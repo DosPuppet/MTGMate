@@ -3,8 +3,6 @@
  "Eriette, the Beguiler | triggered | Eriette, the Beguiler : 1 dans le texte, 0 dans le script": "vol de contrôle tant que l'Aura reste attachée : statique de joueur auraStealsCheaper ; le contrôle dépend aussi de la présence d'Eriette (sa perte rend les permanents volés, une nouvelle Eriette vole rétroactivement ; PLAN-C, lot C12)",
  "Smoky Lounge // Misty Salon | triggered | Smoky Lounge : 1 dans le texte, 0 dans le script": "approximation documentée : capacité de mana utilisable pendant la première phase principale",
  "Ultima, Origin of Oblivion | triggered | Ultima, Origin of Oblivion : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée ({C} en plus) : remplacement de mana (R1, famille I)",
- "Sidequest: Raise a Chocobo // Black Chocobo | triggered | Black Chocobo : 2 dans le texte, 1 dans le script": "approximation documentée : la recherche « quand il se transforme » est faite par l'effet qui le transforme",
- "Ultimecia, Time Sorceress // Ultimecia, Omnipotent | triggered | Ultimecia, Omnipotent : 1 dans le texte, 0 dans le script": "approximation documentée : l'effet « quand elle se transforme » est fait par l'effet qui la transforme",
  "Lavaleaper | triggered | Lavaleaper : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus) : remplacement de mana (R1, famille I)",
  "Shimmerwilds Growth | triggered | Shimmerwilds Growth : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de la couleur choisie) : remplacement de mana (R1, famille I)",
  "Buried in the Garden | triggered | Buried in the Garden : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus) : remplacement de mana (R1, famille I), comme Shimmerwilds Growth",

@@ -104,10 +104,11 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.entersSelf, fx.may("Chercher une Monture ou un Véhicule ?", fx.search(MOUNT_OR_VEHICLE)), {
         label: "Cherchez une Monture ou un Véhicule",
       }),
-      // Approximation : le marqueur supplémentaire vaut pour vos créatures (Véhicules animés compris).
+      // « … sur une créature ou un Véhicule que vous contrôlez » (un Véhicule non animé compris).
       eventReplacement({
         event: "counters",
         to: "yourSide",
+        toFilter: CREATURE_OR_VEHICLE,
         counter: "+1/+1",
         modify: { add: 1 },
         label: "Un marqueur +1/+1 de plus",

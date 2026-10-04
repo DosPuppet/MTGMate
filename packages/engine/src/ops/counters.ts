@@ -238,21 +238,6 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  removeCounterFromEach(s, r, e, ctx) {
-    // Dyadrine : les N permanents qui ont le plus de marqueurs de ce type.
-    const withCounter = s.battlefield
-      .filter((x) => (s.objects[x]?.counters[e.kind] ?? 0) > 0)
-      .filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId))
-      .sort((a, b) => (s.objects[b]?.counters[e.kind] ?? 0) - (s.objects[a]?.counters[e.kind] ?? 0));
-    const done = withCounter.length >= e.n;
-    if (done)
-      for (const id of withCounter.slice(0, e.n)) {
-        const o = s.objects[id];
-        if (o) changeCounters(s, o, e.kind, -1);
-      }
-    store(r, e.store, done ? 1 : 0);
-    return;
-  },
   blight(s, r, e, ctx, key) {
     // Flétrir N (ECL) : chaque joueur désigné choisit une créature qu'il contrôle et y met N marqueurs −1/−1. Tous les
     // choix sont faits avant les marqueurs (une question en attente reprend l'effet depuis le début). `store` : 1 si

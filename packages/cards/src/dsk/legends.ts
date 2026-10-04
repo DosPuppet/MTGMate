@@ -93,8 +93,12 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Dollmaker's Shop": {
-    // « une ou plusieurs créatures non-Jouets attaquent un joueur » : approximé par « chaque fois que vous attaquez ».
-    abilities: [triggered(when.attackWith(), [fx.createTokens(TOY)], { label: "Jeton Jouet 1/1" })],
+    // « une ou plusieurs créatures non-Jouets attaquent un joueur » : l'attaque d'un planeswalker ou d'une bataille compte aussi.
+    abilities: [
+      triggered(when.attackWith(1, { types: ["Creature"], notSubtype: "Toy" }), [fx.createTokens(TOY)], {
+        label: "Jeton Jouet 1/1",
+      }),
+    ],
   },
   "Porcelain Gallery": {
     abilities: [
@@ -456,11 +460,13 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Leyline of Resonance": {
     leyline: true,
-    // « qui ne cible qu'une seule créature que vous contrôlez » : approximé par « qui cible une créature que vous contrôlez ».
     abilities: [
-      triggered(when.castSpell("you", INSTANT_SORCERY, { objects: CREATURE_YOU_CONTROL }), [fx.copySpell(ref.eventObject, 1)], {
-        label: "Copiez ce sort",
-      }),
+      triggered(
+        // « qui ne cible qu'une seule créature que vous contrôlez » : une seule cible, une de vos créatures.
+        { on: "castSpell", by: "you", filter: INSTANT_SORCERY, targeting: { objects: CREATURE_YOU_CONTROL }, singleTarget: true },
+        [fx.copySpell(ref.eventObject, 1)],
+        { label: "Copiez ce sort" },
+      ),
     ],
   },
   "Screaming Nemesis": {

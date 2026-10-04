@@ -173,7 +173,6 @@ export type Effect =
   /** Chaque joueur désigné sacrifie un permanent correspondant ; celui qui ne peut pas défausse une carte (Momentum Breaker). */
   | { op: "sacrificeElseDiscard"; who: Ref; filter: ObjectFilter }
   /** Retire un marqueur de chacun de N permanents correspondants (choisis automatiquement) ; `store` : 1 si fait. */
-  | { op: "removeCounterFromEach"; filter: ObjectFilter; n: number; kind: string; store?: string }
   /** Effets avec choix pendant la résolution. */
   /** `who` : le joueur qui regarde (« le joueur ciblé regarde 3 », Bumi) ; vous par défaut. */
   | { op: "scry"; amount: Amount; who?: Ref }

@@ -25,6 +25,7 @@ import {
 
 const CREATURES: ObjectFilter = { types: ["Creature"] };
 const ALL_CREATURES = ref.permanentsOf(ref.eachPlayer, CREATURES);
+const WITH_P1P1 = { ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" };
 
 /** Mutinous Massacre : détruit les créatures de la parité choisie, puis prend le contrôle de toutes les créatures. */
 const massacre = (parity: "odd" | "even", label: string) =>
@@ -258,17 +259,22 @@ export const UNIQUE: Record<string, CardScript> = {
       entersWith({ counters: amount.manaSpent, label: "Marqueurs +1/+1 = mana dépensé" }),
       triggered(
         when.attackWith(1),
-        [
-          ...fx.may(
+        // Le joueur choisit les deux créatures ; il faut en avoir deux avec un marqueur pour « le faire ».
+        fx.when(
+          cond.controls(WITH_P1P1, 2),
+          fx.may(
             "Retirer un marqueur +1/+1 de deux de vos créatures ?",
-            fx.removeCounterFromEach(CREATURE_YOU_CONTROL, 2, "d"),
+            fx.chooseAmong(ref.permanentsOf(ref.you, WITH_P1P1), ref.you, "d1", {
+              prompt: "Première créature dont retirer un marqueur +1/+1",
+            }),
+            fx.chooseAmong(ref.stored("d1Rest"), ref.you, "d2", { prompt: "Seconde créature dont retirer un marqueur +1/+1" }),
+            fx.removeCounters(ref.stored("d1"), 1, "+1/+1"),
+            fx.removeCounters(ref.stored("d2"), 1, "+1/+1"),
+            fx.draw(1),
+            fx.createTokens(ROBOT),
           ),
-          ...fx.when(cond.v("d"), fx.draw(1), fx.createTokens(ROBOT)),
-        ],
-        {
-          condition: cond.controls({ ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" }, 2),
-          label: "Piochez et Robot 2/2",
-        },
+        ),
+        { label: "Retirez deux marqueurs +1/+1 : piochez et Robot 2/2" },
       ),
     ],
   },

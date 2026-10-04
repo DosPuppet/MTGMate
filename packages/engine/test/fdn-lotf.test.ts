@@ -4,12 +4,24 @@
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
+import { fx, triggered, when } from "../src/dsl";
 import { grantPlay } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { canPay, manaAbilitiesOf } from "../src/mana";
 import { chars, onBattlefield } from "../src/state";
 import type { ActionOption, GameState } from "../src/types";
-import { act, advanceUntil, castNowOf, idOf, idsOf, passAccepting, passBoth, scenario, untilCastNow } from "./helpers";
+import {
+  act,
+  advanceUntil,
+  castNowOf,
+  customCard,
+  idOf,
+  idsOf,
+  passAccepting,
+  passBoth,
+  scenario,
+  untilCastNow,
+} from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -352,6 +364,29 @@ describe("Lot F : doublements, copies, contrôle", () => {
     const copy = idOf(s, "p1", "battlefield", "Shivan Dragon");
     expect(s.objects[copy]?.isToken).toBe(true);
     expect(chars(s, copy).subtypes).toContain("Nightmare");
+    // « Puis exilez tous les autres jetons Cauchemar » : après la création de la nouvelle copie, qui voit partir
+    // l'ancienne (« chaque fois qu'une autre créature que vous contrôlez quitte le champ de bataille »).
+    const watcher = customCard({
+      name: "Veilleur",
+      power: 1,
+      toughness: 1,
+      abilities: [
+        triggered(when.leaves({ types: ["Creature"], controller: "you", other: true }), [fx.gainLife(1)], { label: "1 PV" }),
+      ],
+    });
+    let t = scenario({ p1: { battlefield: ["Abyssal Harvester"] }, p2: { battlefield: ["Shivan Dragon", watcher] } });
+    const h = idOf(t, "p1", "battlefield", "Abyssal Harvester");
+    destroy(t, idOf(t, "p2", "battlefield", "Shivan Dragon"));
+    const settled = (x: S) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority";
+    t = act(t, "p1", { type: "activate", source: h, ability: 0, targets: { t: [idOf(t, "p2", "graveyard", "Shivan Dragon")] } });
+    t = structuredClone(passAccepting(t, settled));
+    t.objects[h]!.tapped = false;
+    destroy(t, idOf(t, "p2", "battlefield", "Veilleur"));
+    t = act(t, "p1", { type: "activate", source: h, ability: 0, targets: { t: [idOf(t, "p2", "graveyard", "Veilleur")] } });
+    t = passAccepting(t, settled);
+    expect(idsOf(t, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
+    expect(idsOf(t, "p1", "battlefield", "Veilleur")).toHaveLength(1);
+    expect(t.players.p1?.life).toBe(21);
   });
 });
 

@@ -155,7 +155,7 @@ export const LEGENDS2: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         sorcerySpeed: true,
-        effects: [fx.createTokens(SPIDER, amount.plus(amount.lkiCounters("nest"), amount.lkiCounters("+1/+1")))],
+        effects: [fx.createTokens(SPIDER, amount.lkiCounters("any"))],
         label: "Une Araignée 2/2 par marqueur",
       }),
     ],

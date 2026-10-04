@@ -125,8 +125,13 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true, maxPower: 2 }),
-        [...fx.may("Défausser une carte pour piocher ?", fx.discard(1), fx.draw(1))],
-        { oncePerTurn: true, label: "Défaussez, puis piochez" },
+        // « Faites ceci une seule fois par tour » : seulement si une carte a été défaussée.
+        fx.may(
+          "Défausser une carte pour piocher ?",
+          fx.discard(1, ref.you, { store: "d" }),
+          fx.when(cond.v("d"), fx.draw(1), fx.doneOncePerTurn),
+        ),
+        { oncePerTurn: "ifDone", label: "Défaussez, puis piochez" },
       ),
     ],
   },
@@ -235,7 +240,7 @@ export const RED: Record<string, CardScript> = {
         fx.gainControl(ref.target()),
         fx.untap(ref.target()),
         fx.pump(ref.target(), 0, 0, ["haste"]),
-        ...fx.may("Défausser une carte pour piocher ?", fx.discard(1), fx.draw(1)),
+        ...fx.may("Défausser une carte pour piocher ?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
       ],
     ),
   },

@@ -5,6 +5,7 @@
 import { card, TOKEN_SPECS } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { createTokens, destroy } from "../src/actions";
+import { addEffect } from "../src/effects";
 import { GameHost } from "../src/host";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, decider } from "../src/state";
@@ -3149,5 +3150,69 @@ describe("Broodguard Elite (lot K8)", () => {
     s = settle(s);
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
     expect(s.objects[bear]?.counters.stun).toBe(1);
+  });
+});
+
+describe("Edge of Eternities : approximations levées (lot A1)", () => {
+  it("Emissary Escort : « +X/+0 » s'ajoute à une force de base fixée par un effet", () => {
+    const s = scenario({ p1: { battlefield: ["Emissary Escort", "Thaumaton Torpedo", "Memorial Vault"] } });
+    const escort = idOf(s, "p1", "battlefield", "Emissary Escort");
+    expect([chars(s, escort).power, chars(s, escort).toughness]).toEqual([4, 4]);
+    // F/E de base 1/1 (couche 7b) : le bonus (couche 7c) s'y ajoute.
+    addEffect(s, [escort], { setPower: 1, setToughness: 1 }, "endOfTurn");
+    expect([chars(s, escort).power, chars(s, escort).toughness]).toEqual([5, 1]);
+  });
+
+  it("Dyadrine : en attaquant, le joueur choisit les deux créatures dont il retire un marqueur +1/+1", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [
+          { name: "Dyadrine, Synthesis Amalgam", counters: { "+1/+1": 3 } },
+          { name: "Bear Cub", counters: { "+1/+1": 1 } },
+          { name: "Llanowar Elves", counters: { "+1/+1": 2 } },
+        ],
+        library: ["Island", "Island"],
+      },
+    });
+    const dyadrine = idOf(s, "p1", "battlefield", "Dyadrine, Synthesis Amalgam");
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const offered: string[][] = [];
+    s = attack(s, [dyadrine]);
+    s = settle(s, (req) => {
+      if (req.type === "yesNo") return [1];
+      if (req.type !== "pick") return undefined;
+      offered.push(req.options.map(String));
+      return req.options.includes(cub) ? [cub] : [elves];
+    });
+    expect(offered[0]?.sort()).toEqual([dyadrine, cub, elves].sort());
+    expect(offered[1]?.sort()).toEqual([dyadrine, elves].sort());
+    expect(s.objects[dyadrine]?.counters["+1/+1"]).toBe(3);
+    expect(s.objects[cub]?.counters["+1/+1"] ?? 0).toBe(0);
+    expect(s.objects[elves]?.counters["+1/+1"]).toBe(1);
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Robot")).toHaveLength(1);
+  });
+
+  it("Terrasymbiosis : un refus de piocher ne compte pas pour « une seule fois par tour »", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Plains", 3), "Bear Cub", "Terrasymbiosis"],
+        hand: ["Fleeting Flight", "Fleeting Flight", "Fleeting Flight"],
+        library: lands("Island", 5),
+      },
+    });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    let r = counterFrom(s, "p1", cub);
+    expect(r.triggered).toEqual(["Terrasymbiosis"]);
+    s = settle(r.s, (req) => (req.type === "yesNo" ? [0] : undefined));
+    expect(s.players.p1?.hand).toHaveLength(2);
+    // Deuxième fois : elle se déclenche encore, et l'on pioche.
+    r = counterFrom(s, "p1", cub);
+    expect(r.triggered).toEqual(["Terrasymbiosis"]);
+    s = settle(r.s, (req) => (req.type === "yesNo" ? [1] : undefined));
+    expect(s.players.p1?.hand).toHaveLength(2);
+    // C'est fait : plus de déclenchement ce tour-ci.
+    expect(counterFrom(s, "p1", cub).triggered).toEqual([]);
   });
 });

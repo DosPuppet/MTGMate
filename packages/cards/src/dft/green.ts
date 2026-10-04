@@ -178,22 +178,16 @@ export const GREEN: Record<string, CardScript> = {
   "Venomsac Lagac": { abilities: [whileSaddled([fx.pump(ref.self, 0, 3)], { label: "+0/+3" })] },
   "Webstrike Elite": {
     abilities: [
-      // « … de valeur de mana X » : la cible est quelconque, et n'est détruite que si sa valeur de mana vaut X.
-      whenCycled(
-        [
-          fx.when(
-            cond.all(
-              cond.amountAtLeast(amount.plus(amount.manaValueOf(ref.target()), amount.neg(amount.eventAmount)), 0),
-              cond.amountAtLeast(amount.plus(amount.eventAmount, amount.neg(amount.manaValueOf(ref.target()))), 0),
-            ),
-            fx.destroy(ref.target()),
-          ),
+      // « … avec une valeur de mana X » : X est celui du coût de cycle payé (montant de l'événement), lu au ciblage.
+      whenCycled([fx.destroy(ref.target())], {
+        targets: [
+          {
+            ...target.upTo(1, target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement de VM X")),
+            manaValueAmount: amount.eventAmount,
+          },
         ],
-        {
-          targets: [target.upTo(1, target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement"))],
-          label: "Détruisez un artefact ou un enchantement de VM X",
-        },
-      ),
+        label: "Détruisez un artefact ou un enchantement de VM X",
+      }),
     ],
   },
 };

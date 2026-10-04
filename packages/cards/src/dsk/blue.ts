@@ -149,16 +149,7 @@ export const BLUE: Record<string, CardScript> = {
   "Unwilling Vessel": {
     abilities: [
       eerie([fx.counters(ref.self, "possession", 1)], { label: "Marqueur de possession" }),
-      triggered(
-        when.diesSelf,
-        [
-          fx.createXXToken(
-            SPIRIT_BLUE,
-            amount.plus(amount.lkiCounters("possession"), amount.lkiCounters("+1/+1"), amount.lkiCounters("stun")),
-          ),
-        ],
-        { label: "Esprit X/X volant" },
-      ),
+      triggered(when.diesSelf, [fx.createXXToken(SPIRIT_BLUE, amount.lkiCounters("any"))], { label: "Esprit X/X volant" }),
     ],
   },
   "Vanish from Sight": {

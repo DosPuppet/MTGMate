@@ -84,7 +84,6 @@
     "damageEachPlayerPer": "Sunspine Lynx — montant par destinataire (R4.6)",
     "destroyAllButChosenType": "Kindred Judgment — « gardez les permanents choisis » (R4.6)",
     "destroyAllButOnePerPlayer": "Unstable Glyphbridge // Sandswirl Wanderglyph — « gardez les permanents choisis » (R4.6)",
-    "doneOncePerTurn": "Spider-Verse — « faites ceci une seule fois par tour » (avec oncePerTurn: \"ifDone\"), générique, une seule carte pour l'instant",
     "exileForManaValue": "Fabrication Foundry — opération propre à une carte (R4.6)",
     "flickerChosen": "Another Round — opération propre à une carte (R4.6)",
     "hellkite": "Steel Hellkite — destroyAll + filtre « blessé par la source » (R4.6)",
@@ -95,7 +94,6 @@
     "noncombatBonusThisTurn": "Taii Wakeen, Perfect Shot — effet de joueur à montant (R4.6)",
     "portent": "Portent of Calamity — opération propre à une carte (R4.6)",
     "reduceSpeed": "Spikeshell Harrier — mécanique générique, une seule carte pour l'instant",
-    "removeCounterFromEach": "Dyadrine, Synthesis Amalgam — mécanique générique, une seule carte pour l'instant",
     "revealFaceDown": "Hauntwoods Shrieker — opération propre à une carte (R4.6)",
     "sacrificeElseDiscard": "Momentum Breaker — opération propre à une carte (R4.6)",
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
@@ -243,8 +241,8 @@
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 17,
     "LayerMods": 31,
-    "Effect": 153,
-    "Effect (champs)": 633,
+    "Effect": 152,
+    "Effect (champs)": 628,
     "TriggerSpec": 60,
     "TriggerSpec (champs)": 159,
     "Condition": 52,
@@ -297,6 +295,7 @@
     "PLAN-G G4e (bibliothèque et pioche) : millWhileShared généralisé (who, share, nonland, draw : trois cartes), payX en PV (life), lookAtTop une carte par type (onePerType) : Effect (champs) 619 → 625",
     "PLAN-G G4e (exil et copies) : copyToken.for (Fractured Identity), discover.filter (cascade légendaire de Jodah) : Effect (champs) 625 → 627",
     "PLAN-G G4e (dernières cartes) : défausser X cartes en coût (CostDef.discardX, Gix), grantPlay.forNonOwners (Ian Malcolm), attach.random (Maddening Hex) : CostDef 33 → 34, Effect (champs) 627 → 629",
-    "PLAN-G G4e (dernières cartes 2) : phasing (PlayerState.phasedOut, Robe of Stars) ; joueur qui choisit ou paie (chooseOption.who, payX.who : Expropriate, Plague of Vermin) : PlayerState 21 → 22, Effect 152 → 153, Effect (champs) 629 → 633"
+    "PLAN-G G4e (dernières cartes 2) : phasing (PlayerState.phasedOut, Robe of Stars) ; joueur qui choisit ou paie (chooseOption.who, payX.who : Expropriate, Plague of Vermin) : PlayerState 21 → 22, Effect 152 → 153, Effect (champs) 629 → 633",
+    "PLAN-A A1 : removeCounterFromEach retiré (Dyadrine choisit ses créatures) : Effect 153 → 152, Effect (champs) 633 → 628"
   ]
 }

@@ -6,6 +6,8 @@ import { activated, amount, cond, fx, jobGear, ref, staticAbility, target, trigg
 const grants = (label: string, ...abilities: Parameters<typeof staticAbility>[1]["addAbilities"] & object) =>
   staticAbility("attached", { addAbilities: abilities }, { label });
 
+const ENCHANTMENT = { types: ["Enchantment" as const] };
+
 export const GEAR: Record<string, CardScript> = {
   "Astrologian's Planisphere": {
     abilities: [
@@ -101,21 +103,17 @@ export const GEAR: Record<string, CardScript> = {
         triggered(
           when.attacksSelf,
           [
-            fx.pickFromZone(
-              "hand",
-              { types: ["Creature"], notTypes: ["Enchantment"] },
-              { to: "battlefield" },
-              { min: 0, store: "c" },
+            fx.chooseAmong(ref.handOf(ref.you, { types: ["Creature"] }), ref.you, "c", {
+              anyZone: true,
+              optional: true,
+              prompt: "Vous pouvez mettre une carte de créature de votre main sur le champ de bataille",
+            }),
+            // Une carte d'enchantement arrive engagée et attaquante.
+            ...fx.when(
+              cond.refMatches(ref.stored("c"), ENCHANTMENT),
+              fx.toBattlefield(ref.stored("c"), { tapped: true, attacking: true }),
             ),
-            fx.when(
-              cond.not(cond.v("c")),
-              fx.pickFromZone(
-                "hand",
-                { types: ["Creature", "Enchantment"] },
-                { to: "battlefield", tapped: true, attacking: true },
-                { min: 0 },
-              ),
-            ),
+            ...fx.when(cond.not(cond.refMatches(ref.stored("c"), ENCHANTMENT)), fx.toBattlefield(ref.stored("c"))),
           ],
           { label: "Mettez une créature de votre main en jeu" },
         ),

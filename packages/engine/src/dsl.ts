@@ -668,13 +668,6 @@ export const fx = {
   /** Chaque joueur désigné meule autant de cartes qu'il y en a dans son cimetière. */
   millGraveyardSize: (who: Ref): Effect => ({ op: "mill", who, amount: 0, graveyardSize: true }),
   sacrificeElseDiscard: (who: Ref, filter: ObjectFilter): Effect => ({ op: "sacrificeElseDiscard", who, filter }),
-  removeCounterFromEach: (filter: ObjectFilter, n: number, store?: string, kind = "+1/+1"): Effect => ({
-    op: "removeCounterFromEach",
-    filter,
-    n,
-    kind,
-    store,
-  }),
   scry: (n: Amount, who?: Ref): Effect => ({ op: "scry", amount: n, ...(who ? { who } : {}) }),
   surveil: (n: Amount, toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }, store?: string): Effect => ({
     op: "surveil",

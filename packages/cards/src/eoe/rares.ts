@@ -114,8 +114,16 @@ export const RARES: Record<string, CardScript> = {
     ),
   },
   "Emissary Escort": {
-    // « +X/+0 » : modélisé par une force de base variable (0 + X), les marqueurs s'y ajoutent.
-    cdaPower: amount.maxManaValue({ types: ["Artifact"], controller: "you", other: true }),
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1 },
+        {
+          perAmount: amount.maxManaValue({ types: ["Artifact"], controller: "you", other: true }),
+          label: "+X/+0 (plus grande VM parmi vos autres artefacts)",
+        },
+      ),
+    ],
   },
   "Uthros Psionicist": {
     abilities: [
@@ -352,8 +360,9 @@ export const RARES: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.youPutCounters(CREATURE_YOU_CONTROL, "+1/+1"),
-        fx.may("Piocher autant de cartes ?", fx.draw(amount.eventAmount)),
-        { oncePerTurn: true, label: "Piochez autant de cartes" },
+        // « Faites ceci une seule fois par tour » : un refus ne compte pas.
+        fx.may("Piocher autant de cartes ?", fx.draw(amount.eventAmount), fx.doneOncePerTurn),
+        { oncePerTurn: "ifDone", label: "Piochez autant de cartes (une fois par tour)" },
       ),
     ],
   },

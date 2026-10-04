@@ -275,10 +275,10 @@ export const BLACK: Record<string, CardScript> = {
           ),
         ],
         effects: [
-          // « Puis exilez tous les autres jetons Cauchemar que vous contrôlez » : fait avant la création (même résultat).
-          fx.moveAll("battlefield", ref.you, { subtype: "Nightmare", token: true }, { to: "exile" }),
           fx.exileCard(ref.target(), { name: "h" }),
-          fx.copyToken(ref.stored("h"), { addSubtypes: ["Nightmare"] }),
+          fx.copyToken(ref.stored("h"), { addSubtypes: ["Nightmare"], store: "tok" }),
+          // « Puis exilez tous les autres jetons Cauchemar que vous contrôlez » : après la création de la copie.
+          fx.exile(ref.except(ref.permanentsOf(ref.you, { subtype: "Nightmare", token: true }), ref.stored("tok"))),
         ],
         label: "Exiler et copier une créature morte ce tour-ci",
       }),

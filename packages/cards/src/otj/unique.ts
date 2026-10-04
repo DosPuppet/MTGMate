@@ -337,7 +337,24 @@ export const UNIQUE: Record<string, CardScript> = {
       {
         cost: "{2}{R}",
         label: "Dégagez vos créatures, combat supplémentaire",
-        effects: [fx.untap(ref.permanentsOf(ref.you, { types: ["Creature"] })), fx.extraCombat],
+        // « Si c'est votre phase de combat, il y a une phase de combat supplémentaire après celle-ci. »
+        effects: [
+          fx.untap(ref.permanentsOf(ref.you, { types: ["Creature"] })),
+          ...fx.when(
+            cond.all(
+              cond.yourTurn,
+              cond.any(
+                cond.step("beginCombat"),
+                cond.step("declareAttackers"),
+                cond.step("declareBlockers"),
+                cond.step("firstStrikeDamage"),
+                cond.step("combatDamage"),
+                cond.step("endCombat"),
+              ),
+            ),
+            fx.extraCombat,
+          ),
+        ],
       },
       { cost: "{2}", label: "+1/+0 et l'initiative", effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["firstStrike"])] },
       {
@@ -551,24 +568,18 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Kellan, the Kid": {
     abilities: [
-      // Approximation : le sort de permanent est mis sur le champ de bataille (et non lancé).
       triggered(
         { on: "castSpell", by: "you", notFromHand: true },
         [
-          fx.pickFromZone(
-            "hand",
-            { permanent: true, notTypes: ["Land"] },
-            { to: "battlefield" },
-            {
-              min: 0,
-              store: "k",
-              maxManaValue: amount.manaValueOf(ref.eventObject),
-              prompt: "Un permanent de votre main (VM inférieure ou égale)",
-            },
-          ),
+          // « Vous pouvez lancer un sort de permanent de VM inférieure ou égale depuis votre main sans payer son coût de
+          // mana. Si vous ne le faites pas, vous pouvez mettre une carte de terrain de votre main sur le champ de bataille. »
+          fx.castNow(ref.handOf(ref.you, { permanent: true }, amount.manaValueOf(ref.eventObject)), {
+            free: true,
+            storeCast: "k",
+          }),
           fx.when(cond.not(cond.v("k")), fx.pickFromZone("hand", { types: ["Land"] }, { to: "battlefield" }, { min: 0 })),
         ],
-        { label: "Un permanent gratuit, sinon un terrain" },
+        { label: "Lancez un sort de permanent gratuitement, sinon un terrain" },
       ),
     ],
   },

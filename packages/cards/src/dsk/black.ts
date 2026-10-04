@@ -100,7 +100,7 @@ export const BLACK: Record<string, CardScript> = {
   "Fear of the Dark": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.self, 0, 0, ["menace", "deathtouch"])], {
-        condition: cond.not(cond.battlefieldCount({ ...GLIMMER_CREATURE, controller: "opponent" }, 1)),
+        condition: cond.not(cond.amountAtLeast(amount.refCount(ref.permanentsOf(ref.defendingPlayer, GLIMMER_CREATURE)), 1)),
         label: "La menace et le contact mortel",
       }),
     ],
@@ -183,12 +183,7 @@ export const BLACK: Record<string, CardScript> = {
         label: "Il perd la moitié de ses PV",
       }),
       triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true, counters: { kind: "stun", n: 2 } })], {
-        condition: cond.not(
-          cond.amountAtLeast(
-            amount.plus(amount.lkiCounters("+1/+1"), amount.lkiCounters("-1/-1"), amount.lkiCounters("stun")),
-            1,
-          ),
-        ),
+        condition: cond.not(cond.amountAtLeast(amount.lkiCounters("any"), 1)),
         label: "Revient engagée avec deux marqueurs d'étourdissement",
       }),
     ],

@@ -183,12 +183,20 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Tellah, Great Sage": {
     abilities: [
-      // Approximation : trois déclenchements séparés (Héros ; puis pioche ; puis sacrifice et blessures).
-      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.createTokens(HERO)], { label: "Héros 1/1" }),
-      triggered(when.castNoncreatureWithMana(4), [fx.draw(2)], { label: "Piochez deux cartes" }),
-      triggered(when.castNoncreatureWithMana(8), [fx.sacrificeIt(ref.self), fx.damage(amount.eventManaSpent, ref.eachOpponent)], {
-        label: "Sacrifiez Tellah, blessures à chaque adversaire",
-      }),
+      // Un seul déclenchement : Héros, puis pioche (quatre mana ou plus), puis sacrifice et blessures (huit ou plus).
+      triggered(
+        when.castSpell("you", { notTypes: ["Creature"] }),
+        [
+          fx.createTokens(HERO),
+          ...fx.when(cond.amountAtLeast(amount.eventManaSpent, 4), fx.draw(2)),
+          ...fx.when(
+            cond.amountAtLeast(amount.eventManaSpent, 8),
+            fx.sacrificeIt(ref.self),
+            fx.damage(amount.eventManaSpent, ref.eachOpponent),
+          ),
+        ],
+        { label: "Héros 1/1 ; quatre mana : piochez deux cartes ; huit : sacrifiez Tellah, blessures" },
+      ),
     ],
   },
   "The Wandering Minstrel": {

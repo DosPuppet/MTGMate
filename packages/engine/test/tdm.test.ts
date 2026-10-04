@@ -3897,3 +3897,36 @@ describe("Contempler (PLAN-D, D2)", () => {
     expect(run(false)).toEqual({ asked: true, treasures: 0 });
   });
 });
+
+describe("Tarkir: Dragonstorm : approximations levées (lot A1)", () => {
+  it("Claim Territory : une seule recherche de jusqu'à deux Forêts de base ; l'une, au choix, arrive engagée, l'autre va en main", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Forest", 3),
+        hand: ["Bloomvine Regent // Claim Territory"],
+        library: ["Forest", "Forest", "Island", "Forest"],
+      },
+    });
+    const card = idOf(s, "p1", "hand", "Bloomvine Regent // Claim Territory");
+    const paid = idsOf(s, "p1", "battlefield", "Forest");
+    const searches: number[] = [];
+    s = settle(act(s, "p1", { type: "cast", card, face: 1 }), (req, _p, cur) => {
+      if (req.type !== "pick") return undefined;
+      if (req.intent === "search") {
+        searches.push(req.max);
+        expect(namesIn(cur, req.options)).toEqual(["Forest", "Forest", "Forest"]);
+        return req.options.slice(0, 2);
+      }
+      // Les deux Forêts trouvées : le joueur choisit celle qui arrive sur le champ de bataille.
+      expect(req.options).toHaveLength(2);
+      return [req.options[1] as string];
+    });
+    expect(searches).toEqual([2]);
+    const found = idsOf(s, "p1", "battlefield", "Forest").filter((id) => !paid.includes(id));
+    expect(found).toHaveLength(1);
+    expect(s.objects[found[0] as string]?.tapped).toBe(true);
+    expect(namesIn(s, s.players.p1?.hand)).toEqual(["Forest"]);
+    expect(s.players.p1?.library).toHaveLength(3);
+    expect(namesIn(s, s.players.p1?.library)).toContain("Bloomvine Regent // Claim Territory");
+  });
+});

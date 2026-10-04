@@ -4182,3 +4182,52 @@ describe("Wreck Remover (lot K8)", () => {
     expect(s.players.p1?.life).toBe(21);
   });
 });
+
+describe("Aetherdrift : approximations levées (lot A1)", () => {
+  const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
+    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
+  };
+  const artifact = (name: string, mv: number) =>
+    customCard({
+      name,
+      typeLine: "Artifact",
+      types: ["Artifact"],
+      manaCost: { generic: mv, colored: {}, x: 0 },
+      manaCostText: `{${mv}}`,
+    });
+
+  it("Webstrike Elite : seul un artefact ou enchantement de valeur de mana X peut être ciblé", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 4), hand: ["Webstrike Elite"], library: lands("Island", 3) },
+      p2: { battlefield: [artifact("Rouage", 3), artifact("Engrenage", 2)] },
+    });
+    const elite = idOf(s, "p1", "hand", "Webstrike Elite");
+    const cog = idOf(s, "p2", "battlefield", "Rouage");
+    const gear = idOf(s, "p2", "battlefield", "Engrenage");
+    let offered: string[] = [];
+    s = settle(activate(s, "p1", elite, "Cycle", { x: 2 }), (req) => {
+      if (req.type !== "pick" || !req.options.includes(gear)) return undefined;
+      offered = req.options.map(String);
+      return [gear];
+    });
+    expect(offered).toEqual([gear]);
+    expect(offered).not.toContain(cog);
+    expect(idsOf(s, "p2", "graveyard", "Engrenage")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Rouage")).toHaveLength(1);
+  });
+
+  it("Caradora : le marqueur +1/+1 de plus vaut pour vos créatures et vos Véhicules, pas pour vos autres permanents", async () => {
+    const { changeCounters } = await import("../src/state");
+    const s = scenario({ p1: { battlefield: ["Caradora, Heart of Alacria", "Spotcycle Scouter", artifact("Rouage", 1)] } });
+    const vehicle = s.objects[idOf(s, "p1", "battlefield", "Spotcycle Scouter")];
+    const cog = s.objects[idOf(s, "p1", "battlefield", "Rouage")];
+    if (!vehicle || !cog) throw new Error("permanents introuvables");
+    expect(chars(s, vehicle.id).types).not.toContain("Creature");
+    changeCounters(s, vehicle, "+1/+1", 1);
+    changeCounters(s, cog, "+1/+1", 1);
+    expect(vehicle.counters["+1/+1"]).toBe(2);
+    expect(cog.counters["+1/+1"]).toBe(1);
+  });
+});

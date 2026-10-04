@@ -198,12 +198,17 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Claim Territory": {
-    // « Jusqu'à deux Forêts de base : l'une en jeu engagée, l'autre en main » : deux recherches successives.
+    // « Jusqu'à deux cartes de Forêt de base, révélées : mettez-en une sur le champ de bataille engagée et l'autre dans
+    // votre main » : une seule recherche (les cartes trouvées vont en main), puis le choix de celle qui arrive en jeu.
     spell: spell(
       [],
       [
-        fx.search({ types: ["Land"], basic: true, subtype: "Forest" }, { to: "battlefield", tapped: true }),
-        fx.search({ types: ["Land"], basic: true, subtype: "Forest" }, { to: "hand" }),
+        fx.search({ types: ["Land"], basic: true, subtype: "Forest" }, { to: "hand" }, 2, undefined, "f"),
+        fx.chooseAmong(ref.stored("f"), ref.you, "bf", {
+          anyZone: true,
+          prompt: "Forêt à mettre sur le champ de bataille engagée",
+        }),
+        fx.moveTo(ref.stored("bf"), { to: "battlefield", tapped: true }),
       ],
     ),
   },

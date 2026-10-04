@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
-import { activated, fx, spell, triggered, when } from "../src/dsl";
+import { activated, fx, ref, spell, target, triggered, when } from "../src/dsl";
 import { moveWithSpec } from "../src/effects";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
@@ -497,13 +497,16 @@ describe("Final Fantasy, cartes du méta (PLAN-C, lot C13)", () => {
     expect(t.players.p1?.life).toBe(22);
   });
 
-  it("Zack Fair : arrive avec un marqueur ; sacrifié, donne l'indestructible, ses marqueurs et son Équipement", () => {
-    let s = scenario({ p1: { battlefield: ["Bear Cub", "Buster Sword", ...lands("Plains", 2)], hand: ["Zack Fair"] } });
+  it("Zack Fair : arrive avec un marqueur ; sacrifié, donne l'indestructible, ses marqueurs et un de ses Équipements", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Buster Sword", "Buster Sword", ...lands("Plains", 2)], hand: ["Zack Fair"] },
+    });
     s = settle(cast(s, "p1", "Zack Fair"));
     const zack = idOf(s, "p1", "battlefield", "Zack Fair");
     expect(s.objects[zack]?.counters["+1/+1"]).toBe(1);
-    const sword = idOf(s, "p1", "battlefield", "Buster Sword");
+    const [other, sword] = idsOf(s, "p1", "battlefield", "Buster Sword") as [string, string];
     s.objects[sword]!.attachedTo = zack;
+    s.objects[other]!.attachedTo = zack;
     bump(s);
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === zack);
@@ -514,10 +517,12 @@ describe("Final Fantasy, cartes du méta (PLAN-C, lot C13)", () => {
       targets: { t: [bear] },
     });
     expect(idsOf(s, "p1", "graveyard", "Zack Fair")).toHaveLength(1);
-    s = settle(s);
+    // « Un Équipement qui était attaché à Zack » : vous choisissez lequel ; l'autre reste détaché.
+    s = settleAll(s, (req) => (req.type === "pick" && req.options.includes(sword) ? [sword] : undefined));
     expect(chars(s, bear).keywords).toContain("indestructible");
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     expect(s.objects[sword]?.attachedTo).toBe(bear);
+    expect(s.objects[other]?.attachedTo).toBeUndefined();
     expect(chars(s, bear).power).toBe(6);
   });
 
@@ -720,6 +725,14 @@ describe("Final Fantasy, lot K6 : choix rendus au joueur", () => {
     expect(idsOf(s, "p1", "hand", "Forest")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Mountain")).toHaveLength(1);
   });
+});
+
+/** Rituel gratuit de test : « transformez le permanent ciblé ». */
+const TRANSMUTE = customCard({
+  name: "Transmutation",
+  typeLine: "Sorcery",
+  types: ["Sorcery"],
+  spell: spell([target.permanent("t", ["Creature", "Enchantment"])], [fx.transform(ref.target())]),
 });
 
 describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () => {
@@ -2140,6 +2153,29 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       const shiva = idOf(t, "p1", "battlefield", "Summon: Shiva");
       expect(t.objects[shiva]?.tapped).toBe(true);
       expect(t.combat?.attackers.some((x) => x.id === shiva)).toBe(true);
+      // Un seul choix parmi toutes les cartes de créature de la main (enchantements compris), et facultatif.
+      const both = (pick: (options: string[], s: S) => string[]) => {
+        const c = scenario({
+          p1: { battlefield: ["Summoner's Grimoire", "Bear Cub"], hand: ["Shivan Dragon", "Summon: Shiva"] },
+        });
+        const bear = idOf(c, "p1", "battlefield", "Bear Cub");
+        c.objects[idOf(c, "p1", "battlefield", "Summoner's Grimoire")]!.attachedTo = bear;
+        bump(c);
+        const asked: string[][] = [];
+        const end = resolve(attack(c, [bear]), (req, _p, cur) => {
+          if (req.type !== "pick") return undefined;
+          asked.push(req.options.map(String));
+          return pick(req.options.map(String), cur);
+        });
+        return { end, asked };
+      };
+      const shivaFirst = both((options, cur) => options.filter((id) => nameOf(cur, id) === "Summon: Shiva"));
+      expect(shivaFirst.asked).toHaveLength(1);
+      expect(shivaFirst.asked[0]).toHaveLength(2);
+      expect(idsOf(shivaFirst.end, "p1", "battlefield", "Summon: Shiva")).toHaveLength(1);
+      expect(idsOf(shivaFirst.end, "p1", "hand", "Shivan Dragon")).toHaveLength(1);
+      const none = both(() => []);
+      expect(none.end.players.p1?.hand).toHaveLength(2);
     });
   });
 
@@ -2174,6 +2210,14 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(hand(eight, "p1")).toBe(2);
       expect(idsOf(eight, "p1", "graveyard", "Tellah, Great Sage")).toHaveLength(1);
       expect(life(eight, "p2")).toBe(12);
+      // Une seule capacité déclenchée (et non trois) au-dessus du sort.
+      const cast8 = cast(
+        scenario({ p1: { battlefield: ["Tellah, Great Sage", ...lands("Island", 8)], hand: [sorcery(8)] } }),
+        "p1",
+        "Rituel à 8",
+      );
+      const pending = passAccepting(cast8, (x) => x.triggers.length === 0 && x.pending?.kind === "priority");
+      expect(pending.stack.filter((i) => i.kind === "ability")).toHaveLength(1);
       // Un sort de créature : rien.
       const c = resolve(
         cast(
@@ -2437,6 +2481,11 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(s, zenos).name).toBe("Shinryu, Transcendent Rival");
       expect(pt(s, zenos)).toEqual([8, 8]);
       expect(chars(s, zenos).keywords).toContain("flying");
+      // La créature est choisie sans être ciblée : sans créature adverse, les autres ont quand même -2/-2.
+      let t = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Swamp", 5)], hand: [ZENOS] } });
+      t = resolve(cast(t, "p1", ZENOS));
+      expect(idsOf(t, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(chars(t, idOf(t, "p1", "battlefield", ZENOS)).name).not.toBe("Shinryu, Transcendent Rival");
     });
   });
 
@@ -2792,6 +2841,9 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(s, wall).keywords).not.toContain("defender");
       s = throughCombat(attack(s, [wall]));
       expect(life(s, "p2")).toBe(15);
+      // « Un marqueur » : n'importe quel type de marqueur, pas seulement +1/+1.
+      const t = scenario({ p1: { battlefield: [{ name: "Demon Wall", counters: { oil: 1 } }] } });
+      expect(chars(t, idOf(t, "p1", "battlefield", "Demon Wall")).keywords).not.toContain("defender");
     });
 
     it("Diamond Weapon : coûte {1} de moins par carte de permanent de votre cimetière ; portée ; les blessures de combat qui lui seraient infligées sont prévenues", () => {
@@ -3687,6 +3739,17 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(t.objects[idOf(t, "p1", "battlefield", "Forest")]?.tapped).toBe(true);
       expect(pt(t, hawk)).toEqual([2, 1]);
       expect(pt(t, id)).toEqual([3, 2]);
+      // « Quand ce permanent se transforme en Black Chocobo » : aussi quand un autre effet le transforme.
+      let v = scenario({ p1: { battlefield: [SQ], hand: [TRANSMUTE], library: ["Bear Cub", "Forest"] } });
+      v = resolve(
+        act(v, "p1", {
+          type: "cast",
+          card: idOf(v, "p1", "hand", "Transmutation"),
+          targets: { t: [idOf(v, "p1", "battlefield", SQ)] },
+        }),
+      );
+      expect(chars(v, idOf(v, "p1", "battlefield", SQ)).name).toBe("Black Chocobo");
+      expect(idsOf(v, "p1", "battlefield", "Forest")).toHaveLength(1);
     });
 
     it("Sleep Magic : la créature enchantée est engagée et ne se dégage plus ; blessée, l'Aura est sacrifiée", () => {
@@ -4012,6 +4075,17 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(t, u).keywords).toContain("menace");
       expect(t.players.p1?.graveyard).toHaveLength(1);
       expect(t.turn.active).toBe("p1");
+      // « Quand elle se transforme en Ultimecia, Omnipotent » : aussi quand un autre effet la transforme.
+      let v = scenario({ p1: { battlefield: [ULT], hand: [TRANSMUTE] } });
+      v = resolve(
+        act(v, "p1", {
+          type: "cast",
+          card: idOf(v, "p1", "hand", "Transmutation"),
+          targets: { t: [idOf(v, "p1", "battlefield", ULT)] },
+        }),
+      );
+      expect(chars(v, idOf(v, "p1", "battlefield", ULT)).name).toBe("Ultimecia, Omnipotent");
+      expect(v.extraTurns).toEqual(["p1"]);
     });
 
     it("Ultros, Obnoxious Octopus : sort non-créature à quatre mana : engage et étourdit une créature adverse ; à huit : huit marqueurs +1/+1", () => {

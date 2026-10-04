@@ -223,8 +223,7 @@ export const TRANSFORM: Record<string, CardScript> = {
   "Sidequest: Raise a Chocobo": {
     abilities: [
       triggered(when.entersSelf, [chocobo()], { label: "Chocobo 2/2" }),
-      // Approximation : la recherche de Black Chocobo (« quand il se transforme ») est faite par le même effet.
-      triggered(when.step("main1"), [fx.transform(), fx.search({ types: ["Land"] }, { to: "battlefield", tapped: true })], {
+      triggered(when.step("main1"), [fx.transform()], {
         condition: cond.controls({ types: ["Creature"], subtype: "Bird" }, 4),
         label: "Transformez (quatre Oiseaux)",
       }),
@@ -232,6 +231,9 @@ export const TRANSFORM: Record<string, CardScript> = {
   },
   "Black Chocobo": {
     abilities: [
+      triggered(when.transformsSelf, [fx.search({ types: ["Land"] }, { to: "battlefield", tapped: true })], {
+        label: "Se transforme : cherchez un terrain",
+      }),
       triggered(when.landfall, [fx.pumpAll({ ...YOURS, subtype: "Bird" }, 1, 0)], { label: "Landfall : Oiseaux +1/+0" }),
     ],
   },
@@ -337,7 +339,6 @@ export const TRANSFORM: Record<string, CardScript> = {
   "Ultimecia, Time Sorceress": {
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((t) => triggered(t, [fx.surveil(2)], { label: "Surveillance 2" })),
-      // Approximation : le tour supplémentaire d'Ultimecia, Omnipotent (« quand elle se transforme ») est donné par le même effet.
       triggered(
         when.yourEndStep,
         fx.mayPay(
@@ -345,13 +346,14 @@ export const TRANSFORM: Record<string, CardScript> = {
           "Payer {4}{U}{U}{B}{B} et exiler huit cartes de votre cimetière ?",
           fx.pickFromZone("graveyard", {}, { to: "exile" }, { count: 8, min: 8, prompt: "Exilez huit cartes" }),
           fx.transform(),
-          fx.extraTurn,
         ),
-        { condition: cond.amountAtLeast(amount.countIn("graveyard"), 8), label: "Compression temporelle" },
+        { condition: cond.amountAtLeast(amount.countIn("graveyard"), 8), label: "Payez, exilez huit cartes : transformez" },
       ),
     ],
   },
-  "Ultimecia, Omnipotent": {},
+  "Ultimecia, Omnipotent": {
+    abilities: [triggered(when.transformsSelf, [fx.extraTurn], { label: "Compression temporelle : tour supplémentaire" })],
+  },
   "Sephiroth, Fabled SOLDIER": {
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((t) =>
@@ -561,11 +563,17 @@ export const TRANSFORM: Record<string, CardScript> = {
   },
   "Zenos yae Galvus": {
     abilities: [
-      // Approximation : la créature « choisie » est une cible.
+      // La créature est choisie à la résolution (sans la cibler) ; s'il n'y en a aucune, les autres ont quand même -2/-2.
       triggered(
         when.entersSelf,
-        [fx.link(ref.target()), fx.pumpAll({ types: ["Creature"], other: true }, -2, -2), fx.pump(ref.target(), 2, 2)],
-        { targets: [target.creature("t", { controller: "opponent" })], label: "Mon premier ami" },
+        [
+          fx.chooseAmong(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }), ref.you, "c", {
+            prompt: "Choisissez une créature qu'un adversaire contrôle",
+          }),
+          fx.link(ref.stored("c")),
+          fx.pump(ref.except(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"], other: true }), ref.stored("c")), -2, -2),
+        ],
+        { label: "Mon premier ami" },
       ),
       triggered(when.linkedLeaves, [fx.transform()], { label: "La créature choisie part : transformez" }),
     ],

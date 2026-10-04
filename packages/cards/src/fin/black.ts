@@ -93,11 +93,11 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Demon Wall": {
     abilities: [
-      // Approximation : « un marqueur » est lu comme un marqueur +1/+1 (les seuls qu'elle se donne).
+      // « Tant qu'elle a un marqueur » : n'importe quel type de marqueur.
       staticAbility(
         "self",
         { removeKeywords: ["defender"] },
-        { condition: cond.counterAtLeast("+1/+1", 1), label: "Peut attaquer (marqueur)" },
+        { condition: cond.sourceMatches({ withCounter: "any" }), label: "Peut attaquer (marqueur)" },
       ),
       activated({ mana: "{5}{B}", effects: [fx.addCounters(ref.self, 2)], label: "Deux marqueurs +1/+1" }),
     ],

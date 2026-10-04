@@ -877,7 +877,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(treasures.every((id) => s.objects[id]?.tapped)).toBe(true);
   });
 
-  it("Kellan, the Kid : un sort lancé hors de la main met en jeu un permanent de VM inférieure ou égale de la main, sinon un terrain", () => {
+  it("Kellan, the Kid : un sort lancé hors de la main permet de lancer gratuitement un sort de permanent de VM inférieure ou égale de la main, sinon de mettre un terrain", () => {
     const setup = () => {
       let s = scenario({
         p1: {
@@ -888,27 +888,24 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
       s = activate(s, idOf(s, "p1", "hand", "Djinn of Fool's Fall"), "Complot");
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
       const plotted = s.exile.find((id) => nameOf(s, id) === "Djinn of Fool's Fall") as string;
-      return act(s, "p1", { type: "cast", card: plotted });
+      return untilCastNow(act(s, "p1", { type: "cast", card: plotted }));
     };
-    let offered: string[] = [];
     let s = setup();
-    const angel = idOf(s, "p1", "hand", "Serra Angel");
-    const dragon = idOf(s, "p1", "hand", "Shivan Dragon");
-    s = settle(s, (req) => {
-      if (req.type === "pick" && req.options.includes(angel)) offered = req.options;
-      return picking([angel])(req);
-    });
-    expect(offered).toContain(angel);
-    expect(offered).not.toContain(dragon);
+    // Seul le sort de permanent de VM 5 ou moins est proposé (ni le Dragon de VM 6, ni le terrain).
+    expect(namesIn(s, castNowOf(s)?.cards)).toEqual(["Serra Angel"]);
+    const lands0 = s.battlefield.filter((id) => nameOf(s, id) === "Island" && !s.objects[id]?.tapped).length;
+    s = act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string });
+    // Lancé (sur la pile, sans payer son coût de mana), et non mis sur le champ de bataille.
+    expect(s.stack.some((i) => i.kind === "spell" && s.defs[i.sourceDefId]?.name === "Serra Angel")).toBe(true);
+    expect(s.battlefield.filter((id) => nameOf(s, id) === "Island" && !s.objects[id]?.tapped)).toHaveLength(lands0);
+    s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(0);
-    // Sans permanent choisi : un terrain de la main.
+    // Sans sort lancé : un terrain de la main.
     let t = setup();
-    t = settle(t, (req) => {
-      if (req.type === "pick" && req.options.some((id) => nameOf(t, id) === "Serra Angel")) return [];
-      if (req.type === "pick") return req.options.filter((id) => nameOf(t, id) === "Plains").slice(0, 1);
-      return undefined;
-    });
+    t = settle(t, (req) =>
+      req.type === "pick" ? req.options.filter((id) => nameOf(t, id) === "Plains").slice(0, 1) : undefined,
+    );
     expect(idsOf(t, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(idsOf(t, "p1", "battlefield", "Plains")).toHaveLength(1);
     // Un sort lancé de la main ne déclenche rien.
@@ -1602,6 +1599,23 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: cub, defender: "p2" }] });
     s = throughCombat(s);
     expect(s.players.p2?.life).toBe(16);
+  });
+
+  it("Great Train Heist : hors de votre phase de combat, le premier mode dégage vos créatures sans combat supplémentaire", () => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Mountain", 4)], hand: ["Great Train Heist"] },
+    });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    const mode = modeOf(s, "Great Train Heist", "Dégagez vos créatures, combat supplémentaire");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Great Train Heist"), mode }));
+    expect(s.objects[cub]?.tapped).toBe(false);
+    expect(s.turn.extraCombats ?? 0).toBe(0);
+    // Une seule phase de combat ce tour-ci.
+    s = attack(s, [cub]);
+    s = throughCombat(s);
+    expect(s.players.p2?.life).toBe(18);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" || x.turn.active === "p2");
+    expect(s.turn.active).toBe("p2");
   });
 
   it("Hell to Pay : X blessures à une créature ; autant de Trésors engagés que de blessures excédentaires", () => {

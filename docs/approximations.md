@@ -52,29 +52,20 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Quilled Greatwurm : les six marqueurs du coût sont retirés d'abord des créatures qui en ont le plus ;
   - `règle` Fishing Pole : la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée ») ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
-  - `timing` Abyssal Harvester : les autres jetons Cauchemar sont exilés avant la création de la copie (même résultat) ;
   - `choix auto` Curator of Destinies : en multijoueur, c'est l'adversaire suivant qui choisit la pile.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
-  - `règle` Demon Wall : « a un marqueur » est lu comme « a un marqueur +1/+1 » ;
   - `règle` Freya Crescent : son mana sert à toute capacité d'un Équipement, pas seulement à Équiper ;
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
-  - `règle` Tellah, Great Sage : trois déclenchements séparés (Héros, pioche, sacrifice) ;
-  - `règle` Ultimecia, Sidequest: Raise a Chocobo : l'effet « quand elle se transforme » est fait par l'effet qui la transforme ;
   - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
   - `règle` Garnet, Princess of Alexandria : un marqueur de savoir de chacune de vos Sagas, ou d'aucune ;
   - `règle` Choco, Seeker of Paradise : les cartes regardées sont meulées, puis une va en main et les terrains sur le champ de bataille ;
   - `règle` Memories Returning : vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous) ;
   - `règle` Sin, Spira's Punishment : six copies au plus par déclenchement ;
-  - `règle` Zack Fair : tous les Équipements qui lui étaient attachés sont déplacés (et non un seul) ;
   - `règle` Stolen Uniform : l'Équipement est détaché à l'étape de fin ;
-  - `règle` Zenos, Shinryu : la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie ;
-  - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X ;
-  - `règle` Sidequest: Raise a Chocobo : la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme ;
-  - `timing` Summoner's Grimoire : le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
+  - `règle` Zenos, Shinryu : l'adversaire choisi est le premier qui perd la partie ;
+  - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X.
 - **Aetherdrift (`docs/extensions/dft.md`) :**
   - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
-  - `règle` Caradora, Heart of Alacria : le marqueur supplémentaire ne vaut que pour vos créatures (Véhicules animés compris) ;
-  - `règle` Webstrike Elite : la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X ;
   - `règle` Grim Javelineer : « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour ;
   - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte ;
   - `règle` Radiant Lotus : c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ;
@@ -85,28 +76,22 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Giant Beaver, Rambling Possum : seules les créatures de la dernière activation de Monture du tour comptent comme l'ayant montée ;
   - `règle` Fortune, The Gitrog : toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix) ;
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
-  - `règle` Kellan, the Kid : le permanent est mis sur le champ de bataille au lieu d'être lancé ;
   - `règle` Obeka : les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien » ;
   - `règle` Riku of Many Paths : un seul mode, quel que soit le nombre de modes du sort ;
-  - `règle` Great Train Heist : le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
+  - `règle` Great Train Heist : les Trésors viennent des blessures infligées à n'importe quel adversaire.
 - **The Big Score (`docs/extensions/otj-big.md`) :**
   - `règle` Memory Vessel : on peut encore jouer les cartes de sa main ;
   - `règle` Transmutation Font : les trois jetons sacrifiés n'ont pas à avoir des noms différents ;
   - `règle` Grand Abolisher : les capacités de mana ne sont pas bloquées.
 - **Edge of Eternities (`docs/extensions/eoe.md`) :**
   - `choix auto` Gene Pollinator : le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana) ;
-  - `règle` Emissary Escort : le bonus « +X/+0 » est une force de base variable (un effet qui fixe la force l'écrase) ;
-  - `règle` Terrasymbiosis : se déclenche au plus une fois par tour, même si l'on refuse de piocher ;
   - `règle` The Endstone : « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV) ;
   - `règle` The Dominion Bracelet : la capacité accordée à la créature équipée est portée par l'Équipement (comme Fishing Pole) ;
   - `règle` Close Encounter : la créature ou la carte exilée « choisie » est une cible ;
-  - `règle` Chorale of the Void : la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur) ;
-  - `choix auto` Dyadrine, Synthesis Amalgam : les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
+  - `règle` Chorale of the Void : la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
   - `règle` Rite of Renewal : les cartes mélangées viennent d'un même cimetière, et vont dans la bibliothèque de leur propriétaire, que ce soit ou non le joueur ciblé ;
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
-  - `timing` Claim Territory : deux recherches successives (une Forêt en jeu engagée, puis une en main), et non une seule ;
-  - `choix auto` Purging Stormbrood : « retirez tous les marqueurs » retire les marqueurs un par un, sans choix du joueur ;
   - `timing` Sidisi, Regent of the Mire : la carte de VM X + 1 est ciblée par une capacité réflexive, une fois le coût payé ;
   - `règle` Betor, Kin to All, Mardu Siegebreaker : en multijoueur, chaque adversaire perd la moitié des PV du premier adversaire (Betor) ; une seule copie, qui attaque le même joueur que Mardu Siegebreaker ;
   - `règle` Teval (cave) : une carte exilée paie {1} générique, mais aussi un {C} ; hors contrôle total, le paiement automatique utilise d'abord le mana, puis exile les cartes dans l'ordre du cimetière (en contrôle total, le joueur les choisit) ;
@@ -117,12 +102,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
   - `choix auto` Monstrous Emergence : la créature ou la carte de la main de plus grande force est choisie par le moteur ;
   - `règle` Kaito (Monstrous Emergence) : en multijoueur, il attaque le joueur qu'attaque une de vos créatures ;
-  - `règle` « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ; Fear of the Dark vérifie qu'aucun adversaire ne contrôle de Lueur ;
+  - `règle` « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ;
   - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
   - `règle` Get Out renvoie ce que vous contrôlez (et non ce que vous possédez) ;
-  - `règle` « avait des marqueurs » : seulement les marqueurs +1/+1, -1/-1, d'étourdissement (et de possession pour Unwilling Vessel, de nid pour Twitching Doll ; Unstoppable Slasher) ;
-  - `règle` Fear of Missing Out (« la première fois chaque tour ») et Irreverent Gremlin : une fois par tour, même si la défausse est refusée ; Vengeful Possession et Irreverent Gremlin piochent même sans carte à défausser ;
-  - `règle` conditions non vérifiées : les créatures non-Jouets (Dollmaker's Shop, qui se déclenche à chaque attaque), la Salle d'un nom différent (Central Elevator), les forces différentes (Rip, Spawn Hunter), « une seule créature ciblée » (Leyline of Resonance : un sort qui cible une de vos créatures) ;
+  - `règle` Fear of Missing Out (« attaque pour la première fois chaque tour ») : une attaque plus tardive du même tour déclenche encore la capacité si le délire manquait à la première ;
+  - `règle` conditions non vérifiées : l'attaque d'un joueur (Dollmaker's Shop : une créature non-Jouet qui attaque un planeswalker ou une bataille compte aussi), la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
   - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
   - `règle` Leyline of Transformation : seulement les créatures sur le champ de bataille (pas les sorts ni les cartes) ;
   - `règle` Smoky Lounge : le {R}{R} est une capacité de mana utilisable pendant votre première phase principale (et non ajouté au début de celle-ci) ;

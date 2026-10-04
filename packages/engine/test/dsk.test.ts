@@ -3206,3 +3206,147 @@ describe("Duskmourn, lot K8 : peu communes (4)", () => {
     expect(s.players.p1?.life).toBe(18);
   });
 });
+
+describe("Duskmourn : approximations levées (scripts)", () => {
+  it("Unstoppable Slasher : un marqueur de n'importe quelle sorte l'empêche de revenir", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [{ name: "Unstoppable Slasher", counters: { oil: 1 } }, ...lands("Mountain", 2)],
+        hand: ["Lightning Strike"],
+      },
+    });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Lightning Strike"),
+      targets: { t: [idOf(s, "p1", "battlefield", "Unstoppable Slasher")] },
+    });
+    s = settle(s);
+    expect(idsOf(s, "p1", "battlefield", "Unstoppable Slasher")).toHaveLength(0);
+    expect(namesIn(s, s.players.p1?.graveyard)).toContain("Unstoppable Slasher");
+  });
+
+  it("Unwilling Vessel : X compte tous ses marqueurs, de toute sorte", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [{ name: "Unwilling Vessel", counters: { possession: 1, oil: 2 } }, ...lands("Mountain", 2)],
+        hand: ["Lightning Strike"],
+      },
+    });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Lightning Strike"),
+      targets: { t: [idOf(s, "p1", "battlefield", "Unwilling Vessel")] },
+    });
+    s = settle(s);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Spirit"))).toMatchObject({ power: 3, toughness: 3 });
+  });
+
+  it("Twitching Doll : une Araignée par marqueur, de toute sorte", () => {
+    let s = scenario({ p1: { battlefield: [{ name: "Twitching Doll", counters: { nest: 2, oil: 1 } }] } });
+    s = activateNth(s, idOf(s, "p1", "battlefield", "Twitching Doll"));
+    s = settle(s);
+    expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(3);
+  });
+
+  it("Irreverent Gremlin : refuser la défausse ne compte pas pour « une seule fois par tour » ; sans carte à défausser, pas de pioche", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Irreverent Gremlin", ...lands("Forest", 3)],
+        hand: ["Llanowar Elves", "Llanowar Elves", "Llanowar Elves", "Opt"],
+        library: lands("Island", 3),
+      },
+    });
+    const cast = (x: S) => act(x, "p1", { type: "cast", card: idOf(x, "p1", "hand", "Llanowar Elves") });
+    // Premier déclenchement refusé.
+    s = settleAnswering(cast(s), (req) => (req.type === "yesNo" ? [0] : undefined));
+    expect(s.players.p1?.hand).toHaveLength(3);
+    // Deuxième : défaussez Opt, piochez.
+    s = settleAnswering(cast(s), (req, _p, cur) => (req.type === "yesNo" ? [1] : pickNamed(cur, req, "Opt")));
+    expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
+    expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Island", "Llanowar Elves"]);
+    // Fait une fois ce tour-ci : plus de déclenchement.
+    s = cast(s);
+    s = passUntil(s, (x) => x.stack.length === 0);
+    expect(s.pending?.kind).toBe("priority");
+    expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island"]);
+    // Main vide : accepter ne fait pas piocher.
+    let t = scenario({
+      p1: { battlefield: ["Irreverent Gremlin", "Forest"], hand: ["Llanowar Elves"], library: lands("Island", 3) },
+    });
+    t = settleAnswering(cast(t), (req) => (req.type === "yesNo" ? [1] : undefined));
+    expect(t.players.p1?.hand).toHaveLength(0);
+    expect(t.players.p1?.library).toHaveLength(3);
+  });
+
+  it("Vengeful Possession : sans carte à défausser, pas de pioche", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 3), hand: ["Vengeful Possession"], library: ["Forest", "Forest"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Vengeful Possession"),
+      targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] },
+    });
+    s = settleAnswering(s, (req) => (req.type === "yesNo" ? [1] : undefined));
+    expect(s.players.p1?.hand).toHaveLength(0);
+    expect(s.players.p1?.library).toHaveLength(2);
+  });
+
+  it("Fear of the Dark : seul le joueur défenseur compte (une Lueur chez un autre adversaire n'empêche rien)", () => {
+    const run = (defender: "p2" | "p3") => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Fear of the Dark"] },
+        p3: { battlefield: ["Lionheart Glimmer"] },
+      });
+      const fear = idOf(s, "p1", "battlefield", "Fear of the Dark");
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: fear, defender }] });
+      s = passUntil(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+      return chars(s, fear)
+        .keywords.filter((k) => k === "menace" || k === "deathtouch")
+        .sort();
+    };
+    expect(run("p2")).toEqual(["deathtouch", "menace"]);
+    expect(run("p3")).toEqual([]);
+  });
+
+  it("Dollmaker's Shop : seulement quand une créature non-Jouet attaque", () => {
+    const run = (attackers: string[]) => {
+      let s = scenario({ p1: { battlefield: ["Dollmaker's Shop // Porcelain Gallery", "Twitching Doll", "Bear Cub"] } });
+      openDoors(s, "Dollmaker's Shop // Porcelain Gallery", [0]);
+      s = attack(
+        s,
+        attackers.map((n) => idOf(s, "p1", "battlefield", n)),
+      );
+      s = settle(s);
+      return idsOf(s, "p1", "battlefield", "Toy").length;
+    };
+    expect(run(["Twitching Doll"])).toBe(0);
+    expect(run(["Twitching Doll", "Bear Cub"])).toBe(1);
+  });
+
+  it("Leyline of Resonance : seulement un sort qui ne cible qu'une seule de vos créatures", () => {
+    const run = (withOpponentTarget: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Leyline of Resonance", "Bear Cub", ...lands("Mountain", 5)], hand: ["Dragonclaw Strike"] },
+        p2: { battlefield: ["Gigantosaurus"] },
+      });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      const giant = idOf(s, "p2", "battlefield", "Gigantosaurus");
+      s = act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Dragonclaw Strike"),
+        targets: { a: [cub], b: withOpponentTarget ? [giant] : [] },
+      });
+      const copies = s.stack.filter((i) => i.kind === "ability").length;
+      s = settle(s);
+      return { copies, power: s.objects[cub] ? chars(s, cub).power : 0 };
+    };
+    // Une seule cible (la vôtre) : copié, la créature est doublée deux fois.
+    expect(run(false)).toEqual({ copies: 1, power: 8 });
+    // Deux cibles : pas de copie.
+    expect(run(true).copies).toBe(0);
+  });
+});
