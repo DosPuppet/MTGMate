@@ -69,6 +69,36 @@ const SPIRIT_CLERIC: TokenSpec = {
   toughness: 0,
   cdaPT: amount.count({ subtype: "Spirit", controller: "you" }),
 };
+const ELDRAZI_SCION: TokenSpec = {
+  name: "Eldrazi Scion",
+  colors: [],
+  types: ["Creature"],
+  subtypes: ["Eldrazi", "Scion"],
+  power: 1,
+  toughness: 1,
+  abilities: [manaAbility("C", 1, { sacrifice: true, noTap: true })],
+};
+const FAERIE_ROGUE: TokenSpec = {
+  name: "Faerie Rogue",
+  colors: ["B"],
+  types: ["Creature"],
+  subtypes: ["Faerie", "Rogue"],
+  power: 1,
+  toughness: 1,
+  keywords: ["flying"],
+};
+/** Terrains « fetch » de Zendikar : {T}, 1 PV, sacrifice : une carte de [type] ou [type] sur le champ de bataille. */
+const fetchland = (a: string, b: string): CardScript => ({
+  abilities: [
+    activated({
+      tap: true,
+      payLife: 1,
+      sacrifice: true,
+      effects: [fx.search({ types: ["Land"], anySubtype: [a, b] }, { to: "battlefield" })],
+      label: `Cherchez une carte de ${a} ou de ${b}`,
+    }),
+  ],
+});
 const YOUR_CREATURES = { types: ["Creature" as const], controller: "you" as const };
 const FIRST_INSTANT = (n: number) => cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", types: ["Instant"] }), n);
 
@@ -704,6 +734,230 @@ export const CARDS: Record<string, CardScript> = {
         targets: [target.creatureOrPlaneswalker("t", { controller: "opponent" })],
         label: "3 blessures à une créature ou un planeswalker adverse",
       }),
+    ],
+  },
+  // — G4c : Special Guests de TDM, EOE et ECL —
+  "Eerie Ultimatum": {
+    spell: spell(
+      [],
+      [
+        fx.pickFromZone(
+          "graveyard",
+          { permanent: true },
+          { to: "battlefield" },
+          {
+            count: 99,
+            min: 0,
+            prompt: "Cartes de permanent aux noms différents à remettre sur le champ de bataille",
+          },
+        ),
+      ],
+    ),
+  },
+  "Emergent Ultimatum": {
+    spell: spell(
+      [],
+      [
+        { op: "search", filter: { colorCount: 1 }, count: 3, to: { to: "exile" }, store: "e", distinctNames: true },
+        fx.chooseAmong(ref.stored("e"), ref.eachOpponent, "o", {
+          prompt: "Choisissez la carte qui retourne dans sa bibliothèque",
+        }),
+        fx.moveTo(ref.stored("o"), { to: "libraryTop" }),
+        fx.shuffle(ref.you),
+        fx.castNow(ref.except(ref.stored("e"), ref.stored("o")), { free: true, many: true }),
+        fx.exileOnResolve,
+      ],
+    ),
+  },
+  "Genesis Ultimatum": {
+    spell: spell(
+      [],
+      [fx.lookAtTop(5, { filter: { permanent: true }, count: 5, to: { to: "battlefield" }, rest: "hand" }), fx.exileOnResolve],
+    ),
+  },
+  "Inspired Ultimatum": {
+    spell: spell(
+      [target.player("p"), { ...target.any("t") }],
+      [fx.gainLife(5, ref.target("p")), fx.damage(5, ref.target("t")), fx.draw(5)],
+    ),
+  },
+  "Ruinous Ultimatum": {
+    spell: spell([], [fx.destroy(ref.permanentsOf(ref.eachOpponent, { notTypes: ["Land"] }))]),
+  },
+  "Arid Mesa": fetchland("Mountain", "Plains"),
+  "Marsh Flats": fetchland("Plains", "Swamp"),
+  "Misty Rainforest": fetchland("Forest", "Island"),
+  "Scalding Tarn": fetchland("Island", "Mountain"),
+  "Verdant Catacombs": fetchland("Swamp", "Forest"),
+  "Warping Wail": {
+    spell: modal(
+      mode(
+        "Exilez une créature de force ou d'endurance 1 ou moins",
+        [target.creature("c", { anyOf: [{ maxPower: 1 }, { maxToughness: 1 }] })],
+        [fx.exile(ref.target("c"))],
+      ),
+      mode(
+        "Contrecarrez le sort de rituel ciblé",
+        [target.spell("s", { types: ["Sorcery"] }, "sort de rituel")],
+        [fx.counter(ref.target("s"))],
+      ),
+      mode("Un Engeance Eldrazi 1/1", [], [fx.createTokens(ELDRAZI_SCION)]),
+    ),
+  },
+  "Deafening Silence": {
+    abilities: [
+      playerStatic({
+        castLimit: { who: "each", maxSpells: 1, spellTypes: { notTypes: ["Creature"] } },
+        label: "Chaque joueur : un seul sort non-créature par tour",
+      }),
+    ],
+  },
+  "Nexus of Fate": { shuffleIntoLibrary: true, spell: spell([], [fx.extraTurn]) },
+  "Paradox Haze": {
+    enchant: { filter: {}, label: "joueur", player: true },
+    abilities: [
+      triggered({ on: "step", step: "upkeep", whose: "any" }, [fx.extraUpkeeps(1)], {
+        condition: cond.not(cond.amountAtLeast(amount.refCount(ref.except(ref.eventPlayer, ref.attached)), 1)),
+        oncePerTurn: true,
+        label: "Première étape d'entretien du joueur enchanté : une étape d'entretien supplémentaire",
+      }),
+    ],
+  },
+  Darkness: { spell: spell([], [fx.thisTurn({ replacement: { event: "damage", combat: true, modify: { prevent: true } } })]) },
+  "Magus of the Moon": {
+    abilities: [
+      staticAbility(
+        { types: ["Land"], basic: false },
+        { setSubtypes: ["Mountain"], loseAllAbilities: true },
+        {
+          label: "Les terrains non-base sont des Montagnes",
+        },
+      ),
+    ],
+  },
+  Burgeoning: {
+    abilities: [
+      triggered(
+        { on: "playLand", whose: "opponent" },
+        [fx.pickFromZone("hand", { types: ["Land"] }, { to: "battlefield" }, { count: 1, min: 0 })],
+        { label: "Un adversaire joue un terrain : vous pouvez mettre un terrain de votre main" },
+      ),
+    ],
+  },
+  "Green Sun's Zenith": {
+    // « Mélangez-la dans la bibliothèque de son propriétaire » : comme une carte qui retourne dans la bibliothèque au
+    // lieu du cimetière.
+    shuffleIntoLibrary: true,
+    spell: spell([], [fx.search({ types: ["Creature"], colors: ["G"], maxManaValueX: true }, { to: "battlefield" })]),
+  },
+  "Sliver Overlord": {
+    abilities: [
+      activated({
+        mana: "{3}",
+        effects: [fx.search({ subtype: "Sliver" }, { to: "hand" })],
+        label: "Cherchez une carte de Slivoïde",
+      }),
+      activated({
+        mana: "{3}",
+        targets: [target.creature("t", { subtype: "Sliver" })],
+        effects: [fx.gainControl(ref.target())],
+        label: "Contrôle du Slivoïde ciblé",
+      }),
+    ],
+  },
+  "Idyllic Tutor": { spell: spell([], [fx.search({ types: ["Enchantment"] }, { to: "hand" })]) },
+  "Kinsbaile Cavalier": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], subtype: "Knight", controller: "you" },
+        { addKeywords: ["doubleStrike"] },
+        {
+          label: "Vos Chevaliers ont la double initiative",
+        },
+      ),
+    ],
+  },
+  Bitterblossom: {
+    abilities: [
+      triggered(when.yourUpkeep, [fx.loseLife(1), fx.createTokens(FAERIE_ROGUE)], {
+        label: "Perdez 1 PV, une Fée Gredine 1/1 volante",
+      }),
+    ],
+  },
+  // Vol : lu dans le texte.
+  "Faerie Macabre": {
+    abilities: [
+      activated({
+        fromHand: true,
+        discardSelf: true,
+        targets: [target.upTo(2, target.cardInGraveyard("t", {}, "any"))],
+        effects: [fx.exile(ref.target())],
+        label: "Défaussez cette carte : exilez jusqu'à deux cartes des cimetières",
+      }),
+    ],
+  },
+  // Célérité : lue dans le texte.
+  "Goblin Chieftain": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], subtype: "Goblin", controller: "you", other: true },
+        { power: 1, toughness: 1, addKeywords: ["haste"] },
+        {
+          label: "Vos autres Gobelins : +1/+1 et célérité",
+        },
+      ),
+    ],
+  },
+  "Goblin Sharpshooter": {
+    abilities: [
+      staticAbility("self", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas lors de votre étape de dégagement" }),
+      triggered(when.dies({ types: ["Creature"] }), [fx.untap(ref.self)], { label: "Une créature meurt : dégagez-la" }),
+      activated({
+        tap: true,
+        targets: [target.any()],
+        effects: [fx.damage(1, ref.target())],
+        label: "1 blessure à n'importe quelle cible",
+      }),
+    ],
+  },
+  "Heat Shimmer": {
+    spell: spell([target.creature()], [fx.copyToken(ref.target(), { addKeywords: ["haste"], exileAtEndStep: true })]),
+  },
+  "Devoted Druid": {
+    abilities: [
+      manaAbility("G"),
+      activated({ addCounters: { kind: "-1/-1", n: 1 }, effects: [fx.untap(ref.self)], label: "Un marqueur −1/−1 : dégagez-la" }),
+    ],
+  },
+  "Leaf-Crowned Visionary": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], subtype: "Elf", controller: "you", other: true },
+        { power: 1, toughness: 1 },
+        {
+          label: "Vos autres Elfes : +1/+1",
+        },
+      ),
+      triggered(when.castSpell("you", { subtype: "Elf" }), fx.mayPay("{G}", "payer {G} pour piocher", fx.draw(1)), {
+        label: "Sort d'Elfe : payez {G} pour piocher",
+      }),
+    ],
+  },
+  "Regal Force": {
+    abilities: [
+      triggered(when.entersSelf, [fx.draw(amount.count({ types: ["Creature"], colors: ["G"], controller: "you" }))], {
+        label: "Piochez une carte par créature verte que vous contrôlez",
+      }),
+    ],
+  },
+  Manamorphose: { spell: spell([], [fx.addManaCombination(2), fx.draw(1)]) },
+  "Risen Reef": {
+    abilities: [
+      triggered(
+        when.enters({ types: ["Creature"], subtype: "Elemental", controller: "you" }),
+        [fx.lookAtTop(1, { filter: { types: ["Land"] }, count: 1, to: { to: "battlefield", tapped: true }, rest: "hand" })],
+        { label: "Un Élémental arrive : la carte du dessus, terrain sur le champ de bataille engagé, sinon en main" },
+      ),
     ],
   },
 };

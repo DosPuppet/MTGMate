@@ -317,3 +317,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
 - **G4b (04/10/2026) :** 29 Special Guests de BLB, DSK, FDN et DFT (SPG 67 / 132) ; destruction sans régénération.
   `RULES_VERSION` 109. Reportées au sous-lot difficile : Expropriate, Maddening Hex, Noxious Revival, Sphinx's Tutelage,
   Phantasmal Image.
+- **G4c (04/10/2026) :** 31 Special Guests de TDM, EOE et ECL (SPG 98 / 132) ; limite de sorts par types,
+  « un adversaire joue un terrain ». `RULES_VERSION` 110. Robe of Stars (phasing) reportée au sous-lot difficile.

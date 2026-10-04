@@ -115,3 +115,17 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
 - **Reportées (sous-lot difficile) :** Expropriate (dilemme du conseil), Maddening Hex (dé, Aura de joueur qui change
   d'hôte), Noxious Revival (mana phyrexian), Sphinx's Tutelage (meule répétée), Phantasmal Image (copie à l'arrivée avec
   une capacité ajoutée).
+
+## G4c — Special Guests de TDM, EOE et ECL ✅ (31 cartes ; SPG 98 / 132)
+
+- **Cartes :** les cinq Ultimatums, les cinq terrains « fetch » (Arid Mesa, Marsh Flats, Misty Rainforest, Scalding Tarn,
+  Verdant Catacombs), Warping Wail, Deafening Silence, Nexus of Fate, Paradox Haze, Darkness, Magus of the Moon,
+  Burgeoning, Green Sun's Zenith, Sliver Overlord, Idyllic Tutor, Kinsbaile Cavalier, Bitterblossom, Faerie Macabre,
+  Goblin Chieftain, Goblin Sharpshooter, Heat Shimmer, Devoted Druid, Leaf-Crowned Visionary, Regal Force, Manamorphose,
+  Risen Reef.
+- **Le moteur gagne :** `castLimit.spellTypes` (Deafening Silence) ; `playLand.whose` (Burgeoning).
+- **Tests :** `spg.test.ts` (+13).
+- **Approximations :** Eerie Ultimatum (les noms différents ne sont pas imposés) ; Green Sun's Zenith (mélangée dans la
+  bibliothèque comme une carte qui ne peut aller au cimetière) ; Magus of the Moon (les terrains non-base perdent tous
+  leurs sous-types).
+- **Reportée :** Robe of Stars (phasing).

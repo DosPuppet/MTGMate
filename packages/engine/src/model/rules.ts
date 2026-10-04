@@ -421,7 +421,8 @@ export type TriggerSpec =
   /** « Chaque fois que [créature] meurt ou est exilée » (depuis le champ de bataille). */
   | { on: "diesOrExiled"; who: "self" | ObjectFilter; minPower?: number }
   /** « Chaque fois que vous jouez un terrain » ; `from` : seulement depuis ces zones (« depuis l'exil », Ghost-Spider). */
-  | { on: "playLand"; from?: Zone[] }
+  /** `whose` : qui joue le terrain (vous par défaut ; Burgeoning : un adversaire). */
+  | { on: "playLand"; from?: Zone[]; whose?: "you" | "opponent" | "any" }
   /** « Chaque fois que [vous] défaussez une ou plusieurs cartes » (montant : leur nombre). */
   | { on: "discardBatch"; whose: "you" | "opponent" | "any" }
   /** « Quand vous cyclez cette carte » (depuis le cimetière ; montant : le X du coût de cycle). */

@@ -49,6 +49,8 @@ const EXTRA_P1: Record<string, string[]> = {
   "Champion of the Clachan": ["Changeling Wayfinder"],
   "Champions of the Shoal": ["Changeling Wayfinder"],
   "Hardlight Containment": ["Nutrient Block"],
+  // {C} : une source de mana incolore.
+  "Warping Wail": ["Ancient Tomb"],
   // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
   "Zodiark, Umbral God": ["Swamp", "Swamp"],
   "Pox Plague": ["Swamp", "Swamp"],

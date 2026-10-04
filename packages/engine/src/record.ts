@@ -307,8 +307,10 @@ export const RECORD_VERSION = 1;
  *   qui touchent d'autres joueurs (`affects`), déclencheur « vous copiez un sort », suspension depuis la main (action
  *   spéciale), carte contrecarrée mémorisée où qu'elle aille (`storeMoved`).
  * - 109 : Special Guests (G4b) : destruction sans régénération possible (`noRegenerate`, Damnation).
+ * - 110 : Special Guests (G4c) : limite de sorts par types (`castLimit.spellTypes`), « un joueur joue un terrain »
+ *   (`playLand.whose`).
  */
-export const RULES_VERSION = 109;
+export const RULES_VERSION = 110;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

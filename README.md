@@ -52,7 +52,7 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 
 | Ensemble | Cartes gérées |
 |---|---|
-| Special Guests (SPG) | 67 / 132 |
+| Special Guests (SPG) | 98 / 132 |
 | Stellar Sights (EOS) | 43 / 43 |
 | Enchanting Tales (WOT) | 1 / 55 |
 | Breaking News (OTP) | 3 / 61 |

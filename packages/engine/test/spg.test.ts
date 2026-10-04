@@ -11,6 +11,7 @@ import {
   act,
   advanceUntil,
   attack,
+  castable,
   customCard,
   idOf,
   idsOf,
@@ -525,6 +526,128 @@ describe("Special Guests", () => {
       s = settle(attack(s, [idOf(s, "p1", "battlefield", "Pathbreaker Ibex")]));
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       expect([chars(s, cub).power, chars(s, cub).keywords.includes("trample")]).toEqual([5, true]);
+    });
+  });
+
+  describe("G4c : Special Guests de TDM, EOE et ECL", () => {
+    const castIt = (s: ReturnType<typeof scenario>, name: string, extra: object = {}) =>
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
+    const activate = (s: ReturnType<typeof scenario>, source: string, extra: object = {}) => {
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === source);
+      return act(s, "p1", { type: "activate", source, ability: ab?.type === "activate" ? ab.ability : 0, ...extra });
+    };
+
+    it("Arid Mesa : 1 PV et sacrifice, une Montagne ou une Plaine sur le champ de bataille", () => {
+      let s = scenario({ p1: { battlefield: ["Arid Mesa"], library: ["Forest", "Plains", "Island"] } });
+      s = settle(activate(s, idOf(s, "p1", "battlefield", "Arid Mesa")));
+      expect([idsOf(s, "p1", "battlefield", "Plains").length, s.players.p1?.life]).toEqual([1, 19]);
+    });
+
+    it("Ruinous Ultimatum : détruit les permanents non-terrain adverses", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Mountain", 2), ...lands("Plains", 3), ...lands("Swamp", 2), "Bear Cub"],
+          hand: ["Ruinous Ultimatum"],
+        },
+        p2: { battlefield: ["Bear Cub", "Ghostly Prison", "Forest"] },
+      });
+      s = settle(castIt(s, "Ruinous Ultimatum"));
+      expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2").map((id) => nameOf(s, id))).toEqual(["Forest"]);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Warping Wail : exile une créature de force ou d'endurance 1 ou moins", () => {
+      let s = scenario({
+        p1: { battlefield: ["Island", "Ancient Tomb"], hand: ["Warping Wail"] },
+        p2: { battlefield: ["Llanowar Elves", "Bear Cub"] },
+      });
+      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Warping Wail"));
+      const legal = opt?.type === "cast" ? opt.modes.find((m) => m.index === 0)?.targets[0]?.legal : [];
+      expect(legal).toEqual([idOf(s, "p2", "battlefield", "Llanowar Elves")]);
+      s = settle(castIt(s, "Warping Wail", { mode: 2 }));
+      expect(idsOf(s, "p1", "battlefield", "Eldrazi Scion")).toHaveLength(1);
+    });
+
+    it("Deafening Silence : un seul sort non-créature par tour et par joueur", () => {
+      let s = scenario({
+        p1: { battlefield: ["Deafening Silence", ...lands("Mountain", 4)], hand: ["Shock", "Shock", "Goblin Sharpshooter"] },
+      });
+      s = settle(castIt(s, "Shock", { targets: { t: ["p2"] } }));
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Shock"))).toBe(false);
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Goblin Sharpshooter"))).toBe(true);
+    });
+
+    it("Nexus of Fate : un tour supplémentaire, puis mélangée dans la bibliothèque", () => {
+      let s = scenario({ p1: { battlefield: lands("Island", 7), hand: ["Nexus of Fate"] } });
+      s = settle(castIt(s, "Nexus of Fate"));
+      expect(s.players.p1?.graveyard).toHaveLength(0);
+      expect(s.players.p1?.library.some((id) => nameOf(s, id) === "Nexus of Fate")).toBe(true);
+      s = advanceUntil(s, (x) => x.turn.step === "upkeep" && x.turn.number > 3);
+      expect(s.turn.active).toBe("p1");
+    });
+
+    it("Magus of the Moon : les terrains non-base sont des Montagnes, sans leurs autres capacités", () => {
+      const s = scenario({ p1: { battlefield: ["Magus of the Moon", "Forest"] }, p2: { battlefield: ["Ancient Tomb"] } });
+      const tomb = idOf(s, "p2", "battlefield", "Ancient Tomb");
+      expect(chars(s, tomb).subtypes).toEqual(["Mountain"]);
+      expect(manaAbilitiesOf(s, tomb).map((a) => [a.produce, a.amount])).toEqual([[["R"], 1]]);
+      expect(chars(s, idOf(s, "p1", "battlefield", "Forest")).subtypes).toEqual(["Forest"]);
+    });
+
+    it("Burgeoning : un adversaire joue un terrain, vous pouvez mettre un terrain de votre main", () => {
+      let s = scenario({ active: "p2", p1: { battlefield: ["Burgeoning"], hand: ["Forest"] }, p2: { hand: ["Island"] } });
+      s = settle(act(s, "p2", { type: "playLand", card: idOf(s, "p2", "hand", "Island") }), (req) =>
+        req.type === "pick" && req.options.length ? req.options.slice(0, 1) : undefined,
+      );
+      expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+    });
+
+    it("Green Sun's Zenith : une créature verte de valeur de mana X ou moins, puis mélangée dans la bibliothèque", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 3), hand: ["Green Sun's Zenith"], library: ["Bear Cub", "Regal Force", "Forest"] },
+      });
+      s = settle(castIt(s, "Green Sun's Zenith", { x: 2 }));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(s.players.p1?.library.some((id) => nameOf(s, id) === "Green Sun's Zenith")).toBe(true);
+    });
+
+    it("Bitterblossom : à l'entretien, 1 PV et une Fée Gredine", () => {
+      let s = scenario({ active: "p2", step: "end", p1: { battlefield: ["Bitterblossom"] } });
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw");
+      expect([s.players.p1?.life, idsOf(s, "p1", "battlefield", "Faerie Rogue").length]).toEqual([19, 1]);
+    });
+
+    it("Goblin Sharpshooter : ne se dégage pas, mais se dégage quand une créature meurt", () => {
+      let s = scenario({ p1: { battlefield: ["Goblin Sharpshooter"] }, p2: { battlefield: ["Llanowar Elves"] } });
+      const gob = idOf(s, "p1", "battlefield", "Goblin Sharpshooter");
+      s = settle(activate(s, gob, { targets: { t: [idOf(s, "p2", "battlefield", "Llanowar Elves")] } }));
+      expect(s.objects[gob]?.tapped).toBe(false);
+    });
+
+    it("Devoted Druid : un marqueur −1/−1 la dégage", () => {
+      let s = scenario({ p1: { battlefield: [{ name: "Devoted Druid", tapped: true }] } });
+      const druid = idOf(s, "p1", "battlefield", "Devoted Druid");
+      s = settle(activate(s, druid));
+      expect([s.objects[druid]?.tapped, s.objects[druid]?.counters["-1/-1"]]).toEqual([false, 1]);
+    });
+
+    it("Risen Reef : un terrain du dessus arrive engagé ; sinon la carte va en main", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 2), "Island"], hand: ["Risen Reef"], library: ["Forest", "Bear Cub"] },
+      });
+      s = settle(castIt(s, "Risen Reef"), (req) =>
+        req.type === "pick" && req.options.length ? req.options.slice(0, 1) : undefined,
+      );
+      expect(
+        s.battlefield.filter((id) => nameOf(s, id) === "Forest" && s.objects[id]?.tapped && s.objects[id]?.controlledSince > 0),
+      ).toHaveLength(1);
+    });
+
+    it("Darkness : aucune blessure de combat ce tour-ci", () => {
+      let s = scenario({ p1: { battlefield: ["Bear Cub", "Swamp"], hand: ["Darkness"] } });
+      s = settle(castIt(s, "Darkness"));
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
+      expect(s.players.p2?.life).toBe(20);
     });
   });
 });

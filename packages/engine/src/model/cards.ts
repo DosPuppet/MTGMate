@@ -899,6 +899,8 @@ export interface CastLimit {
   attackedYou?: boolean;
   /** Au plus N sorts par tour (High Noon : 1). */
   maxSpells?: number;
+  /** Seulement les sorts de ces types, comptés eux seuls (Deafening Silence : un sort non-créature par tour). */
+  spellTypes?: { types?: CardType[]; notTypes?: CardType[] };
   /** Seulement les sorts lancés d'ailleurs que de la main (Avatar's Wrath). */
   exceptFromHand?: boolean;
   /** Seulement retourner des permanents face visible (Karlov Watchdog) : ni les sorts ni les capacités ne sont bloqués. */

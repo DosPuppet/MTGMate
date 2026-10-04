@@ -366,3 +366,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Drown in the Loch : « valeur de mana inférieure ou égale au nombre de cartes du cimetière de son contrôleur » est vérifiée à la résolution, pas au ciblage ;
   - `règle` Mephidross Vampire : « blesse une créature » se lit « inflige des blessures à autre chose qu'un joueur » (un planeswalker compte) ;
   - `règle` Bridge from Below : « mise dans votre cimetière » et « dans le cimetière d'un adversaire » se lisent d'après le dernier contrôleur de la créature, pas son propriétaire.
+  - `règle` Eerie Ultimatum : les cartes remises sur le champ de bataille n'ont pas à avoir des noms différents ;
+  - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
+  - `règle` Magus of the Moon : un terrain non-base devient une Montagne et perd tous ses sous-types (y compris Désert, Grotte…).

@@ -154,7 +154,6 @@
     "manaValueSourcePower": "Jackal, Genius Geneticist — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "maxManaValueAmount": "Moseo, Vein's New Dean — valeur de mana maximale d'une cible calculée au ciblage puis à la résolution (PLAN-D, D4) : famille des montants de cible (countAmount, manaValueAmount, maxTotalManaValueAmount, `concreteSpec`), à réutiliser pour toute cible « de valeur de mana X ou moins »",
     "maxManaValueColorsSpent": "Sundering Archaic — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "maxSpells": "High Noon — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "maxTotalManaValueAmount": "The Rise of Sozin // Fire Lord Sozin — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "maxToughnessX": "Zero Point Ballad — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "modal": "Riku of Many Paths — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -169,7 +168,6 @@
     "options": "A Killer Among Us — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "optionsFrom": "Koh, the Face Stealer — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "perOwnCreatureTypes": "Diligent Zookeeper — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "player": "Grievous Wound — « Enchant player » (303.4, `CardDef.enchant.player`) : seule Aura de joueur du Standard ; règle générique de l'enchantement, apparue quand les références de zone (PLAN-S, S5) ont cessé d'employer ce nom de champ",
     "perPlayer": "Sidequest: Play Blitzball // World Champion, Celestial Weapon — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "powerAboveBase": "Kutzil, Malamet Exemplar — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "preferHighManaValue": "Jade Seedstones // Jadeheart Attendant — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -204,7 +202,8 @@
     "whileCrafting": "Market Gnome — déclencheur « quitte le champ de bataille » limité à l'exil comme matériau d'une fabrication (702.167) : champ de la famille `leaves`, compté depuis que sa déclaration tient sur plusieurs lignes (PLAN-S, S7)",
     "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte",
     "manaValueSourceCounters": "Blast Zone — filtre relatif à la source (famille manaValueSourcePower) : valeur de mana égale à ses marqueurs",
-    "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »"
+    "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »",
+    "spellTypes": "Deafening Silence — limite de sorts (famille D, castLimit) restreinte à certains types : à réutiliser pour toute limite « un sort [non-créature] par tour »"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -236,7 +235,7 @@
     "Effect": 152,
     "Effect (champs)": 617,
     "TriggerSpec": 59,
-    "TriggerSpec (champs)": 155,
+    "TriggerSpec (champs)": 156,
     "Condition": 52,
     "Condition (champs)": 96,
     "Amount": 31,
@@ -279,6 +278,7 @@
     "PLAN-G G1 : impressions (illustration d'une réédition) : CardDef.printings et GameState.printings (uid → impression choisie par le deck), sans effet sur les règles : CardDef 94 → 95, GameState 38 → 39",
     "PLAN-G G3b : régénération (GameObject.regenShields, effet regenerate), déplacer un marqueur (moveCounter), filtre manaValueSourceCounters (Blast Zone) : GameObject 60 → 61, ObjectFilter 84 → 85, Effect 150 → 152, Effect (champs) 611 → 616",
     "PLAN-G G4a : traversée de terrain et restriction d'attaque (BlockRule), portée des statiques de joueur, déclencheur copySpell, suspension en action spéciale : TriggerSpec 58 → 59, TriggerSpec (champs) 153 → 155",
-    "PLAN-G G4b : destruction sans régénération (Damnation, noRegenerate) : Effect (champs) 616 → 617"
+    "PLAN-G G4b : destruction sans régénération (Damnation, noRegenerate) : Effect (champs) 616 → 617",
+    "PLAN-G G4c : déclencheur « joue un terrain » de n'importe quel joueur (whose) : TriggerSpec (champs) 155 → 156"
   ]
 }

@@ -1195,6 +1195,13 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   const fromHand = s.objects[card]?.zone === "hand";
   for (const l of castLimits(s, player)) {
     if (l.faceUp) continue;
+    if (l.spellTypes) {
+      const types = s.defs[s.objects[card]?.defId ?? ""]?.types ?? [];
+      const { types: only, notTypes } = l.spellTypes;
+      if ((only && !only.some((t) => types.includes(t))) || notTypes?.some((t) => types.includes(t))) continue;
+      if (countTurnEvents(s, { event: "cast", who: "you", ...l.spellTypes }, player) >= (l.maxSpells ?? 0)) return null;
+      continue;
+    }
     if (l.maxSpells !== undefined ? spells >= l.maxSpells : !l.exceptFromHand || !fromHand) return null;
   }
   const terms = baseCastTerms(s, player, card);
