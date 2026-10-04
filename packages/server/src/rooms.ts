@@ -15,11 +15,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { buildDeck, CARDS, card, type DeckEntries, sideboardSwapError, validateDeck } from "@mtgx/cards";
+import { buildDeck, CARDS, card, type DeckEntries, FORMAT_LABELS, isFormat, sideboardSwapError, validateDeck } from "@mtgx/cards";
 import {
   createRecordedGame,
   type Decision,
   decider,
+  type Format,
   fallbackDecision,
   type GameEvent,
   GameHost,
@@ -180,13 +181,12 @@ export function cleanName(raw: unknown): string {
   return name;
 }
 
-/** Vérifie la forme et la légalité d'un deck reçu : légal en Standard et entièrement jouable. */
-/** Réserve reçue (facultative) : même forme qu'un deck ; le deck complet (deck et réserve) doit être légal. */
-export function checkSide(main: DeckEntries, raw: unknown): DeckEntries {
+/** Réserve reçue (facultative) : même forme qu'un deck ; le deck complet (deck et réserve) doit être légal dans le format. */
+export function checkSide(main: DeckEntries, raw: unknown, format: Format = "standard"): DeckEntries {
   if (raw === undefined || (Array.isArray(raw) && raw.length === 0)) return [];
   const side = checkEntries(raw);
-  const v = validateDeck({ main, sideboard: side }, CARDS);
-  if (!v.legal) throw new ClientError("deck", `Réserve refusée : ${v.errors[0] ?? "illégale en Standard"}.`);
+  const v = validateDeck({ main, sideboard: side }, CARDS, format);
+  if (!v.legal) throw new ClientError("deck", `Réserve refusée : ${v.errors[0] ?? `illégale en ${FORMAT_LABELS[format]}`}.`);
   return side;
 }
 
@@ -205,7 +205,8 @@ function checkEntries(raw: unknown): DeckEntries {
   return out;
 }
 
-export function checkDeck(raw: unknown): DeckEntries {
+/** Vérifie la forme et la légalité d'un deck reçu : légal dans le format du salon et entièrement jouable. */
+export function checkDeck(raw: unknown, format: Format = "standard"): DeckEntries {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_DECK_LINES) {
     throw new ClientError("deck", "Deck invalide.");
   }
@@ -218,8 +219,8 @@ export function checkDeck(raw: unknown): DeckEntries {
     }
     deck.push([n as number, name]);
   }
-  const v = validateDeck({ main: deck }, CARDS);
-  if (!v.legal) throw new ClientError("deck", `Deck refusé : ${v.errors[0] ?? "illégal en Standard"}.`);
+  const v = validateDeck({ main: deck }, CARDS, format);
+  if (!v.legal) throw new ClientError("deck", `Deck refusé : ${v.errors[0] ?? `illégal en ${FORMAT_LABELS[format]}`}.`);
   if (!v.playable) throw new ClientError("deck", "Deck refusé : il contient des cartes pas encore jouables.");
   return deck;
 }
@@ -495,7 +496,7 @@ export class Room {
     return this.enqueue(async () => {
       if (this.status !== "sideboard") throw new ClientError("state", "Pas de réserve à ajuster maintenant.");
       const next = { main: checkEntries(main), sideboard: checkEntries(side) };
-      const error = sideboardSwapError(seat.original, next, CARDS);
+      const error = sideboardSwapError(seat.original, next, CARDS, this.match.format);
       if (error) throw new ClientError("deck", error);
       seat.deck = next.main;
       seat.side = next.sideboard;
@@ -849,11 +850,12 @@ export class RoomManager {
     name: unknown,
     deck: unknown,
     peer: Peer,
-    opts: { sideboard?: unknown; bestOf?: unknown; ip?: string } = {},
+    opts: { sideboard?: unknown; bestOf?: unknown; format?: unknown; ip?: string } = {},
   ): { room: Room; seat: SeatState } {
     const n = cleanName(name);
-    const d = checkDeck(deck);
-    const side = checkSide(d, opts.sideboard);
+    const format: Format = isFormat(opts.format) ? opts.format : "standard";
+    const d = checkDeck(deck, format);
+    const side = checkSide(d, opts.sideboard, format);
     if (this.rooms.size >= this.config.maxRooms) throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
     // Mémoire : refuser un salon plutôt que de laisser pm2 redémarrer le serveur (et couper toutes les parties).
     const heapMb = process.memoryUsage().heapUsed / 1_048_576;
@@ -865,7 +867,7 @@ export class RoomManager {
       throw new ClientError("busy", "Trop de salons ouverts depuis cette adresse : fermez-en un avant d'en créer un autre.");
     const room = new Room(this.newCode(), this.config, (r) => this.rooms.delete(r.code));
     room.creator = creator;
-    room.match = { ...room.match, bestOf: opts.bestOf === 3 ? 3 : 1 };
+    room.match = { ...room.match, bestOf: opts.bestOf === 3 ? 3 : 1, ...(format !== "standard" ? { format } : {}) };
     this.rooms.set(room.code, room);
     return { room, seat: room.addPlayer(n, d, peer, side) };
   }
@@ -878,8 +880,10 @@ export class RoomManager {
     );
     if (!room) throw new ClientError("room", "Salon introuvable : vérifiez le code.");
     if (room.status !== "waiting" || room.seats.length >= 2) throw new ClientError("full", "Ce salon est complet.");
-    const d = checkDeck(deck);
-    return { room, seat: room.addPlayer(cleanName(name), d, peer, checkSide(d, sideboard)) };
+    // Le deck doit être légal dans le format choisi par le créateur du salon.
+    const format = room.match.format ?? "standard";
+    const d = checkDeck(deck, format);
+    return { room, seat: room.addPlayer(cleanName(name), d, peer, checkSide(d, sideboard, format)) };
   }
 
   byToken(token: unknown): { room: Room; seat: SeatState } | null {

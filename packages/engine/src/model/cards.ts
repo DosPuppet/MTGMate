@@ -248,7 +248,7 @@ export interface CardDef {
   number?: string;
   rarity?: string;
   /** Légalité par format, d'après Scryfall au moment de l'import (« legal », « not_legal », « banned »…). */
-  legalities?: Partial<Record<Format, Legality>>;
+  legalities?: Partial<Record<LegalityFormat, Legality>>;
   isToken?: boolean;
 }
 
@@ -265,8 +265,14 @@ export interface PrepareFace {
   image?: string;
 }
 
-/** Formats de construction reconnus (seul le Standard est dans le périmètre). */
-export type Format = "standard";
+/**
+ * Formats de partie : le Standard, et « sans limite » (toute carte du catalogue, quelle que soit sa légalité : bannie,
+ * hors Standard, Commander… ; seules restent les règles de construction). Les légalités importées de Scryfall ne portent
+ * que sur les formats de `LegalityFormat`.
+ */
+export type Format = "standard" | "unlimited";
+/** Formats des légalités importées de Scryfall. */
+export type LegalityFormat = "standard";
 export type Legality = "legal" | "not_legal" | "banned" | "restricted";
 
 export interface SpellDef {

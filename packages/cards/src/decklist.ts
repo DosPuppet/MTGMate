@@ -43,17 +43,28 @@ export interface DeckValidation {
 
 export const DECK_RULES = { minMain: 60, maxSide: 15, maxCopies: 4 } as const;
 
-export const FORMAT_LABELS: Record<Format, string> = { standard: "Standard" };
+export const FORMAT_LABELS: Record<Format, string> = {
+  standard: "Standard",
+  unlimited: "Sans limite",
+};
 
-/** Seul format du périmètre pour l'instant. */
+/** Formats proposés, dans l'ordre d'affichage. */
+export const FORMATS: readonly Format[] = ["standard", "unlimited"];
+
 export const DEFAULT_FORMAT: Format = "standard";
+
+export function isFormat(v: unknown): v is Format {
+  return typeof v === "string" && (FORMATS as readonly string[]).includes(v);
+}
 
 /** Problème de légalité d'une carte dans un format, ou undefined si elle y est légale. */
 export function legalityIssue(c: CardDef, format: Format = DEFAULT_FORMAT): string | undefined {
   const label = FORMAT_LABELS[format];
   // Carte assemblée (verso commun de deux cartes à assemblage) : elle n'existe pas seule.
   if (c.meldResult) return `${c.name} est une carte assemblée : elle ne se met pas dans un deck`;
-  switch (c.legalities?.[format]) {
+  // Sans limite : toute carte du catalogue, quelle que soit sa légalité.
+  if (format === "unlimited") return undefined;
+  switch (c.legalities?.standard) {
     case "legal":
       return undefined;
     case "banned":
@@ -333,6 +344,7 @@ export function sideboardSwapError(
   original: { main: DeckEntries; sideboard?: DeckEntries },
   next: { main: DeckEntries; sideboard?: DeckEntries },
   cards: Record<string, CardDef>,
+  format: Format = DEFAULT_FORMAT,
 ): string | null {
   const totals = (d: { main: DeckEntries; sideboard?: DeckEntries }) => {
     const m = new Map<string, number>();
@@ -343,7 +355,7 @@ export function sideboardSwapError(
   const b = totals(next);
   if (a.size !== b.size || [...a].some(([name, n]) => b.get(name) !== n))
     return "Le deck et la réserve doivent contenir les mêmes cartes qu'au début du match.";
-  const v = validateDeck(next, cards);
+  const v = validateDeck(next, cards, format);
   if (!v.legal) return v.errors[0] ?? "Deck illégal.";
   if (!v.playable) return "Le deck contient des cartes pas encore jouables.";
   return null;

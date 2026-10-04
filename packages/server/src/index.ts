@@ -393,7 +393,12 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
             if (msg.version?.protocol !== PROTOCOL_VERSION || msg.version?.rules !== RULES_VERSION)
               throw new ClientError("version", "Une nouvelle version de MTG Mate est disponible : rechargez la page.");
             if (msg.type === "create")
-              current = rooms.create(msg.name, msg.deck, peer, { sideboard: msg.sideboard, bestOf: msg.bestOf, ip });
+              current = rooms.create(msg.name, msg.deck, peer, {
+                sideboard: msg.sideboard,
+                bestOf: msg.bestOf,
+                format: msg.format,
+                ip,
+              });
             else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard);
             else {
               const found = rooms.byToken(msg.token);

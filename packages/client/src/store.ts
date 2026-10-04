@@ -15,6 +15,7 @@ import {
   type CostSlot,
   DEFAULT_AUTOPILOT,
   type Decision,
+  type Format,
   type GameEvent,
   type GameRecord,
   type GameView,
@@ -168,6 +169,8 @@ export interface LocalMatch {
   original: { main: DeckEntries; sideboard: DeckEntries };
   aiDeck: DeckEntries;
   aiLevel?: AiLevel;
+  /** Format du match (absent : Standard) : l'échange de réserve doit y rester légal. */
+  format?: Format;
 }
 
 export interface OnlineState {
@@ -248,7 +251,7 @@ interface Store {
     aiDecks: DeckEntries[],
     sandbox?: Sandbox,
     aiLevel?: AiLevel,
-    match?: { bestOf: 3; sideboard: DeckEntries },
+    match?: { bestOf: 3; sideboard: DeckEntries; format?: Format },
   ): void;
   /** Match contre l'IA en cours (BO3). */
   localMatch: LocalMatch | null;
@@ -258,7 +261,7 @@ interface Store {
   startScenario(scenario: ScenarioSpec): void;
   openTutorial(): void;
   openOnline(): void;
-  createRoom(name: string, deck: DeckEntries, opts?: { sideboard?: DeckEntries; bestOf?: 1 | 3 }): void;
+  createRoom(name: string, deck: DeckEntries, opts?: { sideboard?: DeckEntries; bestOf?: 1 | 3; format?: Format }): void;
   joinRoom(code: string, name: string, deck: DeckEntries, sideboard?: DeckEntries): void;
   /** Reprend la partie en ligne de cet onglet (jeton de reconnexion), au chargement ou après une coupure. */
   resumeOnline(): void;
@@ -976,6 +979,7 @@ export const useGame = create<Store>((set, get) => {
               original: { main: playerDeck, sideboard: match.sideboard },
               aiDeck: aiDecks[0] as DeckEntries,
               aiLevel,
+              ...(match.format && match.format !== "standard" ? { format: match.format } : {}),
             }
           : null;
       set({ online: null, tutorialGame: false, replay: null, localMatch });
@@ -990,7 +994,7 @@ export const useGame = create<Store>((set, get) => {
       }
       const m = get().localMatch;
       if (!m || m.winner) return;
-      const error = sideboardSwapError(m.original, { main, sideboard }, CARDS);
+      const error = sideboardSwapError(m.original, { main, sideboard }, CARDS, m.format);
       if (error) return get().notify(error);
       // Le perdant de la manche précédente commence.
       const last = get().view;
@@ -1047,7 +1051,15 @@ export const useGame = create<Store>((set, get) => {
 
     createRoom(name, deck, opts = {}) {
       set({ localMatch: null });
-      connectRemote().raw({ type: "create", name, deck, sideboard: opts.sideboard, bestOf: opts.bestOf, version: VERSION });
+      connectRemote().raw({
+        type: "create",
+        name,
+        deck,
+        sideboard: opts.sideboard,
+        bestOf: opts.bestOf,
+        format: opts.format,
+        version: VERSION,
+      });
       saveName(name);
     },
 

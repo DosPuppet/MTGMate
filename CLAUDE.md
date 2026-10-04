@@ -41,7 +41,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
   - extensions déclarées dans `packages/cards/src/sets.ts` ; une réimpression garde la définition de la première extension ;
   - scripts dans `packages/cards/src/<set>/*.ts` ; DSL et jetons génériques dans `fdn/common.ts` ;
   - ce qui se lit dans le texte Scryfall (mots-clés, garde, « Équiper », loyauté, Harmonie, Marchandage…) est déduit dans `cards/src/scryfall.ts` ;
-  - légalité : `validateDeck` (format `standard` par défaut) refuse les cartes bannies, hors format ou sans légalité connue, réserve comprise.
+  - légalité : `validateDeck` (format `standard` par défaut) refuse les cartes bannies, hors format ou sans légalité connue, réserve comprise ; le format `unlimited` (« Sans limite », choisi à l'accueil ou à la création d'un salon en ligne, retenu dans `mtgmate.format`) accepte toute carte du catalogue quelle que soit sa légalité (bannie, hors Standard, Commander plus tard) ; seules restent les règles de construction.
 - **Jeu en ligne (`packages/server`) :**
   - le serveur fait autorité : il valide le deck et chaque décision (`RulesError` renvoyée au client) ;
   - un joueur ne reçoit que sa vue (`projectView`), ses événements filtrés (`filterEvents`) et les faces qu'il connaît (`visibleFaces`) ;

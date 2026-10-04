@@ -46,7 +46,7 @@ Les cartes ont été couvertes **extension par extension, à 100 % avant de pass
 | **Teenage Mutant Ninja Turtles (TMT)** | ✅ 188 / 188 |
 | **The Hobbit (HOB)** | ✅ 188 / 188 |
 
-Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %, vérifié chaque semaine contre Scryfall : `tools/check-legality.ts`). Les lignes ci-dessus font 5 177 cartes : elles comptent aussi les 13 cartes bannies, gérées mais refusées par la validation des decks.
+Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %, vérifié chaque semaine contre Scryfall : `tools/check-legality.ts`). Les lignes ci-dessus font 5 177 cartes : elles comptent aussi les 13 cartes bannies, gérées mais refusées par la validation des decks, sauf dans le format « Sans limite » (au choix à l'accueil, contre l'IA, et à la création d'une partie en ligne), qui accepte toute carte du catalogue, quelle que soit sa légalité.
 
 **Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 

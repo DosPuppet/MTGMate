@@ -1,6 +1,6 @@
 import type { AiLevel } from "@mtgx/ai";
 import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
-import { isGameRecord } from "@mtgx/engine";
+import { type Format, isGameRecord } from "@mtgx/engine";
 import { useEffect, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
@@ -9,14 +9,15 @@ import { ImageRelayToggle } from "../ImageRelayToggle";
 import { useRelayActive } from "../images";
 import { useGame } from "../store";
 import { useTutorial } from "../tutorial/store";
+import { FormatChoice, loadFormat, saveFormat } from "./FormatChoice";
 
 /** Un deck peut lancer une partie s'il est légal dans le format et que toutes ses cartes sont jouables. */
-export function deckStatus(d: DeckList): { ok: boolean; reason?: string; format: string } {
-  const v = validateDeck(d, CARDS);
-  const format = v.welcome ? "Bienvenue" : FORMAT_LABELS[v.format];
-  if (!v.legal) return { ok: false, reason: v.errors[0], format };
-  if (!v.playable) return { ok: false, reason: "Contient des cartes pas encore jouables", format };
-  return { ok: true, format };
+export function deckStatus(d: DeckList, format: Format = "standard"): { ok: boolean; reason?: string; format: string } {
+  const v = validateDeck(d, CARDS, format);
+  const label = v.welcome ? "Bienvenue" : FORMAT_LABELS[v.format];
+  if (!v.legal) return { ok: false, reason: v.errors[0], format: label };
+  if (!v.playable) return { ok: false, reason: "Contient des cartes pas encore jouables", format: label };
+  return { ok: true, format: label };
 }
 
 /** Catégories de decks de l'accueil : préconstruits par famille, puis ceux du joueur. */
@@ -36,7 +37,18 @@ export function deckCategory(d: DeckList): Category {
   return "welcome";
 }
 
-export function DeckChoice({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
+export function DeckChoice({
+  label,
+  value,
+  onChange,
+  format = "standard",
+}: {
+  label: string;
+  value: string;
+  onChange: (id: string) => void;
+  /** Format de la partie : un deck illégal dans ce format ne peut pas être choisi. */
+  format?: Format;
+}) {
   const decks = useAllDecks();
   useRelayActive(); // illustrations des decks relayées si Scryfall est bloqué
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
@@ -69,7 +81,7 @@ export function DeckChoice({ label, value, onChange }: { label: string; value: s
       )}
       <div className="deck-list">
         {shown.map((d) => {
-          const status = deckStatus(d);
+          const status = deckStatus(d, format);
           const cover = deckCover(d);
           return (
             <div
@@ -157,7 +169,13 @@ export function Lobby() {
   const byId = (id: string) => decks.find((d) => d.id === id);
   const me = byId(mine);
   const them = ai.slice(0, aiCount).map(byId);
-  const canStart = !!me && deckStatus(me).ok && them.every((d) => !!d && deckStatus(d).ok);
+  // Format de la partie (Standard, ou sans limite), retenu d'une partie à l'autre.
+  const [format, setFormat] = useState<Format>(loadFormat);
+  const chooseFormat = (f: Format) => {
+    setFormat(f);
+    saveFormat(f);
+  };
+  const canStart = !!me && deckStatus(me, format).ok && them.every((d) => !!d && deckStatus(d, format).ok);
   // Match au meilleur des trois manches (duel), retenu d'une partie à l'autre.
   const [bo3, setBo3] = useState(() => localStorageFlag("mtgmate.bo3"));
   useEffect(() => saveFlag("mtgmate.bo3", bo3), [bo3]);
@@ -178,7 +196,8 @@ export function Lobby() {
         </h1>
       </header>
       <div className="lobby-body">
-        <DeckChoice label="Votre deck" value={mine} onChange={setMine} />
+        <FormatChoice value={format} onChange={chooseFormat} />
+        <DeckChoice label="Votre deck" value={mine} onChange={setMine} format={format} />
         <div className="ai-count">
           <span>Adversaires IA</span>
           <div className="seg">
@@ -216,6 +235,7 @@ export function Lobby() {
           key={slot}
           label={aiCount > 1 ? `Deck de l'IA ${slot + 1}` : "Deck de l'IA"}
           value={ai[slot] ?? ""}
+          format={format}
           onChange={(id) => setAi((prev) => prev.map((v, i) => (i === slot ? id : v)))}
         />
         <div className="ai-level">
@@ -248,7 +268,7 @@ export function Lobby() {
                 them.map((d) => (d as DeckList).main),
                 undefined,
                 level,
-                bo3 && aiCount === 1 ? { bestOf: 3, sideboard: me.sideboard ?? [] } : undefined,
+                bo3 && aiCount === 1 ? { bestOf: 3, sideboard: me.sideboard ?? [], format } : undefined,
               )
             }
           >

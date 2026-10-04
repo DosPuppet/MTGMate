@@ -19,6 +19,8 @@ export {
   type DeckValidation,
   deckColors,
   FORMAT_LABELS,
+  FORMATS,
+  isFormat,
   legalityIssue,
   normalizeName,
   type ParsedDeck,

@@ -2,10 +2,13 @@
  * Partie en ligne contre un joueur : pseudo, deck, créer un salon (code et lien à partager) ou en rejoindre un.
  * La partie démarre sur le serveur dès que le second joueur arrive.
  */
+import { FORMAT_LABELS } from "@mtgx/cards";
+import type { Format } from "@mtgx/engine";
 import { useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { useAllDecks } from "../decks/store";
 import { loadName, useGame } from "../store";
+import { FormatChoice, loadFormat, saveFormat } from "./FormatChoice";
 import { DeckChoice, deckStatus } from "./Lobby";
 
 /** Code pré-rempli par un lien d'invitation (?room=CODE). */
@@ -40,7 +43,10 @@ function Waiting() {
       <div className="room-code" data-testid="room-code">
         {code}
       </div>
-      <p className="hint">Donnez ce code (ou le lien) à votre adversaire. La partie commence dès son arrivée.</p>
+      <p className="hint">
+        Donnez ce code (ou le lien) à votre adversaire. La partie commence dès son arrivée.
+        {online?.match?.format === "unlimited" && " Format : sans limite (toutes les cartes du catalogue)."}
+      </p>
       <div className="lobby-actions">
         <button type="button" className="btn primary" onClick={copy}>
           Copier le lien
@@ -61,11 +67,16 @@ export function Online() {
   const backToLobby = useGame((s) => s.backToLobby);
   const decks = useAllDecks();
   const [name, setName] = useState(loadName);
-  const [deckId, setDeckId] = useState(() => decks.find((d) => deckStatus(d).ok)?.id ?? "");
+  const [format, setFormat] = useState<Format>(loadFormat);
+  const chooseFormat = (f: Format) => {
+    setFormat(f);
+    saveFormat(f);
+  };
+  const [deckId, setDeckId] = useState(() => decks.find((d) => deckStatus(d, format).ok)?.id ?? "");
   const [code, setCode] = useState(codeFromUrl);
   const [bo3, setBo3] = useState(false);
   const deck = decks.find((d) => d.id === deckId);
-  const ready = !!deck && deckStatus(deck).ok && name.trim().length > 0;
+  const ready = !!deck && deckStatus(deck, format).ok && name.trim().length > 0;
   const busy = online?.status === "connecting" && !online.error;
   const waiting = online?.status === "waiting";
 
@@ -76,7 +87,7 @@ export function Online() {
           <SoundControl />
         </div>
         <h1>Partie en ligne</h1>
-        <p className="hint">Duel au format Standard contre un autre joueur</p>
+        <p className="hint">Duel contre un autre joueur, au format choisi par celui qui crée la partie</p>
       </header>
       <div className="lobby-body">
         {waiting ? (
@@ -93,7 +104,13 @@ export function Online() {
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
-            <DeckChoice label="Votre deck (légal en Standard)" value={deckId} onChange={setDeckId} />
+            <FormatChoice value={format} onChange={chooseFormat} />
+            <DeckChoice
+              label={format === "unlimited" ? "Votre deck (sans limite)" : `Votre deck (légal en ${FORMAT_LABELS[format]})`}
+              value={deckId}
+              onChange={setDeckId}
+              format={format}
+            />
             {online?.error && <div className="v-error online-error">{online.error}</div>}
             <div className="online-actions">
               <div className="online-card">
@@ -107,13 +124,16 @@ export function Online() {
                   type="button"
                   className="btn primary big"
                   disabled={!ready || busy}
-                  onClick={() => deck && createRoom(name.trim(), deck.main, { sideboard: deck.sideboard, bestOf: bo3 ? 3 : 1 })}
+                  onClick={() =>
+                    deck && createRoom(name.trim(), deck.main, { sideboard: deck.sideboard, bestOf: bo3 ? 3 : 1, format })
+                  }
                 >
                   Créer
                 </button>
               </div>
               <div className="online-card">
                 <h3>Rejoindre</h3>
+                <p className="hint">Le salon impose son format : votre deck doit y être légal.</p>
                 <input
                   className="search code-input"
                   value={code}
@@ -132,7 +152,11 @@ export function Online() {
                 </button>
               </div>
             </div>
-            {!ready && <p className="hint">Choisissez un pseudo et un deck légal en Standard et jouable.</p>}
+            {!ready && (
+              <p className="hint">
+                Choisissez un pseudo et un deck {format === "unlimited" ? "" : `légal en ${FORMAT_LABELS[format]} et `}jouable.
+              </p>
+            )}
           </>
         )}
         <div className="lobby-actions">

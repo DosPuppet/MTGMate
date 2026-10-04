@@ -65,7 +65,7 @@ const FORMAT = FORMAT_LABELS[DEFAULT_FORMAT];
 /** Étiquette courte d'une carte illégale dans le format (« bannie », « hors Standard »). */
 function legalityTag(c: CardDef): string | undefined {
   if (!legalityIssue(c)) return undefined;
-  return c.legalities?.[DEFAULT_FORMAT] === "banned" ? "bannie" : `hors ${FORMAT}`;
+  return c.legalities?.standard === "banned" ? "bannie" : `hors ${FORMAT}`;
 }
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 

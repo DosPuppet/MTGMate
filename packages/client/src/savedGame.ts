@@ -5,7 +5,7 @@
  */
 import type { AiLevel } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
-import { type GameRecord, isGameRecord } from "@mtgx/engine";
+import { type Format, type GameRecord, isGameRecord } from "@mtgx/engine";
 import type { LogLine } from "./i18n";
 
 /** Match BO3 contre l'IA en cours (même forme que `LocalMatch` du store). */
@@ -18,6 +18,7 @@ export interface SavedMatch {
   original: { main: DeckEntries; sideboard: DeckEntries };
   aiDeck: DeckEntries;
   aiLevel?: AiLevel;
+  format?: Format;
 }
 
 export interface SavedLocalGame {

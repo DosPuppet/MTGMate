@@ -33,9 +33,11 @@ export function SideboardEditor({
   onSubmit: (main: DeckEntries, sideboard: DeckEntries) => void;
 }) {
   const lang = useGame((s) => s.lang);
+  // Format du match (contre l'IA, ou du salon en ligne) : le deck doit y rester légal.
+  const format = useGame((s) => s.localMatch?.format ?? s.online?.match?.format);
   const [main, setMain] = useState(start.main);
   const [side, setSide] = useState(start.sideboard);
-  const error = sideboardSwapError(original, { main, sideboard: side }, CARDS);
+  const error = sideboardSwapError(original, { main, sideboard: side }, CARDS, format);
   const label = (name: string) => (lang === "fr" && CARDS[name]?.fr?.name) || name;
   const rows = (entries: DeckEntries, toSide: boolean) =>
     [...entries]

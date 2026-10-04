@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CARDS, CardIndex, DECKS, parseDeckList, serializeDeckList, validateDeck } from "../src";
+import { CARDS, CardIndex, DECKS, parseDeckList, serializeDeckList, sideboardSwapError, validateDeck } from "../src";
 
 const index = new CardIndex(CARDS);
 
@@ -225,6 +225,47 @@ describe("légalité en Standard", () => {
       expect(v).toMatchObject({ format: "standard", legal: false, playable: false });
       expect(v.errors).toEqual(["Carte fictive est bannie en Standard"]);
     }
+  });
+
+  it("sans limite : toute carte du catalogue, quelle que soit sa légalité ; les règles de construction restent", () => {
+    for (const legalities of [{ standard: "banned" }, { standard: "not_legal" }, undefined]) {
+      for (const where of ["main", "side"] as const) {
+        const v = validateDeck(deck(where), withCard(legalities), "unlimited");
+        expect(v).toMatchObject({ format: "unlimited", legal: true, errors: [] });
+      }
+    }
+    // 60 cartes minimum, 4 exemplaires au plus.
+    const five = validateDeck(
+      {
+        main: [
+          [5, "Carte fictive"],
+          [55, "Forest"],
+        ],
+      },
+      withCard(undefined),
+      "unlimited",
+    );
+    expect(five.errors).toEqual(["Carte fictive : 5 exemplaires (maximum 4)"]);
+    // Une carte assemblée ne se met toujours pas dans un deck.
+    const meld = Object.values(CARDS).find((c) => c.meldResult);
+    if (meld)
+      expect(
+        validateDeck(
+          {
+            main: [
+              [1, meld.name],
+              [59, "Forest"],
+            ],
+          },
+          CARDS,
+          "unlimited",
+        ).legal,
+      ).toBe(false);
+    // L'échange de réserve d'un match sans limite garde la carte bannie.
+    expect(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" }), "unlimited")).toBeNull();
+    expect(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" }))).toBe(
+      "Carte fictive est bannie en Standard",
+    );
   });
 
   it("une carte hors Standard ou sans légalité connue rend le deck illégal", () => {

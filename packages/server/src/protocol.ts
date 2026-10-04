@@ -3,7 +3,7 @@
  * Le serveur fait autorité : il valide les decks et chaque décision (RulesError du moteur).
  */
 import type { DeckEntries } from "@mtgx/cards";
-import type { AutopilotSettings, CardFace, Decision, GameEvent, GameRecord, GameView } from "@mtgx/engine";
+import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameRecord, GameView } from "@mtgx/engine";
 
 /**
  * Version du protocole : avec `RULES_VERSION`, envoyée par le client à la création, à l'arrivée et à la reprise d'un
@@ -39,6 +39,8 @@ export interface Clock {
 /** Match : une manche (BO1) ou au meilleur des trois (BO3). */
 export interface MatchInfo {
   bestOf: 1 | 3;
+  /** Format des decks du salon, choisi à sa création (absent : Standard). */
+  format?: Format;
   /** Manches gagnées par siège. */
   wins: Record<Seat, number>;
   /** Numéro de la manche en cours (ou de la dernière jouée). */
@@ -62,7 +64,15 @@ export interface RoomInfo {
 }
 
 export type ClientMessage =
-  | { type: "create"; name: string; deck: DeckEntries; sideboard?: DeckEntries; bestOf?: 1 | 3; version?: ClientVersion }
+  | {
+      type: "create";
+      name: string;
+      deck: DeckEntries;
+      sideboard?: DeckEntries;
+      bestOf?: 1 | 3;
+      format?: Format;
+      version?: ClientVersion;
+    }
   | { type: "join"; code: string; name: string; deck: DeckEntries; sideboard?: DeckEntries; version?: ClientVersion }
   | { type: "rejoin"; token: string; version?: ClientVersion }
   | { type: "leave" }
