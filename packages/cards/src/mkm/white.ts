@@ -359,7 +359,7 @@ export const WHITE: Record<string, CardScript> = {
         label: "Chacune de vos créatures inflige 1 blessure à la créature ciblée",
       }),
     ],
-    caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "attack" }), 3),
+    caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "attack", distinct: "object" }), 3),
     caseSolved: [staticAbility({ types: ["Creature"], controller: "you" }, { power: 1 }, { label: "Vos créatures +1/+0" })],
   },
   "No Witnesses": {

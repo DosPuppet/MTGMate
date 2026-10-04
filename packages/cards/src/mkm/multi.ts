@@ -41,7 +41,7 @@ const CREATURES_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
 const NIV_X = amount.colorPairsAmong({ permanent: true, controller: "you" });
 
 /** Tin Street Gossip : « dépensez ce mana seulement pour lancer des sorts face cachée ou retourner des créatures face visible ». */
-const FACE_DOWN_MANA: ManaRestriction = { spell: { faceDown: true }, abilityOfCreature: { faceDown: true } };
+const FACE_DOWN_MANA: ManaRestriction = { spell: { faceDown: true }, ability: ["turnFaceUp"] };
 
 /** Voja Fenstalker : Loup légendaire 5/5 vert et blanc avec le piétinement (Tolsimir, Midnight's Light). */
 const VOJA_FENSTALKER: TokenSpec = {

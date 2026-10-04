@@ -5,9 +5,11 @@
  * Marvin, Found Footage (lots C et D).
  */
 import { describe, expect, it } from "vitest";
+import * as dsl from "../src/dsl";
+import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { chars, moveObject } from "../src/state";
 import type { GameState } from "../src/types";
 import { projectView } from "../src/view";
 import {
@@ -2883,14 +2885,19 @@ describe("Duskmourn, lot K8 : peu communes (3)", () => {
     expect(namesIn(s, s.players.p1?.graveyard)).toContain("Opt");
   });
 
-  it("Smoky Lounge : {R}{R} pendant votre première phase principale, seulement pour les Salles", () => {
-    const s = scenario({
+  it("Smoky Lounge : au début de votre première phase principale, {R}{R} pour des sorts de Salle ou déverrouiller", () => {
+    let s = scenario({
+      step: "upkeep",
       p1: {
         battlefield: ["Smoky Lounge // Misty Salon", "Mountain"],
         hand: ["Painter's Studio // Defaced Gallery", "Lightning Strike"],
       },
     });
     openDoors(s, "Smoky Lounge // Misty Salon", [0]);
+    s = advanceUntil(s, (x) => x.turn.step === "main1" && x.stack.length > 0);
+    s = settle(s);
+    // Le mana est ajouté à la réserve en début de phase (et non par une capacité de mana).
+    expect(s.players.p1?.restrictedMana?.map((m) => m.type)).toEqual(["R", "R"]);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Painter's Studio // Defaced Gallery"))).toBe(true);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Lightning Strike"))).toBe(false);
   });
@@ -3348,5 +3355,71 @@ describe("Duskmourn : approximations levées (scripts)", () => {
     expect(run(false)).toEqual({ copies: 1, power: 8 });
     // Deux cibles : pas de copie.
     expect(run(true).copies).toBe(0);
+  });
+});
+
+describe("Duskmourn : formes génériques (PLAN-A A3)", () => {
+  it("Creeping Peeper : son mana déverrouille une porte, mais ne paie pas une autre capacité d'une Salle", () => {
+    const VAULT = customCard({
+      name: "Test Vault",
+      typeLine: "Enchantment — Room",
+      types: ["Enchantment"],
+      subtypes: ["Room"],
+      abilities: [dsl.activated({ mana: "{1}", effects: [dsl.fx.gainLife(1)], label: "Gagnez 1 PV" })],
+    });
+    const s = scenario({ p1: { battlefield: ["Creeping Peeper", VAULT] } });
+    expect(canActivate(s, "p1", idOf(s, "p1", "battlefield", "Test Vault"))).toBe(false);
+    // Déverrouiller Elegant Rotunda ({2}{W}) : deux Plaines et le {U} de Creeping Peeper.
+    let t = scenario({ p1: { battlefield: ["Creeping Peeper", ROOM, ...lands("Plains", 2)] } });
+    const room = openDoors(t, ROOM, [0]);
+    t = settle(unlock(t, room));
+    expect(t.objects[room]?.unlocked).toEqual([0, 1]);
+    expect(t.objects[idOf(t, "p1", "battlefield", "Creeping Peeper")]?.tapped).toBe(true);
+  });
+
+  describe("Monstrous Emergence", () => {
+    const setup = (battlefield: string[], hand: string[] = []) =>
+      scenario({
+        p1: { battlefield: [...battlefield, ...lands("Forest", 2)], hand: ["Monstrous Emergence", ...hand] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+    const castWith = (s: S, beheld: string[]) =>
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Monstrous Emergence"),
+        targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] },
+        picks: { behold: beheld },
+      });
+
+    it("la créature choisie par le joueur (et non la plus grande force) fixe les blessures", () => {
+      let s = setup(["Bear Cub", "Shivan Dragon"]);
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Monstrous Emergence"));
+      const pick = opt?.type === "cast" ? opt.picks?.find((p) => p.slot === "behold") : undefined;
+      expect(pick?.optional).toBeFalsy();
+      expect(namesIn(s, pick?.options).sort()).toEqual(["Bear Cub", "Shivan Dragon"]);
+      s = settle(castWith(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
+      expect(s.objects[angel]?.damage).toBe(2);
+    });
+
+    it("une carte de créature révélée de la main ; sans créature ni carte, le sort ne se lance pas", () => {
+      let s = setup([], ["Shivan Dragon"]);
+      s = settle(castWith(s, [idOf(s, "p1", "hand", "Shivan Dragon")]));
+      expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+      const t = setup([], ["Opt"]);
+      expect(castable(t, "p1", idOf(t, "p1", "hand", "Monstrous Emergence"))).toBe(false);
+      // Le coût additionnel est obligatoire.
+      const u = setup(["Bear Cub"]);
+      expect(() => castWith(u, [])).toThrow(RulesError);
+    });
+
+    it("la créature choisie a quitté le champ de bataille : sa force telle qu'elle existait en dernier (décision officielle)", () => {
+      let s = setup(["Bear Cub", "Shivan Dragon"]);
+      const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
+      s = castWith(s, [dragon]);
+      moveObject(s, dragon, "graveyard");
+      s = settle(s);
+      expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    });
   });
 });

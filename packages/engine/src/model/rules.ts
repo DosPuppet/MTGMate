@@ -49,15 +49,26 @@ export interface TargetSpec {
   countX?: boolean | "upTo";
 }
 
+/**
+ * Cartes exilées face visible : `withWarp` : qui ont la distorsion (Blade of the Swarm) ; `warped` : exilées par la
+ * distorsion (Close Encounter : « une carte distordue ») ; `own` : que vous possédez (`true`) ou non (`false`, Sentinel of
+ * Lost Lore) ; `linked` : exilées « avec » la source (Mimeoplasm).
+ */
+export interface ExiledFilter {
+  filter?: ObjectFilter;
+  withWarp?: boolean;
+  warped?: boolean;
+  own?: boolean;
+  linked?: boolean;
+}
+
 export interface TargetFilter {
   players?: "any" | "you" | "opponent";
   objects?: ObjectFilter;
   /** Cartes dans un cimetière (« carte de créature ciblée de votre cimetière »). */
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
   /** Cartes exilées face visible (Blade of the Swarm : « carte exilée ciblée avec la distorsion »). */
-  /** `linked` : exilées « avec » la source (Mimeoplasm). */
-  /** `own` : que vous possédez (`true`) ou non (`false`, Sentinel of Lost Lore). */
-  exiled?: { filter?: ObjectFilter; withWarp?: boolean; own?: boolean; linked?: boolean };
+  exiled?: ExiledFilter;
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
   /** … qui ciblent un permanent correspondant (Fugitive Droid : « un sort qui cible un artefact ou une créature que vous
@@ -417,7 +428,12 @@ export type TriggerSpec =
   /** « Chaque fois que cette créature (ou la créature enchantée/équipée) subit des blessures » */
   /** Filtre : « chaque fois qu'une créature que vous contrôlez subit des blessures » (The Sensational She-Hulk). */
   /** `attached` : la créature enchantée ou équipée, ou le joueur enchanté (Aura de joueur, Grievous Wound). */
-  | { on: "isDealtDamage"; who: "self" | "attached" | ObjectFilter }
+  /**
+   * « Chaque fois que [cette créature / un objet / le joueur enchanté / vous / un adversaire] subit des blessures » ; un
+   * joueur : `"you"`, `"opponent"` (de toute source) ; `combat` : seulement les blessures de combat (`true`) ou les autres
+   * (`false`). L'objet de l'événement est la source pour un joueur blessé.
+   */
+  | { on: "isDealtDamage"; who: "self" | "attached" | "you" | "opponent" | ObjectFilter; combat?: boolean }
   /** « Chaque fois que vous copiez un sort [correspondant] » (Kalamax, the Stormsire) ; `ref.eventObject` : la copie. */
   | { on: "copySpell"; filter?: ObjectFilter }
   /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès [non de combat] » (120.4a). */
@@ -647,7 +663,7 @@ export type Ref =
    * Ce qui a été payé en objets pour le coût du sort ou de la capacité qui se résout (dernières informations connues) :
    * permanents sacrifiés, cartes défaussées (encore présentes), cartes exilées, créature renvoyée pour le Web-slinging.
    */
-  | { kind: "cost"; paid: "sacrificed" | "discarded" | "exiled" | "bounced" }
+  | { kind: "cost"; paid: "sacrificed" | "discarded" | "exiled" | "bounced" | "beheld" }
   /**
    * Les objets d'une zone des joueurs désignés, correspondant au filtre : permanents qu'ils contrôlent, cartes de leur
    * cimetière, de leur main (valeur de mana au plus `maxManaValue`), cartes qu'ils possèdent exilées face visible, sorts et

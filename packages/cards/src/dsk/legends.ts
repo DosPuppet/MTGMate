@@ -203,7 +203,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Creeping Peeper": {
     abilities: [
       manaAbility("U", 1, {
-        restriction: { spell: { types: ["Enchantment"] }, abilityOfSource: { anyOf: [{ subtype: "Room" }, { faceDown: true }] } },
+        restriction: { spell: { types: ["Enchantment"] }, ability: ["unlock", "turnFaceUp"] },
       }),
     ],
   },
@@ -620,10 +620,7 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Overgrown Zealot": {
-    abilities: [
-      manaAbility([...ANY_COLOR]),
-      manaAbility([...ANY_COLOR], 2, { restriction: { abilityOfSource: { faceDown: true } } }),
-    ],
+    abilities: [manaAbility([...ANY_COLOR]), manaAbility([...ANY_COLOR], 2, { restriction: { ability: ["turnFaceUp"] } })],
   },
   "Rootwise Survivor": {
     abilities: [

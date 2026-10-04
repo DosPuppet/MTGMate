@@ -592,10 +592,11 @@ export const LEGENDS: Record<string, CardScript> = {
   // --- Incolore -------------------------------------------------------------------
   "Contested Game Ball": {
     abilities: [
+      // « Chaque fois que vous subissez des blessures de combat » : l'objet de l'événement est une créature attaquante.
       triggered(
-        { on: "dealsCombatDamage", who: { types: ["Creature"], controller: "opponent" }, toPlayer: true },
+        when.playerDealtDamage("you", true),
         [fx.giveControl(ref.self, ref.controllerOf(ref.eventObject)), fx.untap(ref.self)],
-        { batched: true, label: "L'attaquant en prend le contrôle" },
+        { batched: true, label: "Le joueur attaquant en prend le contrôle" },
       ),
       activated({
         mana: "{2}",

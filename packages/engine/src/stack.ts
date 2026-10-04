@@ -60,6 +60,7 @@ import {
   isLegalTarget,
   legalTargets,
   matchesCard,
+  matchesExiled,
   matchesObjectFilter,
   matchesView,
   resolveFilter,
@@ -70,6 +71,7 @@ import { checkCondition, checkCrime, createDelayed, onceKey, pushInline, simulta
 import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
   AbilityCostMod,
+  AbilityKind,
   ActivatedAbilityDef,
   AltCostPay,
   CardDef,
@@ -81,6 +83,7 @@ import type {
   CostPick,
   CostSlot,
   Effect,
+  ExiledFilter,
   GameObject,
   GameState,
   Keyword,
@@ -834,7 +837,7 @@ export function spellCost(
   const cost1b = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
   // « Contemplez un Dragon ou payez {1} » : le mana s'ajoute sans contemplation (par défaut : contempler si possible).
   const behold = d.additionalCost?.behold;
-  const beheld = opts.beheld ?? (!!behold && beholdOptions(s, player, opts.card ?? "", behold.filter).length > 0);
+  const beheld = opts.beheld ?? (!!behold && beholdOptions(s, player, opts.card ?? "", behold.filter, behold.exiled).length > 0);
   const cost2 = behold?.orPay && !beheld ? totalCost(cost1b, 0, behold.orPay) : cost1b;
   // Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins » ; un symbole sans pendant dans le coût réduit le générique.
   const symbols = playerStatics(s, player, "spellCost").filter(
@@ -1005,13 +1008,7 @@ function reductionContext(s: GameState, controller: PlayerId, sourceId: string, 
  * (déverrouiller), Doc Aurlock (comploter).
  */
 function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
-  const kind = (m: AbilityCostMod) =>
-    !m.ability ||
-    (m.ability === "exhaust" && !!ab.exhaust) ||
-    (m.ability === "equip" && !!ab.equip) ||
-    (m.ability === "unlock" && !!ab.specialAction && ab.effects.some((e) => e.op === "unlockDoor")) ||
-    (m.ability === "plot" && ab.effects.some((e) => e.op === "plot")) ||
-    (m.ability === "powerUp" && !!ab.powerUp);
+  const kind = (m: AbilityCostMod) => !m.ability || isAbilityKind(ab, m.ability);
   let n = 0;
   for (const { id, ab: x } of playerStatics(s, player, "abilityCost")) {
     const m = x.abilityCost;
@@ -1049,9 +1046,37 @@ export function waterbendAmount(d: CardDef, kicked: boolean, x: number): number 
   );
 }
 
-/** À quoi sert le mana d'une capacité activée : sa source, et la maîtrise de l'eau (tout le coût en est une, X compris). */
+const ABILITY_KINDS: readonly AbilityKind[] = ["exhaust", "equip", "unlock", "plot", "powerUp", "turnFaceUp"];
+
+/** La capacité activée (ou l'action spéciale) est-elle de cette sorte ? */
+export function isAbilityKind(ab: ActivatedAbilityDef, kind: AbilityKind): boolean {
+  switch (kind) {
+    case "exhaust":
+      return !!ab.exhaust;
+    case "equip":
+      return !!ab.equip;
+    case "unlock":
+      return !!ab.specialAction && ab.effects.some((e) => e.op === "unlockDoor");
+    case "turnFaceUp":
+      return !!ab.specialAction && ab.effects.some((e) => e.op === "turnFaceUp");
+    case "plot":
+      return ab.effects.some((e) => e.op === "plot");
+    case "powerUp":
+      return !!ab.powerUp;
+  }
+}
+
+/**
+ * À quoi sert le mana d'une capacité activée : sa source, ses sortes (mana restreint : « activer une capacité
+ * d'équipement »), et la maîtrise de l'eau (tout le coût en est une, X compris).
+ */
 export function abilityPurpose(source: ObjectId, ab: ActivatedAbilityDef): ManaPurpose {
-  return { abilitySource: source, ...(ab.cost.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : {}) };
+  const kinds = ABILITY_KINDS.filter((k) => isAbilityKind(ab, k));
+  return {
+    abilitySource: source,
+    ...(kinds.length ? { abilityKinds: kinds } : {}),
+    ...(ab.cost.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : {}),
+  };
 }
 
 export function abilityMana(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): ManaCost | undefined {
@@ -1558,6 +1583,8 @@ export function additionalOptions(
   // Alien Symbiosis : « en défaussant une carte en plus de ses autres coûts ».
   if (gy?.discard) add = { ...add, discard: gy.discard, ...(gy.discardFilter ? { discardFilter: gy.discardFilter } : {}) };
   if (!add) return {};
+  // Contemplation obligatoire (Monstrous Emergence) : il faut un permanent ou une carte à choisir.
+  if (add.behold?.required && beholdOptions(s, player, card, add.behold.filter, add.behold.exiled).length === 0) return null;
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
     const df = add.discardFilter;
@@ -1681,26 +1708,57 @@ export function autoAdditional(
  * Contempler (701.65) : les permanents correspondants que vous contrôlez, puis les cartes correspondantes de votre main
  * (autres que la carte lancée). Un permanent d'abord : il n'y a rien à révéler.
  */
-export function beholdOptions(s: GameState, player: PlayerId, card: ObjectId, filter: ObjectFilter): ObjectId[] {
+export function beholdOptions(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  filter: ObjectFilter,
+  exiled?: ExiledFilter,
+): ObjectId[] {
   const mine = s.battlefield.filter(
     (id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, { ...filter, controller: "you" }, card),
   );
-  const hand = (s.players[player]?.hand ?? []).filter((id) => id !== card && matchesCard(s, player, id, filter, card));
-  return [...mine, ...hand];
+  // Close Encounter : une carte exilée correspondante au lieu d'une carte de la main.
+  const others = exiled
+    ? s.exile.filter((id) => matchesExiled(s, player, id, exiled, card))
+    : (s.players[player]?.hand ?? []).filter((id) => id !== card && matchesCard(s, player, id, filter, card));
+  return [...mine, ...others];
 }
 
-/** Le permanent ou la carte contemplé au lancement : celui choisi (vérifié ; liste vide : aucun), sinon le premier possible. */
+/**
+ * Contemplation suggérée : un permanent d'abord (rien à révéler) ; obligatoire (Monstrous Emergence, Close Encounter : des
+ * blessures égales à sa force), la plus grande force, un permanent à force égale.
+ */
+function beholdSuggestion(s: GameState, options: ObjectId[], required?: boolean): ObjectId | null {
+  if (!required) return options[0] ?? null;
+  let best: ObjectId | null = null;
+  let max = Number.NEGATIVE_INFINITY;
+  for (const id of options) {
+    const p = chars(s, id).power;
+    if (p > max) [best, max] = [id, p];
+  }
+  return best;
+}
+
+/**
+ * Le permanent ou la carte contemplé au lancement : celui choisi (vérifié ; liste vide : aucun, sauf contemplation
+ * obligatoire), sinon la suggestion.
+ */
 function beholdChoice(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, chosen: ObjectId[] | undefined) {
   const behold = d.additionalCost?.behold;
   if (!behold) {
     if (chosen?.length) throw new RulesError("Ce sort ne demande pas de contempler");
     return null;
   }
-  const options = beholdOptions(s, player, card, behold.filter);
-  if (chosen === undefined) return options[0] ?? null;
-  if (chosen.length === 0) return null;
-  if (chosen.length > 1 || !options.includes(chosen[0] as ObjectId)) throw new RulesError("Contemplation invalide");
-  return chosen[0] as ObjectId;
+  const options = beholdOptions(s, player, card, behold.filter, behold.exiled);
+  const id = chosen === undefined ? beholdSuggestion(s, options, behold.required) : (chosen[0] ?? null);
+  if (chosen && chosen.length > 1) throw new RulesError("Contemplation invalide");
+  if (id === null) {
+    if (behold.required) throw new RulesError("Choisissez ce que le coût additionnel demande");
+    return null;
+  }
+  if (!options.includes(id)) throw new RulesError("Contemplation invalide");
+  return id;
 }
 
 /** Emplacement de chaque coût additionnel choisi par le joueur. */
@@ -2114,6 +2172,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     paid: {
       sacrificed: sacrifice.length ? [...sacrifice] : undefined,
       exiled: costExiled.length ? costExiled : undefined,
+      beheld: beheldId ? [beheldId] : undefined,
     },
     uncounterable: uncounterable || undefined,
   };
@@ -2885,17 +2944,22 @@ export function spellPicks(
   // Contempler : un permanent ou une carte de la main, ou rien (« vous pouvez », ou payer le supplément).
   const behold = d.additionalCost?.behold;
   if (behold) {
-    const options = beholdOptions(s, player, card, behold.filter);
+    const options = beholdOptions(s, player, card, behold.filter, behold.exiled);
+    const suggested = beholdSuggestion(s, options, behold.required);
     if (options.length)
       out.push({
         slot: "behold",
-        label: behold.orPay
-          ? "Contemplez (ou ne choisissez rien et payez le supplément)"
-          : "Vous pouvez contempler (un permanent ou une carte de votre main, révélée)",
+        label: behold.required
+          ? behold.exiled
+            ? "Choisissez un permanent que vous contrôlez ou une carte exilée"
+            : "Choisissez un permanent que vous contrôlez ou révélez une carte de votre main"
+          : behold.orPay
+            ? "Contemplez (ou ne choisissez rien et payez le supplément)"
+            : "Vous pouvez contempler (un permanent ou une carte de votre main, révélée)",
         count: 1,
         options,
-        suggested: options.slice(0, 1),
-        optional: true,
+        suggested: suggested ? [suggested] : [],
+        ...(behold.required ? {} : { optional: true }),
       });
   }
   const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => id !== card);
@@ -3149,7 +3213,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       // Doc Aurlock (comploter), Inquisitive Glimmer (déverrouiller) : moins cher.
       try {
         // Le X d'un coût de déguisement (Aurelia's Vindicator) ; la réduction propre à la capacité (Fugitive Codebreaker).
-        payMana(s, player, abilityManaCost(s, player, source, ab, undefined, x), undefined, { abilitySource: source });
+        payMana(s, player, abilityManaCost(s, player, source, ab, undefined, x), undefined, abilityPurpose(source, ab));
       } catch (e) {
         rethrowAsRules(e, "Mana insuffisant");
       }

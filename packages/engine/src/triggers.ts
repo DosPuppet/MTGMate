@@ -705,6 +705,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return { player: ev.player, amount: ev.amount };
     }
     case "isDealtDamage": {
+      if (ev.e === "damage" && t.combat !== undefined && ev.combat !== t.combat) return null;
+      // « Chaque fois que vous subissez / qu'un adversaire subit des blessures » : de toute source (Massacre Girl).
+      if (t.who === "you" || t.who === "opponent") {
+        if (ev.e !== "damage" || ev.amount <= 0 || !s.players[ev.target]) return null;
+        if (t.who === "you" ? ev.target !== me : ev.target === me || !!s.players[ev.target]?.lost) return null;
+        return { player: ev.target, amount: ev.amount, ...(ev.sourceId ? { objectId: ev.sourceId } : {}) };
+      }
       if (typeof t.who === "object") {
         if (ev.e !== "damage" || ev.amount <= 0) return null;
         const v = liveView(s, ev.target);

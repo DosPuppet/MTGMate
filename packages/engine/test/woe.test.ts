@@ -15,6 +15,7 @@ import { chars, moveObject } from "../src/state";
 import { legalTargets as legalTargetsOf } from "../src/targets";
 import { checkCondition } from "../src/triggers";
 import { canBlock, stateBasedActions } from "../src/turn";
+import { countTurnEvents } from "../src/turnlog";
 import type { CardDef, ChoiceRequest, ChoiceValue, GameState, TokenSpec } from "../src/types";
 import { projectView } from "../src/view";
 import {
@@ -22,6 +23,7 @@ import {
   act,
   advanceUntil,
   castTargets as cast,
+  castable,
   castNowOf,
   customCard,
   exiled,
@@ -33,6 +35,7 @@ import {
   passUntil,
   scenario,
   settle,
+  throughCombat,
 } from "./helpers";
 
 type S = GameState;
@@ -1583,6 +1586,32 @@ describe("Wilds of Eldraine, lot A — bleu", () => {
     s = passUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
     s = settle(cast(s, "p1", "Rowdy Research"));
     expect(s.players.p1?.hand).toHaveLength(3);
+  });
+
+  it("Rowdy Research, Witchstalker Frenzy : une créature qui attaque lors de deux combats ne compte qu'une fois", () => {
+    // Serra Angel (vigilance) attaque lors du combat et du combat supplémentaire : une seule créature a attaqué.
+    const twoCombats = (battlefield: string[], hand: string[]) => {
+      let s = scenario({ p1: { battlefield: ["Serra Angel", ...battlefield], hand } });
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      s.turn.extraCombats = 1;
+      s = throughCombat(attackWith(s, "p1", angel));
+      expect(s.pending?.kind).toBe("declareAttackers");
+      s = throughCombat(attackWith(s, "p1", angel));
+      expect(s.players.p2?.life).toBe(12);
+      expect(countTurnEvents(s, { event: "attack" }, "p1")).toBe(2);
+      expect(countTurnEvents(s, { event: "attack", distinct: "object" }, "p1")).toBe(1);
+      return s;
+    };
+    // {6}{U} moins {1} : six mana, cinq Îles ne suffisent pas, six oui.
+    let s = twoCombats(lands("Island", 5), ["Rowdy Research"]);
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Rowdy Research"))).toBe(false);
+    s = twoCombats(lands("Island", 6), ["Rowdy Research"]);
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Rowdy Research"))).toBe(true);
+    // {3}{R} moins {1} : trois mana.
+    s = twoCombats(lands("Mountain", 2), ["Witchstalker Frenzy"]);
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Witchstalker Frenzy"))).toBe(false);
+    s = twoCombats(lands("Mountain", 3), ["Witchstalker Frenzy"]);
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Witchstalker Frenzy"))).toBe(true);
   });
 });
 

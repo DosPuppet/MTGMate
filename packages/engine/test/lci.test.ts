@@ -2498,6 +2498,20 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[ball]?.tapped).toBe(false);
     });
 
+    it("Contested Game Ball : seulement quand son contrôleur subit des blessures de combat (pas un autre joueur)", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Bear Cub"] },
+        p3: { battlefield: [{ name: "Contested Game Ball", tapped: true }] },
+      });
+      // Bear Cub attaque p2 : p3, qui contrôle la balle, n'est pas blessé.
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
+      expect(s.players.p2?.life).toBe(18);
+      const ball = s.battlefield.find((id) => nameOf(s, id) === "Contested Game Ball") as string;
+      expect(s.objects[ball]?.controller).toBe("p3");
+      expect(s.objects[ball]?.tapped).toBe(true);
+    });
+
     it("Council of Echoes : vol ; descente 4 → renvoie jusqu'à un autre permanent non-terrain dans la main de son propriétaire", () => {
       const run = (graveyard: string[]) => {
         const s = scenario({

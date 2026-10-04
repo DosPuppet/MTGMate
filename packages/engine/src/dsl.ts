@@ -403,8 +403,6 @@ export const amount = {
   /** X du sort qui a mis la source en jeu. */
   sourceX: spent("x"),
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
-  /** Plus grande force parmi les cartes de créature de votre main. */
-  maxPowerInHand: agg("max", "power", { zone: "hand", filter: { types: ["Creature"] } }),
   opponentsLostLife: turnEvents({ event: "lifeLoss", who: "opponent", distinct: "player" }),
   sacrificedThisTurn: turnEvents({ event: "sacrifice", who: "you" }),
   /** Portes déverrouillées parmi les Salles que vous contrôlez. */
@@ -1996,6 +1994,15 @@ export const when = {
   isDealtDamage: { on: "isDealtDamage", who: "self" } as TriggerSpec,
   /** « Chaque fois qu'une [créature que vous contrôlez] subit des blessures » */
   dealtDamage: (who: ObjectFilter): TriggerSpec => ({ on: "isDealtDamage", who }),
+  /**
+   * « Chaque fois que vous subissez / qu'un adversaire subit des blessures [de combat / non de combat] », de toute source ;
+   * `combat` : `true` (de combat), `false` (non de combat).
+   */
+  playerDealtDamage: (who: "you" | "opponent", combat?: boolean): TriggerSpec => ({
+    on: "isDealtDamage",
+    who,
+    ...(combat !== undefined ? { combat } : {}),
+  }),
   /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès » (120.4a). */
   excessDamage: (who: ObjectFilter, noncombatOnly = false): TriggerSpec => ({ on: "excessDamage", who, noncombatOnly }),
   /** « Chaque fois que la créature enchantée (ou équipée) subit des blessures » */

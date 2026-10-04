@@ -2993,6 +2993,29 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(u, idOf(u, "p1", "battlefield", "Freya Crescent")).keywords).not.toContain("flying");
     });
 
+    it("Freya Crescent : son {R} paie « Équiper », pas une autre capacité d'un Équipement", () => {
+      const s = scenario({ p1: { battlefield: ["Freya Crescent", "Shadowspear", "Bear Cub"] } });
+      // Shadowspear : « {1} : … » ne se paie pas avec le mana de Freya (et Équiper {2} demande un mana de plus).
+      const spear = idOf(s, "p1", "battlefield", "Shadowspear");
+      expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === spear)).toBe(false);
+      let t = scenario({ p1: { battlefield: ["Freya Crescent", "Shadowspear", "Bear Cub", "Mountain"] } });
+      const tSpear = idOf(t, "p1", "battlefield", "Shadowspear");
+      const cub = idOf(t, "p1", "battlefield", "Bear Cub");
+      const options = legalActions(t, "p1").filter((a) => a.type === "activate" && a.source === tSpear);
+      const equip = options.find((a) => a.type === "activate" && /Équiper/.test(a.label ?? ""));
+      expect(equip?.type).toBe("activate");
+      t = settle(
+        act(t, "p1", {
+          type: "activate",
+          source: tSpear,
+          ability: equip?.type === "activate" ? equip.ability : -1,
+          targets: { t: [cub] },
+        }),
+      );
+      expect(t.objects[tSpear]?.attachedTo).toBe(cub);
+      expect(t.objects[idOf(t, "p1", "battlefield", "Freya Crescent")]?.tapped).toBe(true);
+    });
+
     it("G'raha Tia : portée ; d'autres créatures ou artefacts à vous meurent : piochez, une fois par tour", () => {
       let s = scenario({ p1: { battlefield: ["G'raha Tia", "Bear Cub", "Buster Sword"] }, p2: { battlefield: ["Bear Cub"] } });
       expect(chars(s, idOf(s, "p1", "battlefield", "G'raha Tia")).keywords).toContain("reach");

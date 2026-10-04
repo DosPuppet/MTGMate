@@ -138,15 +138,9 @@ export const LEGENDS2: Record<string, CardScript> = {
     ],
   },
   "Monstrous Emergence": {
-    // Coût additionnel choisi automatiquement : la plus grande force (créature que vous contrôlez ou carte révélée).
-    castCondition: cond.amountAtLeast(
-      amount.plus(amount.count(CREATURE_YOU_CONTROL), amount.countIn("hand", { types: ["Creature"] })),
-      1,
-    ),
-    spell: spell(
-      [target.creature()],
-      [fx.damage(amount.max(amount.maxPower(CREATURE_YOU_CONTROL), amount.maxPowerInHand), ref.target())],
-    ),
+    // Coût additionnel : contempler une créature (choisie par le joueur), dont la force est lue à la résolution.
+    additionalCost: { behold: { filter: { types: ["Creature"] }, required: true } },
+    spell: spell([target.creature()], [fx.damage(amount.powerOf(ref.cost("beheld")), ref.target())]),
   },
   "Twitching Doll": {
     abilities: [
@@ -191,13 +185,10 @@ export const LEGENDS2: Record<string, CardScript> = {
     ],
   },
   "Smoky Lounge": {
-    // Approximation : le {R}{R} est disponible pendant votre première phase principale (au lieu d'être ajouté au début).
     abilities: [
-      manaAbility("R", 2, {
-        noTap: true,
-        oncePerTurn: true,
-        condition: cond.all(cond.yourTurn, cond.step("main1")),
-        restriction: { spell: { subtype: "Room" }, abilityOfSource: { subtype: "Room" } },
+      // {R}{R} ajouté au début de votre première phase principale (mana restreint de la réserve).
+      triggered(when.step("main1", "you"), [fx.addManaChoice(2, ["R"], { spell: { subtype: "Room" }, ability: ["unlock"] })], {
+        label: "Ajoutez {R}{R}, pour des sorts de Salle et déverrouiller des portes",
       }),
     ],
   },

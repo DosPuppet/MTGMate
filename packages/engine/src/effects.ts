@@ -431,6 +431,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
           return [...(ctx.paid?.exiled ?? [])];
         case "bounced":
           return [...(ctx.paid?.bounced ?? s.objects[ctx.sourceId]?.cast?.costBounced ?? [])];
+        case "beheld":
+          return [...(ctx.paid?.beheld ?? [])];
       }
       return [];
     case "zone":

@@ -262,7 +262,10 @@ export const MULTI: Record<string, CardScript> = {
         { ...MERFOLK_YOU, types: ["Creature"] },
         { power: 1 },
         {
-          condition: cond.amountAtLeast(amount.turnEvents({ event: "attack", who: "you", subtype: "Merfolk" }), 3),
+          condition: cond.amountAtLeast(
+            amount.turnEvents({ event: "attack", who: "you", subtype: "Merfolk", distinct: "object" }),
+            3,
+          ),
           label: "Trois Ondins ou plus ont attaqué : vos Ondins ont +1/+0",
         },
       ),

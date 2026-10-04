@@ -8,7 +8,7 @@ import { createTokens, destroy } from "../src/actions";
 import { addEffect } from "../src/effects";
 import { GameHost } from "../src/host";
 import { legalActions } from "../src/legal";
-import { changeCounters, chars, decider } from "../src/state";
+import { changeCounters, chars, decider, moveObject } from "../src/state";
 import { canBlock, declareBlockers } from "../src/turn";
 import type { ChoiceRequest, ChoiceValue, GameState, PlayerId, TokenSpec } from "../src/types";
 import { projectView } from "../src/view";
@@ -2015,19 +2015,33 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(handSize(s, "p1")).toBe(3);
   });
 
-  it("Close Encounter : blessures égales à la force de la créature choisie à une créature ciblée", () => {
-    let s = scenario({
-      p1: { battlefield: [...lands("Forest", 2), "Serra Angel"], hand: ["Close Encounter"] },
+  it("Close Encounter : coût additionnel, une créature que vous contrôlez ou une carte de créature distordue que vous possédez en exil", () => {
+    const s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 2), "Bear Cub", "Serra Angel"],
+        hand: ["Close Encounter", "Shivan Dragon"],
+        graveyard: ["Starwinder", "Bygone Colossus"],
+      },
       p2: { battlefield: ["Serra Angel"] },
     });
-    s = settle(
-      cast(s, "p1", "Close Encounter", {
-        mode: 0,
-        targets: { c: [idOf(s, "p1", "battlefield", "Serra Angel")], t: [idOf(s, "p2", "battlefield", "Serra Angel")] },
-      }),
-    );
-    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
-    expect(s.objects[idOf(s, "p1", "battlefield", "Serra Angel")]?.damage).toBe(0);
+    const card = idOf(s, "p1", "hand", "Close Encounter");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    // Starwinder exilée par la distorsion ; Bygone Colossus exilée autrement (pas distordue).
+    const warped = moveObject(s, idOf(s, "p1", "graveyard", "Starwinder"), "exile") as string;
+    (s.objects[warped] as { warpExiledTurn?: number }).warpExiledTurn = s.turn.number - 1;
+    moveObject(s, idOf(s, "p1", "graveyard", "Bygone Colossus"), "exile");
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+    const pick = opt?.type === "cast" ? opt.picks?.find((p) => p.slot === "behold") : undefined;
+    // Ni la carte de la main, ni la carte exilée sans distorsion ; la créature choisie n'est pas une cible.
+    expect(namesIn(s, pick?.options).sort()).toEqual(["Bear Cub", "Serra Angel", "Starwinder"]);
+    expect(opt?.type === "cast" ? opt.modes[0]?.targets.map((x) => x.id) : []).toEqual(["t"]);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const t = settle(act(s, "p1", { type: "cast", card, targets: { t: [angel] }, picks: { behold: [bear] } }));
+    expect(t.objects[angel]?.damage).toBe(2);
+    const u = settle(act(s, "p1", { type: "cast", card, targets: { t: [angel] }, picks: { behold: [warped] } }));
+    expect(idsOf(u, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    // La carte choisie reste en exil.
+    expect(u.objects[warped]?.zone).toBe("exile");
   });
 
   it("Codecracker Hound : regardez les deux cartes du dessus, une en main, l'autre au cimetière", () => {

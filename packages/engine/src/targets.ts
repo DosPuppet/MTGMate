@@ -6,7 +6,17 @@ import { chars, hasKeyword, snapshot } from "./layers";
 import { castInfoOf, obj } from "./state";
 import { playerStatic, playerStatics } from "./statics";
 import { attackedThisTurn, dealtDamageThisTurn } from "./turnlog";
-import type { CardType, Color, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
+import type {
+  CardType,
+  Color,
+  ExiledFilter,
+  GameState,
+  LkiSnapshot,
+  ObjectFilter,
+  ObjectId,
+  PlayerId,
+  TargetSpec,
+} from "./types";
 import { PERMANENT_TYPES } from "./types";
 
 /**
@@ -337,6 +347,21 @@ function hexproofFromSource(s: GameState, f: ObjectFilter, player: PlayerId, sou
   return !!v && matchesView(v, f, player);
 }
 
+/** Carte exilée face visible correspondant au filtre (cible « carte exilée », carte distordue contemplée). */
+export function matchesExiled(s: GameState, controller: PlayerId, id: ObjectId, ex: ExiledFilter, sourceId?: ObjectId): boolean {
+  const o = s.objects[id];
+  if (o?.zone !== "exile" || o.faceDown || o.cardCopy || o.preparedFor) return false;
+  if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
+  if (ex.warped && o.warpExiledTurn === undefined) return false;
+  if (ex.own !== undefined && (o.owner === controller) !== ex.own) return false;
+  if (
+    ex.linked &&
+    !(sourceId && ((s.objects[sourceId]?.linked ?? []).includes(id) || s.objects[sourceId]?.linkedUids?.includes(o.uid)))
+  )
+    return false;
+  return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
+}
+
 export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSpec, id: string, sourceId?: ObjectId): boolean {
   const player = s.players[id];
   if (player) {
@@ -390,15 +415,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   }
   if (o && o.zone === "exile") {
     const ex = spec.filter.exiled;
-    if (!ex || o.faceDown || o.cardCopy || o.preparedFor) return false;
-    if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
-    if (ex.own !== undefined && (o.owner === controller) !== ex.own) return false;
-    if (
-      ex.linked &&
-      !(sourceId && ((s.objects[sourceId]?.linked ?? []).includes(id) || s.objects[sourceId]?.linkedUids?.includes(o.uid)))
-    )
-      return false;
-    return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
+    return !!ex && matchesExiled(s, controller, id, ex, sourceId);
   }
   if (o && o.zone === "graveyard") {
     const cards = spec.filter.cards;

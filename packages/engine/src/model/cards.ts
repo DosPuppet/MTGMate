@@ -6,6 +6,7 @@ import type {
   Color,
   Condition,
   Effect,
+  ExiledFilter,
   GiftKind,
   Keyword,
   ManaCost,
@@ -387,9 +388,11 @@ export interface AdditionalCost {
   /**
    * Contempler (701.65) : choisir un permanent correspondant que vous contrôlez ou révéler une telle carte de votre main.
    * « Vous pouvez contempler » (les Exhales) ; avec `orPay` : « contemplez … ou payez [mana] » (ce mana s'ajoute sans
-   * contemplation). Le sort retient qu'on a contemplé (`cond.beheld`).
+   * contemplation). Le sort retient qu'on a contemplé (`cond.beheld`) et ce qu'il a contemplé (`ref.cost("beheld")`).
+   * `required` : obligatoire (« choisissez une créature que vous contrôlez ou révélez une carte de créature de votre main »,
+   * Monstrous Emergence) ; `exiled` : une carte exilée correspondante au lieu d'une carte de la main (Close Encounter).
    */
-  behold?: { filter: ObjectFilter; orPay?: ManaCost };
+  behold?: { filter: ObjectFilter; orPay?: ManaCost; required?: boolean; exiled?: ExiledFilter };
   /** « Défaussez une carte ou sacrifiez un permanent » (Souls of the Lost) : un permanent choisi est sacrifié. */
   /** « … ou sacrifiez un permanent » ; un filtre : « … ou sacrifiez un artefact » (Demand Answers). */
   discardOrSacrifice?: boolean | ObjectFilter;
@@ -431,9 +434,17 @@ export interface CostReductionAbilityDef {
   label?: string;
 }
 
+/**
+ * Sorte d'une capacité activée ou d'une action spéciale (modificateurs de coût, mana restreint) : exhaust, Équiper,
+ * déverrouiller une porte, comploter, mise sous tension, retourner un permanent face visible.
+ */
+export type AbilityKind = "exhaust" | "equip" | "unlock" | "plot" | "powerUp" | "turnFaceUp";
+
 /** Usage permis d'un mana restreint (capacité de mana, ou mana ajouté par un effet : Ashling, Rimebound). */
 export interface ManaRestriction {
   spell?: ObjectFilter;
+  /** Activer une capacité de ces sortes (« ou activer une capacité d'équipement », « déverrouiller une porte »). */
+  ability?: AbilityKind[];
   abilityOfCreature?: ObjectFilter;
   abilityOfSource?: ObjectFilter;
   notSpellFromHand?: boolean;
@@ -996,8 +1007,8 @@ export interface TriggerMod {
  * Modificateur de coût des capacités activées (famille A, R4.4) : {N} de moins, ou {0} pour la première de ce tour.
  */
 export interface AbilityCostMod {
-  /** Capacités concernées : exhaust, Équiper, déverrouiller une porte, comploter ; sinon toutes. */
-  ability?: "exhaust" | "equip" | "unlock" | "plot" | "powerUp";
+  /** Capacités concernées : exhaust, Équiper, déverrouiller une porte, comploter… ; sinon toutes. */
+  ability?: AbilityKind;
   /** Sources concernées (Mutagen Man : vos jetons d'artefact). */
   source?: ObjectFilter;
   /** Pas les capacités de la source de la statique (Boom Scholar : « vos autres permanents »). */

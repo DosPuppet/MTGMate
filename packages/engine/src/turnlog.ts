@@ -94,7 +94,10 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
 /** Poids d'une entrée : sa quantité (blessures, vie, cartes défaussées) pour une somme, sinon 1. */
 const weight = (e: TurnLogEntry, q: TurnLogQuery) => (q.sum && "amount" in e ? e.amount : 1);
 
-/** Valeurs d'une entrée pour `distinct` : source des blessures, sorte de maîtrise, types de carte, joueur concerné. */
+/**
+ * Valeurs d'une entrée pour `distinct` : source des blessures, sorte de maîtrise, types de carte, joueur concerné, créature
+ * qui attaque.
+ */
 function distinctValues(e: TurnLogEntry, d: NonNullable<TurnLogQuery["distinct"]>): readonly string[] {
   switch (d) {
     case "source":
@@ -107,6 +110,8 @@ function distinctValues(e: TurnLogEntry, d: NonNullable<TurnLogQuery["distinct"]
       const p = subjectOf(e);
       return p ? [p] : [];
     }
+    case "object":
+      return e.e === "attack" && e.id ? [e.id] : [];
   }
 }
 

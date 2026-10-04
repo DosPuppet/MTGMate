@@ -288,12 +288,11 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Ronin, Shadow Stalker": {
     abilities: [
-      // Approximation : le mana paie aussi les autres capacités des Équipements, pas seulement « Équiper ».
       manaAbility(["W", "U", "B", "R", "G"], 2, {
         noTap: true,
         payLife: 2,
         oncePerTurn: true,
-        restriction: { spell: { subtype: "Equipment" }, abilityOfSource: { subtype: "Equipment" } },
+        restriction: { spell: { subtype: "Equipment" }, ability: ["equip"] },
       }),
       activated({
         tap: true,

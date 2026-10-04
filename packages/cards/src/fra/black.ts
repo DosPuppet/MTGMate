@@ -266,12 +266,8 @@ export const BLACK: Record<string, CardScript> = {
           label: "1 blessure, +1 PV",
         },
       ),
-      // Approximation : les blessures non de combat infligées par vos sources.
-      triggered(
-        when.dealsDamage("self", { noncombatOnly: true, toOpponent: true, anySourceYouControl: true }),
-        [fx.addCounters(ref.self, 1)],
-        { label: "marqueur +1/+1" },
-      ),
+      // Blessures non de combat infligées à un adversaire par toute source.
+      triggered(when.playerDealtDamage("opponent", false), [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
     ],
   },
   "Teyo, Diamondblade Mage": {

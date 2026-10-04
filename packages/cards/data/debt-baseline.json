@@ -206,7 +206,8 @@
     "sorceryTiming": "Teferi, Mage of Zhalfir : restriction de lancer au moment d'un rituel (famille D, castLimit)",
     "sacrificeReduce": "Cresting Mosasaurus : émerger (702.119), coût alternatif payé par un sacrifice qui le réduit (altCost.pay)",
     "sourceSubtype": "Hunting Velociraptor : rôder (702.76), sous-type de la source des blessures au journal du tour",
-    "forNonOwners": "Ian Malcolm, Chaotician : permission de jouer donnée à chaque joueur autre que le propriétaire (grantPlay, famille C)"
+    "forNonOwners": "Ian Malcolm, Chaotician : permission de jouer donnée à chaque joueur autre que le propriétaire (grantPlay, famille C)",
+    "withWarp": "Blade of the Swarm — cible « carte exilée avec la distorsion » (une carte qui a la distorsion) ; Close Encounter, qui l'utilisait, lit `warped` (carte exilée par la distorsion, PLAN-A A3) : à réutiliser pour toute carte exilée « avec la distorsion »"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -238,7 +239,7 @@
     "Effect": 152,
     "Effect (champs)": 628,
     "TriggerSpec": 60,
-    "TriggerSpec (champs)": 159,
+    "TriggerSpec (champs)": 160,
     "Condition": 52,
     "Condition (champs)": 96,
     "Amount": 31,
@@ -290,6 +291,7 @@
     "PLAN-G G4e (exil et copies) : copyToken.for (Fractured Identity), discover.filter (cascade légendaire de Jodah) : Effect (champs) 625 → 627",
     "PLAN-G G4e (dernières cartes) : défausser X cartes en coût (CostDef.discardX, Gix), grantPlay.forNonOwners (Ian Malcolm), attach.random (Maddening Hex) : CostDef 33 → 34, Effect (champs) 627 → 629",
     "PLAN-G G4e (dernières cartes 2) : phasing (PlayerState.phasedOut, Robe of Stars) ; joueur qui choisit ou paie (chooseOption.who, payX.who : Expropriate, Plague of Vermin) : PlayerState 21 → 22, Effect 152 → 153, Effect (champs) 629 → 633",
-    "PLAN-A A1 : removeCounterFromEach retiré (Dyadrine choisit ses créatures) : Effect 153 → 152, Effect (champs) 633 → 628"
+    "PLAN-A A1 : removeCounterFromEach retiré (Dyadrine choisit ses créatures) : Effect 153 → 152, Effect (champs) 633 → 628",
+    "PLAN-A A3 : « un joueur subit des blessures » de toute source (isDealtDamage.who \"you\" | \"opponent\", combat : Master of Barbs, Massacre Girl, Most Wanted, Contested Game Ball) : TriggerSpec (champs) 159 → 160"
   ]
 }

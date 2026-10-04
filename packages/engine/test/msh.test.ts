@@ -1897,6 +1897,20 @@ describe("lot A, noir", () => {
         expect(t.objects[idOf(t, "p1", "battlefield", "Stolen Stark Tech")]?.attachedTo).toBe(ronin);
       });
 
+      it("son mana paie « Équiper », pas une autre capacité d'un Équipement", () => {
+        let s = scenario({ p1: { battlefield: ["Ronin, Shadow Stalker", "Iron Man Armor"] } });
+        const ronin = idOf(s, "p1", "battlefield", "Ronin, Shadow Stalker");
+        const armor = idOf(s, "p1", "battlefield", "Iron Man Armor");
+        // Iron Man Armor : « {2} : … devient une créature » ne se paie pas avec le mana de Ronin.
+        const labels = legalActions(s, "p1")
+          .filter((a) => a.type === "activate" && a.source === armor)
+          .map((a) => (a.type === "activate" ? a.label : ""));
+        expect(labels).toEqual([expect.stringMatching(/Équiper/)]);
+        s = settle(activate(s, "p1", armor, { targets: { t: [ronin] } }, /Équiper/));
+        expect(s.objects[armor]?.attachedTo).toBe(ronin);
+        expect(s.players.p1?.life).toBe(18);
+      });
+
       it("{T}, sacrifiez un Équipement attaché à Ronin : une créature ciblée a −4/−4", () => {
         let s = scenario({
           p1: { battlefield: ["Ronin, Shadow Stalker", "Stolen Stark Tech", "Stolen Stark Tech"] },

@@ -373,8 +373,8 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Rowdy Research": {
-    // {1} de moins par créature qui a attaqué ce tour-ci (toutes les attaques du journal du tour).
-    costReduction: { generic: amount.turnEvents({ event: "attack" }) },
+    // {1} de moins par créature qui a attaqué ce tour-ci (créatures différentes du journal du tour).
+    costReduction: { generic: amount.turnEvents({ event: "attack", distinct: "object" }) },
     spell: spell([], [fx.draw(3)]),
   },
   "Extraordinary Journey": {

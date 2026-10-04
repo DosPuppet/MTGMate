@@ -60,8 +60,7 @@ export const RED: Record<string, CardScript> = {
   "Freya Crescent": {
     abilities: [
       staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "Saut : vol pendant votre tour" }),
-      // Approximation : le mana sert à toute capacité d'un Équipement (et pas seulement à Équiper).
-      manaAbility("R", 1, { restriction: { spell: { subtype: "Equipment" }, abilityOfSource: { subtype: "Equipment" } } }),
+      manaAbility("R", 1, { restriction: { spell: { subtype: "Equipment" }, ability: ["equip"] } }),
     ],
   },
   "Haste Magic": {

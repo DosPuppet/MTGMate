@@ -55,7 +55,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
   - `choix auto` Curator of Destinies : en multijoueur, c'est l'adversaire suivant qui choisit la pile.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
-  - `règle` Freya Crescent : son mana sert à toute capacité d'un Équipement, pas seulement à Équiper ;
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
   - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
   - `règle` Garnet, Princess of Alexandria : un marqueur de savoir de chacune de vos Sagas, ou d'aucune ;
@@ -88,7 +87,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Gene Pollinator : le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana) ;
   - `règle` The Endstone : « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV) ;
   - `règle` The Dominion Bracelet : la capacité accordée à la créature équipée est portée par l'Équipement (comme Fishing Pole) ;
-  - `règle` Close Encounter : la créature ou la carte exilée « choisie » est une cible ;
   - `règle` Chorale of the Void : la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
   - `règle` Rite of Renewal : les cartes mélangées viennent d'un même cimetière, et vont dans la bibliothèque de leur propriétaire, que ce soit ou non le joueur ciblé ;
@@ -101,7 +99,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Duskmourn (`docs/extensions/dsk.md`) :**
   - `règle` Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
   - `règle` Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
-  - `choix auto` Monstrous Emergence : la créature ou la carte de la main de plus grande force est choisie par le moteur ;
   - `règle` Kaito (Monstrous Emergence) : en multijoueur, il attaque le joueur qu'attaque une de vos créatures ;
   - `règle` « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ;
   - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
@@ -110,11 +107,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` conditions non vérifiées : l'attaque d'un joueur (Dollmaker's Shop : une créature non-Jouet qui attaque un planeswalker ou une bataille compte aussi), la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
   - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
   - `règle` Leyline of Transformation : seulement les créatures sur le champ de bataille (pas les sorts ni les cartes) ;
-  - `règle` Smoky Lounge : le {R}{R} est une capacité de mana utilisable pendant votre première phase principale (et non ajouté au début de celle-ci) ;
   - `choix auto` Say Its Name : Altanak est cherché dans le cimetière, puis la main, puis la bibliothèque ;
   - `règle` Marvin, Murderous Mimic : seulement les capacités activées imprimées des autres créatures (pas celles accordées) ;
   - `choix auto` Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R} ;
-  - `règle` Creeping Peeper : tout sort d'enchantement, toute capacité d'une Salle ou d'un permanent face cachée ;
   - `règle` Turn Inside Out : un emblème temporaire, lié à la créature, porte « quand elle meurt ce tour-ci ».
 - **Bloomburrow (`docs/extensions/blb.md`) :**
   - `choix auto` Cadeau : il va à l'adversaire suivant dans l'ordre du tour (pas de choix de l'adversaire en multijoueur) ;
@@ -138,13 +133,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Kitesail Larcenist : jusqu'à deux cibles contrôlées par des joueurs différents ;
   - `règle` Locus of Enlightenment : les capacités gagnées ne sont pas limitées à une activation par tour ;
   - `règle` The Skullspore Nexus : un jeton par créature mourante (et non un seul pour le lot) ; Ojer Kaslem : jusqu'à deux cartes parmi les créatures et terrains révélés ;
-  - `règle` Contested Game Ball : se déclenche aux blessures de combat d'une créature adverse à un joueur quelconque ;
   - `règle` Echoing Deeps : devient une copie du terrain (et s'engage) par une capacité déclenchée d'arrivée, et non en arrivant ;
   - `règle` Temple of the Dead : « un joueur a une carte ou moins en main » est vérifié pour vous et vos adversaires ;
   - `règle` Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix.
 - **Reality Fracture (`docs/extensions/fra.md`) :**
   - `choix auto` Theorist's Sanctum : on contemple un Jace en arrivant dès que c'est possible, sans révéler la carte ;
-  - `règle` Master of Barbs, Massacre Girl, Most Wanted : seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse ;
   - `règle` Extrapolate the Impossible : ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu ») ;
   - `règle` Garruk, Veiled Butcher −3 : pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur) ;
   - `règle` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 : emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez » ;
@@ -186,7 +179,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
   - `choix auto` Discerning Financier : « un autre joueur » est le premier adversaire ;
   - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
-  - `règle` Rowdy Research, Witchstalker Frenzy : une créature qui attaque lors de deux combats compte deux fois ;
   - `règle` Virtue of Strength : « trois fois plus de mana » est « deux mana de plus » (exact pour un terrain de base qui produit un mana) ;
   - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
   - `timing` Feral Encounter : « au début de la prochaine phase de combat de ce tour » passe par un emblème du tour ;
@@ -222,7 +214,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Worldsoul's Rage : les terrains sont pris dans la main, puis dans le cimetière ;
   - `règle` Rakdos, Patron of Chaos : un adversaire qui accepte sacrifie ce qu'il peut, et vous piochez quand même ;
   - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée) ;
-  - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ; le mana sert aussi aux capacités des créatures face cachée ;
+  - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ;
   - `règle` Officious Interrogation : au plus huit joueurs ciblés ;
   - `choix auto` Hedge Whisperer : elle reste engagée pendant votre étape de dégagement tant que son effet (le terrain 5/5) dure, et se dégage sinon ;
   - `règle` Kaya, Spirits' Justice : une capacité par carte exilée (et non une pour « une ou plusieurs » cartes) ; « les cartes de créature que vous possédez » dans un cimetière sont celles du vôtre ;
@@ -255,7 +247,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Crowd of True Believers : « attaque seule » demande que la créature attaque un joueur ;
   - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
-  - `règle` Ronin, Shadow Stalker : le mana restreint paie aussi les autres capacités d'un Équipement, pas seulement « Équiper » ;
   - `règle` Travail d'équipe (Widow's Bite, HULK SMASH!, Go Nuts!, Atlantis Attacks, Murdock's Crusade) : payé, il permet de choisir les deux modes, mais un seul mode reste permis (l'Oracle impose les deux) ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
   - `règle` The Thing, Ben Grimm : « blessent un joueur » se lit « blessent un adversaire » ;

@@ -336,8 +336,11 @@ export const RECORD_VERSION = 1;
  * - 125 : un permanent exilé ou renvoyé en coût additionnel n'ajoute plus son remplacement de mana au paiement proposé
  *   (Champion of the Path, Lavaleaper) ; une créature qui doit attaquer mais ne peut attaquer aucun défenseur n'y est
  *   plus obligée (The Void, Storm, Windrider).
+ * - 126 : familles génériques (A3c) : attaquants distincts au journal du tour, mana restreint à une sorte de capacité
+ *   (équiper, déverrouiller, retourner…), objet contemplé lisible après le coût, « vous / un adversaire subit des
+ *   blessures » de toute source.
  */
-export const RULES_VERSION = 125;
+export const RULES_VERSION = 126;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

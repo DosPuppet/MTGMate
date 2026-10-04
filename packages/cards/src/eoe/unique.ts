@@ -192,25 +192,9 @@ export const UNIQUE: Record<string, CardScript> = {
 
   // --- Vert ------------------------------------------------------------------
   "Close Encounter": {
-    spell: modal(
-      mode(
-        "Force d'une créature que vous contrôlez",
-        [target.creature("c", { controller: "you" }), target.creature("t")],
-        [fx.damage(amount.powerOf(ref.target("c")), ref.target("t"))],
-      ),
-      mode(
-        "Force d'une carte de créature exilée avec la distorsion",
-        [
-          {
-            id: "c",
-            label: "carte de créature exilée avec la distorsion",
-            filter: { exiled: { withWarp: true, own: true, filter: CREATURES } },
-          },
-          target.creature("t"),
-        ],
-        [fx.damage(amount.powerOf(ref.target("c")), ref.target("t"))],
-      ),
-    ),
+    // Coût additionnel : une créature que vous contrôlez ou une carte de créature distordue que vous possédez en exil.
+    additionalCost: { behold: { filter: CREATURES, required: true, exiled: { warped: true, own: true, filter: CREATURES } } },
+    spell: spell([target.creature("t")], [fx.damage(amount.powerOf(ref.cost("beheld")), ref.target("t"))]),
   },
   "Famished Worldsire": {
     abilities: [

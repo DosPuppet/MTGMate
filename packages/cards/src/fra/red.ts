@@ -67,12 +67,11 @@ export const RED: Record<string, CardScript> = {
   },
   "Master of Barbs": {
     abilities: [
-      // Approximation : les blessures non de combat infligées par vos sources (sorts compris).
-      triggered(
-        when.dealsDamage("self", { noncombatOnly: true, toOpponent: true, anySourceYouControl: true }),
-        [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0)],
-        { label: "+1/+0 à vos créatures" },
-      ),
+      // « Un ou plusieurs adversaires » : un déclenchement par lot de blessures non de combat, de toute source.
+      triggered(when.playerDealtDamage("opponent", false), [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0)], {
+        batched: true,
+        label: "+1/+0 à vos créatures",
+      }),
     ],
   },
   "Skilled Battlecarver": {

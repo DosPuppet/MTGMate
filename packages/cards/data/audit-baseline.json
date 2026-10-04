@@ -1,7 +1,6 @@
 {
  "Assimilation Aegis | triggered | Assimilation Aegis : 2 dans le texte, 1 dans le script": "copie tant qu'il reste attaché : modélisée par une statique (copyLinkedExile)",
  "Eriette, the Beguiler | triggered | Eriette, the Beguiler : 1 dans le texte, 0 dans le script": "vol de contrôle tant que l'Aura reste attachée : statique de joueur auraStealsCheaper ; le contrôle dépend aussi de la présence d'Eriette (sa perte rend les permanents volés, une nouvelle Eriette vole rétroactivement ; PLAN-C, lot C12)",
- "Smoky Lounge // Misty Salon | triggered | Smoky Lounge : 1 dans le texte, 0 dans le script": "approximation documentée : capacité de mana utilisable pendant la première phase principale",
  "Ultima, Origin of Oblivion | triggered | Ultima, Origin of Oblivion : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée ({C} en plus) : remplacement de mana (R1, famille I)",
  "Lavaleaper | triggered | Lavaleaper : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus) : remplacement de mana (R1, famille I)",
  "Shimmerwilds Growth | triggered | Shimmerwilds Growth : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de la couleur choisie) : remplacement de mana (R1, famille I)",

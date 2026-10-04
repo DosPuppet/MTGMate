@@ -24,6 +24,7 @@ import { type ActiveReplacement, eventReplacements, playerSide } from "./statics
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
+  AbilityKind,
   GameObject,
   GameState,
   LkiSnapshot,
@@ -275,6 +276,8 @@ export interface ManaPurpose {
   spell?: LkiSnapshot;
   /** Capacité activée : sa source. */
   abilitySource?: ObjectId;
+  /** Capacité activée : ses sortes (Équiper, déverrouiller une porte, retourner face visible…). */
+  abilityKinds?: readonly AbilityKind[];
   /** Convocation (702.51) : les créatures dégagées peuvent payer {1} ou un mana de leur couleur. */
   convoke?: boolean;
   /** Cave (702.66, Teval) : chaque carte exilée de votre cimetière paie {1}. */
@@ -363,6 +366,7 @@ function allows(
   if (r.notSpellFromHand) return !!purpose.abilitySource || (!!purpose.spell && !purpose.fromHand);
   if (r.spellNotFromHand) return !!purpose.spell && !purpose.fromHand;
   if (r.spell && purpose.spell && matchesView(purpose.spell, withChosen(r.spell, o), player, sourceId)) return true;
+  if (r.ability && purpose.abilityKinds?.some((k) => r.ability?.includes(k))) return true;
   const src = purpose.abilitySource;
   if (r.abilityOfSource && src && s.objects[src]) {
     return matchesView(snapshot(s, src), withChosen(r.abilityOfSource, o), player, sourceId);

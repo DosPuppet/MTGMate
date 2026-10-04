@@ -396,6 +396,11 @@ export interface CostPaid {
   exiled?: ObjectId[];
   /** Permanents engagés (station). */
   tapped?: ObjectId[];
+  /**
+   * Permanent choisi ou carte révélée pour contempler (Monstrous Emergence : « la créature choisie ou la carte révélée »),
+   * ou carte exilée choisie (Close Encounter).
+   */
+  beheld?: ObjectId[];
 }
 
 /**
@@ -546,9 +551,10 @@ export interface TurnLogQuery {
   /**
    * Le nombre de valeurs différentes parmi les entrées : sources des blessures (Case of the Burning Masks), sortes de
    * maîtrise (Avatar Aang), types de carte (April O'Neil : « chaque type parmi les sorts lancés »), joueurs concernés
-   * (Kaito : « adversaires qui ont perdu des points de vie »).
+   * (Kaito : « adversaires qui ont perdu des points de vie »), objets (attaques : « chaque créature qui a attaqué ce
+   * tour-ci », une créature qui attaque lors de deux combats compte une fois).
    */
-  distinct?: "source" | "kind" | "type" | "player";
+  distinct?: "source" | "kind" | "type" | "player" | "object";
 }
 
 export interface CombatState {

@@ -12,6 +12,7 @@ import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { spellCost } from "../src/stack";
 import { chars, setPrepared } from "../src/state";
+import { simultaneously } from "../src/triggers";
 import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import {
@@ -1291,6 +1292,27 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       expect(pt(s, master)).toEqual([3, 1]);
     });
 
+    it("Master of Barbs : de toute source (même adverse) ; un déclenchement par lot d'adversaires blessés ; pas au combat", () => {
+      let s = scenario({ players: 3, p1: { battlefield: ["Master of Barbs"] }, p2: { battlefield: ["Bear Cub"] } });
+      const master = idOf(s, "p1", "battlefield", "Master of Barbs");
+      const cub = sourceFromObject(s, idOf(s, "p2", "battlefield", "Bear Cub"));
+      // Une source de l'adversaire lui inflige des blessures non de combat.
+      dealDamage(s, cub, "p2", 1, false);
+      s = resolve(s);
+      expect(pt(s, master)).toEqual([3, 1]);
+      // Deux adversaires blessés en même temps : un seul déclenchement.
+      simultaneously(s, () => {
+        dealDamage(s, cub, "p2", 1, false);
+        dealDamage(s, cub, "p3", 1, false);
+      });
+      s = resolve(s);
+      expect(pt(s, master)).toEqual([4, 1]);
+      // Blessures de combat, ou blessures non de combat à vous : rien.
+      dealDamage(s, cub, "p2", 1, true);
+      dealDamage(s, cub, "p1", 1, false);
+      expect(s.triggers).toHaveLength(0);
+    });
+
     it("Null Summoner : lancée, exile une carte non-terrain de la main adverse ; avec le seuil, vous pouvez la lancer avec du mana de tout type", () => {
       const run = (grave: number) => {
         let s = scenario({
@@ -2300,6 +2322,23 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       expect([life(s, "p1"), life(s, "p2")]).toEqual([21, 19]);
       // La blessure de sa propre capacité est non de combat : un marqueur.
       expect(counters(s, girl)).toBe(1);
+    });
+
+    it("Massacre Girl, Most Wanted : un adversaire subit des blessures non de combat de toute source, un marqueur par événement", () => {
+      let s = scenario({ players: 3, p1: { battlefield: ["Massacre Girl, Most Wanted"] }, p2: { battlefield: ["Bear Cub"] } });
+      const girl = idOf(s, "p1", "battlefield", "Massacre Girl, Most Wanted");
+      const cub = sourceFromObject(s, idOf(s, "p2", "battlefield", "Bear Cub"));
+      // Une source adverse, deux adversaires blessés : deux marqueurs.
+      simultaneously(s, () => {
+        dealDamage(s, cub, "p2", 1, false);
+        dealDamage(s, cub, "p3", 1, false);
+      });
+      s = resolve(s);
+      expect(counters(s, girl)).toBe(2);
+      // Blessures de combat à un adversaire, ou blessures non de combat à vous : rien.
+      dealDamage(s, cub, "p2", 1, true);
+      dealDamage(s, cub, "p1", 1, false);
+      expect(s.triggers).toHaveLength(0);
     });
 
     it("Mind Meanderer : vol ; vigilance tant que vous contrôlez un planeswalker Jace ; à l'arrivée, se bat contre une créature adverse", () => {

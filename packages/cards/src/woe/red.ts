@@ -379,8 +379,8 @@ export const RED: Record<string, CardScript> = {
     spell: spell([target.upTo(1, yourCreature())], [...mayRummage(2), ...createRole(WICKED_ROLE)]),
   },
   "Witchstalker Frenzy": {
-    // {1} de moins pour chaque créature qui a attaqué ce tour-ci (journal du tour).
-    costReduction: { generic: amount.turnEvents({ event: "attack" }) },
+    // {1} de moins pour chaque créature qui a attaqué ce tour-ci (créatures différentes du journal du tour).
+    costReduction: { generic: amount.turnEvents({ event: "attack", distinct: "object" }) },
     spell: spell([target.creature()], [fx.damage(5, ref.target())]),
   },
   "Decadent Dragon": {
