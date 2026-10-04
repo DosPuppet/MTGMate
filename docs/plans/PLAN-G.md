@@ -321,3 +321,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   « un adversaire joue un terrain ». `RULES_VERSION` 110. Robe of Stars (phasing) reportée au sous-lot difficile.
 - **G4d (04/10/2026) :** 16 Special Guests de SOS et FRA (SPG 114 / 132), sans forme nouvelle. Les 18 cartes SPG
   restantes forment le sous-lot difficile G4e (liste dans `docs/extensions/reeditions.md`).
+- **G5 (04/10/2026) :** 48 cartes d'Enchanting Tales (WOT 49 / 55), sans forme nouvelle. Six cartes vont au sous-lot
+  difficile : Karmic Justice, Phyrexian Unlife, As Foretold, Necropotence, Ground Seal, Shared Animosity.

@@ -369,3 +369,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Eerie Ultimatum : les cartes remises sur le champ de bataille n'ont pas à avoir des noms différents ;
   - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
   - `règle` Magus of the Moon : un terrain non-base devient une Montagne et perd tous ses sous-types (y compris Désert, Grotte…).
+  - `règle` Grasp of Fate : un seul permanent non-terrain adverse est exilé, même avec plusieurs adversaires ;
+  - `règle` Fraying Sanity : le nombre de cartes compte celles mises dans le cimetière des adversaires du contrôleur de l'Aura (exact en duel) ;
+  - `règle` Raid Bombardment : la blessure va au joueur défenseur, même si la créature attaque un planeswalker.

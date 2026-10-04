@@ -143,3 +143,22 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   Robe of Stars (phasing), Painter's Servant (couleur de toutes les cartes), Thousand-Year Elixir (capacités comme avec la
   célérité), Grim Haruspex (mue), Sylvan Library (cartes piochées ce tour-ci), Codie (exil jusqu'à un sort), Library of
   Leng (défausse remplacée), Consign to Memory (réplique), Necrodominance (pioche sautée, vie payée).
+
+## G5 — Enchanting Tales ✅ (48 cartes ; WOT 49 / 55)
+
+- **Cartes :** Dawn of Hope, Grasp of Fate, Greater Auramancy, Griffin Aerie, Intangible Virtue, Knightly Valor, Land
+  Tax, Leyline of Sanctity, Smothering Tithe, Compulsion, Copy Enchantment, Curiosity, Forced Fruition, Fraying Sanity,
+  Hatching Plans, Intruder Alarm, Kindred Discovery, Leyline of Anticipation, Rhystic Study, Spreading Seas, Dark
+  Tutelage, Grave Pact, Oppression, Oversold Cemetery, Polluted Bonds, Sanguine Bond, Stab Wound, Waste Not, Aggravated
+  Assault, Blood Moon, Dragon Mantle, Fiery Emancipation, Goblin Bombardment, Leyline of Lightning, Mana Flare, Raid
+  Bombardment, Repercussion, Sneak Attack, Defense of the Heart, Hardened Scales, Leyline of Abundance, Nature's Will,
+  Parallel Lives, Primal Vigor, Prismatic Omen, Season of Growth, Unnatural Growth, Utopia Sprawl. Aucune forme nouvelle.
+- **Tests :** `wot.test.ts` (+21).
+- **Audit :** Mana Flare, Leyline of Abundance, Utopia Sprawl : capacités de mana déclenchées modélisées par un
+  remplacement de mana (écarts voulus).
+- **Approximations :** Grasp of Fate (un seul permanent exilé, même avec plusieurs adversaires) ; Fraying Sanity (les
+  cartes comptées sont celles des adversaires du contrôleur) ; Raid Bombardment (la blessure va au joueur défenseur, même
+  si la créature attaque un planeswalker).
+- **Sous-lot difficile :** Karmic Justice (destruction par un adversaire), Phyrexian Unlife (défaite et infection à 0 PV),
+  As Foretold (coût alternatif selon les marqueurs, une fois par tour), Necropotence (pioche sautée, exil face cachée),
+  Ground Seal (cartes des cimetières non ciblables), Shared Animosity (créatures qui partagent un type).

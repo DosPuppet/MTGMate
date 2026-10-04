@@ -33,5 +33,8 @@
  "Too Evil to Stay Dead | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
  "The Eagles Are Coming! | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
  "Officious Interrogation | target | 2 « target » dans le texte, 1 dans le script": "« for each target beyond the first » : mention du nombre de cibles, pas une cible",
- "Mistbind Clique | static | Mistbind Clique : 1 dans le texte, 0 dans le script": "« quand une Fée est championnée » : la fin de la capacité déclenchée de champion (réflexive), lue comme une statique"
+ "Mistbind Clique | static | Mistbind Clique : 1 dans le texte, 0 dans le script": "« quand une Fée est championnée » : la fin de la capacité déclenchée de champion (réflexive), lue comme une statique",
+ "Mana Flare | triggered | Mana Flare : 1 dans le texte, 0 dans le script": "capacité déclenchée de mana (605.1b, « chaque fois que … est engagé pour du mana, ajoutez … ») modélisée par un remplacement de mana (eventReplacement « mana »), comme Shimmerwilds Growth",
+ "Leyline of Abundance | triggered | Leyline of Abundance : 1 dans le texte, 0 dans le script": "capacité déclenchée de mana (605.1b, « chaque fois que … est engagé pour du mana, ajoutez … ») modélisée par un remplacement de mana (eventReplacement « mana »), comme Shimmerwilds Growth",
+ "Utopia Sprawl | triggered | Utopia Sprawl : 1 dans le texte, 0 dans le script": "capacité déclenchée de mana (605.1b, « chaque fois que … est engagé pour du mana, ajoutez … ») modélisée par un remplacement de mana (eventReplacement « mana »), comme Shimmerwilds Growth"
 }
