@@ -1,5 +1,5 @@
 /** Jurassic World Collection (REX) : scripts des cartes (PLAN-G). */
-import type { Effect } from "@mtgx/engine";
+import type { Effect, Keyword } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -25,6 +25,22 @@ const partnerWith = (name: string) =>
     fx.mayFor(ref.target("p"), `Chercher ${name} ?`, fx.search({ name }, { to: "hand" }, 1, ref.target("p"))),
     { targets: [target.player("p")], label: `Partenaire avec ${name}` },
   );
+
+/** Indominus Rex, Alpha : les capacités qui donnent un marqueur (702.xx, marqueurs de mot-clé). */
+const INDOMINUS_KEYWORDS: Keyword[] = [
+  "flying",
+  "firstStrike",
+  "doubleStrike",
+  "deathtouch",
+  "hexproof",
+  "haste",
+  "indestructible",
+  "lifelink",
+  "menace",
+  "reach",
+  "trample",
+  "vigilance",
+];
 
 export const CARDS: Record<string, CardScript> = {
   "Don't Move": {
@@ -299,6 +315,37 @@ export const CARDS: Record<string, CardScript> = {
         effects: [fx.copyToken(ref.target(), { pt: 6, setColors: ["G"], setSubtypes: ["Dinosaur"], addKeywords: ["trample"] })],
         label: "{6} : un jeton copie, sauf que c'est un Dinosaure vert 6/6 avec le piétinement (rituel)",
       }),
+    ],
+  },
+  "Ian Malcolm, Chaotician": {
+    abilities: [
+      triggered(
+        { on: "draw", whose: "any", nth: 2 },
+        [
+          fx.exileTop(ref.eventPlayer, 1, "i"),
+          fx.link(ref.stored("i")),
+          fx.grantPlay(ref.stored("i"), { forever: true, anyMana: true, forNonOwners: true, condition: cond.yourTurn }),
+        ],
+        { label: "Un joueur pioche sa deuxième carte du tour : il exile la carte du dessus de sa bibliothèque" },
+      ),
+    ],
+  },
+  "Indominus Rex, Alpha": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.discard(99, ref.you, { filter: { types: ["Creature"] }, optional: true, store: "d" }),
+          ...INDOMINUS_KEYWORDS.flatMap((k) =>
+            fx.when(
+              cond.amountAtLeast(amount.refCount(ref.filtered(ref.stored("d"), { keyword: k })), 1),
+              fx.counters(ref.self, k),
+              fx.draw(1),
+            ),
+          ),
+        ],
+        { label: "Arrivée : défaussez des cartes de créature ; un marqueur par capacité trouvée, et piochez pour chacun" },
+      ),
     ],
   },
 };

@@ -400,3 +400,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Necrodominance : la taille de main maximale la plus petite s'applique (et non la plus récente).
   - `règle` Unlicensed Hearse : les deux cartes peuvent venir de cimetières différents ;
   - `règle` Indomitable Creativity : le joueur qui révèle est le propriétaire de chaque permanent détruit (son contrôleur s'il diffère, en multijoueur avec un permanent volé).
+  - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;
+  - `règle` Painter's Servant : seuls les permanents prennent la couleur choisie (pas les sorts ni les cartes des autres zones) ;
+  - `règle` Sylvan Library : les deux cartes remises peuvent être n'importe quelles cartes de la main (pas seulement celles piochées ce tour-ci) ;
+  - `règle` Indominus Rex, Alpha : la défausse et les marqueurs viennent d'une capacité d'arrivée (pas « en arrivant ») ; seule une carte est piochée par marqueur de mot-clé ;
+  - `règle` Maddening Hex : l'adversaire « choisi au hasard » est tiré parmi les autres adversaires du contrôleur.

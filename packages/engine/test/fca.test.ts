@@ -13,6 +13,7 @@ import {
   attack,
   castNowOf,
   customCard,
+  exiled,
   idOf,
   idsOf,
   lands,
@@ -387,6 +388,27 @@ describe("Through the Ages", () => {
       const forest = s.players.p1?.library[0] as string;
       s = act(s, "p1", { type: "playLand", card: forest });
       expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+    });
+  });
+  describe("G4e : dernières cartes", () => {
+    it("Gix, Yawgmoth Praetor : blessures de combat à un adversaire, 1 PV pour piocher ; défaussez X, jouez X cartes adverses", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Gix, Yawgmoth Praetor", "Bear Cub", ...lands("Swamp", 7)],
+          hand: ["Forest", "Island"],
+          library: lands("Plains", 3),
+        },
+        p2: { library: ["Shock", "Bear Cub", "Forest"] },
+      });
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]), (req) => (req.type === "yesNo" ? [1] : undefined));
+      expect(s.players.p1?.life).toBe(19);
+      expect(s.players.p1?.hand).toHaveLength(3);
+      const gix = idOf(s, "p1", "battlefield", "Gix, Yawgmoth Praetor");
+      s = settle(act(s, "p1", { type: "activate", source: gix, ability: 1, x: 2, targets: { t: ["p2"] } }));
+      expect(s.players.p1?.hand).toHaveLength(1);
+      const shock = exiled(s, "Shock")[0] as string;
+      s = settle(act(s, "p1", { type: "cast", card: shock, targets: { t: ["p2"] } }));
+      expect(s.players.p2?.life).toBe(16);
     });
   });
 });

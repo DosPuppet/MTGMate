@@ -279,3 +279,9 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   bibliothèque, PV égaux à la VM). « Entre zéro et N cibles » (`minCount: 0`) accepte aucune cible (fuzz strict, test dans
   `offers.test.ts`). Le test d'informations cachées sait qu'un joueur qui contrôle un permanent face cachée le connaît
   (708.5). Tests : `otp`, `rex`, `fca` (+7). `RULES_VERSION` 119.
+- **Dernières cartes (1) ✅ :** « défaussez X cartes » en coût (`CostDef.discardX`, Gix, Yawgmoth Praetor) ;
+  `grantPlay({ forNonOwners })` (Ian Malcolm, Chaotician) ; Aura de joueur rattachée au hasard (`fx.attachRandom`,
+  `canAttach` accepte un joueur ; Maddening Hex) ; `setColorsChosen: "add"` (Painter's Servant, permanents seulement) ;
+  Sylvan Library (deux fois « payez 4 PV ou remettez une carte ») ; Indominus Rex (marqueurs de mot-clé par une capacité
+  d'arrivée). Le coût alternatif ne compte plus le mana des permanents qu'il renvoie ou sacrifie (fuzz strict, émerger).
+  Tests : `fca`, `spg`, `rex` (+6), `offers` (+1). `RULES_VERSION` 120.

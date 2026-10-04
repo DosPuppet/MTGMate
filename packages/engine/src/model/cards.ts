@@ -600,6 +600,8 @@ export interface CostDef {
   exileFromGraveyardX?: ObjectFilter;
   /** Sacrifier X permanents correspondants, X ≥ 1 (Radiant Lotus ; choisis automatiquement, la source en dernier). */
   sacrificeX?: ObjectFilter;
+  /** « Défaussez X cartes » (Gix, Yawgmoth Praetor) : X choisi, les cartes choisies par le joueur ou automatiquement. */
+  discardX?: boolean;
   /** Exiler d'autres cartes de votre cimetière (choisies automatiquement : Gallia). */
   exileFromGraveyard?: { filter: ObjectFilter; count: number };
   /** Mettre des marqueurs sur la source (Mazemind Tome : marqueur de page). */
@@ -714,8 +716,11 @@ export interface LayerMods {
   setName?: string;
   /** Couche 5 : couleurs remplacées ; `addColors` : « en plus de ses autres couleurs ». */
   setColors?: Color[];
-  /** « Le terrain enchanté est de la couleur choisie » (Shimmerwilds Growth) : la couleur choisie par la source. */
-  setColorsChosen?: boolean;
+  /**
+   * « Le terrain enchanté est de la couleur choisie » (Shimmerwilds Growth) : la couleur choisie par la source ; `"add"` :
+   * « en plus de ses autres couleurs » (Painter's Servant).
+   */
+  setColorsChosen?: boolean | "add";
   addColors?: Color[];
   /** Couche 4 : a tous les types de créature (Soulstone Sanctuary, changelin). */
   allCreatureTypes?: boolean;

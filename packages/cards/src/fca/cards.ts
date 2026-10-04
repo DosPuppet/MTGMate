@@ -636,4 +636,25 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Gix, Yawgmoth Praetor": {
+    abilities: [
+      triggered(
+        { on: "dealsCombatDamage", who: { types: ["Creature"] }, toOpponent: true },
+        fx.mayFor(
+          ref.controllerOf(ref.eventObject),
+          "Payer 1 PV pour piocher une carte ?",
+          fx.loseLife(1, ref.controllerOf(ref.eventObject)),
+          fx.draw(1, ref.controllerOf(ref.eventObject)),
+        ),
+        { label: "Une créature blesse un de vos adversaires : son contrôleur peut payer 1 PV et piocher" },
+      ),
+      activated({
+        mana: "{4}{B}{B}{B}",
+        discardX: true,
+        targets: [target.player("t", "opponent")],
+        effects: [fx.exileTop(ref.target(), amount.x, "g"), fx.grantPlay(ref.stored("g"), { free: true, forever: true })],
+        label: "{4}{B}{B}{B}, défaussez X cartes : exilez les X cartes du dessus de l'adversaire ; jouez-les sans payer",
+      }),
+    ],
+  },
 };

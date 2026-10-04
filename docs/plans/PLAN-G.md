@@ -347,3 +347,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   Thief, Grindstone, Ad Nauseam, Atraxa, Carpet of Flowers, Trouble in Pairs. `RULES_VERSION` 118.
 - **G4e, exil et copies (04/10/2026) :** Fractured Identity, Unlicensed Hearse, Indomitable Creativity, Dino DNA, Winota,
   Jodah, Bolas's Citadel. `RULES_VERSION` 119.
+- **G4e, dernières cartes (1) (04/10/2026) :** Gix, Ian Malcolm, Maddening Hex, Painter's Servant, Sylvan Library,
+  Indominus Rex. `RULES_VERSION` 120.

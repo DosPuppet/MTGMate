@@ -874,6 +874,8 @@ export const fx = {
       untilOwnersNextTurn?: boolean;
       condition?: Condition;
       forOwner?: boolean;
+      /** Chaque joueur autre que le propriétaire de la carte (Ian Malcolm). */
+      forNonOwners?: boolean;
       extraCost?: number;
       landsTapped?: boolean;
       exileAfter?: boolean;
@@ -1220,6 +1222,8 @@ export const fx = {
   exileLibraryButBottom: (who: Ref, keep = 1): Effect => ({ op: "exileTop", who, allBut: keep, faceDown: "nobody" }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
   attach: (to: Ref, what: Ref = ref.self, store?: string): Effect => ({ op: "attach", what, to, store }),
+  /** Attache à un des objets ou joueurs désignés, choisi au hasard (Maddening Hex). */
+  attachRandom: (to: Ref, what: Ref = ref.self): Effect => ({ op: "attach", what, to, random: true }),
   /** « … devient préparé » / « … devient dé-préparé » (Reality Fracture). */
   prepare: (what: Ref, value = true): Effect => ({ op: "prepare", what, value }),
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
@@ -1788,6 +1792,8 @@ export function activated(opts: {
   exileFromGraveyardX?: ObjectFilter;
   /** « Sacrifiez un ou plusieurs [artefacts] » (X ≥ 1). */
   sacrificeX?: ObjectFilter;
+  /** « Défaussez X cartes ». */
+  discardX?: boolean;
   /** « Défaussez N cartes » (`discardFilter` : seulement des cartes correspondantes). */
   discard?: number;
   /** « Défaussez votre main ». */
@@ -1849,6 +1855,7 @@ export function activated(opts: {
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,
+      discardX: opts.discardX,
       removeCountersX: opts.removeCountersX,
       discard: opts.discard,
       ...(opts.discardHand ? { discardHand: true } : {}),

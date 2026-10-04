@@ -27,6 +27,7 @@ import {
   nextTimestamp,
   onBattlefield,
   opponentsOf,
+  random,
   rulesEvent,
   snapshot,
 } from "../state";
@@ -277,7 +278,8 @@ export const HANDLERS: OpHandlers = {
   },
   attach(s, r, e, ctx) {
     // Plusieurs Équipements vers une même créature (Beatrix, Loyal General).
-    const to = resolveRef(s, ctx, e.to)[0];
+    const all = resolveRef(s, ctx, e.to);
+    const to = e.random ? all[Math.floor(random(s) * all.length)] : all[0];
     let n = 0;
     if (to) for (const what of resolveRef(s, ctx, e.what)) if (attach(s, what, to)) n++;
     store(r, e.store, n);

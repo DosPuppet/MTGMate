@@ -214,4 +214,15 @@ describe("options proposées, décisions acceptées", () => {
     s = act(s, "p1", { type: "activate", source, ability: 0, targets: { t: [] } });
     expect(s.stack).toHaveLength(1);
   });
+
+  it("émerger : la créature sacrifiée ne paie pas le mana du coût alternatif (Cresting Mosasaurus)", () => {
+    const alt = (s: GameState) => castOption(s, "p1", idOf(s, "p1", "hand", "Cresting Mosasaurus"))?.altAvailable;
+    // {6}{U} moins 1 (Llanowar Elves) : six mana, sans celui des Elfes sacrifiés.
+    let s = scenario({ p1: { battlefield: [...lands("Island", 5), "Llanowar Elves"], hand: ["Cresting Mosasaurus"] } });
+    expect(alt(s)).toBeFalsy();
+    s = scenario({ p1: { battlefield: [...lands("Island", 6), "Llanowar Elves"], hand: ["Cresting Mosasaurus"] } });
+    expect(alt(s)).toBe(true);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Cresting Mosasaurus"), alternative: true });
+    expect(s.stack).toHaveLength(1);
+  });
 });

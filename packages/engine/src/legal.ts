@@ -454,11 +454,20 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (terms.free && !freePayable()) return;
     const freeAvailable = !sneakOnly && !!terms.freeOptional && freePayable();
     const alt = terms.free ? undefined : altCostFor(s, player, d);
+    // Les permanents renvoyés ou sacrifiés par le coût alternatif (Daze, émerger) ne produisent plus de mana.
+    const altPaid = alt?.pay ? altCostPayment(s, player, card, alt.pay) : undefined;
+    const altGone = [altPaid?.bounce, altPaid?.sacrifice].filter((x): x is string => !!x);
     const altAvailable =
       !!alt &&
       (!alt.collectEvidence || !!evidenceCards(s, player, card, alt.collectEvidence)) &&
-      (!alt.pay || !!altCostPayment(s, player, card, alt.pay)) &&
-      canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
+      (!alt.pay || !!altPaid) &&
+      canPay(
+        s,
+        player,
+        withExtra(spellCost(s, player, d, { ...base, alternative: true })),
+        altGone.length ? new Set([...(exclude ?? []), ...altGone]) : exclude,
+        purpose,
+      );
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
     // Travail d'équipe : les créatures engagées pour le kicker ne paient pas le mana.
     const kickerCrew = d.kickerCost?.tapPower !== undefined ? suggestedCrew(s, player, card, d.kickerCost.tapPower) : [];
@@ -661,11 +670,13 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
                     purpose,
                   ),
               )
-            : ab.cost.exileFromGraveyardX
-              ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
-              : ab.cost.sacrificeX
-                ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
-                : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
+            : ab.cost.discardX
+              ? (s.players[player]?.hand ?? []).filter((c) => c !== id).length
+              : ab.cost.exileFromGraveyardX
+                ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
+                : ab.cost.sacrificeX
+                  ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
+                  : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
       // Krumar Initiate : « payez X points de vie » — X ne dépasse pas les points de vie.
       const xMax = ab.cost.payLifeX && xMax0 !== null ? Math.min(xMax0, Math.max(0, s.players[player]?.life ?? 0)) : xMax0;
       // « X ne peut pas être 0 » (et « sacrifiez X permanents », Radiant Lotus) : proposée seulement si X peut atteindre son

@@ -3122,6 +3122,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     ab.cost.tapX ||
     ab.cost.exileFromGraveyardX ||
     ab.cost.sacrificeX ||
+    ab.cost.discardX ||
     ab.cost.removeCountersX
       ? Math.max(0, Math.floor(choices.x ?? 0))
       : 0;
@@ -3337,6 +3338,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     const chosen = choices.discard?.length ? choices.discard : options.slice(0, ab.cost.discard);
     if (chosen.length !== ab.cost.discard || chosen.some((id) => !options.includes(id)))
       throw new RulesError("Défausse invalide");
+    emit({ type: "discard", player, defIds: chosen.map((id) => obj(s, id).defId) });
+    for (const id of chosen) announceDiscard(s, player, moveDiscarded(s, player, id));
+    announceDiscardBatch(s, player, chosen.length);
+  }
+  // Gix, Yawgmoth Praetor : « défaussez X cartes » (les cartes choisies, sinon les premières proposées).
+  if (ab.cost.discardX && x > 0) {
+    const options = discardCostOptions(s, player, source, undefined);
+    const chosen = choices.discard?.length ? choices.discard : options.slice(0, x);
+    if (chosen.length !== x || chosen.some((id) => !options.includes(id))) throw new RulesError("Défausse invalide");
     emit({ type: "discard", player, defIds: chosen.map((id) => obj(s, id).defId) });
     for (const id of chosen) announceDiscard(s, player, moveDiscarded(s, player, id));
     announceDiscardBatch(s, player, chosen.length);

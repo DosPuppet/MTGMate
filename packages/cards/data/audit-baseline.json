@@ -41,5 +41,7 @@
  "Detention Sphere | triggered | Detention Sphere : 2 dans le texte, 1 dans le script": "exil « jusqu'à ce qu'il quitte le champ de bataille » (610.3) : les deux capacités déclenchées (arrivée, départ) modélisées par exileUntilLeaves",
  "Crackle with Power | target | 0 « target » dans le texte, 1 dans le script": "« each of up to X targets » : une seule cible à nombre variable (countX), que le décompte des mots « target » ne voit pas",
  "Kinnan, Bonder Prodigy | triggered | Kinnan, Bonder Prodigy : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus du même type) : remplacement de mana (R1, famille I), comme Shimmerwilds Growth",
- "Henry Wu, InGen Geneticist | triggered | Henry Wu, InGen Geneticist : 1 dans le texte, 0 dans le script": "« chaque fois qu'une de vos créatures exploite… » : intégré à la capacité d'exploitation que Henry Wu donne à ses Humains"
+ "Henry Wu, InGen Geneticist | triggered | Henry Wu, InGen Geneticist : 1 dans le texte, 0 dans le script": "« chaque fois qu'une de vos créatures exploite… » : intégré à la capacité d'exploitation que Henry Wu donne à ses Humains",
+ "Ian Malcolm, Chaotician | static | Ian Malcolm, Chaotician : 1 dans le texte, 0 dans le script": "la permission « pendant le tour de chaque joueur, lancez une carte que vous ne possédez pas » est posée par la capacité déclenchée (grantPlay forNonOwners)",
+ "Indominus Rex, Alpha | static | Indominus Rex, Alpha : 1 dans le texte, 0 dans le script": "« en arrivant, défaussez… » écrit dans la capacité d'arrivée (marqueurs mis puis cartes piochées), approximation documentée"
 }

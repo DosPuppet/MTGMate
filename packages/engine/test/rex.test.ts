@@ -1,6 +1,6 @@
 /** Jurassic World Collection (REX) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
-import { destroy } from "../src/actions";
+import { destroy, drawCards } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import { canBlock } from "../src/turn";
@@ -214,6 +214,38 @@ describe("Jurassic World Collection", () => {
       const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
       expect(chars(s, token)).toMatchObject({ name: "Bear Cub", power: 6, toughness: 6, colors: ["G"], subtypes: ["Dinosaur"] });
       expect(chars(s, token).keywords).toContain("trample");
+    });
+  });
+  describe("G4e : dernières cartes", () => {
+    it("Ian Malcolm : la deuxième pioche exile la carte du dessus ; les autres joueurs peuvent la lancer pendant leur tour", () => {
+      let s = scenario({
+        p1: { battlefield: ["Ian Malcolm, Chaotician", "Mountain"], library: lands("Island", 3) },
+        p2: { library: ["Forest", "Forest", "Shock"] },
+      });
+      drawCards(s, "p2", 2);
+      s = settle(s);
+      const shock = s.exile.find((id) => nameOf(s, id) === "Shock") as string;
+      expect(shock).toBeDefined();
+      s = settle(act(s, "p1", { type: "cast", card: shock, targets: { t: ["p2"] } }));
+      expect(s.players.p2?.life).toBe(18);
+    });
+
+    it("Indominus Rex : défausse de créatures, un marqueur par capacité trouvée, et une carte piochée pour chacun", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 3), ...lands("Island", 2)],
+          hand: ["Indominus Rex, Alpha", "Shivan Dragon", "Llanowar Elves"],
+          library: lands("Forest", 3),
+        },
+      });
+      const dragon = idOf(s, "p1", "hand", "Shivan Dragon");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Indominus Rex, Alpha") }), (req) =>
+        req.type === "pick" && req.options.includes(dragon) ? [dragon] : undefined,
+      );
+      const rex = idOf(s, "p1", "battlefield", "Indominus Rex, Alpha");
+      expect(s.objects[rex]?.counters.flying).toBe(1);
+      expect(chars(s, rex).keywords).toContain("flying");
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Forest", "Llanowar Elves"]);
     });
   });
 });

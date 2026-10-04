@@ -1267,4 +1267,58 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Maddening Hex": {
+    enchant: { filter: {}, label: "joueur", player: true },
+    abilities: [
+      triggered(
+        { on: "castSpell", by: "any", filter: { notTypes: ["Creature"] } },
+        [
+          fx.rollDie(6, "d"),
+          fx.damage(amount.v("d"), ref.eventPlayer, ref.self),
+          fx.attachRandom(ref.except(ref.eachOpponent, ref.attached)),
+        ],
+        {
+          condition: cond.not(cond.amountAtLeast(amount.refCount(ref.except(ref.eventPlayer, ref.attached)), 1)),
+          label:
+            "Le joueur enchanté lance un sort non-créature : un d6, autant de blessures ; l'Aura passe à un autre adversaire",
+        },
+      ),
+    ],
+  },
+  "Painter's Servant": {
+    chooseOnEnter: "color",
+    abilities: [staticAbility({}, { setColorsChosen: "add" }, { label: "Les permanents sont aussi de la couleur choisie" })],
+  },
+  "Sylvan Library": {
+    abilities: [
+      triggered(
+        when.step("draw"),
+        fx.may(
+          "Piocher deux cartes de plus ?",
+          fx.draw(2),
+          ...fx.unlessPays(
+            ref.you,
+            { life: 4 },
+            fx.pickFromZone(
+              "hand",
+              {},
+              { to: "libraryTop" },
+              { count: 1, min: 1, prompt: "Remettez une carte au-dessus de votre bibliothèque" },
+            ),
+          ),
+          ...fx.unlessPays(
+            ref.you,
+            { life: 4 },
+            fx.pickFromZone(
+              "hand",
+              {},
+              { to: "libraryTop" },
+              { count: 1, min: 1, prompt: "Remettez une carte au-dessus de votre bibliothèque" },
+            ),
+          ),
+        ),
+        { label: "Votre étape de pioche : deux cartes de plus ; pour deux cartes, payez 4 PV ou remettez-la au-dessus" },
+      ),
+    ],
+  },
 };

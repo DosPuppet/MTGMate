@@ -950,4 +950,51 @@ describe("Special Guests", () => {
       expect(s.players.p1?.hand).toHaveLength(2);
     });
   });
+  describe("G4e : dernières cartes", () => {
+    it("Maddening Hex : le joueur enchanté lance un sort non-créature, un d6 et autant de blessures", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Mountain", 3), hand: ["Maddening Hex"] },
+        p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+      });
+      const card = idOf(s, "p1", "hand", "Maddening Hex");
+      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+      const spec = opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.id as string) : "";
+      s = settle(act(s, "p1", { type: "cast", card, targets: { [spec]: ["p2"] } }));
+      const hex = idOf(s, "p1", "battlefield", "Maddening Hex");
+      expect(s.objects[hex]?.attachedTo).toBe("p2");
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } }));
+      const life = s.players.p2?.life ?? 20;
+      expect(life).toBeLessThanOrEqual(19);
+      expect(life).toBeGreaterThanOrEqual(14);
+      // En duel, pas d'autre adversaire : l'Aura reste sur le joueur.
+      expect(s.objects[hex]?.attachedTo).toBe("p2");
+    });
+
+    it("Painter's Servant : les permanents sont aussi de la couleur choisie", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 2), hand: ["Painter's Servant"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Painter's Servant") }), (req) =>
+        req.type === "pick" && req.options.includes("U") ? ["U"] : undefined,
+      );
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      const color = s.objects[idOf(s, "p1", "battlefield", "Painter's Servant")]?.chosen?.color as string;
+      expect(chars(s, cub).colors).toEqual(expect.arrayContaining(["G", color]));
+    });
+
+    it("Sylvan Library : à l'étape de pioche, deux cartes de plus ; pour chacune des deux, 4 PV ou elle retourne au-dessus", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Sylvan Library"], library: ["Shock", "Bear Cub", "Forest", "Island"] },
+      });
+      let n = 0;
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw" && x.pending?.kind === "choice");
+      s = settle(s, (req) => (req.type === "yesNo" ? [++n === 1 ? 1 : n === 2 ? 1 : 0] : undefined));
+      expect(s.players.p1?.hand).toHaveLength(2);
+      expect(s.players.p1?.life).toBe(16);
+      expect(s.players.p1?.library).toHaveLength(2);
+    });
+  });
 });

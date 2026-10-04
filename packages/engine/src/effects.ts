@@ -868,6 +868,8 @@ export function attackingDefender(s: GameState, controller: PlayerId): string {
 /** Peut-on attacher cette Aura ou cet Équipement à ce permanent ? (301.5c, 303.4d) */
 export function canAttach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   const a = s.objects[what];
+  // Malédiction (Aura « enchanter un joueur ») : un joueur encore en partie (Maddening Hex).
+  if (a?.zone === "battlefield" && isPlayer(s, to)) return !!s.defs[a.defId]?.enchant?.player && !s.players[to]?.lost;
   if (a?.zone !== "battlefield" || !onBattlefield(s, to) || what === to) return false;
   const d = s.defs[a.defId];
   // 702.16c : protection — ni enchantée, ni équipée par ce qui correspond à sa qualité.

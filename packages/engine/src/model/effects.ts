@@ -491,6 +491,8 @@ export type Effect =
       payLifeManaValue?: boolean;
       condition?: Condition;
       forOwner?: boolean;
+      /** Chaque joueur autre que le propriétaire de la carte peut la jouer (Ian Malcolm, Chaotician). */
+      forNonOwners?: boolean;
       extraCost?: number;
       landsTapped?: boolean;
       /** Du mana de n'importe quel type peut être dépensé (Tinybones, Laughing Jasper Flint). */
@@ -704,7 +706,8 @@ export type Effect =
     }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   /** `store` : nombre d'objets réellement attachés (701.3b : un objet déjà attaché ne « devient » pas attaché ; Thorin). */
-  | { op: "attach"; what: Ref; to: Ref; store?: string }
+  /** `random` : à un des objets ou joueurs désignés, choisi au hasard (Maddening Hex : « un autre de vos adversaires »). */
+  | { op: "attach"; what: Ref; to: Ref; store?: string; random?: boolean }
   /** Ajoute du mana à la réserve du contrôleur. */
   /** `times` : chaque mana est ajouté autant de fois (« {G} pour chaque marqueur »). */
   /** `who` : le joueur qui reçoit le mana (Cheering Crowd : le joueur actif), le contrôleur par défaut. */

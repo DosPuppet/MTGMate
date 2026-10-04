@@ -29,6 +29,7 @@ import {
 } from "../stack";
 import { copyStackItem } from "../stackChoices";
 import {
+  alivePlayers,
   apnapOrder,
   bent,
   chars,
@@ -593,7 +594,7 @@ export const HANDLERS: OpHandlers = {
         : e.untilYourNextEndStep
           ? "yourNextEndStep"
           : "thisTurn";
-    grantPlay(s, ctx.controller, ids, until, {
+    const opts = {
       free: e.free,
       anyTime: e.anyTime,
       ...(e.flashback ? { flashback: true, harmonize: e.flashback === "harmonize" || undefined } : {}),
@@ -604,7 +605,12 @@ export const HANDLERS: OpHandlers = {
       payLifeManaValue: e.payLifeManaValue,
       group: e.oneOf ? newId(s, "g") : undefined,
       adventureOnly: e.adventureOnly,
-    });
+    };
+    // Ian Malcolm : chaque joueur autre que le propriétaire de la carte.
+    if (e.forNonOwners) {
+      for (const id of ids)
+        for (const p of alivePlayers(s).filter((q) => q !== s.objects[id]?.owner)) grantPlay(s, p, [id], until, opts);
+    } else grantPlay(s, ctx.controller, ids, until, opts);
     return;
   },
   castCopiesFree(s, r, e, ctx, key) {
