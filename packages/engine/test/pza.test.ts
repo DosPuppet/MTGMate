@@ -1,5 +1,6 @@
 /** Source Material (PZA) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
+import { drawCards } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, moveObject } from "../src/state";
 import { playerStatic } from "../src/statics";
@@ -172,6 +173,25 @@ describe("Source Material", () => {
       const q = scenario({ p1: { battlefield: lands("Mountain", 5), graveyard: ["Waves of Aggression"], hand: ["Forest"] } });
       const w2 = idOf(q, "p1", "graveyard", "Waves of Aggression");
       expect(legalActions(q, "p1").some((a) => a.type === "cast" && a.card === w2)).toBe(true);
+    });
+  });
+  describe("G4e : bibliothèque et pioche", () => {
+    it("Trouble in Pairs : deuxième sort ou deuxième pioche d'un adversaire, vous piochez ; ses tours supplémentaires sont passés", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Trouble in Pairs"], library: lands("Plains", 5) },
+        p2: { battlefield: lands("Mountain", 2), hand: ["Shock", "Shock"], library: lands("Forest", 5) },
+      });
+      s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } }));
+      expect(s.players.p1?.hand).toHaveLength(0);
+      s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } }));
+      expect(s.players.p1?.hand).toHaveLength(1);
+      drawCards(s, "p2", 2);
+      s = settle(s);
+      expect(s.players.p1?.hand).toHaveLength(2);
+      s.extraTurns = ["p2"];
+      s = advanceUntil(s, (x) => x.turn.number > 3);
+      expect(s.turn.active).toBe("p1");
     });
   });
 });

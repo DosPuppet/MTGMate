@@ -189,7 +189,7 @@ export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max
     else if (p.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
     else if (p.kind === "discard") {
       const hand = cur.players[p.player]?.hand ?? [];
-      cur = act(cur, p.player, { type: "discard", cards: hand.slice(0, Math.max(0, hand.length - 7)) });
+      cur = act(cur, p.player, { type: "discard", cards: hand.slice(0, p.count) });
     } else if (p.kind === "choice") cur = act(cur, p.player, { type: "choose", values: p.request.suggested });
     else break;
   }

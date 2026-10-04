@@ -302,7 +302,7 @@ export const HANDLERS: OpHandlers = {
       const id = String(card[0]);
       if (!hand.includes(id)) return;
       emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-      announceDiscard(s, p, moveDiscarded(s, p, id));
+      announceDiscard(s, p, moveDiscarded(s, p, id, true));
       announceDiscardBatch(s, p, 1);
     }
     // Garde « sacrifiez trois permanents » (Emrakul, the Exigent Doom).
@@ -444,7 +444,9 @@ export const HANDLERS: OpHandlers = {
   },
   payX(s, r, e, ctx, key) {
     if (r.vars[`$${e.store}`]) return;
-    const max = availableMana(s, ctx.controller);
+    // « Payez autant de points de vie que vous voulez » (Necrodominance) : au plus ses PV (119.4).
+    const life = s.players[ctx.controller]?.life ?? 0;
+    const max = e.life ? Math.max(0, life) : availableMana(s, ctx.controller);
     const answer = r.vars[key("payx")];
     if (!answer) {
       return {
@@ -457,12 +459,17 @@ export const HANDLERS: OpHandlers = {
             prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`,
             min: 0,
             max,
-            suggested: [max],
+            suggested: [e.life ? Math.min(max, Math.max(0, life - 10)) : max],
           },
         },
       };
     }
     const x = Math.min(Number(answer[0]), max);
+    if (e.life) {
+      if (x > 0) payLife(s, ctx.controller, x);
+      store(r, e.store, Math.max(0, x));
+      return;
+    }
     if (x > 0 && canPay(s, ctx.controller, { generic: x, colored: {}, x: 0 })) {
       payMana(s, ctx.controller, { generic: x, colored: {}, x: 0 });
       store(r, e.store, x);

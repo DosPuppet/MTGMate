@@ -343,3 +343,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
 - **G4e, lancer autrement (04/10/2026) :** Terminal Agony (folie), Cresting Mosasaurus (émerger), Consign to Memory
   (réplique), Underworld Breach, Hunting Velociraptor, Commandeer, Teferi, Mage of Zhalfir, Phantasmal Image, Flesh
   Duplicate, As Foretold. `RULES_VERSION` 117.
+- **G4e, bibliothèque et pioche (04/10/2026) :** Necropotence, Necrodominance, Sphinx's Tutelage, Library of Leng, Notion
+  Thief, Grindstone, Ad Nauseam, Atraxa, Carpet of Flowers, Trouble in Pairs. `RULES_VERSION` 118.

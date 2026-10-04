@@ -265,3 +265,10 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   copie réunies dans `entersAsCopyMods` (Phantasmal Image, Flesh Duplicate avec sa disparition écrite en capacités) ;
   As Foretold (`manaValueSourceCounters: { counter, atMost }`). Tests : `otp`, `rex`, `spg`, `wot`, `fca` (+10).
   `RULES_VERSION` 117.
+- **Bibliothèque et pioche ✅ :** statiques de joueur `skipDrawStep` (Necropotence, Necrodominance), `discardToLibraryTop`
+  (Library of Leng : `moveDiscarded(…, byEffect)`), `stealsOpponentDraws` (Notion Thief, dans `drawCard` : la pioche de
+  l'étape de pioche n'est pas volée), `skipExtraTurns` (Trouble in Pairs) ; `maxHandSize` remplace `opponentMaxHandSize`
+  (Winter, avec `affects: "opponents"`) et la condition d'une statique de joueur se lit pour le contrôleur de sa source ;
+  `fx.payLifeX` (op `payX` en PV) ; `millWhileShared` généralisé (`fx.millWhileSharingColor` : Grindstone, Sphinx's
+  Tutelage) ; `lookAtTop({ onePerType })` (Atraxa, Grand Unifier) ; Ad Nauseam (au plus 30 répétitions) ; Carpet of Flowers.
+  Tests : `wot`, `spg`, `otp`, `soa`, `fca`, `pza` (+10). `RULES_VERSION` 118.

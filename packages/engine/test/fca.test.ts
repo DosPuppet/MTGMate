@@ -1,4 +1,6 @@
 /** Through the Ages (FCA) : tests de règles des cartes (PLAN-G). */
+
+import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy, drawCards, loseLife } from "../src/actions";
 import { legalActions } from "../src/legal";
@@ -10,6 +12,7 @@ import {
   advanceUntil,
   attack,
   castNowOf,
+  customCard,
   idOf,
   idsOf,
   lands,
@@ -310,6 +313,30 @@ describe("Through the Ages", () => {
       s = act(s, "p1", { type: "pass" });
       expect(s.pending?.kind === "priority" && s.pending.player).toBe("p2");
       expect(legalActions(s, "p2").some((a) => a.type === "cast" && a.card === shock)).toBe(false);
+    });
+  });
+  describe("G4e : bibliothèque et pioche", () => {
+    it("Atraxa, Grand Unifier : dix cartes révélées, une de chaque type de carte dans la main", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Plains", 7)],
+          hand: [customCard({ name: "Atraxa de test", types: ["Creature"], abilities: card("Atraxa, Grand Unifier").abilities })],
+          library: ["Bear Cub", "Shivan Dragon", "Forest", "Shock", "Island", "Mana Crypt", "Llanowar Elves", "Lightning Strike"],
+        },
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Atraxa de test") }));
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Forest", "Mana Crypt", "Shock"]);
+      expect(s.players.p1?.library).toHaveLength(4);
+    });
+
+    it("Carpet of Flowers : au début de votre phase principale, X mana d'une couleur (Îles de l'adversaire)", () => {
+      let s = scenario({ active: "p2", p1: { battlefield: ["Carpet of Flowers"] }, p2: { battlefield: lands("Island", 3) } });
+      s = advanceUntil(
+        s,
+        (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.stack.length === 0 && x.triggers.length === 0,
+      );
+      const pool = s.players.p1?.manaPool;
+      expect(Object.values(pool ?? {}).reduce((a, b) => a + b, 0)).toBe(3);
     });
   });
 });

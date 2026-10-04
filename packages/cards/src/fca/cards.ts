@@ -560,4 +560,26 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Atraxa, Grand Unifier": {
+    abilities: [
+      triggered(when.entersSelf, [fx.lookAtTop(10, { count: 8, onePerType: true, rest: "bottom" })], {
+        label: "Arrivée : révélez dix cartes ; une de chaque type de carte dans votre main",
+      }),
+    ],
+  },
+  "Carpet of Flowers": {
+    abilities: [
+      triggered(
+        when.step("main1"),
+        fx.may(
+          "Ajouter du mana (autant que d'Îles de l'adversaire) ?",
+          fx.addManaChoice(amount.refCount(ref.permanentsOf(ref.target(), { subtype: "Island" }))),
+        ),
+        {
+          targets: [target.player("t", "opponent")],
+          label: "Début de votre phase principale : X mana d'une couleur, X étant le nombre d'Îles de l'adversaire ciblé",
+        },
+      ),
+    ],
+  },
 };

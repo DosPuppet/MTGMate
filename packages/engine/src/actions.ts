@@ -63,9 +63,19 @@ export interface DamageSource {
   keywords: Keyword[];
 }
 
-export function drawCard(s: GameState, p: PlayerId): void {
+/** `turnDraw` : la pioche de l'étape de pioche (504.1), que Notion Thief ne remplace pas. */
+export function drawCard(s: GameState, p: PlayerId, turnDraw = false): void {
   const player = s.players[p];
   if (!player) return;
+  // Notion Thief : « si un adversaire devait piocher une carte, sauf la première de son étape de pioche, il passe cette
+  // pioche et vous piochez une carte à la place » (la pioche du voleur n'est pas remplacée à son tour).
+  if (!turnDraw) {
+    const thief = opponentsOf(s, p).find((q) => !s.players[q]?.lost && playerStatic(s, q, "stealsOpponentDraws"));
+    if (thief) {
+      drawCard(s, thief, true);
+      return;
+    }
+  }
   const top = player.library[0];
   if (!top) {
     // Laboratory Maniac : « vous gagnez la partie à la place » (remplacement, appliqué par les actions basées sur l'état).
@@ -86,7 +96,8 @@ export function drawCard(s: GameState, p: PlayerId): void {
  * (le plus de cartes, sauf s'il n'en a pas autant dans sa bibliothèque) : Vnwxt, Verbose Host (« piochez-en deux à la
  * place », pour chaque carte), Quantum Riddler (« autant plus une » avec une carte en main ou moins).
  */
-export function drawCards(s: GameState, p: PlayerId, n: number): void {
+/** `turnDraw` : la pioche de l'étape de pioche (la première carte seulement). */
+export function drawCards(s: GameState, p: PlayerId, n: number, turnDraw = false): void {
   const player = s.players[p];
   if (!player || n <= 0) return;
   // Remplacements de la pioche (R1, famille I) ; Mornsong Aria : « les joueurs ne peuvent pas piocher ».
@@ -97,7 +108,7 @@ export function drawCards(s: GameState, p: PlayerId, n: number): void {
   const total = most <= player.library.length ? most : chooseReplacementOrder(n, mods, "min");
   // Une pioche dans une bibliothèque vide suffit (704.5b) : pas la peine de continuer au-delà.
   const draws = Math.min(total, player.library.length + 1);
-  for (let i = 0; i < draws; i++) drawCard(s, p);
+  for (let i = 0; i < draws; i++) drawCard(s, p, turnDraw && i === 0);
 }
 
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {

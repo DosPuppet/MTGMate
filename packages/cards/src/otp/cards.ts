@@ -586,4 +586,15 @@ export const CARDS: Record<string, CardScript> = {
       [fx.gainControl(ref.target()), fx.changeTarget(ref.target())],
     ),
   },
+  Grindstone: {
+    abilities: [
+      activated({
+        mana: "{3}",
+        tap: true,
+        targets: [target.player()],
+        effects: [fx.millWhileSharingColor(ref.target())],
+        label: "{3}, {T} : le joueur meule deux cartes (et recommence si elles partagent une couleur)",
+      }),
+    ],
+  },
 };

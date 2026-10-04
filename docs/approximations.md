@@ -393,3 +393,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà ; les trois marqueurs sont mis par une capacité d'arrivée ;
   - `règle` Hunting Velociraptor : la maraude demande des blessures de combat d'un Dinosaure (pas de n'importe quel type commun au sort) ;
   - `règle` Commandeer : « vous pouvez choisir de nouvelles cibles » seulement pour un sort à cible unique.
+  - `règle` Ad Nauseam : le processus se répète au plus trente fois ;
+  - `règle` Carpet of Flowers : seulement au début de votre première phase principale ;
+  - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
+  - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
+  - `règle` Necrodominance : la taille de main maximale la plus petite s'applique (et non la plus récente).

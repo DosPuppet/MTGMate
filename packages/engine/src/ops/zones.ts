@@ -106,6 +106,32 @@ function shockLandChoices(
   return paid;
 }
 
+/** Chaque carte reçoit un type de carte qu'elle a, tous différents (couplage, au plus dix cartes) : possible ? */
+function assignTypes(s: GameState, ids: ObjectId[]): boolean {
+  const types = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? [];
+  const used = new Map<string, ObjectId>();
+  const place = (id: ObjectId, seen: Set<string>): boolean => {
+    for (const t of types(id)) {
+      if (seen.has(t)) continue;
+      seen.add(t);
+      const holder = used.get(t);
+      if (!holder || place(holder, seen)) {
+        used.set(t, id);
+        return true;
+      }
+    }
+    return false;
+  };
+  return ids.every((id) => place(id, new Set()));
+}
+
+/** Suggestion « une carte par type » : les cartes dans l'ordre, tant qu'elles prennent un type encore libre. */
+function greedyOnePerType(s: GameState, ids: ObjectId[]): ObjectId[] {
+  const out: ObjectId[] = [];
+  for (const id of ids) if (assignTypes(s, [...out, id])) out.push(id);
+  return out;
+}
+
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
     const stored: string[] = [];
@@ -250,17 +276,23 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, chosen.length);
     return;
   },
-  millWhileShared(s, _r, _e, ctx) {
-    // The Tale of Tamiyo : on recommence tant que les deux cartes meulées partagent un type de carte (la bibliothèque,
-    // qui perd deux cartes à chaque tour de boucle, la borne).
-    for (;;) {
-      const top = (s.players[ctx.controller]?.library ?? []).slice(0, 2);
-      if (top.length === 0) return;
-      const types = top.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? []);
-      for (const id of top) moveAndLog(s, id, "graveyard");
-      if (top.length < 2 || !types[0]?.some((t) => types[1]?.includes(t))) return;
-      drawCards(s, ctx.controller, 1);
+  millWhileShared(s, _r, e, ctx) {
+    // On recommence tant que les deux cartes meulées partagent un type de carte ou une couleur (la bibliothèque, qui perd
+    // deux cartes à chaque tour de boucle, la borne).
+    const def = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""];
+    const traits = (id: ObjectId): string[] =>
+      e.nonland && def(id)?.types.includes("Land") ? [] : e.share === "color" ? (def(id)?.colors ?? []) : (def(id)?.types ?? []);
+    for (const p of e.who ? resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)) : [ctx.controller]) {
+      for (;;) {
+        const top = (s.players[p]?.library ?? []).slice(0, 2);
+        if (top.length === 0) break;
+        const [a, b] = top.map(traits);
+        for (const id of top) moveAndLog(s, id, "graveyard");
+        if (top.length < 2 || !a?.some((t) => b?.includes(t))) break;
+        if (e.draw) drawCards(s, p, 1);
+      }
     }
+    return;
   },
   destroyAllButChosenType(s, r, _e, ctx, key) {
     const creatures = s.battlefield.filter((id) => isCreature(s, id));
@@ -823,7 +855,7 @@ export const HANDLERS: OpHandlers = {
       for (const id of chosen) {
         // Wilt-Leaf Liege : défaussée par un effet adverse, elle va sur le champ de bataille.
         const toField = p !== ctx.controller && !!s.defs[s.objects[id]?.defId ?? ""]?.opponentDiscardToBattlefield;
-        const moved = toField ? moveObject(s, id, "battlefield") : moveDiscarded(s, p, id);
+        const moved = toField ? moveObject(s, id, "battlefield") : moveDiscarded(s, p, id, true);
         if (!toField) announceDiscard(s, p, moved);
         // Les cartes défaussées, pour `ref.stored` (Ninja's Blades : « la valeur de mana de la carte défaussée »).
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
@@ -1197,6 +1229,7 @@ export const HANDLERS: OpHandlers = {
     const count = evalAmount(s, ctx, e.count);
     // Suggestion qui respecte la limite de valeur de mana totale (les premières cartes qui tiennent).
     const withinTotal = (ids: string[]) => {
+      if (e.onePerType) return greedyOnePerType(s, options).slice(0, count);
       if (e.maxTotalManaValue === undefined) return ids;
       let total = 0;
       return ids.filter((id) => {
@@ -1233,6 +1266,8 @@ export const HANDLERS: OpHandlers = {
         };
       }
       picked = answer.map(String);
+      // Atraxa, Grand Unifier : « pour chaque type de carte, une carte de ce type » (chaque carte prise pour un type différent).
+      if (e.onePerType && !assignTypes(s, picked)) throw new RulesError("Une seule carte par type de carte");
       // « de valeur de mana totale N ou moins » : un choix qui dépasse est refusé.
       if (e.maxTotalManaValue !== undefined) {
         const total = picked.reduce((n, id) => n + manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost), 0);
@@ -1364,7 +1399,7 @@ export const HANDLERS: OpHandlers = {
       if (candidates.length) sacrifice(s, id);
       else {
         emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-        announceDiscard(s, p, moveDiscarded(s, p, id));
+        announceDiscard(s, p, moveDiscarded(s, p, id, true));
         announceDiscardBatch(s, p, 1);
       }
     }
@@ -1821,7 +1856,7 @@ export const HANDLERS: OpHandlers = {
       if (!hand.includes(card)) continue;
       const nonland = !s.defs[s.objects[card]?.defId ?? ""]?.types.includes("Land");
       emit({ type: "discard", player: p, defIds: [s.objects[card]?.defId ?? ""] });
-      announceDiscard(s, p, moveDiscarded(s, p, card));
+      announceDiscard(s, p, moveDiscarded(s, p, card, true));
       announceDiscardBatch(s, p, 1);
       if (nonland && onBattlefield(s, id)) changeCounters(s, o, P1P1, 1);
     }

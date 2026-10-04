@@ -111,7 +111,7 @@ export const HANDLERS: OpHandlers = {
       const hand = [...(s.players[p]?.hand ?? [])];
       if (hand.length === 0) continue;
       emit({ type: "discard", player: p, defIds: hand.map((id) => s.objects[id]?.defId ?? "") });
-      for (const id of hand) announceDiscard(s, p, moveDiscarded(s, p, id));
+      for (const id of hand) announceDiscard(s, p, moveDiscarded(s, p, id, true));
       announceDiscardBatch(s, p, hand.length);
     }
     for (const p of yes) drawCards(s, p, 7);
@@ -182,7 +182,7 @@ export const HANDLERS: OpHandlers = {
         for (const id of picked) {
           if (choice === "discard") {
             emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-            announceDiscard(s, p, moveDiscarded(s, p, id));
+            announceDiscard(s, p, moveDiscarded(s, p, id, true));
           } else if (onBattlefield(s, id)) sacrifice(s, id);
         }
         if (choice === "discard") announceDiscardBatch(s, p, picked.length);

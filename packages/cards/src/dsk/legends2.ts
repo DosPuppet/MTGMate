@@ -209,7 +209,8 @@ export const LEGENDS2: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourUpkeep, [fx.draw(2, ref.eachPlayer)], { label: "Chaque joueur pioche deux cartes" }),
       playerStatic({
-        opponentMaxHandSize: amount.plus(7, amount.neg(amount.cardTypesInGraveyard)),
+        maxHandSize: amount.plus(7, amount.neg(amount.cardTypesInGraveyard)),
+        affects: "opponents",
         condition: cond.delirium,
         label: "Délire — main maximale adverse : 7 moins les types",
       }),

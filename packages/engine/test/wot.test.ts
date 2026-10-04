@@ -2,12 +2,13 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife } from "../src/actions";
 import { fx, ref, spell, target } from "../src/dsl";
+import { announceDiscard, moveDiscarded } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
 import { legalTargets } from "../src/targets";
 import { stateBasedActions } from "../src/turn";
-import { act, advanceUntil, attack, castable, customCard, idOf, idsOf, lands, scenario, settle } from "./helpers";
+import { act, advanceUntil, attack, castable, customCard, exiled, idOf, idsOf, lands, scenario, settle } from "./helpers";
 
 describe("Enchanting Tales", () => {
   describe("Blind Obedience", () => {
@@ -325,6 +326,31 @@ describe("Enchanting Tales", () => {
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub"), free: true }));
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
       expect(opt("Llanowar Elves")).toBeUndefined();
+    });
+  });
+  describe("G4e : bibliothèque et pioche", () => {
+    const discardFrom = (s: ReturnType<typeof scenario>, p: string, id: string) =>
+      announceDiscard(s, p, moveDiscarded(s, p, id, true));
+    it("Necropotence : pas d'étape de pioche ; défaussée, une carte est exilée ; 1 PV : une carte exilée revient à l'étape de fin", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Necropotence"], library: ["Shock", "Forest", "Island"] },
+      });
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+      expect(s.players.p1?.hand).toHaveLength(0);
+      const necro = idOf(s, "p1", "battlefield", "Necropotence");
+      s = settle(act(s, "p1", { type: "activate", source: necro, ability: 2 }));
+      expect(s.players.p1?.life).toBe(19);
+      expect(exiled(s, "Shock")).toHaveLength(1);
+      s = advanceUntil(
+        s,
+        (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority",
+      );
+      s = settle(s);
+      expect(idsOf(s, "p1", "hand", "Shock")).toHaveLength(1);
+      discardFrom(s, "p1", idOf(s, "p1", "hand", "Shock"));
+      s = settle(s);
+      expect(exiled(s, "Shock")).toHaveLength(1);
     });
   });
 });

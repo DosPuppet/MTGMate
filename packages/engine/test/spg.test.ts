@@ -1,6 +1,7 @@
 /** Special Guests (SPG) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
-import { dealDamage, destroy, gainLife, sourceFromObject } from "../src/actions";
+import { dealDamage, destroy, drawCards, gainLife, sourceFromObject } from "../src/actions";
+import { fx, spell } from "../src/dsl";
 import { announceDiscard } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
@@ -894,6 +895,59 @@ describe("Special Guests", () => {
       expect(s.objects[dup]?.counters.time).toBe(3);
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
       expect(s.objects[dup]?.counters.time).toBe(2);
+    });
+  });
+  describe("G4e : bibliothèque et pioche", () => {
+    it("Necrodominance : étape de fin, payez X PV et piochez X ; main maximale cinq ; cimetière exilé", () => {
+      let s = scenario({
+        p1: { battlefield: ["Necrodominance"], hand: ["Shock"], library: lands("Swamp", 10) },
+      });
+      s = advanceUntil(s, (x) => x.pending?.kind === "choice" && x.pending.request.type === "number");
+      s = act(s, "p1", { type: "choose", values: [7] });
+      s = settle(s);
+      expect(s.players.p1?.life).toBe(13);
+      expect(s.players.p1?.hand).toHaveLength(8);
+      s = advanceUntil(s, (x) => x.turn.active === "p2", 200);
+      expect(s.players.p1?.hand).toHaveLength(5);
+      expect(s.players.p1?.graveyard).toHaveLength(0);
+      expect(s.exile.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("Sphinx's Tutelage : vous piochez, l'adversaire meule deux cartes, et recommence si deux non-terrain partagent une couleur", () => {
+      let s = scenario({
+        p1: { battlefield: ["Sphinx's Tutelage"], library: lands("Island", 3) },
+        p2: { library: ["Shock", "Lightning Strike", "Bear Cub", "Forest", "Island"] },
+      });
+      drawCards(s, "p1", 1);
+      s = settle(s);
+      expect(s.players.p2?.graveyard.map((id) => nameOf(s, id))).toEqual(["Shock", "Lightning Strike", "Bear Cub", "Forest"]);
+    });
+
+    it("Library of Leng : défaussée par un effet, la carte va au-dessus de la bibliothèque ; pas de main maximale", () => {
+      const discarder = customCard({
+        name: "Défausse de test",
+        types: ["Sorcery"],
+        typeLine: "Sorcery",
+        spell: spell([], [fx.discard(1)]),
+      });
+      let s = scenario({ p1: { battlefield: ["Library of Leng"], hand: [discarder, "Shock"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Défausse de test") }));
+      expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Shock");
+    });
+
+    it("Notion Thief : l'adversaire pioche une carte en plus, vous la piochez à sa place ; pas sa pioche de l'étape de pioche", () => {
+      let s = scenario({
+        active: "p2",
+        step: "upkeep",
+        p1: { battlefield: ["Notion Thief"], library: lands("Island", 3) },
+        p2: { library: lands("Forest", 3) },
+      });
+      s = advanceUntil(s, (x) => x.turn.step === "main1");
+      expect(s.players.p2?.hand).toHaveLength(1);
+      expect(s.players.p1?.hand).toHaveLength(0);
+      drawCards(s, "p2", 2);
+      expect(s.players.p2?.hand).toHaveLength(1);
+      expect(s.players.p1?.hand).toHaveLength(2);
     });
   });
 });

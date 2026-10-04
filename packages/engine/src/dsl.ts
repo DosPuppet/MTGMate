@@ -514,7 +514,14 @@ export const fx = {
   moveCounter: (from: Ref, to: Ref): Effect => ({ op: "moveCounter", from, to }),
   /** « Il ne peut plus gagner de points de vie de la partie » (Screaming Nemesis). */
   cantGainLife: (who: Ref): Effect => ({ op: "playerEffect", ability: { cantGainLife: true }, who, forever: true }),
-  millWhileShared: { op: "millWhileShared" } as Effect,
+  millWhileShared: { op: "millWhileShared", draw: true } as Effect,
+  /** « [Le joueur] meule deux cartes ; si deux cartes [non-terrain] qui partagent une couleur ont été meulées, recommencez. » */
+  millWhileSharingColor: (who: Ref, nonland = false): Effect => ({
+    op: "millWhileShared",
+    who,
+    share: "color",
+    ...(nonland ? { nonland } : {}),
+  }),
   /** `basePT` : F/E de base fixées à ce montant, évalué à la résolution (Fractalize : « X+1/X+1 »). */
   modify: (
     what: Ref,
@@ -1095,6 +1102,8 @@ export const fx = {
     ...opts,
   }),
   payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
+  /** « Payez autant de points de vie que vous voulez » : X mémorisé sous `store`. */
+  payLifeX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store, life: true }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extra", kind: "combat" } as Effect,
   /** « Une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale supplémentaire. » */
@@ -1306,12 +1315,15 @@ export const fx = {
       who?: Ref;
       /** Les cartes prises sont tirées au hasard (Getaway Barrel). */
       random?: boolean;
+      /** Une carte par type de carte au plus (Atraxa, Grand Unifier). */
+      onePerType?: boolean;
     } = {},
   ): Effect => ({
     op: "lookAtTop",
     n,
     ...(opts.who ? { who: opts.who } : {}),
     ...(opts.random ? { random: true } : {}),
+    ...(opts.onePerType ? { onePerType: true } : {}),
     filter: opts.filter,
     count: opts.count ?? 1,
     to: opts.to ?? { to: "hand" },

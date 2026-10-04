@@ -12,6 +12,7 @@ import {
   escalate,
   eventReplacement,
   fx,
+  graveyardReplacement,
   investigate,
   loyalty,
   manaAbility,
@@ -1227,5 +1228,43 @@ export const CARDS: Record<string, CardScript> = {
         ),
       ],
     },
+  },
+  Necrodominance: {
+    abilities: [
+      playerStatic({ skipDrawStep: true, label: "Passez votre étape de pioche" }),
+      triggered(
+        when.step("end"),
+        [fx.payLifeX("payez autant de points de vie que vous voulez (et piochez autant)", "x"), fx.draw(amount.v("x"))],
+        { label: "Votre étape de fin : payez X PV, piochez X cartes" },
+      ),
+      playerStatic({ maxHandSize: 5, label: "Taille de main maximale : cinq" }),
+      graveyardReplacement({ graveyardOf: "you", label: "Ce qui devrait aller dans votre cimetière est exilé à la place" }),
+    ],
+  },
+  "Sphinx's Tutelage": {
+    abilities: [
+      triggered({ on: "draw", whose: "you" }, [fx.millWhileSharingColor(ref.target(), true)], {
+        targets: [target.player("t", "opponent")],
+        label: "Vous piochez : l'adversaire meule deux cartes (et recommence si deux non-terrain partagent une couleur)",
+      }),
+      activated({ mana: "{5}{U}", effects: fx.loot(1), label: "{5}{U} : piochez, puis défaussez une carte" }),
+    ],
+  },
+  "Library of Leng": {
+    abilities: [
+      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      playerStatic({
+        discardToLibraryTop: true,
+        label: "Une carte défaussée par un effet peut aller au-dessus de votre bibliothèque",
+      }),
+    ],
+  },
+  "Notion Thief": {
+    abilities: [
+      playerStatic({
+        stealsOpponentDraws: true,
+        label: "Un adversaire qui pioche (sauf la première carte de son étape de pioche) : vous piochez à sa place",
+      }),
+    ],
   },
 };

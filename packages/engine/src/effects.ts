@@ -34,7 +34,7 @@ import {
   shuffle,
   snapshot,
 } from "./state";
-import { playerStatics } from "./statics";
+import { playerStatic, playerStatics } from "./statics";
 import {
   ALL_CREATURE_TYPES,
   matchesCard,
@@ -891,9 +891,14 @@ export function attach(s: GameState, what: ObjectId, to: ObjectId): boolean {
 /**
  * Met une carte défaussée à sa place (701.9) : au cimetière, ou en exil si elle a la folie (702.35a) ; dans ce cas, une
  * capacité déclenchée « lancez-la pour son coût de folie, sinon mettez-la dans votre cimetière » est mise en attente.
+ * `byEffect` : la défausse vient d'un effet (pas d'un coût ni de la taille de main maximale).
  */
-export function moveDiscarded(s: GameState, player: PlayerId, card: ObjectId): ObjectId | null {
+export function moveDiscarded(s: GameState, player: PlayerId, card: ObjectId, byEffect = false): ObjectId | null {
   const d = s.defs[s.objects[card]?.defId ?? ""];
+  // Library of Leng : défaussée par un effet, la carte peut aller au-dessus de la bibliothèque (choix automatique : oui,
+  // sauf une carte avec la folie).
+  if (byEffect && !d?.madness && playerStatic(s, player, "discardToLibraryTop"))
+    return moveObject(s, card, "library", { position: "top" });
   if (!d?.madness) return moveObject(s, card, "graveyard");
   const exiled = moveObject(s, card, "exile");
   if (exiled) {

@@ -1155,6 +1155,14 @@ export interface PlayerStaticAbilityDef {
   enduringStory?: boolean;
   /** Ral Zarek : « passe son prochain tour » (un effet par tour passé, consommé). */
   skipTurn?: boolean;
+  /** « Passez votre étape de pioche » (Necropotence, Necrodominance). */
+  skipDrawStep?: boolean;
+  /** Library of Leng : une carte défaussée par un effet peut être mise au-dessus de votre bibliothèque. */
+  discardToLibraryTop?: boolean;
+  /** Notion Thief : un adversaire qui pioche (sauf la première carte de son étape de pioche) ne pioche pas ; vous piochez. */
+  stealsOpponentDraws?: boolean;
+  /** Trouble in Pairs (`affects: "opponents"`) : ce joueur passe les tours supplémentaires qu'il devrait commencer. */
+  skipExtraTurns?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
   /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
@@ -1172,8 +1180,11 @@ export interface PlayerStaticAbilityDef {
    * avec `webSlinging` en renvoyant une créature engagée (Amazing Spider-Man : « Web-slinging {G}{W}{U} »).
    */
   altCostAll?: { mana?: ManaCost; collectEvidence?: number; filter?: ObjectFilter; webSlinging?: boolean };
-  /** Winter, Misanthropic Guide : taille de main maximale de chaque adversaire (évaluée pour le contrôleur). */
-  opponentMaxHandSize?: Amount;
+  /**
+   * Taille de main maximale (402.2), évaluée pour le contrôleur de la source : Necrodominance (5), Winter, Misanthropic
+   * Guide (`affects: "opponents"`) ; la plus petite s'applique.
+   */
+  maxHandSize?: Amount;
   /** Valgavoth : pendant votre tour, jouer les cartes liées à la source ; un sort ainsi lancé coûte des PV égaux à sa VM. */
   playLinkedPayLife?: boolean;
   /** Found Footage : vous pouvez regarder les créatures face cachée de vos adversaires à tout moment. */

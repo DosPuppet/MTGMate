@@ -319,8 +319,11 @@ export const RECORD_VERSION = 1;
  *   le joueur qui détruit (déclencheur `destroyed`) ; défense talismanique d'un joueur contre un filtre ; retrace (702.81).
  * - 117 : folie (702.35), émerger (702.119), réplique (702.56), évasion donnée, rôder accordé, gagner le contrôle d'un sort,
  *   lancer seulement au moment d'un rituel, exceptions de copie en `entersAsCopyMods`.
+ * - 118 : étape de pioche passée, pioche volée (Notion Thief), tours supplémentaires passés, défausse au-dessus de la
+ *   bibliothèque, taille de main maximale générique (et condition d'une statique lue pour son contrôleur), PV payés au
+ *   choix, meule répétée par couleur, une carte par type (Atraxa).
  */
-export const RULES_VERSION = 117;
+export const RULES_VERSION = 118;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

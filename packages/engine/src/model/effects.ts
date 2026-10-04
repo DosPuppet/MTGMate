@@ -122,8 +122,12 @@ export type Effect =
   | { op: "lkiCountersTo"; to: Ref }
   /** Déplace un marqueur d'un permanent sur un autre ; sa sorte au choix s'il en a plusieurs (Nesting Grounds). */
   | { op: "moveCounter"; from: Ref; to: Ref }
-  /** The Tale of Tamiyo : « meulez deux cartes ; si elles partagent un type de carte, piochez et recommencez ». */
-  | { op: "millWhileShared" }
+  /**
+   * Meule deux cartes et recommence tant qu'elles partagent un type de carte (The Tale of Tamiyo, `draw` : en piochant
+   * d'abord) ou une couleur (`share: "color"` : Grindstone ; `nonland` : deux cartes non-terrain, Sphinx's Tutelage) ;
+   * `who` : la bibliothèque de ces joueurs (le contrôleur par défaut).
+   */
+  | { op: "millWhileShared"; who?: Ref; share?: "color"; nonland?: boolean; draw?: boolean }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
   /** `tapped` : jetons engagés ; `attacking` : engagés et attaquants (le même défenseur que la source, sinon le premier adversaire). */
@@ -272,6 +276,8 @@ export type Effect =
       store?: string;
       /** Exactement `count` cartes (« mettez-en une dans votre main »), pas « jusqu'à ». */
       exact?: boolean;
+      /** Une carte par type de carte au plus (Atraxa, Grand Unifier). */
+      onePerType?: boolean;
     }
   /** Chercher dans sa bibliothèque jusqu'à `count` cartes correspondant au filtre, puis mélanger. */
   | {
@@ -643,8 +649,8 @@ export type Effect =
    * `anyNumber` : « entre un nombre quelconque de » (pas de minimum par objet, Crashing Wave).
    */
   | { op: "countersDivided"; total: Amount; to: Ref; counter?: string; anyNumber?: boolean }
-  /** Choisir X, puis payer {X} ; mémorisé sous `store` (Wildborn Preserver). */
-  | { op: "payX"; prompt: string; store: string }
+  /** Choisir X, puis payer {X} (ou X points de vie : `life`, Necrodominance) ; mémorisé sous `store` (Wildborn Preserver). */
+  | { op: "payX"; prompt: string; store: string; life?: boolean }
   /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */
   | { op: "changeTarget"; what: Ref }
   /**

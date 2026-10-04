@@ -53,14 +53,13 @@ import {
 import {
   addPlayerEffect,
   consumePlayerEffect,
-  controlledAbilitiesWithSource,
   playerEffectValues,
   playerStatic,
   playerStatics,
   playerStaticTotal,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
-import { checkCondition, processTriggers, pushInline, releaseDelayedTriggers, simultaneously } from "./triggers";
+import { processTriggers, pushInline, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type { CardDef, Effect, GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
@@ -329,7 +328,7 @@ function beginStep(s: GameState): void {
       // 103.8a : en duel, le joueur qui commence ne pioche pas lors de son premier tour
       // (103.8c : en multijoueur, personne ne saute sa pioche).
       if (s.turn.number > 1 || s.playerOrder.length > 2) {
-        drawCards(s, active, 1);
+        drawCards(s, active, 1, true);
       }
       givePriority(s);
       return;
@@ -508,6 +507,8 @@ function endStep(s: GameState): void {
   // Dernières informations connues : plus nécessaires une fois la pile vide et l'étape finie.
   s.lki = {};
   let next = nextStep(s);
+  // 500.11 : une étape passée n'a pas lieu (Necropotence : « passez votre étape de pioche »).
+  if (next === "draw" && playerStatic(s, s.turn.active, "skipDrawStep")) next = "main1";
   // Aurelia : « après cette phase, il y a une phase de combat supplémentaire ».
   if (s.turn.step === "endCombat" && (s.turn.extraCombats ?? 0) > 0) {
     s.turn.extraCombats = (s.turn.extraCombats ?? 1) - 1;
@@ -535,7 +536,9 @@ function endStep(s: GameState): void {
   } else {
     s.turn.number += 1;
     // 500.7 : un tour supplémentaire (le dernier créé d'abord), sinon le joueur suivant.
-    const extra = s.extraTurns?.pop();
+    let extra = s.extraTurns?.pop();
+    // Trouble in Pairs : un adversaire qui devrait commencer un tour supplémentaire le passe.
+    while (extra && playerStatic(s, extra, "skipExtraTurns")) extra = s.extraTurns?.pop();
     s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
     // Ral Zarek : un joueur qui doit passer son tour le passe (un effet consommé par tour passé).
     for (let guard = 0; guard < s.playerOrder.length && consumePlayerEffect(s, s.turn.active, "skipTurn"); guard++)
@@ -726,17 +729,13 @@ export function attackableDefenders(s: GameState, player: PlayerId): string[] {
   return [...opps, ...walkers];
 }
 
-/** 402.2 : taille de main maximale (7), réduite par Winter, Misanthropic Guide d'un adversaire. */
+/** 402.2 : taille de main maximale (7), réduite par Necrodominance ou par Winter, Misanthropic Guide d'un adversaire. */
 function maxHandSize(s: GameState, player: PlayerId): number {
   let max = MAX_HAND_SIZE;
-  for (const q of s.playerOrder) {
-    if (q === player || s.players[q]?.lost) continue;
-    for (const { id, ab } of controlledAbilitiesWithSource(s, q)) {
-      if (ab.kind !== "playerStatic" || ab.opponentMaxHandSize === undefined) continue;
-      if (ab.condition && !checkCondition(s, ab.condition, q, id)) continue;
-      const ctx = staticContext(s, q, id, { sourceDefId: "" });
-      max = Math.min(max, Math.max(0, evalAmount(s, ctx, ab.opponentMaxHandSize)));
-    }
+  for (const { id, ab } of playerStatics(s, player, "maxHandSize")) {
+    if (ab.maxHandSize === undefined) continue;
+    const ctx = staticContext(s, (id && s.objects[id]?.controller) || player, id, { sourceDefId: "" });
+    max = Math.min(max, Math.max(0, evalAmount(s, ctx, ab.maxHandSize)));
   }
   return max;
 }

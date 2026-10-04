@@ -564,4 +564,20 @@ export const CARDS: Record<string, CardScript> = {
       },
     ],
   },
+  Necropotence: {
+    abilities: [
+      playerStatic({ skipDrawStep: true, label: "Passez votre étape de pioche" }),
+      triggered({ on: "discard", whose: "you" }, [fx.exileCard(ref.eventObject)], {
+        label: "Vous défaussez une carte : exilez-la de votre cimetière",
+      }),
+      activated({
+        payLife: 1,
+        effects: [
+          fx.exileTop(ref.you, 1, "n", "you"),
+          fx.delayedAt("yourEndStep", [fx.toHand(ref.target("n"))], { n: ref.stored("n") }),
+        ],
+        label: "Payez 1 PV : exilez la carte du dessus face cachée ; elle va dans votre main à votre prochaine étape de fin",
+      }),
+    ],
+  },
 };

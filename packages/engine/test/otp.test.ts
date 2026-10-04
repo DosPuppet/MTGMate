@@ -463,6 +463,24 @@ describe("Breaking News", () => {
       expect(s.players.p1?.hand).toHaveLength(0);
     });
   });
+  describe("G4e : bibliothèque et pioche", () => {
+    it("Grindstone : le joueur meule deux cartes, et recommence tant qu'elles partagent une couleur", () => {
+      let s = scenario({
+        p1: { battlefield: ["Grindstone", ...lands("Mountain", 3)] },
+        p2: { library: ["Shock", "Lightning Strike", "Bear Cub", "Shivan Dragon", "Forest"] },
+      });
+      s = settle(
+        act(s, "p1", {
+          type: "activate",
+          source: idOf(s, "p1", "battlefield", "Grindstone"),
+          ability: 0,
+          targets: { t: ["p2"] },
+        }),
+      );
+      expect(s.players.p2?.graveyard).toHaveLength(4);
+      expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest"]);
+    });
+  });
 });
 
 /** p2 attaque p1 avec la créature, puis p1 reçoit la priorité à la déclaration des attaquants. */

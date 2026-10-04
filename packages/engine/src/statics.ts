@@ -118,8 +118,11 @@ export function playerStatics(
   key: PlayerStaticKey,
 ): { id?: ObjectId; ab: PlayerStaticAbilityDef }[] {
   const out: { id?: ObjectId; ab: PlayerStaticAbilityDef }[] = [];
-  for (const { id, ab } of current(s).statics.get(player)?.get(key) ?? [])
-    if (ab.kind === "playerStatic" && (!ab.condition || checkCondition(s, ab.condition, player, id))) out.push({ id, ab });
+  for (const { id, ab } of current(s).statics.get(player)?.get(key) ?? []) {
+    // La condition se lit du point de vue du contrôleur de la source (`affects` : la statique touche d'autres joueurs).
+    const controller = (id && s.objects[id]?.controller) || player;
+    if (ab.kind === "playerStatic" && (!ab.condition || checkCondition(s, ab.condition, controller, id))) out.push({ id, ab });
+  }
   for (const e of liveEffects(s, player)) if (e.ability[key]) out.push({ ab: e.ability });
   return out;
 }

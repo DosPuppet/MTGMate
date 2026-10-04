@@ -1,5 +1,5 @@
 /** Mystical Archive (SOA) : scripts des cartes (PLAN-G). */
-import type { TokenSpec } from "@mtgx/engine";
+import type { Effect, TokenSpec } from "@mtgx/engine";
 import {
   altCostMode,
   amount,
@@ -34,6 +34,20 @@ const YOUR_CREATURES = { types: ["Creature" as const], controller: "you" as cons
 const COLORS_SPENT = amount.colorsSpent;
 
 const NOT_YOURS_NONLAND = target.nonland("t", { controller: "opponent" }, "permanent non-terrain que vous ne contrôlez pas");
+
+/**
+ * Ad Nauseam : « révélez la carte du dessus, mettez-la dans votre main, perdez autant de PV que sa valeur de mana ; vous
+ * pouvez recommencer autant de fois que vous le voulez » (au plus N fois, docs/approximations.md).
+ */
+function adNauseam(n: number): Effect[] {
+  const step = (i: number): Effect[] => [
+    fx.moveTo(ref.libraryTop(ref.you), { to: "hand" }, { name: `a${i}` }),
+    fx.loseLife(amount.manaValueOf(ref.stored(`a${i}`)), ref.you),
+  ];
+  let tail: Effect[] = [];
+  for (let i = n - 1; i >= 1; i--) tail = fx.may("Recommencer (révéler la carte suivante) ?", ...step(i), ...tail);
+  return [...step(0), ...tail];
+}
 
 export const CARDS: Record<string, CardScript> = {
   // Déluge : lu dans le texte (Brain Freeze, Empty the Warrens, Flusterstorm).
@@ -300,5 +314,8 @@ export const CARDS: Record<string, CardScript> = {
         ),
       ],
     ),
+  },
+  "Ad Nauseam": {
+    spell: spell([], adNauseam(30)),
   },
 };

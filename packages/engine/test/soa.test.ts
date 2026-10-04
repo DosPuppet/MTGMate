@@ -317,4 +317,17 @@ describe("Mystical Archive", () => {
       expect(s.players.p2?.life).toBe(18);
     });
   });
+  describe("G4e : bibliothèque et pioche", () => {
+    it("Ad Nauseam : la carte du dessus en main, autant de PV perdus que sa VM ; on peut recommencer", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 5), hand: ["Ad Nauseam"], library: ["Shivan Dragon", "Shock", "Forest", "Island"] },
+      });
+      let asked = 0;
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ad Nauseam") }), (req) =>
+        req.type === "yesNo" ? [++asked < 2 ? 1 : 0] : undefined,
+      );
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon", "Shock"]);
+      expect(s.players.p1?.life).toBe(20 - 6 - 1);
+    });
+  });
 });
