@@ -1,0 +1,484 @@
+[
+ {
+  "name": "Path to Exile",
+  "number": "1",
+  "rarity": "mythic",
+  "manaCost": "{W}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/e/ae0397e7-796b-412b-afec-d22759b610db.jpg?1783904181",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/e/ae0397e7-796b-412b-afec-d22759b610db.jpg?1783904181",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chemin vers l'exil",
+   "text": "Exilez une créature ciblée. Son contrôleur peut chercher dans sa bibliothèque une carte de terrain de base, la mettre sur le champ de bataille engagée, puis mélanger.",
+   "image": "https://cards.scryfall.io/normal/front/4/5/456c384c-7268-4cfa-b9f6-4443a9340114.jpg?1782761544"
+  }
+ },
+ {
+  "name": "Teleportation Circle",
+  "number": "2",
+  "rarity": "mythic",
+  "manaCost": "{3}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your end step, exile up to one target artifact or creature you control, then return that card to the battlefield under its owner's control.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/4/d4291f04-2f94-483f-93f6-db313ecffabf.jpg?1783904181",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/4/d4291f04-2f94-483f-93f6-db313ecffabf.jpg?1783904181",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cercle de téléportation",
+   "text": "Au début de votre étape de fin, exilez jusqu'à une cible, artefact ou créature, que vous contrôlez, puis renvoyez cette carte sur le champ de bataille sous le contrôle de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/5/d/5de49f4a-579d-4a8a-a64f-1b959c2f170d.jpg?1782761542"
+  }
+ },
+ {
+  "name": "Trouble in Pairs",
+  "number": "3",
+  "rarity": "mythic",
+  "manaCost": "{2}{W}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If an opponent would begin an extra turn, that player skips that turn instead.\nWhenever an opponent attacks you with two or more creatures, draws their second card each turn, or casts their second spell each turn, you draw a card.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/f/3f631a24-4d71-400c-a58d-ae91e193db2e.jpg?1783904181",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/f/3f631a24-4d71-400c-a58d-ae91e193db2e.jpg?1783904181",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Les problèmes viennent par deux",
+   "text": "Si un adversaire devait commencer un tour supplémentaire, ce joueur passe ce tour à la place.\nÀ chaque fois qu'un adversaire vous attaque avec au moins deux créatures, qu'il pioche sa deuxième carte à chaque tour ou qu'il lance son deuxième sort à chaque tour, vous piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/8/b/8be30096-0be1-420c-b753-ed65f5433507.jpg?1782761535"
+  }
+ },
+ {
+  "name": "Brainstorm",
+  "number": "4",
+  "rarity": "mythic",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Draw three cards, then put two cards from your hand on top of your library in any order.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/b/8bb0a0cf-5b04-4d68-bf7a-7131ae50d06b.jpg?1783904181",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/b/8bb0a0cf-5b04-4d68-bf7a-7131ae50d06b.jpg?1783904181",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Remue-méninges",
+   "text": "Piochez trois cartes et mettez ensuite deux cartes de votre main au-dessus de votre bibliothèque dans l'ordre de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/6/e/6e16b3be-d4ea-47b7-aef7-d082ae34873a.jpg?1782761532"
+  }
+ },
+ {
+  "name": "Cytoplast Manipulator",
+  "number": "5",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}{U}",
+  "cmc": 4,
+  "typeLine": "Creature — Human Wizard Mutant",
+  "oracleText": "Graft 2 (This creature enters with two +1/+1 counters on it. Whenever another creature enters, you may move a +1/+1 counter from this creature onto it.)\n{U}, {T}: Gain control of target creature with a +1/+1 counter on it for as long as this creature remains on the battlefield.",
+  "power": "0",
+  "toughness": "0",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Graft"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/0/402e538f-c8f9-4fb7-9a9f-f9c75c9ca97f.jpg?1783904180",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/402e538f-c8f9-4fb7-9a9f-f9c75c9ca97f.jpg?1783904180",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Manipulatrice de cytoplaste",
+   "text": "Greffe 2\n{U}, {T} : Acquérez le contrôle d'une créature ciblée avec un marqueur +1/+1 sur elle tant que cette créature reste sur le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/6/c/6cf85624-3c9e-44c5-83da-980bfc28cb01.jpg?1782761525"
+  }
+ },
+ {
+  "name": "Ashcoat of the Shadow Swarm",
+  "number": "6",
+  "rarity": "mythic",
+  "manaCost": "{3}{B}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Rat Warlock",
+  "oracleText": "Whenever Ashcoat attacks or blocks, other Rats you control get +X/+X until end of turn, where X is the number of Rats you control.\nAt the beginning of your end step, you may mill four cards. If you do, return up to two Rat creature cards from your graveyard to your hand. (To mill a card, put the top card of your library into your graveyard.)",
+  "power": "3",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/8/6873a1d1-b1bc-4ed6-a734-0e35fd8dbc8e.jpg?1783904180",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/8/6873a1d1-b1bc-4ed6-a734-0e35fd8dbc8e.jpg?1783904180",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cendrepoil de la Meute des ombres",
+   "text": "À chaque fois que Splinter attaque ou bloque, les autres rats que vous contrôlez gagnent +X/+X jusqu'à la fin du tour, X étant le nombre de rats que vous contrôlez.\nAu début de votre étape de fin, vous pouvez meuler quatre cartes. Si vous faites ainsi, renvoyez jusqu'à deux cartes de créature Rat depuis votre cimetière dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/3/7/37961bd7-6d6b-4ba7-b5ce-62704af18b33.jpg?1782761523"
+  }
+ },
+ {
+  "name": "Plague of Vermin",
+  "number": "7",
+  "rarity": "mythic",
+  "manaCost": "{6}{B}",
+  "cmc": 7,
+  "typeLine": "Sorcery",
+  "oracleText": "Starting with you, each player may pay any amount of life. Repeat this process until no one pays life. Each player creates a 1/1 black Rat creature token for each 1 life they paid this way.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/c/6c6aca69-1624-420f-b83e-290a2c38291e.jpg?1783904178",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/c/6c6aca69-1624-420f-b83e-290a2c38291e.jpg?1783904178",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Propagation de vermine",
+   "text": "En commençant par vous, chaque joueur peut payer n'importe quelle quantité de points de vie. Répétez ce processus jusqu'à ce que personne ne paie de points de vie. Chaque joueur crée un jeton de créature 1/1 noire Rat pour chaque 1 point de vie qu'il a payé de cette manière.",
+   "image": "https://cards.scryfall.io/normal/front/9/7/97c1bd4e-6123-443a-8d49-7885648bbf74.jpg?1782761522"
+  }
+ },
+ {
+  "name": "All Will Be One",
+  "number": "8",
+  "rarity": "mythic",
+  "manaCost": "{3}{R}{R}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever you put one or more counters on a permanent or player, this enchantment deals that much damage to target opponent, creature an opponent controls, or planeswalker an opponent controls.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/d/7d9681a6-1c22-41ee-8437-22baafbf8e4b.jpg?1783904180",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/d/7d9681a6-1c22-41ee-8437-22baafbf8e4b.jpg?1783904180",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tous Phyrexians",
+   "text": "À chaque fois que vous mettez au moins un marqueur sur un permanent ou un joueur, cet enchantement inflige autant de blessures à une cible, adversaire, créature qu'un adversaire contrôle ou planeswalker qu'un adversaire contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/9/6/96ddf37c-960d-494f-9ea8-5ecd38bec2ae.jpg?1782761516"
+  }
+ },
+ {
+  "name": "Silverclad Ferocidons",
+  "number": "9",
+  "rarity": "mythic",
+  "manaCost": "{5}{R}{R}",
+  "cmc": 7,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "Enrage — Whenever this creature is dealt damage, each opponent sacrifices a permanent of their choice.",
+  "power": "8",
+  "toughness": "5",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Enrage"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/0/d042bcf5-476e-4994-bec5-831b6b84d74e.jpg?1783904178",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d042bcf5-476e-4994-bec5-831b6b84d74e.jpg?1783904178",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Férocidontes plaqués d'argent",
+   "text": "Rage - À chaque fois que cette créature subit des blessures, chaque adversaire sacrifie un permanent de son choix.",
+   "image": "https://cards.scryfall.io/normal/front/1/5/15f27b8c-4e40-4d4d-bd1e-2a3e86b140ab.jpg?1782761510"
+  }
+ },
+ {
+  "name": "Underworld Breach",
+  "number": "10",
+  "rarity": "mythic",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Each nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard. (You may cast cards from your graveyard for their escape cost.)\nAt the beginning of the end step, sacrifice this enchantment.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/9/49c8b2ed-95bf-4a85-a0d7-6d7c01fc086d.jpg?1783904178",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/9/49c8b2ed-95bf-4a85-a0d7-6d7c01fc086d.jpg?1783904178",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Brèche du Monde souterrain",
+   "text": "Chaque carte non-terrain dans votre cimetière a l'échappée. Le coût d'échappée est égal au coût de mana de la carte plus exilez trois autres cartes de votre cimetière.\nAu début de l'étape de fin, sacrifiez cet enchantement.",
+   "image": "https://cards.scryfall.io/normal/front/9/4/94e3eacc-baed-4705-a0e4-07257ec223aa.jpg?1782761506"
+  }
+ },
+ {
+  "name": "Doubling Season",
+  "number": "11",
+  "rarity": "mythic",
+  "manaCost": "{4}{G}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.\nIf an effect would put one or more counters on a permanent you control, it puts twice that many of those counters on that permanent instead.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/c/8c2d6fde-5c3b-48c3-828c-832f00570824.jpg?1783904178",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/c/8c2d6fde-5c3b-48c3-828c-832f00570824.jpg?1783904178",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Saison de dédoublement",
+   "text": "Si un effet devait créer au moins un jeton sous votre contrôle, il crée deux fois ce nombre de jetons à la place.\nSi un effet devait mettre au moins un marqueur sur un permanent que vous contrôlez, il met deux fois ce nombre de marqueurs sur ce permanent à la place.",
+   "image": "https://cards.scryfall.io/normal/front/1/7/176addd2-91e1-48a3-97f1-3cb2b8ce5585.jpg?1782761503"
+  }
+ },
+ {
+  "name": "Rhythm of the Wild",
+  "number": "12",
+  "rarity": "mythic",
+  "manaCost": "{1}{R}{G}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Creature spells you control can't be countered.\nNontoken creatures you control have riot. (They enter with your choice of a +1/+1 counter or haste.)",
+  "colors": [
+   "G",
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/7/e7843a8a-a8d8-4236-a05d-287fad0a74b1.jpg?1783904177",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/7/e7843a8a-a8d8-4236-a05d-287fad0a74b1.jpg?1783904177",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rythme de la forêt",
+   "text": "Les sorts de créature que vous contrôlez ne peuvent pas être contrecarrés.\nLes créatures non-jeton que vous contrôlez ont l'émeute.",
+   "image": "https://cards.scryfall.io/normal/front/d/c/dcee860d-0bf2-4034-8755-88dd77cdef8c.jpg?1782761497"
+  }
+ },
+ {
+  "name": "Waves of Aggression",
+  "number": "13",
+  "rarity": "mythic",
+  "manaCost": "{3}{R/W}{R/W}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Untap all creatures that attacked this turn. After this main phase, there is an additional combat phase followed by an additional main phase.\nRetrace (You may cast this card from your graveyard by discarding a land card in addition to paying its other costs.)",
+  "colors": [
+   "R",
+   "W"
+  ],
+  "keywords": [
+   "Retrace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/3/83a8bff9-cf74-40d6-87c5-0c2a33cdaed0.jpg?1783904176",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/3/83a8bff9-cf74-40d6-87c5-0c2a33cdaed0.jpg?1783904176",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vagues d'agressivité",
+   "text": "Dégagez toutes les créatures qui ont attaqué ce tour-ci. Cette phase principale est suivie d'une phase de combat supplémentaire, puis d'une phase principale supplémentaire.\nPistage",
+   "image": "https://cards.scryfall.io/normal/front/b/d/bdff8115-9fa0-4f8b-8a0a-fb21390973f1.jpg?1782761494"
+  }
+ },
+ {
+  "name": "Arcbound Ravager",
+  "number": "14",
+  "rarity": "mythic",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact Creature — Beast",
+  "oracleText": "Sacrifice an artifact: Put a +1/+1 counter on this creature.\nModular 1 (This creature enters with a +1/+1 counter on it. When it dies, you may put its +1/+1 counters on target artifact creature.)",
+  "power": "0",
+  "toughness": "0",
+  "colors": [],
+  "keywords": [
+   "Modular"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/0/108033ab-e9d0-4510-9075-f28c3044629c.jpg?1783904176",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/0/108033ab-e9d0-4510-9075-f28c3044629c.jpg?1783904176",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dévastateur entravarc",
+   "text": "Sacrifiez un artefact : Mettez un marqueur +1/+1 sur cette créature.\nModularité 1",
+   "image": "https://cards.scryfall.io/normal/front/9/c/9c4b9f4b-2390-494a-b951-b6bbe85faaa1.jpg?1782761488"
+  }
+ },
+ {
+  "name": "Conqueror's Flail",
+  "number": "15",
+  "rarity": "mythic",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +1/+1 for each color among permanents you control.\nAs long as this Equipment is attached to a creature, your opponents can't cast spells during your turn.\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/4/24db0362-fb1a-4ab4-9922-c4db4b0ca6e1.jpg?1783904176",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/24db0362-fb1a-4ab4-9922-c4db4b0ca6e1.jpg?1783904176",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fléau du conquérant",
+   "text": "La créature équipée gagne +1/+1 pour chaque couleur parmi les permanents que vous contrôlez.\nTant que cet équipement est attaché à une créature, vos adversaires ne peuvent pas lancer de sorts pendant votre tour.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/8/3/83dc3bbc-4b9a-48c6-bfe4-1dc5726cbaa3.jpg?1782761484"
+  }
+ },
+ {
+  "name": "Metallic Mimic",
+  "number": "16",
+  "rarity": "mythic",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact Creature — Shapeshifter",
+  "oracleText": "As this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nEach other creature you control of the chosen type enters with an additional +1/+1 counter on it.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/4/443b0960-a490-4287-80d9-2bfa0bdbea51.jpg?1783904177",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/443b0960-a490-4287-80d9-2bfa0bdbea51.jpg?1783904177",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mimique métallique",
+   "text": "Au moment où cette créature arrive, choisissez un type de créature.\nCette créature a le type choisi en plus de ses autres types.\nChaque autre créature du type choisi que vous contrôlez arrive avec un marqueur +1/+1 supplémentaire sur elle.",
+   "image": "https://cards.scryfall.io/normal/front/4/e/4e1c2a3d-55f0-479d-a1ff-197b82134d13.jpg?1782761481"
+  }
+ },
+ {
+  "name": "Shadowspear",
+  "number": "17",
+  "rarity": "mythic",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Legendary Artifact — Equipment",
+  "oracleText": "Equipped creature gets +1/+1 and has trample and lifelink.\n{1}: Permanents your opponents control lose hexproof and indestructible until end of turn.\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/0/90de17d0-1783-48f3-8aef-0b85df6da730.jpg?1783904176",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/90de17d0-1783-48f3-8aef-0b85df6da730.jpg?1783904176",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ombrelance",
+   "text": "La créature équipée gagne +1/+1 et a le piétinement et le lien de vie.\n{1} : Les permanents que vos adversaires contrôlent perdent la défense talismanique et l'indestructible jusqu'à la fin du tour.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/9/9/99653689-f3ca-4e76-a1d8-2e294e064214.jpg?1782761474"
+  }
+ },
+ {
+  "name": "Sword of Sinew and Steel",
+  "number": "18",
+  "rarity": "mythic",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +2/+2 and has protection from black and from red.\nWhenever equipped creature deals combat damage to a player, destroy up to one target planeswalker and up to one target artifact.\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/f/af0d7cb4-aaac-4dbd-9daa-622342e33388.jpg?1783904175",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/f/af0d7cb4-aaac-4dbd-9daa-622342e33388.jpg?1783904175",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Épée de Nerf et d'Acier",
+   "text": "La créature équipée gagne +2/+2 et a la protection contre le noir et le rouge.\nÀ chaque fois que la créature équipée inflige des blessures de combat à un joueur, détruisez jusqu'à un planeswalker ciblé et jusqu'à un artefact ciblé.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/7/5/75decad7-2806-4ad0-a20e-248978e5fec3.jpg?1782761472"
+  }
+ },
+ {
+  "name": "Umezawa's Jitte",
+  "number": "19",
+  "rarity": "mythic",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Legendary Artifact — Equipment",
+  "oracleText": "Whenever equipped creature deals combat damage, put two charge counters on Umezawa's Jitte.\nRemove a charge counter from Umezawa's Jitte: Choose one —\n• Equipped creature gets +2/+2 until end of turn.\n• Target creature gets -1/-1 until end of turn.\n• You gain 2 life.\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/d/4ddaccfb-52e5-4448-8273-797cff31db2b.jpg?1783904177",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/d/4ddaccfb-52e5-4448-8273-797cff31db2b.jpg?1783904177",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Jitte d'Umezawa",
+   "text": "À chaque fois que la créature équipée inflige des blessures de combat, mettez deux marqueurs « charge » sur le Jitte de Raph.\nRetirez un marqueur « charge » du Jitte de Raph : choisissez l'un -\n* La créature équipée gagne +2/+2 jusqu'à la fin du tour.\n* Une créature ciblée gagne -1/-1 jusqu'à la fin du tour.\n* Vous gagnez 2 points de vie.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/a/d/adad4241-746d-4dde-b643-0e9db479f48d.jpg?1782761466"
+  }
+ },
+ {
+  "name": "Undercity Sewers",
+  "number": "20",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Island Swamp",
+  "oracleText": "({T}: Add {U} or {B}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+  "colors": [],
+  "keywords": [
+   "Surveil"
+  ],
+  "producedMana": [
+   "B",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/9/19545db3-8be5-41e5-8d13-dec4f96fe624.jpg?1783904177",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/9/19545db3-8be5-41e5-8d13-dec4f96fe624.jpg?1783904177",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Égouts de la Citerraine",
+   "text": "Ce terrain arrive engagé.\nQuand ce terrain arrive, surveillez 1.",
+   "image": "https://cards.scryfall.io/normal/front/6/9/691c157f-fb7a-4a55-a44b-cf3dec17ec49.jpg?1782761461"
+  }
+ }
+]

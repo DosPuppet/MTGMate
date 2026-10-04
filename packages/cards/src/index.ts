@@ -31,6 +31,7 @@ export {
 } from "./decklist";
 export { DECKS, type DeckList } from "./decks";
 export { HANDLED_LAYOUTS, onlyKeywords, type RawCard, type RawFace, slug, toCardDef } from "./scryfall";
+export { EXCLUDED_REPRINTS } from "./setRegistry";
 export { type CardSet, isMainSet, SET_BY_CODE, SETS } from "./sets";
 export { type TokenLike, tokenImage } from "./tokenImages";
 export { TOKEN_SPECS } from "./tokens";

@@ -1,0 +1,591 @@
+[
+ {
+  "name": "Don't Move",
+  "number": "1",
+  "rarity": "rare",
+  "manaCost": "{3}{W}{W}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy all tapped creatures. Until your next turn, whenever a creature becomes tapped, destroy it.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/d/1d06f729-990b-4c2c-ad2a-c17449117f75.jpg?1783913641",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/d/1d06f729-990b-4c2c-ad2a-c17449117f75.jpg?1783913641",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ne bougez pas !",
+   "typeLine": "Rituel",
+   "text": "Détruisez toutes les créatures engagées. Jusqu'à votre prochain tour, à chaque fois qu'une créature devient engagée, détruisez-la.",
+   "image": "https://cards.scryfall.io/normal/front/4/c/4c3e7c58-71e2-48eb-8664-5f3d2ff21901.jpg?1782806843"
+  }
+ },
+ {
+  "name": "Cresting Mosasaurus",
+  "number": "2",
+  "rarity": "rare",
+  "manaCost": "{6}{U}{U}",
+  "cmc": 8,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "Emerge {6}{U} (You may cast this spell by sacrificing a creature and paying the emerge cost reduced by that creature's mana value.)\nWhen this creature enters, if you cast it, return each non-Dinosaur creature to its owner's hand.",
+  "power": "4",
+  "toughness": "8",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Emerge"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/6/b6011e4b-a8a7-4cad-a276-c1022b45edc3.jpg?1783913640",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b6011e4b-a8a7-4cad-a276-c1022b45edc3.jpg?1783913640",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mosasaure en crête de vague",
+   "typeLine": "Créature — dinosaure",
+   "text": "Émergence {6}{U} (Vous pouvez lancer ce sort en sacrifiant une créature et en payant le coût d'émergence, moins la valeur de mana de cette créature.)\nQuand le Mosasaure en crête de vague arrive sur le champ de bataille, si vous l'avez lancé, renvoyez chaque créature non-Dinosaure dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/3/6/366c2f47-efa3-443d-8c4a-877bf68cf9ab.jpg?1782806836"
+  }
+ },
+ {
+  "name": "Spitting Dilophosaurus",
+  "number": "3",
+  "rarity": "rare",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "Whenever this creature enters or attacks, put a -1/-1 counter on up to one target creature.\nCreatures your opponents control with -1/-1 counters on them can't block.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/4/f4f0c479-5fd1-45c2-af3f-15b6e5811b0f.jpg?1783913640",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f4f0c479-5fd1-45c2-af3f-15b6e5811b0f.jpg?1783913640",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dilophosaure cracheur",
+   "typeLine": "Créature — dinosaure",
+   "text": "À chaque fois que le Dilophosaure cracheur arrive sur le champ de bataille ou qu'il attaque, mettez un marqueur -1/-1 sur jusqu'à une créature ciblée.\nLes créatures que vos adversaires contrôlent avec des marqueurs -1/-1 sur elles ne peuvent pas bloquer.",
+   "image": "https://cards.scryfall.io/normal/front/5/8/58b34adb-5738-421c-915e-2f9f742dd726.jpg?1782806831"
+  }
+ },
+ {
+  "name": "Hunting Velociraptor",
+  "number": "4",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "First strike\nDinosaur spells you cast have prowl {2}{R}. (You may cast a spell for its prowl cost if you dealt combat damage to a player this turn with a creature with any of its creature types.)",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "First strike"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/2/e2c5c161-49c5-404d-bd8e-86e634222232.jpg?1783913639",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e2c5c161-49c5-404d-bd8e-86e634222232.jpg?1783913639",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vélociraptor en chasse",
+   "typeLine": "Créature — dinosaure",
+   "text": "Initiative\nLes sorts de dinosaure que vous lancez ont incursion {2}{R}. (Vous pouvez lancer un sort pour son coût d'incursion si vous avez infligé des blessures de combat à un joueur ce tour-ci avec une créature qui a n'importe lequel de ses types de créature.)",
+   "image": "https://cards.scryfall.io/normal/front/1/5/159b4965-14c8-4f45-a91a-4f2e8859e322.jpg?1782806822"
+  }
+ },
+ {
+  "name": "Life Finds a Way",
+  "number": "5",
+  "rarity": "rare",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a nontoken creature you control with power 4 or greater enters, populate. (Create a token that's a copy of a creature token you control.)",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Populate"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/2/72137cda-ab1b-4bb7-9190-66a954c36e1e.jpg?1783913639",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/72137cda-ab1b-4bb7-9190-66a954c36e1e.jpg?1783913639",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "La vie trouve toujours un chemin",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature non-jeton avec une force supérieure ou égale à 4 arrive sur le champ de bataille sous votre contrôle, peuplez. (Créez un jeton qui est une copie d'un jeton de créature que vous contrôlez.)",
+   "image": "https://cards.scryfall.io/normal/front/9/1/91135dcc-b10b-4a3d-bda6-4e2c5d31a999.jpg?1782806819"
+  }
+ },
+ {
+  "name": "Savage Order",
+  "number": "6",
+  "rarity": "rare",
+  "manaCost": "{2}{G}{G}",
+  "cmc": 4,
+  "typeLine": "Sorcery",
+  "oracleText": "As an additional cost to cast this spell, sacrifice a creature with power 4 or greater.\nSearch your library for a Dinosaur creature card, put it onto the battlefield, then shuffle. It gains indestructible until your next turn.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/5/f571ef55-50dd-4624-aa42-fea5a0303033.jpg?1783913638",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f571ef55-50dd-4624-aa42-fea5a0303033.jpg?1783913638",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ordre sauvage",
+   "typeLine": "Rituel",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, sacrifiez une créature avec une force supérieure ou égale à 4.\nCherchez dans votre bibliothèque une carte de créature Dinosaure, mettez-la sur le champ de bataille, puis mélangez. Elle acquiert l'indestructible jusqu'à votre prochain tour.",
+   "image": "https://cards.scryfall.io/normal/front/6/0/602b9842-f19c-43d3-aa6a-f3adc654e202.jpg?1782806806"
+  }
+ },
+ {
+  "name": "Welcome to . . . // Jurassic Park",
+  "number": "7",
+  "rarity": "rare",
+  "layout": "transform",
+  "manaCost": "{1}{G}{G}",
+  "cmc": 3,
+  "typeLine": "Enchantment — Saga",
+  "oracleText": "(As this Saga enters and after your draw step, add a lore counter.)\nI — For each opponent, up to one target noncreature artifact they control becomes a 0/4 Wall artifact creature with defender for as long as you control this Saga.\nII — Create a 3/3 green Dinosaur creature token with trample. It gains haste until end of turn.\nIII — Destroy all Walls. Exile this Saga, then return it to the battlefield transformed under your control.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Transform"
+  ],
+  "producedMana": [
+   "G"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/d/6d84e2d4-38bf-4d46-99a6-37c2dda66b16.jpg?1783913644",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6d84e2d4-38bf-4d46-99a6-37c2dda66b16.jpg?1783913644",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Welcome to . . .",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter.)\nI — For each opponent, up to one target noncreature artifact they control becomes a 0/4 Wall artifact creature with defender for as long as you control this Saga.\nII — Create a 3/3 green Dinosaur creature token with trample. It gains haste until end of turn.\nIII — Destroy all Walls. Exile this Saga, then return it to the battlefield transformed under your control.",
+    "colors": [
+     "G"
+    ],
+    "image": "https://cards.scryfall.io/normal/front/6/d/6d84e2d4-38bf-4d46-99a6-37c2dda66b16.jpg?1783913644",
+    "fr": {
+     "name": "Bienvenue à...",
+     "typeLine": "Enchantement — saga",
+     "text": "(Au moment où cette saga arrive sur le champ de bataille et après votre étape de pioche, ajoutez un marqueur « sapience ».)\nI — Pour chaque adversaire, jusqu'à un artefact non-créature ciblé qu'il contrôle devient une créature-artefact 0/4 Mur avec le défenseur tant que vous contrôlez cette saga.\nII — Créez un jeton de créature 3/3 verte Dinosaure avec le piétinement. Il acquiert la célérité jusqu'à la fin du tour.\nIII — Détruisez tous les murs. Exilez cette saga, puis renvoyez-la sur le champ de bataille, transformée et sous votre contrôle.",
+     "image": "https://cards.scryfall.io/normal/front/9/e/9e5f9bc3-f467-44ce-8af2-c04178ddaf87.jpg?1782806802"
+    }
+   },
+   {
+    "name": "Jurassic Park",
+    "manaCost": "",
+    "typeLine": "Legendary Land",
+    "oracleText": "(Transforms from Welcome to ....)\nEach Dinosaur card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard. (You may cast cards from your graveyard for their escape cost.)\n{T}: Add {G} for each Dinosaur you control.",
+    "colors": [],
+    "image": "https://cards.scryfall.io/normal/back/6/d/6d84e2d4-38bf-4d46-99a6-37c2dda66b16.jpg?1783913644",
+    "fr": {
+     "name": "Jurassic Park",
+     "typeLine": "Terrain légendaire",
+     "text": "(Transformation de Bienvenue à...\nChaque carte de dinosaure dans votre cimetière a l'échappée. Le coût d'échappée est égal au coût de mana de la carte plus l'exil de trois autres cartes de votre cimetière. (Vous pouvez lancer des cartes depuis votre cimetière pour leur coût d'échappée.)\n{T} : Ajoutez {G} pour chaque dinosaure que vous contrôlez.",
+     "image": "https://cards.scryfall.io/normal/back/9/e/9e5f9bc3-f467-44ce-8af2-c04178ddaf87.jpg?1782806802"
+    }
+   }
+  ],
+  "fr": {
+   "name": "Bienvenue à...",
+   "typeLine": "Enchantement — saga",
+   "text": "(Au moment où cette saga arrive sur le champ de bataille et après votre étape de pioche, ajoutez un marqueur « sapience ».)\nI — Pour chaque adversaire, jusqu'à un artefact non-créature ciblé qu'il contrôle devient une créature-artefact 0/4 Mur avec le défenseur tant que vous contrôlez cette saga.\nII — Créez un jeton de créature 3/3 verte Dinosaure avec le piétinement. Il acquiert la célérité jusqu'à la fin du tour.\nIII — Détruisez tous les murs. Exilez cette saga, puis renvoyez-la sur le champ de bataille, transformée et sous votre contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/9/e/9e5f9bc3-f467-44ce-8af2-c04178ddaf87.jpg?1782806802"
+  }
+ },
+ {
+  "name": "Blue, Loyal Raptor",
+  "number": "8",
+  "rarity": "rare",
+  "manaCost": "{2}{G}{U}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Dinosaur",
+  "oracleText": "Partner with Owen Grady, Raptor Trainer (When this creature enters, target player may put Owen into their hand from their library, then shuffle.)\nFor each kind of counter on Blue, Loyal Raptor, each other Dinosaur you control enters with a counter of that kind on it.",
+  "power": "5",
+  "toughness": "4",
+  "colors": [
+   "G",
+   "U"
+  ],
+  "keywords": [
+   "Partner with",
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/a/0a764ec9-6a30-4df3-91b4-c64fd8e32fa0.jpg?1783913638",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0a764ec9-6a30-4df3-91b4-c64fd8e32fa0.jpg?1783913638",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Blue, raptor loyale",
+   "typeLine": "Créature légendaire — dinosaure",
+   "text": "Partenariat avec Owen Grady, dresseur de raptors (Quand cette créature arrive sur le champ de bataille, un joueur ciblé peut mettre Owen dans sa main depuis sa bibliothèque, puis mélanger.)\nPour chaque sorte de marqueur sur Blue, raptor loyale, chaque autre dinosaure que vous contrôlez arrive sur le champ de bataille avec un marqueur de cette sorte sur lui.",
+   "image": "https://cards.scryfall.io/normal/front/e/1/e141f21d-72f4-40d2-9088-262a324ed108.jpg?1782806794"
+  }
+ },
+ {
+  "name": "Compy Swarm",
+  "number": "9",
+  "rarity": "rare",
+  "manaCost": "{1}{B}{G}",
+  "cmc": 3,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "At the beginning of your end step, if a creature died this turn, create a tapped token that's a copy of this creature.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/0/800871ee-7394-4a31-98a7-4b92860208a1.jpg?1783913638",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/0/800871ee-7394-4a31-98a7-4b92860208a1.jpg?1783913638",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nuée de compys",
+   "typeLine": "Créature — dinosaure",
+   "text": "Au début de votre étape de fin, si une créature est morte ce tour-ci, créez un jeton engagé qui est une copie de la Nuée de compys.",
+   "image": "https://cards.scryfall.io/normal/front/1/2/12141360-5417-44be-a722-dac3bee83e43.jpg?1782806790"
+  }
+ },
+ {
+  "name": "Ellie and Alan, Paleontologists",
+  "number": "10",
+  "rarity": "rare",
+  "manaCost": "{2}{G}{W}{U}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Human Scientist",
+  "oracleText": "{T}, Exile a creature card from your graveyard: Discover X, where X is the mana value of the exiled card. Activate only as a sorcery. (Exile cards from the top of your library until you exile a nonland card with that mana value or less. Cast it without paying its mana cost or put it into your hand. Put the rest on the bottom in a random order.)",
+  "power": "2",
+  "toughness": "5",
+  "colors": [
+   "G",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Discover"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/4/c40b25d7-73c9-4f30-a707-5afb08185a8d.jpg?1783913637",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/4/c40b25d7-73c9-4f30-a707-5afb08185a8d.jpg?1783913637",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ellie et Alan, paléontologues",
+   "typeLine": "Créature légendaire — humain et scientifique",
+   "text": "{T}, Exilez une carte de créature de votre cimetière : Découvrez X, X étant la valeur de mana de la carte exilée. N'activez que lorsque vous pourriez lancer un rituel. (Exilez les cartes du dessus de votre bibliothèque jusqu'à ce que vous exiliez une carte non-terrain avec une valeur de mana inférieure ou égale à celle-ci. Lancez-la sans payer son coût de mana ou mettez-la dans votre main. Mettez le reste au-dessous de votre bibliothèque dans un ordre aléatoire.)",
+   "image": "https://cards.scryfall.io/normal/front/f/0/f002bcc9-ccca-482d-aaa2-77ba2f3be323.jpg?1782806782"
+  }
+ },
+ {
+  "name": "Grim Giganotosaurus",
+  "number": "11",
+  "rarity": "rare",
+  "manaCost": "{5}{B}{G}",
+  "cmc": 7,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "{10}{B}{G}: Monstrosity 10. This ability costs {1} less to activate for each creature with power 4 or greater your opponents control. (If this creature isn't monstrous, put ten +1/+1 counters on it and it becomes monstrous.)\nWhen this creature becomes monstrous, destroy all artifacts and creatures other than this creature.",
+  "power": "10",
+  "toughness": "10",
+  "colors": [
+   "B",
+   "G"
+  ],
+  "keywords": [
+   "Monstrosity"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/e/ae30b824-9586-413b-b925-ce6f915bf7e5.jpg?1783913636",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/e/ae30b824-9586-413b-b925-ce6f915bf7e5.jpg?1783913636",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Giganotosaure sinistre",
+   "typeLine": "Créature — dinosaure",
+   "text": "{10}{B}{G}: Monstruosité 10. Cette capacité coûte {1} de moins à activer pour chaque créature avec une force supérieure ou égale à 4 que vos adversaires contrôlent. (Si cette créature n'est pas monstrueuse, mettez dix marqueurs +1/+1 sur elle et elle devient monstrueuse.)\nQuand le Gigantosaure sinistre devient monstrueux, détruisez tous les artefacts et toutes les créatures autres que le Gigantosaure sinistre.",
+   "image": "https://cards.scryfall.io/normal/front/7/e/7ebbf066-39b0-4624-9e83-d175f2799ad4.jpg?1782806777"
+  }
+ },
+ {
+  "name": "Henry Wu, InGen Geneticist",
+  "number": "12",
+  "rarity": "rare",
+  "manaCost": "{B}{G}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Scientist",
+  "oracleText": "Henry Wu and other Human creatures you control have exploit. (When a creature with exploit enters, you may sacrifice a creature.)\nWhenever a creature you control exploits a non-Human creature, draw a card. If the exploited creature had power 3 or greater, create a Treasure token.",
+  "power": "1",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "G",
+   "U"
+  ],
+  "keywords": [
+   "Treasure"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/b/5b67d302-ddaa-4627-adc8-86bb665f69ad.jpg?1783913636",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/b/5b67d302-ddaa-4627-adc8-86bb665f69ad.jpg?1783913636",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Henry Wu, généticien d'InGen",
+   "typeLine": "Créature légendaire — humain et scientifique",
+   "text": "Henry Wu, généticien d'InGen et les autres créatures Humain que vous contrôlez ont l'exploitation. (Quand une créature avec l'exploitation arrive sur le champ de bataille, vous pouvez sacrifier une créature.)\nÀ chaque fois qu'une créature que vous contrôlez exploite une créature non-Humain, piochez une carte. Si la créature exploitée avait une force supérieure ou égale à 3, créez un jeton Trésor.",
+   "image": "https://cards.scryfall.io/normal/front/1/8/1873ba0f-8e72-4c71-babe-d2c8b1762cf6.jpg?1782806771"
+  }
+ },
+ {
+  "name": "Ian Malcolm, Chaotician",
+  "number": "13",
+  "rarity": "rare",
+  "manaCost": "{1}{U}{R}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Scientist",
+  "oracleText": "Whenever a player draws their second card each turn, that player exiles the top card of their library.\nDuring each player's turn, that player may cast a spell from among the cards they don't own exiled with Ian Malcolm, and mana of any type can be spent to cast it.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "R",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/4/b4a0402e-e39b-4008-b654-189b4a5e03a3.jpg?1783913634",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/4/b4a0402e-e39b-4008-b654-189b4a5e03a3.jpg?1783913634",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ian Malcolm, théoricien du chaos",
+   "typeLine": "Créature légendaire — humain et scientifique",
+   "text": "À chaque fois qu'un joueur pioche sa deuxième carte à chaque tour, ce joueur exile la carte du dessus de sa bibliothèque.\nPendant le tour de chaque joueur, ce joueur peut lancer un sort parmi les cartes qu'il ne possède pas exilées par Ian Malcolm, théoricien du chaos, et n'importe quel type de mana peut être utilisé pour le lancer.",
+   "image": "https://cards.scryfall.io/normal/front/e/d/ed69f4cc-8468-4497-b817-9391ce2771f7.jpg?1782806764"
+  }
+ },
+ {
+  "name": "Indominus Rex, Alpha",
+  "number": "14",
+  "rarity": "rare",
+  "manaCost": "{1}{U/B}{U/B}{G}{G}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Dinosaur Mutant",
+  "oracleText": "As Indominus Rex enters, discard any number of creature cards. It enters with a flying counter on it if a card discarded this way has flying. The same is true for first strike, double strike, deathtouch, hexproof, haste, indestructible, lifelink, menace, reach, trample, and vigilance.\nWhen Indominus Rex enters, draw a card for each counter on it.",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "B",
+   "G",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/5/25e6ebfb-8f0b-44f0-a911-103ade41c6bc.jpg?1783913634",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/5/25e6ebfb-8f0b-44f0-a911-103ade41c6bc.jpg?1783913634",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Indominus Rex, alpha",
+   "typeLine": "Créature légendaire — dinosaure et mutant",
+   "text": "Quand Indominus Rex, alpha arrive sur le champ de bataille, défaussez-vous de n'importe quel nombre de cartes de créature. Il arrive avec un marqueur « vol » sur lui si une carte défaussée de cette manière a le vol. C'est vrai aussi pour l'initiative, la double initiative, le contact mortel, la défense talismanique, la célérité, l'indestructible, le lien de vie, la menace, la portée, le piétinement et la vigilance.\nQuand Indominus Rex arrive sur le champ de bataille, piochez une carte pour chaque marqueur sur lui.",
+   "image": "https://cards.scryfall.io/normal/front/9/6/96966041-39dd-47d9-bf62-71a352a7b4c9.jpg?1782806759"
+  }
+ },
+ {
+  "name": "Indoraptor, the Perfect Hybrid",
+  "number": "15",
+  "rarity": "rare",
+  "manaCost": "{1}{B/G}{R}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Dinosaur Mutant",
+  "oracleText": "Bloodthirst X (This creature enters with X +1/+1 counters on it, where X is the damage dealt to your opponents this turn.)\nMenace\nEnrage — Whenever Indoraptor is dealt damage, choose an opponent at random. Indoraptor deals damage equal to its power to that player unless they sacrifice a nontoken creature of their choice.",
+  "power": "3",
+  "toughness": "1",
+  "colors": [
+   "B",
+   "G",
+   "R"
+  ],
+  "keywords": [
+   "Enrage",
+   "Bloodthirst",
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/8/3826e2af-c134-4dc1-98b5-574b1bda9a98.jpg?1783913634",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/3826e2af-c134-4dc1-98b5-574b1bda9a98.jpg?1783913634",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Indoraptor, l'hybride parfait",
+   "typeLine": "Créature légendaire — dinosaure et mutant",
+   "text": "Soif de sang X (Cette créature arrive sur le champ de bataille avec X marqueurs +1/+1 sur elle, X étant le nombre de blessures infligées à vos adversaires ce tour-ci.)\nMenace\nRage — À chaque fois que l'Indoraptor, l'hybride parfait subit des blessures, choisissez un adversaire au hasard. L'Indoraptor inflige un nombre de blessures égal à sa force à ce joueur à moins qu'il ne sacrifie une créature non-jeton.",
+   "image": "https://cards.scryfall.io/normal/front/3/b/3b9f0cf1-34d2-4c55-82b3-649783542a4a.jpg?1782806751"
+  }
+ },
+ {
+  "name": "Owen Grady, Raptor Trainer",
+  "number": "16",
+  "rarity": "rare",
+  "manaCost": "{1}{R}{G}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Soldier Scientist",
+  "oracleText": "Partner with Blue, Loyal Raptor\n{T}: Put your choice of a reach, menace, trample, or haste counter on target Dinosaur. Activate only as a sorcery.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+   "G",
+   "R"
+  ],
+  "keywords": [
+   "Partner with",
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/8/a85a1e4c-af02-4072-872f-956fa74f8aa6.jpg?1783913633",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/8/a85a1e4c-af02-4072-872f-956fa74f8aa6.jpg?1783913633",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Owen Grady, dresseur de raptors",
+   "typeLine": "Créature légendaire — humain et soldat et scientifique",
+   "text": "Partenariat avec Blue, raptor loyale\n{T} : Mettez, selon votre choix, un marqueur « menace », « piétinement », « portée » ou « célérité » sur un dinosaure ciblé. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/1/c/1c622e60-b863-4c96-ace7-c493537e0fe0.jpg?1782806747"
+  }
+ },
+ {
+  "name": "Permission Denied",
+  "number": "17",
+  "rarity": "rare",
+  "manaCost": "{W}{U}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Counter target noncreature spell. Your opponents can't cast noncreature spells this turn.",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/3/c3e8dd5a-d52d-481d-b48c-1392462beb33.jpg?1783913634",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c3e8dd5a-d52d-481d-b48c-1392462beb33.jpg?1783913634",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Permission refusée",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez un sort non-créature ciblé. Vos adversaires ne peuvent pas lancer de sorts non-créature ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/e/1/e1e67422-1c9a-4f02-9c25-6e9ab07510e3.jpg?1782806739"
+  }
+ },
+ {
+  "name": "Ravenous Tyrannosaurus",
+  "number": "18",
+  "rarity": "rare",
+  "manaCost": "{4}{R}{G}",
+  "cmc": 6,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "Devour 3 (As this creature enters, you may sacrifice any number of creatures. It enters with three times that many +1/+1 counters on it.)\nWhenever this creature attacks, it deals damage equal to its power to up to one other target creature. Excess damage is dealt to that creature's controller instead.",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "G",
+   "R"
+  ],
+  "keywords": [
+   "Devour"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/b/2be38927-637b-4dce-b228-83ce4f50c4a4.jpg?1783913633",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2be38927-637b-4dce-b228-83ce4f50c4a4.jpg?1783913633",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tyrannosaure vorace",
+   "typeLine": "Créature — dinosaure",
+   "text": "Dévorement 3 (Au moment où cette créature arrive sur le champ de bataille, vous pouvez sacrifier le nombre de créatures de votre choix. Cette créature arrive sur le champ de bataille avec trois fois ce nombre de marqueurs +1/+1 sur elle.)\nÀ chaque fois que le Tyrannosaure vorace attaque, il inflige un nombre de blessures égal à sa force à jusqu'à une autre créature ciblée. Le surplus de blessures est infligé au contrôleur de cette créature à la place.",
+   "image": "https://cards.scryfall.io/normal/front/4/2/4232de01-9535-443d-8988-ae157eb4a745.jpg?1782806733"
+  }
+ },
+ {
+  "name": "Swooping Pteranodon",
+  "number": "19",
+  "rarity": "rare",
+  "manaCost": "{3}{R}{W}",
+  "cmc": 5,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "Flying, haste\nWhenever this creature or another Dinosaur you control with flying enters, gain control of target creature an opponent controls until end of turn. Untap that creature. It gains flying and haste until end of turn. At the beginning of the next end step, target land deals 3 damage to that creature.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "R",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Haste"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/3/43aa5d97-7483-4f90-998d-70732a7ae1dc.jpg?1783913633",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/3/43aa5d97-7483-4f90-998d-70732a7ae1dc.jpg?1783913633",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ptéranodon plongeant",
+   "typeLine": "Créature — dinosaure",
+   "text": "Vol, célérité\nÀ chaque fois que le Ptéranodon plongeant ou qu'un autre dinosaure avec le vol arrive sur le champ de bataille sous votre contrôle, acquérez le contrôle d'une créature ciblée qu'un adversaire contrôle jusqu'à la fin du tour. Dégagez cette créature. Elle acquiert le vol et la célérité jusqu'à la fin du tour. Au début de la prochaine étape de fin, un terrain ciblé inflige 3 blessures à cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/8/a/8afbe395-0fc6-4b69-adf4-87c4b20f85d6.jpg?1782806727"
+  }
+ },
+ {
+  "name": "Dino DNA",
+  "number": "20",
+  "rarity": "rare",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "Imprint — {1}, {T}: Exile target creature card from a graveyard. Activate only as a sorcery.\n{6}: Create a token that's a copy of target creature card exiled with this artifact, except it's a 6/6 green Dinosaur creature with trample. Activate only as a sorcery.",
+  "colors": [],
+  "keywords": [
+   "Imprint"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/e/ceb287d3-cb8e-4ff2-8082-c0bd59c59b45.jpg?1783913633",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/e/ceb287d3-cb8e-4ff2-8082-c0bd59c59b45.jpg?1783913633",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "ADN de dinosaure",
+   "typeLine": "Artefact",
+   "text": "Empreinte — {1}, {T} : Exilez une carte de créature ciblée depuis un cimetière. N'activez que lorsque vous pourriez lancer un rituel.\n{6} : Créez un jeton qui est une copie d'une carte de créature ciblée exilée par l'ADN de dinosaure, excepté que c'est une créature 6/6 verte Dinosaure avec le piétinement. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/5/c/5c8865fc-fad7-41c9-b20a-290c844a83a1.jpg?1782806721"
+  }
+ }
+]

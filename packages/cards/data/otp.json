@@ -1,0 +1,1672 @@
+[
+ {
+  "name": "Fell the Mighty",
+  "number": "1",
+  "rarity": "rare",
+  "manaCost": "{4}{W}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy all creatures with power greater than target creature's power.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/b/fbd897e0-0f6b-4a35-9f33-a16d85ddfad8.jpg?1783911729",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fbd897e0-0f6b-4a35-9f33-a16d85ddfad8.jpg?1783911729",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Anéantir les puissants",
+   "typeLine": "Rituel",
+   "text": "Détruisez toutes les créatures de force supérieure à la force d'une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/4/0/401b3f48-9c63-4b59-ae1b-20e2ff2e606b.jpg?1782795735"
+  }
+ },
+ {
+  "name": "Fierce Retribution",
+  "number": "2",
+  "rarity": "uncommon",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Cleave {5}{W} (You may cast this spell for its cleave cost. If you do, remove the words in square brackets.)\nDestroy target [attacking] creature.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Cleave"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/2/92270719-352d-426f-b498-fbeaf8fd087b.jpg?1783911730",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/92270719-352d-426f-b498-fbeaf8fd087b.jpg?1783911730",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Châtiment féroce",
+   "typeLine": "Éphémère",
+   "text": "Tranchage {5}{W} (Vous pouvez lancer ce sort pour son coût de tranchage. Si vous faites ainsi, retirez les mots entre crochets.)\nDétruisez une créature attaquante ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/2/8/288282fa-b3cd-44b4-93c9-eee6ae1ee44b.jpg?1782795727"
+  }
+ },
+ {
+  "name": "Journey to Nowhere",
+  "number": "3",
+  "rarity": "uncommon",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, exile target creature.\nWhen this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/4/442bb671-8b23-4e3b-bf39-18152a68887e.jpg?1783911727",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/442bb671-8b23-4e3b-bf39-18152a68887e.jpg?1783911727",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Voyage vers le néant",
+   "typeLine": "Enchantement",
+   "text": "Quand le Voyage vers le néant arrive sur le champ de bataille, exilez une créature ciblée.\nQuand le Voyage vers le néant quitte le champ de bataille, renvoyez, sous le contrôle de son propriétaire, la carte exilée sur le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/7/e/7e18d5c2-e7e4-4023-bb13-76dfe1d53bbe.jpg?1782795721"
+  }
+ },
+ {
+  "name": "Leyline Binding",
+  "number": "4",
+  "rarity": "mythic",
+  "manaCost": "{5}{W}",
+  "cmc": 6,
+  "typeLine": "Enchantment",
+  "oracleText": "Flash\nDomain — This spell costs {1} less to cast for each basic land type among lands you control.\nWhen this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Domain",
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/f/5f48b1fe-175a-40bb-be21-84b5c768403e.jpg?1783911728",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5f48b1fe-175a-40bb-be21-84b5c768403e.jpg?1783911728",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Emprisonnement par les lignes ley",
+   "typeLine": "Enchantement",
+   "text": "Flash\nDomaine — Ce sort coûte {1} de moins à lancer pour chaque type de terrain de base parmi les terrains que vous contrôlez.\nQuand l'Emprisonnement par les lignes ley arrive sur le champ de bataille, exilez un permanent non-terrain ciblé qu'un adversaire contrôle jusqu'à ce que l'Emprisonnement par les lignes ley quitte le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/0/1/01486746-f705-46aa-a484-eef9fe3b5d6e.jpg?1782795713"
+  }
+ },
+ {
+  "name": "Pariah",
+  "number": "5",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant creature\nAll damage that would be dealt to you is dealt to enchanted creature instead.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/9/1995fed6-992f-4333-afa6-63d61cfdfa00.jpg?1783911728",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/9/1995fed6-992f-4333-afa6-63d61cfdfa00.jpg?1783911728",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Paria",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : créature\nToutes les blessures qui devraient vous être infligées sont infligées à la créature enchantée à la place.",
+   "image": "https://cards.scryfall.io/normal/front/f/2/f2366936-ac8e-4cfd-897b-70187e1460a2.jpg?1782795705"
+  }
+ },
+ {
+  "name": "Path to Exile",
+  "number": "6",
+  "rarity": "rare",
+  "manaCost": "{W}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/a/aa112736-7596-448a-be2f-0798acb3b2ee.jpg?1783911727",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/a/aa112736-7596-448a-be2f-0798acb3b2ee.jpg?1783911727",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chemin vers l'exil",
+   "typeLine": "Éphémère",
+   "text": "Exilez une créature ciblée. Son contrôleur peut chercher dans sa bibliothèque une carte de terrain de base, la mettre sur le champ de bataille engagée, puis mélanger.",
+   "image": "https://cards.scryfall.io/normal/front/4/7/47a6cae6-1ed3-42f8-b91e-8ab9a2d7538a.jpg?1782795697"
+  }
+ },
+ {
+  "name": "Archive Trap",
+  "number": "7",
+  "rarity": "rare",
+  "manaCost": "{3}{U}{U}",
+  "cmc": 5,
+  "typeLine": "Instant — Trap",
+  "oracleText": "If an opponent searched their library this turn, you may pay {0} rather than pay this spell's mana cost.\nTarget opponent mills thirteen cards.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/e/defa687c-a064-4a7b-afa2-3c3ecdb5e13f.jpg?1783911726",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/e/defa687c-a064-4a7b-afa2-3c3ecdb5e13f.jpg?1783911726",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Piège aux archives",
+   "typeLine": "Éphémère — piège",
+   "text": "Si un adversaire a cherché dans sa bibliothèque ce tour-ci, vous pouvez payer {0} à la place du coût de mana de ce sort.\nUn adversaire ciblé meule treize cartes.",
+   "image": "https://cards.scryfall.io/normal/front/b/3/b359f2d7-8d13-491b-a39b-0d4f980960ac.jpg?1782795691"
+  }
+ },
+ {
+  "name": "Archmage's Charm",
+  "number": "8",
+  "rarity": "rare",
+  "manaCost": "{U}{U}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Choose one —\n• Counter target spell.\n• Target player draws two cards.\n• Gain control of target nonland permanent with mana value 1 or less.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/4/44fe86de-c131-41b2-a06a-827b4d374a6d.jpg?1783911726",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/44fe86de-c131-41b2-a06a-827b4d374a6d.jpg?1783911726",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Charme de l'archimage",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un —\n• Contrecarrez un sort ciblé.\n• Un joueur ciblé pioche deux cartes.\n• Acquérez le contrôle d'un permanent non-terrain ciblé avec une valeur de mana inférieure ou égale à 1.",
+   "image": "https://cards.scryfall.io/normal/front/4/4/44915184-4a08-4603-92dc-c100dd5da5db.jpg?1782795682"
+  }
+ },
+ {
+  "name": "Commandeer",
+  "number": "9",
+  "rarity": "rare",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Instant",
+  "oracleText": "You may exile two blue cards from your hand rather than pay this spell's mana cost.\nGain control of target noncreature spell. You may choose new targets for it. (If that spell is an artifact, enchantment, or planeswalker, the permanent enters under your control.)",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/4/e473db8a-ee0e-4753-aaab-76eda5808075.jpg?1783911727",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/4/e473db8a-ee0e-4753-aaab-76eda5808075.jpg?1783911727",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Réquisition",
+   "typeLine": "Éphémère",
+   "text": "Vous pouvez exiler deux cartes bleues de votre main à la place de payer le coût de mana de ce sort.\nAcquérez le contrôle d'un sort non-créature ciblé. Vous pouvez choisir de nouvelles cibles pour celui-ci.",
+   "image": "https://cards.scryfall.io/normal/front/c/6/c60fa1fc-e949-4c94-98f8-7c6d4e4920d2.jpg?1782795675"
+  }
+ },
+ {
+  "name": "Essence Capture",
+  "number": "10",
+  "rarity": "uncommon",
+  "manaCost": "{U}{U}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Counter target creature spell. Put a +1/+1 counter on up to one target creature you control.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/2/d2bcfba6-fbd8-487c-8a89-2327c3d07870.jpg?1783911725",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/2/d2bcfba6-fbd8-487c-8a89-2327c3d07870.jpg?1783911725",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Capture d'essence",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez un sort de créature ciblé. Ciblez jusqu'à une créature que vous contrôlez. Mettez un marqueur +1/+1 sur elle.",
+   "image": "https://cards.scryfall.io/normal/front/6/0/608e98c5-cc4d-42df-94a9-a2cdd5f038a4.jpg?1782795667"
+  }
+ },
+ {
+  "name": "Mana Drain",
+  "number": "11",
+  "rarity": "mythic",
+  "manaCost": "{U}{U}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/c/4c7f0ea5-a142-4157-b85d-ec49dd79adf6.jpg?1783911725",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/c/4c7f0ea5-a142-4157-b85d-ec49dd79adf6.jpg?1783911725",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Drain de mana",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez un sort ciblé. Au début de votre prochaine phase principale, ajoutez une quantité de {C} égale à la valeur de mana de ce sort.",
+   "image": "https://cards.scryfall.io/normal/front/a/8/a8f2783d-3c67-45fd-b3c2-39728d54fd69.jpg?1782795659"
+  }
+ },
+ {
+  "name": "Mindbreak Trap",
+  "number": "12",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}{U}",
+  "cmc": 4,
+  "typeLine": "Instant — Trap",
+  "oracleText": "If an opponent cast three or more spells this turn, you may pay {0} rather than pay this spell's mana cost.\nExile any number of target spells.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/d/4ddb33dd-a92a-4f71-bcb3-56678ef5e45d.jpg?1783911725",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/d/4ddb33dd-a92a-4f71-bcb3-56678ef5e45d.jpg?1783911725",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Piège brisesprit",
+   "typeLine": "Éphémère — piège",
+   "text": "Si un adversaire a lancé au moins trois sorts ce tour-ci, vous pouvez payer {0} à la place du coût de mana de ce sort.\nExilez n'importe quel nombre de sorts ciblés.",
+   "image": "https://cards.scryfall.io/normal/front/c/4/c4e96719-cc0e-4055-bd33-8bbcddc19229.jpg?1782795651"
+  }
+ },
+ {
+  "name": "Repulse",
+  "number": "13",
+  "rarity": "uncommon",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Return target creature to its owner's hand.\nDraw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/8/88941ed3-1cae-47ce-8ccb-938c5d0e767f.jpg?1783911725",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/8/88941ed3-1cae-47ce-8ccb-938c5d0e767f.jpg?1783911725",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Répulsion",
+   "typeLine": "Éphémère",
+   "text": "Renvoyez une créature ciblée dans la main de son propriétaire.\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/4/d/4dbab99a-17de-47a9-acfe-bfb2644c3660.jpg?1782795645"
+  }
+ },
+ {
+  "name": "Heartless Pillage",
+  "number": "14",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Target opponent discards two cards.\nRaid — If you attacked this turn, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Treasure",
+   "Raid"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/0/d06a1a70-aa26-4178-8486-e0a25c907cdb.jpg?1783911724",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d06a1a70-aa26-4178-8486-e0a25c907cdb.jpg?1783911724",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pillage cruel",
+   "typeLine": "Rituel",
+   "text": "Un adversaire ciblé se défausse de deux cartes.\nSaccage — Si vous avez attaqué ce tour-ci, créez un jeton Trésor.",
+   "image": "https://cards.scryfall.io/normal/front/c/5/c5aa4131-1ccd-422f-8277-d93ff8103e06.jpg?1782795636"
+  }
+ },
+ {
+  "name": "Imp's Mischief",
+  "number": "15",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Change the target of target spell with a single target. You lose life equal to that spell's mana value.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/1/41137be4-cfc2-40dc-873a-b9a63d0d8ea6.jpg?1783911725",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/1/41137be4-cfc2-40dc-873a-b9a63d0d8ea6.jpg?1783911725",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Malice selon le diablotin",
+   "typeLine": "Éphémère",
+   "text": "Remplacez la cible d'un sort ciblé qui a une cible unique. Vous perdez un nombre de points de vie égal à la valeur de mana de ce sort.",
+   "image": "https://cards.scryfall.io/normal/front/7/4/74486de9-4fc1-45dd-9489-3bf1924804a6.jpg?1782795630"
+  }
+ },
+ {
+  "name": "Murder",
+  "number": "16",
+  "rarity": "uncommon",
+  "manaCost": "{1}{B}{B}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Destroy target creature.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/c/6c776ca4-4950-4a27-8ce2-fbe534579d62.jpg?1783911724",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/c/6c776ca4-4950-4a27-8ce2-fbe534579d62.jpg?1783911724",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Homicide",
+   "typeLine": "Éphémère",
+   "text": "Détruisez une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/7/f/7fc98787-69bb-4b1d-b58a-333bcdb0442a.jpg?1782795622"
+  }
+ },
+ {
+  "name": "Overwhelming Forces",
+  "number": "17",
+  "rarity": "mythic",
+  "manaCost": "{6}{B}{B}",
+  "cmc": 8,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy all creatures target opponent controls. Draw a card for each creature destroyed this way.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/d/0d16af8d-4967-4244-8622-c6fa03ac739b.jpg?1783911724",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0d16af8d-4967-4244-8622-c6fa03ac739b.jpg?1783911724",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Forces insurmontables",
+   "typeLine": "Rituel",
+   "text": "Détruisez toutes les créatures qu'un adversaire ciblé contrôle. Piochez une carte pour chaque créature détruite de cette manière.",
+   "image": "https://cards.scryfall.io/normal/front/0/2/02dd7f0d-093f-4c8a-bfba-f8f48fef3358.jpg?1782795616"
+  }
+ },
+ {
+  "name": "Reanimate",
+  "number": "18",
+  "rarity": "rare",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/0/609c34f9-9f53-4773-a02b-517209024fc2.jpg?1783911724",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/609c34f9-9f53-4773-a02b-517209024fc2.jpg?1783911724",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Réanimation",
+   "typeLine": "Rituel",
+   "text": "Mettez sur le champ de bataille, sous votre contrôle, une carte de créature ciblée depuis un cimetière. Vous perdez un nombre de points de vie égal à sa valeur de mana.",
+   "image": "https://cards.scryfall.io/normal/front/e/b/ebf2fc6e-e1aa-4062-b2b6-d596d95446e3.jpg?1782795608"
+  }
+ },
+ {
+  "name": "Surgical Extraction",
+  "number": "19",
+  "rarity": "rare",
+  "manaCost": "{B/P}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "({B/P} can be paid with either {B} or 2 life.)\nChoose target card in a graveyard other than a basic land card. Search its owner's graveyard, hand, and library for any number of cards with the same name as that card and exile them. Then that player shuffles.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/1/11cc603a-5d60-4959-a03f-e3dfbee4606b.jpg?1783911723",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/11cc603a-5d60-4959-a03f-e3dfbee4606b.jpg?1783911723",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Extraction chirurgicale",
+   "typeLine": "Éphémère",
+   "text": "({B/P} peut être payé au choix avec {B} ou 2 points de vie.)\nChoisissez une carte ciblée dans un cimetière autre qu'une carte de terrain de base. Cherchez dans le cimetière, la main et la bibliothèque de son propriétaire n'importe quel nombre de cartes ayant le même nom que cette carte et exilez-les. Puis ce joueur mélange.",
+   "image": "https://cards.scryfall.io/normal/front/7/c/7c10cc1d-2dc6-4686-8c6c-3f041532ba8c.jpg?1782795601"
+  }
+ },
+ {
+  "name": "Thoughtseize",
+  "number": "20",
+  "rarity": "mythic",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/e/5e85d5db-ced3-406d-90d2-e506a9332468.jpg?1783911723",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/e/5e85d5db-ced3-406d-90d2-e506a9332468.jpg?1783911723",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Saisie des pensées",
+   "typeLine": "Rituel",
+   "text": "Un joueur ciblé révèle sa main. Vous y choisissez une carte non-terrain. Ce joueur se défausse de cette carte. Vous perdez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/5/0/507cbf24-710f-420d-915a-48463ac100c8.jpg?1782795597"
+  }
+ },
+ {
+  "name": "Collective Defiance",
+  "number": "21",
+  "rarity": "rare",
+  "manaCost": "{1}{R}{R}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Escalate {1} (Pay this cost for each mode chosen beyond the first.)\nChoose one or more —\n• Target player discards all the cards in their hand, then draws that many cards.\n• Collective Defiance deals 4 damage to target creature.\n• Collective Defiance deals 3 damage to target opponent or planeswalker.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Escalate"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/b/cbaaa9e0-e5d4-4ae1-8082-cc018eb1fe39.jpg?1783911722",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/b/cbaaa9e0-e5d4-4ae1-8082-cc018eb1fe39.jpg?1783911722",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Défiance collective",
+   "typeLine": "Rituel",
+   "text": "Intensification {1} (Payez ce coût pour chaque mode choisi après le premier.)\nChoisissez l'un ou plus —\n• Un joueur ciblé se défausse de toutes les cartes de sa main et pioche ensuite autant de cartes.\n• La Défiance collective inflige 4 blessures à une créature ciblée.\n• La Défiance collective inflige 3 blessures à une cible, adversaire ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/a/e/aeca7446-a38c-4f81-ad33-c9f3fa481e59.jpg?1782795590"
+  }
+ },
+ {
+  "name": "Crackle with Power",
+  "number": "22",
+  "rarity": "mythic",
+  "manaCost": "{X}{X}{X}{R}{R}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Crackle with Power deals five times X damage to each of up to X targets.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/7/d7cdccd8-13c0-49ab-9fc9-554e7897e782.jpg?1783911721",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/7/d7cdccd8-13c0-49ab-9fc9-554e7897e782.jpg?1783911721",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Crépitement de puissance",
+   "typeLine": "Rituel",
+   "text": "Ciblez jusqu'à X cibles. Le Crépitement de puissance inflige cinq fois X blessures à chacune d'elles.",
+   "image": "https://cards.scryfall.io/normal/front/9/1/91f77fbd-7ef7-4d5f-b46c-5acf9f83ee4e.jpg?1782795584"
+  }
+ },
+ {
+  "name": "Electrodominance",
+  "number": "23",
+  "rarity": "rare",
+  "manaCost": "{X}{R}{R}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Electrodominance deals X damage to any target. You may cast a spell with mana value X or less from your hand without paying its mana cost.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/d/6d550bc9-2cb5-4947-a48d-2c92b5c72541.jpg?1783911721",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6d550bc9-2cb5-4947-a48d-2c92b5c72541.jpg?1783911721",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Électrodominance",
+   "typeLine": "Éphémère",
+   "text": "L'Électrodominance inflige X blessures à n'importe quelle cible. Vous pouvez lancer un sort avec une valeur de mana inférieure ou égale à X depuis votre main sans payer son coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/a/1/a1a67c1e-2346-4af4-953c-7154c16028d0.jpg?1782795578"
+  }
+ },
+ {
+  "name": "Fling",
+  "number": "24",
+  "rarity": "uncommon",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nFling deals damage equal to the sacrificed creature's power to any target.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/c/1cddae19-eb96-475c-9800-17ac57df4c0a.jpg?1783911720",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/c/1cddae19-eb96-475c-9800-17ac57df4c0a.jpg?1783911720",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Jet",
+   "typeLine": "Éphémère",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, sacrifiez une créature.\nLe Jet inflige un nombre de blessures égal à la force de la créature sacrifiée à n'importe quelle cible.",
+   "image": "https://cards.scryfall.io/normal/front/8/3/83bf04b7-ad9d-42cf-94aa-a54d6d70a186.jpg?1782795574"
+  }
+ },
+ {
+  "name": "Indomitable Creativity",
+  "number": "25",
+  "rarity": "mythic",
+  "manaCost": "{X}{R}{R}{R}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy X target artifacts and/or creatures. For each permanent destroyed this way, its controller reveals cards from the top of their library until an artifact or creature card is revealed and exiles that card. Those players put the exiled cards onto the battlefield, then shuffle.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/8/18cb625b-a41f-4f3b-8f56-257a3795aa8f.jpg?1783911719",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18cb625b-a41f-4f3b-8f56-257a3795aa8f.jpg?1783911719",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Créativité indomptable",
+   "typeLine": "Rituel",
+   "text": "Détruisez X cibles, artefacts et/ou créatures. Pour chaque permanent détruit de cette manière, son contrôleur révèle les cartes du dessus de sa bibliothèque jusqu'à ce qu'une carte de créature ou d'artefact soit révélée et exile cette carte. Ces joueurs mettent les cartes exilées sur le champ de bataille, puis mélangent.",
+   "image": "https://cards.scryfall.io/normal/front/5/6/5690f176-df5e-43b6-93eb-89652145063d.jpg?1782795567"
+  }
+ },
+ {
+  "name": "Skewer the Critics",
+  "number": "26",
+  "rarity": "uncommon",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Spectacle {R} (You may cast this spell for its spectacle cost rather than its mana cost if an opponent lost life this turn.)\nSkewer the Critics deals 3 damage to any target.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Spectacle"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/f/9f3261b6-4f5c-4cf0-a396-1d9397603602.jpg?1783911720",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/f/9f3261b6-4f5c-4cf0-a396-1d9397603602.jpg?1783911720",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Embrocher les critiques",
+   "typeLine": "Rituel",
+   "text": "Spectacle {R} (Vous pouvez lancer ce sort pour son coût de spectacle à la place de son coût de mana si un adversaire a perdu des points de vie ce tour-ci.)\nEmbrocher les critiques inflige 3 blessures à n'importe quelle cible.",
+   "image": "https://cards.scryfall.io/normal/front/4/6/46572729-c56b-4d73-95c7-cad56168e642.jpg?1782795560"
+  }
+ },
+ {
+  "name": "Skullcrack",
+  "number": "27",
+  "rarity": "rare",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Players can't gain life this turn. Damage can't be prevented this turn. Skullcrack deals 3 damage to target player or planeswalker.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/7/170a06cd-501e-43c8-98e0-63ebd61cc0aa.jpg?1783911719",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/7/170a06cd-501e-43c8-98e0-63ebd61cc0aa.jpg?1783911719",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Défoncecrâne",
+   "typeLine": "Éphémère",
+   "text": "Les joueurs ne peuvent pas gagner de points de vie ce tour-ci. Les blessures ne peuvent pas être prévenues ce tour-ci. Le Défoncecrâne inflige 3 blessures à une cible, joueur ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/1/e/1efc1960-df9c-4333-8e51-2833b0e7301b.jpg?1782795554"
+  }
+ },
+ {
+  "name": "Clear Shot",
+  "number": "28",
+  "rarity": "uncommon",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Target creature you control gets +1/+1 until end of turn. It deals damage equal to its power to target creature you don't control.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/f/4f362332-3682-4638-bc8b-6984f48e3464.jpg?1783911720",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4f362332-3682-4638-bc8b-6984f48e3464.jpg?1783911720",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tir dégagé",
+   "typeLine": "Éphémère",
+   "text": "Une créature ciblée que vous contrôlez gagne +1/+1 jusqu'à la fin du tour. Elle inflige un nombre de blessures égal à sa force à une créature ciblée que vous ne contrôlez pas.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/dd3dac1d-7671-483e-936a-73abaf9986c8.jpg?1782795548"
+  }
+ },
+ {
+  "name": "Force of Vigor",
+  "number": "29",
+  "rarity": "mythic",
+  "manaCost": "{2}{G}{G}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "If it's not your turn, you may exile a green card from your hand rather than pay this spell's mana cost.\nDestroy up to two target artifacts and/or enchantments.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/d/3d98d6a5-36a0-441f-ac64-9d02b2dbb773.jpg?1783911719",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/d/3d98d6a5-36a0-441f-ac64-9d02b2dbb773.jpg?1783911719",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Force de vigueur",
+   "typeLine": "Éphémère",
+   "text": "Si ce n'est pas votre tour, vous pouvez exiler une carte verte de votre main à la place de payer le coût de mana de ce sort.\nDétruisez jusqu'à deux cibles, artefacts et/ou enchantements.",
+   "image": "https://cards.scryfall.io/normal/front/7/6/761dc047-7bcd-47e1-a80f-27ed6b0edf6f.jpg?1782795543"
+  }
+ },
+ {
+  "name": "Pest Infestation",
+  "number": "30",
+  "rarity": "rare",
+  "manaCost": "{X}{X}{G}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy up to X target artifacts and/or enchantments. Create twice X 1/1 black and green Pest creature tokens with \"When this token dies, you gain 1 life.\"",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/4/8407c498-b972-49fe-b30a-a864c39ddc7a.jpg?1783911720",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/4/8407c498-b972-49fe-b30a-a864c39ddc7a.jpg?1783911720",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Infestation de parasites",
+   "typeLine": "Rituel",
+   "text": "Détruisez jusqu'à X cibles, artefacts et/ou enchantements. Créez deux fois X jetons de créature 1/1 noire et verte Parasite avec « Quand cette créature meurt, vous gagnez 1 point de vie. »",
+   "image": "https://cards.scryfall.io/normal/front/d/3/d3f9dab8-defd-4dc0-bec6-5fd9b538bf13.jpg?1782795537"
+  }
+ },
+ {
+  "name": "Primal Command",
+  "number": "31",
+  "rarity": "rare",
+  "manaCost": "{3}{G}{G}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Choose two —\n• Target player gains 7 life.\n• Put target noncreature permanent on top of its owner's library.\n• Target player shuffles their graveyard into their library.\n• Search your library for a creature card, reveal it, put it into your hand, then shuffle.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/4/4416de3b-ba68-44a9-843b-26743813c661.jpg?1783911718",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/4416de3b-ba68-44a9-843b-26743813c661.jpg?1783911718",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Commandement primordial",
+   "typeLine": "Rituel",
+   "text": "Choisissez deux —\n• Un joueur ciblé gagne 7 points de vie.\n• Mettez un permanent non-créature ciblé au-dessus de la bibliothèque de son propriétaire.\n• Un joueur ciblé mélange son cimetière dans sa bibliothèque.\n• Cherchez dans votre bibliothèque une carte de créature, révélez-la, mettez-la dans votre main, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/c/2/c20899f1-0060-48f9-9770-553fd7f16cbf.jpg?1782795530"
+  }
+ },
+ {
+  "name": "Primal Might",
+  "number": "32",
+  "rarity": "rare",
+  "manaCost": "{X}{G}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Target creature you control gets +X/+X until end of turn. Then it fights up to one target creature you don't control. (Each deals damage equal to its power to the other.)",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Fight"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/1/d11a1ac4-b025-4bc7-a00f-5de04acefbf8.jpg?1783911717",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/1/d11a1ac4-b025-4bc7-a00f-5de04acefbf8.jpg?1783911717",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Puissance primordiale",
+   "typeLine": "Rituel",
+   "text": "Une créature ciblée que vous contrôlez gagne +X/+X jusqu'à la fin du tour. Ensuite, elle se bat contre jusqu'à une créature ciblée que vous ne contrôlez pas.",
+   "image": "https://cards.scryfall.io/normal/front/e/f/ef189bc6-f3a6-4fb0-81e0-fc927cb4453c.jpg?1782795526"
+  }
+ },
+ {
+  "name": "Thornado",
+  "number": "33",
+  "rarity": "uncommon",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Destroy target creature with flying.\nCycling {1}{G} ({1}{G}, Discard this card: Draw a card.)",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Cycling"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/e/8eb4b155-ddde-465d-bd2e-3b7eb32bc052.jpg?1783911717",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8eb4b155-ddde-465d-bd2e-3b7eb32bc052.jpg?1783911717",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tourbillon d'épines",
+   "typeLine": "Éphémère",
+   "text": "Détruisez une créature avec le vol ciblée.\nRecyclage {1}{G} ({1}{G}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/f/f/ffa3e50b-ff77-4aa5-8460-116b7f0fa622.jpg?1782795519"
+  }
+ },
+ {
+  "name": "Abrupt Decay",
+  "number": "34",
+  "rarity": "rare",
+  "manaCost": "{B}{G}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "This spell can't be countered.\nDestroy target nonland permanent with mana value 3 or less.",
+  "colors": [
+   "B",
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/4/84f71a16-915d-4b8e-8c39-cc46bcaa9de9.jpg?1783911718",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/4/84f71a16-915d-4b8e-8c39-cc46bcaa9de9.jpg?1783911718",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Décomposition abrupte",
+   "typeLine": "Éphémère",
+   "text": "Ce sort ne peut pas être contrecarré.\nDétruisez un permanent non-terrain ciblé avec une valeur de mana inférieure ou égale à 3.",
+   "image": "https://cards.scryfall.io/normal/front/4/7/4727ec31-5118-4f0c-b149-bbd7f544d0a7.jpg?1782795514"
+  }
+ },
+ {
+  "name": "Anguished Unmaking",
+  "number": "35",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}{B}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Exile target nonland permanent. You lose 3 life.",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/0/c03cc4a3-a526-4811-871e-290ae5bbe424.jpg?1783911718",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c03cc4a3-a526-4811-871e-290ae5bbe424.jpg?1783911718",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Annulation angoissée",
+   "typeLine": "Éphémère",
+   "text": "Exilez un permanent non-terrain ciblé. Vous perdez 3 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/1/f/1f0129a4-86a5-474f-a091-b07d9315514d.jpg?1782795507"
+  }
+ },
+ {
+  "name": "Back for More",
+  "number": "36",
+  "rarity": "uncommon",
+  "manaCost": "{4}{B}{G}",
+  "cmc": 6,
+  "typeLine": "Instant",
+  "oracleText": "Return target creature card from your graveyard to the battlefield. When you do, it fights up to one target creature you don't control. (Each deals damage equal to its power to the other.)",
+  "colors": [
+   "B",
+   "G"
+  ],
+  "keywords": [
+   "Fight"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/5/f55e5aca-b6fe-4b2f-9943-568f4d1704ca.jpg?1783911718",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f55e5aca-b6fe-4b2f-9943-568f4d1704ca.jpg?1783911718",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "En redemander",
+   "typeLine": "Éphémère",
+   "text": "Renvoyez sur le champ de bataille une carte de créature ciblée depuis votre cimetière. Quand vous faites ainsi, elle se bat contre jusqu'à une créature ciblée que vous ne contrôlez pas.",
+   "image": "https://cards.scryfall.io/normal/front/f/b/fbb7b854-694d-47f0-a2de-66cf62c515b9.jpg?1782795502"
+  }
+ },
+ {
+  "name": "Bedevil",
+  "number": "37",
+  "rarity": "rare",
+  "manaCost": "{B}{B}{R}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Destroy target artifact, creature, or planeswalker.",
+  "colors": [
+   "B",
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/4/2473bb43-4de4-402a-884b-42fd9fcadd7d.jpg?1783911718",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/2473bb43-4de4-402a-884b-42fd9fcadd7d.jpg?1783911718",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Affres",
+   "typeLine": "Éphémère",
+   "text": "Détruisez une cible, artefact, créature ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/5/c/5c3ef940-1a9b-455a-bda4-6dfd558bcd13.jpg?1782795496"
+  }
+ },
+ {
+  "name": "Buried in the Garden",
+  "number": "38",
+  "rarity": "uncommon",
+  "manaCost": "{2}{G}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant land\nWhen this Aura enters, exile target nonland permanent you don't control until this Aura leaves the battlefield.\nWhenever enchanted land is tapped for mana, its controller adds an additional one mana of any color.",
+  "colors": [
+   "G",
+   "W"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/0/507073ca-4f97-4fcb-b570-233f096bf0fd.jpg?1783911715",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/0/507073ca-4f97-4fcb-b570-233f096bf0fd.jpg?1783911715",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Enterrée dans le jardin",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : terrain\nQuand Enterrée dans le jardin arrive sur le champ de bataille, exilez un permanent non-terrain ciblé que vous ne contrôlez pas jusqu'à ce qu'Enterrée dans le jardin quitte le champ de bataille.\nÀ chaque fois que le terrain enchanté est engagé pour du mana, son contrôleur ajoute un mana supplémentaire de la couleur de son choix.",
+   "image": "https://cards.scryfall.io/normal/front/0/8/0869a66b-0e9b-468e-8ad8-6cfa07625306.jpg?1782795488"
+  }
+ },
+ {
+  "name": "Crime // Punishment",
+  "number": "39",
+  "rarity": "mythic",
+  "layout": "split",
+  "manaCost": "{3}{W}{B}",
+  "cmc": 7,
+  "typeLine": "Sorcery",
+  "oracleText": "Put target creature or enchantment card from an opponent's graveyard onto the battlefield under your control.",
+  "colors": [
+   "B",
+   "G",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/e/ce4bc5b7-233c-4076-8268-7f9bd346ec55.jpg?1783911715",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/e/ce4bc5b7-233c-4076-8268-7f9bd346ec55.jpg?1783911715",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Crime",
+    "manaCost": "{3}{W}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Put target creature or enchantment card from an opponent's graveyard onto the battlefield under your control.",
+    "fr": {
+     "name": "Crime // Punishment",
+     "typeLine": "Rituel",
+     "text": "Mettez sur le champ de bataille, sous votre contrôle, une carte de créature ou d'enchantement ciblée depuis le cimetière d'un adversaire."
+    }
+   },
+   {
+    "name": "Punishment",
+    "manaCost": "{X}{B}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy each artifact, creature, and enchantment with mana value X.",
+    "fr": {
+     "name": "Crime // Punishment",
+     "typeLine": "Rituel",
+     "text": "Détruisez chaque artefact, chaque créature et chaque enchantement ayant une valeur de mana de X."
+    }
+   }
+  ],
+  "fr": {
+   "name": "Crime // Punishment",
+   "typeLine": "Rituel",
+   "text": "Mettez sur le champ de bataille, sous votre contrôle, une carte de créature ou d'enchantement ciblée depuis le cimetière d'un adversaire.",
+   "image": "https://cards.scryfall.io/normal/front/3/d/3dd02ab2-9451-436b-bfee-9c8232388c92.jpg?1782795484"
+  }
+ },
+ {
+  "name": "Cruel Ultimatum",
+  "number": "40",
+  "rarity": "rare",
+  "manaCost": "{U}{U}{B}{B}{B}{R}{R}",
+  "cmc": 7,
+  "typeLine": "Sorcery",
+  "oracleText": "Target opponent sacrifices a creature of their choice, discards three cards, then loses 5 life. You return a creature card from your graveyard to your hand, draw three cards, then gain 5 life.",
+  "colors": [
+   "B",
+   "R",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/3/539e00a6-6cb0-4960-8a45-52d70b575f5a.jpg?1783911714",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/3/539e00a6-6cb0-4960-8a45-52d70b575f5a.jpg?1783911714",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ultimatum cruel",
+   "typeLine": "Rituel",
+   "text": "Un adversaire ciblé sacrifie une créature, se défausse de trois cartes et perd ensuite 5 points de vie. Vous renvoyez dans votre main une carte de créature depuis votre cimetière, piochez trois cartes et gagnez ensuite 5 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/d/0/d0113e5f-6828-45c0-baeb-8d874b4763f6.jpg?1782795476"
+  }
+ },
+ {
+  "name": "Decimate",
+  "number": "41",
+  "rarity": "rare",
+  "manaCost": "{2}{R}{G}",
+  "cmc": 4,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy target artifact, target creature, target enchantment, and target land. (You can't cast this spell unless you have legal choices for all its targets.)",
+  "colors": [
+   "G",
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/6/a6166dde-22d8-4fd1-93f9-c4e7762ae2a0.jpg?1783911714",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/6/a6166dde-22d8-4fd1-93f9-c4e7762ae2a0.jpg?1783911714",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Décimation",
+   "typeLine": "Rituel",
+   "text": "Détruisez un artefact ciblé, une créature ciblée, un enchantement ciblé et un terrain ciblé. (Vous ne pouvez pas lancer ce sort à moins que vous n'ayez des choix légaux pour toutes ses cibles.)",
+   "image": "https://cards.scryfall.io/normal/front/c/c/cc1c00b2-4a0b-4553-8f2f-f332c04c2e29.jpg?1782795473"
+  }
+ },
+ {
+  "name": "Decisive Denial",
+  "number": "42",
+  "rarity": "uncommon",
+  "manaCost": "{G}{U}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Choose one —\n• Target creature you control fights target creature you don't control. (Each deals damage equal to its power to the other.)\n• Counter target noncreature spell unless its controller pays {3}.",
+  "colors": [
+   "G",
+   "U"
+  ],
+  "keywords": [
+   "Fight"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/4/54ee0802-62c1-46ac-907e-82ace59fbddb.jpg?1783911714",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/54ee0802-62c1-46ac-907e-82ace59fbddb.jpg?1783911714",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Déni décisif",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un —\n• Une créature ciblée que vous contrôlez se bat contre une créature ciblée que vous ne contrôlez pas.\n• Contrecarrez un sort non-créature ciblé à moins que son contrôleur ne paie {3}.",
+   "image": "https://cards.scryfall.io/normal/front/8/3/83a15dea-1eaf-4122-9201-e6aec9a013d8.jpg?1782795465"
+  }
+ },
+ {
+  "name": "Detention Sphere",
+  "number": "43",
+  "rarity": "rare",
+  "manaCost": "{1}{W}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, you may exile target nonland permanent not named Detention Sphere and all other permanents with the same name as that permanent.\nWhen this enchantment leaves the battlefield, return the exiled cards to the battlefield under their owner's control.",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/b/bb049418-44db-4f98-9d53-385c5cd0f5cc.jpg?1783911714",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/b/bb049418-44db-4f98-9d53-385c5cd0f5cc.jpg?1783911714",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sphère de détention",
+   "typeLine": "Enchantement",
+   "text": "Quand la Sphère de détention arrive sur le champ de bataille, vous pouvez exiler un permanent non-terrain ciblé qui n'est pas nommé Sphère de détention et tous les autres permanents ayant le même nom que ce permanent.\nQuand la Sphère de détention quitte le champ de bataille, renvoyez, sous le contrôle de leur propriétaire, les cartes exilées sur le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/4/5/45930ae1-d39e-45bb-9746-28bb1a5eb3eb.jpg?1782795459"
+  }
+ },
+ {
+  "name": "Endless Detour",
+  "number": "44",
+  "rarity": "rare",
+  "manaCost": "{G}{W}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "The owner of target spell, nonland permanent, or card in a graveyard puts it on their choice of the top or bottom of their library.",
+  "colors": [
+   "G",
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/0/70afd040-59a8-491e-bd2a-92a12cda96dd.jpg?1783911712",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/0/70afd040-59a8-491e-bd2a-92a12cda96dd.jpg?1783911712",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Déviation sans fin",
+   "typeLine": "Éphémère",
+   "text": "Le propriétaire d'une cible, sort, permanent non-terrain ou carte dans un cimetière, la met au-dessus ou au-dessous de sa bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/f/2/f21d182a-72f7-4939-b78b-a45a095a25ac.jpg?1782795454"
+  }
+ },
+ {
+  "name": "Fractured Identity",
+  "number": "45",
+  "rarity": "mythic",
+  "manaCost": "{3}{W}{U}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Exile target nonland permanent. Each player other than its controller creates a token that's a copy of it.",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/d/bd1db186-dd74-4e05-905c-34321fb3d641.jpg?1783911713",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/d/bd1db186-dd74-4e05-905c-34321fb3d641.jpg?1783911713",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Identité fracturée",
+   "typeLine": "Rituel",
+   "text": "Exilez un permanent non-terrain ciblé. Chaque joueur autre que son contrôleur crée un jeton qui en est une copie.",
+   "image": "https://cards.scryfall.io/normal/front/d/2/d20ba453-68b9-43c2-a45b-0c327660b05a.jpg?1782795446"
+  }
+ },
+ {
+  "name": "Hindering Light",
+  "number": "46",
+  "rarity": "uncommon",
+  "manaCost": "{W}{U}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Counter target spell that targets you or a permanent you control.\nDraw a card.",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/6/860f4304-38f1-4c2f-a122-2590619522fd.jpg?1783911712",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/6/860f4304-38f1-4c2f-a122-2590619522fd.jpg?1783911712",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lumière obstruante",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez un sort ciblé qui vous cible ou qui cible un permanent que vous contrôlez.\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/f/6/f61f4311-129f-4170-9783-d16122292752.jpg?1782795443"
+  }
+ },
+ {
+  "name": "Humiliate",
+  "number": "47",
+  "rarity": "uncommon",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Target opponent reveals their hand. You choose a nonland card from it. That player discards that card. Put a +1/+1 counter on a creature you control.",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/5/454bb7c2-cb7b-4601-9f50-2d24e3ffe1c1.jpg?1783911715",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/454bb7c2-cb7b-4601-9f50-2d24e3ffe1c1.jpg?1783911715",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Humilier",
+   "typeLine": "Rituel",
+   "text": "Un adversaire ciblé révèle sa main. Vous y choisissez une carte non-terrain. Ce joueur se défausse de cette carte. Mettez un marqueur +1/+1 sur une créature que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/c/4/c4256ac7-c516-4abc-a3a8-d603e1172dea.jpg?1782795435"
+  }
+ },
+ {
+  "name": "Hypothesizzle",
+  "number": "48",
+  "rarity": "uncommon",
+  "manaCost": "{3}{U}{R}",
+  "cmc": 5,
+  "typeLine": "Instant",
+  "oracleText": "Draw two cards. Then you may discard a nonland card. When you do, Hypothesizzle deals 4 damage to target creature.",
+  "colors": [
+   "R",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/4/4448d31e-faf4-4281-af48-4f638b939a62.jpg?1783911712",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/4448d31e-faf4-4281-af48-4f638b939a62.jpg?1783911712",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Grésipothèse",
+   "typeLine": "Éphémère",
+   "text": "Piochez deux cartes. Vous pouvez ensuite vous défausser d'une carte non-terrain. Quand vous faites ainsi, la Grésipothèse inflige 4 blessures à une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/f/b/fb72fc53-a947-493f-bf78-3d2fe4950364.jpg?1782795428"
+  }
+ },
+ {
+  "name": "Ionize",
+  "number": "49",
+  "rarity": "rare",
+  "manaCost": "{1}{U}{R}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Counter target spell. Ionize deals 2 damage to that spell's controller.",
+  "colors": [
+   "R",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/8/98c75555-8fe0-4902-a2c7-b807d95b71ab.jpg?1783911713",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/8/98c75555-8fe0-4902-a2c7-b807d95b71ab.jpg?1783911713",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ionisation",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez un sort ciblé. L'ionisation inflige 2 blessures au contrôleur de ce sort.",
+   "image": "https://cards.scryfall.io/normal/front/6/9/69c56ad4-d3cc-450f-bc93-11e3ce6d8e0d.jpg?1782795424"
+  }
+ },
+ {
+  "name": "Oko, Thief of Crowns",
+  "number": "50",
+  "rarity": "mythic",
+  "manaCost": "{1}{G}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Planeswalker — Oko",
+  "oracleText": "+2: Create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\n+1: Target artifact or creature loses all abilities and becomes a green Elk creature with base power and toughness 3/3.\n−5: Exchange control of target artifact or creature you control and target creature an opponent controls with power 3 or less.",
+  "loyalty": "4",
+  "colors": [
+   "G",
+   "U"
+  ],
+  "keywords": [
+   "Food"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/5/659e8760-c7a8-445d-bfef-7cd445ea67c3.jpg?1783911713",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/5/659e8760-c7a8-445d-bfef-7cd445ea67c3.jpg?1783911713",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Oko, voleur de couronnes",
+   "typeLine": "Planeswalker légendaire — Oko",
+   "text": "+2 : Créez un jeton Nourriture.\n+1 : Une cible, artefact ou créature, perd toutes ses capacités et devient une créature verte Élan avec une force et une endurance de base de 3/3.\n-5 : Échangez le contrôle d'une cible que vous contrôlez, artefact ou créature, contre celui d'une créature de force inférieure ou égale à 3 qu'un adversaire contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/6/f/6f1c09ac-1cea-493c-84a6-249e78445113.jpg?1782795415"
+  }
+ },
+ {
+  "name": "Outlaws' Merriment",
+  "number": "51",
+  "rarity": "rare",
+  "manaCost": "{1}{R}{W}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, choose one at random. Create a red and white creature token with those characteristics.\n• 3/1 Human Warrior with trample and haste.\n• 2/1 Human Cleric with lifelink and haste.\n• 1/2 Human Rogue with haste and \"When this token enters, it deals 1 damage to any target.\"",
+  "colors": [
+   "R",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/b/eb214fdf-edb1-49ab-8f98-dea62475f2fc.jpg?1783911712",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/b/eb214fdf-edb1-49ab-8f98-dea62475f2fc.jpg?1783911712",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Joie des compagnons",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre entretien, choisissez l'un au hasard. Créez un jeton de créature rouge et blanche avec ces caractéristiques.\n• 3/1 Humain et Guerrier avec le piétinement et la célérité.\n• 2/1 Humain et Clerc avec le lien de vie et la célérité.\n• 1/2 Humain et Gredin avec la célérité et « Quand cette créature arrive sur le champ de bataille, elle inflige 1 blessure à n'importe quelle cible. »",
+   "image": "https://cards.scryfall.io/normal/front/2/1/218771b0-3979-481e-bb05-b63877be0bbb.jpg?1782795413"
+  }
+ },
+ {
+  "name": "Ride Down",
+  "number": "52",
+  "rarity": "uncommon",
+  "manaCost": "{R}{W}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Destroy target blocking creature. Creatures that were blocked by that creature this combat gain trample until end of turn.",
+  "colors": [
+   "R",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/1/f1ec2b59-fbc5-464c-916c-b1accf29867d.jpg?1783911711",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/1/f1ec2b59-fbc5-464c-916c-b1accf29867d.jpg?1783911711",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Piétiner",
+   "typeLine": "Éphémère",
+   "text": "Détruisez une créature bloqueuse ciblée. Les créatures qui ont été bloquées par cette créature pendant ce combat acquièrent le piétinement jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/5/7/57d4d20f-0130-454c-a8b9-ac62269aa276.jpg?1782795404"
+  }
+ },
+ {
+  "name": "Savage Smash",
+  "number": "53",
+  "rarity": "uncommon",
+  "manaCost": "{1}{R}{G}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Target creature you control gets +2/+2 until end of turn. It fights target creature you don't control. (Each deals damage equal to its power to the other.)",
+  "colors": [
+   "G",
+   "R"
+  ],
+  "keywords": [
+   "Fight"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/b/4b05cacb-1f62-46ca-90a0-202d4adcff2c.jpg?1783911709",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/b/4b05cacb-1f62-46ca-90a0-202d4adcff2c.jpg?1783911709",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fracas sauvage",
+   "typeLine": "Rituel",
+   "text": "Une créature ciblée que vous contrôlez gagne +2/+2 jusqu'à la fin du tour. Elle se bat contre une créature ciblée que vous ne contrôlez pas.",
+   "image": "https://cards.scryfall.io/normal/front/f/7/f735daeb-f4ac-4b54-aa22-48d6bf921de2.jpg?1782795401"
+  }
+ },
+ {
+  "name": "Siphon Insight",
+  "number": "54",
+  "rarity": "rare",
+  "manaCost": "{U}{B}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Look at the top two cards of target opponent's library. Exile one of them face down and put the other on the bottom of that library. You may play the exiled card for as long as it remains exiled, and you may spend mana as though it were mana of any color to cast that spell.\nFlashback {1}{U}{B}",
+  "colors": [
+   "B",
+   "U"
+  ],
+  "keywords": [
+   "Flashback"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/7/07fb25f7-1fb7-4c2a-abb8-adfb24860bce.jpg?1783911713",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/7/07fb25f7-1fb7-4c2a-abb8-adfb24860bce.jpg?1783911713",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Perspicacité siphonnée",
+   "typeLine": "Éphémère",
+   "text": "Regardez les deux cartes du dessus de la bibliothèque d'un adversaire ciblé. Exilez l'une d'elles face cachée et mettez l'autre au-dessous de cette bibliothèque. Vous pouvez jouer la carte exilée tant qu'elle reste exilée, et vous pouvez dépenser du mana comme s'il s'agissait de mana de n'importe quelle couleur pour lancer ce sort.\nFlashback {1}{U}{B}",
+   "image": "https://cards.scryfall.io/normal/front/9/1/91c71679-54b4-449d-9228-483a33a3d622.jpg?1782795392"
+  }
+ },
+ {
+  "name": "Terminal Agony",
+  "number": "55",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}{R}",
+  "cmc": 4,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy target creature.\nMadness {B}{R} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+  "colors": [
+   "B",
+   "R"
+  ],
+  "keywords": [
+   "Madness"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/b/ebccedbd-558c-419d-a18f-8751afd937b2.jpg?1783911709",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/b/ebccedbd-558c-419d-a18f-8751afd937b2.jpg?1783911709",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Angoisse terminale",
+   "typeLine": "Rituel",
+   "text": "Détruisez une créature ciblée.\nFolie {B}{R} (Si vous vous défaussez de cette carte, défaussez-vous-en vers l'exil. Quand vous faites ainsi, lancez-la pour son coût de folie ou mettez-la dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/6/3/63c2c587-c5e8-4db6-b926-d2f5d6683485.jpg?1782795384"
+  }
+ },
+ {
+  "name": "Tyrant's Scorn",
+  "number": "56",
+  "rarity": "uncommon",
+  "manaCost": "{U}{B}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Choose one —\n• Destroy target creature with mana value 3 or less.\n• Return target creature to its owner's hand.",
+  "colors": [
+   "B",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/6/e61f8b36-6ad2-4295-bd1d-7f9e90b23190.jpg?1783911707",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e61f8b36-6ad2-4295-bd1d-7f9e90b23190.jpg?1783911707",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mépris selon le Tyran",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un —\n• Détruisez une créature ciblée dont la valeur de mana est inférieure ou égale à 3.\n• Renvoyez une créature ciblée dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/4/3/43065ecb-759f-4071-9ca1-b1fb3a3cbfb6.jpg?1782795381"
+  }
+ },
+ {
+  "name": "Vanishing Verse",
+  "number": "57",
+  "rarity": "rare",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Exile target monocolored permanent.",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/c/fc4b1507-7daa-4728-b79e-a9423dae6c57.jpg?1783911707",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/c/fc4b1507-7daa-4728-b79e-a9423dae6c57.jpg?1783911707",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Verset disparaissant",
+   "typeLine": "Éphémère",
+   "text": "Exilez un permanent monochrome ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/5/9/59bb448f-f406-4cdb-b6b0-feaecd85ac76.jpg?1782795373"
+  }
+ },
+ {
+  "name": "Villainous Wealth",
+  "number": "58",
+  "rarity": "rare",
+  "manaCost": "{X}{B}{G}{U}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Target opponent exiles the top X cards of their library. You may cast any number of spells with mana value X or less from among them without paying their mana costs.",
+  "colors": [
+   "B",
+   "G",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/6/66126f16-3d22-4d93-86c8-1800f1cfd22e.jpg?1783911708",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/6/66126f16-3d22-4d93-86c8-1800f1cfd22e.jpg?1783911708",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Richesse abominable",
+   "typeLine": "Rituel",
+   "text": "Un adversaire ciblé exile les X cartes du dessus de sa bibliothèque. Vous pouvez lancer n'importe quel nombre de sorts avec une valeur de mana inférieure ou égale à X parmi elles sans payer leur coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/3/4/346eba11-e2f0-468d-b21a-76a3cc40c57c.jpg?1782795368"
+  }
+ },
+ {
+  "name": "Void Rend",
+  "number": "59",
+  "rarity": "rare",
+  "manaCost": "{W}{U}{B}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "This spell can't be countered.\nDestroy target nonland permanent.",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/9/598f6fd1-51a3-4bb3-9696-911cd45367f9.jpg?1783911708",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/9/598f6fd1-51a3-4bb3-9696-911cd45367f9.jpg?1783911708",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Déchiqueté par le vide",
+   "typeLine": "Éphémère",
+   "text": "Ce sort ne peut pas être contrecarré.\nDétruisez un permanent non-terrain ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/b/5/b53001eb-8df4-433c-94bc-b72a198acf11.jpg?1782795362"
+  }
+ },
+ {
+  "name": "Voidslime",
+  "number": "60",
+  "rarity": "rare",
+  "manaCost": "{G}{U}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Counter target spell, activated ability, or triggered ability. (Mana abilities can't be targeted.)",
+  "colors": [
+   "G",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/2/f21cca5c-dc1e-4e7c-9dab-218165f42b90.jpg?1783911707",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/2/f21cca5c-dc1e-4e7c-9dab-218165f42b90.jpg?1783911707",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vide gluant",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez une cible, sort, capacité activée ou capacité déclenchée. (Les capacités de mana ne peuvent pas être ciblées.)",
+   "image": "https://cards.scryfall.io/normal/front/a/e/aeebb370-6d44-4724-91f5-1ff9cba3f3c6.jpg?1782795355"
+  }
+ },
+ {
+  "name": "Contagion Engine",
+  "number": "61",
+  "rarity": "mythic",
+  "manaCost": "{6}",
+  "cmc": 6,
+  "typeLine": "Artifact",
+  "oracleText": "When this artifact enters, put a -1/-1 counter on each creature target player controls.\n{4}, {T}: Proliferate twice. (Choose any number of permanents and/or players, then give each another counter of each kind already there. Then do it again.)",
+  "colors": [],
+  "keywords": [
+   "Proliferate"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/e/fe584bf8-cb71-42b5-b5c0-dea3fec79c9d.jpg?1783911708",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe584bf8-cb71-42b5-b5c0-dea3fec79c9d.jpg?1783911708",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Machine à contagion",
+   "typeLine": "Artefact",
+   "text": "Quand la Machine à contagion arrive sur le champ de bataille, mettez un marqueur -1/-1 sur chaque créature qu'un joueur ciblé contrôle.\n{4}, {T} : Proliférez deux fois. (Choisissez n'importe quel nombre de permanents et/ou de joueurs, puis donnez-leur à chacun un autre marqueur de chaque sorte déjà présente. Puis recommencez.)",
+   "image": "https://cards.scryfall.io/normal/front/2/a/2af4c203-5cb6-43f5-81ad-93e44831363a.jpg?1782795349"
+  }
+ },
+ {
+  "name": "Grindstone",
+  "number": "62",
+  "rarity": "mythic",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "{3}, {T}: Target player mills two cards. If two cards that share a color were milled this way, repeat this process.",
+  "colors": [],
+  "keywords": [
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/5/f5914135-d927-4d95-a4cd-85c871adaeee.jpg?1783911706",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f5914135-d927-4d95-a4cd-85c871adaeee.jpg?1783911706",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Meularde",
+   "typeLine": "Artefact",
+   "text": "{3}, {T} : Un joueur ciblé meule deux cartes. Si deux cartes qui partagent une couleur ont été meulées de cette manière, répétez ce processus.",
+   "image": "https://cards.scryfall.io/normal/front/2/6/26b1e5cb-1182-44e5-a15d-0c761f650dc8.jpg?1782795342"
+  }
+ },
+ {
+  "name": "Mindslaver",
+  "number": "63",
+  "rarity": "mythic",
+  "manaCost": "{6}",
+  "cmc": 6,
+  "typeLine": "Legendary Artifact",
+  "oracleText": "{4}, {T}, Sacrifice Mindslaver: You control target player during that player's next turn. (You see all cards that player could see and make all decisions for them.)",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/5/65b007d5-d9da-4342-ba7e-4b5d8d79912b.jpg?1783911706",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/5/65b007d5-d9da-4342-ba7e-4b5d8d79912b.jpg?1783911706",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Esclavagiste d'âmes",
+   "typeLine": "Artefact légendaire",
+   "text": "{4}, {T}, sacrifiez l'Esclavagiste d'âmes : Vous contrôlez un joueur ciblé pendant son prochain tour. (Vous voyez toutes les cartes que ce joueur pourrait voir et vous prenez toutes les décisions pour ce joueur.)",
+   "image": "https://cards.scryfall.io/normal/front/d/c/dcd9aec6-5f5a-4b23-b058-43a4d746a3c1.jpg?1782795338"
+  }
+ },
+ {
+  "name": "Unlicensed Hearse",
+  "number": "64",
+  "rarity": "rare",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact — Vehicle",
+  "oracleText": "{T}: Exile up to two target cards from a single graveyard.\nUnlicensed Hearse's power and toughness are each equal to the number of cards exiled with it.\nCrew 2",
+  "power": "*",
+  "toughness": "*",
+  "colors": [],
+  "keywords": [
+   "Crew"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/4/5447a777-769d-4773-ab64-31c67e310e15.jpg?1783911705",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/5447a777-769d-4773-ab64-31c67e310e15.jpg?1783911705",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Corbillard illicite",
+   "typeLine": "Artefact — véhicule",
+   "text": "{T} : Exilez jusqu'à deux cartes ciblées d'un cimetière unique.\nLa force et l'endurance du Corbillard illicite sont chacune égales au nombre de cartes exilées par lui.\nPilotage 2",
+   "image": "https://cards.scryfall.io/normal/front/2/f/2f21c16e-269d-4d1f-9a83-0229ef88b21d.jpg?1782795331"
+  }
+ },
+ {
+  "name": "Dust Bowl",
+  "number": "65",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{3}, {T}, Sacrifice a land: Destroy target nonbasic land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/8/18d24d9a-a49e-4ce8-9158-03fe4cea39e2.jpg?1783911705",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18d24d9a-a49e-4ce8-9158-03fe4cea39e2.jpg?1783911705",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Désert de poussière",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{3}, {T}, sacrifiez un terrain : Détruisez un terrain non-base ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/b/d/bd84f9c1-4098-47e3-a7c1-7379b81ba1a7.jpg?1782795325"
+  }
+ }
+]

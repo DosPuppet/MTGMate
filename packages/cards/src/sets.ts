@@ -9,6 +9,8 @@ import dftData from "../data/dft.json";
 import dskData from "../data/dsk.json";
 import eclData from "../data/ecl.json";
 import eoeData from "../data/eoe.json";
+import eosData from "../data/eos.json";
+import fcaData from "../data/fca.json";
 import fdnData from "../data/fdn.json";
 import finData from "../data/fin.json";
 import fraData from "../data/fra.json";
@@ -17,18 +19,26 @@ import lciData from "../data/lci.json";
 import mkmData from "../data/mkm.json";
 import mshData from "../data/msh.json";
 import otjData from "../data/otj.json";
+import otpData from "../data/otp.json";
+import pzaData from "../data/pza.json";
+import rexData from "../data/rex.json";
+import soaData from "../data/soa.json";
 import sosData from "../data/sos.json";
+import spgData from "../data/spg.json";
 import spmData from "../data/spm.json";
 import tdmData from "../data/tdm.json";
 import tlaData from "../data/tla.json";
 import tmtData from "../data/tmt.json";
 import woeData from "../data/woe.json";
+import wotData from "../data/wot.json";
 import { BIG_SCRIPTS } from "./big/index";
 import { BLB_SCRIPTS } from "./blb/index";
 import { DFT_SCRIPTS } from "./dft/index";
 import { DSK_SCRIPTS } from "./dsk/index";
 import { ECL_SCRIPTS } from "./ecl/index";
 import { EOE_SCRIPTS } from "./eoe/index";
+import { EOS_SCRIPTS } from "./eos/index";
+import { FCA_SCRIPTS } from "./fca/index";
 import { FDN_SCRIPTS } from "./fdn/index";
 import { FIN_SCRIPTS } from "./fin/index";
 import { FRA_SCRIPTS } from "./fra/index";
@@ -37,14 +47,20 @@ import { LCI_SCRIPTS } from "./lci/index";
 import { MKM_SCRIPTS } from "./mkm/index";
 import { MSH_SCRIPTS } from "./msh/index";
 import { OTJ_SCRIPTS } from "./otj/index";
+import { OTP_SCRIPTS } from "./otp/index";
+import { PZA_SCRIPTS } from "./pza/index";
+import { REX_SCRIPTS } from "./rex/index";
 import type { RawCard } from "./scryfall";
 import { SET_INFO, type SetInfo } from "./setRegistry";
+import { SOA_SCRIPTS } from "./soa/index";
 import { SOS_SCRIPTS } from "./sos/index";
+import { SPG_SCRIPTS } from "./spg/index";
 import { SPM_SCRIPTS } from "./spm/index";
 import { TDM_SCRIPTS } from "./tdm/index";
 import { TLA_SCRIPTS } from "./tla/index";
 import { TMT_SCRIPTS } from "./tmt/index";
 import { WOE_SCRIPTS } from "./woe/index";
+import { WOT_SCRIPTS } from "./wot/index";
 
 export interface CardSet extends SetInfo {
   data: RawCard[];
@@ -72,6 +88,14 @@ const DATA: Record<string, unknown> = {
   DSK: dskData,
   LCI: lciData,
   FIN: finData,
+  SPG: spgData,
+  EOS: eosData,
+  WOT: wotData,
+  OTP: otpData,
+  FCA: fcaData,
+  SOA: soaData,
+  PZA: pzaData,
+  REX: rexData,
 };
 
 const SCRIPTS: Record<string, Record<string, CardScript>> = {
@@ -95,6 +119,14 @@ const SCRIPTS: Record<string, Record<string, CardScript>> = {
   DSK: DSK_SCRIPTS,
   LCI: LCI_SCRIPTS,
   FIN: FIN_SCRIPTS,
+  SPG: SPG_SCRIPTS,
+  EOS: EOS_SCRIPTS,
+  WOT: WOT_SCRIPTS,
+  OTP: OTP_SCRIPTS,
+  FCA: FCA_SCRIPTS,
+  SOA: SOA_SCRIPTS,
+  PZA: PZA_SCRIPTS,
+  REX: REX_SCRIPTS,
 };
 
 export const SETS: CardSet[] = SET_INFO.map((info) => ({

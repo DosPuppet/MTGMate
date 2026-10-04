@@ -208,11 +208,21 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
         </label>
         <select value={f.set} onChange={(e) => setF({ ...f, set: e.target.value })} aria-label="Extension">
           <option value="">Toutes les extensions</option>
-          {SETS.map((s) => (
-            <option key={s.code} value={s.code}>
-              {s.nameFr}
-            </option>
-          ))}
+          <optgroup label="Standard">
+            {SETS.filter((s) => !s.reprint).map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.nameFr}
+              </option>
+            ))}
+          </optgroup>
+          {/* Rééditions (PLAN-G) : hors Standard, jouables en « Sans limite ». */}
+          <optgroup label="Rééditions (Sans limite)">
+            {SETS.filter((s) => s.reprint).map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.nameFr}
+              </option>
+            ))}
+          </optgroup>
         </select>
         <span className="hint">
           {cards.length} cartes · {coverageHint(f.set)}

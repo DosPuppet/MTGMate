@@ -254,3 +254,13 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
 2. Les variantes SPG multiples (LCI) : seulement la variante de base.
 3. G1 (impressions) avant les cartes, ou après : il ne concerne que les 44 cartes déjà présentes, les 410 nouvelles ont
    d'emblée l'illustration de leur réédition.
+
+## Suivi
+
+- **G0 (04/10/2026) :** registre des huit ensembles de rééditions (`setRegistry.ts`, `reprint`, plages de numéros des
+  Special Guests), liste unique des cartes exclues (`EXCLUDED_REPRINTS` : une carte exclue l'est dans tous les
+  ensembles, Thrasios et Akroma's Will étant aussi en SPG et SOA), import (`npm run import-cards -- reprints`, français
+  complété par `tools/import-french.ts`), légalité Scryfall gardée (hors Standard, permises en « Sans limite »),
+  couverture (ligne « dont rééditions »), tableau du README, ensembles groupés dans l'éditeur de decks. Décompte réel
+  après import : 413 cartes nouvelles (SPG 132, EOS 43, WOT 55, OTP 61, FCA 50, SOA 37, PZA 15, REX 20), une carte déjà
+  jouable. Bundle : chunk des cartes 5 785 → 6 211 Ko, dans le budget.

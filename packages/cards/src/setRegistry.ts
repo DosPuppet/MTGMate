@@ -10,7 +10,40 @@ export interface SetInfo {
   nameFr: string;
   /** Dernier numéro de collection du set principal (au-delà : réimpressions, cartes spéciales). */
   mainMax: number;
+  /**
+   * Ensemble de rééditions sorti avec des extensions du Standard (PLAN-G : Special Guests, feuilles bonus) : hors
+   * Standard, jouable en « Sans limite ». `of` : les extensions avec lesquelles il est sorti.
+   */
+  reprint?: {
+    of: string[];
+    /** Numéros de collection importés (Special Guests : la plage de chaque extension de l'appli). */
+    numbers?: [number, number][];
+  };
 }
+
+/**
+ * Cartes des ensembles de rééditions laissées de côté, quel que soit l'ensemble, avec la raison (PLAN-G) : une partie de
+ * la carte ne fonctionne qu'en Commander (partenaire, éminence, ninjutsu de commandant, zone de commandement, identité de
+ * couleur du commandant, « si vous contrôlez un commandant »).
+ */
+const COMMANDER_ONLY = "mécanique propre au Commander (à reprendre avec Commander)";
+export const EXCLUDED_REPRINTS: Readonly<Record<string, string>> = {
+  "Akroma's Will": COMMANDER_ONLY,
+  "Breeches, Brazen Plunderer": COMMANDER_ONLY,
+  "Bruse Tarl, Boorish Herder": COMMANDER_ONLY,
+  "Command Beacon": COMMANDER_ONLY,
+  "Command Tower": COMMANDER_ONLY,
+  "Dargo, the Shipwrecker": COMMANDER_ONLY,
+  "Inalla, Archmage Ritualist": COMMANDER_ONLY,
+  "Ishai, Ojutai Dragonspeaker": COMMANDER_ONLY,
+  "Jeska's Will": COMMANDER_ONLY,
+  "Kraum, Ludevic's Opus": COMMANDER_ONLY,
+  "Malcolm, Keen-Eyed Navigator": COMMANDER_ONLY,
+  "Thrasios, Triton Hero": COMMANDER_ONLY,
+  "Tymna the Weaver": COMMANDER_ONLY,
+  "Vial Smasher the Fierce": COMMANDER_ONLY,
+  "Yuriko, the Tiger's Shadow": COMMANDER_ONLY,
+};
 
 export const SET_INFO: readonly SetInfo[] = [
   { code: "FDN", name: "Foundations", nameFr: "Fondations", mainMax: 281 },
@@ -33,4 +66,67 @@ export const SET_INFO: readonly SetInfo[] = [
   { code: "DSK", name: "Duskmourn: House of Horror", nameFr: "Mornebrune : la Maison de l'horreur", mainMax: 301 },
   { code: "LCI", name: "The Lost Caverns of Ixalan", nameFr: "Les cavernes oubliées d'Ixalan", mainMax: 291 },
   { code: "FIN", name: "Final Fantasy", nameFr: "Final Fantasy", mainMax: 309 },
+  // Rééditions (PLAN-G), après les extensions : une carte déjà présente garde sa définition et son image.
+  {
+    code: "SPG",
+    name: "Special Guests",
+    nameFr: "Invités spéciaux",
+    mainMax: 0,
+    reprint: {
+      of: ["LCI", "MKM", "OTJ", "BLB", "DSK", "FDN", "DFT", "TDM", "EOE", "ECL", "SOS", "FRA"],
+      // Une plage par extension de l'appli (39–53 : Modern Horizons 3, absente de l'appli).
+      numbers: [
+        [1, 38],
+        [54, 168],
+      ],
+    },
+  },
+  {
+    code: "EOS",
+    name: "Edge of Eternities: Stellar Sights",
+    nameFr: "Aux confins de l'éternité : merveilles stellaires",
+    mainMax: 0,
+    reprint: { of: ["EOE"] },
+  },
+  {
+    code: "WOT",
+    name: "Wilds of Eldraine: Enchanting Tales",
+    nameFr: "Les friches d'Eldraine : contes enchanteurs",
+    mainMax: 0,
+    reprint: { of: ["WOE"] },
+  },
+  { code: "OTP", name: "Breaking News", nameFr: "Dernières nouvelles", mainMax: 0, reprint: { of: ["OTJ"] } },
+  {
+    code: "FCA",
+    name: "Final Fantasy: Through the Ages",
+    nameFr: "Final Fantasy : à travers les âges",
+    mainMax: 0,
+    reprint: {
+      of: ["FIN"],
+    },
+  },
+  {
+    code: "SOA",
+    name: "Secrets of Strixhaven Mystical Archive",
+    nameFr: "Archive mystique de Secrets de Strixhaven",
+    mainMax: 0,
+    reprint: { of: ["SOS"] },
+  },
+  {
+    code: "PZA",
+    name: "Teenage Mutant Ninja Turtles Source Material",
+    nameFr: "Les Tortues Ninja : sources",
+    mainMax: 0,
+    reprint: { of: ["TMT"] },
+  },
+  {
+    code: "REX",
+    name: "Jurassic World Collection",
+    nameFr: "Collection Jurassic World",
+    mainMax: 0,
+    reprint: { of: ["LCI"] },
+  },
 ];
+
+/** Extensions du Standard (sans les ensembles de rééditions). */
+export const STANDARD_SETS: readonly SetInfo[] = SET_INFO.filter((s) => !s.reprint);

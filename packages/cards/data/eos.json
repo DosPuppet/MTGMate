@@ -1,0 +1,1143 @@
+[
+ {
+  "name": "Ancient Tomb",
+  "number": "1",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}{C}. This land deals 2 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/a/3afebe8a-9f21-4260-8e93-1ab1dff13c09.jpg?1783905865",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/a/3afebe8a-9f21-4260-8e93-1ab1dff13c09.jpg?1783905865",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ancienne tombe",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}{C}. L'Ancienne tombe vous inflige 2 blessures."
+  }
+ },
+ {
+  "name": "Blast Zone",
+  "number": "2",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters with a charge counter on it.\n{T}: Add {C}.\n{X}{X}, {T}: Put X charge counters on this land.\n{3}, {T}, Sacrifice this land: Destroy each nonland permanent with mana value equal to the number of charge counters on this land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/5/75a02940-4930-4cd6-ba20-a88efd6e82ce.jpg?1783905864",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/5/75a02940-4930-4cd6-ba20-a88efd6e82ce.jpg?1783905864",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Zone de déflagration",
+   "typeLine": "Terrain",
+   "text": "La Zone de déflagration arrive sur le champ de bataille avec un marqueur « charge » sur elle.\n{T} : Ajoutez {C}.\n{X}{X}, {T} : Mettez X marqueurs « charge » sur la Zone de déflagration.\n{3}, {T}, sacrifiez la Zone de déflagration : Détruisez chaque permanent non-terrain ayant une valeur de mana égale au nombre de marqueurs « charge » sur la Zone de déflagration."
+  }
+ },
+ {
+  "name": "Blinkmoth Nexus",
+  "number": "3",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{1}: This land becomes a 1/1 Blinkmoth artifact creature with flying until end of turn. It's still a land.\n{1}, {T}: Target Blinkmoth creature gets +1/+1 until end of turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/6/765fad0a-50fe-4e19-87a1-c3ec70937f61.jpg?1783905864",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/6/765fad0a-50fe-4e19-87a1-c3ec70937f61.jpg?1783905864",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nexus des scintimites",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{1} : Le Nexus des scintimites devient une créature-artefact 1/1 Scintimite avec le vol jusqu'à la fin du tour. C'est toujours un terrain.\n{1}, {T} : La créature Scintimite ciblée gagne +1/+1 jusqu'à la fin du tour."
+  }
+ },
+ {
+  "name": "Bonders' Enclave",
+  "number": "4",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{3}, {T}: Draw a card. Activate only if you control a creature with power 4 or greater.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/2/02a16e1e-1ea8-49af-9cde-2166134f7bdc.jpg?1783905865",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/02a16e1e-1ea8-49af-9cde-2166134f7bdc.jpg?1783905865",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Enclave des brideurs",
+   "text": "{T} : Ajoutez {C}.\n{3}, {T} : Piochez une carte. N'activez que si vous contrôlez une créature de force supérieure ou égale à 4."
+  }
+ },
+ {
+  "name": "Cascading Cataracts",
+  "number": "5",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "Indestructible\n{T}: Add {C}.\n{5}, {T}: Add five mana in any combination of colors.",
+  "colors": [],
+  "keywords": [
+   "Indestructible"
+  ],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/7/f74406a2-61f5-4ee4-bfea-8ba74f186e91.jpg?1783905863",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f74406a2-61f5-4ee4-bfea-8ba74f186e91.jpg?1783905863",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cataractes iridescentes",
+   "typeLine": "Terrain",
+   "text": "Indestructible\n{T} : Ajoutez {C}.\n{5}, {T} : Ajoutez cinq manas de la combinaison de mana coloré de votre choix."
+  }
+ },
+ {
+  "name": "Cathedral of War",
+  "number": "6",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\nExalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\n{T}: Add {C}.",
+  "colors": [],
+  "keywords": [
+   "Exalted"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/6/d6ca2f32-dd29-4fd5-9d36-253209230ebd.jpg?1783905864",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/6/d6ca2f32-dd29-4fd5-9d36-253209230ebd.jpg?1783905864",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cathédrale de la Guerre",
+   "typeLine": "Terrain",
+   "text": "La Cathédrale de la Guerre arrive sur le champ de bataille engagée.\nExaltation (À chaque fois qu'une créature que vous contrôlez attaque seule, elle gagne +1/+1 jusqu'à la fin du tour.)\n{T} : Ajoutez {1} à votre réserve."
+  }
+ },
+ {
+  "name": "Celestial Colonnade",
+  "number": "7",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {W} or {U}.\n{3}{W}{U}: Until end of turn, this land becomes a 4/4 white and blue Elemental creature with flying and vigilance. It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/a/ca60d7c8-4ceb-46c8-85be-30ba5879b130.jpg?1783905863",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/ca60d7c8-4ceb-46c8-85be-30ba5879b130.jpg?1783905863",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Colonnade céleste",
+   "typeLine": "Terrain",
+   "text": "La Colonnade céleste arrive sur le champ de bataille engagée.\n{T} : Ajoutez {W} ou {U}.\n{3}{W}{U} : Jusqu'à la fin du tour, la Colonnade céleste devient une créature 4/4 blanche et bleue Élémental avec le vol et la vigilance. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Contested War Zone",
+  "number": "8",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "Whenever a creature deals combat damage to you, that creature's controller gains control of this land.\n{T}: Add {C}.\n{1}, {T}: Attacking creatures get +1/+0 until end of turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/6/1617ef81-5815-47e1-9532-2af791bbd5b3.jpg?1783905864",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/6/1617ef81-5815-47e1-9532-2af791bbd5b3.jpg?1783905864",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Zone de guerre contestée",
+   "typeLine": "Terrain",
+   "text": "À chaque fois qu'une créature vous inflige des blessures de combat, le contrôleur de cette créature acquiert le contrôle de la Zone de guerre contestée.\n{T} : Ajoutez {1} à votre réserve.\n{1}, {T} : Les créatures attaquantes gagnent +1/+0 jusqu'à la fin du tour."
+  }
+ },
+ {
+  "name": "Creeping Tar Pit",
+  "number": "9",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {U} or {B}.\n{1}{U}{B}: Until end of turn, this land becomes a 3/2 blue and black Elemental creature. It's still a land. It can't be blocked this turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/2/a2184faf-6fa0-4d3c-b811-814beffe4320.jpg?1783905863",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a2184faf-6fa0-4d3c-b811-814beffe4320.jpg?1783905863",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fosse à goudron rampante",
+   "typeLine": "Terrain",
+   "text": "La Fosse à goudron rampante arrive sur le champ de bataille engagée.\n{T} : Ajoutez {U} ou {B}.\n{1}{U}{B} : La Fosse à goudron rampante devient une créature 3/2 bleue et noire Élémental jusqu'à la fin du tour et elle ne peut pas être bloquée ce tour-ci. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Crystal Quarry",
+  "number": "10",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{5}, {T}: Add {W}{U}{B}{R}{G}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/e/be6c67b2-4142-4bb4-a707-6dba787f811e.jpg?1783905862",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/e/be6c67b2-4142-4bb4-a707-6dba787f811e.jpg?1783905862",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Carrière de cristal",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{5}, {T} : Ajoutez {W}{U}{B}{R}{G}."
+  }
+ },
+ {
+  "name": "Deserted Temple",
+  "number": "11",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{1}, {T}: Untap target land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/6/463d8132-fe98-4b71-b6a8-0feb4d40a391.jpg?1783905862",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/6/463d8132-fe98-4b71-b6a8-0feb4d40a391.jpg?1783905862",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Temple déserté",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{1}, {T} : Dégagez un terrain ciblé."
+  }
+ },
+ {
+  "name": "Dust Bowl",
+  "number": "12",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{3}, {T}, Sacrifice a land: Destroy target nonbasic land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/d/6d9b32b9-837f-438f-b0dd-1f8fb74b9e6b.jpg?1783905862",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6d9b32b9-837f-438f-b0dd-1f8fb74b9e6b.jpg?1783905862",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Désert de poussière",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{3}, {T}, sacrifiez un terrain : Détruisez un terrain non-base ciblé."
+  }
+ },
+ {
+  "name": "Echoing Deeps",
+  "number": "13",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Cave",
+  "oracleText": "You may have this land enter tapped as a copy of any land card in a graveyard, except it's a Cave in addition to its other types.\n{T}: Add {C}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/8/b8a61e4e-e51f-4175-be3a-1f71fefc966f.jpg?1783905861",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/8/b8a61e4e-e51f-4175-be3a-1f71fefc966f.jpg?1783905861",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Profondeurs résonnantes",
+   "typeLine": "Terrain — caverne",
+   "text": "Vous pouvez faire que les Profondeurs résonnantes arrivent sur le champ de bataille engagées comme une copie de n'importe quelle carte de terrain dans un cimetière, excepté que c'est une caverne en plus de ses autres types.\n{T} : Ajoutez {C}."
+  }
+ },
+ {
+  "name": "Eldrazi Temple",
+  "number": "14",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {C}{C}. Spend this mana only to cast colorless Eldrazi spells or activate abilities of colorless Eldrazi.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/1/010abd40-3f9c-44bc-8570-d539750c3cd7.jpg?1783905861",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/1/010abd40-3f9c-44bc-8570-d539750c3cd7.jpg?1783905861",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Temple eldrazi",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {C}{C}. Ne dépensez ce mana que pour lancer des sorts d'eldrazi incolores ou activer des capacités d'eldrazi incolores."
+  }
+ },
+ {
+  "name": "Endless Sands",
+  "number": "15",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Desert",
+  "oracleText": "{T}: Add {C}.\n{2}, {T}: Exile target creature you control.\n{4}, {T}, Sacrifice this land: Return each creature card exiled with this land to the battlefield under its owner's control.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/d/0d79548c-bcef-46b5-929c-efbaf72cb29e.jpg?1783905862",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0d79548c-bcef-46b5-929c-efbaf72cb29e.jpg?1783905862",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sables infinis",
+   "typeLine": "Terrain : désert",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T} : Exilez une créature ciblée que vous contrôlez.\n{4}, {T}, sacrifiez les Sables infinis : renvoyez sur le champ de bataille, sous le contrôle de son propriétaire, chaque carte de créature exilée par les Sables infinis."
+  }
+ },
+ {
+  "name": "Gemstone Caverns",
+  "number": "16",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/3/930ff1c5-7f34-47b8-8e8b-720909cc6a69.jpg?1783905861",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/3/930ff1c5-7f34-47b8-8e8b-720909cc6a69.jpg?1783905861",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cavernes aux gemmes",
+   "typeLine": "Terrain légendaire",
+   "text": "Si les Cavernes aux gemmes sont dans votre main de départ et que vous ne jouez pas en premier, vous pouvez commencer la partie avec les Cavernes aux gemmes sur le champ de bataille avec, sur elles, un marqueur « chance ». Si vous faites ainsi, exilez une carte de votre main.\n{T} : Ajoutez {C}. Si les Cavernes aux gemmes ont un marqueur « chance » sur elles, ajoutez un mana de la couleur de votre choix à la place."
+  }
+ },
+ {
+  "name": "Grove of the Burnwillows",
+  "number": "17",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {R} or {G}. Each opponent gains 1 life.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C",
+   "G",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/8/38900352-9087-4842-9a99-aceb862e5d70.jpg?1783905860",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/38900352-9087-4842-9a99-aceb862e5d70.jpg?1783905860",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bosquet des brûlesaules",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {R} ou {G}. Chaque adversaire gagne 1 point de vie."
+  }
+ },
+ {
+  "name": "High Market",
+  "number": "18",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Sacrifice a creature: You gain 1 life.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/2/229c383b-305b-44b1-ba0f-fbe95bbd633f.jpg?1783905860",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/2/229c383b-305b-44b1-ba0f-fbe95bbd633f.jpg?1783905860",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Haut marché",
+   "text": "{T} : Ajoutez {C}.\n{T}, sacrifiez une créature : Vous gagnez 1 point de vie."
+  }
+ },
+ {
+  "name": "Hissing Quagmire",
+  "number": "19",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {B} or {G}.\n{1}{B}{G}: Until end of turn, this land becomes a 2/2 black and green Elemental creature with deathtouch. It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/9/d9bb686f-d66d-4de3-9497-a7d23d5c87b7.jpg?1783905859",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/9/d9bb686f-d66d-4de3-9497-a7d23d5c87b7.jpg?1783905859",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bourbiers sifflants",
+   "typeLine": "Terrain",
+   "text": "Les Bourbiers sifflants arrivent sur le champ de bataille engagés.\n{T} : Ajoutez {B} ou {G} à votre réserve.\n{1}{B}{G} : Les Bourbiers sifflants deviennent une créature 2/2 noire et verte Élémental avec le contact mortel jusqu'à la fin du tour. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Inkmoth Nexus",
+  "number": "20",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{1}: This land becomes a 1/1 Phyrexian Blinkmoth artifact creature with flying and infect until end of turn. It's still a land. (It deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/c/4c65f0c0-e771-4236-a3aa-02a0104eb4bc.jpg?1783905859",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/c/4c65f0c0-e771-4236-a3aa-02a0104eb4bc.jpg?1783905859",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nexus des encrimites",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {1} à votre réserve.\n{1} : Le Nexus des encrimites devient une créature-artefact 1/1 Scintimite avec le vol et l'infection jusqu'à la fin du tour. C'est toujours un terrain. (Il inflige des blessures aux créatures sous la forme de marqueurs -1/-1 et aux joueurs sous la forme de marqueurs « poison ».)"
+  }
+ },
+ {
+  "name": "Inventors' Fair",
+  "number": "21",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "At the beginning of your upkeep, if you control three or more artifacts, you gain 1 life.\n{T}: Add {C}.\n{4}, {T}, Sacrifice Inventors' Fair: Search your library for an artifact card, reveal it, put it into your hand, then shuffle. Activate only if you control three or more artifacts.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/6/06b24278-4d20-4d74-8be8-c8078e0a1873.jpg?1783905859",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/6/06b24278-4d20-4d74-8be8-c8078e0a1873.jpg?1783905859",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Foire des inventeurs",
+   "typeLine": "Terrain légendaire",
+   "text": "Au début de votre entretien, si vous contrôlez au moins trois artefacts, vous gagnez 1 point de vie.\n{T} : Ajoutez {C} à votre réserve.\n{4}, {T}, sacrifiez la Foire des inventeurs : Cherchez dans votre bibliothèque une carte d'artefact, révélez-la, mettez-la dans votre main et mélangez ensuite votre bibliothèque. N'activez cette capacité que si vous contrôlez au moins trois artefacts."
+  }
+ },
+ {
+  "name": "Lavaclaw Reaches",
+  "number": "22",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {B} or {R}.\n{1}{B}{R}: Until end of turn, this land becomes a 2/2 black and red Elemental creature with \"{X}: This creature gets +X/+0 until end of turn.\" It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/7/5766b7ed-eb92-4c53-a5ad-577b5466ff6f.jpg?1783905857",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/7/5766b7ed-eb92-4c53-a5ad-577b5466ff6f.jpg?1783905857",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Étendues de Griffelave",
+   "typeLine": "Terrain",
+   "text": "Les Étendues de Griffelave arrivent sur le champ de bataille engagées.\n{T} : Ajoutez {B} ou {R}.\n{1}{B}{R} : Jusqu'à la fin du tour, les Étendues de Griffelave deviennent une créature 2/2 noire et rouge Élémental avec « {X} : Cette créature gagne +X/+0 jusqu'à la fin du tour. » C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Lotus Field",
+  "number": "23",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "Hexproof\nThis land enters tapped.\nWhen this land enters, sacrifice two lands.\n{T}: Add three mana of any one color.",
+  "colors": [],
+  "keywords": [
+   "Hexproof"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/2/e2fdbc99-7696-434e-bbc5-366393ea7f04.jpg?1783905856",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e2fdbc99-7696-434e-bbc5-366393ea7f04.jpg?1783905856",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Champ de lotus",
+   "typeLine": "Terrain",
+   "text": "Défense talismanique\nLe Champ de lotus arrive sur le champ de bataille engagé.\nQuand le Champ de lotus arrive sur le champ de bataille, sacrifiez deux terrains.\n{T} : Ajoutez trois manas d'une seule couleur de votre choix."
+  }
+ },
+ {
+  "name": "Lumbering Falls",
+  "number": "24",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {G} or {U}.\n{2}{G}{U}: Until end of turn, this land becomes a 3/3 green and blue Elemental creature with hexproof. It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/7/d75fb845-e000-4f5d-9546-1fd610726aa2.jpg?1783905858",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/7/d75fb845-e000-4f5d-9546-1fd610726aa2.jpg?1783905858",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chutes mugissantes",
+   "typeLine": "Terrain",
+   "text": "Les Chutes mugissantes arrivent sur le champ de bataille engagées.\n{T} : Ajoutez {G} ou {U}.\n{2}{G}{U} : Les Chutes mugissantes deviennent une créature 3/3 verte et bleue Élémental avec la défense talismanique jusqu'à la fin du tour. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Mana Confluence",
+  "number": "25",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}, Pay 1 life: Add one mana of any color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/3/a374b6ef-bd75-4eae-ac7a-09332b0a653d.jpg?1783905857",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a374b6ef-bd75-4eae-ac7a-09332b0a653d.jpg?1783905857",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Confluence de mana",
+   "typeLine": "Terrain",
+   "text": "{T}, payez 1 point de vie : Ajoutez un mana de la couleur de votre choix à votre réserve."
+  }
+ },
+ {
+  "name": "Meteor Crater",
+  "number": "26",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Choose a color of a permanent you control. Add one mana of that color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/c/cc67cb3d-76ae-4394-9f45-41865b12edf5.jpg?1783905857",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/c/cc67cb3d-76ae-4394-9f45-41865b12edf5.jpg?1783905857",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cratère météoritique",
+   "typeLine": "Terrain",
+   "text": "{T}: Choisissez une couleur d'un permanent que vous contrôlez. Ajoutez un mana de cette couleur à votre réserve."
+  }
+ },
+ {
+  "name": "Mirrorpool",
+  "number": "27",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {C}.\n{2}{C}, {T}, Sacrifice this land: Copy target instant or sorcery spell you control. You may choose new targets for the copy.\n{4}{C}, {T}, Sacrifice this land: Create a token that's a copy of target creature you control.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/e/eebffbb3-5421-40e4-af92-999d8eb504f4.jpg?1783905858",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/e/eebffbb3-5421-40e4-af92-999d8eb504f4.jpg?1783905858",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bassin miroir",
+   "typeLine": "Terrain",
+   "text": "Le Bassin miroir arrive sur le champ de bataille engagé.\n{T} : Ajoutez {C}.\n{2}{C}, {T}, sacrifiez le Bassin miroir : Copiez un sort d'éphémère ou de rituel ciblé que vous contrôlez. Vous pouvez choisir de nouvelles cibles pour cette copie.\n{4}{C}, {T}, sacrifiez le Bassin miroir : Créez un jeton qui est une copie d'une créature ciblée que vous contrôlez."
+  }
+ },
+ {
+  "name": "Mutavault",
+  "number": "28",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{1}: This land becomes a 2/2 creature with all creature types until end of turn. It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/1/b13486fe-e5c7-47bf-abe7-d252fd4db459.jpg?1783905857",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/1/b13486fe-e5c7-47bf-abe7-d252fd4db459.jpg?1783905857",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mutecaveau",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{1} : Le Mutecaveau devient une créature 2/2 avec tous les types de créature jusqu'à la fin du tour. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Mystifying Maze",
+  "number": "29",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{4}, {T}: Exile target attacking creature an opponent controls. At the beginning of the next end step, return it to the battlefield tapped under its owner's control.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/5/2520c11e-5751-493e-bdae-defe2e05e448.jpg?1783905857",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/5/2520c11e-5751-493e-bdae-defe2e05e448.jpg?1783905857",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Labyrinthe mystificateur",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C} à votre réserve.\n{4}, {T} : Exilez une créature attaquante ciblée qu'un d'adversaire contrôle. Au début de la prochaine étape de fin, renvoyez-la sur le champ de bataille engagée, sous le contrôle de son propriétaire."
+  }
+ },
+ {
+  "name": "Needle Spires",
+  "number": "30",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {R} or {W}.\n{2}{R}{W}: Until end of turn, this land becomes a 2/1 red and white Elemental creature with double strike. It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/8/08fb8639-a0bb-4ad7-86b0-46116a078556.jpg?1783905856",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08fb8639-a0bb-4ad7-86b0-46116a078556.jpg?1783905856",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cimes aiguilles",
+   "typeLine": "Terrain",
+   "text": "Les Cimes aiguilles arrivent sur le champ de bataille engagées.\n{T} : Ajoutez {R} ou {W}.\n{2}{R}{W} : Les Cimes aiguilles deviennent une créature 2/1 rouge et blanche Élémental avec la double initiative jusqu'à la fin du tour. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Nesting Grounds",
+  "number": "31",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{1}, {T}: Move a counter from target permanent you control onto a second target permanent. Activate only as a sorcery.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/5/352b132b-7f97-46e3-8efd-238cb7f87b29.jpg?1783905856",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/5/352b132b-7f97-46e3-8efd-238cb7f87b29.jpg?1783905856",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Terrains de nidification",
+   "text": "{T} : Ajoutez {C}.\n{1}, {T} : Déplacez un marqueur d'un permanent ciblé que vous contrôlez sur un deuxième permanent ciblé. N'activez que lorsque vous pourriez lancer un rituel."
+  }
+ },
+ {
+  "name": "Petrified Field",
+  "number": "32",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Sacrifice this land: Return target land card from your graveyard to your hand.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/f/bf41d9f3-4e77-4b93-b153-d0aeb01ac312.jpg?1783905856",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/f/bf41d9f3-4e77-4b93-b153-d0aeb01ac312.jpg?1783905856",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Champ pétrifié",
+   "typeLine": "Terrain",
+   "text": "{T}: Ajoutez un mana incolore à votre réserve.\n{T}, sacrifiez le Champ pétrifié : Renvoyez la carte de terrain ciblée depuis votre cimetière dans votre main."
+  }
+ },
+ {
+  "name": "Plaza of Heroes",
+  "number": "33",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell.\n{T}: Add one mana of any color among legendary permanents you control.\n{3}, {T}, Exile this land: Target legendary creature gains hexproof and indestructible until end of turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/5/c5653373-d4ed-4211-9393-c7839d2d0a73.jpg?1783905854",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/5/c5653373-d4ed-4211-9393-c7839d2d0a73.jpg?1783905854",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Esplanade des héros",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez un mana de la couleur de votre choix. Ne dépensez ce mana que pour lancer un sort légendaire.\n{T} : Ajoutez un mana de la couleur de votre choix parmi les couleurs des permanents légendaires que vous contrôlez.\n{3}, {T}, exilez ce terrain : Une créature légendaire ciblée acquiert la défense talismanique et l'indestructible jusqu'à la fin du tour."
+  }
+ },
+ {
+  "name": "Power Depot",
+  "number": "34",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Artifact Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast artifact spells or activate abilities of artifacts.\nModular 1",
+  "colors": [],
+  "keywords": [
+   "Modular"
+  ],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/e/feaffb58-26e0-4f14-80af-681b785bb059.jpg?1783905855",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/feaffb58-26e0-4f14-80af-681b785bb059.jpg?1783905855",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dépôt d'énergie",
+   "typeLine": "Terrain-artefact",
+   "text": "Le Dépôt d'énergie arrive sur le champ de bataille engagé.\n{T} : Ajoutez {C}.\n{T} : Ajoutez un mana de la couleur de votre choix. Ne dépensez ce mana que pour lancer des sorts d'artefact ou activer des capacités d'artefact.\nModularité 1"
+  }
+ },
+ {
+  "name": "Raging Ravine",
+  "number": "35",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {R} or {G}.\n{2}{R}{G}: Until end of turn, this land becomes a 3/3 red and green Elemental creature with \"Whenever this creature attacks, put a +1/+1 counter on it.\" It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/d/ed878350-ebc3-419b-9dd9-384e44906569.jpg?1783905853",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/d/ed878350-ebc3-419b-9dd9-384e44906569.jpg?1783905853",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ravin enragé",
+   "text": "Ce terrain arrive engagé.\n{T} : Ajoutez {R} ou {G}.\n{2RG} : Jusqu'à la fin du tour, ce terrain devient une créature 3/3 rouge et verte Élémental avec « À chaque fois que cette créature attaque, mettez un marqueur +1/+1 sur elle. » C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Reflecting Pool",
+  "number": "36",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add one mana of any type that a land you control could produce.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/b/2b4e8ad6-7a60-43d6-a402-c91284993c14.jpg?1783905854",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2b4e8ad6-7a60-43d6-a402-c91284993c14.jpg?1783905854",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bassin réfléchissant",
+   "text": "{T} : Ajoutez un mana de n'importe quel type qu'un terrain que vous contrôlez pourrait produire."
+  }
+ },
+ {
+  "name": "Scavenger Grounds",
+  "number": "37",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Desert",
+  "oracleText": "{T}: Add {C}.\n{2}, {T}, Sacrifice a Desert: Exile all graveyards.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/2/c287ec37-c54e-4df8-a7be-50d6c4ffc744.jpg?1783905854",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/2/c287ec37-c54e-4df8-a7be-50d6c4ffc744.jpg?1783905854",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Terrains des charognards",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T}, sacrifiez un désert : Exilez tous les cimetières."
+  }
+ },
+ {
+  "name": "Shambling Vent",
+  "number": "38",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {W} or {B}.\n{1}{W}{B}: Until end of turn, this land becomes a 2/3 white and black Elemental creature with lifelink. It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/f/7f39bc7a-129e-4d52-8024-396c06906a45.jpg?1783905852",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7f39bc7a-129e-4d52-8024-396c06906a45.jpg?1783905852",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fumerolles titubantes",
+   "typeLine": "Terrain",
+   "text": "Les Fumerolles titubantes arrivent sur le champ de bataille engagées.\n{T} : Ajoutez {W} ou {B}.\n{1}{W}{B} : Les Fumerolles titubantes deviennent une créature 2/3 blanche et noire Élémental avec le lien de vie jusqu'à la fin du tour. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Stirring Wildwood",
+  "number": "39",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {G} or {W}.\n{1}{G}{W}: Until end of turn, this land becomes a 3/4 green and white Elemental creature with reach. It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/5/75ea63a8-3046-4578-a190-72efa34f8d88.jpg?1783905852",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/5/75ea63a8-3046-4578-a190-72efa34f8d88.jpg?1783905852",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bois sauvage en éveil",
+   "typeLine": "Terrain",
+   "text": "Le Bois sauvage en éveil arrive sur le champ de bataille engagé.\n{T} : Ajoutez {G} ou {W} à votre réserve.\n{1}{G}{W} : Jusqu'à la fin du tour, le Bois sauvage en éveil devient une créature 3/4 verte et blanche Élémental avec la portée. C'est toujours un terrain."
+  }
+ },
+ {
+  "name": "Strip Mine",
+  "number": "40",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Sacrifice this land: Destroy target land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/2/62aa232c-6034-4417-95a6-77b3a81c505c.jpg?1783905852",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/2/62aa232c-6034-4417-95a6-77b3a81c505c.jpg?1783905852",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mine des morts-terrains",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T}, sacrifiez la Mine des morts-terrains : Détruisez le terrain ciblé."
+  }
+ },
+ {
+  "name": "Sunken Citadel",
+  "number": "41",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Cave",
+  "oracleText": "This land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color.\n{T}: Add two mana of the chosen color. Spend this mana only to activate abilities of land sources.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/1/a12a9d09-7b6a-4207-96db-0d968cbdc09c.jpg?1783905851",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a12a9d09-7b6a-4207-96db-0d968cbdc09c.jpg?1783905851",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Citadelle engloutie",
+   "typeLine": "Terrain — caverne",
+   "text": "La Citadelle engloutie arrive sur le champ de bataille engagée. Au moment où elle arrive, choisissez une couleur.\n{T} : Ajoutez un mana de la couleur choisie.\n{T} : Ajoutez deux manas de la couleur choisie. Ne dépensez ce mana que pour activer des capacités de sources terrain."
+  }
+ },
+ {
+  "name": "Swarmyard",
+  "number": "42",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Regenerate target Insect, Rat, Spider, or Squirrel. (The next time it would be destroyed this turn, instead tap it, remove it from combat, and heal all damage on it.)",
+  "colors": [],
+  "keywords": [
+   "Heal",
+   "Regenerate"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/b/2b4ee0e7-7528-4fdc-a768-055d2c097f05.jpg?1783905852",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2b4ee0e7-7528-4fdc-a768-055d2c097f05.jpg?1783905852",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Grouilletière",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T} : Régénérez une cible, insecte, rat, araignée ou écureuil. (La prochaine fois qu'elle devrait être détruite, à la place, engagez-la, retirez-la du combat et retirez-lui toutes ses blessures.)"
+  }
+ },
+ {
+  "name": "Terrain Generator",
+  "number": "43",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{2}, {T}: You may put a basic land card from your hand onto the battlefield tapped.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/7/97b4d936-a7d6-4d43-87b5-0378f57e9e61.jpg?1783905852",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/7/97b4d936-a7d6-4d43-87b5-0378f57e9e61.jpg?1783905852",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Générateur de terrains",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T} : Vous pouvez mettre sur le champ de bataille, engagée, une carte de terrain de base de votre main."
+  }
+ },
+ {
+  "name": "Thespian's Stage",
+  "number": "44",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{2}, {T}: This land becomes a copy of target land, except it has this ability.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/c/dc03cbbf-6157-48ee-9687-c91513a95f18.jpg?1783905851",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/c/dc03cbbf-6157-48ee-9687-c91513a95f18.jpg?1783905851",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Scène de théâtre",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T} : La Scène de théâtre devient une copie d'un terrain ciblé, excepté qu'elle a cette capacité."
+  }
+ },
+ {
+  "name": "Wandering Fumarole",
+  "number": "45",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {U} or {R}.\n{2}{U}{R}: Until end of turn, this land becomes a 1/4 blue and red Elemental creature with \"{0}: Switch this creature's power and toughness until end of turn.\" It's still a land.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/9/89d53010-d85f-48e4-bf75-c02e8942f508.jpg?1783905851",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/9/89d53010-d85f-48e4-bf75-c02e8942f508.jpg?1783905851",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fumerolle vagabonde",
+   "typeLine": "Terrain",
+   "text": "La Fumerolle vagabonde arrive sur le champ de bataille engagée.\n{T} : Ajoutez {U} ou {R}.\n{2}{U}{R} : Jusqu'à la fin du tour, la Fumerolle vagabonde devient une créature 1/4 bleue et rouge Élémental avec « {0} : Échangez la force et l'endurance de cette créature jusqu'à la fin du tour. » C'est toujours un terrain."
+  }
+ }
+]

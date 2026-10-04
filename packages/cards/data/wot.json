@@ -1,0 +1,1566 @@
+[
+ {
+  "name": "Blind Obedience",
+  "number": "1",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nArtifacts and creatures your opponents control enter tapped.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Extort"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/c/1cb0ea8e-0707-46a8-9dc6-77c17244fd7b.jpg?1783914934",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/c/1cb0ea8e-0707-46a8-9dc6-77c17244fd7b.jpg?1783914934",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Obéissance aveugle",
+   "typeLine": "Enchantement",
+   "text": "Extorsion (À chaque fois que vous lancez un sort, vous pouvez payer {W/B}. Si vous faites ainsi, chaque adversaire perd 1 point de vie et vous gagnez autant de points de vie.)\nLes artefacts et les créatures que vos adversaires contrôlent arrivent sur le champ de bataille engagés.",
+   "image": "https://cards.scryfall.io/normal/front/6/b/6b920b63-6762-42aa-ac07-d00a6542d3ec.jpg?1782812276"
+  }
+ },
+ {
+  "name": "Dawn of Hope",
+  "number": "2",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever you gain life, you may pay {2}. If you do, draw a card.\n{3}{W}: Create a 1/1 white Soldier creature token with lifelink.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/e/de36ecaa-62e0-4f1c-b07f-837a786dc897.jpg?1783914934",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/e/de36ecaa-62e0-4f1c-b07f-837a786dc897.jpg?1783914934",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Aube de l'espoir",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois que vous gagnez des points de vie, vous pouvez payer {2}. Si vous faites ainsi, piochez une carte.\n{3}{W} : Créez un jeton de créature 1/1 blanche Soldat avec le lien de vie.",
+   "image": "https://cards.scryfall.io/normal/front/6/c/6c3a919f-eff4-4233-9b6d-1b6251ebe9e8.jpg?1782812271"
+  }
+ },
+ {
+  "name": "Grasp of Fate",
+  "number": "3",
+  "rarity": "uncommon",
+  "manaCost": "{1}{W}{W}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, for each opponent, exile up to one target nonland permanent that player controls until this enchantment leaves the battlefield. (Those permanents return under their owners' control.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/9/d983b297-e341-40fa-ba9b-b9f87eb25057.jpg?1783914933",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/9/d983b297-e341-40fa-ba9b-b9f87eb25057.jpg?1783914933",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Emprise du destin",
+   "typeLine": "Enchantement",
+   "text": "Quand l'Emprise du destin arrive sur le champ de bataille, pour chaque adversaire, exilez jusqu'à un permanent non-terrain ciblé que ce joueur contrôle jusqu'à ce que l'Emprise du destin quitte le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/e/7/e7b22ccf-c085-4617-aa33-3fb6af94199a.jpg?1782812265"
+  }
+ },
+ {
+  "name": "Greater Auramancy",
+  "number": "4",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Other enchantments you control have shroud. (A permanent with shroud can't be the target of spells or abilities.)\nEnchanted creatures you control have shroud.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/0/7088f502-662e-4083-b9b2-fdc0574592cd.jpg?1783914933",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/0/7088f502-662e-4083-b9b2-fdc0574592cd.jpg?1783914933",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Grande auramancie",
+   "typeLine": "Enchantement",
+   "text": "Les autres enchantements que vous contrôlez ont le linceul. (Un permanent avec le linceul ne peut pas être la cible de sorts ou de capacités.)\nLes créatures enchantées que vous contrôlez ont le linceul.",
+   "image": "https://cards.scryfall.io/normal/front/8/5/85ee6bc7-f292-4d0e-a994-fd279c1b0d93.jpg?1782812259"
+  }
+ },
+ {
+  "name": "Griffin Aerie",
+  "number": "5",
+  "rarity": "uncommon",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your end step, if you gained 3 or more life this turn, create a 2/2 white Griffin creature token with flying.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/0/b0c1cd62-aa6e-4120-ba70-1f12c8efe389.jpg?1783914933",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b0c1cd62-aa6e-4120-ba70-1f12c8efe389.jpg?1783914933",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Aérain de griffons",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre étape de fin, si vous avez gagné au moins 3 points de vie ce tour-ci, créez un jeton de créature 2/2 blanche Griffon avec le vol.",
+   "image": "https://cards.scryfall.io/normal/front/a/0/a0a3cab3-38d9-4a22-b89e-c2ff5a819fc4.jpg?1782812257"
+  }
+ },
+ {
+  "name": "Intangible Virtue",
+  "number": "6",
+  "rarity": "uncommon",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Creature tokens you control get +1/+1 and have vigilance.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/b/bb1bc2f9-d02a-4515-aa07-fcf98a3d194d.jpg?1783914933",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/b/bb1bc2f9-d02a-4515-aa07-fcf98a3d194d.jpg?1783914933",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vertu intangible",
+   "typeLine": "Enchantement",
+   "text": "Les jetons de créature que vous contrôlez gagnent +1/+1 et ont la vigilance.",
+   "image": "https://cards.scryfall.io/normal/front/b/1/b1c13255-2968-4612-89eb-bec7cc8d5344.jpg?1782812250"
+  }
+ },
+ {
+  "name": "Karmic Justice",
+  "number": "7",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a spell or ability an opponent controls destroys a noncreature permanent you control, you may destroy target permanent that opponent controls.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/5/45078d81-91ea-402c-ab3c-8464fc2ebb42.jpg?1783914933",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/45078d81-91ea-402c-ab3c-8464fc2ebb42.jpg?1783914933",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Justice karmique",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un sort ou une capacité qu'un adversaire contrôle détruit un permanent non-créature que vous contrôlez, vous pouvez détruire un permanent ciblé que cet adversaire contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/5/9/594e3223-5d51-4da6-9eeb-b39d130ead4f.jpg?1782812246"
+  }
+ },
+ {
+  "name": "Knightly Valor",
+  "number": "8",
+  "rarity": "uncommon",
+  "manaCost": "{4}{W}",
+  "cmc": 5,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant creature\nWhen this Aura enters, create a 2/2 white Knight creature token with vigilance. (Attacking doesn't cause it to tap.)\nEnchanted creature gets +2/+2 and has vigilance.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/4/844b8b36-6c45-445c-92a3-f1058669d66a.jpg?1783914933",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/4/844b8b36-6c45-445c-92a3-f1058669d66a.jpg?1783914933",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Valeur chevaleresque",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : créature\nQuand la Valeur chevaleresque arrive sur le champ de bataille, créez un jeton de créature 2/2 blanche Chevalier avec la vigilance.\nLa créature enchantée gagne +2/+2 et a la vigilance.",
+   "image": "https://cards.scryfall.io/normal/front/c/d/cdf7bfb5-9415-416b-868f-96b2ef17883b.jpg?1782812242"
+  }
+ },
+ {
+  "name": "Land Tax",
+  "number": "9",
+  "rarity": "mythic",
+  "manaCost": "{W}",
+  "cmc": 1,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, if an opponent controls more lands than you, you may search your library for up to three basic land cards, reveal them, put them into your hand, then shuffle.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/b/cb8796fd-ebf4-4fe3-b785-f48c65ff8257.jpg?1783914932",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/b/cb8796fd-ebf4-4fe3-b785-f48c65ff8257.jpg?1783914932",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Contribution foncière",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre entretien, si un adversaire contrôle plus de terrains que vous, vous pouvez chercher dans votre bibliothèque jusqu'à trois cartes de terrain de base, les révéler, les mettre dans votre main, puis mélanger.",
+   "image": "https://cards.scryfall.io/normal/front/a/2/a2a8edbf-23d6-4a2e-aaed-77d84ee6ac4f.jpg?1782812235"
+  }
+ },
+ {
+  "name": "Leyline of Sanctity",
+  "number": "10",
+  "rarity": "rare",
+  "manaCost": "{2}{W}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nYou have hexproof. (You can't be the target of spells or abilities your opponents control.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/f/dfaae165-add6-491f-9521-60e30accc528.jpg?1783914932",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/dfaae165-add6-491f-9521-60e30accc528.jpg?1783914932",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ligne ley de vertu",
+   "typeLine": "Enchantement",
+   "text": "Si la Ligne ley de vertu est dans votre main de départ, vous pouvez l'avoir sur le champ de bataille au début de la partie.\nVous avez la défense talismanique.",
+   "image": "https://cards.scryfall.io/normal/front/4/1/41b959c8-39bf-4f2d-b204-bd78ff96a8c0.jpg?1782812232"
+  }
+ },
+ {
+  "name": "Phyrexian Unlife",
+  "number": "11",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "You don't lose the game for having 0 or less life.\nAs long as you have 0 or less life, all damage is dealt to you as though its source had infect. (Damage is dealt to you in the form of poison counters.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/d/fdbbcb80-bd9f-4b45-af55-c1264e73d602.jpg?1783914930",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/d/fdbbcb80-bd9f-4b45-af55-c1264e73d602.jpg?1783914930",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Non-vie phyrexiane",
+   "typeLine": "Enchantement",
+   "text": "Vous ne perdez pas la partie parce que vous avez 0 point de vie ou moins.\nTant que vous avez 0 point de vie ou moins, toutes les blessures vous sont infligées comme si leur source avait l'infection. (Les blessures vous sont infligées sous la forme de marqueurs « poison ».)",
+   "image": "https://cards.scryfall.io/normal/front/6/9/690818de-d0ac-4d24-b0c2-8dec6f6e68b8.jpg?1782812226"
+  }
+ },
+ {
+  "name": "Rest in Peace",
+  "number": "12",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, exile all graveyards.\nIf a card or token would be put into a graveyard from anywhere, exile it instead.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/3/43eb0e85-1c26-4d2c-bdac-6e94717f0762.jpg?1783914931",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/3/43eb0e85-1c26-4d2c-bdac-6e94717f0762.jpg?1783914931",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Repose en paix",
+   "typeLine": "Enchantement",
+   "text": "Quand Repose en paix arrive sur le champ de bataille, exilez tous les cimetières.\nSi une carte ou un jeton devait être mis dans un cimetière d'où qu'il vienne, exilez-le à la place.",
+   "image": "https://cards.scryfall.io/normal/front/d/2/d2b9e5a0-9b5f-4b69-af80-eeac406041c1.jpg?1782812222"
+  }
+ },
+ {
+  "name": "Smothering Tithe",
+  "number": "13",
+  "rarity": "mythic",
+  "manaCost": "{3}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Treasure"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/6/f6c69c2f-729b-49ed-909d-57190a728e11.jpg?1783914931",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/6/f6c69c2f-729b-49ed-909d-57190a728e11.jpg?1783914931",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dîme étouffante",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un adversaire pioche une carte, ce joueur peut payer {2}. S'il ne le fait pas, vous créez un jeton Trésor.",
+   "image": "https://cards.scryfall.io/normal/front/8/6/86962cf4-ba68-4b8b-86ba-860632bd4bcf.jpg?1782812217"
+  }
+ },
+ {
+  "name": "As Foretold",
+  "number": "14",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, put a time counter on this enchantment.\nOnce each turn, you may pay {0} rather than pay the mana cost for a spell you cast with mana value X or less, where X is the number of time counters on this enchantment.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/0/306937c6-0eb3-43d3-bd71-40ef7cefa9e6.jpg?1783914930",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/0/306937c6-0eb3-43d3-bd71-40ef7cefa9e6.jpg?1783914930",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Conforme à la prédiction",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre entretien, mettez un marqueur « temps » sur Conforme à la prédiction.\nUne fois par tour, vous pouvez payer {0} à la place du coût de mana d'un sort avec une valeur de mana inférieure ou égale à X que vous lancez, X étant le nombre de marqueurs « temps » sur Conforme à la prédiction.",
+   "image": "https://cards.scryfall.io/normal/front/6/a/6a310daa-4bbc-4ef5-af02-a518efa5f43e.jpg?1782812210"
+  }
+ },
+ {
+  "name": "Compulsion",
+  "number": "15",
+  "rarity": "uncommon",
+  "manaCost": "{1}{U}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "{1}{U}, Discard a card: Draw a card.\n{1}{U}, Sacrifice this enchantment: Draw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/3/c39d78e6-fa15-43a2-8c8e-5436e82926b7.jpg?1783914929",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c39d78e6-fa15-43a2-8c8e-5436e82926b7.jpg?1783914929",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Compulsion",
+   "typeLine": "Enchantement",
+   "text": "{1}{U}, défaussez-vous d'une carte : Piochez une carte.\n{1}{U}, sacrifiez la Compulsion : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/0/0/005be64e-7f25-47eb-8f89-90f763d33127.jpg?1782812208"
+  }
+ },
+ {
+  "name": "Copy Enchantment",
+  "number": "16",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "You may have this enchantment enter as a copy of any enchantment on the battlefield.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/6/36924d70-5ede-4eed-a7db-7bc74d3eede9.jpg?1783914930",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/6/36924d70-5ede-4eed-a7db-7bc74d3eede9.jpg?1783914930",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Copie d'enchantement",
+   "typeLine": "Enchantement",
+   "text": "Vous pouvez faire que la Copie d'enchantement arrive sur le champ de bataille comme une copie de n'importe quel enchantement sur le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/3/6/3642f19f-84b7-4c6e-88c0-001c2e0e0534.jpg?1782812202"
+  }
+ },
+ {
+  "name": "Curiosity",
+  "number": "17",
+  "rarity": "uncommon",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/6/96056dc1-b989-4c87-8ad9-7a9dd99dd7fc.jpg?1783914931",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/6/96056dc1-b989-4c87-8ad9-7a9dd99dd7fc.jpg?1783914931",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Curiosité",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : créature\nÀ chaque fois que la créature enchantée inflige des blessures à un adversaire, vous pouvez piocher une carte.",
+   "image": "https://cards.scryfall.io/normal/front/5/9/59d83abd-f141-46ed-91b9-1529e782d6e0.jpg?1782812198"
+  }
+ },
+ {
+  "name": "Forced Fruition",
+  "number": "18",
+  "rarity": "rare",
+  "manaCost": "{4}{U}{U}",
+  "cmc": 6,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever an opponent casts a spell, that player draws seven cards.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/8/b8281681-a243-4995-8657-c3730aa67c57.jpg?1783914929",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/8/b8281681-a243-4995-8657-c3730aa67c57.jpg?1783914929",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fructification forcée",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un adversaire lance un sort, ce joueur pioche sept cartes.",
+   "image": "https://cards.scryfall.io/normal/front/c/0/c0d64464-8f34-4e4e-86cb-e2aabcf92257.jpg?1782812192"
+  }
+ },
+ {
+  "name": "Fraying Sanity",
+  "number": "19",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment — Aura Curse",
+  "oracleText": "Enchant player\nAt the beginning of each end step, enchanted player mills X cards, where X is the number of cards put into their graveyard from anywhere this turn.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Enchant",
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/0/303ecebb-cadc-465a-8ef8-7b314f971f6c.jpg?1783914929",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/0/303ecebb-cadc-465a-8ef8-7b314f971f6c.jpg?1783914929",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lucidité effilochée",
+   "typeLine": "Enchantement — aura et malédiction",
+   "text": "Enchanter : joueur\nAu début de chaque étape de fin, le joueur enchanté meule X cartes, X étant le nombre de cartes mises dans son cimetière d'où qu'elles viennent ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/0/2/028ac302-73c8-4c69-a980-9e67f2978e89.jpg?1782812185"
+  }
+ },
+ {
+  "name": "Hatching Plans",
+  "number": "20",
+  "rarity": "uncommon",
+  "manaCost": "{1}{U}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment is put into a graveyard from the battlefield, draw three cards.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/8/e8ebcbfb-1522-4ff5-b23a-f3ea9e08ad9b.jpg?1783914928",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e8ebcbfb-1522-4ff5-b23a-f3ea9e08ad9b.jpg?1783914928",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Plans naissants",
+   "typeLine": "Enchantement",
+   "text": "Quand les Plans naissants sont mis dans un cimetière depuis le champ de bataille, piochez trois cartes.",
+   "image": "https://cards.scryfall.io/normal/front/d/7/d775055b-2f90-465d-9694-21c1da6cda0d.jpg?1782812182"
+  }
+ },
+ {
+  "name": "Intruder Alarm",
+  "number": "21",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Creatures don't untap during their controllers' untap steps.\nWhenever a creature enters, untap all creatures.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/c/0c7eafcf-49aa-4134-b2d8-d9804160bcca.jpg?1783914929",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0c7eafcf-49aa-4134-b2d8-d9804160bcca.jpg?1783914929",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Signal d'alarme",
+   "typeLine": "Enchantement",
+   "text": "Les créatures ne se dégagent pas pendant les étapes de dégagement de leurs contrôleurs.\nÀ chaque fois qu'une créature arrive sur le champ de bataille, dégagez toutes les créatures.",
+   "image": "https://cards.scryfall.io/normal/front/e/9/e9185529-027e-4aad-bade-8cd0df1e0071.jpg?1782812175"
+  }
+ },
+ {
+  "name": "Kindred Discovery",
+  "number": "22",
+  "rarity": "mythic",
+  "manaCost": "{3}{U}{U}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "As this enchantment enters, choose a creature type.\nWhenever a creature you control of the chosen type enters or attacks, draw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/d/0db7f9e6-4f27-4743-a456-1386f24dbd5f.jpg?1783914928",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0db7f9e6-4f27-4743-a456-1386f24dbd5f.jpg?1783914928",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Découverte de congénères",
+   "typeLine": "Enchantement",
+   "text": "Au moment où la Découverte de congénères arrive sur le champ de bataille, choisissez un type de créature.\nÀ chaque fois qu'une créature du type choisi que vous contrôlez arrive sur le champ de bataille ou attaque, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/e/8/e8b832ef-5506-4725-a321-bc666532d7b2.jpg?1782812171"
+  }
+ },
+ {
+  "name": "Leyline of Anticipation",
+  "number": "23",
+  "rarity": "rare",
+  "manaCost": "{2}{U}{U}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nYou may cast spells as though they had flash.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/7/d789703e-81ae-48a7-8831-201ccdec5eba.jpg?1783914928",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/7/d789703e-81ae-48a7-8831-201ccdec5eba.jpg?1783914928",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ligne ley de prescience",
+   "typeLine": "Enchantement",
+   "text": "Si la Ligne ley de prescience est dans votre main de départ, vous pouvez l'avoir sur le champ de bataille au début de la partie.\nVous pouvez lancer les sorts comme s'ils avaient le flash.",
+   "image": "https://cards.scryfall.io/normal/front/f/a/faaef447-57e5-4b6e-961c-704d6b27b18a.jpg?1782812166"
+  }
+ },
+ {
+  "name": "Omniscience",
+  "number": "24",
+  "rarity": "mythic",
+  "manaCost": "{7}{U}{U}{U}",
+  "cmc": 10,
+  "typeLine": "Enchantment",
+  "oracleText": "You may cast spells from your hand without paying their mana costs.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/3/a3c11195-144e-44c4-aaa9-c534037748ea.jpg?1783914927",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a3c11195-144e-44c4-aaa9-c534037748ea.jpg?1783914927",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Omniscience",
+   "typeLine": "Enchantement",
+   "text": "Vous pouvez lancer des sorts depuis votre main sans payer leur coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/7/8/78d1373a-a140-4254-bed3-d60c1318c3e5.jpg?1782812161"
+  }
+ },
+ {
+  "name": "Rhystic Study",
+  "number": "25",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/4/043b2d30-a40f-4d47-933b-80544512f9c2.jpg?1783914927",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/4/043b2d30-a40f-4d47-933b-80544512f9c2.jpg?1783914927",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Étude rhystique",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un adversaire lance un sort, vous pouvez piocher une carte à moins que ce joueur ne paie {1}.",
+   "image": "https://cards.scryfall.io/normal/front/6/d/6d02e4ae-d4b5-486f-b389-5788aca58108.jpg?1782812156"
+  }
+ },
+ {
+  "name": "Spreading Seas",
+  "number": "26",
+  "rarity": "uncommon",
+  "manaCost": "{1}{U}",
+  "cmc": 2,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant land\nWhen this Aura enters, draw a card.\nEnchanted land is an Island.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/a/9ad6dfe9-90b6-4582-af77-1355c950a50d.jpg?1783914927",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9ad6dfe9-90b6-4582-af77-1355c950a50d.jpg?1783914927",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mers envahissantes",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : terrain\nQuand les Mers envahissantes arrivent sur le champ de bataille, piochez une carte.\nLe terrain enchanté est une île.",
+   "image": "https://cards.scryfall.io/normal/front/0/2/02dd6659-3289-4fdd-81aa-6de4e4e6f4f6.jpg?1782812151"
+  }
+ },
+ {
+  "name": "Bitterblossom",
+  "number": "27",
+  "rarity": "mythic",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Kindred Enchantment — Faerie",
+  "oracleText": "At the beginning of your upkeep, you lose 1 life and create a 1/1 black Faerie Rogue creature token with flying.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/d/bdf9661d-b581-4496-9004-f292d9ac03ef.jpg?1783914926",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/d/bdf9661d-b581-4496-9004-f292d9ac03ef.jpg?1783914926",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Âpre fleur",
+   "typeLine": "Enchantement tribal — peuple fée",
+   "text": "Au début de votre entretien, vous perdez 1 point de vie et vous créez un jeton de créature 1/1 noire Peuple fée et Gredin avec le vol.",
+   "image": "https://cards.scryfall.io/normal/front/1/6/167e63e4-4eb6-4097-800c-cb3e08881ebd.jpg?1782812145"
+  }
+ },
+ {
+  "name": "Dark Tutelage",
+  "number": "28",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, reveal the top card of your library and put that card into your hand. You lose life equal to its mana value.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/2/a2b11a54-b38c-4e22-8b6d-dfc6c037db0e.jpg?1783914926",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a2b11a54-b38c-4e22-8b6d-dfc6c037db0e.jpg?1783914926",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Obscure tutelle",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre entretien, révélez la carte du dessus de votre bibliothèque et mettez-la dans votre main. Vous perdez un nombre de points de vie égal à sa valeur de mana.",
+   "image": "https://cards.scryfall.io/normal/front/e/9/e988da39-2fb7-4534-a970-ff69d399cc73.jpg?1782812140"
+  }
+ },
+ {
+  "name": "Grave Pact",
+  "number": "29",
+  "rarity": "mythic",
+  "manaCost": "{1}{B}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a creature you control dies, each other player sacrifices a creature of their choice.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/7/b728cdab-e4fe-478b-b7b2-5912bd6a80a3.jpg?1783914926",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/7/b728cdab-e4fe-478b-b7b2-5912bd6a80a3.jpg?1783914926",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pacte de la tombe",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature que vous contrôlez meurt, chaque autre joueur sacrifie une créature.",
+   "image": "https://cards.scryfall.io/normal/front/1/1/116a3c44-6716-4d68-a1f5-4736c17f2f85.jpg?1782812136"
+  }
+ },
+ {
+  "name": "Leyline of the Void",
+  "number": "30",
+  "rarity": "rare",
+  "manaCost": "{2}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nIf a card would be put into an opponent's graveyard from anywhere, exile it instead.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/3/034bfd23-8f10-4d98-9500-47d392531c69.jpg?1783914925",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/3/034bfd23-8f10-4d98-9500-47d392531c69.jpg?1783914925",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Ligne ley du vide",
+   "typeLine": "Enchantement",
+   "text": "Si la Ligne ley du vide est dans votre main de départ, vous pouvez l'avoir sur le champ de bataille au début de la partie.\nSi une carte devait être mise dans le cimetière d'un adversaire d'où qu'elle vienne, exilez-la à la place.",
+   "image": "https://cards.scryfall.io/normal/front/6/8/681f2af0-a675-4a23-8804-d922d550f5df.jpg?1782812131"
+  }
+ },
+ {
+  "name": "Necropotence",
+  "number": "31",
+  "rarity": "mythic",
+  "manaCost": "{B}{B}{B}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Skip your draw step.\nWhenever you discard a card, exile that card from your graveyard.\nPay 1 life: Exile the top card of your library face down. Put that card into your hand at the beginning of your next end step.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/f/ff727bfb-8cd8-43dd-afdf-eb74a4631eac.jpg?1783914925",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/f/ff727bfb-8cd8-43dd-afdf-eb74a4631eac.jpg?1783914925",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nécropuissance",
+   "typeLine": "Enchantement",
+   "text": "Passez votre étape de pioche.\nÀ chaque fois que vous vous défaussez d'une carte, exilez cette carte de votre cimetière.\nPayez 1 point de vie : Exilez la carte du dessus de votre bibliothèque face cachée. Mettez cette carte dans votre main au début de votre prochaine étape de fin.",
+   "image": "https://cards.scryfall.io/normal/front/1/4/146751bf-3e5a-40a8-8549-6c881ba30d99.jpg?1782812126"
+  }
+ },
+ {
+  "name": "Oppression",
+  "number": "32",
+  "rarity": "rare",
+  "manaCost": "{1}{B}{B}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a player casts a spell, that player discards a card.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/e/2e8ffc89-6436-4e4d-aa43-8f704b658b96.jpg?1783914926",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/e/2e8ffc89-6436-4e4d-aa43-8f704b658b96.jpg?1783914926",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Oppression",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un joueur lance un sort, ce joueur se défausse d'une carte.",
+   "image": "https://cards.scryfall.io/normal/front/c/b/cb9707f5-7890-4a80-be43-302ac072fb5d.jpg?1782812121"
+  }
+ },
+ {
+  "name": "Oversold Cemetery",
+  "number": "33",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, if you have four or more creature cards in your graveyard, you may return target creature card from your graveyard to your hand.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/8/48a6cfd3-20bb-431b-b3f5-bb32a26e5002.jpg?1783914924",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/48a6cfd3-20bb-431b-b3f5-bb32a26e5002.jpg?1783914924",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cimetière surpeuplé",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre entretien, si vous avez au moins quatre cartes de créature dans votre cimetière, vous pouvez renvoyer dans votre main une carte de créature ciblée depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/9/3/93ec3eb9-9173-4973-898e-08e9c7d3223e.jpg?1782812116"
+  }
+ },
+ {
+  "name": "Polluted Bonds",
+  "number": "34",
+  "rarity": "rare",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a land an opponent controls enters, that player loses 2 life and you gain 2 life.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/1/e15e0521-1abf-4426-9f31-4081f068b184.jpg?1783914924",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/1/e15e0521-1abf-4426-9f31-4081f068b184.jpg?1783914924",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Liens pollués",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un terrain arrive sur le champ de bataille sous le contrôle d'un adversaire, ce joueur perd 2 points de vie et vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/3/8/38d9326b-0927-4453-bf61-ec2e91903144.jpg?1782812112"
+  }
+ },
+ {
+  "name": "Sanguine Bond",
+  "number": "35",
+  "rarity": "rare",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever you gain life, target opponent loses that much life.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/d/bd199c13-9437-4162-bde9-9301589989aa.jpg?1783914924",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/d/bd199c13-9437-4162-bde9-9301589989aa.jpg?1783914924",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lien sanguin",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois que vous gagnez des points de vie, un adversaire ciblé perd autant de points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/6/a/6a0f2f6b-7489-4132-9c85-5260d3861188.jpg?1782812106"
+  }
+ },
+ {
+  "name": "Stab Wound",
+  "number": "36",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant creature\nEnchanted creature gets -2/-2.\nAt the beginning of the upkeep of enchanted creature's controller, that player loses 2 life.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/2/02e5953c-420f-4f5e-bee1-2e49662e1f5b.jpg?1783914924",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/02e5953c-420f-4f5e-bee1-2e49662e1f5b.jpg?1783914924",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Blessure d'arme blanche",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : créature\nLa créature enchantée gagne -2/-2.\nAu début de l'entretien du contrôleur de la créature enchantée, ce joueur perd 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/1/f/1fbf7910-5802-4727-a2bb-3d036fc847d1.jpg?1782812099"
+  }
+ },
+ {
+  "name": "Vampiric Rites",
+  "number": "37",
+  "rarity": "uncommon",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Enchantment",
+  "oracleText": "{1}{B}, Sacrifice a creature: You gain 1 life and draw a card.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/8/6854dc06-4845-4201-958b-2fdad3f7b64a.jpg?1783914923",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/8/6854dc06-4845-4201-958b-2fdad3f7b64a.jpg?1783914923",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Sacres vampiriques",
+   "typeLine": "Enchantement",
+   "text": "{1}{B}, sacrifiez une créature : Vous gagnez 1 point de vie et vous piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/d/3/d3327930-4e4b-4280-989e-b5709a0c1374.jpg?1782812096"
+  }
+ },
+ {
+  "name": "Waste Not",
+  "number": "38",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever an opponent discards a creature card, create a 2/2 black Zombie creature token.\nWhenever an opponent discards a land card, add {B}{B}.\nWhenever an opponent discards a noncreature, nonland card, draw a card.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/5/f5dd0247-f6a0-4f1d-ac27-a49a7e022e5b.jpg?1783914923",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f5dd0247-f6a0-4f1d-ac27-a49a7e022e5b.jpg?1783914923",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rien n'est jamais gâché",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un adversaire se défausse d'une carte de créature, créez un jeton de créature 2/2 noire Zombie.\nÀ chaque fois qu'un adversaire se défausse d'une carte de terrain, ajoutez {B}{B}.\nÀ chaque fois qu'un adversaire se défausse d'une carte non-créature non-terrain, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/5/3/538e88ad-b066-424b-a12c-67b816cf5737.jpg?1782812090"
+  }
+ },
+ {
+  "name": "Aggravated Assault",
+  "number": "39",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "{3}{R}{R}: Untap all creatures you control. After this main phase, there is an additional combat phase followed by an additional main phase. Activate only as a sorcery.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/1/01499449-5614-428f-8fc1-1fa74f7114ad.jpg?1783914923",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/1/01499449-5614-428f-8fc1-1fa74f7114ad.jpg?1783914923",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Escalade de violence",
+   "typeLine": "Enchantement",
+   "text": "{3}{R}{R} : Dégagez toutes les créatures que vous contrôlez. Si c'est une phase principale, il y a une phase de combat supplémentaire suivie d'une phase principale supplémentaire. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/4/6/4600602f-02ed-4d19-8469-15731f76223f.jpg?1782812088"
+  }
+ },
+ {
+  "name": "Blood Moon",
+  "number": "40",
+  "rarity": "mythic",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Nonbasic lands are Mountains.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/0/b0dbdacf-59b5-46fc-9635-fd4fb1527189.jpg?1783914922",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b0dbdacf-59b5-46fc-9635-fd4fb1527189.jpg?1783914922",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lune de sang",
+   "typeLine": "Enchantement",
+   "text": "Les terrains non-base sont des montagnes.",
+   "image": "https://cards.scryfall.io/normal/front/1/e/1e495089-593a-4986-9343-10f1b8178cf0.jpg?1782812081"
+  }
+ },
+ {
+  "name": "Dragon Mantle",
+  "number": "41",
+  "rarity": "uncommon",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant creature\nWhen this Aura enters, draw a card.\nEnchanted creature has \"{R}: This creature gets +1/+0 until end of turn.\"",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/d/8dc7ea40-f45d-4550-82f5-ded841d8746d.jpg?1783914922",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/d/8dc7ea40-f45d-4550-82f5-ded841d8746d.jpg?1783914922",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Manteau de dragon",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : créature\nQuand le Manteau de dragon arrive sur le champ de bataille, piochez une carte.\nLa créature enchantée a « {R} : Cette créature gagne +1/+0 jusqu'à la fin du tour. »",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3c1b6630-e3d8-43f5-9a02-5beaf36d69ee.jpg?1782812078"
+  }
+ },
+ {
+  "name": "Fiery Emancipation",
+  "number": "42",
+  "rarity": "rare",
+  "manaCost": "{3}{R}{R}{R}",
+  "cmc": 6,
+  "typeLine": "Enchantment",
+  "oracleText": "If a source you control would deal damage to a permanent or player, it deals triple that damage to that permanent or player instead.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Triple"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/8/8801efe9-e141-4790-9d97-af8fc0222833.jpg?1783914923",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/8/8801efe9-e141-4790-9d97-af8fc0222833.jpg?1783914923",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Émancipation ardente",
+   "typeLine": "Enchantement",
+   "text": "Si une source que vous contrôlez devait infliger des blessures à un permanent ou à un joueur, elle inflige à la place le triple de ces blessures à ce permanent ou à ce joueur.",
+   "image": "https://cards.scryfall.io/normal/front/0/a/0a51161c-d973-42aa-8874-537d9d4455f6.jpg?1782812073"
+  }
+ },
+ {
+  "name": "Goblin Bombardment",
+  "number": "43",
+  "rarity": "rare",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Sacrifice a creature: This enchantment deals 1 damage to any target.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/9/e92af114-ad34-4106-a7fa-5676dbcd4960.jpg?1783914925",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/9/e92af114-ad34-4106-a7fa-5676dbcd4960.jpg?1783914925",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bombardement des gobelins",
+   "typeLine": "Enchantement",
+   "text": "Sacrifiez une créature : Le Bombardement des gobelins inflige 1 blessure à n'importe quelle cible.",
+   "image": "https://cards.scryfall.io/normal/front/7/1/716bc9ed-a637-4ac0-b74d-0bed42bfa715.jpg?1782812066"
+  }
+ },
+ {
+  "name": "Impact Tremors",
+  "number": "44",
+  "rarity": "uncommon",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a creature you control enters, this enchantment deals 1 damage to each opponent.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/2/e23cf8e0-0983-4495-ad3e-8b0c3e706115.jpg?1783914921",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e23cf8e0-0983-4495-ad3e-8b0c3e706115.jpg?1783914921",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Secousses d'impact",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature arrive sur le champ de bataille sous votre contrôle, les Secousses d'impact infligent 1 blessure à chaque adversaire.",
+   "image": "https://cards.scryfall.io/normal/front/2/3/236907f2-6631-44f3-a3c1-acb94e3a51f0.jpg?1782812063"
+  }
+ },
+ {
+  "name": "Leyline of Lightning",
+  "number": "45",
+  "rarity": "rare",
+  "manaCost": "{2}{R}{R}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nWhenever you cast a spell, you may pay {1}. If you do, this enchantment deals 1 damage to target player or planeswalker.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/1/d1670149-b64b-44a8-8858-59637679065c.jpg?1783914921",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/1/d1670149-b64b-44a8-8858-59637679065c.jpg?1783914921",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ligne ley d'éclairs",
+   "typeLine": "Enchantement",
+   "text": "Si la Ligne ley d'éclairs est dans votre main de départ, vous pouvez l'avoir sur le champ de bataille au début de la partie.\nÀ chaque fois que vous lancez un sort, vous pouvez payer {1}. Si vous faites ainsi, la Ligne ley d'éclairs inflige 1 blessure à une cible, joueur ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/8/6/86dc5a14-23a3-41cd-b5ac-d2ba2713de6d.jpg?1782812057"
+  }
+ },
+ {
+  "name": "Mana Flare",
+  "number": "46",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a player taps a land for mana, that player adds one mana of any type that land produced.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/f/3f0b8b24-7272-4d1a-af4a-c3a1b89a7e04.jpg?1783914921",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/f/3f0b8b24-7272-4d1a-af4a-c3a1b89a7e04.jpg?1783914921",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Flamboiement de mana",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un joueur engage un terrain pour du mana, ce joueur ajoute un mana de n'importe quel type que ce terrain a produit.",
+   "image": "https://cards.scryfall.io/normal/front/8/2/82691394-b462-48da-b049-4bd4d6445263.jpg?1782812052"
+  }
+ },
+ {
+  "name": "Raid Bombardment",
+  "number": "47",
+  "rarity": "uncommon",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a creature you control with power 2 or less attacks, this enchantment deals 1 damage to the player or planeswalker that creature is attacking.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/a/1a7576d7-ef3a-48b1-a06b-81d334c57b96.jpg?1783914920",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/a/1a7576d7-ef3a-48b1-a06b-81d334c57b96.jpg?1783914920",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bombardement d'assaut",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature de force inférieure ou égale à 2 que vous contrôlez attaque, le Bombardement d'assaut inflige 1 blessure au joueur ou au planeswalker que cette créature attaque.",
+   "image": "https://cards.scryfall.io/normal/front/a/9/a9fdeba1-e1a3-45ce-8599-de6c4f143262.jpg?1782812048"
+  }
+ },
+ {
+  "name": "Repercussion",
+  "number": "48",
+  "rarity": "mythic",
+  "manaCost": "{1}{R}{R}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a creature is dealt damage, this enchantment deals that much damage to that creature's controller.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/e/4e95e687-fa34-4dfe-bf24-34a481041bd1.jpg?1783914920",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/e/4e95e687-fa34-4dfe-bf24-34a481041bd1.jpg?1783914920",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Répercussion",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature subit des blessures, la Répercussion inflige autant de blessures au contrôleur de cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/6/2/625c1cee-ea0b-4940-85fd-eacb61579f59.jpg?1782812041"
+  }
+ },
+ {
+  "name": "Shared Animosity",
+  "number": "49",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a creature you control attacks, it gets +1/+0 until end of turn for each other attacking creature that shares a creature type with it.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/9/299a807e-21cb-4b49-ad2b-c9ce7eef393a.jpg?1783914920",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/9/299a807e-21cb-4b49-ad2b-c9ce7eef393a.jpg?1783914920",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Animosité partagée",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature que vous contrôlez attaque, elle gagne +1/+0 jusqu'à la fin du tour pour chaque autre créature attaquante qui partage un type de créature avec elle.",
+   "image": "https://cards.scryfall.io/normal/front/1/b/1b604bd7-b0d0-4658-9cf0-68432f21e716.jpg?1782812040"
+  }
+ },
+ {
+  "name": "Sneak Attack",
+  "number": "50",
+  "rarity": "mythic",
+  "manaCost": "{3}{R}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "{R}: You may put a creature card from your hand onto the battlefield. That creature gains haste. Sacrifice the creature at the beginning of the next end step.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/b/0b121aba-52c0-4b6c-a7d8-17188b524673.jpg?1783914920",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/b/0b121aba-52c0-4b6c-a7d8-17188b524673.jpg?1783914920",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Attaque furtive",
+   "typeLine": "Enchantement",
+   "text": "{R} : Vous pouvez mettre sur le champ de bataille une carte de créature de votre main. Cette créature acquiert la célérité. Sacrifiez la créature au début de la prochaine étape de fin.",
+   "image": "https://cards.scryfall.io/normal/front/d/e/de700161-c0e5-4184-9c88-3a6b26590e73.jpg?1782812032"
+  }
+ },
+ {
+  "name": "Defense of the Heart",
+  "number": "51",
+  "rarity": "mythic",
+  "manaCost": "{3}{G}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, if an opponent controls three or more creatures, sacrifice this enchantment, search your library for up to two creature cards, put those cards onto the battlefield, then shuffle.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/1/61c15767-1ddd-4bea-a23e-1598708434f6.jpg?1783914919",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/1/61c15767-1ddd-4bea-a23e-1598708434f6.jpg?1783914919",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Défense du cœur de la forêt",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre entretien, si un adversaire contrôle au moins trois créatures, sacrifiez la Défense du cœur de la forêt, cherchez dans votre bibliothèque jusqu'à deux cartes de créature, mettez-les sur le champ de bataille, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/a/4/a46dd277-738c-4458-9d8b-efd99ee16258.jpg?1782812030"
+  }
+ },
+ {
+  "name": "Doubling Season",
+  "number": "52",
+  "rarity": "mythic",
+  "manaCost": "{4}{G}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.\nIf an effect would put one or more counters on a permanent you control, it puts twice that many of those counters on that permanent instead.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/7/c7d7db76-0a0c-444f-96f1-559838450549.jpg?1783914920",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/7/c7d7db76-0a0c-444f-96f1-559838450549.jpg?1783914920",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Saison de dédoublement",
+   "typeLine": "Enchantement",
+   "text": "Si un effet devait créer au moins un jeton sous votre contrôle, il crée deux fois ce nombre de jetons à la place.\nSi un effet devait mettre au moins un marqueur sur un permanent que vous contrôlez, il met deux fois ce nombre de marqueurs sur ce permanent à la place.",
+   "image": "https://cards.scryfall.io/normal/front/c/9/c9ec5b48-892c-4e73-9f31-d3dabe150d43.jpg?1782812023"
+  }
+ },
+ {
+  "name": "Garruk's Uprising",
+  "number": "53",
+  "rarity": "uncommon",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, if you control a creature with power 4 or greater, draw a card.\nCreatures you control have trample. (Each of those creatures can deal excess combat damage to the player or planeswalker it's attacking.)\nWhenever a creature you control with power 4 or greater enters, draw a card.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/9/7931a072-b688-4a0b-a32e-9a2082738745.jpg?1783914918",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/9/7931a072-b688-4a0b-a32e-9a2082738745.jpg?1783914918",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Soulèvement de Garruk",
+   "typeLine": "Enchantement",
+   "text": "Quand le Soulèvement de Garruk arrive sur le champ de bataille, si vous contrôlez une créature de force supérieure ou égale à 4, piochez une carte.\nLes créatures que vous contrôlez ont le piétinement.\nÀ chaque fois qu'une créature avec une force supérieure ou égale à 4 arrive sur le champ de bataille sous votre contrôle, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/7/9/795f0b9d-47d7-4b45-bedf-fdd61a308e86.jpg?1782812018"
+  }
+ },
+ {
+  "name": "Ground Seal",
+  "number": "54",
+  "rarity": "uncommon",
+  "manaCost": "{1}{G}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, draw a card.\nCards in graveyards can't be the targets of spells or abilities.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/b/9b36d3ff-8d38-467b-bd70-33dfeae73b7d.jpg?1783914917",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/b/9b36d3ff-8d38-467b-bd70-33dfeae73b7d.jpg?1783914917",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sceau cthonien",
+   "typeLine": "Enchantement",
+   "text": "Quand le Sceau cthonien arrive sur le champ de bataille, piochez une carte.\nLes cartes des cimetières ne peuvent pas être les cibles de sorts ou de capacités.",
+   "image": "https://cards.scryfall.io/normal/front/8/c/8c3736ef-cc1a-4269-aa7b-c04aa2e43376.jpg?1782812014"
+  }
+ },
+ {
+  "name": "Hardened Scales",
+  "number": "55",
+  "rarity": "rare",
+  "manaCost": "{G}",
+  "cmc": 1,
+  "typeLine": "Enchantment",
+  "oracleText": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/2/d2d1bfab-25b4-474b-bdab-ac18215f1920.jpg?1783914918",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/2/d2d1bfab-25b4-474b-bdab-ac18215f1920.jpg?1783914918",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Écailles renforcées",
+   "typeLine": "Enchantement",
+   "text": "Si au moins un marqueur +1/+1 devait être mis sur une créature que vous contrôlez, autant de marqueurs +1/+1 plus un sont mis sur elle à la place.",
+   "image": "https://cards.scryfall.io/normal/front/9/f/9f177acb-81e5-4215-b168-04d6fc876e34.jpg?1782812008"
+  }
+ },
+ {
+  "name": "Leyline of Abundance",
+  "number": "56",
+  "rarity": "rare",
+  "manaCost": "{2}{G}{G}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nWhenever you tap a creature for mana, add an additional {G}.\n{6}{G}{G}: Put a +1/+1 counter on each creature you control.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "G"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/0/607157a4-4fe8-46b9-86e1-0a30f040116b.jpg?1783914918",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/607157a4-4fe8-46b9-86e1-0a30f040116b.jpg?1783914918",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ligne ley d'abondance",
+   "typeLine": "Enchantement",
+   "text": "Si la Ligne ley d'abondance est dans votre main de départ, vous pouvez l'avoir sur le champ de bataille au début de la partie.\nÀ chaque fois que vous engagez une créature pour du mana, ajoutez {G} supplémentaire.\n{6}{G}{G} : Mettez un marqueur +1/+1 sur chaque créature que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/2/6/267a320b-6725-4aa2-b54a-dfaa4710fda8.jpg?1782812004"
+  }
+ },
+ {
+  "name": "Nature's Will",
+  "number": "57",
+  "rarity": "rare",
+  "manaCost": "{2}{G}{G}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever one or more creatures you control deal combat damage to a player, tap all lands that player controls and untap all lands you control.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/e/ce7785c2-0b3f-4952-8b2d-71fe73cf64e0.jpg?1783914919",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/e/ce7785c2-0b3f-4952-8b2d-71fe73cf64e0.jpg?1783914919",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Volonté de la nature",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'au moins une des créatures que vous contrôlez inflige des blessures de combat à un joueur, engagez tous les terrains que ce joueur contrôle et dégagez tous les terrains que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/9/c/9c332849-39f8-48d5-9a2e-df10214cf2d3.jpg?1782811999"
+  }
+ },
+ {
+  "name": "Parallel Lives",
+  "number": "58",
+  "rarity": "mythic",
+  "manaCost": "{3}{G}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/3/73558b8d-fb08-4df5-99e3-d4c11c9ccfa7.jpg?1783914916",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/3/73558b8d-fb08-4df5-99e3-d4c11c9ccfa7.jpg?1783914916",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vies parallèles",
+   "typeLine": "Enchantement",
+   "text": "Si un effet devait créer au moins un jeton sous votre contrôle, il crée deux fois ce nombre de jetons à la place.",
+   "image": "https://cards.scryfall.io/normal/front/e/2/e2626a1b-0f5f-4257-a7a3-5199d2e76c94.jpg?1782811993"
+  }
+ },
+ {
+  "name": "Primal Vigor",
+  "number": "59",
+  "rarity": "rare",
+  "manaCost": "{4}{G}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "If one or more tokens would be created, twice that many of those tokens are created instead.\nIf one or more +1/+1 counters would be put on a creature, twice that many +1/+1 counters are put on that creature instead.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/6/86c63e02-41a8-4915-9e0d-fbabd916dbe7.jpg?1783914916",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/6/86c63e02-41a8-4915-9e0d-fbabd916dbe7.jpg?1783914916",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vigueur primordiale",
+   "typeLine": "Enchantement",
+   "text": "Si au moins un jeton devait être créé, deux fois ce nombre de jetons sont créés à la place.\nSi au moins un marqueur +1/+1 devait être mis sur une créature, mettez deux fois ce nombre de marqueurs +1/+1 sur cette créature à la place.",
+   "image": "https://cards.scryfall.io/normal/front/5/1/51f2c4a0-91cb-4217-85dc-2fd9252575f9.jpg?1782811989"
+  }
+ },
+ {
+  "name": "Prismatic Omen",
+  "number": "60",
+  "rarity": "rare",
+  "manaCost": "{1}{G}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Lands you control are every basic land type in addition to their other types.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/7/97bd2780-f132-46dc-a33e-611dd7845bc4.jpg?1783914917",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/7/97bd2780-f132-46dc-a33e-611dd7845bc4.jpg?1783914917",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Augure prismatique",
+   "typeLine": "Enchantement",
+   "text": "Les terrains que vous contrôlez ont chaque type de terrain de base en plus de leurs autres types.",
+   "image": "https://cards.scryfall.io/normal/front/8/1/813011d0-81cb-4eea-b860-6fed0f0e9e77.jpg?1782811983"
+  }
+ },
+ {
+  "name": "Season of Growth",
+  "number": "61",
+  "rarity": "uncommon",
+  "manaCost": "{1}{G}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a creature you control enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\nWhenever you cast a spell that targets a creature you control, draw a card.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Scry"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/4/742f2d20-0f6b-488e-ae37-54a41522c191.jpg?1783914916",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/742f2d20-0f6b-488e-ae37-54a41522c191.jpg?1783914916",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Saison de croissance",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature arrive sur le champ de bataille sous votre contrôle, regard 1.\nÀ chaque fois que vous lancez un sort qui cible une créature que vous contrôlez, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/3/6/368e63f4-85f5-419e-a0ad-7d3e4feb392b.jpg?1782811979"
+  }
+ },
+ {
+  "name": "Unnatural Growth",
+  "number": "62",
+  "rarity": "rare",
+  "manaCost": "{1}{G}{G}{G}{G}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of each combat, double the power and toughness of each creature you control until end of turn.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Double"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/f/6f32f0e3-9ff6-4e86-b7ec-24f6cee998b2.jpg?1783914915",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/f/6f32f0e3-9ff6-4e86-b7ec-24f6cee998b2.jpg?1783914915",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Croissance surnaturelle",
+   "typeLine": "Enchantement",
+   "text": "Au début de chaque combat, doublez la force et l'endurance de chaque créature que vous contrôlez jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/f/c/fc1caf82-5886-48e2-9e19-10d2e488c9e5.jpg?1782811974"
+  }
+ },
+ {
+  "name": "Utopia Sprawl",
+  "number": "63",
+  "rarity": "uncommon",
+  "manaCost": "{G}",
+  "cmc": 1,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant Forest\nAs this Aura enters, choose a color.\nWhenever enchanted Forest is tapped for mana, its controller adds an additional one mana of the chosen color.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/e/8ee63809-729b-48b1-a06d-3edc2a26208f.jpg?1783914916",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8ee63809-729b-48b1-a06d-3edc2a26208f.jpg?1783914916",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Étendue de l'utopie",
+   "typeLine": "Enchantement — aura",
+   "text": "Enchanter : forêt\nAu moment où l'Étendue de l'utopie arrive sur le champ de bataille, choisissez une couleur.\nÀ chaque fois que la forêt enchantée est engagée pour du mana, son contrôleur ajoute un mana supplémentaire de la couleur choisie.",
+   "image": "https://cards.scryfall.io/normal/front/2/9/29e9b4bf-f3d8-4748-ba46-f56993bf3768.jpg?1782811968"
+  }
+ }
+]

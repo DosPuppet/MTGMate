@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { CARDS, CardIndex, DECKS, parseDeckList, serializeDeckList, sideboardSwapError, validateDeck } from "../src";
+import {
+  CARDS,
+  CardIndex,
+  DECKS,
+  EXCLUDED_REPRINTS,
+  legalityIssue,
+  parseDeckList,
+  SETS,
+  serializeDeckList,
+  sideboardSwapError,
+  validateDeck,
+} from "../src";
 
 const index = new CardIndex(CARDS);
 
@@ -182,7 +193,9 @@ describe("légalité en Standard", () => {
   });
 
   it("les cartes des extensions couvertes sont légales en Standard, sauf les 13 bannies (légalités Scryfall)", () => {
-    const cards = Object.values(CARDS).filter((c) => !c.isToken);
+    // Les ensembles de rééditions (PLAN-G) sont hors Standard : vérifiés à part.
+    const reprints = new Set(SETS.filter((s) => s.reprint).map((s) => s.code));
+    const cards = Object.values(CARDS).filter((c) => !c.isToken && !reprints.has(c.set ?? ""));
     expect(cards.filter((c) => c.set === "FDN")).toHaveLength(517);
     // Reality Fracture : 285 cartes, dont 6 réimpressions de Foundations (terrains de base, Unsummon).
     expect(cards.filter((c) => c.set === "FRA")).toHaveLength(279);
@@ -266,6 +279,17 @@ describe("légalité en Standard", () => {
     expect(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" }))).toBe(
       "Carte fictive est bannie en Standard",
     );
+  });
+
+  it("rééditions (PLAN-G) : aucune n'est légale en Standard, toutes se jouent en « Sans limite », sans carte propre au Commander", () => {
+    const reprints = SETS.filter((s) => s.reprint);
+    expect(reprints.map((s) => s.code)).toEqual(["SPG", "EOS", "WOT", "OTP", "FCA", "SOA", "PZA", "REX"]);
+    const codes = new Set(reprints.map((s) => s.code));
+    const cards = Object.values(CARDS).filter((c) => !c.isToken && codes.has(c.set ?? ""));
+    expect(cards.length).toBeGreaterThan(400);
+    expect(cards.filter((c) => c.legalities?.standard === "legal").map((c) => c.name)).toEqual([]);
+    for (const c of cards) expect(legalityIssue(c, "unlimited"), c.name).toBeUndefined();
+    for (const name of Object.keys(EXCLUDED_REPRINTS)) expect(CARDS[name], name).toBeUndefined();
   });
 
   it("une carte hors Standard ou sans légalité connue rend le deck illégal", () => {

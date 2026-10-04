@@ -2,18 +2,21 @@
  * Importe les données d'un set depuis l'API Scryfall (anglais + français)
  * et écrit un JSON réduit aux champs utiles dans packages/cards/data/<set>.json.
  *
- * Usage : npm run import-cards -- [set|all]   (défaut : fdn ; « all » : toutes les extensions Standard hors FDN et FRA)
+ * Usage : npm run import-cards -- [set|all|reprints]   (défaut : fdn ; « all » : toutes les extensions Standard hors FDN
+ * et FRA ; « reprints » : les ensembles de rééditions du registre, PLAN-G)
  *
  * Les images ne sont pas téléchargées : on conserve seulement leurs URLs (CDN Scryfall).
  */
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SET_INFO } from "../packages/cards/src/setRegistry";
+import { EXCLUDED_REPRINTS, SET_INFO, STANDARD_SETS } from "../packages/cards/src/setRegistry";
 
 /** Extensions Standard importées par « all » : le registre (`cards/src/setRegistry.ts`), sauf FDN et FRA, déjà importées
  * et retouchées, qui s'importent à part. */
-const STANDARD = SET_INFO.map((x) => x.code.toLowerCase()).filter((c) => c !== "fdn" && c !== "fra");
+const STANDARD = STANDARD_SETS.map((x) => x.code.toLowerCase()).filter((c) => c !== "fdn" && c !== "fra");
+/** Ensembles de rééditions (Special Guests, feuilles bonus) : importés par « reprints ». */
+const REPRINTS = SET_INFO.filter((x) => x.reprint).map((x) => x.code.toLowerCase());
 const ARG = (process.argv[2] ?? "fdn").toLowerCase();
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "packages", "cards", "data");
 const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "application/json" };
@@ -88,11 +91,19 @@ const SINGLE = new Set(["normal", "prepare", "saga", "class", "case", "meld"]);
 /** Dispositions à plusieurs faces : gardées telles quelles (faces), gérées par le moteur aux lots 0.3 à 0.6. */
 const MULTI = new Set(["adventure", "split", "transform", "modal_dfc"]);
 
-for (const set of ARG === "all" ? STANDARD : [ARG]) await importSet(set);
+for (const set of ARG === "all" ? STANDARD : ARG === "reprints" ? REPRINTS : [ARG]) await importSet(set);
 
 async function importSet(SET: string): Promise<void> {
   const OUT = join(DATA_DIR, `${SET}.json`);
-  const en = await search(`set:${SET} lang:en`);
+  // Ensemble de rééditions : seulement les numéros retenus, sans les cartes exclues (PLAN-G).
+  const reprint = SET_INFO.find((x) => x.code.toLowerCase() === SET)?.reprint;
+  const kept = (c: ScryfallCard) => {
+    if (!reprint) return true;
+    const n = Number.parseInt(c.collector_number, 10);
+    if (reprint.numbers && !reprint.numbers.some(([a, b]) => n >= a && n <= b)) return false;
+    return !EXCLUDED_REPRINTS[c.name];
+  };
+  const en = (await search(`set:${SET} lang:en`)).filter(kept);
   const fr = await search(`set:${SET} lang:fr`);
   const frByNumber = new Map(fr.map((c) => [c.collector_number, c]));
   // Numérotation française différente (réimpressions, promotions) : rapprochement par le nom anglais.

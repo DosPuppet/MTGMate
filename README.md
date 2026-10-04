@@ -48,6 +48,19 @@ Les cartes ont été couvertes **extension par extension, à 100 % avant de pass
 
 Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %, vérifié chaque semaine contre Scryfall : `tools/check-legality.ts`). Les lignes ci-dessus font 5 177 cartes : elles comptent aussi les 13 cartes bannies, gérées mais refusées par la validation des decks, sauf dans le format « Sans limite » (au choix à l'accueil, contre l'IA, et à la création d'une partie en ligne), qui accepte toute carte du catalogue, quelle que soit sa légalité.
 
+**Rééditions, pour le format « Sans limite »** (plan G, `docs/plans/PLAN-G.md`) : les Special Guests et les feuilles bonus sorties avec les extensions ci-dessus, hors Standard, avec l'illustration de la réédition. Les cartes à mécanique propre au Commander (partenaire, éminence…) attendent Commander.
+
+| Ensemble | Cartes gérées |
+|---|---|
+| Special Guests (SPG) | 1 / 133 |
+| Stellar Sights (EOS) | 0 / 43 |
+| Enchanting Tales (WOT) | 0 / 55 |
+| Breaking News (OTP) | 0 / 61 |
+| Through the Ages (FCA) | 0 / 50 |
+| Mystical Archive (SOA) | 0 / 37 |
+| Source Material (PZA) | 0 / 15 |
+| Jurassic World Collection (REX) | 0 / 20 |
+
 **Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
 **Cartes bannies en Standard** (13) :

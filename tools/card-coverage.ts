@@ -97,6 +97,10 @@ const label = main
       : "toutes extensions";
 console.log(`${label} : ${done.length} / ${all.length} cartes gérées (${Math.round((done.length / all.length) * 100)} %)`);
 if (!setArg) {
+  // Rééditions (PLAN-G) : hors Standard, jouables en « Sans limite ».
+  const reprintCodes = new Set(SETS.filter((s) => s.reprint).map((s) => s.code));
+  const reprints = all.filter((c) => reprintCodes.has(c.set ?? ""));
+  console.log(`  dont rééditions (« Sans limite ») : ${reprints.filter((c) => c.implemented).length} / ${reprints.length}`);
   for (const s of SETS) {
     const inSet = all.filter((c) => c.set === s.code);
     console.log(`  ${s.code.padEnd(4)} ${s.name.padEnd(30)} ${inSet.filter((c) => c.implemented).length} / ${inSet.length}`);
