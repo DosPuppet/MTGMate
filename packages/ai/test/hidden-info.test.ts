@@ -169,6 +169,9 @@ describe("informations cachées : cartes face cachée (708)", () => {
         if (r.events.some((e) => e.type === "turnedFaceUp")) revealed = true;
         if (Object.values(state.objects).some((o) => o.defId === DISGUISED.id && PUBLIC_ZONES.has(o.zone))) revealed = true;
         if (state.battlefield.some((id) => state.objects[id]?.faceDown)) faceDownSeen++;
+        // 708.5 : p2 qui prend le contrôle d'un permanent face cachée peut le regarder ; la carte lui est alors connue.
+        if (state.battlefield.some((id) => state.objects[id]?.faceDown && state.objects[id]?.controller === "p2"))
+          revealed = true;
         if (revealed) break;
         const view = projectView(state, "p2");
         const evs = filterEvents(r.events, "p2");

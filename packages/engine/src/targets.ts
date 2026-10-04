@@ -463,7 +463,8 @@ export function validateTargets(
     if (ids.length > max) throw new RulesError(max === 1 ? "Une seule cible par mot « cible »" : `${max} cibles au maximum`);
     if (new Set(ids).size !== ids.length) throw new RulesError("Même cible choisie deux fois");
     // « X cibles » avec X = 0 : aucune cible (601.2c).
-    if (ids.length === 0 && !spec.optional && !(spec.countX && max === 0))
+    // « entre zéro et N cibles » (`minCount: 0`) : aucune cible permise, comme « jusqu'à N ».
+    if (ids.length === 0 && !spec.optional && spec.minCount !== 0 && !(spec.countX && max === 0))
       throw new RulesError(`Cible manquante : ${spec.label ?? spec.id}`);
     const min = spec.minCount ?? max;
     if (!spec.optional && !spec.kickedCount && ids.length < min)

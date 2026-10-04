@@ -597,4 +597,37 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Fractured Identity": {
+    spell: spell(
+      [target.nonland()],
+      [fx.copyToken(ref.target(), { for: ref.except(ref.eachPlayer, ref.controllerOf(ref.target())) }), fx.exile(ref.target())],
+    ),
+  },
+  "Unlicensed Hearse": {
+    cdaPT: amount.refCount(ref.linked),
+    abilities: [
+      activated({
+        tap: true,
+        targets: [target.upTo(2, target.cardInGraveyard("t", {}, "any"))],
+        effects: [fx.exileCard(ref.target(), { name: "h" }), fx.link(ref.stored("h"))],
+        label: "{T} : exilez jusqu'à deux cartes d'un cimetière (liées)",
+      }),
+    ],
+  },
+  "Indomitable Creativity": {
+    spell: spell(
+      [{ ...target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature"), countX: true }],
+      [
+        fx.destroy(ref.target(), "d"),
+        {
+          op: "exileUntil",
+          filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] },
+          store: "c",
+          who: ref.controllerOf(ref.stored("d")),
+        },
+        fx.toBattlefield(ref.stored("c")),
+        fx.shuffle(ref.controllerOf(ref.stored("d"))),
+      ],
+    ),
+  },
 };

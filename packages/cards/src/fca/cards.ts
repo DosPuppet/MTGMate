@@ -582,4 +582,58 @@ export const CARDS: Record<string, CardScript> = {
       ),
     ],
   },
+  "Winota, Joiner of Forces": {
+    abilities: [
+      triggered(
+        when.attacks({ types: ["Creature"], controller: "you", notSubtype: "Human" }),
+        [
+          fx.lookAtTop(6, {
+            filter: { types: ["Creature"], subtype: "Human" },
+            count: 1,
+            to: { to: "battlefield", tapped: true, attacking: true },
+            rest: "bottom",
+            store: "w",
+          }),
+          fx.pump(ref.stored("w"), 0, 0, ["indestructible"]),
+        ],
+        { label: "Une créature non-Humain attaque : un Humain des six cartes du dessus arrive engagé et attaquant" },
+      ),
+    ],
+  },
+  "Jodah, the Unifier": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", legendary: true },
+        { power: 1, toughness: 1 },
+        {
+          perAmount: amount.count({ types: ["Creature"], controller: "you", legendary: true }),
+          label: "Vos créatures légendaires : +X/+X (X : vos créatures légendaires)",
+        },
+      ),
+      triggered(
+        { on: "castSpell", by: "you", filter: { legendary: true }, fromHand: true },
+        [fx.cascade(amount.manaValueOf(ref.eventObject), { legendary: true })],
+        { label: "Vous lancez un sort légendaire de votre main : cascade légendaire" },
+      ),
+    ],
+  },
+  "Bolas's Citadel": {
+    abilities: [
+      playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
+      playerStatic({
+        playFrom: { zone: "libraryTop", what: "lands" },
+        label: "Vous pouvez jouer des terrains du dessus de votre bibliothèque",
+      }),
+      playerStatic({
+        playFrom: { zone: "libraryTop", what: "spells", payLifeManaValue: true },
+        label: "Sorts du dessus de votre bibliothèque : des PV égaux à leur VM au lieu de leur coût",
+      }),
+      activated({
+        tap: true,
+        sacrificeOther: { filter: { notTypes: ["Land"] }, count: 10, includeSelf: true },
+        effects: [fx.loseLife(10, ref.eachOpponent)],
+        label: "{T}, sacrifiez dix permanents non-terrain : chaque adversaire perd 10 PV",
+      }),
+    ],
+  },
 };

@@ -272,3 +272,10 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   `fx.payLifeX` (op `payX` en PV) ; `millWhileShared` généralisé (`fx.millWhileSharingColor` : Grindstone, Sphinx's
   Tutelage) ; `lookAtTop({ onePerType })` (Atraxa, Grand Unifier) ; Ad Nauseam (au plus 30 répétitions) ; Carpet of Flowers.
   Tests : `wot`, `spg`, `otp`, `soa`, `fca`, `pza` (+10). `RULES_VERSION` 118.
+- **Exil et copies ✅ :** `copyToken({ for })` (Fractured Identity : chaque autre joueur crée la copie) ; F/E égales aux
+  cartes liées en exil (`cdaPT: amount.refCount(ref.linked)`, clé de CDA `refCount:linked` ; Unlicensed Hearse) ; cascade
+  filtrée (`fx.cascade(n, filtre)`, Jodah, the Unifier) ; Dino DNA (exil lié, copie 6/6) ; Indomitable Creativity
+  (`exileUntil` pour le contrôleur de chaque permanent détruit) ; Winota ; Bolas's Citadel (`playFrom` du dessus de la
+  bibliothèque, PV égaux à la VM). « Entre zéro et N cibles » (`minCount: 0`) accepte aucune cible (fuzz strict, test dans
+  `offers.test.ts`). Le test d'informations cachées sait qu'un joueur qui contrôle un permanent face cachée le connaît
+  (708.5). Tests : `otp`, `rex`, `fca` (+7). `RULES_VERSION` 119.

@@ -1055,7 +1055,7 @@ export const fx = {
   /** « Suspectez [la créature] » (701.60) ; `value: false` : « elle n'est plus suspecte ». */
   suspect: (what: Ref, value = true): Effect => ({ op: "suspect", what, value }),
   /** Cascade (702.85) : `n` est la valeur de mana du sort qui a la cascade. */
-  cascade: (n: Amount): Effect => ({ op: "discover", n, cascade: true }),
+  cascade: (n: Amount, filter?: ObjectFilter): Effect => ({ op: "discover", n, cascade: true, ...(filter ? { filter } : {}) }),
   /** « [créature] a la connivence » (701.50). */
   connive: (what: Ref = ref.self): Effect => ({ op: "connive", what }),
   /** `orExileStore` : sinon (éphémère ou rituel), la carte est exilée et mémorisée (Etrata). */
@@ -1408,6 +1408,8 @@ export const fx = {
     of: Ref,
     opts: {
       count?: Amount;
+      /** Les joueurs qui créent chacun les jetons (Fractured Identity). */
+      for?: Ref;
       addKeywords?: Keyword[];
       addSubtypes?: string[];
       sacrificeAtEndStep?: boolean;

@@ -243,7 +243,7 @@
     "PlayFromZone": 17,
     "LayerMods": 31,
     "Effect": 152,
-    "Effect (champs)": 625,
+    "Effect (champs)": 627,
     "TriggerSpec": 60,
     "TriggerSpec (champs)": 159,
     "Condition": 52,
@@ -293,6 +293,7 @@
     "PLAN-G G4e : mue (CardDef.morph, 702.37) ; dé (coinFlip.sides) et Surgical Extraction (exileNamesakes.draw) : CardDef 95 → 96, Effect (champs) 617 → 619",
     "PLAN-G G4e (combat) : filtres relatifs à un objet désigné (powerAboveOf, sharesCreatureTypeWith), référence combatPartners, déclencheur destroyed (Karmic Justice) : ObjectFilter 85 → 87, TriggerSpec 59 → 60, TriggerSpec (champs) 156 → 159, Ref 27 → 28, Ref (champs) 47 → 49",
     "PLAN-G G4e (lancer autrement) : évasion donnée (PlayFromZone.exileOthers) ; CardDef stable (folie ajoutée, entersAsCopyAddSubtypes et entersAsCopyAddKeywords réunis dans entersAsCopyMods) : PlayFromZone 16 → 17",
-    "PLAN-G G4e (bibliothèque et pioche) : millWhileShared généralisé (who, share, nonland, draw : trois cartes), payX en PV (life), lookAtTop une carte par type (onePerType) : Effect (champs) 619 → 625"
+    "PLAN-G G4e (bibliothèque et pioche) : millWhileShared généralisé (who, share, nonland, draw : trois cartes), payX en PV (life), lookAtTop une carte par type (onePerType) : Effect (champs) 619 → 625",
+    "PLAN-G G4e (exil et copies) : copyToken.for (Fractured Identity), discover.filter (cascade légendaire de Jodah) : Effect (champs) 625 → 627"
   ]
 }

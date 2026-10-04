@@ -398,3 +398,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
   - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
   - `règle` Necrodominance : la taille de main maximale la plus petite s'applique (et non la plus récente).
+  - `règle` Unlicensed Hearse : les deux cartes peuvent venir de cimetières différents ;
+  - `règle` Indomitable Creativity : le joueur qui révèle est le propriétaire de chaque permanent détruit (son contrôleur s'il diffère, en multijoueur avec un permanent volé).

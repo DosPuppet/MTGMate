@@ -351,6 +351,8 @@ export type Effect =
       setSubtypes?: string[];
       /** « … sauf que c'est un artefact en plus » (Molten Duplication, Vaultborn Tyrant). */
       addTypes?: CardType[];
+      /** Les joueurs qui créent chacun les jetons (Fractured Identity), le contrôleur par défaut. */
+      for?: Ref;
     }
   /** Capacité déclenchée retardée : « au début de la prochaine étape de fin, … ». Les références sont figées maintenant. */
   | {
@@ -552,7 +554,8 @@ export type Effect =
    * Découverte N (701.57) ; `cascade` (702.85) : une carte non-terrain de valeur de mana strictement inférieure à N, et
    * celle qui n'est pas lancée va au-dessous avec les autres (au lieu de la main).
    */
-  | { op: "discover"; n: Amount; who?: Ref; store?: string; cascade?: boolean }
+  /** `filter` : la carte trouvée doit aussi y correspondre (Jodah, the Unifier : une carte légendaire). */
+  | { op: "discover"; n: Amount; who?: Ref; store?: string; cascade?: boolean; filter?: ObjectFilter }
   /**
    * 608.2g : « vous pouvez lancer [ces cartes] » pendant la résolution. Le joueur lance tout de suite une des cartes
    * (puis une autre si `many`), ou refuse. `free` : sans payer leur coût de mana ; `exileAfter` : exilé au lieu d'aller

@@ -339,4 +339,54 @@ describe("Through the Ages", () => {
       expect(Object.values(pool ?? {}).reduce((a, b) => a + b, 0)).toBe(3);
     });
   });
+  describe("G4e : exil et copies", () => {
+    it("Winota : une créature non-Humain attaque, un Humain des six cartes du dessus arrive engagé, attaquant et indestructible", () => {
+      let s = scenario({
+        p1: { battlefield: ["Winota, Joiner of Forces", "Bear Cub"], library: ["Shock", "Soul Warden", "Forest"] },
+      });
+      s = attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]);
+      s = settle(s);
+      const warden = idOf(s, "p1", "battlefield", "Soul Warden");
+      expect(s.combat?.attackers.some((a) => a.id === warden)).toBe(true);
+      expect(chars(s, warden).keywords).toContain("indestructible");
+    });
+
+    it("Jodah, the Unifier : vos créatures légendaires +X/+X ; un sort légendaire de la main déclenche une cascade légendaire", () => {
+      const legend = customCard({
+        name: "Légende de test",
+        supertypes: ["Legendary"],
+        types: ["Creature"],
+        manaCost: { generic: 1, colored: {}, x: 0 },
+        manaCostText: "{1}",
+        power: 1,
+        toughness: 1,
+      });
+      let s = scenario({
+        p1: {
+          battlefield: ["Jodah, the Unifier", ...lands("Forest", 2), "Plains"],
+          hand: ["Mirri, Weatherlight Duelist"],
+          library: ["Shock", legend, "Forest"],
+        },
+      });
+      const jodah = idOf(s, "p1", "battlefield", "Jodah, the Unifier");
+      expect(chars(s, jodah).power).toBe(6);
+      s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Mirri, Weatherlight Duelist") }));
+      const hit = castNowOf(s)?.cards[0] as string;
+      expect(nameOf(s, hit)).toBe("Légende de test");
+      s = settle(act(s, "p1", { type: "cast", card: hit, free: true }));
+      expect(idsOf(s, "p1", "battlefield", "Légende de test")).toHaveLength(1);
+      expect(chars(s, jodah).power).toBe(8);
+    });
+
+    it("Bolas's Citadel : sorts du dessus de la bibliothèque pour des PV égaux à leur VM ; terrains aussi", () => {
+      let s = scenario({ p1: { battlefield: ["Bolas's Citadel"], library: ["Shock", "Forest", "Island"] } });
+      const shock = s.players.p1?.library[0] as string;
+      s = settle(act(s, "p1", { type: "cast", card: shock, targets: { t: ["p2"] } }));
+      expect(s.players.p1?.life).toBe(19);
+      expect(s.players.p2?.life).toBe(18);
+      const forest = s.players.p1?.library[0] as string;
+      s = act(s, "p1", { type: "playLand", card: forest });
+      expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+    });
+  });
 });

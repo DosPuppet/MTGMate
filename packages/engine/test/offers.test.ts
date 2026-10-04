@@ -4,7 +4,7 @@
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { manaAbility } from "../src/dsl";
+import { activated, fx, manaAbility, ref, target } from "../src/dsl";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
@@ -192,6 +192,26 @@ describe("options proposées, décisions acceptées", () => {
     const option = castOption(s, "p1", stories);
     expect(option?.additional?.tap?.suggested).toEqual([idOf(s, "p1", "battlefield", "Géant de test")]);
     s = act(s, "p1", { type: "cast", card: stories });
+    expect(s.stack).toHaveLength(1);
+  });
+
+  it("« entre zéro et deux cibles » (`minCount: 0`) : l'activation sans cible est acceptée", () => {
+    const hearse = customCard({
+      name: "Corbillard de test",
+      types: ["Artifact"],
+      typeLine: "Artifact",
+      abilities: [
+        activated({
+          tap: true,
+          targets: [target.between(0, 2, target.cardInGraveyard("t", {}, "any"))],
+          effects: [fx.exileCard(ref.target())],
+        }),
+      ],
+    });
+    let s = scenario({ p1: { battlefield: [hearse] } });
+    const source = idOf(s, "p1", "battlefield", "Corbillard de test");
+    expect(activations(s, "p1", source)).toHaveLength(1);
+    s = act(s, "p1", { type: "activate", source, ability: 0, targets: { t: [] } });
     expect(s.stack).toHaveLength(1);
   });
 });

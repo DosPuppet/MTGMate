@@ -201,4 +201,19 @@ describe("Jurassic World Collection", () => {
       expect(idsOf(s, "p1", "battlefield", "Polyraptor")).toHaveLength(1);
     });
   });
+  describe("G4e : exil et copies", () => {
+    it("Dino DNA : exile une carte de créature d'un cimetière ; {6} : une copie Dinosaure vert 6/6 avec le piétinement", () => {
+      let s = scenario({ p1: { battlefield: ["Dino DNA", ...lands("Forest", 7)] }, p2: { graveyard: ["Bear Cub"] } });
+      const dna = idOf(s, "p1", "battlefield", "Dino DNA");
+      s = settle(
+        act(s, "p1", { type: "activate", source: dna, ability: 0, targets: { t: [idOf(s, "p2", "graveyard", "Bear Cub")] } }),
+      );
+      const cub = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
+      expect(s.objects[dna]?.linked).toContain(cub);
+      s = settle(act(s, "p1", { type: "activate", source: dna, ability: 1, targets: { t: [cub] } }));
+      const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
+      expect(chars(s, token)).toMatchObject({ name: "Bear Cub", power: 6, toughness: 6, colors: ["G"], subtypes: ["Dinosaur"] });
+      expect(chars(s, token).keywords).toContain("trample");
+    });
+  });
 });

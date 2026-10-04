@@ -43,7 +43,7 @@ import {
   setPrepared,
   shuffle,
 } from "../state";
-import { legalTargets, matchesObjectFilter } from "../targets";
+import { legalTargets, matchesCard, matchesObjectFilter } from "../targets";
 import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution, StackItem } from "../types";
 
 export const HANDLERS: OpHandlers = {
@@ -65,7 +65,13 @@ export const HANDLERS: OpHandlers = {
         const d = s.defs[s.objects[lib[0] as string]?.defId ?? ""];
         const id = moveObject(s, lib[0] as string, "exile");
         if (!id) break;
-        if (d && !d.types.includes("Land") && (e.cascade ? manaValue(d.manaCost) < n : manaValue(d.manaCost) <= n)) hit = id;
+        if (
+          d &&
+          !d.types.includes("Land") &&
+          (e.cascade ? manaValue(d.manaCost) < n : manaValue(d.manaCost) <= n) &&
+          (!e.filter || matchesCard(s, p, id, { ...e.filter, controller: undefined }))
+        )
+          hit = id;
         else rest.push(id);
       }
       emit({ type: "reveal", player: p, defIds: [...rest, ...(hit ? [hit] : [])].map((id) => s.objects[id]?.defId ?? "") });

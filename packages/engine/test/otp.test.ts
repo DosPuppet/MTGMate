@@ -481,6 +481,44 @@ describe("Breaking News", () => {
       expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest"]);
     });
   });
+  describe("G4e : exil et copies", () => {
+    it("Fractured Identity : exile le permanent ; chaque autre joueur en crée une copie", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 2)], hand: ["Fractured Identity"] },
+        p2: { battlefield: ["Shivan Dragon"] },
+      });
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Fractured Identity"), targets: { t: [dragon] } }));
+      expect(exiled(s, "Shivan Dragon")).toHaveLength(1);
+      const copy = s.battlefield.find((id) => s.objects[id]?.isToken && chars(s, id).name === "Shivan Dragon");
+      expect(copy && s.objects[copy]?.controller).toBe("p1");
+    });
+
+    it("Unlicensed Hearse : exile jusqu'à deux cartes d'un cimetière ; F/E égales aux cartes exilées avec lui", () => {
+      let s = scenario({ p1: { battlefield: ["Unlicensed Hearse"] }, p2: { graveyard: ["Shock", "Bear Cub"] } });
+      const hearse = idOf(s, "p1", "battlefield", "Unlicensed Hearse");
+      expect(chars(s, hearse).power).toBe(0);
+      const gy = s.players.p2?.graveyard ?? [];
+      s = settle(act(s, "p1", { type: "activate", source: hearse, ability: 0, targets: { t: [...gy] } }));
+      expect(s.players.p2?.graveyard).toHaveLength(0);
+      expect(chars(s, hearse).power).toBe(2);
+      expect(chars(s, hearse).toughness).toBe(2);
+    });
+
+    it("Indomitable Creativity : détruit X artefacts ou créatures ; leur contrôleur révèle jusqu'à un artefact ou une créature et le met en jeu", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Mountain", 4), hand: ["Indomitable Creativity"] },
+        p2: { battlefield: ["Bear Cub"], library: ["Forest", "Shivan Dragon", "Island"] },
+      });
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(
+        act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Indomitable Creativity"), x: 1, targets: { t: [cub] } }),
+      );
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
+      expect(exiled(s, "Forest")).toHaveLength(1);
+    });
+  });
 });
 
 /** p2 attaque p1 avec la créature, puis p1 reçoit la priorité à la déclaration des attaquants. */

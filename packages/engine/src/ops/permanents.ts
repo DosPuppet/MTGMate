@@ -424,88 +424,91 @@ export const HANDLERS: OpHandlers = {
     const made: string[] = [];
     // Doubling Season s'applique aussi aux jetons copies.
     const base = e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
-    for (const id of resolveRef(s, ctx, e.of)) {
-      const model = s.objects[id] ?? undefined;
-      // La copie d'une copie copie ce que copie le modèle (707.3), et la face active d'une carte transformée.
-      const defId = model?.zone === "battlefield" ? copiedDefId(s, id) : (model?.defId ?? s.lki[id]?.defId);
-      if (!defId) continue;
-      const view = model?.zone === "battlefield" ? snapshot(s, id) : s.lki[id];
-      const types = [...new Set([...(view?.types ?? s.defs[defId]?.types ?? []), ...(e.addTypes ?? [])])];
-      const n = view ? tokenCopyCount(s, ctx.controller, { ...view, types, isToken: true }, base) : base;
-      for (let i = 0; i < n; i++) {
-        // Engagé, types, capacités et F/E en place avant l'événement d'arrivée (pas de « devient engagé »).
-        // 707.9b : les exceptions du modèle, puis celles de cet effet (« sauf que c'est un 1/1 »), sont copiables.
-        const token = createTokenCopy(s, ctx.controller, defId, {
-          tapped: !!e.tapped,
-          mods: mergeMods(model?.zone === "battlefield" ? copiableExceptions(s, id) : undefined, {
-            addTypes: e.addTypes?.length ? e.addTypes : undefined,
-            addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
-            addSubtypes: e.addSubtypes?.length ? e.addSubtypes : undefined,
-            addSupertypes: e.legendary ? ["Legendary"] : undefined,
-            removeSupertypes: e.nonlegendary ? ["Legendary"] : undefined,
-            addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
-            addColors: e.addColors?.length ? e.addColors : undefined,
-            // Ardyn, the Usurper : « sauf que c'est un Démon noir ».
-            setColors: e.setColors,
-            setSubtypes: e.setSubtypes,
-            ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
-          }),
-          modsCopiable: true,
-        });
-        made.push(token);
-        // Firion : des capacités d'Équiper moins chères (ajoutées ; la moins chère sera utilisée).
-        if (e.equipDiscount) {
-          const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>
-            ab.kind === "activated" && ab.label?.startsWith("Équiper") && ab.cost.mana
-              ? [
-                  {
-                    ...ab,
-                    cost: {
-                      ...ab.cost,
-                      mana: { ...ab.cost.mana, generic: Math.max(0, ab.cost.mana.generic - (e.equipDiscount ?? 0)) },
-                    },
-                    label: `${ab.label} (réduit)`,
-                  },
-                ]
-              : [],
-          );
-          if (equips.length) addEffect(s, [token], { addAbilities: equips }, "permanent");
-        }
-        if (e.sacrificeAtNextUpkeep) {
-          createDelayed(
-            s,
-            ctx.controller,
-            token,
-            s.objects[token]?.defId ?? defId,
-            { targets: [], effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }], bound: { c: [token] } },
-            "nextUpkeep",
-          );
-        }
-        if (e.attacking && s.combat) {
-          // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures).
-          const tok = s.objects[token];
-          if (tok) tok.tapped = true;
-          const defender =
-            s.combat.attackers.find((a) => s.objects[a.id]?.controller === ctx.controller)?.defender ??
-            opponentsOf(s, ctx.controller)[0] ??
-            "";
-          s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
-          bump(s);
-        }
-        if (e.sacrificeAtEndStep || e.exileAtEndStep) {
-          createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
-            targets: [],
-            effects: [
-              e.exileAtEndStep
-                ? { op: "exile", what: { kind: "target", id: "copy" } }
-                : { op: "sacrificeIt", what: { kind: "target", id: "copy" } },
-            ],
-            bound: { copy: [token] },
-            label: e.exileAtEndStep ? "exiler la copie" : "sacrifier la copie",
+    // Fractured Identity : « chaque joueur autre que son contrôleur crée un jeton qui est une copie ».
+    const creators = e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller];
+    for (const who of creators)
+      for (const id of resolveRef(s, ctx, e.of)) {
+        const model = s.objects[id] ?? undefined;
+        // La copie d'une copie copie ce que copie le modèle (707.3), et la face active d'une carte transformée.
+        const defId = model?.zone === "battlefield" ? copiedDefId(s, id) : (model?.defId ?? s.lki[id]?.defId);
+        if (!defId) continue;
+        const view = model?.zone === "battlefield" ? snapshot(s, id) : s.lki[id];
+        const types = [...new Set([...(view?.types ?? s.defs[defId]?.types ?? []), ...(e.addTypes ?? [])])];
+        const n = view ? tokenCopyCount(s, who, { ...view, types, isToken: true }, base) : base;
+        for (let i = 0; i < n; i++) {
+          // Engagé, types, capacités et F/E en place avant l'événement d'arrivée (pas de « devient engagé »).
+          // 707.9b : les exceptions du modèle, puis celles de cet effet (« sauf que c'est un 1/1 »), sont copiables.
+          const token = createTokenCopy(s, who, defId, {
+            tapped: !!e.tapped,
+            mods: mergeMods(model?.zone === "battlefield" ? copiableExceptions(s, id) : undefined, {
+              addTypes: e.addTypes?.length ? e.addTypes : undefined,
+              addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
+              addSubtypes: e.addSubtypes?.length ? e.addSubtypes : undefined,
+              addSupertypes: e.legendary ? ["Legendary"] : undefined,
+              removeSupertypes: e.nonlegendary ? ["Legendary"] : undefined,
+              addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
+              addColors: e.addColors?.length ? e.addColors : undefined,
+              // Ardyn, the Usurper : « sauf que c'est un Démon noir ».
+              setColors: e.setColors,
+              setSubtypes: e.setSubtypes,
+              ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
+            }),
+            modsCopiable: true,
           });
+          made.push(token);
+          // Firion : des capacités d'Équiper moins chères (ajoutées ; la moins chère sera utilisée).
+          if (e.equipDiscount) {
+            const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>
+              ab.kind === "activated" && ab.label?.startsWith("Équiper") && ab.cost.mana
+                ? [
+                    {
+                      ...ab,
+                      cost: {
+                        ...ab.cost,
+                        mana: { ...ab.cost.mana, generic: Math.max(0, ab.cost.mana.generic - (e.equipDiscount ?? 0)) },
+                      },
+                      label: `${ab.label} (réduit)`,
+                    },
+                  ]
+                : [],
+            );
+            if (equips.length) addEffect(s, [token], { addAbilities: equips }, "permanent");
+          }
+          if (e.sacrificeAtNextUpkeep) {
+            createDelayed(
+              s,
+              ctx.controller,
+              token,
+              s.objects[token]?.defId ?? defId,
+              { targets: [], effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }], bound: { c: [token] } },
+              "nextUpkeep",
+            );
+          }
+          if (e.attacking && s.combat) {
+            // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures).
+            const tok = s.objects[token];
+            if (tok) tok.tapped = true;
+            const defender =
+              s.combat.attackers.find((a) => s.objects[a.id]?.controller === ctx.controller)?.defender ??
+              opponentsOf(s, ctx.controller)[0] ??
+              "";
+            s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
+            bump(s);
+          }
+          if (e.sacrificeAtEndStep || e.exileAtEndStep) {
+            createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
+              targets: [],
+              effects: [
+                e.exileAtEndStep
+                  ? { op: "exile", what: { kind: "target", id: "copy" } }
+                  : { op: "sacrificeIt", what: { kind: "target", id: "copy" } },
+              ],
+              bound: { copy: [token] },
+              label: e.exileAtEndStep ? "exiler la copie" : "sacrifier la copie",
+            });
+          }
         }
       }
-    }
     if (e.store) r.vars[`$ids:${e.store}`] = made;
     return;
   },

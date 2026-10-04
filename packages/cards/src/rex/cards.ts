@@ -276,4 +276,29 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Dino DNA": {
+    abilities: [
+      activated({
+        mana: "{1}",
+        tap: true,
+        sorcerySpeed: true,
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière")],
+        effects: [fx.exileCard(ref.target(), { name: "e" }), fx.link(ref.stored("e"))],
+        label: "Empreinte — {1}, {T} : exilez une carte de créature d'un cimetière (rituel)",
+      }),
+      activated({
+        mana: "{6}",
+        sorcerySpeed: true,
+        targets: [
+          {
+            id: "t",
+            label: "carte de créature exilée avec Dino DNA",
+            filter: { exiled: { linked: true, filter: { types: ["Creature"] } } },
+          },
+        ],
+        effects: [fx.copyToken(ref.target(), { pt: 6, setColors: ["G"], setSubtypes: ["Dinosaur"], addKeywords: ["trample"] })],
+        label: "{6} : un jeton copie, sauf que c'est un Dinosaure vert 6/6 avec le piétinement (rituel)",
+      }),
+    ],
+  },
 };

@@ -144,10 +144,13 @@ export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
   "aggregate:distinct:color",
   "aggregate:sum:counters",
   "aggregate:max:manaValue",
+  // Unlicensed Hearse : nombre de cartes exilées avec lui (cartes liées encore en exil).
+  "refCount:linked",
 ]);
 
 /** Clé d'un montant pour `CDA_AMOUNT_KINDS`. */
 export function cdaKey(a: Exclude<Amount, number>): string {
+  if (a.kind === "refCount") return `refCount:${a.ref.kind}`;
   if (a.kind !== "aggregate") return a.kind;
   const objects = a.of ? [a.of.kind] : a.zone ? [a.zone, a.whose ?? "you"] : [];
   return ["aggregate", a.fn, a.property, ...objects].join(":");
@@ -206,6 +209,8 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   // Journal du tour (Duelist of the Mind : cartes piochées ce tour-ci), vu du contrôleur.
   if (a.kind === "turnEvents" && !a.of) return countTurnEvents(s, a.query, o.controller);
   if (a.kind === "aggregate") return cdaAggregate(s, o, a);
+  if (a.kind === "refCount" && a.ref.kind === "linked")
+    return (o.linked ?? []).filter((id) => s.objects[id]?.zone === "exile").length;
   // Sorte non prise en charge (`CDA_AMOUNT_KINDS`) : aucune carte n'en utilise (cards/test/cda.test.ts).
   if (a.kind !== "count") return 0;
   if (a.zone === "exile") {

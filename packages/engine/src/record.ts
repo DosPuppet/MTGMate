@@ -322,8 +322,9 @@ export const RECORD_VERSION = 1;
  * - 118 : étape de pioche passée, pioche volée (Notion Thief), tours supplémentaires passés, défausse au-dessus de la
  *   bibliothèque, taille de main maximale générique (et condition d'une statique lue pour son contrôleur), PV payés au
  *   choix, meule répétée par couleur, une carte par type (Atraxa).
+ * - 119 : jetons copies créés par d'autres joueurs, cascade filtrée, F/E égales aux cartes liées.
  */
-export const RULES_VERSION = 118;
+export const RULES_VERSION = 119;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
