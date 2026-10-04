@@ -158,7 +158,7 @@ export const CARDS: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       triggered(
-        { on: "dealsDamage", who: { attachedToSource: true }, toOpponent: true },
+        { on: "dealsDamage", who: { attachedToSource: true }, to: { players: "opponent" } },
         fx.may("piocher une carte", fx.draw(1)),
         { label: "La créature enchantée blesse un adversaire : vous pouvez piocher" },
       ),

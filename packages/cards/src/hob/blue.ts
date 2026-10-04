@@ -153,7 +153,7 @@ export const BLUE: Record<string, CardScript> = {
         effects: [
           fx.moveTo(ref.self, { to: "libraryTop", shuffle: true }),
           // Son propriétaire pioche, même si Gandalf n'est plus sur le champ de bataille.
-          fx.draw(3, ref.controllerOf(ref.selfCard)),
+          fx.draw(3, ref.ownerOf(ref.selfCard)),
         ],
         label: "Son propriétaire le mélange dans sa bibliothèque et pioche trois cartes",
       }),

@@ -74,6 +74,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.subtype && !hasSubtype(v, f.subtype)) return false;
   if (f.controller === "you" && v.controller !== perspective) return false;
   if (f.controller === "opponent" && v.controller === perspective) return false;
+  if (f.owner && (v.owner === perspective) !== (f.owner === "you")) return false;
   if (f.keyword && !v.keywords.includes(f.keyword)) return false;
   if (f.other && v.id === sourceId) return false;
   if (f.self && v.id !== sourceId) return false;
@@ -123,7 +124,6 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.withActivatedAbility && !(v.abilities ?? []).some((a) => a.kind === "activated")) return false;
   if (f.manaValueParity && ((v.manaValue ?? 0) % 2 === 0) !== (f.manaValueParity === "even")) return false;
   if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
-  if (f.notOwned && v.owner === v.controller) return false;
   if (f.noneOfSubtypes && (v.subtypes.includes(ALL_CREATURE_TYPES) || f.noneOfSubtypes.some((t) => v.subtypes.includes(t))))
     return false;
   if (f.preparedSpell !== undefined && !!v.preparedSpell !== f.preparedSpell) return false;
@@ -292,7 +292,6 @@ export function matchesObjectFilter(
   }
   // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
-  if (f.notOwned && o.owner === o.controller) return false;
   // Treacherous Greed : « une créature qui a infligé des blessures ce tour-ci ».
   if (f.dealtDamageThisTurn && !dealtDamageThisTurn(s, id)) return false;
   if (f.disguise !== undefined && !!s.defs[o.defId]?.disguise !== f.disguise) return false;

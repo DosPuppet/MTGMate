@@ -593,7 +593,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Laughing Jasper Flint": {
     abilities: [
       staticAbility(
-        { types: ["Creature"], controller: "you", notOwned: true },
+        { types: ["Creature"], controller: "you", owner: "opponent" },
         { addSubtypes: ["Mercenary"] },
         {
           label: "Vos créatures volées sont des Mercenaires",

@@ -1,8 +1,9 @@
 /** Special Guests (SPG) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife, sourceFromObject } from "../src/actions";
-import { fx, spell, staticAbility } from "../src/dsl";
+import { activated, fx, ref, spell, staticAbility, target } from "../src/dsl";
 import { announceDiscard } from "../src/effects";
+import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { spellCost } from "../src/stack";
@@ -24,6 +25,7 @@ import {
   picking,
   scenario,
   settle,
+  steal,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -160,6 +162,53 @@ describe("Special Guests", () => {
       destroy(s, idOf(s, "p2", "battlefield", "Llanowar Elves"));
       s = settle(s);
       expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Bridge from Below"]);
+    });
+
+    it("Bridge from Below : le cimetière où va la créature est celui de son propriétaire, pas de son contrôleur", () => {
+      let s = scenario({
+        p1: { graveyard: ["Bridge from Below"], battlefield: ["Bear Cub"] },
+        p2: { battlefield: ["Llanowar Elves"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+      steal(s, bear, "p2");
+      steal(s, elves, "p1");
+      // Votre Bear Cub, contrôlé par p2, va dans votre cimetière : un Zombie, et le Pont reste.
+      destroy(s, bear);
+      s = settle(s);
+      expect(idsOf(s, "p1", "battlefield", "Zombie")).toHaveLength(1);
+      expect(exiled(s, "Bridge from Below")).toHaveLength(0);
+      // Les Llanowar Elves de p2, que vous contrôlez, vont dans le cimetière de p2 : le Pont est exilé.
+      destroy(s, elves);
+      s = settle(s);
+      expect(idsOf(s, "p1", "battlefield", "Zombie")).toHaveLength(1);
+      expect(exiled(s, "Bridge from Below")).toHaveLength(1);
+    });
+
+    it("Mephidross Vampire : vos créatures gagnent un marqueur en blessant une créature, pas un joueur ni un planeswalker", () => {
+      const pinger = customCard({
+        name: "Test Pinger",
+        types: ["Creature"],
+        typeLine: "Creature",
+        power: 1,
+        toughness: 1,
+        abilities: [activated({ tap: true, targets: [target.any()], effects: [fx.damage(1, ref.target())] })],
+      });
+      const walker = customCard({ name: "Test Walker", types: ["Planeswalker"], typeLine: "Planeswalker", loyalty: 3 });
+      let s = scenario({
+        p1: { battlefield: ["Mephidross Vampire", pinger] },
+        p2: { battlefield: ["Bear Cub", walker] },
+      });
+      const pyro = idOf(s, "p1", "battlefield", "Test Pinger");
+      const ping = (t: string) => {
+        s = settle(act(s, "p1", { type: "activate", source: pyro, ability: 0, targets: { t: [t] } }));
+        (s.objects[pyro] as { tapped: boolean }).tapped = false;
+      };
+      ping(idOf(s, "p2", "battlefield", "Test Walker"));
+      ping("p2");
+      expect(s.objects[pyro]?.counters["+1/+1"] ?? 0).toBe(0);
+      ping(idOf(s, "p2", "battlefield", "Bear Cub"));
+      expect(s.objects[pyro]?.counters["+1/+1"]).toBe(1);
     });
 
     it("Rampaging Ferocidon : aucun joueur ne gagne de PV ; une autre créature arrive, 1 blessure à son contrôleur", () => {
@@ -1070,6 +1119,53 @@ describe("Special Guests", () => {
       expect(s.objects[cub]?.controller).toBe("p1");
       expect(s.extraTurns).toEqual(["p1"]);
       expect(exiled(s, "Expropriate")).toHaveLength(1);
+    });
+
+    it("Expropriate : votre vote pour l'argent reprend un permanent que vous possédez, contrôlé par un adversaire", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Island", 9), "Bear Cub"], hand: ["Expropriate"] },
+        p2: { battlefield: ["Llanowar Elves"] },
+      });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+      steal(s, cub, "p2");
+      let offered: string[] = [];
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Expropriate") }), (req, player) => {
+        if (req.type !== "pick") return undefined;
+        if (req.options.includes(cub)) {
+          offered = req.options.map(String);
+          return [cub];
+        }
+        return player === "p1" ? ["1"] : ["0"];
+      });
+      // Les permanents que vous possédez, qui que ce soit qui les contrôle ; pas les Llanowar Elves de p2.
+      expect(offered).not.toContain(elves);
+      expect(s.objects[cub]?.controller).toBe("p1");
+      expect(s.extraTurns).toEqual(["p1"]);
+    });
+
+    it("Eerie Ultimatum : un nombre quelconque de cartes de permanent de noms différents de votre cimetière", () => {
+      const start = () =>
+        scenario({
+          p1: {
+            battlefield: [...lands("Plains", 2), ...lands("Swamp", 3), ...lands("Forest", 2)],
+            hand: ["Eerie Ultimatum"],
+            graveyard: ["Bear Cub", "Bear Cub", "Llanowar Elves", "Shock"],
+          },
+        });
+      let s = start();
+      const cubs = s.players.p1?.graveyard.filter((id) => nameOf(s, id) === "Bear Cub") ?? [];
+      // Deux Bear Cub : refusé.
+      expect(() =>
+        settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Eerie Ultimatum") }), (req) =>
+          req.type === "pick" ? cubs : undefined,
+        ),
+      ).toThrow(RulesError);
+      // Le choix par défaut : un Bear Cub et les Llanowar Elves.
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Eerie Ultimatum") }));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
     it("Robe of Stars : +0/+3 ; {1}{W} : la créature équipée sort de phase jusqu'à votre prochaine étape de dégagement", () => {

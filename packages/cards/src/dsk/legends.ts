@@ -166,7 +166,7 @@ export const LEGENDS: Record<string, CardScript> = {
         targets: [target.upTo(1, target.creature("t", { maxToughness: 5 }))],
         label: "Exilez une créature d'endurance 5 ou moins",
       }),
-      triggered(when.leavesSelf, [fx.manifestDreadBy({ who: ref.controllerOf(ref.linked) })], {
+      triggered(when.leavesSelf, [fx.manifestDreadBy({ who: ref.ownerOf(ref.linked) })], {
         label: "Son propriétaire manifeste l'effroi",
       }),
     ],

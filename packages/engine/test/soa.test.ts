@@ -21,6 +21,7 @@ import {
   nameOf,
   scenario,
   settle,
+  steal,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -98,6 +99,36 @@ describe("Mystical Archive", () => {
       expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(2);
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
       expect(s.exile).toHaveLength(2);
+    });
+
+    it("ciblé : c'est le contrôleur de la créature exilée qui cherche, pas son propriétaire", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 2), "Bear Cub"], hand: ["Winds of Abandon"], library: ["Plains", "Plains"] },
+        p2: { library: ["Forest", "Forest"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      steal(s, bear, "p2");
+      s = settle(
+        act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Winds of Abandon"), mode: 0, targets: { t: [bear] } }),
+      );
+      expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(2);
+    });
+
+    it("surchargé : chaque contrôleur cherche autant de terrains que de ses créatures exilées, volées comprises", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: [...lands("Plains", 6), "Bear Cub"], hand: ["Winds of Abandon"], library: ["Plains", "Plains"] },
+        p2: { battlefield: ["Llanowar Elves"], library: ["Forest", "Forest", "Forest"] },
+        p3: { battlefield: ["Serra Angel"], library: ["Island", "Island", "Island"] },
+      });
+      steal(s, idOf(s, "p1", "battlefield", "Bear Cub"), "p2");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Winds of Abandon"), mode: 1 }));
+      expect(s.exile).toHaveLength(3);
+      // p2 contrôlait deux créatures (ses Elves et votre Bear Cub), p3 une ; vous, aucune.
+      expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(2);
+      expect(idsOf(s, "p3", "battlefield", "Island")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(6);
     });
   });
 

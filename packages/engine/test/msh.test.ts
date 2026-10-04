@@ -6,7 +6,7 @@
 
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { destroy } from "../src/actions";
+import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { fx, manaAbility, ref, spell, target, triggered, when } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
@@ -3037,6 +3037,19 @@ describe("lot A, vert", () => {
       });
       s = advanceUntil(s, (x) => x.turn.step === "main2");
       expect(s.players.p2?.life).toBe(15);
+      expect(plusOnes(s, thing)).toBe(2);
+    });
+
+    it("The Thing : « blessent un joueur » compte aussi des blessures infligées à vous-même, pas à une créature", () => {
+      let s = scenario({ p1: { battlefield: ["The Thing, Ben Grimm", "Guerrilla Gorilla", "Bear Cub"] } });
+      const thing = idOf(s, "p1", "battlefield", "The Thing, Ben Grimm");
+      const gorilla = idOf(s, "p1", "battlefield", "Guerrilla Gorilla");
+      dealDamage(s, sourceFromObject(s, gorilla), idOf(s, "p1", "battlefield", "Bear Cub"), 1, false);
+      s = settle(s);
+      expect(plusOnes(s, thing)).toBe(0);
+      dealDamage(s, sourceFromObject(s, gorilla), "p1", 1, false);
+      s = settle(s);
+      expect(s.players.p1?.life).toBe(19);
       expect(plusOnes(s, thing)).toBe(2);
     });
 

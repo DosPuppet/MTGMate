@@ -35,6 +35,7 @@ import {
   picking,
   scenario,
   settle,
+  steal,
   untilCastNow,
 } from "./helpers";
 
@@ -1233,17 +1234,19 @@ describe("lot A, bleu", () => {
     });
 
     describe("Lost Days", () => {
-      const run = (bottom: boolean) => {
+      const run = (bottom: boolean, stolen = false) => {
         let s = scenario({
           p1: { battlefield: lands("Island", 5), hand: ["Lost Days"] },
           p2: { battlefield: ["Bear Cub"], library: ["Forest", "Forest", "Forest"] },
         });
         const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        // Une créature de p2 contrôlée par p1 : c'est toujours son propriétaire qui choisit.
+        if (stolen) steal(s, bear, "p1");
         let asked = "";
         s = settle(cast(s, "p1", "Lost Days", { targets: { t: [bear] } }), (req, player) => {
-          if (req.intent !== "may") return undefined;
+          if (req.intent !== "topOrBottom") return undefined;
           asked = player;
-          return [bottom ? 1 : 0];
+          return [bottom ? "bottom" : "top"];
         });
         return { s, asked };
       };
@@ -1259,6 +1262,12 @@ describe("lot A, bleu", () => {
         const { s } = run(true);
         expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest", "Forest", "Forest", "Bear Cub"]);
         expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
+      });
+
+      it("le choix revient au propriétaire, même quand vous contrôlez la créature", () => {
+        const { s, asked } = run(true, true);
+        expect(asked).toBe("p2");
+        expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest", "Forest", "Forest", "Bear Cub"]);
       });
     });
 
@@ -3509,6 +3518,24 @@ describe("lot A, multicolores", () => {
       const ally = idOf(s, "p1", "battlefield", "Ally");
       expect(plus(s, ally)).toBe(1);
       expect(pt(s, ally)).toEqual([2, 2]);
+    });
+
+    it("Iroh, Tea Master : seuls comptent les permanents que vous possédez chez vos adversaires (pas ceux qu'un adversaire a pris à un autre)", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Iroh, Tea Master", "Bear Cub", "Llanowar Elves"] },
+        p2: { battlefield: ["Savannah Lions"] },
+        p3: { battlefield: ["Serra Angel"] },
+      });
+      const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+      steal(s, elves, "p3");
+      steal(s, idOf(s, "p3", "battlefield", "Serra Angel"), "p2");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && (x.pending?.kind === "choice" || x.stack.length > 0));
+      s = settle(s, picking([bear]));
+      expect(s.objects[bear]?.controller).not.toBe("p1");
+      // Le Bear Cub donné et les Llanowar Elves pris par p3 : deux marqueurs ; la Serra Angel de p3 chez p2 ne compte pas.
+      expect(plus(s, idOf(s, "p1", "battlefield", "Ally"))).toBe(2);
     });
 
     it("Jet, Freedom Fighter : en arrivant, blessures égales au nombre de vos créatures à une créature adverse", () => {

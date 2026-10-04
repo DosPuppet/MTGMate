@@ -87,7 +87,7 @@ export const BLACK: Record<string, CardScript> = {
         ...rioterExile,
         label: "Engagez un Allié : exilez une carte d'un cimetière",
       }),
-      triggered(when.attacksSelf, [fx.castNow(ref.filtered(ref.linked, { subtype: "Ally", controller: "you" }))], {
+      triggered(when.attacksSelf, [fx.castNow(ref.filtered(ref.linked, { subtype: "Ally", owner: "you" }))], {
         label: "Vous pouvez lancer un sort d'Allié exilé avec lui",
       }),
     ],

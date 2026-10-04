@@ -79,7 +79,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Great Train Heist : les Trésors viennent des blessures infligées à n'importe quel adversaire.
 - **The Big Score (`docs/extensions/otj-big.md`) :**
   - `règle` Memory Vessel : on peut encore jouer les cartes de sa main ;
-  - `règle` Transmutation Font : les trois jetons sacrifiés n'ont pas à avoir des noms différents ;
   - `règle` Grand Abolisher : les capacités de mana ne sont pas bloquées.
 - **Edge of Eternities (`docs/extensions/eoe.md`) :**
   - `choix auto` Gene Pollinator : le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana) ;
@@ -100,7 +99,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Kaito (Monstrous Emergence) : en multijoueur, il attaque le joueur qu'attaque une de vos créatures ;
   - `règle` « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ;
   - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
-  - `règle` Get Out renvoie ce que vous contrôlez (et non ce que vous possédez) ;
   - `règle` Fear of Missing Out (« attaque pour la première fois chaque tour ») : une attaque plus tardive du même tour déclenche encore la capacité si le délire manquait à la première ;
   - `règle` conditions non vérifiées : l'attaque d'un joueur (Dollmaker's Shop : une créature non-Jouet qui attaque un planeswalker ou une bataille compte aussi), la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
   - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
@@ -162,8 +160,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
   - `règle` Spry and Mighty : sans deux créatures, la carte ne fait rien ;
-  - `règle` Flitterwing Nuisance, Sygg (Wanderbrine Shield) : « blessures de combat à un joueur ou un planeswalker » ne compte que les joueurs ;
-  - `choix auto` Temporal Cleansing : le choix « deuxième depuis le dessus ou au-dessous » revient au contrôleur du permanent, pas à son propriétaire ;
   - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
   - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte ;
   - `règle` Swat Away : « si une créature vous attaque » est vrai dès qu'une créature adverse attaque (en multijoueur, même un autre joueur) ;
@@ -201,11 +197,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Murders at Karlov Manor (`docs/extensions/mkm.md`) :**
   - `règle` suspect (701.60) : la menace et « ne peut pas bloquer » s'ajoutent après les effets de couche 6 ; un effet « perd toutes ses capacités » ne les retire pas ;
   - `timing` Bubble Smuggler : « en étant retournée face visible, quatre marqueurs +1/+1 » est une capacité déclenchée (on peut y répondre) ;
-  - `règle` Coveted Falcon : « un permanent que vous possédez mais ne contrôlez pas » est « contrôlé par un adversaire et non possédé par lui » (exact en duel) ;
   - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
   - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe) ;
-  - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ; celui qui cherche est le propriétaire du terrain détruit ;
-  - `règle` Expedited Inheritance : « son contrôleur » d'une créature morte est son propriétaire ;
+  - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ;
   - `timing` Archdruid's Charm, Flourishing Bloom-Kin : les cartes cherchées passent par la main avant que le terrain arrive engagé ; le mélange a lieu avant ;
   - `timing` Crowd-Control Warden : retournée face visible, les marqueurs viennent d'une capacité déclenchée (à l'arrivée, c'est un remplacement) ;
   - `règle` Break Out : la créature révélée repasse sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main ;
@@ -215,13 +209,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ;
   - `règle` Officious Interrogation : au plus huit joueurs ciblés ;
   - `choix auto` Hedge Whisperer : elle reste engagée pendant votre étape de dégagement tant que son effet (le terrain 5/5) dure, et se dégage sinon ;
-  - `règle` Kaya, Spirits' Justice : une capacité par carte exilée (et non une pour « une ou plusieurs » cartes) ; « les cartes de créature que vous possédez » dans un cimetière sont celles du vôtre ;
+  - `règle` Kaya, Spirits' Justice : une capacité par carte exilée (et non une pour « une ou plusieurs » cartes) ;
   - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution ;
   - `règle` Kaya, Spirits' Justice (−2), Jetsam : « pour chaque autre joueur » et « les cimetières de vos adversaires » sont exacts en duel ; à plusieurs, une seule créature adverse est ciblée.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`) :**
   - `choix auto` Maîtrise de l'eau, convocation, improvisation, cave : hors contrôle total, les objets qui paient sont choisis par le paiement automatique, après les terrains (comme sur Arena) ; en contrôle total, le joueur les choisit ;
   - `règle` The Legend of Yangchen (chapitre I) : vous seul choisissez un permanent adverse de valeur de mana 3 ou plus (exact en duel ; à plusieurs, chaque joueur devrait en choisir un à tour de rôle), et le choix est obligatoire s'il en existe un ;
-  - `règle` Lost Days : le choix entre la deuxième position et le dessous de la bibliothèque revient au contrôleur de la créature, et non à son propriétaire (comme Temporal Cleansing) ;
   - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact) ;
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
   - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée ;
@@ -229,7 +222,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition ;
   - `règle` Azula, Cunning Usurper : les cartes exilées se lancent pendant votre tour avec du mana de n'importe quel type, mais sans le flash ;
   - `règle` Bumi, Unleashed : « seules les créatures-terrains peuvent attaquer pendant ce combat » interdit d'attaquer, jusqu'à la fin du tour, aux créatures non-terrains présentes à la résolution ;
-  - `règle` Iroh, Tea Master : « les permanents que vous possédez et que vos adversaires contrôlent » sont ceux qu'un adversaire contrôle sans les posséder (exact en duel) ;
   - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui du premier adversaire ;
   - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
   - `règle` Trusty Boomerang : la capacité « {1}, {T} : engagez une créature ciblée, renvoyez le Boomerang » est portée par l'Équipement (elle reste si la créature équipée perd ses capacités) ;
@@ -245,7 +237,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
-  - `règle` The Thing, Ben Grimm : « blessent un joueur » se lit « blessent un adversaire » ;
   - `règle` World War Hulk (chapitre I) : le sort gratuit vient seulement de la main, et un sort de créature payé normalement ne consomme pas la permission ;
   - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
   - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
@@ -274,11 +265,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Shark Shredder : la carte est ciblée dans le cimetière d'un adversaire, pas forcément celui du joueur blessé (exact en duel) ;
   - `règle` Shredder's Technique : « si un enchantement a été détruit » se lit « la cible était un enchantement et n'est plus sur le champ de bataille » ;
   - `règle` Party Dude : au niveau 3, « chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » se lit « chaque fois que vous attaquez » (exact en duel, sauf une attaque contre un planeswalker seul) ;
-  - `règle` Northampton Farm, The Neutrinos : « une créature que vous possédez » se lit « que vous contrôlez et possédez, ou qu'un adversaire contrôle sans la posséder » (Northampton Farm, exact en duel) ou « que vous contrôlez et possédez » (The Neutrinos) ;
   - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet ;
   - `choix auto` Ninja Teen : un sort de créature lancé du cimetière par le faufilement donné renvoie l'attaquant non bloqué le plus faible.
 - **The Hobbit (`docs/extensions/hob.md`) :**
-  - `règle` The Eagles Are Coming! : « une créature que vous possédez » se lit « que vous possédez et contrôlez » ;
   - `règle` Burglar's Plot : « deux permanents non-terrain ciblés qui partagent un type de carte » est un sort modal, un mode par type ;
   - `règle` Bilbo, Thief in the Night : la réduction vaut pour les sorts lancés depuis un cimetière ou l'exil, pas depuis le dessus de la bibliothèque ; un artefact lancé ainsi puis contrecarré serait exilé ;
   - `règle` Old Fat Spider Can't See Me : au chapitre II, la prévention est une capacité donnée à la créature, tant que la Saga reste ;
@@ -287,14 +276,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Goblin Plate Mail : l'Équipement s'attache à votre première Armée.
 - **Rééditions, « Sans limite » (`docs/extensions/reeditions.md`) :**
   - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » est une permission de jouer (un terrain exilé ainsi pourrait être joué) ;
-  - `règle` Winds of Abandon : le joueur qui cherche les terrains de base est le propriétaire de chaque créature exilée (son contrôleur avant l'exil s'il diffère, en multijoueur avec une créature volée) ;
   - `règle` Cytoplast Manipulator : le contrôle dure tant que vous contrôlez le Manipulator (et non « tant qu'il reste sur le champ de bataille ») ;
   - `choix auto` Gemstone Caverns : la carte exilée de la main est la carte non-terrain de plus petite valeur de mana (un terrain s'il n'y en a pas) ;
   - `règle` Reflecting Pool : les types que produiraient d'autres terrains du même genre (Reflecting Pool) ne comptent pas ;
   - `règle` Drown in the Loch : « valeur de mana inférieure ou égale au nombre de cartes du cimetière de son contrôleur » est vérifiée à la résolution, pas au ciblage ;
-  - `règle` Mephidross Vampire : « blesse une créature » se lit « inflige des blessures à autre chose qu'un joueur » (un planeswalker compte) ;
-  - `règle` Bridge from Below : « mise dans votre cimetière » et « dans le cimetière d'un adversaire » se lisent d'après le dernier contrôleur de la créature, pas son propriétaire ;
-  - `règle` Eerie Ultimatum : les cartes remises sur le champ de bataille n'ont pas à avoir des noms différents ;
   - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
   - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous ;
   - `règle` Adeline, Resplendent Cathar : les Humains créés attaquent tous le même défenseur (un par adversaire, en multijoueur) ;
@@ -319,11 +304,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Carpet of Flowers : seulement au début de votre première phase principale ;
   - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
   - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
-  - `règle` Indomitable Creativity : le joueur qui révèle est le propriétaire de chaque permanent détruit (son contrôleur s'il diffère, en multijoueur avec un permanent volé) ;
   - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;
   - `règle` Painter's Servant : seuls les permanents prennent la couleur choisie (pas les sorts ni les cartes des autres zones) ;
   - `règle` Sylvan Library : les deux cartes remises peuvent être n'importe quelles cartes de la main (pas seulement celles piochées ce tour-ci) ;
   - `règle` Indominus Rex, Alpha : la défausse et les marqueurs viennent d'une capacité d'arrivée (pas « en arrivant ») ; seule une carte est piochée par marqueur de mot-clé ;
-  - `règle` Expropriate : seul le premier adversaire vote (exact en duel) ; « un permanent possédé par le votant » est un permanent qu'il contrôle ;
+  - `règle` Expropriate : seul le premier adversaire vote (exact en duel) ;
   - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ; seul le premier adversaire paie (exact en duel) ;
   - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour »).

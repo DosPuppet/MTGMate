@@ -469,12 +469,11 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       activated({ tap: true, effects: [fx.createTokens(BLOOD)], label: "Jeton Sang" }),
       activated({ tap: true, effects: [fx.createTokens(CLUE)], label: "Jeton Indice" }),
       activated({ tap: true, effects: [fx.createTokens(FOOD)], label: "Jeton Nourriture" }),
-      // Approximation : les trois jetons sacrifiés n'ont pas à avoir des noms différents.
       activated({
         mana: "{3}",
         tap: true,
         sorcerySpeed: true,
-        sacrificeOther: { filter: { types: ["Artifact"], token: true }, count: 3 },
+        sacrificeOther: { filter: { types: ["Artifact"], token: true }, count: 3, differentNames: true },
         effects: [fx.search({ types: ["Artifact"] }, { to: "battlefield" })],
         label: "Un artefact de la bibliothèque",
       }),

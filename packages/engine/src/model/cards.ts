@@ -566,7 +566,8 @@ export interface CostDef {
   };
   /** Sacrifier d'autres permanents (choisis par le joueur). */
   /** `includeSelf` : la source peut faire partie des permanents sacrifiés (Rat King : « sacrifiez trois Rats »). */
-  sacrifice?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
+  /** `differentNames` : des permanents de noms différents (Transmutation Font : « trois jetons d'artefact de noms différents »). */
+  sacrifice?: { filter: ObjectFilter; count: number; includeSelf?: boolean; differentNames?: boolean };
   /** Flétrir N (ECL) : N marqueurs −1/−1 sur une créature que vous contrôlez (choisie automatiquement : `blightTarget`). */
   blight?: number;
   /** Réunir des preuves N (701.59, MKM) : cartes du cimetière de valeur de mana totale N ou plus (choisies automatiquement). */

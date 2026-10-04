@@ -32,6 +32,7 @@ import {
   pickNamed,
   settle as resolve,
   scenario,
+  steal,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -3320,6 +3321,20 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       // La découverte (VM 5) trouve Bear Cub ou l'Ange mélangé ; refusée, la carte va en main.
       expect(s.players.p2?.hand).toHaveLength(1);
       expect(s.players.p2?.library).toHaveLength(3);
+    });
+
+    it("Zoyowa's Justice : une créature volée retourne chez son propriétaire, et c'est lui qui découvre", () => {
+      let s = scenario({
+        p1: { battlefield: ["Mountain", "Mountain"], hand: ["Zoyowa's Justice"], library: ["Plains", "Plains"] },
+        p2: { battlefield: ["Serra Angel"], library: ["Forest", "Bear Cub", "Island"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      steal(s, angel, "p1");
+      s = resolve(castCard(s, "p1", "Zoyowa's Justice", { targets: { t: [angel] } }));
+      expect(s.players.p2?.hand).toHaveLength(1);
+      expect(s.players.p2?.library).toHaveLength(3);
+      expect(s.players.p1?.hand).toHaveLength(0);
+      expect(s.players.p1?.library).toHaveLength(2);
     });
   });
 });

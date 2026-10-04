@@ -68,8 +68,8 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Winds of Abandon": {
-    // Le contrôleur de chaque créature exilée cherche autant de terrains de base que de ses créatures exilées (le
-    // nombre est lu du point de vue de celui qui cherche ; une créature exilée a son propriétaire pour contrôleur).
+    // Le contrôleur de chaque créature exilée (son dernier contrôleur connu) cherche autant de terrains de base que de ses
+    // créatures exilées (le nombre est lu du point de vue de celui qui cherche).
     spell: altCostMode(
       "Surcharge",
       "{4}{W}{W}",

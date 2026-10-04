@@ -493,7 +493,7 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       manaAbility("C", 1, { addCounter: "point" }),
       triggered(
-        { on: "dealsCombatDamage", who: { types: ["Creature"] }, toPlayer: true },
+        { on: "dealsCombatDamage", who: { types: ["Creature"] }, to: { players: "any" } },
         [fx.removeCounters(ref.self, 1, "point")],
         {
           condition: cond.not(cond.amountAtLeast(amount.refCount(ref.except(ref.eventPlayer, ref.you)), 1)),
@@ -639,7 +639,7 @@ export const CARDS: Record<string, CardScript> = {
   "Gix, Yawgmoth Praetor": {
     abilities: [
       triggered(
-        { on: "dealsCombatDamage", who: { types: ["Creature"] }, toOpponent: true },
+        { on: "dealsCombatDamage", who: { types: ["Creature"] }, to: { players: "opponent" } },
         fx.mayFor(
           ref.controllerOf(ref.eventObject),
           "Payer 1 PV pour piocher une carte ?",

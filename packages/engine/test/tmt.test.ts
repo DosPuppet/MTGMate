@@ -28,6 +28,7 @@ import {
   pickNamed,
   scenario,
   settleNoBlocks as settle,
+  steal,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -3523,6 +3524,16 @@ describe("lot A, multicolores", () => {
         // 2 de l'Ours, 3 des Neutrinos : l'Ours revenu a déclenché l'Alliance.
         expect(s.players.p2?.life).toBe(15);
       });
+
+      it("en attaquant : une créature que vous possédez, même contrôlée par un adversaire, revient sous votre contrôle", () => {
+        let s = scenario({ p1: { battlefield: ["The Neutrinos", "Bear Cub"] } });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        steal(s, bear, "p2");
+        s = settle(attack(s, [idOf(s, "p1", "battlefield", "The Neutrinos")]), (req) => pickId(req, bear));
+        const back = idOf(s, "p1", "battlefield", "Bear Cub");
+        expect(s.objects[back]?.tapped).toBe(true);
+        expect(s.combat?.attackers.map((a) => a.id)).toContain(back);
+      });
     });
 
     it("Nobody : renvoie un autre de vos artefacts en main, puis regard 1", () => {
@@ -3937,6 +3948,22 @@ describe("lot A, incolores et terrains", () => {
         const angel = idOf(s, "p2", "battlefield", "Serra Angel");
         expect(() => activate(s, "p1", farm, "Exilez", { targets: { t: [angel] } })).toThrow();
         const after = settle(activate(s, "p1", farm, "Exilez", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
+        expect(inExile(after, "Bear Cub")).toHaveLength(1);
+      });
+
+      it("{1}, {T} : à plusieurs, votre créature chez un adversaire, mais pas celle qu'un adversaire a prise à un autre", () => {
+        const s = scenario({
+          players: 3,
+          p1: { battlefield: ["Northampton Farm", "Wastes", "Bear Cub"] },
+          p3: { battlefield: ["Serra Angel"] },
+        });
+        const farm = idOf(s, "p1", "battlefield", "Northampton Farm");
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const angel = idOf(s, "p3", "battlefield", "Serra Angel");
+        steal(s, bear, "p3");
+        steal(s, angel, "p2");
+        expect(() => activate(s, "p1", farm, "Exilez", { targets: { t: [angel] } })).toThrow();
+        const after = settle(activate(s, "p1", farm, "Exilez", { targets: { t: [bear] } }));
         expect(inExile(after, "Bear Cub")).toHaveLength(1);
       });
 

@@ -271,7 +271,7 @@ export const MULTI: Record<string, CardScript> = {
             [],
             [
               fx.createTokens(ALLY, 1, undefined, "a"),
-              fx.addCounters(ref.stored("a"), amount.count({ permanent: true, controller: "opponent", notOwned: true })),
+              fx.addCounters(ref.stored("a"), amount.count({ permanent: true, owner: "you", controller: "opponent" })),
             ],
           ),
         ),

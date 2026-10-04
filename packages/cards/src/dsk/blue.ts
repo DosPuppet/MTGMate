@@ -90,7 +90,7 @@ export const BLUE: Record<string, CardScript> = {
           target.between(
             1,
             2,
-            target.permanent("b", ["Creature", "Enchantment"], { controller: "you" }, "créature ou enchantement à vous"),
+            target.permanent("b", ["Creature", "Enchantment"], { owner: "you" }, "créature ou enchantement que vous possédez"),
           ),
         ],
         [fx.bounce(ref.target("b"))],

@@ -69,7 +69,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(4, ref.eachOpponent)], { label: "4 blessures à chaque adversaire" }),
       triggered(
-        when.dealsDamage({}, { noncombatOnly: true, toOpponent: true, anySourceYouControl: true }),
+        when.dealsDamage({}, { noncombatOnly: true, to: { players: "opponent" }, anySourceYouControl: true }),
         [fx.damage(amount.eventAmount, ref.target())],
         {
           condition: cond.delirium,

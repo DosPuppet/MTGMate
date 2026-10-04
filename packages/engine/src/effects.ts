@@ -163,6 +163,24 @@ export function viewOf(s: GameState, id: string): LkiSnapshot | undefined {
   return s.lki[id];
 }
 
+/**
+ * « Son contrôleur » : le contrôleur d'un permanent, d'un sort ou d'une capacité ; d'un objet parti du champ de bataille ce
+ * tour-ci (la carte qu'il est devenu, ou ses dernières informations), son dernier contrôleur connu (608.2h : Winds of
+ * Abandon, Indomitable Creativity) ; d'une autre carte, son propriétaire.
+ */
+export function lastController(s: GameState, id: ObjectId): PlayerId | undefined {
+  const o = s.objects[id];
+  if (!o) return s.stack.find((x) => x.id === id)?.controller ?? s.lki[id]?.controller;
+  if (o.zone === "battlefield" || o.zone === "stack") return o.controller;
+  if (o.arrivedFrom === "battlefield") {
+    // Les dernières informations sont effacées à chaque tour : la plus récente de cette carte est celle de son départ.
+    let last: PlayerId | undefined;
+    for (const k in s.lki) if (s.lki[k]?.uid === o.uid) last = s.lki[k]?.controller;
+    if (last) return last;
+  }
+  return o.owner;
+}
+
 /** Mémorise une valeur de résolution (« si vous le faites », « la vie perdue de cette façon »). */
 export function store(r: Resolution, name: string | undefined, n: number): void {
   if (!name) return;
@@ -330,11 +348,14 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     case "controllerOf":
       return resolveRef(s, ctx, ref.ref).flatMap((id) => {
         if (isPlayer(s, id)) return [id];
-        const o = s.objects[id];
-        if (o) return [o.zone === "battlefield" || o.zone === "stack" ? o.controller : o.owner];
-        const item = s.stack.find((x) => x.id === id);
-        if (item) return [item.controller];
-        return s.lki[id] ? [s.lki[id].controller] : [];
+        const p = lastController(s, id);
+        return p ? [p] : [];
+      });
+    case "ownerOf":
+      return resolveRef(s, ctx, ref.ref).flatMap((id) => {
+        if (isPlayer(s, id)) return [id];
+        const p = s.objects[id]?.owner ?? s.lki[id]?.owner;
+        return p ? [p] : [];
       });
     case "stored":
       // Objets mémorisés, encore présents ou connus par leurs dernières informations (sacrifiés…).
@@ -365,10 +386,16 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       const out = new Set(resolveRef(s, ctx, ref.exclude));
       return resolveRef(s, ctx, ref.ref).filter((id) => !out.has(id));
     }
-    case "filtered":
+    case "filtered": {
+      // `controller` : le contrôleur, ou le dernier contrôleur connu (Winds of Abandon : « ses créatures exilées »).
+      const c = ref.filter.controller;
       return resolveRef(s, ctx, ref.ref).filter(
-        (id) => !!s.objects[id] && matchesCard(s, ctx.controller, id, { ...ref.filter, controller: undefined }, ctx.sourceId),
+        (id) =>
+          !!s.objects[id] &&
+          (!c || (lastController(s, id) === ctx.controller) === (c === "you")) &&
+          matchesCard(s, ctx.controller, id, { ...ref.filter, controller: undefined }, ctx.sourceId),
       );
+    }
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
     case "sameName": {

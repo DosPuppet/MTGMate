@@ -342,8 +342,11 @@ export const RECORD_VERSION = 1;
  * - 127 : familles génériques (A3b) : taille de main maximale dans l'ordre d'horodatage, « choisissez les deux » si le
  *   coût additionnel est payé (un seul mode refusé), un nouveau type de terrain ne remplace que les types de terrain
  *   (205.1a, 305.7), montures et équipages cumulés sur le tour, marqueurs d'arrivée en montant.
+ * - 128 : familles génériques (A3a) : filtre de propriétaire et référence `ownerOf`, dernier contrôleur connu d'un objet
+ *   parti du champ de bataille ce tour-ci (`controllerOf`), noms différents au choix et au sacrifice en coût,
+ *   destinataire des blessures des déclencheurs (`to`).
  */
-export const RULES_VERSION = 127;
+export const RULES_VERSION = 128;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

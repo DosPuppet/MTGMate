@@ -368,7 +368,7 @@ export const RED: Record<string, CardScript> = {
       [
         fx.moveTo(ref.target(), { to: "libraryTop", shuffle: true }, { name: "z" }),
         // Le propriétaire de la carte mélangée découvre (fixé au premier passage de la découverte).
-        fx.discover(amount.manaValueOf(ref.stored("z")), { who: ref.controllerOf(ref.stored("z")) }),
+        fx.discover(amount.manaValueOf(ref.stored("z")), { who: ref.ownerOf(ref.stored("z")) }),
       ],
     ),
   },

@@ -189,7 +189,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
       triggered(
-        when.dealsDamage({}, { anySourceYouControl: true, noncombatOnly: true, toOpponent: true }),
+        when.dealsDamage({}, { anySourceYouControl: true, noncombatOnly: true, to: { players: "opponent" } }),
         [fx.draw(amount.eventAmount)],
         { label: "piochez autant de cartes" },
       ),

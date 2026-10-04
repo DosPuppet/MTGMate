@@ -319,7 +319,7 @@ export const MULTI: Record<string, CardScript> = {
             token: SPIRIT_W,
             count: 1,
             pt: amount.manaValueOf(ref.linked),
-            for: ref.controllerOf(ref.linked),
+            for: ref.ownerOf(ref.linked),
           },
         ],
         { label: "Le propriétaire de la carte exilée crée un Esprit X/X" },

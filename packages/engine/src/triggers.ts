@@ -53,6 +53,7 @@ import type {
   PendingTrigger,
   PlayerId,
   StackItem,
+  TargetFilter,
   TargetSpec,
   TriggerEventData,
   TriggeredAbilityDef,
@@ -463,6 +464,17 @@ function matchWho(who: "self" | ObjectFilter, v: LkiSnapshot, src: Source): bool
   return matchesView(v, withChosen(who, src.view), src.view.controller, src.id);
 }
 
+/**
+ * Ce qui a reçu les blessures correspond-il à `to` (joueur relatif au contrôleur de la capacité, ou objet : vivant, sinon
+ * ses dernières informations) ? Sans `to`, tout correspond.
+ */
+function damagedMatches(s: GameState, target: string, to: TargetFilter | undefined, me: PlayerId, srcId: ObjectId): boolean {
+  if (!to) return true;
+  if (s.players[target]) return !!to.players && whose(to.players, target, me);
+  const v = liveView(s, target) ?? s.lki[target];
+  return !!to.objects && !!v && matchesView(v, to.objects, me, srcId);
+}
+
 function whose(rel: "you" | "opponent" | "any", player: PlayerId, controller: PlayerId): boolean {
   return rel === "any" || (rel === "you" ? player === controller : player !== controller);
 }
@@ -594,7 +606,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.on === "dealsDamage" && t.anySourceYouControl) {
         if (ev.sourceController !== me || (t.noncombatOnly && ev.combat)) return null;
         const toOpp = !!s.players[ev.target] && ev.target !== me;
-        if (t.toOpponent && !toOpp) return null;
+        if (!damagedMatches(s, ev.target, t.to, me, src.id)) return null;
         if (t.exactToughness) {
           const victim = s.objects[ev.target];
           if (victim?.zone !== "battlefield" || !isCreature(s, ev.target) || chars(s, ev.target).toughness !== ev.amount)
@@ -606,10 +618,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.on === "dealsCombatDamage" && !ev.combat) return null;
       if (t.on === "dealsDamage" && t.noncombatOnly && ev.combat) return null;
       const toPlayer = !!s.players[ev.target];
-      if (t.on === "dealsCombatDamage" && t.toPlayer && !toPlayer) return null;
-      // « … à l'un de vos adversaires » (Gonti, Night Minister).
-      if (t.on === "dealsCombatDamage" && t.toOpponent && (!toPlayer || ev.target === me)) return null;
-      if (t.on === "dealsDamage" && t.toOpponent && (!toPlayer || ev.target === me)) return null;
+      // « … à un joueur », « … à l'un de vos adversaires » (Gonti, Night Minister), « … à une créature » (Mephidross Vampire).
+      if (!damagedMatches(s, ev.target, t.to, me, src.id)) return null;
       const v = liveView(s, ev.sourceId) ?? s.lki[ev.sourceId] ?? null;
       if (!v || !matchWho(t.who, v, src)) return null;
       return { objectId: ev.sourceId, player: toPlayer ? ev.target : undefined, amount: ev.amount };

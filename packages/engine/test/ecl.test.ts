@@ -15,7 +15,7 @@ import { bump, chars } from "../src/state";
 import { ALL_CREATURE_TYPES, isLegalTarget, matchesObjectFilter } from "../src/targets";
 import { simultaneously } from "../src/triggers";
 import type { CardDef, ChoiceRequest, ChoiceValue, Color, GameState, ManaCost, TokenSpec } from "../src/types";
-import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, scenario, untilCastNow } from "./helpers";
+import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, scenario, steal, untilCastNow } from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -968,6 +968,13 @@ describe("Lorwyn Eclipsed, lot A — bleu", () => {
   };
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const SYGG = "Sygg, Wanderwine Wisdom // Sygg, Wanderbrine Shield";
+  const WALKER: CardDef = customCard({ name: "Test Walker", types: ["Planeswalker"], typeLine: "Planeswalker", loyalty: 5 });
+  /** Attaque le planeswalker de p2 (Test Walker). */
+  const attackWalker = (s: S, attackers: string[]) => {
+    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const walker = idOf(cur, "p2", "battlefield", "Test Walker");
+    return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: walker })) });
+  };
 
   describe("Auras", () => {
     it("Aquitect's Defenses : seulement sur votre créature ; +1/+2 et défense talismanique jusqu'à la fin du tour", () => {
@@ -1035,6 +1042,20 @@ describe("Lorwyn Eclipsed, lot A — bleu", () => {
       expect(emblem()).toBe(true);
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(emblem()).toBe(false);
+    });
+
+    it("Flitterwing Nuisance : des blessures de combat à un planeswalker font aussi piocher", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Island", 4), "Bear Cub"], hand: ["Flitterwing Nuisance"] },
+        p2: { battlefield: [WALKER] },
+      });
+      s = settle(cast(s, "Flitterwing Nuisance"));
+      s = settle(activate(s, idOf(s, "p1", "battlefield", "Flitterwing Nuisance")));
+      const hand = s.players.p1?.hand.length ?? 0;
+      s = attackWalker(s, [idOf(s, "p1", "battlefield", "Bear Cub")]);
+      s = advanceUntil(s, (x) => x.turn.step === "end");
+      expect(s.players.p2?.life).toBe(20);
+      expect(s.players.p1?.hand).toHaveLength(hand + 1);
     });
 
     it("Glen Elendra Guardian : retire son marqueur pour contrecarrer un sort non-créature, dont le contrôleur pioche", () => {
@@ -1288,19 +1309,27 @@ describe("Lorwyn Eclipsed, lot A — bleu", () => {
     });
   });
 
-  it("Temporal Cleansing : le permanent va en deuxième position depuis le dessus, ou au-dessous", () => {
-    const run = (bottom: number) => {
+  it("Temporal Cleansing : le propriétaire met le permanent en deuxième position depuis le dessus, ou au-dessous", () => {
+    const run = (where: "top" | "bottom", stolen = false) => {
       let s = scenario({
         p1: { battlefield: lands("Island", 4), hand: ["Temporal Cleansing"] },
         p2: { battlefield: ["Serra Angel"] },
       });
-      s = cast(s, "Temporal Cleansing", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } });
-      s = chooseWanted(s, [bottom]);
-      expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      // Volée par p1 : c'est toujours son propriétaire, p2, qui choisit.
+      if (stolen) steal(s, angel, "p1");
+      s = cast(s, "Temporal Cleansing", { targets: { t: [angel] } });
+      s = passAccepting(s, (x) => x.pending?.kind === "choice");
+      const p = s.pending;
+      if (p?.kind !== "choice" || p.request.intent !== "topOrBottom") throw new Error("choix attendu");
+      expect(p.player).toBe("p2");
+      s = settle(act(s, p.player, { type: "choose", values: [where] }));
+      expect(s.battlefield.some((id) => nameOf(s, id) === "Serra Angel")).toBe(false);
       return (s.players.p2?.library ?? []).findIndex((id) => nameOf(s, id) === "Serra Angel");
     };
-    expect(run(0)).toBe(1);
-    expect(run(1)).toBe(10);
+    expect(run("top")).toBe(1);
+    expect(run("bottom")).toBe(10);
+    expect(run("bottom", true)).toBe(10);
   });
 
   it("Thirst for Identity : piochez trois cartes, puis défaussez une carte de créature ou deux cartes", () => {
@@ -1356,6 +1385,16 @@ describe("Lorwyn Eclipsed, lot A — bleu", () => {
       s = attack(s, [bear]);
       s = advanceUntil(s, (x) => x.turn.step === "end" || x.turn.active === "p2");
       expect(s.players.p2?.life).toBe(18);
+      expect(s.players.p1?.hand).toHaveLength(1);
+    });
+
+    it("la créature choisie fait aussi piocher en blessant un planeswalker", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Island", 2), "Bear Cub"], hand: [SYGG] }, p2: { battlefield: [WALKER] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = chooseWanted(cast(s, SYGG), [bear]);
+      s = attackWalker(s, [bear]);
+      s = advanceUntil(s, (x) => x.turn.step === "end" || x.turn.active === "p2");
+      expect(s.players.p2?.life).toBe(20);
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 

@@ -110,7 +110,7 @@ export const CARDS: Record<string, CardScript> = {
   "Contested War Zone": {
     abilities: [
       triggered(
-        { on: "dealsCombatDamage", who: { types: ["Creature"] }, toPlayer: true },
+        { on: "dealsCombatDamage", who: { types: ["Creature"] }, to: { players: "any" } },
         [fx.giveControl(ref.self, ref.controllerOf(ref.eventObject))],
         {
           // Les blessures vous sont infligées : le joueur blessé n'est pas un adversaire.

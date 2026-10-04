@@ -32,8 +32,8 @@ const ONE_NONLAND_PER_OPPONENT: TargetSpec = {
   differentPlayers: true,
 };
 
-/** « créature ciblée que vous possédez » (et contrôlez : voir docs/approximations.md). */
-const CREATURE_YOU_OWN: ObjectFilter = { controller: "you", not: { notOwned: true } };
+/** « créature ciblée que vous possédez » (qui la contrôle). */
+const CREATURE_YOU_OWN: ObjectFilter = { owner: "you" };
 
 /** Les créatures attaquantes que contrôle le joueur ciblé (Settle the Wreckage). */
 const ATTACKERS_OF_TARGET = ref.permanentsOf(ref.target(), { types: ["Creature"], attacking: true });

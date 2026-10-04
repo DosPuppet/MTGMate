@@ -23,6 +23,7 @@ import {
   ref,
   spell,
   staticAbility,
+  TO_CREATURE,
   TREASURE,
   target,
   triggered,
@@ -214,13 +215,13 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Bridge from Below": {
     abilities: [
-      triggered(when.dies({ types: ["Creature"], token: false, controller: "you" }), [fx.createTokens(ZOMBIE)], {
+      triggered(when.dies({ types: ["Creature"], token: false, owner: "you" }), [fx.createTokens(ZOMBIE)], {
         fromGraveyard: true,
-        label: "Depuis votre cimetière : une créature non-jeton meurt, un Zombie 2/2",
+        label: "Depuis votre cimetière : une créature non-jeton est mise dans votre cimetière, un Zombie 2/2",
       }),
-      triggered(when.dies({ types: ["Creature"], controller: "opponent" }), [fx.exileCard(ref.selfCard)], {
+      triggered(when.dies({ types: ["Creature"], owner: "opponent" }), [fx.exileCard(ref.selfCard)], {
         fromGraveyard: true,
-        label: "Depuis votre cimetière : une créature adverse meurt, exilez cette carte",
+        label: "Depuis votre cimetière : une créature est mise dans le cimetière d'un adversaire, exilez cette carte",
       }),
     ],
   },
@@ -231,9 +232,7 @@ export const CARDS: Record<string, CardScript> = {
         {
           addSubtypes: ["Vampire"],
           addAbilities: [
-            triggered({ on: "dealsDamage", who: "self" }, [fx.addCounters(ref.self, 1)], {
-              // Des blessures infligées à une créature (ni à un joueur).
-              condition: cond.not(cond.amountAtLeast(amount.refCount(ref.eventPlayer), 1)),
+            triggered(when.dealsDamage("self", { to: TO_CREATURE }), [fx.addCounters(ref.self, 1)], {
               label: "Blesse une créature : un marqueur +1/+1",
             }),
           ],
@@ -777,6 +776,7 @@ export const CARDS: Record<string, CardScript> = {
           {
             count: 99,
             min: 0,
+            differentNames: true,
             prompt: "Cartes de permanent aux noms différents à remettre sur le champ de bataille",
           },
         ),
@@ -1351,7 +1351,10 @@ export const CARDS: Record<string, CardScript> = {
           { label: "Le temps (un tour supplémentaire)", effects: [fx.extraTurn] },
           {
             label: "L'argent (un de vos permanents)",
-            effects: [fx.chooseAmong(ref.permanentsOf(ref.you, {}), ref.you, "m1"), fx.giveControl(ref.stored("m1"), ref.you)],
+            effects: [
+              fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { owner: "you" }), ref.you, "m1"),
+              fx.giveControl(ref.stored("m1"), ref.you),
+            ],
           },
         ]),
         ...fx.yourChoice(
@@ -1362,7 +1365,8 @@ export const CARDS: Record<string, CardScript> = {
             {
               label: "L'argent (il prend un de vos permanents)",
               effects: [
-                fx.chooseAmong(ref.permanentsOf(ref.eachOpponent, {}), ref.you, "m2"),
+                // Le votant est le premier adversaire : un permanent possédé par un adversaire (exact en duel).
+                fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { owner: "opponent" }), ref.you, "m2"),
                 fx.giveControl(ref.stored("m2"), ref.you),
               ],
             },

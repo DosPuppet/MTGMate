@@ -9,6 +9,7 @@
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import { describe, expect, it } from "vitest";
 import { createTokens } from "../src/actions";
+import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
@@ -758,5 +759,31 @@ describe("The Big Score, lot K8 : mythiques", () => {
     // Territory Forge n'a pas été lancé : la Lost Jitte adverse reste.
     expect(idsOf(t, "p2", "battlefield", "Lost Jitte")).toHaveLength(1);
     expect(t.stack).toHaveLength(0);
+  });
+
+  it("Transmutation Font : les trois jetons d'artefact sacrifiés ont des noms différents", () => {
+    let s = scenario({ p1: { battlefield: ["Transmutation Font", ...lands("Plains", 3)], library: ["Territory Forge"] } });
+    for (const name of ["Clue", "Clue", "Food"]) createTokens(s, "p1", TOKEN_SPECS[name] as TokenSpec, 1);
+    const font = idOf(s, "p1", "battlefield", "Transmutation Font");
+    // Deux noms seulement : la capacité n'est pas proposée.
+    expect(hasActivate(s, "p1", font, "Un artefact")).toBe(false);
+    createTokens(s, "p1", TOKEN_SPECS.Treasure as TokenSpec, 1);
+    const clues = idsOf(s, "p1", "battlefield", "Clue");
+    const food = idOf(s, "p1", "battlefield", "Food");
+    const treasure = idOf(s, "p1", "battlefield", "Treasure");
+    const ability = legalActions(s, "p1").find(
+      (x) => x.type === "activate" && x.source === font && x.label?.startsWith("Un artefact"),
+    );
+    if (ability?.type !== "activate") throw new Error("capacité introuvable");
+    // Deux Indices : refusé.
+    expect(() => act(s, "p1", { type: "activate", source: font, ability: ability.ability, sacrifice: [...clues, food] })).toThrow(
+      RulesError,
+    );
+    // Le choix par défaut prend un jeton de chaque nom.
+    s = settle(act(s, "p1", { type: "activate", source: font, ability: ability.ability }));
+    expect(idsOf(s, "p1", "battlefield", "Territory Forge")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
+    expect(s.objects[food]).toBeUndefined();
+    expect(s.objects[treasure]).toBeUndefined();
   });
 });

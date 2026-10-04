@@ -786,6 +786,8 @@ export type Effect =
        * des permanents correspondants (les vôtres).
        */
       onePerColorOf?: ObjectFilter;
+      /** Cartes de noms différents (Eerie Ultimatum : « un nombre quelconque de cartes de permanent de noms différents »). */
+      differentNames?: boolean;
     }
   /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
   /** `topDamage` : si le propriétaire la met au-dessus, la source lui inflige N blessures (Clash of Elements). */

@@ -203,8 +203,12 @@ export interface ObjectFilter {
   maxManaValueX?: boolean;
   /** Valeur de mana au plus égale au nombre de couleurs dépensées pour lancer la source (convergence, Sundering Archaic). */
   maxManaValueColorsSpent?: boolean;
-  /** Contrôlé mais pas possédé (Laughing Jasper Flint). */
-  notOwned?: boolean;
+  /**
+   * Possédé par vous ou par un adversaire, dans toute zone (« que vous possédez » : Get Out ; « que vous possédez mais ne
+   * contrôlez pas », avec `controller: "opponent"` : Coveted Falcon ; « que vous contrôlez mais ne possédez pas » :
+   * Laughing Jasper Flint).
+   */
+  owner?: "you" | "opponent";
   /** Aucun mana n'a été dépensé pour le lancer (ou il n'a pas été lancé) : Satoru. */
   noManaSpent?: boolean;
   /** Aucun de ces sous-types (« non-hors-la-loi » : Shoot the Sheriff). */
@@ -302,7 +306,12 @@ export type TriggerSpec =
   | { on: "controlChange" }
   /** `alone` : « chaque fois qu'une créature que vous contrôlez attaque seule » (Squall, Seifer). */
   | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you"; alone?: boolean }
-  | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; toPlayer?: boolean; toOpponent?: boolean }
+  /**
+   * `to` : ce qui reçoit les blessures, joueurs (`players`, relatif au contrôleur de la capacité) ou objets (`objects`) :
+   * « à un joueur » (`{ players: "any" }`), « à l'un de vos adversaires », « à un joueur ou un planeswalker » (Flitterwing
+   * Nuisance), « à une créature » (Mephidross Vampire).
+   */
+  | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; to?: TargetFilter }
   /** `targeting` : le sort cible un objet correspondant, ou un adversaire (`opponent`). */
   | {
       on: "castSpell";
@@ -361,7 +370,8 @@ export type TriggerSpec =
       on: "dealsDamage";
       who: "self" | ObjectFilter;
       noncombatOnly?: boolean;
-      toOpponent?: boolean;
+      /** Ce qui reçoit les blessures (comme pour `dealsCombatDamage`). */
+      to?: TargetFilter;
       anySourceYouControl?: boolean;
       /** Taii Wakeen : des blessures égales à l'endurance de la créature blessée. */
       exactToughness?: boolean;
@@ -646,8 +656,13 @@ export type Ref =
   | { kind: "except"; ref: Ref; exclude: Ref }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
   | { kind: "eventPlayer" }
-  /** Le contrôleur (ou, hors du champ de bataille, le dernier contrôleur connu) de l'objet désigné. */
+  /**
+   * Le contrôleur de l'objet désigné ; parti du champ de bataille ce tour-ci, son dernier contrôleur connu (608.2h : Winds
+   * of Abandon, Indomitable Creativity) ; sinon, hors du champ de bataille et de la pile, son propriétaire.
+   */
   | { kind: "controllerOf"; ref: Ref }
+  /** Le propriétaire de l'objet désigné (« son propriétaire … » : Zoyowa's Justice). */
+  | { kind: "ownerOf"; ref: Ref }
   /** Objets déplacés plus tôt pendant la résolution (`store` d'un déplacement), sous leur nouvel identifiant. */
   | { kind: "stored"; name: string }
   /** « Chaque joueur qui contrôle le plus de [créatures] » (No Witnesses). */

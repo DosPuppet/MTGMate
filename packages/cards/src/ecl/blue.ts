@@ -18,6 +18,7 @@ import {
   ref,
   spell,
   staticAbility,
+  TO_PLAYER_OR_PLANESWALKER,
   target,
   targetObj,
   triggered,
@@ -33,11 +34,11 @@ const CAST_MV4 = when.castSpell("you", { minManaValue: 4 });
 /** « Retirez un marqueur (deux marqueurs) de cette créature » : de n'importe quelle sorte. */
 const removeMinus = (n: number) => ({ kind: "any", n });
 
-/** « Jusqu'à la fin du tour, [la créature ciblée] a “chaque fois qu'elle inflige des blessures de combat à un joueur, piochez une carte” ». */
+/** « Jusqu'à la fin du tour, [la créature ciblée] a “chaque fois qu'elle inflige des blessures de combat à un joueur ou un planeswalker, piochez une carte” ». */
 const grantCombatDraw = fx.modify(ref.target(), {
   addAbilities: [
-    triggered(when.combatDamage("self", true), [fx.draw(1)], {
-      label: "Blessures de combat à un joueur : piochez une carte",
+    triggered(when.combatDamage("self", TO_PLAYER_OR_PLANESWALKER), [fx.draw(1)], {
+      label: "Blessures de combat à un joueur ou un planeswalker : piochez une carte",
     }),
   ],
 });
@@ -220,10 +221,10 @@ export const BLUE: Record<string, CardScript> = {
           // Capacité déclenchée retardée « ce tour-ci » : un emblème qui disparaît à la fin du tour.
           fx.emblem(
             "Flitterwing Nuisance",
-            "Ce tour-ci, chaque fois qu'une créature que vous contrôlez inflige des blessures de combat à un joueur, piochez une carte.",
+            "Ce tour-ci, chaque fois qu'une créature que vous contrôlez inflige des blessures de combat à un joueur ou un planeswalker, piochez une carte.",
             [
-              triggered(when.combatDamage({ types: ["Creature"], controller: "you" }, true), [fx.draw(1)], {
-                label: "Blessures de combat à un joueur : piochez une carte",
+              triggered(when.combatDamage({ types: ["Creature"], controller: "you" }, TO_PLAYER_OR_PLANESWALKER), [fx.draw(1)], {
+                label: "Blessures de combat à un joueur ou un planeswalker : piochez une carte",
               }),
             ],
             false,
@@ -419,19 +420,8 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell([target.upTo(2, target.creature())], [fx.tap(ref.target()), fx.counters(ref.target(), "stun"), fx.draw(1)]),
   },
   "Temporal Cleansing": {
-    // Convocation lue dans le texte. Le choix est posé au contrôleur du permanent (approximation : l'Oracle dit son propriétaire).
-    spell: spell(
-      [target.nonland()],
-      [
-        ...fx.mayForStore(
-          ref.controllerOf(ref.target()),
-          "mettre ce permanent au-dessous de votre bibliothèque (sinon, en deuxième position depuis le dessus) ?",
-          "bottom",
-          fx.moveTo(ref.target(), { to: "libraryBottom" }),
-        ),
-        ...fx.when(cond.not(cond.v("bottom")), fx.moveTo(ref.target(), { to: "libraryTop", fromTop: 2 })),
-      ],
-    ),
+    // Convocation lue dans le texte. Le propriétaire choisit : deuxième depuis le dessus ou au-dessous.
+    spell: spell([target.nonland()], [fx.topOrBottom(ref.target(), undefined, 2)]),
   },
   "Thirst for Identity": {
     spell: spell([], [fx.draw(3), fx.discard(2, ref.you, { unlessFilter: { types: ["Creature"] } })]),

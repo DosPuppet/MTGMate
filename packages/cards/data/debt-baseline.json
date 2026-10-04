@@ -124,7 +124,6 @@
     "copyNonlegendary": "The Clone Saga — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "createToken": "Head of the Hunt — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "crewedBySource": "Balthier and Fran — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "differentNames": "Behold the Sinister Six! — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "discardedThisTurn": "Norman Osborn // Green Goblin — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "discardOrLife": "Bitter Triumph — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "distinctColors": "Sunbird Standard // Sunbird Effigy — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -237,15 +236,15 @@
     "PlayFromZone": 17,
     "LayerMods": 31,
     "Effect": 152,
-    "Effect (champs)": 628,
+    "Effect (champs)": 629,
     "TriggerSpec": 60,
-    "TriggerSpec (champs)": 160,
+    "TriggerSpec (champs)": 159,
     "Condition": 52,
     "Condition (champs)": 96,
     "Amount": 31,
     "Amount (champs)": 67,
-    "Ref": 28,
-    "Ref (champs)": 49
+    "Ref": 29,
+    "Ref (champs)": 51
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -292,6 +291,8 @@
     "PLAN-G G4e (dernières cartes) : défausser X cartes en coût (CostDef.discardX, Gix), grantPlay.forNonOwners (Ian Malcolm), attach.random (Maddening Hex) : CostDef 33 → 34, Effect (champs) 627 → 629",
     "PLAN-G G4e (dernières cartes 2) : phasing (PlayerState.phasedOut, Robe of Stars) ; joueur qui choisit ou paie (chooseOption.who, payX.who : Expropriate, Plague of Vermin) : PlayerState 21 → 22, Effect 152 → 153, Effect (champs) 629 → 633",
     "PLAN-A A1 : removeCounterFromEach retiré (Dyadrine choisit ses créatures) : Effect 153 → 152, Effect (champs) 633 → 628",
-    "PLAN-A A3 : « un joueur subit des blessures » de toute source (isDealtDamage.who \"you\" | \"opponent\", combat : Master of Barbs, Massacre Girl, Most Wanted, Contested Game Ball) : TriggerSpec (champs) 159 → 160"
+    "PLAN-A A3 : « un joueur subit des blessures » de toute source (isDealtDamage.who \"you\" | \"opponent\", combat : Master of Barbs, Massacre Girl, Most Wanted, Contested Game Ball) : TriggerSpec (champs) 159 → 160",
+    "PLAN-A A3 : noms différents au choix de cartes et au sacrifice en coût (pickFromZone.differentNames, CostDef.sacrifice.differentNames : Eerie Ultimatum, Transmutation Font ; differentNames n'est plus propre à une carte), référence ownerOf (Zoyowa's Justice, Gandalf, Unidentified Hovership), destinataire des blessures des déclencheurs (to : TargetFilter, à la place de toPlayer et toOpponent) ; ObjectFilter stable (owner remplace notOwned) : Effect (champs) 628 → 629, TriggerSpec (champs) 159 → 158, Ref 28 → 29, Ref (champs) 49 → 51",
+    "PLAN-A A3 (intégration de A3a et A3c) : isDealtDamage.combat ajouté, toPlayer et toOpponent remplacés par to : TriggerSpec (champs) 160 → 159"
   ]
 }

@@ -31,6 +31,7 @@ import {
   scenario,
   settle as settleAnswering,
   settleNoBlocks,
+  steal,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -527,6 +528,21 @@ describe("Duskmourn : cartes du méta confrontées à leur texte Oracle (PLAN-C,
     expect(idsOf(t, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
   });
 
+  it("Get Out : « que vous possédez » — une créature volée par l'adversaire revient dans votre main, pas une créature que vous lui avez volée", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Island", 2)], hand: ["Get Out"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    steal(s, bear, "p2");
+    steal(s, elves, "p1");
+    const getOut = idOf(s, "p1", "hand", "Get Out");
+    expect(() => act(s, "p1", { type: "cast", card: getOut, mode: 1, targets: { b: [elves] } })).toThrow();
+    s = settle(act(s, "p1", { type: "cast", card: getOut, mode: 1, targets: { b: [bear] } }));
+    expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
+  });
+
   it("Split Up : détruit toutes les créatures engagées, ou toutes les dégagées", () => {
     const board = {
       p1: { battlefield: [{ name: "Llanowar Elves", tapped: true }, "Bear Cub", ...lands("Plains", 3)], hand: ["Split Up"] },
@@ -571,6 +587,25 @@ describe("Duskmourn : cartes du méta confrontées à leur texte Oracle (PLAN-C,
     expect(faceDown).toHaveLength(1);
     expect(s.objects[faceDown[0] as string]?.controller).toBe("p2");
     expect(s.exile.some((id) => nameOf(s, id) === "Shivan Dragon")).toBe(true);
+  });
+
+  it("Unidentified Hovership : c'est le propriétaire de la créature exilée qui manifeste, même si un autre la contrôlait", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Plains", 5),
+        hand: ["Unidentified Hovership", "Bovine Intervention"],
+        library: lands("Plains", 3),
+      },
+      p2: { battlefield: ["Shivan Dragon"], library: lands("Forest", 3) },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    steal(s, dragon, "p1");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Unidentified Hovership") });
+    s = settleAnswering(s, picking([dragon]));
+    const ship = idOf(s, "p1", "battlefield", "Unidentified Hovership");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bovine Intervention"), targets: { t: [ship] } }));
+    const faceDown = s.battlefield.filter((id) => s.objects[id]?.faceDown);
+    expect(faceDown.map((id) => s.objects[id]?.controller)).toEqual(["p2"]);
   });
 });
 

@@ -160,12 +160,11 @@ export const BLUE: Record<string, CardScript> = {
     // Déguisement : lu dans le texte.
     abilities: [
       triggered(when.attacksSelf, [fx.gainControl(ref.target())], {
-        // « que vous possédez mais ne contrôlez pas » : contrôlé par un adversaire qui ne le possède pas (exact en duel).
         targets: [
           {
             id: "t",
             label: "permanent que vous possédez sans le contrôler",
-            filter: { objects: { permanent: true, controller: "opponent", notOwned: true } },
+            filter: { objects: { permanent: true, owner: "you", controller: "opponent" } },
           },
         ],
         label: "Reprenez un permanent que vous possédez",

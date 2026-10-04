@@ -41,6 +41,7 @@ import type {
   SpellDef,
   StaticAbilityDef,
   Step,
+  TargetFilter,
   TargetSpec,
   TokenSpec,
   TriggeredAbilityDef,
@@ -217,7 +218,10 @@ export const ref = {
   attached: { kind: "attached" } as Ref,
   /** Les permanents attachés à l'objet désigné (filtrer avec `ref.filtered`). */
   attachmentsOf: (r: Ref): Ref => ({ kind: "attachmentsOf", ref: r }),
+  /** « Son contrôleur » (dernier contrôleur connu d'un objet parti du champ de bataille ce tour-ci). */
   controllerOf: (r: Ref): Ref => ({ kind: "controllerOf", ref: r }),
+  /** « Son propriétaire ». */
+  ownerOf: (r: Ref): Ref => ({ kind: "ownerOf", ref: r }),
   /** « cette carte », où qu'elle soit (Angelic Destiny). */
   selfCard: { kind: "selfCard" } as Ref,
   linked: { kind: "linked" } as Ref,
@@ -1359,6 +1363,7 @@ export const fx = {
       pool?: Ref;
       random?: boolean;
       onePerColorOf?: ObjectFilter;
+      differentNames?: boolean;
       who?: Ref;
     } = {},
   ): Effect => ({
@@ -1376,6 +1381,7 @@ export const fx = {
     pool: opts.pool,
     random: opts.random,
     onePerColorOf: opts.onePerColorOf,
+    ...(opts.differentNames ? { differentNames: true } : {}),
   }),
   topOrBottom: (what: Ref, topDamage?: number, fromTop?: number): Effect => ({
     op: "libraryTopOrBottom",
@@ -1767,7 +1773,7 @@ export function activated(opts: {
   /** Sacrifier la source. */
   sacrifice?: boolean;
   /** Sacrifier d'autres permanents (« Sacrifiez une autre créature »). */
-  sacrificeOther?: { filter: ObjectFilter; count?: number; includeSelf?: boolean };
+  sacrificeOther?: { filter: ObjectFilter; count?: number; includeSelf?: boolean; differentNames?: boolean };
   removeCounters?: { kind: string; n: number };
   tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
   /** Engager la créature équipée (« {T} » de la créature, pour une capacité portée par l'Équipement). */
@@ -1856,6 +1862,7 @@ export function activated(opts: {
             filter: opts.sacrificeOther.filter,
             count: opts.sacrificeOther.count ?? 1,
             ...(opts.sacrificeOther.includeSelf ? { includeSelf: true } : {}),
+            ...(opts.sacrificeOther.differentNames ? { differentNames: true } : {}),
           }
         : undefined,
       removeCounters: opts.removeCounters,
@@ -1947,6 +1954,12 @@ export function loyaltyX(opts: { targets?: TargetSpec[]; effects: Effects; label
   };
 }
 
+/** Ce qui reçoit les blessures d'un déclencheur `dealsDamage` / `dealsCombatDamage` (`to`). */
+export const TO_PLAYER: TargetFilter = { players: "any" };
+export const TO_OPPONENT: TargetFilter = { players: "opponent" };
+export const TO_PLAYER_OR_PLANESWALKER: TargetFilter = { players: "any", objects: { types: ["Planeswalker"] } };
+export const TO_CREATURE: TargetFilter = { objects: { types: ["Creature"] } };
+
 /** Déclencheurs courants. */
 export const when = {
   /** « Quand cette créature arrive sur le champ de bataille » */
@@ -1976,7 +1989,7 @@ export const when = {
   /** « Chaque fois qu'une [créature] vous attaque ou attaque un planeswalker que vous contrôlez » */
   attacksYou: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter, defending: "you" }),
   /** « Chaque fois que cette créature inflige des blessures de combat à un joueur » */
-  combatDamageToPlayer: { on: "dealsCombatDamage", who: "self", toPlayer: true } as TriggerSpec,
+  combatDamageToPlayer: { on: "dealsCombatDamage", who: "self", to: TO_PLAYER } as TriggerSpec,
   castSpell: (
     by: "you" | "opponent" | "any" = "you",
     filter?: ObjectFilter,
@@ -2064,25 +2077,26 @@ export const when = {
   }),
   /** « Chaque fois que vous mettez un ou plusieurs marqueurs (de cette sorte) sur … ». */
   youPutCounters: (who: ObjectFilter, kind?: string): TriggerSpec => ({ on: "countersPut", who, kind, by: "you" }),
+  /** `to` : ce qui reçoit les blessures (`TO_OPPONENT`, `TO_CREATURE`…). */
   dealsDamage: (
     who: "self" | ObjectFilter,
-    opts: { noncombatOnly?: boolean; toOpponent?: boolean; anySourceYouControl?: boolean } = {},
+    opts: { noncombatOnly?: boolean; to?: TargetFilter; anySourceYouControl?: boolean } = {},
   ): TriggerSpec => ({
     on: "dealsDamage",
     who,
     ...opts,
   }),
-  combatDamage: (who: "self" | ObjectFilter, toPlayer = false): TriggerSpec => ({ on: "dealsCombatDamage", who, toPlayer }),
-  /** « Chaque fois qu'une [créature] inflige des blessures de combat à l'un de vos adversaires » */
-  combatDamageToOpponent: (who: "self" | ObjectFilter): TriggerSpec => ({
+  /** `to` : `true` pour « à un joueur », ou ce qui reçoit les blessures (`TO_PLAYER_OR_PLANESWALKER`…). */
+  combatDamage: (who: "self" | ObjectFilter, to: boolean | TargetFilter = false): TriggerSpec => ({
     on: "dealsCombatDamage",
     who,
-    toPlayer: true,
-    toOpponent: true,
+    ...(to ? { to: to === true ? TO_PLAYER : to } : {}),
   }),
+  /** « Chaque fois qu'une [créature] inflige des blessures de combat à l'un de vos adversaires » */
+  combatDamageToOpponent: (who: "self" | ObjectFilter): TriggerSpec => ({ on: "dealsCombatDamage", who, to: TO_OPPONENT }),
   step: (step: Step, whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "step", step, whose }),
   /** « Chaque fois que la créature équipée inflige des blessures de combat à un joueur » */
-  attachedDealsCombatDamageToPlayer: { on: "dealsCombatDamage", who: { attachedToSource: true }, toPlayer: true } as TriggerSpec,
+  attachedDealsCombatDamageToPlayer: { on: "dealsCombatDamage", who: { attachedToSource: true }, to: TO_PLAYER } as TriggerSpec,
   /** « Chaque fois que la créature équipée se dégage » */
   attachedUntaps: { on: "untaps", who: { attachedToSource: true } } as TriggerSpec,
   discard: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "discard", whose }),

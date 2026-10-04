@@ -2478,7 +2478,16 @@ export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectI
   );
   // Choix par défaut (les premiers) : d'abord ce qui ne produit pas de mana (un Trésor peut encore payer le coût).
   const makesMana = (id: ObjectId) => manaAbilitiesOf(s, id).length > 0;
-  return [...ids.filter((id) => !makesMana(id)), ...ids.filter(makesMana)];
+  const ordered = [...ids.filter((id) => !makesMana(id)), ...ids.filter(makesMana)];
+  if (!ab.cost.sacrifice?.differentNames) return ordered;
+  // « de noms différents » (Transmutation Font) : un permanent par nom d'abord, pour que le choix par défaut soit permis.
+  const first = ordered.filter((id, i) => ordered.findIndex((x) => chars(s, x).name === chars(s, id).name) === i);
+  return [...first, ...ordered.filter((id) => !first.includes(id))];
+}
+
+/** Nombre de noms différents parmi des permanents (coût « de noms différents »). */
+function distinctNames(s: GameState, ids: readonly ObjectId[]): number {
+  return new Set(ids.map((id) => chars(s, id).name)).size;
 }
 
 /**
@@ -2784,7 +2793,11 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   const player = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.cost.removeCounters && countersFor(o, ab.cost.removeCounters.kind) < ab.cost.removeCounters.n) return false;
   if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
-  if (ab.cost.sacrifice && sacrificeOptions(s, player, source, ab).length < ab.cost.sacrifice.count) return false;
+  if (ab.cost.sacrifice) {
+    const options = sacrificeOptions(s, player, source, ab);
+    const n = ab.cost.sacrifice.differentNames ? distinctNames(s, options) : options.length;
+    if (n < ab.cost.sacrifice.count) return false;
+  }
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
   if (ab.cost.discard && discardCostOptions(s, player, source, ab.cost.discardFilter).length < ab.cost.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
@@ -3209,6 +3222,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (sacrificed.length !== ab.cost.sacrifice.count || sacrificed.some((id) => !options.includes(id))) {
       throw new RulesError("Sacrifice invalide");
     }
+    if (ab.cost.sacrifice.differentNames && distinctNames(s, sacrificed) !== sacrificed.length)
+      throw new RulesError("Les permanents sacrifiés doivent avoir des noms différents");
   }
   const x =
     ab.cost.mana?.x ||

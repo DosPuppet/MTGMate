@@ -169,16 +169,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         tap: true,
-        // « Une créature que vous possédez » : contrôlée par vous et à vous, ou contrôlée par un adversaire sans être à
-        // lui (exact à deux joueurs).
-        targets: [
-          target.creature("t", {
-            anyOf: [
-              { controller: "you", not: { notOwned: true } },
-              { controller: "opponent", notOwned: true },
-            ],
-          }),
-        ],
+        targets: [target.creature("t", { owner: "you" })],
         effects: [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))],
         label: "Exilez une créature que vous possédez",
       }),

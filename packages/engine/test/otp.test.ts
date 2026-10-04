@@ -21,6 +21,7 @@ import {
   pickNamed,
   scenario,
   settle,
+  steal,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -527,6 +528,27 @@ describe("Breaking News", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
       expect(exiled(s, "Forest")).toHaveLength(1);
+    });
+
+    it("Indomitable Creativity : c'est le contrôleur du permanent détruit qui révèle, pas son propriétaire", () => {
+      // Votre Bear Cub contrôlé par p2.
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Mountain", 4), "Bear Cub"],
+          hand: ["Indomitable Creativity"],
+          library: ["Forest", "Serra Angel"],
+        },
+        p2: { library: ["Island", "Shivan Dragon"] },
+      });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      steal(s, cub, "p2");
+      s = settle(
+        act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Indomitable Creativity"), x: 1, targets: { t: [cub] } }),
+      );
+      expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
+      expect(s.players.p1?.library).toHaveLength(2);
     });
   });
 });

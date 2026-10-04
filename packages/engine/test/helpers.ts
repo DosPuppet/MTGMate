@@ -2,6 +2,7 @@
  * Outils de test : construire une position de jeu précise et jouer des décisions.
  */
 import { card } from "@mtgx/cards";
+import { addControlEffect, syncControl } from "../src/control";
 import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { cloneState, createObject, registerDef } from "../src/state";
@@ -155,6 +156,13 @@ export function idOf(s: GameState, player: PlayerId, zone: "hand" | "battlefield
   const id = idsOf(s, player, zone, name)[0];
   if (!id) throw new Error(`${name} introuvable (${player}, ${zone})`);
   return id;
+}
+
+/** Un joueur prend le contrôle d'un permanent (effet de contrôle permanent, couche 2), sur l'état reçu. */
+export function steal(s: GameState, id: string, to: PlayerId): GameState {
+  addControlEffect(s, [id], to, "permanent");
+  syncControl(s);
+  return s;
 }
 
 export function customCard(partial: Partial<CardDef> & { name: string }): CardDef {

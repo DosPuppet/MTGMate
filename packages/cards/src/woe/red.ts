@@ -364,7 +364,7 @@ export const RED: Record<string, CardScript> = {
   "Virtue of Courage": {
     abilities: [
       triggered(
-        when.dealsDamage({}, { noncombatOnly: true, toOpponent: true, anySourceYouControl: true }),
+        when.dealsDamage({}, { noncombatOnly: true, to: { players: "opponent" }, anySourceYouControl: true }),
         fx.may(
           "Exiler autant de cartes du dessus de votre bibliothèque ?",
           fx.exileTop(ref.you, amount.eventAmount, "v"),

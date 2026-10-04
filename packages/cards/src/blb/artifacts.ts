@@ -256,7 +256,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Mind Spring": { spell: spell([], [fx.draw(amount.x)]) },
   "Thieving Otter": {
-    abilities: [triggered(when.dealsDamage("self", { toOpponent: true }), [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [
+      triggered(when.dealsDamage("self", { to: { players: "opponent" } }), [fx.draw(1)], { label: "Piochez une carte" }),
+    ],
   },
   "Flame Lash": { spell: spell([target.any()], [fx.damage(4, ref.target())]) },
   Colossification: {

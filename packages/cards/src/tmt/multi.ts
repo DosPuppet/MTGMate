@@ -304,7 +304,6 @@ export const MULTI: Record<string, CardScript> = {
   "The Neutrinos": {
     abilities: [
       triggered(ALLIANCE, [fx.pump(ref.self, 1, 0)], { label: "Alliance — +1/+0 jusqu'à la fin du tour" }),
-      // « Une créature que vous possédez » : approchée par une créature que vous contrôlez et possédez.
       triggered(
         when.attacksSelf,
         [
@@ -312,7 +311,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.toBattlefield(ref.stored("n"), { underYourControl: true, tapped: true, attacking: true }),
         ],
         {
-          targets: [target.upTo(1, target.creature("t", { controller: "you", not: { notOwned: true } }))],
+          targets: [target.upTo(1, target.creature("t", { owner: "you" }))],
           label: "Exile puis renvoie une de vos créatures, engagée et attaquante",
         },
       ),

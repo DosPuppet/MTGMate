@@ -410,13 +410,15 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "The Thing, Ben Grimm": {
-    // Approximation : « à un joueur » est lu comme « à un adversaire » (des blessures de vos Héros à vous-même ne
-    // déclenchent pas).
     abilities: [
-      triggered(when.dealsDamage({ subtype: "Hero", controller: "you" }, { toOpponent: true }), [fx.addCounters(ref.self, 2)], {
-        batched: true,
-        label: "Des Héros blessent un joueur : deux marqueurs +1/+1",
-      }),
+      triggered(
+        when.dealsDamage({ subtype: "Hero", controller: "you" }, { to: { players: "any" } }),
+        [fx.addCounters(ref.self, 2)],
+        {
+          batched: true,
+          label: "Des Héros blessent un joueur : deux marqueurs +1/+1",
+        },
+      ),
     ],
   },
   "Tigra, Feline Fury": {

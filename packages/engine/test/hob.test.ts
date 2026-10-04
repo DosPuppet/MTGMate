@@ -29,6 +29,7 @@ import {
   pickNamed,
   scenario,
   settleNoBlocks as settle,
+  steal,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -475,6 +476,20 @@ describe("lot A, blanc", () => {
         expect(s.players.p1?.hand).toHaveLength(2);
         s = settle(advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "draw"));
         expect(tokens(s, "p1", "Bird Soldier")).toHaveLength(2);
+      });
+
+      it("une créature que vous possédez contrôlée par un adversaire revient dans votre main ; pas une créature volée", () => {
+        let s = scenario({
+          p1: { battlefield: ["Llanowar Elves", ...lands("Plains", 2)], hand: ["The Eagles Are Coming!"] },
+          p2: { battlefield: ["Bear Cub"] },
+        });
+        const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+        const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        steal(s, elves, "p2");
+        steal(s, bear, "p1");
+        expect(() => cast(s, "p1", "The Eagles Are Coming!", { targets: { t: [bear] } })).toThrow();
+        s = settle(cast(s, "p1", "The Eagles Are Coming!", { targets: { t: [elves] } }));
+        expect(namesIn(s, s.players.p1?.hand)).toEqual(["Llanowar Elves"]);
       });
     });
 
@@ -1012,6 +1027,18 @@ describe("lot A, bleu", () => {
       expect(namesIn(s, [...(s.players.p1?.library ?? []), ...(s.players.p1?.hand ?? [])])).toContain(
         "Gandalf, Wandering Wizard",
       );
+    });
+
+    it("Gandalf, Wandering Wizard : volé, il retourne dans la bibliothèque de son propriétaire, qui pioche", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 6), library: lands("Island", 5) },
+        p2: { battlefield: ["Gandalf, Wandering Wizard"], library: lands("Forest", 5) },
+      });
+      const gandalf = idOf(s, "p2", "battlefield", "Gandalf, Wandering Wizard");
+      steal(s, gandalf, "p1");
+      s = settle(activate(s, "p1", gandalf));
+      expect(s.players.p2?.hand).toHaveLength(3);
+      expect(s.players.p1?.hand).toHaveLength(0);
     });
 
     describe("Recrutement", () => {

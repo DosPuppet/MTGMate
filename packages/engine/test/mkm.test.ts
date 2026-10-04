@@ -14,7 +14,7 @@ import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars, FACE_DOWN_ID, moveObject } from "../src/state";
-import { matchesObjectFilter } from "../src/targets";
+import { isLegalTarget, matchesObjectFilter } from "../src/targets";
 import { canBlock, requiredBlocks } from "../src/turn";
 import type { ChoiceRequest, Decision, GameState } from "../src/types";
 import { projectView } from "../src/view";
@@ -34,6 +34,7 @@ import {
   scenario,
   settle,
   settleNoBlocks,
+  steal,
   untilCastNow,
 } from "./helpers";
 
@@ -1160,6 +1161,28 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: falcon, defender: "p2" }] });
       s = settle(s, pickIf([bear]));
       expect(s.objects[bear]?.controller).toBe("p1");
+    });
+
+    it("en attaquant : la cible est un permanent que vous possédez sans le contrôler, pas celui d'un autre adversaire", () => {
+      const s = scenario({
+        players: 3,
+        p1: { battlefield: ["Coveted Falcon", "Bear Cub"] },
+        p2: { battlefield: ["Llanowar Elves"] },
+        p3: { battlefield: ["Serra Angel"] },
+      });
+      const falcon = idOf(s, "p1", "battlefield", "Coveted Falcon");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const angel = idOf(s, "p3", "battlefield", "Serra Angel");
+      steal(s, bear, "p3");
+      steal(s, angel, "p2");
+      const ab = s.defs[s.objects[falcon]?.defId ?? ""]?.abilities.find(
+        (a) => a.kind === "triggered" && a.trigger.on === "attacks",
+      );
+      const spec = ab?.kind === "triggered" ? ab.targets?.[0] : undefined;
+      if (!spec) throw new Error("capacité d'attaque introuvable");
+      expect(isLegalTarget(s, "p1", spec, bear, falcon)).toBe(true);
+      // La Serra Angel de p3 contrôlée par p2 : ni à vous, ni contrôlée par son propriétaire.
+      expect(isLegalTarget(s, "p1", spec, angel, falcon)).toBe(false);
     });
   });
 
@@ -2405,6 +2428,28 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       s = settle(cast(s, "p1", "Lightning Strike", { t: [bear] }), no);
       expect(s.exile).toHaveLength(0);
     });
+
+    it("une créature volée tuée par les blessures : c'est son dernier contrôleur, pas son propriétaire, qui peut exiler", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Expedited Inheritance", ...lands("Mountain", 2)],
+          hand: ["Lightning Strike"],
+          library: ["Opt", "Island", "Forest"],
+        },
+        p2: { battlefield: ["Bear Cub"], library: ["Forest", "Forest", "Forest"] },
+      });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      steal(s, bear, "p1");
+      let asked = "";
+      s = settle(cast(s, "p1", "Lightning Strike", { t: [bear] }), (req, player) => {
+        if (req.type !== "yesNo") return undefined;
+        asked = player;
+        return [1];
+      });
+      expect(asked).toBe("p1");
+      expect(names(s, s.exile).sort()).toEqual(["Forest", "Island", "Opt"]);
+      expect(s.players.p2?.library).toHaveLength(3);
+    });
   });
 
   describe("Felonious Rage", () => {
@@ -2594,6 +2639,23 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Krenko's Buzzcrusher")).keywords).toEqual(
         expect.arrayContaining(["flying", "trample"]),
       );
+    });
+
+    it("un terrain volé détruit : c'est son contrôleur qui cherche, pas son propriétaire", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Mountain", 4), hand: ["Krenko's Buzzcrusher"], library: ["Mountain", "Opt"] },
+        p2: { battlefield: ["Thundering Falls"], library: ["Island", "Opt"] },
+      });
+      const falls = idOf(s, "p2", "battlefield", "Thundering Falls");
+      steal(s, falls, "p1");
+      s = settle(cast(s, "p1", "Krenko's Buzzcrusher"), (req) => {
+        if (req.type !== "pick") return undefined;
+        if (req.options.includes(falls)) return [falls];
+        return req.options.filter((id) => nameOf(s, String(id)) === "Mountain").slice(0, 1);
+      });
+      expect(idsOf(s, "p2", "graveyard", "Thundering Falls")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Mountain")).toHaveLength(5);
+      expect(idsOf(s, "p2", "battlefield", "Island")).toHaveLength(0);
     });
   });
 

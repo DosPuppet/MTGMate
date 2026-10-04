@@ -171,19 +171,10 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Lost Days": {
-    // Le choix est posé au contrôleur du permanent (approximation : son propriétaire, comme Temporal Cleansing).
+    // Le propriétaire choisit : deuxième depuis le dessus ou au-dessous.
     spell: spell(
       [{ id: "t", label: "créature ou enchantement", filter: { objects: { types: ["Creature", "Enchantment"] } } }],
-      [
-        ...fx.mayForStore(
-          ref.controllerOf(ref.target()),
-          "mettre ce permanent au-dessous de votre bibliothèque (sinon, en deuxième position depuis le dessus) ?",
-          "bottom",
-          fx.moveTo(ref.target(), { to: "libraryBottom" }),
-        ),
-        ...fx.when(cond.not(cond.v("bottom")), fx.moveTo(ref.target(), { to: "libraryTop", fromTop: 2 })),
-        fx.createTokens(CLUE),
-      ],
+      [fx.topOrBottom(ref.target(), undefined, 2), fx.createTokens(CLUE)],
     ),
   },
   "Master Pakku": {

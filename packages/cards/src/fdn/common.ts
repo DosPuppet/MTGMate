@@ -46,6 +46,8 @@ export const {
   powerFor,
   powerRuleAbility,
   firebending,
+  TO_CREATURE,
+  TO_PLAYER_OR_PLANESWALKER,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */
