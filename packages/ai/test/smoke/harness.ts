@@ -258,5 +258,9 @@ export const OWN_FILES = [
   "SPM",
   "TMT",
   "HOB",
+  "SPG",
+  "SOA",
+  "FCA",
+  "OTP",
 ];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

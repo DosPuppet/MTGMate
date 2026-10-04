@@ -291,8 +291,10 @@ export const RECORD_VERSION = 1;
  *   durée des emblèmes.
  * - 102 : filtres (PLAN-S, lot S8b) : les sous-filtres `anyOf` et `not` sont évalués comme le filtre lui-même (champs
  *   propres à l'objet, valeurs choisies) au lieu d'être lus seulement sur la vue (un champ inconnu y était ignoré).
+ * - 103 : rééditions (PLAN-G, lot G2a) : mode lancé pour son propre coût (surcharge, fendre), escalade, ruée et
+ *   spectacle ; le nombre de cartes d'une recherche faite par d'autres joueurs se lit du point de vue de chacun.
  */
-export const RULES_VERSION = 102;
+export const RULES_VERSION = 103;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

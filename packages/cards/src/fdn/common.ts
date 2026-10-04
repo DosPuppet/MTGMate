@@ -35,6 +35,8 @@ export const {
   craft,
   spree,
   tiered,
+  escalate,
+  altCostMode,
   pawprint,
   block,
   blockAbility,

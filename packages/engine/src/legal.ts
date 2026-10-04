@@ -480,7 +480,19 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         kickerCrew.length ? new Set([...(exclude ?? []), ...kickerCrew]) : undefined,
         purposeFor(true, 0),
       );
-    if (!terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
+    // Surcharge, fendre : un mode à son propre coût n'est proposé que s'il est payable (jamais gratuitement) ; les autres
+    // modes demandent le coût normal ou un autre moyen de payer.
+    const allModes = modesOf(d);
+    const otherwise = normal || freeAvailable || altAvailable || kickerAffordable;
+    for (let i = modes.length - 1; i >= 0; i--) {
+      const own = allModes[(modes[i] as (typeof modes)[number]).index]?.cost;
+      const ok = own
+        ? !terms.free && payableWith(withExtra(spellCost(s, player, { ...d, manaCost: own }, base)))
+        : terms.free || otherwise;
+      if (!ok) modes.splice(i, 1);
+    }
+    if (modes.length === 0) return;
+    if (!terms.free && !otherwise && !modes.some((m) => allModes[m.index]?.cost)) return;
     // Un mode qui n'a de cibles qu'avec le kicker ou le cadeau (Too Evil to Stay Dead) demande un kicker payable.
     if (!kickerAffordable)
       for (let i = modes.length - 1; i >= 0; i--)
@@ -556,7 +568,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       freeAvailable: freeAvailable || undefined,
       altAvailable: altAvailable || undefined,
       altLabel: altAvailable ? alt?.label : undefined,
-      normalAvailable: normal || undefined,
+      // Un mode à son propre coût (surcharge) se paie comme le coût normal.
+      normalAvailable: normal || modes.some((m) => allModes[m.index]?.cost) || undefined,
       additional:
         additional.discard || additional.sacrifice || harmony?.options.length
           ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }

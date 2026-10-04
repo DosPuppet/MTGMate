@@ -278,3 +278,9 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   choisie. Pas de `RULES_VERSION` : les règles ne changent pas et les parties dorées se rejouent à l'identique. Plafonds
   CardDef 94 → 95 et GameState 38 → 39 (justifiés). Tests : `cards/test/printings.test.ts` (4), `server/test/format.test.ts`
   (1) ; script Playwright ponctuel (éditeur, export, main en partie), captures dans `test-results/plan-g/`.
+- **G2a (04/10/2026) :** surcharge et fendre (`ModeDef.cost`, aide `altCostMode`), escalade (`escalate`), ruée et
+  spectacle (déduits du texte, `altCost.via`), avec leurs cartes : Cyclonic Rift, Winds of Abandon, Mizzix's Mastery,
+  Fierce Retribution, Collective Defiance, Ragavan, Light Up the Stage, Skewer the Critics (8). Émergence, folie,
+  réplique et retour n'ont qu'une carte chacune : faits dans le lot de leur carte. `RULES_VERSION` 103, parties dorées
+  identiques. Tests : 16 (`soa`, `fca`, `otp`) ; fumée par ensemble (SPG, SOA, FCA, OTP) ; détail dans
+  `docs/extensions/reeditions.md`.

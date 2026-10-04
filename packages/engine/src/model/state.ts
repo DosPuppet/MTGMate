@@ -376,9 +376,10 @@ export interface TurnStats {
 
 /**
  * Coût alternatif payé pour lancer un sort (601.2b, un seul par lancement), que des règles ou des capacités lisent :
- * Web-slinging, chaos (Mayhem), faufilement (Sneak), évocation (702.74), distorsion (Warp), imminence (702.176).
+ * Web-slinging, chaos (Mayhem), faufilement (Sneak), évocation (702.74), distorsion (Warp), imminence (702.176), ruée
+ * (702.109).
  */
-export type CastVia = "webSlinging" | "mayhem" | "sneak" | "evoke" | "warp" | "impending";
+export type CastVia = "webSlinging" | "mayhem" | "sneak" | "evoke" | "warp" | "impending" | "dash";
 
 /** Objets payés pour le coût d'un sort ou d'une capacité (dernières informations connues disponibles). */
 export interface CostPaid {

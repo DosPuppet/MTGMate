@@ -355,3 +355,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Bard, King of Dale : « la première carte que vous piochez pendant chacune de vos étapes de pioche » se lit « une pioche pendant votre étape de pioche, si vous n'avez encore pioché aucune carte ce tour-ci » ;
   - `règle` Eagle's Rescue : l'Aura qui revient du cimetière est d'abord attachée comme toute Aura mise sur le champ de bataille, puis à la cible (une question de trop s'il y a plusieurs hôtes possibles) ;
   - `règle` Goblin Plate Mail : l'Équipement s'attache à votre première Armée.
+- **Rééditions, « Sans limite » (`docs/extensions/reeditions.md`) :**
+  - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » est une permission de jouer (un terrain exilé ainsi pourrait être joué) ;
+  - `règle` Winds of Abandon : le joueur qui cherche les terrains de base est le propriétaire de chaque créature exilée (son contrôleur avant l'exil s'il diffère, en multijoueur avec une créature volée).

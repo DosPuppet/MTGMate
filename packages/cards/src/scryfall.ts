@@ -802,6 +802,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Le Hobbit : Storied ; Tortues Ninja : Faufilement ; Spider-Man : Chaos ; Strixhaven : Paradigme.
   const storied = /^Storied\b/m.test(raw.oracleText);
   const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Ruée (702.109) et spectacle (702.137) : coûts alternatifs.
+  const dash = /^Dash ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  const spectacle = /^Spectacle ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
   const mayhem =
     /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1] ?? (/^Mayhem \(You may play/m.test(raw.oracleText) ? "{0}" : undefined);
@@ -843,6 +846,17 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   }
   if (firebending) {
     bloomburrowAbilities.push(dsl.firebending(firebending));
+  }
+  // Ruée : la créature a la célérité et revient dans la main de son propriétaire au début de la prochaine étape de fin.
+  if (dash) {
+    const dashed = dsl.cond.castVia("dash");
+    bloomburrowAbilities.push(
+      dsl.staticAbility("self", { addKeywords: ["haste"] }, { condition: dashed, label: "Ruée : célérité" }),
+      dsl.triggered(dsl.when.entersSelf, [dsl.fx.delayed([dsl.fx.toHand(dsl.ref.target("d"))], { d: dsl.ref.self })], {
+        condition: dashed,
+        label: "Ruée : revient en main à la prochaine étape de fin",
+      }),
+    );
   }
   if (mobilize) {
     bloomburrowAbilities.push(
@@ -928,13 +942,17 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
           ? { mana: parseManaCost(evoke), condition: dsl.cond.all(), label: `Évocation — ${evoke}` }
           : sneak
             ? { mana: parseManaCost(sneak), condition: dsl.cond.sneakWindow, label: `Faufilement — ${sneak}` }
-            : webSlinging
-              ? {
-                  mana: parseManaCost(webSlinging),
-                  condition: dsl.cond.controls({ types: ["Creature"], tapped: true }),
-                  label: `Web-slinging — ${webSlinging}`,
-                }
-              : impendingAltCost(raw.oracleText),
+            : dash
+              ? { mana: parseManaCost(dash), condition: dsl.cond.all(), label: `Ruée — ${dash}`, via: "dash" as const }
+              : spectacle
+                ? { mana: parseManaCost(spectacle), condition: dsl.cond.opponentLostLife, label: `Spectacle — ${spectacle}` }
+                : webSlinging
+                  ? {
+                      mana: parseManaCost(webSlinging),
+                      condition: dsl.cond.controls({ types: ["Creature"], tapped: true }),
+                      label: `Web-slinging — ${webSlinging}`,
+                    }
+                  : impendingAltCost(raw.oracleText),
     forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
     entersAsCopyAnyController: script?.entersAsCopyAnyController,
     entersAsCopyAddKeywords: script?.entersAsCopyAddKeywords,

@@ -2,6 +2,7 @@
 import type {
   Amount,
   CardType,
+  CastVia,
   Color,
   Condition,
   Effect,
@@ -129,7 +130,8 @@ export interface CardDef {
   /** « Ce sort coûte {N} de moins si… » ; `colored` : symboles colorés retirés aussi (Brush Off : {1}{U}). */
   costReduction?: { generic: Amount; colored?: ManaCost["colored"]; condition?: Condition };
   /** Coût alternatif (« vous pouvez payer {B} plutôt que le coût de mana de ce sort si… »). */
-  altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean };
+  /** `via` : nom du coût, noté au lancement (`CastInfo.via`) et lu par `cond.castVia` (ruée). */
+  altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean; via?: CastVia };
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
@@ -305,6 +307,11 @@ export interface ModeDef {
   extraCost?: ManaCost;
   /** Mode disponible seulement si la condition est remplie (délire : « choisissez-en un ou plus à la place »). */
   condition?: Condition;
+  /**
+   * Coût alternatif propre au mode, qui remplace le coût de mana (surcharge 702.96, fendre 702.148) : le texte change
+   * avec le coût payé. Ni gratuit ni avec un autre coût alternatif (118.9a) ; la valeur de mana reste celle de la carte.
+   */
+  cost?: ManaCost;
 }
 
 export type AbilityDef =

@@ -271,6 +271,7 @@ export type Effect =
   | {
       op: "search";
       filter: ObjectFilter;
+      /** Avec `who`, lu du point de vue du joueur qui cherche (Winds of Abandon : autant que de ses créatures exilées). */
       count: Amount;
       to: MoveSpec;
       who?: Ref;

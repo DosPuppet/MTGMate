@@ -1510,6 +1510,46 @@ export function spree(...modes: { cost: string; label: string; targets?: TargetS
   return { modes: out };
 }
 
+/**
+ * Escalade (702.120) : « choisissez un ou plusieurs modes ; payez [coût] pour chaque mode au-delà du premier ». Toutes les
+ * combinaisons sont générées (identifiants de cibles distincts d'un mode à l'autre).
+ */
+export function escalate(cost: string, ...modes: { label: string; targets?: TargetSpec[]; effects: Effects }[]): SpellDef {
+  const each = parseManaCost(cost);
+  const out: ModeDef[] = [];
+  for (let mask = 1; mask < 1 << modes.length; mask++) {
+    const chosen = modes.filter((_, i) => mask & (1 << i));
+    const n = chosen.length - 1;
+    const colored: ManaCost["colored"] = {};
+    for (const [k, v] of Object.entries(each.colored)) colored[k as ManaType] = (v ?? 0) * n;
+    out.push({
+      label: chosen.map((m) => m.label).join(" + "),
+      targets: chosen.flatMap((m) => m.targets ?? []),
+      effects: chosen.flatMap((m) => m.effects.flat()),
+      ...(n > 0 ? { extraCost: { generic: each.generic * n, colored, x: 0 } } : {}),
+    });
+  }
+  return { modes: out };
+}
+
+/**
+ * Surcharge (702.96) et fendre (702.148) : un second mode, lancé pour son propre coût, où le texte change (« chaque » au
+ * lieu de « ciblé », sans les mots entre crochets).
+ */
+export function altCostMode(
+  keyword: "Surcharge" | "Fendre",
+  cost: string,
+  normal: { targets: TargetSpec[]; effects: Effects },
+  other: { targets?: TargetSpec[]; effects: Effects },
+): SpellDef {
+  return {
+    modes: [
+      { label: "Coût normal", targets: normal.targets, effects: normal.effects.flat() },
+      { label: `${keyword} — ${cost}`, targets: other.targets ?? [], effects: other.effects.flat(), cost: parseManaCost(cost) },
+    ],
+  };
+}
+
 /** Tiered (Final Fantasy) : « choisissez un coût supplémentaire » — un seul mode, chacun avec son coût. */
 export function tiered(...modes: { cost: string; label: string; targets?: TargetSpec[]; effects: Effects }[]): SpellDef {
   return {

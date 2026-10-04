@@ -1260,7 +1260,8 @@ export const HANDLERS: OpHandlers = {
       if (r.vars[key(`sdone-${p}`)]) continue;
       const player = s.players[p];
       if (!player) continue;
-      const count = evalAmount(s, ctx, e.count);
+      // Le nombre se lit du point de vue de celui qui cherche (Winds of Abandon : autant que de ses créatures exilées).
+      const count = evalAmount(s, e.who ? { ...ctx, controller: p } : ctx, e.count);
       const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
       // « valeur de mana X ou moins » : le X du sort qui se résout (Nature's Rhythm).
       const base = withX(e.filter, ctx.x);

@@ -223,11 +223,14 @@ export function mulberryChoice(rand: () => number, req: ChoiceRequest): ChoiceVa
     case "yesNo":
       return [rand() < 0.5 ? 0 : 1];
     case "divide": {
-      // Répartition aléatoire entre les bloqueurs uniquement (toujours légale, même avec le piétinement).
+      // Répartition aléatoire entre les bloqueurs uniquement (toujours légale, même avec le piétinement), au moins
+      // `minEach` pour chacun (« au moins 1 à chaque cible »).
       if (rand() < 0.5) return req.suggested;
+      const minEach = req.minEach ?? 0;
+      if (req.total < minEach * req.among.length) return req.suggested;
       const creatures = req.among.map((id, i) => (id === req.lethal?.player ? -1 : i)).filter((i) => i >= 0);
-      const values = req.among.map(() => 0);
-      for (let k = 0; k < req.total; k++) {
+      const values = req.among.map(() => minEach);
+      for (let k = minEach * req.among.length; k < req.total; k++) {
         const i = creatures[Math.floor(rand() * creatures.length)] ?? 0;
         values[i] = (values[i] ?? 0) + 1;
       }

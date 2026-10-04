@@ -103,7 +103,9 @@ export function altCostFor(
   s: GameState,
   player: PlayerId,
   d: CardDef,
-): { mana: ManaCost; label: string; forage?: boolean; collectEvidence?: number; webSlinging?: boolean } | undefined {
+):
+  | { mana: ManaCost; label: string; forage?: boolean; collectEvidence?: number; webSlinging?: boolean; via?: CastVia }
+  | undefined {
   if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
   for (const { id, ab } of playerStatics(s, player, "altCostAll")) {
     const a = ab.altCostAll;
@@ -1734,6 +1736,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const modeIndex = choices.mode ?? 0;
   const mode = modes[modeIndex];
   if (!mode) throw new RulesError("Mode invalide");
+  // Surcharge, fendre : le mode se lance pour son propre coût, ni gratuitement ni avec un autre coût alternatif (118.9a).
+  if (mode.cost && (free || alternative)) throw new RulesError("Ce mode se lance seulement pour son propre coût");
+  const dc = mode.cost ? { ...d, manaCost: mode.cost } : d;
   // « Si le coût additionnel a été payé, choisissez les deux » : le mode exige le kicker choisi avec la décision.
   if (mode.condition?.kind === "kicked") {
     if (!choices.kicked) throw new RulesError("Ce mode demande de payer le coût additionnel");
@@ -1744,7 +1749,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceId: card,
     x: choices.x,
   });
-  const hasX = (!free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || !!d.xCost;
+  const hasX = (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost;
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
   if (d.xCost === "life" && x > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
@@ -1811,7 +1816,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Molten Exhale : « comme s'il avait le flash si vous contemplez » : lancé ainsi, il faut contempler.
   if (d.additionalCost?.behold && d.flashIf && !beheldId && !canCastTiming(s, player, { ...d, flashIf: undefined }))
     throw new RulesError("Sans contempler, ce sort ne se lance qu'au moment d'un rituel");
-  let cost = spellCost(s, player, d, {
+  let cost = spellCost(s, player, dc, {
     beheld: !!beheldId,
     x,
     kicked,
@@ -1941,7 +1946,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
             ? "impending"
             : alternative && cardDef.evoke
               ? "evoke"
-              : undefined;
+              : alternative
+                ? altCostFor(s, player, d)?.via
+                : undefined;
   const item: StackItem = {
     id: stackId,
     kind: "spell",
