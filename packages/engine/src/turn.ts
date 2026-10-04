@@ -19,7 +19,7 @@ import { announceDiscard, announceDiscardBatch, evalAmount, staticContext } from
 import { rethrowAsRules } from "./errors";
 import { bumpFor, copiedDefId, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
-import { payMana } from "./mana";
+import { manaValue, payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import { announceNext } from "./stackChoices";
 import {
@@ -62,7 +62,7 @@ import {
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
 import { checkCondition, processTriggers, pushInline, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
-import type { Effect, GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
+import type { CardDef, Effect, GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
 
 export const MAX_HAND_SIZE = 7;
@@ -205,7 +205,7 @@ function askLeylines(s: GameState): boolean {
   for (const p of order) {
     if (asked.includes(p)) continue;
     asked.push(p);
-    const cards = (s.players[p]?.hand ?? []).filter((id) => s.defs[obj(s, id).defId]?.leyline);
+    const cards = (s.players[p]?.hand ?? []).filter((id) => leylineFor(s, p, id));
     if (cards.length === 0) continue;
     ask(
       s,
@@ -226,10 +226,31 @@ function askLeylines(s: GameState): boolean {
   return false;
 }
 
+/** La carte de la main de départ peut-elle commencer sur le champ de bataille (Gemstone Caverns : si vous ne commencez pas) ? */
+function leylineFor(s: GameState, player: PlayerId, id: ObjectId): CardDef["leyline"] {
+  const l = s.defs[obj(s, id).defId]?.leyline;
+  return l && (l === true || !l.notStartingPlayer || s.turn.startingPlayer !== player) ? l : undefined;
+}
+
 export function answerLeylines(s: GameState, player: PlayerId, cards: ObjectId[]): void {
   for (const id of cards) {
     const o = s.objects[id];
-    if (o?.zone === "hand" && o.owner === player && s.defs[o.defId]?.leyline) moveObject(s, id, "battlefield");
+    const l = o?.zone === "hand" && o.owner === player ? leylineFor(s, player, id) : undefined;
+    if (!l) continue;
+    const placed = moveObject(s, id, "battlefield");
+    if (l === true) continue;
+    if (l.counter && placed && s.objects[placed]) changeCounters(s, obj(s, placed), l.counter, 1);
+    // « Si vous le faites, exilez une carte de votre main » : choix automatique, la carte non-terrain de plus petite
+    // valeur de mana (un terrain s'il n'y en a pas).
+    if (l.exileFromHand) {
+      const hand = s.players[player]?.hand ?? [];
+      const mv = (h: ObjectId) => {
+        const d = s.defs[obj(s, h).defId];
+        return d?.types.includes("Land") ? 100 : manaValue(d?.manaCost);
+      };
+      const pick = [...hand].sort((a, b) => mv(a) - mv(b))[0];
+      if (pick) moveObject(s, pick, "exile");
+    }
   }
   s.flow = "mulligan";
 }
@@ -386,6 +407,7 @@ function finishCleanup(s: GameState): void {
     // Ancient Adamantoise : ses blessures restent.
     if (!hasKeyword(s, id, "keepsDamage")) o.damage = 0;
     o.deathtouched = false;
+    delete o.regenShields;
     o.damagedBy = undefined;
     o.combatDamagedPlayers = undefined;
   }

@@ -182,6 +182,13 @@ export function enterChoiceRequest(
 }
 
 export const HANDLERS: OpHandlers = {
+  regenerate(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      if (o?.zone === "battlefield") o.regenShields = (o.regenShields ?? 0) + 1;
+    }
+    return;
+  },
   pump(s, _r, e, ctx) {
     const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
     if (e.double) {

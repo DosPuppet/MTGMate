@@ -1,8 +1,11 @@
 /** Stellar Sights (EOS) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
+import { destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
+import { manaAbilitiesOf } from "../src/mana";
 import { chars } from "../src/state";
-import { act, advanceUntil, attack, idOf, idsOf, lands, nameOf, scenario, settle } from "./helpers";
+import { answerLeylines } from "../src/turn";
+import { act, advanceUntil, attack, customCard, idOf, idsOf, lands, nameOf, scenario, settle } from "./helpers";
 
 type S = ReturnType<typeof scenario>;
 
@@ -199,6 +202,118 @@ describe("Stellar Sights", () => {
       expect(
         chars(s, stage).abilities.some((a) => a.kind === "activated" && a.label === "Devient une copie du terrain ciblé"),
       ).toBe(true);
+    });
+  });
+
+  describe("G3b : terrains qui demandent du moteur", () => {
+    const RAT = customCard({ name: "Test Rat", subtypes: ["Rat"], typeLine: "Creature — Rat", power: 1, toughness: 1 });
+    const LEGEND = customCard({
+      name: "Test Legend",
+      supertypes: ["Legendary"],
+      colors: ["R"],
+      typeLine: "Legendary Creature",
+      power: 2,
+      toughness: 2,
+    });
+
+    it("Inkmoth Nexus : infection, des marqueurs poison au joueur et −1/−1 aux créatures (702.90)", () => {
+      let s = scenario({ p1: { battlefield: ["Inkmoth Nexus", "Plains"] } });
+      const nexus = idOf(s, "p1", "battlefield", "Inkmoth Nexus");
+      s = settle(act(s, "p1", { type: "activate", source: nexus, ability: 1 }));
+      expect(chars(s, nexus).keywords).toEqual(expect.arrayContaining(["flying", "infect"]));
+      // Le paiement automatique a pu engager le Nexus lui-même pour {1}.
+      (s.objects[nexus] as { tapped: boolean }).tapped = false;
+      s = attack(s, [nexus]);
+      s = advanceUntil(s, (x) => x.turn.step === "main2");
+      expect([s.players.p2?.life, s.players.p2?.poison]).toEqual([20, 1]);
+    });
+
+    it("Swarmyard : la régénération remplace la prochaine destruction ce tour-ci (engagé, blessures retirées)", () => {
+      let s = scenario({ p1: { battlefield: ["Swarmyard", RAT] } });
+      const rat = idOf(s, "p1", "battlefield", "Test Rat");
+      s = settle(
+        act(s, "p1", { type: "activate", source: idOf(s, "p1", "battlefield", "Swarmyard"), ability: 1, targets: { t: [rat] } }),
+      );
+      expect(s.objects[rat]?.regenShields).toBe(1);
+      expect(destroy(s, rat)).toBe(false);
+      expect([s.objects[rat]?.zone, s.objects[rat]?.tapped, s.objects[rat]?.regenShields]).toEqual([
+        "battlefield",
+        true,
+        undefined,
+      ]);
+      // Plus de bouclier : la destruction suivante a lieu.
+      expect(destroy(s, rat)).toBe(true);
+    });
+
+    it("Swarmyard : seulement un Insecte, un Rat, une Araignée ou un Écureuil", () => {
+      const s = scenario({ p1: { battlefield: ["Swarmyard", RAT, "Bear Cub"] } });
+      const yard = idOf(s, "p1", "battlefield", "Swarmyard");
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === yard);
+      expect(ab?.type === "activate" && ab.targets[0]?.legal).toEqual([idOf(s, "p1", "battlefield", "Test Rat")]);
+    });
+
+    it("Meteor Crater et Plaza of Heroes : les couleurs de vos permanents (légendaires pour Plaza)", () => {
+      const s = scenario({ p1: { battlefield: ["Meteor Crater", "Plaza of Heroes", LEGEND, "Bear Cub"] } });
+      const crater = manaAbilitiesOf(s, idOf(s, "p1", "battlefield", "Meteor Crater"))[0];
+      expect(crater?.produce).toEqual(["R", "G"]);
+      const plaza = manaAbilitiesOf(s, idOf(s, "p1", "battlefield", "Plaza of Heroes"));
+      expect(plaza[2]?.produce).toEqual(["R"]);
+    });
+
+    it("Reflecting Pool : les types que vos autres terrains pourraient produire", () => {
+      const s = scenario({ p1: { battlefield: ["Reflecting Pool", "Forest", "Ancient Tomb"] } });
+      expect(manaAbilitiesOf(s, idOf(s, "p1", "battlefield", "Reflecting Pool"))[0]?.produce).toEqual(["G", "C"]);
+      const alone = scenario({ p1: { battlefield: ["Reflecting Pool"] } });
+      expect(manaAbilitiesOf(alone, idOf(alone, "p1", "battlefield", "Reflecting Pool"))[0]?.produce).toEqual([]);
+    });
+
+    it("Blast Zone : détruit les permanents non-terrain de valeur de mana égale à ses marqueurs de charge", () => {
+      let s = scenario({
+        p1: { battlefield: [{ name: "Blast Zone", counters: { charge: 2 } }, ...lands("Plains", 3)] },
+        p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Forest"] },
+      });
+      const zone = idOf(s, "p1", "battlefield", "Blast Zone");
+      const ab = legalActions(s, "p1")
+        .filter((a) => a.type === "activate" && a.source === zone)
+        .at(-1);
+      s = settle(act(s, "p1", { type: "activate", source: zone, ability: ab?.type === "activate" ? ab.ability : 0 }));
+      // Bear Cub coûte {1}{G} : détruit ; Llanowar Elves ({G}) et la Forêt restent.
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
+    });
+
+    it("Nesting Grounds : déplace un marqueur d'un de vos permanents sur un autre", () => {
+      let s = scenario({
+        p1: { battlefield: ["Nesting Grounds", "Plains", { name: "Bear Cub", counters: { "+1/+1": 2 } }] },
+        p2: { battlefield: ["Llanowar Elves"] },
+      });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+      s = settle(
+        act(s, "p1", {
+          type: "activate",
+          source: idOf(s, "p1", "battlefield", "Nesting Grounds"),
+          ability: 1,
+          targets: { a: [cub], b: [elves] },
+        }),
+      );
+      expect([s.objects[cub]?.counters["+1/+1"], s.objects[elves]?.counters["+1/+1"]]).toEqual([1, 1]);
+    });
+
+    it("Gemstone Caverns : en main de départ sans commencer, sur le champ de bataille avec un marqueur de chance", () => {
+      const s = scenario({ p2: { hand: ["Gemstone Caverns", "Bear Cub", "Forest"] } });
+      answerLeylines(s, "p2", [idOf(s, "p2", "hand", "Gemstone Caverns")]);
+      const gem = idOf(s, "p2", "battlefield", "Gemstone Caverns");
+      expect(s.objects[gem]?.counters.luck).toBe(1);
+      // Une carte de la main exilée (la non-terrain la moins chère) ; un mana de n'importe quelle couleur.
+      expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
+      const abs = manaAbilitiesOf(s, gem);
+      expect(abs.map((a) => a.produce.length)).toEqual([1, 5]);
+      // Le premier joueur ne peut pas.
+      const t = scenario({ p1: { hand: ["Gemstone Caverns"] } });
+      answerLeylines(t, "p1", [idOf(t, "p1", "hand", "Gemstone Caverns")]);
+      expect(idsOf(t, "p1", "hand", "Gemstone Caverns")).toHaveLength(1);
     });
   });
 });

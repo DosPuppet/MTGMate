@@ -21,6 +21,7 @@ import {
   opponentsOf,
   rulesEvent,
   snapshot,
+  tapObject,
 } from "./state";
 import {
   type ActiveReplacement,
@@ -456,7 +457,12 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     }
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     logDamage(s, source, target, target, true, amount, combat);
-    loseLife(s, target, amount);
+    // Infection (702.90b) : des marqueurs poison au lieu d'une perte de points de vie.
+    const pl = s.players[target];
+    if (source.keywords.includes("infect") && pl) {
+      pl.poison = (pl.poison ?? 0) + amount;
+      emit({ type: "poison", player: target, amount, total: pl.poison });
+    } else loseLife(s, target, amount);
   } else {
     const o = s.objects[target];
     // 506.4 : un planeswalker attaqué qui a quitté le champ de bataille ne reçoit pas de blessures.
@@ -478,8 +484,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     // 120.3c : les blessures infligées à un planeswalker lui retirent autant de marqueurs de loyauté.
     if (walker) changeCounters(s, o, "loyalty", -Math.min(amount, o.counters.loyalty ?? 0));
     if (creature) {
-      // Flétrissure (702.80) : des marqueurs −1/−1 au lieu de blessures marquées (ce sont toujours des blessures).
-      if (source.keywords.includes("wither")) changeCounters(s, o, "-1/-1", amount);
+      // Flétrissure (702.80), infection (702.90b) : des marqueurs −1/−1 au lieu de blessures marquées (ce sont toujours
+      // des blessures).
+      if (source.keywords.includes("wither") || source.keywords.includes("infect")) changeCounters(s, o, "-1/-1", amount);
       else o.damage += amount;
       if (source.keywords.includes("deathtouch")) o.deathtouched = true;
       // Suivi « blessée par cette créature ce tour-ci » (Predator Ooze).
@@ -518,6 +525,18 @@ export function destroy(s: GameState, id: ObjectId): boolean {
   // 122.1c : un permanent avec un marqueur de bouclier qui devrait être détruit perd ce marqueur à la place.
   if ((o.counters.shield ?? 0) > 0) {
     changeCounters(s, o, "shield", -1);
+    return false;
+  }
+  // Régénération (701.19c) : la destruction est remplacée ; le permanent est engagé, retiré du combat et ses blessures
+  // sont retirées.
+  if (o.regenShields) {
+    o.regenShields -= 1;
+    if (!o.regenShields) delete o.regenShields;
+    if (!o.tapped) tapObject(s, o);
+    removeFromCombat(s, id);
+    o.damage = 0;
+    o.deathtouched = false;
+    bump(s);
     return false;
   }
   emit({ type: "destroy", objectId: id, defId: o.defId });

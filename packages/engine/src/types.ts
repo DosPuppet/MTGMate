@@ -55,6 +55,8 @@ export type Keyword =
   | "changeling"
   /** Flétrissure (702.80) : ses blessures aux créatures prennent la forme de marqueurs −1/−1. */
   | "wither"
+  /** Infection (702.90) : marqueurs −1/−1 aux créatures, marqueurs poison aux joueurs. */
+  | "infect"
   /** « Doit être bloquée si possible » (509.1c). */
   | "mustBeBlocked"
   /** Wolverine : « si des blessures devaient lui être infligées, elles le sont, mais les autres blessures sont guéries ». */

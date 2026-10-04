@@ -368,6 +368,44 @@ export const HANDLERS: OpHandlers = {
     rulesEvent(s, { e: "caseSolved", player: o.controller, objectId: o.id });
     return;
   },
+  moveCounter(s, r, e, ctx, key) {
+    const from = resolveRef(s, ctx, e.from)
+      .map((id) => s.objects[id])
+      .find((o) => o?.zone === "battlefield");
+    const to = resolveRef(s, ctx, e.to)
+      .map((id) => s.objects[id])
+      .find((o) => o?.zone === "battlefield");
+    if (!from || !to || from === to) return;
+    const kinds = Object.keys(from.counters).filter((k) => (from.counters[k] ?? 0) > 0);
+    if (kinds.length === 0) return;
+    let kind = kinds[0] as string;
+    if (kinds.length > 1) {
+      const answer = r.vars[key("kind")];
+      if (!answer)
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("kind"),
+            request: {
+              type: "pick",
+              intent: "other",
+              prompt: "Sorte du marqueur à déplacer",
+              options: kinds,
+              labels: Object.fromEntries(kinds.map((k) => [k, counterLabel(k)])),
+              min: 1,
+              max: 1,
+              suggested: [kinds.includes("+1/+1") ? "+1/+1" : (kinds[0] as string)],
+            },
+          },
+        };
+      const chosen = String(answer[0]);
+      if (!kinds.includes(chosen)) throw new RulesError("Sorte de marqueur invalide");
+      kind = chosen;
+    }
+    changeCounters(s, from, kind, -1);
+    changeCounters(s, to, kind, 1);
+    return;
+  },
   lkiCountersTo(s, _r, e, ctx) {
     const from = ctx.event?.objectId;
     const counters = from ? s.lki[from]?.counters : undefined;

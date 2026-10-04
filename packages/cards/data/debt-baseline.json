@@ -93,7 +93,9 @@
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
     "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)",
     "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant",
-    "keepWithinTotalPower": "« chaque joueur garde des créatures de force totale N ou moins et sacrifie les autres » (Destined Confrontation), famille « gardez, sacrifiez le reste » avec keepOnePerType et keepSharingCreatureType ; une seule carte pour l'instant"
+    "keepWithinTotalPower": "« chaque joueur garde des créatures de force totale N ou moins et sacrifie les autres » (Destined Confrontation), famille « gardez, sacrifiez le reste » avec keepOnePerType et keepSharingCreatureType ; une seule carte pour l'instant",
+    "moveCounter": "Nesting Grounds — déplacer un marqueur (sorte au choix) d'un permanent sur un autre : effet générique, à réutiliser (greffe, Bioshift…)",
+    "regenerate": "Swarmyard — régénération (701.19) : bouclier générique qui remplace la prochaine destruction, à réutiliser pour toute carte « régénérez »"
   },
   "singleCardKeys": {
     "absolute": "Loot, the Anomaly — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -201,7 +203,9 @@
     "onDies": "The Masamune — champ générique de la famille triggerMod (R4.5), remplace le drapeau de CardDef doubleDeathTriggersForEquipped (PLAN-C, C14)",
     "emblems": "The Masamune — champ générique de la famille triggerMod (R4.5) : capacités des emblèmes du joueur (PLAN-C, C14)",
     "whileCrafting": "Market Gnome — déclencheur « quitte le champ de bataille » limité à l'exil comme matériau d'une fabrication (702.167) : champ de la famille `leaves`, compté depuis que sa déclaration tient sur plusieurs lignes (PLAN-S, S7)",
-    "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte"
+    "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte",
+    "manaValueSourceCounters": "Blast Zone — filtre relatif à la source (famille manaValueSourcePower) : valeur de mana égale à ses marqueurs",
+    "produceLikeLands": "Reflecting Pool — capacité de mana « un type que vos terrains pourraient produire » : famille des mana à couleurs calculées (produceColorsOf, produceLinkedColors)"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -220,18 +224,18 @@
   "engineCardLiterals": {},
   "ceilings": {
     "CardDef": 95,
-    "GameObject": 60,
+    "GameObject": 61,
     "StackItem": 29,
     "PlayerState": 21,
     "GameState": 39,
-    "ObjectFilter": 84,
+    "ObjectFilter": 85,
     "CostDef": 33,
     "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 16,
     "LayerMods": 31,
-    "Effect": 150,
-    "Effect (champs)": 611,
+    "Effect": 152,
+    "Effect (champs)": 616,
     "TriggerSpec": 58,
     "TriggerSpec (champs)": 153,
     "Condition": 52,
@@ -273,6 +277,7 @@
     "PLAN-S S8a : négations d'ObjectFilter exprimées par les champs existants (token, notTypes, basic, not, anyOf) : ObjectFilter 90 → 84",
     "PLAN-S S10 : le compteur des objets rejoint idCounters : GameState 39 → 38",
     "PLAN-S S9 : coûts sur la source regroupés (CostDef.self) : CostDef 37 → 33",
-    "PLAN-G G1 : impressions (illustration d'une réédition) : CardDef.printings et GameState.printings (uid → impression choisie par le deck), sans effet sur les règles : CardDef 94 → 95, GameState 38 → 39"
+    "PLAN-G G1 : impressions (illustration d'une réédition) : CardDef.printings et GameState.printings (uid → impression choisie par le deck), sans effet sur les règles : CardDef 94 → 95, GameState 38 → 39",
+    "PLAN-G G3b : régénération (GameObject.regenShields, effet regenerate), déplacer un marqueur (moveCounter), filtre manaValueSourceCounters (Blast Zone) : GameObject 60 → 61, ObjectFilter 84 → 85, Effect 150 → 152, Effect (champs) 611 → 616"
   ]
 }

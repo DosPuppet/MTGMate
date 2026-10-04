@@ -361,3 +361,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Cytoplast Manipulator : le contrôle dure tant que vous contrôlez le Manipulator (et non « tant qu'il reste sur le champ de bataille ») ;
   - `règle` Power Depot : modulaire ne déclenche qu'à la mort d'une créature ; le terrain n'en est pas une.
   - `règle` Eldrazi Temple : le mana restreint vaut pour les sorts et capacités d'Eldrazi, incolores ou non.
+  - `choix auto` Gemstone Caverns : la carte exilée de la main est la carte non-terrain de plus petite valeur de mana (un terrain s'il n'y en a pas) ;
+  - `règle` Reflecting Pool : les types que produiraient d'autres terrains du même genre (Reflecting Pool) ne comptent pas.

@@ -80,7 +80,7 @@ export interface CardScript {
   /** `player` : « Enchanter un joueur » (Grievous Wound). */
   enchant?: { filter: ObjectFilter; label: string; player?: boolean };
   /** Peut commencer la partie sur le champ de bataille (Leyline). */
-  leyline?: boolean;
+  leyline?: CardDef["leyline"];
   /** Coût alternatif : « vous pouvez payer {B} plutôt que… si [condition] ». */
   altCost?: { mana: string; condition: Condition; label: string };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
@@ -507,6 +507,8 @@ export const fx = {
     ...opts,
   }),
   lkiCountersTo: (to: Ref): Effect => ({ op: "lkiCountersTo", to }),
+  /** « Déplacez un marqueur de [ce permanent] sur [cet autre] » (sorte au choix). */
+  moveCounter: (from: Ref, to: Ref): Effect => ({ op: "moveCounter", from, to }),
   /** « Il ne peut plus gagner de points de vie de la partie » (Screaming Nemesis). */
   cantGainLife: (who: Ref): Effect => ({ op: "playerEffect", ability: { cantGainLife: true }, who, forever: true }),
   millWhileShared: { op: "millWhileShared" } as Effect,
@@ -640,6 +642,8 @@ export const fx = {
     times,
   }),
   exile: (what: Ref): Effect => ({ op: "exile", what }),
+  /** « Régénérez [ce permanent] » (701.19). */
+  regenerate: (what: Ref): Effect => ({ op: "regenerate", what }),
   mill: (n: Amount, who: Ref = ref.you, store?: { name: string; filter?: ObjectFilter }): Effect => ({
     op: "mill",
     who,
@@ -1654,6 +1658,10 @@ export function manaAbility(
     combination?: boolean;
     /** Contrepartie : blessures à vous, PV pour chaque adversaire (Ancient Tomb, Grove of the Burnwillows). */
     drawback?: ManaAbilityDef["drawback"];
+    /** Couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater). */
+    colorsOf?: ObjectFilter;
+    /** Ce que vos terrains pourraient produire (Reflecting Pool). */
+    likeLands?: boolean;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -1668,6 +1676,8 @@ export function manaAbility(
     removeCounter: opts.removeCounter,
     produceLinkedColors: opts.linkedColors,
     ...(opts.drawback ? { drawback: opts.drawback } : {}),
+    ...(opts.colorsOf ? { produceColorsOf: opts.colorsOf } : {}),
+    ...(opts.likeLands ? { produceLikeLands: true } : {}),
     amountGraveyard: opts.perGraveyard,
     oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],

@@ -301,8 +301,10 @@ export const RECORD_VERSION = 1;
  *   lancement à part (sans gratuité) ; un sort qu'un joueur éliminé contrôle sans le posséder est exilé (800.4a).
  * - 106 : terrains de Stellar Sights (G3a) : contrepartie d'une capacité de mana (`drawback` : blessures à vous, PV aux
  *   adversaires).
+ * - 107 : terrains de Stellar Sights (G3b) : infection (702.90), régénération (701.19, boucliers retirés au nettoyage),
+ *   déplacer un marqueur, mana des couleurs de vos permanents ou des types de vos terrains, leyline conditionnelle.
  */
-export const RULES_VERSION = 106;
+export const RULES_VERSION = 107;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

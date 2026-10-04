@@ -147,7 +147,23 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
     // « Ajoutez un mana de la couleur choisie » (Heraldic Banner).
     // Pit of Offerings : les couleurs des cartes exilées avec la source.
     if (a.produceLinkedColors) list.push({ ...a, produce: linkedColors(s, o.linked) });
-    else list.push(a.produceChosen ? { ...a, produce: o.chosen?.color ? [o.chosen.color] : a.produce } : a);
+    // Meteor Crater : les couleurs des permanents correspondants que vous contrôlez.
+    else if (a.produceColorsOf) {
+      const colors = new Set<ManaType>();
+      for (const pid of s.battlefield)
+        if (obj(s, pid).controller === o.controller && matchesObjectFilter(s, o.controller, pid, a.produceColorsOf, id))
+          for (const c of chars(s, pid).colors) colors.add(c);
+      list.push({ ...a, produce: MANA_TYPES.filter((m) => colors.has(m)) });
+    }
+    // Reflecting Pool : les types que vos autres terrains pourraient produire (sans les sources du même genre, 106.7).
+    else if (a.produceLikeLands) {
+      const types = new Set<ManaType>();
+      for (const pid of s.battlefield) {
+        if (pid === id || obj(s, pid).controller !== o.controller || !chars(s, pid).types.includes("Land")) continue;
+        for (const m of manaAbilitiesOf(s, pid)) if (!m.produceLikeLands) for (const t of m.produce) types.add(t);
+      }
+      list.push({ ...a, produce: MANA_TYPES.filter((m) => types.has(m)) });
+    } else list.push(a.produceChosen ? { ...a, produce: o.chosen?.color ? [o.chosen.color] : a.produce } : a);
   }
   return list;
 }

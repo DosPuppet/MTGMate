@@ -73,6 +73,8 @@ export interface GameObject {
   damage: number;
   /** A reçu des blessures d'une source avec le contact mortel depuis la dernière vérification. */
   deathtouched: boolean;
+  /** Boucliers de régénération (701.19) : chacun remplace la prochaine destruction ; ils disparaissent au nettoyage. */
+  regenShields?: number;
   /** Marqueurs par nom : "+1/+1", "-1/-1", "stun", "loyalty"… */
   counters: Record<string, number>;
   /** Numéro du tour pendant lequel le contrôleur actuel en a pris le contrôle. */

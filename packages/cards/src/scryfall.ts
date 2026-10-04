@@ -80,6 +80,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   flash: "flash",
   hexproof: "hexproof",
   shroud: "shroud",
+  infect: "infect",
   indestructible: "indestructible",
   convoke: "convoke",
   improvise: "improvise",

@@ -18,6 +18,7 @@ import {
 const ANY = ["W", "U", "B", "R", "G"] as const;
 const TAPPED = entersWith({ tapped: true, label: "Arrive engagé" });
 const ARTIFACTS_3 = cond.controls({ types: ["Artifact"], controller: "you" }, 3);
+const LUCK = cond.amountAtLeast(amount.countersOn(ref.self, "luck"), 1);
 
 /**
  * Terrains-créatures de Worldwake et d'Oath of the Gatewatch : engagés, bicolores ; « jusqu'à la fin du tour, ce terrain
@@ -359,4 +360,89 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   }),
+  "Blast Zone": {
+    abilities: [
+      entersWith({ counters: 1, counterKind: "charge", label: "Arrive avec un marqueur de charge" }),
+      manaAbility("C"),
+      activated({
+        mana: "{X}{X}",
+        tap: true,
+        effects: [fx.counters(ref.self, "charge", amount.x)],
+        label: "X marqueurs de charge",
+      }),
+      activated({
+        mana: "{3}",
+        tap: true,
+        sacrifice: true,
+        effects: [fx.destroyAll({ notTypes: ["Land"], manaValueSourceCounters: "charge" })],
+        label: "Détruisez chaque permanent non-terrain de valeur de mana égale à ses marqueurs de charge",
+      }),
+    ],
+  },
+  "Gemstone Caverns": {
+    leyline: { notStartingPlayer: true, counter: "luck", exileFromHand: true },
+    abilities: [manaAbility("C", 1, { condition: cond.not(LUCK) }), manaAbility([...ANY], 1, { condition: LUCK })],
+  },
+  "Inkmoth Nexus": {
+    abilities: [
+      manaAbility("C"),
+      activated({
+        mana: "{1}",
+        effects: [
+          fx.modify(ref.self, {
+            addTypes: ["Artifact", "Creature"],
+            addSubtypes: ["Phyrexian", "Blinkmoth"],
+            setPower: 1,
+            setToughness: 1,
+            addKeywords: ["flying", "infect"],
+          }),
+        ],
+        label: "Devient une créature-artefact 1/1 volante avec l'infection",
+      }),
+    ],
+  },
+  "Meteor Crater": { abilities: [manaAbility([...ANY], 1, { colorsOf: {} })] },
+  "Nesting Grounds": {
+    abilities: [
+      manaAbility("C"),
+      activated({
+        mana: "{1}",
+        tap: true,
+        sorcerySpeed: true,
+        targets: [
+          { id: "a", label: "permanent que vous contrôlez", filter: { objects: { controller: "you" } } },
+          { id: "b", label: "second permanent", filter: { objects: {} } },
+        ],
+        effects: [fx.moveCounter(ref.target("a"), ref.target("b"))],
+        label: "Déplacez un marqueur d'un de vos permanents sur un autre",
+      }),
+    ],
+  },
+  "Plaza of Heroes": {
+    abilities: [
+      manaAbility("C"),
+      manaAbility([...ANY], 1, { restriction: { spell: { legendary: true } } }),
+      manaAbility([...ANY], 1, { colorsOf: { legendary: true } }),
+      activated({
+        mana: "{3}",
+        tap: true,
+        exileSelf: true,
+        targets: [target.creature("t", { legendary: true })],
+        effects: [fx.pump(ref.target(), 0, 0, ["hexproof", "indestructible"])],
+        label: "La créature légendaire ciblée gagne la défense talismanique et l'indestructible",
+      }),
+    ],
+  },
+  "Reflecting Pool": { abilities: [manaAbility([...ANY, "C"], 1, { likeLands: true })] },
+  Swarmyard: {
+    abilities: [
+      manaAbility("C"),
+      activated({
+        tap: true,
+        targets: [target.creature("t", { anySubtype: ["Insect", "Rat", "Spider", "Squirrel"] })],
+        effects: [fx.regenerate(ref.target())],
+        label: "Régénérez l'Insecte, le Rat, l'Araignée ou l'Écureuil ciblé",
+      }),
+    ],
+  },
 };

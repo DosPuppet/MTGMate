@@ -118,6 +118,8 @@ export type Effect =
   | { op: "tapChosen"; filter: ObjectFilter; store: string; exactly?: number; sharesColorWith?: Ref }
   /** « Mettez ces marqueurs sur [cible] » : les marqueurs qu'avait l'objet de l'événement (dernières informations connues). */
   | { op: "lkiCountersTo"; to: Ref }
+  /** Déplace un marqueur d'un permanent sur un autre ; sa sorte au choix s'il en a plusieurs (Nesting Grounds). */
+  | { op: "moveCounter"; from: Ref; to: Ref }
   /** The Tale of Tamiyo : « meulez deux cartes ; si elles partagent un type de carte, piochez et recommencez ». */
   | { op: "millWhileShared" }
   | { op: "draw"; who: Ref; amount: Amount }
@@ -145,6 +147,8 @@ export type Effect =
   | { op: "loseLife"; who: Ref; amount: Amount; store?: string; half?: boolean }
   | { op: "bounce"; what: Ref }
   | { op: "exile"; what: Ref }
+  /** Régénérer (701.19) : un bouclier de régénération pour chaque permanent désigné, jusqu'à la fin du tour. */
+  | { op: "regenerate"; what: Ref }
   /**
    * `halfLibrary` : chaque joueur meule la moitié de sa bibliothèque, arrondie à l'inférieur (Singularity Rupture) ;
    * `graveyardSize` : autant de cartes qu'il y en a dans son cimetière (Riverchurn Monument).

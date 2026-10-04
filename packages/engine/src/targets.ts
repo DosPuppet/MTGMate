@@ -216,6 +216,10 @@ export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId
   if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
   if (f.powerAboveSource) f = { ...f, powerAboveSource: undefined, minPower: sourcePower(s, sourceId) + 1 };
   if (f.manaValueSourcePower) f = { ...f, manaValueSourcePower: undefined, manaValue: sourcePower(s, sourceId) };
+  if (f.manaValueSourceCounters) {
+    const src = sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined;
+    f = { ...f, manaValueSourceCounters: undefined, manaValue: src?.counters?.[f.manaValueSourceCounters] ?? 0 };
+  }
   if (f.maxManaValueColorsSpent) {
     const spent = castInfoOf(s, sourceId)?.spentColors ?? {};
     const n = (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;

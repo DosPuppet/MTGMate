@@ -102,7 +102,11 @@ export interface CardDef {
   /** Aura : ce qu'elle peut enchanter (cible du sort d'Aura, puis légalité de l'attachement). */
   enchant?: { filter: ObjectFilter; label: string; player?: boolean };
   /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
-  leyline?: boolean;
+  /**
+   * `notStartingPlayer` : seulement si vous ne commencez pas ; `counter` : il arrive avec ce marqueur ; `exileFromHand` :
+   * une carte de votre main est alors exilée (Gemstone Caverns).
+   */
+  leyline?: boolean | { notStartingPlayer?: boolean; counter?: string; exileFromHand?: boolean };
   /** Garde : coût à payer (mana ou points de vie). */
   ward?: {
     mana?: ManaCost;
@@ -421,6 +425,10 @@ export interface ManaAbilityDef {
    * contrôleur (Ancient Tomb, terrains « douloureux »), chaque adversaire gagne des PV (Grove of the Burnwillows).
    */
   drawback?: { damageYou?: number; opponentsGainLife?: number };
+  /** Un mana d'une des couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater, Plaza of Heroes). */
+  produceColorsOf?: ObjectFilter;
+  /** Un mana d'un type qu'un terrain que vous contrôlez pourrait produire (Reflecting Pool). */
+  produceLikeLands?: boolean;
   /** The Core : autant de mana que de cartes de votre cimetière correspondant au filtre. */
   amountGraveyard?: ObjectFilter;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */

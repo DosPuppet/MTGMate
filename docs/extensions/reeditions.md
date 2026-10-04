@@ -68,3 +68,19 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   Wandering Fumarole est la première carte à échanger F/E (`switchPT`, 613.4d).
 - **Tests :** `eos.test.ts` (+12).
 - **Approximation :** Eldrazi Temple, le mana restreint vaut pour tout sort ou capacité d'Eldrazi (incolore ou non).
+
+## G3b — Stellar Sights, terrains qui demandaient du moteur ✅ (43 / 43)
+
+| Carte | Forme nouvelle |
+|---|---|
+| Inkmoth Nexus | mot-clé infection (702.90) |
+| Swarmyard | régénération (701.19) : `fx.regenerate`, bouclier consommé par `destroy`, retiré au nettoyage |
+| Meteor Crater, Plaza of Heroes | mana des couleurs de vos permanents (`colorsOf`) |
+| Reflecting Pool | mana des types que vos autres terrains pourraient produire (`likeLands`) |
+| Blast Zone | filtre `manaValueSourceCounters` (valeur de mana égale aux marqueurs de la source, dernière information après le sacrifice) |
+| Nesting Grounds | effet `moveCounter` (sorte au choix) |
+| Gemstone Caverns | `leyline` conditionnelle : si vous ne commencez pas, avec un marqueur de chance, une carte de la main exilée |
+
+- **Tests :** `eos.test.ts` (+8).
+- **Approximations :** Gemstone Caverns exile automatiquement la carte non-terrain de plus petite valeur de mana ;
+  Reflecting Pool ne voit pas ce que produiraient d'autres Reflecting Pools.
