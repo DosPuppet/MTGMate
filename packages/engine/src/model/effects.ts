@@ -109,7 +109,8 @@ export type Effect =
    * `store` : le nombre de permanents détruits, et les cartes mises au cimetière ainsi (« si une carte de créature est mise
    * dans un cimetière de cette façon », « pour chaque créature détruite de cette façon »).
    */
-  | { op: "destroy"; what: Ref; store?: string }
+  /** `noRegenerate` : « ils ne peuvent pas être régénérés » (Damnation). */
+  | { op: "destroy"; what: Ref; store?: string; noRegenerate?: boolean }
   /** « Engagez un nombre quelconque de [permanents] dégagés que vous contrôlez » : `store` mémorise leur nombre. */
   /**
    * Engager des permanents dégagés choisis ; `exactly` : aucun ou exactement N (conspiration : « vous pouvez engager deux

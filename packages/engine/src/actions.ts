@@ -518,7 +518,7 @@ export function sourceFromObject(s: GameState, id: ObjectId): DamageSource {
 }
 
 /** Détruit un permanent (sauf indestructible). Renvoie true s'il a quitté le champ de bataille. */
-export function destroy(s: GameState, id: ObjectId): boolean {
+export function destroy(s: GameState, id: ObjectId, noRegenerate = false): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (hasKeyword(s, id, "indestructible")) return false;
@@ -529,7 +529,7 @@ export function destroy(s: GameState, id: ObjectId): boolean {
   }
   // Régénération (701.19c) : la destruction est remplacée ; le permanent est engagé, retiré du combat et ses blessures
   // sont retirées.
-  if (o.regenShields) {
+  if (o.regenShields && !noRegenerate) {
     o.regenShields -= 1;
     if (!o.regenShields) delete o.regenShields;
     if (!o.tapped) tapObject(s, o);

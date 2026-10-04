@@ -127,7 +127,6 @@
     "equipDiscount": "Firion, Wild Rose Warrior — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "exactToughness": "Taii Wakeen, Perfect Shot — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "exceptFromHand": "Avatar's Wrath — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "exileAtEndStep": "Stormsplitter — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "faceUp": "Karlov Watchdog — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "firstOf": "Alania, Divergent Storm — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "firstThisTurnFree": "Kíli the Resourceful — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -235,7 +234,7 @@
     "PlayFromZone": 16,
     "LayerMods": 31,
     "Effect": 152,
-    "Effect (champs)": 616,
+    "Effect (champs)": 617,
     "TriggerSpec": 59,
     "TriggerSpec (champs)": 155,
     "Condition": 52,
@@ -279,6 +278,7 @@
     "PLAN-S S9 : coûts sur la source regroupés (CostDef.self) : CostDef 37 → 33",
     "PLAN-G G1 : impressions (illustration d'une réédition) : CardDef.printings et GameState.printings (uid → impression choisie par le deck), sans effet sur les règles : CardDef 94 → 95, GameState 38 → 39",
     "PLAN-G G3b : régénération (GameObject.regenShields, effet regenerate), déplacer un marqueur (moveCounter), filtre manaValueSourceCounters (Blast Zone) : GameObject 60 → 61, ObjectFilter 84 → 85, Effect 150 → 152, Effect (champs) 611 → 616",
-    "PLAN-G G4a : traversée de terrain et restriction d'attaque (BlockRule), portée des statiques de joueur, déclencheur copySpell, suspension en action spéciale : TriggerSpec 58 → 59, TriggerSpec (champs) 153 → 155"
+    "PLAN-G G4a : traversée de terrain et restriction d'attaque (BlockRule), portée des statiques de joueur, déclencheur copySpell, suspension en action spéciale : TriggerSpec 58 → 59, TriggerSpec (champs) 153 → 155",
+    "PLAN-G G4b : destruction sans régénération (Damnation, noRegenerate) : Effect (champs) 616 → 617"
   ]
 }

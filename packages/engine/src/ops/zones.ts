@@ -111,7 +111,7 @@ export const HANDLERS: OpHandlers = {
     let destroyed = 0;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
-      if (destroy(s, id)) destroyed++;
+      if (destroy(s, id, e.noRegenerate)) destroyed++;
       // Come Back Wrong, Zero Point Ballad : les cartes mises au cimetière de cette façon.
       const card = o && (s.players[o.owner]?.graveyard ?? []).find((x) => s.objects[x]?.uid === o.uid);
       if (card) stored.push(card);

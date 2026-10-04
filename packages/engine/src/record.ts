@@ -306,8 +306,9 @@ export const RECORD_VERSION = 1;
  * - 108 : Special Guests (G4a) : traversée de terrain, « n'attaque pas deux fois le même joueur », statiques de joueur
  *   qui touchent d'autres joueurs (`affects`), déclencheur « vous copiez un sort », suspension depuis la main (action
  *   spéciale), carte contrecarrée mémorisée où qu'elle aille (`storeMoved`).
+ * - 109 : Special Guests (G4b) : destruction sans régénération possible (`noRegenerate`, Damnation).
  */
-export const RULES_VERSION = 108;
+export const RULES_VERSION = 109;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

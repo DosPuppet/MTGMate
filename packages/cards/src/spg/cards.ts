@@ -16,6 +16,7 @@ import {
   modal,
   mode,
   playerStatic,
+  protection,
   ref,
   spell,
   staticAbility,
@@ -51,6 +52,24 @@ const DROWNABLE = (t: string) =>
     amount.plus(amount.refCount(ref.graveyardOf(ref.controllerOf(ref.target(t)))), amount.neg(amount.manaValueOf(ref.target(t)))),
     0,
   );
+const GOLEM_3: TokenSpec = {
+  name: "Golem",
+  colors: [],
+  types: ["Artifact", "Creature"],
+  subtypes: ["Golem"],
+  power: 3,
+  toughness: 3,
+};
+const SPIRIT_CLERIC: TokenSpec = {
+  name: "Spirit Cleric",
+  colors: ["W"],
+  types: ["Creature"],
+  subtypes: ["Spirit", "Cleric"],
+  power: 0,
+  toughness: 0,
+  cdaPT: amount.count({ subtype: "Spirit", controller: "you" }),
+};
+const YOUR_CREATURES = { types: ["Creature" as const], controller: "you" as const };
 const FIRST_INSTANT = (n: number) => cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", types: ["Instant"] }), n);
 
 /**
@@ -385,6 +404,305 @@ export const CARDS: Record<string, CardScript> = {
         sacrifice: true,
         effects: [fx.search(BASIC_LAND, { to: "battlefield" })],
         label: "Cherchez une carte de terrain de base",
+      }),
+    ],
+  },
+  // — G4b : Special Guests de BLB, DSK, FDN et DFT —
+  "Swords to Plowshares": {
+    spell: spell(
+      [target.creature()],
+      [fx.gainLife(amount.powerOf(ref.target()), ref.controllerOf(ref.target())), fx.exile(ref.target())],
+    ),
+  },
+  // Vol : lu dans le texte.
+  "Ledger Shredder": {
+    abilities: [
+      triggered({ on: "castSpell", by: "any", nth: 2 }, [fx.connive(ref.self)], {
+        label: "Un joueur lance son deuxième sort du tour : complote",
+      }),
+    ],
+  },
+  "Rat Colony": {
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1 },
+        { per: { subtype: "Rat", controller: "you", other: true }, label: "+1/+0 par autre Rat" },
+      ),
+    ],
+  },
+  "Relentless Rats": {
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1, toughness: 1 },
+        { per: { name: "Relentless Rats", other: true }, label: "+1/+1 par autre Relentless Rats" },
+      ),
+    ],
+  },
+  "Kindred Charge": {
+    spell: spell(
+      [],
+      [
+        fx.chooseForSelf("creatureType"),
+        fx.copyToken(ref.permanentsOf(ref.you, { types: ["Creature"], subtypeChosen: true }), {
+          addKeywords: ["haste"],
+          exileAtEndStep: true,
+        }),
+      ],
+    ),
+  },
+  "Sylvan Tutor": { spell: spell([], [fx.search({ types: ["Creature"] }, { to: "libraryTop" })]) },
+  // Indestructible : lu dans le texte.
+  "Toski, Bearer of Secrets": {
+    cantBeCountered: true,
+    abilities: [
+      staticAbility("self", { addKeywords: ["mustAttack"] }, { label: "Attaque à chaque combat si possible" }),
+      triggered(when.combatDamage(YOUR_CREATURES, true), [fx.draw(1)], {
+        label: "Une de vos créatures blesse un joueur : piochez",
+      }),
+    ],
+  },
+  // Équiper {2} : lu dans le texte.
+  "Sword of Fire and Ice": {
+    abilities: [
+      staticAbility(
+        "attached",
+        {
+          power: 2,
+          toughness: 2,
+          addProtections: [
+            protection.from({ colors: ["R"] }, "Protection contre le rouge"),
+            protection.from({ colors: ["U"] }, "Protection contre le bleu"),
+          ],
+        },
+        { label: "+2/+2, protection contre le rouge et le bleu" },
+      ),
+      triggered(
+        when.combatDamage({ types: ["Creature"], attachedToSource: true }, true),
+        [fx.damage(2, ref.target()), fx.draw(1)],
+        {
+          targets: [target.any()],
+          label: "2 blessures à n'importe quelle cible et piochez",
+        },
+      ),
+    ],
+  },
+  "Hallowed Haunting": {
+    abilities: [
+      staticAbility(
+        YOUR_CREATURES,
+        { addKeywords: ["flying", "vigilance"] },
+        {
+          condition: cond.controls({ types: ["Enchantment"], controller: "you" }, 7),
+          label: "Sept enchantements : vos créatures ont le vol et la vigilance",
+        },
+      ),
+      triggered(when.castSpell("you", { types: ["Enchantment"] }), [fx.createTokens(SPIRIT_CLERIC)], {
+        label: "Sort d'enchantement : un Esprit Clerc",
+      }),
+    ],
+  },
+  "Soul Warden": {
+    abilities: [
+      triggered(when.enters({ types: ["Creature"], other: true }), [fx.gainLife(1)], {
+        label: "Une autre créature arrive : 1 PV",
+      }),
+    ],
+  },
+  Damnation: { spell: spell([], [fx.destroyAll({ types: ["Creature"] }, undefined, true)]) },
+  Sacrifice: {
+    additionalCost: { sacrifice: { filter: { types: ["Creature"] }, count: 1 } },
+    spell: spell([], [fx.addManaChoice(amount.manaValueOf(ref.costSacrificed), ["B"])]),
+  },
+  "Unholy Heat": {
+    spell: spell(
+      [target.creatureOrPlaneswalker()],
+      [...fx.when(cond.delirium, fx.damage(6, ref.target())), ...fx.when(cond.not(cond.delirium), fx.damage(2, ref.target()))],
+    ),
+  },
+  "Collected Company": {
+    spell: spell(
+      [],
+      [
+        fx.lookAtTop(6, {
+          filter: { types: ["Creature"], maxManaValue: 3 },
+          count: 2,
+          to: { to: "battlefield" },
+          rest: "bottom",
+        }),
+      ],
+    ),
+  },
+  Condemn: {
+    spell: spell(
+      [target.creature("t", { attacking: true })],
+      [
+        fx.gainLife(amount.toughnessOf(ref.target()), ref.controllerOf(ref.target())),
+        fx.moveTo(ref.target(), { to: "libraryBottom" }),
+      ],
+    ),
+  },
+  "Grim Tutor": { spell: spell([], [fx.search({}, { to: "hand" }), fx.loseLife(3)]) },
+  // Flash, équiper {3} : lus dans le texte.
+  Embercleave: {
+    costReduction: { generic: amount.count({ types: ["Creature"], controller: "you", attacking: true }) },
+    abilities: [
+      triggered(when.entersSelf, [fx.attach(ref.target())], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "Attachez-la à une de vos créatures",
+      }),
+      staticAbility(
+        "attached",
+        { power: 1, toughness: 1, addKeywords: ["doubleStrike", "trample"] },
+        {
+          label: "+1/+1, double initiative et piétinement",
+        },
+      ),
+    ],
+  },
+  "Goblin Bushwhacker": {
+    kicker: "{R}",
+    abilities: [
+      triggered(when.entersSelf, [fx.pumpAll(YOUR_CREATURES, 1, 0, ["haste"])], {
+        condition: cond.kicked,
+        label: "Kické : vos créatures gagnent +1/+0 et la célérité",
+      }),
+    ],
+  },
+  "Paradise Druid": {
+    abilities: [
+      staticAbility(
+        "self",
+        { addKeywords: ["hexproof"] },
+        {
+          condition: cond.sourceMatches({ tapped: false }),
+          label: "Défense talismanique tant qu'elle est dégagée",
+        },
+      ),
+      manaAbility([...ANY]),
+    ],
+  },
+  "Akroma's Memorial": {
+    abilities: [
+      staticAbility(
+        YOUR_CREATURES,
+        {
+          addKeywords: ["flying", "firstStrike", "vigilance", "trample", "haste"],
+          addProtections: [
+            protection.from({ colors: ["B"] }, "Protection contre le noir"),
+            protection.from({ colors: ["R"] }, "Protection contre le rouge"),
+          ],
+        },
+        { label: "Vos créatures : vol, initiative, vigilance, piétinement, célérité, protection contre le noir et le rouge" },
+      ),
+    ],
+  },
+  "Temporal Manipulation": { spell: spell([], [fx.extraTurn]) },
+  "Fiend Artisan": {
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1, toughness: 1 },
+        { perGraveyard: { types: ["Creature"] }, label: "+1/+1 par carte de créature de votre cimetière" },
+      ),
+      activated({
+        mana: "{X}{B/G}",
+        tap: true,
+        sacrificeOther: { filter: { types: ["Creature"], other: true } },
+        sorcerySpeed: true,
+        effects: [fx.search({ types: ["Creature"], maxManaValueX: true }, { to: "battlefield" })],
+        label: "Cherchez une créature de valeur de mana X ou moins",
+      }),
+    ],
+  },
+  // Vigilance : lue dans le texte.
+  "Cavalier of Dawn": {
+    abilities: [
+      triggered(when.entersSelf, [fx.destroy(ref.target()), fx.createTokens(GOLEM_3, 1, ref.controllerOf(ref.target()))], {
+        targets: [target.optional(target.nonland("t"))],
+        label: "Détruisez jusqu'à un permanent non-terrain ; son contrôleur crée un Golem 3/3",
+      }),
+      triggered(when.diesSelf, [fx.toHand(ref.target())], {
+        targets: [
+          target.cardInGraveyard(
+            "t",
+            { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] },
+            "you",
+            "carte d'artefact ou d'enchantement de votre cimetière",
+          ),
+        ],
+        label: "Renvoyez une carte d'artefact ou d'enchantement de votre cimetière",
+      }),
+    ],
+  },
+  // Improvisation : lue dans le texte.
+  "Whir of Invention": {
+    spell: spell([], [fx.search({ types: ["Artifact"], maxManaValueX: true }, { to: "battlefield" })]),
+  },
+  "Bone Miser": {
+    abilities: [
+      triggered(when.discard("you"), [fx.createTokens(ZOMBIE)], {
+        condition: cond.refMatches(ref.eventObject, { types: ["Creature"] }),
+        label: "Vous défaussez une carte de créature : un Zombie 2/2",
+      }),
+      triggered(when.discard("you"), [fx.addMana("B", "B")], {
+        condition: cond.refMatches(ref.eventObject, { types: ["Land"] }),
+        label: "Vous défaussez une carte de terrain : {B}{B}",
+      }),
+      triggered(when.discard("you"), [fx.draw(1)], {
+        condition: cond.refMatches(ref.eventObject, { notTypes: ["Creature", "Land"] }),
+        label: "Vous défaussez une autre carte : piochez",
+      }),
+    ],
+  },
+  "Lord of the Undead": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], subtype: "Zombie", other: true },
+        { power: 1, toughness: 1 },
+        { label: "Les autres Zombies : +1/+1" },
+      ),
+      activated({
+        mana: "{1}{B}",
+        tap: true,
+        targets: [target.cardInGraveyard("t", { subtype: "Zombie" }, "you", "carte de Zombie de votre cimetière")],
+        effects: [fx.toHand(ref.target())],
+        label: "Renvoyez une carte de Zombie de votre cimetière",
+      }),
+    ],
+  },
+  "Chandra's Ignition": {
+    spell: spell(
+      [target.creature("t", { controller: "you" })],
+      [
+        fx.damage(
+          amount.powerOf(ref.target()),
+          ref.union(ref.except(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }), ref.target()), ref.eachOpponent),
+          ref.target(),
+        ),
+      ],
+    ),
+  },
+  "Pathbreaker Ibex": {
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        [fx.pumpAll(YOUR_CREATURES, amount.maxPower(YOUR_CREATURES), amount.maxPower(YOUR_CREATURES), ["trample"])],
+        { label: "Vos créatures gagnent le piétinement et +X/+X (X : la plus grande force)" },
+      ),
+    ],
+  },
+  // Vol, équipage 3 : lus dans le texte.
+  "Skysovereign, Consul Flagship": {
+    abilities: [
+      triggered(when.entersSelf, [fx.damage(3, ref.target())], {
+        targets: [target.creatureOrPlaneswalker("t", { controller: "opponent" })],
+        label: "3 blessures à une créature ou un planeswalker adverse",
+      }),
+      triggered(when.attacksSelf, [fx.damage(3, ref.target())], {
+        targets: [target.creatureOrPlaneswalker("t", { controller: "opponent" })],
+        label: "3 blessures à une créature ou un planeswalker adverse",
       }),
     ],
   },

@@ -1228,7 +1228,12 @@ export const fx = {
     players,
     source,
   }),
-  destroyAll: (filter: ObjectFilter, store?: string): Effect => ({ op: "destroy", what: allMatching(filter), store }),
+  destroyAll: (filter: ObjectFilter, store?: string, noRegenerate?: boolean): Effect => ({
+    op: "destroy",
+    what: allMatching(filter),
+    store,
+    ...(noRegenerate ? { noRegenerate } : {}),
+  }),
   addCountersAll: (filter: ObjectFilter, n: Amount = 1, kind?: string): Effect => ({
     op: "addCounters",
     what: allMatching(filter),

@@ -314,3 +314,6 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   « n'attaque pas deux fois le même joueur », la portée des statiques de joueur, le déclencheur « vous copiez un sort »,
   la suspension depuis la main. `RULES_VERSION` 108. Trois cartes reportées à un sous-lot difficile : Underworld Breach,
   Mirri, Weatherlight Duelist, Notion Thief.
+- **G4b (04/10/2026) :** 29 Special Guests de BLB, DSK, FDN et DFT (SPG 67 / 132) ; destruction sans régénération.
+  `RULES_VERSION` 109. Reportées au sous-lot difficile : Expropriate, Maddening Hex, Noxious Revival, Sphinx's Tutelage,
+  Phantasmal Image.

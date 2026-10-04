@@ -1,10 +1,11 @@
 /** Special Guests (SPG) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, gainLife, sourceFromObject } from "../src/actions";
+import { announceDiscard } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { spellCost } from "../src/stack";
-import { chars } from "../src/state";
+import { chars, moveObject } from "../src/state";
 import { attackTaxFor, canBlock } from "../src/turn";
 import {
   act,
@@ -20,6 +21,12 @@ import {
   settle,
   throughCombat,
 } from "./helpers";
+
+/** Attache l'Équipement à la créature (mise en scène). */
+function attachTo(s: ReturnType<typeof scenario>, equipment: string, creature: string): void {
+  (s.objects[equipment] as { attachedTo?: string }).attachedTo = creature;
+  s.version += 1;
+}
 
 const ARTIFACT = customCard({ name: "Test Trinket", types: ["Artifact"], typeLine: "Artifact" });
 
@@ -343,6 +350,181 @@ describe("Special Guests", () => {
       );
       const t = settle(s);
       expect(idsOf(t, "p1", "battlefield", "Polyraptor")).toHaveLength(2);
+    });
+  });
+
+  describe("G4b : Special Guests de BLB, DSK, FDN et DFT", () => {
+    const castIt = (s: ReturnType<typeof scenario>, name: string, extra: object = {}) =>
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
+
+    it("Swords to Plowshares : exilée, son contrôleur gagne autant de PV que sa force", () => {
+      let s = scenario({ p1: { battlefield: ["Plains"], hand: ["Swords to Plowshares"] }, p2: { battlefield: ["Bear Cub"] } });
+      s = settle(castIt(s, "Swords to Plowshares", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
+      expect([s.exile.map((id) => nameOf(s, id)), s.players.p2?.life]).toEqual([["Bear Cub"], 22]);
+    });
+
+    it("Relentless Rats : +1/+1 par autre Relentless Rats", () => {
+      const s = scenario({ p1: { battlefield: ["Relentless Rats", "Relentless Rats", "Relentless Rats"] } });
+      expect(chars(s, idsOf(s, "p1", "battlefield", "Relentless Rats")[0] as string).power).toBe(4);
+    });
+
+    it("Kindred Charge : une copie avec la célérité de chacune de vos créatures du type choisi", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 6), "Bear Cub", "Llanowar Elves"], hand: ["Kindred Charge"] },
+      });
+      s = settle(castIt(s, "Kindred Charge"), (req) =>
+        req.type === "pick" && req.options.includes("Bear") ? ["Bear"] : undefined,
+      );
+      const cubs = idsOf(s, "p1", "battlefield", "Bear Cub");
+      expect(cubs).toHaveLength(2);
+      expect(cubs.some((id) => s.objects[id]?.isToken && chars(s, id).keywords.includes("haste"))).toBe(true);
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    });
+
+    it("Sword of Fire and Ice : +2/+2, protection ; blessures de combat à un joueur : 2 blessures et une carte", () => {
+      let s = scenario({ p1: { battlefield: ["Bear Cub", "Sword of Fire and Ice"] }, p2: { battlefield: ["Llanowar Elves"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      attachTo(s, idOf(s, "p1", "battlefield", "Sword of Fire and Ice"), cub);
+      expect(chars(s, cub).power).toBe(4);
+      const hand = s.players.p1?.hand.length ?? 0;
+      s = throughCombat(attack(s, [cub]), (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined));
+      expect(s.players.p2?.life).toBe(14);
+      expect(s.players.p1?.hand.length).toBe(hand + 1);
+    });
+
+    it("Hallowed Haunting : un sort d'enchantement donne un Esprit Clerc, F/E égales au nombre d'Esprits", () => {
+      let s = scenario({ p1: { battlefield: ["Hallowed Haunting", ...lands("Plains", 4)], hand: ["Ghostly Prison"] } });
+      s = settle(castIt(s, "Ghostly Prison"));
+      const spirit = idOf(s, "p1", "battlefield", "Spirit Cleric");
+      expect([chars(s, spirit).power, chars(s, spirit).toughness]).toEqual([1, 1]);
+    });
+
+    it("Damnation : détruit toutes les créatures, sans régénération", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Damnation"] },
+        p2: { battlefield: ["Llanowar Elves"] },
+      });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      (s.objects[cub] as { regenShields?: number }).regenShields = 1;
+      s = settle(castIt(s, "Damnation"));
+      expect(s.battlefield.filter((id) => chars(s, id).types.includes("Creature"))).toHaveLength(0);
+    });
+
+    it("Sacrifice : {B} autant que la valeur de mana de la créature sacrifiée", () => {
+      let s = scenario({ p1: { battlefield: ["Swamp", "Fiend Artisan"], hand: ["Sacrifice"] } });
+      s = settle(castIt(s, "Sacrifice", { sacrifice: [idOf(s, "p1", "battlefield", "Fiend Artisan")] }));
+      expect(s.players.p1?.manaPool.B).toBe(2);
+    });
+
+    it("Unholy Heat : 2 blessures, 6 avec le délire", () => {
+      const run = (gy: string[]) => {
+        let s = scenario({
+          p1: { battlefield: ["Mountain"], hand: ["Unholy Heat"], graveyard: gy },
+          p2: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 3 } }] },
+        });
+        const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+        s = settle(castIt(s, "Unholy Heat", { targets: { t: [cub] } }));
+        return idsOf(s, "p2", "battlefield", "Bear Cub").length;
+      };
+      expect(run([])).toBe(1);
+      expect(run(["Forest", "Bear Cub", "Shock", "Ghostly Prison"])).toBe(0);
+    });
+
+    it("Collected Company : jusqu'à deux créatures de valeur de mana 3 ou moins parmi les six du dessus", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Forest", 4),
+          hand: ["Collected Company"],
+          library: ["Bear Cub", "Forest", "Llanowar Elves", "Polyraptor", "Forest", "Bear Cub", "Forest"],
+        },
+      });
+      s = settle(castIt(s, "Collected Company"));
+      expect(s.battlefield.filter((id) => ["Bear Cub", "Llanowar Elves"].includes(nameOf(s, id) ?? ""))).toHaveLength(2);
+      expect(idsOf(s, "p1", "battlefield", "Polyraptor")).toHaveLength(0);
+    });
+
+    it("Condemn : l'attaquant au-dessous de la bibliothèque, son contrôleur gagne autant de PV que son endurance", () => {
+      let s = scenario({ active: "p2", p1: { battlefield: ["Plains"], hand: ["Condemn"] }, p2: { battlefield: ["Bear Cub"] } });
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: cub, defender: "p1" }] });
+      s = act(s, "p2", { type: "pass" });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Condemn"), targets: { t: [cub] } }));
+      const lib = s.players.p2?.library ?? [];
+      expect(nameOf(s, lib[lib.length - 1] as string)).toBe("Bear Cub");
+      expect(s.players.p2?.life).toBe(22);
+    });
+
+    it("Embercleave : {1} de moins par attaquant ; arrive attachée à une de vos créatures", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Mountain", 6), "Bear Cub"], hand: ["Embercleave"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(castIt(s, "Embercleave"), (req) => (req.type === "pick" && req.options.includes(cub) ? [cub] : undefined));
+      const ember = idOf(s, "p1", "battlefield", "Embercleave");
+      expect(s.objects[ember]?.attachedTo).toBe(cub);
+      expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["doubleStrike", "trample"]));
+    });
+
+    it("Goblin Bushwhacker : kické, vos créatures gagnent +1/+0 et la célérité", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Goblin Bushwhacker"] } });
+      s = settle(castIt(s, "Goblin Bushwhacker", { kicked: true }));
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      expect([chars(s, cub).power, chars(s, cub).keywords.includes("haste")]).toEqual([3, true]);
+    });
+
+    it("Paradise Druid : défense talismanique tant qu'elle est dégagée", () => {
+      const s = scenario({ p1: { battlefield: ["Paradise Druid", { name: "Paradise Druid", tapped: true }] } });
+      const [a, b] = idsOf(s, "p1", "battlefield", "Paradise Druid");
+      expect([chars(s, a as string).keywords.includes("hexproof"), chars(s, b as string).keywords.includes("hexproof")]).toEqual([
+        true,
+        false,
+      ]);
+    });
+
+    it("Cavalier of Dawn : détruit un permanent non-terrain ; son contrôleur crée un Golem 3/3", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Plains", 5), hand: ["Cavalier of Dawn"] },
+        p2: { battlefield: ["Ghostly Prison"] },
+      });
+      const prison = idOf(s, "p2", "battlefield", "Ghostly Prison");
+      s = settle(castIt(s, "Cavalier of Dawn"), (req) =>
+        req.type === "pick" && req.options.includes(prison) ? [prison] : undefined,
+      );
+      expect(idsOf(s, "p2", "graveyard", "Ghostly Prison")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Golem")).toHaveLength(1);
+    });
+
+    it("Bone Miser : défausser une créature, un terrain ou autre chose", () => {
+      let s = scenario({ p1: { battlefield: ["Bone Miser"], hand: ["Bear Cub", "Forest", "Shock"] } });
+      s = settle(s);
+      for (const n of ["Bear Cub", "Forest", "Shock"])
+        announceDiscard(s, "p1", moveObject(s, idOf(s, "p1", "hand", n), "graveyard"));
+      s = settle(s);
+      expect(idsOf(s, "p1", "battlefield", "Zombie")).toHaveLength(1);
+      expect(s.players.p1?.manaPool.B).toBe(2);
+      expect(s.players.p1?.hand).toHaveLength(1);
+    });
+
+    it("Chandra's Ignition : votre créature blesse chaque autre créature et chaque adversaire", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Mountain", 5), { name: "Bear Cub", counters: { "+1/+1": 1 } }, "Llanowar Elves"],
+          hand: ["Chandra's Ignition"],
+        },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const mine = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(castIt(s, "Chandra's Ignition", { targets: { t: [mine] } }));
+      expect(s.players.p2?.life).toBe(17);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Pathbreaker Ibex : en attaquant, vos créatures gagnent le piétinement et +X/+X", () => {
+      let s = scenario({ p1: { battlefield: ["Pathbreaker Ibex", "Bear Cub"] } });
+      s = settle(attack(s, [idOf(s, "p1", "battlefield", "Pathbreaker Ibex")]));
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      expect([chars(s, cub).power, chars(s, cub).keywords.includes("trample")]).toEqual([5, true]);
     });
   });
 });

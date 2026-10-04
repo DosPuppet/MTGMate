@@ -102,3 +102,16 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   comme celui du dernier contrôleur de la créature).
 - **Reportées (sous-lot difficile) :** Underworld Breach (évasion), Mirri, Weatherlight Duelist (limites d'attaquants et
   de bloqueurs), Notion Thief (pioche détournée).
+
+## G4b — Special Guests de BLB, DSK, FDN et DFT ✅ (29 cartes ; SPG 67 / 132)
+
+- **Cartes :** Swords to Plowshares, Ledger Shredder, Rat Colony, Relentless Rats, Kindred Charge, Sylvan Tutor, Toski,
+  Bearer of Secrets, Sword of Fire and Ice, Hallowed Haunting, Soul Warden, Damnation, Sacrifice, Unholy Heat, Collected
+  Company, Condemn, Grim Tutor, Embercleave, Goblin Bushwhacker, Paradise Druid, Akroma's Memorial, Temporal
+  Manipulation, Fiend Artisan, Cavalier of Dawn, Whir of Invention, Bone Miser, Lord of the Undead, Chandra's Ignition,
+  Pathbreaker Ibex, Skysovereign, Consul Flagship.
+- **Le moteur gagne :** `destroy` sans régénération (`noRegenerate`).
+- **Tests :** `spg.test.ts` (+17).
+- **Reportées (sous-lot difficile) :** Expropriate (dilemme du conseil), Maddening Hex (dé, Aura de joueur qui change
+  d'hôte), Noxious Revival (mana phyrexian), Sphinx's Tutelage (meule répétée), Phantasmal Image (copie à l'arrivée avec
+  une capacité ajoutée).
