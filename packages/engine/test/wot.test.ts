@@ -353,6 +353,14 @@ describe("Enchanting Tales", () => {
       expect(exiled(s, "Shock")).toHaveLength(1);
     });
   });
+
+  it("Raid Bombardment : chaque fois qu'une de vos créatures de force 2 ou moins attaque, 1 blessure au joueur qu'elle attaque", () => {
+    let s = scenario({ p1: { battlefield: ["Raid Bombardment", "Bear Cub", "Serra Angel"] } });
+    s = attack(s, [idOf(s, "p1", "battlefield", "Bear Cub"), idOf(s, "p1", "battlefield", "Serra Angel")]);
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    // 1 (Bear Cub seul déclenche) + 2 + 4 de combat.
+    expect(s.players.p2?.life).toBe(13);
+  });
 });
 
 /** Identifiant de la cible d'enchantement d'une Aura. */

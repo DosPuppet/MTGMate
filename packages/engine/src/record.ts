@@ -327,8 +327,10 @@ export const RECORD_VERSION = 1;
  *   couleur choisie ajoutée.
  * - 121 : phasing (702.26), vote et paiement par un autre joueur, déclencheur du prochain sort lancé, Saga transformée en
  *   terrain avec l'évasion donnée.
+ * - 122 : passe sur les approximations (A0) : « le joueur défenseur » d'un déclencheur d'attaque dont la source n'attaque
+ *   pas est celui de l'attaquant (Raid Bombardment) ; retirer tous les marqueurs ne demande plus leur sorte.
  */
-export const RULES_VERSION = 121;
+export const RULES_VERSION = 122;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

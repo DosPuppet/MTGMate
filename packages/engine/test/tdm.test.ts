@@ -2808,7 +2808,13 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
       p2: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 2, flying: 1 } }] },
     });
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
-    s = settle(cast(s, "p1", "Purging Stormbrood // Absorb Essence"), picking([bear]));
+    // Tous les marqueurs partent : aucune question sur leur sorte.
+    const asked: string[] = [];
+    s = settle(cast(s, "p1", "Purging Stormbrood // Absorb Essence"), (req, p) => {
+      if (req.type === "pick" && req.prompt.includes("quel marqueur retirer")) asked.push(req.prompt);
+      return picking([bear])(req, p);
+    });
+    expect(asked).toEqual([]);
     expect(chars(s, idOf(s, "p1", "battlefield", "Purging Stormbrood // Absorb Essence")).keywords).toContain("flying");
     expect(Object.values(s.objects[bear]?.counters ?? {}).filter((n) => n > 0)).toHaveLength(0);
     expect(pt(s, bear)).toEqual([2, 2]);

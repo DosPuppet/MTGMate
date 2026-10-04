@@ -419,7 +419,7 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell([target.upTo(2, target.creature())], [fx.tap(ref.target()), fx.counters(ref.target(), "stun"), fx.draw(1)]),
   },
   "Temporal Cleansing": {
-    // Convocation lue dans le texte. Le choix est posé au contrôleur du permanent (approximation : son propriétaire).
+    // Convocation lue dans le texte. Le choix est posé au contrôleur du permanent (approximation : l'Oracle dit son propriétaire).
     spell: spell(
       [target.nonland()],
       [

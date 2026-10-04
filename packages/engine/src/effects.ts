@@ -412,7 +412,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return alive.filter((p) => count(p) === most);
     }
     case "defendingPlayer": {
-      const atk = s.combat?.attackers.find((a) => a.id === ctx.sourceId);
+      // La source attaque ; sinon, l'attaquant de l'événement (« chaque fois qu'une de vos créatures attaque », Raid
+      // Bombardment).
+      const atk =
+        s.combat?.attackers.find((a) => a.id === ctx.sourceId) ?? s.combat?.attackers.find((a) => a.id === ctx.event?.objectId);
       if (!atk) return [];
       if (isPlayer(s, atk.defender)) return [atk.defender];
       const pw = s.objects[atk.defender];

@@ -151,7 +151,9 @@ export const HANDLERS: OpHandlers = {
         const kinds = DEFAULT_ORDER(Object.keys(left).filter((k) => (left[k] ?? 0) > 0));
         if (kinds.length === 0) break;
         let kind = kinds[0] as string;
-        if (kinds.length > 1) {
+        // Tous les marqueurs restants partent (« retirez tous les marqueurs ») : aucun choix à faire.
+        const remaining = Object.values(left).reduce((a, c) => a + Math.max(0, c ?? 0), 0);
+        if (kinds.length > 1 && n - i < remaining) {
           const k = key(`rc-${id}-${i}`);
           const answer = r.vars[k];
           if (!answer) {

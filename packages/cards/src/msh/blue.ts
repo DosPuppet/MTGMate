@@ -409,7 +409,7 @@ export const BLUE: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         tap: true,
-        // Le reste va au-dessous de la bibliothèque (ordre non aléatoire).
+        // Le reste va au-dessous de la bibliothèque dans un ordre aléatoire.
         effects: [fx.lookAtTop(4, { filter: { types: ["Artifact"] }, rest: "bottom" })],
         label: "Regardez quatre cartes : un artefact en main",
       }),
