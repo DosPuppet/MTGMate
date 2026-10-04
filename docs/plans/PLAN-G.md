@@ -325,3 +325,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   difficile : Karmic Justice, Phyrexian Unlife, As Foretold, Necropotence, Ground Seal, Shared Animosity.
 - **G6 (04/10/2026) :** 47 cartes de Breaking News (OTP 50 / 61) ; la recherche est notée au journal du tour.
   `RULES_VERSION` 111. Onze cartes vont au sous-lot difficile (liste dans `docs/extensions/reeditions.md`).
+- **G7 (04/10/2026) :** 36 cartes de Through the Ages (FCA 39 / 50) ; une capacité de mana peut engager un artefact.
+  `RULES_VERSION` 112. Onze cartes vont au sous-lot difficile.

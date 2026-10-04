@@ -1,8 +1,9 @@
 /** Through the Ages (FCA) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
-import { loseLife } from "../src/actions";
+import { destroy, loseLife } from "../src/actions";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { manaAbilitiesOf } from "../src/mana";
+import { chars, moveObject } from "../src/state";
 import {
   act,
   advanceUntil,
@@ -15,6 +16,7 @@ import {
   scenario,
   settle,
   settleNoBlocks,
+  throughCombat,
   untilCastNow,
 } from "./helpers";
 
@@ -98,6 +100,167 @@ describe("Through the Ages", () => {
       expect(s.players.p2?.life).toBe(16);
       expect(s.exile.map((id) => nameOf(s, id)).sort()).toEqual(["Mizzix's Mastery", "Shock", "Shock"]);
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+  });
+
+  describe("G7 : Through the Ages", () => {
+    const castIt = (s: S, name: string, extra: object = {}) =>
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
+    const activate = (s: S, source: string, extra: object = {}, pick?: (a: { label?: string }) => boolean) => {
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === source && (!pick || pick(a)));
+      return act(s, "p1", { type: "activate", source, ability: ab?.type === "activate" ? ab.ability : 0, ...extra });
+    };
+
+    it("Adeline : force égale au nombre de vos créatures ; vous attaquez, un Humain 1/1 attaquant", () => {
+      let s = scenario({ p1: { battlefield: ["Adeline, Resplendent Cathar", "Bear Cub"] } });
+      const adeline = idOf(s, "p1", "battlefield", "Adeline, Resplendent Cathar");
+      expect(chars(s, adeline).power).toBe(2);
+      s = settle(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
+      const human = idOf(s, "p1", "battlefield", "Human");
+      expect(s.combat?.attackers.some((a) => a.id === human)).toBe(true);
+    });
+
+    it("Ranger-Captain of Eos : sacrifié, vos adversaires ne lancent pas de sorts non-créature ce tour-ci", () => {
+      let s = scenario({
+        p1: { battlefield: ["Ranger-Captain of Eos"] },
+        p2: { battlefield: ["Mountain", "Forest"], hand: ["Shock", "Llanowar Elves"] },
+      });
+      s = settle(activate(s, idOf(s, "p1", "battlefield", "Ranger-Captain of Eos")));
+      expect(castOption(s, idOf(s, "p2", "hand", "Shock"))).toBeUndefined();
+      expect(legalActions(s, "p2").some((a) => a.type === "cast" && a.card === idOf(s, "p2", "hand", "Shock"))).toBe(false);
+    });
+
+    it("Urza : engager un artefact donne {U}", () => {
+      let s = scenario({ p1: { battlefield: ["Urza, Lord High Artificer", "Mana Crypt"] } });
+      s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Urza, Lord High Artificer"), ability: 0 });
+      expect([s.players.p1?.manaPool.U, s.objects[idOf(s, "p1", "battlefield", "Mana Crypt")]?.tapped]).toEqual([1, true]);
+    });
+
+    it("Venser : renvoie un sort en main", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: lands("Island", 4), hand: ["Venser, Shaper Savant"] },
+        p2: { battlefield: lands("Forest", 2), hand: ["Bear Cub"] },
+      });
+      s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Bear Cub") });
+      s = act(s, "p2", { type: "pass" });
+      const spellId = s.stack[0]?.id as string;
+      s = settle(castIt(s, "Venser, Shaper Savant"), (req) =>
+        req.type === "pick" && req.options.includes(spellId) ? [spellId] : undefined,
+      );
+      expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Fatal Push : valeur de mana 2 ou moins, ou 4 avec la révolte", () => {
+      const run = (revolt: boolean) => {
+        let s = scenario({
+          p1: { battlefield: ["Swamp", "Ghostly Prison"], hand: ["Fatal Push"] },
+          p2: { battlefield: ["Kalamax, the Stormsire"] },
+        });
+        if (revolt) destroy(s, idOf(s, "p1", "battlefield", "Ghostly Prison"));
+        s = settle(castIt(s, "Fatal Push", { targets: { t: [idOf(s, "p2", "battlefield", "Kalamax, the Stormsire")] } }));
+        return idsOf(s, "p2", "battlefield", "Kalamax, the Stormsire").length;
+      };
+      expect(run(false)).toBe(1);
+      expect(run(true)).toBe(0);
+    });
+
+    it("Syr Konrad : une créature meurt, une carte de créature quitte votre cimetière : 1 blessure à chaque adversaire", () => {
+      let s = scenario({ p1: { battlefield: ["Syr Konrad, the Grim", "Bear Cub"], graveyard: ["Llanowar Elves"] } });
+      destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
+      s = settle(s);
+      moveObject(s, idOf(s, "p1", "graveyard", "Llanowar Elves"), "exile");
+      s = settle(s);
+      expect(s.players.p2?.life).toBe(18);
+    });
+
+    it("Purphoros : n'est une créature qu'avec cinq de dévotion au rouge ; une de vos créatures arrive, 2 blessures", () => {
+      let s = scenario({ p1: { battlefield: ["Purphoros, God of the Forge", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
+      const purph = idOf(s, "p1", "battlefield", "Purphoros, God of the Forge");
+      expect(chars(s, purph).types.includes("Creature")).toBe(false);
+      s = settle(castIt(s, "Bear Cub"));
+      expect(s.players.p2?.life).toBe(18);
+    });
+
+    it("Azusa : deux terrains de plus par tour", () => {
+      let s = scenario({ p1: { battlefield: ["Azusa, Lost but Seeking"], hand: ["Forest", "Forest", "Forest", "Forest"] } });
+      for (let i = 0; i < 3; i++) s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
+      expect(legalActions(s, "p1").some((a) => a.type === "playLand")).toBe(false);
+    });
+
+    it("Traxos : se dégage quand vous lancez un sort historique", () => {
+      let s = scenario({ p1: { battlefield: [{ name: "Traxos, Scourge of Kroog", tapped: true }], hand: ["Mana Crypt"] } });
+      s = settle(castIt(s, "Mana Crypt"));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Traxos, Scourge of Kroog")]?.tapped).toBe(false);
+    });
+
+    it("Kenrith : {2}{W}, le joueur ciblé gagne 5 PV", () => {
+      let s = scenario({ p1: { battlefield: ["Kenrith, the Returned King", ...lands("Plains", 3)] } });
+      s = settle(
+        activate(
+          s,
+          idOf(s, "p1", "battlefield", "Kenrith, the Returned King"),
+          { targets: { t: ["p1"] } },
+          (a) => !!a.label?.includes("5 PV"),
+        ),
+      );
+      expect(s.players.p1?.life).toBe(25);
+    });
+
+    it("Brainstorm : piochez trois cartes, puis remettez-en deux sur la bibliothèque", () => {
+      let s = scenario({ p1: { battlefield: ["Island"], hand: ["Brainstorm", "Shock"], library: lands("Forest", 5) } });
+      s = settle(castIt(s, "Brainstorm"));
+      expect(s.players.p1?.hand).toHaveLength(2);
+      expect(s.players.p1?.library).toHaveLength(4);
+    });
+
+    it("Cryptic Command : contrecarrez et piochez", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: lands("Island", 4), hand: ["Cryptic Command"], library: lands("Island", 3) },
+        p2: { battlefield: lands("Forest", 2), hand: ["Bear Cub"] },
+      });
+      s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Bear Cub") });
+      s = act(s, "p2", { type: "pass" });
+      const opt = castOption(s, idOf(s, "p1", "hand", "Cryptic Command"));
+      const pair =
+        opt?.type === "cast"
+          ? opt.modes.find((m) => m.label?.startsWith("Contrecarrez") && m.label.includes("Piochez"))
+          : undefined;
+      s = settle(castIt(s, "Cryptic Command", { mode: pair?.index, targets: { s: [s.stack[0]?.id as string] } }));
+      expect([idsOf(s, "p2", "graveyard", "Bear Cub").length, s.players.p1?.hand.length]).toEqual([1, 1]);
+    });
+
+    it("Deadly Dispute : sacrifiez un artefact ou une créature ; deux cartes et un Trésor", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Deadly Dispute"], library: lands("Swamp", 3) },
+      });
+      s = settle(castIt(s, "Deadly Dispute", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      expect([s.players.p1?.hand.length, idsOf(s, "p1", "battlefield", "Treasure").length]).toEqual([2, 1]);
+    });
+
+    it("Isshin : un déclenchement d'attaque se déclenche une fois de plus", () => {
+      let s = scenario({ p1: { battlefield: ["Isshin, Two Heavens as One", "Captain Lannery Storm"] } });
+      s = settle(attack(s, [idOf(s, "p1", "battlefield", "Captain Lannery Storm")]));
+      expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(2);
+    });
+
+    it("Kinnan : un permanent non-terrain engagé pour du mana en produit un de plus", () => {
+      let s = scenario({ p1: { battlefield: ["Kinnan, Bonder Prodigy", "Llanowar Elves"] } });
+      s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Llanowar Elves"), ability: 0 });
+      expect(s.players.p1?.manaPool.G).toBe(2);
+    });
+
+    it("Chromatic Lantern : vos terrains produisent n'importe quelle couleur", () => {
+      const s = scenario({ p1: { battlefield: ["Chromatic Lantern", "Forest"] } });
+      expect(manaAbilitiesOf(s, idOf(s, "p1", "battlefield", "Forest")).some((a) => a.produce.length === 5)).toBe(true);
+    });
+
+    it("Strixhaven Stadium : dix marqueurs de point, l'adversaire perd la partie", () => {
+      let s = scenario({ p1: { battlefield: [{ name: "Strixhaven Stadium", counters: { point: 9 } }, "Bear Cub"] } });
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
+      expect(s.over).toBe(true);
+      expect(s.winner).toBe("p1");
     });
   });
 });

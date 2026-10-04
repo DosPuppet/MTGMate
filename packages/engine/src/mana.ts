@@ -189,9 +189,15 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
  */
 function otherToTap(s: GameState, id: ObjectId, strict = false): ObjectId | undefined {
   const me = obj(s, id).controller;
-  const creature = manaAbilitiesOf(s, id).some((a) => a.tapAnother === "creature");
+  // « Engagez une créature (un artefact) dégagée que vous contrôlez » : Springleaf Drum, Urza, Lord High Artificer.
+  const kind = manaAbilitiesOf(s, id).find((a) => typeof a.tapAnother === "string")?.tapAnother;
   const mine = s.battlefield.filter(
-    (x) => x !== id && !obj(s, x).tapped && obj(s, x).controller === me && (!creature || isCreature(s, x)),
+    (x) =>
+      x !== id &&
+      !obj(s, x).tapped &&
+      obj(s, x).controller === me &&
+      (kind !== "creature" || isCreature(s, x)) &&
+      (kind !== "artifact" || chars(s, x).types.includes("Artifact")),
   );
   return mine.find((x) => manaAbilitiesOf(s, x).length === 0) ?? (strict ? undefined : mine[0]);
 }

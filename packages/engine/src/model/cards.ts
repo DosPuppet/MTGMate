@@ -409,7 +409,7 @@ export interface ManaAbilityDef {
   restriction?: ManaRestriction;
   /** Gene Pollinator : « engagez un permanent dégagé que vous contrôlez » en plus de {T} (choisi automatiquement). */
   /** `"creature"` : une créature dégagée (Springleaf Drum). */
-  tapAnother?: boolean | "creature";
+  tapAnother?: boolean | "creature" | "artifact";
   /** « N'activez que si vous contrôlez… » (Verges d'Aetherdrift). */
   condition?: Condition;
   /** « Une seule fois par tour » (Vivi Ornitier). */

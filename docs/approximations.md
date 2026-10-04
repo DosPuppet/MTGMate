@@ -373,3 +373,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Fraying Sanity : le nombre de cartes compte celles mises dans le cimetière des adversaires du contrôleur de l'Aura (exact en duel) ;
   - `règle` Raid Bombardment : la blessure va au joueur défenseur, même si la créature attaque un planeswalker.
   - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous.
+  - `règle` Adeline, Resplendent Cathar : les Humains créés attaquent tous le même défenseur (un par adversaire, en multijoueur) ;
+  - `règle` Mangara, the Diplomat : « deux créatures ou plus vous attaquent » compte les attaques contre vous du tour entier.

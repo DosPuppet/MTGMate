@@ -1645,7 +1645,7 @@ export function manaAbility(
     rider?: ManaAbilityDef["rider"];
     distinctPowers?: boolean;
     /** « Engagez un permanent (une créature : `"creature"`) dégagé que vous contrôlez » en plus de {T}. */
-    tapAnother?: boolean | "creature";
+    tapAnother?: boolean | "creature" | "artifact";
     condition?: Condition;
     /** Autant de mana que la force de la source. */
     selfPower?: boolean;

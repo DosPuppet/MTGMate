@@ -39,5 +39,6 @@
  "Utopia Sprawl | triggered | Utopia Sprawl : 1 dans le texte, 0 dans le script": "capacité déclenchée de mana (605.1b, « chaque fois que … est engagé pour du mana, ajoutez … ») modélisée par un remplacement de mana (eventReplacement « mana »), comme Shimmerwilds Growth",
  "Journey to Nowhere | triggered | Journey to Nowhere : 2 dans le texte, 1 dans le script": "exil « jusqu'à ce qu'il quitte le champ de bataille » (610.3) : les deux capacités déclenchées (arrivée, départ) modélisées par exileUntilLeaves",
  "Detention Sphere | triggered | Detention Sphere : 2 dans le texte, 1 dans le script": "exil « jusqu'à ce qu'il quitte le champ de bataille » (610.3) : les deux capacités déclenchées (arrivée, départ) modélisées par exileUntilLeaves",
- "Crackle with Power | target | 0 « target » dans le texte, 1 dans le script": "« each of up to X targets » : une seule cible à nombre variable (countX), que le décompte des mots « target » ne voit pas"
+ "Crackle with Power | target | 0 « target » dans le texte, 1 dans le script": "« each of up to X targets » : une seule cible à nombre variable (countX), que le décompte des mots « target » ne voit pas",
+ "Kinnan, Bonder Prodigy | triggered | Kinnan, Bonder Prodigy : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus du même type) : remplacement de mana (R1, famille I), comme Shimmerwilds Growth"
 }

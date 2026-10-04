@@ -183,3 +183,17 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   alternatif en exilant une carte de la main), Terminal Agony (folie), Grindstone (meule répétée), Outlaws' Merriment
   (mode au hasard), Fractured Identity (copies pour les autres joueurs), Unlicensed Hearse (F/E égales aux cartes liées),
   Ride Down (créatures bloquées par une créature).
+
+## G7 — Through the Ages ✅ (36 cartes ; FCA 39 / 50)
+
+- **Cartes :** Adeline, Ranger-Captain of Eos, Sram, Counterspell, Urza, Lord High Artificer, Venser, Dark Ritual, Fatal
+  Push, Syr Konrad, Yawgmoth, Godo, Purphoros, Azusa, Traxos, Danitha Capashen, Kenrith, Loran of the Third Path,
+  Mangara, Wall of Omens, Brainstorm, Cryptic Command, Deadly Dispute, Diabolic Intent, Varragoth, Captain Lannery Storm,
+  Lightning Bolt, Najeela, Farseek, Nature's Claim, Primeval Titan, Dovin's Veto, Isshin, Kinnan, Chromatic Lantern,
+  Smuggler's Copter, Strixhaven Stadium.
+- **Le moteur gagne :** `tapAnother: "artifact"` (Urza : « engagez un artefact dégagé : {U} »).
+- **Tests :** `fca.test.ts` (+17).
+- **Approximations :** Adeline (les Humains attaquent le premier adversaire) ; Mangara (les attaques contre vous sont
+  comptées sur le tour) ; Purphoros (sans dévotion suffisante, c'est un enchantement sans autre type de carte).
+- **Sous-lot difficile :** Bolas's Citadel, Jodah, Winota, Nyxbloom Ancient, Laboratory Maniac, Teferi, Mage of Zhalfir,
+  Gix, K'rrik (mana phyrexian), Atraxa, Carpet of Flowers, Ancient Copper Dragon (d20).

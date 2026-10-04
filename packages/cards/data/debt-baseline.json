@@ -163,7 +163,6 @@
     "notEventObject": "Pawpatch Recruit — cible d'une capacité déclenchée « autre que cette créature » (objet de l'événement, lot K6) : famille des contraintes de cible (otherThan), à réutiliser pour toute carte « autre que cette créature / ce permanent »",
     "notSpellFromHand": "Heartwood Crafter — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "numberChosen": "Talion, the Kindly Lord — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "onAttack": "Windcrag Siege — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "options": "A Killer Among Us — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "optionsFrom": "Koh, the Face Stealer — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "perOwnCreatureTypes": "Diligent Zookeeper — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -200,7 +199,7 @@
     "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte",
     "manaValueSourceCounters": "Blast Zone — filtre relatif à la source (famille manaValueSourcePower) : valeur de mana égale à ses marqueurs",
     "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »",
-    "spellTypes": "Deafening Silence — limite de sorts (famille D, castLimit) restreinte à certains types : à réutiliser pour toute limite « un sort [non-créature] par tour »"
+    "againstYou": "Mangara, the Diplomat — requête du journal du tour (attaques contre vous) déjà employée par le moteur (castLimit attackedYou) : à réutiliser pour toute carte « créatures qui vous attaquent »"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
