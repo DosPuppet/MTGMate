@@ -597,8 +597,11 @@ export interface CostDef {
   /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). `includeSelf` : « engagez N
    * créatures dégagées que vous contrôlez », la source peut en être une, même avec le mal d'invocation (302.6). */
   tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
-  /** Engager la créature à laquelle la source est attachée (elle doit pouvoir utiliser {T}). */
-  tapAttached?: boolean;
+  /**
+   * Capacité accordée par un autre permanent (`Characteristics.grantors`) : ce qu'on en fait pour payer (« Engagez Fishing
+   * Pole », « Exilez The Dominion Bracelet », « Sacrifiez Deconstruction Hammer »).
+   */
+  grantor?: "tap" | "exile" | "sacrifice";
   /** Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N). */
   loyalty?: number;
   /** « −X » : X marqueurs de loyauté retirés (X choisi à l'activation). */

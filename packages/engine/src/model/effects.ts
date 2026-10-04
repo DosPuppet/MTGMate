@@ -668,7 +668,10 @@ export type Effect =
   /** Choisir X, puis payer {X} (ou X points de vie : `life`, Necrodominance) ; mémorisé sous `store` (Wildborn Preserver). */
   /** `who` : ce joueur paie (Plague of Vermin), le contrôleur par défaut. */
   | { op: "payX"; prompt: string; store: string; life?: boolean; who?: Ref }
-  /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */
+  /**
+   * Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend) ; à plusieurs cibles, de nouvelles cibles au
+   * choix pour chaque mot « cible », celles d'origine proposées (« vous pouvez choisir de nouvelles cibles » : Commandeer).
+   */
   | { op: "changeTarget"; what: Ref }
   /**
    * Le mana ajouté ne se vide pas avant la fin du tour (Savage Ventmaw), ou avant la fin du combat (`untilEndOfCombat` :

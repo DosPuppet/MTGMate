@@ -334,7 +334,7 @@ export const WHITE: Record<string, CardScript> = {
       }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
       triggered(when.attacks({ types: ["Creature"], attachedToSource: true }), [fx.tap(ref.target())], {
-        targets: [target.creature("t", { controller: "opponent" })],
+        targets: [target.of(ref.defendingPlayer, target.creature("t"), "créature du joueur défenseur")],
         label: "Engagez une créature du défenseur",
       }),
     ],

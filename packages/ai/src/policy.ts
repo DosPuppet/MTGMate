@@ -69,7 +69,12 @@ function castDecision(s: GameState, me: PlayerId, a: ActionOption): Decision | n
   const bad = harmful(d);
   const specs = a.type === "cast" ? (a.modes[0]?.targets ?? []) : a.targets;
   const targets: Record<string, string[]> = {};
-  for (const spec of specs) {
+  for (const spec0 of specs) {
+    // « Le joueur ciblé … les cartes de son cimetière » : celles du joueur déjà choisi.
+    const of = spec0.ofTarget;
+    const spec = of
+      ? { ...spec0, legal: spec0.legal.filter((id) => (targets[of.id] ?? []).includes(of.holders[id] ?? "")) }
+      : spec0;
     const t = pickTarget(s, me, spec, bad);
     if (!t && !spec.optional) return null;
     targets[spec.id] = t ? [t] : [];

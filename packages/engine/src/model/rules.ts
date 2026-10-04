@@ -1,5 +1,5 @@
 /** Types du moteur — Filtres, cibles, déclencheurs, conditions, références et montants. Réexportés par `types.ts`. */
-import type { CardType, CastVia, Color, Keyword, ManaType, Step, TurnLogQuery, Zone } from "../types";
+import type { CardType, CastVia, Color, Keyword, ManaType, PlayerId, Step, TurnLogQuery, Zone } from "../types";
 
 export interface TargetSpec {
   id: string;
@@ -47,6 +47,16 @@ export interface TargetSpec {
    * `"upTo"` : jusqu'à X cibles (Divergent Equation).
    */
   countX?: boolean | "upTo";
+  /**
+   * « … que ce joueur contrôle », « du cimetière de ce joueur » : chaque cible est tenue (contrôlée sur le champ de bataille
+   * ou sur la pile, possédée ailleurs) par un joueur désigné : le joueur de l'événement (le joueur blessé : Fear of Burning
+   * Alive ; celui qui détruit : Karmic Justice), le joueur défenseur (Fear of Falling, Chorale of the Void), ou le joueur
+   * choisi pour un autre mot « cible » du même sort ou de la même capacité (`ref.target("p")` : Rite of Renewal). Évaluée
+   * au ciblage (`concreteSpec`, qui la remplace par `ofPlayers`), puis de nouveau à la résolution (608.2b).
+   */
+  of?: Ref;
+  /** `of` évaluée : les joueurs qui peuvent tenir les cibles. */
+  ofPlayers?: PlayerId[];
 }
 
 /**
@@ -657,6 +667,11 @@ export type Ref =
   | { kind: "except"; ref: Ref; exclude: Ref }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
   | { kind: "eventPlayer" }
+  /**
+   * Le permanent qui accorde la capacité activée qui se résout (« la créature équipée a "… Renvoyez Trusty Boomerang dans
+   * la main de son propriétaire" »), retenu à l'activation ; rien s'il a changé de zone depuis.
+   */
+  | { kind: "grantor" }
   /**
    * Le contrôleur de l'objet désigné ; parti du champ de bataille ce tour-ci, son dernier contrôleur connu (608.2h : Winds
    * of Abandon, Indomitable Creativity) ; sinon, hors du champ de bataille et de la pile, son propriétaire.

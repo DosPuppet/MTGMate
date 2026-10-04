@@ -71,7 +71,10 @@ export function buildCastDecision(
   };
   const targetsFrom = (opts: TargetOption[]) => {
     const t: Record<string, string[]> = {};
-    for (const o of opts) {
+    for (const o0 of opts) {
+      // « Le joueur ciblé … les cartes de son cimetière » : seulement celles du joueur déjà choisi (Rite of Renewal).
+      const of = o0.ofTarget;
+      const o = of ? { ...o0, legal: o0.legal.filter((id) => (t[of.id] ?? []).includes(of.holders[id] ?? "")) } : o0;
       if (o.count) {
         const taken = (o.otherThan ?? []).flatMap((k) => t[k] ?? []);
         const order = [...o.legal].filter((id) => !taken.includes(id)).sort(() => rand() - 0.5);

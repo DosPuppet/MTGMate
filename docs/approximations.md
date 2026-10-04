@@ -51,7 +51,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Moonlit Meditation, Mirrormind Crown : « vous pouvez » est demandé pour les jetons créés par un effet de création de jetons ; ceux d'amasser, d'endurer ou d'un cadeau sont toujours remplacés par des copies.
 - **Foundations (`docs/extensions/fdn.md`) :**
   - `choix auto` Quilled Greatwurm : les six marqueurs du coût sont retirés d'abord des créatures qui en ont le plus ;
-  - `règle` Fishing Pole : la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée ») ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
   - `choix auto` Curator of Destinies : en multijoueur, c'est l'adversaire suivant qui choisit la pile.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
@@ -80,11 +79,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Grand Abolisher : les capacités de mana ne sont pas bloquées.
 - **Edge of Eternities (`docs/extensions/eoe.md`) :**
   - `choix auto` Gene Pollinator : le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana) ;
-  - `règle` The Endstone : « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV) ;
-  - `règle` The Dominion Bracelet : la capacité accordée à la créature équipée est portée par l'Équipement (comme Fishing Pole) ;
-  - `règle` Chorale of the Void : la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
+  - `règle` The Endstone : « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV).
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
-  - `règle` Rite of Renewal : les cartes mélangées viennent d'un même cimetière, et vont dans la bibliothèque de leur propriétaire, que ce soit ou non le joueur ciblé ;
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
   - `timing` Sidisi, Regent of the Mire : la carte de VM X + 1 est ciblée par une capacité réflexive, une fois le coût payé ;
   - `règle` Betor, Kin to All, Mardu Siegebreaker : en multijoueur, chaque adversaire perd la moitié des PV du premier adversaire (Betor) ; une seule copie, qui attaque le même joueur que Mardu Siegebreaker ;
@@ -95,7 +91,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
   - `règle` Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
   - `règle` Kaito (Monstrous Emergence) : en multijoueur, il attaque le joueur qu'attaque une de vos créatures ;
-  - `règle` « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ;
   - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
   - `règle` conditions non vérifiées : l'attaque d'un joueur (Dollmaker's Shop : une créature non-Jouet qui attaque un planeswalker ou une bataille compte aussi), la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
   - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
@@ -115,7 +110,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Alania : un sort d'Alania lancé plus tôt dans le tour compte comme sort de Loutre (le sort de Loutre suivant n'est plus « le premier ») ; Ral (emblème) : la réplique est comptée à la résolution (un sort lancé en réponse au déclenchement compte).
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
-  - `règle` Dreadmaw's Ire : l'artefact détruit est celui d'un adversaire quelconque ;
   - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : la carte devient un Esprit 1/1 volant juste après son arrivée (et non en arrivant) ;
   - `règle` Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
   - `règle` Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
@@ -139,7 +133,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Warrior's Blades : la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie ;
   - `règle` Emrakul, the Exigent Doom : la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée) ; lancée, elle dure jusqu'à ce que le sort soit lancé (601.2i) et peut servir à le payer.
 - **Méta Standard (plan P4, `docs/extensions/meta.md`) :**
-  - `règle` Leatherhead, Swamp Stalker : l'artefact ou l'enchantement détruit est celui d'un adversaire quelconque (« ce joueur ») ;
   - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
@@ -218,11 +211,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Bumi, Unleashed : « seules les créatures-terrains peuvent attaquer pendant ce combat » interdit d'attaquer, jusqu'à la fin du tour, aux créatures non-terrains présentes à la résolution ;
   - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui du premier adversaire ;
   - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
-  - `règle` Trusty Boomerang : la capacité « {1}, {T} : engagez une créature ciblée, renvoyez le Boomerang » est portée par l'Équipement (elle reste si la créature équipée perd ses capacités) ;
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges ;
   - `règle` Secret of Bloodbending : sans maîtrise de l'eau, vous contrôlez l'adversaire pendant la première phase de combat de son prochain tour (une phase de combat supplémentaire de ce tour lui revient) ;
   - `règle` Firebender Ascension : « cette capacité » est la plus récente capacité de la créature sur la pile ; si elle s'est déjà résolue, rien n'est copié ;
-  - `règle` Fire Lord Sozin : les cartes ciblées sont celles d'un cimetière adverse (exact en duel ; à plusieurs, celui du joueur blessé) ;
   - `choix auto` Koh, the Face Stealer : une carte exilée et liée ne quitte pas le choix quand une autre carte de même nom est exilée (les capacités sont les mêmes).
 - **Marvel Super Heroes (`docs/extensions/msh.md`) :**
   - `règle` Raft Security Officer : « coûte {1} de moins si elle cible une créature de force 3 ou moins » est deux capacités ({1} avec une telle cible, {2} sinon) ; si la force de la cible dépasse 3 avant la résolution, la version à {1} perd sa cible ;
@@ -235,10 +226,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
   - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
   - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
-  - `règle` Speedball, New Warrior : seule la cible d'un sort à une seule cible peut être changée ;
   - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ;
   - `règle` Cosmic Cube : la carte choisie parmi les six passe par l'exil le temps d'être lancée (visible de tous), puis va au-dessous si vous renoncez ;
-  - `règle` Captain America's Shield : la créature ciblée est une créature adverse (pas forcément au joueur défenseur) ;
   - `règle` Kang the Conqueror : « pendant ce tour, les montées en puissance ne peuvent pas être activées » n'est pas appliqué au tour supplémentaire ;
   - `choix auto` Baron Helmut Zemo : les cartes noires exilées pour la vantardise sont choisies par le moteur (les plus riches en {B} d'abord, le moins de cartes possible) ;
   - `timing` Worlds Within Worlds : chaque joueur choisit et met ses créatures à tour de rôle (ordre APNAP), et non simultanément ;
@@ -256,7 +245,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Kitsune, Dragon's Daughter : l'échange se fait entre votre créature et celle d'un adversaire (deux créatures de deux adversaires ne s'échangent pas, à plus de deux joueurs) ;
   - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci ;
   - `règle` Madame Null : « payez des PV égaux à sa force » est une perte de PV facultative, proposée seulement si vos PV suffisent ;
-  - `règle` Shark Shredder : la carte est ciblée dans le cimetière d'un adversaire, pas forcément celui du joueur blessé (exact en duel) ;
+  - `règle` Shark Shredder : la créature arrive attaquant le joueur qu'attaque votre première créature attaquante, pas forcément le joueur blessé (exact en duel) ;
   - `règle` Shredder's Technique : « si un enchantement a été détruit » se lit « la cible était un enchantement et n'est plus sur le champ de bataille » ;
   - `règle` Party Dude : au niveau 3, « chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » se lit « chaque fois que vous attaquez » (exact en duel, sauf une attaque contre un planeswalker seul) ;
   - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet ;
@@ -285,7 +274,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Henry Wu : la pioche et le Trésor font partie de la capacité d'exploitation qu'il donne (ils n'ont lieu que s'il est sur le champ de bataille quand elle se résout) ;
   - `règle` Laboratory Maniac : la victoire qui remplace la pioche est constatée avec les actions basées sur l'état qui suivent (comme la défaite qu'elle remplace) ;
   - `règle` Nyxbloom Ancient : le mana « en plus » d'un autre type (Utopia Sprawl, Shimmerwilds Growth) n'est pas triplé ;
-  - `règle` Karmic Justice : le permanent ciblé est celui de n'importe quel adversaire (exact en duel) ;
   - `règle` Mirri, Weatherlight Duelist : « ce combat » dure le tour (un combat supplémentaire reste limité) ;
   - `règle` Shared Animosity : un attaquant changelin partage un type avec toute autre créature attaquante ;
   - `règle` Outlaws' Merriment : le jeton « choisi au hasard » est tiré par un dé à trois faces (affiché au journal) ;
@@ -293,7 +281,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` As Foretold : seulement les sorts lancés depuis la main ;
   - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà ; les trois marqueurs sont mis par une capacité d'arrivée ;
   - `règle` Hunting Velociraptor : la maraude demande des blessures de combat d'un Dinosaure (pas de n'importe quel type commun au sort) ;
-  - `règle` Commandeer : « vous pouvez choisir de nouvelles cibles » seulement pour un sort à cible unique ;
   - `règle` Ad Nauseam : le processus se répète au plus trente fois ;
   - `règle` Carpet of Flowers : seulement au début de votre première phase principale ;
   - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;

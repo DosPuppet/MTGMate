@@ -234,7 +234,7 @@ export const BLUE: Record<string, CardScript> = {
   "Spring Splasher": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), -3, 0)], {
-        targets: [target.creature("t", { controller: "opponent" })],
+        targets: [target.of(ref.defendingPlayer, target.creature("t"), "créature du joueur défenseur")],
         label: "-3/-0",
       }),
     ],

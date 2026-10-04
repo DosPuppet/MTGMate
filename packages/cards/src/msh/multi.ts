@@ -393,7 +393,6 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Speedball, New Warrior": {
     abilities: [
-      // Nouvelles cibles : seulement pour un sort à une seule cible (`changeTarget`, voir docs/approximations.md).
       triggered(
         when.castSpell("any", undefined, { objects: { self: true } }),
         [fx.pump(ref.self, 2, 2), fx.changeTarget(ref.eventObject)],

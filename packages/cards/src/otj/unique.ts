@@ -313,7 +313,11 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.combatDamage("self", true), [fx.castNow(ref.target(), { anyMana: true })], {
         targets: [
-          target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "opponent", "carte de permanent non-terrain"),
+          target.of(
+            ref.eventPlayer,
+            target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "any", "carte de permanent non-terrain"),
+            "carte de permanent non-terrain du cimetière de ce joueur",
+          ),
         ],
         label: "Lancez une carte de son cimetière",
       }),

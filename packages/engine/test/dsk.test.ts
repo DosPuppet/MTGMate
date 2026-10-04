@@ -16,9 +16,11 @@ import {
   act,
   advanceUntil,
   attack,
+  attackPlayer,
   canActivate,
   castable,
   castNowOf,
+  combatTargetsOffered,
   customCard,
   idOf,
   idsOf,
@@ -3507,5 +3509,58 @@ describe("Duskmourn : formes génériques (PLAN-A A3)", () => {
       s = settle(s);
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     });
+  });
+});
+
+describe("Duskmourn, PLAN-A A4a : « que ce joueur contrôle »", () => {
+  it("Fear of Falling : à plusieurs, seules les créatures du joueur défenseur sont des cibles", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Fear of Falling"] },
+      p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+      p3: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const run = combatTargetsOffered(attackPlayer(s, [idOf(s, "p1", "battlefield", "Fear of Falling")], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
+    s = run.s;
+    expect(chars(s, idOf(s, "p3", "battlefield", "Shivan Dragon")).keywords).not.toContain("flying");
+    expect(chars(s, idOf(s, "p2", "battlefield", "Serra Angel")).keywords).toContain("flying");
+  });
+
+  it("Fear of Falling : la cible est revérifiée à la résolution (608.2b) : passée à un autre joueur, elle est illégale", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Fear of Falling"] },
+      p3: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const dragon = idOf(s, "p3", "battlefield", "Shivan Dragon");
+    s = attackPlayer(s, [idOf(s, "p1", "battlefield", "Fear of Falling")], "p3");
+    expect(s.pending?.kind).toBe("choice");
+    s = act(s, "p1", { type: "choose", values: [dragon] });
+    expect(s.stack.at(-1)?.targets.t).toEqual([dragon]);
+    // p2 (un autre adversaire) prend le contrôle du Dragon avant la résolution : il n'est plus au joueur défenseur.
+    s = steal(s, dragon, "p2");
+    s = settleNoBlocks(s);
+    expect(chars(s, dragon).keywords).toContain("flying");
+    expect(chars(s, dragon).power).toBe(5);
+  });
+
+  it("Fear of Burning Alive : à plusieurs, la créature ciblée est celle du joueur blessé", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Fear of Burning Alive", "Mountain", "Mountain"], hand: ["Lightning Strike"], graveyard: DELIRIUM },
+      p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+      p3: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p3"] } });
+    const offered: (string | undefined)[][] = [];
+    s = settleAnswering(s, (req, _p, cur) => {
+      if (req.type === "pick" && req.intent === "triggerTarget") offered.push(namesIn(cur, req.options));
+      return undefined;
+    });
+    expect(offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
+    expect(s.players.p3?.life).toBe(17);
+    // Les créatures de p2 ne sont pas touchées.
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });

@@ -72,7 +72,7 @@ export const BLUE: Record<string, CardScript> = {
   "Fear of Falling": {
     abilities: [
       triggered(when.attacksSelf, [fx.modify(ref.target(), { power: -2, removeKeywords: ["flying"] }, "untilYourNextTurn")], {
-        targets: [target.creature("t", { controller: "opponent" })],
+        targets: [target.of(ref.defendingPlayer, target.creature("t"), "créature du joueur défenseur")],
         label: "-2/-0 et perd le vol",
       }),
     ],

@@ -129,12 +129,12 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Rite of Renewal": {
-    // Les cartes mélangées viennent d'un même cimetière ; leur propriétaire les mélange dans sa bibliothèque.
+    // Les cartes mélangées viennent du cimetière du joueur ciblé, qui les mélange dans sa bibliothèque.
     spell: spell(
       [
         target.upTo(2, target.cardInGraveyard("p", { permanent: true }, "you", "carte de permanent de votre cimetière")),
         target.player("pl"),
-        { ...target.upTo(4, target.cardInGraveyard("c", {}, "any", "carte du cimetière du joueur ciblé")), samePlayer: true },
+        target.of(ref.target("pl"), target.upTo(4, target.cardInGraveyard("c", {}, "any", "carte du cimetière du joueur ciblé"))),
       ],
       [fx.toHand(ref.target("p")), fx.moveTo(ref.target("c"), { to: "libraryTop", shuffle: true }), fx.exileOnResolve],
     ),

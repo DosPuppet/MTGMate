@@ -562,7 +562,7 @@ export const CARDS: Record<string, CardScript> = {
         when.destroyedByOpponent({ notTypes: ["Creature"], controller: "you" }),
         fx.may("Détruire un permanent de cet adversaire ?", fx.destroy(ref.target())),
         {
-          targets: [{ id: "t", label: "permanent adverse", filter: { objects: { controller: "opponent" } } }],
+          targets: [target.of(ref.eventPlayer, { id: "t", filter: { objects: {} } }, "permanent de cet adversaire")],
           label: "Un adversaire détruit un de vos permanents non-créature : vous pouvez détruire un de ses permanents",
         },
       ),

@@ -174,8 +174,6 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Shark Shredder, Killer Clone": {
     abilities: [
-      // Approximation à plus de deux joueurs : la carte est prise dans le cimetière d'un adversaire, pas forcément celui
-      // du joueur blessé.
       triggered(
         when.combatDamageToPlayer,
         [fx.toBattlefield(ref.target(), { underYourControl: true, tapped: true, attacking: true })],
@@ -183,7 +181,10 @@ export const BLACK: Record<string, CardScript> = {
           targets: [
             target.upTo(
               1,
-              target.cardInGraveyard("t", { types: ["Creature"] }, "opponent", "carte de créature du cimetière de ce joueur"),
+              target.of(
+                ref.eventPlayer,
+                target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature du cimetière de ce joueur"),
+              ),
             ),
           ],
           label: "Une carte de créature de son cimetière arrive sous votre contrôle, engagée et attaquante",

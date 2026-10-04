@@ -19,6 +19,7 @@ import {
   announceDiscardBatch,
   concreteSpec,
   evalAmount,
+  GRANTOR_KEY,
   moveDiscarded,
   moveWithSpec,
   permissionActive,
@@ -40,7 +41,6 @@ import {
   FACE_DOWN_DEF,
   FACE_DOWN_ID,
   isCreature,
-  isSummoningSick,
   moveObject,
   newId,
   nextTimestamp,
@@ -2459,6 +2459,13 @@ export function abilitiesOf(s: GameState, id: ObjectId): CardDef["abilities"] {
   return o.zone === "battlefield" ? chars(s, id).abilities : (s.defs[o.defId]?.abilities ?? []);
 }
 
+/** Le permanent qui accorde à `source` sa capacité de rang `index` (« la créature équipée a "…" »), s'il est en jeu. */
+export function grantorOf(s: GameState, source: ObjectId, index: number): ObjectId | undefined {
+  if (s.objects[source]?.zone !== "battlefield") return undefined;
+  const g = chars(s, source).grantors?.[index];
+  return g && onBattlefield(s, g) ? g : undefined;
+}
+
 export function activatedAbility(s: GameState, source: ObjectId, index: number): ActivatedAbilityDef | null {
   const ab = abilitiesOf(s, source)[index];
   return ab?.kind === "activated" ? ab : null;
@@ -2786,9 +2793,11 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.removeCounterFrom && !counterSources(s, who, source, ab)) return false;
   if (ab.cost.blight && !blightTarget(s, o.controller, ab.cost.blight)) return false;
   if (ab.cost.collectEvidence && !evidenceCards(s, who, source, ab.cost.collectEvidence)) return false;
-  if (ab.cost.tapAttached) {
-    const host = o.attachedTo;
-    if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
+  // « Engagez / exilez / sacrifiez [le permanent qui accorde la capacité] » (Fishing Pole, The Dominion Bracelet).
+  if (ab.cost.grantor) {
+    const g = grantorOf(s, source, index);
+    if (!g || (ab.cost.grantor === "tap" && obj(s, g).tapped)) return false;
+    if (ab.cost.grantor === "sacrifice" && hasKeyword(s, g, "cantBeSacrificed")) return false;
   }
   const player = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.cost.removeCounters && countersFor(o, ab.cost.removeCounters.kind) < ab.cost.removeCounters.n) return false;
@@ -3248,6 +3257,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (tapXChosen.length < (ab.cost.tapX ? x : 0) || tapXChosen.some((id) => !tapXOptions.includes(id)))
     throw new RulesError("Pas assez de permanents à engager");
   const c = chars(s, source);
+  const grantor = grantorOf(s, source, index);
   // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
   if (ab.specialAction) {
     if (ab.cost.mana) {
@@ -3286,8 +3296,17 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     x,
     kicked: false,
     sourceSnapshot: { keywords: c.keywords, power: c.power, controller: player },
-    // Capacité accordée (pas dans la définition imprimée) : ses effets voyagent avec elle.
-    inline: s.defs[o.defId]?.abilities[index] === ab ? undefined : { targets: ab.targets, effects: ab.effects, label: ab.label },
+    // Capacité accordée (pas dans la définition imprimée) : ses effets voyagent avec elle, et le permanent qui l'accorde
+    // (`ref.grantor`).
+    inline:
+      s.defs[o.defId]?.abilities[index] === ab
+        ? undefined
+        : {
+            targets: ab.targets,
+            effects: ab.effects,
+            label: ab.label,
+            ...(grantor ? { bound: { [GRANTOR_KEY]: [grantor] } } : {}),
+          },
   };
   s.stack.push(item);
   // Coûts : mana (sans engager la source si elle doit s'engager pour le coût), puis {T}, puis sacrifice.
@@ -3323,6 +3342,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       ...crew,
       ...materials,
       ...(ab.cost.tap || ab.cost.craft ? [source] : []),
+      ...(ab.cost.grantor && grantor ? [grantor] : []),
     ]);
     try {
       // Warrior's Blades, Dragonfire Blade : le coût dépend de la créature ciblée.
@@ -3342,7 +3362,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   if (ab.cost.tap) tapObject(s, o);
   if (ab.cost.removeCountersX && x > 0) changeCounters(s, o, ab.cost.removeCountersX, -x);
-  if (ab.cost.tapAttached && o.attachedTo) tapObject(s, obj(s, o.attachedTo));
+  if (ab.cost.grantor === "tap" && grantor) tapObject(s, obj(s, grantor));
   if (ab.cost.loyalty !== undefined) {
     o.loyaltyTurn = s.turn.number;
     const cost = ab.cost.loyaltyX ? -x : ab.cost.loyalty;
@@ -3387,6 +3407,11 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   };
   for (const id of sacrificed) sacrificePermanent(s, id);
   if (ab.cost.self === "sacrifice") sacrificePermanent(s, source);
+  if (ab.cost.grantor === "sacrifice" && grantor) sacrificePermanent(s, grantor);
+  if (ab.cost.grantor === "exile" && grantor) {
+    s.lki[grantor] ??= snapshot(s, grantor);
+    moveObject(s, grantor, "exile");
+  }
   // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).
   if (ab.cost.self === "exile" || ab.cost.self === "discard" || ab.cost.self === "bounce") s.lki[source] ??= snapshot(s, source);
   // Coûts payés avec des objets choisis par le joueur (sinon la suggestion du moteur) : `activationPicks`.
@@ -3545,8 +3570,19 @@ function resolveManaAbilityNow(s: GameState, item: StackItem): void {
 }
 
 /** Mots « cible » d'un élément de pile (Bolt Bend). */
-export function stackItemSpecs(s: GameState, item: StackItem): TargetSpec[] {
-  return specsAndEffects(s, item).specs;
+/**
+ * Mots « cible » d'un élément de la pile, rendus concrets dans son contexte (608.2b : valeurs évaluées de nouveau, Moseo ;
+ * joueur qui tient les cibles, Fear of Falling).
+ */
+export function stackItemSpecs(s: GameState, item: StackItem, specs = specsAndEffects(s, item).specs): TargetSpec[] {
+  // Le nombre de cibles et les autres valeurs, figés au ciblage, ne sont pas évalués de nouveau.
+  const again = (x: TargetSpec) => x.maxManaValueAmount !== undefined || (x.of !== undefined && x.of.kind !== "target");
+  if (!specs.some(again)) return specs;
+  const ctx = {
+    ...staticContext(s, item.controller, item.sourceId, { sourceDefId: item.sourceDefId, event: item.event }),
+    x: item.x,
+  };
+  return specs.map((x) => (again(x) ? concreteSpec(s, ctx, x, true) : x));
 }
 
 export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; effects: Effect[] } {
@@ -3615,19 +3651,9 @@ export function resolveTop(s: GameState): boolean {
   const item = s.stack[s.stack.length - 1];
   if (!item) return true;
   const { specs: specs0, effects } = specsAndEffects(s, item);
-  // Valeurs de cible évaluées de nouveau à la résolution (Moseo : les PV gagnés ce tour-ci).
-  const specs = specs0.some((x) => x.maxManaValueAmount !== undefined)
-    ? specs0.map((x) =>
-        concreteSpec(
-          s,
-          {
-            ...staticContext(s, item.controller, item.sourceId, { sourceDefId: item.sourceDefId, event: item.event }),
-            x: item.x,
-          },
-          x,
-        ),
-      )
-    : specs0;
+  // Valeurs de cible évaluées de nouveau à la résolution (Moseo : les PV gagnés ce tour-ci ; Fear of Falling : le joueur
+  // défenseur).
+  const specs = stackItemSpecs(s, item, specs0);
 
   // 608.2b : on revérifie les cibles. Si toutes sont devenues illégales, le sort ne se résout pas.
   // Références figées d'une capacité retardée (`bind`) : conservées telles quelles, ce ne sont pas des cibles.

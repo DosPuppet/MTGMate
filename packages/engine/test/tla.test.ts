@@ -4038,11 +4038,9 @@ describe("lot A, incolores et terrains", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       const label = "Engagez une créature, puis Trusty Boomerang revient dans la main";
-      // Non équipé : rien à engager.
-      expect(canActivate(s, "p1", boomerang, label)).toBe(false);
-      const equip = legalActions(s, "p1").find(
-        (a) => a.type === "activate" && a.source === boomerang && a.ability !== abilityIndex(s, boomerang, label),
-      );
+      // Non équipé : l'Ourson n'a pas la capacité.
+      expect(chars(s, bear).abilities.some((ab) => "label" in ab && ab.label === label)).toBe(false);
+      const equip = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === boomerang);
       const targetId = equip?.type === "activate" ? (equip.targets?.[0]?.id ?? "t") : "t";
       s = settle(
         act(s, "p1", {
@@ -4053,7 +4051,9 @@ describe("lot A, incolores et terrains", () => {
         }),
       );
       expect(s.objects[boomerang]?.attachedTo).toBe(bear);
-      s = settle(activate(s, "p1", boomerang, label, { targets: { t: [angel] } }));
+      // « Equipped creature has "{1}, {T}: …" » : la capacité est celle de l'Ourson, qui s'engage.
+      expect(chars(s, boomerang).abilities.some((ab) => "label" in ab && ab.label === label)).toBe(false);
+      s = settle(activate(s, "p1", bear, label, { targets: { t: [angel] } }));
       expect(s.objects[angel]?.tapped).toBe(true);
       expect(s.objects[bear]?.tapped).toBe(true);
       expect(idsOf(s, "p1", "hand", "Trusty Boomerang")).toHaveLength(1);
@@ -4745,6 +4745,39 @@ describe("lot C3 : cartes uniques", () => {
     expect(s.players.p2?.life).toBe(15);
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(s.players.p2?.graveyard.some((id) => nameOf(s, id) === "Serra Angel")).toBe(true);
+  });
+
+  it("Fire Lord Sozin : à plusieurs, les cartes viennent du cimetière du joueur blessé (PLAN-A A4a)", async () => {
+    const { moveWithSpec } = await import("../src/effects");
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: lands("Swamp", 3), hand: ["The Rise of Sozin // Fire Lord Sozin"] },
+      p2: { graveyard: ["Bear Cub"] },
+      p3: { graveyard: ["Bear Cub", "Llanowar Elves"] },
+    });
+    const sozin = moveWithSpec(s, "p1", idOf(s, "p1", "hand", "The Rise of Sozin // Fire Lord Sozin"), {
+      to: "battlefield",
+      transformed: true,
+    }) as string;
+    s.objects[sozin]!.controlledSince = 0;
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: sozin, defender: "p3" }] });
+    let offered: string[] = [];
+    for (let i = 0; i < 80 && s.turn.step !== "main2"; i++) {
+      const p = s.pending;
+      if (p?.kind === "choice") {
+        const req = p.request;
+        if (req.type === "pick" && req.intent === "triggerTarget") offered = req.options.map((id) => s.objects[id]?.owner ?? "");
+        const v =
+          req.type === "number" ? [3] : req.type === "pick" && req.intent === "triggerTarget" ? req.options : req.suggested;
+        s = act(s, p.player, { type: "choose", values: v });
+      } else if (p?.kind === "declareBlockers") s = act(s, p.player, { type: "declareBlockers", blocks: [] });
+      else if (p) s = act(s, p.player, { type: "pass" });
+    }
+    // Seules les cartes du cimetière de p3 (le joueur blessé) sont proposées.
+    expect(offered).toEqual(["p3", "p3"]);
+    expect(s.players.p2?.graveyard).toHaveLength(1);
+    expect(s.players.p3?.graveyard).toHaveLength(0);
   });
 });
 

@@ -97,8 +97,13 @@ export const UNIQUE: Record<string, CardScript> = {
         when.attacks({ types: ["Creature"], attachedToSource: true }),
         [fx.toBattlefield(ref.target(), { underYourControl: true, tapped: true, attacking: true })],
         {
-          targets: [target.cardInGraveyard("t", CREATURES, "opponent", "carte de créature")],
-          label: "Une créature du cimetière adverse, attaquante",
+          targets: [
+            target.of(
+              ref.defendingPlayer,
+              target.cardInGraveyard("t", CREATURES, "any", "carte de créature du cimetière du joueur défenseur"),
+            ),
+          ],
+          label: "Une créature du cimetière du joueur défenseur, attaquante",
         },
       ),
       triggered(when.yourEndStep, [fx.sacrificeIt(ref.self)], {
@@ -368,18 +373,26 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "The Dominion Bracelet": {
     abilities: [
-      staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
-      // Approximation (comme Fishing Pole) : la capacité accordée à la créature équipée est portée par l'Équipement.
-      activated({
-        mana: "{15}",
-        exileSelf: true,
-        sorcerySpeed: true,
-        targets: [target.player("t", "opponent")],
-        effects: [fx.controlNextTurn(ref.target())],
-        reduction: { generic: amount.powerOf(ref.attached) },
-        activationCondition: cond.controls({ types: ["Creature"], attachedToSource: true }),
-        label: "Contrôlez l'adversaire pendant son prochain tour",
-      }),
+      staticAbility(
+        "attached",
+        {
+          power: 1,
+          toughness: 1,
+          addAbilities: [
+            activated({
+              mana: "{15}",
+              grantor: "exile",
+              sorcerySpeed: true,
+              targets: [target.player("t", "opponent")],
+              effects: [fx.controlNextTurn(ref.target())],
+              // « Cette capacité coûte {X} de moins, X étant la force de cette créature. »
+              reduction: { generic: amount.powerOf(ref.self) },
+              label: "Exilez The Dominion Bracelet : contrôlez l'adversaire pendant son prochain tour",
+            }),
+          ],
+        },
+        { label: "+1/+1 et « {15}, exilez The Dominion Bracelet : contrôlez un adversaire »" },
+      ),
     ],
   },
 };

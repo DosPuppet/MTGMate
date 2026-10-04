@@ -15,10 +15,12 @@ import {
   act,
   advanceUntil,
   attack,
+  attackPlayer,
   canActivate,
   cast,
   castable,
   castNowOf,
+  combatTargetsOffered,
   customCard,
   exiled,
   idOf,
@@ -4374,5 +4376,44 @@ describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toEqual([bear]);
     // Force de l'Ange : 4 cartes piochées (aucun terrain mis en jeu).
     expect(s.players.p1?.hand).toHaveLength(4);
+  });
+});
+
+describe("Outlaws of Thunder Junction, PLAN-A A4a : « le joueur défenseur », « ce joueur » à plusieurs", () => {
+  it("Spring Splasher : la créature ciblée est celle du joueur défenseur", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: ["Spring Splasher"] },
+      p2: { battlefield: ["Serra Angel"] },
+      p3: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const run = combatTargetsOffered(attackPlayer(s, [idOf(s, "p1", "battlefield", "Spring Splasher")], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
+  });
+
+  it("Thunder Lasso : la créature engagée est celle du joueur défenseur", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: ["Thunder Lasso", "Bear Cub"] },
+      p2: { battlefield: ["Serra Angel"] },
+      p3: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s.objects[idOf(s, "p1", "battlefield", "Thunder Lasso")]!.attachedTo = bear;
+    s.version += 1;
+    const run = combatTargetsOffered(attackPlayer(s, [bear], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
+    expect(run.s.objects[idOf(run.s, "p2", "battlefield", "Serra Angel")]?.tapped).toBe(false);
+  });
+
+  it("Tinybones, the Pickpocket : la carte vient du cimetière du joueur blessé", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: ["Tinybones, the Pickpocket"] },
+      p2: { graveyard: ["Serra Angel"] },
+      p3: { graveyard: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const run = combatTargetsOffered(attackPlayer(s, [idOf(s, "p1", "battlefield", "Tinybones, the Pickpocket")], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
   });
 });

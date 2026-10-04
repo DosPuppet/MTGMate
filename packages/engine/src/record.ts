@@ -348,8 +348,11 @@ export const RECORD_VERSION = 1;
  * - 129 : familles moyennes (A4b) : objets d'un lot « un ou plusieurs » (`ref.eventObjects`), capacité retardée liée à
  *   un objet pour le reste du tour (`fx.whenThisTurn`, 603.7c), « la première fois chaque tour » noté avant la
  *   condition « si » (`oncePerTurn: "firstEvent"`).
+ * - 130 : familles moyennes (A4a) : cible détenue par un joueur désigné (`TargetSpec.of` : joueur de l'événement,
+ *   joueur défenseur, joueur d'une autre cible), nouvelles cibles d'un sort à plusieurs cibles, capacité accordée qui
+ *   connaît le permanent qui l'accorde (`ref.grantor`, `CostDef.grantor`).
  */
-export const RULES_VERSION = 129;
+export const RULES_VERSION = 130;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

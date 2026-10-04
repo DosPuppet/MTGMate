@@ -67,15 +67,24 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Deconstruction Hammer": {
     abilities: [
-      staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
-      activated({
-        mana: "{3}",
-        tapAttached: true,
-        sacrifice: true,
-        targets: [targetObj("t", { types: ["Artifact", "Enchantment"] }, "artefact ou enchantement")],
-        effects: [fx.destroy(ref.target())],
-        label: "Détruisez un artefact ou un enchantement",
-      }),
+      staticAbility(
+        "attached",
+        {
+          power: 1,
+          toughness: 1,
+          addAbilities: [
+            activated({
+              mana: "{3}",
+              tap: true,
+              grantor: "sacrifice",
+              targets: [targetObj("t", { types: ["Artifact", "Enchantment"] }, "artefact ou enchantement")],
+              effects: [fx.destroy(ref.target())],
+              label: "Sacrifiez Deconstruction Hammer : détruisez un artefact ou un enchantement",
+            }),
+          ],
+        },
+        { label: "+1/+1 et « {3}, {T}, sacrifiez Deconstruction Hammer : détruisez un artefact ou un enchantement »" },
+      ),
     ],
   },
   "Dusk Rose Reliquary": {

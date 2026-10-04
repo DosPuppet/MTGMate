@@ -53,11 +53,9 @@ export const CARDS: Record<string, CardScript> = {
             cond.v("removed"),
             fx.reflexive(
               [
-                target.permanent(
-                  "t",
-                  ["Artifact", "Enchantment"],
-                  { controller: "opponent" },
-                  "artefact ou enchantement adverse",
+                target.of(
+                  ref.eventPlayer,
+                  target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement de ce joueur"),
                 ),
               ],
               [fx.destroy(ref.target())],

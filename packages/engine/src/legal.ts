@@ -56,7 +56,7 @@ import {
   waterbendAmount,
   webSlingingOptions,
 } from "./stack";
-import { ALL_CREATURE_TYPES, matchesCard, matchesObjectFilter, NON_CREATURE_SUBTYPES } from "./targets";
+import { ALL_CREATURE_TYPES, holderOf, matchesCard, matchesObjectFilter, NON_CREATURE_SUBTYPES } from "./targets";
 
 /** Winter, Cursed Rider : nombre de cartes exilables pour « exilez X cartes … de votre cimetière ». */
 function graveyardXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
@@ -208,6 +208,8 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
         ? { maxTotalManaValue: { max: cap, values: Object.fromEntries(legal.map((id) => [id, snapshot(s, id).manaValue ?? 0])) } }
         : {}),
     };
+    if (t.of?.kind === "target")
+      opt.ofTarget = { id: t.of.id, holders: Object.fromEntries(legal.map((id) => [id, holderOf(s, id)])) };
     if (t.samePlayer || t.differentPlayers) {
       const holders: Record<string, string> = {};
       for (const id of legal) {

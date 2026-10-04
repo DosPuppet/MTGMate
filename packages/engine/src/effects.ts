@@ -191,25 +191,39 @@ export function readVar(ctx: EffectContext, name: string): number {
   return Number(ctx.vars?.[`$${name}`]?.[0] ?? 0);
 }
 
-/** Condition évaluée pendant la résolution (elle peut dépendre du kicker ou des valeurs mémorisées). */
+/** Référence figée (`InlineAbility.bound`) du permanent qui accorde une capacité activée (`ref.grantor`). */
+export const GRANTOR_KEY = "$grantor";
+
+/** La spécification dépend-elle de la partie (valeurs ou joueur évalués au ciblage et à la résolution) ? */
+export function needsConcrete(t: TargetSpec): boolean {
+  return (
+    t.countAmount !== undefined ||
+    t.manaValueAmount !== undefined ||
+    t.maxManaValueAmount !== undefined ||
+    t.maxTotalManaValueAmount !== undefined ||
+    (t.of !== undefined && t.of.kind !== "target")
+  );
+}
+
 /**
  * Une spécification de cible dont des valeurs dépendent de la partie, rendue concrète dans ce contexte : nombre de cibles
  * (`countAmount`), valeur de mana exacte (`manaValueAmount`) ou maximale (`maxManaValueAmount`), valeur de mana totale
- * (`maxTotalManaValueAmount`). Évaluée au ciblage et à la résolution.
+ * (`maxTotalManaValueAmount`), joueur qui tient les cibles (`of` → `ofPlayers` ; un autre mot « cible » se vérifie avec
+ * les cibles choisies, dans `validateTargets`). Évaluée au ciblage et à la résolution. `resolving` : à la résolution, un
+ * joueur qui n'est plus désigné (le joueur défenseur d'une créature retirée du combat) laisse les cibles telles quelles.
  */
-export function concreteSpec(s: GameState, ctx: EffectContext, t: TargetSpec): TargetSpec {
-  if (
-    t.countAmount === undefined &&
-    t.manaValueAmount === undefined &&
-    t.maxManaValueAmount === undefined &&
-    t.maxTotalManaValueAmount === undefined
-  )
-    return t;
+export function concreteSpec(s: GameState, ctx: EffectContext, t: TargetSpec, resolving = false): TargetSpec {
+  if (!needsConcrete(t)) return t;
   const out: TargetSpec = { ...t, countAmount: undefined, manaValueAmount: undefined, maxManaValueAmount: undefined };
   if (t.countAmount !== undefined) out.count = Math.max(0, evalAmount(s, ctx, t.countAmount));
   if (t.maxTotalManaValueAmount !== undefined) {
     out.maxTotalManaValue = evalAmount(s, ctx, t.maxTotalManaValueAmount);
     out.maxTotalManaValueAmount = undefined;
+  }
+  if (t.of && t.of.kind !== "target") {
+    const players = resolveRef(s, ctx, t.of).filter((id) => isPlayer(s, id));
+    out.of = undefined;
+    if (players.length > 0 || !resolving) out.ofPlayers = players;
   }
   const extra: ObjectFilter = {
     ...(t.manaValueAmount !== undefined ? { manaValue: evalAmount(s, ctx, t.manaValueAmount) } : {}),
@@ -250,6 +264,7 @@ export function staticContext(
   };
 }
 
+/** Condition évaluée pendant la résolution (elle peut dépendre du kicker ou des valeurs mémorisées). */
 export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): boolean {
   switch (c.kind) {
     case "kicked":
@@ -336,6 +351,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
   switch (ref.kind) {
     case "target":
       return ctx.targets[ref.id] ?? [];
+    case "grantor":
+      return (ctx.targets[GRANTOR_KEY] ?? []).filter((id) => !!s.objects[id]);
     case "self":
       return [ctx.sourceId];
     case "you":

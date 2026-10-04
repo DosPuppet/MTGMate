@@ -282,6 +282,26 @@ export const picking =
 export const pickNamed = (s: GameState, req: ChoiceRequest, name: string) =>
   req.type === "pick" ? req.options.filter((id) => nameOf(s, id) === name).slice(0, 1) : undefined;
 
+/** Va à la déclaration des attaquants de p1 et attaque le joueur `defender` avec `attackers` (partie à plusieurs). */
+export function attackPlayer(s: GameState, attackers: string[], defender: PlayerId): GameState {
+  const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+  return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender })) });
+}
+
+/**
+ * Joue le combat (comme `throughCombat`) en notant, par nom, les options de chaque choix de cible d'une capacité
+ * déclenchée ; « vous pouvez » : oui ; sinon la réponse suggérée.
+ */
+export function combatTargetsOffered(s: GameState): { s: GameState; offered: (string | undefined)[][] } {
+  const offered: (string | undefined)[][] = [];
+  const out = throughCombat(s, (req, _p, cur) => {
+    if (req.intent === "may") return [1];
+    if (req.type === "pick" && req.intent === "triggerTarget") offered.push(namesIn(cur, req.options));
+    return undefined;
+  });
+  return { s: out, offered };
+}
+
 /** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
 export function attack(s: GameState, attackers: string[]): GameState {
   const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");

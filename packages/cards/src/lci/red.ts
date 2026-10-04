@@ -133,7 +133,7 @@ export const RED: Record<string, CardScript> = {
           addKeywords: ["trample"],
           addAbilities: [
             triggered(when.combatDamageToPlayer, [fx.destroy(ref.target("a"))], {
-              targets: [targetObj("a", { types: ["Artifact"], controller: "opponent" }, "artefact de ce joueur")],
+              targets: [target.of(ref.eventPlayer, targetObj("a", { types: ["Artifact"] }, "artefact de ce joueur"))],
               label: "Détruisez un artefact",
             }),
           ],

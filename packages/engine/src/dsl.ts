@@ -177,6 +177,11 @@ export const target = {
   exactly: (n: number, t: TargetSpec): TargetSpec => ({ ...t, count: n }),
   /** « une ou deux cibles » : entre `min` et `max` cibles. */
   between: (min: number, max: number, t: TargetSpec): TargetSpec => ({ ...t, count: max, minCount: min }),
+  /**
+   * « … que ce joueur contrôle », « du cimetière de ce joueur » : les cibles sont tenues par le joueur désigné (le joueur
+   * de l'événement, le joueur défenseur, ou celui choisi pour un autre mot « cible » : `ref.target("p")`).
+   */
+  of: (who: Ref, t: TargetSpec, label?: string): TargetSpec => ({ ...t, of: who, ...(label ? { label } : {}) }),
   /** « carte de [filtre] ciblée de votre cimetière / d'un cimetière » */
   cardInGraveyard: (
     id = "t",
@@ -212,6 +217,8 @@ export const ref = {
   /** « Une ou plusieurs … » (déclenchement `batched`) : les objets de tous les événements du lot (« ces créatures »). */
   eventObjects: { kind: "eventObjects" } as Ref,
   eventPlayer: { kind: "eventPlayer" } as Ref,
+  /** Le permanent qui accorde la capacité (« Renvoyez Trusty Boomerang », dans la capacité accordée à la créature équipée). */
+  grantor: { kind: "grantor" } as Ref,
   self: { kind: "self" } as Ref,
   you: { kind: "you" } as Ref,
   eachOpponent: { kind: "eachOpponent" } as Ref,
@@ -1797,8 +1804,8 @@ export function activated(opts: {
   sacrificeOther?: { filter: ObjectFilter; count?: number; includeSelf?: boolean; differentNames?: boolean };
   removeCounters?: { kind: string; n: number };
   tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
-  /** Engager la créature équipée (« {T} » de la créature, pour une capacité portée par l'Équipement). */
-  tapAttached?: boolean;
+  /** Capacité accordée : engager, exiler ou sacrifier le permanent qui l'accorde (« Engagez Fishing Pole »). */
+  grantor?: "tap" | "exile" | "sacrifice";
   /** Épuiser la source (« Exert »). */
   exert?: boolean;
   payLife?: number;
@@ -1888,7 +1895,7 @@ export function activated(opts: {
         : undefined,
       removeCounters: opts.removeCounters,
       tapOthers: opts.tapOthers,
-      tapAttached: opts.tapAttached,
+      ...(opts.grantor ? { grantor: opts.grantor } : {}),
       payLife: opts.payLife,
       payLifeX: opts.payLifeX,
       addCounters: opts.addCounters,

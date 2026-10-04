@@ -1,7 +1,7 @@
 /** Breaking News (OTP) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, gainLife, loseLife } from "../src/actions";
-import { fx, spell, target } from "../src/dsl";
+import { fx, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars, decider } from "../src/state";
 import { legalTargets } from "../src/targets";
@@ -569,3 +569,42 @@ function attackWith(s: S, id: string): S {
   }
   return cur;
 }
+
+describe("Rééditions, PLAN-A A4a", () => {
+  it("Commandeer : « vous pouvez choisir de nouvelles cibles » pour un sort à plusieurs cibles", () => {
+    const blue = (name: string) => customCard({ name, types: ["Instant"], typeLine: "Instant", colors: ["U"] });
+    const twinBolt = customCard({
+      name: "Test Twin Bolt",
+      types: ["Instant"],
+      typeLine: "Instant",
+      spell: spell([target.creature("a"), target.creature("b")], [fx.damage(1, ref.target("a")), fx.damage(1, ref.target("b"))]),
+    });
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Llanowar Elves", "Bear Cub"], hand: ["Commandeer", blue("Bleu A"), blue("Bleu B")] },
+      p2: { battlefield: ["Shivan Dragon", "Serra Angel"], hand: [twinBolt] },
+    });
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Test Twin Bolt"), targets: { a: [elves], b: [bear] } });
+    s = act(s, "p2", { type: "pass" });
+    const bolt = s.stack[0]?.id as string;
+    const asked: string[][] = [];
+    s = settle(
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Commandeer"), alternative: true, targets: { t: [bolt] } }),
+      (req) => {
+        if (req.type !== "pick" || req.intent !== "changeTarget") return undefined;
+        asked.push(req.options);
+        return asked.length === 1 ? [dragon] : [angel];
+      },
+    );
+    // Une question par mot « cible », la cible d'origine proposée avec les autres.
+    expect(asked).toHaveLength(2);
+    expect(asked[0]).toEqual(expect.arrayContaining([elves, dragon, angel]));
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    expect(s.objects[dragon]?.damage).toBe(1);
+    expect(s.objects[angel]?.damage).toBe(1);
+  });
+});

@@ -13,7 +13,7 @@
 import { ask } from "./choices";
 import { type EffectContext, evalAmount } from "./effects";
 import { RulesError } from "./errors";
-import { specsAndEffects } from "./stack";
+import { specsAndEffects, stackItemSpecs } from "./stack";
 import { createObject, emit, newId, rulesEvent } from "./state";
 import { legalTargets } from "./targets";
 import type { ChoiceRequest, ChoiceValue, Effect, GameState, PendingStackChoice, PlayerId, StackItem } from "./types";
@@ -112,26 +112,39 @@ export function answerStackChoice(s: GameState, stackId: string, request: Choice
   const item = s.stack.find((x) => x.id === stackId);
   const c = item?.pendingChoices?.[0];
   if (!item || !c) throw new RulesError("Aucun choix en attente pour cet élément de la pile");
-  if (c.step === "target" && request.type === "pick") {
-    const orig = item.targets[c.spec] ?? [];
-    const chosen = values.map(String);
-    // Une cible gardée reste à sa place (la répartition suit l'ordre des cibles) ; les nouvelles prennent les places libérées.
-    const fresh = chosen.filter((id) => !orig.includes(id));
-    const next = orig.map((id) => (chosen.includes(id) || !exists(s, id) ? id : (fresh.shift() ?? id)));
-    const g = request.group;
-    if (g) {
-      const holders = next.map((id) => g.holders[id] ?? id);
-      if (g.kind === "same" && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
-      if (g.kind === "different" && new Set(holders).size !== holders.length)
-        throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
-    }
-    item.targets = { ...item.targets, [c.spec]: next };
-  } else if (c.step === "divide" && request.type === "divide") {
+  if (c.step === "target" && request.type === "pick") applyRetarget(s, item, c.spec, request, values);
+  else if (c.step === "divide" && request.type === "divide") {
     const d = dividedEffect(s, item);
     if (!d) throw new RulesError("Rien à répartir");
     item.division = { ...item.division, [d.spec]: values.map(Number) };
   } else throw new RulesError("Réponse inattendue");
   item.pendingChoices = item.pendingChoices?.slice(1);
+}
+
+/**
+ * Nouvelles cibles choisies pour un mot « cible » d'un élément de la pile (réponse à `retargetRequest`). Une cible gardée
+ * reste à sa place (la répartition suit l'ordre des cibles) ; les nouvelles prennent les places libérées. Rejouer la même
+ * réponse ne change rien.
+ */
+export function applyRetarget(
+  s: GameState,
+  item: StackItem,
+  specId: string,
+  request: ChoiceRequest,
+  values: ChoiceValue[],
+): void {
+  const orig = item.targets[specId] ?? [];
+  const chosen = values.map(String);
+  const fresh = chosen.filter((id) => !orig.includes(id));
+  const next = orig.map((id) => (chosen.includes(id) || !exists(s, id) ? id : (fresh.shift() ?? id)));
+  const g = request.type === "pick" ? request.group : undefined;
+  if (g) {
+    const holders = next.map((id) => g.holders[id] ?? id);
+    if (g.kind === "same" && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
+    if (g.kind === "different" && new Set(holders).size !== holders.length)
+      throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
+  }
+  item.targets = { ...item.targets, [specId]: next };
 }
 
 /** Question à poser pour ce choix, ou null s'il se règle d'office. */
@@ -143,7 +156,7 @@ function requestFor(s: GameState, item: StackItem, c: PendingStackChoice): Choic
     if (all.length) rulesEvent(s, { e: "targeted", stackId: item.id, controller: item.controller, targets: all });
     return null;
   }
-  if (c.step === "target") return retargetRequest(s, item, c.spec, name);
+  if (c.step === "target") return retargetRequest(s, item, c.spec, `${name} (copie)`);
   const d = dividedEffect(s, item);
   const among = d ? (item.targets[d.spec] ?? []) : [];
   if (!d || among.length < 2) return null;
@@ -162,9 +175,12 @@ function requestFor(s: GameState, item: StackItem, c: PendingStackChoice): Choic
   };
 }
 
-/** Nouvelles cibles d'une copie pour un mot « cible » : autant qu'à l'origine, celles d'origine proposées. */
-function retargetRequest(s: GameState, item: StackItem, specId: string, name: string): ChoiceRequest | null {
-  const spec = specsAndEffects(s, item).specs.find((x) => x.id === specId);
+/**
+ * Nouvelles cibles d'un élément de la pile pour un mot « cible » (copie, 707.10c ; « vous pouvez choisir de nouvelles
+ * cibles », Commandeer) : autant qu'à l'origine, celles d'origine proposées. Légales pour le contrôleur de l'élément.
+ */
+export function retargetRequest(s: GameState, item: StackItem, specId: string, name: string): ChoiceRequest | null {
+  const spec = stackItemSpecs(s, item).find((x) => x.id === specId);
   const orig = item.targets[specId] ?? [];
   if (!spec || orig.length === 0) return null;
   // « une autre cible » : ce qui est ciblé par l'autre mot n'est pas proposé.
@@ -193,7 +209,7 @@ function retargetRequest(s: GameState, item: StackItem, specId: string, name: st
   return {
     type: "pick",
     intent: "changeTarget",
-    prompt: `${name} (copie) : choisissez ${count > 1 ? `${count} cibles` : "la cible"}${spec.label ? ` — ${spec.label}` : ""} (celle${count > 1 ? "s" : ""} d'origine proposée${count > 1 ? "s" : ""})`,
+    prompt: `${name} : choisissez ${count > 1 ? `${count} cibles` : "la cible"}${spec.label ? ` — ${spec.label}` : ""} (celle${count > 1 ? "s" : ""} d'origine proposée${count > 1 ? "s" : ""})`,
     options,
     min: count,
     max: count,

@@ -236,6 +236,11 @@ export interface TargetOption {
   kickedLegal?: string[];
   otherThan?: string[];
   attachedToTarget?: string;
+  /**
+   * « Le joueur ciblé … les cartes ciblées de son cimetière » (Rite of Renewal) : chaque cible doit être tenue par une cible
+   * de l'autre mot `id` ; `holders` : le joueur qui tient chaque cible légale.
+   */
+  ofTarget?: { id: string; holders: Record<string, string> };
   /** « Valeur de mana totale N ou moins » (Scout for Survivors) : N et la valeur de mana de chaque cible légale. */
   maxTotalManaValue?: { max: number; values: Record<string, number> };
   /**

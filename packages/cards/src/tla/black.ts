@@ -431,7 +431,10 @@ export const BLACK: Record<string, CardScript> = {
           fx.reflexive(
             [
               {
-                ...target.cardInGraveyard("t", { types: ["Creature"] }, "opponent", "carte de créature de son cimetière"),
+                ...target.of(
+                  ref.eventPlayer,
+                  target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature de son cimetière"),
+                ),
                 count: 99,
                 optional: true,
                 maxTotalManaValueAmount: amount.v("x"),

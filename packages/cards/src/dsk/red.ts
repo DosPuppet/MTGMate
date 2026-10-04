@@ -73,7 +73,7 @@ export const RED: Record<string, CardScript> = {
         [fx.damage(amount.eventAmount, ref.target())],
         {
           condition: cond.delirium,
-          targets: [target.creature("t", { controller: "opponent" })],
+          targets: [target.of(ref.eventPlayer, target.creature("t"), "créature de ce joueur")],
           label: "Délire — autant de blessures à une de ses créatures",
         },
       ),

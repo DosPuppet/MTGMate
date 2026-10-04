@@ -833,7 +833,12 @@ export const useGame = create<Store>((set, get) => {
       return set({ casting: { ...c, stage: "tap", spec: null } });
     for (const spec0 of targetSpecs(c)) {
       // Cadeau promis (Bloomburrow) : « à la place, un permanent non-terrain ciblé ».
-      const spec = c.kicked && spec0.kickedLegal ? { ...spec0, legal: spec0.kickedLegal } : spec0;
+      const spec1 = c.kicked && spec0.kickedLegal ? { ...spec0, legal: spec0.kickedLegal } : spec0;
+      // « Le joueur ciblé … les cartes de son cimetière » (Rite of Renewal) : celles du joueur déjà choisi.
+      const of = spec1.ofTarget;
+      const spec = of
+        ? { ...spec1, legal: spec1.legal.filter((id) => (c.targets[of.id] ?? []).includes(of.holders[id] ?? "")) }
+        : spec1;
       if (c.targets[spec.id] !== undefined) continue;
       if (c.preset && spec.legal.includes(c.preset)) {
         c.targets[spec.id] = [c.preset];

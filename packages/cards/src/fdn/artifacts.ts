@@ -26,13 +26,21 @@ export const ARTIFACTS: Record<string, CardScript> = {
   // --- Équipements (« Équiper {N} » est lu dans le texte) ---
   "Fishing Pole": {
     abilities: [
-      activated({
-        mana: "{1}",
-        tap: true,
-        tapAttached: true,
-        effects: [fx.counters(ref.self, "bait", 1)],
-        label: "Engager la créature équipée : marqueur d'appât",
-      }),
+      staticAbility(
+        "attached",
+        {
+          addAbilities: [
+            activated({
+              mana: "{1}",
+              tap: true,
+              grantor: "tap",
+              effects: [fx.counters(ref.grantor, "bait", 1)],
+              label: "Engagez Fishing Pole : un marqueur d'appât sur elle",
+            }),
+          ],
+        },
+        { label: "« {1}, {T}, engagez Fishing Pole : un marqueur d'appât »" },
+      ),
       triggered(
         when.attachedUntaps,
         [...fx.when(cond.counterAtLeast("bait", 1), fx.counters(ref.self, "bait", -1), fx.createTokens(FISH))],

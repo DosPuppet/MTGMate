@@ -54,6 +54,11 @@ export interface Characteristics {
   keywords: Keyword[];
   /** Capacités non-mot-clé effectives (vides si l'objet a perdu toutes ses capacités). */
   abilities: AbilityDef[];
+  /**
+   * Capacités accordées par la capacité statique d'un autre permanent (« la créature équipée a "…" ») : le permanent qui
+   * accorde chacune, par rang dans `abilities` (Fishing Pole, Trusty Boomerang : `ref.grantor`, coût `grantor`).
+   */
+  grantors?: Record<number, ObjectId>;
   /** Règles de blocage (« ne peut pas être bloquée par… »), comme des capacités. */
   blockRules: BlockRule[];
   /** Protections et défenses talismaniques « contre [filtre] ». */
@@ -990,8 +995,8 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
     }
     return ids;
   };
-  const layer = (has: (m: LayerMods) => boolean, apply: (c: Characteristics, m: LayerMods) => void) => {
-    for (const a of applied) if (has(a.mods)) for (const id of affectedBy(a)) apply(out.get(id) as Characteristics, a.mods);
+  const layer = (has: (m: LayerMods) => boolean, apply: (c: Characteristics, m: LayerMods, a: Applied) => void) => {
+    for (const a of applied) if (has(a.mods)) for (const id of affectedBy(a)) apply(out.get(id) as Characteristics, a.mods, a);
   };
 
   // Couche 4 : types (et nom, pour Witness Protection).
@@ -1040,10 +1045,11 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
         m.addProtections?.length ||
         m.addPowerRules?.length
       ),
-    (c, m) => {
+    (c, m, a) => {
       if (m.loseAllAbilities) {
         c.keywords = [];
         c.abilities = [];
+        c.grantors = undefined;
         c.blockRules = [];
         c.protections = [];
         c.powerRules = [];
@@ -1053,7 +1059,16 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
       if (m.addProtections?.length) c.protections = [...c.protections, ...m.addProtections];
       for (const k of m.removeKeywords ?? []) c.keywords = c.keywords.filter((x) => x !== k);
       for (const k of m.addKeywords ?? []) if (!c.keywords.includes(k)) c.keywords.push(k);
-      if (m.addAbilities?.length) c.abilities = [...c.abilities, ...m.addAbilities];
+      if (m.addAbilities?.length) {
+        // Capacité accordée par la statique d'un permanent : il est retenu pour `ref.grantor` (« renvoyez Trusty
+        // Boomerang »). Un effet de résolution (Dreadmaw's Ire) n'a pas d'objet qui l'accorde.
+        if (!Array.isArray(a.affected)) {
+          const from = a.affected.sourceId;
+          const at = c.abilities.length;
+          c.grantors = { ...c.grantors, ...Object.fromEntries(m.addAbilities.map((_, i) => [at + i, from])) };
+        }
+        c.abilities = [...c.abilities, ...m.addAbilities];
+      }
     },
   );
   // 122.1b : marqueurs de capacité (vol, lien de vie, contact mortel…), appliqués après les autres effets de couche 6.

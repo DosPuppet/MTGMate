@@ -14,9 +14,11 @@ import {
   act,
   advanceUntil,
   attack,
+  attackPlayer,
   canActivate,
   cast,
   castNowOf,
+  combatTargetsOffered,
   counterFrom,
   customCard,
   idOf,
@@ -4259,5 +4261,32 @@ describe("Teenage Mutant Ninja Turtles, PLAN-D D9 : dernières cartes", () => {
     expect(idsOf(t, "p1", "battlefield", "North Wind Avatar")).toHaveLength(1);
     expect(t.stack).toHaveLength(0);
     expect(t.triggers).toHaveLength(0);
+  });
+});
+
+describe("Teenage Mutant Ninja Turtles, PLAN-A A4a : « ce joueur » à plusieurs", () => {
+  it("Leatherhead : l'artefact ou l'enchantement détruit est celui du joueur blessé", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: [{ name: "Leatherhead, Swamp Stalker", counters: { hexproof: 1 } }] },
+      p2: { battlefield: ["Warleader's Call"] },
+      p3: { battlefield: ["Fishing Pole", "Trusty Boomerang"] },
+    });
+    const run = combatTargetsOffered(attackPlayer(s, [idOf(s, "p1", "battlefield", "Leatherhead, Swamp Stalker")], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Fishing Pole", "Trusty Boomerang"]]);
+    expect(idsOf(run.s, "p2", "battlefield", "Warleader's Call")).toHaveLength(1);
+    expect(run.s.players.p3?.graveyard).toHaveLength(1);
+  });
+
+  it("Shark Shredder : la carte vient du cimetière du joueur blessé", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: ["Shark Shredder, Killer Clone"] },
+      p2: { graveyard: ["Serra Angel"] },
+      p3: { graveyard: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const run = combatTargetsOffered(attackPlayer(s, [idOf(s, "p1", "battlefield", "Shark Shredder, Killer Clone")], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
+    expect(idsOf(run.s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
   });
 });

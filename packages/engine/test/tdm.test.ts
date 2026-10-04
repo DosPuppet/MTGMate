@@ -3677,6 +3677,25 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes (4)", () => {
     expect(exiled(s, "Rite of Renewal")).toHaveLength(1);
   });
 
+  it("Rite of Renewal : les cartes mélangées viennent du cimetière du joueur ciblé (PLAN-A A4a)", () => {
+    const s = scenario({
+      p1: { battlefield: lands("Forest", 4), hand: ["Rite of Renewal"], graveyard: ["Bear Cub"] },
+      p2: { graveyard: lands("Plains", 2) },
+    });
+    const bear = idOf(s, "p1", "graveyard", "Bear Cub");
+    const plains = s.players.p2?.graveyard.slice(0, 1) as string[];
+    // « Target player shuffles up to four target cards from their graveyard » : pas celles d'un autre cimetière.
+    expect(() => cast(s, "p1", "Rite of Renewal", { p: [], pl: ["p1"], c: plains })).toThrow(RulesError);
+    // L'option proposée relie les cartes au joueur ciblé (interface, IA).
+    const option = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Rite of Renewal"));
+    const spec = option?.type === "cast" ? option.modes[0]?.targets.find((t) => t.id === "c") : undefined;
+    expect(spec?.ofTarget?.id).toBe("pl");
+    expect(spec?.ofTarget?.holders[bear]).toBe("p1");
+    const t = settle(cast(s, "p1", "Rite of Renewal", { p: [], pl: ["p1"], c: [bear] }));
+    expect(namesIn(t, t.players.p1?.library)).toContain("Bear Cub");
+    expect(t.players.p2?.graveyard).toHaveLength(2);
+  });
+
   it("Skirmish Rhino : piétinement ; en arrivant, chaque adversaire perd 2 PV et vous en gagnez 2", () => {
     let s = scenario({ p1: { battlefield: ["Plains", "Swamp", "Forest"], hand: ["Skirmish Rhino"] } });
     s = settle(cast(s, "p1", "Skirmish Rhino"));

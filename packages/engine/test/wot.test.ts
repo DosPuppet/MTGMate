@@ -8,7 +8,20 @@ import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
 import { legalTargets } from "../src/targets";
 import { stateBasedActions } from "../src/turn";
-import { act, advanceUntil, attack, castable, customCard, exiled, idOf, idsOf, lands, scenario, settle } from "./helpers";
+import {
+  act,
+  advanceUntil,
+  attack,
+  castable,
+  customCard,
+  exiled,
+  idOf,
+  idsOf,
+  lands,
+  namesIn,
+  scenario,
+  settle,
+} from "./helpers";
 
 describe("Enchanting Tales", () => {
   describe("Blind Obedience", () => {
@@ -448,5 +461,37 @@ describe("PLAN-A A3 : « les terrains non-base sont des Montagnes » (305.7)", (
     // Sans Blood Moon, la statique s'applique.
     const t = scenario({ p1: { battlefield: [DRYAD, "Bear Cub"] } });
     expect(chars(t, idOf(t, "p1", "battlefield", "Bear Cub")).power).toBe(3);
+  });
+});
+
+describe("Rééditions de WOT, PLAN-A A4a", () => {
+  it("Karmic Justice : à plusieurs, le permanent détruit est celui de l'adversaire qui a détruit", () => {
+    const shatter = customCard({
+      name: "Test Shatter",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      spell: spell([target.permanent("t", ["Artifact"], {}, "artefact")], [fx.destroy(ref.target())]),
+    });
+    let s = scenario({
+      players: 3,
+      active: "p2",
+      p1: { battlefield: ["Karmic Justice", "Fishing Pole"] },
+      p2: { battlefield: ["Serra Angel", "Bear Cub"], hand: [shatter] },
+      p3: { battlefield: ["Shivan Dragon"] },
+    });
+    s = act(s, "p2", {
+      type: "cast",
+      card: idOf(s, "p2", "hand", "Test Shatter"),
+      targets: { t: [idOf(s, "p1", "battlefield", "Fishing Pole")] },
+    });
+    const offered: (string | undefined)[][] = [];
+    s = settle(s, (req, _p, cur) => {
+      if (req.type === "pick" && req.intent === "triggerTarget") offered.push(namesIn(cur, req.options));
+      if (req.intent === "may") return [1];
+      return undefined;
+    });
+    expect(offered.map((x) => [...x].sort())).toEqual([["Bear Cub", "Serra Angel"]]);
+    expect(idsOf(s, "p3", "battlefield", "Shivan Dragon")).toHaveLength(1);
+    expect(s.players.p2?.graveyard).toHaveLength(2);
   });
 });

@@ -16,9 +16,11 @@ import {
   type Answer,
   act,
   advanceUntil,
+  attackPlayer,
   cast,
   castable,
   castNowOf,
+  combatTargetsOffered,
   counterFrom,
   customCard,
   idOf,
@@ -4858,4 +4860,55 @@ describe("PLAN-A A3 : Vision Quest, « avec X marqueurs +1/+1 supplémentaires �
       expect(s.objects[robot]?.counters["+1/+1"]).toBe(3);
       expect(s.players.p1?.life).toBe(21);
     });
+});
+
+describe("Marvel Super Heroes, PLAN-A A4a", () => {
+  /** Éphémère à {0} : 1 blessure à chacune de deux créatures ciblées (deux mots « cible »). */
+  const twinBolt = customCard({
+    name: "Test Twin Bolt",
+    types: ["Instant"],
+    typeLine: "Instant",
+    spell: spell([target.creature("a"), target.creature("b")], [fx.damage(1, ref.target("a")), fx.damage(1, ref.target("b"))]),
+  });
+
+  it("Speedball : nouvelles cibles pour un sort à plusieurs cibles (chaque mot « cible », celles d'origine proposées)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Speedball, New Warrior"] },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves"], hand: [twinBolt] },
+    });
+    const speed = idOf(s, "p1", "battlefield", "Speedball, New Warrior");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    s = advanceUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p2");
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Test Twin Bolt"), targets: { a: [speed], b: [bear] } });
+    const asked: { player: string; options: string[] }[] = [];
+    s = settle(s, (req, player) => {
+      if (req.type !== "pick" || req.intent !== "changeTarget") return undefined;
+      asked.push({ player, options: req.options });
+      // Le premier mot « cible » (Speedball) passe sur les Elfes ; le second garde l'Ourson.
+      return asked.length === 1 ? [elves] : [bear];
+    });
+    // Speedball (p1) choisit, pour chacun des deux mots « cible ».
+    expect(asked.map((a) => a.player)).toEqual(["p1", "p1"]);
+    expect(asked[0]?.options).toEqual(expect.arrayContaining([speed, elves, bear]));
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+    expect(s.objects[bear]?.damage).toBe(1);
+    expect(s.objects[speed]?.damage ?? 0).toBe(0);
+    expect(pt(s, speed)).toEqual([4, 4]);
+  });
+
+  it("Captain America's Shield : à plusieurs, la créature engagée est celle du joueur défenseur", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: ["Captain America's Shield", "Bear Cub"] },
+      p2: { battlefield: ["Serra Angel"] },
+      p3: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s.objects[idOf(s, "p1", "battlefield", "Captain America's Shield")]!.attachedTo = bear;
+    s.version += 1;
+    const run = combatTargetsOffered(attackPlayer(s, [bear], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
+    expect(run.s.objects[idOf(run.s, "p2", "battlefield", "Serra Angel")]?.tapped).toBe(false);
+  });
 });

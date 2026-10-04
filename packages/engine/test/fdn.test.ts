@@ -6,6 +6,7 @@
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
+import { addEffect } from "../src/effects";
 import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
@@ -17,8 +18,10 @@ import {
   act,
   advanceUntil,
   attack,
+  attackPlayer,
   canActivate,
   castable,
+  combatTargetsOffered,
   counterFrom,
   customCard,
   exiled,
@@ -467,7 +470,17 @@ describe("Foundations : Auras et Équipements", () => {
     const pole = idOf(s, "p1", "battlefield", "Fishing Pole");
     const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
     (s.objects[pole] as { attachedTo?: string }).attachedTo = elf;
-    s = act(s, "p1", { type: "activate", source: pole, ability: 0 });
+    s.version += 1;
+    // « Equipped creature has "{1}, {T}, Tap Fishing Pole: …" » : la capacité est celle de l'Elfe, pas de l'Équipement.
+    const bait = chars(s, elf).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Engagez Fishing"));
+    expect(bait).toBeGreaterThanOrEqual(0);
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === pole && a.ability === 0)).toBe(false);
+    // Fishing Pole engagée : le coût « engagez Fishing Pole » ne peut pas être payé.
+    s.objects[pole]!.tapped = true;
+    expect(() => act(s, "p1", { type: "activate", source: elf, ability: bait })).toThrow();
+    s.objects[pole]!.tapped = false;
+    s = act(s, "p1", { type: "activate", source: elf, ability: bait });
+    expect(s.objects[pole]?.tapped).toBe(true);
     s = passBoth(s);
     expect(s.objects[pole]?.counters.bait).toBe(1);
     expect(s.objects[elf]?.tapped).toBe(true);
@@ -4916,5 +4929,32 @@ describe("Foundations, lot K8 : peu communes (3)", () => {
       },
     });
     expect(counterFrom(h, "p1", idsOf(h, "p1", "battlefield", "Wildwood Scourge")[0] as string).triggered).toEqual([]);
+  });
+});
+
+describe("Foundations, PLAN-A A4a", () => {
+  it("Trygon Predator : à plusieurs, l'artefact ou l'enchantement détruit est celui du joueur blessé", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: ["Trygon Predator"] },
+      p2: { battlefield: ["Fishing Pole"] },
+      p3: { battlefield: ["Leyline Axe", "Quick-Draw Katana"] },
+    });
+    const run = combatTargetsOffered(attackPlayer(s, [idOf(s, "p1", "battlefield", "Trygon Predator")], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Leyline Axe", "Quick-Draw Katana"]]);
+    expect(idsOf(run.s, "p2", "battlefield", "Fishing Pole")).toHaveLength(1);
+  });
+
+  it("Fishing Pole : la capacité accordée est celle de la créature équipée ; elle la perd avec ses capacités", () => {
+    const s = scenario({ p1: { battlefield: ["Fishing Pole", "Llanowar Elves", "Forest"] } });
+    const pole = idOf(s, "p1", "battlefield", "Fishing Pole");
+    const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s.objects[pole]!.attachedTo = elf;
+    s.version += 1;
+    const bait = (x: GameState) =>
+      legalActions(x, "p1").some((a) => a.type === "activate" && a.label?.startsWith("Engagez Fishing Pole"));
+    expect(bait(s)).toBe(true);
+    addEffect(s, [elf], { loseAllAbilities: true }, "endOfTurn");
+    expect(bait(s)).toBe(false);
   });
 });

@@ -27,7 +27,7 @@ import {
   stackItemSpecs,
   suspendCard,
 } from "../stack";
-import { copyStackItem } from "../stackChoices";
+import { applyRetarget, copyStackItem, retargetRequest } from "../stackChoices";
 import {
   alivePlayers,
   apnapOrder,
@@ -495,7 +495,20 @@ export const HANDLERS: OpHandlers = {
       if (!item) continue;
       const entries = Object.entries(item.targets).filter(([, ids]) => ids.length > 0);
       const [specId, current] = entries[0] ?? [];
-      if (entries.length !== 1 || !specId || current?.length !== 1) continue;
+      if (!specId || !current) continue;
+      if (entries.length > 1 || current.length > 1) {
+        // Plusieurs cibles (« vous pouvez choisir de nouvelles cibles », Commandeer, Speedball) : pour chaque mot « cible »,
+        // autant de cibles qu'à l'origine, celles d'origine proposées (comme pour une copie, 707.10c).
+        for (const [sid] of entries) {
+          const k = key(`ct-${id}-${sid}`);
+          const request = retargetRequest(s, item, sid, nameOf(s, item.sourceId));
+          if (!request) continue;
+          const answer = r.vars[k];
+          if (!answer) return { ask: { player: ctx.controller, key: k, request } };
+          applyRetarget(s, item, sid, request, answer);
+        }
+        continue;
+      }
       const spec = stackItemSpecs(s, item).find((x) => x.id === specId);
       if (!spec) continue;
       const options = legalTargets(s, item.controller, spec, item.sourceId).filter((x) => x !== current[0] && x !== item.id);

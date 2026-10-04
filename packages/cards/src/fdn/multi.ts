@@ -359,7 +359,10 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.combatDamageToPlayer, fx.may("Détruire l'artefact ou l'enchantement ciblé ?", fx.destroy(ref.target())), {
         targets: [
           target.optional(
-            target.permanent("t", ["Artifact", "Enchantment"], { controller: "opponent" }, "artefact ou enchantement adverse"),
+            target.of(
+              ref.eventPlayer,
+              target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement de ce joueur"),
+            ),
           ),
         ],
         label: "détruit un artefact ou un enchantement",

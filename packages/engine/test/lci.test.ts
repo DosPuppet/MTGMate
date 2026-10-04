@@ -19,9 +19,11 @@ import {
   act,
   advanceUntil,
   attack,
+  attackPlayer,
   canActivate,
   castable,
   castNowOf,
+  combatTargetsOffered,
   customCard,
   exiled,
   idOf,
@@ -3461,5 +3463,52 @@ describe("PLAN-A A3 : « avec X marqueurs +1/+1 supplémentaires » posés à l'
     const block = idOf(s, "p1", "battlefield", "Nutrient Block");
     expect(s.objects[block]?.counters["+1/+1"]).toBe(2);
     expect(s.players.p1?.life).toBe(21);
+  });
+});
+
+describe("The Lost Caverns of Ixalan, PLAN-A A4a", () => {
+  it("Dreadmaw's Ire : à plusieurs, l'artefact détruit est celui du joueur blessé", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Bear Cub", "Mountain"], hand: ["Dreadmaw's Ire"] },
+      p2: { battlefield: ["Deconstruction Hammer"] },
+      p3: { battlefield: ["Fishing Pole", "Trusty Boomerang"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = attackPlayer(s, [bear], "p3");
+    s = passAccepting(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1" && x.stack.length === 0);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dreadmaw's Ire"), targets: { t: [bear] } }));
+    const run = combatTargetsOffered(s);
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Fishing Pole", "Trusty Boomerang"]]);
+    expect(run.s.players.p3?.life).toBe(16);
+    expect(idsOf(run.s, "p2", "battlefield", "Deconstruction Hammer")).toHaveLength(1);
+    expect(run.s.players.p3?.graveyard).toHaveLength(1);
+  });
+
+  it("Deconstruction Hammer : la créature équipée a « {3}, {T}, sacrifiez Deconstruction Hammer : détruisez … »", () => {
+    let s = scenario({
+      p1: { battlefield: ["Deconstruction Hammer", "Bear Cub", ...lands("Plains", 3)] },
+      p2: { battlefield: ["Fishing Pole"] },
+    });
+    const hammer = idOf(s, "p1", "battlefield", "Deconstruction Hammer");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const pole = idOf(s, "p2", "battlefield", "Fishing Pole");
+    s.objects[hammer]!.attachedTo = bear;
+    bump(s);
+    const index = chars(s, bear).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Sacrifiez"));
+    expect(index).toBeGreaterThanOrEqual(0);
+    expect(chars(s, hammer).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Sacrifiez"))).toBe(false);
+    s = settle(act(s, "p1", { type: "activate", source: bear, ability: index, targets: { t: [pole] } }));
+    expect(idsOf(s, "p1", "graveyard", "Deconstruction Hammer")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Fishing Pole")).toHaveLength(1);
+    expect(s.objects[bear]?.tapped).toBe(true);
+    // Une créature arrivée ce tour-ci ne peut pas utiliser {T}.
+    const sick = scenario({
+      p1: { battlefield: ["Deconstruction Hammer", { name: "Bear Cub", sick: true }, ...lands("Plains", 3)] },
+    });
+    const cub = idOf(sick, "p1", "battlefield", "Bear Cub");
+    sick.objects[idOf(sick, "p1", "battlefield", "Deconstruction Hammer")]!.attachedTo = cub;
+    bump(sick);
+    expect(canActivate(sick, "p1", cub)).toBe(false);
   });
 });

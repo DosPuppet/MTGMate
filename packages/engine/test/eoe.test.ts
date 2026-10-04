@@ -16,8 +16,10 @@ import {
   act,
   advanceUntil,
   attack,
+  attackPlayer,
   castable,
   castNowOf,
+  combatTargetsOffered,
   counterFrom,
   exiled,
   idOf,
@@ -385,10 +387,14 @@ describe("Edge of Eternities, lot D", () => {
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     s.objects[bracelet]!.attachedTo = angel;
     s.version += 1;
-    const ab = chars(s, bracelet).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Contrôlez"));
-    s = act(s, "p1", { type: "activate", source: bracelet, ability: ab, targets: { t: ["p2"] } });
-    // {15} − 5 (force de l'Ange équipé) = {10}.
+    // La capacité est celle de la créature équipée (« Equipped creature … has "{15}, Exile The Dominion Bracelet: …" »).
+    expect(chars(s, bracelet).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Exilez"))).toBe(false);
+    const ab = chars(s, angel).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Exilez"));
+    expect(ab).toBeGreaterThanOrEqual(0);
+    s = act(s, "p1", { type: "activate", source: angel, ability: ab, targets: { t: ["p2"] } });
+    // {15} − 5 (force de l'Ange équipé) = {10} ; le Bracelet est exilé pour payer.
     expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(10);
+    expect(exiled(s, "The Dominion Bracelet")).toHaveLength(1);
     s = passBoth(s);
     expect(s.turnControl).toEqual({ player: "p2", by: "p1" });
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
@@ -3228,5 +3234,35 @@ describe("Edge of Eternities : approximations levées (lot A1)", () => {
     expect(s.players.p1?.hand).toHaveLength(2);
     // C'est fait : plus de déclenchement ce tour-ci.
     expect(counterFrom(s, "p1", cub).triggered).toEqual([]);
+  });
+});
+
+describe("Edge of Eternities, PLAN-A A4a", () => {
+  it("Chorale of the Void : à plusieurs, la carte vient du cimetière du joueur défenseur", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Chorale of the Void"] },
+      p2: { graveyard: ["Serra Angel"] },
+      p3: { graveyard: ["Shivan Dragon", "Llanowar Elves"] },
+    });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Chorale of the Void", { targets: { enchant: [cub] } }));
+    const run = combatTargetsOffered(attackPlayer(s, [cub], "p3"));
+    expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
+    expect(idsOf(run.s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    expect(run.s.battlefield.filter((id) => run.s.objects[id]?.owner === "p3")).toHaveLength(1);
+  });
+
+  it("The Dominion Bracelet : la capacité accordée disparaît si la créature équipée perd ses capacités", () => {
+    const s = scenario({ p1: { battlefield: ["The Dominion Bracelet", "Serra Angel", ...lands("Plains", 15)] } });
+    const bracelet = idOf(s, "p1", "battlefield", "The Dominion Bracelet");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    s.objects[bracelet]!.attachedTo = angel;
+    s.version += 1;
+    const has = (x: S) =>
+      legalActions(x, "p1").some((a) => a.type === "activate" && a.targets.some((t) => t.legal.includes("p2")));
+    expect(has(s)).toBe(true);
+    addEffect(s, [angel], { loseAllAbilities: true }, "endOfTurn");
+    expect(has(s)).toBe(false);
   });
 });

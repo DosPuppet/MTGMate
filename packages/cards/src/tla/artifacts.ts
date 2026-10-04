@@ -118,14 +118,21 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Trusty Boomerang": {
     abilities: [
-      // La capacité est portée par l'Équipement et engage la créature équipée (« {T} » de la créature).
-      activated({
-        mana: "{1}",
-        tapAttached: true,
-        targets: [target.creature()],
-        effects: [fx.tap(ref.target()), fx.bounce(ref.self)],
-        label: "Engagez une créature, puis Trusty Boomerang revient dans la main",
-      }),
+      staticAbility(
+        "attached",
+        {
+          addAbilities: [
+            activated({
+              mana: "{1}",
+              tap: true,
+              targets: [target.creature()],
+              effects: [fx.tap(ref.target()), fx.bounce(ref.grantor)],
+              label: "Engagez une créature, puis Trusty Boomerang revient dans la main",
+            }),
+          ],
+        },
+        { label: "« {1}, {T} : engagez une créature ; renvoyez Trusty Boomerang »" },
+      ),
     ],
   },
   "The Walls of Ba Sing Se": {

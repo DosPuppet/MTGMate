@@ -348,7 +348,20 @@ export function matchesExiled(s: GameState, controller: PlayerId, id: ObjectId, 
   return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
 }
 
+/**
+ * Joueur qui tient une cible : un joueur lui-même ; le contrôleur d'un permanent, d'un sort ou d'une capacité ; le
+ * propriétaire d'une carte ailleurs (cimetière, exil).
+ */
+export function holderOf(s: GameState, id: string): PlayerId {
+  if (s.players[id]) return id;
+  const o = s.objects[id];
+  if (o) return o.zone === "battlefield" || o.zone === "stack" ? o.controller : o.owner;
+  return s.stack.find((x) => x.id === id)?.controller ?? id;
+}
+
 export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSpec, id: string, sourceId?: ObjectId): boolean {
+  // « … que ce joueur contrôle », « du cimetière de ce joueur » (`concreteSpec`).
+  if (spec.ofPlayers && !spec.ofPlayers.includes(holderOf(s, id))) return false;
   const player = s.players[id];
   if (player) {
     if (player.lost || !spec.filter.players) return false;
@@ -477,6 +490,13 @@ export function validateTargets(
     for (const id of ids)
       if (!isLegalTarget(s, controller, legalSpec, id, opts.sourceId)) throw new RulesError(`Cible illégale : ${id}`);
     const holders = ids.map((id) => s.objects[id]?.[s.objects[id]?.zone === "battlefield" ? "controller" : "owner"] ?? id);
+    // « Le joueur ciblé … les cartes ciblées de son cimetière » : les cibles sont tenues par une cible d'un autre mot.
+    const of = spec.of;
+    if (of?.kind === "target") {
+      const allowed = (chosen[of.id] ?? []).map((x) => holderOf(s, x));
+      if (ids.some((id) => !allowed.includes(holderOf(s, id))))
+        throw new RulesError("Les cibles doivent appartenir au joueur choisi pour l'autre cible");
+    }
     if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
       throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");

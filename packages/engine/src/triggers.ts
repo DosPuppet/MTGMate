@@ -11,7 +11,7 @@
 
 import { gainLife } from "./actions";
 import { ask, cardRef } from "./choices";
-import { boardAmount, concreteSpec, evalAmount, resolveRef, staticContext } from "./effects";
+import { boardAmount, concreteSpec, evalAmount, needsConcrete, resolveRef, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import {
   apnapOrder,
@@ -30,6 +30,7 @@ import {
 } from "./state";
 import { playerStatic, playerStatics } from "./statics";
 import {
+  holderOf,
   legalTargets,
   matchesCard,
   matchesObjectFilter,
@@ -1232,18 +1233,8 @@ export function triggerTargetSpecs(
   const modes = t.inline ? t.inline.modes : ab?.modes;
   const specs = modes ? (modes[t.mode ?? 0]?.targets ?? []) : t.inline ? t.inline.targets : (ab?.targets ?? []);
   // Valeurs évaluées au ciblage (Moseo : « valeur de mana X ou moins, X étant les PV gagnés ce tour-ci » ; Prismabasher :
-  // « jusqu'à X créatures ciblées »).
-  if (
-    !t.controller ||
-    !specs.some(
-      (x) =>
-        x.maxManaValueAmount !== undefined ||
-        x.manaValueAmount !== undefined ||
-        x.countAmount !== undefined ||
-        x.maxTotalManaValueAmount !== undefined,
-    )
-  )
-    return specs;
+  // « jusqu'à X créatures ciblées » ; Fear of Falling : « que le joueur défenseur contrôle »).
+  if (!t.controller || !specs.some(needsConcrete)) return specs;
   const ctx = staticContext(s, t.controller, t.sourceId ?? "", { sourceDefId: t.sourceDefId, event: t.event });
   return specs.map((x) => concreteSpec(s, ctx, x));
 }
@@ -1389,7 +1380,11 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
     // « une autre carte » : la créature de l'événement, sous son ancien comme son nouvel identifiant (morte : sa carte).
     if (spec.notEventObject && t.event?.objectId) taken.add(t.event.objectId);
     if (spec.notEventObject && t.event?.newObjectId) taken.add(t.event.newObjectId);
-    const legal = legalTargets(s, t.controller, spec, t.sourceId).filter((id) => !taken.has(id));
+    // « Le joueur ciblé … les cartes de son cimetière » : seulement celles du joueur choisi pour l'autre mot « cible ».
+    const of = spec.of?.kind === "target" ? (t.targets[spec.of.id] ?? []).map((x) => holderOf(s, x)) : undefined;
+    const legal = legalTargets(s, t.controller, spec, t.sourceId).filter(
+      (id) => !taken.has(id) && (!of || of.includes(holderOf(s, id))),
+    );
     const count = spec.count ?? 1;
     // « jusqu'à X cibles » avec X = 0 : aucune cible.
     if (count === 0) {
