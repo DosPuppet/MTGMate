@@ -1,5 +1,5 @@
 /**
- * Configuration pm2 du serveur MTG Mate (voir docs/deploiement.md).
+ * Configuration pm2 du serveur Planecircle (voir docs/deploiement.md).
  *   pm2 start deploy/ecosystem.config.cjs && pm2 save
  * Le serveur écoute seulement en local : c'est nginx qui le publie en HTTPS.
  */
@@ -8,7 +8,7 @@ const path = require("node:path");
 module.exports = {
   apps: [
     {
-      name: "mtgmate",
+      name: "planecircle",
       cwd: path.join(__dirname, ".."),
       // Serveur compilé par « npm run build:server » (un seul fichier : moteur, cartes et ws compris ; ni tsx ni
       // node_modules à l'exécution).

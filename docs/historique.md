@@ -1,4 +1,4 @@
-# Historique de MTGX (MTG Mate)
+# Historique de Planecircle (MTGX)
 
 Historique du projet, sorti de CLAUDE.md le 02/10/2026 (lot C0 de `docs/plans/PLAN-C.md`). CLAUDE.md ne garde que l'état présent, les règles de travail et les pièges ; le suivi des lots en cours est dans le plan en cours (`docs/plans/`).
 
@@ -12,7 +12,7 @@ Historique du projet, sorti de CLAUDE.md le 02/10/2026 (lot C0 de `docs/plans/PL
 | Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | ✅ |
 | Champ de bataille façon MTGA (rangées, zone des planeswalkers, piles de jetons, lignes multiples, redimensionnement) | ✅ |
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
-| Relais des images Scryfall par le serveur (`/scry/`, bascule automatique, case « Images par le serveur MTG Mate », cache nginx) | ✅ |
+| Relais des images Scryfall par le serveur (`/scry/`, bascule automatique, case « Images par le serveur Planecircle », cache nginx) | ✅ |
 | Tablette et téléphone (main ajustée à la largeur, appui long = aperçu, tap pour lever une carte, tiroir sous 1100 px, paysage imposé sur téléphone) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Reprise à la réouverture de la page (02/10/2026) : partie contre l'IA sauvegardée et rejouée là où elle en était (journal compris) ; partie en ligne reprise par son jeton, ou message puis accueil si elle est perdue | ✅ |
@@ -72,6 +72,7 @@ Historique du projet, sorti de CLAUDE.md le 02/10/2026 (lot C0 de `docs/plans/PL
 - **04/10/2026 :** PLAN-A à la demande de l'utilisateur (`docs/plans/PLAN-A.md`) : passe sur les approximations ; deux bogues corrigés (Raid Bombardment sans blessure, question inutile de « retirez tous les marqueurs »), puis environ 100 entrées levées par script (A1, A2) ou par des formes génériques (A3 : propriétaire et dernier contrôleur, taille de main maximale par horodatage, « choisissez les deux » du travail d'équipe, types de terrain seuls, montures cumulées, mana restreint à une sorte de capacité, objet contemplé, blessures subies par un joueur) ; deux échecs anciens du fuzz corrigés ; `approximations.md` passe de 347 à 244 entrées par carte ; règles 121 → 128.
 - **05/10/2026 :** PLAN-A, lot A4 à la demande de l'utilisateur : familles moyennes (cible détenue par un joueur désigné, nouvelles cibles d'un sort à plusieurs cibles, capacité accordée qui connaît son Équipement, objets d'un lot « un ou plusieurs », capacité retardée liée à un objet, sort gratuit de toute zone, phases et étapes ajoutées à leur place, marqueurs répartis entre créatures) ; `approximations.md` à 218 entrées par carte ; règles 131.
 - **05/10/2026 :** illustrations au choix pour toute carte, à la demande de l'utilisateur : table des impressions de Scryfall (`cards/data/printings.json`, `npm run import-printings` ; une entrée par apparence, impressions papier, cartes imprimées dans une seule langue comprises, comme les Archives mystiques japonaises ; terrains de base en pleine carte seulement), menu « Illustration » de l'éditeur de deck, import « (SET) numéro » ; clé `SET-numéro@<id Scryfall>` dont le moteur déduit l'image, vérifiée par le serveur ; règles 132.
+- **05/10/2026 :** le projet s'appelle désormais **Planecircle** (« MTG Mate » était déjà pris), à la demande de l'utilisateur ; dépôt `github.com/DosPuppet/planecircle`. « MTGX » reste le nom de code interne (paquets `@mtgx/*`, variables `MTGX_*`). Les clés `mtgmate.*` du navigateur sont reprises sous `planecircle.*` au chargement (`client/src/storageRename.ts`) ; `deploy/update.sh` remplace le processus pm2 `mtgmate` par `planecircle`.
 - **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;

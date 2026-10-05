@@ -17,7 +17,7 @@ export function TutorialMenu() {
       </header>
       <div className="lobby-body">
         <p className="tutorial-intro">
-          Des leçons courtes, sur de vrais extraits de partie, pour découvrir Magic: The Gathering et l'interface de MTG Mate.
+          Des leçons courtes, sur de vrais extraits de partie, pour découvrir Magic: The Gathering et l'interface de Planecircle.
           Votre progression est conservée : vous pouvez vous arrêter et reprendre plus tard.
         </p>
         <div className="lobby-actions">

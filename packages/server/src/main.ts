@@ -41,7 +41,7 @@ const lan = (host === "0.0.0.0" ? Object.values(networkInterfaces()) : [])
   .flat()
   .filter((a) => a && a.family === "IPv4" && !a.internal)
   .map((a) => `http://${a?.address}:${server.port}`);
-console.log(`MTG Mate — serveur en ligne sur le port ${server.port}`);
+console.log(`Planecircle — serveur en ligne sur le port ${server.port}`);
 console.log(
   `  local : http://${host === "0.0.0.0" ? "localhost" : host}:${server.port}${lan.length ? `\n  réseau : ${lan.join(", ")}` : ""}`,
 );

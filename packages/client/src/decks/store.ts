@@ -66,7 +66,7 @@ export const useDecks = create<DeckStore>()(
         return id;
       },
     }),
-    { name: "mtgmate.decks", version: 1, storage: createJSONStorage(() => safeStorage) },
+    { name: "planecircle.decks", version: 1, storage: createJSONStorage(() => safeStorage) },
   ),
 );
 

@@ -503,8 +503,8 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
 // Jeu en ligne : jeton de reconnexion et pseudo (retenus : une page rouverte reprend sa partie)
 // ---------------------------------------------------------------------------
 
-const TOKEN_KEY = "mtgmate.online";
-const NAME_KEY = "mtgmate.name";
+const TOKEN_KEY = "planecircle.online";
+const NAME_KEY = "planecircle.name";
 
 function loadToken(): string | null {
   try {
@@ -514,13 +514,13 @@ function loadToken(): string | null {
   }
 }
 
-/** Enregistrement de partie téléchargé en fichier JSON (« mtgmate-partie-2026-09-29-1432.json »). */
+/** Enregistrement de partie téléchargé en fichier JSON (« planecircle-partie-2026-09-29-1432.json »). */
 function downloadRecord(record: GameRecord): void {
   const stamp = new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "");
   const blob = new Blob([JSON.stringify(record)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `mtgmate-partie-${stamp}.json`;
+  a.download = `planecircle-partie-${stamp}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -662,9 +662,9 @@ export function playbackTimes(pace: Pace): { show: number; after: number } {
   }[pace];
 }
 
-const PACE_KEY = "mtgmate.pace";
-const SETTINGS_KEY = "mtgmate.autopilot";
-const LANG_KEY = "mtgmate.lang";
+const PACE_KEY = "planecircle.pace";
+const SETTINGS_KEY = "planecircle.autopilot";
+const LANG_KEY = "planecircle.lang";
 
 /** Réglages de l'automatisme retenus d'une session à l'autre (arrêts, contrôle total, garder la priorité). */
 function loadSettings(): AutopilotSettings {

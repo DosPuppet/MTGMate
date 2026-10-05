@@ -1,6 +1,6 @@
-# Installer MTG Mate sur un serveur (pm2 + nginx)
+# Installer Planecircle sur un serveur (pm2 + nginx)
 
-Cette notice installe MTG Mate sur un VPS Linux qui héberge déjà d'autres applications derrière **nginx**. L'appli tourne avec Node, gérée par **pm2**, et n'écoute qu'en local (`127.0.0.1:8787`) ; nginx la publie en HTTPS sur un sous-domaine.
+Cette notice installe Planecircle sur un VPS Linux qui héberge déjà d'autres applications derrière **nginx**. L'appli tourne avec Node, gérée par **pm2**, et n'écoute qu'en local (`127.0.0.1:8787`) ; nginx la publie en HTTPS sur un sous-domaine.
 
 Une fois installée, deux joueurs sur deux machines différentes ouvrent `https://mtg.mondomaine.fr`, choisissent « Contre un joueur » : l'un crée la partie et envoie le lien, l'autre la rejoint.
 
@@ -42,23 +42,23 @@ Le dépôt n'a pas de dépôt distant. Deux possibilités :
 - **Dépôt privé** (GitHub, GitLab…) : depuis votre poste, `git remote add origin <url> && git push -u origin master`, puis sur le VPS :
 
   ```bash
-  sudo mkdir -p /opt/mtgmate && sudo chown "$USER" /opt/mtgmate
-  git clone <url> /opt/mtgmate
+  sudo mkdir -p /opt/planecircle && sudo chown "$USER" /opt/planecircle
+  git clone <url> /opt/planecircle
   ```
 
 - **Sans dépôt distant** : depuis votre poste,
 
   ```bash
-  git bundle create mtgmate.bundle master
-  scp mtgmate.bundle vps:/tmp/
+  git bundle create planecircle.bundle master
+  scp planecircle.bundle vps:/tmp/
   ```
 
-  puis sur le VPS : `git clone /tmp/mtgmate.bundle /opt/mtgmate`.
+  puis sur le VPS : `git clone /tmp/planecircle.bundle /opt/planecircle`.
 
 ## 4. Installer et construire
 
 ```bash
-cd /opt/mtgmate
+cd /opt/planecircle
 npm ci
 npm run build          # construit l'interface dans packages/client/dist
 npm run build:server   # compile le serveur dans packages/server/dist/main.mjs (lancé par pm2, sans tsx)
@@ -73,7 +73,7 @@ pm2 startup            # une seule fois par machine : affiche une commande sudo 
 curl http://127.0.0.1:8787/healthz     # → {"ok":true,"build":"…","rules":…,"rooms":0,"memory":{…}}
 ```
 
-Commandes utiles : `pm2 status`, `pm2 logs mtgmate`, `pm2 restart mtgmate`, `pm2 stop mtgmate`.
+Commandes utiles : `pm2 status`, `pm2 logs planecircle`, `pm2 restart planecircle`, `pm2 stop planecircle`.
 
 **Journaux :** pm2 ne les fait pas tourner de lui-même. Une fois par machine :
 
@@ -85,16 +85,16 @@ pm2 set pm2-logrotate:retain 14
 
 **`/healthz` :** une requête locale directe (`curl` sur le VPS, supervision) reçoit le détail en JSON : commit du serveur, version du protocole et des règles, salons, mémoire. À travers nginx, la réponse n'est que « ok ».
 
-Si le port 8787 est déjà pris sur le VPS, changez `PORT` dans `deploy/ecosystem.config.cjs` **et** dans le site nginx (étape 6), puis `pm2 restart mtgmate --update-env && pm2 save`.
+Si le port 8787 est déjà pris sur le VPS, changez `PORT` dans `deploy/ecosystem.config.cjs` **et** dans le site nginx (étape 6), puis `pm2 restart planecircle --update-env && pm2 save`.
 
 Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200), `MTGX_MAX_HEAP_MB` (tas JavaScript au-delà duquel aucun salon n'est plus créé, 384 Mo), `MTGX_DATA_DIR` (sauvegarde des parties en cours, `data/rooms` par défaut, `off` pour la désactiver), `MTGX_MAX_ROOMS_PER_IP` (salons ouverts au plus par adresse de créateur, 4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même, séparées par des virgules ; inutile en temps normal).
 
 ## 6. nginx et HTTPS
 
 ```bash
-sudo cp deploy/nginx-mtgmate.conf /etc/nginx/sites-available/mtgmate
-sudo nano /etc/nginx/sites-available/mtgmate      # remplacer mtg.mondomaine.fr
-sudo ln -s ../sites-available/mtgmate /etc/nginx/sites-enabled/
+sudo cp deploy/nginx-planecircle.conf /etc/nginx/sites-available/planecircle
+sudo nano /etc/nginx/sites-available/planecircle      # remplacer mtg.mondomaine.fr
+sudo ln -s ../sites-available/planecircle /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d mtg.mondomaine.fr         # certificat Let's Encrypt + redirection HTTPS
 ```
@@ -108,13 +108,13 @@ Points importants de ce site (déjà dans le fichier) :
 - `X-Real-IP` : l'adresse du joueur vue par nginx ; le serveur limite les connexions et les salons par adresse. `X-Forwarded-For` ne suffit pas : son début est fourni par le client ;
 - `proxy_cache_key $scheme$host$uri` (dans `/scry/`) : une image par chemin, quelle que soit la chaîne de requête ;
 - HSTS : après `certbot`, ajoutez dans le bloc `listen 443` la ligne indiquée en commentaire en tête du fichier. Les autres en-têtes de sécurité (`nosniff`, `X-Frame-Options`, `Referrer-Policy`) viennent du serveur Node ;
-- `location /scry/` et `proxy_cache_path` : relais des images (voir « Images pour les joueurs derrière un proxy »). Si `nginx -t` signale que la zone `mtgmate_scry` existe déjà, c'est que le fichier est inclus deux fois.
+- `location /scry/` et `proxy_cache_path` : relais des images (voir « Images pour les joueurs derrière un proxy »). Si `nginx -t` signale que la zone `planecircle_scry` existe déjà, c'est que le fichier est inclus deux fois.
 
 ### Images pour les joueurs derrière un proxy
 
-Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains réseaux (entreprise, école) le bloquent. L'appli relaie alors les images par `https://mtg.mondomaine.fr/scry/…`, et nginx les garde en cache (`/var/cache/nginx/mtgmate-scry`, 2 Go au plus).
+Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains réseaux (entreprise, école) le bloquent. L'appli relaie alors les images par `https://mtg.mondomaine.fr/scry/…`, et nginx les garde en cache (`/var/cache/nginx/planecircle-scry`, 2 Go au plus).
 
-- **Côté joueur :** rien à faire. Le relais s'active tout seul quand Scryfall ne répond pas. Sinon, le joueur coche « Images par le serveur MTG Mate », sur l'accueil ou dans les réglages de la partie.
+- **Côté joueur :** rien à faire. Le relais s'active tout seul quand Scryfall ne répond pas. Sinon, le joueur coche « Images par le serveur Planecircle », sur l'accueil ou dans les réglages de la partie.
 - **Côté serveur :** seules les images de cartes sont relayées (liste blanche) ; ce n'est pas un proxy ouvert. Le VPS doit pouvoir joindre `cards.scryfall.io` en HTTPS.
 - **Vérification :** lancez deux fois la commande suivante. La première réponse contient `X-Cache: MISS`, la seconde `X-Cache: HIT`.
 
@@ -130,7 +130,7 @@ curl -sI https://mtg.mondomaine.fr/scry/small/front/8/d/8d8432a7-1c8a-4cfb-947c-
 ## 8. Mettre à jour
 
 ```bash
-cd /opt/mtgmate
+cd /opt/planecircle
 ./deploy/update.sh
 ```
 
@@ -140,23 +140,25 @@ Le script :
 3. rejoue une copie des parties en cours avec le nouveau moteur (`tools/rooms-check.ts`) et dit combien seront interrompues : une mise à jour qui change les règles du moteur interrompt les parties dont les empreintes ne concordent plus. Pour la reporter, arrêtez-vous là (Ctrl+C) et relancez-la quand aucune partie n'est en cours (`/healthz`, `rooms`) ;
 4. redémarre le serveur et attend que `/healthz` réponde (30 s au plus).
 
+**Installation d'avant le changement de nom (MTG Mate, jusqu'au 05/10/2026) :** le script remplace de lui-même le processus pm2 `mtgmate` par `planecircle`. Le dossier `/opt/mtgmate`, le site nginx `mtgmate` et sa zone de cache `mtgmate_scry` peuvent rester tels quels ; si le dépôt a changé d'adresse : `git remote set-url origin <nouvelle url>` avant la mise à jour.
+
 ### Revenir en arrière
 
 Si la nouvelle version pose problème :
 
 ```bash
-cd /opt/mtgmate
+cd /opt/planecircle
 git log --oneline -5                       # le commit précédent
 git checkout <commit précédent>
 npm ci && npm run build && npm run build:server
-pm2 stop mtgmate
+pm2 stop planecircle
 rm -rf data/rooms && tar -xzf data/backups/rooms-<date>-<commit>.tgz -C data   # parties d'avant la mise à jour
-pm2 start mtgmate && pm2 save
+pm2 start planecircle && pm2 save
 ```
 
 Restaurer la sauvegarde n'est utile que si les parties ont été interrompues par la nouvelle version : celles jouées depuis sont perdues. Revenez ensuite sur la branche (`git checkout master`) pour la mise à jour suivante.
 
-**Onglets restés ouverts :** le client envoie sa version (protocole et règles) en créant, rejoignant ou reprenant un salon. Après une mise à jour, un onglet de l'ancienne version reçoit « Une nouvelle version de MTG Mate est disponible » et recharge la page ; le jeton de reconnexion est gardé, la partie reprend avec la nouvelle version.
+**Onglets restés ouverts :** le client envoie sa version (protocole et règles) en créant, rejoignant ou reprenant un salon. Après une mise à jour, un onglet de l'ancienne version reçoit « Une nouvelle version de Planecircle est disponible » et recharge la page ; le jeton de reconnexion est gardé, la partie reprend avec la nouvelle version.
 
 **Les parties en cours survivent au redémarrage** : chaque salon est sauvegardé dans `data/rooms/` (un fichier par salon : les sièges, puis une décision par ligne) et repris au démarrage, en rejouant ses décisions. Les joueurs se reconnectent seuls (le navigateur réessaie pendant une minute) et ont le délai de retour habituel (`MTGX_GRACE_MS`).
 
@@ -172,14 +174,14 @@ Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met
 
 | Symptôme | Cause probable |
 |---|---|
-| 502 Bad Gateway | appli arrêtée (`pm2 status`, `pm2 logs mtgmate`) ou port différent entre pm2 et nginx |
+| 502 Bad Gateway | appli arrêtée (`pm2 status`, `pm2 logs planecircle`) ou port différent entre pm2 et nginx |
 | La page s'affiche mais « Contre un joueur » ne se connecte jamais | en-têtes `Upgrade` / `Connection` absents dans `location /ws` |
 | Déconnexions régulières après environ une minute | `proxy_read_timeout` trop court dans `location /ws` |
 | « Trop de connexions depuis cette adresse » | plus de 8 onglets ouverts depuis la même IP |
 | « Serveur complet, réessayez plus tard » | limite `MTGX_MAX_ROOMS` atteinte, ou tas au-delà de `MTGX_MAX_HEAP_MB` (`/healthz` en local) |
 | « Trop de salons ouverts depuis cette adresse » | limite `MTGX_MAX_ROOMS_PER_IP` ; si tous les joueurs semblent avoir la même adresse, vérifier `X-Real-IP` dans le site nginx |
 | Jeu en ligne impossible (WebSocket refusé) | page servie depuis une autre adresse que le serveur : ajouter cette origine à `MTGX_ORIGINS` |
-| Cartes sans images chez un joueur, « Images par le serveur MTG Mate » cochée | le VPS ne joint pas `cards.scryfall.io` (`curl -I https://cards.scryfall.io` depuis le VPS), ou `location /scry/` absent |
+| Cartes sans images chez un joueur, « Images par le serveur Planecircle » cochée | le VPS ne joint pas `cards.scryfall.io` (`curl -I https://cards.scryfall.io` depuis le VPS), ou `location /scry/` absent |
 | Certificat refusé par certbot | le DNS ne pointe pas encore vers le VPS, ou le port 80 est fermé |
 
 ## Sécurité

@@ -1,9 +1,9 @@
 /**
- * Images des cartes : directement depuis Scryfall, ou relayées par le serveur MTG Mate (/scry/) quand le réseau
+ * Images des cartes : directement depuis Scryfall, ou relayées par le serveur Planecircle (/scry/) quand le réseau
  * du joueur bloque cards.scryfall.io (proxy d'entreprise, d'école…).
  *
  * - `auto` (par défaut) : direct, et bascule sur le relais si une image de Scryfall ne charge pas ;
- * - `on` / `off` : choix du joueur (case « Images par le serveur MTG Mate »), mémorisé.
+ * - `on` / `off` : choix du joueur (case « Images par le serveur Planecircle »), mémorisé.
  *
  * Toute URL d'image affichée passe par `imageUrl`.
  */

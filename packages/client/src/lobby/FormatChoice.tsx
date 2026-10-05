@@ -1,7 +1,7 @@
 import { FORMAT_LABELS, FORMATS, isFormat } from "@mtgx/cards";
 import type { Format } from "@mtgx/engine";
 
-const FORMAT_KEY = "mtgmate.format";
+const FORMAT_KEY = "planecircle.format";
 
 const HINTS: Record<Format, string> = {
   standard: "Seules les cartes légales en Standard : les cartes bannies ou hors Standard sont refusées.",

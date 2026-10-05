@@ -14,7 +14,7 @@ Le tutoriel s'adresse à un joueur qui ne connaît pas Magic. Il se lance depuis
 | 8 | `capacites` | Vol, vigilance, lien de vie, portée, contact mortel, capacités déclenchées et activées |
 | 9 | `partie` | Mulligan, arrêts, « Passer le tour », puis une vraie partie contre l'IA débutante (adversaire à 10 PV), avec des conseils |
 
-On peut **tout dérouler** (la leçon suivante est proposée en premier), **reprendre** ou choisir une leçon. La progression est gardée dans `localStorage` (`mtgmate.tutorial` : leçons terminées et leçon à reprendre). La reprise relance la leçon **depuis son début**.
+On peut **tout dérouler** (la leçon suivante est proposée en premier), **reprendre** ou choisir une leçon. La progression est gardée dans `localStorage` (`planecircle.tutorial` : leçons terminées et leçon à reprendre). La reprise relance la leçon **depuis son début**.
 
 ## Fichiers
 

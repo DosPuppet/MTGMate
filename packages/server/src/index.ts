@@ -203,7 +203,7 @@ const SCRY_CACHE = "public, max-age=2592000, immutable";
 const SCRY_TIMEOUT_MS = 10_000;
 
 const fetchScryfall = (url: string): Promise<Response> =>
-  fetch(url, { headers: { "User-Agent": "MTGMate/1.0", Accept: "image/*" }, signal: AbortSignal.timeout(SCRY_TIMEOUT_MS) });
+  fetch(url, { headers: { "User-Agent": "Planecircle/1.0", Accept: "image/*" }, signal: AbortSignal.timeout(SCRY_TIMEOUT_MS) });
 
 async function relayImage(
   req: IncomingMessage,
@@ -391,7 +391,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
           case "rejoin": {
             if (current) throw new ClientError("state", "Vous êtes déjà dans un salon.");
             if (msg.version?.protocol !== PROTOCOL_VERSION || msg.version?.rules !== RULES_VERSION)
-              throw new ClientError("version", "Une nouvelle version de MTG Mate est disponible : rechargez la page.");
+              throw new ClientError("version", "Une nouvelle version de Planecircle est disponible : rechargez la page.");
             if (msg.type === "create")
               current = rooms.create(msg.name, msg.deck, peer, {
                 sideboard: msg.sideboard,

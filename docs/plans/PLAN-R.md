@@ -116,7 +116,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - liste blanche d'`Origin` ;
   - `/scry/` sans chaîne de requête ;
   - plafond de salons par IP ;
-  - en-têtes de sécurité dans `deploy/nginx-mtgmate.conf`.
+  - en-têtes de sécurité dans `deploy/nginx-planecircle.conf`.
 
 ## R0 — corrections rapides ✅
 

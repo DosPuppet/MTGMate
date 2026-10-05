@@ -30,7 +30,7 @@ function get(port: number, path: string, encoding?: string): Promise<{ headers: 
 describe("fichiers du client", () => {
   it("politique de contenu (CSP) : scripts du site seulement, images de Scryfall, pas d'encadrement", async () => {
     dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
-    writeFileSync(join(dir, "index.html"), "<!doctype html><title>MTG Mate</title>");
+    writeFileSync(join(dir, "index.html"), "<!doctype html><title>Planecircle</title>");
     srv = await startServer({ port: 0, host: "127.0.0.1", staticDir: dir });
     const csp = String((await get(srv.port, "/")).headers["content-security-policy"]);
     expect(csp).toContain("script-src 'self'");
@@ -44,7 +44,7 @@ describe("fichiers du client", () => {
     mkdirSync(join(dir, "assets"));
     const js = `export const data = ${JSON.stringify(Array.from({ length: 2000 }, (_, i) => ({ carte: `Carte ${i}` })))};`;
     writeFileSync(join(dir, "assets", "index-abc.js"), js);
-    writeFileSync(join(dir, "index.html"), "<!doctype html><title>MTG Mate</title>");
+    writeFileSync(join(dir, "index.html"), "<!doctype html><title>Planecircle</title>");
     srv = await startServer({ port: 0, host: "127.0.0.1", staticDir: dir });
 
     const br = await get(srv.port, "/assets/index-abc.js", "gzip, deflate, br");
@@ -71,7 +71,7 @@ describe("fichiers du client", () => {
 
   it("une URL mal encodée répond 400, sans arrêter le serveur", async () => {
     dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
-    writeFileSync(join(dir, "index.html"), "<!doctype html><title>MTG Mate</title>");
+    writeFileSync(join(dir, "index.html"), "<!doctype html><title>Planecircle</title>");
     srv = await startServer({ port: 0, host: "127.0.0.1", staticDir: dir });
     expect((await fetch(`http://127.0.0.1:${srv.port}/%`)).status).toBe(400);
     expect((await fetch(`http://127.0.0.1:${srv.port}/healthz`)).status).toBe(200);

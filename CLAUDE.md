@@ -1,4 +1,4 @@
-# CLAUDE.md — suivi et conventions de MTGX (MTG Mate)
+# CLAUDE.md — suivi et conventions de Planecircle (MTGX)
 
 Ce fichier sert au suivi du projet entre les sessions : état présent, règles de travail, pièges. Le README présente le projet ; l'historique est dans `docs/historique.md` ; le reste est dans `docs/` (voir « Documents »).
 
@@ -41,7 +41,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
   - extensions déclarées dans `packages/cards/src/sets.ts` ; une réimpression garde la définition de la première extension ;
   - scripts dans `packages/cards/src/<set>/*.ts` ; DSL et jetons génériques dans `fdn/common.ts` ;
   - ce qui se lit dans le texte Scryfall (mots-clés, garde, « Équiper », loyauté, Harmonie, Marchandage…) est déduit dans `cards/src/scryfall.ts` ;
-  - légalité : `validateDeck` (format `standard` par défaut) refuse les cartes bannies, hors format ou sans légalité connue, réserve comprise ; le format `unlimited` (« Sans limite », choisi à l'accueil ou à la création d'un salon en ligne, retenu dans `mtgmate.format`) accepte toute carte du catalogue quelle que soit sa légalité (bannie, hors Standard, Commander plus tard) ; seules restent les règles de construction.
+  - légalité : `validateDeck` (format `standard` par défaut) refuse les cartes bannies, hors format ou sans légalité connue, réserve comprise ; le format `unlimited` (« Sans limite », choisi à l'accueil ou à la création d'un salon en ligne, retenu dans `planecircle.format`) accepte toute carte du catalogue quelle que soit sa légalité (bannie, hors Standard, Commander plus tard) ; seules restent les règles de construction.
 - **Jeu en ligne (`packages/server`) :**
   - le serveur fait autorité : il valide le deck et chaque décision (`RulesError` renvoyée au client) ;
   - un joueur ne reçoit que sa vue (`projectView`), ses événements filtrés (`filterEvents`) et les faces qu'il connaît (`visibleFaces`) ;
@@ -49,7 +49,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
   - le protocole est dans `server/src/protocol.ts`, que le client importe en `import type` (sauf la constante `PROTOCOL_VERSION`) ;
   - poignée de main : création, arrivée et reprise d'un salon portent `{ protocol: PROTOCOL_VERSION, rules: RULES_VERSION }` ; un client d'une autre version reçoit l'erreur `version` et recharge la page. Faire avancer `PROTOCOL_VERSION` à tout changement incompatible des messages.
 - **Données :** `packages/cards/data/fdn.json` est indenté avec **1 espace** (le réécrire à l'identique) ; réimport : `npm run import-cards -- <set>|all` (`all` exclut FDN et FRA, retouchés à la main ; leurs données françaises manquantes : `npx tsx tools/import-french.ts <set>`). Liste des extensions : `cards/src/setRegistry.ts` (seule source, lue par les outils d'import). Table des impressions (illustrations au choix dans l'éditeur de deck, chargée à la demande, vérifiée par le serveur) : `npm run import-printings`, à relancer après un réimport. Bannissement annoncé avant un réimport : `cards/data/legality-overrides.json` ; la liste des bannies du README est vérifiée par `cards/test/legality.test.ts`.
-- **Commits :** uniquement quand l'utilisateur le demande ; message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ; remote `origin` (github.com/DosPuppet/MTGMate) : c'est l'utilisateur qui pousse.
+- **Commits :** uniquement quand l'utilisateur le demande ; message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ; remote `origin` (github.com/DosPuppet/planecircle) : c'est l'utilisateur qui pousse.
 
 ## Vérifications avant de rendre un lot
 
@@ -74,8 +74,8 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 - **Sons (`client/src/audio/`) :** `sounds.ts` (table des fichiers), `eventSounds.ts` (événements → sons, testé), `sfx.ts` ; débloqués au premier geste ; un nouvel événement du moteur n'a pas de son tant qu'il n'est pas dans `soundsFor`.
 - **Serveur de parties :** `npm run server` (tsx, pour le développement) charge le moteur au démarrage (le relancer après une modification du moteur ou des cartes) et sert `packages/client/dist` (relancer `npm run build`). En production, pm2 lance le serveur compilé `packages/server/dist/main.mjs` (`npm run build:server`, esbuild). `/healthz` détaille versions, mémoire et salons pour une requête locale directe seulement. Un salon occupe 0,2 à 0,3 Mo de tas ; au-delà de `maxHeapMb`, aucun salon n'est créé (`tools/load-test.ts`). Avant un déploiement [règles] : `npx tsx tools/rooms-check.ts` (lancé par `deploy/update.sh`).
 - **Déploiement (VPS de l'utilisateur) :** machine partagée, nginx existant, **ni Docker ni Caddy ni unité systemd** : pm2 (`deploy/ecosystem.config.cjs`), serveur sur `127.0.0.1`. Les parties en cours sont sauvegardées (`data/rooms`, fichiers en 600, jetons et adresses en empreintes SHA-256) et reprises au démarrage en rejouant leurs décisions ; un changement de règles peut rendre une sauvegarde impossible à rejouer (fichier mis de côté, effacé après sept jours). `deploy/update.sh` sauvegarde `data/rooms` avant chaque mise à jour (retour arrière : `docs/deploiement.md`).
-- **Reprise à la réouverture (`client/src/savedGame.ts`) :** partie contre l'IA écrite dans `localStorage` (`mtgmate.localGame`) par `SaveWriter`, rejouée par le worker à l'ouverture ; partie en ligne reprise par son jeton (`mtgmate.online`), sinon message et accueil ; un lien `?room=` passe avant.
-- **Réglages retenus** dans `localStorage` (`mtgmate.autopilot`, `mtgmate.lang`, `mtgmate.board`). « Fin du tour » est une passe douce ; Maj+Entrée, une passe dure.
+- **Reprise à la réouverture (`client/src/savedGame.ts`) :** partie contre l'IA écrite dans `localStorage` (`planecircle.localGame`) par `SaveWriter`, rejouée par le worker à l'ouverture ; partie en ligne reprise par son jeton (`planecircle.online`), sinon message et accueil ; un lien `?room=` passe avant.
+- **Réglages retenus** dans `localStorage` (`planecircle.autopilot`, `planecircle.lang`, `planecircle.board`). « Fin du tour » est une passe douce ; Maj+Entrée, une passe dure.
 - **`undoMana`** n'est pas une option de `legalActions` (l'IA aléatoire bouclerait) : la vue marque les sources annulables.
 - **Mode dev seulement :** `window.__mtgx` (bac à sable : `startGame(deck, decksIA, { p1: { cards, tokens } })`) et `window.__sfxLog` ; pas dans le build de production. Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **Mode rapide des tests (`?fast`) :** l'IA joue sans pause. Les scripts d'interface ouvrent `/?fast`, sauf `battlefield-smoke`. Une boucle de test qui joue une partie gère les fenêtres de choix et la défausse, et échoue si la partie se bloque.

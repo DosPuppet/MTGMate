@@ -1,3 +1,5 @@
+// En premier : les clés « mtgmate.* » renommées avant que les stores ne les lisent.
+import "./storageRename";
 import { LayoutGroup, MotionConfig } from "motion/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -63,7 +65,7 @@ void detectBlockedScryfall();
 // Page rouverte : reprise de la partie en ligne, sinon de la partie contre l'IA sauvegardée (sauf lien d'invitation
 // ?room=CODE, qui ouvre le jeu en ligne ; la partie sauvegardée reprendra à la prochaine ouverture).
 const invited = new URLSearchParams(location.search).has("room");
-if (invited && !localStorage.getItem("mtgmate.online")) useGame.getState().openOnline();
+if (invited && !localStorage.getItem("planecircle.online")) useGame.getState().openOnline();
 else useGame.getState().resumeAtStartup();
 // Fermeture de la page : la sauvegarde de la partie locale est écrite tout de suite.
 window.addEventListener("pagehide", flushSave);

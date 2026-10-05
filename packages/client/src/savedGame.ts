@@ -32,7 +32,7 @@ export interface SavedLocalGame {
   savedAt: string;
 }
 
-const KEY = "mtgmate.localGame";
+const KEY = "planecircle.localGame";
 
 export function loadSavedGame(): SavedLocalGame | null {
   try {

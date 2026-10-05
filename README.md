@@ -1,4 +1,4 @@
-# MTGX — MTG Mate
+# Planecircle
 
 Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur) et en ligne contre un autre joueur (duel, BO3). Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
 
@@ -121,10 +121,10 @@ L'interface s'adapte à l'écran : tablette en paysage ou en portrait, télépho
 
 ### Images bloquées par le réseau
 
-Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains réseaux (entreprise, école) le bloquent, et les cartes s'affichent alors en cadre texte. Le serveur MTG Mate peut relayer les images par `/scry/…` :
+Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains réseaux (entreprise, école) le bloquent, et les cartes s'affichent alors en cadre texte. Le serveur Planecircle peut relayer les images par `/scry/…` :
 
 - **Automatique :** au démarrage, si Scryfall ne répond pas et que le serveur répond, le relais s'active tout seul.
-- **À la main :** la case **« Images par le serveur MTG Mate »**, sur l'accueil (en haut à droite) ou dans les réglages de la partie. Cochez-la si les cartes ne s'affichent pas. Le choix est mémorisé.
+- **À la main :** la case **« Images par le serveur Planecircle »**, sur l'accueil (en haut à droite) ou dans les réglages de la partie. Cochez-la si les cartes ne s'affichent pas. Le choix est mémorisé.
 - **Serveur :** seules les images de cartes sont relayées (liste blanche) ; ce n'est pas un proxy ouvert. Derrière nginx, les images sont mises en cache (voir [docs/deploiement.md](docs/deploiement.md)). En dev, Vite relaie `/scry` directement.
 - Si Scryfall est accessible, les images viennent de Scryfall en direct, et le serveur n'est pas sollicité.
 
@@ -145,7 +145,7 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"] [-- --audit]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte ; `--audit` : écarts entre le texte Oracle et le script des cartes gérées |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
-| `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur MTG Mate » (serveur de dev lancé) |
+| `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur Planecircle » (serveur de dev lancé) |
 | `npm run bo3-smoke` | Match BO3 contre l'IA : réserve entre les manches, perdant qui commence, issue du match (serveur de dev lancé) |
 | `npm run replay-smoke` | Replays : partie contre l'IA exportée, puis rouverte dans le visionneur (avance, retour, fin, point de vue) (serveur de dev lancé) |
 | `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |

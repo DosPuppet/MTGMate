@@ -10,7 +10,7 @@ const BASE = `${import.meta.env.BASE_URL}sounds/`;
 /** Écart minimal entre deux lectures du même son. */
 const MIN_GAP_MS = 60;
 const MAX_VOICES = 8;
-const STORAGE_KEY = "mtgmate.audio";
+const STORAGE_KEY = "planecircle.audio";
 
 // ---------------------------------------------------------------------------
 // Réglages (préférence propre à ce navigateur)

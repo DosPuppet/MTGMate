@@ -1,7 +1,7 @@
 /**
  * Test de bout en bout du relais des images (client/src/images.ts, route /scry/ du serveur) :
  * - Scryfall bloqué (comme par un proxy d'entreprise) : le relais s'active tout seul, les images s'affichent ;
- * - Scryfall accessible : images en direct ; la case « Images par le serveur MTG Mate » force le relais,
+ * - Scryfall accessible : images en direct ; la case « Images par le serveur Planecircle » force le relais,
  *   et le choix survit à un rechargement.
  * Captures dans test-results/proxy/.
  *

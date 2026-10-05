@@ -1,6 +1,6 @@
 # L'IA : niveaux, évaluation, combat par simulation, ISMCTS
 
-L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son niveau à l'accueil (**Débutant**, **Moyen**, **Élevé**), et ce choix est retenu dans `localStorage`, sous `mtgmate.aiLevel`. Le code est dans `packages/ai/src/`.
+L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son niveau à l'accueil (**Débutant**, **Moyen**, **Élevé**), et ce choix est retenu dans `localStorage`, sous `planecircle.aiLevel`. Le code est dans `packages/ai/src/`.
 
 ## Fichiers
 

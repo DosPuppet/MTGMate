@@ -7,7 +7,7 @@ import { setDecisionGuard, setUpdateObserver, useGame } from "../store";
 import { LESSONS, lessonById } from "./lessons";
 import { alwaysAllowed, type Ctx, matches, type Step } from "./runtime";
 
-const KEY = "mtgmate.tutorial";
+const KEY = "planecircle.tutorial";
 
 export interface Progress {
   /** Leçons terminées. */

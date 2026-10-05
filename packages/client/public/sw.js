@@ -1,12 +1,12 @@
 /**
- * Service worker de MTG Mate (build de production seulement, enregistré par main.tsx).
+ * Service worker de Planecircle (build de production seulement, enregistré par main.tsx).
  * - /assets/* (nommés par leur empreinte) et /sounds/* : depuis le cache après la première visite ; une nouvelle
  *   version d'un fichier remplace l'ancienne (même préfixe de nom) ;
  * - la page : réseau d'abord, cache si hors ligne (partie contre l'IA sans réseau ; les images de Scryfall, elles,
  *   restent au navigateur).
  * Ni le jeu en ligne (/ws), ni le relais des images (/scry/), ni /healthz ne passent par le cache.
  */
-const CACHE = "mtgmate-v1";
+const CACHE = "planecircle-v1";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => {

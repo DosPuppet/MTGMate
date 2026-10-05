@@ -28,7 +28,7 @@ describe("textures du plateau", () => {
     expect(loadBoardTheme()).toBe("bois");
     saveBoardTheme("hasard");
     expect(loadBoardTheme()).toBe("hasard");
-    store.set("mtgmate.board", "inconnue");
+    store.set("planecircle.board", "inconnue");
     expect(loadBoardTheme()).toBe("nuit");
     vi.stubGlobal("localStorage", {
       getItem: () => {

@@ -122,7 +122,7 @@ export function DeckChoice({
   );
 }
 
-const LEVEL_KEY = "mtgmate.aiLevel";
+const LEVEL_KEY = "planecircle.aiLevel";
 
 const LEVELS: { level: AiLevel; label: string; hint: string }[] = [
   { level: "beginner", label: "Débutant", hint: "Pour apprendre : l'IA fait des erreurs et ne vous tend pas de pièges." },
@@ -177,8 +177,8 @@ export function Lobby() {
   };
   const canStart = !!me && deckStatus(me, format).ok && them.every((d) => !!d && deckStatus(d, format).ok);
   // Match au meilleur des trois manches (duel), retenu d'une partie à l'autre.
-  const [bo3, setBo3] = useState(() => localStorageFlag("mtgmate.bo3"));
-  useEffect(() => saveFlag("mtgmate.bo3", bo3), [bo3]);
+  const [bo3, setBo3] = useState(() => localStorageFlag("planecircle.bo3"));
+  useEffect(() => saveFlag("planecircle.bo3", bo3), [bo3]);
   const [level, setLevel] = useState<AiLevel>(loadLevel);
   const chooseLevel = (l: AiLevel) => {
     setLevel(l);
@@ -192,7 +192,7 @@ export function Lobby() {
           <ImageRelayToggle />
         </div>
         <h1>
-          MTG Mate <span className="build-tag">(alpha build)</span>
+          Planecircle <span className="build-tag">(alpha build)</span>
         </h1>
       </header>
       <div className="lobby-body">
@@ -316,7 +316,7 @@ function ReplayOpener() {
           if (!file) return;
           try {
             const record = JSON.parse(await file.text()) as unknown;
-            if (!isGameRecord(record)) return notify("Ce fichier n'est pas une partie MTG Mate.");
+            if (!isGameRecord(record)) return notify("Ce fichier n'est pas une partie Planecircle.");
             openReplay(record);
           } catch {
             notify("Fichier illisible.");

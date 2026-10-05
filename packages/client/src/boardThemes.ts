@@ -17,7 +17,7 @@ export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   { id: "ocean", label: "Océan" },
 ];
 
-const KEY = "mtgmate.board";
+const KEY = "planecircle.board";
 
 export function loadBoardTheme(): BoardThemeChoice {
   try {
