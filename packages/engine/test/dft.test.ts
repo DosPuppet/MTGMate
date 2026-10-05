@@ -3050,6 +3050,30 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     expect(chars(s, lizard).keywords).toEqual(expect.arrayContaining(["deathtouch", "haste"]));
   });
 
+  it("Gastal Thrillseeker à la vitesse 3 : la vitesse maximale atteinte pendant les blessures de combat ne lui donne pas le contact mortel pour ces blessures (510.2, simultanées)", () => {
+    // Un attaquant non bloqué fait perdre des PV à l'adversaire dans le même combat : la vitesse passe à 4, mais après
+    // les blessures, infligées en même temps ; le bloqueur (10/10) survit à 2 blessures. Dans les deux ordres d'attaquants.
+    for (const order of [
+      ["Gastal Thrillseeker", "Bear Cub"],
+      ["Bear Cub", "Gastal Thrillseeker"],
+    ]) {
+      let s = scenario({ p1: { battlefield: order }, p2: { battlefield: ["Gigantosaurus"] } });
+      s.players.p1!.speed = 3;
+      s.version += 1;
+      const lizard = idOf(s, "p1", "battlefield", "Gastal Thrillseeker");
+      const giant = idOf(s, "p2", "battlefield", "Gigantosaurus");
+      expect(chars(s, lizard).keywords).not.toContain("deathtouch");
+      s = attack(s, [lizard, idOf(s, "p1", "battlefield", "Bear Cub")]);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: giant, attacker: lizard }] });
+      s = advanceUntil(s, (x) => x.turn.step === "main2");
+      expect(s.players.p1?.speed).toBe(4);
+      expect(s.players.p2?.life).toBe(18);
+      expect(s.objects[giant]?.zone).toBe("battlefield");
+      expect(s.objects[giant]?.damage).toBe(2);
+    }
+  });
+
   it("Gloryheath Lynx : lien de vie ; attaque en étant montée : une carte de Plaine de base en main, pas sans être montée", () => {
     const run = (saddled: boolean) => {
       let s = scenario({ p1: { battlefield: ["Gloryheath Lynx", "Bear Cub"], library: ["Forest", "Plains", "Forest"] } });
