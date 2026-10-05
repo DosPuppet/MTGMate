@@ -6,6 +6,7 @@
 import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
+import { keyedPrinting } from "./printing";
 import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
 import { chars, decider, HIDDEN_CARD_ID, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic, playerStatics } from "./statics";
@@ -274,7 +275,7 @@ function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
 function printedFace(s: GameState, uid: string, defId: string, d: CardDef): CardFace {
   const face = cardFace(d);
   const key = s.printings?.[uid];
-  const p = key && d.id === defId ? d.printings?.find((x) => x.key === key) : undefined;
+  const p = key && d.id === defId ? (d.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
   if (!p?.image) return face;
   return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };
 }

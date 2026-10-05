@@ -2833,10 +2833,19 @@ button {
   padding: 0 8px;
 }
 /* Choix de l'illustration (impression d'une réédition) : code de l'ensemble. */
+/* Menu « Illustration » : fermé, il ne montre que le début du libellé (code de l'ensemble et numéro). */
 .deck-line-art {
-  padding: 0 6px;
+  width: 8.5em;
+  flex: none;
+  padding: 1px 2px;
+  font: inherit;
   font-size: 10.5px;
   letter-spacing: 0.04em;
+  background: #151c26;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-overflow: ellipsis;
   opacity: 0.75;
 }
 .deck-line-art.on {

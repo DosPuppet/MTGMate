@@ -2,7 +2,7 @@
  * Decks de l'utilisateur, conservés dans le navigateur (localStorage), plus les decks préconstruits.
  */
 import { CARDS, DECKS, type DeckList, deckColors } from "@mtgx/cards";
-import type { CardDef, CardFace } from "@mtgx/engine";
+import { type CardDef, type CardFace, keyedPrinting } from "@mtgx/engine";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import { imageUrl } from "../images";
@@ -81,12 +81,13 @@ export function deckCover(deck: DeckList): string | undefined {
   if (deck.cover) return imageUrl(deck.cover);
   const best = [...deck.main].filter(([, name]) => !CARDS[name]?.types.includes("Land")).sort((a, b) => b[0] - a[0])[0];
   const c = best ? CARDS[best[1]] : undefined;
-  return imageUrl(c?.printings?.find((p) => p.key === best?.[2])?.artCrop ?? c?.artCrop);
+  const key = best?.[2];
+  return imageUrl((key && (c?.printings?.find((p) => p.key === key) ?? keyedPrinting(key))?.artCrop) || c?.artCrop);
 }
 
-/** La face d'une carte dans l'impression choisie par le deck (PLAN-G : l'illustration d'une réédition). */
+/** La face d'une carte dans l'impression choisie par le deck (réédition, PLAN-G, ou impression de la table). */
 export function printedFace(face: CardFace, c: CardDef, key: string | undefined): CardFace {
-  const p = key ? c.printings?.find((x) => x.key === key) : undefined;
+  const p = key ? (c.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
   if (!p?.image) return face;
   return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };
 }

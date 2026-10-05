@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./decks": "./src/decks.ts",
+    "./printings": "./src/printings.ts",
     "./tokens": "./src/tokens.ts"
   },
   "dependencies": {

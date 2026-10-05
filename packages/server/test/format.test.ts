@@ -1,5 +1,7 @@
 /** Format du salon : Standard, ou sans limite (choisi à la création, imposé à celui qui rejoint). */
-import { CARDS, type DeckEntries } from "@mtgx/cards";
+import { CARDS, card, type DeckEntries } from "@mtgx/cards";
+import { printingOptions } from "@mtgx/cards/printings";
+import { keyedPrinting, printingKey } from "@mtgx/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RunningServer } from "../src/index";
 import { Client, RED, server } from "./helpers";
@@ -87,5 +89,26 @@ describe("impressions (PLAN-G, G1)", () => {
     clients.push(c);
     c.send({ type: "create", name: "Eve", deck: [[60, "Forest", 3]] as unknown as DeckEntries });
     expect((await c.next("error")).code).toBe("deck");
+  });
+
+  it("une impression de la table est montrée ; une clé qui n'est pas une impression de la carte est retirée", async () => {
+    const forest = printingOptions(card("Forest")).find((p) => p.key)?.key as string;
+    const image = keyedPrinting(forest)?.image;
+    // Bien formée, mais pas une impression de l'Île : un client ne peut pas imposer une image de son choix.
+    const forged = printingKey("LEA", "161", "0123456789abcdef0123456789abcdef");
+    const deck: DeckEntries = [
+      [30, "Forest", forest],
+      [30, "Island", forged],
+    ];
+    const { a, b } = await two();
+    a.send({ type: "create", name: "Alice", deck, format: "unlimited" });
+    const created = await a.next("room");
+    b.send({ type: "join", code: created.room.code, name: "Bob", deck: RED });
+    const ua = await a.next("update");
+    const hand = ua.view.hand;
+    expect(hand.some((v) => v.name === "Forest" || v.name === "Island")).toBe(true);
+    for (const v of hand.filter((x) => x.name === "Forest")) expect(v.image).toBe(image);
+    for (const v of hand.filter((x) => x.name === "Island")) expect(v.image).toBe(card("Island").image);
+    expect(JSON.stringify(ua.view)).not.toContain("0123456789abcdef");
   });
 });

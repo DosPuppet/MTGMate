@@ -3,12 +3,13 @@
  * des règles de construction (60 cartes minimum, 4 exemplaires maximum, réserve de 15)
  * et de la légalité dans le format (Standard).
  */
-import type { CardDef, Format } from "@mtgx/engine";
+import { type CardDef, type Format, keyedPrinting } from "@mtgx/engine";
 import { preconFor } from "./decks";
 
 /**
- * Lignes d'un deck : [nombre, nom anglais, impression ?]. Une ligne par nom ; l'impression (« SPG-13 », PLAN-G) choisit
- * l'illustration de tous ses exemplaires, sans rien changer aux règles ni à la légalité.
+ * Lignes d'un deck : [nombre, nom anglais, impression ?]. Une ligne par nom ; l'impression (« SPG-13 » d'une réédition,
+ * PLAN-G, ou « STA-42@<id> » de la table des impressions, `printings.ts`) choisit l'illustration de tous ses
+ * exemplaires, sans rien changer aux règles ni à la légalité.
  */
 export type DeckEntries = DeckEntry[];
 export type DeckEntry = [number, string, string?];
@@ -189,7 +190,12 @@ function add(entries: DeckEntries, n: number, name: string, printing?: string): 
  * - MTGO : `4 Llanowar Elves`, `4x …`, préfixe `SB:`, réserve après une ligne vide ;
  * - noms anglais ou français, commentaires `//` et `#`.
  */
-export function parseDeckList(text: string, index: CardIndex): ParsedDeck {
+export function parseDeckList(
+  text: string,
+  index: CardIndex,
+  /** Impression d'une carte d'après « (SET) numéro » au-delà de ses rééditions (`findPrinting` de la table). */
+  findPrinting?: (c: CardDef, set: string, number: string) => string | undefined,
+): ParsedDeck {
   const out: ParsedDeck = { main: [], sideboard: [], issues: [] };
   let section: "main" | "side" | "ignore" | "about" = "main";
   let sawHeader = false;
@@ -238,9 +244,14 @@ export function parseDeckList(text: string, index: CardIndex): ParsedDeck {
     }
     const toSide = m[1] === "SB" || section === "side" || (!sawHeader && sawBlankAfterCards);
     const c = index.cards[name];
-    // « (SPG) 13 » : une impression de la carte (réédition), retenue pour son illustration.
+    // « (SPG) 13 » : une impression de la carte (réédition, ou de la table), retenue pour son illustration.
     const key = suffix?.[2] ? `${suffix[1]?.toUpperCase()}-${suffix[2]}` : undefined;
-    const printing = key && c?.printings?.some((p) => p.key === key) ? key : undefined;
+    const printing =
+      key && c?.printings?.some((p) => p.key === key)
+        ? key
+        : c && suffix?.[1] && suffix[2]
+          ? findPrinting?.(c, suffix[1], suffix[2])
+          : undefined;
     add(toSide ? out.sideboard : out.main, count, name, printing);
     const illegal = c && legalityIssue(c);
     if (illegal) out.issues.push({ line: n, text: line, kind: "illegal", message: illegal });
@@ -264,7 +275,7 @@ export function serializeDeckList(
   const format = opts.format ?? "mtga";
   const line = ([n, name, key]: DeckEntry) => {
     const c = cards[name];
-    const p = key ? c?.printings?.find((x) => x.key === key) : undefined;
+    const p = key ? (c?.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
     const set = p ? ` (${p.set}) ${p.number}` : c?.set && c.number ? ` (${c.set}) ${c.number}` : "";
     if (format === "mtga") return `${n} ${exportName(c, name)}${set}`;
     return `${n} ${(opts.lang === "fr" && c?.fr?.name) || name}`;

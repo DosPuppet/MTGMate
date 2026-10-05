@@ -20,6 +20,7 @@
     "verify": "tsx tools/verify.ts",
     "import-cards": "tsx tools/import-scryfall.ts",
     "import-tokens": "tsx tools/import-tokens.ts",
+    "import-printings": "tsx tools/import-printings.ts",
     "ui-smoke": "tsx tools/ui-smoke.ts",
     "bench": "tsx tools/bench.ts",
     "coverage": "tsx tools/card-coverage.ts",

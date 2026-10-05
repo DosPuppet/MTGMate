@@ -26,6 +26,7 @@ import {
   sideboardSwapError,
   validateDeck,
 } from "@mtgx/cards";
+import { hasPrinting } from "@mtgx/cards/printings";
 import {
   createRecordedGame,
   type Decision,
@@ -210,10 +211,14 @@ function checkEntries(raw: unknown): DeckEntries {
     if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > 60 || typeof name !== "string") {
       throw new ClientError("deck", "Deck invalide.");
     }
-    if (key !== undefined && key !== null && (typeof key !== "string" || key.length > 24)) {
+    if (key !== undefined && key !== null && (typeof key !== "string" || key.length > 64)) {
       throw new ClientError("deck", "Deck invalide.");
     }
-    out.push(typeof key === "string" ? [n as number, name, key] : [n as number, name]);
+    // Une impression que la carte n'a pas (table des impressions plus ancienne ou plus récente que le client) : la
+    // carte garde son illustration. Le moteur ne vérifie pas les clés de la table : c'est fait ici.
+    const c = CARDS[name];
+    const printed = typeof key === "string" && c && hasPrinting(c, key);
+    out.push(printed ? [n as number, name, key] : [n as number, name]);
   }
   return out;
 }

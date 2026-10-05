@@ -3,6 +3,7 @@
  */
 import { CARDS, CardIndex, type DeckList, parseDeckList, serializeDeckList } from "@mtgx/cards";
 import { useMemo, useState } from "react";
+import { usePrintings } from "./printings";
 
 const INDEX = new CardIndex(CARDS);
 
@@ -37,7 +38,9 @@ export function ImportModal({
 }) {
   const [text, setText] = useState("");
   const [name, setName] = useState("");
-  const parsed = useMemo(() => parseDeckList(text, INDEX), [text]);
+  // « (STA) 42 » : impression de la table, une fois chargée.
+  const table = usePrintings();
+  const parsed = useMemo(() => parseDeckList(text, INDEX, table?.findPrinting), [text, table]);
   const mainCount = parsed.main.reduce((a, [n]) => a + n, 0);
   const sideCount = parsed.sideboard.reduce((a, [n]) => a + n, 0);
   const blocking = parsed.issues.filter((i) => i.kind === "unknown" || i.kind === "syntax");

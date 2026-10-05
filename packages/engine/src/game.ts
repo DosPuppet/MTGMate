@@ -9,6 +9,7 @@ import { checkDecisionShape } from "./decisionShape";
 import { outcomeHash } from "./fingerprint";
 import { LOOP_LIMIT, LOOP_SUSPECT } from "./limits";
 import { activateManaAbility, undoMana } from "./mana";
+import { keyedPrinting } from "./printing";
 import { activateAbility, answerCastNow, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
 import { answerStackChoice } from "./stackChoices";
 import {
@@ -139,9 +140,11 @@ export function createGame(opts: GameOptions): StepResult {
       p.deck.forEach((card, i) => {
         registerDef(s, card);
         const o = createObject(s, card.id, p.id, "library");
-        // Illustration d'une autre impression (réédition) : notée par identité physique, suivie d'une zone à l'autre.
+        // Illustration d'une autre impression (réédition, ou impression de la table, vérifiée par l'appelant) : notée
+        // par identité physique, suivie d'une zone à l'autre.
         const key = p.printings?.[i];
-        if (key && card.printings?.some((x) => x.key === key)) s.printings = { ...s.printings, [o.uid]: key };
+        if (key && (card.printings?.some((x) => x.key === key) || keyedPrinting(key)))
+          s.printings = { ...s.printings, [o.uid]: key };
       });
       shuffle(s, s.players[p.id]?.library ?? []);
     }

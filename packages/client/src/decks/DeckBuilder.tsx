@@ -14,13 +14,15 @@ import {
   SETS,
   validateDeck,
 } from "@mtgx/cards";
-import { type CardDef, cardFace, manaValue } from "@mtgx/engine";
+import type { PrintingOption } from "@mtgx/cards/printings";
+import { type CardDef, cardFace, keyedPrinting, manaValue } from "@mtgx/engine";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { Preview } from "../board/Sidebar";
 import { faceName } from "../i18n";
 import { useGame } from "../store";
 import { ExportModal, ImportModal } from "./ImportExport";
+import { type PrintingTable, usePrintings } from "./printings";
 import { searchFilter } from "./search";
 import { printedFace, useAllDecks, useDecks } from "./store";
 
@@ -84,17 +86,39 @@ function withPrinting(entries: DeckEntries, name: string, key: string | undefine
   return entries.map(([n, x, p]): DeckEntry => (x !== name ? (p ? [n, x, p] : [n, x]) : key ? [n, x, key] : [n, x]));
 }
 
-/** L'impression suivante d'une carte : celle de la carte, puis celles des rééditions, dans l'ordre. */
-function nextPrinting(c: CardDef, key: string | undefined): string | undefined {
-  const keys = [undefined, ...(c.printings ?? []).map((p) => p.key)];
-  return keys[(keys.indexOf(key) + 1) % keys.length];
+/** Langue d'une carte imprimée dans une seule langue (Archives mystiques japonaises…). */
+const PRINT_LANGS: Record<string, string> = {
+  ja: "japonais",
+  zhs: "chinois simplifié",
+  zht: "chinois traditionnel",
+  ko: "coréen",
+  ru: "russe",
+  de: "allemand",
+  fr: "français",
+  it: "italien",
+  es: "espagnol",
+  pt: "portugais",
+  ph: "phyrexian",
+};
+
+/** Libellé d'une impression dans le menu « Illustration » : « STA 42 · Strixhaven Mystical Archive · 2021 · japonais ». */
+function printingLabel(p: PrintingOption): string {
+  const info = SET_BY_CODE[p.set];
+  const setName = info ? (info.nameFr ?? info.name) : p.setName;
+  return [`${p.set} ${p.number}`, setName, p.year, p.lang && (PRINT_LANGS[p.lang] ?? p.lang)].filter(Boolean).join(" · ");
 }
 
-/** Nom de l'ensemble d'une impression (« Special Guests »), pour l'infobulle. */
-function printingLabel(c: CardDef, key: string | undefined): string {
-  const set = (key ? c.printings?.find((p) => p.key === key)?.set : undefined) ?? c.set ?? "";
-  const info = SET_BY_CODE[set];
-  return info ? `${info.nameFr ?? info.name} (${set})` : set;
+/**
+ * Impressions proposées pour une carte : toutes celles de la table une fois chargée ; avant, la carte et ses rééditions
+ * (et l'impression déjà choisie).
+ */
+function printingChoices(c: CardDef, key: string | undefined, table: PrintingTable | undefined): PrintingOption[] {
+  const out: PrintingOption[] = table?.printingOptions(c) ?? [
+    { set: c.set ?? "", number: c.number ?? "" },
+    ...(c.printings ?? []).map((p) => ({ key: p.key, set: p.set, number: p.number })),
+  ];
+  const chosen = key && !out.some((p) => p.key === key) ? keyedPrinting(key) : undefined;
+  return chosen ? [...out, { key, set: chosen.set, number: chosen.number }] : out;
 }
 
 // ---------------------------------------------------------------------------
@@ -308,6 +332,7 @@ function DeckLines({
 }) {
   const lang = useGame((s) => s.lang);
   const setHover = useGame((s) => s.setHover);
+  const table = usePrintings();
   return (
     <>
       {GROUPS.map(([label, test]) => {
@@ -324,6 +349,8 @@ function DeckLines({
               const c = CARDS[name] as CardDef;
               const face = printedFace(cardFace(c), c, key);
               const illegal = legalityIssue(c);
+              const choices = printingChoices(c, key, table);
+              const current = choices.find((p) => p.key === key);
               return (
                 <div
                   key={name}
@@ -334,21 +361,25 @@ function DeckLines({
                   <span className="deck-line-n">{n}</span>
                   <span className="deck-line-name">{faceName(face, lang)}</span>
                   <ManaCost cost={face.manaCost} size={13} />
-                  {!!c.printings?.length && (
-                    <button
-                      type="button"
-                      className={`btn small deck-line-art ${key ? "on" : ""}`}
+                  {choices.length > 1 && (
+                    <select
+                      className={`deck-line-art ${key ? "on" : ""}`}
+                      value={key ?? ""}
                       disabled={readOnly}
-                      title={`Illustration : ${printingLabel(c, key)}${readOnly ? "" : " — cliquer pour changer"}`}
-                      aria-label={`Illustration de ${faceName(face, lang)} : ${printingLabel(c, key)}`}
-                      onClick={() => {
-                        const next = nextPrinting(c, key);
+                      title={`Illustration : ${current ? printingLabel(current) : "?"}`}
+                      aria-label={`Illustration de ${faceName(face, lang)}`}
+                      onChange={(e) => {
+                        const next = e.target.value || undefined;
                         onPrinting(name, next);
                         setHover({ face: printedFace(cardFace(c), c, next) });
                       }}
                     >
-                      {(key ? c.printings?.find((p) => p.key === key)?.set : c.set) ?? "?"}
-                    </button>
+                      {choices.map((p) => (
+                        <option key={p.key ?? ""} value={p.key ?? ""}>
+                          {printingLabel(p)}
+                        </option>
+                      ))}
+                    </select>
                   )}
                   {!readOnly && (
                     <span className="deck-line-btns">

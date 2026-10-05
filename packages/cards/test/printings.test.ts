@@ -1,5 +1,8 @@
-/** Impressions (PLAN-G, G1) : l'illustration d'une réédition choisie par le deck, sans rien changer aux règles. */
-import { createRecordedGame, isGameRecord, projectView, replayGame } from "@mtgx/engine";
+/**
+ * Impressions (PLAN-G, G1) : l'illustration d'une réédition, ou d'une impression de la table (`printings.ts`), choisie
+ * par le deck, sans rien changer aux règles.
+ */
+import { createRecordedGame, isGameRecord, keyedPrinting, projectView, replayGame } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import {
   buildDeck,
@@ -12,6 +15,7 @@ import {
   serializeDeckList,
   validateDeck,
 } from "../src";
+import { findPrinting, hasPrinting, printingOptions } from "../src/printings";
 
 const GHALTA = "Ghalta, Primal Hunger";
 const ghalta = card(GHALTA);
@@ -101,5 +105,82 @@ describe("impressions des rééditions", () => {
       ],
     });
     expect(state.printings).toBeUndefined();
+  });
+});
+
+describe("table des impressions", () => {
+  const BOLT = "Lightning Bolt";
+  const bolt = card(BOLT);
+  const sta = findPrinting(bolt, "STA", "42") as string;
+  const staJa = printingOptions(bolt).find((p) => p.set === "STA" && p.lang === "ja");
+
+  it("toutes les apparences d'une carte : la sienne, ses rééditions, puis la table, sans doublon", () => {
+    const options = printingOptions(bolt);
+    expect(options[0]).toEqual({ set: bolt.set, number: bolt.number });
+    expect(options.length).toBeGreaterThan(10);
+    expect(new Set(options.map((p) => `${p.set}-${p.number}`)).size).toBe(options.length);
+    expect(keyedPrinting(sta)).toMatchObject({ set: "STA", number: "42" });
+    expect(options.find((p) => p.key === sta)).toMatchObject({ setName: "Strixhaven Mystical Archive", year: 2021 });
+    // Archives mystiques japonaises : imprimées en japonais seulement.
+    expect(staJa?.key).toBeTruthy();
+    expect(hasPrinting(bolt, staJa?.key as string)).toBe(true);
+    // Une réédition du catalogue garde sa clé (et son image française) ; la table ne la reprend pas.
+    const doubling = printingOptions(card("Doubling Season"));
+    expect(doubling.filter((p) => p.set === "PZA").map((p) => p.key)).toEqual(["PZA-11"]);
+  });
+
+  it("chaque clé de la table se lit (ensemble, numéro, image) et tient dans une ligne de deck du serveur", () => {
+    for (const c of Object.values(CARDS))
+      for (const p of printingOptions(c).filter((x) => x.key?.includes("@"))) {
+        const key = p.key as string;
+        expect(keyedPrinting(key), key).toMatchObject({ set: p.set, number: p.number });
+        expect(key.length, key).toBeLessThanOrEqual(64);
+      }
+  });
+
+  it("terrains de base : les versions pleine carte seulement", () => {
+    const sets = new Set(printingOptions(card("Forest")).map((p) => p.set));
+    // Zendikar, Unstable : forêts pleine carte ; Alpha, Magic 2010 : forêts à cadre ordinaire.
+    for (const set of ["ZEN", "UST"]) expect(sets.has(set)).toBe(true);
+    for (const set of ["LEA", "M10"]) expect(sets.has(set)).toBe(false);
+  });
+
+  it("une clé qui n'est pas une impression de la carte est refusée", () => {
+    expect(hasPrinting(card("Shock"), sta)).toBe(false);
+    expect(hasPrinting(bolt, sta.replace(/@.*/, "@0123456789abcdef0123456789abcdef"))).toBe(false);
+    expect(hasPrinting(bolt, "STA-42")).toBe(false);
+  });
+
+  it("MTGA : « (STA) 42 » choisit l'impression de la table si elle est chargée, et revient à l'export", () => {
+    const text = `Deck\n4 ${BOLT} (STA) 42\n56 Mountain\n`;
+    const index = new CardIndex(CARDS);
+    expect(parseDeckList(text, index, findPrinting).main).toEqual([
+      [4, BOLT, sta],
+      [56, "Mountain"],
+    ]);
+    expect(parseDeckList(text, index).main[0]).toEqual([4, BOLT]);
+    expect(serializeDeckList({ main: [[4, BOLT, sta]] }, CARDS)).toContain(`4 ${BOLT} (STA) 42`);
+  });
+
+  it("en partie, l'objet montre l'image de l'impression ; le replay la retrouve ; l'adversaire ne voit pas la main", () => {
+    const main: DeckEntries = [
+      [30, BOLT, staJa?.key],
+      [30, "Mountain"],
+    ];
+    const image = keyedPrinting(staJa?.key as string)?.image;
+    const { state, record } = createRecordedGame({
+      seed: 5,
+      players: [
+        { id: "p1", name: "A", deck: buildDeck({ main }), printings: deckPrintings({ main }) },
+        { id: "p2", name: "B", deck: buildDeck({ main }) },
+      ],
+    });
+    const hand = (viewer: string) => projectView(state, viewer).hand.filter((v) => v.name === BOLT);
+    expect(hand("p1").length).toBeGreaterThan(0);
+    for (const v of hand("p1")) expect([v.image, v.fr?.image]).toEqual([image, image]);
+    for (const v of hand("p2")) expect(v.image).toBe(bolt.image);
+    expect(JSON.stringify(projectView(state, "p2"))).not.toContain(image);
+    const replayed = replayGame(JSON.parse(JSON.stringify(record)), (name) => card(name)).state;
+    expect(replayed.printings).toEqual(state.printings);
   });
 });

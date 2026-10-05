@@ -14,6 +14,8 @@ const BUDGET: Record<string, number> = {
   index: 2300 * KB,
   cartes: 6500 * KB,
   bibliotheques: 450 * KB,
+  // Table des impressions (éditeur de deck), chargée à la demande.
+  printings: 450 * KB,
 };
 
 execSync("npm run build -w @mtgx/client", { stdio: "pipe" });

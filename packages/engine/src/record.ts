@@ -354,8 +354,9 @@ export const RECORD_VERSION = 1;
  * - 131 : familles moyennes (A4c) : sort gratuit depuis toute zone (`castPermission.freeFrom`), phases et étapes
  *   ajoutées à leur place (files `turn.addedPhases`/`addedSteps`, rang de la phase principale), marqueurs retirés parmi
  *   plusieurs créatures choisis par le joueur ; le renvoi d'une créature par web-slinging est compté avant le mana.
+ * - 132 : impressions de la table (`STA-42@<id>`, `printing.ts`) gardées par `createGame` et montrées par la vue.
  */
-export const RULES_VERSION = 131;
+export const RULES_VERSION = 132;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

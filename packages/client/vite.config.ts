@@ -12,7 +12,8 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            { name: "cartes", test: /packages[\\/]cards[\\/]data/ },
+            // La table des impressions (éditeur de deck) reste un fichier à part, chargé à la demande.
+            { name: "cartes", test: /packages[\\/]cards[\\/]data[\\/](?!printings)/ },
             { name: "bibliotheques", test: /node_modules/ },
           ],
         },
