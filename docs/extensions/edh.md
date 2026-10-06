@@ -51,3 +51,12 @@ cartes faites seulement de mots-clés sont déjà jouables (Vampire of the Dire 
 - **Tests :** `engine/test/edh-edgar.test.ts` (38).
 - **Approximations :** New Blood (pas de changement de texte), ascension d'un permanent seulement.
 - **Dette :** PlayerState 22 → 23, Condition 52 → 53 ; `perPlayer` n'est plus propre à une carte.
+
+## E12 — Y'shtola : drain et contrôle ✅ (94 / 117)
+
+**Cartes (19, `edh/yshtola.ts`) :** Y'shtola, Night's Blessed, Emet-Selch of the Third Seat, Esper Sentinel, Kambal, Lotho, Lyse Hext, Orcish Bowmasters, Papalymo Totolymo, Sheoldred, the Apocalypse, Tataru Taru, Irenicus's Vile Duplication, Quantum Misalignment, Mindcrank, Bloodchief Ascension, Helm of the Ghastlord, Mystic Remora, Ophidian Eye, Propaganda, Teferi, Time Raveler.
+
+- **Moteur :** entretien cumulatif (702.24, lu dans le texte : marqueur d'âge puis coût payé une fois par marqueur, `unlessPay.times`, `cumulativeUpkeepAbility`) ; rebond imprimé (mot-clé `rebound`) ; pioche « sauf la première de son étape de pioche » (`turnDraw` de l'événement, `when.drawExceptTurnDraw`) ; changement de zone « d'un adversaire » (`whose: "opponent"`).
+- **Tests :** `engine/test/edh-yshtola.test.ts` (31), dont la boucle Mindcrank + Bloodchief Ascension jusqu'à la défaite.
+- **Approximations :** Propaganda (taxe aussi pour les planeswalkers), Orcish Bowmasters (pioche de l'étape).
+- **Dette :** Effect (champs) 635, TriggerSpec (champs) 160 ; `perPlayer` et `sorceryTiming` ne sont plus propres à une carte.

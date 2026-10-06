@@ -291,3 +291,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Relic of Legends : la créature légendaire engagée est choisie par le moteur (d'abord une sans capacité de mana, comme Gene Pollinator) ; le paiement automatique ne s'en sert qu'une fois par capacité ; Phyrexian Tower et Sunken Ruins (coût de sacrifice ou de mana) s'activent à la main.
   - `règle` New Blood : le changement de texte (612, « remplacez toutes les occurrences d'un type de créature par Vampire ») n'est pas fait ; la créature volée devient un Vampire en plus de ses autres types ;
   - `règle` Ascension (702.131) : seule celle d'un permanent est gérée (action basée sur l'état), pas celle d'un éphémère ou d'un rituel ; la bénédiction de la cité n'est pas montrée dans l'interface.
+  - `règle` Propaganda : la taxe vaut aussi pour les attaques contre les planeswalkers de son contrôleur (forme `attackTax` d'Archangel of Tithes) ;
+  - `règle` Orcish Bowmasters : « la première carte piochée lors de son étape de pioche » est la pioche de l'étape (504.1) ; si elle est remplacée ou passée, une pioche ultérieure de la même étape déclenche quand même.

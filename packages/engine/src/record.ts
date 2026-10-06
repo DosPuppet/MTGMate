@@ -365,8 +365,10 @@ export const RECORD_VERSION = 1;
  *   (Relic of Legends), lu par le solveur de paiement.
  * - 137 : vampires d'Edgar Markov (PLAN-E, E10) : ascension et bénédiction de la cité (702.131, action basée sur
  *   l'état) ; la condition d'un `entersWith` qui touche d'autres permanents est vérifiée (Vampire Socialite).
+ * - 138 : deck de Y'shtola (PLAN-E, E12) : entretien cumulatif (702.24), rebond imprimé, déclencheur de pioche « sauf la
+ *   première de son étape de pioche » (`turnDraw`), changement de zone « d'un adversaire ».
  */
-export const RULES_VERSION = 137;
+export const RULES_VERSION = 138;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
