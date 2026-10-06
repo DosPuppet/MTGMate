@@ -390,8 +390,10 @@ export const RECORD_VERSION = 1;
  *   main, copie de sort avec loyauté de départ, tour contrôlé suivi d'un tour supplémentaire, cibles de valeurs de mana
  *   différentes, recherche bornée par un montant ; une carte sacrifiée est suivie dans sa nouvelle zone par les
  *   déclenchements de son sacrifice.
+ * - 146 : « défaussez une carte ou payez {2} » (Titania) : le paiement proposé tient compte de la taxe de commandant et des
+ *   surcoûts (fuzz strict).
  */
-export const RULES_VERSION = 145;
+export const RULES_VERSION = 146;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

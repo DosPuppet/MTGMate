@@ -28,6 +28,21 @@ const activations = (s: GameState, player: string, source: string) =>
   );
 
 describe("options proposées, décisions acceptées", () => {
+  it("« défaussez une carte ou payez {2} » : le paiement tient compte de la taxe de commandant (Titania depuis la zone de commandement)", () => {
+    const affordable = (n: number) => {
+      const s = scenario({
+        p1: { command: ["Titania, Rugged Rumbler"], battlefield: [...lands("Forest", n)], hand: ["Forest"] },
+      });
+      const titania = s.players.p1?.command[0] ?? "";
+      const rec = s.commander?.cards[s.objects[titania]?.uid ?? ""];
+      if (rec) rec.casts = 1;
+      return castOption(s, "p1", titania)?.additional?.discard?.orPayAffordable;
+    };
+    // {2}{B/G} + taxe {2} + {2} : sept mana.
+    expect(affordable(5)).toBe(false);
+    expect(affordable(7)).toBe(true);
+  });
+
   it("Terror of the Peaks : pas proposée comme cible si le joueur ne peut pas payer les 3 PV de plus", () => {
     const at = (life: number) => {
       const s = scenario({

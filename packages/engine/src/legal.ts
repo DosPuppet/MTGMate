@@ -474,12 +474,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     // Titania : sans carte à défausser, le mana s'ajoute au coût.
     const dis = additional.discard;
     const mustPayDiscard = !!dis?.orPay && dis.options.length < dis.count;
+    // Surcoût de la permission (Lightstall Inquisitor : « coûte {1} de plus » ; taxe de commandant), comme dans
+    // `castSpell`, et surcoût de timing.
+    const withSurcharges = (c: ManaCost) => {
+      const a = terms.extraCost ? totalCost(c, 0, { generic: terms.extraCost, colored: {}, x: 0 }) : c;
+      return timingExtra ? totalCost(a, 0, timingExtra) : a;
+    };
     const withExtra = (c: ManaCost) => {
       const a0 = mustPayInstead && sac?.orPay ? totalCost(c, 0, sac.orPay) : c;
       const a1 = mustPayDiscard && dis?.orPay ? totalCost(a0, 0, dis.orPay) : a0;
-      // Surcoût de la permission (Lightstall Inquisitor : « coûte {1} de plus »), comme dans `castSpell`.
-      const a = terms.extraCost ? totalCost(a1, 0, { generic: terms.extraCost, colored: {}, x: 0 }) : a1;
-      return timingExtra ? totalCost(a, 0, timingExtra) : a;
+      return withSurcharges(a1);
     };
     // Harmonie : payable aussi en engageant une créature (qui ne sert alors pas à payer le mana).
     const harmony =
@@ -594,10 +598,22 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     }
     // Le mana à payer à la place du sacrifice est-il disponible ?
     if (dis?.orPay) {
-      dis.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, dis.orPay), undefined, purpose);
+      dis.orPayAffordable = canPay(
+        s,
+        player,
+        totalCost(withSurcharges(spellCost(s, player, d, base)), 0, dis.orPay),
+        undefined,
+        purpose,
+      );
     }
     if (sac?.orPay) {
-      sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
+      sac.orPayAffordable = canPay(
+        s,
+        player,
+        totalCost(withSurcharges(spellCost(s, player, d, base)), 0, sac.orPay),
+        undefined,
+        purpose,
+      );
     }
     const hasX =
       (!terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || d.xCost === "waterbend" || replicate;
