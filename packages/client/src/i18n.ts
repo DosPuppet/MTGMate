@@ -95,6 +95,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   improvise: "Improvisation",
   delve: "Cave",
   splitSecond: "Second partagé",
+  rebound: "Rebond",
   riot: "Émeute",
   attacksDespiteDefender: "Attaque malgré le défenseur",
 };

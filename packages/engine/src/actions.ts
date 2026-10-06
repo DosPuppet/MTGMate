@@ -89,7 +89,9 @@ export function drawCard(s: GameState, p: PlayerId, turnDraw = false): void {
   // Journal du tour (Duelist of the Mind : force égale aux cartes piochées ce tour-ci).
   logTurnEvent(s, { e: "draw", player: p });
   const nth = countTurnEvents(s, { event: "draw" }, p, p);
-  rulesEvent(s, { e: "draw", player: p, nth, objectId: id ?? undefined });
+  // La pioche de l'étape de pioche du joueur (pas celle de Notion Thief, qui pioche à la place d'un autre).
+  const stepDraw = turnDraw && s.turn.step === "draw" && s.turn.active === p;
+  rulesEvent(s, { e: "draw", player: p, nth, objectId: id ?? undefined, ...(stepDraw ? { turnDraw: true } : {}) });
 }
 
 /**

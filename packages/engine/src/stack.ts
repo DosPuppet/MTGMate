@@ -768,8 +768,8 @@ function emergeVictim(s: GameState, player: PlayerId, f: ObjectFilter): ObjectId
     .sort((a, b) => mv(b) - mv(a))[0];
 }
 
-/** Un coût de mana payé N fois (réplique). */
-function timesCost(c: ManaCost, n: number): ManaCost {
+/** Un coût de mana payé N fois (réplique, entretien cumulatif). */
+export function timesCost(c: ManaCost, n: number): ManaCost {
   const colored: ManaCost["colored"] = {};
   for (const [k, v] of Object.entries(c.colored)) colored[k as ManaType] = (v ?? 0) * n;
   return { ...c, generic: c.generic * n, colored, ...(c.hybrid ? { hybrid: Array(n).fill(c.hybrid).flat() } : {}) };
@@ -3985,8 +3985,10 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
     return;
   }
   // Rebond (702.88) : un sort lancé depuis la main est exilé ; au début de votre prochain entretien, vous pouvez le lancer
-  // depuis l'exil sans payer son coût de mana (pendant la résolution de la capacité retardée, 608.2g).
-  if (item.rebound && item.cast?.from === "hand" && !item.flashback && !item.copy) {
+  // depuis l'exil sans payer son coût de mana (pendant la résolution de la capacité retardée, 608.2g). Mot-clé imprimé
+  // (Quantum Misalignment) ou accordé au sort (Ojer Pakpatiq : `item.rebound`).
+  const rebound = item.rebound || (!!d && spellHasKeyword(s, item.controller, d, "rebound"));
+  if (rebound && item.cast?.from === "hand" && !item.flashback && !item.copy) {
     const exiled = moveObject(s, item.sourceId, "exile");
     if (exiled) {
       const grant: Effect = { op: "castNow", what: { kind: "target", id: "rb" }, free: true };

@@ -79,7 +79,8 @@ export type RulesEvent =
   | { e: "lifeGain"; player: PlayerId; amount: number; first: boolean }
   | { e: "lifeLoss"; player: PlayerId; amount: number }
   /** `nth` : rang de cette carte parmi celles piochées par ce joueur ce tour-ci. */
-  | { e: "draw"; player: PlayerId; nth: number; objectId?: ObjectId }
+  /** `turnDraw` : la pioche de l'étape de pioche (504.1). */
+  | { e: "draw"; player: PlayerId; nth: number; objectId?: ObjectId; turnDraw?: boolean }
   | { e: "attackWith"; player: PlayerId; count: number }
   | { e: "counters"; objectId: ObjectId; kind: string; amount: number; first: boolean; by: PlayerId }
   /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */

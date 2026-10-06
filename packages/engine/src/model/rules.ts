@@ -363,7 +363,8 @@ export type TriggerSpec =
   | { on: "step"; step: Step | "main"; whose: "you" | "opponent" | "any"; nth?: number }
   | { on: "landfall" }
   /** « Chaque fois que vous piochez [votre deuxième carte ce tour] » ; `whose` relatif au contrôleur. */
-  | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number }
+  /** `exceptTurnDraw` : « sauf la première qu'il pioche lors de chacune de ses étapes de pioche » (Orcish Bowmasters). */
+  | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number; exceptTurnDraw?: boolean }
   /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
   /** `anyPlayer` : « chaque fois qu'un joueur attaque avec N créatures ou plus » (Aurelia, the Law Above). */
   /**
@@ -486,7 +487,7 @@ export type TriggerSpec =
    * Une carte change de zone (Ketramose : « mises en exil depuis les cimetières et/ou le champ de bataille » ;
    * Dredger's Insight : « quittent votre cimetière »). `whose` : le propriétaire de la carte.
    */
-  | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "any" }
+  | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any" }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean }
   /** Dépense N (Bloomburrow) : « chaque fois que vous dépensez votre N-ième mana total pour lancer des sorts pendant un tour ». */

@@ -26,6 +26,7 @@ import {
   plotCard,
   stackItemSpecs,
   suspendCard,
+  timesCost,
 } from "../stack";
 import { applyRetarget, copyStackItem, retargetRequest } from "../stackChoices";
 import {
@@ -196,9 +197,12 @@ export const HANDLERS: OpHandlers = {
     // « à moins que son contrôleur ne paie {X} » (Syncopate) : X est celui du sort.
     const extra = e.genericAmount ? evalAmount(s, ctx, e.genericAmount) : 0;
     const base = e.mana ?? (e.genericAmount ? { generic: 0, colored: {}, x: 0 } : undefined);
-    const mana = base ? { ...base, x: 0, generic: base.generic + (base.x ?? 0) * ctx.x + extra } : undefined;
+    // Entretien cumulatif (702.24a) : le coût payé une fois par marqueur d'âge.
+    const times = e.times ? Math.max(0, evalAmount(s, ctx, e.times)) : 1;
+    const mana = base ? timesCost({ ...base, x: 0, generic: base.generic + (base.x ?? 0) * ctx.x + extra }, times) : undefined;
     // Raubahn : « Garde — payez des PV égaux à sa force ».
-    const life = e.lifeAmount ? evalAmount(s, ctx, e.lifeAmount) : e.life;
+    const lifeOnce = e.lifeAmount ? evalAmount(s, ctx, e.lifeAmount) : e.life;
+    const life = lifeOnce === undefined ? undefined : lifeOnce * times;
     // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
     const hand = s.players[p]?.hand ?? [];
     const sacrificeable = () =>

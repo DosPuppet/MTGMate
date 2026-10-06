@@ -90,6 +90,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   improvise: "improvise",
   delve: "delve",
   "split second": "splitSecond",
+  rebound: "rebound",
   riot: "riot",
   changeling: "changeling",
   wither: "wither",
@@ -252,6 +253,14 @@ function foretellAbility(text: string): CardDef["abilities"] {
       label: "Présage",
     },
   ];
+}
+
+/** Entretien cumulatif (702.24) : « Cumulative upkeep {1} », « Cumulative upkeep—Pay 1 life. » */
+function cumulativeUpkeep(text: string): CardDef["abilities"] {
+  const m = /^Cumulative upkeep(?: ((?:\{[^}]+\})+)|—Pay (\d+) life\.?)[ \t]*$/m.exec(stripReminder(text));
+  if (!m) return [];
+  const cost = m[1] ? { mana: parseManaCost(m[1]) } : { life: Number(m[2]) };
+  return [dsl.cumulativeUpkeepAbility(cost, `Entretien cumulatif ${m[1] ?? `— ${m[2]} PV`}`)];
 }
 
 /** Dévorer (702.82) : « Devour 2 », « Devour land 3 », « Devour artifact 1 ». */
@@ -1024,6 +1033,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ),
       ...plotAbility(raw.oracleText),
       ...foretellAbility(raw.oracleText),
+      ...cumulativeUpkeep(raw.oracleText),
       ...impendingAbilities(raw.oracleText),
       ...jobSelectAbility(raw.keywords),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),

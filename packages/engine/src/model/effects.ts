@@ -416,6 +416,8 @@ export type Effect =
       /** Points de vie variables (Raubahn : sa force). */
       lifeAmount?: Amount;
       life?: number;
+      /** Le coût (mana et PV) payé autant de fois (entretien cumulatif, 702.24a : une fois par marqueur d'âge). */
+      times?: Amount;
       skip: number;
     }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */

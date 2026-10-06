@@ -850,6 +850,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const card = (ev.newId && s.objects[ev.newId]) || undefined;
       const owner = card?.owner ?? ev.lki?.owner;
       if (t.whose === "you" && owner !== me) return null;
+      // « … dans le cimetière d'un adversaire » (Bloodchief Ascension) : un adversaire encore en partie.
+      if (t.whose === "opponent" && (!owner || owner === me || !!s.players[owner]?.lost)) return null;
       if (t.filter) {
         const d = s.defs[card?.defId ?? ev.lki?.defId ?? ""];
         // Depuis le champ de bataille : ses types et son contrôleur au moment de partir (Kaya, Spirits' Justice : « des
@@ -902,7 +904,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "scry" && ev.player === me ? { player: me } : null;
     case "draw":
       // La carte piochée est l'objet de l'événement (miracle : Lorehold, the Historian).
-      return ev.e === "draw" && whose(t.whose, ev.player, me) && (t.nth === undefined || ev.nth === t.nth)
+      return ev.e === "draw" &&
+        whose(t.whose, ev.player, me) &&
+        (t.nth === undefined || ev.nth === t.nth) &&
+        !(t.exceptTurnDraw && ev.turnDraw)
         ? { player: ev.player, amount: 1, objectId: ev.objectId }
         : null;
     case "taps": {

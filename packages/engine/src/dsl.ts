@@ -786,7 +786,7 @@ export const fx = {
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
   unlessPays: (
     who: Ref,
-    cost: { mana?: string; life?: number; paidStore?: string; genericAmount?: Amount; waterbend?: boolean },
+    cost: { mana?: string; life?: number; paidStore?: string; genericAmount?: Amount; waterbend?: boolean; times?: Amount },
     ...effects: Effects
   ): Effect[] => {
     const flat = effects.flat();
@@ -799,6 +799,7 @@ export const fx = {
         life: cost.life,
         paidStore: cost.paidStore,
         waterbend: cost.waterbend,
+        ...(cost.times ? { times: cost.times } : {}),
         skip: flat.length,
       },
       ...flat,
@@ -2062,7 +2063,10 @@ export const when = {
   /** « Chaque fois que vous activez une capacité qui cible une créature ou un joueur » */
   activateTargeting: { on: "activateTargeting" } as TriggerSpec,
   /** Une carte change de zone (voir TriggerSpec `zoneChange`). */
-  zoneChange: (from: Zone[], opts: { to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "any" } = {}): TriggerSpec => ({
+  zoneChange: (
+    from: Zone[],
+    opts: { to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any" } = {},
+  ): TriggerSpec => ({
     on: "zoneChange",
     from,
     ...opts,
@@ -2105,6 +2109,12 @@ export const when = {
   gainLifeFirst: { on: "life", change: "gain", first: true } as TriggerSpec,
   /** « Chaque fois que vous piochez une carte » / « votre N-ième carte à chaque tour » */
   draw: (nth?: number, whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "draw", whose, nth }),
+  /** « Chaque fois qu'un adversaire pioche une carte, sauf la première qu'il pioche lors de chacune de ses étapes de pioche » */
+  drawExceptTurnDraw: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({
+    on: "draw",
+    whose,
+    exceptTurnDraw: true,
+  }),
   loseLife: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "life", change: "loss", whose }),
   /** « Chaque fois que vous attaquez [avec N créatures ou plus] » */
   /** `filter` : « … avec un ou plusieurs [Rats] ». */
@@ -2431,6 +2441,26 @@ export function saddleAbility(n: number): ActivatedAbilityDef {
     effects: [{ op: "saddle" }],
     sorcerySpeed: true,
     label: `Monture ${n}`,
+  };
+}
+
+/**
+ * Entretien cumulatif (702.24) : « au début de votre entretien, mettez un marqueur d'âge sur ce permanent, puis
+ * sacrifiez-le à moins que vous ne payiez son coût d'entretien pour chaque marqueur d'âge sur lui » ; lu dans le texte
+ * (`scryfall.ts`), coût en mana et/ou en PV.
+ */
+export function cumulativeUpkeepAbility(cost: { mana?: ManaCost; life?: number }, label: string): TriggeredAbilityDef {
+  const age: Amount = { kind: "countersOn", ref: { kind: "self" }, counter: "age" };
+  return {
+    kind: "triggered",
+    trigger: { on: "step", step: "upkeep", whose: "you" },
+    targets: [],
+    effects: [
+      { op: "addCounters", what: { kind: "self" }, amount: 1, kind: "age" },
+      { op: "unlessPay", who: { kind: "you" }, mana: cost.mana, life: cost.life, times: age, skip: 1 },
+      { op: "sacrificeIt", what: { kind: "self" } },
+    ],
+    label,
   };
 }
 

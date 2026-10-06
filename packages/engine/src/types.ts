@@ -106,6 +106,8 @@ export type Keyword =
   | "delve"
   /** Second partagé (702.61) : tant que ce sort est sur la pile, ni sorts ni capacités (hors mana). */
   | "splitSecond"
+  /** Rebond (702.88) : lancé depuis la main, exilé en se résolvant ; relançable gratuitement à votre prochain entretien. */
+  | "rebound"
   /** Émeute (702.136) : il arrive avec un marqueur +1/+1 ou la célérité, au choix de son contrôleur. */
   | "riot"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
