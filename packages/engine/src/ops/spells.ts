@@ -45,6 +45,7 @@ import {
   setPrepared,
   shuffle,
 } from "../state";
+import { payableLife } from "../statics";
 import { legalTargets, matchesCard, matchesObjectFilter } from "../targets";
 import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution, StackItem } from "../types";
 
@@ -215,7 +216,7 @@ export const HANDLERS: OpHandlers = {
     const evidence = e.collectEvidence ? evidenceCards(s, p, "", e.collectEvidence) : undefined;
     const canDo =
       (!mana || canPay(s, p, mana, undefined, purpose)) &&
-      (!life || (s.players[p]?.life ?? 0) >= life) &&
+      (!life || payableLife(s, p) >= life) &&
       (!e.discard || hand.length > 0 || (!!e.orMana && canPay(s, p, e.orMana))) &&
       sacrificeable().length >= (e.sacrifice ?? 0) &&
       evidence !== null;
@@ -462,7 +463,7 @@ export const HANDLERS: OpHandlers = {
       store(r, e.store, 0);
       return;
     }
-    const life = s.players[payer]?.life ?? 0;
+    const life = payableLife(s, payer);
     const max = e.life ? Math.max(0, life) : availableMana(s, payer);
     const answer = r.vars[key("payx")];
     if (!answer) {

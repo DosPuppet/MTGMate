@@ -6,6 +6,7 @@ import { RulesError } from "../errors";
 import { canPay, manaValue, payMana } from "../mana";
 import { beholdOptions, collectEvidence, pickEvidence } from "../stack";
 import { emit, isPlayer } from "../state";
+import { payableLife } from "../statics";
 import { createDelayed, pushInline } from "../triggers";
 import type { ChoiceValue } from "../types";
 
@@ -23,7 +24,7 @@ export const HANDLERS: OpHandlers = {
       };
     }
     if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
-    if (e.life && (s.players[ctx.controller]?.life ?? 0) < e.life) return { skip: e.skip };
+    if (e.life && payableLife(s, ctx.controller) < e.life) return { skip: e.skip };
     payMana(s, ctx.controller, e.cost);
     if (e.life) payLife(s, ctx.controller, e.life);
     return;

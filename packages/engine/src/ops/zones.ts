@@ -51,7 +51,7 @@ import {
   turnFaceUp,
   untapObject,
 } from "../state";
-import { playerStatic, quantityMods, recipientMatches } from "../statics";
+import { payableLife, playerStatic, quantityMods, recipientMatches } from "../statics";
 import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import { logTurnEvent } from "../turnlog";
 import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
@@ -84,7 +84,7 @@ function shockLandChoices(
     const n = d?.shockLand;
     if (!d || !n) continue;
     const who = controllerOf(id);
-    const life = s.players[who]?.life ?? 0;
+    const life = payableLife(s, who);
     if (life < n) continue;
     const k = key(`shock-${id}`);
     const answer = r.vars[k];

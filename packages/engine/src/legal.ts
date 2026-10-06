@@ -2,6 +2,7 @@
  * Énumération exhaustive des actions légales pour le joueur qui a la priorité.
  * L'interface ne met en surbrillance que ces options ; l'IA et l'autopilot s'en servent aussi.
  */
+
 import { availableMana, canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
@@ -37,6 +38,7 @@ import {
   isWebSlinging,
   kickerCostOptions,
   kickerCostPermanent,
+  landFace,
   modeConditionHolds,
   modesOf,
   sacrificeOptions,
@@ -56,6 +58,7 @@ import {
   waterbendAmount,
   webSlingingOptions,
 } from "./stack";
+import { payableLife } from "./statics";
 import { ALL_CREATURE_TYPES, holderOf, matchesCard, matchesObjectFilter, NON_CREATURE_SUBTYPES } from "./targets";
 
 /** Winter, Cursed Rider : nombre de cartes exilables pour « exilez X cartes … de votre cimetière ». */
@@ -319,23 +322,25 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   for (const card of [...hand, ...graveyard, ...exiled, ...command]) {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
-    if (d.types.includes("Land")) {
+    // La face terrain : la carte, ou le verso terrain d'une carte modale (dont le recto reste lançable).
+    const land = landFace(d);
+    if (land) {
       if (canPlayLand(s, player, card)) {
         // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
         // Multiversal Passage : une option par type de terrain de base choisi.
-        const types = d.chooseOnEnter === "landType" ? BASIC_LAND_TYPES : [undefined];
+        const types = land.chooseOnEnter === "landType" ? BASIC_LAND_TYPES : [undefined];
         // « En arrivant, choisissez… » (Cavern of Souls) : la question posée en jouant le terrain.
-        const kind = d.chooseOnEnter;
-        const choose = kind && kind !== "landType" ? { choose: enterChoiceRequest(s, player, d.id, kind) } : {};
+        const kind = land.chooseOnEnter;
+        const choose = kind && kind !== "landType" ? { choose: enterChoiceRequest(s, player, land.id, kind) } : {};
         for (const landType of types) {
           const extra = landType ? { landType, ...choose } : choose;
-          if (d.shockLand && (s.players[player]?.life ?? 0) >= d.shockLand)
+          if (land.shockLand && payableLife(s, player) >= land.shockLand)
             out.push({ type: "playLand", card, payLife: true, ...extra });
           out.push({ type: "playLand", card, ...extra });
         }
       }
       // Ville à aventure : l'Aventure reste lançable ; un terrain déguisé, face cachée (Branch of Vitu-Ghazi).
-      if (d.layout !== "adventure" && !d.disguise) continue;
+      if (land === d && d.layout !== "adventure" && !d.disguise) continue;
     }
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;
@@ -348,7 +353,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, "faceDown");
     // Distorsion (702.185) : depuis la main, ou le cimetière si la carte le permet.
     const warp = warpOf(s, player, card, d);
-    const life = s.players[player]?.life ?? 0;
+    const life = payableLife(s, player);
     if (warp && (terms.source === "hand" || terms.warpOnly) && life >= (warp.life ?? 0)) {
       castOption(card, undefined, { ...d, manaCost: warp.cost }, terms, "warp");
     }
@@ -504,7 +509,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           : d.kickerCost.collectEvidence !== undefined
             ? !!evidenceCards(s, player, card, d.kickerCost.collectEvidence)
             : d.kickerCost.life !== undefined
-              ? (s.players[player]?.life ?? 0) >= d.kickerCost.life
+              ? payableLife(s, player) >= d.kickerCost.life
               : d.kickerCost.exileGraveyard !== undefined
                 ? !!graveyardToExile(s, player, card, d.kickerCost.exileGraveyard)
                 : !!kickerCostPermanent(s, player, card, d))) &&
@@ -581,7 +586,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const lifeX = !normal
       ? null
       : d.xCost === "life"
-        ? (s.players[player]?.life ?? 0)
+        ? payableLife(s, player)
         : d.xCost === "blight"
           ? greatestToughness(s, player)
           : null;
@@ -705,7 +710,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
                   ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
                   : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
       // Krumar Initiate : « payez X points de vie » — X ne dépasse pas les points de vie.
-      const xMax = ab.cost.payLifeX && xMax0 !== null ? Math.min(xMax0, Math.max(0, s.players[player]?.life ?? 0)) : xMax0;
+      const xMax = ab.cost.payLifeX && xMax0 !== null ? Math.min(xMax0, Math.max(0, payableLife(s, player))) : xMax0;
       // « X ne peut pas être 0 » (et « sacrifiez X permanents », Radiant Lotus) : proposée seulement si X peut atteindre son
       // minimum.
       // Seul coût {X} (Helix Pinnacle) : à X = 0, l'activation est gratuite et sans effet ; elle n'est pas proposée (le

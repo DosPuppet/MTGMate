@@ -537,6 +537,8 @@ export function moveObject(
     landed?: { to?: Zone };
     /** Arrive transformé (712.14) ou engagé : fixé avant les remplacements et les déclencheurs d'arrivée. */
     transformed?: boolean;
+    /** Carte modale recto-verso jouée par son verso (712.12, verso terrain) : elle arrive verso visible. */
+    modalBack?: boolean;
     tapped?: boolean;
   } = {},
 ): ObjectId | null {
@@ -676,9 +678,9 @@ export function moveObject(
     }
   }
   if (shuffleIn) shuffle(s, s.players[o.owner]?.library ?? []);
-  if (to === "battlefield" && opts.transformed) {
+  if (to === "battlefield" && (opts.transformed || opts.modalBack)) {
     const d = s.defs[moved.defId];
-    const back = d?.layout === "transform" ? d.faceDefs?.[1] : undefined;
+    const back = d?.layout === (opts.modalBack ? "modal_dfc" : "transform") ? d.faceDefs?.[1] : undefined;
     if (back) moved.faceDefId = back.id;
   }
   if (to === "battlefield" && opts.tapped) moved.tapped = true;

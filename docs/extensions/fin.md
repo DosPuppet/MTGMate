@@ -58,7 +58,7 @@ Demandée par l'utilisateur le 27/09/2026.
   - `setController` (state.ts) : tout changement de contrôle passe par là et émet l'événement `controlChange` (déclencheur `when.opponentGainsControl`, Zidane) ;
   - `fx.unattach`, la garde « payez des PV égaux à sa force » (`ward.lifePower`), les capacités retardées « au prochain entretien » (`nextUpkeep`) ;
   - les copies-jetons avec Équiper réduit et sacrifiées au prochain entretien (Firion) ; Triple Triad (`fx.tripleTriad`) ;
-  - Ancient Adamantoise (mots-clés `keepsDamage`, `absorbsDamage`), la protection du joueur contre ses adversaires (`protectionFromOpponents`) ;
+  - Ancient Adamantoise (mots-clés `keepsDamage`, `absorbsDamage`), la protection du joueur contre ses adversaires (`protectionFromOpponents`, devenue `protection: "opponents"` au lot E9 de PLAN-E) ;
   - `playTopCard` filtré et les déclencheurs d'arrivée doublés filtrés (Traveling Chocobo), les déclencheurs de mort doublés (The Masamune) ;
   - la permission gratuite depuis la main à usage unique (`ref.handOf`, `grantPlay` avec `oneOf`, Buster Sword) ;
   - l'exil « au lieu de mourir » lié par identité physique (`linkedUids`, The Darkness Crystal) ;

@@ -56,7 +56,14 @@ import {
   turnFaceUp,
   unlockDoor,
 } from "./state";
-import { consumePlayerEffect, controlledAbilitiesWithSource, playerStatic, playerStatics, playerStaticTotal } from "./statics";
+import {
+  consumePlayerEffect,
+  controlledAbilitiesWithSource,
+  payableLife,
+  playerStatic,
+  playerStatics,
+  playerStaticTotal,
+} from "./statics";
 import {
   isLegalTarget,
   legalTargets,
@@ -303,11 +310,22 @@ function stashPlayable(s: GameState, player: PlayerId, o: GameObject): boolean {
   );
 }
 
+/**
+ * Face qui se joue comme terrain : la carte si c'est un terrain, sinon le verso terrain d'une carte modale recto-verso
+ * (712.12 : Sink into Stupor // Soporific Springs).
+ */
+export function landFace(d: CardDef | undefined): CardDef | undefined {
+  if (!d) return undefined;
+  if (d.types.includes("Land")) return d;
+  const back = d.layout === "modal_dfc" ? d.faceDefs?.[1] : undefined;
+  return back?.types.includes("Land") ? back : undefined;
+}
+
 export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): boolean {
   const o = s.objects[card];
   if (!o) return false;
   const d = s.defs[o.defId];
-  if (!d?.types.includes("Land")) return false;
+  if (!d || !landFace(d)) return false;
   return (
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
@@ -374,24 +392,30 @@ export function playLand(
 ): void {
   if (!canPlayLand(s, player, card)) throw new RulesError("Vous ne pouvez pas jouer ce terrain maintenant");
   const o = obj(s, card);
+  // La face jouée : la carte, ou le verso terrain d'une carte modale (qui arrive alors verso visible).
+  const face = landFace(s.defs[o.defId]);
+  const backFace = !!face && face.id !== o.defId;
   // Multiversal Passage : « en arrivant, choisissez un type de terrain de base » (choisi avec la décision).
-  const choosesType = s.defs[o.defId]?.chooseOnEnter === "landType";
+  const choosesType = face?.chooseOnEnter === "landType";
   if (landType !== undefined && (!choosesType || !BASIC_LAND_TYPES.includes(landType)))
     throw new RulesError("Type de terrain de base invalide");
   // 614.12 : « en arrivant, choisissez… » (Cavern of Souls) : le choix du joueur, parmi les options ; sans choix, le
   // choix par défaut (`defaultChoice`).
-  const kind = s.defs[o.defId]?.chooseOnEnter;
+  const kind = face?.chooseOnEnter;
   let enterChosen: GameObject["chosen"] | undefined;
   if (chosen !== undefined) {
-    if (!kind || kind === "landType") throw new RulesError("Ce terrain ne demande pas de choix");
-    const request = enterChoiceRequest(s, player, o.defId, kind);
+    if (!kind || kind === "landType" || !face) throw new RulesError("Ce terrain ne demande pas de choix");
+    const request = enterChoiceRequest(s, player, face.id, kind);
     if (request.type !== "pick" || !request.options.includes(chosen)) throw new RulesError("Choix invalide");
     enterChosen = chosenValue(kind, chosen);
   }
   // Terrains choc : « vous pouvez payer 2 points de vie ; sinon, il arrive engagé ».
-  const shock = s.defs[o.defId]?.shockLand;
+  const shock = face?.shockLand;
   if (payLife && !shock) throw new RulesError("Ce terrain ne demande pas de points de vie");
-  if (payLife && shock) payLife_(s, player, shock);
+  if (payLife && shock) {
+    if (payableLife(s, player) < shock) throw new RulesError("Pas assez de points de vie");
+    payLife_(s, player, shock);
+  }
   if (o.zone === "graveyard") s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), "Land"];
   const defId = o.defId;
   const fromZone = o.zone;
@@ -399,11 +423,12 @@ export function playLand(
   const id = moveObject(s, card, "battlefield", {
     controller: player,
     enters: { shockPaid: payLife, chosen: landType ? { landType } : enterChosen },
+    ...(backFace ? { modalBack: true } : {}),
   });
   s.turn.landsPlayed += 1;
   emit({ type: "playLand", player, objectId: id as string, defId });
   if (id) rulesEvent(s, { e: "playLand", player, objectId: id, from: fromZone });
-  const land = s.defs[defId];
+  const land = face;
   logTurnEvent(s, { e: "playLand", player, fromZone, types: land?.types ?? [], subtypes: land?.subtypes ?? [] });
   // Lightstall Inquisitor : un terrain joué depuis l'exil ainsi arrive engagé.
   const landed = id ? s.objects[id] : undefined;
@@ -573,7 +598,7 @@ export function playFromRules(
       const r = ab.playFrom;
       if (!r || r.zone !== zone || (r.what && r.what !== what)) return [];
       if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
-      if (r.payLife && (s.players[player]?.life ?? 0) < r.payLife) return [];
+      if (r.payLife && payableLife(s, player) < r.payLife) return [];
       if (r.forage && !canForage(s, player, card)) return [];
       if (r.exileOthers && !graveyardToExile(s, player, card, r.exileOthers)) return [];
       // Faufilement donné : seulement pendant la fenêtre de faufilement, avec un attaquant à renvoyer.
@@ -737,7 +762,7 @@ export function altCostPayment(
   pay: AltCostPay,
 ): { exile: ObjectId[]; bounce?: ObjectId; sacrifice?: ObjectId } | null {
   const pl = s.players[player];
-  if (!pl || (pay.life !== undefined && pl.life < pay.life)) return null;
+  if (!pl || (pay.life !== undefined && payableLife(s, player) < pay.life)) return null;
   let exile: ObjectId[] = [];
   if (pay.exileFromHand) {
     const f = pay.exileFromHand;
@@ -1453,7 +1478,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     const fromGy = d.castFromGraveyard;
     if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
       // Wickerfolk Indomitable : « en payant 2 PV et en sacrifiant un artefact ou une créature en plus ».
-      if (fromGy.payLife && (s.players[player]?.life ?? 0) < fromGy.payLife) return null;
+      if (fromGy.payLife && payableLife(s, player) < fromGy.payLife) return null;
       // Hundred-Battle Veteran : « si vous le faites, il arrive avec un marqueur de finalité ».
       return { source: "graveyard", payLife: fromGy.payLife, finality: fromGy.finality };
     }
@@ -1480,7 +1505,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Gwenom : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
     if (rule?.payLifeManaValue) {
       const life = manaValue(d.manaCost);
-      if (life > 0 && (s.players[player]?.life ?? 0) < life) return null;
+      if (life > 0 && payableLife(s, player) < life) return null;
       return { source: "library", free: true, payLife: life || undefined, playFrom: rule };
     }
     return rule ? playFromTerms(rule, "library") : null;
@@ -1540,7 +1565,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Valgavoth : pendant votre tour, les cartes liées ; un sort ainsi lancé coûte des PV égaux à sa valeur de mana.
     if (valgavothLinked(s, player, card)) {
       const life = manaValue(d.manaCost);
-      if (life > 0 && (s.players[player]?.life ?? 0) < life) return null;
+      if (life > 0 && payableLife(s, player) < life) return null;
       return { source: "exile", free: true, payLife: life || undefined };
     }
     // 715.4 : la carte « en aventure » : son propriétaire peut lancer la créature.
@@ -1551,7 +1576,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Inside Information : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
     if (perm?.payLifeManaValue && !d.types.includes("Land")) {
       const life = manaValue(d.manaCost);
-      if (life > 0 && (s.players[player]?.life ?? 0) < life) return null;
+      if (life > 0 && payableLife(s, player) < life) return null;
       return { source: "exile", free: true, payLife: life || undefined };
     }
     if (perm)
@@ -1657,8 +1682,7 @@ export function additionalOptions(
       : [];
     const options = [...hand, ...perms];
     // Bitter Triumph : « … ou payez 3 points de vie » (il faut en avoir au moins autant, 119.4).
-    const orLife =
-      add.discardOrLife !== undefined && (s.players[player]?.life ?? 0) >= add.discardOrLife ? add.discardOrLife : undefined;
+    const orLife = add.discardOrLife !== undefined && payableLife(s, player) >= add.discardOrLife ? add.discardOrLife : undefined;
     if (options.length < add.discard && orLife === undefined && !add.discardOrPay) return null;
     out.discard = {
       count: add.discard,
@@ -1945,7 +1969,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     throw new RulesError("Cette carte ne peut pas être lancée avec la distorsion");
   }
   if (terms.warpOnly && !choices.warp) throw new RulesError("Cette carte ne se lance d'ici qu'avec la distorsion");
-  if (warp?.life && (s.players[player]?.life ?? 0) < warp.life) throw new RulesError("Pas assez de points de vie");
+  if (warp?.life && payableLife(s, player) < warp.life) throw new RulesError("Pas assez de points de vie");
   const d = choices.faceDown ? FACE_DOWN_SPELL : warp ? { ...face[1], manaCost: warp.cost } : face[1];
   if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
@@ -1991,7 +2015,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost || d.kickerKind === "replicate";
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
-  if (d.xCost === "life" && x > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
+  if (d.xCost === "life" && x > payableLife(s, player)) throw new RulesError("Pas assez de points de vie");
   // Soul Immolation : « flétrissez X ; X ne peut pas dépasser la plus grande endurance parmi vos créatures ».
   if (d.xCost === "blight" && x > greatestToughness(s, player)) throw new RulesError("X dépasse la plus grande endurance");
   const kicked = !!choices.kicked && !!d.kicker && d.kickerKind !== "replicate";
@@ -2028,7 +2052,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (gyExile === null) throw new RulesError("Pas assez de cartes dans votre cimetière");
   // Redirect Lightning : « payez 5 PV ou payez {2} » (le kicker est le paiement en PV).
   const kickerLife = kicked ? d.kickerCost?.life : undefined;
-  if (kickerLife !== undefined && (s.players[player]?.life ?? 0) < kickerLife) throw new RulesError("Pas assez de points de vie");
+  if (kickerLife !== undefined && payableLife(s, player) < kickerLife) throw new RulesError("Pas assez de points de vie");
   if (kicked && d.kickerCost && kickerLife === undefined && !teamwork && !evidence && !gyExile && !kickerPermanent)
     throw new RulesError("Impossible de payer le kicker");
   // Travail d'équipe : les créatures engagées (choisies par `tap`, sinon les plus faibles suffisantes).
@@ -2076,7 +2100,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     return n + chars(s, id).abilities.reduce((m, ab) => m + (ab.kind === "playerStatic" ? (ab.targetLifeTax ?? 0) : 0), 0);
   }, 0);
   // Payer 0 PV est toujours possible (119.4), même avec un total négatif (Herald of Eternal Dawn).
-  if (lifeTax > 0 && lifeTax > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
+  if (lifeTax > 0 && lifeTax > payableLife(s, player)) throw new RulesError("Pas assez de points de vie");
   // Spree : les coûts supplémentaires des modes choisis (payés même si le sort est gratuit).
   if (mode.extraCost) cost = addCosts(cost, mode.extraCost);
   if (opts.sacrifice?.orPay && sacrifice.length === 0) cost = addCosts(cost, opts.sacrifice.orPay);
@@ -2847,7 +2871,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   }
   const player = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.cost.removeCounters && countersFor(o, ab.cost.removeCounters.kind) < ab.cost.removeCounters.n) return false;
-  if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
+  if (ab.cost.payLife && payableLife(s, player) < ab.cost.payLife) return false;
   if (ab.cost.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
     const n = ab.cost.sacrifice.differentNames ? distinctNames(s, options) : options.length;
@@ -3295,7 +3319,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       : 0;
   const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source, x });
   // Krumar Initiate : « payez X points de vie ».
-  if (ab.cost.payLifeX && x > 0 && (s.players[player]?.life ?? 0) < x) throw new RulesError("Pas assez de points de vie");
+  if (ab.cost.payLifeX && x > 0 && payableLife(s, player) < x) throw new RulesError("Pas assez de points de vie");
   if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
   if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(`X doit valoir au moins ${ab.cost.minX}`);
   if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");

@@ -1595,6 +1595,24 @@ export function bothIfKicked(a: ModeDef, b: ModeDef, bothLabel: string): SpellDe
 }
 
 /**
+ * « Choisissez un ou plusieurs — » (700.2) : toutes les combinaisons de modes, dans l'ordre imprimé, pour un sort
+ * (`modal(...oneOrMore(…))`) ou une capacité déclenchée (`triggeredModal`). Les identifiants de cibles doivent être
+ * distincts d'un mode à l'autre.
+ */
+export function oneOrMore(...modes: { label: string; targets?: TargetSpec[]; effects: Effects }[]): ModeDef[] {
+  const out: ModeDef[] = [];
+  for (let mask = 1; mask < 1 << modes.length; mask++) {
+    const chosen = modes.filter((_, i) => mask & (1 << i));
+    out.push({
+      label: chosen.map((m) => m.label).join(" + "),
+      targets: chosen.flatMap((m) => m.targets ?? []),
+      effects: chosen.flatMap((m) => m.effects.flat()),
+    });
+  }
+  return out;
+}
+
+/**
  * Spree (702.172) : « choisissez un ou plusieurs modes, + [coût] chacun ». Toutes les combinaisons sont générées
  * (les identifiants de cibles doivent être distincts d'un mode à l'autre).
  */

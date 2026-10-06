@@ -21,7 +21,7 @@ import {
   snapshot,
   tapObject,
 } from "./state";
-import { type ActiveReplacement, eventReplacements, playerSide } from "./statics";
+import { type ActiveReplacement, eventReplacements, payableLife, playerSide } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -198,7 +198,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   if (ab.tapAnother && !otherToTap(s, id, ab)) return false;
   if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
   if (ab.oncePerTurn && s.turn.onceFired.includes(`mana:${id}`)) return false;
-  if (ab.cost.payLife && (s.players[o.controller]?.life ?? 0) < ab.cost.payLife) return false;
+  if (ab.cost.payLife && payableLife(s, o.controller) < ab.cost.payLife) return false;
   if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence)) return false;
   return true;
 }
@@ -872,7 +872,7 @@ function phyrexianSplit(
   purpose?: ManaPurpose,
 ): { cost: ManaCost; life: number } | null {
   const phy = cost.phyrexian ?? [];
-  const life = s.players[player]?.life ?? 0;
+  const life = payableLife(s, player);
   for (let k = 0; k <= phy.length; k++) {
     if (k > 0 && life < 2 * k) break;
     const colored = { ...cost.colored };

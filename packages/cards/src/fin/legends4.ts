@@ -224,7 +224,7 @@ export const LEGENDS4: Record<string, CardScript> = {
   },
   "Absolute Virtue": {
     cantBeCountered: true,
-    abilities: [playerStatic({ protectionFromOpponents: true, label: "Protection contre vos adversaires" })],
+    abilities: [playerStatic({ protection: "opponents", label: "Protection contre vos adversaires" })],
   },
   "Zidane, Tantalus Thief": {
     abilities: [

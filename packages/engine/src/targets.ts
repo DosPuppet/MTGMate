@@ -4,7 +4,7 @@
 import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
 import { castInfoOf, obj } from "./state";
-import { playerStatic, playerStatics } from "./statics";
+import { playerProtectedFrom, playerStatic, playerStatics } from "./statics";
 import { attackedThisTurn, dealtDamageThisTurn } from "./turnlog";
 import type {
   CardType,
@@ -374,7 +374,8 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
       )
     )
       return false;
-    if (id !== controller && playerStatic(s, id, "protectionFromOpponents")) return false;
+    // Protection du joueur (702.16) : contre ses adversaires, ou contre tout (même ses propres sorts).
+    if (playerProtectedFrom(s, id, controller)) return false;
     if (spec.filter.players === "you") return id === controller;
     if (spec.filter.players === "opponent") return id !== controller;
     return true;

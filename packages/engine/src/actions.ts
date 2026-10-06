@@ -28,6 +28,7 @@ import {
   type ActiveReplacement,
   consumeReplacement,
   eventReplacements,
+  playerProtectedFrom,
   playerSide,
   playerStatic,
   playerStatics,
@@ -209,6 +210,9 @@ export function loseLife(s: GameState, p: PlayerId, amount: number, damage = fal
   const mods: AmountMod[] = [];
   for (const a of eventReplacements(s, "lifeLoss")) {
     if (!recipientMatches(s, a, p)) continue;
+    // « Votre total de points de vie ne peut pas changer » (Teferi's Protection) : aucune perte (les blessures, elles,
+    // sont bien infligées).
+    if (a.r.modify.prevent) return;
     if (a.r.modify.add) mods.push({ add: a.r.modify.add });
     if (a.r.modify.times) mods.push({ times: a.r.modify.times });
   }
@@ -401,9 +405,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     chars(s, target).keywords.includes("combatDamageImmune")
   )
     return;
-  // Absolute Virtue : les blessures des sources adverses à ce joueur sont prévenues.
-  if (!unpreventable && isPlayer(s, target) && source.controller !== target && playerStatic(s, target, "protectionFromOpponents"))
-    return;
+  // Protection du joueur (702.16) : les blessures des sources adverses (Absolute Virtue) ou de toute source (Teferi's
+  // Protection) sont prévenues.
+  if (!unpreventable && isPlayer(s, target) && playerProtectedFrom(s, target, source.controller)) return;
   const targetObj = s.objects[target];
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
   // Remplacements et préventions des blessures (R1, 616.1) : le joueur blessé choisit l'ordre, le moins de blessures

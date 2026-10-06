@@ -231,6 +231,30 @@ export function playerStatic(s: GameState, player: PlayerId, key: PlayerStaticKe
   return playerStatics(s, player, key).length > 0;
 }
 
+/** Le joueur ne peut pas perdre de points de vie (« votre total de points de vie ne peut pas changer ») ? */
+export function lifeLossPrevented(s: GameState, player: PlayerId): boolean {
+  return eventReplacements(s, "lifeLoss").some((a) => a.r.modify.prevent && recipientMatches(s, a, player));
+}
+
+/**
+ * Points de vie qu'un joueur peut payer (119.4) : son total, ou aucun s'il ne peut pas perdre de points de vie (119.8,
+ * Teferi's Protection). Payer 0 PV reste toujours possible.
+ */
+export function payableLife(s: GameState, player: PlayerId): number {
+  const life = s.players[player]?.life ?? 0;
+  return lifeLossPrevented(s, player) ? Math.min(life, 0) : life;
+}
+
+/**
+ * Le joueur a-t-il la protection contre une source contrôlée par `from` (702.16) ? Contre tout (702.16j), ou contre ses
+ * adversaires (une source d'un autre joueur).
+ */
+export function playerProtectedFrom(s: GameState, player: PlayerId, from: PlayerId | undefined): boolean {
+  return playerStatics(s, player, "protection").some(
+    ({ ab }) => ab.protection === "everything" || (ab.protection === "opponents" && from !== player),
+  );
+}
+
 /** Somme d'une statique de joueur numérique (un booléen vaut 1) : capacités contrôlées et effets en vigueur. */
 export function playerStaticTotal(s: GameState, player: PlayerId, key: PlayerStaticKey): number {
   let n = 0;

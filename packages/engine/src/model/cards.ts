@@ -1149,8 +1149,12 @@ export interface PlayerStaticAbilityDef {
   extraLands?: number;
   /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */
   landsEnterUntapped?: boolean;
-  /** « Vous avez la protection contre chacun de vos adversaires » (702.16j, Absolute Virtue). */
-  protectionFromOpponents?: boolean;
+  /**
+   * Protection du joueur (702.16) : contre chacun de ses adversaires (`opponents`, Absolute Virtue) ou contre tout
+   * (`everything`, 702.16j : Teferi's Protection, The One Ring). Le joueur ne peut pas être ciblé par les sorts et
+   * capacités de ces sources, et les blessures qu'elles devraient lui infliger sont prévenues ; on peut l'attaquer.
+   */
+  protection?: "opponents" | "everything";
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
   winFirstCoinFlips?: boolean;
   /**

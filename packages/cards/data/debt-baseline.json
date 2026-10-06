@@ -33,7 +33,7 @@
     "maxHandSize": "famille J, exceptions aux règles (R4.5) : taille de main maximale (Necrodominance ; Winter, Misanthropic Guide avec affects: opponents)",
     "playFrom": "famille C générique (R4.4) : jouer ou lancer depuis le cimetière ou le dessus de la bibliothèque, filtre et coûts en plus",
     "playLinkedPayLife": "statique d'objet, pas de joueur (R4.4)",
-    "protectionFromOpponents": "famille K, protection du joueur (R4.2)",
+    "protection": "famille K, protection du joueur (R4.2) : contre ses adversaires (Absolute Virtue) ou contre tout (702.16j : Teferi's Protection, The One Ring, PLAN-E E9)",
     "replacement": "familles E et F génériques (R1) : remplacements et préventions de blessures et de perte de PV posés par un effet (fx.thisTurn, boucliers 615.7) ; les capacités imprimées sont des EventReplacementAbilityDef",
     "scryBeforeExplore": "cas isolé, sans famille (à revoir en R4)",
     "seeFaceDown": "famille O, information (R4.5)",
@@ -101,8 +101,7 @@
     "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant",
     "keepWithinTotalPower": "« chaque joueur garde des créatures de force totale N ou moins et sacrifie les autres » (Destined Confrontation), famille « gardez, sacrifiez le reste » avec keepOnePerType et keepSharingCreatureType ; une seule carte pour l'instant",
     "moveCounter": "Nesting Grounds — déplacer un marqueur (sorte au choix) d'un permanent sur un autre : effet générique, à réutiliser (greffe, Bioshift…)",
-    "regenerate": "Swarmyard — régénération (701.19) : bouclier générique qui remplace la prochaine destruction, à réutiliser pour toute carte « régénérez »",
-    "phaseOut": "Robe of Stars : phasing (702.26), zone phasedOut et retour en phase à l'étape de dégagement ; à réutiliser pour toute carte qui fait sortir de phase"
+    "regenerate": "Swarmyard — régénération (701.19) : bouclier générique qui remplace la prochaine destruction, à réutiliser pour toute carte « régénérez »"
   },
   "singleCardKeys": {
     "fromCommand": "PLAN-E E6 : éminence (113.6, capacité qui fonctionne depuis la zone de commandement) ; seul Edgar Markov pour l'instant, famille des commandants à éminence (The Ur-Dragon, Inalla, Arahbo…) à venir avec leurs decks",
