@@ -41,9 +41,10 @@ describe("règles de construction du Commander (903.5)", () => {
   const edgar = DECKS.find((d) => d.id === "cmd-edgar-markov")!;
   const yshtola = DECKS.find((d) => d.id === "cmd-yshtola")!;
   const urDragon = DECKS.find((d) => d.id === "cmd-ur-dragon")!;
+  const rakdos = DECKS.find((d) => d.id === "cmd-rakdos")!;
 
   it("les préconstruits sont légaux ; Game Changers et tranche estimée", () => {
-    for (const d of [edgar, yshtola, urDragon]) {
+    for (const d of [edgar, yshtola, urDragon, rakdos]) {
       const v = validateDeck(d, CARDS, "commander");
       expect(v.errors, d.id).toEqual([]);
       expect(v.legal).toBe(true);
@@ -77,6 +78,11 @@ describe("règles de construction du Commander (903.5)", () => {
       "The One Ring",
     ]);
     expect(u.bracket).toBe("4+");
+    const r = validateDeck(rakdos, CARDS, "commander");
+    expect(r.commanders).toEqual(["Rakdos, Lord of Riots"]);
+    expect(r.identity).toEqual(["B", "R"]);
+    expect(r.gameChangers?.sort()).toEqual(["Demonic Tutor", "Vampiric Tutor"]);
+    expect(r.bracket).toBe("3");
   });
 
   const base = (): { commander: DeckEntries; main: DeckEntries } => ({

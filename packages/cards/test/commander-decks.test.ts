@@ -12,8 +12,8 @@ import { CARDS, DECKS, SET_BY_CODE } from "../src";
 describe("decks Commander", () => {
   const decks = commanderDecks();
 
-  it("Edgar Markov, The Ur-Dragon et Y'shtola : 100 cartes, un commandant, tous les noms connus du catalogue", () => {
-    expect(decks.map((d) => d.id)).toEqual(["edgar-markov", "ur-dragon", "yshtola"]);
+  it("les decks Commander : 100 cartes, un commandant, tous les noms connus du catalogue", () => {
+    expect(decks.map((d) => d.id)).toEqual(["edgar-markov", "rakdos", "ur-dragon", "yshtola"]);
     for (const d of decks) {
       expect(d.unknown, d.id).toEqual([]);
       expect(d.commander.length, d.id).toBe(1);

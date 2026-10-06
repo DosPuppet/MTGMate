@@ -385,8 +385,13 @@ export const RECORD_VERSION = 1;
  *   qui accumule (jetons, déclenchements sur la pile) est nulle, et les choix faits pendant la boucle ne la coupent pas.
  * - 144 : mulligan gratuit dans toute partie de Commander, duel compris (règle du format) ; ailleurs, à trois joueurs ou
  *   plus (103.5c).
+ * - 145 : deck Commander Rakdos, Lord of Riots : « pour chaque joueur » (référence `nth`), nombres choisis secrètement,
+ *   deux coûts au choix pour « à moins qu'il ne paie », annihilateur et exhumation lus dans le texte, manifester depuis la
+ *   main, copie de sort avec loyauté de départ, tour contrôlé suivi d'un tour supplémentaire, cibles de valeurs de mana
+ *   différentes, recherche bornée par un montant ; une carte sacrifiée est suivie dans sa nouvelle zone par les
+ *   déclenchements de son sacrifice.
  */
-export const RULES_VERSION = 144;
+export const RULES_VERSION = 145;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -102,7 +102,8 @@
     "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant",
     "keepWithinTotalPower": "« chaque joueur garde des créatures de force totale N ou moins et sacrifie les autres » (Destined Confrontation), famille « gardez, sacrifiez le reste » avec keepOnePerType et keepSharingCreatureType ; une seule carte pour l'instant",
     "moveCounter": "Nesting Grounds — déplacer un marqueur (sorte au choix) d'un permanent sur un autre : effet générique, à réutiliser (greffe, Bioshift…)",
-    "regenerate": "Swarmyard — régénération (701.19) : bouclier générique qui remplace la prochaine destruction, à réutiliser pour toute carte « régénérez »"
+    "regenerate": "Swarmyard — régénération (701.19) : bouclier générique qui remplace la prochaine destruction, à réutiliser pour toute carte « régénérez »",
+    "chooseNumbers": "Wheel of Misfortune — chaque joueur choisit secrètement un nombre (ref.numberChoosers, amount.numberChosen) ; famille des choix secrets simultanés (votes, enchères) à rattacher quand une autre carte en a besoin"
   },
   "singleCardKeys": {
     "absolute": "Loot, the Anomaly — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -118,7 +119,6 @@
     "bottomAfter": "Kylox's Voltstrider — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "bySource": "Fog Bank — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "bySpellYouControl": "Gnarlback Rhino — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "cast": "The Sibsig Ceremony — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "cloak": "Vannifar, Evolved Enigma — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "collectEvidenceTargetsManaValue": "Urgent Necropsy — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "copyNonlegendary": "The Clone Saga — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -206,7 +206,10 @@
     "withWarp": "Blade of the Swarm — cible « carte exilée avec la distorsion » (une carte qui a la distorsion) ; Close Encounter, qui l'utilisait, lit `warped` (carte exilée par la distorsion, PLAN-A A3) : à réutiliser pour toute carte exilée « avec la distorsion »",
     "nameOf": "Dragonlord Kolaghan : « du même nom que [l'objet désigné] », relation résolue par withX comme sharesCreatureTypeWith ; famille des bornes dynamiques des filtres",
     "attackEach": "Goldlust Triad : myriade (702.116), lue dans le texte (scryfall.ts) ; famille du mot-clé myriade (une copie attaque chacun des autres adversaires)",
-    "exileAtEndOfCombat": "Goldlust Triad : myriade (702.116), copies exilées à la fin du combat ; famille du mot-clé myriade"
+    "exileAtEndOfCombat": "Goldlust Triad : myriade (702.116), copies exilées à la fin du combat ; famille du mot-clé myriade",
+    "differentManaValues": "Agadeem's Awakening : cibles de valeurs de mana différentes, sur le modèle de differentNames (même mécanisme de groupe)",
+    "exileIfLeaves": "Exhumation (702.84a, lue dans le texte : Cityscape Leveler) : « s'il devait quitter le champ de bataille, exilez-le à la place » ; famille des retours temporaires (exhumation, Whip of Erebos…)",
+    "manifest": "Kozilek, the Broken Reality : manifester depuis la main (701.40) ; famille de la manifestation (manifestDread existant, à rattacher)"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -225,7 +228,7 @@
   "engineCardLiterals": {},
   "ceilings": {
     "CardDef": 97,
-    "GameObject": 61,
+    "GameObject": 62,
     "StackItem": 29,
     "PlayerState": 23,
     "GameState": 40,
@@ -235,16 +238,16 @@
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 17,
     "LayerMods": 31,
-    "Effect": 152,
-    "Effect (champs)": 638,
+    "Effect": 153,
+    "Effect (champs)": 645,
     "TriggerSpec": 60,
     "TriggerSpec (champs)": 160,
     "Condition": 53,
     "Condition (champs)": 98,
-    "Amount": 32,
-    "Amount (champs)": 70,
-    "Ref": 32,
-    "Ref (champs)": 55
+    "Amount": 33,
+    "Amount (champs)": 72,
+    "Ref": 34,
+    "Ref (champs)": 61
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -305,6 +308,7 @@
     "PLAN-E E10 : ascension (702.131), PlayerState.citysBlessing (bénédiction de la cité, pour la partie, comme la vitesse) et la condition citysBlessing (Twilight Prophet ; famille des désignations de joueur permanentes, avec le récit durable) : PlayerState 22 → 23, Condition 52 → 53, Condition (champs) 96 → 97",
     "PLAN-E E12 : entretien cumulatif (unlessPay.times, coût payé une fois par marqueur d'âge, lu dans le texte) ; « sauf la première pioche de son étape de pioche » (draw.exceptTurnDraw, Orcish Bowmasters) : Effect (champs) 634 → 635, TriggerSpec (champs) 159 → 160",
     "Ref commanders (PLAN-E, Path of Ancestry) : « votre commandant », où qu'il soit ; forme générique pour les cartes Commander qui citent le commandant : Ref 31 → 32, Ref (champs) 53 → 55",
-    "Deck The Ur-Dragon (Commander) : ObjectFilter.nameOf (Dragonlord Kolaghan), Amount maxOverPlayers (Cavern-Hoard Dragon), zone de commandement dans Ref zone et MoveSpec (Hellkite Courser, Majestic Genesis), myriade (copyToken attackEach, exileAtEndOfCombat), mana marqué gardé (Klauth) et porteur d'un effet (Arena of Glory), éminence d'une statique de joueur : ObjectFilter 87 → 88, Effect (champs) 635 → 638, Condition (champs) 97 → 98, Amount 31 → 32, Amount (champs) 67 → 70"
+    "Deck The Ur-Dragon (Commander) : ObjectFilter.nameOf (Dragonlord Kolaghan), Amount maxOverPlayers (Cavern-Hoard Dragon), zone de commandement dans Ref zone et MoveSpec (Hellkite Courser, Majestic Genesis), myriade (copyToken attackEach, exileAtEndOfCombat), mana marqué gardé (Klauth) et porteur d'un effet (Arena of Glory), éminence d'une statique de joueur : ObjectFilter 87 → 88, Effect (champs) 635 → 638, Condition (champs) 97 → 98, Amount 31 → 32, Amount (champs) 67 → 70",
+    "Deck Rakdos, Lord of Riots (Commander) : GameObject.exileIfLeaves (exhumation), MoveSpec manifest et exileIfLeaves, Ref nth (fx.forEachPlayer) et numberChoosers, Amount numberChosen, op chooseNumbers (Wheel of Misfortune), TargetSpec differentManaValues, unlessPay orMana sans défausse, copie de sort avec loyauté, recherche bornée par un montant, tour contrôlé suivi d'un tour supplémentaire : GameObject 61 → 62, Effect 152 → 153, Effect (champs) 638 → 645, Amount 32 → 33, Amount (champs) 70 → 72, Ref 32 → 34, Ref (champs) 55 → 61"
   ]
 }

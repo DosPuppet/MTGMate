@@ -176,6 +176,8 @@ export interface GameObject {
   foretoldTurn?: number;
   /** Exilée face cachée (406.3) : les joueurs qui peuvent la regarder (vide : personne). */
   exiledFaceDown?: PlayerId[];
+  /** Exhumé (702.84a) : s'il devait quitter le champ de bataille, il est exilé à la place. */
+  exileIfLeaves?: boolean;
   /** Créatures qui ont monté ou équipé ce permanent (coût payé ce tour-ci). */
   crewedBy?: { turn: number; ids: ObjectId[] };
   /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */
@@ -273,6 +275,8 @@ export interface StackItem {
     subtypes?: string[];
     sacrificeAtEnd?: boolean;
     nonlegendary?: boolean;
+    /** Loyauté de départ à la place de celle imprimée (copie d'Ob Nixilis, the Adversary). */
+    loyalty?: number;
   };
   kind: "spell" | "ability";
   controller: PlayerId;
@@ -908,7 +912,7 @@ export interface GameState {
    * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.
    */
   /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur (Secret of Bloodbending). */
-  turnControl?: { player: PlayerId; by: PlayerId; turn?: number; combatOnly?: boolean };
+  turnControl?: { player: PlayerId; by: PlayerId; turn?: number; combatOnly?: boolean; thenExtraTurn?: boolean };
   /** Tours supplémentaires à venir (500.7 : le plus récent d'abord). */
   extraTurns?: PlayerId[];
   /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */

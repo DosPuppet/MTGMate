@@ -582,16 +582,17 @@ export function destroy(s: GameState, id: ObjectId, noRegenerate = false, by?: P
 }
 
 /** Met un permanent au cimetière de son propriétaire (mort, sacrifice, endurance 0…). */
-export function putIntoGraveyard(s: GameState, id: ObjectId): void {
+export function putIntoGraveyard(s: GameState, id: ObjectId): ObjectId | null {
   const o = obj(s, id);
   // Émis avant le déplacement (ordre des événements), complété ensuite par la destination réelle :
   // un remplacement peut exiler la créature (Feu du dragon dévastateur) ou la mélanger dans la bibliothèque.
   const event: Extract<GameEvent, { type: "dies" }> = { type: "dies", objectId: id, defId: o.defId, to: "graveyard" };
   emit(event);
   const landed: { to?: Zone } = {};
-  moveObject(s, id, "graveyard", { landed });
+  const moved = moveObject(s, id, "graveyard", { landed });
   if (landed.to) event.to = landed.to;
   removeFromCombat(s, id);
+  return moved;
 }
 
 /** Sacrifier (701.21) : le contrôleur met le permanent au cimetière ; « chaque fois que vous sacrifiez… » se déclenche. */
@@ -610,7 +611,10 @@ export function sacrifice(s: GameState, id: ObjectId): void {
     supertypes: c.supertypes,
     token: o.isToken || undefined,
   });
-  putIntoGraveyard(s, id);
+  const moved = putIntoGraveyard(s, id);
+  // « Chaque fois qu'un adversaire sacrifie… mettez cette carte sur le champ de bataille » (It That Betrays) : les
+  // déclenchements créés avant le déplacement suivent la carte dans sa nouvelle zone.
+  if (moved) for (const t of s.triggers) if (t.event.objectId === id && !t.event.newObjectId) t.event.newObjectId = moved;
 }
 
 /**

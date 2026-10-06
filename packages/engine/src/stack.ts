@@ -3849,6 +3849,7 @@ function finishResolution(
         copyChosen: vars.$copyOf !== undefined,
         // Choreographed Sparks : « la copie gagne la célérité ».
         counters: item.arrival?.counters,
+        ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
         haste: item.arrival?.haste,
         ...(item.arrival?.nonlegendary ? { mods: { removeSupertypes: ["Legendary"] }, modsCopiable: true } : {}),
       });
@@ -3886,6 +3887,7 @@ function finishResolution(
           ...(item.cast?.sneakDefender ? { tapped: true, attacking: item.cast.sneakDefender } : {}),
           // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
           counters: item.arrival?.counters,
+          ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
           haste: item.arrival?.haste,
           mods: item.arrival?.subtypes ? { addSubtypes: item.arrival.subtypes } : undefined,
           impending: item.cast?.via === "impending" ? (d.impending ?? 0) : undefined,

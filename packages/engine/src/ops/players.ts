@@ -222,9 +222,40 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
+  chooseNumbers(s, r, e, ctx, key) {
+    const who = resolveRef(s, ctx, e.who);
+    for (const p of apnapOrder(s).filter((x) => who.includes(x))) {
+      const k = `$num:${e.store}:${p}`;
+      if (r.vars[k]) continue;
+      const answer = r.vars[key(`num-${p}`)];
+      if (!answer)
+        return {
+          ask: {
+            player: p,
+            key: key(`num-${p}`),
+            request: {
+              type: "number",
+              intent: "other",
+              prompt: `${nameOf(s, ctx.sourceId)} : choisissez secrètement un nombre`,
+              min: 0,
+              max: e.max,
+              suggested: [0],
+            },
+          },
+        };
+      r.vars[k] = [Math.min(e.max, Math.max(0, Number(answer[0] ?? 0)))];
+    }
+    return;
+  },
   controlNextTurn(s, _r, e, ctx) {
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
-    if (p) s.turnControl = { player: p, by: ctx.controller, ...(e.combatOnly ? { combatOnly: true } : {}) };
+    if (p)
+      s.turnControl = {
+        player: p,
+        by: ctx.controller,
+        ...(e.combatOnly ? { combatOnly: true } : {}),
+        ...(e.thenExtraTurn ? { thenExtraTurn: true } : {}),
+      };
     return;
   },
   endTurn(s, r) {

@@ -31,6 +31,8 @@ export interface TargetSpec {
   shareCreatureType?: boolean;
   /** Cibles de noms différents (Behold the Sinister Six! : « cartes de créature ciblées de noms différents »). */
   differentNames?: boolean;
+  /** Cibles de valeurs de mana différentes (Agadeem's Awakening). */
+  differentManaValues?: boolean;
   /** Nombre de cibles variable (« jusqu'à X créatures ciblées ») : remplace `count` au moment de choisir les cibles. */
   countAmount?: Amount;
   /** Filtre si le sort est kické ou si le cadeau est promis (« à la place, un permanent non-terrain ciblé »). */
@@ -729,7 +731,11 @@ export type Ref =
   /** Les créatures qui bloquent les objets désignés ou sont bloquées par eux pendant ce combat (Ride Down). */
   | { kind: "combatPartners"; ref: Ref }
   /** Commander (903.3) : les commandants des joueurs désignés, où qu'ils soient (« votre commandant », Path of Ancestry). */
-  | { kind: "commanders"; who: Ref };
+  | { kind: "commanders"; who: Ref }
+  /** Les joueurs qui ont choisi le plus grand nombre, le plus petit, ou pas le plus petit (`fx.chooseNumbers`). */
+  | { kind: "numberChoosers"; store: string; which: "highest" | "lowest" | "notLowest" }
+  /** Le n-ième (à partir de 0) des objets ou joueurs désignés, rien s'il n'y en a pas autant (`fx.forEachPlayer`). */
+  | { kind: "nth"; of: Ref; n: number };
 
 export type Amount =
   | number
@@ -805,6 +811,8 @@ export type Amount =
    * d'artefacts que contrôle un adversaire », Cavern-Hoard Dragon) ; 0 sans joueur.
    */
   | { kind: "maxOverPlayers"; players: Ref; amount: Amount }
+  /** Le plus grand nombre choisi (`fx.chooseNumbers`, Wheel of Misfortune). */
+  | { kind: "numberChosen"; store: string }
   /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */
   | { kind: "graveyardsWithAtLeast"; n: number }
   /** Noms différents parmi les portes déverrouillées de ses Salles (Promising Stairs). */

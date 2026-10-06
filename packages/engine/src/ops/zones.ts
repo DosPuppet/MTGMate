@@ -1316,10 +1316,22 @@ export const HANDLERS: OpHandlers = {
       // Le nombre se lit du point de vue de celui qui cherche (Winds of Abandon : autant que de ses créatures exilées).
       const count = evalAmount(s, e.who ? { ...ctx, controller: p } : ctx, e.count);
       const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
+      // Grim Servant : « valeur de mana au plus égale à votre dévotion au noir ».
+      const maxMv = e.maxManaValue !== undefined ? evalAmount(s, ctx, e.maxManaValue) : undefined;
       // « valeur de mana X ou moins » : le X du sort qui se résout (Nature's Rhythm).
       const base = withX(s, e.filter, ctx);
       const options = player.library.filter((id) =>
-        matchesCard(s, p, id, exactMv === undefined ? base : { ...base, manaValue: exactMv }, ctx.sourceId),
+        matchesCard(
+          s,
+          p,
+          id,
+          {
+            ...base,
+            ...(exactMv === undefined ? {} : { manaValue: exactMv }),
+            ...(maxMv === undefined ? {} : { maxManaValue: maxMv }),
+          },
+          ctx.sourceId,
+        ),
       );
       let picked: string[] = [];
       if (options.length > 0 && count > 0) {

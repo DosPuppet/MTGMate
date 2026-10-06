@@ -296,6 +296,8 @@ export type Effect =
       distinctNames?: boolean;
       /** Valeur de mana exacte (Repurposing Bay : 1 + celle de l'artefact sacrifié). */
       manaValue?: Amount;
+      /** Valeur de mana au plus égale à ce montant (Grim Servant : votre dévotion au noir). */
+      maxManaValue?: Amount;
     }
   | { op: "shuffle"; who: Ref }
   /** Échange le contrôle de deux permanents (Trade the Helm). */
@@ -489,7 +491,16 @@ export type Effect =
   | { op: "spellFate"; fate: "exile" | "plot" | "rebound" | "battlefieldTransformed"; what?: Ref; counter?: string }
   /** Copies d'un sort sur la pile (mêmes cibles). */
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature a la célérité et est sacrifiée en fin de tour. */
-  | { op: "copySpell"; what: Ref; count: Amount; haste?: boolean; sacrificeAtEnd?: boolean; nonlegendary?: boolean }
+  /** `loyalty` : la copie (un planeswalker) a cette loyauté de départ (victime X d'Ob Nixilis, the Adversary). */
+  | {
+      op: "copySpell";
+      what: Ref;
+      count: Amount;
+      haste?: boolean;
+      sacrificeAtEnd?: boolean;
+      nonlegendary?: boolean;
+      loyalty?: Amount;
+    }
   /** Chaque joueur désigné révèle des cartes jusqu'à une carte correspondant au filtre, puis les met toutes au cimetière. */
   | { op: "millUntil"; who: Ref; filter: ObjectFilter }
   /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */
@@ -545,7 +556,13 @@ export type Effect =
   | { op: "reduceSpeed"; who: Ref }
   /** « Vous contrôlez [le joueur ciblé] pendant son prochain tour » (The Dominion Bracelet). */
   /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur. */
-  | { op: "controlNextTurn"; who: Ref; combatOnly?: boolean }
+  /**
+   * Chaque joueur désigné choisit secrètement un nombre (de 0 à `max`), dans l'ordre APNAP, sans voir ceux des autres ;
+   * mémorisés sous `store`, lus par `ref.numberChoosers` et `amount.numberChosen` (Wheel of Misfortune).
+   */
+  | { op: "chooseNumbers"; who: Ref; store: string; max: number }
+  /** `thenExtraTurn` : après ce tour, ce joueur prend un tour supplémentaire (Emrakul, the Promised End). */
+  | { op: "controlNextTurn"; who: Ref; combatOnly?: boolean; thenExtraTurn?: boolean }
   /** « Votre total de points de vie devient N » (The Endstone). */
   /**
    * Les joueurs désignés ont `amount` points de vie, ou (`exchange`) échangent leurs points de vie avec ce joueur ; chaque

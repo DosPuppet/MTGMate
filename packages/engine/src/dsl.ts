@@ -244,6 +244,10 @@ export const ref = {
   union: (...of: Ref[]): Ref => ({ kind: "union", of }),
   /** « Les créatures bloquées par [elle] / qui [la] bloquent » pendant ce combat. */
   combatPartners: (r: Ref): Ref => ({ kind: "combatPartners", ref: r }),
+  /** Les joueurs qui ont choisi le plus grand nombre, le plus petit, ou pas le plus petit (`fx.chooseNumbers`). */
+  numberChoosers: (store: string, which: "highest" | "lowest" | "notLowest"): Ref => ({ kind: "numberChoosers", store, which }),
+  /** Le n-ième (à partir de 0) des objets ou joueurs désignés. */
+  nth: (of: Ref, n: number): Ref => ({ kind: "nth", of, n }),
   /** Commander : les commandants des joueurs désignés (vous par défaut), où qu'ils soient. */
   commanders: (who: Ref = { kind: "you" }): Ref => ({ kind: "commanders", who }),
   /** Les objets de `r` sauf ceux de `exclude` (« toutes les autres créatures »). */
@@ -418,6 +422,8 @@ export const amount = {
   /** X du sort qui a mis la source en jeu. */
   sourceX: spent("x"),
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
+  /** Le plus grand nombre choisi (`fx.chooseNumbers`). */
+  numberChosen: (store: string): Amount => ({ kind: "numberChosen", store }),
   /** La plus grande valeur du montant, vu de chacun des joueurs désignés (« … qu'un adversaire contrôle »). */
   maxOverPlayers: (players: Ref, of: Amount): Amount => ({ kind: "maxOverPlayers", players, amount: of }),
   opponentsLostLife: turnEvents({ event: "lifeLoss", who: "opponent", distinct: "player" }),
@@ -769,6 +775,13 @@ export const fx = {
     return [{ op: "behold", filter, skip: flat.length }, ...flat];
   },
   /** « Si [condition], … » : les effets ne s'appliquent que si la condition est vraie à la résolution. */
+  /**
+   * « Pour chaque joueur [désigné], … » : les effets sont répétés pour chacun, dans l'ordre de `of` (l'ordre du tour), avec
+   * `p` qui le désigne (et `n`, son rang, pour des noms mémorisés distincts) ; déroulés pour six joueurs au plus (un siège
+   * absent ne fait rien).
+   */
+  forEachPlayer: (of: Ref, build: (p: Ref, n: number) => Effects): Effect[] =>
+    Array.from({ length: 6 }, (_, n) => build({ kind: "nth", of, n }, n).flat()).flat(),
   when: (c: Condition, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
     return [{ op: "if", cond: c, skip: flat.length }, ...flat];
@@ -790,7 +803,16 @@ export const fx = {
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
   unlessPays: (
     who: Ref,
-    cost: { mana?: string; life?: number; paidStore?: string; genericAmount?: Amount; waterbend?: boolean; times?: Amount },
+    cost: {
+      mana?: string;
+      /** Ou ce coût en mana, au choix (Lim-Dûl's Hex : « {B} ou {3} »). */
+      orMana?: string;
+      life?: number;
+      paidStore?: string;
+      genericAmount?: Amount;
+      waterbend?: boolean;
+      times?: Amount;
+    },
     ...effects: Effects
   ): Effect[] => {
     const flat = effects.flat();
@@ -799,6 +821,7 @@ export const fx = {
         op: "unlessPay",
         who,
         mana: cost.mana ? parseManaCost(cost.mana) : undefined,
+        ...(cost.orMana ? { orMana: parseManaCost(cost.orMana) } : {}),
         genericAmount: cost.genericAmount,
         life: cost.life,
         paidStore: cost.paidStore,
@@ -863,7 +886,7 @@ export const fx = {
   copySpell: (
     what: Ref,
     count: Amount,
-    opts: { haste?: boolean; sacrificeAtEnd?: boolean; nonlegendary?: boolean } = {},
+    opts: { haste?: boolean; sacrificeAtEnd?: boolean; nonlegendary?: boolean; loyalty?: Amount } = {},
   ): Effect => ({
     op: "copySpell",
     what,
@@ -955,10 +978,14 @@ export const fx = {
   }),
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
-  controlNextTurn: (who: Ref, combatOnly?: boolean): Effect => ({
+  /** Chaque joueur désigné choisit secrètement un nombre de 0 à `max` (Wheel of Misfortune). */
+  chooseNumbers: (who: Ref, store: string, max = 20): Effect => ({ op: "chooseNumbers", who, store, max }),
+  /** `thenExtraTurn` : « après ce tour, ce joueur prend un tour supplémentaire » (Emrakul, the Promised End). */
+  controlNextTurn: (who: Ref, combatOnly?: boolean, thenExtraTurn?: boolean): Effect => ({
     op: "controlNextTurn",
     who,
     ...(combatOnly ? { combatOnly } : {}),
+    ...(thenExtraTurn ? { thenExtraTurn } : {}),
   }),
   /** La carte ou le sort est exilé et devient comploté. */
   plot: (what: Ref): Effect => ({ op: "plot", what }),

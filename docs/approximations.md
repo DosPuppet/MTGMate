@@ -302,3 +302,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Myriade (Goldlust Triad) : une seule question pour toutes les copies ; chacune attaque le joueur, jamais un de ses planeswalkers ;
   - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ;
   - `choix auto` Zurgo and Ojutai : les deux cartes qui ne vont pas en main sont mises au-dessous dans un ordre aléatoire (pas au choix).
+  - `choix auto` Foreboding Ruins : une carte de Marais ou de Montagne de la main est révélée d'office si possible ;
+  - `règle` Pandemonium : la cible des blessures est choisie par le contrôleur de Pandemonium, pas par celui de la créature qui arrive (exact quand c'est la même personne) ;
+  - `choix auto` Sandstone Oracle : l'adversaire choisi est celui qui a le plus de cartes en main ;
+  - `règle` Emrakul, the World Anew : « protection contre les sorts » se lit contre les éphémères et les rituels (pas contre un sort d'Aura ou de permanent) ;
+  - `choix auto` Cryptolith Fragment : sa capacité de mana s'active à la main (le paiement automatique ne s'en sert pas) ;
+  - `règle` Wheel of Misfortune : les nombres sont choisis l'un après l'autre (dans l'ordre APNAP, sans voir ceux des autres), de 0 à 20 ;
+  - `règle` Gray Merchant of Asphodel, Creeping Bloodsucker : les PV gagnés sont calculés (dévotion par adversaire, nombre d'adversaires), pas lus sur les pertes et blessures réelles (différent seulement si elles sont remplacées) ;
+  - `règle` Ob Nixilis, the Adversary : la loyauté de la copie est la force imprimée de la créature sacrifiée (pas sa force modifiée) ;
+  - `règle` Keen Duelist : les cartes du dessus ne sont pas révélées explicitement.

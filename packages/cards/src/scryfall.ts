@@ -318,6 +318,14 @@ export function parseKeywordCost(text: string, keyword: string): ManaCost | unde
   return m ? parseManaCost(m[1] as string) : undefined;
 }
 
+/** Folie écrite en toutes lettres : « Madness—Pay six {C} » (Emrakul, the World Anew). */
+const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+function parseMadnessPay(text: string): ManaCost | undefined {
+  const m = /^Madness—Pay (\w+) (\{[^}]+\})/m.exec(stripReminder(text));
+  const n = m ? NUMBER_WORDS.indexOf(m[1] as string) : -1;
+  return m && n > 0 ? parseManaCost((m[2] as string).repeat(n)) : undefined;
+}
+
 /** Déguisement (702.168) ou mue (702.37, Grim Haruspex) : le coût pour retourner la carte face visible. */
 export function parseDisguise(text: string): CardDef["disguise"] {
   const m = /^(?:Disguise|Morph) ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
@@ -833,6 +841,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Exaltation (702.83), affinité pour les artefacts (702.41), modulaire (702.43), greffe (702.58), extorsion (702.101).
   const exalted = /^Exalted\b/m.test(raw.oracleText);
   const myriad = /^Myriad\b/m.test(raw.oracleText);
+  // Annihilateur N (702.86) ; exhumation (702.84).
+  const annihilator = Number(/^Annihilator (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  const unearth = /^Unearth ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const affinityArtifacts = /^Affinity for artifacts\b/m.test(raw.oracleText);
   const modular = Number(/^Modular (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const graft = Number(/^Graft (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
@@ -884,6 +895,30 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   }
   if (firebending) {
     bloomburrowAbilities.push(dsl.firebending(firebending));
+  }
+  // Annihilateur N (702.86a) : quand elle attaque, le joueur défenseur sacrifie N permanents.
+  if (annihilator) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.attacksSelf, [dsl.fx.sacrifice(dsl.ref.defendingPlayer, { permanent: true }, annihilator)], {
+        label: `Annihilateur ${annihilator} : le joueur défenseur sacrifie ${annihilator} permanent(s)`,
+      }),
+    );
+  }
+  // Exhumation (702.84a) : depuis le cimetière, en rituel ; elle revient avec la célérité, est exilée au début de la
+  // prochaine étape de fin, et le serait à la place si elle devait quitter le champ de bataille.
+  if (unearth) {
+    bloomburrowAbilities.push(
+      dsl.activated({
+        mana: unearth,
+        fromGraveyard: true,
+        sorcerySpeed: true,
+        effects: [
+          dsl.fx.moveTo(dsl.ref.self, { to: "battlefield", addKeywords: ["haste"], exileIfLeaves: true }, { name: "unearth" }),
+          dsl.fx.delayed([dsl.fx.exile(dsl.ref.target("unearth"))], { unearth: dsl.ref.stored("unearth") }),
+        ],
+        label: `Exhumation ${unearth}`,
+      }),
+    );
   }
   // Myriade (702.116) : quand elle attaque, pour chaque adversaire autre que le joueur défenseur, une copie engagée et
   // attaquante qui attaque ce joueur, exilée à la fin du combat (l'attaque d'un de ses planeswalkers n'est pas proposée).
@@ -1177,7 +1212,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashbackCost: script?.flashbackCost,
     disguise: parseDisguise(raw.oracleText),
     morph: /^Morph \{/m.test(stripReminder(raw.oracleText)) ? true : undefined,
-    madness: parseKeywordCost(raw.oracleText, "Madness"),
+    madness: parseKeywordCost(raw.oracleText, "Madness") ?? parseMadnessPay(raw.oracleText),
     disguiseReduction: script?.disguiseReduction,
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),

@@ -660,6 +660,8 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
   if (s.turnControl?.turn !== undefined && s.turnControl.turn !== s.turn.number) s.turnControl = undefined;
   if (s.turnControl && s.turnControl.turn === undefined && s.turnControl.player === p) {
     s.turnControl.turn = s.turn.number;
+    // Emrakul, the Promised End : « après ce tour, ce joueur prend un tour supplémentaire ».
+    if (s.turnControl.thenExtraTurn) s.extraTurns = [...(s.extraTurns ?? []), p];
     emit({ type: "turnControl", player: p, by: s.turnControl.by, combatOnly: s.turnControl.combatOnly });
   }
   const player = s.players[p];

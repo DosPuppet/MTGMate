@@ -89,6 +89,8 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Talisman of Dominance": painSource("U", "B"),
   "Talisman of Hierarchy": painSource("W", "B"),
   "Talisman of Progress": painSource("W", "U"),
+  "Sulfurous Springs": painSource("B", "R"),
+  "Talisman of Indulgence": painSource("B", "R"),
 
   // --- Terrains à contrôle ---
   "Dragonskull Summit": checkLand("B", "R", "Swamp", "Mountain"),
@@ -98,6 +100,41 @@ export const EDH_LANDS: Record<string, CardScript> = {
 
   // --- Deux terrains de base, Triomes, terrains tricolores ---
   "Prairie Stream": battleLand,
+  "Smoldering Marsh": battleLand,
+  "Blackcleave Cliffs": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.controls({ types: ["Land"], other: true }, 3),
+        label: "Engagé, sauf si vous contrôlez deux autres terrains ou moins",
+      }),
+      manaAbility(["B", "R"]),
+    ],
+  },
+  // Choix automatique : une carte de Marais ou de Montagne de la main est révélée si possible (docs/approximations.md).
+  "Foreboding Ruins": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.amountAtLeast(amount.countIn("hand", { anySubtype: ["Swamp", "Mountain"] }), 1)),
+        label: "Engagé, sauf si vous révélez une carte de Marais ou de Montagne de votre main",
+      }),
+      manaAbility(["B", "R"]),
+    ],
+  },
+  "Graven Cairns": {
+    abilities: [
+      manaAbility("C"),
+      activated({
+        mana: "{B/R}",
+        tap: true,
+        effects: [fx.addManaCombination(2, ["B", "R"])],
+        label: "{B}{B}, {B}{R} ou {R}{R}",
+      }),
+    ],
+  },
+  "Blightstep Pathway": { abilities: [manaAbility("B")] },
+  "Searstep Pathway": { abilities: [manaAbility("R")] },
   "Sunken Hollow": battleLand,
   "Raffine's Tower": tappedTriland,
   "Savai Triome": tappedTriland,

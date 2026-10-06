@@ -1391,4 +1391,8 @@ export interface MoveSpec {
    * propriétaire (présage) ou personne (Doomsday Excruciator).
    */
   faceDown?: "you" | "owner" | "nobody";
+  /** Sur le champ de bataille : manifesté (701.40, face cachée 2/2) ; Kozilek, the Broken Reality : depuis la main. */
+  manifest?: boolean;
+  /** Sur le champ de bataille : s'il devait le quitter, il est exilé à la place (exhumation, 702.84a). */
+  exileIfLeaves?: boolean;
 }

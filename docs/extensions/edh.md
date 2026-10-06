@@ -95,3 +95,27 @@ Ajouté le 06/10/2026 avec la recette « Ajouter un deck Commander » (CLAUDE.md
 - **Dette :** `fromCommand` (statique de joueur), `nameOf`, `attackEach`, `exileAtEndOfCombat` justifiés dans `debt-baseline.json` ; ObjectFilter 87 → 88, Amount 31 → 32, Condition (champs) 97 → 98, Effect (champs) 635 → 638, Amount (champs) 67 → 70 ; `fromCommand` n'est plus propre à Edgar Markov.
 - **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-ur-dragon`, contre Edgar et Y'shtola à tour de rôle) : en duel, The Ur-Dragon gagne 54,9 % ± 4,0 (597 parties décidées, 3 nulles, 17 tours en moyenne) ; à quatre (sièges Ur-Dragon, autre, Ur-Dragon, autre), 41,2 % ± 5,7 (291 parties décidées, 9 nulles, 37 tours). Dans la cible de 45 à 55 % en duel, un peu en dessous à quatre ; la liste n'est pas retouchée.
 
+## Deck Rakdos, Lord of Riots : gros sorts gratuits ✅ (225 / 225)
+
+Ajouté le 06/10/2026 avec la recette « Ajouter un deck Commander ». Liste : « Rakdos, Lord of Big Free Stuff » de wachelreeks sur Moxfield (mise à jour le 24/09/2026), dans `docs/commander/decks/rakdos.txt` ; préconstruit `cmd-rakdos` (2 Game Changers : Demonic Tutor, Vampiric Tutor ; tranche estimée 3).
+
+**Import :** 57 cartes absentes du catalogue ajoutées à EDH, toutes avec une image française ; texte français de Lim-Dûl's Hex complété à la main (`french-overrides.json`).
+
+**Cartes (57, `edh/rakdos.ts` et `edh/lands.ts`) :** Rakdos, Lord of Riots ; Eldrazi : Emrakul, the Promised End, Emrakul, the World Anew, It That Betrays, Kozilek, Butcher of Truth, Kozilek, the Broken Reality, Ulamog, the Ceaseless Hunger, Ulamog, the Defiler, Ulamog, the Infinite Gyre ; Blightsteel Colossus, Cityscape Leveler, Razaketh, the Foulblooded, Ancient Cellarspawn, Exocrine, Screamer-Killer, Knollspine Dragon, Shivan Devastator, Walking Ballista, Sandstone Oracle ; blessures et pertes de PV : Creeping Bloodsucker, Fanatic of Mogis, Gray Merchant of Asphodel, Grim Servant, Keen Duelist, Plague Spitter, Shepherd of Rot, Spear Spewer, Stormfist Crusader, Thermo-Alchemist, Florian, Voldaren Scion, Imperial Recruiter, Priest of Gix, Tuktuk Rubblefort ; enchantements : Descent into Avernus, Lim-Dûl's Hex, Pandemonium, Phyrexian Reclamation, Protection Racket, Sanctum of Stone Fangs ; sorts : Agadeem's Awakening, Bloodsoaked Insight, Shatterskull Smashing, Valakut Awakening (versos terrains), Deflecting Swat, Rakdos Charm, Wheel of Misfortune ; Ob Nixilis, the Adversary ; mana : Rakdos Signet, Talisman of Indulgence, Cryptolith Fragment, Lightning Greaves ; terrains : Blackcleave Cliffs, Blightstep Pathway, Foreboding Ruins, Graven Cairns, Smoldering Marsh, Sulfurous Springs.
+
+- **Moteur :**
+  - « pour chaque joueur, … » : `fx.forEachPlayer(of, (p, n) => …)`, déroulé pour six sièges avec la référence `nth` (Lim-Dûl's Hex, Protection Racket, Gray Merchant, Kozilek, the Broken Reality, Ob Nixilis) ;
+  - nombres choisis secrètement : `fx.chooseNumbers`, `ref.numberChoosers`, `amount.numberChosen` (Wheel of Misfortune) ;
+  - « à moins qu'il ne paie {B} ou {3} » : `unlessPays(…, { mana, orMana })` sans défausse ;
+  - annihilateur N et exhumation lus dans le texte (`scryfall.ts`) ; exhumé : `MoveSpec.exileIfLeaves`, `GameObject.exileIfLeaves` (exilé s'il devait quitter le champ de bataille) ; folie écrite en toutes lettres (« Madness—Pay six {C} ») ;
+  - manifester depuis la main : `MoveSpec.manifest`, avec le choix de chaque joueur dans sa main (`pickFromZone` et `who`) ;
+  - copie de sort avec loyauté de départ (`copySpell(…, { loyalty })`, victime X d'Ob Nixilis) ; tour contrôlé suivi d'un tour supplémentaire (`controlNextTurn(…, thenExtraTurn)`, Emrakul, the Promised End) ;
+  - cibles de valeurs de mana différentes (`TargetSpec.differentManaValues`) ; recherche bornée par un montant (`search` et `maxManaValue`, Grim Servant) ;
+  - jeton Powerstone (mana réservé aux sorts d'artefact et aux capacités) ;
+  - correction : les déclenchements d'un sacrifice suivent la carte sacrifiée dans sa nouvelle zone (It That Betrays) ;
+  - correction trouvée par le fuzz strict : un sort ne propose plus comme cible une créature à taxe de PV impayable (Terror of the Peaks, à 2 PV) ; test dans `offers.test.ts`.
+- **Tests :** `engine/test/edh-rakdos.test.ts` (29) ; fumée EDH (225 cartes) ; fuzz Commander à 2, 3 et 4 joueurs, strict et « chaos » propres (quelques parties nulles par défaite simultanée : blessures à chaque joueur).
+- **Approximations :** Foreboding Ruins, Pandemonium, Sandstone Oracle, Emrakul, the World Anew (protection contre les sorts), Cryptolith Fragment, Wheel of Misfortune, Gray Merchant et Creeping Bloodsucker, Ob Nixilis (force imprimée), Keen Duelist.
+- **Dette :** `chooseNumbers`, `differentManaValues`, `exileIfLeaves`, `manifest` justifiés ; `cast` n'est plus propre à une carte ; plafonds relevés (GameObject 62, Effect 153, Ref 34, Amount 33…).
+- **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-rakdos`, contre les trois autres préconstruits à tour de rôle) : en duel, Rakdos gagne 33,2 % ± 3,8 (599 parties décidées, 18 tours) ; à quatre, 26,6 % ± 5,0 (297 parties décidées, 35 tours). Nettement sous la cible de 45 à 55 % ; à étudier dans l'IA d'abord (lancer Rakdos et les Eldrazi au bon moment, garder les pertes de PV pour la réduction), la liste n'est pas retouchée. Deux décisions de plus de 20 s sur un plateau de 270 permanents (limite connue du niveau moyen, `docs/ia.md`).
+

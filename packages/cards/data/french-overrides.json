@@ -49,5 +49,9 @@
   "Korvold, Fae-Cursed King": {
     "typeLine": "Créature légendaire : dragon et noble",
     "text": "Vol\nÀ chaque fois que Korvold arrive ou attaque, sacrifiez un autre permanent.\nÀ chaque fois que vous sacrifiez un permanent, mettez un marqueur +1/+1 sur Korvold et piochez une carte."
+  },
+  "Lim-Dûl's Hex": {
+    "typeLine": "Enchantement",
+    "text": "Au début de votre entretien, pour chaque joueur, cet enchantement inflige 1 blessure à ce joueur à moins qu'il ne paie {B} ou {3}."
   }
 }

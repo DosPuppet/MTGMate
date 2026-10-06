@@ -85,7 +85,7 @@ function tapXMax(
   return 0;
 }
 
-import { snapshot } from "./layers";
+import { chars, snapshot } from "./layers";
 import { enterChoiceRequest } from "./ops/permanents";
 import { obj } from "./state";
 import { legalTargets } from "./targets";
@@ -188,6 +188,20 @@ function creatureTypesOf(s: GameState, ids: ObjectId[]): Record<string, string[]
   );
 }
 
+/**
+ * Terror of the Peaks : « les sorts de vos adversaires qui ciblent cette créature coûtent 3 PV de plus » ; un sort ne
+ * propose pas une cible dont la taxe dépasse les PV que le joueur peut payer (le moteur refuserait le lancer).
+ */
+function withoutUnpayableLifeTax(s: GameState, player: PlayerId, opts: TargetOption[]): TargetOption[] {
+  const life = payableLife(s, player);
+  const tax = (id: string) => {
+    const t = s.objects[id];
+    if (t?.zone !== "battlefield" || t.controller === player) return 0;
+    return chars(s, id).abilities.reduce((m, ab) => m + (ab.kind === "playerStatic" ? (ab.targetLifeTax ?? 0) : 0), 0);
+  };
+  return opts.map((o) => (o.legal.some((id) => tax(id) > life) ? { ...o, legal: o.legal.filter((id) => tax(id) <= life) } : o));
+}
+
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
   return specs.map((t) => {
     const all = legalTargets(s, player, t, sourceId);
@@ -225,6 +239,12 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
     if (t.differentNames) {
       const holders: Record<string, string> = {};
       for (const id of legal) holders[id] = (s.objects[id] ? snapshot(s, id).name : undefined) ?? id;
+      opt.group = { kind: "different", holders };
+    }
+    // Valeurs de mana différentes : la valeur de mana tient lieu de joueur.
+    if (t.differentManaValues) {
+      const holders: Record<string, string> = {};
+      for (const id of legal) holders[id] = String((s.objects[id] ? snapshot(s, id).manaValue : undefined) ?? id);
       opt.group = { kind: "different", holders };
     }
     return opt;
@@ -389,7 +409,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       .map((m, index) => ({
         index,
         label: m.label,
-        targets: targetOptions(s, player, m.targets, card),
+        targets: withoutUnpayableLifeTax(s, player, targetOptions(s, player, m.targets, card)),
         extra: m.extraCost,
         ...kickerNeeds(m.condition),
       }))

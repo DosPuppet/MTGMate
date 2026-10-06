@@ -28,6 +28,20 @@ const activations = (s: GameState, player: string, source: string) =>
   );
 
 describe("options proposées, décisions acceptées", () => {
+  it("Terror of the Peaks : pas proposée comme cible si le joueur ne peut pas payer les 3 PV de plus", () => {
+    const at = (life: number) => {
+      const s = scenario({
+        p1: { life, battlefield: ["Mountain"], hand: ["Shock"] },
+        p2: { battlefield: ["Terror of the Peaks"] },
+      });
+      const terror = idOf(s, "p2", "battlefield", "Terror of the Peaks");
+      const legal = castOption(s, "p1", idOf(s, "p1", "hand", "Shock"))?.modes[0]?.targets[0]?.legal ?? [];
+      return legal.includes(terror);
+    };
+    expect(at(2)).toBe(false);
+    expect(at(3)).toBe(true);
+  });
+
   it("sources qui coûtent des PV : pas plus que ce que le joueur peut payer (119.4 ; Mana Confluence à 1 PV)", () => {
     // Deux Mana Confluence pour {1}{R} : à 1 PV, une seule peut payer (le sort n'est pas proposé) ; à 3 PV, les deux.
     const at = (life: number) => {

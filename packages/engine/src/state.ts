@@ -564,6 +564,8 @@ export function moveObject(
     return null;
   // Un permanent préparé qui quitte le champ de bataille : la copie de son sort cesse d'exister.
   if (o.preparedCopy && o.zone === "battlefield") setPrepared(s, o, false);
+  // Exhumation (702.84a) : un permanent exhumé qui devrait quitter le champ de bataille est exilé à la place.
+  if (o.exileIfLeaves && o.zone === "battlefield" && to !== "battlefield" && to !== "exile") to = "exile";
   // 614.1a / 616.1 : remplacements « au lieu du cimetière » (Progenitus, finalité, Rest in Peace, Valgavoth…).
   let shuffleIn = false;
   let linkTo: ObjectId | undefined;

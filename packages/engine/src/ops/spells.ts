@@ -214,8 +214,12 @@ export const HANDLERS: OpHandlers = {
     // Garde « maîtrise de l'eau {4} », Waterbending Lesson : artefacts et créatures dégagés paient {1} chacun.
     const purpose = e.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : undefined;
     const evidence = e.collectEvidence ? evidenceCards(s, p, "", e.collectEvidence) : undefined;
+    // « à moins qu'il ne paie {B} ou {3} » (Lim-Dûl's Hex) : deux coûts en mana au choix (sans défausse).
+    const orManaOnly = !e.discard && !!e.orMana && !!mana;
+    const canMana = !mana || canPay(s, p, mana, undefined, purpose);
+    const canOr = orManaOnly && canPay(s, p, e.orMana as ManaCost);
     const canDo =
-      (!mana || canPay(s, p, mana, undefined, purpose)) &&
+      (canMana || canOr) &&
       (!life || payableLife(s, p) >= life) &&
       (!e.discard || hand.length > 0 || (!!e.orMana && canPay(s, p, e.orMana))) &&
       sacrificeable().length >= (e.sacrifice ?? 0) &&
@@ -224,7 +228,9 @@ export const HANDLERS: OpHandlers = {
     const answer = r.vars[key("unless")];
     if (!answer) {
       const what = [
-        mana ? `${e.waterbend ? "maîtriser l'eau " : ""}${costToText(mana)}` : "",
+        mana
+          ? `${e.waterbend ? "maîtriser l'eau " : ""}${costToText(mana)}${orManaOnly ? ` ou ${costToText(e.orMana as ManaCost)}` : ""}`
+          : "",
         life ? `${life} points de vie` : "",
         e.discard ? (e.orMana ? `défausser une carte ou payer ${costToText(e.orMana)}` : "défausser une carte") : "",
         e.poison ? `recevoir ${e.poison} marqueurs poison` : "",
@@ -347,9 +353,39 @@ export const HANDLERS: OpHandlers = {
       for (const id of ids) sacrifice(s, id);
     }
     if (evidence) collectEvidence(s, p, evidence);
-    if (mana) {
-      if (!canPay(s, p, mana, undefined, purpose)) return;
-      payMana(s, p, mana, undefined, purpose);
+    // Deux coûts au choix : le joueur choisit s'il peut payer les deux.
+    let payWith = mana;
+    if (orManaOnly && e.orMana) {
+      if (!canMana) payWith = e.orMana;
+      else if (canOr) {
+        const how = r.vars[key("unlessHow")];
+        if (!how) {
+          return {
+            ask: {
+              player: p,
+              key: key("unlessHow"),
+              request: {
+                type: "pick",
+                intent: "unlessPay",
+                prompt: "Comment payer ?",
+                options: ["mana", "orMana"],
+                labels: { mana: `Payer ${costToText(mana as ManaCost)}`, orMana: `Payer ${costToText(e.orMana)}` } as Record<
+                  string,
+                  string
+                >,
+                min: 1,
+                max: 1,
+                suggested: ["mana"],
+              },
+            },
+          };
+        }
+        if (how[0] === "orMana") payWith = e.orMana;
+      }
+    }
+    if (payWith) {
+      if (!canPay(s, p, payWith, undefined, purpose)) return;
+      payMana(s, p, payWith, undefined, purpose);
       if (e.waterbend) bent(s, p, "water");
     }
     if (life) payLife(s, p, life);
@@ -443,12 +479,13 @@ export const HANDLERS: OpHandlers = {
       for (let i = 0; i < n; i++) {
         const id = copyStackItem(s, item, ctx.controller);
         const copy = id ? s.stack.find((x) => x.id === id) : undefined;
-        if (copy && (e.haste || e.sacrificeAtEnd || e.nonlegendary))
+        if (copy && (e.haste || e.sacrificeAtEnd || e.nonlegendary || e.loyalty !== undefined))
           copy.arrival = {
             ...copy.arrival,
             ...(e.haste ? { haste: true } : {}),
             ...(e.sacrificeAtEnd ? { sacrificeAtEnd: true } : {}),
             ...(e.nonlegendary ? { nonlegendary: true } : {}),
+            ...(e.loyalty !== undefined ? { loyalty: Math.max(0, evalAmount(s, ctx, e.loyalty)) } : {}),
           };
       }
     }

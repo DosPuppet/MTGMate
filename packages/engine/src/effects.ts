@@ -412,6 +412,19 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "union":
       return [...new Set(ref.of.flatMap((r) => resolveRef(s, ctx, r)))];
+    case "numberChoosers": {
+      const chosen = numbersChosen(ctx, ref.store);
+      if (!chosen.length) return [];
+      const hi = Math.max(...chosen.map(([, n]) => n));
+      const lo = Math.min(...chosen.map(([, n]) => n));
+      return chosen
+        .filter(([, n]) => (ref.which === "highest" ? n === hi : ref.which === "lowest" ? n === lo : n !== lo))
+        .map(([p]) => p);
+    }
+    case "nth": {
+      const all = resolveRef(s, ctx, ref.of);
+      return all[ref.n] === undefined ? [] : [all[ref.n] as string];
+    }
     case "commanders": {
       if (!s.commander) return [];
       const who = new Set(resolveRef(s, ctx, ref.who));
@@ -522,6 +535,14 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
   }
 }
 
+/** Nombres choisis (`fx.chooseNumbers`) : [joueur, nombre], mémorisés sous `$num:<store>:<joueur>`. */
+function numbersChosen(ctx: EffectContext, store: string): [string, number][] {
+  const prefix = `$num:${store}:`;
+  return Object.entries(ctx.vars ?? {})
+    .filter(([k]) => k.startsWith(prefix))
+    .map(([k, v]) => [k.slice(prefix.length), Number(v[0] ?? 0)]);
+}
+
 export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number {
   if (typeof a === "number") return a;
   switch (a.kind) {
@@ -623,6 +644,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "max":
       return Math.max(0, ...a.of.map((x) => evalAmount(s, ctx, x)));
+    case "numberChosen":
+      return Math.max(0, ...numbersChosen(ctx, a.store).map(([, n]) => n));
     case "maxOverPlayers":
       return Math.max(
         0,
@@ -900,6 +923,8 @@ export function moveWithSpec(
   if (!o) return null;
   // Vannifar : « enveloppez d'une cape une carte de votre main ».
   if (spec.to === "battlefield" && spec.cloak) return putFaceDown(s, controller, id, true);
+  // Manifester (701.40) : face cachée, 2/2, sous le contrôle de son propriétaire (sauf « sous votre contrôle »).
+  if (spec.to === "battlefield" && spec.manifest) return putFaceDown(s, spec.underYourControl ? controller : o.owner, id, false);
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
   // Exilée face cachée (406.3) : les joueurs qui peuvent la regarder.
   const viewers =
@@ -957,6 +982,8 @@ export function moveWithSpec(
   if (moved && zone === "exile" && viewers) moved.exiledFaceDown = viewers;
   // Distorsion : lançable depuis l'exil à partir du tour suivant.
   if (moved && zone === "exile" && spec.warp) moved.warpExiledTurn = s.turn.number;
+  // Exhumation (702.84a) : « s'il devait quitter le champ de bataille, exilez-le à la place ».
+  if (moved && zone === "battlefield" && spec.exileIfLeaves) moved.exileIfLeaves = true;
   // Le verso (712.14), l'état engagé, les marqueurs, les types et l'attaque sont posés par `moveObject` avant l'événement
   // d'arrivée (voir `EntersContext`).
   return newId_;

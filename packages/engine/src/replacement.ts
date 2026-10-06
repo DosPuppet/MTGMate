@@ -37,6 +37,8 @@ import { BASIC_LAND_TYPES } from "./types";
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
   x?: number;
+  /** Loyauté de départ à la place de celle imprimée (copie d'Ob Nixilis, the Adversary). */
+  loyalty?: number;
   kicked?: boolean;
   /** Arrive depuis la résolution d'un sort : comment il a été lancé (X, kicker, mana dépensé…), noté sur le permanent. */
   cast?: CastInfo;
@@ -379,7 +381,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 714.3a : une Saga arrive avec un marqueur de savoir.
   if (eff?.saga) changeCounters(s, o, "lore", 1);
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
-  const loyalty = eff?.loyalty;
+  const loyalty = ctx.loyalty ?? eff?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);
   // Marqueurs imposés par l'effet (« avec un marqueur +1/+1 », Imminence) : mis en arrivant (122.6).
   for (const c of ctx.counters ?? []) changeCounters(s, o, c.kind, c.n);
