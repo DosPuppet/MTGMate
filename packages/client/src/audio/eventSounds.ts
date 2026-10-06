@@ -96,6 +96,9 @@ export function soundsFor(events: GameEvent[], view: GameView, prev: GameView | 
       case "poison":
         add("poison");
         break;
+      case "moved":
+        if (e.to === "command") add("command");
+        break;
       case "gameOver":
         add(e.winner === me ? "win" : "lose");
         break;

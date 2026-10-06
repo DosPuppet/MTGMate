@@ -1,21 +1,33 @@
 /**
  * Deckbuilder : collection filtrable (Foundations), deck et réserve, statistiques,
- * validation des règles de construction et de la légalité en Standard, import et export de decklists.
+ * validation des règles de construction et de la légalité dans le format du deck (Standard, Commander : commandant,
+ * 100 cartes, identité), import et export de decklists.
  */
 import {
   CARDS,
+  canBeCommander,
   DEFAULT_FORMAT,
   type DeckEntries,
   type DeckEntry,
   type DeckList,
   FORMAT_LABELS,
+  FORMATS,
   legalityIssue,
   SET_BY_CODE,
   SETS,
   validateDeck,
 } from "@mtgx/cards";
 import type { PrintingOption } from "@mtgx/cards/printings";
-import { type CardDef, cardFace, keyedPrinting, manaValue } from "@mtgx/engine";
+import {
+  type CardDef,
+  type Color,
+  cardFace,
+  colorIdentity,
+  type Format,
+  keyedPrinting,
+  manaValue,
+  withinIdentity,
+} from "@mtgx/engine";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { Preview } from "../board/Sidebar";
@@ -64,12 +76,12 @@ function colorRank(c: CardDef): number {
 }
 
 const isBasic = (c: CardDef | undefined) => !!c?.supertypes.includes("Basic");
-const FORMAT = FORMAT_LABELS[DEFAULT_FORMAT];
 
 /** Étiquette courte d'une carte illégale dans le format (« bannie », « hors Standard »). */
-function legalityTag(c: CardDef): string | undefined {
-  if (!legalityIssue(c)) return undefined;
-  return c.legalities?.standard === "banned" ? "bannie" : `hors ${FORMAT}`;
+function legalityTag(c: CardDef, format: Format): string | undefined {
+  const issue = legalityIssue(c, format);
+  if (!issue) return undefined;
+  return /bannie/.test(issue) ? "bannie" : `hors ${FORMAT_LABELS[format]}`;
 }
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 
@@ -132,15 +144,18 @@ interface Filters {
   rarity: string;
   query: string;
   playableOnly: boolean;
-  /** Cartes légales dans le format seulement (Standard). */
+  /** Cartes légales dans le format du deck seulement. */
   legalOnly: boolean;
+  /** Commander : cartes dans l'identité de couleur du commandant seulement. */
+  identityOnly: boolean;
   /** Extension (code de set), ou "" pour toutes. */
   set: string;
 }
 
-function matches(c: CardDef, f: Filters): boolean {
+function matches(c: CardDef, f: Filters, format: Format, identity: Color[] | null): boolean {
   if (f.playableOnly && !c.implemented) return false;
-  if (f.legalOnly && legalityIssue(c)) return false;
+  if (f.legalOnly && legalityIssue(c, format)) return false;
+  if (identity && f.identityOnly && !withinIdentity(colorIdentity(c), identity)) return false;
   if (f.set && c.set !== f.set) return false;
   if (f.colors.length) {
     const want = new Set(f.colors);
@@ -160,6 +175,14 @@ function matches(c: CardDef, f: Filters): boolean {
 }
 
 function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: string, delta: number) => void }) {
+  const format = deck.format ?? DEFAULT_FORMAT;
+  // Commander : identité du commandant (null tant qu'il n'y en a pas).
+  const commanderNames = (deck.commander ?? []).map(([, n]) => n).join("|");
+  const identity = useMemo(() => {
+    if (format !== "commander" || !commanderNames) return null;
+    const set = new Set(commanderNames.split("|").flatMap((n) => (CARDS[n] ? colorIdentity(CARDS[n]) : [])));
+    return (["W", "U", "B", "R", "G"] as Color[]).filter((x) => set.has(x));
+  }, [format, commanderNames]);
   const [f, setF] = useState<Filters>({
     colors: [],
     type: "",
@@ -168,11 +191,12 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
     query: "",
     playableOnly: true,
     legalOnly: true,
+    identityOnly: true,
     set: "",
   });
   // Filtres différés : la saisie reste fluide pendant que la grille se recalcule.
   const deferred = useDeferredValue(f);
-  const cards = useMemo(() => POOL.filter((c) => matches(c, deferred)), [deferred]);
+  const cards = useMemo(() => POOL.filter((c) => matches(c, deferred, format, identity)), [deferred, format, identity]);
   // Rendu progressif (plus de 5 000 cartes) : une page, puis la suivante à l'approche du bas de la grille.
   // Le nombre de cartes affichées est lié à la liste filtrée : un nouveau filtre repart d'une page.
   const [more, setMore] = useState<{ of: CardDef[]; n: number }>({ of: cards, n: PAGE });
@@ -194,7 +218,9 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
     return () => io.disconnect();
   }, []);
   const inDeck = (name: string) =>
-    (deck.main.find((e) => e[1] === name)?.[0] ?? 0) + (deck.sideboard?.find((e) => e[1] === name)?.[0] ?? 0);
+    (deck.main.find((e) => e[1] === name)?.[0] ?? 0) +
+    (deck.sideboard?.find((e) => e[1] === name)?.[0] ?? 0) +
+    (deck.commander?.find((e) => e[1] === name)?.[0] ?? 0);
   const toggleColor = (c: string) =>
     setF((x) => ({ ...x, colors: x.colors.includes(c) ? x.colors.filter((y) => y !== c) : [...x.colors, c] }));
   return (
@@ -248,8 +274,14 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
         </label>
         <label className="toggle" title="Masquer les cartes bannies ou hors format">
           <input type="checkbox" checked={f.legalOnly} onChange={(e) => setF({ ...f, legalOnly: e.target.checked })} />
-          Légales en {FORMAT}
+          Légales en {FORMAT_LABELS[format]}
         </label>
+        {identity && (
+          <label className="toggle" title="Seulement les cartes dans l'identité de couleur du commandant">
+            <input type="checkbox" checked={f.identityOnly} onChange={(e) => setF({ ...f, identityOnly: e.target.checked })} />
+            Identité du commandant
+          </label>
+        )}
         <select value={f.set} onChange={(e) => setF({ ...f, set: e.target.value })} aria-label="Extension">
           <option value="">Toutes les extensions</option>
           <optgroup label="Standard">
@@ -283,7 +315,7 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
       <div className="collection-grid">
         {cards.slice(0, shown).map((c) => {
           const n = inDeck(c.name);
-          const illegal = legalityTag(c);
+          const illegal = legalityTag(c, format);
           return (
             <div
               key={c.id}
@@ -332,11 +364,16 @@ function DeckLines({
   onChange,
   onPrinting,
   readOnly,
+  format = DEFAULT_FORMAT,
+  onCommander,
 }: {
   entries: DeckEntries;
   onChange: (name: string, d: number) => void;
   onPrinting: (name: string, key: string | undefined) => void;
   readOnly: boolean;
+  format?: Format;
+  /** Commander : « définir comme commandant » (créatures légendaires du deck). */
+  onCommander?: (name: string) => void;
 }) {
   const lang = useGame((s) => s.lang);
   const setHover = useGame((s) => s.setHover);
@@ -356,7 +393,7 @@ function DeckLines({
             {lines.map(([n, name, key]) => {
               const c = CARDS[name] as CardDef;
               const face = printedFace(cardFace(c), c, key);
-              const illegal = legalityIssue(c);
+              const illegal = legalityIssue(c, format);
               const choices = printingChoices(c, key, table);
               const current = choices.find((p) => p.key === key);
               return (
@@ -391,6 +428,17 @@ function DeckLines({
                   )}
                   {!readOnly && (
                     <span className="deck-line-btns">
+                      {onCommander && canBeCommander(c) && (
+                        <button
+                          type="button"
+                          className="btn small"
+                          onClick={() => onCommander(name)}
+                          title="Définir comme commandant"
+                          aria-label={`Définir ${faceName(face, lang)} comme commandant`}
+                        >
+                          ♛
+                        </button>
+                      )}
                       <button type="button" className="btn small" onClick={() => onChange(name, -1)} aria-label="Retirer">
                         −
                       </button>
@@ -458,16 +506,20 @@ export function DeckBuilder() {
   const setLang = useGame((s) => s.setLang);
   const decks = useAllDecks();
   const { save, remove, duplicate, create } = useDecks();
-  const [tab, setTab] = useState<"main" | "side">("main");
+  const [tab, setTab] = useState<"main" | "side" | "commander">("main");
   const [modal, setModal] = useState<"import" | "export" | null>(null);
   const select = (id: string | null) => useGame.setState({ editingDeck: id });
 
   const deck = decks.find((d) => d.id === editing) ?? decks.find((d) => !d.builtin) ?? decks[0];
   if (!deck) return null;
   const readOnly = !!deck.builtin;
-  // Un deck Commander (PLAN-E) se valide en Commander ; les autres en Standard.
-  const v = validateDeck(deck, CARDS, deck.format ?? DEFAULT_FORMAT);
+  // Un deck se valide dans son format (Standard par défaut ; Commander : PLAN-E).
+  const format = deck.format ?? DEFAULT_FORMAT;
+  const v = validateDeck(deck, CARDS, format);
   const formatLabel = FORMAT_LABELS[v.format];
+  const isCommander = format === "commander";
+  // Onglet de la réserve en Commander : celui du commandant (et inversement).
+  const shownTab = isCommander && tab === "side" ? "commander" : !isCommander && tab === "commander" ? "side" : tab;
 
   const change = (name: string, delta: number) => {
     if (readOnly) {
@@ -475,13 +527,35 @@ export function DeckBuilder() {
       return;
     }
     const c = CARDS[name];
-    const total = (deck.main.find((e) => e[1] === name)?.[0] ?? 0) + (deck.sideboard?.find((e) => e[1] === name)?.[0] ?? 0);
-    if (delta > 0 && !isBasic(c) && total >= 4) {
-      notify(`${name} : 4 exemplaires maximum.`);
+    const total =
+      (deck.main.find((e) => e[1] === name)?.[0] ?? 0) +
+      (deck.sideboard?.find((e) => e[1] === name)?.[0] ?? 0) +
+      (deck.commander?.find((e) => e[1] === name)?.[0] ?? 0);
+    // Commander : un seul exemplaire de chaque carte (sauf les terrains de base).
+    const max = isCommander ? 1 : 4;
+    if (delta > 0 && !isBasic(c) && total >= max) {
+      notify(isCommander ? `${name} : un seul exemplaire en Commander.` : `${name} : 4 exemplaires maximum.`);
       return;
     }
-    if (tab === "main") save({ ...deck, main: withCount(deck.main, name, delta) });
+    if (shownTab === "commander") {
+      // Retirer le commandant le remet dans le deck.
+      if (delta < 0) save({ ...deck, commander: withCount(deck.commander ?? [], name, -1), main: withCount(deck.main, name, 1) });
+      return;
+    }
+    if (shownTab === "main") save({ ...deck, main: withCount(deck.main, name, delta) });
     else save({ ...deck, sideboard: withCount(deck.sideboard ?? [], name, delta) });
+  };
+  /** Commander : la carte devient le commandant ; l'ancien commandant revient dans le deck. */
+  const setCommander = (name: string) => {
+    if (readOnly) return;
+    let main = withCount(deck.main, name, -1);
+    for (const [n, old] of deck.commander ?? []) main = withCount(main, old, n);
+    save({ ...deck, commander: [[1, name]], main });
+  };
+  /** Format du deck (un deck préconstruit garde le sien). */
+  const setFormat = (f: Format) => {
+    if (readOnly) return;
+    save({ ...deck, format: f === DEFAULT_FORMAT ? undefined : f });
   };
   /** L'illustration d'une carte vaut pour le deck et la réserve. */
   const choosePrinting = (name: string, key: string | undefined) => {
@@ -524,12 +598,21 @@ export function DeckBuilder() {
         {readOnly ? (
           <span className="hint">Deck préconstruit (lecture seule)</span>
         ) : (
-          <input
-            className="deck-name-input"
-            value={deck.name}
-            onChange={(e) => save({ ...deck, name: e.target.value })}
-            aria-label="Nom du deck"
-          />
+          <>
+            <input
+              className="deck-name-input"
+              value={deck.name}
+              onChange={(e) => save({ ...deck, name: e.target.value })}
+              aria-label="Nom du deck"
+            />
+            <select value={format} onChange={(e) => setFormat(e.target.value as Format)} aria-label="Format du deck">
+              {FORMATS.map((f) => (
+                <option key={f} value={f}>
+                  {FORMAT_LABELS[f]}
+                </option>
+              ))}
+            </select>
+          </>
         )}
         <div className="builder-actions">
           <button type="button" className="btn small" onClick={() => select(create())}>
@@ -563,7 +646,17 @@ export function DeckBuilder() {
             className="btn small primary"
             disabled={!v.playable || !opponent}
             title={!v.playable ? (v.errors[0] ?? "Contient des cartes pas encore jouables") : undefined}
-            onClick={() => opponent && startGame(deck.main, [opponent.main])}
+            onClick={() =>
+              opponent &&
+              startGame(
+                deck.main,
+                [opponent.main],
+                undefined,
+                undefined,
+                undefined,
+                isCommander ? { player: deck.commander ?? [], ai: [opponent.commander ?? []] } : undefined,
+              )
+            }
           >
             Tester contre l'IA
           </button>
@@ -581,12 +674,29 @@ export function DeckBuilder() {
         <Collection deck={deck} onChange={change} />
         <section className="deck-panel">
           <div className="deck-tabs">
-            <button type="button" className={tab === "main" ? "on" : ""} onClick={() => setTab("main")}>
-              Deck <strong className={v.mainCount >= v.minMain ? "ok" : "short"}>{v.mainCount}</strong>/{v.minMain}
+            <button type="button" className={shownTab === "main" ? "on" : ""} onClick={() => setTab("main")}>
+              Deck{" "}
+              <strong
+                className={isCommander ? (v.mainCount === v.minMain ? "ok" : "short") : v.mainCount >= v.minMain ? "ok" : "short"}
+              >
+                {v.mainCount}
+              </strong>
+              /{v.minMain}
             </button>
-            <button type="button" className={tab === "side" ? "on" : ""} onClick={() => setTab("side")}>
-              Réserve <strong>{v.sideCount}</strong>/15
-            </button>
+            {isCommander ? (
+              <button
+                type="button"
+                className={shownTab === "commander" ? "on" : ""}
+                onClick={() => setTab("commander")}
+                title="Le commandant compte dans les 100 cartes"
+              >
+                Commandant <strong>{v.commanders?.length ? "♛" : "—"}</strong>
+              </button>
+            ) : (
+              <button type="button" className={shownTab === "side" ? "on" : ""} onClick={() => setTab("side")}>
+                Réserve <strong>{v.sideCount}</strong>/15
+              </button>
+            )}
             <span
               className={`format-badge ${v.legal ? "ok" : "ko"}`}
               title={
@@ -600,17 +710,36 @@ export function DeckBuilder() {
               {v.welcome ? "Bienvenue" : formatLabel} {v.legal ? "✓" : "✗"}
             </span>
           </div>
+          {isCommander && (
+            <div className="commander-summary" data-testid="commander-summary">
+              {v.gameChangers && (
+                <span
+                  className="format-badge"
+                  title={v.gameChangers.length ? `Game Changers : ${v.gameChangers.join(", ")}` : "Aucun Game Changer"}
+                >
+                  Game Changers : {v.gameChangers.length} · tranche estimée {v.bracket}
+                </span>
+              )}
+            </div>
+          )}
           <Stats deck={deck} />
           <div className="deck-lines">
             <DeckLines
-              entries={tab === "main" ? deck.main : (deck.sideboard ?? [])}
+              entries={
+                shownTab === "main" ? deck.main : shownTab === "commander" ? (deck.commander ?? []) : (deck.sideboard ?? [])
+              }
               onChange={change}
               onPrinting={choosePrinting}
               readOnly={readOnly}
+              format={format}
+              onCommander={isCommander && shownTab === "main" ? setCommander : undefined}
             />
-            {(tab === "main" ? deck.main : (deck.sideboard ?? [])).length === 0 && (
+            {shownTab === "commander" && !deck.commander?.length && (
+              <p className="hint">Choisissez une créature légendaire du deck avec le bouton ♛.</p>
+            )}
+            {(shownTab === "main" ? deck.main : shownTab === "side" ? (deck.sideboard ?? []) : [1]).length === 0 && (
               <p className="hint">
-                Cliquez sur une carte de la collection pour l'ajouter{tab === "side" ? " à la réserve" : ""}.
+                Cliquez sur une carte de la collection pour l'ajouter{shownTab === "side" ? " à la réserve" : ""}.
               </p>
             )}
           </div>
@@ -645,7 +774,12 @@ export function DeckBuilder() {
             setModal(null);
           }}
           onReplace={(d) => {
-            save({ ...deck, main: d.main, sideboard: d.sideboard });
+            save({
+              ...deck,
+              main: d.main,
+              sideboard: d.sideboard,
+              ...(d.commander ? { commander: d.commander, format: "commander" as const } : {}),
+            });
             setModal(null);
           }}
         />

@@ -310,6 +310,7 @@ export function describeEvents(
           graveyard: "va au cimetière",
           battlefield: "arrive sur le champ de bataille",
           library: "est mis dans la bibliothèque de son propriétaire",
+          command: "retourne dans la zone de commandement",
         };
         if (!e.defId) {
           // Carte cachée d'un autre joueur (recherche vers la main, remise dans la bibliothèque…).

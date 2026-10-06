@@ -794,6 +794,23 @@ function matchSummary(view: GameView): {
   };
 }
 
+/**
+ * Multijoueur : le joueur est éliminé mais la partie continue sans lui (800.4a) ; il peut regarder la fin ou quitter.
+ */
+function Eliminated({ view }: { view: GameView }) {
+  const backToLobby = useGame((s) => s.backToLobby);
+  const replay = useGame((s) => !!s.replay);
+  if (view.over || replay || !view.players[view.viewer]?.lost) return null;
+  return (
+    <div className="eliminated-banner" role="status" data-testid="eliminated">
+      <span>Vous avez été éliminé. La partie continue sans vous.</span>
+      <button type="button" className="btn" onClick={backToLobby}>
+        Quitter
+      </button>
+    </div>
+  );
+}
+
 function GameOver({ view }: { view: GameView }) {
   const backToLobby = useGame((s) => s.backToLobby);
   const online = useGame((s) => s.online);
@@ -828,6 +845,9 @@ function GameOver({ view }: { view: GameView }) {
                 ? "Défaite"
                 : "Match nul"}
         </h2>
+        {!won && view.winner && view.opponents.length > 1 && (
+          <p className="match-score">{view.players[view.winner]?.name} gagne la partie.</p>
+        )}
         {match && (
           <p className="match-score">
             Manche {match.game} · Score {match.mine} – {match.theirs} (au meilleur des {match.bestOf})
@@ -944,6 +964,7 @@ export function Prompts() {
       <GraveyardViewer />
       <ExileViewer />
       <GameOver view={view} />
+      <Eliminated view={view} />
     </>
   );
 }

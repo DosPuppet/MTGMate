@@ -32,6 +32,8 @@ export const SOUNDS = {
   dies: { files: range("impactSoft_heavy_00", [0, 1, 2]), volume: 0.7 },
   token: { files: range("chip-lay-", [1, 2, 3]), volume: 0.7 },
   attach: { files: ["metalClick.ogg"], volume: 0.5 },
+  // Commander (PLAN-E) : un commandant rejoint la zone de commandement.
+  command: { files: range("phaserUp", [1, 3]), volume: 0.4 },
   poison: { files: range("drop_00", [2, 4]), volume: 0.6 },
   turn: { files: ["bong_001.ogg"], volume: 0.5 },
   tap: { files: range("card-shove-", [1, 2, 3, 4]), volume: 0.25 },

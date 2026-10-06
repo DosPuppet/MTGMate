@@ -2,7 +2,7 @@
  * Decks de l'utilisateur, conservés dans le navigateur (localStorage), plus les decks préconstruits.
  */
 import { CARDS, DECKS, type DeckList, deckColors } from "@mtgx/cards";
-import { type CardDef, type CardFace, keyedPrinting } from "@mtgx/engine";
+import { type CardDef, type CardFace, colorIdentity, keyedPrinting } from "@mtgx/engine";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import { imageUrl } from "../images";
@@ -48,7 +48,13 @@ export const useDecks = create<DeckStore>()(
     (set, get) => ({
       decks: [],
       save(deck) {
-        const d = { ...deck, builtin: false, colors: deckColors(deck.main, CARDS) };
+        // Deck Commander (PLAN-E) : ses couleurs sont l'identité de son commandant.
+        const commander = deck.format === "commander" && deck.commander?.length;
+        const identity = new Set((deck.commander ?? []).flatMap(([, n]) => (CARDS[n] ? colorIdentity(CARDS[n]) : [])));
+        const colors = commander
+          ? ["W", "U", "B", "R", "G"].filter((c) => identity.has(c as never))
+          : deckColors(deck.main, CARDS);
+        const d = { ...deck, builtin: false, colors };
         const others = get().decks.filter((x) => x.id !== d.id);
         set({ decks: [...others, d].sort((a, b) => a.name.localeCompare(b.name)) });
       },
@@ -79,6 +85,9 @@ export function useAllDecks(): DeckList[] {
 /** Illustration d'un deck : sa couverture, sinon la carte non-terrain la plus présente (dans l'impression choisie). */
 export function deckCover(deck: DeckList): string | undefined {
   if (deck.cover) return imageUrl(deck.cover);
+  // Deck Commander : l'illustration de son commandant.
+  const cmd = deck.commander?.[0];
+  if (cmd && CARDS[cmd[1]]) return imageUrl(CARDS[cmd[1]]?.artCrop);
   const best = [...deck.main].filter(([, name]) => !CARDS[name]?.types.includes("Land")).sort((a, b) => b[0] - a[0])[0];
   const c = best ? CARDS[best[1]] : undefined;
   const key = best?.[2];

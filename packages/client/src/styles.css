@@ -1015,6 +1015,54 @@ button {
   border: 1px solid rgba(255, 210, 120, 0.6);
   color: #ffe6b0;
 }
+/* Commander (PLAN-E) : commandant et blessures de commandant reçues, sur une ligne à part qui passe à la ligne. */
+.commander-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+  max-width: 320px;
+}
+.commander-chip,
+.commander-damage {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  cursor: help;
+}
+.commander-chip {
+  background: rgba(230, 190, 90, 0.16);
+  border: 1px solid rgba(230, 190, 90, 0.55);
+  color: #f6e2a8;
+}
+.commander-chip.waiting {
+  background: rgba(230, 190, 90, 0.3);
+}
+.commander-where {
+  opacity: 0.8;
+}
+.commander-tax {
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  font-weight: 600;
+}
+.commander-damage {
+  background: rgba(255, 120, 100, 0.12);
+  border: 1px solid rgba(255, 120, 100, 0.45);
+  color: #ffd2c8;
+}
+.commander-damage.danger {
+  background: #8a2a1e;
+  color: #fff;
+}
+@media (max-width: 1100px) {
+  .commander-where {
+    display: none;
+  }
+}
 .emblem-chip {
   font-size: 11px;
   padding: 1px 7px;
@@ -3549,4 +3597,28 @@ button {
 }
 .btn.choice.suggested {
   border-color: var(--accent, #d4a64a);
+}
+
+/* Multijoueur : le joueur éliminé regarde la fin de la partie (PLAN-E). */
+.eliminated-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(40, 20, 20, 0.92);
+  border: 1px solid rgba(255, 120, 100, 0.6);
+  color: #ffe0da;
+}
+/* Barres étroites des adversaires (multijoueur) : la puce du commandant ne déborde pas sur la main. */
+.player-bar.opp .commander-chip,
+.player-bar.opp .commander-damage {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

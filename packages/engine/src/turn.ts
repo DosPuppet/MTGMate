@@ -1723,8 +1723,10 @@ function commanderReturnOffer(s: GameState): { owner: PlayerId; id: ObjectId } |
 
 /** 903.9a : réponse du propriétaire ; oui, le commandant (toujours au cimetière ou en exil) va dans la zone de commandement. */
 export function answerCommanderZone(s: GameState, card: ObjectId, yes: boolean): void {
-  const zone = s.objects[card]?.zone;
-  if (yes && (zone === "graveyard" || zone === "exile")) moveObject(s, card, "command");
+  const o = s.objects[card];
+  if (!yes || !o || (o.zone !== "graveyard" && o.zone !== "exile")) return;
+  emit({ type: "moved", owner: o.owner, objectId: card, defId: o.defId, from: o.zone, to: "command" });
+  moveObject(s, card, "command");
 }
 
 export function answerLegendChoice(s: GameState, keep: ObjectId, options: ObjectId[]): void {

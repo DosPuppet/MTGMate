@@ -2,7 +2,7 @@
  * Partie en ligne contre un joueur : pseudo, deck, créer un salon (code et lien à partager) ou en rejoindre un.
  * La partie démarre sur le serveur dès que le second joueur arrive.
  */
-import { FORMAT_LABELS } from "@mtgx/cards";
+import { FORMAT_LABELS, ONLINE_FORMATS } from "@mtgx/cards";
 import type { Format } from "@mtgx/engine";
 import { useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
@@ -67,7 +67,11 @@ export function Online() {
   const backToLobby = useGame((s) => s.backToLobby);
   const decks = useAllDecks();
   const [name, setName] = useState(loadName);
-  const [format, setFormat] = useState<Format>(loadFormat);
+  // Formats en ligne : pas encore le Commander (PLAN-E E13).
+  const [format, setFormat] = useState<Format>(() => {
+    const f = loadFormat();
+    return ONLINE_FORMATS.includes(f) ? f : "standard";
+  });
   const chooseFormat = (f: Format) => {
     setFormat(f);
     saveFormat(f);
@@ -104,7 +108,7 @@ export function Online() {
                 onChange={(e) => setName(e.target.value)}
               />
             </label>
-            <FormatChoice value={format} onChange={chooseFormat} />
+            <FormatChoice value={format} onChange={chooseFormat} formats={ONLINE_FORMATS} />
             <DeckChoice
               label={format === "unlimited" ? "Votre deck (sans limite)" : `Votre deck (légal en ${FORMAT_LABELS[format]})`}
               value={deckId}

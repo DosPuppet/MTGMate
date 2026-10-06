@@ -165,8 +165,64 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
             </span>
           ))}
         </div>
+        <CommanderChips player={player} />
       </div>
       <ManaPool pool={player.manaPool} restricted={player.restrictedMana} />
+    </div>
+  );
+}
+
+/** Zone d'un commandant, telle qu'affichée sur sa puce (absente : dans la zone de commandement). */
+const COMMANDER_ZONE: Partial<Record<string, string>> = {
+  battlefield: "en jeu",
+  stack: "sur la pile",
+  hand: "en main",
+  library: "dans la bibliothèque",
+  graveyard: "au cimetière",
+  exile: "en exil",
+};
+
+/**
+ * Commander (PLAN-E) : les commandants du joueur (zone, taxe du prochain lancer depuis la zone de commandement) et les
+ * blessures de commandant qu'il a reçues (21 d'un même commandant : il perd).
+ */
+function CommanderChips({ player }: { player: PlayerView }) {
+  const faces = useGame((s) => s.faces);
+  const lang = useGame((s) => s.lang);
+  const setHover = useGame((s) => s.setHover);
+  const name = (defId: string) => faceName(faces[defId], lang);
+  // Nom court (avant la virgule : « Edgar Markov », « Y'shtola ») pour les blessures reçues, le nom complet en infobulle.
+  const short = (defId: string) => name(defId).split(",")[0];
+  if (!player.commanders?.length && !player.commanderDamage?.length) return null;
+  return (
+    <div className="commander-row">
+      {player.commanders?.map((c) => {
+        const where = COMMANDER_ZONE[c.zone];
+        const face = faces[c.defId];
+        return (
+          <span
+            key={c.defId}
+            className={`commander-chip ${c.zone === "command" ? "waiting" : ""}`}
+            title={`Commandant${where ? ` (${where})` : " (zone de commandement)"}${c.tax ? ` · taxe +${c.tax}` : ""}`}
+            onMouseEnter={face ? () => setHover({ face }) : undefined}
+            data-testid="commander-chip"
+          >
+            ♛ {name(c.defId)}
+            {where && <span className="commander-where"> · {where}</span>}
+            {c.tax > 0 && <span className="commander-tax">+{c.tax}</span>}
+          </span>
+        );
+      })}
+      {player.commanderDamage?.map((c) => (
+        <span
+          key={c.defId}
+          className={`commander-damage ${c.amount >= 15 ? "danger" : ""}`}
+          title={`Blessures de commandant reçues de ${name(c.defId)} (21 : le joueur perd)`}
+          data-testid="commander-damage"
+        >
+          ⚔ {short(c.defId)} {c.amount}
+        </span>
+      ))}
     </div>
   );
 }
@@ -768,7 +824,12 @@ function CenterStrip() {
 // ---------------------------------------------------------------------------
 
 /** Étiquette des cartes jouables depuis une autre zone que la main. */
-const ZONE_TAG: Record<string, string> = { exile: "Exil", graveyard: "Cimetière", library: "Bibliothèque" };
+const ZONE_TAG: Record<string, string> = {
+  exile: "Exil",
+  graveyard: "Cimetière",
+  library: "Bibliothèque",
+  command: "Commandant",
+};
 
 function Hand() {
   const view = useGame((s) => s.view) as GameView;

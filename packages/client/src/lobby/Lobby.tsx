@@ -176,7 +176,17 @@ export function Lobby() {
   const chooseFormat = (f: Format) => {
     setFormat(f);
     saveFormat(f);
+    // Un deck qui ne convient pas au nouveau format (Commander : un deck à commandant) est remplacé par le premier qui
+    // convient, pour le joueur et pour chaque IA.
+    const fits = (id: string) => {
+      const d = byId(id);
+      return !!d && deckStatus(d, f).ok;
+    };
+    const firstFit = decks.filter((d) => deckStatus(d, f).ok).map((d) => d.id);
+    if (!fits(mine) && firstFit[0]) setMine(firstFit[0]);
+    setAi((prev) => prev.map((id, i) => (fits(id) ? id : (firstFit[(i + 1) % firstFit.length] ?? id))));
   };
+  const commander = format === "commander";
   const canStart = !!me && deckStatus(me, format).ok && them.every((d) => !!d && deckStatus(d, format).ok);
   // Match au meilleur des trois manches (duel), retenu d'une partie à l'autre.
   const [bo3, setBo3] = useState(() => localStorageFlag("planecircle.bo3"));
@@ -209,8 +219,11 @@ export function Lobby() {
               </button>
             ))}
           </div>
-          <span className="hint">{aiCount > 1 ? "Multijoueur chacun pour soi" : "Duel"}</span>
-          {aiCount === 1 && (
+          <span className="hint">
+            {aiCount > 1 ? "Multijoueur chacun pour soi" : "Duel"}
+            {commander ? " · 40 points de vie" : ""}
+          </span>
+          {aiCount === 1 && !commander && (
             <label className="toggle" title="Au meilleur des trois manches, avec votre réserve entre les manches">
               <input type="checkbox" checked={bo3} onChange={(e) => setBo3(e.target.checked)} />
               Match en 3 manches (BO3)
@@ -270,7 +283,8 @@ export function Lobby() {
                 them.map((d) => (d as DeckList).main),
                 undefined,
                 level,
-                bo3 && aiCount === 1 ? { bestOf: 3, sideboard: me.sideboard ?? [], format } : undefined,
+                bo3 && aiCount === 1 && !commander ? { bestOf: 3, sideboard: me.sideboard ?? [], format } : undefined,
+                commander ? { player: me.commander ?? [], ai: them.map((d) => (d as DeckList).commander ?? []) } : undefined,
               )
             }
           >

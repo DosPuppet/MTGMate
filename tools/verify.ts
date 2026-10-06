@@ -232,6 +232,7 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
         { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
         { name: "mobile-smoke", cmd: "npx tsx tools/mobile-smoke.ts", show: /^ok : aucune erreur de page$/ },
         { name: "tutorial-smoke", cmd: "npx tsx tools/tutorial-smoke.ts", show: /^ok : tutoriel suivi de bout en bout$/ },
+        { name: "commander-smoke", cmd: "npx tsx tools/commander-smoke.ts", show: /^ok : aucune erreur de page$/ },
       ]),
       chain([
         { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },

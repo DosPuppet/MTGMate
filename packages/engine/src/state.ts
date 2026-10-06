@@ -556,6 +556,7 @@ export function moveObject(
   if (to === "library" && o.zone !== "command" && commanderOf(s, o)) {
     to = "command";
     shuffleIn = false;
+    emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: "command" });
   }
   if (opts.landed) opts.landed.to = to;
   const from = zoneArray(s, o);

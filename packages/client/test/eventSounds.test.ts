@@ -32,6 +32,12 @@ describe("sons des événements", () => {
     ).toEqual(["shuffle", "turn", "draw", "land", "cast", "ability", "counter", "token"]);
   });
 
+  it("Commander : un commandant qui rejoint la zone de commandement a son son", () => {
+    expect(keys([{ type: "moved", owner: "p1", objectId: "c", defId: "bear", from: "graveyard", to: "command" }])).toEqual([
+      "command",
+    ]);
+  });
+
   it("combat : attaque, blocage, coups ; une grosse blessure et une perte de PV frappent plus fort", () => {
     expect(
       keys([

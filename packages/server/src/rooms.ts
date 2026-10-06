@@ -866,6 +866,8 @@ export class RoomManager {
     opts: { sideboard?: unknown; bestOf?: unknown; format?: unknown; ip?: string } = {},
   ): { room: Room; seat: SeatState } {
     const n = cleanName(name);
+    // Commander en ligne : avec les salons de 2 à 4 joueurs (PLAN-E E13).
+    if (opts.format === "commander") throw new ClientError("deck", "Le Commander en ligne arrive bientôt.");
     const format: Format = isFormat(opts.format) ? opts.format : "standard";
     const d = checkDeck(deck, format);
     const side = checkSide(d, opts.sideboard, format);

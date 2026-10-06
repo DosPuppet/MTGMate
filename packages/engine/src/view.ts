@@ -414,6 +414,8 @@ const PUBLIC_ZONES: readonly Zone[] = ["command", "battlefield", "stack", "grave
 
 /** Commander (PLAN-E) : les commandants d'un joueur et les blessures de commandant qu'il a reçues. */
 function commanderViews(s: GameState, p: PlayerId): Pick<PlayerView, "commanders" | "commanderDamage"> {
+  // Un joueur éliminé a quitté la partie avec ses cartes (800.4a) : plus rien à montrer.
+  if (s.players[p]?.lost) return {};
   const cards = s.commander?.cards ?? {};
   const where = new Map<string, GameObject>();
   for (const o of Object.values(s.objects)) if (cards[o.uid] && commanderOf(s, o)) where.set(o.uid, o);

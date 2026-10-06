@@ -27,6 +27,7 @@ export {
   isGameChanger,
   legalityIssue,
   normalizeName,
+  ONLINE_FORMATS,
   type ParsedDeck,
   parseDeckList,
   serializeDeckList,

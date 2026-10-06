@@ -25,9 +25,10 @@ function useArrowSpecs(): ArrowSpec[] {
   return useMemo(() => {
     const out: ArrowSpec[] = [];
     if (!view) return out;
-    // Attaques contre un planeswalker (déclarées, ou en cours de sélection).
+    // Attaques déclarées : contre un planeswalker ; contre un joueur aussi à plusieurs (on voit qui est attaqué).
+    const multiplayer = Object.values(view.players).filter((p) => !p.lost).length > 2;
     for (const a of view.combat?.attackers ?? []) {
-      if (!view.players[a.defender]) out.push({ key: `a-${a.id}`, from: a.id, to: a.defender, kind: "target" });
+      if (!view.players[a.defender] || multiplayer) out.push({ key: `a-${a.id}`, from: a.id, to: a.defender, kind: "target" });
     }
     if (view.pending?.kind === "declareAttackers") {
       // Plusieurs cibles possibles : chaque attaquant montre sa cible (joueur compris) ; sinon, seulement un planeswalker.

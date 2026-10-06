@@ -1,7 +1,7 @@
 /** Messages échangés entre l'interface et le Web Worker qui fait tourner la partie. */
 import type { AiLevel, ScriptAction } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
-import type { AutopilotSettings, CardDef, CardFace, Decision, GameEvent, GameRecord, GameView } from "@mtgx/engine";
+import type { AutopilotSettings, CardDef, CardFace, Decision, GameEvent, GameRecord, GameVariant, GameView } from "@mtgx/engine";
 
 /**
  * Bac à sable (mode dev, tests d'interface) : permanents et jetons mis en jeu au début de la partie,
@@ -62,6 +62,12 @@ export type ToWorker =
       scenario?: ScenarioSpec;
       /** Niveau des IA adverses (moyen par défaut). */
       aiLevel?: AiLevel;
+      /**
+       * Commander (PLAN-E) : partie de Commander ; `commanders` donne, pour le joueur puis chaque IA, le nombre de cartes
+       * en tête du deck qui sont ses commandants.
+       */
+      variant?: GameVariant;
+      commanders?: number[];
     }
   /**
    * Reprise d'une partie sauvegardée (page rouverte) : l'enregistrement est rejoué, puis la partie continue contre des IA

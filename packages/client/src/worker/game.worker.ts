@@ -168,16 +168,29 @@ async function handle(msg: ToWorker): Promise<void> {
         await host.run();
         return;
       }
+      // Commander : les premières cartes de chaque deck sont ses commandants.
+      const commandersOf = (seat: number) => {
+        const n = msg.commanders?.[seat] ?? 0;
+        return n ? Array.from({ length: n }, (_, k) => k) : undefined;
+      };
       const { state, events, record } = createRecordedGame({
         seed: msg.seed,
         startingPlayer: msg.startingPlayer,
+        ...(msg.variant ? { variant: msg.variant } : {}),
         players: [
-          { id: HUMAN, name: msg.playerName, deck: buildDeck(msg.playerDeck), printings: deckPrintings(msg.playerDeck) },
+          {
+            id: HUMAN,
+            name: msg.playerName,
+            deck: buildDeck(msg.playerDeck),
+            printings: deckPrintings(msg.playerDeck),
+            commanders: commandersOf(0),
+          },
           ...msg.aiDecks.map((deck, i) => ({
             id: `p${i + 2}`,
             name: msg.aiDecks.length > 1 ? `IA ${i + 1}` : "IA",
             deck: buildDeck(deck),
             printings: deckPrintings(deck),
+            commanders: commandersOf(i + 1),
           })),
         ],
       });

@@ -252,6 +252,8 @@ interface Store {
     sandbox?: Sandbox,
     aiLevel?: AiLevel,
     match?: { bestOf: 3; sideboard: DeckEntries; format?: Format },
+    /** Commander (PLAN-E) : le commandant du joueur, puis celui de chaque IA. */
+    commander?: { player: DeckEntries; ai: DeckEntries[] },
   ): void;
   /** Match contre l'IA en cours (BO3). */
   localMatch: LocalMatch | null;
@@ -914,6 +916,8 @@ export const useGame = create<Store>((set, get) => {
     sandbox?: Sandbox,
     aiLevel?: AiLevel,
     startingPlayer?: string,
+    /** Commander : nombre de commandants en tête de chaque deck (joueur, puis IA). */
+    commanders?: number[],
   ): void {
     get().session?.close();
     preloadSounds();
@@ -936,6 +940,7 @@ export const useGame = create<Store>((set, get) => {
       fast: fastMode(),
       aiLevel,
       startingPlayer,
+      ...(commanders ? { variant: "commander" as const, commanders } : {}),
     });
     session.send({ type: "settings", settings });
   }
@@ -988,7 +993,7 @@ export const useGame = create<Store>((set, get) => {
       }
     },
 
-    startGame(playerDeck, aiDecks, sandbox, aiLevel, match) {
+    startGame(playerDeck, aiDecks, sandbox, aiLevel, match, commander) {
       get().session?.close();
       const localMatch: LocalMatch | null =
         match && aiDecks.length === 1
@@ -1005,6 +1010,19 @@ export const useGame = create<Store>((set, get) => {
             }
           : null;
       set({ online: null, tutorialGame: false, replay: null, localMatch });
+      if (commander) {
+        // Commander : chaque deck commence par son commandant (worker : `commanders`, cartes en tête du deck).
+        const size = (e: DeckEntries) => e.reduce((n, [k]) => n + k, 0);
+        startLocal(
+          [...commander.player, ...playerDeck],
+          aiDecks.map((d, i) => [...(commander.ai[i] ?? []), ...d]),
+          sandbox,
+          aiLevel,
+          undefined,
+          [size(commander.player), ...aiDecks.map((_, i) => size(commander.ai[i] ?? []))],
+        );
+        return;
+      }
       startLocal(playerDeck, aiDecks, sandbox, aiLevel);
     },
 

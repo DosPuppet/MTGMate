@@ -50,6 +50,8 @@ export function ImportModal({
     colors: [],
     main: parsed.main,
     sideboard: parsed.sideboard,
+    // Section « Commander » (ou marque *CMDR*) : un deck Commander (PLAN-E).
+    ...(parsed.commander?.length ? { commander: parsed.commander, format: "commander" as const } : {}),
   };
   /** Remplace, à la ligne indiquée, le nom inconnu par la suggestion. */
   const applySuggestion = (line: number, suggestion: string) => {

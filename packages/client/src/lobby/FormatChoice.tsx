@@ -28,14 +28,22 @@ export function saveFormat(format: Format): void {
   }
 }
 
-/** Choix du format de la partie (Standard, ou sans limite). */
-export function FormatChoice({ value, onChange }: { value: Format; onChange: (f: Format) => void }) {
+/** Choix du format de la partie (Standard, sans limite, Commander ; `formats` : ceux proposés). */
+export function FormatChoice({
+  value,
+  onChange,
+  formats = FORMATS,
+}: {
+  value: Format;
+  onChange: (f: Format) => void;
+  formats?: readonly Format[];
+}) {
   return (
     <div className="ai-level">
       <div className="ai-count">
         <span>Format</span>
         <div className="seg">
-          {FORMATS.map((f) => (
+          {formats.map((f) => (
             <button
               key={f}
               type="button"
