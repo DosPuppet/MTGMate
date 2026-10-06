@@ -367,8 +367,11 @@ export const RECORD_VERSION = 1;
  *   l'état) ; la condition d'un `entersWith` qui touche d'autres permanents est vérifiée (Vampire Socialite).
  * - 138 : deck de Y'shtola (PLAN-E, E12) : entretien cumulatif (702.24), rebond imprimé, déclencheur de pioche « sauf la
  *   première de son étape de pioche » (`turnDraw`), changement de zone « d'un adversaire ».
+ * - 139 : sorts communs des decks Commander (PLAN-E, E9) : protection d'un joueur (« des adversaires » ou « contre tout »,
+ *   702.16j), « votre total de PV ne peut pas changer » (perte de PV prévenue, 119.8 : PV payables 0), verso terrain
+ *   d'une carte modale joué comme terrain (712.12), « choisissez un ou plus » (`oneOrMore`).
  */
-export const RULES_VERSION = 138;
+export const RULES_VERSION = 139;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

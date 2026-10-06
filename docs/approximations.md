@@ -293,3 +293,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Ascension (702.131) : seule celle d'un permanent est gérée (action basée sur l'état), pas celle d'un éphémère ou d'un rituel ; la bénédiction de la cité n'est pas montrée dans l'interface.
   - `règle` Propaganda : la taxe vaut aussi pour les attaques contre les planeswalkers de son contrôleur (forme `attackTax` d'Archangel of Tithes) ;
   - `règle` Orcish Bowmasters : « la première carte piochée lors de son étape de pioche » est la pioche de l'étape (504.1) ; si elle est remplacée ou passée, une pioche ultérieure de la même étape déclenche quand même.
+  - `règle` Enlightened Tutor, Herald's Horn : la carte cherchée ou mise en main n'est pas révélée explicitement ;
+  - `choix auto` Rewind, Unwind, Frantic Search : « dégagez jusqu'à N terrains » ne dégage que vos terrains, choisis automatiquement ;
+  - `choix auto` Phyrexian Altar : capacité de mana activée à la main ; le paiement automatique ne sacrifie jamais de créature ;
+  - `règle` Teferi's Protection : une Aura déjà attachée au joueur (malédiction) ne tombe pas.

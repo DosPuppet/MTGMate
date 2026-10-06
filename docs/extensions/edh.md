@@ -60,3 +60,13 @@ cartes faites seulement de mots-clés sont déjà jouables (Vampire of the Dire 
 - **Tests :** `engine/test/edh-yshtola.test.ts` (31), dont la boucle Mindcrank + Bloodchief Ascension jusqu'à la défaite.
 - **Approximations :** Propaganda (taxe aussi pour les planeswalkers), Orcish Bowmasters (pioche de l'étape).
 - **Dette :** Effect (champs) 635, TriggerSpec (champs) 160 ; `perPlayer` et `sorceryTiming` ne sont plus propres à une carte.
+
+## E9 — sorts communs et moteurs ✅ (117 / 117)
+
+**Cartes (23, `edh/staples.ts`) :** Teferi's Protection, The One Ring, Demonic Tutor, Enlightened Tutor, Force of Negation, Snuff Out, Vindicate, Toxic Deluge, Farewell, Damn, Rewind, Unwind, Frantic Search, Sink into Stupor // Soporific Springs, Village Rites, Black Market Connections, Skullclamp, Phyrexian Altar, Herald's Horn, Vanquisher's Banner, Anointed Procession, Exquisite Blood, Blade of the Bloodchief.
+
+- **Moteur :** protection d'un joueur (`PlayerStaticAbilityDef.protection` : `"opponents"` ou `"everything"`, à la place de `protectionFromOpponents` ; `playerProtectedFrom` pour les cibles et les blessures) ; « votre total de PV ne peut pas changer » (remplacement `lifeLoss` qui prévient, 119.8 : `payableLife`, aucun paiement de PV au-delà de 0) ; verso terrain d'une carte modale joué comme terrain (712.12, `landFace`, `moveObject(…, { modalBack })`) ; « choisissez un ou plus » (`oneOrMore`).
+- **Tests :** `engine/test/edh-staples.test.ts` (31), dont la boucle Exquisite Blood + Sanguine Bond (victoire à deux, joueur suivant à trois) et Anointed Procession avec l'éminence d'Edgar.
+- **Approximations :** Enlightened Tutor et Herald's Horn (pas de révélation), « dégagez jusqu'à N terrains », Phyrexian Altar, Teferi's Protection (Aura sur le joueur).
+
+**Les deux decks sont jouables :** `cmd-edgar-markov` (88 / 88 hors terrains de base) et `cmd-yshtola` (91 / 91).
