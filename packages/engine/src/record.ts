@@ -372,8 +372,10 @@ export const RECORD_VERSION = 1;
  *   d'une carte modale joué comme terrain (712.12), « choisissez un ou plus » (`oneOrMore`).
  * - 140 : deux sources « comme les terrains » (Exotic Orchard chez deux joueurs) ne se consultent plus l'une l'autre
  *   (récursion infinie trouvée par le fuzz Commander à trois).
+ * - 141 : 903.9b demandé au propriétaire : un commandant mis dans sa main ou dans sa bibliothèque (pioche comprise) peut
+ *   aller dans la zone de commandement, à la vérification suivante, comme depuis un cimetière ou l'exil.
  */
-export const RULES_VERSION = 140;
+export const RULES_VERSION = 141;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

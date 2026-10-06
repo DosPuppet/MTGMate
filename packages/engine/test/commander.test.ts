@@ -188,16 +188,39 @@ describe("Commander : retour dans la zone de commandement (903.9)", () => {
     expect(s.players.p1?.command).toHaveLength(1);
   });
 
-  it("903.9b : vers la bibliothèque, il va dans la zone de commandement ; vers la main, il y reste (choix automatique)", () => {
-    const s = onBattlefield();
-    const toLibrary = moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "library");
-    expect(s.objects[toLibrary ?? ""]?.zone).toBe("command");
-    const s2 = onBattlefield();
-    const toHand = moveObject(s2, idOf(s2, "p1", "battlefield", ARAHBO), "hand");
-    expect(s2.objects[toHand ?? ""]?.zone).toBe("hand");
-    // Relancé depuis la main : pas de taxe.
-    expect(castTerms(s2, "p1", toHand ?? "")).toMatchObject({ source: "hand" });
-    expect(castTerms(s2, "p1", toHand ?? "")?.extraCost).toBeUndefined();
+  it("903.9b : vers la bibliothèque ou la main, le propriétaire choisit ; un refus le laisse où il est", () => {
+    // Vers la bibliothèque : la question est posée ; oui, il va dans la zone de commandement.
+    let s = onBattlefield();
+    moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "library");
+    s = recheck(s);
+    expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("commanderZone");
+    expect(s.pending?.kind === "choice" && s.pending.request.autoOk).toBeFalsy();
+    s = answer(s, true);
+    expect(s.players.p1?.command.map((x) => s.objects[x]?.defId)).toEqual([card(ARAHBO).id]);
+    expect(s.players.p1?.library.some((x) => s.objects[x]?.defId === card(ARAHBO).id)).toBe(false);
+    // Vers la main : non, il reste en main et se relance sans taxe.
+    let s2 = onBattlefield();
+    moveObject(s2, idOf(s2, "p1", "battlefield", ARAHBO), "hand");
+    s2 = answer(recheck(s2), false);
+    const inHand = idOf(s2, "p1", "hand", ARAHBO);
+    expect(s2.pending?.kind).toBe("priority");
+    expect(castTerms(s2, "p1", inHand)).toMatchObject({ source: "hand" });
+    expect(castTerms(s2, "p1", inHand)?.extraCost).toBeUndefined();
+    // Vers la main : oui, il va dans la zone de commandement.
+    let s3 = onBattlefield();
+    moveObject(s3, idOf(s3, "p1", "battlefield", ARAHBO), "hand");
+    s3 = answer(recheck(s3), true);
+    expect(s3.players.p1?.hand).toEqual([]);
+    expect(s3.players.p1?.command).toHaveLength(1);
+  });
+
+  it("903.9b : laissé dans la bibliothèque puis pioché, la question est posée de nouveau (vers la main)", () => {
+    let s = onBattlefield();
+    moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "library", { position: "top" });
+    s = answer(recheck(s), false);
+    moveObject(s, s.players.p1?.library[0] as string, "hand");
+    s = recheck(s);
+    expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("commanderZone");
   });
 });
 

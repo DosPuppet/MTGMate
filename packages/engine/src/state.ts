@@ -572,13 +572,6 @@ export function moveObject(
     shuffleIn = !!r.shuffle;
     linkTo = r.linkTo;
   }
-  // 903.9b : un commandant qui devrait aller dans une bibliothèque va dans la zone de commandement à la place (son
-  // propriétaire le peut ; choix automatique, approximation : vers la main, il y reste et se relance sans taxe).
-  if (to === "library" && o.zone !== "command" && commanderOf(s, o)) {
-    to = "command";
-    shuffleIn = false;
-    emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: "command" });
-  }
   if (opts.landed) opts.landed.to = to;
   const from = zoneArray(s, o);
   if (from) {

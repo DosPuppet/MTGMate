@@ -1688,9 +1688,9 @@ function stateBasedActionsOnce(s: GameState): boolean {
       );
       return acted;
     }
-    // 903.9a : un commandant arrivé dans un cimetière ou en exil depuis la dernière vérification : son propriétaire peut
-    // le remettre dans la zone de commandement (une question par objet ; un refus vaut jusqu'à son prochain changement de
-    // zone).
+    // 903.9a et 903.9b : un commandant arrivé dans un cimetière, en exil, dans la main ou dans la bibliothèque de son
+    // propriétaire depuis la dernière vérification : son propriétaire peut le remettre dans la zone de commandement (une
+    // question par objet, jamais répondue par l'automatisme ; un refus vaut jusqu'à son prochain changement de zone).
     const offer = commanderReturnOffer(s);
     if (offer) {
       acted = true;
@@ -1713,14 +1713,18 @@ function stateBasedActionsOnce(s: GameState): boolean {
   return true;
 }
 
-/** 903.9a : le premier commandant au cimetière ou en exil dont le retour n'a pas encore été proposé. */
+/**
+ * 903.9a et 903.9b : le premier commandant au cimetière, en exil, dans la main ou dans la bibliothèque de son
+ * propriétaire dont le retour n'a pas encore été proposé. 903.9b est un remplacement : la question est posée juste après
+ * l'arrivée en main ou dans la bibliothèque, à la vérification suivante (approximation de timing).
+ */
 function commanderReturnOffer(s: GameState): { owner: PlayerId; id: ObjectId } | undefined {
   const cards = s.commander?.cards;
   if (!cards) return undefined;
   for (const rec of Object.values(cards)) {
     const owner = s.players[rec.owner];
     if (!owner || owner.lost) continue;
-    for (const id of [...owner.graveyard, ...s.exile]) {
+    for (const id of [...owner.graveyard, ...s.exile, ...owner.hand, ...owner.library]) {
       const o = s.objects[id];
       if (o && commanderOf(s, o) === rec && rec.offered !== id) {
         rec.offered = id;
@@ -1731,10 +1735,16 @@ function commanderReturnOffer(s: GameState): { owner: PlayerId; id: ObjectId } |
   return undefined;
 }
 
-/** 903.9a : réponse du propriétaire ; oui, le commandant (toujours au cimetière ou en exil) va dans la zone de commandement. */
+/** Zones d'où un commandant peut retourner dans la zone de commandement (903.9a, 903.9b). */
+const COMMANDER_RETURN_ZONES: readonly string[] = ["graveyard", "exile", "hand", "library"];
+
+/**
+ * 903.9a et 903.9b : réponse du propriétaire ; oui, le commandant (toujours dans la zone où il est arrivé) va dans la
+ * zone de commandement.
+ */
 export function answerCommanderZone(s: GameState, card: ObjectId, yes: boolean): void {
   const o = s.objects[card];
-  if (!yes || !o || (o.zone !== "graveyard" && o.zone !== "exile")) return;
+  if (!yes || !o || !COMMANDER_RETURN_ZONES.includes(o.zone)) return;
   emit({ type: "moved", owner: o.owner, objectId: card, defId: o.defId, from: o.zone, to: "command" });
   moveObject(s, card, "command");
 }

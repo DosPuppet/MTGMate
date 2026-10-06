@@ -55,10 +55,12 @@ export function choiceSource(view: GameView): { face: CardFace; effect?: string 
   const p = view.pending;
   if (p?.kind !== "choice") return null;
   if (p.source) return p.source;
-  // 903.9a : la carte du commandant qu'on peut remettre dans la zone de commandement (cimetière ou exil).
+  // 903.9a et 903.9b : la carte du commandant qu'on peut remettre dans la zone de commandement (cimetière, exil, main ;
+  // dans la bibliothèque, son nom seul, dans la question).
   if (p.purpose?.kind === "commanderZone") {
     const card = p.purpose.card;
     const o =
+      view.hand.find((x) => x.id === card) ??
       view.exile.find((x) => x.id === card) ??
       Object.values(view.players)
         .flatMap((pl) => pl.graveyard)
