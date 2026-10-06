@@ -52,6 +52,15 @@ L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son nivea
 - **Main.** Un permanent en main vaut moins qu'en jeu (0,7) ; un éphémère ou un rituel garde sa souplesse (1,5).
 - **Contre-attaque** (niveau élevé, pendant son tour) : `incomingDamage` estime les blessures de la prochaine attaque adverse. Les créatures qui ont attaqué restent engagées jusqu'au prochain tour de l'IA. La pénalité vaut la moitié de la perte de vie, et elle est forte si l'attaque serait létale.
 
+### Commander (PLAN-E)
+
+- **PV effectifs** (`effectiveLife`) : les points de vie, réduits en proportion des blessures de combat reçues du commandant le plus menaçant (PV × (21 − blessures) / 21) ; sans blessure de commandant, les points de vie. Lus par `evaluate` et `targetOpponent`.
+- **Commandant qui attend** dans la zone de commandement : 0,6 × sa valeur de créature, divisée par 1 + (lancers depuis la zone) / 2 ; il ne compte plus comme un emblème. La question 903.9a se règle par simulation (oui : le commandant reste disponible).
+- **Cible d'attaque** à plusieurs (`attackTarget`) : un joueur qu'un commandant attaquant peut achever par ses 21 blessures de commandant est « tuable ».
+- **Déterminisation** : un commandant est public, même dans une main ; il n'est ni tiré au hasard ni utilisé pour deviner les cartes cachées.
+- **ISMCTS** reste réservé au duel, Commander compris : 65 % ± 15 contre le niveau moyen sur 40 parties de Commander à deux (decks aléatoires, budget 60, 06/10/2026).
+- **Arène :** `npm run arena -- --a medium --b medium --format commander [--pool commander] [--by-deck] [--players 4]` (`--by-deck` : les decks changent de place, les IA restent ; « A » est le premier deck).
+
 ## Combat par simulation (`combat.ts`, niveau élevé)
 
 - **Attaques.** On essaie des ensembles d'attaquants :

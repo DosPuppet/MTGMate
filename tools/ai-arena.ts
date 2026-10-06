@@ -12,17 +12,21 @@
  * et des decks s'annule). --budget : itérations de l'ISMCTS (un budget en itérations rend le tournoi reproductible).
  * --pool decks : decks préconstruits ; all : decks aléatoires bicolores ; mix : moitié-moitié ; meta : les decks du
  * méta Standard jouables (docs/meta/).
+ * --format commander (PLAN-E) : parties de Commander ; decks Commander aléatoires, ou `--pool commander` : les
+ * préconstruits Commander jouables.
+ * --by-deck : mesure les decks et non les IA (même IA conseillée : --a medium --b medium) ; les decks changent de place
+ * d'une partie à l'autre et « A » est le premier deck de la paire (à 4 joueurs : sièges deck 1, deck 2, deck 1, deck 2).
  */
 import { fork } from "node:child_process";
 import { type AiLevel, aiAgent, playGame, randomAgent } from "@mtgx/ai";
-import { buildDeck, DECKS } from "@mtgx/cards";
+import { buildDeck, buildGameDeck, CARDS, DECKS, validateDeck } from "@mtgx/cards";
 
 /** Préconstruits hors Commander (les decks Commander se jouent avec leurs règles, PLAN-E). */
 const PRECONS = DECKS.filter((d) => d.format !== "commander");
 
 import type { Agent, CardDef } from "@mtgx/engine";
 import { metaDecks } from "./meta-decks";
-import { randomDeck } from "./random-deck";
+import { randomCommanderDeck, randomDeck } from "./random-deck";
 
 const arg = (name: string, def: string) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -37,6 +41,22 @@ const jobs = Math.max(1, Number(arg("jobs", "1")));
 const budget = Number(arg("budget", "150"));
 const worker = process.argv.includes("--worker");
 const players = Math.max(2, Number(arg("players", "2")));
+const commander = arg("format", "") === "commander";
+const byDeck = process.argv.includes("--by-deck");
+/** Préconstruits Commander jouables (`--pool commander`). */
+const COMMANDER_PRECONS =
+  commander && pool === "commander"
+    ? DECKS.filter((d) => d.format === "commander" && validateDeck(d, CARDS, "commander").playable)
+    : [];
+if (commander && pool === "commander" && COMMANDER_PRECONS.length < 2)
+  throw new Error("Il faut deux préconstruits Commander jouables");
+
+/** Un deck de partie, avec ses commandants en Commander. */
+interface GameDeck {
+  deck: CardDef[];
+  commanders?: number[];
+  name?: string;
+}
 
 /** « expert:200 » : niveau et budget propre (itérations de l'ISMCTS ; 0 = sans ISMCTS). */
 function agent(spec: string, seed: number): Agent {
@@ -53,6 +73,28 @@ function agent(spec: string, seed: number): Agent {
 
 /** Decks de la paire de parties `pair` : deux decks différents. */
 const META = pool === "meta" ? metaDecks().filter((d) => d.playable) : [];
+
+/** Decks Commander de la paire `pair` (préconstruits, ou aléatoires). */
+function commanderDecksFor(pair: number): [GameDeck, GameDeck] {
+  if (COMMANDER_PRECONS.length) {
+    const n = COMMANDER_PRECONS.length;
+    const i = pair % n;
+    const j = (i + 1 + (Math.floor(pair / n) % (n - 1))) % n;
+    const g = (k: number) => {
+      const d = COMMANDER_PRECONS[k]!;
+      const b = buildGameDeck(d);
+      return { deck: b.deck, commanders: b.commanders, name: d.name };
+    };
+    return [g(i), g(j)];
+  }
+  return [randomCommanderDeck(seed0 * 7919 + pair * 2), randomCommanderDeck(seed0 * 7919 + pair * 2 + 1)];
+}
+
+function gameDecksFor(pair: number): [GameDeck, GameDeck] {
+  if (commander) return commanderDecksFor(pair);
+  const [a, b] = decksFor(pair);
+  return [{ deck: a }, { deck: b }];
+}
 
 function decksFor(pair: number): [CardDef[], CardDef[]] {
   if (pool === "meta") {
@@ -95,13 +137,23 @@ function runMulti(first: number, count: number): Tally {
   const t: Tally = { a: 0, b: 0, draws: 0, unfinished: 0, turns: 0, time: { a: [], b: [] } };
   for (let g = first; g < first + count; g++) {
     const seed = seed0 + g;
-    const decks = Array.from({ length: players }, (_, i) => randomDeck(seed0 * 7919 + g * players + i));
     const shift = g % 2;
     const isA = (seat: number) => (seat + shift) % 2 === 0;
+    // Commander : les deux decks de la paire en alternance (A, B, A, B), sinon des decks aléatoires.
+    const pairDecks = commander ? commanderDecksFor(Math.floor(g / 2)) : null;
+    const decks: GameDeck[] = Array.from({ length: players }, (_, i) =>
+      pairDecks ? pairDecks[isA(i) ? 0 : 1] : { deck: randomDeck(seed0 * 7919 + g * players + i) },
+    );
     const agents = decks.map((_, seat) =>
       isA(seat) ? timed(agent(A, seed * 8 + seat), t.time.a) : timed(agent(B, seed * 8 + seat), t.time.b),
     );
-    const r = playGame({ seed, decks, agents, maxDecisions: 12000 });
+    const r = playGame({
+      seed,
+      decks: decks.map((d) => d.deck),
+      ...(commander ? { variant: "commander" as const, commanders: decks.map((d) => d.commanders) } : {}),
+      agents,
+      maxDecisions: (commander ? 15000 : 4000) * players,
+    });
     t.turns += r.turns;
     if (!r.state.over) t.unfinished++;
     else if (!r.state.winner) t.draws++;
@@ -118,17 +170,20 @@ function run(first: number, count: number): Tally {
     const pair = Math.floor(g / 2);
     const swap = g % 2 === 1;
     const seed = seed0 + pair;
-    const [d1, d2] = decksFor(pair);
+    const [d1, d2] = gameDecksFor(pair);
     // Partie paire : A joue le premier deck en p1 ; partie impaire : B joue ce deck en p1, A l'autre en p2.
+    // --by-deck : les IA restent en place, les decks changent de place ; « A » est le premier deck.
     const agentA = timed(agent(A, seed * 2 + 1), t.time.a);
     const agentB = timed(agent(B, seed * 2 + 2), t.time.b);
+    const decks = byDeck && swap ? [d2, d1] : [d1, d2];
     let r: ReturnType<typeof playGame>;
     try {
       r = playGame({
         seed,
-        decks: [d1, d2],
-        agents: swap ? [agentB, agentA] : [agentA, agentB],
-        maxDecisions: 8000,
+        decks: decks.map((d) => d.deck),
+        ...(commander ? { variant: "commander" as const, commanders: decks.map((d) => d.commanders) } : {}),
+        agents: !byDeck && swap ? [agentB, agentA] : [agentA, agentB],
+        maxDecisions: commander ? 30000 : 8000,
       });
     } catch (e) {
       // Partie à rejouer pour reproduire l'erreur : son numéro (--first N --games 1) et sa graine.
@@ -155,7 +210,7 @@ function report(t: Tally, ms: number): void {
     return `${mean.toFixed(2)} ms/déc (p95 ${(sorted[Math.floor(sorted.length * 0.95)] ?? 0).toFixed(1)}, max ${(sorted.at(-1) ?? 0).toFixed(0)})`;
   };
   console.log(
-    `${A} contre ${B} : ${games} parties${players > 2 ? ` à ${players} joueurs` : ""} (pool ${pool}${[A, B].some((x) => x.startsWith("expert")) ? `, budget ${budget}` : ""}) en ${(ms / 1000).toFixed(0)} s`,
+    `${A} contre ${B} : ${games} parties${players > 2 ? ` à ${players} joueurs` : ""} (pool ${pool}${commander ? ", Commander" : ""}${byDeck ? ", par deck" : ""}${[A, B].some((x) => x.startsWith("expert")) ? `, budget ${budget}` : ""}) en ${(ms / 1000).toFixed(0)} s`,
   );
   console.log(
     `  ${A} gagne ${pct(p)} % ± ${pct(ci)} (${t.a} / ${decided}) · nuls ${t.draws} · inachevées ${t.unfinished} · ${(t.turns / games).toFixed(1)} tours en moyenne`,

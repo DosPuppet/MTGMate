@@ -11,6 +11,7 @@ import {
   type Characteristics,
   chars,
   cloneState,
+  commanderOf,
   computeBattlefield,
   type Decision,
   fallbackDecision,
@@ -87,6 +88,33 @@ export function lifeValue(life: number): number {
 }
 
 /**
+ * Points de vie « effectifs » (Commander, PLAN-E) : les points de vie, réduits en proportion des blessures de combat
+ * reçues du commandant le plus menaçant (21 tuent, 704.6c) ; sans blessure de commandant, les points de vie.
+ */
+export function effectiveLife(s: GameState, p: PlayerId): number {
+  const life = s.players[p]?.life ?? 0;
+  if (!s.commander) return life;
+  let worst = 0;
+  for (const c of Object.values(s.commander.cards)) worst = Math.max(worst, c.damage[p] ?? 0);
+  return worst > 0 ? (life * Math.max(0, 21 - worst)) / 21 : life;
+}
+
+/**
+ * Commander (PLAN-E) : un commandant qui attend dans la zone de commandement est une menace toujours disponible ; il
+ * vaut un peu moins qu'une fois en jeu, et d'autant moins que sa taxe est élevée.
+ */
+function commandZoneValue(s: GameState, p: PlayerId): number {
+  let v = 0;
+  for (const id of s.players[p]?.command ?? []) {
+    const o = s.objects[id];
+    const c = commanderOf(s, o);
+    const d = o ? s.defs[o.defId] : undefined;
+    if (c && d) v += (0.6 * creatureValue(d)) / (1 + c.casts / 2);
+  }
+  return v;
+}
+
+/**
  * Valeur d'une carte en main : un potentiel. Un permanent vaut moins en main qu'une fois en jeu (où il agit) ;
  * un éphémère ou un rituel garde sa souplesse jusqu'au bon moment.
  */
@@ -107,7 +135,7 @@ export function targetOpponent(s: GameState, me: PlayerId): PlayerId {
       const o = s.objects[id];
       return o?.controller === p ? n + (s.defs[o.defId]?.power ?? 0) : n;
     }, 0);
-  return [...opps].sort((a, b) => (s.players[a]?.life ?? 0) - (s.players[b]?.life ?? 0) || power(b) - power(a))[0] ?? me;
+  return [...opps].sort((a, b) => effectiveLife(s, a) - effectiveLife(s, b) || power(b) - power(a))[0] ?? me;
 }
 
 // ---------------------------------------------------------------------------
@@ -162,8 +190,12 @@ export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): nu
   if (mine.lost) return -1e6 + mine.life * 100;
   const opps = opponentsOf(s, me);
   const w = 1 / Math.max(1, opps.length);
-  let score = lifeValue(mine.life);
-  for (const p of opps) score -= w * lifeValue(s.players[p]?.life ?? 0);
+  let score = lifeValue(effectiveLife(s, me));
+  for (const p of opps) score -= w * lifeValue(effectiveLife(s, p));
+  if (s.commander) {
+    score += commandZoneValue(s, me);
+    for (const p of opps) score -= w * commandZoneValue(s, p);
+  }
 
   const dc = durableChars(s);
   const lands: Record<PlayerId, number> = {};

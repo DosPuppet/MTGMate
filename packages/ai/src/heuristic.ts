@@ -11,6 +11,7 @@ import {
   attackCandidates,
   blockCandidates,
   chars,
+  commanderOf,
   creaturesControlledBy,
   type Decision,
   forcedAttackers,
@@ -108,7 +109,13 @@ function attackTarget(s: GameState, me: PlayerId, attackers: string[]): PlayerId
   if (opps.length <= 1) return opps[0] ?? targetOpponent(s, me);
   const total = attackers.reduce((n, id) => n + Math.max(0, chars(s, id).power), 0);
   const life = (p: PlayerId) => s.players[p]?.life ?? 0;
-  const killable = opps.filter((p) => total >= life(p)).sort((a, b) => life(a) - life(b));
+  // Commander : un commandant qui attaque peut achever un joueur par ses blessures de commandant (21, 704.6c).
+  const commanderKills = (p: PlayerId) =>
+    attackers.some((id) => {
+      const c = commanderOf(s, s.objects[id]);
+      return !!c && (c.damage[p] ?? 0) + Math.max(0, chars(s, id).power) >= 21;
+    });
+  const killable = opps.filter((p) => total >= life(p) || commanderKills(p)).sort((a, b) => life(a) - life(b));
   if (killable[0]) return killable[0];
   const threat = (p: PlayerId) => {
     let t = (s.players[p]?.hand.length ?? 0) * 0.5;

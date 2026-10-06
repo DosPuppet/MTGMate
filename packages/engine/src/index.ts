@@ -46,6 +46,7 @@ export {
   type Characteristics,
   chars,
   cloneState,
+  commanderOf,
   createObject,
   creaturesControlledBy,
   decider,

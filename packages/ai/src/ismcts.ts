@@ -9,7 +9,15 @@
  * L'arbre est limité à la racine (les options de l'IA à cette décision) : avec quelques dizaines à quelques centaines
  * d'itérations, les nœuds plus profonds seraient trop peu visités pour être fiables.
  */
-import { cloneState, type Decision, fallbackDecision, type GameState, opponentsOf, type PlayerId } from "@mtgx/engine";
+import {
+  cloneState,
+  commanderOf,
+  type Decision,
+  fallbackDecision,
+  type GameState,
+  opponentsOf,
+  type PlayerId,
+} from "@mtgx/engine";
 import { evaluate, onlyRulesErrors, step } from "./evaluate";
 import { priorityOptions } from "./heuristic";
 import { fastPolicy } from "./policy";
@@ -57,7 +65,8 @@ function seenCards(s: GameState, p: PlayerId, me: PlayerId): { spells: string[];
     ...s.stack.filter((i) => i.kind === "spell" && !i.copy).map((i) => i.sourceId),
   ]
     .map((id) => s.objects[id])
-    .filter((o) => !!o && o.owner === p && !o.faceDown && !o.isToken && !o.cardCopy);
+    // Un commandant (singleton, toujours connu) ne sert pas à deviner les cartes cachées.
+    .filter((o) => !!o && o.owner === p && !o.faceDown && !o.isToken && !o.cardCopy && !commanderOf(s, o));
   const defs = visible.map((o) => o?.defId as string);
   const spells = defs.filter((id) => !s.defs[id]?.types.includes("Land"));
   const colors = new Set(defs.flatMap((id) => s.defs[id]?.colors ?? []));
@@ -96,7 +105,8 @@ export function determinize(s: GameState, me: PlayerId, rand: () => number): Gam
     }
     for (const id of [...pl.hand, ...pl.library]) {
       const o = d.objects[id];
-      if (!o) continue;
+      // Un commandant est public (Commander) : il reste ce qu'il est, même dans une main.
+      if (!o || commanderOf(d, o)) continue;
       const land = spells.length === 0 || rand() < LAND_SHARE;
       const def = land && lands.length ? pick(lands) : spells.length ? pick(spells) : undefined;
       if (def) {
