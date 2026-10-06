@@ -200,10 +200,11 @@ function nextMulligan(s: GameState): void {
 
 /**
  * Cartes à mettre au-dessous de la bibliothèque en gardant après `mulligans` mulligans (103.5) ; 103.5c : dans une
- * partie à plusieurs (trois joueurs ou plus), le premier mulligan ne compte pas.
+ * partie à plusieurs (trois joueurs ou plus), le premier mulligan ne compte pas ; en Commander aussi, duel compris
+ * (règle du format, choix de l'utilisateur).
  */
 function mulliganBottom(s: GameState, mulligans: number): number {
-  return Math.max(0, mulligans - (s.playerOrder.length > 2 ? 1 : 0));
+  return Math.max(0, mulligans - (s.playerOrder.length > 2 || s.commander ? 1 : 0));
 }
 
 /** Cartes « leyline » de la main de départ (103.6), proposées dans l'ordre de jeu. Renvoie true si une question est posée. */

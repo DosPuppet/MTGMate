@@ -205,6 +205,8 @@
   },
   "fr": {
    "name": "Désolation",
+   "typeLine": "Terrain : marais et montagne",
+   "text": "({T} : Ajoutez {B} ou {R}.)",
    "image": "https://cards.scryfall.io/normal/front/2/f/2fb67912-3d3d-40d4-8aa0-141a8025b037.jpg?1783948105"
   },
   "origin": "LEB",
@@ -234,6 +236,8 @@
   },
   "fr": {
    "name": "Bayou",
+   "typeLine": "Terrain : marais et forêt",
+   "text": "({T} : Ajoutez {B} ou {G}.)",
    "image": "https://cards.scryfall.io/normal/front/9/3/937fa336-0539-425e-9de6-7029dc91f105.jpg?1789586041"
   },
   "origin": "LEB",
@@ -2396,7 +2400,8 @@
   },
   "fr": {
    "name": "Korvold, roi maudit par les fæs",
-   "text": "Flying\nWhenever Korvold enters or attacks, sacrifice another permanent.\nWhenever you sacrifice a permanent, put a +1/+1 counter on Korvold and draw a card.",
+   "typeLine": "Créature légendaire : dragon et noble",
+   "text": "Vol\nÀ chaque fois que Korvold arrive ou attaque, sacrifiez un autre permanent.\nÀ chaque fois que vous sacrifiez un permanent, mettez un marqueur +1/+1 sur Korvold et piochez une carte.",
    "image": "https://cards.scryfall.io/normal/front/e/1/e1f05cae-200d-479a-96c3-fab3c945482b.jpg?1782768322"
   },
   "origin": "EOC",
@@ -2845,6 +2850,8 @@
   },
   "fr": {
    "name": "Mox de diamant",
+   "typeLine": "Artefact",
+   "text": "Si cet artefact devait arriver, vous pouvez vous défausser d'une carte de terrain à la place. Si vous faites ainsi, mettez cet artefact sur le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire.\n{T} : Ajoutez un mana de la couleur de votre choix.",
    "image": "https://cards.scryfall.io/normal/front/1/5/156875c0-3435-4dd4-ba6b-e748924c242e.jpg?1783049543"
   },
   "origin": "STH",
@@ -3276,6 +3283,8 @@
   },
   "fr": {
    "name": "Plateau",
+   "typeLine": "Terrain : montagne et plaine",
+   "text": "({T} : Ajoutez {R} ou {W}.)",
    "image": "https://cards.scryfall.io/normal/front/f/7/f747a422-2706-4b0c-b45c-bf599e2f8eed.jpg?1783948104"
   },
   "origin": "LEB",
@@ -3600,6 +3609,8 @@
   },
   "fr": {
    "name": "Savane",
+   "typeLine": "Terrain : forêt et plaine",
+   "text": "({T} : Ajoutez {G} ou {W}.)",
    "image": "https://cards.scryfall.io/normal/front/c/e/ce9c9221-582e-496d-845c-164f2502ffeb.jpg?1783948103"
   },
   "origin": "LEB",
@@ -3661,6 +3672,8 @@
   },
   "fr": {
    "name": "Brousse",
+   "typeLine": "Terrain : plaine et marais",
+   "text": "({T} : Ajoutez {W} ou {B}.)",
    "image": "https://cards.scryfall.io/normal/front/e/8/e82fad14-3d4b-44dc-ab1c-35f535ea958b.jpg?1783948103"
   },
   "origin": "LEB",
@@ -4141,6 +4154,8 @@
   },
   "fr": {
    "name": "Taïga",
+   "typeLine": "Terrain : montagne et forêt",
+   "text": "({T} : Ajoutez {R} ou {G}.)",
    "image": "https://cards.scryfall.io/normal/front/1/d/1ddfceae-b9d0-4de8-aaf1-c12f780536c6.jpg?1783948105"
   },
   "origin": "LEB",
@@ -4545,7 +4560,9 @@
    "standard": "not_legal"
   },
   "fr": {
-   "name": "Ile tropicale",
+   "name": "Île tropicale",
+   "typeLine": "Terrain : forêt et île",
+   "text": "({T} : Ajoutez {G} ou {U}.)",
    "image": "https://cards.scryfall.io/normal/front/c/4/c409f51e-eea5-478b-8679-27309bd73936.jpg?1783948105"
   },
   "origin": "LEB",
@@ -4575,6 +4592,8 @@
   },
   "fr": {
    "name": "Toundra",
+   "typeLine": "Terrain : plaine et île",
+   "text": "({T} : Ajoutez {W} ou {U}.)",
    "image": "https://cards.scryfall.io/normal/front/1/6/16cbac60-fd88-4369-942e-e8a1d16f7300.jpg?1783948103"
   },
   "origin": "LEB",
@@ -4699,6 +4718,8 @@
   },
   "fr": {
    "name": "Mer souterraine",
+   "typeLine": "Terrain : île et marais",
+   "text": "({T} : Ajoutez {U} ou {B}.)",
    "image": "https://cards.scryfall.io/normal/front/8/d/8d4a47d3-75f4-4770-8fbf-735b97811d82.jpg?1783948103"
   },
   "origin": "LEB",
@@ -5059,7 +5080,9 @@
    "standard": "not_legal"
   },
   "fr": {
-   "name": "Ile volcanique",
+   "name": "Île volcanique",
+   "typeLine": "Terrain : île et montagne",
+   "text": "({T} : Ajoutez {U} ou {R}.)",
    "image": "https://cards.scryfall.io/normal/front/6/f/6f609594-ed25-4c7f-8829-ea9f735ddcab.jpg?1783948100"
   },
   "origin": "LEB",

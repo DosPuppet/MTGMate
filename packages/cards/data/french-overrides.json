@@ -1,0 +1,53 @@
+{
+  "_note": "Textes français complétés à la main, appliqués par l'import par nom (npm run import-cards -- edh) : cartes dont aucune impression française n'a son texte chez Scryfall (impressions de 1994 à 1998, ou texte anglais dans une impression française). Règle : les cartes en français de préférence.",
+  "Badlands": {
+    "typeLine": "Terrain : marais et montagne",
+    "text": "({T} : Ajoutez {B} ou {R}.)"
+  },
+  "Bayou": {
+    "typeLine": "Terrain : marais et forêt",
+    "text": "({T} : Ajoutez {B} ou {G}.)"
+  },
+  "Plateau": {
+    "typeLine": "Terrain : montagne et plaine",
+    "text": "({T} : Ajoutez {R} ou {W}.)"
+  },
+  "Savannah": {
+    "typeLine": "Terrain : forêt et plaine",
+    "text": "({T} : Ajoutez {G} ou {W}.)"
+  },
+  "Scrubland": {
+    "typeLine": "Terrain : plaine et marais",
+    "text": "({T} : Ajoutez {W} ou {B}.)"
+  },
+  "Taiga": {
+    "typeLine": "Terrain : montagne et forêt",
+    "text": "({T} : Ajoutez {R} ou {G}.)"
+  },
+  "Tropical Island": {
+    "name": "Île tropicale",
+    "typeLine": "Terrain : forêt et île",
+    "text": "({T} : Ajoutez {G} ou {U}.)"
+  },
+  "Tundra": {
+    "typeLine": "Terrain : plaine et île",
+    "text": "({T} : Ajoutez {W} ou {U}.)"
+  },
+  "Underground Sea": {
+    "typeLine": "Terrain : île et marais",
+    "text": "({T} : Ajoutez {U} ou {B}.)"
+  },
+  "Volcanic Island": {
+    "name": "Île volcanique",
+    "typeLine": "Terrain : île et montagne",
+    "text": "({T} : Ajoutez {U} ou {R}.)"
+  },
+  "Mox Diamond": {
+    "typeLine": "Artefact",
+    "text": "Si cet artefact devait arriver, vous pouvez vous défausser d'une carte de terrain à la place. Si vous faites ainsi, mettez cet artefact sur le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire.\n{T} : Ajoutez un mana de la couleur de votre choix."
+  },
+  "Korvold, Fae-Cursed King": {
+    "typeLine": "Créature légendaire : dragon et noble",
+    "text": "Vol\nÀ chaque fois que Korvold arrive ou attaque, sacrifiez un autre permanent.\nÀ chaque fois que vous sacrifiez un permanent, mettez un marqueur +1/+1 sur Korvold et piochez une carte."
+  }
+}

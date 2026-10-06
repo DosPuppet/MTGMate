@@ -20,6 +20,11 @@ const STANDARD = STANDARD_SETS.map((x) => x.code.toLowerCase()).filter((c) => c 
 const REPRINTS = SET_INFO.filter((x) => x.reprint).map((x) => x.code.toLowerCase());
 const ARG = (process.argv[2] ?? "fdn").toLowerCase();
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "packages", "cards", "data");
+/** Textes français complétés à la main (cartes sans impression française qui ait son texte). */
+const FRENCH_OVERRIDES = JSON.parse(readFileSync(join(DATA_DIR, "french-overrides.json"), "utf8")) as Record<
+  string,
+  { name?: string; typeLine?: string; text?: string }
+>;
 const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "application/json" };
 
 interface ScryfallCard {
@@ -225,7 +230,10 @@ async function importByName(SET: string): Promise<void> {
       unsupported.push(`${name} (${chosen?.layout})`);
       continue;
     }
-    out.push({ ...entry, origin: chosen.set.toUpperCase(), colorIdentity: chosen.color_identity });
+    // Texte français complété à la main quand aucune impression française n'a le sien (`french-overrides.json`).
+    const fix = FRENCH_OVERRIDES[name];
+    const withFr = fix ? { ...entry, fr: { ...(entry.fr as object | undefined), ...fix } } : entry;
+    out.push({ ...withFr, origin: chosen.set.toUpperCase(), colorIdentity: chosen.color_identity });
   }
   const OUT = join(DATA_DIR, `${SET}.json`);
   writeFileSync(OUT, `${JSON.stringify(out, null, 1)}\n`);

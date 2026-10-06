@@ -184,6 +184,24 @@ describe("mulligan gratuit (103.5c)", () => {
     expect(mulliganThenKeep(start(2), 1).bottom).toBe(1);
   });
 
+  it("en Commander, le premier mulligan est gratuit, duel compris : puis une carte, deux cartes…", () => {
+    const duel = () =>
+      createGame({
+        seed: 3,
+        startingPlayer: "p1",
+        variant: "commander",
+        players: ["p1", "p2"].map((id) => ({
+          id,
+          name: id,
+          deck: [card("Edgar Markov"), ...Array.from({ length: 99 }, () => card("Swamp"))],
+          commanders: [0],
+        })),
+      }).state;
+    expect(mulliganThenKeep(duel(), 1).bottom).toBe(0);
+    expect(mulliganThenKeep(duel(), 2).bottom).toBe(1);
+    expect(mulliganThenKeep(duel(), 3).bottom).toBe(2);
+  });
+
   it("la décision annonce le nombre de cartes à mettre au-dessous", () => {
     let s = start(3);
     s = act(s, "p1", { type: "mulligan" });

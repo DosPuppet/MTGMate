@@ -383,8 +383,10 @@ export const RECORD_VERSION = 1;
  *   (Hellkite Courser) ; « du même nom que » un objet désigné ; plus grand montant parmi des joueurs ; le paiement
  *   n'utilise pas plus de sources qui coûtent des PV que le joueur ne peut en payer (fuzz strict) ; 104.4b : une boucle
  *   qui accumule (jetons, déclenchements sur la pile) est nulle, et les choix faits pendant la boucle ne la coupent pas.
+ * - 144 : mulligan gratuit dans toute partie de Commander, duel compris (règle du format) ; ailleurs, à trois joueurs ou
+ *   plus (103.5c).
  */
-export const RULES_VERSION = 143;
+export const RULES_VERSION = 144;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
