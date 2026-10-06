@@ -472,8 +472,8 @@ export interface ManaAbilityDef {
   /** `spellNotFromHand` : « seulement pour lancer un sort depuis ailleurs que votre main » (Mm'menon, the Right Hand). */
   restriction?: ManaRestriction;
   /** Gene Pollinator : « engagez un permanent dégagé que vous contrôlez » en plus de {T} (choisi automatiquement). */
-  /** `"creature"` : une créature dégagée (Springleaf Drum). */
-  tapAnother?: boolean | "creature" | "artifact";
+  /** `"creature"` : une créature dégagée (Springleaf Drum) ; un filtre : un permanent correspondant (Relic of Legends). */
+  tapAnother?: boolean | "creature" | "artifact" | ObjectFilter;
   /** « N'activez que si vous contrôlez… » (Verges d'Aetherdrift). */
   condition?: Condition;
   /** « Une seule fois par tour » (Vivi Ornitier). */

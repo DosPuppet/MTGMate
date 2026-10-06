@@ -4,5 +4,6 @@
  */
 import type { CardScript } from "@mtgx/engine";
 import { COMMANDER_CARDS } from "./commander";
+import { EDH_LANDS } from "./lands";
 
-export const EDH_SCRIPTS: Record<string, CardScript> = { ...COMMANDER_CARDS };
+export const EDH_SCRIPTS: Record<string, CardScript> = { ...COMMANDER_CARDS, ...EDH_LANDS };

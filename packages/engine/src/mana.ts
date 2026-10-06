@@ -195,7 +195,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   if (ab.cost.mana) return false;
   if (chars(s, id).keywords.includes("noActivatedAbilities")) return false;
   if (ab.cost.tap && (o.tapped || sickForActivation(s, id))) return false;
-  if (ab.tapAnother && !otherToTap(s, id)) return false;
+  if (ab.tapAnother && !otherToTap(s, id, ab)) return false;
   if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
   if (ab.oncePerTurn && s.turn.onceFired.includes(`mana:${id}`)) return false;
   if (ab.cost.payLife && (s.players[o.controller]?.life ?? 0) < ab.cost.payLife) return false;
@@ -203,21 +203,24 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   return true;
 }
 
+/** `x` peut-il être engagé pour le coût « engagez un [permanent] dégagé que vous contrôlez » d'une capacité de `id` ? */
+function fitsTapAnother(s: GameState, id: ObjectId, x: ObjectId, kind: ManaAbilityDef["tapAnother"]): boolean {
+  if (kind === "creature") return isCreature(s, x);
+  if (kind === "artifact") return chars(s, x).types.includes("Artifact");
+  if (typeof kind === "object") return matchesObjectFilter(s, obj(s, id).controller, x, kind, id);
+  return true;
+}
+
 /**
  * Gene Pollinator : le permanent engagé en plus, choisi automatiquement. D'abord un permanent sans capacité de mana
  * (pour ne pas priver le solveur d'une source), sinon n'importe lequel ; `strict` : seulement le premier cas.
  */
-function otherToTap(s: GameState, id: ObjectId, strict = false): ObjectId | undefined {
+function otherToTap(s: GameState, id: ObjectId, ab: ManaAbilityDef, strict = false): ObjectId | undefined {
   const me = obj(s, id).controller;
-  // « Engagez une créature (un artefact) dégagée que vous contrôlez » : Springleaf Drum, Urza, Lord High Artificer.
-  const kind = manaAbilitiesOf(s, id).find((a) => typeof a.tapAnother === "string")?.tapAnother;
+  // « Engagez une créature (un artefact, une créature légendaire) dégagée que vous contrôlez » : Springleaf Drum, Urza,
+  // Lord High Artificer, Relic of Legends.
   const mine = s.battlefield.filter(
-    (x) =>
-      x !== id &&
-      !obj(s, x).tapped &&
-      obj(s, x).controller === me &&
-      (kind !== "creature" || isCreature(s, x)) &&
-      (kind !== "artifact" || chars(s, x).types.includes("Artifact")),
+    (x) => x !== id && !obj(s, x).tapped && obj(s, x).controller === me && fitsTapAnother(s, id, x, ab.tapAnother),
   );
   return mine.find((x) => manaAbilitiesOf(s, x).length === 0) ?? (strict ? undefined : mine[0]);
 }
@@ -402,7 +405,7 @@ export function manaSources(
       if (!canActivateMana(s, id, ab)) return;
       // Mana restreint : seulement utilisable par le solveur pour un paiement autorisé.
       if (!restrictionAllows(s, id, ab, player, purpose)) return;
-      if (ab.tapAnother && !otherToTap(s, id, true)) return;
+      if (ab.tapAnother && !otherToTap(s, id, ab, true)) return;
       if (ab.cost.self === "sacrifice" && purpose?.sacrificedForCost?.has(id)) return;
       if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose, exclude))) return;
       // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).
@@ -580,7 +583,7 @@ export function activateManaAbility(
   const amountNow = () => before?.amount ?? manaAmount(s, id, ab);
   if (ab.cost.tap) tapObject(s, o);
   if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
-  if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
+  if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id, ab) as ObjectId));
   if (ab.cost.self === "sacrifice") sacrifice(s, id);
   // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
   if (ab.cost.payLife) payLife(s, player, ab.cost.payLife);
@@ -677,6 +680,8 @@ export function solvePayment(
     if (sharing.length <= 1) return plan;
     const inPlan = new Set(plan.taps.map((t) => t.id));
     const creature = sharing.some((t) => manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother === "creature");
+    // Relic of Legends : les permanents à engager correspondent au filtre de chaque source qui en a un.
+    const filtered = sharing.filter((t) => typeof manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother === "object");
     const others = s.battlefield.filter(
       (x) =>
         !inPlan.has(x) &&
@@ -684,6 +689,7 @@ export function solvePayment(
         !obj(s, x).tapped &&
         obj(s, x).controller === player &&
         (!creature || isCreature(s, x)) &&
+        filtered.every((t) => fitsTapAnother(s, t.id, x, manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother)) &&
         manaAbilitiesOf(s, x).length === 0,
     );
     if (sharing.length <= others.length) return plan;

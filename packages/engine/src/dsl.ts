@@ -1738,8 +1738,8 @@ export function manaAbility(
     produceChosen?: boolean;
     rider?: ManaAbilityDef["rider"];
     distinctPowers?: boolean;
-    /** « Engagez un permanent (une créature : `"creature"`) dégagé que vous contrôlez » en plus de {T}. */
-    tapAnother?: boolean | "creature" | "artifact";
+    /** « Engagez un permanent (une créature : `"creature"` ; un filtre : Relic of Legends) dégagé que vous contrôlez ». */
+    tapAnother?: boolean | "creature" | "artifact" | ObjectFilter;
     condition?: Condition;
     /** Autant de mana que la force de la source. */
     selfPower?: boolean;
