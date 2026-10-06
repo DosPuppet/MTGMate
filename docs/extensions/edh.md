@@ -41,3 +41,13 @@ cartes faites seulement de mots-clés sont déjà jouables (Vampire of the Dire 
 - **Tests :** `engine/test/edh-mana.test.ts` (17).
 - **Approximations :** Relic of Legends (créature engagée choisie par le moteur) ; Phyrexian Tower et Sunken Ruins s'activent à la main.
 - Fait par un agent dans une copie isolée, intégré par cherry-pick.
+
+## E10 — Edgar Markov : vampires ✅ (75 / 117)
+
+**Cartes (31, `edh/edgar.ts`) :** Blood Artist, Bloodline Keeper, Captivating Vampire, Champion of Dusk, Charismatic Conqueror, Clavileño, Cordial Vampire, Cruel Celebrant, Drana, Edgar, Charmed Groom, Elenda, Forerunner of the Legion, Indulgent Aristocrat, Knight of the Ebon Legion, Legion Lieutenant, Malakir Bloodwitch, Markov Baron, Master of Dark Rites, Mavren Fein, Sanctum Seeker, Stromkirk Captain, Twilight Prophet, Vampire Socialite, Viscera Seer, Vito, Welcoming Vampire, Yahenni, New Blood, Olivia's Wrath, Pact of the Serpent, Sorin, Imperious Bloodlord ; jetons `VAMPIRE_FLYING`, `VAMPIRE_WB_LIFELINK`.
+
+- **Moteur :** ascension (mot-clé lu dans le texte, `PlayerState.citysBlessing` acquise par une action basée sur l'état, `cond.citysBlessing`) ; la condition d'un `entersWith({ affects, condition })` est vérifiée du point de vue du contrôleur de la source.
+- **Formes existantes réutilisées :** `tapOthers` (Captivating Vampire), coût additionnel `tap` (New Blood), `fx.chooseForSelf("creatureType")` (Pact of the Serpent), `addManaChoice` restreint (Master of Dark Rites), `fx.mayForStore` posé au contrôleur adverse (Charismatic Conqueror).
+- **Tests :** `engine/test/edh-edgar.test.ts` (38).
+- **Approximations :** New Blood (pas de changement de texte), ascension d'un permanent seulement.
+- **Dette :** PlayerState 22 → 23, Condition 52 → 53 ; `perPlayer` n'est plus propre à une carte.

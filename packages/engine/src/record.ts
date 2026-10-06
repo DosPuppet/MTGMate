@@ -363,8 +363,10 @@ export const RECORD_VERSION = 1;
  *   capacités qui fonctionnent depuis la zone de commandement (éminence), mana des terrains d'un adversaire.
  * - 136 : base de mana des decks Commander (PLAN-E, E8) : `tapAnother` d'une capacité de mana accepte un filtre
  *   (Relic of Legends), lu par le solveur de paiement.
+ * - 137 : vampires d'Edgar Markov (PLAN-E, E10) : ascension et bénédiction de la cité (702.131, action basée sur
+ *   l'état) ; la condition d'un `entersWith` qui touche d'autres permanents est vérifiée (Vampire Socialite).
  */
-export const RULES_VERSION = 136;
+export const RULES_VERSION = 137;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
