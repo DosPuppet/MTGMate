@@ -98,6 +98,8 @@ export interface TargetFilter {
 export interface ObjectFilter {
   /** L'objet doit avoir au moins un de ces types. */
   types?: CardType[];
+  /** Un commandant (903.3, PLAN-E : « si vous contrôlez un commandant », Fierce Guardianship). */
+  commander?: boolean;
   /** L'objet ne doit avoir aucun de ces types (« non-créature »…). */
   notTypes?: CardType[];
   subtype?: string;

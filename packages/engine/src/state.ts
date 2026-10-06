@@ -2,10 +2,12 @@
  * Primitives de manipulation de l'état : identifiants, hasard déterministe,
  * événements, zones et caractéristiques calculées (couches).
  */
+import { colorIdentity } from "./identity";
 import type {
   AbilityDef,
   CardDef,
   CastInfo,
+  Color,
   CommanderState,
   ContinuousEffect,
   GameObject,
@@ -19,6 +21,7 @@ import type {
   TurnStats,
   Zone,
 } from "./types";
+import { COLORS } from "./types";
 
 /** Types de permanent (Descente : « une carte de permanent a été mise dans votre cimetière »). */
 
@@ -490,14 +493,29 @@ export function commanderOf(s: GameState, o: GameObject | undefined): CommanderS
 const NO_ABILITIES: readonly AbilityDef[] = [];
 
 /**
- * Capacités qui fonctionnent dans la zone de commandement (113.6) : toutes celles d'un emblème ; aucune d'une carte
- * (un commandant qui attend d'être lancé), sauf celles qui disent fonctionner depuis la zone de commandement.
+ * Capacités qui fonctionnent dans la zone de commandement (113.6) : toutes celles d'un emblème ; d'une carte (un
+ * commandant qui attend d'être lancé), seulement celles qui disent fonctionner depuis la zone de commandement
+ * (`fromCommand` : éminence).
  */
 export function commandZoneAbilities(s: GameState, id: ObjectId): readonly AbilityDef[] {
   const o = s.objects[id];
   if (!o) return NO_ABILITIES;
   const abilities = s.defs[o.defId]?.abilities ?? NO_ABILITIES;
-  return o.isToken ? abilities : NO_ABILITIES;
+  if (o.isToken) return abilities;
+  return abilities.some(fromCommand) ? abilities.filter(fromCommand) : NO_ABILITIES;
+}
+
+const fromCommand = (ab: AbilityDef) => (ab.kind === "triggered" || ab.kind === "static") && !!ab.fromCommand;
+
+/** Commander (903.4) : identité de couleur des commandants d'un joueur (vide sans commandant, 903.4f). */
+export function commanderIdentity(s: GameState, player: PlayerId): Color[] {
+  if (!s.commander) return [];
+  const out = new Set<Color>();
+  for (const c of Object.values(s.commander.cards)) {
+    const d = c.owner === player ? s.defs[c.defId] : undefined;
+    if (d) for (const color of colorIdentity(d)) out.add(color);
+  }
+  return COLORS.filter((c) => out.has(c));
 }
 
 /**

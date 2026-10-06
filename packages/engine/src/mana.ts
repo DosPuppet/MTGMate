@@ -10,6 +10,7 @@ import {
   bump,
   changeCounters,
   chars,
+  commanderIdentity,
   defOf,
   emit,
   isCreature,
@@ -25,6 +26,7 @@ import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./tar
 import { checkCondition } from "./triggers";
 import type {
   AbilityKind,
+  Color,
   GameObject,
   GameState,
   LkiSnapshot,
@@ -164,15 +166,24 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
           for (const c of chars(s, pid).colors) colors.add(c);
       list.push({ ...a, produce: MANA_TYPES.filter((m) => colors.has(m)) });
     }
-    // Reflecting Pool : les types que vos autres terrains pourraient produire (sans les sources du même genre, 106.7).
+    // Reflecting Pool : les types que vos autres terrains pourraient produire (sans les sources du même genre, 106.7) ;
+    // Exotic Orchard, Fellwar Stone : les couleurs que pourraient produire les terrains d'un adversaire (filtre).
     else if (a.produceLikeLands) {
       const types = new Set<ManaType>();
+      const anyController = a.produceLikeLands.controller !== undefined;
       for (const pid of s.battlefield) {
-        if (pid === id || obj(s, pid).controller !== o.controller || !chars(s, pid).types.includes("Land")) continue;
+        if (pid === id || !chars(s, pid).types.includes("Land")) continue;
+        if (!anyController && obj(s, pid).controller !== o.controller) continue;
         if (!matchesObjectFilter(s, o.controller, pid, a.produceLikeLands, id)) continue;
-        for (const m of manaAbilitiesOf(s, pid)) if (!m.produceLikeLands) for (const t of m.produce) types.add(t);
+        for (const m of manaAbilitiesOf(s, pid))
+          if (!m.produceLikeLands && !m.produceIdentity) for (const t of m.produce) types.add(t);
       }
-      list.push({ ...a, produce: MANA_TYPES.filter((m) => types.has(m)) });
+      list.push({ ...a, produce: MANA_TYPES.filter((m) => types.has(m) && a.produce.includes(m)) });
+    }
+    // Command Tower, Arcane Signet : l'identité de couleur de votre commandant (903.4 ; rien sans commandant).
+    else if (a.produceIdentity) {
+      const identity = commanderIdentity(s, o.controller);
+      list.push({ ...a, produce: MANA_TYPES.filter((m) => identity.includes(m as Color)) });
     } else list.push(a.produceChosen ? { ...a, produce: o.chosen?.color ? [o.chosen.color] : a.produce } : a);
   }
   return list;

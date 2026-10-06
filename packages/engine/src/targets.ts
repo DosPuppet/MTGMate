@@ -72,6 +72,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.types && !f.types.some((t) => v.types.includes(t))) return false;
   if (f.notTypes?.some((t) => v.types.includes(t))) return false;
   if (f.subtype && !hasSubtype(v, f.subtype)) return false;
+  if (f.commander && !v.commander) return false;
   if (f.controller === "you" && v.controller !== perspective) return false;
   if (f.controller === "opponent" && v.controller === perspective) return false;
   if (f.owner && (v.owner === perspective) !== (f.owner === "you")) return false;

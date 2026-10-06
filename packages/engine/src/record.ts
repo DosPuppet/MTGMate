@@ -359,8 +359,10 @@ export const RECORD_VERSION = 1;
  *   retour dans la zone de commandement 903.9a et 903.9b, 21 blessures de commandant) ; seuls les emblèmes ont des
  *   capacités actives dans la zone de commandement.
  * - 134 : mulligan gratuit dans une partie à trois joueurs ou plus (103.5c) : le premier mulligan ne compte pas.
+ * - 135 : mécaniques qui citent le commandant (PLAN-E, E6) : mana de l'identité du commandant, filtre `commander`,
+ *   capacités qui fonctionnent depuis la zone de commandement (éminence), mana des terrains d'un adversaire.
  */
-export const RULES_VERSION = 134;
+export const RULES_VERSION = 135;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

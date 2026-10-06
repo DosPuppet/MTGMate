@@ -617,6 +617,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     tapped: o.tapped,
     damage: o.zone === "battlefield" ? o.damage : undefined,
     uid: o.uid,
+    commander: (!!s.commander && !o.isToken && !!s.commander.cards[o.uid]) || undefined,
     linked: o.linked,
     damagedBy: o.damagedBy,
     attachedTo: o.attachedTo,

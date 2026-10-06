@@ -286,3 +286,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Expropriate : seul le premier adversaire vote (exact en duel) ;
   - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ; seul le premier adversaire paie (exact en duel) ;
   - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour »).
+- **Commander, pseudo-ensemble EDH (`docs/extensions/edh.md`) :**
+  - `règle` Path of Ancestry : le regard 1 quand son mana sert à lancer un sort de créature qui partage un type de créature avec votre commandant n'est pas fait.

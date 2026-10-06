@@ -153,8 +153,9 @@ function computeLiveSources(s: GameState): Source[] {
   // Zone de commandement : emblèmes (un commandant qui attend d'être lancé n'y a pas de capacité active, 113.6).
   for (const p of s.playerOrder) {
     for (const id of s.players[p]?.command ?? []) {
-      const abilities = commandZoneAbilities(s, id);
-      if (hasTriggers(abilities)) out.push({ id, view: { ...snapshot(s, id), abilities: [...abilities] } });
+      // Le filtre par capacité (`fromCommand`) se fait dans `detectTriggers` : les indices des capacités restent ceux de la
+      // définition.
+      if (hasTriggers(commandZoneAbilities(s, id))) out.push({ id, view: snapshot(s, id) });
     }
   }
   return out;
@@ -984,7 +985,10 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
     (src.view.abilities ?? []).forEach((ab, index) => {
       if (ab.kind !== "triggered") return;
       // Une capacité « depuis le cimetière » ne se déclenche que là, les autres jamais depuis le cimetière.
-      if (!!ab.fromGraveyard !== (s.objects[src.id]?.zone === "graveyard")) return;
+      const zone = s.objects[src.id]?.zone;
+      if (!!ab.fromGraveyard !== (zone === "graveyard")) return;
+      // Zone de commandement : les emblèmes ; d'une carte, seulement « depuis la zone de commandement » (113.6, éminence).
+      if (zone === "command" && !s.objects[src.id]?.isToken && !ab.fromCommand) return;
       const data = matchTrigger(s, ev, ab.trigger, src);
       if (!data) return;
       // « … pour la première fois chaque tour » : le premier événement est noté avant la condition « si … » (603.4).

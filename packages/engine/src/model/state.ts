@@ -651,6 +651,8 @@ export interface LkiSnapshot {
   attachedTo?: ObjectId;
   /** Identité physique (suit la carte d'une zone à l'autre). */
   uid?: string;
+  /** Commandant (903.3, filtre `commander`). */
+  commander?: boolean;
   linked?: ObjectId[];
   damagedBy?: ObjectId[];
   name?: string;

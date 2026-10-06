@@ -491,8 +491,16 @@ export interface ManaAbilityDef {
   drawback?: { damageYou?: number; opponentsGainLife?: number };
   /** Un mana d'une des couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater, Plaza of Heroes). */
   produceColorsOf?: ObjectFilter;
-  /** Un mana d'un type qu'un terrain correspondant que vous contrôlez pourrait produire (Reflecting Pool ; Star Compass : de base). */
+  /**
+   * Un mana d'un type de `produce` qu'un terrain correspondant pourrait produire : que vous contrôlez (Reflecting Pool ;
+   * Star Compass : de base), ou d'un adversaire si le filtre le dit (`controller: "opponent"` : Exotic Orchard).
+   */
   produceLikeLands?: ObjectFilter;
+  /**
+   * Commander (903.4) : un mana d'une couleur de l'identité de couleur de votre commandant (Command Tower, Arcane
+   * Signet) ; sans commandant, aucun mana (903.4f).
+   */
+  produceIdentity?: boolean;
   /** The Core : autant de mana que de cartes de votre cimetière correspondant au filtre. */
   amountGraveyard?: ObjectFilter;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
@@ -1255,6 +1263,8 @@ export interface PreventionAbilityDef {
 /** Capacité statique : génère un effet continu tant que la source est sur le champ de bataille (604, 611.3). */
 export interface StaticAbilityDef {
   kind: "static";
+  /** Fonctionne aussi depuis la zone de commandement (113.6 ; éminence, Commander). */
+  fromCommand?: boolean;
   /**
    * « self » : la source elle-même ; « attached » : le permanent auquel la source est attachée
    * (« la créature équipée / enchantée ») ; sinon les permanents correspondant au filtre (vus du contrôleur).
@@ -1308,6 +1318,11 @@ export interface TriggeredAbilityDef {
   oncePerTurn?: boolean | "ifDone" | "firstEvent";
   /** Se déclenche depuis le cimetière de son propriétaire (Flamewake Phoenix). */
   fromGraveyard?: boolean;
+  /**
+   * Fonctionne aussi depuis la zone de commandement (113.6 ; éminence, Commander : « si [ce commandant] est dans la zone
+   * de commandement ou sur le champ de bataille »).
+   */
+  fromCommand?: boolean;
   /** « Choisissez un mode qui n'a pas déjà été choisi » (Demonic Pact) ; `turn` : ce tour-ci (Monument to Endurance). */
   uniqueModes?: boolean | "turn";
   /** « une ou plusieurs … » : une seule occurrence en attente à la fois (même lot d'événements). */

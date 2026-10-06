@@ -1764,8 +1764,13 @@ export function manaAbility(
     drawback?: ManaAbilityDef["drawback"];
     /** Couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater). */
     colorsOf?: ObjectFilter;
-    /** Ce que vos terrains correspondants pourraient produire (Reflecting Pool : {} ; Star Compass : de base). */
+    /**
+     * Ce que des terrains correspondants pourraient produire, parmi `produce` : les vôtres (Reflecting Pool : {} ; Star
+     * Compass : de base), ou ceux d'un adversaire (`{ controller: "opponent" }` : Exotic Orchard).
+     */
     likeLands?: ObjectFilter;
+    /** Commander : une couleur de l'identité de votre commandant (Command Tower, Arcane Signet). */
+    commanderIdentity?: boolean;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -1782,6 +1787,7 @@ export function manaAbility(
     ...(opts.drawback ? { drawback: opts.drawback } : {}),
     ...(opts.colorsOf ? { produceColorsOf: opts.colorsOf } : {}),
     ...(opts.likeLands ? { produceLikeLands: opts.likeLands } : {}),
+    ...(opts.commanderIdentity ? { produceIdentity: true } : {}),
     amountGraveyard: opts.perGraveyard,
     oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],
@@ -2634,6 +2640,8 @@ export function triggered(
     oncePerTurn?: boolean | "ifDone" | "firstEvent";
     /** Se déclenche depuis le cimetière (Flamewake Phoenix). */
     fromGraveyard?: boolean;
+    /** Fonctionne aussi depuis la zone de commandement (éminence, Commander). */
+    fromCommand?: boolean;
     /** « une ou plusieurs … » : un seul déclenchement par lot d'événements. */
     batched?: boolean;
   } = {},
@@ -2648,6 +2656,7 @@ export function triggered(
     label: opts.label,
     oncePerTurn: opts.oncePerTurn,
     fromGraveyard: opts.fromGraveyard,
+    ...(opts.fromCommand ? { fromCommand: true } : {}),
     batched: opts.batched,
   };
 }

@@ -105,7 +105,7 @@
     "phaseOut": "Robe of Stars : phasing (702.26), zone phasedOut et retour en phase à l'étape de dégagement ; à réutiliser pour toute carte qui fait sortir de phase"
   },
   "singleCardKeys": {
-    "origin": "PLAN-E : impression d'origine des cartes du pseudo-ensemble EDH, champ de données et non de règles ; une seule carte EDH gérée avant les lots de cartes (à retirer dès E8)",
+    "fromCommand": "PLAN-E E6 : éminence (113.6, capacité qui fonctionne depuis la zone de commandement) ; seul Edgar Markov pour l'instant, famille des commandants à éminence (The Ur-Dragon, Inalla, Arahbo…) à venir avec leurs decks",
     "absolute": "Loot, the Anomaly — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addChosenLandType": "Multiversal Passage — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addSourceCounters": "Fated Firepower — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -230,7 +230,7 @@
     "StackItem": 29,
     "PlayerState": 22,
     "GameState": 40,
-    "ObjectFilter": 86,
+    "ObjectFilter": 87,
     "CostDef": 34,
     "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 21,
@@ -301,6 +301,7 @@
     "PLAN-A A4c : phases et étapes ajoutées à leur place (extra.after \"step\" | \"main\" : Paradox Haze, Full Throttle ; file turn.addedPhases / addedSteps), rang de la phase principale (step \"main\" et nth : Survie, Carpet of Flowers) : Effect (champs) 629 → 630, TriggerSpec (champs) 159 → 160",
     "PLAN-A A4 (intégration de A4c après A4a et A4b) : Effect (champs) 633 → 634, TriggerSpec (champs) 158 → 159",
     "PLAN-E E0 : CardDef.origin, impression d'origine des cartes du pseudo-ensemble Commander (EDH) importées par nom : CardDef 96 → 97",
-    "PLAN-E E2 : GameState.commander, état d'une partie de Commander (903 : commandants par identité physique, taxe, blessures de commandant), absent hors Commander : GameState 39 → 40"
+    "PLAN-E E2 : GameState.commander, état d'une partie de Commander (903 : commandants par identité physique, taxe, blessures de commandant), absent hors Commander : GameState 39 → 40",
+    "PLAN-E E6 : ObjectFilter.commander (« si vous contrôlez un commandant » : Fierce Guardianship, Deadly Rollick, Flawless Maneuver) : ObjectFilter 86 → 87"
   ]
 }
