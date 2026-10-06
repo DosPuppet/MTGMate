@@ -59,7 +59,8 @@ L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son nivea
 - **Cible d'attaque** à plusieurs (`attackTarget`) : un joueur qu'un commandant attaquant peut achever par ses 21 blessures de commandant est « tuable ».
 - **Déterminisation** : un commandant est public, même dans une main ; il n'est ni tiré au hasard ni utilisé pour deviner les cartes cachées.
 - **ISMCTS** reste réservé au duel, Commander compris : 65 % ± 15 contre le niveau moyen sur 40 parties de Commander à deux (decks aléatoires, budget 60, 06/10/2026).
-- **Arène :** `npm run arena -- --a medium --b medium --format commander [--pool commander] [--by-deck] [--players 4]` (`--by-deck` : les decks changent de place, les IA restent ; « A » est le premier deck).
+- **Arène :** `npm run arena -- --a medium --b medium --format commander [--pool commander] [--by-deck] [--players 4]` (`--by-deck` : les decks changent de place, les IA restent ; « A » est le premier préconstruit, Edgar Markov).
+- **Équilibre des précons (06/10/2026, IA moyenne des deux côtés) :** en duel, Edgar Markov gagne 59,3 % ± 3,9 contre Y'shtola (600 parties, 21 tours en moyenne) ; à quatre (Edgar, Y'shtola, Edgar, Y'shtola), les sièges d'Edgar gagnent 33,3 % ± 5,3 (300 parties, 40 tours) : les drains de Y'shtola frappent chaque adversaire. Hors de la cible de 45 à 55 % dans les deux cas, en sens contraires ; les listes ne sont pas retouchées (à l'utilisateur de décider).
 
 ## Combat par simulation (`combat.ts`, niveau élevé)
 

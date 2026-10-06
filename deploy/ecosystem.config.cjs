@@ -25,6 +25,9 @@ module.exports = {
         // MTGX_GRACE_MS: 60000,    // délai de retour après une déconnexion
         // MTGX_MAX_ROOMS: 200,     // salons ouverts au plus
         // MTGX_MAX_HEAP_MB: 384,   // tas au-delà duquel aucun salon n'est créé (avant max_memory_restart)
+        // MTGX_AI_WORKERS: 2,      // workers des sièges IA en ligne (0 : pas d'IA en ligne)
+        // MTGX_MAX_AI_ROOMS: 12,   // salons avec IA ouverts au plus (environ 20 Mo de RSS chacun)
+        // MTGX_MAX_RSS_MB: 640,    // RSS (workers compris) au-delà duquel aucun salon avec IA n'est créé
       },
       autorestart: true,
       // Au repos : environ 210 Mo de RSS. Un salon occupe 0,2 à 0,3 Mo de tas ; le serveur refuse de nouveaux salons

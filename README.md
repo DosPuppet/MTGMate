@@ -79,7 +79,7 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 - Up the Beanstalk
 - Vivi Ornitier
 
-**Commander (plan E, `docs/plans/PLAN-E.md`, en cours) :** règles du format de 2 à 4 joueurs, contre l'IA et en ligne, avec deux premiers decks, Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4. Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, `docs/extensions/edh.md`).
+**Commander (plan E, `docs/plans/PLAN-E.md`) :** règles du format (zone de commandement, taxe, blessures de commandant, 40 points de vie, identité de couleur, liste de bannissement et Game Changers de Scryfall), de 2 à 4 joueurs, contre l'IA et en ligne (avec des sièges IA tenus par le serveur), éditeur de deck Commander (tranche estimée d'après les Game Changers). Deux préconstruits jouables, Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4 (06/10/2026). Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, 117 / 117 cartes gérées, `docs/extensions/edh.md`).
 
 **Hors périmètre pour l'instant :** Limité (scellé, draft), formats éternels, cartes numériques d'Alchemy.
 

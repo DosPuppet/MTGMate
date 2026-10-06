@@ -106,7 +106,9 @@ export const DEFAULT_CONFIG: RoomConfig = {
   maxRooms: 200,
   maxRoomsPerIp: 4,
   maxHeapMb: 384,
-  maxAiRooms: 20,
+  // Mesuré (load-test --ai 3) : environ 20 Mo de RSS par salon avec IA, en plus des workers ; sous le
+  // `max_memory_restart` de pm2 (768 Mo).
+  maxAiRooms: 12,
   maxRssMb: 640,
 };
 
@@ -1063,7 +1065,7 @@ export class RoomManager {
     let aiRooms = 0;
     for (const room of this.rooms.values()) if (room.hasAi) aiRooms++;
     const rssMb = process.memoryUsage().rss / 1_048_576;
-    if (aiRooms >= (this.config.maxAiRooms ?? 20) || (this.config.maxRssMb && rssMb > this.config.maxRssMb))
+    if (aiRooms >= (this.config.maxAiRooms ?? 12) || (this.config.maxRssMb && rssMb > this.config.maxRssMb))
       throw new ClientError("busy", "Trop de parties contre l'IA en cours sur le serveur, réessayez plus tard.");
     if (aiDecks(format).length === 0) throw new ClientError("deck", "Aucun deck jouable pour l'IA dans ce format.");
     return { count, level };

@@ -64,7 +64,7 @@ describe("salons à plusieurs", () => {
     c.send({ type: "join", code: created.room.code, name: "Chloé", deck: GREEN });
     const [, , up] = await Promise.all([a, b, c].map((x) => x.next("update")));
     // Bob et Chloé arrivent en même temps : le siège de Chloé est celui que lui donne le serveur.
-    const seat = up.view.viewer;
+    const seat = up?.view.viewer ?? "p3";
     await c.close();
     const after = await a.next("update", (m) => !!m.view.players[seat]?.lost, 10_000);
     expect(after.view.over).toBe(false);

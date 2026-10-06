@@ -12,7 +12,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { heuristicAgent, randomAgent } from "@mtgx/ai";
-import { buildDeck, card, deckById } from "@mtgx/cards";
+import { buildDeck, buildGameDeck, card, deckById } from "@mtgx/cards";
 import {
   type CardDef,
   createRecordedGame,
@@ -97,6 +97,23 @@ const GOLDEN_GAMES: GoldenSpec[] = [
     maxDecisions: 2000,
     commander: true,
   },
+  // Les deux préconstruits Commander (Edgar Markov, Y'shtola) : en duel avec l'IA heuristique jusqu'au bout, et à quatre.
+  {
+    name: "commandant-duel-precons",
+    seed: 32,
+    decks: ["cmd-edgar-markov", "cmd-yshtola"],
+    agent: "heuristic",
+    maxDecisions: 9000,
+    commander: true,
+  },
+  {
+    name: "commandant-quatre-precons",
+    seed: 33,
+    decks: ["cmd-yshtola", "cmd-edgar-markov", "cmd-yshtola", "cmd-edgar-markov"],
+    agent: "random",
+    maxDecisions: 2500,
+    commander: true,
+  },
 ];
 
 function decksOf(spec: GoldenSpec): CardDef[][] {
@@ -105,8 +122,13 @@ function decksOf(spec: GoldenSpec): CardDef[][] {
   return (spec.pools ?? []).map((set, i) => randomDeck(spec.seed * 100 + i, set));
 }
 
-/** Decks Commander aléatoires d'une partie dorée de Commander. */
+/** Decks d'une partie dorée de Commander : préconstruits (`decks`), ou decks Commander aléatoires (`pools`). */
 function commanderDecksOf(spec: GoldenSpec): { deck: CardDef[]; commanders: number[] }[] {
+  if (spec.decks)
+    return spec.decks.map((id) => {
+      const g = buildGameDeck(deckById(id));
+      return { deck: g.deck, commanders: g.commanders ?? [] };
+    });
   return (spec.pools ?? []).map((set, i) => randomCommanderDeck(spec.seed * 100 + i, set === "all" ? undefined : set));
 }
 

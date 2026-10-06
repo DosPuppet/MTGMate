@@ -5,7 +5,7 @@
  * des parties en cours, `data/rooms` par défaut ; « off » pour garder les parties en mémoire seulement), MTGX_ORIGINS
  * (origines admises pour le WebSocket en plus du même hôte, séparées par des virgules), MTGX_MAX_ROOMS_PER_IP (4),
  * MTGX_MAX_HEAP_MB (tas au-delà duquel aucun salon n'est créé, 384), MTGX_AI_WORKERS (workers des sièges IA, 2 au plus
- * par défaut ; 0 : pas d'IA en ligne), MTGX_MAX_AI_ROOMS (salons avec IA ouverts au plus, 20), MTGX_MAX_RSS_MB (mémoire
+ * par défaut ; 0 : pas d'IA en ligne), MTGX_MAX_AI_ROOMS (salons avec IA ouverts au plus, 12), MTGX_MAX_RSS_MB (mémoire
  * du processus au-delà de laquelle aucun salon avec IA n'est créé, 640).
  */
 import { networkInterfaces } from "node:os";

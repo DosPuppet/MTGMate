@@ -78,8 +78,9 @@ const META = pool === "meta" ? metaDecks().filter((d) => d.playable) : [];
 function commanderDecksFor(pair: number): [GameDeck, GameDeck] {
   if (COMMANDER_PRECONS.length) {
     const n = COMMANDER_PRECONS.length;
-    const i = pair % n;
-    const j = (i + 1 + (Math.floor(pair / n) % (n - 1))) % n;
+    // --by-deck : le premier préconstruit est toujours « A », contre chacun des autres à tour de rôle.
+    const i = byDeck ? 0 : pair % n;
+    const j = byDeck ? 1 + (pair % (n - 1)) : (i + 1 + (Math.floor(pair / n) % (n - 1))) % n;
     const g = (k: number) => {
       const d = COMMANDER_PRECONS[k]!;
       const b = buildGameDeck(d);
@@ -212,6 +213,7 @@ function report(t: Tally, ms: number): void {
   console.log(
     `${A} contre ${B} : ${games} parties${players > 2 ? ` à ${players} joueurs` : ""} (pool ${pool}${commander ? ", Commander" : ""}${byDeck ? ", par deck" : ""}${[A, B].some((x) => x.startsWith("expert")) ? `, budget ${budget}` : ""}) en ${(ms / 1000).toFixed(0)} s`,
   );
+  if (byDeck && COMMANDER_PRECONS.length) console.log(`  A = ${COMMANDER_PRECONS[0]?.name}`);
   console.log(
     `  ${A} gagne ${pct(p)} % ± ${pct(ci)} (${t.a} / ${decided}) · nuls ${t.draws} · inachevées ${t.unfinished} · ${(t.turns / games).toFixed(1)} tours en moyenne`,
   );
