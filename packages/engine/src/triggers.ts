@@ -342,6 +342,7 @@ export function checkCondition(
       const id = eventObject;
       const v = id ? (s.lki[id] ?? (s.objects[id]?.zone === "battlefield" ? snapshot(s, id) : undefined)) : undefined;
       if (!v) return false;
+      if (c.strictAmongAll) return s.battlefield.every((x) => x === id || !isCreature(s, x) || chars(s, x).power < v.power);
       const others = [
         ...s.battlefield
           .filter((x) => x !== id && s.objects[x]?.controller === v.controller && isCreature(s, x))

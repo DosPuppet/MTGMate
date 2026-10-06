@@ -101,12 +101,15 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Sunken Hollow": battleLand,
   "Raffine's Tower": tappedTriland,
   "Savai Triome": tappedTriland,
+  "Ketria Triome": tappedTriland,
   "Arcane Sanctum": { abilities: [entersWith({ tapped: true }), manaAbility(["W", "U", "B"])] },
 
   // --- Fetchs ---
   "Bloodstained Mire": fetchland("Swamp", "Mountain"),
   "Flooded Strand": fetchland("Plains", "Island"),
   "Polluted Delta": fetchland("Island", "Swamp"),
+  "Windswept Heath": fetchland("Forest", "Plains"),
+  "Wooded Foothills": fetchland("Mountain", "Forest"),
 
   // --- Terrains à capacité ---
   "Bojuka Bog": {

@@ -296,3 +296,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Rewind, Unwind, Frantic Search : « dégagez jusqu'à N terrains » ne dégage que vos terrains, choisis automatiquement ;
   - `choix auto` Phyrexian Altar : capacité de mana activée à la main ; le paiement automatique ne sacrifie jamais de créature ;
   - `règle` Teferi's Protection : une Aura déjà attachée au joueur (malédiction) ne tombe pas.
+  - `règle` Mox Diamond : « s'il devait arriver, vous pouvez défausser une carte de terrain à la place ; sinon, il va au cimetière » est une capacité d'arrivée : il arrive (ses capacités « quand un artefact arrive » le voient), puis il est sacrifié si aucun terrain n'est défaussé ;
+  - `règle` Forbidden Orchard : « quand vous engagez ce terrain pour du mana » se déclenche quand il devient engagé, quelle qu'en soit la raison ;
+  - `règle` Chromatic Orrery : « dépenser du mana comme s'il était de n'importe quelle couleur » vaut pour les sorts, pas pour les capacités activées ;
+  - `choix auto` Myriade (Goldlust Triad) : une seule question pour toutes les copies ; chacune attaque le joueur, jamais un de ses planeswalkers ;
+  - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ;
+  - `choix auto` Zurgo and Ojutai : les deux cartes qui ne vont pas en main sont mises au-dessous dans un ordre aléatoire (pas au choix).

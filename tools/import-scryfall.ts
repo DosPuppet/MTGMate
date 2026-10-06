@@ -204,14 +204,22 @@ async function importByName(SET: string): Promise<void> {
     }
     const newest = (list: ScryfallCard[]) => [...list].sort((a, b) => b.released_at.localeCompare(a.released_at))[0];
     const chosen = newest(prints.filter(regularPrint)) ?? newest(prints.filter((c) => !c.digital)) ?? prints[0];
+    // Les cartes sont de préférence en français : l'impression française de la même extension si elle a son texte, sinon
+    // la plus récente impression française (ordinaire d'abord, avec son texte imprimé d'abord), image comprise.
     const frPrints = fr.filter((c) => c.name === chosen?.name);
+    // Texte imprimé en français : certaines impressions (EOC sur Scryfall) portent le texte anglais.
+    const printed = (c: ScryfallCard) =>
+      c.card_faces?.length
+        ? c.card_faces.some((x) => x.printed_text && x.printed_text !== x.oracle_text)
+        : !!c.printed_text && c.printed_text !== c.oracle_text;
     const frSame = frPrints.find((c) => c.set === chosen?.set);
-    const frOther = newest(frPrints);
-    const f =
-      frSame ??
-      (frOther
-        ? { ...frOther, image_uris: undefined, card_faces: frOther.card_faces?.map((x) => ({ ...x, image_uris: undefined })) }
-        : undefined);
+    const withText = frPrints.filter(printed);
+    const frOther =
+      newest(withText.filter(regularPrint)) ??
+      newest(withText.filter((c) => !c.digital)) ??
+      newest(frPrints.filter(regularPrint)) ??
+      newest(frPrints.filter((c) => !c.digital));
+    const f = frSame && (printed(frSame) || !frOther || !printed(frOther)) ? frSame : frOther;
     const entry = chosen && entryOf(chosen, f);
     if (!chosen || !entry) {
       unsupported.push(`${name} (${chosen?.layout})`);

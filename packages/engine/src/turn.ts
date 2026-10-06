@@ -446,6 +446,11 @@ function finishCleanup(s: GameState): void {
     if (pl) {
       pl.manaKeep = undefined;
       pl.manaKeepCombat = undefined;
+      if (pl.restrictedMana?.some((m) => m.keep)) {
+        pl.restrictedMana = pl.restrictedMana.filter((m) => !m.keep);
+        if (!pl.restrictedMana.length) pl.restrictedMana = undefined;
+        bumpFor(s, "mana");
+      }
     }
   }
   bump(s);
@@ -550,7 +555,9 @@ function endStep(s: GameState): void {
     const changed =
       !!player.restrictedMana?.length || (Object.keys(pool) as ManaType[]).some((m) => pool[m] !== player.manaPool[m]);
     player.manaPool = pool;
-    player.restrictedMana = undefined;
+    // Le mana marqué « gardé jusqu'à la fin du tour » reste (Klauth) ; il se vide au nettoyage.
+    const kept = player.restrictedMana?.filter((m) => m.keep);
+    player.restrictedMana = kept?.length ? kept : undefined;
     if (changed) bumpFor(s, "mana");
   }
   if (s.turn.step === "endCombat") {

@@ -418,6 +418,8 @@ export const amount = {
   /** X du sort qui a mis la source en jeu. */
   sourceX: spent("x"),
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
+  /** La plus grande valeur du montant, vu de chacun des joueurs désignés (« … qu'un adversaire contrôle »). */
+  maxOverPlayers: (players: Ref, of: Amount): Amount => ({ kind: "maxOverPlayers", players, amount: of }),
   opponentsLostLife: turnEvents({ event: "lifeLoss", who: "opponent", distinct: "player" }),
   sacrificedThisTurn: turnEvents({ event: "sacrifice", who: "you" }),
   /** Portes déverrouillées parmi les Salles que vous contrôlez. */
@@ -810,6 +812,12 @@ export const fx = {
   /** Ces cartes de votre cimetière sont lançables ce tour-ci (permission ordinaire, Zul Ashur). */
   allowCastFromGraveyard: (what: Ref): Effect => ({ op: "grantPlay", what }),
   addMana: (...mana: ManaType[]): Effect => ({ op: "addMana", mana }),
+  /** « Ajoutez [mana]. Si ce mana sert à lancer [un sort correspondant], [effet] » (Arena of Glory). */
+  addManaWithRider: (rider: NonNullable<ManaAbilityDef["rider"]>, ...mana: ManaType[]): Effect => ({
+    op: "addMana",
+    mana,
+    rider,
+  }),
   /** « Ajoutez N mana d'une couleur au choix » ; `colors` : « {R}, {W} ou {B} ». */
   addManaChoice: (n: Amount = 1, colors?: ManaType[], restriction?: ManaRestriction, keep?: boolean): Effect => ({
     op: "addManaChoice",
@@ -819,12 +827,13 @@ export const fx = {
     ...(keep ? { keep } : {}),
   }),
   /** « Ajoutez N mana en n'importe quelle combinaison de couleurs » ; `colors` : « {R} ou {G} pour chaque … ». */
-  addManaCombination: (n: Amount, colors?: ManaType[], restriction?: ManaRestriction): Effect => ({
+  addManaCombination: (n: Amount, colors?: ManaType[], restriction?: ManaRestriction, keep?: boolean): Effect => ({
     op: "addManaChoice",
     n,
     colors,
     restriction,
     combination: true,
+    ...(keep ? { keep } : {}),
   }),
   revealUntilN: (filter: ObjectFilter, n: Amount, to?: MoveSpec, store?: string): Effect => ({
     op: "revealUntilN",
@@ -1460,6 +1469,8 @@ export const fx = {
       store?: string;
       tapped?: boolean;
       attacking?: boolean;
+      attackEach?: Ref;
+      exileAtEndOfCombat?: boolean;
       addTypes?: CardType[];
       pt?: number;
       setColors?: Color[];
@@ -2342,6 +2353,8 @@ export const cond = {
   evoked: { kind: "cast", via: "evoke" } as Condition,
   /** « … avec la plus grande force parmi les créatures que ce joueur contrôle » (l'objet de l'événement, parti). */
   eventObjectGreatestPower: { kind: "eventObjectGreatestPower" } as Condition,
+  /** Sa force est supérieure à celle de chaque autre créature, de tous les joueurs (Selvala). */
+  eventObjectStrictlyGreatestPower: { kind: "eventObjectGreatestPower", strictAmongAll: true } as Condition,
   /** « S'il a été lancé par Web-slinging », « si le coût de chaos a été payé ». */
   castVia: (via: CastVia): Condition => ({ kind: "cast", via }),
   /** Capacité ∞ : la source a été exploitée. */

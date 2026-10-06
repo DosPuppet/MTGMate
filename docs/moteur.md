@@ -99,7 +99,7 @@ Des gardes empêchent une partie de boucler ou d'exploser ; elles déclarent la 
 |---|---|---|---|
 | Étapes du déroulement | `turn.ts` | 100 000 | partie nulle |
 | Passes d'actions basées sur l'état | `turn.ts` | 100 | partie nulle |
-| Boucle d'actions obligatoires (104.4b) | `game.ts` | même empreinte 3 fois | partie nulle |
+| Boucle d'actions obligatoires (104.4b) | `game.ts` | même empreinte 3 fois ; ou même empreinte où jetons et objets de la pile ne comptent qu'une fois, 3 fois, sans que la pile ni le champ de bataille ne diminuent (boucle qui accumule : Ganax et Draconic Visitor) ; les choix faits pendant la boucle (ordre des déclenchements, cibles) ne la coupent pas | partie nulle |
 | Décisions automatiques par tour | `host.ts` | 10 000 | partie nulle |
 | Jetons créés | `actions.ts` | 100 par événement, aucun au-delà de 400 objets | coupure |
 | Montant remplacé | `modifiers.ts` | 1 000 000 | coupure |

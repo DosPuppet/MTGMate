@@ -15,7 +15,9 @@
  * --format commander (PLAN-E) : parties de Commander ; decks Commander aléatoires, ou `--pool commander` : les
  * préconstruits Commander jouables.
  * --by-deck : mesure les decks et non les IA (même IA conseillée : --a medium --b medium) ; les decks changent de place
- * d'une partie à l'autre et « A » est le premier deck de la paire (à 4 joueurs : sièges deck 1, deck 2, deck 1, deck 2).
+ * d'une partie à l'autre et « A » est le premier deck de la paire (à 4 joueurs : sièges deck 1, deck 2, deck 1, deck 2) ;
+ * `--deck cmd-<id>` : ce préconstruit Commander est « A », contre chacun des autres à tour de rôle.
+ * MTGX_SLOW_MS=N : chaque décision de plus de N ms est signalée (attente, taille du plateau, pile, décision prise).
  */
 import { fork } from "node:child_process";
 import { type AiLevel, aiAgent, playGame, randomAgent } from "@mtgx/ai";
@@ -44,10 +46,14 @@ const players = Math.max(2, Number(arg("players", "2")));
 const commander = arg("format", "") === "commander";
 const byDeck = process.argv.includes("--by-deck");
 /** Préconstruits Commander jouables (`--pool commander`). */
-const COMMANDER_PRECONS =
+/** --deck <id> (avec --by-deck) : ce préconstruit est « A », contre chacun des autres (par défaut, le premier). */
+const focus = arg("deck", "");
+const COMMANDER_PRECONS = (
   commander && pool === "commander"
     ? DECKS.filter((d) => d.format === "commander" && validateDeck(d, CARDS, "commander").playable)
-    : [];
+    : []
+).sort((x, y) => Number(y.id === focus) - Number(x.id === focus));
+if (focus && COMMANDER_PRECONS[0]?.id !== focus) throw new Error(`Préconstruit Commander inconnu ou injouable : ${focus}`);
 if (commander && pool === "commander" && COMMANDER_PRECONS.length < 2)
   throw new Error("Il faut deux préconstruits Commander jouables");
 
@@ -124,11 +130,20 @@ interface Tally {
 }
 
 /** Enveloppe un agent pour mesurer son temps de réflexion. */
+const SLOW_MS = Number(process.env.MTGX_SLOW_MS ?? 0);
 function timed(inner: Agent, into: number[]): Agent {
   return (s, p) => {
     const t0 = performance.now();
     const d = inner(s, p);
-    into.push(performance.now() - t0);
+    const ms = performance.now() - t0;
+    into.push(ms);
+    if (SLOW_MS && ms > SLOW_MS) {
+      const what =
+        s.pending?.kind === "choice" ? `choix ${s.pending.request.type} (${s.pending.request.intent ?? ""})` : s.pending?.kind;
+      console.error(
+        `lent : ${ms.toFixed(0)} ms, tour ${s.turn.number}, ${p}, ${what}, ${s.battlefield.length} permanents, pile ${s.stack.length} → ${JSON.stringify(d).slice(0, 160)}`,
+      );
+    }
     return d;
   };
 }

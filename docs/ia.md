@@ -60,7 +60,7 @@ L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son nivea
 - **Déterminisation** : un commandant est public, même dans une main ; il n'est ni tiré au hasard ni utilisé pour deviner les cartes cachées.
 - **ISMCTS** reste réservé au duel, Commander compris : 65 % ± 15 contre le niveau moyen sur 40 parties de Commander à deux (decks aléatoires, budget 60, 06/10/2026).
 - **Arène :** `npm run arena -- --a medium --b medium --format commander [--pool commander] [--by-deck] [--players 4]` (`--by-deck` : les decks changent de place, les IA restent ; « A » est le premier préconstruit, Edgar Markov).
-- **Équilibre des précons (06/10/2026, IA moyenne des deux côtés) :** en duel, Edgar Markov gagne 59,3 % ± 3,9 contre Y'shtola (600 parties, 21 tours en moyenne) ; à quatre (Edgar, Y'shtola, Edgar, Y'shtola), les sièges d'Edgar gagnent 33,3 % ± 5,3 (300 parties, 40 tours) : les drains de Y'shtola frappent chaque adversaire. Hors de la cible de 45 à 55 % dans les deux cas, en sens contraires ; les listes ne sont pas retouchées (à l'utilisateur de décider).
+- **Équilibre des précons (06/10/2026, IA moyenne des deux côtés) :** en duel, Edgar Markov gagne 59,3 % ± 3,9 contre Y'shtola (600 parties, 21 tours en moyenne) ; à quatre (Edgar, Y'shtola, Edgar, Y'shtola), les sièges d'Edgar gagnent 33,3 % ± 5,3 (300 parties, 40 tours) : les drains de Y'shtola frappent chaque adversaire. Hors de la cible de 45 à 55 % dans les deux cas, en sens contraires ; les listes ne sont pas retouchées (à l'utilisateur de décider). The Ur-Dragon (troisième précon, `--deck cmd-ur-dragon`, contre les deux autres) : 54,9 % ± 4,0 en duel (600 parties, 17 tours), 41,2 % ± 5,7 à quatre (300 parties, 37 tours).
 
 ## Combat par simulation (`combat.ts`, niveau élevé)
 
@@ -158,7 +158,7 @@ Essais sans gain mesurable, écartés :
 
 ## Pièges
 
-- **Multijoueur, grands plateaux :** une décision de priorité du niveau moyen prend 1,5 à 4 s quand le champ de bataille compte 50 à 90 permanents (parties à quatre longues, mesuré au tournoi le 03/10/2026) ; c'était déjà le cas avant C17. Le niveau moyen n'a pas de budget en temps : à borner si l'interface en souffre.
+- **Multijoueur, grands plateaux :** une décision de priorité du niveau moyen prend 1,5 à 4 s quand le champ de bataille compte 50 à 90 permanents (parties à quatre longues, mesuré au tournoi le 03/10/2026) ; c'était déjà le cas avant C17. Le niveau moyen n'a pas de budget en temps : à borner si l'interface en souffre. Borne posée le 06/10/2026 pour les choix (deck The Ur-Dragon, boucles de déclenchements) : avec plus de 12 objets sur la pile ou plus de 150 permanents, les choix ne sont plus simulés (suggestion du moteur, ordre par valeur) ; une cible de déclenchement prenait jusqu'à 242 s avec 92 objets sur la pile.
 
 - **Information cachée.** Le code de l'IA ne doit jamais lire la main adverse, la liste de son deck ni l'ordre des bibliothèques. Il passe par `determinize` (ISMCTS), qui ne tire que de ce qui a été vu. Les simulations à un coup (`rollout`, `simulate`) ne piochent pas. `ai/test/ismcts.test.ts` vérifie qu'une autre répartition, ou d'autres cartes cachées, ne changent ni la déterminisation ni la décision.
 - **`applyMutable` n'est pas transactionnel.** Une décision illégale laisse l'état à moitié modifié. Dans une simulation, on passe par `step` (`evaluate.ts`) : « passer » est appliqué sur place, le reste par `submit`, qui travaille sur une copie.

@@ -28,6 +28,21 @@ const activations = (s: GameState, player: string, source: string) =>
   );
 
 describe("options proposées, décisions acceptées", () => {
+  it("sources qui coûtent des PV : pas plus que ce que le joueur peut payer (119.4 ; Mana Confluence à 1 PV)", () => {
+    // Deux Mana Confluence pour {1}{R} : à 1 PV, une seule peut payer (le sort n'est pas proposé) ; à 3 PV, les deux.
+    const at = (life: number) => {
+      const s = scenario({ p1: { life, battlefield: ["Mana Confluence", "Mana Confluence"], hand: ["Axgard Cavalry"] } });
+      const cavalry = idOf(s, "p1", "hand", "Axgard Cavalry");
+      return { s, offered: !!castOption(s, "p1", cavalry), cavalry };
+    };
+    expect(at(1).offered).toBe(false);
+    const two = at(3);
+    expect(two.offered).toBe(true);
+    const after = settle(act(two.s, "p1", { type: "cast", card: two.cavalry }));
+    expect(idsOf(after, "p1", "battlefield", "Axgard Cavalry")).toHaveLength(1);
+    expect(after.players.p1?.life).toBe(1);
+  });
+
   it("« X cibles » avec X = 0 : aucune cible (601.2c, Hide on the Ceiling)", () => {
     let s = scenario({ p1: { battlefield: ["Island"], hand: ["Hide on the Ceiling"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Hide on the Ceiling"), x: 0, targets: { t: [] } });

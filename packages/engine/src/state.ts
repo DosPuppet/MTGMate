@@ -506,7 +506,8 @@ export function commandZoneAbilities(s: GameState, id: ObjectId): readonly Abili
   return abilities.some(fromCommand) ? abilities.filter(fromCommand) : NO_ABILITIES;
 }
 
-const fromCommand = (ab: AbilityDef) => (ab.kind === "triggered" || ab.kind === "static") && !!ab.fromCommand;
+const fromCommand = (ab: AbilityDef) =>
+  (ab.kind === "triggered" || ab.kind === "static" || ab.kind === "playerStatic") && !!ab.fromCommand;
 
 /** Commander (903.4) : identité de couleur des commandants d'un joueur (vide sans commandant, 903.4f). */
 export function commanderIdentity(s: GameState, player: PlayerId): Color[] {

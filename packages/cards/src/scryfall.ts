@@ -832,6 +832,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const spectacle = /^Spectacle ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Exaltation (702.83), affinité pour les artefacts (702.41), modulaire (702.43), greffe (702.58), extorsion (702.101).
   const exalted = /^Exalted\b/m.test(raw.oracleText);
+  const myriad = /^Myriad\b/m.test(raw.oracleText);
   const affinityArtifacts = /^Affinity for artifacts\b/m.test(raw.oracleText);
   const modular = Number(/^Modular (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const graft = Number(/^Graft (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
@@ -883,6 +884,23 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   }
   if (firebending) {
     bloomburrowAbilities.push(dsl.firebending(firebending));
+  }
+  // Myriade (702.116) : quand elle attaque, pour chaque adversaire autre que le joueur défenseur, une copie engagée et
+  // attaquante qui attaque ce joueur, exilée à la fin du combat (l'attaque d'un de ses planeswalkers n'est pas proposée).
+  if (myriad) {
+    bloomburrowAbilities.push(
+      dsl.triggered(
+        dsl.when.attacksSelf,
+        dsl.fx.may(
+          "Myriade : créer des copies qui attaquent vos autres adversaires ?",
+          dsl.fx.copyToken(dsl.ref.self, {
+            attackEach: dsl.ref.except(dsl.ref.eachOpponent, dsl.ref.defendingPlayer),
+            exileAtEndOfCombat: true,
+          }),
+        ),
+        { label: "Myriade : une copie attaque chacun de vos autres adversaires" },
+      ),
+    );
   }
   if (exalted) {
     bloomburrowAbilities.push(

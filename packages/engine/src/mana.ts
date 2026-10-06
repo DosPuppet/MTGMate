@@ -685,6 +685,15 @@ export function solvePayment(
   for (let tries = 0; tries < 8; tries++) {
     const plan = solvePaymentOnce(s, player, cost, without, purpose);
     if (!plan) return null;
+    // Sources qui coûtent des PV (Mana Confluence, Horizon of Progress) : le total ne peut dépasser ce que le joueur peut
+    // payer (119.4 : à 1 PV, une seule) ; sinon le plan est refait sans l'une d'elles.
+    const lifeOf = (t: { id: ObjectId; ability: number }) =>
+      t.ability >= 0 ? (manaAbilitiesOf(s, t.id)[t.ability]?.cost.payLife ?? 0) : 0;
+    const lifeTaps = plan.taps.filter((t) => lifeOf(t) > 0);
+    if (lifeTaps.length > 1 && lifeTaps.reduce((n, t) => n + lifeOf(t), 0) > payableLife(s, player)) {
+      without = new Set([...without, (lifeTaps.at(-1) as { id: ObjectId }).id]);
+      continue;
+    }
     const sharing = plan.taps.filter((t) => t.ability >= 0 && manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother);
     if (sharing.length <= 1) return plan;
     const inPlan = new Set(plan.taps.map((t) => t.id));

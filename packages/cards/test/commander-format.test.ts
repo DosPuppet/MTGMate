@@ -40,9 +40,10 @@ describe("identité de couleur (903.4)", () => {
 describe("règles de construction du Commander (903.5)", () => {
   const edgar = DECKS.find((d) => d.id === "cmd-edgar-markov")!;
   const yshtola = DECKS.find((d) => d.id === "cmd-yshtola")!;
+  const urDragon = DECKS.find((d) => d.id === "cmd-ur-dragon")!;
 
-  it("les deux préconstruits sont légaux (pas encore jouables) ; Game Changers et tranche estimée", () => {
-    for (const d of [edgar, yshtola]) {
+  it("les préconstruits sont légaux ; Game Changers et tranche estimée", () => {
+    for (const d of [edgar, yshtola, urDragon]) {
       const v = validateDeck(d, CARDS, "commander");
       expect(v.errors, d.id).toEqual([]);
       expect(v.legal).toBe(true);
@@ -63,6 +64,19 @@ describe("règles de construction du Commander (903.5)", () => {
     const y = validateDeck(yshtola, CARDS, "commander");
     expect(y.identity).toEqual(["W", "U", "B"]);
     expect(y.gameChangers).toHaveLength(13);
+    const u = validateDeck(urDragon, CARDS, "commander");
+    expect(u.commanders).toEqual(["The Ur-Dragon"]);
+    expect(u.identity).toEqual(["W", "U", "B", "R", "G"]);
+    expect(u.gameChangers?.sort()).toEqual([
+      "Chrome Mox",
+      "Demonic Tutor",
+      "Mana Vault",
+      "Mox Diamond",
+      "Smothering Tithe",
+      "Teferi's Protection",
+      "The One Ring",
+    ]);
+    expect(u.bracket).toBe("4+");
   });
 
   const base = (): { commander: DeckEntries; main: DeckEntries } => ({

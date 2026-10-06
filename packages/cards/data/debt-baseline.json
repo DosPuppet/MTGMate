@@ -58,7 +58,8 @@
     "skipDrawStep": "Necropotence, Necrodominance : étape de pioche passée (500.11, famille J)",
     "discardToLibraryTop": "Library of Leng : une carte défaussée par un effet va au-dessus de la bibliothèque (famille J, défausse)",
     "stealsOpponentDraws": "Notion Thief : remplacement de la pioche d'un adversaire par la vôtre (famille I, pioche ; un remplacement chiffré ne change pas de joueur)",
-    "skipExtraTurns": "Trouble in Pairs (affects: opponents) : tours supplémentaires passés (famille J)"
+    "skipExtraTurns": "Trouble in Pairs (affects: opponents) : tours supplémentaires passés (famille J)",
+    "fromCommand": "Deck The Ur-Dragon (PLAN-E, recette « Ajouter un deck Commander ») : éminence d'une statique de joueur (réduction du coût des sorts de Dragon depuis la zone de commandement) ; même famille que le déclencheur d'éminence d'Edgar Markov (fromCommand)"
   },
   "keyword": {
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",
@@ -104,7 +105,6 @@
     "regenerate": "Swarmyard — régénération (701.19) : bouclier générique qui remplace la prochaine destruction, à réutiliser pour toute carte « régénérez »"
   },
   "singleCardKeys": {
-    "fromCommand": "PLAN-E E6 : éminence (113.6, capacité qui fonctionne depuis la zone de commandement) ; seul Edgar Markov pour l'instant, famille des commandants à éminence (The Ur-Dragon, Inalla, Arahbo…) à venir avec leurs decks",
     "absolute": "Loot, the Anomaly — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addChosenLandType": "Multiversal Passage — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addSourceCounters": "Fated Firepower — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -203,7 +203,10 @@
     "sacrificeReduce": "Cresting Mosasaurus : émerger (702.119), coût alternatif payé par un sacrifice qui le réduit (altCost.pay)",
     "sourceSubtype": "Hunting Velociraptor : rôder (702.76), sous-type de la source des blessures au journal du tour",
     "forNonOwners": "Ian Malcolm, Chaotician : permission de jouer donnée à chaque joueur autre que le propriétaire (grantPlay, famille C)",
-    "withWarp": "Blade of the Swarm — cible « carte exilée avec la distorsion » (une carte qui a la distorsion) ; Close Encounter, qui l'utilisait, lit `warped` (carte exilée par la distorsion, PLAN-A A3) : à réutiliser pour toute carte exilée « avec la distorsion »"
+    "withWarp": "Blade of the Swarm — cible « carte exilée avec la distorsion » (une carte qui a la distorsion) ; Close Encounter, qui l'utilisait, lit `warped` (carte exilée par la distorsion, PLAN-A A3) : à réutiliser pour toute carte exilée « avec la distorsion »",
+    "nameOf": "Dragonlord Kolaghan : « du même nom que [l'objet désigné] », relation résolue par withX comme sharesCreatureTypeWith ; famille des bornes dynamiques des filtres",
+    "attackEach": "Goldlust Triad : myriade (702.116), lue dans le texte (scryfall.ts) ; famille du mot-clé myriade (une copie attaque chacun des autres adversaires)",
+    "exileAtEndOfCombat": "Goldlust Triad : myriade (702.116), copies exilées à la fin du combat ; famille du mot-clé myriade"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -226,20 +229,20 @@
     "StackItem": 29,
     "PlayerState": 23,
     "GameState": 40,
-    "ObjectFilter": 87,
+    "ObjectFilter": 88,
     "CostDef": 34,
     "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 17,
     "LayerMods": 31,
     "Effect": 152,
-    "Effect (champs)": 635,
+    "Effect (champs)": 638,
     "TriggerSpec": 60,
     "TriggerSpec (champs)": 160,
     "Condition": 53,
-    "Condition (champs)": 97,
-    "Amount": 31,
-    "Amount (champs)": 67,
+    "Condition (champs)": 98,
+    "Amount": 32,
+    "Amount (champs)": 70,
     "Ref": 32,
     "Ref (champs)": 55
   },
@@ -301,6 +304,7 @@
     "PLAN-E E6 : ObjectFilter.commander (« si vous contrôlez un commandant » : Fierce Guardianship, Deadly Rollick, Flawless Maneuver) : ObjectFilter 86 → 87",
     "PLAN-E E10 : ascension (702.131), PlayerState.citysBlessing (bénédiction de la cité, pour la partie, comme la vitesse) et la condition citysBlessing (Twilight Prophet ; famille des désignations de joueur permanentes, avec le récit durable) : PlayerState 22 → 23, Condition 52 → 53, Condition (champs) 96 → 97",
     "PLAN-E E12 : entretien cumulatif (unlessPay.times, coût payé une fois par marqueur d'âge, lu dans le texte) ; « sauf la première pioche de son étape de pioche » (draw.exceptTurnDraw, Orcish Bowmasters) : Effect (champs) 634 → 635, TriggerSpec (champs) 159 → 160",
-    "Ref commanders (PLAN-E, Path of Ancestry) : « votre commandant », où qu'il soit ; forme générique pour les cartes Commander qui citent le commandant : Ref 31 → 32, Ref (champs) 53 → 55"
+    "Ref commanders (PLAN-E, Path of Ancestry) : « votre commandant », où qu'il soit ; forme générique pour les cartes Commander qui citent le commandant : Ref 31 → 32, Ref (champs) 53 → 55",
+    "Deck The Ur-Dragon (Commander) : ObjectFilter.nameOf (Dragonlord Kolaghan), Amount maxOverPlayers (Cavern-Hoard Dragon), zone de commandement dans Ref zone et MoveSpec (Hellkite Courser, Majestic Genesis), myriade (copyToken attackEach, exileAtEndOfCombat), mana marqué gardé (Klauth) et porteur d'un effet (Arena of Glory), éminence d'une statique de joueur : ObjectFilter 87 → 88, Effect (champs) 635 → 638, Condition (champs) 97 → 98, Amount 31 → 32, Amount (champs) 67 → 70"
   ]
 }

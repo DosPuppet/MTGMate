@@ -9,7 +9,7 @@ import type { GameState } from "./types";
  * et pile. Elle ne cite aucun identifiant d'objet ni compteur interne (horodatages, version du cache, hasard) : deux
  * versions du moteur qui jouent la même partie donnent la même empreinte.
  */
-export function outcomeHash(s: GameState): string {
+export function outcomeHash(s: GameState, collapse = false): string {
   const def = (id: string | undefined) => (id ? (s.objects[id]?.defId ?? "?") : null);
   const zone = (ids: string[]) => ids.map(def);
   const projection = {
@@ -21,15 +21,21 @@ export function outcomeHash(s: GameState): string {
       return pl ? [p, pl.life, pl.poison ?? 0, pl.lost, zone(pl.library), zone(pl.hand), zone(pl.graveyard)] : [p, null];
     }),
     exile: zone(s.exile),
-    battlefield: s.battlefield.map((id) => {
-      const o = s.objects[id];
-      if (!o) return null;
-      const counters = Object.entries(o.counters)
-        .filter(([, n]) => n)
-        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-      return [o.defId, o.owner, o.controller, o.tapped, o.damage, counters, def(o.attachedTo)];
-    }),
-    stack: s.stack.map((i) => [i.kind, i.sourceDefId, i.controller]),
+    battlefield: once(
+      s.battlefield.map((id) => {
+        const o = s.objects[id];
+        if (!o) return null;
+        const counters = Object.entries(o.counters)
+          .filter(([, n]) => n)
+          .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+        return [o.defId, o.owner, o.controller, o.tapped, o.damage, counters, def(o.attachedTo)];
+      }),
+      (_, i) => collapse && !!s.objects[s.battlefield[i] ?? ""]?.isToken,
+    ),
+    stack: once(
+      s.stack.map((i) => [i.kind, i.sourceDefId, i.controller]),
+      () => collapse,
+    ),
     // Commander (PLAN-E) : zone de commandement, taxes et blessures de commandant ; absent hors Commander.
     ...(s.commander
       ? {
@@ -41,6 +47,17 @@ export function outcomeHash(s: GameState): string {
       : {}),
   };
   return cyrb53(JSON.stringify(projection));
+}
+
+/**
+ * `collapse` (détection d'une boucle qui accumule, 104.4b) : les éléments pour lesquels `dup` est vrai (jetons, objets
+ * de la pile) ne comptent qu'une fois, triés ; sinon la liste telle quelle.
+ */
+function once<T>(list: T[], dup: (x: T, i: number) => boolean): (T | string)[] {
+  if (!list.some(dup)) return list;
+  const keep = list.filter((x, i) => !dup(x, i));
+  const seen = [...new Set(list.filter(dup).map((x) => JSON.stringify(x)))].sort();
+  return [...keep, ...seen];
 }
 
 /** Hachage 53 bits (cyrb53), en hexadécimal : pur et déterministe. */

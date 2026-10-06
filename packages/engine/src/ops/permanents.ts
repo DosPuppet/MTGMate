@@ -428,8 +428,12 @@ export const HANDLERS: OpHandlers = {
   },
   copyToken(s, r, e, ctx) {
     const made: string[] = [];
+    // Myriade : une copie par joueur désigné (un adversaire autre que le joueur défenseur), qui l'attaque.
+    const attackEach = e.attackEach
+      ? resolveRef(s, ctx, e.attackEach).filter((p) => isPlayer(s, p) && p !== ctx.controller)
+      : undefined;
     // Doubling Season s'applique aussi aux jetons copies.
-    const base = e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
+    const base = attackEach ? attackEach.length : e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
     // Fractured Identity : « chaque joueur autre que son contrôleur crée un jeton qui est une copie ».
     const creators = e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller];
     for (const who of creators)
@@ -490,16 +494,33 @@ export const HANDLERS: OpHandlers = {
               "nextUpkeep",
             );
           }
-          if (e.attacking && s.combat) {
-            // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures).
+          if ((e.attacking || attackEach) && s.combat) {
+            // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures) ; myriade : le joueur de
+            // sa copie (les copies en plus d'un doubleur se répartissent entre eux).
             const tok = s.objects[token];
             if (tok) tok.tapped = true;
             const defender =
+              attackEach?.[Math.floor((i * attackEach.length) / n)] ??
               s.combat.attackers.find((a) => s.objects[a.id]?.controller === ctx.controller)?.defender ??
               opponentsOf(s, ctx.controller)[0] ??
               "";
             s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
             bump(s);
+          }
+          if (e.exileAtEndOfCombat) {
+            createDelayed(
+              s,
+              ctx.controller,
+              ctx.sourceId,
+              ctx.sourceDefId,
+              {
+                targets: [],
+                effects: [{ op: "exile", what: { kind: "target", id: "copy" } }],
+                bound: { copy: [token] },
+                label: "exiler la copie",
+              },
+              "endOfCombat",
+            );
           }
           if (e.sacrificeAtEndStep || e.exileAtEndStep) {
             createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {

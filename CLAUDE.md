@@ -6,7 +6,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 - Plateforme MTG contre l'IA et en ligne (de 2 à 4 joueurs, BO3 en duel ; Commander), moteur de règles maison en TypeScript, interface fluide façon MTG Arena.
 - **Périmètre : le format Standard.** Extensions légales et bannies : voir le README ; à revérifier à chaque rotation (Scryfall `legal:standard` / `banned:standard`).
-- **Commander (PLAN-E, fait le 06/10/2026) :** règles du format, de 2 à 4 joueurs, contre l'IA et en ligne (sièges IA compris) ; deux préconstruits jouables (Edgar Markov, Y'shtola) ; les cartes arrivent deck par deck (pseudo-ensemble `EDH`, `docs/commander/decks/`, recette plus bas).
+- **Commander (PLAN-E, fait le 06/10/2026) :** règles du format, de 2 à 4 joueurs, contre l'IA et en ligne (sièges IA compris) ; trois préconstruits jouables (Edgar Markov, Y'shtola, The Ur-Dragon) ; les cartes arrivent deck par deck (pseudo-ensemble `EDH`, `docs/commander/decks/`, recette plus bas).
 - Hors périmètre : Limité, formats éternels, Alchemy.
 
 ## État (02/10/2026)
@@ -50,6 +50,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
   - tout nouvel événement ou champ de vue qui peut citer une carte cachée est filtré ; `ai/test/hidden-info.test.ts` le vérifie ;
   - le protocole est dans `server/src/protocol.ts`, que le client importe en `import type` (sauf la constante `PROTOCOL_VERSION`) ;
   - poignée de main : création, arrivée et reprise d'un salon portent `{ protocol: PROTOCOL_VERSION, rules: RULES_VERSION }` ; un client d'une autre version reçoit l'erreur `version` et recharge la page. Faire avancer `PROTOCOL_VERSION` à tout changement incompatible des messages.
+- **Cartes en français de préférence** (sauf indication contraire de l'utilisateur) : nom, texte et image ; sans impression française dans l'extension d'origine, celle d'une autre extension (`import-cards -- edh` le fait ; Scryfall a des impressions françaises au texte anglais, EOC : à écarter). Signaler les cartes qui n'existent pas en français.
 - **Données :** `packages/cards/data/fdn.json` est indenté avec **1 espace** (le réécrire à l'identique) ; réimport : `npm run import-cards -- <set>|all` (`all` exclut FDN et FRA, retouchés à la main ; leurs données françaises manquantes : `npx tsx tools/import-french.ts <set>`). Liste des extensions : `cards/src/setRegistry.ts` (seule source, lue par les outils d'import). Table des impressions (illustrations au choix dans l'éditeur de deck, chargée à la demande, vérifiée par le serveur) : `npm run import-printings`, à relancer après un réimport. Bannissement annoncé avant un réimport : `cards/data/legality-overrides.json` ; la liste des bannies du README est vérifiée par `cards/test/legality.test.ts`.
 - **Commits :** uniquement quand l'utilisateur le demande ; message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ; remote `origin` (github.com/DosPuppet/planecircle) : c'est l'utilisateur qui pousse.
 
@@ -97,7 +98,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 2. `npm run import-cards -- edh` (cartes absentes du catalogue, impression d'origine, texte français), puis `npm run import-printings` (impressions ; il compare aussi l'identité de couleur à Scryfall).
 3. `npm run coverage -- --deck <id> --text` : cartes à scripter ; mécaniques nouvelles d'abord (formes génériques), puis les cartes dans `packages/cards/src/edh/<fichier>.ts`, tests de règles dans `packages/engine/test/edh*.test.ts`.
 4. Préconstruit `packages/cards/decks/cmd-<id>.json` (enregistré dans `decks.ts`), identique à la liste (`cards/test/commander-decks.test.ts`) ; il devient jouable quand toutes ses cartes le sont (liste `commanderPlayable` de `decklist.test.ts`).
-5. Équilibre : `npm run arena -- --a medium --b medium --format commander --pool commander --by-deck --games 600` (à 2 puis `--players 4`) contre les autres précons ; `npm run verify -- --set COMMANDER`.
+5. Équilibre : `npm run arena -- --a medium --b medium --format commander --pool commander --by-deck --deck cmd-<id> --games 600` (à 2 puis `--players 4`) contre les autres précons ; `npm run verify -- --set COMMANDER`.
 
 ## Règle : pas de dette propre à une carte
 

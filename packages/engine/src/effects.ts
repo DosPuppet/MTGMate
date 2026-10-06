@@ -115,6 +115,12 @@ export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): Object
       ? { ...f, sharesCreatureTypeWith: undefined, types: [...(f.types ?? []), "Creature"] }
       : { ...f, sharesCreatureTypeWith: undefined, anySubtype: types };
   }
+  if (f.nameOf) {
+    const id = resolveRef(s, ctx, f.nameOf).find((x) => s.objects[x] || s.lki[x]);
+    const name = id ? (s.defs[s.objects[id]?.defId ?? s.lki[id]?.defId ?? ""]?.name ?? "") : "";
+    // Sans objet désigné, rien ne correspond.
+    f = { ...f, nameOf: undefined, name: name || "\u0000" };
+  }
   const x = ctx.x;
   if (!f.maxToughnessX && !f.manaValueX && !f.maxManaValueX) return f;
   return {
@@ -153,6 +159,9 @@ function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind:
         const o = s.objects[id];
         return !!o && players.includes(o.owner) && !o.faceDown && !o.cardCopy && !o.preparedFor && card(id);
       });
+    case "command":
+      // Les cartes de la zone de commandement (commandants), pas les emblèmes.
+      return players.flatMap((p) => s.players[p]?.command ?? []).filter((id) => !s.objects[id]?.isToken && card(id));
     case "stack": {
       const resolving = s.resolving?.item.id;
       return s.stack.filter((x) => x.id !== resolving && players.includes(x.controller)).map((x) => x.id);
@@ -336,7 +345,9 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
     case "handAtMost":
       return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
     default:
-      return checkCondition(s, c, ctx.controller, ctx.sourceId);
+      // L'objet et l'événement déclencheur, pour une condition lue à la résolution (Selvala : « si sa force est
+      // supérieure à celle de chaque autre créature »).
+      return checkCondition(s, c, ctx.controller, ctx.sourceId, ctx.event?.objectId, ctx.event);
   }
 }
 
@@ -612,6 +623,13 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "max":
       return Math.max(0, ...a.of.map((x) => evalAmount(s, ctx, x)));
+    case "maxOverPlayers":
+      return Math.max(
+        0,
+        ...resolveRef(s, ctx, a.players)
+          .filter((p) => isPlayer(s, p))
+          .map((p) => evalAmount(s, { ...ctx, controller: p }, a.amount)),
+      );
     case "unlockedDoorNames": {
       const names = new Set<string>();
       for (const id of s.battlefield) {

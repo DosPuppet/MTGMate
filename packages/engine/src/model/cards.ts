@@ -1099,6 +1099,8 @@ export interface PlayFromZone {
 
 /** Capacité statique qui s'applique à des joueurs (défense talismanique, « ne peut pas perdre »…). */
 export interface PlayerStaticAbilityDef {
+  /** Fonctionne aussi depuis la zone de commandement (113.6 ; éminence : The Ur-Dragon). */
+  fromCommand?: boolean;
   /** Jouer ou lancer des cartes depuis le cimetière ou le dessus de la bibliothèque (famille C, R4.4). */
   playFrom?: PlayFromZone;
   /** Coût des capacités activées modifié (famille A, R4.4). */
@@ -1358,7 +1360,8 @@ export interface TokenSpec {
 
 /** Destination d'un déplacement d'objet. */
 export interface MoveSpec {
-  to: "hand" | "battlefield" | "graveyard" | "exile" | "libraryTop" | "libraryBottom";
+  /** `command` : la zone de commandement de son propriétaire (Hellkite Courser : « renvoyez-le dans la zone de commandement »). */
+  to: "hand" | "battlefield" | "graveyard" | "exile" | "libraryTop" | "libraryBottom" | "command";
   /** Exilé par la distorsion : lançable depuis l'exil un tour suivant (`warpExiledTurn`). */
   warp?: boolean;
   tapped?: boolean;

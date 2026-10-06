@@ -148,7 +148,19 @@ function permutations<T>(xs: T[]): T[][] {
   return xs.flatMap((x, i) => permutations([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p]));
 }
 
+/**
+ * Pile très haute ou plateau énorme (boucle de déclenchements : Ganax et Draconic Visitor, Scourge of Valkas) : chaque
+ * simulation résoudrait toute la pile, et une réponse coûterait des minutes (mesuré au tournoi Commander du 06/10/2026).
+ * Les choix y prennent la suggestion du moteur, ou l'ordre par valeur.
+ */
+const COSTLY_STACK = 12;
+const COSTLY_FIELD = 150;
+
 export function heuristicChoice(s: GameState, me: PlayerId, req: ChoiceRequest): ChoiceValue[] {
+  if (s.stack.length > COSTLY_STACK || s.battlefield.length > COSTLY_FIELD) {
+    if (req.type === "order") return [...req.items].sort((a, b) => keepValue(s, me, b) - keepValue(s, me, a));
+    return req.suggested;
+  }
   // Répartition (blessures de combat, blessures ou marqueurs répartis) : candidats simulés (PLAN-C, C17).
   if (req.type === "divide") return bestSettled(s, me, divideCandidates(s, me, req)) ?? req.suggested;
   // Ordre des déclencheurs : chaque ordre essayé jusqu'à trois capacités (six ordres).

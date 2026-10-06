@@ -10,7 +10,14 @@ export const HANDLERS: OpHandlers = {
     const who = e.who ? resolveRef(s, ctx, e.who)[0] : ctx.controller;
     const pool = who ? s.players[who]?.manaPool : undefined;
     const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
-    if (pool) for (const m of e.mana) pool[m] += times;
+    const pl = who ? s.players[who] : undefined;
+    // Mana porteur d'un effet (Arena of Glory) : réserve marquée avec sa source, pour que l'effet s'applique à la dépense.
+    if (e.rider && pl) {
+      const units = e.mana.flatMap((type) =>
+        Array.from({ length: times }, () => ({ type, rider: e.rider, source: ctx.sourceId })),
+      );
+      pl.restrictedMana = [...(pl.restrictedMana ?? []), ...units];
+    } else if (pool) for (const m of e.mana) pool[m] += times;
     bump(s);
     return;
   },
@@ -63,7 +70,8 @@ export const HANDLERS: OpHandlers = {
       : Array.from({ length: Math.max(0, n) }, () => String(answer[0]) as ManaType);
     const restriction = e.restriction;
     if (pl && restriction) {
-      pl.restrictedMana = [...(pl.restrictedMana ?? []), ...units.map((type) => ({ type, restriction }))];
+      const keep = e.keep ? { keep: true } : {};
+      pl.restrictedMana = [...(pl.restrictedMana ?? []), ...units.map((type) => ({ type, restriction, ...keep }))];
     } else if (pl) {
       for (const type of units) {
         pl.manaPool[type] += 1;

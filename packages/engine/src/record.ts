@@ -377,8 +377,14 @@ export const RECORD_VERSION = 1;
  * - 142 : Path of Ancestry : regard 1 quand son mana sert à lancer un sort de créature qui partage un type de créature
  *   avec votre commandant (effet déclenché porté par le mana, `rider.effects` ; référence `commanders`) ; « partage un
  *   type de créature avec » plusieurs objets : un type de l'un d'eux suffit.
+ * - 143 : deck Commander The Ur-Dragon : une condition lue à la résolution voit l'objet et l'événement déclencheurs
+ *   (Selvala) ; myriade ; mana marqué gardé jusqu'à la fin du tour (Klauth) ou porteur d'un effet produit par un effet
+ *   (Arena of Glory) ; éminence d'une statique de joueur ; zone de commandement dans les références et les déplacements
+ *   (Hellkite Courser) ; « du même nom que » un objet désigné ; plus grand montant parmi des joueurs ; le paiement
+ *   n'utilise pas plus de sources qui coûtent des PV que le joueur ne peut en payer (fuzz strict) ; 104.4b : une boucle
+ *   qui accumule (jetons, déclenchements sur la pile) est nulle, et les choix faits pendant la boucle ne la coupent pas.
  */
-export const RULES_VERSION = 142;
+export const RULES_VERSION = 143;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

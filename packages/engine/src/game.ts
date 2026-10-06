@@ -341,12 +341,16 @@ export function submit(state: GameState, player: PlayerId, decision: Decision): 
 }
 
 /**
- * 104.4b : détection d'une boucle d'actions obligatoires. Tant que les joueurs ne font que passer alors que la pile n'est
- * pas vide (déclenchements qui se relancent), on compte ; au-delà de `LOOP_SUSPECT`, on relève l'empreinte canonique
- * de l'état (`outcomeHash`) : la même trois fois, ou plus de `LOOP_LIMIT` passes, et la partie est nulle.
+ * 104.4b : détection d'une boucle d'actions obligatoires. Tant que les joueurs ne font que passer (ou répondre aux
+ * choix de la boucle : ordre des déclenchements, cibles) alors que la pile n'est pas vide (déclenchements qui se
+ * relancent), on compte ; au-delà de `LOOP_SUSPECT`, on relève l'empreinte canonique de l'état (`outcomeHash`) : la même
+ * trois fois, ou plus de `LOOP_LIMIT` passes, et la partie est nulle. Une boucle qui accumule (des jetons à chaque tour,
+ * des déclenchements sur la pile : Ganax et Draconic Visitor) est reconnue à son empreinte où jetons et objets de la pile
+ * ne comptent qu'une fois : la même trois fois, sans que la pile ni le champ de bataille ne diminuent.
  */
 function watchLoop(s: GameState, d: Decision, stacked: boolean): void {
   if (s.over) return;
+  if (d.type === "choose" && s.loop && s.stack.length > 0) return;
   if (d.type !== "pass" || !stacked || s.stack.length === 0) {
     s.loop = undefined;
     return;
@@ -360,8 +364,22 @@ function watchLoop(s: GameState, d: Decision, stacked: boolean): void {
   }
   if (loop.passes < LOOP_SUSPECT) return;
   const h = outcomeHash(s);
-  if (loop.seen.filter((x) => x === h).length >= 2) declareLoopDraw(s);
-  else loop.seen.push(h);
+  if (loop.seen.filter((x) => x === h).length >= 2) {
+    declareLoopDraw(s);
+    return;
+  }
+  loop.seen.push(h);
+  const g = { h: outcomeHash(s, true), stack: s.stack.length, field: s.battlefield.length };
+  loop.growth ??= [];
+  const same = loop.growth.filter((x) => x.h === g.h);
+  const last = same.at(-1);
+  // La pile et le champ de bataille n'ont pas diminué depuis la dernière fois (une chaîne finie fait baisser la pile).
+  if (last && (g.stack < last.stack || g.field < last.field)) loop.growth = loop.growth.filter((x) => x.h !== g.h);
+  else if (same.length >= 2) {
+    declareLoopDraw(s);
+    return;
+  }
+  loop.growth.push(g);
 }
 
 /**

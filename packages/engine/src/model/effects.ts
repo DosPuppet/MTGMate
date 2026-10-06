@@ -9,6 +9,7 @@ import type {
   EventReplacement,
   Keyword,
   LayerMods,
+  ManaAbilityDef,
   ManaCost,
   ManaRestriction,
   ManaType,
@@ -342,6 +343,12 @@ export type Effect =
       tapped?: boolean;
       /** Engagée et attaquante (Calamity, Galloping Inferno). */
       attacking?: boolean;
+      /**
+       * Myriade (702.116) : une copie engagée et attaquante pour chacun des joueurs désignés, qui attaque ce joueur ; `count`
+       * est ignoré. `exileAtEndOfCombat` : les copies sont exilées à la fin du combat.
+       */
+      attackEach?: Ref;
+      exileAtEndOfCombat?: boolean;
       /** F/E de base fixées (Nexus of Becoming : 3/3). */
       pt?: number;
       /** « … sauf que ses capacités d'équipement coûtent {N} de moins » (Firion) ; `sacrificeAtNextUpkeep` en plus. */
@@ -736,7 +743,8 @@ export type Effect =
   /** Ajoute du mana à la réserve du contrôleur. */
   /** `times` : chaque mana est ajouté autant de fois (« {G} pour chaque marqueur »). */
   /** `who` : le joueur qui reçoit le mana (Cheering Crowd : le joueur actif), le contrôleur par défaut. */
-  | { op: "addMana"; mana: ManaType[]; times?: Amount; who?: Ref }
+  /** `rider` : l'effet associé au mana quand il sert à lancer un sort correspondant (Arena of Glory : célérité). */
+  | { op: "addMana"; mana: ManaType[]; times?: Amount; who?: Ref; rider?: ManaAbilityDef["rider"] }
   /** Chaque joueur peut défausser sa main et piocher sept cartes (Arc of Fortune). */
   | { op: "mayWheel" }
   /** « Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi. » */

@@ -70,3 +70,28 @@ cartes faites seulement de mots-clés sont déjà jouables (Vampire of the Dire 
 - **Approximations :** Enlightened Tutor et Herald's Horn (pas de révélation), « dégagez jusqu'à N terrains », Phyrexian Altar, Teferi's Protection (Aura sur le joueur).
 
 **Les deux decks sont jouables :** `cmd-edgar-markov` (88 / 88 hors terrains de base) et `cmd-yshtola` (91 / 91).
+
+## Deck The Ur-Dragon : Dragons, cinq couleurs ✅ (168 / 168)
+
+Ajouté le 06/10/2026 avec la recette « Ajouter un deck Commander » (CLAUDE.md). Liste : « How to Train Ur-Dragon [Primer!] » de Shiny_Latios sur Moxfield (bracket 4, mise à jour le 27/09/2026), dans `docs/commander/decks/ur-dragon.txt` ; préconstruit `cmd-ur-dragon` (7 Game Changers : Chrome Mox, Demonic Tutor, Mana Vault, Mox Diamond, Smothering Tithe, Teferi's Protection, The One Ring).
+
+**Import :** 51 cartes absentes du catalogue ajoutées à EDH ; 48 cartes du deck étaient déjà jouables (Standard, rééditions, decks précédents). L'import par nom prend désormais l'impression française la plus récente d'une autre extension (image comprise) quand l'impression d'origine n'en a pas, et ignore les impressions françaises dont le texte est en anglais (EOC chez Scryfall) : toutes les cartes EDH ont une image française, 16 cartes des decks précédents en ont gagné une ; seul Korvold garde son texte anglais (aucune impression française n'a son texte).
+
+**Cartes (41, `edh/urdragon.ts` et `edh/lands.ts`) :** The Ur-Dragon ; mana : Birds of Paradise, Noble Hierarch, Ignoble Hierarch, Delighted Halfling, Selvala, Heart of the Wilds, Mana Vault, Mox Diamond, Chromatic Orrery ; terrains : City of Brass, Forbidden Orchard, Arena of Glory, Boseiju, Who Endures, Horizon of Progress, Windswept Heath, Wooded Foothills, Ketria Triome ; enchantements et planeswalker : Dragon Tempest, Temur Ascendancy, Steely Resolve, Kiora, Behemoth Beckoner ; sorts : Stubborn Denial, Swan Song, Crux of Fate, Majestic Genesis ; Dragons : Ancient Gold Dragon, Cavern-Hoard Dragon, Dragonlord Dromoka, Dragonlord Kolaghan, Ganax, Astral Hunter, Goldlust Triad, Goldspan Dragon, Hellkite Courser, Klauth, Unrivaled Ancient, Korvold, Fae-Cursed King, Miirym, Sentinel Wyrm, Old Gnawbone, Scourge of Valkas, Tiamat, Ureni of the Unwritten, Zurgo and Ojutai.
+
+- **Moteur :**
+  - éminence d'une statique de joueur (`PlayerStaticAbilityDef.fromCommand` : The Ur-Dragon, réduction du coût depuis la zone de commandement) ;
+  - zone de commandement dans les références (`ref.zone("command", …)`, cartes seulement, pas les emblèmes) et dans les déplacements (`MoveSpec.to: "command"`) : Hellkite Courser, Majestic Genesis ;
+  - myriade (702.116, lue dans le texte) : `copyToken` avec `attackEach` (une copie attaque chacun des joueurs désignés) et `exileAtEndOfCombat` ;
+  - mana marqué gardé jusqu'à la fin du tour (`TaggedMana.keep`, `addManaCombination(…, keep)` : Klauth) ; mana produit par un effet porteur d'un effet associé (`fx.addManaWithRider` : Arena of Glory, célérité) ;
+  - « du même nom que [l'objet désigné] » (`ObjectFilter.nameOf`, résolu par `withX` : Dragonlord Kolaghan) ; plus grand montant parmi des joueurs (`amount.maxOverPlayers` : Cavern-Hoard Dragon) ; force supérieure à celle de chaque autre créature (`cond.eventObjectStrictlyGreatestPower` : Selvala) ;
+  - correction : une condition lue à la résolution (`fx.when`) voit l'objet et l'événement déclencheurs ;
+  - boucle obligatoire qui accumule (104.4b) : Ganax et Draconic Visitor (un Dragon arrive → un Trésor → un Dragon 5/5 à la place) se relancent sans fin ; le moteur ne la voyait pas (l'empreinte change à chaque jeton, l'ordre des déclenchements remettait le compteur à zéro) et une partie à quatre durait des heures ; elle est désormais nulle (empreinte où jetons et objets de la pile ne comptent qu'une fois, `outcomeHash(s, true)`) ; test dans `edh-urdragon.test.ts` ;
+  - IA : avec plus de 12 objets sur la pile ou 150 permanents, les choix ne sont plus simulés (`docs/ia.md`) ;
+  - correction trouvée par le fuzz strict : le paiement n'utilise pas plus de sources qui coûtent des PV (Mana Confluence, Horizon of Progress) que le joueur ne peut en payer (119.4) ; test dans `offers.test.ts`.
+- **Outils :** `npm run arena -- … --by-deck --deck cmd-<id>` mesure un préconstruit Commander contre chacun des autres.
+- **Tests :** `engine/test/edh-urdragon.test.ts` (32) ; fumée EDH (168 cartes) ; fuzz Commander à 2, 3 et 4 joueurs, strict (`--offers 4`) et « chaos » propres.
+- **Approximations :** Mox Diamond (capacité d'arrivée), Forbidden Orchard (« devient engagé »), Chromatic Orrery (sorts seulement), myriade (une question, joueurs seulement), Hellkite Courser (deux commandants), Zurgo and Ojutai (ordre au-dessous).
+- **Dette :** `fromCommand` (statique de joueur), `nameOf`, `attackEach`, `exileAtEndOfCombat` justifiés dans `debt-baseline.json` ; ObjectFilter 87 → 88, Amount 31 → 32, Condition (champs) 97 → 98, Effect (champs) 635 → 638, Amount (champs) 67 → 70 ; `fromCommand` n'est plus propre à Edgar Markov.
+- **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-ur-dragon`, contre Edgar et Y'shtola à tour de rôle) : en duel, The Ur-Dragon gagne 54,9 % ± 4,0 (597 parties décidées, 3 nulles, 17 tours en moyenne) ; à quatre (sièges Ur-Dragon, autre, Ur-Dragon, autre), 41,2 % ± 5,7 (291 parties décidées, 9 nulles, 37 tours). Dans la cible de 45 à 55 % en duel, un peu en dessous à quatre ; la liste n'est pas retouchée.
+

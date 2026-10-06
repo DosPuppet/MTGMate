@@ -127,6 +127,8 @@ export interface ObjectFilter {
    */
   powerAboveOf?: Ref;
   sharesCreatureTypeWith?: Ref;
+  /** Du même nom que l'objet désigné, résolu par `withX` (Dragonlord Kolaghan : « du même nom qu'une carte de son cimetière »). */
+  nameOf?: Ref;
   /** Créature équipée (au moins un Équipement attaché). */
   equipped?: boolean;
   /** Modifié (700.9) : porte un marqueur, est équipé, ou enchanté par une Aura que son contrôleur contrôle. */
@@ -575,8 +577,9 @@ export type Condition =
   /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
   | { kind: "harnessed" }
   /** L'objet de l'événement (parti du champ de bataille) avait la plus grande force parmi les créatures de son contrôleur,
-   * en comptant celles parties en même temps (Kraven the Hunter). */
-  | { kind: "eventObjectGreatestPower" }
+   * en comptant celles parties en même temps (Kraven the Hunter). `strictAmongAll` : sa force est supérieure à celle de
+   * chaque autre créature, quel que soit son contrôleur (Selvala, Heart of the Wilds). */
+  | { kind: "eventObjectGreatestPower"; strictAmongAll?: boolean }
   /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
   | { kind: "behold"; filter: ObjectFilter }
   /** Le sort a été lancé en contemplant (coût additionnel `behold`). */
@@ -711,7 +714,7 @@ export type Ref =
    */
   | {
       kind: "zone";
-      zone: "battlefield" | "graveyard" | "hand" | "exile" | "stack";
+      zone: "battlefield" | "graveyard" | "hand" | "exile" | "stack" | "command";
       who: Ref;
       filter?: ObjectFilter;
       maxManaValue?: Amount;
@@ -797,6 +800,11 @@ export type Amount =
   | { kind: "unlockedDoors" }
   /** Le plus grand des montants. */
   | { kind: "max"; of: Amount[] }
+  /**
+   * La plus grande valeur du montant, évalué du point de vue de chacun des joueurs désignés (« le plus grand nombre
+   * d'artefacts que contrôle un adversaire », Cavern-Hoard Dragon) ; 0 sans joueur.
+   */
+  | { kind: "maxOverPlayers"; players: Ref; amount: Amount }
   /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */
   | { kind: "graveyardsWithAtLeast"; n: number }
   /** Noms différents parmi les portes déverrouillées de ses Salles (Promising Stairs). */

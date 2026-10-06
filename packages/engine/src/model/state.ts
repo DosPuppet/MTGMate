@@ -197,6 +197,8 @@ export interface TaggedMana {
   source?: ObjectId;
   chosen?: GameObject["chosen"];
   rider?: ManaAbilityDef["rider"];
+  /** « Jusqu'à la fin du tour, vous ne perdez pas ce mana entre les étapes et phases » (Klauth, Unrivaled Ancient). */
+  keep?: boolean;
 }
 
 export interface PlayerState {
@@ -850,7 +852,11 @@ export interface GameState {
    * 104.4b : passes enchaînées pile non vide, sans autre décision, et empreintes relevées au-delà de 20 (game.ts) ; une
    * même empreinte trois fois, ou plus de 2 000 passes, et la partie est nulle.
    */
-  loop?: { passes: number; seen: string[] };
+  /**
+   * 104.4b : boucle suspectée (passes pile non vide d'affilée) ; `seen` : empreintes relevées ; `growth` : empreintes où
+   * jetons et objets de la pile ne comptent qu'une fois, avec la taille de la pile et du champ de bataille.
+   */
+  loop?: { passes: number; seen: string[]; growth?: { h: string; stack: number; field: number }[] };
   resolving: Resolution | null;
   /** Effets de remplacement et de prévention créés par des résolutions (jusqu'à la fin du tour). */
   replacements: CreatedReplacement[];
