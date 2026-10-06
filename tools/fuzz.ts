@@ -23,6 +23,10 @@ import { readFileSync } from "node:fs";
 import { inspect } from "node:util";
 import { type AiLevel, aiAgent, heuristicAgent, playGame, randomAgent } from "@mtgx/ai";
 import { buildDeck, DECKS } from "@mtgx/cards";
+
+/** Préconstruits hors Commander (les decks Commander se jouent avec leurs règles, PLAN-E). */
+const PRECONS = DECKS.filter((d) => d.format !== "commander");
+
 import type { Agent, CardDef } from "@mtgx/engine";
 import { metaDecks } from "./meta-decks";
 import { randomDeck } from "./random-deck";
@@ -73,7 +77,7 @@ const meta = () => {
 
 const deckFor = (spec: Spec, seed: number, g: number, i: number): CardDef[] =>
   spec.pool === "decks"
-    ? buildDeck(DECKS[(g + i) % DECKS.length]!)
+    ? buildDeck(PRECONS[(g + i) % PRECONS.length]!)
     : spec.pool === "meta"
       ? buildDeck(meta()[(g + i) % meta().length]!)
       : randomDeck(seed * 31 + i, spec.pool === "all" ? undefined : spec.pool.toUpperCase());

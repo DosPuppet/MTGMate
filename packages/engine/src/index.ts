@@ -16,6 +16,7 @@ export {
   submit,
 } from "./game";
 export { type Agent, fallbackDecision, GameHost, type HostOptions } from "./host";
+export { colorIdentity, withinIdentity } from "./identity";
 export { CDA_AMOUNT_KINDS, cdaKey, computeBattlefield } from "./layers";
 export { legalActions, meaningfulActions } from "./legal";
 export { availableMana, costToText, manaSources, manaValue, parseManaCost, solvePayment } from "./mana";

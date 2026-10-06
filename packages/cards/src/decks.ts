@@ -1,10 +1,13 @@
 /** Listes de decks seules (sans les données de cartes) : utilisable côté interface sans alourdir le bundle. */
 
+import type { Format } from "@mtgx/engine";
 import bienvenueBlanc from "../decks/bienvenue-blanc.json";
 import bienvenueBleu from "../decks/bienvenue-bleu.json";
 import bienvenueNoir from "../decks/bienvenue-noir.json";
 import bienvenueRouge from "../decks/bienvenue-rouge.json";
 import bienvenueVert from "../decks/bienvenue-vert.json";
+import cmdEdgarMarkov from "../decks/cmd-edgar-markov.json";
+import cmdYshtola from "../decks/cmd-yshtola.json";
 import finCloud from "../decks/fin-cloud.json";
 import finSephiroth from "../decks/fin-sephiroth.json";
 import meta4cControl from "../decks/meta-4c-control.json";
@@ -21,15 +24,19 @@ export interface DeckList {
   description?: string;
   colors: string[];
   cover?: string;
+  /** Commander (PLAN-E) : le commandant (une ligne), à part du deck. */
+  commander?: DeckEntries;
   main: DeckEntries;
   sideboard?: DeckEntries;
+  /** Format du deck, quand il n'est pas le Standard (un deck Commander se valide en Commander). */
+  format?: Format;
   /** Deck préconstruit (lecture seule) ou créé par l'utilisateur. */
   builtin?: boolean;
 }
 
 /**
- * Decks de bienvenue (40 cartes, Foundations), le Starter Kit Final Fantasy, puis les cinq premiers decks du méta
- * Standard (relevé du 29/09/2026, `docs/meta/`), réserve comprise.
+ * Decks de bienvenue (40 cartes, Foundations), le Starter Kit Final Fantasy, les cinq premiers decks du méta Standard
+ * (relevé du 29/09/2026, `docs/meta/`), réserve comprise, puis les decks Commander (PLAN-E, `docs/commander/decks/`).
  */
 export const DECKS: DeckList[] = [
   bienvenueBlanc,
@@ -44,6 +51,8 @@ export const DECKS: DeckList[] = [
   metaDimirMidrange,
   metaJundSacrifice,
   meta4cControl,
+  cmdEdgarMarkov,
+  cmdYshtola,
 ].map((d) => ({ ...(d as DeckList), builtin: true }));
 
 const deckKey = (main: DeckEntries) => {

@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { commanderDecks } from "../../../tools/commander-decks";
 import commanderData from "../data/commander.json";
 import edhData from "../data/edh.json";
-import { CARDS, SET_BY_CODE } from "../src";
+import { CARDS, DECKS, SET_BY_CODE } from "../src";
 
 describe("decks Commander", () => {
   const decks = commanderDecks();
@@ -19,6 +19,15 @@ describe("decks Commander", () => {
       expect(d.commander.length, d.id).toBe(1);
       const count = [...d.commander, ...d.main].reduce((n, [k]) => n + k, 0);
       expect(count, d.id).toBe(100);
+    }
+  });
+
+  it("les préconstruits Commander (cmd-<id>) reprennent exactement les decklists", () => {
+    for (const d of decks) {
+      const precon = DECKS.find((x) => x.id === `cmd-${d.id}`);
+      expect(precon?.format, d.id).toBe("commander");
+      expect(precon?.commander).toEqual(d.commander);
+      expect(precon?.main).toEqual(d.main);
     }
   });
 

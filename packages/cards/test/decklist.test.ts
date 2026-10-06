@@ -107,8 +107,15 @@ describe("export des decklists", () => {
 });
 
 describe("règles de construction", () => {
-  it("les decks préconstruits sont légaux et jouables", () => {
+  it("les decks préconstruits sont légaux et jouables (les decks Commander, une fois leurs cartes faites)", () => {
+    // Préconstruits Commander (PLAN-E) jouables : à la fin de leurs lots de cartes (E11 Edgar, E12 Y'shtola).
+    const commanderPlayable: string[] = [];
     for (const d of DECKS) {
+      if (d.format === "commander") {
+        const v = validateDeck(d, CARDS, "commander");
+        expect(v, d.id).toMatchObject({ legal: true, playable: commanderPlayable.includes(d.id), mainCount: 100 });
+        continue;
+      }
       const welcome = d.id.startsWith("bienvenue-");
       const v = validateDeck(d, CARDS);
       expect(v, d.id).toMatchObject({ legal: true, playable: true, welcome });

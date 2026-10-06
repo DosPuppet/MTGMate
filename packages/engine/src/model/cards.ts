@@ -340,11 +340,12 @@ export interface CardPrinting {
 }
 
 /**
- * Formats de partie : le Standard, et « sans limite » (toute carte du catalogue, quelle que soit sa légalité : bannie,
- * hors Standard, Commander… ; seules restent les règles de construction). Les légalités importées de Scryfall ne portent
- * que sur les formats de `LegalityFormat`.
+ * Formats de partie : le Standard, « sans limite » (toute carte du catalogue, quelle que soit sa légalité : bannie,
+ * hors Standard… ; seules restent les règles de construction) et le Commander (903, PLAN-E : 100 cartes dont le
+ * commandant, singleton, identité de couleur, liste de bannissement de `cards/data/commander.json`). Les légalités
+ * importées de Scryfall ne portent que sur les formats de `LegalityFormat`.
  */
-export type Format = "standard" | "unlimited";
+export type Format = "standard" | "unlimited" | "commander";
 /** Formats des légalités importées de Scryfall. */
 export type LegalityFormat = "standard";
 export type Legality = "legal" | "not_legal" | "banned" | "restricted";

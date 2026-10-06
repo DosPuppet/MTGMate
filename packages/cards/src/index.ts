@@ -12,6 +12,8 @@ interface LegalityOverride {
 
 export {
   CardIndex,
+  COMMANDER_DECK_SIZE,
+  canBeCommander,
   DECK_RULES,
   DEFAULT_FORMAT,
   type DeckEntries,
@@ -22,6 +24,7 @@ export {
   FORMAT_LABELS,
   FORMATS,
   isFormat,
+  isGameChanger,
   legalityIssue,
   normalizeName,
   type ParsedDeck,
@@ -91,6 +94,23 @@ export function buildDeck(list: Pick<DeckList, "main">): CardDef[] {
   const out: CardDef[] = [];
   for (const [n, name] of list.main) for (let i = 0; i < n; i++) out.push(card(name));
   return out;
+}
+
+/**
+ * Deck d'une partie (PLAN-E) : en Commander, le ou les commandants d'abord, puis le deck ; `commanders` donne leurs
+ * indices (à passer dans `PlayerSetup.commanders`), `printings` l'impression de chaque carte, dans le même ordre.
+ */
+export function buildGameDeck(list: Pick<DeckList, "main" | "commander">): {
+  deck: CardDef[];
+  commanders?: number[];
+  printings?: (string | null)[];
+} {
+  const commander = list.commander ?? [];
+  const entries = [...commander, ...list.main];
+  const deck = buildDeck({ main: entries });
+  const printings = deckPrintings({ main: entries });
+  const commanders = commander.length ? Array.from({ length: commander.reduce((a, [n]) => a + n, 0) }, (_, i) => i) : undefined;
+  return { deck, ...(commanders ? { commanders } : {}), ...(printings ? { printings } : {}) };
 }
 
 /**

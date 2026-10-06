@@ -14,6 +14,9 @@
  * Écrit packages/cards/data/printings.json : { sets: { CODE: nom }, cards: { nom: "SET num id année[ langue];…" } }
  * (id : identifiant Scryfall sans tirets ; du plus récent au plus ancien).
  *
+ * Identité de couleur (PLAN-E) : l'identité calculée par le moteur (`colorIdentity`) est comparée à celle de Scryfall pour
+ * toutes les cartes du catalogue ; un écart est signalé (code de sortie 1), la table est écrite quand même.
+ *
  * Usage : npm run import-printings [-- <fichier default-cards .jsonl.gz déjà téléchargé>]
  */
 import { createReadStream, writeFileSync } from "node:fs";
@@ -22,6 +25,7 @@ import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { createGunzip } from "node:zlib";
+import { colorIdentity } from "@mtgx/engine";
 import { CARDS } from "../packages/cards/src/index";
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "packages", "cards", "data", "printings.json");
@@ -48,13 +52,14 @@ interface ScryfallPrint {
   image_status: string;
   image_uris?: unknown;
   card_faces?: { illustration_id?: string; image_uris?: unknown }[];
+  color_identity?: string[];
 }
 
 const SKIPPED_SET_TYPES = new Set(["memorabilia", "token", "minigame"]);
 const SKIPPED_LAYOUTS = new Set(["art_series", "token", "double_faced_token", "emblem", "reversible_card"]);
 
 async function input(): Promise<NodeJS.ReadableStream> {
-  const local = process.argv[2];
+  const local = process.argv.slice(2).find((a) => !a.startsWith("--"));
   if (local) return createReadStream(local).pipe(createGunzip());
   const bulk = (await (await fetch("https://api.scryfall.com/bulk-data", { headers: HEADERS })).json()) as {
     data: { type: string; jsonl_download_uri?: string; download_uri?: string }[];
@@ -69,10 +74,16 @@ async function input(): Promise<NodeJS.ReadableStream> {
 }
 
 const prints: ScryfallPrint[] = [];
+/** Identité de couleur selon Scryfall, par nom (la même pour toutes les impressions). */
+const identity = new Map<string, string[]>();
 for await (const line of createInterface({ input: await input() })) {
   if (!line.trim()) continue;
   const c = JSON.parse(line) as ScryfallPrint;
-  if (!CARDS[c.name] || c.digital || c.oversized) continue;
+  if (!CARDS[c.name]) continue;
+  // Cartes de test et objets de collection homonymes (Red Herring, Earth Rumble…) : identité d'une autre carte.
+  if (c.color_identity && !SKIPPED_LAYOUTS.has(c.layout) && !SKIPPED_SET_TYPES.has(c.set_type) && c.set_type !== "funny")
+    identity.set(c.name, c.color_identity);
+  if (c.digital || c.oversized) continue;
   if (SKIPPED_SET_TYPES.has(c.set_type) || SKIPPED_LAYOUTS.has(c.layout)) continue;
   if (c.image_status === "missing" || c.image_status === "placeholder") continue;
   if (!c.image_uris && !c.card_faces?.[0]?.image_uris) continue;
@@ -104,7 +115,7 @@ for (const name of Object.keys(CARDS).sort()) {
   const list = byName.get(name);
   if (!def || !list) continue;
   // Apparences déjà proposées : la carte elle-même et ses rééditions du catalogue.
-  const known = new Set([`${def.set}-${def.number}`, ...(def.printings ?? []).map((p) => p.key)]);
+  const known = new Set([`${def.origin ?? def.set}-${def.number}`, ...(def.printings ?? []).map((p) => p.key)]);
   const seen = new Set(list.filter((c) => known.has(keyOf(c))).map(look));
   const basic = def.supertypes.includes("Basic");
   const kept: ScryfallPrint[] = [];
@@ -135,3 +146,17 @@ for (const name of Object.keys(CARDS).sort()) {
 const sortedSets = Object.fromEntries(Object.entries(sets).sort(([a], [b]) => a.localeCompare(b)));
 writeFileSync(OUT, `${JSON.stringify({ sets: sortedSets, cards }, null, 1)}\n`);
 console.log(`${total} impressions pour ${Object.keys(cards).length} cartes, ${Object.keys(sets).length} ensembles → ${OUT}`);
+
+// Identité de couleur : calcul du moteur contre Scryfall.
+const ORDER = ["W", "U", "B", "R", "G"];
+const mismatches: string[] = [];
+for (const [name, want] of identity) {
+  const def = CARDS[name];
+  if (!def || def.isToken) continue;
+  const got = colorIdentity(def).join("");
+  const expected = ORDER.filter((c) => want.includes(c)).join("");
+  if (got !== expected) mismatches.push(`${name} : calculée ${got || "incolore"}, Scryfall ${expected || "incolore"}`);
+}
+console.log(`Identité de couleur : ${identity.size} cartes comparées à Scryfall, ${mismatches.length} écart(s)`);
+for (const m of mismatches) console.log(`  ${m}`);
+if (mismatches.length) process.exitCode = 1;

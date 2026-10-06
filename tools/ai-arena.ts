@@ -16,6 +16,10 @@
 import { fork } from "node:child_process";
 import { type AiLevel, aiAgent, playGame, randomAgent } from "@mtgx/ai";
 import { buildDeck, DECKS } from "@mtgx/cards";
+
+/** Préconstruits hors Commander (les decks Commander se jouent avec leurs règles, PLAN-E). */
+const PRECONS = DECKS.filter((d) => d.format !== "commander");
+
 import type { Agent, CardDef } from "@mtgx/engine";
 import { metaDecks } from "./meta-decks";
 import { randomDeck } from "./random-deck";
@@ -59,10 +63,10 @@ function decksFor(pair: number): [CardDef[], CardDef[]] {
   }
   const usePrecons = pool === "decks" || (pool === "mix" && pair % 2 === 0);
   if (usePrecons) {
-    const n = DECKS.length;
+    const n = PRECONS.length;
     const i = pair % n;
     const j = (i + 1 + (Math.floor(pair / n) % (n - 1))) % n;
-    return [buildDeck(DECKS[i]!), buildDeck(DECKS[j]!)];
+    return [buildDeck(PRECONS[i]!), buildDeck(PRECONS[j]!)];
   }
   return [randomDeck(seed0 * 7919 + pair * 2), randomDeck(seed0 * 7919 + pair * 2 + 1)];
 }

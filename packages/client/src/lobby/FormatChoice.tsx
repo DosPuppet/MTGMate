@@ -6,6 +6,8 @@ const FORMAT_KEY = "planecircle.format";
 const HINTS: Record<Format, string> = {
   standard: "Seules les cartes légales en Standard : les cartes bannies ou hors Standard sont refusées.",
   unlimited: "Toutes les cartes du catalogue, même bannies ou hors Standard ; 60 cartes minimum, 4 exemplaires au plus.",
+  commander:
+    "De 2 à 4 joueurs, 40 points de vie : 100 cartes dont votre commandant, un exemplaire de chaque carte, toutes dans son identité de couleur.",
 };
 
 /** Format retenu d'une partie à l'autre (le stockage peut être indisponible : navigation privée, aperçu). */

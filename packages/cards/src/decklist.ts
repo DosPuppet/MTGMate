@@ -1,9 +1,10 @@
 /**
  * Decklists : lecture (formats MTGA et MTGO, noms anglais ou français), export et validation
- * des règles de construction (60 cartes minimum, 4 exemplaires maximum, réserve de 15)
- * et de la légalité dans le format (Standard).
+ * des règles de construction (60 cartes minimum, 4 exemplaires maximum, réserve de 15 ; en Commander, 100 cartes dont
+ * le commandant, singleton, identité de couleur) et de la légalité dans le format.
  */
-import { type CardDef, type Format, keyedPrinting } from "@mtgx/engine";
+import { type CardDef, type Color, colorIdentity, type Format, keyedPrinting, withinIdentity } from "@mtgx/engine";
+import commanderData from "../data/commander.json";
 import { preconFor } from "./decks";
 
 /**
@@ -35,6 +36,16 @@ export interface ParsedDeck {
 
 export interface DeckValidation {
   format: Format;
+  /** Commander : le ou les commandants retenus (noms). */
+  commanders?: string[];
+  /** Commander : identité de couleur du deck (celle du ou des commandants), dans l'ordre WUBRG. */
+  identity?: Color[];
+  /**
+   * Commander : cartes de la liste des Game Changers, et tranche estimée (0 → « 1–2 », jusqu'à 3 → « 3 », au-delà →
+   * « 4+ ») ; indicatives seulement, jamais une erreur.
+   */
+  gameChangers?: string[];
+  bracket?: "1–2" | "3" | "4+";
   /** Respecte les règles de construction et la légalité des cartes dans le format. */
   legal: boolean;
   /** Toutes les cartes sont gérées par le moteur. */
@@ -54,10 +65,24 @@ export const DECK_RULES = { minMain: 60, maxSide: 15, maxCopies: 4 } as const;
 export const FORMAT_LABELS: Record<Format, string> = {
   standard: "Standard",
   unlimited: "Sans limite",
+  commander: "Commander",
 };
 
-/** Formats proposés, dans l'ordre d'affichage. */
+/** Formats proposés, dans l'ordre d'affichage (le Commander le sera quand l'interface le gérera, PLAN-E E5). */
 export const FORMATS: readonly Format[] = ["standard", "unlimited"];
+
+/** Commander (PLAN-E) : taille exacte du deck, commandant compris. */
+export const COMMANDER_DECK_SIZE = 100;
+const COMMANDER = commanderData as { banned: string[]; notLegal: string[]; gameChangers: string[] };
+const COMMANDER_BANNED = new Set(COMMANDER.banned);
+const COMMANDER_NOT_LEGAL = new Set(COMMANDER.notLegal);
+const GAME_CHANGERS = new Set(COMMANDER.gameChangers);
+const frontName = (name: string) => name.split(" // ")[0] as string;
+
+/** La carte est-elle sur la liste des Game Changers (`cards/data/commander.json`) ? */
+export function isGameChanger(c: CardDef): boolean {
+  return GAME_CHANGERS.has(frontName(c.name));
+}
 
 export const DEFAULT_FORMAT: Format = "standard";
 
@@ -72,6 +97,12 @@ export function legalityIssue(c: CardDef, format: Format = DEFAULT_FORMAT): stri
   if (c.meldResult) return `${c.name} est une carte assemblée : elle ne se met pas dans un deck`;
   // Sans limite : toute carte du catalogue, quelle que soit sa légalité.
   if (format === "unlimited") return undefined;
+  // Commander : la liste de bannissement et les cartes non légales de `commander.json` (Scryfall).
+  if (format === "commander") {
+    if (COMMANDER_BANNED.has(frontName(c.name))) return `${c.name} est bannie en ${label}`;
+    if (COMMANDER_NOT_LEGAL.has(frontName(c.name))) return `${c.name} n'est pas légale en ${label}`;
+    return undefined;
+  }
   switch (c.legalities?.standard) {
     case "legal":
       return undefined;
@@ -313,6 +344,21 @@ function exportName(c: CardDef | undefined, name: string): string {
 
 /** « Un deck peut contenir n'importe quel nombre de cartes appelées … » (Hare Apparent, Relentless Rats…). */
 const ANY_NUMBER = /A deck can have any number of cards named/;
+/** « Un deck peut contenir jusqu'à N cartes appelées … » (Seven Dwarves, Nazgûl) : N exemplaires, même en Commander. */
+const UP_TO = /A deck can have up to (\w+) cards named/;
+const NUMBER_WORDS: Record<string, number> = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
+
+/** Exemplaires permis d'une carte : `max` par défaut, tous pour un terrain de base ou « n'importe quel nombre ». */
+function copiesAllowed(c: CardDef, max: number): number {
+  if (c.supertypes.includes("Basic") || ANY_NUMBER.test(c.text ?? "")) return Number.POSITIVE_INFINITY;
+  const upTo = UP_TO.exec(c.text ?? "");
+  return upTo ? (NUMBER_WORDS[upTo[1] as string] ?? max) : max;
+}
+
+/** Peut-elle être un commandant (903.3) : créature légendaire, ou « peut être votre commandant » ? */
+export function canBeCommander(c: CardDef): boolean {
+  return (c.supertypes.includes("Legendary") && c.types.includes("Creature")) || /can be your commander/.test(c.text ?? "");
+}
 
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 
@@ -322,10 +368,11 @@ const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
  * Exception : un deck identique à un deck de bienvenue préconstruit (40 cartes) se joue tel quel.
  */
 export function validateDeck(
-  deck: { main: DeckEntries; sideboard?: DeckEntries },
+  deck: { commander?: DeckEntries; main: DeckEntries; sideboard?: DeckEntries },
   cards: Record<string, CardDef>,
   format: Format = DEFAULT_FORMAT,
 ): DeckValidation {
+  if (format === "commander") return validateCommanderDeck(deck, cards);
   const errors: string[] = [];
   const warnings: string[] = [];
   const side = deck.sideboard ?? [];
@@ -347,7 +394,7 @@ export function validateDeck(
       playable = false;
       continue;
     }
-    if (n > DECK_RULES.maxCopies && !c.supertypes.includes("Basic") && !ANY_NUMBER.test(c.text ?? "")) {
+    if (n > copiesAllowed(c, DECK_RULES.maxCopies)) {
       errors.push(`${name} : ${n} exemplaires (maximum ${DECK_RULES.maxCopies})`);
     }
     const illegal = legalityIssue(c, format);
@@ -368,6 +415,76 @@ export function validateDeck(
     sideCount,
     errors,
     warnings,
+  };
+}
+
+/**
+ * Commander (903.5, PLAN-E) : un commandant (créature légendaire ou « peut être votre commandant » ; les paires,
+ * partenaire ou historique, attendent un deck qui en a), exactement 100 cartes commandant compris, un exemplaire de
+ * chaque carte sauf les terrains de base (et « n'importe quel nombre », « jusqu'à N »), toutes dans l'identité de couleur
+ * du commandant, aucune bannie ni non légale (`commander.json`), pas de réserve. Les Game Changers et la tranche estimée
+ * sont donnés à titre indicatif.
+ */
+function validateCommanderDeck(
+  deck: { commander?: DeckEntries; main: DeckEntries; sideboard?: DeckEntries },
+  cards: Record<string, CardDef>,
+): DeckValidation {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const commanderEntries = deck.commander ?? [];
+  const commanders = commanderEntries.map(([, name]) => name);
+  const sideCount = count(deck.sideboard ?? []);
+  const mainCount = count(deck.main) + count(commanderEntries);
+  if (commanders.length === 0) errors.push("Choisissez un commandant");
+  else if (commanders.length > 1 || count(commanderEntries) > 1)
+    errors.push("Paire de commandants (partenaire, historique…) pas encore gérée : un seul commandant");
+  if (mainCount !== COMMANDER_DECK_SIZE)
+    errors.push(`Le deck contient ${mainCount} cartes, commandant compris (il en faut exactement ${COMMANDER_DECK_SIZE})`);
+  if (sideCount > 0) errors.push("Pas de réserve en Commander");
+  const identity = new Set<Color>();
+  for (const name of commanders) {
+    const c = cards[name];
+    if (!c) continue;
+    if (!canBeCommander(c)) errors.push(`${name} ne peut pas être votre commandant (créature légendaire attendue)`);
+    for (const color of colorIdentity(c)) identity.add(color);
+  }
+  const deckIdentity = (["W", "U", "B", "R", "G"] as Color[]).filter((x) => identity.has(x));
+  const totals = new Map<string, number>();
+  for (const [n, name] of [...commanderEntries, ...deck.main]) totals.set(name, (totals.get(name) ?? 0) + n);
+  let playable = true;
+  const gameChangers: string[] = [];
+  for (const [name, n] of totals) {
+    const c = cards[name];
+    if (!c) {
+      errors.push(`Carte inconnue : ${name}`);
+      playable = false;
+      continue;
+    }
+    if (n > copiesAllowed(c, 1)) errors.push(`${name} : ${n} exemplaires (un seul en Commander)`);
+    if (commanders.length && !withinIdentity(colorIdentity(c), deckIdentity))
+      errors.push(`${name} est hors de l'identité de couleur du commandant`);
+    const illegal = legalityIssue(c, "commander");
+    if (illegal) errors.push(illegal);
+    if (isGameChanger(c)) gameChangers.push(name);
+    if (!c.implemented) {
+      playable = false;
+      warnings.push(`${name} n'est pas encore jouable`);
+    }
+  }
+  return {
+    format: "commander",
+    legal: errors.length === 0,
+    playable: playable && errors.length === 0,
+    mainCount,
+    minMain: COMMANDER_DECK_SIZE,
+    welcome: false,
+    sideCount,
+    errors,
+    warnings,
+    commanders,
+    identity: deckIdentity,
+    gameChangers,
+    bracket: gameChangers.length === 0 ? "1–2" : gameChangers.length <= 3 ? "3" : "4+",
   };
 }
 

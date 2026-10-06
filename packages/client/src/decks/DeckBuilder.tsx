@@ -465,7 +465,9 @@ export function DeckBuilder() {
   const deck = decks.find((d) => d.id === editing) ?? decks.find((d) => !d.builtin) ?? decks[0];
   if (!deck) return null;
   const readOnly = !!deck.builtin;
-  const v = validateDeck(deck, CARDS);
+  // Un deck Commander (PLAN-E) se valide en Commander ; les autres en Standard.
+  const v = validateDeck(deck, CARDS, deck.format ?? DEFAULT_FORMAT);
+  const formatLabel = FORMAT_LABELS[v.format];
 
   const change = (name: string, delta: number) => {
     if (readOnly) {
@@ -486,7 +488,12 @@ export function DeckBuilder() {
     if (readOnly) return;
     save({ ...deck, main: withPrinting(deck.main, name, key), sideboard: withPrinting(deck.sideboard ?? [], name, key) });
   };
-  const opponent = decks.find((d) => d.id !== deck.id && validateDeck(d, CARDS).playable);
+  const opponent = decks.find(
+    (d) =>
+      d.id !== deck.id &&
+      validateDeck(d, CARDS, d.format ?? DEFAULT_FORMAT).playable &&
+      (d.format ?? DEFAULT_FORMAT) === (deck.format ?? DEFAULT_FORMAT),
+  );
 
   return (
     <div className="builder">
@@ -583,10 +590,14 @@ export function DeckBuilder() {
             <span
               className={`format-badge ${v.legal ? "ok" : "ko"}`}
               title={
-                v.welcome ? "Deck de bienvenue : 40 cartes, joué tel quel" : v.legal ? `Deck légal en ${FORMAT}` : v.errors[0]
+                v.welcome
+                  ? "Deck de bienvenue : 40 cartes, joué tel quel"
+                  : v.legal
+                    ? `Deck légal en ${formatLabel}`
+                    : v.errors[0]
               }
             >
-              {v.welcome ? "Bienvenue" : FORMAT} {v.legal ? "✓" : "✗"}
+              {v.welcome ? "Bienvenue" : formatLabel} {v.legal ? "✓" : "✗"}
             </span>
           </div>
           <Stats deck={deck} />
@@ -617,7 +628,7 @@ export function DeckBuilder() {
             {v.warnings.length > 5 && (
               <div className="v-warn">… et {v.warnings.length - 5} autres cartes pas encore jouables</div>
             )}
-            {v.playable && <div className="v-ok">Deck légal en {FORMAT} et jouable</div>}
+            {v.playable && <div className="v-ok">Deck légal en {formatLabel} et jouable</div>}
           </div>
         </section>
         <aside className="builder-preview">

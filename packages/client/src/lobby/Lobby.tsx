@@ -25,6 +25,7 @@ const CATEGORIES = [
   { key: "welcome", label: "Débutant (bienvenue)" },
   { key: "fin", label: "Final Fantasy" },
   { key: "meta", label: "Méta Standard" },
+  { key: "commander", label: "Commander" },
   { key: "mine", label: "Vos decks" },
 ] as const;
 type Category = (typeof CATEGORIES)[number]["key"];
@@ -34,6 +35,7 @@ export function deckCategory(d: DeckList): Category {
   if (!d.builtin) return "mine";
   if (d.id.startsWith("fin-")) return "fin";
   if (d.id.startsWith("meta-")) return "meta";
+  if (d.id.startsWith("cmd-")) return "commander";
   return "welcome";
 }
 

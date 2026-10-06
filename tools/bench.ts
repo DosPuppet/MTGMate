@@ -7,6 +7,10 @@
  */
 import { aiAgent, heuristicAgent, randomAgent } from "@mtgx/ai";
 import { buildDeck, DECKS } from "@mtgx/cards";
+
+/** Préconstruits hors Commander (les decks Commander se jouent avec leurs règles, PLAN-E). */
+const PRECONS = DECKS.filter((d) => d.format !== "commander");
+
 import { type Agent, createGame, fallbackDecision, RulesError, submit } from "@mtgx/engine";
 
 function run(label: string, players: number, games: number, agentFor: (seed: number, i: number) => Agent) {
@@ -19,7 +23,7 @@ function run(label: string, players: number, games: number, agentFor: (seed: num
     const ids = Array.from({ length: players }, (_, i) => `p${i + 1}`);
     let { state } = createGame({
       seed,
-      players: ids.map((id, i) => ({ id, name: id, deck: buildDeck(DECKS[(g + i) % DECKS.length]!) })),
+      players: ids.map((id, i) => ({ id, name: id, deck: buildDeck(PRECONS[(g + i) % PRECONS.length]!) })),
     });
     const agents = ids.map((_, i) => agentFor(seed, i));
     for (let k = 0; k < 20000 && state.pending && !state.over; k++) {
