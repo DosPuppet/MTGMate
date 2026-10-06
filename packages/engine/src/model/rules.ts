@@ -569,6 +569,8 @@ export type Condition =
   | { kind: "sneakWindow" }
   /** Vous avez un récit durable (Storied). */
   | { kind: "enduringStory" }
+  /** Vous avez la bénédiction de la cité (ascension, 702.131). */
+  | { kind: "citysBlessing" }
   /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
   | { kind: "harnessed" }
   /** L'objet de l'événement (parti du champ de bataille) avait la plus grande force parmi les créatures de son contrôleur,

@@ -233,6 +233,8 @@ export interface PlayerState {
   turnsTaken?: number;
   /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */
   speed?: number;
+  /** Bénédiction de la cité (702.131) : acquise par l'ascension, pour le reste de la partie. */
+  citysBlessing?: boolean;
   /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
   manaKeep?: Partial<Record<ManaType, number>>;
   /** Mana qui ne se vide pas avant la fin du combat (maîtrise du feu). */

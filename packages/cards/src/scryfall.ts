@@ -95,6 +95,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   wither: "wither",
   "start your engines!": "startYourEngines",
   decayed: "decayed",
+  ascend: "ascend",
 };
 
 const CARD_TYPES = new Set<CardType>([

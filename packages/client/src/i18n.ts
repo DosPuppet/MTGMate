@@ -79,6 +79,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   cantBlock: "Ne peut pas bloquer",
   startYourEngines: "Start your engines!",
   decayed: "Décomposition",
+  ascend: "Ascension",
   cantBeSacrificed: "Ne peut pas être sacrifié",
   cantBeSuspected: "Ne peut pas devenir suspecte",
   mayNotUntap: "Peut ne pas se dégager",

@@ -2318,6 +2318,8 @@ export const cond = {
   harnessed: { kind: "harnessed" } as Condition,
   /** Storied : « tant que vous avez un récit durable ». */
   enduringStory: { kind: "enduringStory" } as Condition,
+  /** Ascension (702.131) : « si vous avez la bénédiction de la cité ». */
+  citysBlessing: { kind: "citysBlessing" } as Condition,
   /** « Si le coût de faufilement de ce sort a été payé ». */
   sneaked: { kind: "cast", via: "sneak" } as Condition,
   sneakWindow: { kind: "sneakWindow" } as Condition,

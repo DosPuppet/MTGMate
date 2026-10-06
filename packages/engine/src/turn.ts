@@ -1520,6 +1520,16 @@ function stateBasedActionsOnce(s: GameState): boolean {
       }).length;
       if (n >= 3) addPlayerEffect(s, p, { enduringStory: true }, null);
     }
+    // Ascension (702.131b) : le contrôleur d'un permanent qui l'a et qui contrôle dix permanents ou plus reçoit la
+    // bénédiction de la cité pour le reste de la partie (une capacité statique, vérifiée aux mêmes moments que ces actions).
+    for (const id of s.battlefield) {
+      const pl = s.players[obj(s, id).controller];
+      if (!pl || pl.citysBlessing || !hasKeyword(s, id, "ascend")) continue;
+      if (s.battlefield.filter((x) => obj(s, x).controller === pl.id).length >= 10) {
+        pl.citysBlessing = true;
+        bump(s);
+      }
+    }
     const toGraveyard: ObjectId[] = [];
     const toDestroy: ObjectId[] = [];
     let changed = false;

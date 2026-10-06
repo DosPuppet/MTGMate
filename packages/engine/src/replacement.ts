@@ -392,6 +392,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     for (const ab of chars(s, id).abilities) {
       if (ab.kind !== "replacement" || !ab.affects) continue;
       if (!matchesObjectFilter(s, src.controller, o.id, ab.affects, id)) continue;
+      // « Tant qu'un adversaire a perdu des PV ce tour-ci, … » (Vampire Socialite) : vue du contrôleur de la source.
+      if (ab.condition && !checkCondition(s, ab.condition, src.controller, id)) continue;
       if (ab.entersTapped) o.tapped = true;
       if (ab.entersWithCounters !== undefined) {
         const n = amountAtEntry(s, ab.entersWithCounters, src, ctx, o);

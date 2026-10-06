@@ -114,6 +114,8 @@ export type Keyword =
   | "startYourEngines"
   /** Décomposition (702.147) : ne peut pas bloquer, et quand elle attaque, elle est sacrifiée à la fin du combat. */
   | "decayed"
+  /** Ascension (702.131) : avec dix permanents ou plus, son contrôleur reçoit la bénédiction de la cité pour la partie. */
+  | "ascend"
   /** « Ne peut pas être sacrifié » (Zurgo, Thunder's Decree : ses jetons Guerrier pendant votre étape de fin). */
   | "cantBeSacrificed"
   /** « Ne peut pas devenir suspecte » (Airtight Alibi, 701.60). */

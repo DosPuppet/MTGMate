@@ -334,6 +334,8 @@ export function checkCondition(
       );
     case "enduringStory":
       return playerStatic(s, controller, "enduringStory");
+    case "citysBlessing":
+      return !!s.players[controller]?.citysBlessing;
     case "harnessed":
       return !!sourceId && !!s.objects[sourceId]?.harnessed;
     case "eventObjectGreatestPower": {

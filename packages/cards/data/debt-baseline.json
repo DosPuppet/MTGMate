@@ -169,7 +169,6 @@
     "options": "A Killer Among Us — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "optionsFrom": "Koh, the Face Stealer — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "perOwnCreatureTypes": "Diligent Zookeeper — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "perPlayer": "Sidequest: Play Blitzball // World Champion, Celestial Weapon — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "powerAboveBase": "Kutzil, Malamet Exemplar — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "preferHighManaValue": "Jade Seedstones // Jadeheart Attendant — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "preparedSpell": "Codie, Ravenous Codex — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -228,7 +227,7 @@
     "CardDef": 97,
     "GameObject": 61,
     "StackItem": 29,
-    "PlayerState": 22,
+    "PlayerState": 23,
     "GameState": 40,
     "ObjectFilter": 87,
     "CostDef": 34,
@@ -240,8 +239,8 @@
     "Effect (champs)": 634,
     "TriggerSpec": 60,
     "TriggerSpec (champs)": 159,
-    "Condition": 52,
-    "Condition (champs)": 96,
+    "Condition": 53,
+    "Condition (champs)": 97,
     "Amount": 31,
     "Amount (champs)": 67,
     "Ref": 31,
@@ -302,6 +301,7 @@
     "PLAN-A A4 (intégration de A4c après A4a et A4b) : Effect (champs) 633 → 634, TriggerSpec (champs) 158 → 159",
     "PLAN-E E0 : CardDef.origin, impression d'origine des cartes du pseudo-ensemble Commander (EDH) importées par nom : CardDef 96 → 97",
     "PLAN-E E2 : GameState.commander, état d'une partie de Commander (903 : commandants par identité physique, taxe, blessures de commandant), absent hors Commander : GameState 39 → 40",
-    "PLAN-E E6 : ObjectFilter.commander (« si vous contrôlez un commandant » : Fierce Guardianship, Deadly Rollick, Flawless Maneuver) : ObjectFilter 86 → 87"
+    "PLAN-E E6 : ObjectFilter.commander (« si vous contrôlez un commandant » : Fierce Guardianship, Deadly Rollick, Flawless Maneuver) : ObjectFilter 86 → 87",
+    "PLAN-E E10 : ascension (702.131), PlayerState.citysBlessing (bénédiction de la cité, pour la partie, comme la vitesse) et la condition citysBlessing (Twilight Prophet ; famille des désignations de joueur permanentes, avec le récit durable) : PlayerState 22 → 23, Condition 52 → 53, Condition (champs) 96 → 97"
   ]
 }
