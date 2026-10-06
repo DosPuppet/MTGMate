@@ -52,7 +52,10 @@ function PendingPrompt({ view }: { view: GameView }) {
         <Modal title={p.mulligans === 0 ? "Votre main de départ" : `Mulligan ${p.mulligans} — nouvelle main`} wide>
           <HandPicker view={view} selectable={false} />
           <p className="hint">
-            {p.mulligans > 0 && `Si vous gardez, vous placerez ${p.mulligans} carte(s) au-dessous de votre bibliothèque. `}
+            {p.mulligans > 0 &&
+              (p.bottom > 0
+                ? `Si vous gardez, vous placerez ${p.bottom} carte(s) au-dessous de votre bibliothèque. `
+                : "Premier mulligan gratuit (partie à plusieurs) : vous gardez les sept cartes. ")}
             Vous commencez {view.turn.active === view.viewer ? "la partie" : "en second"}.
           </p>
           <div className="modal-actions">

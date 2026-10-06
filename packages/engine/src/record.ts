@@ -358,8 +358,9 @@ export const RECORD_VERSION = 1;
  * - 133 : Commander (PLAN-E, E2) : variante `commander` (40 PV, zone de commandement, lancer depuis elle avec la taxe,
  *   retour dans la zone de commandement 903.9a et 903.9b, 21 blessures de commandant) ; seuls les emblèmes ont des
  *   capacités actives dans la zone de commandement.
+ * - 134 : mulligan gratuit dans une partie à trois joueurs ou plus (103.5c) : le premier mulligan ne compte pas.
  */
-export const RULES_VERSION = 133;
+export const RULES_VERSION = 134;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

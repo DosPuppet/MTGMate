@@ -1,4 +1,4 @@
-import { buildDeck, deckById } from "@mtgx/cards";
+import { buildDeck, card, deckById } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { cond } from "../src/dsl";
 import { createGame } from "../src/game";
@@ -146,5 +146,48 @@ describe("multijoueur", () => {
     expect(s.stack).toHaveLength(0);
     expect(s.objects[spell]).toBeUndefined();
     expect(s.exile.map((id) => [s.objects[id]?.owner, s.defs[s.objects[id]?.defId ?? ""]?.name])).toEqual([["p1", "Shock"]]);
+  });
+});
+
+describe("mulligan gratuit (103.5c)", () => {
+  const forests = () => Array.from({ length: 40 }, () => card("Forest"));
+  const start = (players: number) =>
+    createGame({
+      seed: 3,
+      startingPlayer: "p1",
+      players: Array.from({ length: players }, (_, i) => ({ id: `p${i + 1}`, name: `J${i + 1}`, deck: forests() })),
+    }).state;
+  /** Chaque joueur garde, sauf `p1` qui prend `n` mulligans avant de garder. */
+  const mulliganThenKeep = (s0: ReturnType<typeof start>, n: number) => {
+    let s = s0;
+    let taken = 0;
+    for (let i = 0; i < 40 && s.pending && (s.pending.kind === "mulligan" || s.pending.kind === "bottomCards"); i++) {
+      const p = s.pending;
+      if (p.kind === "bottomCards") return { s, bottom: p.count };
+      if (p.player === "p1" && taken < n) {
+        taken++;
+        s = act(s, "p1", { type: "mulligan" });
+      } else s = act(s, p.player, { type: "keep" });
+    }
+    return { s, bottom: 0 };
+  };
+
+  it("à trois joueurs ou plus, le premier mulligan est gratuit : sept cartes gardées, aucune au-dessous", () => {
+    const one = mulliganThenKeep(start(3), 1);
+    expect(one.bottom).toBe(0);
+    expect(one.s.players.p1?.hand).toHaveLength(7);
+    const two = mulliganThenKeep(start(4), 2);
+    expect(two.bottom).toBe(1);
+  });
+
+  it("en duel, chaque mulligan compte", () => {
+    expect(mulliganThenKeep(start(2), 1).bottom).toBe(1);
+  });
+
+  it("la décision annonce le nombre de cartes à mettre au-dessous", () => {
+    let s = start(3);
+    s = act(s, "p1", { type: "mulligan" });
+    for (let i = 0; i < 5 && s.pending?.player !== "p1"; i++) s = act(s, s.pending?.player as string, { type: "keep" });
+    expect(s.pending).toMatchObject({ kind: "mulligan", player: "p1", mulligans: 1, bottom: 0 });
   });
 });

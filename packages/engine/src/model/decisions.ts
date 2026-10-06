@@ -2,7 +2,8 @@
 import type { GiftKind, ManaCost, ManaType, ObjectId, PlayerId, Step, Zone } from "../types";
 
 export type PendingDecision =
-  | { kind: "mulligan"; player: PlayerId; mulligans: number }
+  /** `bottom` : cartes à mettre au-dessous en gardant (le premier mulligan est gratuit à trois joueurs ou plus, 103.5c). */
+  | { kind: "mulligan"; player: PlayerId; mulligans: number; bottom: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
   /**
    * `castNow` : priorité restreinte pendant une résolution (608.2g, « vous pouvez lancer cette carte ») : le joueur

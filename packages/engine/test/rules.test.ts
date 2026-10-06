@@ -21,7 +21,7 @@ describe("début de partie", () => {
     });
     expect(state.players.p1?.hand).toHaveLength(7);
     expect(state.players.p2?.hand).toHaveLength(7);
-    expect(state.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 0 });
+    expect(state.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 0, bottom: 0 });
   });
 
   it("mulligan de Londres : on repioche 7 et on remet une carte en dessous", () => {
@@ -37,10 +37,10 @@ describe("début de partie", () => {
     s = act(s, "p1", { type: "mulligan" });
     // 103.5 : p2 décide à son tour avant que p1 ne prenne son mulligan.
     expect(s.players.p1?.hand).toEqual(first);
-    expect(s.pending).toEqual({ kind: "mulligan", player: "p2", mulligans: 0 });
+    expect(s.pending).toEqual({ kind: "mulligan", player: "p2", mulligans: 0, bottom: 0 });
     s = act(s, "p2", { type: "keep" });
     expect(s.players.p1?.hand).toHaveLength(7);
-    expect(s.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 1 });
+    expect(s.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 1, bottom: 1 });
     s = act(s, "p1", { type: "keep" });
     expect(s.pending).toEqual({ kind: "bottomCards", player: "p1", count: 1 });
     s = act(s, "p1", { type: "bottom", cards: [s.players.p1?.hand[0] as string] });
@@ -61,7 +61,7 @@ describe("début de partie", () => {
     s = act(s, "p2", { type: "mulligan" });
     expect(s.players.p1?.mulligans).toBe(1);
     expect(s.players.p2?.mulligans).toBe(1);
-    expect(s.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 1 });
+    expect(s.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 1, bottom: 1 });
   });
 
   it("le premier joueur ne pioche pas à son premier tour", () => {

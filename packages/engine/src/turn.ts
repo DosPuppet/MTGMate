@@ -194,7 +194,16 @@ function nextMulligan(s: GameState): void {
     s.flow = "stepStart";
     return;
   }
-  s.pending = { kind: "mulligan", player: p, mulligans: s.players[p]?.mulligans ?? 0 };
+  const mulligans = s.players[p]?.mulligans ?? 0;
+  s.pending = { kind: "mulligan", player: p, mulligans, bottom: mulliganBottom(s, mulligans) };
+}
+
+/**
+ * Cartes à mettre au-dessous de la bibliothèque en gardant après `mulligans` mulligans (103.5) ; 103.5c : dans une
+ * partie à plusieurs (trois joueurs ou plus), le premier mulligan ne compte pas.
+ */
+function mulliganBottom(s: GameState, mulligans: number): number {
+  return Math.max(0, mulligans - (s.playerOrder.length > 2 ? 1 : 0));
 }
 
 /** Cartes « leyline » de la main de départ (103.6), proposées dans l'ordre de jeu. Renvoie true si une question est posée. */
@@ -275,8 +284,9 @@ export function takeMulligan(s: GameState, p: PlayerId): void {
 export function keepHand(s: GameState, p: PlayerId): void {
   const player = s.players[p];
   if (!player) return;
-  if (player.mulligans > 0) {
-    s.pending = { kind: "bottomCards", player: p, count: Math.min(player.mulligans, player.hand.length) };
+  const bottom = mulliganBottom(s, player.mulligans);
+  if (bottom > 0) {
+    s.pending = { kind: "bottomCards", player: p, count: Math.min(bottom, player.hand.length) };
     return;
   }
   s.mulliganQueue.shift();

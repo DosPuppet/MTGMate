@@ -153,7 +153,7 @@ export interface PlayerView {
 }
 
 export type PendingView =
-  | { kind: "mulligan"; player: PlayerId; mulligans: number }
+  | { kind: "mulligan"; player: PlayerId; mulligans: number; bottom: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
   /** `castNow` : lancer une carte pendant une résolution (608.2g), seulement pour le joueur qui décide. */
   | { kind: "priority"; player: PlayerId; actions?: ActionOption[]; castNow?: CastNowRequest }

@@ -59,6 +59,8 @@ describe("BO3", () => {
   it("un échange de réserve qui change les cartes est refusé", async () => {
     const { a, b } = await bo3();
     a.bot = false;
+    // La partie doit avoir commencé (arrivée de Bob traitée) avant l'abandon d'Alice.
+    await a.next("room", (x) => x.room.status === "playing", 10_000);
     a.send({ type: "decision", decision: { type: "concede" } });
     await a.next("room", (m) => m.room.status === "sideboard", 10_000);
     // Deck vert contre deck rouge : ce ne sont pas les cartes d'Alice.
