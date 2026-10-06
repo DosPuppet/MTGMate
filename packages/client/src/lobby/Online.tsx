@@ -1,6 +1,6 @@
 /**
- * Partie en ligne contre un joueur : pseudo, deck, créer un salon (code et lien à partager) ou en rejoindre un.
- * La partie démarre sur le serveur dès que le second joueur arrive.
+ * Partie en ligne contre d'autres joueurs : pseudo, deck, créer un salon de 2 à 4 joueurs (code et lien à partager) ou
+ * en rejoindre un. La partie démarre sur le serveur dès que le salon est plein.
  */
 import { FORMAT_LABELS, ONLINE_FORMATS } from "@mtgx/cards";
 import type { Format } from "@mtgx/engine";
@@ -29,6 +29,8 @@ function Waiting() {
   const leaveRoom = useGame((s) => s.leaveRoom);
   const notify = useGame((s) => s.notify);
   const code = online?.code ?? "";
+  const seats = online?.match?.seats ?? 2;
+  const missing = Math.max(0, seats - (online?.players.length ?? 1));
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(inviteLink(code));
@@ -44,9 +46,19 @@ function Waiting() {
         {code}
       </div>
       <p className="hint">
-        Donnez ce code (ou le lien) à votre adversaire. La partie commence dès son arrivée.
+        {seats > 2
+          ? `Donnez ce code (ou le lien) à vos adversaires. La partie commence quand les ${seats} joueurs sont là.`
+          : "Donnez ce code (ou le lien) à votre adversaire. La partie commence dès son arrivée."}
         {online?.match?.format === "unlimited" && " Format : sans limite (toutes les cartes du catalogue)."}
+        {online?.match?.format === "commander" && " Format : Commander (40 points de vie)."}
       </p>
+      {seats > 2 && (
+        <ul className="online-seats" data-testid="online-seats">
+          {online?.players.map((p) => (
+            <li key={p.seat}>{p.name}</li>
+          ))}
+        </ul>
+      )}
       <div className="lobby-actions">
         <button type="button" className="btn primary" onClick={copy}>
           Copier le lien
@@ -55,7 +67,13 @@ function Waiting() {
           Annuler
         </button>
       </div>
-      <div className="waiting-dots">En attente d'un adversaire</div>
+      <div className="waiting-dots">
+        {missing > 1
+          ? `En attente de ${missing} joueurs`
+          : missing === 1 && seats > 2
+            ? "En attente d'un joueur"
+            : "En attente d'un adversaire"}
+      </div>
     </div>
   );
 }
@@ -67,7 +85,6 @@ export function Online() {
   const backToLobby = useGame((s) => s.backToLobby);
   const decks = useAllDecks();
   const [name, setName] = useState(loadName);
-  // Formats en ligne : pas encore le Commander (PLAN-E E13).
   const [format, setFormat] = useState<Format>(() => {
     const f = loadFormat();
     return ONLINE_FORMATS.includes(f) ? f : "standard";
@@ -79,6 +96,9 @@ export function Online() {
   const [deckId, setDeckId] = useState(() => decks.find((d) => deckStatus(d, format).ok)?.id ?? "");
   const [code, setCode] = useState(codeFromUrl);
   const [bo3, setBo3] = useState(false);
+  // Nombre de joueurs du salon créé (2 à 4).
+  const [players, setPlayers] = useState<2 | 3 | 4>(2);
+  const commander = format === "commander";
   const deck = decks.find((d) => d.id === deckId);
   const ready = !!deck && deckStatus(deck, format).ok && name.trim().length > 0;
   const busy = online?.status === "connecting" && !online.error;
@@ -91,7 +111,7 @@ export function Online() {
           <SoundControl />
         </div>
         <h1>Partie en ligne</h1>
-        <p className="hint">Duel contre un autre joueur, au format choisi par celui qui crée la partie</p>
+        <p className="hint">De 2 à 4 joueurs, au format et au nombre choisis par celui qui crée la partie</p>
       </header>
       <div className="lobby-body">
         {waiting ? (
@@ -109,6 +129,7 @@ export function Online() {
               />
             </label>
             <FormatChoice value={format} onChange={chooseFormat} formats={ONLINE_FORMATS} />
+            {commander && <p className="hint">Commander : rejoindre un salon Commander demande un deck à commandant.</p>}
             <DeckChoice
               label={format === "unlimited" ? "Votre deck (sans limite)" : `Votre deck (légal en ${FORMAT_LABELS[format]})`}
               value={deckId}
@@ -120,16 +141,35 @@ export function Online() {
               <div className="online-card">
                 <h3>Créer une partie</h3>
                 <p className="hint">Vous recevrez un code à partager.</p>
-                <label className="toggle" title="Au meilleur des trois manches, avec votre réserve entre les manches">
-                  <input type="checkbox" checked={bo3} onChange={(e) => setBo3(e.target.checked)} />
-                  Match en 3 manches (BO3)
-                </label>
+                <div className="ai-count">
+                  <span>Joueurs</span>
+                  <div className="seg" role="group" aria-label="Nombre de joueurs">
+                    {([2, 3, 4] as const).map((n) => (
+                      <button key={n} type="button" className={players === n ? "on" : ""} onClick={() => setPlayers(n)}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {players === 2 && !commander && (
+                  <label className="toggle" title="Au meilleur des trois manches, avec votre réserve entre les manches">
+                    <input type="checkbox" checked={bo3} onChange={(e) => setBo3(e.target.checked)} />
+                    Match en 3 manches (BO3)
+                  </label>
+                )}
                 <button
                   type="button"
                   className="btn primary big"
                   disabled={!ready || busy}
                   onClick={() =>
-                    deck && createRoom(name.trim(), deck.main, { sideboard: deck.sideboard, bestOf: bo3 ? 3 : 1, format })
+                    deck &&
+                    createRoom(name.trim(), deck.main, {
+                      sideboard: commander ? [] : deck.sideboard,
+                      bestOf: bo3 && players === 2 && !commander ? 3 : 1,
+                      format,
+                      players,
+                      ...(commander ? { commander: deck.commander ?? [] } : {}),
+                    })
                   }
                 >
                   Créer
@@ -150,7 +190,16 @@ export function Online() {
                   type="button"
                   className="btn primary big"
                   disabled={!ready || busy || code.length !== 6}
-                  onClick={() => deck && joinRoom(code, name.trim(), deck.main, deck.sideboard)}
+                  onClick={() =>
+                    deck &&
+                    joinRoom(
+                      code,
+                      name.trim(),
+                      deck.main,
+                      commander ? [] : deck.sideboard,
+                      commander ? deck.commander : undefined,
+                    )
+                  }
                 >
                   Rejoindre
                 </button>

@@ -263,8 +263,20 @@ interface Store {
   startScenario(scenario: ScenarioSpec): void;
   openTutorial(): void;
   openOnline(): void;
-  createRoom(name: string, deck: DeckEntries, opts?: { sideboard?: DeckEntries; bestOf?: 1 | 3; format?: Format }): void;
-  joinRoom(code: string, name: string, deck: DeckEntries, sideboard?: DeckEntries): void;
+  createRoom(
+    name: string,
+    deck: DeckEntries,
+    opts?: {
+      sideboard?: DeckEntries;
+      bestOf?: 1 | 3;
+      format?: Format;
+      /** Nombre de joueurs du salon (2 par défaut). */
+      players?: 2 | 3 | 4;
+      /** Commander : le commandant. */
+      commander?: DeckEntries;
+    },
+  ): void;
+  joinRoom(code: string, name: string, deck: DeckEntries, sideboard?: DeckEntries, commander?: DeckEntries): void;
   /** Reprend la partie en ligne de cet onglet (jeton de reconnexion), au chargement ou après une coupure. */
   resumeOnline(): void;
   /** Ouverture de la page : reprend la partie en ligne de cette page, sinon la partie locale sauvegardée. */
@@ -1098,14 +1110,24 @@ export const useGame = create<Store>((set, get) => {
         sideboard: opts.sideboard,
         bestOf: opts.bestOf,
         format: opts.format,
+        ...(opts.players && opts.players > 2 ? { players: opts.players } : {}),
+        ...(opts.commander?.length ? { commander: opts.commander } : {}),
         version: VERSION,
       });
       saveName(name);
     },
 
-    joinRoom(code, name, deck, sideboard) {
+    joinRoom(code, name, deck, sideboard, commander) {
       set({ localMatch: null });
-      connectRemote().raw({ type: "join", code, name, deck, sideboard, version: VERSION });
+      connectRemote().raw({
+        type: "join",
+        code,
+        name,
+        deck,
+        sideboard,
+        ...(commander?.length ? { commander } : {}),
+        version: VERSION,
+      });
       saveName(name);
     },
 

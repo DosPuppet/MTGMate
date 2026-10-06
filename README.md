@@ -1,6 +1,6 @@
 # Planecircle
 
-Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur) et en ligne contre un autre joueur (duel, BO3). Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
+Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur) et en ligne contre d'autres joueurs (de 2 à 4, BO3 en duel ; Standard, Sans limite ou Commander). Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
 
 - passage automatique de la priorité ;
 - paiement automatique du mana ;

@@ -70,8 +70,8 @@ export const FORMAT_LABELS: Record<Format, string> = {
 
 /** Formats proposés, dans l'ordre d'affichage. */
 export const FORMATS: readonly Format[] = ["standard", "unlimited", "commander"];
-/** Formats des parties en ligne (le Commander en ligne arrive avec les salons de 2 à 4 joueurs, PLAN-E E13). */
-export const ONLINE_FORMATS: readonly Format[] = ["standard", "unlimited"];
+/** Formats des parties en ligne (tous, depuis les salons de 2 à 4 joueurs, PLAN-E E13). */
+export const ONLINE_FORMATS: readonly Format[] = FORMATS;
 
 /** Commander (PLAN-E) : taille exacte du deck, commandant compris. */
 export const COMMANDER_DECK_SIZE = 100;

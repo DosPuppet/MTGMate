@@ -795,6 +795,17 @@ function NetBanner() {
   const remaining = useRemaining(online?.opponent.deadline);
   if (!online || !view || view.over) return null;
   if (online.reconnecting) return <div className="net-banner">Connexion au serveur perdue — reconnexion…</div>;
+  // À plusieurs : les joueurs encore en partie qui se sont déconnectés (ils abandonnent s'ils ne reviennent pas à temps).
+  if ((online.match?.seats ?? 2) > 2) {
+    const gone = online.players.filter((p) => p.seat !== online.seat && !p.connected && !view.players[p.seat]?.lost);
+    if (!gone.length) return null;
+    return (
+      <div className="net-banner">
+        {gone.map((p) => p.name).join(", ")} {gone.length > 1 ? "se sont déconnectés" : "s'est déconnecté"} — abandon s'il
+        {gone.length > 1 ? "s ne reviennent" : " ne revient"} pas à temps
+      </div>
+    );
+  }
   if (online.opponent.connected) return null;
   const opp = view.players[view.opponents[0] ?? ""]?.name ?? "L'adversaire";
   return (

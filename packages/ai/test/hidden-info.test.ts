@@ -17,6 +17,7 @@ import {
   visibleFaces,
 } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
+import { randomCommanderDeck } from "../../../tools/random-deck";
 import { mulberry32, randomAgent } from "../src";
 
 const ALL = implementedCards();
@@ -47,11 +48,19 @@ function defIdsIn(value: unknown, out = new Set<string>()): Set<string> {
 
 const PUBLIC_ZONES = new Set(["battlefield", "graveyard", "exile", "stack", "command"]);
 
-function auditGame(seed: number): string[] {
-  const players = ["p1", "p2"];
+/** `commander` : partie de Commander à `n` joueurs, decks Commander aléatoires (PLAN-E). */
+function auditGame(seed: number, opts: { players?: number; commander?: boolean } = {}): string[] {
+  const players = Array.from({ length: opts.players ?? 2 }, (_, i) => `p${i + 1}`);
+  const cmd = opts.commander ? players.map((_, i) => randomCommanderDeck(seed * 31 + i)) : null;
   let { state } = createGame({
     seed,
-    players: players.map((id, i) => ({ id, name: id, deck: randomDeck(seed * 31 + i) })),
+    ...(cmd ? { variant: "commander" as const } : {}),
+    players: players.map((id, i) => ({
+      id,
+      name: id,
+      deck: cmd?.[i]?.deck ?? randomDeck(seed * 31 + i),
+      commanders: cmd?.[i]?.commanders,
+    })),
   });
   const agents = Object.fromEntries(players.map((p, i) => [p, randomAgent(seed * 7 + i)]));
   const publicSeen = new Set<string>();
@@ -94,7 +103,7 @@ function auditGame(seed: number): string[] {
     }
   };
   check(state, []);
-  for (let i = 0; i < 2500 && state.pending && !state.over && leaks.length === 0; i++) {
+  for (let i = 0; i < 2500 * (players.length - 1) && state.pending && !state.over && leaks.length === 0; i++) {
     const p = state.pending;
     let r: ReturnType<typeof submit>;
     try {
@@ -115,6 +124,12 @@ describe("informations cachées", () => {
     for (let seed = 1; seed <= 20; seed++) leaks.push(...auditGame(seed));
     expect(leaks.slice(0, 10)).toEqual([]);
   }, 120_000);
+
+  it("Commander à 3 et 4 joueurs (PLAN-E) : rien de caché ne fuit, commandants publics compris", () => {
+    const leaks: string[] = [];
+    for (let seed = 1; seed <= 4; seed++) leaks.push(...auditGame(seed, { players: 3 + (seed % 2), commander: true }));
+    expect(leaks.slice(0, 10)).toEqual([]);
+  }, 240_000);
 });
 
 /** Carte à déguisement de test : lancée face cachée, elle ne doit pas être révélée à l'adversaire. */

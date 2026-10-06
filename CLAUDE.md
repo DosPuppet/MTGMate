@@ -4,7 +4,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 ## Objectif et périmètre
 
-- Plateforme MTG contre l'IA et en ligne (duel), moteur de règles maison en TypeScript, interface fluide façon MTG Arena.
+- Plateforme MTG contre l'IA et en ligne (de 2 à 4 joueurs, BO3 en duel ; Commander), moteur de règles maison en TypeScript, interface fluide façon MTG Arena.
 - **Périmètre : le format Standard.** Extensions légales et bannies : voir le README ; à revérifier à chaque rotation (Scryfall `legal:standard` / `banned:standard`).
 - **Commander (PLAN-E, en cours depuis le 06/10/2026) :** règles du format, de 2 à 4 joueurs, contre l'IA et en ligne (sièges IA compris) ; les cartes arrivent deck par deck (pseudo-ensemble `EDH`, `docs/commander/decks/`).
 - Hors périmètre : Limité, formats éternels, Alchemy.

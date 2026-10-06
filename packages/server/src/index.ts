@@ -397,9 +397,11 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
                 sideboard: msg.sideboard,
                 bestOf: msg.bestOf,
                 format: msg.format,
+                players: msg.players,
+                commander: msg.commander,
                 ip,
               });
-            else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard);
+            else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard, msg.commander);
             else {
               const found = rooms.byToken(msg.token);
               if (!found)

@@ -10,8 +10,10 @@ import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameReco
  * salon. Un client d'une autre version (onglet resté ouvert, service worker périmé) est refusé et invité à recharger
  * la page. À faire avancer à tout changement incompatible des messages.
  * - 2 : une ligne de deck peut citer une impression, `[nombre, nom, impression]` (PLAN-G, G1).
+ * - 3 : salons de 2 à 4 joueurs et Commander (PLAN-E, E13) : sièges p1 à p4, `players` et `commander` à la création,
+ *   `commander` à l'arrivée, victoires par siège facultatives.
  */
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 
 /** Versions du client (protocole et règles du moteur). */
 export interface ClientVersion {
@@ -19,8 +21,8 @@ export interface ClientVersion {
   rules: number;
 }
 
-/** Sièges d'un duel : identifiants des joueurs dans le moteur. */
-export type Seat = "p1" | "p2";
+/** Sièges d'un salon (deux à quatre joueurs) : identifiants des joueurs dans le moteur. */
+export type Seat = "p1" | "p2" | "p3" | "p4";
 
 /** Minuteur de la décision en cours (durées relatives : pas de dépendance à l'horloge du client). */
 export interface Clock {
@@ -33,7 +35,7 @@ export interface Clock {
   /** Durée pendant laquelle la corde s'affiche (ms, fin du temps). */
   ropeMs: number;
   /** Expirations déjà subies par joueur (défaite à `maxTimeouts`). */
-  timeouts: Record<Seat, number>;
+  timeouts: Partial<Record<Seat, number>>;
   maxTimeouts: number;
 }
 
@@ -42,8 +44,10 @@ export interface MatchInfo {
   bestOf: 1 | 3;
   /** Format des decks du salon, choisi à sa création (absent : Standard). */
   format?: Format;
+  /** Nombre de joueurs du salon (absent : 2, un duel). Le BO3 n'existe qu'en duel. */
+  seats?: 2 | 3 | 4;
   /** Manches gagnées par siège. */
-  wins: Record<Seat, number>;
+  wins: Partial<Record<Seat, number>>;
   /** Numéro de la manche en cours (ou de la dernière jouée). */
   game: number;
   /** Vainqueur du match (null tant qu'il n'est pas décidé). */
@@ -60,8 +64,8 @@ export interface RoomInfo {
   /** `ready` : réserve validée, prêt pour la manche suivante. */
   players: { seat: Seat; name: string; connected: boolean; rematch: boolean; ready: boolean }[];
   match: MatchInfo;
-  /** Deck et réserve actuels du destinataire (entre les manches : point de départ de l'échange). */
-  deck: { main: DeckEntries; sideboard: DeckEntries };
+  /** Deck et réserve actuels du destinataire (entre les manches : point de départ de l'échange) ; son commandant. */
+  deck: { main: DeckEntries; sideboard: DeckEntries; commander?: DeckEntries };
 }
 
 export type ClientMessage =
@@ -72,9 +76,22 @@ export type ClientMessage =
       sideboard?: DeckEntries;
       bestOf?: 1 | 3;
       format?: Format;
+      /** Nombre de joueurs (2 par défaut). */
+      players?: 2 | 3 | 4;
+      /** Commander : le commandant du créateur. */
+      commander?: DeckEntries;
       version?: ClientVersion;
     }
-  | { type: "join"; code: string; name: string; deck: DeckEntries; sideboard?: DeckEntries; version?: ClientVersion }
+  | {
+      type: "join";
+      code: string;
+      name: string;
+      deck: DeckEntries;
+      sideboard?: DeckEntries;
+      /** Commander : le commandant de celui qui arrive. */
+      commander?: DeckEntries;
+      version?: ClientVersion;
+    }
   | { type: "rejoin"; token: string; version?: ClientVersion }
   | { type: "leave" }
   | { type: "decision"; decision: Decision }

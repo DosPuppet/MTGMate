@@ -1,6 +1,7 @@
 /**
- * Salons de duel : deux sièges, une partie (GameHost sans IA), minuteur par décision,
- * déconnexions avec délai de retour, revanche. Le serveur fait autorité sur tout.
+ * Salons de deux à quatre joueurs (duel, multijoueur, Commander) : une partie (GameHost), minuteur par décision,
+ * déconnexions avec délai de retour (un joueur qui ne revient pas abandonne : à plusieurs, la partie continue sans lui),
+ * revanche, BO3 en duel. Le serveur fait autorité sur tout.
  */
 import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import {
@@ -16,11 +17,10 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import {
-  buildDeck,
+  buildGameDeck,
   CARDS,
   card,
   type DeckEntries,
-  deckPrintings,
   FORMAT_LABELS,
   isFormat,
   sideboardSwapError,
@@ -144,6 +144,8 @@ interface SavedRoom {
     name: string;
     deck: DeckEntries;
     side?: DeckEntries;
+    /** Commander : le commandant du joueur. */
+    commander?: DeckEntries;
     original?: { main: DeckEntries; sideboard: DeckEntries };
     /** Empreinte du jeton de reconnexion (`digest`) ; anciennes sauvegardes : le jeton lui-même. */
     tokenHash?: string;
@@ -162,6 +164,8 @@ interface SeatState {
   /** Deck et réserve de la manche en cours (modifiables entre les manches d'un BO3). */
   deck: DeckEntries;
   side: DeckEntries;
+  /** Commander : le commandant (vide hors Commander). */
+  commander: DeckEntries;
   /** Deck et réserve du début du match : un échange de réserve doit garder les mêmes cartes. */
   original: { main: DeckEntries; sideboard: DeckEntries };
   /** Entre deux manches : réserve validée, prêt pour la suivante. */
@@ -208,7 +212,8 @@ function checkEntries(raw: unknown): DeckEntries {
   for (const line of raw) {
     if (!Array.isArray(line) || (line.length !== 2 && line.length !== 3)) throw new ClientError("deck", "Deck invalide.");
     const [n, name, key] = line as [unknown, unknown, unknown];
-    if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > 60 || typeof name !== "string") {
+    // Au plus 100 exemplaires sur une ligne (Commander : 99 terrains de base possibles).
+    if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > 100 || typeof name !== "string") {
       throw new ClientError("deck", "Deck invalide.");
     }
     if (key !== undefined && key !== null && (typeof key !== "string" || key.length > 64)) {
@@ -223,11 +228,20 @@ function checkEntries(raw: unknown): DeckEntries {
   return out;
 }
 
-/** Vérifie la forme et la légalité d'un deck reçu : légal dans le format du salon et entièrement jouable. */
-export function checkDeck(raw: unknown, format: Format = "standard"): DeckEntries {
+/** Commander reçu : une ou deux lignes de deck (sa légalité est vérifiée avec le deck). */
+function checkCommander(raw: unknown): DeckEntries {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 2) throw new ClientError("deck", "Choisissez un commandant.");
+  return checkEntries(raw);
+}
+
+/**
+ * Vérifie la forme et la légalité d'un deck reçu : légal dans le format du salon et entièrement jouable. Commander :
+ * avec son commandant (`commander`).
+ */
+export function checkDeck(raw: unknown, format: Format = "standard", commander?: DeckEntries): DeckEntries {
   if (!Array.isArray(raw) || raw.length === 0) throw new ClientError("deck", "Deck invalide.");
   const deck = checkEntries(raw);
-  const v = validateDeck({ main: deck }, CARDS, format);
+  const v = validateDeck({ main: deck, ...(commander ? { commander } : {}) }, CARDS, format);
   if (!v.legal) throw new ClientError("deck", `Deck refusé : ${v.errors[0] ?? `illégal en ${FORMAT_LABELS[format]}`}.`);
   if (!v.playable) throw new ClientError("deck", "Deck refusé : il contient des cartes pas encore jouables.");
   return deck;
@@ -238,6 +252,10 @@ export class Room {
   status: RoomInfo["status"] = "waiting";
   /** Match : BO1 ou BO3, victoires, manche en cours. */
   match: MatchInfo = { bestOf: 1, wins: { p1: 0, p2: 0 }, game: 0, winner: null };
+  /** Nombre de joueurs du salon (2 à 4). */
+  get size(): number {
+    return this.match.seats ?? 2;
+  }
   /** Joueur qui commence la prochaine manche (le perdant de la précédente) ; null : tirage au sort. */
   private nextStarter: Seat | null = null;
   private host: GameHost | null = null;
@@ -277,13 +295,17 @@ export class Room {
     return seat;
   }
 
-  addPlayer(name: string, deck: DeckEntries, peer: Peer, side: DeckEntries = []): SeatState {
-    if (this.seats.length >= 2) throw new ClientError("full", "Ce salon est complet.");
+  addPlayer(name: string, deck: DeckEntries, peer: Peer, side: DeckEntries = [], commander: DeckEntries = []): SeatState {
+    if (this.seats.length >= this.size) throw new ClientError("full", "Ce salon est complet.");
+    // Premier siège libre (un joueur parti avant le début libère le sien).
+    const taken = new Set(this.seats.map((s) => s.seat));
+    const free = (["p1", "p2", "p3", "p4"] as Seat[]).find((x) => !taken.has(x)) as Seat;
     const seat: SeatState = {
-      seat: this.seats.length === 0 ? "p1" : "p2",
+      seat: free,
       name,
       deck,
       side,
+      commander,
       original: { main: deck, sideboard: side },
       ready: false,
       token: "",
@@ -297,9 +319,10 @@ export class Room {
     seat.token = randomUUID();
     seat.tokenHash = digest(seat.token);
     this.seats.push(seat);
+    this.seats.sort((a, b) => (a.seat < b.seat ? -1 : 1));
     this.cancelCleanup();
     this.broadcastRoom();
-    if (this.seats.length === 2) this.enqueue(() => this.start());
+    if (this.seats.length === this.size) this.enqueue(() => this.start());
     return seat;
   }
 
@@ -317,16 +340,23 @@ export class Room {
     }
     this.match = { ...this.match, game: this.match.game + 1 };
     // Première manche : tirage au sort ; ensuite, le perdant de la manche précédente commence.
-    const starter = this.nextStarter ?? this.seats[randomInt(0, 2)]?.seat;
+    const starter = this.nextStarter ?? this.seats[randomInt(0, this.seats.length)]?.seat;
+    const commander = this.match.format === "commander";
     const { state, events, record } = createRecordedGame({
       seed: randomInt(0, 2 ** 31),
       startingPlayer: starter,
-      players: this.seats.map((s) => ({
-        id: s.seat,
-        name: s.name,
-        deck: buildDeck({ main: s.deck }),
-        printings: deckPrintings({ main: s.deck }),
-      })),
+      ...(commander ? { variant: "commander" as const } : {}),
+      players: this.seats.map((s) => {
+        // Commander : le commandant en tête du deck, désigné par son indice.
+        const built = buildGameDeck({ main: s.deck, ...(commander ? { commander: s.commander } : {}) });
+        return {
+          id: s.seat,
+          name: s.name,
+          deck: built.deck,
+          ...(built.printings ? { printings: built.printings } : {}),
+          ...(built.commanders ? { commanders: built.commanders } : {}),
+        };
+      }),
     });
     this.status = "playing";
     this.saveHeader(record);
@@ -388,6 +418,7 @@ export class Room {
           name: s.name,
           deck: s.deck,
           side: s.side,
+          ...(s.commander.length ? { commander: s.commander } : {}),
           original: s.original,
           tokenHash: s.tokenHash,
         })),
@@ -441,6 +472,7 @@ export class Room {
         token: "",
         tokenHash: tokenHash ?? digest(token ?? ""),
         side: s.side ?? [],
+        commander: s.commander ?? [],
         original: s.original ?? { main: s.deck, sideboard: s.side ?? [] },
         ready: false,
         peer: null,
@@ -494,11 +526,20 @@ export class Room {
    */
   private finishGame(winner: Seat | null): void {
     const wins = { ...this.match.wins };
-    if (winner) wins[winner] += 1;
+    if (winner) wins[winner] = (wins[winner] ?? 0) + 1;
+    // À plusieurs : une seule manche, le vainqueur de la partie gagne le match.
+    if (this.size > 2) {
+      this.match = { ...this.match, wins, winner };
+      this.nextStarter = null;
+      this.status = "over";
+      return;
+    }
     const need = Math.ceil(this.match.bestOf / 2);
+    const w1 = wins.p1 ?? 0;
+    const w2 = wins.p2 ?? 0;
     // Au plus trois manches (une partie nulle compte comme une manche jouée).
-    const decided = wins.p1 >= need || wins.p2 >= need || this.match.game >= this.match.bestOf;
-    const matchWinner = decided ? (wins.p1 > wins.p2 ? "p1" : wins.p2 > wins.p1 ? "p2" : null) : null;
+    const decided = w1 >= need || w2 >= need || this.match.game >= this.match.bestOf;
+    const matchWinner = decided ? (w1 > w2 ? "p1" : w2 > w1 ? "p2" : null) : null;
     this.match = { ...this.match, wins, winner: matchWinner };
     this.nextStarter = winner ? (winner === "p1" ? "p2" : "p1") : null;
     this.status = decided ? "over" : "sideboard";
@@ -526,7 +567,7 @@ export class Room {
       remainingMs: Math.max(0, this.clock.deadline - Date.now()),
       totalMs: this.config.decisionMs,
       ropeMs: this.config.ropeMs,
-      timeouts: Object.fromEntries(this.seats.map((s) => [s.seat, s.timeouts])) as Record<Seat, number>,
+      timeouts: Object.fromEntries(this.seats.map((s) => [s.seat, s.timeouts])) as Partial<Record<Seat, number>>,
       maxTimeouts: this.config.maxTimeouts,
     };
   }
@@ -597,9 +638,9 @@ export class Room {
       if (this.status !== "over") throw new ClientError("state", "La partie n'est pas terminée.");
       seat.rematch = true;
       this.broadcastRoom();
-      if (this.seats.length === 2 && this.seats.every((s) => s.rematch && s.peer)) {
+      if (this.seats.length === this.size && this.seats.every((s) => s.rematch && s.peer)) {
         // Nouveau match : score à zéro, decks d'origine.
-        this.match = { ...this.match, wins: { p1: 0, p2: 0 }, game: 0, winner: null };
+        this.match = { ...this.match, wins: {}, game: 0, winner: null };
         this.nextStarter = null;
         for (const s of this.seats) {
           s.deck = s.original.main;
@@ -629,7 +670,7 @@ export class Room {
     this.sendOpponentStatus();
   }
 
-  /** Connexion perdue : l'adversaire est prévenu ; sans retour à temps, défaite (ou salon supprimé). */
+  /** Connexion perdue : les autres sont prévenus ; sans retour à temps, défaite (ou salon supprimé). */
   disconnect(seat: SeatState): void {
     seat.peer = null;
     if (this.status === "playing") {
@@ -675,7 +716,9 @@ export class Room {
     });
   }
 
+  /** Duel : l'état de connexion de l'adversaire (à plusieurs, `RoomInfo.players` le donne pour chacun). */
   private sendOpponentStatus(): void {
+    if (this.size > 2) return;
     for (const s of this.seats) {
       const other = this.seats.find((o) => o !== s);
       if (!other) continue;
@@ -739,7 +782,7 @@ export class Room {
           ready: s.ready,
         })),
         match: this.match,
-        deck: { main: seat.deck, sideboard: seat.side },
+        deck: { main: seat.deck, sideboard: seat.side, ...(seat.commander.length ? { commander: seat.commander } : {}) },
       },
     });
   }
@@ -863,14 +906,22 @@ export class RoomManager {
     name: unknown,
     deck: unknown,
     peer: Peer,
-    opts: { sideboard?: unknown; bestOf?: unknown; format?: unknown; ip?: string } = {},
+    opts: {
+      sideboard?: unknown;
+      bestOf?: unknown;
+      format?: unknown;
+      players?: unknown;
+      commander?: unknown;
+      ip?: string;
+    } = {},
   ): { room: Room; seat: SeatState } {
     const n = cleanName(name);
-    // Commander en ligne : avec les salons de 2 à 4 joueurs (PLAN-E E13).
-    if (opts.format === "commander") throw new ClientError("deck", "Le Commander en ligne arrive bientôt.");
-    const format: Format = isFormat(opts.format) ? opts.format : "standard";
-    const d = checkDeck(deck, format);
-    const side = checkSide(d, opts.sideboard, format);
+    const format: Format = isFormat(opts.format) || opts.format === "commander" ? (opts.format as Format) : "standard";
+    const players = opts.players === 3 || opts.players === 4 ? opts.players : 2;
+    const commander = format === "commander" ? checkCommander(opts.commander) : [];
+    const d = checkDeck(deck, format, format === "commander" ? commander : undefined);
+    // Pas de réserve en Commander.
+    const side = format === "commander" ? [] : checkSide(d, opts.sideboard, format);
     if (this.rooms.size >= this.config.maxRooms) throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
     // Mémoire : refuser un salon plutôt que de laisser pm2 redémarrer le serveur (et couper toutes les parties).
     const heapMb = process.memoryUsage().heapUsed / 1_048_576;
@@ -882,23 +933,39 @@ export class RoomManager {
       throw new ClientError("busy", "Trop de salons ouverts depuis cette adresse : fermez-en un avant d'en créer un autre.");
     const room = new Room(this.newCode(), this.config, (r) => this.rooms.delete(r.code));
     room.creator = creator;
-    room.match = { ...room.match, bestOf: opts.bestOf === 3 ? 3 : 1, ...(format !== "standard" ? { format } : {}) };
+    // Le BO3 n'existe qu'en duel, hors Commander.
+    const bestOf = opts.bestOf === 3 && players === 2 && format !== "commander" ? 3 : 1;
+    room.match = {
+      ...room.match,
+      bestOf,
+      ...(format !== "standard" ? { format } : {}),
+      ...(players > 2 ? { seats: players, wins: {} } : {}),
+    };
     this.rooms.set(room.code, room);
-    return { room, seat: room.addPlayer(n, d, peer, side) };
+    return { room, seat: room.addPlayer(n, d, peer, side, commander) };
   }
 
-  join(code: unknown, name: unknown, deck: unknown, peer: Peer, sideboard?: unknown): { room: Room; seat: SeatState } {
+  join(
+    code: unknown,
+    name: unknown,
+    deck: unknown,
+    peer: Peer,
+    sideboard?: unknown,
+    commanderRaw?: unknown,
+  ): { room: Room; seat: SeatState } {
     const room = this.rooms.get(
       String(code ?? "")
         .toUpperCase()
         .trim(),
     );
     if (!room) throw new ClientError("room", "Salon introuvable : vérifiez le code.");
-    if (room.status !== "waiting" || room.seats.length >= 2) throw new ClientError("full", "Ce salon est complet.");
+    if (room.status !== "waiting" || room.seats.length >= room.size) throw new ClientError("full", "Ce salon est complet.");
     // Le deck doit être légal dans le format choisi par le créateur du salon.
     const format = room.match.format ?? "standard";
-    const d = checkDeck(deck, format);
-    return { room, seat: room.addPlayer(cleanName(name), d, peer, checkSide(d, sideboard, format)) };
+    const commander = format === "commander" ? checkCommander(commanderRaw) : [];
+    const d = checkDeck(deck, format, format === "commander" ? commander : undefined);
+    const side = format === "commander" ? [] : checkSide(d, sideboard, format);
+    return { room, seat: room.addPlayer(cleanName(name), d, peer, side, commander) };
   }
 
   byToken(token: unknown): { room: Room; seat: SeatState } | null {

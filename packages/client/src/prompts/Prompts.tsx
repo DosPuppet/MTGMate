@@ -776,8 +776,8 @@ function matchSummary(view: GameView): {
     return {
       bestOf: m.bestOf,
       game: m.game,
-      mine: m.wins[me],
-      theirs: m.wins[them],
+      mine: m.wins[me] ?? 0,
+      theirs: m.wins[them] ?? 0,
       decided: !!m.winner || s.online.status === "over",
       wonMatch: m.winner === me,
     };
@@ -823,6 +823,10 @@ function GameOver({ view }: { view: GameView }) {
   if (!view.over || coached || replay) return null;
   const me = online?.players.find((p) => p.seat === online.seat);
   const opp = online?.players.find((p) => p.seat !== online.seat);
+  // À plusieurs : la revanche attend que tous les autres joueurs, encore connectés, l'acceptent.
+  const others = online?.players.filter((p) => p.seat !== online.seat) ?? [];
+  const multi = others.length > 1;
+  const othersConnected = others.every((p) => p.connected);
   const won = view.winner === view.viewer;
   const match = matchSummary(view);
   // BO3 en cours : réserve puis manche suivante (en ligne, statut « sideboard » envoyé par le serveur).
@@ -866,17 +870,28 @@ function GameOver({ view }: { view: GameView }) {
             onSubmit={nextGame}
           />
         )}
-        {online && opp?.rematch && !me?.rematch && <p className="hint">{opp.name} propose une revanche.</p>}
+        {online && !multi && opp?.rematch && !me?.rematch && <p className="hint">{opp.name} propose une revanche.</p>}
+        {online && multi && others.some((p) => p.rematch) && !me?.rematch && (
+          <p className="hint">
+            {others
+              .filter((p) => p.rematch)
+              .map((p) => p.name)
+              .join(", ")}{" "}
+            {others.filter((p) => p.rematch).length > 1 ? "proposent" : "propose"} une revanche.
+          </p>
+        )}
         <div className="modal-actions">
           {online && !between && (
             <button
               type="button"
               className="btn primary"
-              disabled={!!me?.rematch || !opp?.connected}
+              disabled={!!me?.rematch || !othersConnected}
               onClick={rematch}
-              title={!opp?.connected ? "Votre adversaire a quitté la partie" : undefined}
+              title={
+                !othersConnected ? (multi ? "Un joueur a quitté la partie" : "Votre adversaire a quitté la partie") : undefined
+              }
             >
-              {me?.rematch ? `En attente de ${opp?.name ?? "l'adversaire"}…` : "Revanche"}
+              {me?.rematch ? `En attente ${multi ? "des autres joueurs" : `de ${opp?.name ?? "l'adversaire"}`}…` : "Revanche"}
             </button>
           )}
           <button type="button" className={`btn ${online ? "" : "primary"}`} onClick={backToLobby}>
