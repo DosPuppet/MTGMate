@@ -6,3 +6,4 @@ coverage/
 test-results/
 # Parties en ligne sauvegardées par le serveur (MTGX_DATA_DIR)
 /data/
+*.tsbuildinfo
