@@ -67,6 +67,9 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   if (settings.fullControl) return null;
   // Sort ou capacité adverse : le joueur doit le voir, même sans réponse possible (l'interface passe seule).
   if (top && top.controller !== player && settings.revealOpponentStack) return null;
+  // Son tour, pile vide, seconde phase principale : on s'arrête toujours, même sans rien à faire. Le joueur termine
+  // lui-même son tour (« Fin du tour ») ; sinon le tour passe au joueur suivant sans qu'il ait rien vu, comme sauté.
+  if (!top && s.turn.active === player && s.turn.step === "main2") return null;
   // Rien à faire : on passe.
   if (meaningfulActions(s, player).length === 0) return { type: "pass" };
   if (top) {

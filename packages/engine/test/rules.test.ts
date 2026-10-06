@@ -414,6 +414,19 @@ describe("autopilot", () => {
     expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "pass" });
   });
 
+  it("son tour : s'arrête toujours en seconde phase principale, même sans rien à faire (« Fin du tour » à appuyer)", () => {
+    const main2 = scenario({ step: "main2", p1: { battlefield: ["Forest"] } });
+    expect(autopilotDecision(main2, "p1", DEFAULT_AUTOPILOT)).toBeNull();
+    // « Fin du tour » demandé : on passe.
+    expect(autopilotDecision(main2, "p1", { ...DEFAULT_AUTOPILOT, passUntilTurn: main2.turn.number })).toEqual({
+      type: "pass",
+    });
+    // Le tour d'un adversaire, rien à faire : on passe.
+    const theirs = scenario({ active: "p2", step: "main2", p1: { battlefield: ["Forest"] } });
+    theirs.pending = { kind: "priority", player: "p1" };
+    expect(autopilotDecision(theirs, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "pass" });
+  });
+
   it("s'arrête en phase principale quand on peut jouer", () => {
     const s = scenario({ p1: { hand: ["Forest"] } });
     expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toBeNull();
