@@ -2,6 +2,7 @@
  * Protocole du jeu en ligne (WebSocket, JSON). Types partagés : le client les importe en `import type`.
  * Le serveur fait autorité : il valide les decks et chaque décision (RulesError du moteur).
  */
+import type { AiLevel } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameRecord, GameView } from "@mtgx/engine";
 
@@ -11,7 +12,7 @@ import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameReco
  * la page. À faire avancer à tout changement incompatible des messages.
  * - 2 : une ligne de deck peut citer une impression, `[nombre, nom, impression]` (PLAN-G, G1).
  * - 3 : salons de 2 à 4 joueurs et Commander (PLAN-E, E13) : sièges p1 à p4, `players` et `commander` à la création,
- *   `commander` à l'arrivée, victoires par siège facultatives.
+ *   `commander` à l'arrivée, victoires par siège facultatives ; sièges IA (`ai` à la création, `players[].ai`).
  */
 export const PROTOCOL_VERSION = 3;
 
@@ -61,8 +62,8 @@ export interface RoomInfo {
   token: string;
   /** `sideboard` : entre deux manches d'un BO3, chacun ajuste son deck avec sa réserve. */
   status: "waiting" | "playing" | "sideboard" | "over";
-  /** `ready` : réserve validée, prêt pour la manche suivante. */
-  players: { seat: Seat; name: string; connected: boolean; rematch: boolean; ready: boolean }[];
+  /** `ready` : réserve validée, prêt pour la manche suivante ; `ai` : siège tenu par l'IA du serveur (son niveau). */
+  players: { seat: Seat; name: string; connected: boolean; rematch: boolean; ready: boolean; ai?: AiLevel }[];
   match: MatchInfo;
   /** Deck et réserve actuels du destinataire (entre les manches : point de départ de l'échange) ; son commandant. */
   deck: { main: DeckEntries; sideboard: DeckEntries; commander?: DeckEntries };
@@ -80,6 +81,8 @@ export type ClientMessage =
       players?: 2 | 3 | 4;
       /** Commander : le commandant du créateur. */
       commander?: DeckEntries;
+      /** Sièges tenus par l'IA du serveur (au plus `players` − 1) et son niveau ; decks choisis par le serveur. */
+      ai?: { count: number; level: AiLevel };
       version?: ClientVersion;
     }
   | {

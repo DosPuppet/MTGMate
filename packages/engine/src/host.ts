@@ -16,9 +16,14 @@ import { filterEvents, type GameView, projectView } from "./view";
 
 /** Une IA : reçoit l'état complet et renvoie une décision (elle ne doit lire que l'information publique). */
 export type Agent = (state: GameState, player: PlayerId) => Decision;
+/**
+ * Une IA qui réfléchit ailleurs (serveur : dans un worker, PLAN-E E14) : sa décision arrive plus tard ; l'hôte l'attend
+ * avant de continuer.
+ */
+export type AsyncAgent = (state: GameState, player: PlayerId) => Decision | Promise<Decision>;
 
 export interface HostOptions {
-  agents?: Partial<Record<PlayerId, Agent>>;
+  agents?: Partial<Record<PlayerId, Agent | AsyncAgent>>;
   /** Appelé pour chaque joueur humain quand sa vue change. */
   onUpdate?: (player: PlayerId, view: GameView, events: GameEvent[]) => void;
   /** Pause entre deux actions visibles de l'IA (ms), pour que l'humain puisse suivre. */
@@ -216,7 +221,12 @@ export class GameHost {
           let d: Decision;
           try {
             // Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
-            d = actor === p.player ? agent(this.state, p.player) : fallbackDecision(this.state, p);
+            const out = actor === p.player ? agent(this.state, p.player) : fallbackDecision(this.state, p);
+            if (out instanceof Promise) {
+              d = await out;
+              // La partie a pu changer pendant la réflexion (abandon d'un joueur) : on repart de l'état courant.
+              if (this.state.pending !== p) continue;
+            } else d = out;
             this.apply(actor, d);
           } catch (e) {
             console.warn("Décision IA illégale, repli :", e);

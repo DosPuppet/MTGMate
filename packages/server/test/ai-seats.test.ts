@@ -1,0 +1,90 @@
+/**
+ * Sièges IA tenus par le serveur (PLAN-E, E14) : l'IA réfléchit dans le pool de workers, joue ses décisions (enregistrées
+ * comme les autres), n'a pas de minuteur ; le salon ferme quand il n'y a plus d'humain ; une reprise après redémarrage
+ * rejoue ses décisions sans la relancer, puis elle continue.
+ */
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import type { RunningServer } from "../src/index";
+import { Client, GREEN, server } from "./helpers";
+
+let srv: RunningServer | null = null;
+const clients: Client[] = [];
+const dirs: string[] = [];
+afterEach(async () => {
+  await Promise.all(clients.splice(0).map((c) => c.close()));
+  await srv?.close();
+  srv = null;
+  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+});
+async function human(port: number): Promise<Client> {
+  const c = await Client.connect(port);
+  clients.push(c);
+  return c;
+}
+
+describe("sièges IA", () => {
+  it("duel contre l'IA du serveur : la partie commence aussitôt et l'IA joue (décisions enregistrées)", async () => {
+    srv = await server({});
+    const a = await human(srv.port);
+    a.bot = true;
+    a.send({ type: "create", name: "Alice", deck: GREEN, ai: { count: 1, level: "beginner" } });
+    const room = await a.next("room", (m) => m.room.status === "playing", 10_000);
+    expect(room.room.players.map((p) => p.ai ?? null)).toEqual([null, "beginner"]);
+    expect(room.room.players[1]?.name).toBe("IA 1 (débutante)");
+    // L'IA a gardé sa main et joue des terrains : son champ de bataille se remplit.
+    const later = await a.next("update", (u) => u.view.battlefield.some((o) => o.controller === "p2"), 30_000);
+    expect(later.view.players.p2?.name).toBe("IA 1 (débutante)");
+  }, 45_000);
+
+  it("à trois avec deux IA : quand l'humain abandonne, le salon ferme", async () => {
+    srv = await server({});
+    const a = await human(srv.port);
+    a.send({ type: "create", name: "Alice", deck: GREEN, players: 3, ai: { count: 2, level: "medium" } });
+    await a.next("update", () => true, 15_000);
+    expect(srv.rooms.size).toBe(1);
+    a.send({ type: "leave" });
+    for (let i = 0; i < 50 && srv.rooms.size > 0; i++) await new Promise((r) => setTimeout(r, 100));
+    expect(srv.rooms.size).toBe(0);
+  }, 30_000);
+
+  it("refus : pas d'humain, niveau élevé à plusieurs ramené au moyen", async () => {
+    srv = await server({});
+    const a = await human(srv.port);
+    a.send({ type: "create", name: "Alice", deck: GREEN, players: 2, ai: { count: 2, level: "medium" } });
+    expect((await a.next("error")).code).toBe("state");
+    a.send({ type: "create", name: "Alice", deck: GREEN, players: 3, ai: { count: 1, level: "expert" } });
+    const r = await a.next("room", (m) => m.room.players.some((p) => p.ai));
+    expect(r.room.players.find((p) => p.ai)?.ai).toBe("medium");
+  }, 30_000);
+
+  it("reprise après redémarrage : les décisions de l'IA sont rejouées, puis elle continue", async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), "mtgx-rooms-"));
+    dirs.push(dataDir);
+    const first = await server({ dataDir, graceMs: 20_000 });
+    const a = await Client.connect(first.port);
+    a.bot = true;
+    a.send({ type: "create", name: "Alice", deck: GREEN, ai: { count: 1, level: "beginner" } });
+    const created = await a.next("room", (m) => m.room.status === "playing", 10_000);
+    await a.next("update", (u) => u.view.turn.number >= 3, 30_000);
+    a.bot = false;
+    await new Promise((r) => setTimeout(r, 300));
+    const lines = readFileSync(join(dataDir, `${created.room.code}.jsonl`), "utf8").split("\n").filter(Boolean);
+    const aiDecisions = lines.slice(1).filter((l) => JSON.parse(l)[0] === "p2").length;
+    expect(aiDecisions).toBeGreaterThan(0);
+    await a.close();
+    await first.close();
+    srv = await server({ dataDir, graceMs: 20_000 });
+    expect(srv.rooms.size).toBe(1);
+    const back = await human(srv.port);
+    back.send({ type: "rejoin", token: created.room.token });
+    const up = await back.next("update");
+    expect(up.view.players.p2?.name).toBe("IA 1 (débutante)");
+    back.bot = true;
+    back.play(up.view);
+    const turn = up.view.turn.number;
+    await back.next("update", (u) => u.view.turn.number > turn + 1 || u.view.over, 30_000);
+  }, 90_000);
+});

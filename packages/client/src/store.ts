@@ -274,6 +274,8 @@ interface Store {
       players?: 2 | 3 | 4;
       /** Commander : le commandant. */
       commander?: DeckEntries;
+      /** Sièges tenus par l'IA du serveur et son niveau (PLAN-E, E14). */
+      ai?: { count: number; level: AiLevel };
     },
   ): void;
   joinRoom(code: string, name: string, deck: DeckEntries, sideboard?: DeckEntries, commander?: DeckEntries): void;
@@ -1112,6 +1114,7 @@ export const useGame = create<Store>((set, get) => {
         format: opts.format,
         ...(opts.players && opts.players > 2 ? { players: opts.players } : {}),
         ...(opts.commander?.length ? { commander: opts.commander } : {}),
+        ...(opts.ai?.count ? { ai: opts.ai } : {}),
         version: VERSION,
       });
       saveName(name);

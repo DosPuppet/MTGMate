@@ -12,6 +12,7 @@ import { Readable } from "node:stream";
 import { brotliCompressSync, gzipSync, constants as zlibConstants } from "node:zlib";
 import { RULES_VERSION } from "@mtgx/engine";
 import { WebSocket, WebSocketServer } from "ws";
+import { AiPool } from "./aiPool";
 import { type ClientMessage, PROTOCOL_VERSION, type ServerMessage } from "./protocol";
 import { ClientError, DEFAULT_CONFIG, ipKey, type Peer, type Room, type RoomConfig, RoomManager } from "./rooms";
 import { cleanSettings, isDecision } from "./validate";
@@ -36,6 +37,11 @@ export interface ServerOptions {
   /** Récupération d'une image de Scryfall pour le relais /scry/ (remplaçable dans les tests). */
   fetchImage?: (url: string) => Promise<Response>;
   config?: Partial<RoomConfig>;
+  /**
+   * Workers d'IA (sièges IA des salons, PLAN-E E14) : 0 pour n'en avoir aucun ; par défaut, au plus deux (le VPS est
+   * partagé). Ils ne démarrent qu'au premier besoin.
+   */
+  aiWorkers?: number;
 }
 
 export interface RunningServer {
@@ -258,7 +264,7 @@ const BUILD = process.env.MTGX_BUILD ?? "dev";
  * Santé du serveur. Une requête locale directe (sans en-tête de relais : pm2, `deploy/update.sh`, supervision) reçoit le
  * détail en JSON (versions, mémoire, salons) ; une requête venue d'ailleurs (par nginx) ne reçoit que « ok ».
  */
-function healthz(req: IncomingMessage, res: ServerResponse, rooms: RoomManager): void {
+function healthz(req: IncomingMessage, res: ServerResponse, rooms: RoomManager, aiPool?: AiPool): void {
   const local = LOOPBACK.has(req.socket.remoteAddress ?? "") && !req.headers["x-real-ip"] && !req.headers["x-forwarded-for"];
   if (!local) {
     res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }).end("ok\n");
@@ -274,6 +280,8 @@ function healthz(req: IncomingMessage, res: ServerResponse, rooms: RoomManager):
       rules: RULES_VERSION,
       rooms: rooms.size,
       memory: { rssMb: mb(m.rss), heapUsedMb: mb(m.heapUsed), heapTotalMb: mb(m.heapTotal) },
+      // Sièges IA : workers, file d'attente et durée des réflexions (médiane, 95e centile, ms).
+      ...(aiPool ? { ai: aiPool.stats() } : {}),
       uptimeS: Math.round(process.uptime()),
     })}\n`,
   );
@@ -289,7 +297,8 @@ function parse(data: WebSocket.RawData): ClientMessage | null {
 }
 
 export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
-  const rooms = new RoomManager({ ...DEFAULT_CONFIG, ...opts.config });
+  const aiPool = opts.aiWorkers === 0 ? undefined : new AiPool(opts.aiWorkers);
+  const rooms = new RoomManager({ ...DEFAULT_CONFIG, ...(aiPool ? { aiPool } : {}), ...opts.config });
   const root = opts.staticDir && existsSync(opts.staticDir) ? resolve(opts.staticDir) : undefined;
   const http = createHttpServer((req, res) => {
     try {
@@ -303,7 +312,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
   });
   const handle = (req: IncomingMessage, res: ServerResponse) => {
     if (req.url === "/healthz") {
-      healthz(req, res, rooms);
+      healthz(req, res, rooms, aiPool);
       return;
     }
     if (req.url?.startsWith(SCRY_PREFIX)) {
@@ -399,6 +408,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
                 format: msg.format,
                 players: msg.players,
                 commander: msg.commander,
+                ai: msg.ai,
                 ip,
               });
             else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard, msg.commander);
@@ -473,6 +483,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
           new Promise<void>((done) => {
             clearInterval(pinger);
             rooms.closeAll();
+            void aiPool?.close();
             for (const c of wss.clients) c.terminate();
             wss.close();
             http.close(() => done());

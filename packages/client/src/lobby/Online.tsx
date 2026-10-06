@@ -2,6 +2,8 @@
  * Partie en ligne contre d'autres joueurs : pseudo, deck, créer un salon de 2 à 4 joueurs (code et lien à partager) ou
  * en rejoindre un. La partie démarre sur le serveur dès que le salon est plein.
  */
+
+import type { AiLevel } from "@mtgx/ai";
 import { FORMAT_LABELS, ONLINE_FORMATS } from "@mtgx/cards";
 import type { Format } from "@mtgx/engine";
 import { useState } from "react";
@@ -9,7 +11,7 @@ import { SoundControl } from "../audio/SoundControl";
 import { useAllDecks } from "../decks/store";
 import { loadName, useGame } from "../store";
 import { FormatChoice, loadFormat, saveFormat } from "./FormatChoice";
-import { DeckChoice, deckStatus } from "./Lobby";
+import { DeckChoice, deckStatus, LEVELS } from "./Lobby";
 
 /** Code pré-rempli par un lien d'invitation (?room=CODE). */
 function codeFromUrl(): string {
@@ -55,7 +57,10 @@ function Waiting() {
       {seats > 2 && (
         <ul className="online-seats" data-testid="online-seats">
           {online?.players.map((p) => (
-            <li key={p.seat}>{p.name}</li>
+            <li key={p.seat}>
+              {p.name}
+              {p.ai ? " · IA" : ""}
+            </li>
           ))}
         </ul>
       )}
@@ -96,8 +101,11 @@ export function Online() {
   const [deckId, setDeckId] = useState(() => decks.find((d) => deckStatus(d, format).ok)?.id ?? "");
   const [code, setCode] = useState(codeFromUrl);
   const [bo3, setBo3] = useState(false);
-  // Nombre de joueurs du salon créé (2 à 4).
+  // Nombre de joueurs du salon créé (2 à 4), dont sièges tenus par l'IA du serveur (PLAN-E, E14).
   const [players, setPlayers] = useState<2 | 3 | 4>(2);
+  const [aiSeats, setAiSeats] = useState(0);
+  const [aiLevel, setAiLevel] = useState<AiLevel>("medium");
+  const ai = Math.min(aiSeats, players - 1);
   const commander = format === "commander";
   const deck = decks.find((d) => d.id === deckId);
   const ready = !!deck && deckStatus(deck, format).ok && name.trim().length > 0;
@@ -151,7 +159,35 @@ export function Online() {
                     ))}
                   </div>
                 </div>
-                {players === 2 && !commander && (
+                <div className="ai-count">
+                  <span>dont IA</span>
+                  <div className="seg" role="group" aria-label="Sièges tenus par l'IA">
+                    {Array.from({ length: players }, (_, n) => n).map((n) => (
+                      <button key={n} type="button" className={ai === n ? "on" : ""} onClick={() => setAiSeats(n)}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {ai > 0 && (
+                  <div className="ai-count">
+                    <span>Niveau</span>
+                    <div className="seg" role="group" aria-label="Niveau de l'IA">
+                      {LEVELS.filter((l) => l.level !== "expert" || players === 2).map((l) => (
+                        <button
+                          key={l.level}
+                          type="button"
+                          className={aiLevel === l.level ? "on" : ""}
+                          onClick={() => setAiLevel(l.level)}
+                          title={l.hint}
+                        >
+                          {l.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {players === 2 && !commander && ai === 0 && (
                   <label className="toggle" title="Au meilleur des trois manches, avec votre réserve entre les manches">
                     <input type="checkbox" checked={bo3} onChange={(e) => setBo3(e.target.checked)} />
                     Match en 3 manches (BO3)
@@ -165,10 +201,11 @@ export function Online() {
                     deck &&
                     createRoom(name.trim(), deck.main, {
                       sideboard: commander ? [] : deck.sideboard,
-                      bestOf: bo3 && players === 2 && !commander ? 3 : 1,
+                      bestOf: bo3 && players === 2 && !commander && ai === 0 ? 3 : 1,
                       format,
                       players,
                       ...(commander ? { commander: deck.commander ?? [] } : {}),
+                      ...(ai > 0 ? { ai: { count: ai, level: players > 2 && aiLevel === "expert" ? "medium" : aiLevel } } : {}),
                     })
                   }
                 >

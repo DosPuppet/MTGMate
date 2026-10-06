@@ -89,6 +89,8 @@ Si le port 8787 est déjà pris sur le VPS, changez `PORT` dans `deploy/ecosyste
 
 Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200), `MTGX_MAX_HEAP_MB` (tas JavaScript au-delà duquel aucun salon n'est plus créé, 384 Mo), `MTGX_DATA_DIR` (sauvegarde des parties en cours, `data/rooms` par défaut, `off` pour la désactiver), `MTGX_MAX_ROOMS_PER_IP` (salons ouverts au plus par adresse de créateur, 4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même, séparées par des virgules ; inutile en temps normal).
 
+**Sièges IA en ligne (PLAN-E) :** les IA des salons réfléchissent dans des workers (`packages/server/dist/ai-worker.mjs`, construit avec le serveur), jamais dans le fil principal. `MTGX_AI_WORKERS` (workers, 2 au plus par défaut ; `0` : pas d'IA en ligne), `MTGX_MAX_AI_ROOMS` (salons avec IA ouverts au plus, 20), `MTGX_MAX_RSS_MB` (mémoire du processus, workers compris, au-delà de laquelle aucun salon avec IA n'est créé, 640 Mo ; garder `max_memory_restart` de pm2 au-dessus). `/healthz` donne en local l'état des workers (`ai` : workers, occupés, file d'attente, réflexion p50 et p95 en ms). Mesure : `node --expose-gc --import tsx tools/load-test.ts --rooms 10 --ai 3 --workers 2`.
+
 ## 6. nginx et HTTPS
 
 ```bash
@@ -179,6 +181,7 @@ Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met
 | Déconnexions régulières après environ une minute | `proxy_read_timeout` trop court dans `location /ws` |
 | « Trop de connexions depuis cette adresse » | plus de 8 onglets ouverts depuis la même IP |
 | « Serveur complet, réessayez plus tard » | limite `MTGX_MAX_ROOMS` atteinte, ou tas au-delà de `MTGX_MAX_HEAP_MB` (`/healthz` en local) |
+| « Trop de parties contre l'IA en cours sur le serveur » | limite `MTGX_MAX_AI_ROOMS` atteinte, ou RSS au-delà de `MTGX_MAX_RSS_MB` |
 | « Trop de salons ouverts depuis cette adresse » | limite `MTGX_MAX_ROOMS_PER_IP` ; si tous les joueurs semblent avoir la même adresse, vérifier `X-Real-IP` dans le site nginx |
 | Jeu en ligne impossible (WebSocket refusé) | page servie depuis une autre adresse que le serveur : ajouter cette origine à `MTGX_ORIGINS` |
 | Cartes sans images chez un joueur, « Images par le serveur Planecircle » cochée | le VPS ne joint pas `cards.scryfall.io` (`curl -I https://cards.scryfall.io` depuis le VPS), ou `location /scry/` absent |

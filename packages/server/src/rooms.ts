@@ -16,11 +16,14 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { AI_LEVELS, type AiLevel } from "@mtgx/ai";
 import {
   buildGameDeck,
   CARDS,
   card,
+  DECKS,
   type DeckEntries,
+  type DeckList,
   FORMAT_LABELS,
   isFormat,
   sideboardSwapError,
@@ -28,6 +31,7 @@ import {
 } from "@mtgx/cards";
 import { hasPrinting } from "@mtgx/cards/printings";
 import {
+  type AsyncAgent,
   createRecordedGame,
   type Decision,
   decider,
@@ -39,12 +43,14 @@ import {
   type GameState,
   type GameView,
   isGameRecord,
+  meaningfulActions,
   outcomeHash,
   type PlayerId,
   RULES_VERSION,
   replayChecked,
   visibleFaces,
 } from "@mtgx/engine";
+import type { AiPool } from "./aiPool";
 import type { Clock, ErrorCode, MatchInfo, RoomInfo, Seat, ServerMessage } from "./protocol";
 
 /** Connexion d'un joueur (WebSocket en production, faux client dans les tests). */
@@ -79,6 +85,15 @@ export interface RoomConfig {
    * (`max_memory_restart`). Un salon de partie en cours occupe de 0,2 à 0,3 Mo de tas (`tools/load-test.ts`).
    */
   maxHeapMb?: number;
+  /** Sièges IA (PLAN-E, E14) : le pool de workers où réfléchissent les IA (absent : pas de siège IA). */
+  aiPool?: AiPool;
+  /** Salons avec des sièges IA ouverts au plus sur le serveur (le CPU du VPS est partagé). */
+  maxAiRooms?: number;
+  /**
+   * Mémoire du processus (RSS, Mo, workers d'IA compris) au-delà de laquelle aucun salon avec IA n'est créé : `heapUsed`
+   * ne voit pas les workers.
+   */
+  maxRssMb?: number;
 }
 
 export const DEFAULT_CONFIG: RoomConfig = {
@@ -91,6 +106,8 @@ export const DEFAULT_CONFIG: RoomConfig = {
   maxRooms: 200,
   maxRoomsPerIp: 4,
   maxHeapMb: 384,
+  maxAiRooms: 20,
+  maxRssMb: 640,
 };
 
 /** Empreinte d'un secret (jeton de reconnexion, adresse) : seule elle est écrite sur le disque. */
@@ -146,6 +163,8 @@ interface SavedRoom {
     side?: DeckEntries;
     /** Commander : le commandant du joueur. */
     commander?: DeckEntries;
+    /** Siège tenu par l'IA du serveur : son niveau. */
+    ai?: AiLevel;
     original?: { main: DeckEntries; sideboard: DeckEntries };
     /** Empreinte du jeton de reconnexion (`digest`) ; anciennes sauvegardes : le jeton lui-même. */
     tokenHash?: string;
@@ -166,6 +185,8 @@ interface SeatState {
   side: DeckEntries;
   /** Commander : le commandant (vide hors Commander). */
   commander: DeckEntries;
+  /** Siège tenu par l'IA du serveur (son niveau) : pas de connexion, pas de minuteur. */
+  ai?: AiLevel;
   /** Deck et réserve du début du match : un échange de réserve doit garder les mêmes cartes. */
   original: { main: DeckEntries; sideboard: DeckEntries };
   /** Entre deux manches : réserve validée, prêt pour la suivante. */
@@ -179,6 +200,14 @@ interface SeatState {
   /** Échéance de retour après une déconnexion (Date.now()), ou null si connecté. */
   graceDeadline: number | null;
   graceTimer: ReturnType<typeof setTimeout> | null;
+}
+
+/** Libellés des niveaux d'IA (nom des sièges IA). */
+const AI_LEVEL_LABELS: Record<AiLevel, string> = { beginner: "débutante", medium: "moyenne", expert: "élevée" };
+
+/** Préconstruits jouables par l'IA dans un format : ceux du Commander en Commander, les autres sinon. */
+function aiDecks(format: Format): DeckList[] {
+  return DECKS.filter((d) => (format === "commander") === (d.format === "commander") && validateDeck(d, CARDS, format).playable);
 }
 
 /** Codes sans caractères ambigus (0/O, 1/I/L). */
@@ -295,7 +324,14 @@ export class Room {
     return seat;
   }
 
-  addPlayer(name: string, deck: DeckEntries, peer: Peer, side: DeckEntries = [], commander: DeckEntries = []): SeatState {
+  addPlayer(
+    name: string,
+    deck: DeckEntries,
+    peer: Peer | null,
+    side: DeckEntries = [],
+    commander: DeckEntries = [],
+    ai?: AiLevel,
+  ): SeatState {
     if (this.seats.length >= this.size) throw new ClientError("full", "Ce salon est complet.");
     // Premier siège libre (un joueur parti avant le début libère le sien).
     const taken = new Set(this.seats.map((s) => s.seat));
@@ -306,6 +342,7 @@ export class Room {
       deck,
       side,
       commander,
+      ...(ai ? { ai } : {}),
       original: { main: deck, sideboard: side },
       ready: false,
       token: "",
@@ -371,7 +408,7 @@ export class Room {
    * en cours de route (erreur interne) : une partie ne doit jamais rester sans minuteur. Une décision refusée
    * ne change pas l'état et ne relance donc pas le minuteur.
    */
-  private async advancing(host: GameHost, fn: () => Promise<void>): Promise<void> {
+  async advancing(host: GameHost, fn: () => Promise<void>): Promise<void> {
     const before = host.state;
     try {
       await fn();
@@ -383,11 +420,48 @@ export class Room {
     }
   }
 
+  /** Le salon a-t-il des sièges IA ? */
+  get hasAi(): boolean {
+    return this.seats.some((s) => s.ai);
+  }
+
+  /**
+   * IA d'un siège : sa décision est calculée dans le pool de workers (le fil principal sert les autres salons). Une
+   * priorité où il n'y a rien d'autre à faire que passer se règle ici, sans worker.
+   */
+  private aiAgentFor(seat: Seat, level: AiLevel): AsyncAgent {
+    return (state, player) => {
+      const p = state.pending;
+      if (p?.kind === "priority" && !p.castNow && meaningfulActions(state, player).length === 0) return { type: "pass" };
+      const pool = this.config.aiPool;
+      if (!pool || !p) return fallbackDecision(state, p ?? { kind: "priority", player });
+      const n = this.host?.record?.decisions.length ?? 0;
+      const seed = (Number(this.host?.record?.seed ?? 0) ^ (n * 2654435761) ^ seat.charCodeAt(1)) >>> 0;
+      return pool.decide({
+        room: this.code,
+        seat,
+        level,
+        players: state.playerOrder.length,
+        seed,
+        // Niveau élevé (ISMCTS, en duel) : une seconde et demie au plus.
+        ...(level === "expert" ? { budget: { ms: 1500 } } : {}),
+        state,
+      });
+    };
+  }
+
+  private agents(): Partial<Record<Seat, AsyncAgent>> {
+    const out: Partial<Record<Seat, AsyncAgent>> = {};
+    for (const s of this.seats) if (s.ai) out[s.seat] = this.aiAgentFor(s.seat, s.ai);
+    return out;
+  }
+
   /** Hôte d'une partie enregistrée : chaque décision est ajoutée au fichier du salon. */
   private newHost(state: GameHost["state"], record: GameRecord, events: GameEvent[]): GameHost {
     return new GameHost(
       state,
       {
+        agents: this.agents(),
         // Une mise à jour par résolution : l'interface montre chaque effet l'un après l'autre.
         frames: true,
         onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts),
@@ -419,6 +493,7 @@ export class Room {
           deck: s.deck,
           side: s.side,
           ...(s.commander.length ? { commander: s.commander } : {}),
+          ...(s.ai ? { ai: s.ai } : {}),
           original: s.original,
           tokenHash: s.tokenHash,
         })),
@@ -488,8 +563,16 @@ export class Room {
     room.status = "playing";
     if (room.waitingTimer) clearTimeout(room.waitingTimer);
     room.waitingTimer = null;
-    for (const seat of room.seats) room.disconnect(seat);
+    for (const seat of room.seats) if (!seat.ai) room.disconnect(seat);
     room.afterStep();
+    // Une IA devait décider au moment de l'arrêt : elle reprend.
+    const pending = room.host.state.pending;
+    if (
+      pending &&
+      !room.host.state.over &&
+      room.seats.find((x) => x.seat === (decider(room.host?.state as GameState) ?? pending.player))?.ai
+    )
+      void room.enqueue(() => room.advancing(room.host as GameHost, () => (room.host as GameHost).run()));
     return room;
   }
 
@@ -511,8 +594,10 @@ export class Room {
       this.scheduleCleanupIfIdle();
     } else if (s.pending) {
       // Chaque nouvelle décision a son temps plein (comme sur MTGA) ; une décision refusée ne relance rien.
-      // 722 : pendant un tour contrôlé, c'est le contrôleur qui décide.
-      this.armClock((decider(s) ?? s.pending.player) as Seat);
+      // 722 : pendant un tour contrôlé, c'est le contrôleur qui décide. Une IA n'a pas de minuteur.
+      const who = (decider(s) ?? s.pending.player) as Seat;
+      if (this.seats.find((x) => x.seat === who)?.ai) this.stopClock();
+      else this.armClock(who);
     }
     for (const [p, frames] of this.outbox)
       for (const u of frames)
@@ -638,7 +723,8 @@ export class Room {
       if (this.status !== "over") throw new ClientError("state", "La partie n'est pas terminée.");
       seat.rematch = true;
       this.broadcastRoom();
-      if (this.seats.length === this.size && this.seats.every((s) => s.rematch && s.peer)) {
+      // Les sièges IA acceptent toujours la revanche.
+      if (this.seats.length === this.size && this.seats.every((s) => s.ai || (s.rematch && s.peer))) {
         // Nouveau match : score à zéro, decks d'origine.
         this.match = { ...this.match, wins: {}, game: 0, winner: null };
         this.nextStarter = null;
@@ -688,7 +774,8 @@ export class Room {
     return this.enqueue(async () => {
       if (this.status === "waiting") {
         this.seats.splice(this.seats.indexOf(seat), 1);
-        if (this.seats.length === 0) this.close();
+        // Plus aucun humain (il ne reste que des sièges IA) : le salon ferme.
+        if (!this.seats.some((s) => !s.ai)) this.close();
         else this.broadcastRoom();
         return;
       }
@@ -714,6 +801,8 @@ export class Room {
     await this.advancing(host, async () => {
       await host.submitHuman(seat.seat, { type: "concede" });
     });
+    // Sièges IA : sans humain encore connecté, la partie s'arrête et le salon ferme (le CPU du serveur est partagé).
+    if (this.hasAi && !this.seats.some((s) => !s.ai && s.peer)) this.close();
   }
 
   /** Duel : l'état de connexion de l'adversaire (à plusieurs, `RoomInfo.players` le donne pour chacun). */
@@ -745,6 +834,7 @@ export class Room {
   /** Fermeture définitive du salon : son fichier de sauvegarde disparaît. */
   close(): void {
     this.shutdown();
+    this.config.aiPool?.forget(this.code);
     const file = this.file;
     if (file) rmSync(file, { force: true });
     this.onClose(this);
@@ -777,9 +867,10 @@ export class Room {
         players: this.seats.map((s) => ({
           seat: s.seat,
           name: s.name,
-          connected: !!s.peer,
-          rematch: s.rematch,
+          connected: !!s.peer || !!s.ai,
+          rematch: s.rematch || !!s.ai,
           ready: s.ready,
+          ...(s.ai ? { ai: s.ai } : {}),
         })),
         match: this.match,
         deck: { main: seat.deck, sideboard: seat.side, ...(seat.commander.length ? { commander: seat.commander } : {}) },
@@ -795,7 +886,7 @@ export class Room {
    * Exécute les actions une par une : une décision, une expiration et une déconnexion ne se
    * croisent jamais sur la même partie. Les erreurs client remontent à l'appelant.
    */
-  private enqueue(fn: () => Promise<void>): Promise<void> {
+  enqueue(fn: () => Promise<void>): Promise<void> {
     const run = this.queue.then(fn);
     this.queue = run.catch(() => {});
     return run;
@@ -912,6 +1003,7 @@ export class RoomManager {
       format?: unknown;
       players?: unknown;
       commander?: unknown;
+      ai?: unknown;
       ip?: string;
     } = {},
   ): { room: Room; seat: SeatState } {
@@ -933,16 +1025,48 @@ export class RoomManager {
       throw new ClientError("busy", "Trop de salons ouverts depuis cette adresse : fermez-en un avant d'en créer un autre.");
     const room = new Room(this.newCode(), this.config, (r) => this.rooms.delete(r.code));
     room.creator = creator;
+    const ai = this.checkAi(opts.ai, players, format);
     // Le BO3 n'existe qu'en duel, hors Commander.
     const bestOf = opts.bestOf === 3 && players === 2 && format !== "commander" ? 3 : 1;
     room.match = {
       ...room.match,
-      bestOf,
+      bestOf: ai ? 1 : bestOf,
       ...(format !== "standard" ? { format } : {}),
       ...(players > 2 ? { seats: players, wins: {} } : {}),
     };
     this.rooms.set(room.code, room);
-    return { room, seat: room.addPlayer(n, d, peer, side, commander) };
+    const seat = room.addPlayer(n, d, peer, side, commander);
+    // Sièges IA : remplis tout de suite, avec des préconstruits jouables du format tirés au sort.
+    if (ai) {
+      const decks = aiDecks(format);
+      for (let i = 0; i < ai.count; i++) {
+        const deck = decks[randomInt(0, decks.length)] as DeckList;
+        const label = AI_LEVEL_LABELS[ai.level];
+        room.addPlayer(`IA ${i + 1} (${label})`, deck.main, null, [], deck.commander ?? [], ai.level);
+      }
+    }
+    return { room, seat };
+  }
+
+  /**
+   * Sièges IA demandés à la création : au plus `players` − 1, niveau connu (l'élevé, avec l'ISMCTS, seulement en duel :
+   * sinon le moyen), un pool d'IA, de la place pour un salon avec IA et de la mémoire.
+   */
+  private checkAi(raw: unknown, players: number, format: Format): { count: number; level: AiLevel } | null {
+    const r = raw as { count?: unknown; level?: unknown } | null | undefined;
+    const count = Number(r?.count ?? 0);
+    if (!r || !Number.isInteger(count) || count <= 0) return null;
+    if (count > players - 1) throw new ClientError("state", "Il faut au moins un joueur humain dans le salon.");
+    if (!this.config.aiPool) throw new ClientError("busy", "L'IA n'est pas disponible sur ce serveur.");
+    let level: AiLevel = (AI_LEVELS as readonly unknown[]).includes(r.level) ? (r.level as AiLevel) : "medium";
+    if (level === "expert" && players > 2) level = "medium";
+    let aiRooms = 0;
+    for (const room of this.rooms.values()) if (room.hasAi) aiRooms++;
+    const rssMb = process.memoryUsage().rss / 1_048_576;
+    if (aiRooms >= (this.config.maxAiRooms ?? 20) || (this.config.maxRssMb && rssMb > this.config.maxRssMb))
+      throw new ClientError("busy", "Trop de parties contre l'IA en cours sur le serveur, réessayez plus tard.");
+    if (aiDecks(format).length === 0) throw new ClientError("deck", "Aucun deck jouable pour l'IA dans ce format.");
+    return { count, level };
   }
 
   join(

@@ -126,7 +126,7 @@ export function DeckChoice({
 
 const LEVEL_KEY = "planecircle.aiLevel";
 
-const LEVELS: { level: AiLevel; label: string; hint: string }[] = [
+export const LEVELS: { level: AiLevel; label: string; hint: string }[] = [
   { level: "beginner", label: "Débutant", hint: "Pour apprendre : l'IA fait des erreurs et ne vous tend pas de pièges." },
   { level: "medium", label: "Moyen", hint: "L'IA joue correctement et bloque avec prudence." },
   {

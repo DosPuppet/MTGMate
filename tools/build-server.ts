@@ -37,4 +37,18 @@ await build({
   banner: { js: "import { createRequire as __mtgxRequire } from 'node:module'; const require = __mtgxRequire(import.meta.url);" },
   logLevel: "warning",
 });
+// Worker des sièges IA (PLAN-E, E14) : un second fichier à côté du serveur, chargé par `aiPool.ts`.
+const workerFile = join(root, "packages", "server", "dist", "ai-worker.mjs");
+await build({
+  entryPoints: [join(root, "packages", "server", "src", "aiWorker.ts")],
+  outfile: workerFile,
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  target: "node22",
+  sourcemap: true,
+  banner: { js: "import { createRequire as __mtgxRequire } from 'node:module'; const require = __mtgxRequire(import.meta.url);" },
+  logLevel: "warning",
+});
+console.log(`Worker d'IA compilé : ${workerFile} (${(statSync(workerFile).size / 1_048_576).toFixed(1)} Mo)`);
 console.log(`Serveur compilé : ${outfile} (${(statSync(outfile).size / 1_048_576).toFixed(1)} Mo, ${commit})`);
