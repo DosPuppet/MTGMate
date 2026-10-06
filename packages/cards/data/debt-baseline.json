@@ -199,7 +199,6 @@
     "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »",
     "againstYou": "Mangara, the Diplomat — requête du journal du tour (attaques contre vous) déjà employée par le moteur (castLimit attackedYou) : à réutiliser pour toute carte « créatures qui vous attaquent »",
     "powerAboveOf": "Fell the Mighty : relation à un objet désigné résolue par withX (« de force supérieure à celle de la créature ciblée »), famille des bornes dynamiques des filtres",
-    "sharesCreatureTypeWith": "Shared Animosity : relation à un objet désigné résolue par withX (« qui partage un type de créature avec elle »), famille des bornes dynamiques des filtres",
     "atMost": "As Foretold : variante « au plus » de manaValueSourceCounters (bornes dynamiques des filtres)",
     "sacrificeReduce": "Cresting Mosasaurus : émerger (702.119), coût alternatif payé par un sacrifice qui le réduit (altCost.pay)",
     "sourceSubtype": "Hunting Velociraptor : rôder (702.76), sous-type de la source des blessures au journal du tour",
@@ -241,8 +240,8 @@
     "Condition (champs)": 97,
     "Amount": 31,
     "Amount (champs)": 67,
-    "Ref": 31,
-    "Ref (champs)": 53
+    "Ref": 32,
+    "Ref (champs)": 55
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -301,6 +300,7 @@
     "PLAN-E E2 : GameState.commander, état d'une partie de Commander (903 : commandants par identité physique, taxe, blessures de commandant), absent hors Commander : GameState 39 → 40",
     "PLAN-E E6 : ObjectFilter.commander (« si vous contrôlez un commandant » : Fierce Guardianship, Deadly Rollick, Flawless Maneuver) : ObjectFilter 86 → 87",
     "PLAN-E E10 : ascension (702.131), PlayerState.citysBlessing (bénédiction de la cité, pour la partie, comme la vitesse) et la condition citysBlessing (Twilight Prophet ; famille des désignations de joueur permanentes, avec le récit durable) : PlayerState 22 → 23, Condition 52 → 53, Condition (champs) 96 → 97",
-    "PLAN-E E12 : entretien cumulatif (unlessPay.times, coût payé une fois par marqueur d'âge, lu dans le texte) ; « sauf la première pioche de son étape de pioche » (draw.exceptTurnDraw, Orcish Bowmasters) : Effect (champs) 634 → 635, TriggerSpec (champs) 159 → 160"
+    "PLAN-E E12 : entretien cumulatif (unlessPay.times, coût payé une fois par marqueur d'âge, lu dans le texte) ; « sauf la première pioche de son étape de pioche » (draw.exceptTurnDraw, Orcish Bowmasters) : Effect (champs) 634 → 635, TriggerSpec (champs) 159 → 160",
+    "Ref commanders (PLAN-E, Path of Ancestry) : « votre commandant », où qu'il soit ; forme générique pour les cartes Commander qui citent le commandant : Ref 31 → 32, Ref (champs) 53 → 55"
   ]
 }

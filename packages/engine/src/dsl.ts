@@ -244,6 +244,8 @@ export const ref = {
   union: (...of: Ref[]): Ref => ({ kind: "union", of }),
   /** « Les créatures bloquées par [elle] / qui [la] bloquent » pendant ce combat. */
   combatPartners: (r: Ref): Ref => ({ kind: "combatPartners", ref: r }),
+  /** Commander : les commandants des joueurs désignés (vous par défaut), où qu'ils soient. */
+  commanders: (who: Ref = { kind: "you" }): Ref => ({ kind: "commanders", who }),
   /** Les objets de `r` sauf ceux de `exclude` (« toutes les autres créatures »). */
   except: (r: Ref, exclude: Ref): Ref => ({ kind: "except", ref: r, exclude }),
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */

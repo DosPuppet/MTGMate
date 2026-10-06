@@ -724,7 +724,9 @@ export type Ref =
   /** Réunion de références, sans doublon (Call the Spirit Dragons : les Dragons choisis pour chaque couleur). */
   | { kind: "union"; of: Ref[] }
   /** Les créatures qui bloquent les objets désignés ou sont bloquées par eux pendant ce combat (Ride Down). */
-  | { kind: "combatPartners"; ref: Ref };
+  | { kind: "combatPartners"; ref: Ref }
+  /** Commander (903.3) : les commandants des joueurs désignés, où qu'ils soient (« votre commandant », Path of Ancestry). */
+  | { kind: "commanders"; who: Ref };
 
 export type Amount =
   | number

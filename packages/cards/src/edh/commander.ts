@@ -41,10 +41,16 @@ const twoOpponentsLand = (a: ManaType, b: ManaType): CardScript => ({
 export const COMMANDER_CARDS: Record<string, CardScript> = {
   "Command Tower": { abilities: [manaAbility(ANY_COLOR, 1, { commanderIdentity: true })] },
   "Arcane Signet": { abilities: [manaAbility(ANY_COLOR, 1, { commanderIdentity: true })] },
-  // Approximation : le regard 1 quand ce mana sert à lancer un sort de créature qui partage un type de créature avec
-  // votre commandant n'est pas fait (docs/approximations.md).
   "Path of Ancestry": {
-    abilities: [entersWith({ tapped: true }), manaAbility(ANY_COLOR, 1, { commanderIdentity: true })],
+    abilities: [
+      entersWith({ tapped: true }),
+      manaAbility(ANY_COLOR, 1, {
+        commanderIdentity: true,
+        // « Quand ce mana est dépensé pour lancer un sort de créature qui partage un type de créature avec votre
+        // commandant, regard 1. »
+        rider: { spell: { types: ["Creature"], sharesCreatureTypeWith: ref.commanders() }, effects: [fx.scry(1)] },
+      }),
+    ],
   },
   "Exotic Orchard": { abilities: [manaAbility(ANY_COLOR, 1, { likeLands: { controller: "opponent" } })] },
   "Fellwar Stone": { abilities: [manaAbility(ANY_COLOR, 1, { likeLands: { controller: "opponent" } })] },

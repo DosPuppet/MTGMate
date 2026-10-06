@@ -148,6 +148,8 @@ export interface PlayerView {
   commanderDamage?: { defId: string; owner: PlayerId; amount: number }[];
   /** Vitesse (702.179), absente tant qu'elle n'a pas démarré. */
   speed?: number;
+  /** Bénédiction de la cité (702.131, ascension), absente tant que le joueur ne l'a pas. */
+  citysBlessing?: true;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd), absents s'il n'en a aucun. */
   poison?: number;
 }
@@ -445,6 +447,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       libraryCount: pl.library.length,
       handCount: pl.hand.length,
       speed: pl.speed,
+      ...(pl.citysBlessing ? { citysBlessing: true as const } : {}),
       ...(pl.poison ? { poison: pl.poison } : {}),
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },

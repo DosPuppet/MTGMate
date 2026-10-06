@@ -55,6 +55,8 @@ const ICONS = {
   // Un vortex (spirale) pour l'exil.
   exile:
     "M12 3a9 9 0 1 1-9 9h2a7 7 0 1 0 7-7 5 5 0 0 0-5 5 3 3 0 0 0 3 3 1 1 0 0 0 1-1h2a3 3 0 0 1-3 3 5 5 0 0 1-5-5 7 7 0 0 1 7-7z",
+  // Une cité : trois tours crénelées.
+  city: "M2 21V10h2V8h2v2h1V5h2v2h2V5h2v2h2V5h2v5h1V8h2v2h2v11h-8v-4a2 2 0 0 0-4 0v4H2z",
 };
 
 function Icon({ d }: { d: string }) {
@@ -537,6 +539,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   const overlap = cardW ? Math.min(0, walkerStep - cardW * CARD_RATIO) : 0;
   return (
     <div ref={ref} className={`battlefield ${isMe ? "me" : "opp"}`} data-tuto={isMe ? "field-me" : "field-opp"} style={style}>
+      {view.players[player]?.citysBlessing && <CitysBlessing name={isMe ? null : (view.players[player]?.name ?? "")} />}
       <div className="bf-rows">{isMe ? rows : rows.reverse()}</div>
       {walkers.length > 0 && (
         // Zone des planeswalkers (et batailles), tout à droite comme sur MTGA.
@@ -560,6 +563,32 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Bénédiction de la cité (702.131) : une icône dans un coin du champ de bataille de celui qui l'a ; au survol (ou au
+ * toucher), ce qu'elle est et qui la détient.
+ */
+function CitysBlessing({ name }: { name: string | null }) {
+  const who = name === null ? "Vous avez" : `${name} a`;
+  return (
+    // Bouton (focalisable) : l'infobulle s'affiche aussi au toucher et au clavier.
+    <button
+      type="button"
+      className="citys-blessing"
+      aria-label={`Bénédiction de la cité : ${who} la bénédiction de la cité`}
+      data-testid="citys-blessing"
+    >
+      <Icon d={ICONS.city} />
+      <span className="citys-blessing-tip" role="tooltip">
+        <strong>Bénédiction de la cité</strong>
+        <span>{who} la bénédiction de la cité, pour le reste de la partie.</span>
+        <span className="citys-blessing-rule">
+          Elle s'obtient par l'ascension, en contrôlant dix permanents ou plus ; les capacités qui l'exigent sont actives.
+        </span>
+      </span>
+    </button>
   );
 }
 

@@ -22,6 +22,7 @@ import {
   castInfoOf,
   changeCounters,
   chars,
+  commanderOf,
   emit,
   isCreature,
   isPlayer,
@@ -103,10 +104,12 @@ export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): Object
     f = { ...f, powerAboveOf: undefined, minPower: id ? chars(s, id).power + 1 : Number.POSITIVE_INFINITY };
   }
   if (f.sharesCreatureTypeWith) {
-    const id = resolveRef(s, ctx, f.sharesCreatureTypeWith).find((x) => s.objects[x]);
-    const v = id ? snapshot(s, id) : undefined;
-    const all = !!v && (v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES));
-    const types = v ? v.subtypes.filter((st) => !NON_CREATURE_SUBTYPES.has(st)) : [];
+    // Plusieurs objets désignés (deux commandants) : un type de créature de l'un d'eux suffit.
+    const vs = resolveRef(s, ctx, f.sharesCreatureTypeWith)
+      .filter((x) => s.objects[x])
+      .map((x) => snapshot(s, x));
+    const all = vs.some((v) => v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES));
+    const types = [...new Set(vs.flatMap((v) => v.subtypes.filter((st) => !NON_CREATURE_SUBTYPES.has(st))))];
     // Un changelin partage chacun de ses types avec toute créature (approché : toute créature).
     f = all
       ? { ...f, sharesCreatureTypeWith: undefined, types: [...(f.types ?? []), "Creature"] }
@@ -398,6 +401,13 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "union":
       return [...new Set(ref.of.flatMap((r) => resolveRef(s, ctx, r)))];
+    case "commanders": {
+      if (!s.commander) return [];
+      const who = new Set(resolveRef(s, ctx, ref.who));
+      return Object.values(s.objects)
+        .filter((o) => who.has(commanderOf(s, o)?.owner ?? ""))
+        .map((o) => o.id);
+    }
     case "combatPartners": {
       const of = new Set(resolveRef(s, ctx, ref.ref));
       const out = new Set<ObjectId>();

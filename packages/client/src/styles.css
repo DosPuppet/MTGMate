@@ -436,6 +436,7 @@ button {
    rangée de devant = créatures ; rangée arrière = terrains, puis artefacts et enchantements ;
    zone des planeswalkers tout à droite. */
 .battlefield {
+  position: relative;
   display: flex;
   gap: 0;
   padding: 4px 14px;
@@ -443,6 +444,72 @@ button {
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
+}
+/* Bénédiction de la cité (ascension) : icône dans le coin du champ de bataille, en bas pour vous, en haut pour un
+   adversaire ; l'infobulle s'ouvre vers l'intérieur de la zone. */
+.citys-blessing {
+  position: absolute;
+  left: 4px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(20, 16, 6, 0.75);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 8px rgba(230, 190, 90, 0.45);
+  padding: 0;
+  font: inherit;
+  cursor: help;
+}
+.battlefield.me .citys-blessing {
+  bottom: 4px;
+}
+.battlefield.opp .citys-blessing {
+  top: 4px;
+}
+.citys-blessing .icon {
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+  vertical-align: 0;
+}
+.citys-blessing-tip {
+  position: absolute;
+  left: 0;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  width: 230px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--gold);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.citys-blessing-tip strong {
+  color: var(--gold);
+}
+.citys-blessing-rule {
+  opacity: 0.75;
+  font-size: 11px;
+}
+.battlefield.me .citys-blessing-tip {
+  bottom: 32px;
+}
+.battlefield.opp .citys-blessing-tip {
+  top: 32px;
+}
+.citys-blessing:hover .citys-blessing-tip,
+.citys-blessing:focus .citys-blessing-tip {
+  display: flex;
 }
 /* Rangées (créatures, terrains et artefacts), à gauche de la zone des planeswalkers. */
 .bf-rows {

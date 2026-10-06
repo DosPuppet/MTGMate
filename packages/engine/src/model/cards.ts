@@ -503,9 +503,12 @@ export interface ManaAbilityDef {
   produceIdentity?: boolean;
   /** The Core : autant de mana que de cartes de votre cimetière correspondant au filtre. */
   amountGraveyard?: ObjectFilter;
-  /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
-  /** `uncounterable` : « ce sort ne peut pas être contrecarré » (Cavern of Souls). */
-  rider?: { spell: ObjectFilter; effect: "haste" | "copy" | "uncounterable" };
+  /**
+   * Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie ;
+   * `uncounterable` : « ce sort ne peut pas être contrecarré », Cavern of Souls). `effects` : « quand ce mana est dépensé
+   * pour lancer [un sort correspondant], [effets] », capacité déclenchée de la source (Path of Ancestry : regard 1).
+   */
+  rider?: { spell: ObjectFilter; effect?: "haste" | "copy" | "uncounterable"; effects?: Effect[] };
   amount: number;
   /** « {G} pour chaque Elfe que vous contrôlez » : le montant est le nombre de permanents correspondant. */
   amountPer?: ObjectFilter;

@@ -48,6 +48,54 @@ describe("Commander (EDH)", () => {
       expect(s.objects[path]?.tapped).toBe(true);
       expect(produced(s, path)).toEqual(["W"]);
     });
+
+    /** Lance la carte de la main de p1 et résout tout ; dit si un regard a eu lieu. */
+    const castScrying = (s: GameState, name: string, tapFirst?: string): { s: GameState; scried: boolean } => {
+      if (tapFirst)
+        s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", tapFirst), ability: 0, color: "B" });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name) });
+      let scried = false;
+      s = settle(s, (req) => {
+        if (req.intent === "scryBottom") scried = true;
+        return undefined;
+      });
+      return { s, scried };
+    };
+
+    it("Path of Ancestry : regard 1 si son mana lance une créature qui partage un type avec le commandant", () => {
+      const s = scenario({
+        p1: { command: ["Edgar Markov"], battlefield: ["Path of Ancestry"], hand: ["Vampire of the Dire Moon"] },
+      });
+      const r = castScrying(s, "Vampire of the Dire Moon");
+      expect(r.scried).toBe(true);
+      expect(idsOf(r.s, "p1", "battlefield", "Vampire of the Dire Moon")).toHaveLength(1);
+    });
+
+    it("Path of Ancestry : mana engagé à la main d'abord (réserve marquée), le regard a lieu aussi", () => {
+      const s = scenario({
+        p1: { command: ["Edgar Markov"], battlefield: ["Path of Ancestry"], hand: ["Vampire of the Dire Moon"] },
+      });
+      expect(castScrying(s, "Vampire of the Dire Moon", "Path of Ancestry").scried).toBe(true);
+    });
+
+    it("Path of Ancestry : pas de regard pour une créature sans type commun, ni avec le mana d'un autre terrain", () => {
+      const lions = scenario({ p1: { command: ["Edgar Markov"], battlefield: ["Path of Ancestry"], hand: ["Savannah Lions"] } });
+      expect(castScrying(lions, "Savannah Lions").scried).toBe(false);
+      const swamp = scenario({
+        p1: { command: ["Edgar Markov"], battlefield: ["Path of Ancestry", "Swamp"], hand: ["Vampire of the Dire Moon"] },
+      });
+      expect(castScrying(swamp, "Vampire of the Dire Moon", "Swamp").scried).toBe(false);
+    });
+
+    it("Path of Ancestry : le commandant compte où qu'il soit (sur le champ de bataille aussi) ; sans commandant, rien", () => {
+      const s = scenario({
+        p1: { battlefield: ["Edgar Markov", "Path of Ancestry", "Swamp"], hand: ["Vampire of the Dire Moon"] },
+      });
+      // Sans commandant, Path of Ancestry ne produit rien (903.4f) : le Marais paie, pas de regard.
+      expect(castScrying(structuredClone(s), "Vampire of the Dire Moon").scried).toBe(false);
+      makeCommander(s, idOf(s, "p1", "battlefield", "Edgar Markov"));
+      expect(castScrying(s, "Vampire of the Dire Moon", "Path of Ancestry").scried).toBe(true);
+    });
   });
 
   describe("mana des terrains adverses : Exotic Orchard, Fellwar Stone", () => {

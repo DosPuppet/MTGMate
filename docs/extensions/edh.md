@@ -30,7 +30,7 @@ cartes faites seulement de mots-clés sont déjà jouables (Vampire of the Dire 
 | Éminence (113.6) | `triggered(…, { fromCommand: true })` : la capacité fonctionne aussi depuis la zone de commandement (`commandZoneAbilities`, `detectTriggers`) | Edgar Markov |
 
 - **Tests :** `engine/test/edh.test.ts` (11).
-- **Approximation :** Path of Ancestry (regard 1 non fait).
+- **Approximation :** Path of Ancestry (regard 1 non fait) ; levée après le bilan (règles 142) : « quand ce mana est dépensé pour lancer [un sort correspondant], [effets] » (`rider.effects`, capacité déclenchée de la source) et « qui partage un type de créature avec votre commandant » (`sharesCreatureTypeWith: ref.commanders()`, référence `commanders` : les commandants des joueurs désignés, où qu'ils soient) ; 4 tests dans `edh.test.ts`.
 - **Dette :** `fromCommand` propre à Edgar Markov pour l'instant (famille des commandants à éminence) ; plafond ObjectFilter 86 → 87.
 
 ## E8 — base de mana ✅ (44 / 117)
@@ -46,7 +46,7 @@ cartes faites seulement de mots-clés sont déjà jouables (Vampire of the Dire 
 
 **Cartes (31, `edh/edgar.ts`) :** Blood Artist, Bloodline Keeper, Captivating Vampire, Champion of Dusk, Charismatic Conqueror, Clavileño, Cordial Vampire, Cruel Celebrant, Drana, Edgar, Charmed Groom, Elenda, Forerunner of the Legion, Indulgent Aristocrat, Knight of the Ebon Legion, Legion Lieutenant, Malakir Bloodwitch, Markov Baron, Master of Dark Rites, Mavren Fein, Sanctum Seeker, Stromkirk Captain, Twilight Prophet, Vampire Socialite, Viscera Seer, Vito, Welcoming Vampire, Yahenni, New Blood, Olivia's Wrath, Pact of the Serpent, Sorin, Imperious Bloodlord ; jetons `VAMPIRE_FLYING`, `VAMPIRE_WB_LIFELINK`.
 
-- **Moteur :** ascension (mot-clé lu dans le texte, `PlayerState.citysBlessing` acquise par une action basée sur l'état, `cond.citysBlessing`) ; la condition d'un `entersWith({ affects, condition })` est vérifiée du point de vue du contrôleur de la source.
+- **Moteur :** ascension (mot-clé lu dans le texte, `PlayerState.citysBlessing` acquise par une action basée sur l'état, `cond.citysBlessing` ; montrée dans l'interface par une icône dans le coin du champ de bataille du joueur, avec une infobulle : `PlayerView.citysBlessing`, `CitysBlessing` dans `Board.tsx`) ; la condition d'un `entersWith({ affects, condition })` est vérifiée du point de vue du contrôleur de la source.
 - **Formes existantes réutilisées :** `tapOthers` (Captivating Vampire), coût additionnel `tap` (New Blood), `fx.chooseForSelf("creatureType")` (Pact of the Serpent), `addManaChoice` restreint (Master of Dark Rites), `fx.mayForStore` posé au contrôleur adverse (Charismatic Conqueror).
 - **Tests :** `engine/test/edh-edgar.test.ts` (38).
 - **Approximations :** New Blood (pas de changement de texte), ascension d'un permanent seulement.

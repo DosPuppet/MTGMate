@@ -25,6 +25,7 @@ import {
   permissionActive,
   runEffect,
   staticContext,
+  withX,
 } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
@@ -2310,13 +2311,18 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       if (caves && item.cast) item.cast.caveMana = caves;
     }
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles ; Cavern of Souls :
-    // « du type choisi » se lit sur la source).
+    // « du type choisi » se lit sur la source ; Path of Ancestry : « qui partage un type de créature avec votre
+    // commandant », capacité déclenchée de la source).
     const riders = taps.flatMap(({ id, ab, chosen }) => {
       const rider = ab?.rider;
       if (!rider) return [];
       // Mana marqué de la réserve : le choix de sa source, figé à la production (Cavern of Souls).
       const src = chosen ? { chosen } : s.objects[id];
-      return matchesView(view, src ? withChosen(rider.spell, src) : rider.spell, player, id) ? [rider.effect] : [];
+      const filter = withX(s, src ? withChosen(rider.spell, src) : rider.spell, staticContext(s, player, id));
+      if (!matchesView(view, filter, player, id)) return [];
+      const defId = s.objects[id]?.defId ?? s.lki[id]?.defId;
+      if (rider.effects && defId) pushInline(s, player, id, defId, { targets: [], effects: rider.effects });
+      return rider.effect ? [rider.effect] : [];
     });
     if (riders.length) item.riders = riders;
     if (riders.includes("uncounterable")) item.uncounterable = true;

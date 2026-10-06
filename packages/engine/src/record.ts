@@ -374,8 +374,11 @@ export const RECORD_VERSION = 1;
  *   (récursion infinie trouvée par le fuzz Commander à trois).
  * - 141 : 903.9b demandé au propriétaire : un commandant mis dans sa main ou dans sa bibliothèque (pioche comprise) peut
  *   aller dans la zone de commandement, à la vérification suivante, comme depuis un cimetière ou l'exil.
+ * - 142 : Path of Ancestry : regard 1 quand son mana sert à lancer un sort de créature qui partage un type de créature
+ *   avec votre commandant (effet déclenché porté par le mana, `rider.effects` ; référence `commanders`) ; « partage un
+ *   type de créature avec » plusieurs objets : un type de l'un d'eux suffit.
  */
-export const RULES_VERSION = 141;
+export const RULES_VERSION = 142;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
