@@ -5,7 +5,7 @@
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { chars } from "../src/layers";
+import { bump, chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import type { GameState, PlayerId } from "../src/types";
 import {
@@ -113,6 +113,20 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
   });
 
   describe("Ob Nixilis, the Adversary", () => {
+    it("victime X : X est la force de la créature au moment du sacrifice, modifications comprises", () => {
+      let s = scenario({ p1: { battlefield: ["Swamp", "Mountain", "Swamp", "Bear Cub"], hand: ["Ob Nixilis, the Adversary"] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      // Bear Cub 2/2 avec trois marqueurs +1/+1 : force 5.
+      const o = s.objects[bear];
+      if (o) o.counters["+1/+1"] = 3;
+      bump(s);
+      s = settle(castIt(s, "p1", "Ob Nixilis, the Adversary"), (req) =>
+        req.type === "pick" && req.options.includes(bear) ? [bear] : undefined,
+      );
+      const copy = idsOf(s, "p1", "battlefield", "Ob Nixilis, the Adversary").find((id) => s.objects[id]?.isToken) ?? "";
+      expect(s.objects[copy]?.counters.loyalty).toBe(5);
+    });
+
     it("victime X : la copie n'est pas légendaire et a une loyauté de départ X", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Mountain", "Swamp", "Gigantosaurus"], hand: ["Ob Nixilis, the Adversary"] },

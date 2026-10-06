@@ -309,5 +309,4 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Cryptolith Fragment : sa capacité de mana s'active à la main (le paiement automatique ne s'en sert pas) ;
   - `règle` Wheel of Misfortune : les nombres sont choisis l'un après l'autre (dans l'ordre APNAP, sans voir ceux des autres), de 0 à 20 ;
   - `règle` Gray Merchant of Asphodel, Creeping Bloodsucker : les PV gagnés sont calculés (dévotion par adversaire, nombre d'adversaires), pas lus sur les pertes et blessures réelles (différent seulement si elles sont remplacées) ;
-  - `règle` Ob Nixilis, the Adversary : la loyauté de la copie est la force imprimée de la créature sacrifiée (pas sa force modifiée) ;
   - `règle` Keen Duelist : les cartes du dessus ne sont pas révélées explicitement.

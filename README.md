@@ -2,7 +2,7 @@
 
 Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur) et en ligne contre d'autres joueurs (de 2 à 4, BO3 en duel ; Standard, Sans limite ou Commander). Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
 
-- passage automatique de la priorité ;
+- passage automatique de la priorité, avec un arrêt sur « Fin du tour » à la fin de chacun de vos tours (même sans rien à jouer) ;
 - paiement automatique du mana ;
 - arrêts configurables ;
 - cible choisie automatiquement quand elle est unique ;
@@ -12,9 +12,10 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - IA à trois niveaux au choix (débutant, moyen, élevé), du jeu heuristique à la recherche ISMCTS en duel (voir docs/ia.md) ;
 - exil consultable : bouton à côté du cimetière, et cartes exilées par un permanent affichées sous lui (survol pour les voir) ;
 - jouable sur tablette et sur téléphone en paysage (voir « Tablette et téléphone ») ;
-- images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau »).
+- images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau ») ;
+- cartes en français : nom, texte et illustration de l'impression française (celle d'une autre édition quand l'originale n'existe pas en français ; texte complété à la main quand Scryfall ne l'a pas).
 
-Dernière extension ajoutée : **The Hobbit (HOB)**, entièrement gérée (188 / 188), avec Storied, amasser, le recrutement, les marqueurs d'affûtage et les Aventures. Avant elle : **Teenage Mutant Ninja Turtles (TMT)**, 188 / 188. **Toutes les cartes légales en Standard sont désormais jouables.**
+**Toutes les cartes légales en Standard sont jouables** (dernière extension ajoutée : The Hobbit, 188 / 188). Dernier ajout : le **Commander**, de 2 à 4 joueurs, contre l'IA et en ligne, avec quatre decks préconstruits (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots) ; les decks suivants arrivent un par un, chacun avec ses cartes.
 
 ## Périmètre : le Standard
 
@@ -79,7 +80,14 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 - Up the Beanstalk
 - Vivi Ornitier
 
-**Commander (plan E, `docs/plans/PLAN-E.md`) :** règles du format (zone de commandement, taxe, blessures de commandant, 40 points de vie, identité de couleur, liste de bannissement et Game Changers de Scryfall), de 2 à 4 joueurs, contre l'IA et en ligne (avec des sièges IA tenus par le serveur), éditeur de deck Commander (tranche estimée d'après les Game Changers). Quatre préconstruits jouables : Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4 (06/10/2026), The Ur-Dragon (Dragons, cinq couleurs, liste « How to Train Ur-Dragon » de Moxfield) et Rakdos, Lord of Riots (gros sorts presque gratuits, noir et rouge, liste Moxfield). Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, 225 / 225 cartes gérées, `docs/extensions/edh.md`).
+**Commander (plan E, `docs/plans/PLAN-E.md`) :** règles du format (zone de commandement, taxe, retour dans la zone de commandement demandé au propriétaire, blessures de commandant, 40 points de vie, identité de couleur, singleton, liste de bannissement et Game Changers de Scryfall, premier mulligan gratuit), de 2 à 4 joueurs, contre l'IA et en ligne (avec des sièges IA tenus par le serveur), éditeur de deck Commander (100 cartes, identité, tranche estimée d'après les Game Changers). Quatre préconstruits jouables : Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4 (06/10/2026), The Ur-Dragon (Dragons, cinq couleurs, liste « How to Train Ur-Dragon » de Moxfield) et Rakdos, Lord of Riots (gros sorts presque gratuits, noir et rouge, liste Moxfield). Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, 225 / 225 cartes gérées, `docs/extensions/edh.md`). Ajouter un deck : liste dans `docs/commander/decks/`, `npm run import-cards -- edh`, scripts et tests, préconstruit (recette dans CLAUDE.md).
+
+| Préconstruit | Couleurs | Source | Game Changers (tranche estimée) |
+|---|---|---|---|
+| Edgar Markov — Vampires | blanc, noir, rouge | EDHREC, liste moyenne « optimized » | 5 (4+) |
+| Y'shtola, Night's Blessed — drain et contrôle | blanc, bleu, noir | EDHREC, liste moyenne « optimized » | 13 (4+) |
+| The Ur-Dragon — Dragons | cinq couleurs | Moxfield, « How to Train Ur-Dragon [Primer!] » | 7 (4+) |
+| Rakdos, Lord of Riots — gros sorts gratuits | noir, rouge | Moxfield, « Rakdos, Lord of Big Free Stuff » | 2 (3) |
 
 **Hors périmètre pour l'instant :** Limité (scellé, draft), formats éternels, cartes numériques d'Alchemy.
 
@@ -90,18 +98,19 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-### Jouer en ligne contre un joueur (duel Standard)
+### Jouer en ligne (de 2 à 4 joueurs)
 
 - **En développement :** `npm run server` (serveur de parties, port 8787) et `npm run dev`. Ouvrez deux onglets, puis « Contre un joueur » : l'un crée la partie, l'autre la rejoint avec le code ou le lien.
+- **Salons :** format Standard, Sans limite ou Commander ; de 2 à 4 sièges, chacun tenu par un joueur ou par une IA du serveur (la partie commence quand tous les sièges humains sont pris). À plusieurs, un joueur qui part abandonne et la partie continue sans lui.
 - **En réseau local :** `npm run build` puis `npm run server`. Le serveur sert aussi l'interface : votre adversaire ouvre l'adresse « réseau » affichée (`http://<ip>:8787`).
 - **Sur un serveur (Internet, HTTPS) :** Node + pm2 derrière nginx, avec un sous-domaine. La notice pas à pas est dans [docs/deploiement.md](docs/deploiement.md) ; les fichiers sont dans `deploy/` (configuration pm2, site nginx, script de mise à jour).
-- **Match en 3 manches (BO3) :** à cocher en créant le salon (et, contre l'IA, sur l'accueil). Entre deux manches, chacun ajuste son deck avec sa réserve (mêmes cartes au total, deck légal), puis le perdant de la manche précédente commence la suivante. Le match s'arrête à deux victoires.
+- **Match en 3 manches (BO3, en duel seulement) :** à cocher en créant le salon (et, contre l'IA, sur l'accueil). Entre deux manches, chacun ajuste son deck avec sa réserve (mêmes cartes au total, deck légal), puis le perdant de la manche précédente commence la suivante. Le match s'arrête à deux victoires.
 - **Règles du salon :**
   - 60 s par décision, avec une corde affichée pendant les 20 dernières ;
   - à l'expiration, une décision par défaut est jouée ; 3 expirations valent une défaite ;
   - après une déconnexion, 60 s pour revenir (en rechargeant la page), sinon défaite ;
   - revanche possible dans le même salon.
-- **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`, `MTGX_DATA_DIR` (sauvegarde des parties, reprises après un redémarrage ; `data/rooms` par défaut), `MTGX_MAX_ROOMS_PER_IP` (4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même). `/healthz` indique l'état du serveur.
+- **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`, `MTGX_DATA_DIR` (sauvegarde des parties, reprises après un redémarrage ; `data/rooms` par défaut), `MTGX_MAX_ROOMS_PER_IP` (4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même), `MTGX_MAX_HEAP_MB` ; sièges IA : `MTGX_AI_WORKERS` (2), `MTGX_MAX_AI_ROOMS` (12), `MTGX_MAX_RSS_MB` (640). `/healthz` indique l'état du serveur (détail dans [docs/deploiement.md](docs/deploiement.md)).
 
 ### Replays et export d'une partie
 
@@ -134,17 +143,17 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 
 | Commande | Rôle |
 |---|---|
-| `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (environ 2 min) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé |
+| `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (environ 2 min) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé. `--set COMMANDER` : les préconstruits Commander ; `--set EDH` : le pseudo-ensemble Commander |
 | `npm run verify -- --full` | Vérification complète (environ 7 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
 | `npm run verify -- --ci` | Vérification de l'intégration continue (GitHub Actions, à chaque push) : types, Biome, couverture, tests et fuzz courts sur tout le pool, sans interface ni bench |
 | `npm test` | Tests de règles, d'IA, et test de fumée de chaque carte gérée (Vitest, un fichier par extension) |
 | `npm run golden [-- --update]` | Parties dorées (`tools/golden.ts`) : vérifie qu'elles se rejouent à l'identique ; `--update` régénère seulement celles qui divergent après un changement de `RULES_VERSION` |
-| `npm run fuzz -- --games 300 [--pool decks\|all\|<EXT>] [--players 4] [--offers 4] [--ai random\|heuristic\|mixed\|beginner\|medium\|expert\|levels] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
+| `npm run fuzz -- --games 300 [--pool decks\|all\|meta\|<EXT>\|commander] [--format commander] [--players 4] [--offers 4] [--ai random\|heuristic\|mixed\|beginner\|medium\|expert\|levels\|chaos] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--format commander` : parties de Commander (decks aléatoires, ou `--pool commander` : les préconstruits). `--offers N` : fuzz strict (toute option proposée doit être acceptée). `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA moyenne < 50 ms, IA élevée < 150 ms ; à mesurer sur secteur) |
-| `npm run arena -- --a expert --b medium [--games 600] [--jobs 11] [--budget 100] [--pool decks\|all\|mix]` | Tournoi d'IA en duel (places et decks alternés) : taux de victoire avec intervalle à 95 %, temps de décision ; `expert:0` = élevé sans ISMCTS |
+| `npm run arena -- --a expert --b medium [--games 600] [--jobs 11] [--budget 100] [--pool decks\|all\|mix\|meta\|commander] [--players 4]` | Tournoi d'IA (places et decks alternés) : taux de victoire avec intervalle à 95 %, temps de décision ; `expert:0` = élevé sans ISMCTS. Équilibre des decks : `--a medium --b medium --format commander --pool commander --by-deck --deck cmd-<id>`. `MTGX_SLOW_MS=N` signale les décisions de plus de N ms |
 | `npm run ai-smoke` | Niveau de l'IA : sélecteur de l'accueil, latence de l'IA élevée en temps réel, processeur normal et ralenti ×4 (serveur de dev lancé) |
 | `npm run tutorial-smoke [-- --only 2,3] [-- --debug]` | Tutoriel suivi dans le navigateur comme un joueur, refus hors guide, reprise (serveur de dev lancé) |
-| `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"] [-- --audit]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte ; `--audit` : écarts entre le texte Oracle et le script des cartes gérées |
+| `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"] [-- --deck <id\|all>] [-- --audit]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte ; `--deck` : cartes d'un deck Commander à scripter ; `--audit` : écarts entre le texte Oracle et le script des cartes gérées |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur Planecircle » (serveur de dev lancé) |
@@ -153,7 +162,10 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
 | `npm run import-tokens` | Images des jetons : jetons Scryfall des extensions Standard (`t<code>`) dans `packages/cards/data/tokens.json` |
-| `npm run import-cards -- <set>\|all` | Import Scryfall d'une extension, ou de toutes les extensions Standard hors FDN et FRA (`all`) |
+| `npm run import-cards -- <set>\|all\|edh` | Import Scryfall d'une extension, de toutes les extensions Standard hors FDN et FRA (`all`), ou par nom des cartes des decks Commander absentes du catalogue (`edh`, impressions françaises en priorité) |
+| `npm run import-printings` | Table des impressions (illustrations au choix dans l'éditeur de deck) ; compare aussi l'identité de couleur à Scryfall |
+| `npx tsx tools/check-legality.ts [--commander] [--write]` | Légalités Standard (ou bannissements et Game Changers du Commander) comparées à Scryfall ; tâche hebdomadaire de la CI |
+| `npx tsx tools/commander-smoke.ts` | Commander dans le navigateur : accueil, éditeur, partie à quatre (serveur de dev lancé) |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
 | `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
@@ -164,12 +176,13 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
             src/model/ (types), src/ops/ (traitements des effets par domaine) ; guide : docs/moteur.md
-  cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/<ext>/*.ts), lecture du texte
-            Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN, 5 decks du méta)
+  cards/    données Scryfall (data/<set>.json : 20 extensions Standard, 8 ensembles de rééditions, pseudo-ensemble Commander
+            edh.json), scripts des cartes (src/<ext>/*.ts), lecture du texte Scryfall (src/scryfall.ts), decklists, decks
+            préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN, 5 decks du méta, 4 decks Commander)
   ai/       IA à trois niveaux (heuristique paramétrée, combat par simulation, ISMCTS), IA aléatoire (fuzz),
             adversaire scripté (tutoriel) ; guide : docs/ia.md
-  server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé ;
-            relais des images de Scryfall (/scry/)
+  server/   jeu en ligne : salons de 2 à 4 sièges, GameHost côté serveur (fait autorité), sièges IA dans des workers,
+            minuteur, reconnexion, sauvegarde et reprise ; protocole partagé ; relais des images de Scryfall (/scry/)
   client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ;
             effets sonores (audio/) ; gestes tactiles (touch.ts) ; relais des images (images.ts)
 tools/      import Scryfall, vérification, fuzz, bench, couverture, tests d'interface
@@ -177,10 +190,12 @@ docs/       guide du moteur, approximations connues, détail des extensions, dé
 ```
 
 - **`submit(state, joueur, décision) → { state, events }`** : le moteur avance tout seul jusqu'à la prochaine décision. Il donne ensuite la liste exhaustive des options légales (`legalActions`), dont se servent l'interface, l'IA et l'autopilot.
-- **Autopilot** (`engine/src/autopilot.ts`) : il répond aux décisions triviales. Le moteur, lui, reste strict. Le mode « contrôle total » désactive l'autopilot, sauf « Fin du tour », qui reste une demande explicite.
+- **Autopilot** (`engine/src/autopilot.ts`) : il répond aux décisions triviales. Le moteur, lui, reste strict. Le mode « contrôle total » désactive l'autopilot, sauf « Fin du tour », qui reste une demande explicite. Pendant votre tour, il s'arrête toujours à la seconde phase principale : c'est vous qui terminez le tour. Les vraies décisions (retour du commandant dans la zone de commandement…) ne sont jamais prises à votre place.
 - **Effets de cartes** : ce sont des données sérialisables (`engine/src/dsl.ts`), jamais du code stocké dans l'état.
 - **Règle 400.7** : un objet qui change de zone reçoit un nouvel identifiant (`id`). L'identifiant `uid`, lui, suit la carte physique pour les animations.
-- **N joueurs** : priorité en tour de table, ordre APNAP, un défenseur par attaquant (joueur ou planeswalker), élimination d'un joueur (800.4a).
+- **N joueurs** : priorité en tour de table, ordre APNAP, un défenseur par attaquant (joueur ou planeswalker), élimination d'un joueur (800.4a), mulligan gratuit à trois joueurs ou plus.
+- **Commander** (903) : commandants désignés par leur identité physique, zone de commandement (taxe, éminence), retour demandé au propriétaire, blessures de commandant, identité de couleur.
+- **Boucles** (104.4b) : une boucle d'actions obligatoires est nulle, y compris une boucle qui accumule des jetons ou des déclenchements.
 - **Choix génériques** (`choices.ts`) : toute question passe par une `ChoiceRequest` (choisir, ordonner, oui/non, nombre, répartir) avec une réponse suggérée. Une résolution peut être suspendue sur un choix puis reprise ; les valeurs intermédiaires (« si vous le faites ») sont mémorisées dans la résolution.
 - **Capacités déclenchées** (`triggers.ts`) :
   - détectées au moment de l'événement, avec regard en arrière pour les morts simultanées ;
@@ -199,7 +214,7 @@ docs/       guide du moteur, approximations connues, détail des extensions, dé
   - remplacements d'événements chiffrés en données (`eventReplacement`, 616.1) : blessures, perte et gain de PV, pioche, meule, marqueurs, jetons, mana et dégagement (« autant plus N », « le double », prévention, boucliers « la prochaine fois que »), dans l'ordre le plus favorable au joueur affecté ;
   - coûts : hybride, coûts additionnels, flashback, réductions, sacrifice ou marqueurs comme coût, activation depuis le cimetière.
 - **Cartes à plusieurs faces** : aventures et présages, recto-verso (transformation, faces modales, Sagas au verso), cartes scindées et Salles, assemblage ; Sagas, Classes et Affaires ; cartes face cachée (déguisement, cape, manifestation), invisibles pour l'adversaire.
-- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK), Progéniture, Cadeau, Fourrager, Dépense, Vaillance et Saisons (BLB), endurance, rafale, renouveau et présages (TDM), flétrir, Vivid, changelin, contempler, flétrissure et conspiration (ECL), Rôles, Célébration, Aventures et Marchandage (WOE), Repartee, Infusion, Opus, Increment, cascade et miracle (SOS), suspect, déguisement, cape et réunir des preuves (MKM), maîtrise de l'eau, de la terre, du feu et de l'air et présage (TLA), montée en puissance, travail d'équipe, improvisation et marqueurs de bouclier (MSH), Web-slinging, chaos, émeute et créatures modifiées (SPM), faufilement, Mutagène, Alliance et Disparition (TMT), Storied, recrutement et marqueurs d'affûtage (HOB). Le détail par extension est dans `docs/extensions/`.
+- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK), Progéniture, Cadeau, Fourrager, Dépense, Vaillance et Saisons (BLB), endurance, rafale, renouveau et présages (TDM), flétrir, Vivid, changelin, contempler, flétrissure et conspiration (ECL), éminence, myriade, annihilateur, exhumation, victime et nombres choisis secrètement (Commander), Rôles, Célébration, Aventures et Marchandage (WOE), Repartee, Infusion, Opus, Increment, cascade et miracle (SOS), suspect, déguisement, cape et réunir des preuves (MKM), maîtrise de l'eau, de la terre, du feu et de l'air et présage (TLA), montée en puissance, travail d'équipe, improvisation et marqueurs de bouclier (MSH), Web-slinging, chaos, émeute et créatures modifiées (SPM), faufilement, Mutagène, Alliance et Disparition (TMT), Storied, recrutement et marqueurs d'affûtage (HOB). Le détail par extension est dans `docs/extensions/`.
 - **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
 
 ## Ajouter une carte
@@ -225,17 +240,18 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
 | 3. Client contre l'IA | plateau façon MTGA (créatures devant ; terrains, puis artefacts, puis enchantements derrière ; zone des planeswalkers à part, tout à droite ; attachements et cartes exilées sur leur hôte ; exil consultable ; piles de jetons « ×N » ; lignes multiples et taille des cartes adaptées à la place), main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
 | 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
-| 4b. Deckbuilder | collection filtrable, deck et réserve, validation 60/4/15, import et export de decklists (MTGA, MTGO, noms FR), persistance | ✅ |
+| 4b. Deckbuilder | collection filtrable, deck et réserve, validation 60/4/15 (Standard, Sans limite) et Commander (100 cartes, commandant, identité, Game Changers), import et export de decklists (MTGA, MTGO, Moxfield, noms FR), illustrations au choix, persistance | ✅ |
 | 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
 | 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅, Murders at Karlov Manor ✅, Avatar: The Last Airbender ✅, Marvel Super Heroes ✅, Marvel's Spider-Man ✅, Teenage Mutant Ninja Turtles ✅, The Hobbit ✅ : tout le Standard est couvert | ✅ |
 | 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
-| 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
-| 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; musique | en cours |
+| 6. JcJ en ligne | de 2 à 4 joueurs (Standard, Sans limite, Commander), sièges IA : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, reprise après redémarrage, revanche, BO3 en duel | ✅ ; déploiement pm2 + nginx documenté |
+| 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; tutoriel ✅ ; musique | en cours |
+| 8. Commander | règles du format, de 2 à 4 joueurs, contre l'IA et en ligne ; decks ajoutés un par un (4 préconstruits, 225 cartes propres au Commander) | ✅ en cours d'enrichissement |
 
-Le suivi (état, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md), l'historique dans [docs/historique.md](docs/historique.md), le plan en cours dans [docs/plans/PLAN-C.md](docs/plans/PLAN-C.md). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
+Le suivi (état, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md), l'historique dans [docs/historique.md](docs/historique.md), les plans dans [docs/plans/](docs/plans/) (le dernier : [PLAN-E.md](docs/plans/PLAN-E.md), le Commander). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
 
 ## Cadre légal
 

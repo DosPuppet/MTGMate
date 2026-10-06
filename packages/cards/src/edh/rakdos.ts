@@ -525,7 +525,8 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
   },
   "Ob Nixilis, the Adversary": {
     abilities: [
-      // Victime X : sacrifiez une créature de force X en le lançant ; la copie (un jeton) n'est pas légendaire et a X loyauté.
+      // Victime X : sacrifiez une créature de force X en le lançant ; la copie (un jeton) n'est pas légendaire et a X loyauté
+      // (la force de la créature au moment du sacrifice, modifications comprises : dernières informations connues).
       triggered(
         CAST_SELF,
         [
