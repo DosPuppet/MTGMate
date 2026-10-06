@@ -69,10 +69,21 @@ Sideboard
     ]);
   });
 
-  it("section Commander ignorée et signalée", () => {
-    const d = parseDeckList("Commander\n1 Llanowar Elves\nDeck\n4 Forest", index);
+  it("section Commander (PLAN-E) : le commandant à part ; marque *CMDR* de Moxfield ; section Compagnon ignorée", () => {
+    const d = parseDeckList("Commander\n1 Llanowar Elves\n\nDeck\n4 Forest", index);
+    expect(d.commander).toEqual([[1, "Llanowar Elves"]]);
     expect(d.main).toEqual([[4, "Forest"]]);
-    expect(d.issues[0]?.kind).toBe("ignored");
+    expect(d.sideboard).toEqual([]);
+    const moxfield = parseDeckList("1 Llanowar Elves (FDN) 227 *CMDR*\n4 Forest", index);
+    expect(moxfield.commander?.map((e) => e[1])).toEqual(["Llanowar Elves"]);
+    expect(moxfield.main).toEqual([[4, "Forest"]]);
+    const companion = parseDeckList("Companion\n1 Llanowar Elves\nDeck\n4 Forest", index);
+    expect(companion.main).toEqual([[4, "Forest"]]);
+    expect(companion.issues[0]?.kind).toBe("ignored");
+    // Aller-retour : l'export écrit la section Commander en premier.
+    const text = serializeDeckList({ commander: d.commander, main: d.main }, CARDS);
+    expect(text).toMatch(/^Commander\n1 Llanowar Elves \(FDN\) \d+\n\nDeck\n4 Forest/);
+    expect(parseDeckList(text, index).commander).toEqual(d.commander);
   });
 });
 
@@ -194,8 +205,8 @@ describe("légalité en Standard", () => {
   });
 
   it("les cartes des extensions couvertes sont légales en Standard, sauf les 13 bannies (légalités Scryfall)", () => {
-    // Les ensembles de rééditions (PLAN-G) sont hors Standard : vérifiés à part.
-    const reprints = new Set(SETS.filter((s) => s.reprint).map((s) => s.code));
+    // Les ensembles de rééditions (PLAN-G) et le pseudo-ensemble Commander (PLAN-E) sont hors Standard : vérifiés à part.
+    const reprints = new Set(SETS.filter((s) => s.reprint || s.byName).map((s) => s.code));
     const cards = Object.values(CARDS).filter((c) => !c.isToken && !reprints.has(c.set ?? ""));
     expect(cards.filter((c) => c.set === "FDN")).toHaveLength(517);
     // Reality Fracture : 285 cartes, dont 6 réimpressions de Foundations (terrains de base, Unsummon).
@@ -290,7 +301,8 @@ describe("légalité en Standard", () => {
     expect(cards.length).toBeGreaterThan(400);
     expect(cards.filter((c) => c.legalities?.standard === "legal").map((c) => c.name)).toEqual([]);
     for (const c of cards) expect(legalityIssue(c, "unlimited"), c.name).toBeUndefined();
-    for (const name of Object.keys(EXCLUDED_REPRINTS)) expect(CARDS[name], name).toBeUndefined();
+    // Une carte écartée des rééditions peut venir d'un deck Commander (pseudo-ensemble EDH, PLAN-E), jamais d'une réédition.
+    for (const name of Object.keys(EXCLUDED_REPRINTS)) expect(CARDS[name]?.set ?? "EDH", name).toBe("EDH");
   });
 
   it("une carte hors Standard ou sans légalité connue rend le deck illégal", () => {

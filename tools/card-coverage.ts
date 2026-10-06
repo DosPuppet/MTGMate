@@ -4,6 +4,7 @@
  *
  * Usage : npm run coverage [-- --set all|standard|main|<set>] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
  *         npm run coverage -- --set FIN --text [--color W|U|B|R|G|M|C|L]
+ *         npm run coverage -- --deck <id|all> [--text]   (decks Commander de `docs/commander/decks/`, PLAN-E)
  *
  * --audit : écarts entre le texte Oracle et le script des cartes gérées (capacités manquantes, nombres absents).
  * --tests : part des cartes gérées nommées dans un test de règles (`engine/test`, attentes de l'Oracle), par extension ;
@@ -16,6 +17,7 @@ import { CARDS, isMainSet, SET_BY_CODE, SETS } from "@mtgx/cards";
 import type { CardDef } from "@mtgx/engine";
 import auditBaseline from "../packages/cards/data/audit-baseline.json";
 import { auditCard, issueKey } from "../packages/cards/src/audit";
+import { commanderDecks } from "./commander-decks";
 import { metaDecks } from "./meta-decks";
 
 const MECHANICS: [string, RegExp][] = [
@@ -74,6 +76,39 @@ if (cardName !== undefined) {
   process.exit(0);
 }
 
+// --deck <id|all> : les cartes d'un deck Commander (ou de tous), jouables, au catalogue mais non jouables, ou inconnues.
+const deckArg = arg("--deck");
+const deckCards = deckArg === undefined ? undefined : deckCoverage(deckArg);
+
+function deckCoverage(id: string): Set<string> {
+  const decks = commanderDecks().filter((d) => id === "all" || d.id === id);
+  if (!decks.length) {
+    console.log(
+      `Deck Commander inconnu : ${id} (connus : ${commanderDecks()
+        .map((d) => d.id)
+        .join(", ")})`,
+    );
+    process.exit(1);
+  }
+  const names = new Set<string>();
+  for (const d of decks) {
+    const cards = [...d.commander, ...d.main].map(([, name]) => name).filter((n) => !CARDS[n]?.supertypes.includes("Basic"));
+    for (const n of cards) names.add(n);
+    const ok = cards.filter((n) => CARDS[n]?.implemented).length;
+    const bySet = new Map<string, number>();
+    for (const n of cards.filter((x) => !CARDS[x]?.implemented)) {
+      const set = CARDS[n]?.set ?? "?";
+      bySet.set(set, (bySet.get(set) ?? 0) + 1);
+    }
+    const detail = [...bySet].map(([set, n]) => `${set} ${n}`).join(", ");
+    console.log(
+      `${d.name} (${d.id}) : ${ok} / ${cards.length} cartes jouables (hors terrains de base)` +
+        `${detail ? ` ; à faire : ${detail}` : ""}${d.unknown.length ? ` ; inconnues : ${d.unknown.join(", ")}` : ""}`,
+    );
+  }
+  return names;
+}
+
 // --set main : sets principaux ; --set fdn|fra|… : une extension (toutes ses cartes) ;
 // --set all (ou sans option) : tout, avec le détail par extension ; --set standard : cartes légales en Standard.
 const setArg0 = (arg("--set") ?? "").toUpperCase();
@@ -85,18 +120,21 @@ const all = Object.values(CARDS).filter(
     !c.isToken &&
     (!main || isMainSet(c)) &&
     (!standard || c.legalities?.standard === "legal") &&
-    (!setArg || main || standard || c.set === setArg),
+    (!setArg || main || standard || c.set === setArg) &&
+    (!deckCards || deckCards.has(c.name)),
 );
 const done = all.filter((c) => c.implemented);
-const label = main
-  ? "sets principaux"
-  : standard
-    ? "Standard (cartes légales)"
-    : setArg
-      ? (SET_BY_CODE[setArg]?.name ?? setArg)
-      : "toutes extensions";
+const label = deckCards
+  ? `deck${deckArg === "all" ? "s" : ""} Commander`
+  : main
+    ? "sets principaux"
+    : standard
+      ? "Standard (cartes légales)"
+      : setArg
+        ? (SET_BY_CODE[setArg]?.name ?? setArg)
+        : "toutes extensions";
 console.log(`${label} : ${done.length} / ${all.length} cartes gérées (${Math.round((done.length / all.length) * 100)} %)`);
-if (!setArg) {
+if (!setArg && !deckCards) {
   // Rééditions (PLAN-G) : hors Standard, jouables en « Sans limite ».
   const reprintCodes = new Set(SETS.filter((s) => s.reprint).map((s) => s.code));
   const reprints = all.filter((c) => reprintCodes.has(c.set ?? ""));

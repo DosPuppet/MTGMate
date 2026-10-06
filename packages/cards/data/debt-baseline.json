@@ -105,6 +105,7 @@
     "phaseOut": "Robe of Stars : phasing (702.26), zone phasedOut et retour en phase à l'étape de dégagement ; à réutiliser pour toute carte qui fait sortir de phase"
   },
   "singleCardKeys": {
+    "origin": "PLAN-E : impression d'origine des cartes du pseudo-ensemble EDH, champ de données et non de règles ; une seule carte EDH gérée avant les lots de cartes (à retirer dès E8)",
     "absolute": "Loot, the Anomaly — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addChosenLandType": "Multiversal Passage — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addSourceCounters": "Fated Firepower — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -224,7 +225,7 @@
   },
   "engineCardLiterals": {},
   "ceilings": {
-    "CardDef": 96,
+    "CardDef": 97,
     "GameObject": 61,
     "StackItem": 29,
     "PlayerState": 22,
@@ -298,6 +299,7 @@
     "PLAN-A A4a : référence ref.grantor (le permanent qui accorde une capacité activée : Fishing Pole, Trusty Boomerang ; coût CostDef.grantor, qui remplace tapAttached : Fishing Pole, The Dominion Bracelet, Deconstruction Hammer) : Ref 29 → 30, Ref (champs) 51 → 52",
     "PLAN-A A4 (intégration de A4a et A4b) : ref.grantor et ref.eventObjects ensemble : Ref 30 → 31, Ref (champs) 52 → 53",
     "PLAN-A A4c : phases et étapes ajoutées à leur place (extra.after \"step\" | \"main\" : Paradox Haze, Full Throttle ; file turn.addedPhases / addedSteps), rang de la phase principale (step \"main\" et nth : Survie, Carpet of Flowers) : Effect (champs) 629 → 630, TriggerSpec (champs) 159 → 160",
-    "PLAN-A A4 (intégration de A4c après A4a et A4b) : Effect (champs) 633 → 634, TriggerSpec (champs) 158 → 159"
+    "PLAN-A A4 (intégration de A4c après A4a et A4b) : Effect (champs) 633 → 634, TriggerSpec (champs) 158 → 159",
+    "PLAN-E E0 : CardDef.origin, impression d'origine des cartes du pseudo-ensemble Commander (EDH) importées par nom : CardDef 96 → 97"
   ]
 }

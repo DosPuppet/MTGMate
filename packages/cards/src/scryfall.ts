@@ -48,6 +48,10 @@ export interface RawCard {
   layout?: string;
   /** Cartes à plusieurs faces (aventure, scindée, recto-verso, assemblage) : toutes les faces. */
   faces?: RawFace[];
+  /** Pseudo-ensemble importé par nom (PLAN-E) : ensemble Scryfall de l'impression retenue (`CardDef.origin`). */
+  origin?: string;
+  /** Pseudo-ensemble importé par nom : identité de couleur selon Scryfall, comparée à l'identité calculée (test). */
+  colorIdentity?: string[];
 }
 
 export interface RawFace {

@@ -1,6 +1,8 @@
 # Légalités Standard comparées à Scryfall, chaque semaine (PLAN-C, C19) : une annonce de bannissement, une rotation ou
 # une nouvelle extension fait échouer la tâche. Corriger : réimport (npm run import-cards), dérogation
 # (packages/cards/data/legality-overrides.json), liste du README (test cards/test/legality.test.ts).
+# Commander (PLAN-E) : bannissements, Game Changers et cartes non légales, comparés à packages/cards/data/commander.json
+# (corriger : npx tsx tools/check-legality.ts --commander --write).
 name: Légalités Standard
 
 on:
@@ -21,3 +23,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsx tools/check-legality.ts
+      - run: npx tsx tools/check-legality.ts --commander
+        if: always()

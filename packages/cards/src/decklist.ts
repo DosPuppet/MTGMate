@@ -26,6 +26,8 @@ export interface DeckIssue {
 
 export interface ParsedDeck {
   name?: string;
+  /** Section « Commander » (ou marque `*CMDR*` de Moxfield) : le ou les commandants (PLAN-E). */
+  commander?: DeckEntries;
   main: DeckEntries;
   sideboard: DeckEntries;
   issues: DeckIssue[];
@@ -157,7 +159,7 @@ export class CardIndex {
   }
 }
 
-const HEADERS: Record<string, "main" | "side" | "ignore" | "about"> = {
+const HEADERS: Record<string, "main" | "side" | "commander" | "ignore" | "about"> = {
   deck: "main",
   main: "main",
   maindeck: "main",
@@ -165,14 +167,17 @@ const HEADERS: Record<string, "main" | "side" | "ignore" | "about"> = {
   sideboard: "side",
   reserve: "side",
   réserve: "side",
-  commander: "ignore",
+  commander: "commander",
+  commandant: "commander",
   companion: "ignore",
   compagnon: "ignore",
   about: "about",
 };
 
 const LINE = /^(?:(SB):\s*)?(\d+)\s*[xX]?\s+(.+?)\s*$/;
-const SET_SUFFIX = /\s+\(([A-Za-z0-9]{2,6})\)(?:\s+([\w-]+))?(?:\s+\*[A-Z]\*)?$/;
+const SET_SUFFIX = /\s+\(([A-Za-z0-9]{2,6})\)(?:\s+([\w-]+))?(?:\s+\*[A-Z]\*)?(?:\s+\*CMDR\*)?$/;
+/** Marque d'un commandant dans une liste Moxfield (`1 Edgar Markov (C17) 36 *CMDR*`). */
+const CMDR_MARK = /\s+\*CMDR\*$/;
 
 /** Ajoute des exemplaires ; la première impression citée pour un nom vaut pour tous ses exemplaires. */
 function add(entries: DeckEntries, n: number, name: string, printing?: string): void {
@@ -197,7 +202,7 @@ export function parseDeckList(
   findPrinting?: (c: CardDef, set: string, number: string) => string | undefined,
 ): ParsedDeck {
   const out: ParsedDeck = { main: [], sideboard: [], issues: [] };
-  let section: "main" | "side" | "ignore" | "about" = "main";
+  let section: "main" | "side" | "commander" | "ignore" | "about" = "main";
   let sawHeader = false;
   let sawBlankAfterCards = false;
   const lines = text.replace(/\r/g, "").split("\n");
@@ -228,8 +233,9 @@ export function parseDeckList(
     }
     if (section === "ignore") return;
     const count = Number(m[2]);
+    const marked = CMDR_MARK.test(m[3] as string);
     const suffix = SET_SUFFIX.exec(m[3] as string);
-    const cardText = (m[3] as string).replace(SET_SUFFIX, "").trim();
+    const cardText = (m[3] as string).replace(SET_SUFFIX, "").replace(CMDR_MARK, "").trim();
     const name = index.find(cardText);
     if (!name) {
       const suggestion = index.suggest(cardText);
@@ -252,7 +258,10 @@ export function parseDeckList(
         : c && suffix?.[1] && suffix[2]
           ? findPrinting?.(c, suffix[1], suffix[2])
           : undefined;
-    add(toSide ? out.sideboard : out.main, count, name, printing);
+    if (section === "commander" || marked) {
+      out.commander ??= [];
+      add(out.commander, count, name, printing);
+    } else add(toSide ? out.sideboard : out.main, count, name, printing);
     const illegal = c && legalityIssue(c);
     if (illegal) out.issues.push({ line: n, text: line, kind: "illegal", message: illegal });
     if (!c?.implemented) {
@@ -268,7 +277,7 @@ export function parseDeckList(
  * - "plain" : `4 Nom`, réserve après une ligne vide (format MTGO), éventuellement avec les noms français.
  */
 export function serializeDeckList(
-  deck: { name?: string; main: DeckEntries; sideboard?: DeckEntries },
+  deck: { name?: string; commander?: DeckEntries; main: DeckEntries; sideboard?: DeckEntries },
   cards: Record<string, CardDef>,
   opts: { format?: "mtga" | "plain"; lang?: "en" | "fr" } = {},
 ): string {
@@ -276,17 +285,24 @@ export function serializeDeckList(
   const line = ([n, name, key]: DeckEntry) => {
     const c = cards[name];
     const p = key ? (c?.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
-    const set = p ? ` (${p.set}) ${p.number}` : c?.set && c.number ? ` (${c.set}) ${c.number}` : "";
+    const origin = c?.origin ?? c?.set;
+    const set = p ? ` (${p.set}) ${p.number}` : origin && c?.number ? ` (${origin}) ${c.number}` : "";
     if (format === "mtga") return `${n} ${exportName(c, name)}${set}`;
     return `${n} ${(opts.lang === "fr" && c?.fr?.name) || name}`;
   };
   const side = deck.sideboard ?? [];
   if (format === "mtga") {
-    const parts = [...(deck.name ? ["About", `Name ${deck.name}`, ""] : []), "Deck", ...deck.main.map(line)];
+    const parts = [
+      ...(deck.name ? ["About", `Name ${deck.name}`, ""] : []),
+      ...(deck.commander?.length ? ["Commander", ...deck.commander.map(line), ""] : []),
+      "Deck",
+      ...deck.main.map(line),
+    ];
     if (side.length) parts.push("", "Sideboard", ...side.map(line));
     return `${parts.join("\n")}\n`;
   }
-  return `${[...deck.main.map(line), ...(side.length ? ["", ...side.map(line)] : [])].join("\n")}\n`;
+  const commander = deck.commander?.length ? ["Commander", ...deck.commander.map(line), "", "Deck"] : [];
+  return `${[...commander, ...deck.main.map(line), ...(side.length ? ["", ...side.map(line)] : [])].join("\n")}\n`;
 }
 
 /** Nom exporté : le nom complet « A // B » pour une carte scindée, le recto seul pour les autres cartes à plusieurs faces. */

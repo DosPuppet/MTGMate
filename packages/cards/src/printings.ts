@@ -47,7 +47,7 @@ function tableOptions(name: string): PrintingOption[] {
 /** Toutes les impressions proposées pour une carte : la sienne, celles des rééditions du catalogue, puis la table. */
 export function printingOptions(c: CardDef): PrintingOption[] {
   return [
-    { set: c.set ?? "", number: c.number ?? "" },
+    { set: c.origin ?? c.set ?? "", number: c.number ?? "" },
     ...(c.printings ?? []).map((p) => ({ key: p.key, set: p.set, number: p.number })),
     ...tableOptions(c.name),
   ];

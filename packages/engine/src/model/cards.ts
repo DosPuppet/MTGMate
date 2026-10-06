@@ -289,6 +289,11 @@ export interface CardDef {
   /** Impression de référence (code de set, numéro de collection, rareté) : export des decklists, filtres. */
   set?: string;
   number?: string;
+  /**
+   * Carte d'un pseudo-ensemble importé par nom (EDH, PLAN-E) : ensemble Scryfall de son impression (`number` est le numéro
+   * dans cet ensemble). Sert à l'export des decklists et au menu des illustrations ; `set` reste le pseudo-ensemble.
+   */
+  origin?: string;
   rarity?: string;
   /** Légalité par format, d'après Scryfall au moment de l'import (« legal », « not_legal », « banned »…). */
   legalities?: Partial<Record<LegalityFormat, Legality>>;

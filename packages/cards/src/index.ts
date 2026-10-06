@@ -42,7 +42,11 @@ export const CARDS: Record<string, CardDef> = {};
 for (const set of SETS) {
   for (const raw of set.data) {
     const known = CARDS[raw.name];
-    if (!known) CARDS[raw.name] = toCardDef(raw, set.scripts[raw.name], set.code, set.scripts);
+    if (!known) {
+      const def = toCardDef(raw, set.scripts[raw.name], set.code, set.scripts);
+      if (raw.origin) def.origin = raw.origin;
+      CARDS[raw.name] = def;
+    }
     // Réédition d'une carte déjà connue (PLAN-G) : une impression de plus, avec son illustration, que le deck peut choisir.
     else if (set.reprint && raw.image !== known.image) {
       const key = `${set.code}-${raw.number}`;

@@ -19,12 +19,18 @@ export interface SetInfo {
     /** Numéros de collection importés (Special Guests : la plage de chaque extension de l'appli). */
     numbers?: [number, number][];
   };
+  /**
+   * Pseudo-ensemble importé par nom (PLAN-E, Commander) : les cartes des decklists de `decks` (dossier relatif à la
+   * racine du dépôt) absentes du catalogue, chacune avec l'impression choisie par l'import (`origin`). Hors Standard.
+   */
+  byName?: { decks: string };
 }
 
 /**
  * Cartes des ensembles de rééditions laissées de côté, quel que soit l'ensemble, avec la raison (PLAN-G) : une partie de
  * la carte ne fonctionne qu'en Commander (partenaire, éminence, ninjutsu de commandant, zone de commandement, identité de
- * couleur du commandant, « si vous contrôlez un commandant »).
+ * couleur du commandant, « si vous contrôlez un commandant »). Le pseudo-ensemble EDH (PLAN-E) peut les définir quand un
+ * deck Commander les demande.
  */
 const COMMANDER_ONLY = "mécanique propre au Commander (à reprendre avec Commander)";
 export const EXCLUDED_REPRINTS: Readonly<Record<string, string>> = {
@@ -126,7 +132,10 @@ export const SET_INFO: readonly SetInfo[] = [
     mainMax: 0,
     reprint: { of: ["LCI"] },
   },
+  // Commander (PLAN-E) : cartes des decks Commander absentes des extensions ci-dessus, importées par nom
+  // (`npm run import-cards -- edh`). Le code n'est pas celui d'un ensemble Scryfall (CMD : Commander 2011).
+  { code: "EDH", name: "Commander", nameFr: "Commander", mainMax: 0, byName: { decks: "docs/commander/decks" } },
 ];
 
-/** Extensions du Standard (sans les ensembles de rééditions). */
-export const STANDARD_SETS: readonly SetInfo[] = SET_INFO.filter((s) => !s.reprint);
+/** Extensions du Standard (sans les ensembles de rééditions ni le pseudo-ensemble Commander). */
+export const STANDARD_SETS: readonly SetInfo[] = SET_INFO.filter((s) => !s.reprint && !s.byName);

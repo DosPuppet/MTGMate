@@ -253,7 +253,7 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
         <select value={f.set} onChange={(e) => setF({ ...f, set: e.target.value })} aria-label="Extension">
           <option value="">Toutes les extensions</option>
           <optgroup label="Standard">
-            {SETS.filter((s) => !s.reprint).map((s) => (
+            {SETS.filter((s) => !s.reprint && !s.byName).map((s) => (
               <option key={s.code} value={s.code}>
                 {s.nameFr}
               </option>
@@ -262,6 +262,14 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
           {/* Rééditions (PLAN-G) : hors Standard, jouables en « Sans limite ». */}
           <optgroup label="Rééditions (Sans limite)">
             {SETS.filter((s) => s.reprint).map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.nameFr}
+              </option>
+            ))}
+          </optgroup>
+          {/* Cartes des decks Commander (PLAN-E), importées par nom. */}
+          <optgroup label="Commander">
+            {SETS.filter((s) => s.byName).map((s) => (
               <option key={s.code} value={s.code}>
                 {s.nameFr}
               </option>

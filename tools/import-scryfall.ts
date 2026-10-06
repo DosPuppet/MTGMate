@@ -2,12 +2,13 @@
  * Importe les données d'un set depuis l'API Scryfall (anglais + français)
  * et écrit un JSON réduit aux champs utiles dans packages/cards/data/<set>.json.
  *
- * Usage : npm run import-cards -- [set|all|reprints]   (défaut : fdn ; « all » : toutes les extensions Standard hors FDN
- * et FRA ; « reprints » : les ensembles de rééditions du registre, PLAN-G)
+ * Usage : npm run import-cards -- [set|all|reprints|edh]   (défaut : fdn ; « all » : toutes les extensions Standard hors
+ * FDN et FRA ; « reprints » : les ensembles de rééditions du registre, PLAN-G ; « edh » : le pseudo-ensemble Commander,
+ * importé par nom depuis les decklists de `docs/commander/decks/`, PLAN-E)
  *
  * Les images ne sont pas téléchargées : on conserve seulement leurs URLs (CDN Scryfall).
  */
-import { writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EXCLUDED_REPRINTS, SET_INFO, STANDARD_SETS } from "../packages/cards/src/setRegistry";
@@ -24,7 +25,15 @@ const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "app
 interface ScryfallCard {
   name: string;
   lang: string;
+  set: string;
+  set_type: string;
+  released_at: string;
   collector_number: string;
+  color_identity: string[];
+  digital: boolean;
+  full_art: boolean;
+  border_color: string;
+  frame_effects?: string[];
   rarity: string;
   layout: string;
   mana_cost?: string;
@@ -91,8 +100,6 @@ const SINGLE = new Set(["normal", "prepare", "saga", "class", "case", "meld"]);
 /** Dispositions à plusieurs faces : gardées telles quelles (faces), gérées par le moteur aux lots 0.3 à 0.6. */
 const MULTI = new Set(["adventure", "split", "transform", "modal_dfc"]);
 
-for (const set of ARG === "all" ? STANDARD : ARG === "reprints" ? REPRINTS : [ARG]) await importSet(set);
-
 async function importSet(SET: string): Promise<void> {
   const OUT = join(DATA_DIR, `${SET}.json`);
   // Ensemble de rééditions : seulement les numéros retenus, sans les cartes exclues (PLAN-G).
@@ -117,72 +124,168 @@ async function importSet(SET: string): Promise<void> {
   // Researcher, Tomik, Wielder of Law et Voja, Jaws of the Conclave : promotions de MKM seulement, légales en Standard).
   const regular = new Set(sorted.filter((c) => !c.promo).map((c) => c.name));
   for (const c of sorted) {
-    if ((c.promo && regular.has(c.name)) || !(SINGLE.has(c.layout) || MULTI.has(c.layout))) continue;
-    const image = c.image_uris ?? c.card_faces?.[0]?.image_uris;
-    if (!image) continue;
-    if (MULTI.has(c.layout)) {
-      if (byName.has(c.name)) continue;
-      byName.set(c.name, multiFace(c, frOf(c), image));
-      continue;
-    }
-    // Carte à préparer : la face 0 (la créature) donne la carte, la face 1 est le sort qu'elle prépare.
-    const [main, spell] = c.layout === "prepare" ? (c.card_faces ?? []) : [];
-    const name = main?.name ?? c.name;
-    if (byName.has(name)) continue;
-    const f = frOf(c);
-    const [frMain, frSpell] = f?.card_faces ?? [];
-    byName.set(name, {
-      name,
-      number: c.collector_number,
-      rarity: c.rarity,
-      manaCost: main ? (main.mana_cost ?? "") : (c.mana_cost ?? ""),
-      cmc: c.cmc,
-      typeLine: main?.type_line ?? c.type_line,
-      oracleText: main ? (main.oracle_text ?? "") : (c.oracle_text ?? ""),
-      power: main?.power ?? c.power,
-      toughness: main?.toughness ?? c.toughness,
-      loyalty: c.loyalty,
-      colors: c.colors ?? [],
-      keywords: c.keywords,
-      producedMana: c.produced_mana,
-      image: image.normal,
-      artCrop: image.art_crop,
-      // Seuls les formats du périmètre : à réimporter à chaque rotation ou annonce de bannissement.
-      legalities: { standard: c.legalities.standard },
-      // Saga, Classe, Affaire, assemblage : la disposition sert au moteur.
-      layout: c.layout === "normal" || c.layout === "prepare" ? undefined : c.layout,
-      meld:
-        c.layout === "meld"
-          ? {
-              parts: (c.all_parts ?? []).filter((p) => p.component === "meld_part").map((p) => p.name),
-              result: c.all_parts?.find((p) => p.component === "meld_result")?.name,
-            }
-          : undefined,
-      prepare: spell
-        ? {
-            name: spell.name,
-            manaCost: spell.mana_cost ?? "",
-            typeLine: spell.type_line,
-            oracleText: spell.oracle_text ?? "",
-            fr: frSpell
-              ? { name: frSpell.printed_name, typeLine: frSpell.printed_type_line, text: frSpell.printed_text }
-              : undefined,
-          }
-        : undefined,
-      fr: f
-        ? {
-            name: frMain?.printed_name ?? f.printed_name,
-            typeLine: frMain?.printed_type_line ?? f.printed_type_line,
-            text: frMain?.printed_text ?? f.printed_text,
-            image: f.image_uris?.normal,
-          }
-        : undefined,
-    });
+    if (c.promo && regular.has(c.name)) continue;
+    const entry = entryOf(c, frOf(c));
+    if (entry && !byName.has(entry.name as string)) byName.set(entry.name as string, entry);
   }
 
   const out = [...byName.values()];
   writeFileSync(OUT, `${JSON.stringify(out, null, 1)}\n`);
   console.log(`${SET} : ${out.length} cartes (${fr.length} impressions FR) écrites dans ${OUT}`);
+}
+
+/** Types d'ensembles Scryfall dont l'impression peut servir d'impression par défaut (pas de Secret Lair ni de promotion). */
+const PRINT_SET_TYPES = new Set(["commander", "expansion", "core", "masters", "draft_innovation", "starter"]);
+/** Ensembles écartés malgré leur type : The List (impressions tamponnées), Mystery Booster. */
+const PRINT_SETS_EXCLUDED = new Set(["plst", "mb1", "mb2", "mbc"]);
+/** Noms des cartes par lots (requêtes « !"A" or !"B" ») : une URL de recherche reste courte. */
+const NAME_BATCH = 15;
+
+/**
+ * Pseudo-ensemble importé par nom (PLAN-E) : toutes les cartes des decklists du registre (`byName.decks`) absentes des
+ * autres ensembles du catalogue, chacune avec une impression par défaut (la plus récente d'un ensemble ordinaire, cadre
+ * normal), son ensemble d'origine (`origin`) et l'identité de couleur de Scryfall (`colorIdentity`, vérifiée contre
+ * l'identité calculée par le moteur). Le texte français vient de l'impression française de même ensemble si elle existe,
+ * sinon de la plus récente (sans son image).
+ */
+async function importByName(SET: string): Promise<void> {
+  const info = SET_INFO.find((x) => x.code.toLowerCase() === SET);
+  if (!info?.byName) throw new Error(`${SET} n'est pas un ensemble importé par nom`);
+  const ROOT = join(DATA_DIR, "..", "..", "..");
+  const deckDir = join(ROOT, info.byName.decks);
+  const wanted = new Set<string>();
+  for (const file of readdirSync(deckDir)
+    .filter((f) => f.endsWith(".txt"))
+    .sort()) {
+    for (const line of readFileSync(join(deckDir, file), "utf8").split("\n")) {
+      const m = /^\s*\d+\s*[xX]?\s+(.+?)\s*$/.exec(line);
+      if (m && !line.trim().startsWith("//")) wanted.add((m[1] as string).replace(/\s+\([A-Za-z0-9]{2,6}\).*$/, "").trim());
+    }
+  }
+  // Noms déjà au catalogue (nom complet et première face), hors de l'ensemble importé.
+  const known = new Set<string>();
+  for (const s of SET_INFO.filter((x) => x.code !== info.code)) {
+    const data = JSON.parse(readFileSync(join(DATA_DIR, `${s.code.toLowerCase()}.json`), "utf8")) as { name: string }[];
+    for (const c of data) {
+      known.add(c.name);
+      known.add(c.name.split(" // ")[0] as string);
+    }
+  }
+  const names = [...wanted].filter((n) => !known.has(n)).sort();
+  const batches: string[][] = [];
+  for (let i = 0; i < names.length; i += NAME_BATCH) batches.push(names.slice(i, i + NAME_BATCH));
+  const query = (list: string[]) => `(${list.map((n) => `!"${n.replace(/"/g, '\\"')}"`).join(" or ")})`;
+  const front = (c: ScryfallCard) => c.name.split(" // ")[0] as string;
+  const en: ScryfallCard[] = [];
+  const fr: ScryfallCard[] = [];
+  for (const b of batches) {
+    en.push(...(await search(`${query(b)} lang:en game:paper`)));
+    fr.push(...(await search(`${query(b)} lang:fr game:paper`)));
+  }
+  // Une impression annoncée mais pas encore sortie n'est pas retenue.
+  const today = new Date().toISOString().slice(0, 10);
+  const regularPrint = (c: ScryfallCard) =>
+    !c.promo &&
+    !c.digital &&
+    !c.full_art &&
+    c.border_color === "black" &&
+    PRINT_SET_TYPES.has(c.set_type) &&
+    !PRINT_SETS_EXCLUDED.has(c.set) &&
+    c.released_at <= today &&
+    !(c.frame_effects ?? []).some((e) => e === "showcase" || e === "extendedart" || e === "etched" || e === "inverted");
+  const out: Record<string, unknown>[] = [];
+  const missing: string[] = [];
+  const unsupported: string[] = [];
+  for (const name of names) {
+    const prints = en.filter((c) => c.name === name || front(c) === name);
+    if (!prints.length) {
+      missing.push(name);
+      continue;
+    }
+    const newest = (list: ScryfallCard[]) => [...list].sort((a, b) => b.released_at.localeCompare(a.released_at))[0];
+    const chosen = newest(prints.filter(regularPrint)) ?? newest(prints.filter((c) => !c.digital)) ?? prints[0];
+    const frPrints = fr.filter((c) => c.name === chosen?.name);
+    const frSame = frPrints.find((c) => c.set === chosen?.set);
+    const frOther = newest(frPrints);
+    const f =
+      frSame ??
+      (frOther
+        ? { ...frOther, image_uris: undefined, card_faces: frOther.card_faces?.map((x) => ({ ...x, image_uris: undefined })) }
+        : undefined);
+    const entry = chosen && entryOf(chosen, f);
+    if (!chosen || !entry) {
+      unsupported.push(`${name} (${chosen?.layout})`);
+      continue;
+    }
+    out.push({ ...entry, origin: chosen.set.toUpperCase(), colorIdentity: chosen.color_identity });
+  }
+  const OUT = join(DATA_DIR, `${SET}.json`);
+  writeFileSync(OUT, `${JSON.stringify(out, null, 1)}\n`);
+  console.log(
+    `${SET} : ${out.length} cartes écrites dans ${OUT} (${wanted.size} noms dans les decklists, ${known.size} au catalogue)`,
+  );
+  if (missing.length) console.log(`Introuvables chez Scryfall (${missing.length}) : ${missing.join(", ")}`);
+  if (unsupported.length) console.log(`Disposition non gérée (${unsupported.length}) : ${unsupported.join(", ")}`);
+  if (missing.length || unsupported.length) process.exitCode = 1;
+}
+
+/** Entrée de données d'une impression Scryfall (et de son impression française), ou rien pour une disposition non gérée. */
+function entryOf(c: ScryfallCard, f: ScryfallCard | undefined): Record<string, unknown> | undefined {
+  if (!(SINGLE.has(c.layout) || MULTI.has(c.layout))) return undefined;
+  const image = c.image_uris ?? c.card_faces?.[0]?.image_uris;
+  if (!image) return undefined;
+  if (MULTI.has(c.layout)) return multiFace(c, f, image);
+  // Carte à préparer : la face 0 (la créature) donne la carte, la face 1 est le sort qu'elle prépare.
+  const [main, spell] = c.layout === "prepare" ? (c.card_faces ?? []) : [];
+  const name = main?.name ?? c.name;
+  const [frMain, frSpell] = f?.card_faces ?? [];
+  return {
+    name,
+    number: c.collector_number,
+    rarity: c.rarity,
+    manaCost: main ? (main.mana_cost ?? "") : (c.mana_cost ?? ""),
+    cmc: c.cmc,
+    typeLine: main?.type_line ?? c.type_line,
+    oracleText: main ? (main.oracle_text ?? "") : (c.oracle_text ?? ""),
+    power: main?.power ?? c.power,
+    toughness: main?.toughness ?? c.toughness,
+    loyalty: c.loyalty,
+    colors: c.colors ?? [],
+    keywords: c.keywords,
+    producedMana: c.produced_mana,
+    image: image.normal,
+    artCrop: image.art_crop,
+    // Seuls les formats du périmètre : à réimporter à chaque rotation ou annonce de bannissement.
+    legalities: { standard: c.legalities.standard },
+    // Saga, Classe, Affaire, assemblage : la disposition sert au moteur.
+    layout: c.layout === "normal" || c.layout === "prepare" ? undefined : c.layout,
+    meld:
+      c.layout === "meld"
+        ? {
+            parts: (c.all_parts ?? []).filter((p) => p.component === "meld_part").map((p) => p.name),
+            result: c.all_parts?.find((p) => p.component === "meld_result")?.name,
+          }
+        : undefined,
+    prepare: spell
+      ? {
+          name: spell.name,
+          manaCost: spell.mana_cost ?? "",
+          typeLine: spell.type_line,
+          oracleText: spell.oracle_text ?? "",
+          fr: frSpell
+            ? { name: frSpell.printed_name, typeLine: frSpell.printed_type_line, text: frSpell.printed_text }
+            : undefined,
+        }
+      : undefined,
+    fr: f
+      ? {
+          name: frMain?.printed_name ?? f.printed_name,
+          typeLine: frMain?.printed_type_line ?? f.printed_type_line,
+          text: frMain?.printed_text ?? f.printed_text,
+          image: f.image_uris?.normal,
+        }
+      : undefined,
+  };
 }
 
 /**
@@ -241,3 +344,7 @@ function multiFace(
       : undefined,
   };
 }
+
+// Après les déclarations : `await` au niveau du module s'exécute avant les `const` qui le suivent.
+if (ARG === "edh") await importByName("edh");
+else for (const set of ARG === "all" ? STANDARD : ARG === "reprints" ? REPRINTS : [ARG]) await importSet(set);

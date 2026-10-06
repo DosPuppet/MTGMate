@@ -12,8 +12,11 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            // Cartes des decks Commander (pseudo-ensemble EDH, PLAN-E) : un fichier à part, pour ne pas peser sur le budget
+            // des extensions ; à charger à la demande quand elles dépasseront 1 Mo.
+            { name: "commander", test: /packages[\\/]cards[\\/]data[\\/]edh\.json/ },
             // La table des impressions (éditeur de deck) reste un fichier à part, chargé à la demande.
-            { name: "cartes", test: /packages[\\/]cards[\\/]data[\\/](?!printings)/ },
+            { name: "cartes", test: /packages[\\/]cards[\\/]data[\\/](?!printings|edh\.json)/ },
             { name: "bibliotheques", test: /node_modules/ },
           ],
         },

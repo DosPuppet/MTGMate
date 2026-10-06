@@ -33,9 +33,9 @@ const SETS = [
   "msh",
   "tmt",
 ];
-// Toutes les extensions du registre (`cards/src/setRegistry.ts`) sauf FRA (sans jetons chez Scryfall) et les rééditions : une extension
-// ajoutée au registre doit prendre sa place dans cet ordre de préférence.
-const missing = SET_INFO.filter((x) => !x.reprint)
+// Toutes les extensions du registre (`cards/src/setRegistry.ts`) sauf FRA (sans jetons chez Scryfall), les rééditions et le
+// pseudo-ensemble Commander : une extension ajoutée au registre doit prendre sa place dans cet ordre de préférence.
+const missing = SET_INFO.filter((x) => !x.reprint && !x.byName)
   .map((x) => x.code.toLowerCase())
   .filter((c) => c !== "fra" && !SETS.includes(c));
 if (missing.length) throw new Error(`Extensions du registre absentes de la liste des jetons : ${missing.join(", ")}`);

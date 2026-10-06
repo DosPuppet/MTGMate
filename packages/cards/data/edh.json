@@ -1,0 +1,3616 @@
+[
+ {
+  "name": "Adarkar Wastes",
+  "number": "147",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {U}. This land deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/2/42e0aa15-639a-4e88-9bd8-ce5e7c7d7649.jpg?1783906017",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/42e0aa15-639a-4e88-9bd8-ce5e7c7d7649.jpg?1783906017",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Landes d'Adarkar",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {U}. This land deals 1 damage to you.",
+   "image": "https://cards.scryfall.io/normal/front/c/f/cfc3166d-718e-4e1e-a84d-ccdc4ccec692.jpg?1782768202"
+  },
+  "origin": "EOC",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Anointed Procession",
+  "number": "2",
+  "rarity": "rare",
+  "manaCost": "{3}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/a/9a52c265-6920-4929-ba0a-70da08df01f1.jpg?1783936544",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9a52c265-6920-4929-ba0a-70da08df01f1.jpg?1783936544",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Procession consécratrice",
+   "typeLine": "Enchantement",
+   "text": "Si un effet devait créer au moins un jeton sous votre contrôle, il crée deux fois ce nombre de jetons à la place.",
+   "image": "https://cards.scryfall.io/normal/front/0/7/078e7a3f-ec9d-4240-b09d-2d8ba6e1e65a.jpg?1782943713"
+  },
+  "origin": "AKH",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Arcane Sanctum",
+  "number": "373",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {W}, {U}, or {B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/2/82ce1102-a88c-46ff-9fc1-7153beb50b6a.jpg?1783906231",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/2/82ce1102-a88c-46ff-9fc1-7153beb50b6a.jpg?1783906231",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sanctuaire ésotérique",
+   "text": "Ce terrain arrive engagé.\n{T} : Ajoutez {W}, {U} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/c/9/c98c6137-97b9-4216-9520-bcdd25528724.jpg?1782769099"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Arcane Signet",
+  "number": "245",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/e/ee7710cf-e73d-479f-bc8d-0e78a0e324d9.jpg?1789753310",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/e/ee7710cf-e73d-479f-bc8d-0e78a0e324d9.jpg?1789753310",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cachet d'ésotérisme",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix de l'identité couleur de votre commandant."
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Black Market Connections",
+  "number": "155",
+  "rarity": "rare",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Create a Treasure token. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life. (It is every creature type.)",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Hire a Mercenary",
+   "Treasure",
+   "Sell Contraband",
+   "Buy Information"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/d/9d9ca869-e68a-4f53-9f52-85c714dac6f3.jpg?1783903238",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/d/9d9ca869-e68a-4f53-9f52-85c714dac6f3.jpg?1783903238",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Connexions du marché noir",
+   "text": "Au début de votre première phase principale, choisissez l'un ou plus -\n* Vendre de la contrebande - Créez un jeton Trésor. Vous perdez 1 point de vie.\n* Acheter des informations - Piochez une carte. Vous perdez 2 points de vie.\n* Engager un mercenaire - Créez un jeton de créature 3/2 incolore Changeforme avec le changelin. Vous perdez 3 points de vie. (Il a tous les types de créature.)",
+   "image": "https://cards.scryfall.io/normal/front/b/9/b9e609f4-3022-4edb-96d8-e601da417cfc.jpg?1785263260"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Blade of the Bloodchief",
+  "number": "300",
+  "rarity": "rare",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Whenever a creature dies, put a +1/+1 counter on equipped creature. If equipped creature is a Vampire, put two +1/+1 counters on it instead.\nEquip {1}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/4/34e7bebf-1844-476c-a947-978393908fa2.jpg?1783913842",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/4/34e7bebf-1844-476c-a947-978393908fa2.jpg?1783913842",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lame du chef de sang",
+   "typeLine": "Artefact — équipement",
+   "text": "À chaque fois qu'une créature meurt, mettez un marqueur +1/+1 sur la créature équipée. Si la créature équipée est un vampire, mettez sur elle deux marqueurs +1/+1 à la place.\nÉquipement {1}",
+   "image": "https://cards.scryfall.io/normal/front/e/d/edce6073-927e-4cf1-b2e0-469440aaac7e.jpg?1782809609"
+  },
+  "origin": "LCC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Blood Artist",
+  "number": "209",
+  "rarity": "uncommon",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Creature — Vampire",
+  "oracleText": "Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life.",
+  "power": "0",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/5/b5275d76-2947-4219-be21-614c7421614a.jpg?1783903786",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/5/b5275d76-2947-4219-be21-614c7421614a.jpg?1783903786",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Artiste de sang",
+   "text": "À chaque fois que cette créature ou une autre créature meurt, un joueur ciblé perd 1 point de vie et vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/1/4/1425105a-b198-4140-be86-43c43cb6ab39.jpg?1782759271"
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Bloodchief Ascension",
+  "number": "139",
+  "rarity": "rare",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of each end step, if an opponent lost 2 or more life this turn, you may put a quest counter on this enchantment. (Damage causes loss of life.)\nWhenever a card is put into an opponent's graveyard from anywhere, if this enchantment has three or more quest counters on it, you may have that player lose 2 life. If you do, you gain 2 life.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/5/d56d1535-d9de-459f-bc31-0923f621e0e9.jpg?1783915683",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d56d1535-d9de-459f-bc31-0923f621e0e9.jpg?1783915683",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ascension du chef de sang",
+   "typeLine": "Enchantement",
+   "text": "Au début de chaque étape de fin, si un adversaire a perdu au moins 2 points de vie ce tour-ci, vous pouvez mettre un marqueur « quête » sur l'Ascension du chef de sang. (Les blessures provoquent la perte de points de vie.)\nÀ chaque fois qu'une carte est mise dans le cimetière d'un adversaire d'où qu'elle vienne, si l'Ascension du chef de sang a au moins trois marqueurs « quête » sur elle, vous pouvez faire que ce joueur perde 2 points de vie. Si vous faites ainsi, vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/3/6/36a3b606-624c-42ee-b255-5267da9cb35b.jpg?1782817841"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Bloodline Keeper // Lord of Lineage",
+  "number": "98",
+  "rarity": "mythic",
+  "layout": "transform",
+  "manaCost": "{2}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Creature — Vampire",
+  "oracleText": "Flying\n{T}: Create a 2/2 black Vampire creature token with flying.\n{B}: Transform this creature. Activate only if you control five or more Vampires.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Flying",
+   "Transform"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/0/60658907-dd63-478d-a66a-123e4e9d2a00.jpg?1783908156",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/60658907-dd63-478d-a66a-123e4e9d2a00.jpg?1783908156",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Bloodline Keeper",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Flying\n{T}: Create a 2/2 black Vampire creature token with flying.\n{B}: Transform this creature. Activate only if you control five or more Vampires.",
+    "power": "3",
+    "toughness": "3",
+    "colors": [
+     "B"
+    ],
+    "image": "https://cards.scryfall.io/normal/front/6/0/60658907-dd63-478d-a66a-123e4e9d2a00.jpg?1783908156",
+    "fr": {
+     "name": "Gardien de la lignée",
+     "typeLine": "Créature : vampire",
+     "text": "Vol\n{T} : Mettez sur le champ de bataille un jeton de créature 2/2 noire Vampire avec le vol.\n{B} : Transformez le Gardien de la lignée. N'activez cette capacité que si vous contrôlez au moins cinq vampires."
+    }
+   },
+   {
+    "name": "Lord of Lineage",
+    "manaCost": "",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Flying\nOther Vampire creatures you control get +2/+2.\n{T}: Create a 2/2 black Vampire creature token with flying.",
+    "power": "5",
+    "toughness": "5",
+    "colors": [
+     "B"
+    ],
+    "image": "https://cards.scryfall.io/normal/back/6/0/60658907-dd63-478d-a66a-123e4e9d2a00.jpg?1783908156",
+    "fr": {
+     "name": "Seigneur de la succession",
+     "typeLine": "Créature : - vampire",
+     "text": "Vol\nLes autres créatures Vampire que vous contrôlez gagnent +2/+2.\n{T} : Mettez sur le champ de bataille un jeton de créature 2/2 noire Vampire avec le vol."
+    }
+   }
+  ],
+  "fr": {
+   "name": "Gardien de la lignée",
+   "typeLine": "Créature : vampire",
+   "text": "Vol\n{T} : Mettez sur le champ de bataille un jeton de créature 2/2 noire Vampire avec le vol.\n{B} : Transformez le Gardien de la lignée. N'activez cette capacité que si vous contrôlez au moins cinq vampires."
+  },
+  "origin": "INR",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Bloodstained Mire",
+  "number": "216",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/7/579743fe-f71e-4cb2-8629-d6b02ed1591d.jpg?1783911241",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/7/579743fe-f71e-4cb2-8629-d6b02ed1591d.jpg?1783911241",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fondrière sanguinolente",
+   "typeLine": "Terrain",
+   "text": "{T}, payez 1 point de vie, sacrifiez la Fondrière sanguinolente : Cherchez dans votre bibliothèque une carte de marais ou de montagne, mettez-la sur le champ de bataille, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/7/9/79d9358f-c921-4e91-8a3b-e4e1734d7b99.jpg?1782792987"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
+  "name": "Bojuka Bog",
+  "number": "296",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\nWhen this land enters, exile target player's graveyard.\n{T}: Add {B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/9/3999a519-bfd5-43cf-b7b1-40ed5eb0a05a.jpg?1789753362",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/3999a519-bfd5-43cf-b7b1-40ed5eb0a05a.jpg?1789753362",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Marécage de Bojuka",
+   "text": "This land enters tapped.\nWhen this land enters, exile target player's graveyard.\n{T}: Add {B}."
+  },
+  "origin": "FDC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Captivating Vampire",
+  "number": "100",
+  "rarity": "rare",
+  "manaCost": "{1}{B}{B}",
+  "cmc": 3,
+  "typeLine": "Creature — Vampire",
+  "oracleText": "Other Vampire creatures you control get +1/+1.\nTap five untapped Vampires you control: Gain control of target creature. It becomes a Vampire in addition to its other types.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/f/0f87aadf-7638-4691-b5a5-86f928e98462.jpg?1783908149",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/f/0f87aadf-7638-4691-b5a5-86f928e98462.jpg?1783908149",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vampire captivant",
+   "typeLine": "Créature : vampire",
+   "text": "Les autres créatures Vampire que vous contrôlez gagnent +1/+1.\nEngagez cinq vampires dégagés que vous contrôlez : Acquérez le contrôle de la créature ciblée. Elle devient un vampire en plus de ses autres types."
+  },
+  "origin": "INR",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Caves of Koilos",
+  "number": "66",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {B}. This land deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/a/ca814c7c-9908-4727-b556-3f85bfd653ca.jpg?1789599896",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/ca814c7c-9908-4727-b556-3f85bfd653ca.jpg?1789599896",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cavernes de Koïlos",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {W} ou {B}. Ce terrain vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/4/2/429411ce-50b0-4001-b3d6-d7c173deb7c2.jpg?1790694153"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Champion of Dusk",
+  "number": "188",
+  "rarity": "rare",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Creature — Vampire Knight",
+  "oracleText": "When this creature enters, you draw X cards and you lose X life, where X is the number of Vampires you control.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/f/5fa1674a-86cc-4fdf-8671-860b2bf5043d.jpg?1783913877",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5fa1674a-86cc-4fdf-8671-860b2bf5043d.jpg?1783913877",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Champion du crépuscule",
+   "typeLine": "Créature — vampire et chevalier",
+   "text": "Quand le Champion du crépuscule arrive sur le champ de bataille, vous piochez X cartes et vous perdez X points de vie, X étant le nombre de vampires que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/2/c/2c1a692b-340c-4162-86fa-4592001dc351.jpg?1782810177"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Charismatic Conqueror",
+  "number": "70",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Creature — Vampire Soldier",
+  "oracleText": "Vigilance\nWhenever an artifact or creature an opponent controls enters untapped, they may tap that permanent. If they don't, you create a 1/1 white Vampire creature token with lifelink.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Vigilance"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/9/599c934d-bfff-43ce-a545-6e3cde124515.jpg?1783913915",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/9/599c934d-bfff-43ce-a545-6e3cde124515.jpg?1783913915",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Conquérant charismatique",
+   "typeLine": "Créature — vampire et soldat",
+   "text": "Vigilance\nÀ chaque fois qu'un artefact ou une créature arrive sur le champ de bataille dégagée sous le contrôle d'un adversaire, il peut engager ce permanent. S'il ne le fait pas, vous créez un jeton de créature 1/1 blanche Vampire avec le lien de vie.",
+   "image": "https://cards.scryfall.io/normal/front/a/d/adc9c034-1bdb-43c4-adad-75c07058be0e.jpg?1782810863"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Clavileño, First of the Blessed",
+  "number": "2",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Vampire Cleric",
+  "oracleText": "Whenever you attack, target attacking Vampire that isn't a Demon becomes a Demon in addition to its other types. It gains \"When this creature dies, draw a card and create a tapped 4/3 white and black Vampire Demon creature token with flying.\"",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/f/9f55b648-b1ec-407a-a0c7-7647755793d1.jpg?1783913936",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/f/9f55b648-b1ec-407a-a0c7-7647755793d1.jpg?1783913936",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Clavileño, premier parmi les bénis",
+   "typeLine": "Créature légendaire — vampire et clerc",
+   "text": "À chaque fois que vous attaquez, un vampire attaquant ciblé qui n'est pas un démon devient un démon en plus de ses autres types. Il acquiert « Quand cette créature meurt, piochez une carte et créez, engagé, un jeton de créature 4/3 blanche et noire Vampire et Démon avec le vol. »",
+   "image": "https://cards.scryfall.io/normal/front/a/7/a75e9c63-cd0e-49f3-8d5b-3ced3aad4dc0.jpg?1782810985"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Command Tower",
+  "number": "22",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/a/1ac6cb62-45da-4e9a-84c6-09e6eacf0664.jpg?1789644465",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/a/1ac6cb62-45da-4e9a-84c6-09e6eacf0664.jpg?1789644465",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tour de commandement",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix de l'identité couleur de votre commandant.",
+   "image": "https://cards.scryfall.io/normal/front/a/4/a4e78575-f9cb-42ca-bb05-0c7bb4c462ab.jpg?1790692819"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Cordial Vampire",
+  "number": "189",
+  "rarity": "rare",
+  "manaCost": "{B}{B}",
+  "cmc": 2,
+  "typeLine": "Creature — Vampire",
+  "oracleText": "Whenever this creature or another creature dies, put a +1/+1 counter on each Vampire you control.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/d/0d91e61d-e3bf-4ddc-9f01-18b1abe35a61.jpg?1783913876",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0d91e61d-e3bf-4ddc-9f01-18b1abe35a61.jpg?1783913876",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vampire cordial",
+   "typeLine": "Créature — vampire",
+   "text": "À chaque fois que le Vampire cordial ou qu'une autre créature meurt, mettez un marqueur +1/+1 sur chaque vampire que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/e/b/eb9caa9d-9989-46f7-99a1-81c86b221dc4.jpg?1782810171"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Cruel Celebrant",
+  "number": "267",
+  "rarity": "uncommon",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Creature — Vampire",
+  "oracleText": "Whenever this creature or another creature or planeswalker you control dies, each opponent loses 1 life and you gain 1 life.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/3/b3f8be99-a398-4664-beb6-3e98d6e62a32.jpg?1783913853",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/3/b3f8be99-a398-4664-beb6-3e98d6e62a32.jpg?1783913853",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Officiante cruelle",
+   "typeLine": "Créature — vampire",
+   "text": "À chaque fois que l'Officiante cruelle ou qu'une autre créature ou qu'un planeswalker que vous contrôlez meurt, chaque adversaire perd 1 point de vie et vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/8/9/89c9f8da-ab0c-473b-92fe-7b3055383eba.jpg?1782809769"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Damn",
+  "number": "89",
+  "rarity": "rare",
+  "manaCost": "{B}{B}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy target creature. A creature destroyed this way can't be regenerated.\nOverload {2}{W}{W} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Overload"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/b/1b25c224-4531-4fdc-9845-6663eaf60540.jpg?1783907725",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/b/1b25c224-4531-4fdc-9845-6663eaf60540.jpg?1783907725",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Damner",
+   "typeLine": "Rituel",
+   "text": "Détruisez une créature ciblée. Une créature détruite de cette manière ne peut pas être régénérée.\nSurcharge {2}{W}{W} (Vous pouvez lancer ce sort pour son coût de surcharge. Si vous faites ainsi, remplacez « ciblé(e) » par « chaque » dans son texte.)",
+   "image": "https://cards.scryfall.io/normal/front/2/2/222acf18-e1cc-4144-9cbf-749e2de8ddbc.jpg?1782776223"
+  },
+  "origin": "DRC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Deadly Rollick",
+  "number": "147",
+  "rarity": "rare",
+  "manaCost": "{3}{B}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "If you control a commander, you may cast this spell without paying its mana cost.\nExile target creature.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/e/0e13f735-54fa-42b6-aea4-ced33811d7d4.jpg?1783915679",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/e/0e13f735-54fa-42b6-aea4-ced33811d7d4.jpg?1783915679",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ripaille mortelle",
+   "typeLine": "Éphémère",
+   "text": "Si vous contrôlez un commandant, vous pouvez lancer ce sort sans payer son coût de mana.\nExilez une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/1/e/1e884340-436d-4994-923c-31956b819359.jpg?1782817802"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Decanter of Endless Water",
+  "number": "309",
+  "rarity": "common",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "You have no maximum hand size.\n{T}: Add one mana of any color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/1/518bbc36-58ea-44c4-a857-75a3aff058f5.jpg?1783922678",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/518bbc36-58ea-44c4-a857-75a3aff058f5.jpg?1783922678",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Carafe intarissable",
+   "typeLine": "Artefact",
+   "text": "Il n'y a pas de limite au nombre de cartes dans votre main.\n{T} : Ajoutez un mana de la couleur de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/8/c/8ce1e29f-dc70-4cc8-bdb5-cbe02b011c2a.jpg?1782851584"
+  },
+  "origin": "CLB",
+  "colorIdentity": []
+ },
+ {
+  "name": "Demonic Tutor",
+  "number": "150",
+  "rarity": "mythic",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Search your library for a card, put that card into your hand, then shuffle.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/2/a24b4cb6-cebb-428b-8654-74347a6a8d63.jpg?1783915679",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a24b4cb6-cebb-428b-8654-74347a6a8d63.jpg?1783915679",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Précepteur diabolique",
+   "typeLine": "Rituel",
+   "text": "Cherchez une carte dans votre bibliothèque, mettez cette carte dans votre main, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/a/9/a9d2fb69-ed9b-4d72-9803-c7037b3a5a91.jpg?1782817791"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Dragonskull Summit",
+  "number": "238",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/2/d20e433a-eb62-4301-bc20-bfe27468b033.jpg?1783903203",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/2/d20e433a-eb62-4301-bc20-bfe27468b033.jpg?1783903203",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sommet du Crânedragon",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un marais ou une montagne.\n{T} : Ajoutez {B} ou {R}.",
+   "image": "https://cards.scryfall.io/normal/front/0/0/00e1b39b-34bf-40a3-809a-ba187bcb2b7c.jpg?1785266466"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "B",
+   "R"
+  ]
+ },
+ {
+  "name": "Drana, Liberator of Malakir",
+  "number": "193",
+  "rarity": "mythic",
+  "manaCost": "{1}{B}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Vampire Ally",
+  "oracleText": "Flying, first strike\nWhenever Drana deals combat damage to a player, put a +1/+1 counter on each attacking creature you control.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Flying",
+   "First strike"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/8/0850b41d-3589-40cd-ae22-cc5b4ddee1c4.jpg?1783913874",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/0850b41d-3589-40cd-ae22-cc5b4ddee1c4.jpg?1783913874",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Drana, libératrice de Malakir",
+   "typeLine": "Créature légendaire — vampire et allié",
+   "text": "Vol, initiative\nÀ chaque fois que Drana, libératrice de Malakir inflige des blessures de combat à un joueur, mettez un marqueur +1/+1 sur chaque créature attaquante que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/8/1/819917f7-763f-42ab-9652-630a43598903.jpg?1782810150"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Drowned Catacomb",
+  "number": "69",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control an Island or a Swamp.\n{T}: Add {U} or {B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/a/4acb0f92-74be-40e8-b70e-61c4aaaeb47b.jpg?1789599912",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/a/4acb0f92-74be-40e8-b70e-61c4aaaeb47b.jpg?1789599912",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Catacombes noyées",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez une île ou un marais.\n{T} : Ajoutez {U} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/0/b/0ba8c7f4-f64c-4a8d-9f18-50f24e7ec9e1.jpg?1790694271"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Edgar Markov",
+  "number": "234",
+  "rarity": "mythic",
+  "manaCost": "{3}{R}{W}{B}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Vampire Knight",
+  "oracleText": "Eminence — Whenever you cast another Vampire spell, if Edgar is in the command zone or on the battlefield, create a 1/1 black Vampire creature token.\nFirst strike, haste\nWhenever Edgar attacks, put a +1/+1 counter on each Vampire you control.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "R",
+   "W"
+  ],
+  "keywords": [
+   "First strike",
+   "Haste",
+   "Eminence"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/5/a577ba08-0aa8-45be-aa83-d5078770127c.jpg?1783908078",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a577ba08-0aa8-45be-aa83-d5078770127c.jpg?1783908078",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Edgar Markov",
+   "typeLine": "Créature légendaire : vampire et chevalier",
+   "text": "Éminence — À chaque fois que vous lancez un autre sort de vampire, si Edgar Markov est dans la zone de commandement ou sur le champ de bataille, créez un jeton de créature 1/1 noire Vampire.\nInitiative, célérité\nÀ chaque fois qu'Edgar Markov attaque, mettez un marqueur +1/+1 sur chaque vampire que vous contrôlez."
+  },
+  "origin": "INR",
+  "colorIdentity": [
+   "B",
+   "R",
+   "W"
+  ]
+ },
+ {
+  "name": "Edgar, Charmed Groom // Edgar Markov's Coffin",
+  "number": "236",
+  "rarity": "rare",
+  "layout": "transform",
+  "manaCost": "{2}{W}{B}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Vampire Noble",
+  "oracleText": "Other Vampires you control get +1/+1.\nWhen Edgar dies, return it to the battlefield transformed under its owner's control.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Transform"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/3/63ba8eef-b834-4031-b0a1-0f8505d53813.jpg?1783924799",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/3/63ba8eef-b834-4031-b0a1-0f8505d53813.jpg?1783924799",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Edgar, Charmed Groom",
+    "manaCost": "{2}{W}{B}",
+    "typeLine": "Legendary Creature — Vampire Noble",
+    "oracleText": "Other Vampires you control get +1/+1.\nWhen Edgar dies, return it to the battlefield transformed under its owner's control.",
+    "power": "4",
+    "toughness": "4",
+    "colors": [
+     "B",
+     "W"
+    ],
+    "image": "https://cards.scryfall.io/normal/front/6/3/63ba8eef-b834-4031-b0a1-0f8505d53813.jpg?1783924799",
+    "fr": {
+     "name": "Edgar, marié enchanté",
+     "typeLine": "Créature légendaire — vampire et noble",
+     "text": "Les autres vampires que vous contrôlez gagnent +1/+1.\nQuand Edgar, marié enchanté meurt, renvoyez-le sur le champ de bataille transformé et sous le contrôle de son propriétaire.",
+     "image": "https://cards.scryfall.io/normal/front/b/f/bfa17844-dff8-4900-9e84-7d05d318c863.jpg?1782865444"
+    }
+   },
+   {
+    "name": "Edgar Markov's Coffin",
+    "manaCost": "",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "At the beginning of your upkeep, create a 1/1 white and black Vampire creature token with lifelink and put a bloodline counter on Edgar Markov's Coffin. Then if there are three or more bloodline counters on it, remove those counters and transform it.",
+    "colors": [
+     "B",
+     "W"
+    ],
+    "image": "https://cards.scryfall.io/normal/back/6/3/63ba8eef-b834-4031-b0a1-0f8505d53813.jpg?1783924799",
+    "fr": {
+     "name": "Cercueil d'Edgar Markov",
+     "typeLine": "Artefact légendaire",
+     "text": "Au début de votre entretien, créez un jeton de créature 1/1 blanche et noire Vampire avec le lien de vie et mettez un marqueur « lignée » sur le Cercueil d'Edgar Markov. Ensuite, s'il y a au moins trois marqueurs « lignée » sur lui, retirez ces marqueurs et transformez-le.",
+     "image": "https://cards.scryfall.io/normal/back/b/f/bfa17844-dff8-4900-9e84-7d05d318c863.jpg?1782865444"
+    }
+   }
+  ],
+  "fr": {
+   "name": "Edgar, marié enchanté",
+   "typeLine": "Créature légendaire — vampire et noble",
+   "text": "Les autres vampires que vous contrôlez gagnent +1/+1.\nQuand Edgar, marié enchanté meurt, renvoyez-le sur le champ de bataille transformé et sous le contrôle de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/b/f/bfa17844-dff8-4900-9e84-7d05d318c863.jpg?1782865444"
+  },
+  "origin": "VOW",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Elenda, the Dusk Rose",
+  "number": "268",
+  "rarity": "mythic",
+  "manaCost": "{2}{W}{B}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Vampire Knight",
+  "oracleText": "Lifelink\nWhenever another creature dies, put a +1/+1 counter on Elenda.\nWhen Elenda dies, create X 1/1 white Vampire creature tokens with lifelink, where X is Elenda's power.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Lifelink"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/1/e18feca3-1b1b-4456-8873-25a24849a917.jpg?1783913851",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/1/e18feca3-1b1b-4456-8873-25a24849a917.jpg?1783913851",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Elenda, la Rose du crépuscule",
+   "typeLine": "Créature légendaire — vampire et chevalier",
+   "text": "Lien de vie\nÀ chaque fois qu'une autre créature meurt, mettez un marqueur +1/+1 sur Elenda, la Rose du crépuscule.\nQuand Elenda meurt, créez X jetons de créature 1/1 blanche Vampire avec le lien de vie, X étant la force d'Elenda.",
+   "image": "https://cards.scryfall.io/normal/front/2/b/2bc5a816-5294-443d-88ef-ad3933130e63.jpg?1782809764"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Emet-Selch of the Third Seat",
+  "number": "81",
+  "rarity": "rare",
+  "manaCost": "{2}{U}{B}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Elder Wizard",
+  "oracleText": "Spells you cast from your graveyard cost {2} less to cast.\nWhenever one or more opponents lose life, you may cast target instant or sorcery card from your graveyard. If that spell would be put into your graveyard, exile it instead. Do this only once each turn.",
+  "power": "3",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/d/dd3141de-633e-48e3-a89f-a91339f5e882.jpg?1783906347",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/dd3141de-633e-48e3-a89f-a91339f5e882.jpg?1783906347",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Emet-Selch, troisième membre du Concile",
+   "text": "Les sorts que vous lancez depuis votre cimetière coûtent {2} de moins à lancer.\nÀ chaque fois qu'au moins un adversaire perd des points de vie, vous pouvez lancer une carte d'éphémère ou de rituel ciblée depuis votre cimetière. Si ce sort devait être mis dans votre cimetière, exilez-le à la place. Ne faites ceci qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/9/f/9f051569-d09f-48da-89a7-062252221994.jpg?1782770055"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Enlightened Tutor",
+  "number": "6",
+  "rarity": "rare",
+  "manaCost": "{W}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/c/1c9675fb-1a89-420f-aea8-50e0642f549c.jpg?1783918516",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/c/1c9675fb-1a89-420f-aea8-50e0642f549c.jpg?1783918516",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Préceptrice éclairée",
+   "typeLine": "Éphémère",
+   "text": "Cherchez dans votre bibliothèque une carte d'artefact ou d'enchantement, révélez-la, puis mélangez et mettez cette carte au-dessus de votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/f/1/f1526018-2d29-42a2-a889-345da861ee9c.jpg?1782833382"
+  },
+  "origin": "DMR",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Esper Sentinel",
+  "number": "2",
+  "rarity": "rare",
+  "manaCost": "{W}",
+  "cmc": 1,
+  "typeLine": "Artifact Creature — Human Soldier",
+  "oracleText": "Whenever an opponent casts their first noncreature spell each turn, draw a card unless that player pays {X}, where X is this creature's power.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/b/8b5a916f-a6f2-4e89-b38f-7e5bc0c2e032.jpg?1783911473",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/b/8b5a916f-a6f2-4e89-b38f-7e5bc0c2e032.jpg?1783911473",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sentinelle d'Esper",
+   "typeLine": "Créature-artefact : humain et soldat",
+   "text": "À chaque fois qu'un adversaire lance son premier sort non-créature à chaque tour, piochez une carte à moins que ce joueur ne paie {X}, X étant la force de la Sentinelle d'Esper."
+  },
+  "origin": "H2R",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Exotic Orchard",
+  "number": "70",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add one mana of any color that a land an opponent controls could produce.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/c/cc14b1ee-5def-42df-8ef6-0d91dba39e3a.jpg?1789599911",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/c/cc14b1ee-5def-42df-8ef6-0d91dba39e3a.jpg?1789599911",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Verger exotique",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix qu'un terrain qu'un adversaire contrôle pourrait produire.",
+   "image": "https://cards.scryfall.io/normal/front/2/c/2ce37a55-640c-44b3-bdc3-7b30eebb6229.jpg?1790694302"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Exquisite Blood",
+  "number": "195",
+  "rarity": "rare",
+  "manaCost": "{4}{B}",
+  "cmc": 5,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever an opponent loses life, you gain that much life.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/e/0e8ccfa7-4178-476a-a155-0ca1c98556c9.jpg?1783913874",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/e/0e8ccfa7-4178-476a-a155-0ca1c98556c9.jpg?1783913874",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sang délectable",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'un adversaire perd des points de vie, vous gagnez autant de points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/0/7/07298aa1-fc71-4bab-ba74-fd49ef79c0d0.jpg?1782810141"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Farewell",
+  "number": "242",
+  "rarity": "rare",
+  "manaCost": "{4}{W}{W}",
+  "cmc": 6,
+  "typeLine": "Sorcery",
+  "oracleText": "Choose one or more —\n• Exile all artifacts.\n• Exile all creatures.\n• Exile all enchantments.\n• Exile all graveyards.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/d/4d8b6418-da30-4c68-b87c-3936eb77620c.jpg?1783906289",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/d/4d8b6418-da30-4c68-b87c-3936eb77620c.jpg?1783906289",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Adieu",
+   "text": "Choisissez l'un ou plus —\n• Exilez tous les artefacts.\n• Exilez toutes les créatures.\n• Exilez tous les enchantements.\n• Exilez tous les cimetières.",
+   "image": "https://cards.scryfall.io/normal/front/b/c/bcbceb62-04ff-4d19-8440-43eb5b654d18.jpg?1782769623"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Fellwar Stone",
+  "number": "57",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add one mana of any color that a land an opponent controls could produce.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/c/bc99f300-29c0-44e7-9560-7bbd1dda7556.jpg?1789599840",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc99f300-29c0-44e7-9560-7bbd1dda7556.jpg?1789599840",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pierre de Guermont",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix qu'un terrain qu'un adversaire contrôle pourrait produire.",
+   "image": "https://cards.scryfall.io/normal/front/3/9/39164f50-4731-4137-87cf-446bf60f47a0.jpg?1790693820"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Fierce Guardianship",
+  "number": "94",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "If you control a commander, you may cast this spell without paying its mana cost.\nCounter target noncreature spell.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/7/f7f3dd95-bd14-4e0f-a388-444f9cf1b0dc.jpg?1783915698",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f7f3dd95-bd14-4e0f-a388-444f9cf1b0dc.jpg?1783915698",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tutelle féroce",
+   "typeLine": "Éphémère",
+   "text": "Si vous contrôlez un commandant, vous pouvez lancer ce sort sans payer son coût de mana.\nContrecarrez un sort non-créature ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/0/2/025d47fc-718f-4741-9e2e-a15441ef724a.jpg?1782818043"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Flawless Maneuver",
+  "number": "25",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "If you control a commander, you may cast this spell without paying its mana cost.\nCreatures you control gain indestructible until end of turn.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/f/3ffe82a4-584e-4ebd-9551-a745bed01e26.jpg?1789599786",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/f/3ffe82a4-584e-4ebd-9551-a745bed01e26.jpg?1789599786",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Manœuvre irréprochable",
+   "text": "Si vous contrôlez un commandant, vous pouvez lancer ce sort sans payer son coût de mana.\nLes créatures que vous contrôlez acquièrent l'indestructible jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/9/2/92423913-f963-4614-818d-31abfedacf53.jpg?1790692912"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Flooded Strand",
+  "number": "220",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/f/8f85e12c-196b-4459-b81f-0c9c854e9f57.jpg?1783911240",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/f/8f85e12c-196b-4459-b81f-0c9c854e9f57.jpg?1783911240",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Grève inondée",
+   "typeLine": "Terrain",
+   "text": "{T}, payez 1 point de vie, sacrifiez la Grève inondée : Cherchez dans votre bibliothèque une carte de plaine ou d'île, mettez-la sur le champ de bataille, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/d/2/d2b957da-b180-4544-9c44-3e8c75215763.jpg?1782792963"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
+  "name": "Force of Negation",
+  "number": "50",
+  "rarity": "rare",
+  "manaCost": "{1}{U}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/8/1825a719-1b2a-4af9-9cd2-7cb497cd0317.jpg?1783921916",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/1825a719-1b2a-4af9-9cd2-7cb497cd0317.jpg?1783921916",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Force de négation",
+   "typeLine": "Éphémère",
+   "text": "Si ce n'est pas votre tour, vous pouvez exiler une carte bleue de votre main à la place de payer le coût de mana de ce sort.\nContrecarrez un sort non-créature ciblé. Si ce sort est contrecarré de cette manière, exilez-le à la place de le mettre dans le cimetière de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/1/e/1eab59c3-fb63-4784-9cea-be550fdeb4e9.jpg?1782847940"
+  },
+  "origin": "2X2",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Forerunner of the Legion",
+  "number": "9",
+  "rarity": "uncommon",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Creature — Vampire Knight",
+  "oracleText": "When this creature enters, you may search your library for a Vampire card, reveal it, then shuffle and put that card on top.\nWhenever another Vampire you control enters, target creature gets +1/+1 until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/0/10718d37-63d4-44b7-9450-5d49cffce944.jpg?1783935338",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/0/10718d37-63d4-44b7-9450-5d49cffce944.jpg?1783935338",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Précurseur de la Légion",
+   "typeLine": "Créature : vampire et chevalier",
+   "text": "Quand le Précurseur de la Légion arrive sur le champ de bataille, vous pouvez chercher dans votre bibliothèque une carte de vampire, la révéler, puis mélanger votre bibliothèque et mettre cette carte au-dessus d'elle.\nÀ chaque fois qu'un autre vampire arrive sur le champ de bataille sous votre contrôle, la créature ciblée gagne +1/+1 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/a/b/abe4f4fd-1a52-4aae-8405-3ef1770f5a91.jpg?1782935845"
+  },
+  "origin": "RIX",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Frantic Search",
+  "number": "153",
+  "rarity": "common",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Draw two cards, then discard two cards. Untap up to three lands.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/1/a1c71f3e-16be-492a-8a3e-5911867270bd.jpg?1783907106",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a1c71f3e-16be-492a-8a3e-5911867270bd.jpg?1783907106",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Recherche effrénée",
+   "typeLine": "Éphémère",
+   "text": "Piochez deux cartes, puis défaussez-vous de deux cartes. Dégagez jusqu'à trois terrains.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/dd9e2d32-19f8-4967-8772-baad9410ec59.jpg?1782773771"
+  },
+  "origin": "TDC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Glacial Fortress",
+  "number": "73",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {W} or {U}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/c/3c726a60-8de7-4d5e-8ad5-8405e6ac36b5.jpg?1789599901",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/c/3c726a60-8de7-4d5e-8ad5-8405e6ac36b5.jpg?1789599901",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Forteresse glaciaire",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez une plaine ou une île.\n{T} : Ajoutez {W} ou {U}.",
+   "image": "https://cards.scryfall.io/normal/front/8/9/899c28f2-57cd-4288-a398-e1b39f87da68.jpg?1790694414"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Helm of the Ghastlord",
+  "number": "166",
+  "rarity": "common",
+  "manaCost": "{3}{U/B}",
+  "cmc": 4,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant creature\nAs long as enchanted creature is blue, it gets +1/+1 and has \"Whenever this creature deals damage to an opponent, draw a card.\"\nAs long as enchanted creature is black, it gets +1/+1 and has \"Whenever this creature deals damage to an opponent, that player discards a card.\"",
+  "colors": [
+   "B",
+   "U"
+  ],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/5/653dd5b7-1ad3-4df1-bd2a-4e6ae362a8a2.jpg?1783942732",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/5/653dd5b7-1ad3-4df1-bd2a-4e6ae362a8a2.jpg?1783942732",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Casque du Seigneur pâle",
+   "typeLine": "Enchantement : aura",
+   "text": "Enchanter : créature\nTant que la créature enchantée est bleue, elle gagne +1/+1 et elle a « À chaque fois que cette créature inflige des blessures à un adversaire, piochez une carte. »\nTant que la créature enchantée est noire, elle gagne +1/+1 et elle a « À chaque fois que cette créature inflige des blessures à un adversaire, ce joueur se défausse d'une carte. »",
+   "image": "https://cards.scryfall.io/normal/front/a/a/aaaf8785-2912-4656-922b-7fd862524f4b.jpg?1783006540"
+  },
+  "origin": "SHM",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Herald's Horn",
+  "number": "264",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "As this artifact enters, choose a creature type.\nCreature spells you cast of the chosen type cost {1} less to cast.\nAt the beginning of your upkeep, look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/5/d5ba6786-c812-4744-bb2e-f180010b18b7.jpg?1789753327",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d5ba6786-c812-4744-bb2e-f180010b18b7.jpg?1789753327",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cor du héraut",
+   "text": "Au moment où cet artefact arrive, choisissez un type de créature.\nLes sorts de créature du type choisi que vous lancez coûtent {1} de moins à lancer.\nAu début de votre entretien, regardez la carte du dessus de votre bibliothèque. Si c'est une carte de créature du type choisi, vous pouvez la révéler et la mettre dans votre main."
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Indulgent Aristocrat",
+  "number": "118",
+  "rarity": "uncommon",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Creature — Vampire Noble",
+  "oracleText": "Lifelink\n{2}, Sacrifice a creature: Put a +1/+1 counter on each Vampire you control.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Lifelink"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/7/07015524-874f-4856-a5c1-3148bd126886.jpg?1783908141",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/7/07015524-874f-4856-a5c1-3148bd126886.jpg?1783908141",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Aristocrate indulgent",
+   "typeLine": "Créature — vampire et noble",
+   "text": "Lien de vie\n{2}, sacrifiez une créature : Mettez un marqueur +1/+1 sur chaque vampire que vous contrôlez."
+  },
+  "origin": "INR",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Irenicus's Vile Duplication",
+  "number": "78",
+  "rarity": "uncommon",
+  "manaCost": "{3}{U}",
+  "cmc": 4,
+  "typeLine": "Sorcery",
+  "oracleText": "Create a token that's a copy of target creature you control, except the token has flying and it isn't legendary.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/0/40a791df-2483-406d-90b0-a8d402d615d6.jpg?1783922787",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40a791df-2483-406d-90b0-a8d402d615d6.jpg?1783922787",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vile duplication d'Irenicus",
+   "typeLine": "Rituel",
+   "text": "Créez un jeton qui est une copie d'une créature ciblée que vous contrôlez, excepté que le jeton a le vol et n'est pas légendaire si cette créature est légendaire.",
+   "image": "https://cards.scryfall.io/normal/front/f/a/fa30ebd8-987a-4bd1-b2c9-eda0f990c14b.jpg?1782853344"
+  },
+  "origin": "CLB",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Isolated Chapel",
+  "number": "74",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control a Plains or a Swamp.\n{T}: Add {W} or {B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/3/b3169b9a-f5e3-402e-883a-08274d0c7b12.jpg?1789599905",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/3/b3169b9a-f5e3-402e-883a-08274d0c7b12.jpg?1789599905",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chapelle isolée",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez une plaine ou un marais.\n{T} : Ajoutez {W} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/0/9/095645e1-6ffd-4202-9cf0-e8d6de084c83.jpg?1790694447"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Kambal, Consul of Allocation",
+  "number": "237",
+  "rarity": "rare",
+  "manaCost": "{1}{W}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Advisor",
+  "oracleText": "Whenever an opponent casts a noncreature spell, that player loses 2 life and you gain 2 life.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/3/b3e47d49-e5b5-487b-a1ec-373dbf89b2ec.jpg?1783921824",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/3/b3e47d49-e5b5-487b-a1ec-373dbf89b2ec.jpg?1783921824",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Kambal, consul de l'attribution",
+   "typeLine": "Créature légendaire : humain et conseiller",
+   "text": "À chaque fois qu'un adversaire lance un sort non-créature, ce joueur perd 2 points de vie et vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/8/4/845a8238-24bf-4c5b-b98d-7d0b5b3e741d.jpg?1782847330"
+  },
+  "origin": "2X2",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Knight of the Ebon Legion",
+  "number": "105",
+  "rarity": "rare",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Creature — Vampire Knight",
+  "oracleText": "{2}{B}: This creature gets +3/+3 and gains deathtouch until end of turn.\nAt the beginning of your end step, if a player lost 4 or more life this turn, put a +1/+1 counter on this creature. (Damage causes loss of life.)",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/9/29425426-7bf2-4872-aa35-c12c22801edd.jpg?1783932992",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/9/29425426-7bf2-4872-aa35-c12c22801edd.jpg?1783932992",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chevalier de la légion d'ébène",
+   "typeLine": "Créature : vampire et chevalier",
+   "text": "{2}{B} : Le Chevalier de la légion d'ébène gagne +3/+3 et acquiert le contact mortel jusqu'à la fin du tour.\nAu début de votre étape de fin, si un joueur a perdu au moins 4 points de vie ce tour-ci, mettez un marqueur +1/+1 sur le Chevalier de la légion d'ébène. (Les blessures provoquent la perte de points de vie.)",
+   "image": "https://cards.scryfall.io/normal/front/d/9/d984b03a-ec14-4bde-a3c7-d455852849e7.jpg?1782917599"
+  },
+  "origin": "M20",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Legion Lieutenant",
+  "number": "275",
+  "rarity": "uncommon",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Creature — Vampire Knight",
+  "oracleText": "Other Vampires you control get +1/+1.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/5/85c6bd7d-537a-42fe-9c68-742bdf2e7025.jpg?1783913849",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/5/85c6bd7d-537a-42fe-9c68-742bdf2e7025.jpg?1783913849",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lieutenante de la Légion",
+   "typeLine": "Créature — vampire et chevalier",
+   "text": "Les autres vampires que vous contrôlez gagnent +1/+1.",
+   "image": "https://cards.scryfall.io/normal/front/d/c/dcd67563-a792-401e-b0bb-54e895e0c323.jpg?1782809729"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Lotho, Corrupt Shirriff",
+  "number": "213",
+  "rarity": "rare",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Halfling Rogue",
+  "oracleText": "Whenever a player casts their second spell each turn, you lose 1 life and create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Treasure"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/e/ce01ff8f-a037-484f-9148-c847ffaabc5a.jpg?1783916251",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/e/ce01ff8f-a037-484f-9148-c847ffaabc5a.jpg?1783916251",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lotho, shirriff corrompu",
+   "typeLine": "Créature légendaire : halfelin et gredin",
+   "text": "À chaque fois qu'un joueur lance son deuxième sort à chaque tour, vous perdez 1 point de vie et créez un jeton Trésor. (C'est un artefact avec « {T}, sacrifiez cet artefact : Ajoutez un mana de la couleur de votre choix. »)",
+   "image": "https://cards.scryfall.io/normal/front/f/f/ffc2f08b-5f69-46ce-8e0a-714dc1d59b19.jpg?1782821085"
+  },
+  "origin": "LTR",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Luxury Suite",
+  "number": "252",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {R}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/c/3c409d1e-f634-44a2-8fcf-dcdcb0babc3f.jpg?1783903199",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/c/3c409d1e-f634-44a2-8fcf-dcdcb0babc3f.jpg?1783903199",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Appartement de luxe",
+   "text": "Ce terrain arrive engagé à moins que vous n'ayez au moins deux adversaires.\n{T} : Ajoutez {B} ou {R}.",
+   "image": "https://cards.scryfall.io/normal/front/a/5/a5a3bb92-01a1-4fdc-b261-49da5943a673.jpg?1785267118"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "B",
+   "R"
+  ]
+ },
+ {
+  "name": "Lyse Hext",
+  "number": "88",
+  "rarity": "rare",
+  "manaCost": "{1}{W}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Rebel Monk",
+  "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nNoncreature spells you cast cost {1} less to cast.\nAs long as you've cast two or more noncreature spells this turn, Lyse Hext has double strike.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Prowess"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/7/97845ece-ceef-468c-a4e3-6fde1413c9f0.jpg?1783906345",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/7/97845ece-ceef-468c-a4e3-6fde1413c9f0.jpg?1783906345",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lyse Hext",
+   "text": "Prouesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour.)\nLes sorts non-créature que vous lancez coûtent {1} de moins à lancer.\nTant que vous avez lancé au moins deux sorts non-créature ce tour-ci, Lyse Hext a la double initiative.",
+   "image": "https://cards.scryfall.io/normal/front/c/3/c3c90213-f693-456b-9778-1d1802a7f25e.jpg?1782770027"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Malakir Bloodwitch",
+  "number": "131",
+  "rarity": "rare",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Creature — Vampire Shaman",
+  "oracleText": "Flying, protection from white\nWhen this creature enters, each opponent loses life equal to the number of Vampires you control. You gain life equal to the life lost this way.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Flying",
+   "Protection"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/9/b91ceead-5071-43e8-bf90-f379d683acdf.jpg?1783924954",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/9/b91ceead-5071-43e8-bf90-f379d683acdf.jpg?1783924954",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sorcière de sang de Malakir",
+   "typeLine": "Créature : vampire et shamane",
+   "text": "Vol, protection contre le blanc\nQuand la Sorcière de sang de Malakir arrive sur le champ de bataille, chaque adversaire perd un nombre de points de vie égal au nombre de vampires que vous contrôlez. Vous gagnez autant de points de vie que ceux perdus de cette manière.",
+   "image": "https://cards.scryfall.io/normal/front/e/f/ef3851d6-15d4-4612-8bc8-d0198e607d50.jpg?1782867999"
+  },
+  "origin": "VOC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Markov Baron",
+  "number": "14",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Creature — Vampire Noble",
+  "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nLifelink\nOther Vampires you control get +1/+1.\nMadness {2}{B} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Lifelink",
+   "Madness",
+   "Convoke"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/1/a1dc6b0f-09bb-4489-8022-42c700eb1191.jpg?1783916524",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a1dc6b0f-09bb-4489-8022-42c700eb1191.jpg?1783916524",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Baron Markov",
+   "typeLine": "Créature : vampire et noble",
+   "text": "Convocation (Vos créatures peuvent aider à lancer ce sort. Chaque créature que vous engagez en lançant ce sort paie {1} ou un mana de la couleur de cette créature.)\nLien de vie\nLes autres vampires que vous contrôlez gagnent +1/+1.\nFolie {2}{B} (Si vous vous défaussez de cette carte, défaussez-vous-en vers l'exil. Quand vous faites ainsi, lancez-la pour son coût de folie ou mettez-la dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/4/a/4ad6c07f-d5e0-49db-8755-2ddb66b64c8e.jpg?1782823102"
+  },
+  "origin": "MAT",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Master of Dark Rites",
+  "number": "83",
+  "rarity": "rare",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Creature — Vampire Cleric",
+  "oracleText": "{T}, Sacrifice another creature: Add {B}{B}{B}. Spend this mana only to cast Vampire, Cleric, and/or Demon spells.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/3/6394a522-37bb-4cf3-b434-5121c8000ac6.jpg?1783913910",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/3/6394a522-37bb-4cf3-b434-5121c8000ac6.jpg?1783913910",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Maîtresse des rites noirs",
+   "typeLine": "Créature — vampire et clerc",
+   "text": "{T}, sacrifiez une autre créature : Ajoutez {B}{B}{B}. Ne dépensez ce mana que pour lancer des sorts de vampire, de clerc et/ou de démon.",
+   "image": "https://cards.scryfall.io/normal/front/8/7/87b6c31f-2598-4dd2-87b4-33f2f8afa534.jpg?1782810823"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Mavren Fein, Dusk Apostle",
+  "number": "133",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Vampire Cleric",
+  "oracleText": "Whenever one or more nontoken Vampires you control attack, create a 1/1 white Vampire creature token with lifelink.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/d/fdc3e998-760b-41ca-9f92-270aaa82f3fb.jpg?1783913894",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/d/fdc3e998-760b-41ca-9f92-270aaa82f3fb.jpg?1783913894",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mavren Fein, Apôtre du crépuscule",
+   "typeLine": "Créature légendaire — vampire et clerc",
+   "text": "À chaque fois qu'au moins un vampire non-jeton que vous contrôlez attaque, créez un jeton de créature 1/1 blanche Vampire avec le lien de vie.",
+   "image": "https://cards.scryfall.io/normal/front/c/b/cb05080a-b96b-438f-a8c5-c560a960eb95.jpg?1782810441"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Mindcrank",
+  "number": "866",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "Whenever an opponent loses life, that player mills that many cards. (Damage causes loss of life.)",
+  "colors": [],
+  "keywords": [
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/8/8858a941-8175-476d-8177-2db4ffdcb3ad.jpg?1783922388",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/8/8858a941-8175-476d-8177-2db4ffdcb3ad.jpg?1783922388",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Manivelle à esprit",
+   "typeLine": "Artefact",
+   "text": "À chaque fois qu'un adversaire perd des points de vie, ce joueur meule autant de cartes. (Les blessures provoquent la perte de points de vie.)",
+   "image": "https://cards.scryfall.io/normal/front/5/6/561e67c2-ccc8-4524-995c-30348999a83d.jpg?1782848547"
+  },
+  "origin": "CLB",
+  "colorIdentity": []
+ },
+ {
+  "name": "Morphic Pool",
+  "number": "357",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you have two or more opponents.\n{T}: Add {U} or {B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/8/48e40927-dd87-42ed-b805-0ae8ba81f5fb.jpg?1783922655",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/48e40927-dd87-42ed-b805-0ae8ba81f5fb.jpg?1783922655",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bassin morphique",
+   "typeLine": "Terrain",
+   "text": "Le Bassin morphique arrive sur le champ de bataille engagé à moins que vous n'ayez au moins deux adversaires.\n{T} : Ajoutez {U} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/c/7/c79691ea-1925-4b37-8e49-30dbcc87209d.jpg?1782851172"
+  },
+  "origin": "CLB",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Mystic Remora",
+  "number": "59",
+  "rarity": "rare",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Enchantment",
+  "oracleText": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Cumulative upkeep"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/0/40140991-cffa-4b52-9a25-37e9a8aa9ddd.jpg?1783918491",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40140991-cffa-4b52-9a25-37e9a8aa9ddd.jpg?1783918491",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rémora mystique",
+   "typeLine": "Enchantement",
+   "text": "Entretien cumulatif {1} (Au début de votre entretien, mettez un marqueur « âge » sur ce permanent, puis sacrifiez-le à moins que vous ne payiez son coût d'entretien pour chaque marqueur « âge » sur lui.)\nÀ chaque fois qu'un adversaire lance un sort non-créature, vous pouvez piocher une carte à moins que ce joueur ne paie {4}.",
+   "image": "https://cards.scryfall.io/normal/front/2/d/2d5dc925-0e02-4b1c-9407-00941ca9a5a1.jpg?1782833138"
+  },
+  "origin": "DMR",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "New Blood",
+  "number": "202",
+  "rarity": "rare",
+  "manaCost": "{2}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Sorcery",
+  "oracleText": "As an additional cost to cast this spell, tap an untapped Vampire you control.\nGain control of target creature. Change the text of that creature by replacing all instances of one creature type with Vampire.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/e/6ee669ab-0ae6-43e5-86fd-f0dcb621e478.jpg?1783913872",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/e/6ee669ab-0ae6-43e5-86fd-f0dcb621e478.jpg?1783913872",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sang neuf",
+   "typeLine": "Rituel",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, engagez un vampire dégagé que vous contrôlez.\nAcquérez le contrôle d'une créature ciblée. Changez le texte de cette créature en remplaçant toutes les occurrences d'un type de créature par vampire.",
+   "image": "https://cards.scryfall.io/normal/front/6/f/6f740fbe-6278-4687-b867-b47515b4aa1b.jpg?1782810099"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Olivia's Wrath",
+  "number": "205",
+  "rarity": "rare",
+  "manaCost": "{4}{B}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Each non-Vampire creature gets -X/-X until end of turn, where X is the number of Vampires you control.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/e/3eb5cc8d-a198-43cd-a2bd-9c9414d815b2.jpg?1783913871",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/e/3eb5cc8d-a198-43cd-a2bd-9c9414d815b2.jpg?1783913871",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Colère d'Olivia",
+   "typeLine": "Rituel",
+   "text": "Chaque créature non-Vampire gagne -X/-X jusqu'à la fin du tour, X étant le nombre de vampires que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/dd0c37fc-ccf8-4f97-873a-709c3399070e.jpg?1782810083"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Ophidian Eye",
+  "number": "70",
+  "rarity": "common",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nEnchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Enchant",
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/6/26836ff5-b3c3-4b10-af1e-df3658781cb2.jpg?1783943242",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/6/26836ff5-b3c3-4b10-af1e-df3658781cb2.jpg?1783943242",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Œil d'ophidien",
+   "typeLine": "Enchantement : aura",
+   "text": "Flash (Vous pouvez jouer ce sort à tout moment où vous pourriez jouer un éphémère.)\nEnchanter : créature\nÀ chaque fois que la créature enchantée inflige des blessures à un adversaire, vous pouvez piocher une carte.",
+   "image": "https://cards.scryfall.io/normal/front/3/a/3a3e3e09-3868-4a20-9e8b-9d7eb7dc468c.jpg?1783014673"
+  },
+  "origin": "TSP",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Orcish Bowmasters",
+  "number": "103",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Creature — Orc Archer",
+  "oracleText": "Flash\nWhen this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Amass",
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/c/7c024bae-5631-4e20-ac69-df392ac9e109.jpg?1783916299",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/c/7c024bae-5631-4e20-ac69-df392ac9e109.jpg?1783916299",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Maîtres archers orques",
+   "typeLine": "Créature : orque et archer",
+   "text": "Flash\nQuand les Maîtres archers orques arrivent sur le champ de bataille et à chaque fois qu'un adversaire pioche une carte, excepté la première qu'il pioche à chacune de ses étapes de pioche, les Maîtres archers orques infligent 1 blessure à n'importe quelle cible. Puis, amassez des orques 1.",
+   "image": "https://cards.scryfall.io/normal/front/1/a/1a22aef4-260f-4f30-ba49-fbe7ed0a162f.jpg?1782821697"
+  },
+  "origin": "LTR",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Otawara, Soaring City",
+  "number": "271",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control.",
+  "colors": [],
+  "keywords": [
+   "Channel"
+  ],
+  "producedMana": [
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/8/486d7edc-d983-41f0-8b78-c99aecd72996.jpg?1783923816",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/486d7edc-d983-41f0-8b78-c99aecd72996.jpg?1783923816",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Otawara, cité aérienne",
+   "typeLine": "Terrain légendaire",
+   "text": "{T} : Ajoutez {U}.\nTransfert — {3}{U}, défaussez-vous d'Otawara, cité aérienne : Renvoyez une cible, artefact, créature, enchantement ou planeswalker, dans la main de son propriétaire. Cette capacité coûte {1} de moins à activer pour chaque créature légendaire que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/e/f/efbc5cc8-1b4d-4a77-bf1e-b7d61463e721.jpg?1782861091"
+  },
+  "origin": "NEO",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Pact of the Serpent",
+  "number": "206",
+  "rarity": "rare",
+  "manaCost": "{1}{B}{B}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Choose a creature type. Target player draws X cards and loses X life, where X is the number of creatures they control of the chosen type.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/8/481d268a-848c-4ccd-95ff-eed77dc20776.jpg?1783913870",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/481d268a-848c-4ccd-95ff-eed77dc20776.jpg?1783913870",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pacte du Grand serpent",
+   "typeLine": "Rituel",
+   "text": "Choisissez un type de créature. Un joueur ciblé pioche X cartes et perd X points de vie, X étant le nombre de créatures du type choisi qu'il contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/e/f/efa943fc-7431-4a4c-a5e9-f73aad4c8941.jpg?1782810077"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Papalymo Totolymo",
+  "number": "90",
+  "rarity": "rare",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Dwarf Wizard",
+  "oracleText": "Whenever you cast a noncreature spell, Papalymo Totolymo deals 1 damage to each opponent and you gain 1 life.\n{4}, {T}, Sacrifice Papalymo Totolymo: Each opponent who lost life this turn sacrifices a creature with the greatest power among creatures they control.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/b/0b876b1e-fcf4-4e5c-81b0-1080ac8099ed.jpg?1783906343",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/b/0b876b1e-fcf4-4e5c-81b0-1080ac8099ed.jpg?1783906343",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Papalymo Totolymo",
+   "text": "À chaque fois que vous lancez un sort non-créature, Papalymo Totolymo inflige 1 blessure à chaque adversaire et vous gagnez 1 point de vie.\n{4}, {T}, sacrifiez Papalymo Totolymo : Chaque adversaire qui a perdu des points de vie ce tour-ci sacrifie une créature avec la force la plus élevée parmi les créatures qu'il contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/9/9/99e3119b-f2f4-4323-ad42-cf509dbe6e54.jpg?1782770018"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Path of Ancestry",
+  "number": "77",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "colors": [],
+  "keywords": [
+   "Scry"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/0/c047dedc-43bc-4a7c-bca4-182283c89069.jpg?1789599910",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c047dedc-43bc-4a7c-bca4-182283c89069.jpg?1789599910",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Voie de l'Ascendance",
+   "text": "Ce terrain arrive engagé.\n{T} : Ajoutez un mana de la couleur de votre choix de l'identité couleur de votre commandant. Quand ce mana est dépensé pour lancer un sort de créature qui partage un type de créature avec votre commandant, regard 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez mettre cette carte au-dessous.)",
+   "image": "https://cards.scryfall.io/normal/front/5/a/5a433746-81dc-4c27-9014-c31cf298a2dd.jpg?1790694539"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Phyrexian Altar",
+  "number": "311",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "Sacrifice a creature: Add one mana of any color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/5/95d9f93c-50a8-41a9-be98-d1900bf1c12f.jpg?1783921789",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/5/95d9f93c-50a8-41a9-be98-d1900bf1c12f.jpg?1783921789",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Autel phyrexian",
+   "typeLine": "Artefact",
+   "text": "Sacrifiez une créature : Ajoutez un mana de la couleur de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/9/8/98564c50-55d5-411e-8506-401eb26f5d4d.jpg?1782847088"
+  },
+  "origin": "2X2",
+  "colorIdentity": []
+ },
+ {
+  "name": "Phyrexian Tower",
+  "number": "303",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Sacrifice a creature: Add {B}{B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/b/0b47f6d2-9f65-47a4-bfc4-15619befe53d.jpg?1783911207",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/b/0b47f6d2-9f65-47a4-bfc4-15619befe53d.jpg?1783911207",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tour phyrexiane",
+   "typeLine": "Terrain légendaire",
+   "text": "{T} : Ajoutez {C}.\n{T}, sacrifiez une créature : Ajoutez {B}{B}.",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f348504e-e48d-4f94-bee5-c7f42b30d7c2.jpg?1782792368"
+  },
+  "origin": "MH3",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Polluted Delta",
+  "number": "224",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/e/6e288374-2b71-4ace-b1d2-a19fee6cb4af.jpg?1783911240",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/e/6e288374-2b71-4ace-b1d2-a19fee6cb4af.jpg?1783911240",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Estuaire pollué",
+   "typeLine": "Terrain",
+   "text": "{T}, payez 1 point de vie, sacrifiez l'Estuaire pollué : Cherchez dans votre bibliothèque une carte d'île ou de marais, mettez-la sur le champ de bataille, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/8/d/8de29bff-d65d-4790-a004-f86d4c7e8c4d.jpg?1782792938"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
+  "name": "Prairie Stream",
+  "number": "79",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Plains Island",
+  "oracleText": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/9/a93c2e0b-3fca-476e-ae5b-a331ccacae19.jpg?1789599913",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a93c2e0b-3fca-476e-ae5b-a331ccacae19.jpg?1789599913",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Prairie ruisselante",
+   "text": "{T} : Ajoutez {W} ou {U}.\nCe terrain arrive engagé à moins que vous ne contrôliez au moins deux terrains de base.",
+   "image": "https://cards.scryfall.io/normal/front/6/d/6df258c5-9d75-44cd-a57a-95746652b73c.jpg?1790694605"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Propaganda",
+  "number": "72",
+  "rarity": "uncommon",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/f/efc52d02-7d22-4ff6-b104-a6fe704e8ef2.jpg?1789752915",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/f/efc52d02-7d22-4ff6-b104-a6fe704e8ef2.jpg?1789752915",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Propagande",
+   "text": "Les créatures ne peuvent pas vous attaquer à moins que leur contrôleur ne paie {2} pour chaque créature qu'il contrôle qui vous attaque."
+  },
+  "origin": "FDC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Quantum Misalignment",
+  "number": "152",
+  "rarity": "rare",
+  "manaCost": "{4}{U}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Create a token that's a copy of target creature you control, except it isn't legendary.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Rebound"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/6/561caecd-e065-48f6-8fde-85b938794ed3.jpg?1783903239",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/6/561caecd-e065-48f6-8fde-85b938794ed3.jpg?1783903239",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Désalignement quantique",
+   "text": "Créez un jeton qui est une copie d'une créature ciblée que vous contrôlez, excepté qu'il n'est pas légendaire.\nRebond (Si vous lancez ce sort depuis votre main, exilez-le au moment où il se résout. Au début de votre prochain entretien, vous pouvez lancer cette carte depuis l'exil sans payer son coût de mana.)",
+   "image": "https://cards.scryfall.io/normal/front/f/b/fbe3cc93-fda2-44eb-b63d-38922f1c48ae.jpg?1785263129"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Raffine's Tower",
+  "number": "254",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Plains Island Swamp",
+  "oracleText": "({T}: Add {W}, {U}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "colors": [],
+  "keywords": [
+   "Cycling"
+  ],
+  "producedMana": [
+   "B",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/2/a2c56479-4bee-4edb-80d7-4af010b7c793.jpg?1783923055",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a2c56479-4bee-4edb-80d7-4af010b7c793.jpg?1783923055",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tour de Raffine",
+   "typeLine": "Terrain : plaine et île et marais",
+   "text": "({T} : Ajoutez {W}, {U}, ou {B}.)\nLa Tour de Raffine arrive sur le champ de bataille engagée.\nRecyclage {3} ({3}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/7/5/756406cb-cf60-46c5-b1d3-14f5e45ac599.jpg?1782854949"
+  },
+  "origin": "SNC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Relic of Legends",
+  "number": "209",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add one mana of any color.\nTap an untapped legendary creature you control: Add one mana of any color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/9/89691cda-e38b-4f53-bee6-4c234186e6ad.jpg?1783903214",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/9/89691cda-e38b-4f53-bee6-4c234186e6ad.jpg?1783903214",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Relique de légendes",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix.\nEngagez une créature légendaire dégagée que vous contrôlez : Ajoutez un mana de la couleur de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/2/f/2f5fdc78-e258-4d7d-a62d-5214e73b16b2.jpg?1785265497"
+  },
+  "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Reliquary Tower",
+  "number": "398",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "You have no maximum hand size.\n{T}: Add {C}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/2/e2a27742-08c1-4153-af7f-25a7a98f585e.jpg?1783903721",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e2a27742-08c1-4153-af7f-25a7a98f585e.jpg?1783903721",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tour du Reliquaire",
+   "typeLine": "Terrain",
+   "text": "Il n'y a pas de limite au nombre de cartes dans votre main.\n{T} : Ajoutez {C}."
+  },
+  "origin": "SOC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Rewind",
+  "number": "63",
+  "rarity": "uncommon",
+  "manaCost": "{2}{U}{U}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "Counter target spell. Untap up to four lands.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/8/b832abcc-9ffd-47bf-827a-01b303c610ee.jpg?1783930724",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/8/b832abcc-9ffd-47bf-827a-01b303c610ee.jpg?1783930724",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rembobinage",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez le sort ciblé. Dégagez jusqu'à quatre terrains.",
+   "image": "https://cards.scryfall.io/normal/front/a/7/a7045085-a0b0-42b5-a2ef-7c9dff0d9265.jpg?1782905716"
+  },
+  "origin": "M21",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Sanctum Seeker",
+  "number": "485",
+  "rarity": "rare",
+  "manaCost": "{2}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Creature — Vampire Knight",
+  "oracleText": "Whenever a Vampire you control attacks, each opponent loses 1 life and you gain 1 life.",
+  "power": "3",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/e/fef94159-c0ad-4731-bff8-dd33439db8c3.jpg?1783908712",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fef94159-c0ad-4731-bff8-dd33439db8c3.jpg?1783908712",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Quêteuse de sanctuaire",
+   "typeLine": "Créature — vampire et chevalier",
+   "text": "À chaque fois qu'un vampire que vous contrôlez attaque, chaque adversaire perd 1 point de vie et vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/2/0/20b514ae-cf4a-4c63-8621-4b7920cd89f1.jpg?1782779812"
+  },
+  "origin": "J25",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Savai Triome",
+  "number": "253",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Mountain Plains Swamp",
+  "oracleText": "({T}: Add {R}, {W}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "colors": [],
+  "keywords": [
+   "Cycling"
+  ],
+  "producedMana": [
+   "B",
+   "R",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/4/748e6a61-9c1f-4225-9f04-e54002f63ac3.jpg?1783931000",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/748e6a61-9c1f-4225-9f04-e54002f63ac3.jpg?1783931000",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Triome de Savaï",
+   "typeLine": "Terrain : montagne et plaine et marais",
+   "text": "({T} : Ajoutez {R}, {W} ou {B}.)\nLe Triome de Savaï arrive sur le champ de bataille engagé.\nRecyclage {3} ({3}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5e722cea-8321-4fc8-82a5-3623c90a5eaf.jpg?1782906420"
+  },
+  "origin": "IKO",
+  "colorIdentity": [
+   "B",
+   "R",
+   "W"
+  ]
+ },
+ {
+  "name": "Sea of Clouds",
+  "number": "360",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {U}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/4/d4fb722f-40af-4bd1-b660-e8186b98f233.jpg?1783922655",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/4/d4fb722f-40af-4bd1-b660-e8186b98f233.jpg?1783922655",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mer de nuages",
+   "typeLine": "Terrain",
+   "text": "La Mer de nuages arrive sur le champ de bataille engagée à moins que vous n'ayez au moins deux adversaires.\n{T} : Ajoutez {W} ou {U}.",
+   "image": "https://cards.scryfall.io/normal/front/3/2/32a5ff47-8951-460b-a456-9287781a9002.jpg?1782851143"
+  },
+  "origin": "CLB",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Sheoldred, the Apocalypse",
+  "number": "107",
+  "rarity": "mythic",
+  "manaCost": "{2}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Phyrexian Praetor",
+  "oracleText": "Deathtouch\nWhenever you draw a card, you gain 2 life.\nWhenever an opponent draws a card, they lose 2 life.",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Deathtouch"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/6/d67be074-cdd4-41d9-ac89-0a0456c4e4b2.jpg?1783921327",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/6/d67be074-cdd4-41d9-ac89-0a0456c4e4b2.jpg?1783921327",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sheoldred, l'Apocalypse",
+   "typeLine": "Créature légendaire : phyrexian et praetor",
+   "text": "Contact mortel\nÀ chaque fois que vous piochez une carte, vous gagnez 2 points de vie.\nÀ chaque fois qu'un adversaire pioche une carte, il perd 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/d/b/dbb16ada-3c27-4e34-b76a-d7f9cdf5eeeb.jpg?1782844710"
+  },
+  "origin": "DMU",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Sink into Stupor // Soporific Springs",
+  "number": "241",
+  "rarity": "uncommon",
+  "layout": "modal_dfc",
+  "manaCost": "{1}{U}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Return target spell or nonland permanent an opponent controls to its owner's hand.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Sink into Stupor",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target spell or nonland permanent an opponent controls to its owner's hand.",
+    "colors": [
+     "U"
+    ],
+    "image": "https://cards.scryfall.io/normal/front/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+    "fr": {
+     "name": "Sombrer dans la stupeur",
+     "typeLine": "Éphémère",
+     "text": "Renvoyez une cible qu'un adversaire contrôle, sort ou permanent non-terrain, dans la main de son propriétaire.\nTerrain\n{T} : Ajoutez {U}.",
+     "image": "https://cards.scryfall.io/normal/front/c/2/c27a65b9-1774-4889-8aa4-37856f26a15f.jpg?1782792815"
+    }
+   },
+   {
+    "name": "Soporific Springs",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}.",
+    "colors": [],
+    "image": "https://cards.scryfall.io/normal/back/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+    "fr": {
+     "name": "Sources soporifiques",
+     "typeLine": "Terrain",
+     "text": "Au moment où les Sources soporifiques arrivent sur le champ de bataille, vous pouvez payer 3 points de vie. Si vous ne le faites pas, elles arrivent sur le champ de bataille engagées.\n{T} : Ajoutez {U}.\nÉphémère\n{1}{U}{U}",
+     "image": "https://cards.scryfall.io/normal/back/c/2/c27a65b9-1774-4889-8aa4-37856f26a15f.jpg?1782792815"
+    }
+   }
+  ],
+  "fr": {
+   "name": "Sombrer dans la stupeur",
+   "typeLine": "Éphémère",
+   "text": "Renvoyez une cible qu'un adversaire contrôle, sort ou permanent non-terrain, dans la main de son propriétaire.\nTerrain\n{T} : Ajoutez {U}.",
+   "image": "https://cards.scryfall.io/normal/front/c/2/c27a65b9-1774-4889-8aa4-37856f26a15f.jpg?1782792815"
+  },
+  "origin": "MH3",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Skullclamp",
+  "number": "210",
+  "rarity": "rare",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/d/1d8b007b-3169-4ee3-80c7-781fc096fc7a.jpg?1783903215",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/d/1d8b007b-3169-4ee3-80c7-781fc096fc7a.jpg?1783903215",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pincecrâne",
+   "text": "La créature équipée gagne +1/-1.\nÀ chaque fois que la créature équipée meurt, piochez deux cartes.\nÉquipement {1}",
+   "image": "https://cards.scryfall.io/normal/front/6/9/69d8fcb5-24ad-4e20-a45b-70a3635327a4.jpg?1785265542"
+  },
+  "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Snuff Out",
+  "number": "285",
+  "rarity": "common",
+  "manaCost": "{3}{B}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "If you control a Swamp, you may pay 4 life rather than pay this spell's mana cost.\nDestroy target nonblack creature. It can't be regenerated.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/3/a3b1fc65-3620-4052-a1f8-1779d95029c7.jpg?1783906269",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a3b1fc65-3620-4052-a1f8-1779d95029c7.jpg?1783906269",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dégommage",
+   "text": "Si vous contrôlez un marais, vous pouvez payer 4 points de vie à la place du coût de mana de ce sort.\nDétruisez une créature non-noire ciblée. Elle ne peut pas être régénérée.",
+   "image": "https://cards.scryfall.io/normal/front/3/8/38294b09-0aca-4f37-aa12-4b1176a83c0f.jpg?1782769449"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Sol Ring",
+  "number": "286",
+  "rarity": "uncommon",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {C}{C}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/f/4f152dd9-2b35-45b2-90fe-8c71d0634226.jpg?1789753351",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4f152dd9-2b35-45b2-90fe-8c71d0634226.jpg?1789753351",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Anneau solaire",
+   "text": "{T} : Ajoutez {C}{C}."
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Sorin, Imperious Bloodlord",
+  "number": "133",
+  "rarity": "mythic",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Planeswalker — Sorin",
+  "oracleText": "+1: Target creature you control gains deathtouch and lifelink until end of turn. If it's a Vampire, put a +1/+1 counter on it.\n+1: You may sacrifice a Vampire. When you do, Sorin deals 3 damage to any target and you gain 3 life.\n−3: You may put a Vampire creature card from your hand onto the battlefield.",
+  "loyalty": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/1/219d3e48-e0b1-472d-ac45-11c14b292c9e.jpg?1790456308",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/1/219d3e48-e0b1-472d-ac45-11c14b292c9e.jpg?1790456308",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sorin, seigneur de sang impérieux",
+   "typeLine": "Planeswalker légendaire : Sorin",
+   "text": "+1 : Une créature ciblée que vous contrôlez acquiert le contact mortel et le lien de vie jusqu'à la fin du tour. Si c'est un vampire, mettez un marqueur +1/+1 sur lui.\n+1 : Vous pouvez sacrifier un vampire. Quand vous faites ainsi, Sorin, seigneur de sang impérieux inflige 3 blessures à n'importe quelle cible et vous gagnez 3 points de vie.\n-3 : Vous pouvez mettre sur le champ de bataille une carte de créature Vampire de votre main."
+  },
+  "origin": "INR",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Stromkirk Captain",
+  "number": "157",
+  "rarity": "uncommon",
+  "manaCost": "{1}{B}{R}",
+  "cmc": 3,
+  "typeLine": "Creature — Vampire Soldier",
+  "oracleText": "First strike\nOther Vampire creatures you control get +1/+1 and have first strike.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "R"
+  ],
+  "keywords": [
+   "First strike"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/f/2f053406-d2e4-4443-81f1-025e3b27c65a.jpg?1783924943",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/f/2f053406-d2e4-4443-81f1-025e3b27c65a.jpg?1783924943",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Capitaine de Stromkirk",
+   "typeLine": "Créature : vampire et soldat",
+   "text": "Initiative\nLes autres créatures Vampire que vous contrôlez gagnent +1/+1 et ont l'initiative.",
+   "image": "https://cards.scryfall.io/normal/front/4/5/4537c5d8-5027-4d78-b936-b0091b10862b.jpg?1782867821"
+  },
+  "origin": "VOC",
+  "colorIdentity": [
+   "B",
+   "R"
+  ]
+ },
+ {
+  "name": "Sunken Hollow",
+  "number": "271",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Island Swamp",
+  "oracleText": "({T}: Add {U} or {B}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/a/3a8eef9b-9b03-42cd-a27a-07021bf0b33f.jpg?1783903191",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/a/3a8eef9b-9b03-42cd-a27a-07021bf0b33f.jpg?1783903191",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dépression engloutie",
+   "text": "({T} : Ajoutez {U} ou {B}.)\nCe terrain arrive engagé à moins que vous ne contrôliez au moins deux terrains de base.",
+   "image": "https://cards.scryfall.io/normal/front/0/a/0a0d3f9c-1d97-4938-9eb7-3e7ada965916.jpg?1785267972"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Sunken Ruins",
+  "number": "86",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{U/B}, {T}: Add {U}{U}, {U}{B}, or {B}{B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/8/b8652a52-d9f6-42ad-9746-6827845b540e.jpg?1789599920",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/8/b8652a52-d9f6-42ad-9746-6827845b540e.jpg?1789599920",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ruines englouties",
+   "text": "{T} : Ajoutez {C}.\n{U/B}, {T} : Ajoutez {U}{U}, {U}{B} ou {B}{B}.",
+   "image": "https://cards.scryfall.io/normal/front/3/f/3f5662cc-4569-489f-8def-4b581e367f9e.jpg?1790694853"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Talisman of Dominance",
+  "number": "62",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {B}. This artifact deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/8/78d5366f-eb6d-4ec1-880b-111872863766.jpg?1789599840",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/8/78d5366f-eb6d-4ec1-880b-111872863766.jpg?1789599840",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Talisman de dominance",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {U} ou {B}. Cet artefact vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/a/a/aaeebd21-5d4a-4d9f-a990-cd3223dfdce5.jpg?1790693975"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Talisman of Hierarchy",
+  "number": "358",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {B}. This artifact deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/c/0c959368-2f58-48de-b7a5-2bab408652b5.jpg?1783903737",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0c959368-2f58-48de-b7a5-2bab408652b5.jpg?1783903737",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Talisman de hiérarchie",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {W} ou {B}. Cet artefact vous inflige 1 blessure."
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Talisman of Progress",
+  "number": "64",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {U}. This artifact deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/5/454ed9c8-3ec1-4b65-bf3f-29a186742aed.jpg?1789599848",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/454ed9c8-3ec1-4b65-bf3f-29a186742aed.jpg?1789599848",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Talisman de progrès",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {W} ou {U}. Cet artefact vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/8/d/8d0815dd-c927-4c8a-a9cc-b22289ac1dc2.jpg?1790694068"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Tataru Taru",
+  "number": "30",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Dwarf Advisor",
+  "oracleText": "When Tataru Taru enters, you draw a card and target opponent may draw a card.\nScions' Secretary — Whenever an opponent draws a card, if it isn't that player's turn, create a tapped Treasure token. This ability triggers only once each turn.",
+  "power": "0",
+  "toughness": "3",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Scions' Secretary",
+   "Treasure"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/3/93176e85-2343-43a8-8578-69699b464b86.jpg?1783906365",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/3/93176e85-2343-43a8-8578-69699b464b86.jpg?1783906365",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tataru Taru",
+   "text": "Quand Tataru Taru arrive, vous piochez une carte et un adversaire ciblé peut piocher une carte.\nTrésorière des Héritiers — À chaque fois qu'un adversaire pioche une carte, si ce n'est pas le tour de ce joueur, créez un jeton Trésor engagé. Cette capacité ne se déclenche qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/9/2/9271f5af-48bb-4196-962a-3a30b39182e9.jpg?1782770256"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Teferi's Protection",
+  "number": "32",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before you untap during your untap step.)\nExile Teferi's Protection.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/8/483fa1cb-1e35-44f2-a143-98c0f107f5ca.jpg?1783921926",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/483fa1cb-1e35-44f2-a143-98c0f107f5ca.jpg?1783921926",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Protection de Téfeiri",
+   "typeLine": "Éphémère",
+   "text": "Jusqu'à votre prochain tour, votre total de points de vie ne peut pas changer et vous acquérez la protection contre tout. Tous les permanents que vous contrôlez passent hors phase. (Tant qu'ils sont hors phase, ils sont traités comme s'ils n'existaient pas. Ils passent en phase avant le dégagement pendant votre étape de dégagement.)\nExilez la Protection de Téfeiri.",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3ccdb329-e160-4103-b6d7-7264a8ea5353.jpg?1782847994"
+  },
+  "origin": "2X2",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Teferi, Time Raveler",
+  "number": "232",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Planeswalker — Teferi",
+  "oracleText": "Each opponent can cast spells only any time they could cast a sorcery.\n+1: Until your next turn, you may cast sorcery spells as though they had flash.\n−3: Return up to one target artifact, creature, or enchantment to its owner's hand. Draw a card.",
+  "loyalty": "4",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/6/662fe50f-d75c-422c-8c6c-1f9b5c4ba21f.jpg?1783913271",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/6/662fe50f-d75c-422c-8c6c-1f9b5c4ba21f.jpg?1783913271",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Téfeiri, effileur de temps",
+   "typeLine": "Planeswalker légendaire — Téfeiri",
+   "text": "Chaque adversaire ne peut lancer des sorts que lorsqu'il pourrait lancer un rituel.\n+1: Jusqu'à votre prochain tour, vous pouvez lancer les sorts de rituel comme s'ils avaient le flash.\n-3: Renvoyez jusqu'à une cible, artefact, créature ou enchantement, dans la main de son propriétaire. Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/0/8/081739ef-9afd-4d91-b425-df4570fc1d20.jpg?1782805351"
+  },
+  "origin": "RVR",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "The One Ring",
+  "number": "246",
+  "rarity": "mythic",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Legendary Artifact",
+  "oracleText": "Indestructible\nWhen The One Ring enters, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on The One Ring.",
+  "colors": [],
+  "keywords": [
+   "Indestructible"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/5/d5806e68-1054-458e-866d-1f2470f682b2.jpg?1790212038",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d5806e68-1054-458e-866d-1f2470f682b2.jpg?1790212038",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "L'Anneau Unique",
+   "typeLine": "Artefact légendaire",
+   "text": "Indestructible\nQuand L'Anneau Unique arrive sur le champ de bataille, si vous l'avez lancé, vous acquérez la protection contre tout jusqu'à votre prochain tour.\nAu début de votre entretien, vous perdez 1 point de vie pour chaque marqueur « fardeau » sur L'Anneau Unique.\n{T} : Mettez un marqueur « fardeau » sur L'Anneau Unique, puis piochez une carte pour chaque marqueur « fardeau » sur L'Anneau Unique.",
+   "image": "https://cards.scryfall.io/normal/front/5/b/5b6791c1-090e-4cd8-be9c-f25c702b7a36.jpg?1782820893"
+  },
+  "origin": "LTR",
+  "colorIdentity": []
+ },
+ {
+  "name": "Thought Vessel",
+  "number": "292",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "You have no maximum hand size.\n{T}: Add {C}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/d/ddd26152-5e1f-4c48-99e0-a4fdc5155d98.jpg?1789753352",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/ddd26152-5e1f-4c48-99e0-a4fdc5155d98.jpg?1789753352",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Urne de pensée",
+   "text": "Il n'y a pas de limite au nombre de cartes dans votre main.\n{T} : Ajoutez {C}."
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Toxic Deluge",
+  "number": "161",
+  "rarity": "rare",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "As an additional cost to cast this spell, pay X life.\nAll creatures get -X/-X until end of turn.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/e/de5afccc-8d42-4bd6-b068-b9ea2361655e.jpg?1783903236",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/e/de5afccc-8d42-4bd6-b068-b9ea2361655e.jpg?1783903236",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Déluge toxique",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, payez X points de vie.\nToutes les créatures gagnent -X/-X jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/c/b/cb25b5d6-87d0-4de2-9bdd-bbafdb0f513a.jpg?1785263500"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Twilight Prophet",
+  "number": "143",
+  "rarity": "mythic",
+  "manaCost": "{2}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Creature — Vampire Cleric",
+  "oracleText": "Flying\nAscend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nAt the beginning of your upkeep, if you have the city's blessing, reveal the top card of your library and put it into your hand. Each opponent loses X life and you gain X life, where X is that card's mana value.",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Flying",
+   "Ascend"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/5/050ca791-265a-4e7b-9640-4fd5a6d8cd3a.jpg?1783913002",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/5/050ca791-265a-4e7b-9640-4fd5a6d8cd3a.jpg?1783913002",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Prophétesse du crépuscule",
+   "typeLine": "Créature — vampire et clerc",
+   "text": "Vol\nAscension (Si vous contrôlez au moins dix permanents, vous gagnez l'agrément de la cité pour le reste de la partie.)\nAu début de votre entretien, si vous avez l'agrément de la cité, révélez la carte du dessus de votre bibliothèque et mettez-la dans votre main. Chaque adversaire perd X points de vie et vous gagnez X points de vie, X étant la valeur de mana de cette carte.",
+   "image": "https://cards.scryfall.io/normal/front/c/4/c4102e82-588c-416a-b7ff-890c3a32c4d3.jpg?1782803767"
+  },
+  "origin": "MKC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Unclaimed Territory",
+  "number": "275",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/3/d3782952-3839-4a94-95bc-716611d3ece6.jpg?1783903190",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/3/d3782952-3839-4a94-95bc-716611d3ece6.jpg?1783903190",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Terra nullius",
+   "text": "Au moment où ce terrain arrive, choisissez un type de créature.\n{T} : Ajoutez {C}.\n{T} : Ajoutez un mana de la couleur de votre choix. Ne dépensez ce mana que pour lancer un sort de créature du type choisi.",
+   "image": "https://cards.scryfall.io/normal/front/7/1/71617a25-66a1-418c-ba9b-b622da4a4dbe.jpg?1785268155"
+  },
+  "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Underground River",
+  "number": "87",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {B}. This land deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/8/e8b05f37-815f-4854-bf82-ca544ca67532.jpg?1789599935",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e8b05f37-815f-4854-bf82-ca544ca67532.jpg?1789599935",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rivière souterraine",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {U} ou {B}. Ce terrain vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/0/6/060d4667-c5c9-49ec-b06f-7c12967cefa6.jpg?1790694889"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Unwind",
+  "number": "72",
+  "rarity": "common",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Counter target noncreature spell. Untap up to three lands.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/7/97da6607-9131-4f8b-8af3-63439a59b78b.jpg?1783935018",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/7/97da6607-9131-4f8b-8af3-63439a59b78b.jpg?1783935018",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Débobinage",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez le sort non-créature ciblé. Dégagez jusqu'à trois terrains.",
+   "image": "https://cards.scryfall.io/normal/front/d/5/d53db739-7263-4a6f-9957-700c73529b67.jpg?1782933499"
+  },
+  "origin": "DOM",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Urborg, Tomb of Yawgmoth",
+  "number": "287",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "Each land is a Swamp in addition to its other land types.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/e/9e1a9e38-6ffc-490f-b0be-23ba4e8204c6.jpg?1783927747",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9e1a9e38-6ffc-490f-b0be-23ba4e8204c6.jpg?1783927747",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Urborg, tombe de Yaugzebul",
+   "typeLine": "Terrain légendaire",
+   "text": "Chaque terrain est un marais en plus de ses autres types de terrain.",
+   "image": "https://cards.scryfall.io/normal/front/4/c/4cb72dd1-a744-4a99-98e7-9ed5c5bc3d68.jpg?1782889215"
+  },
+  "origin": "TSR",
+  "colorIdentity": []
+ },
+ {
+  "name": "Vampire Socialite",
+  "number": "249",
+  "rarity": "uncommon",
+  "manaCost": "{B}{R}",
+  "cmc": 2,
+  "typeLine": "Creature — Vampire Noble",
+  "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, if an opponent lost life this turn, put a +1/+1 counter on each other Vampire you control.\nAs long as an opponent lost life this turn, each other Vampire you control enters with an additional +1/+1 counter on it.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "R"
+  ],
+  "keywords": [
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/0/f07cbf04-2864-4407-800e-4d55c10d3426.jpg?1783925550",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/0/f07cbf04-2864-4407-800e-4d55c10d3426.jpg?1783925550",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vampire mondaine",
+   "typeLine": "Créature — vampire et noble",
+   "text": "Menace (Cette créature ne peut pas être bloquée excepté par deux créatures ou plus.)\nQuand la Vampire mondaine arrive sur le champ de bataille, si un adversaire a perdu des points de vie ce tour-ci, mettez un marqueur +1/+1 sur chaque autre vampire que vous contrôlez.\nTant qu'un adversaire a perdu des points de vie ce tour-ci, chaque autre vampire que vous contrôlez arrive sur le champ de bataille avec un marqueur +1/+1 supplémentaire sur lui.",
+   "image": "https://cards.scryfall.io/normal/front/d/b/dbcc6108-3dfa-460b-b7f5-2863dbad5644.jpg?1782870769"
+  },
+  "origin": "MID",
+  "colorIdentity": [
+   "B",
+   "R"
+  ]
+ },
+ {
+  "name": "Vampire of the Dire Moon",
+  "number": "504",
+  "rarity": "uncommon",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Creature — Vampire",
+  "oracleText": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nLifelink (Damage dealt by this creature also causes you to gain that much life.)",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Lifelink",
+   "Deathtouch"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/d/adc8b892-d2d9-49aa-8e3a-4c60fad49496.jpg?1783908705",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/d/adc8b892-d2d9-49aa-8e3a-4c60fad49496.jpg?1783908705",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vampire de la lune sinistre",
+   "typeLine": "Créature — vampire",
+   "text": "Contact mortel (Le nombre de blessures que cette créature inflige à une créature, quel qu'il soit, est suffisant pour la détruire.)\nLien de vie (Les blessures infligées par cette créature vous font aussi gagner autant de points de vie.)",
+   "image": "https://cards.scryfall.io/normal/front/b/5/b570e795-d8b6-4375-860b-8fd91ae7f8e2.jpg?1782779732"
+  },
+  "origin": "J25",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Vanquisher's Banner",
+  "number": "294",
+  "rarity": "rare",
+  "manaCost": "{5}",
+  "cmc": 5,
+  "typeLine": "Artifact",
+  "oracleText": "As this artifact enters, choose a creature type.\nCreatures you control of the chosen type get +1/+1.\nWhenever you cast a creature spell of the chosen type, draw a card.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/e/8eae5f95-909e-4de7-b767-8a16bdba5ede.jpg?1789753356",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8eae5f95-909e-4de7-b767-8a16bdba5ede.jpg?1789753356",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bannière du vainqueur",
+   "typeLine": "Artefact",
+   "text": "Au moment où la Bannière du vainqueur arrive sur le champ de bataille, choisissez un type de créature.\nLes créatures du type choisi que vous contrôlez gagnent +1/+1.\nÀ chaque fois que vous lancez un sort de créature du type choisi, piochez une carte."
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Vault of Champions",
+  "number": "436",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/a/cafd7db6-b04e-4fa2-bccd-981211132a93.jpg?1783915582",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/cafd7db6-b04e-4fa2-bccd-981211132a93.jpg?1783915582",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Caveau des champions",
+   "typeLine": "Terrain",
+   "text": "Le Caveau des champions arrive sur le champ de bataille engagé à moins que vous n'ayez au moins deux adversaires.\n{T} : Ajoutez {W} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/d/0/d01120dc-7402-4e09-b5e1-459082fcbb99.jpg?1782815887"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Village Rites",
+  "number": "137",
+  "rarity": "common",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/2/42ed35e9-51cd-468a-86a9-9412553cf50d.jpg?1783908135",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/42ed35e9-51cd-468a-86a9-9412553cf50d.jpg?1783908135",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rites du village",
+   "typeLine": "Éphémère",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, sacrifiez une créature.\nPiochez deux cartes."
+  },
+  "origin": "INR",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Vindicate",
+  "number": "330",
+  "rarity": "rare",
+  "manaCost": "{1}{W}{B}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy target permanent.",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/b/1b2c1bf2-d03a-4cd5-ab51-26c928949497.jpg?1783906250",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/b/1b2c1bf2-d03a-4cd5-ab51-26c928949497.jpg?1783906250",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Justification",
+   "text": "Détruisez un permanent ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/e/7/e76e3d37-c057-4c7c-8912-5473b5391c40.jpg?1782769269"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Viscera Seer",
+  "number": "229",
+  "rarity": "common",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Creature — Vampire Wizard",
+  "oracleText": "Sacrifice a creature: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Scry"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/5/f511830b-1c1f-4d30-aa5d-4314726d142e.jpg?1783903780",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f511830b-1c1f-4d30-aa5d-4314726d142e.jpg?1783903780",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Voyant de viscères",
+   "text": "Sacrifiez une créature : Regard 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez mettre cette carte au-dessous.)",
+   "image": "https://cards.scryfall.io/normal/front/0/1/016b1063-26e4-48ab-bfbb-3f1ac7f185e9.jpg?1782759192"
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Vito, Thorn of the Dusk Rose",
+  "number": "71",
+  "rarity": "rare",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Vampire Cleric",
+  "oracleText": "Whenever you gain life, target opponent loses that much life.\n{3}{B}{B}: Creatures you control gain lifelink until end of turn.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/d/5deb74ff-15df-4894-b074-9a98731bd2c0.jpg?1783908850",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/d/5deb74ff-15df-4894-b074-9a98731bd2c0.jpg?1783908850",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vito, Épine de la Rose du crépuscule",
+   "typeLine": "Créature légendaire — vampire et clerc",
+   "text": "À chaque fois que vous gagnez des points de vie, un adversaire ciblé perd autant de points de vie.\n{3}{B}{B} : Les créatures que vous contrôlez acquièrent le lien de vie jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f37d1ec6-29fb-493a-bad6-41a05426737f.jpg?1782781492"
+  },
+  "origin": "J25",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Voldaren Estate",
+  "number": "369",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color. Spend this mana only to cast a Vampire spell.\n{5}, {T}: Create a Blood token. This ability costs {1} less to activate for each Vampire you control. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/f/1fcbc704-4fb3-49c3-9040-aa1681e86e2c.jpg?1783913817",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/f/1fcbc704-4fb3-49c3-9040-aa1681e86e2c.jpg?1783913817",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Domaine Voldaren",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T}, payez 1 point de vie : Ajoutez un mana de la couleur de votre choix. Ne dépensez ce mana que pour lancer un sort de vampire.\n{5}, {T} : Créez un jeton Sang. Cette capacité coûte {1} de moins à activer pour chaque vampire que vous contrôlez. (C'est un artefact avec « {1}, {T}, défaussez-vous d'une carte, sacrifiez cet artefact : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/d/b/db70e632-6a5d-41c2-8a5a-51b2da55c289.jpg?1782809275"
+  },
+  "origin": "LCC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Welcoming Vampire",
+  "number": "140",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Creature — Vampire",
+  "oracleText": "Flying\nWhenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/5/35a69bb5-b8e6-4558-9563-10c7a3662f93.jpg?1783907112",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/5/35a69bb5-b8e6-4558-9563-10c7a3662f93.jpg?1783907112",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vampire accueillante",
+   "typeLine": "Créature — vampire",
+   "text": "Vol\nÀ chaque fois qu'au moins une autre créature avec une force inférieure ou égale à 2 que vous contrôlez arrive, piochez une carte. Cette capacité ne se déclenche qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/0/0/007cd8a6-a34a-4ed1-8d7d-243db2c3bf7c.jpg?1782773820"
+  },
+  "origin": "TDC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Y'shtola, Night's Blessed",
+  "number": "7",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}{U}{B}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Cat Warlock",
+  "oracleText": "Vigilance\nAt the beginning of each end step, if a player lost 4 or more life this turn, you draw a card.\nWhenever you cast a noncreature spell with mana value 3 or greater, Y'shtola deals 2 damage to each opponent and you gain 2 life.",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Vigilance"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/7/c7f2c2d5-e052-49e8-b5de-712858c2ea78.jpg?1783906373",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/7/c7f2c2d5-e052-49e8-b5de-712858c2ea78.jpg?1783906373",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Y'shtola, sorcière",
+   "text": "Vigilance\nAu début de chaque étape de fin, si un joueur a perdu au moins 4 points de vie ce tour-ci, vous piochez une carte.\nÀ chaque fois que vous lancez un sort non-créature avec une valeur de mana supérieure ou égale à 3, Y'shtola inflige 2 blessures à chaque adversaire et vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/e/6/e6fdeb06-a07e-4eb4-983a-a0f301b61ddf.jpg?1782770344"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Yahenni, Undying Partisan",
+  "number": "232",
+  "rarity": "rare",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Aetherborn Vampire",
+  "oracleText": "Haste\nWhenever a creature an opponent controls dies, put a +1/+1 counter on Yahenni.\nSacrifice another creature: Yahenni gains indestructible until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Haste"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/1/518b155a-cb84-48d3-9aba-07577f60f091.jpg?1783903779",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/518b155a-cb84-48d3-9aba-07577f60f091.jpg?1783903779",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Yahenni, partisan immortel",
+   "text": "Célérité\nÀ chaque fois qu'une créature qu'un adversaire contrôle meurt, mettez un marqueur +1/+1 sur Yahenni.\nSacrifiez une autre créature : Yahenni acquiert l'indestructible jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/7/4/746dfac3-9481-4279-add3-cb665f22de05.jpg?1782759182"
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "B"
+  ]
+ }
+]

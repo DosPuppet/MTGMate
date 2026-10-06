@@ -48,7 +48,7 @@ Les cartes ont été couvertes **extension par extension, à 100 % avant de pass
 
 Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %, vérifié chaque semaine contre Scryfall : `tools/check-legality.ts`). Les lignes ci-dessus font 5 177 cartes : elles comptent aussi les 13 cartes bannies, gérées mais refusées par la validation des decks, sauf dans le format « Sans limite » (au choix à l'accueil, contre l'IA, et à la création d'une partie en ligne), qui accepte toute carte du catalogue, quelle que soit sa légalité.
 
-**Rééditions, pour le format « Sans limite »** (plan G, `docs/plans/PLAN-G.md`) : les Special Guests et les feuilles bonus sorties avec les extensions ci-dessus, hors Standard, avec l'illustration de la réédition. Les cartes à mécanique propre au Commander (partenaire, éminence…) attendent Commander.
+**Rééditions, pour le format « Sans limite »** (plan G, `docs/plans/PLAN-G.md`) : les Special Guests et les feuilles bonus sorties avec les extensions ci-dessus, hors Standard, avec l'illustration de la réédition. Les cartes à mécanique propre au Commander (partenaire, éminence…) attendent un deck Commander qui les demande (plan E).
 
 | Ensemble | Cartes gérées |
 |---|---|
@@ -79,7 +79,9 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 - Up the Beanstalk
 - Vivi Ornitier
 
-**Hors périmètre pour l'instant :** Commander, Limité (scellé, draft), formats éternels, cartes numériques d'Alchemy. L'architecture reste prête pour N joueurs.
+**Commander (plan E, `docs/plans/PLAN-E.md`, en cours) :** règles du format de 2 à 4 joueurs, contre l'IA et en ligne, avec deux premiers decks, Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4. Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, `docs/extensions/edh.md`).
+
+**Hors périmètre pour l'instant :** Limité (scellé, draft), formats éternels, cartes numériques d'Alchemy.
 
 ## Démarrer
 

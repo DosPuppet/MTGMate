@@ -13,6 +13,8 @@ const BUDGET: Record<string, number> = {
   "game.worker": 600 * KB,
   index: 2300 * KB,
   cartes: 6500 * KB,
+  // Cartes des decks Commander (pseudo-ensemble EDH, PLAN-E).
+  commander: 400 * KB,
   bibliotheques: 450 * KB,
   // Table des impressions (éditeur de deck), chargée à la demande.
   printings: 450 * KB,

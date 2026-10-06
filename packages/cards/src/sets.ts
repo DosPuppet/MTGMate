@@ -8,6 +8,7 @@ import blbData from "../data/blb.json";
 import dftData from "../data/dft.json";
 import dskData from "../data/dsk.json";
 import eclData from "../data/ecl.json";
+import edhData from "../data/edh.json";
 import eoeData from "../data/eoe.json";
 import eosData from "../data/eos.json";
 import fcaData from "../data/fca.json";
@@ -36,6 +37,7 @@ import { BLB_SCRIPTS } from "./blb/index";
 import { DFT_SCRIPTS } from "./dft/index";
 import { DSK_SCRIPTS } from "./dsk/index";
 import { ECL_SCRIPTS } from "./ecl/index";
+import { EDH_SCRIPTS } from "./edh/index";
 import { EOE_SCRIPTS } from "./eoe/index";
 import { EOS_SCRIPTS } from "./eos/index";
 import { FCA_SCRIPTS } from "./fca/index";
@@ -96,6 +98,7 @@ const DATA: Record<string, unknown> = {
   SOA: soaData,
   PZA: pzaData,
   REX: rexData,
+  EDH: edhData,
 };
 
 const SCRIPTS: Record<string, Record<string, CardScript>> = {
@@ -127,6 +130,7 @@ const SCRIPTS: Record<string, Record<string, CardScript>> = {
   SOA: SOA_SCRIPTS,
   PZA: PZA_SCRIPTS,
   REX: REX_SCRIPTS,
+  EDH: EDH_SCRIPTS,
 };
 
 export const SETS: CardSet[] = SET_INFO.map((info) => ({
