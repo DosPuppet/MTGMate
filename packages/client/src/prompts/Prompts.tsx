@@ -628,11 +628,14 @@ function AbilityMenu() {
           if (o.type === "playLand") {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => playLand(o)}>
-                {o.payLife
-                  ? "Jouer ce terrain en payant 2 points de vie (dégagé)"
-                  : menu.options.some((x) => x.type === "playLand" && x.payLife)
-                    ? "Jouer ce terrain engagé"
-                    : "Jouer ce terrain"}
+                {/* Pathways : chaque face terrain a son option. */}
+                {menu.options.some((x) => x.type === "playLand" && x.back)
+                  ? `Jouer ${faceLabel(source, o.faceName, lang)}`
+                  : o.payLife
+                    ? "Jouer ce terrain en payant 2 points de vie (dégagé)"
+                    : menu.options.some((x) => x.type === "playLand" && x.payLife)
+                      ? "Jouer ce terrain engagé"
+                      : "Jouer ce terrain"}
                 {o.landType ? ` — ${LAND_TYPE_FR[o.landType] ?? o.landType}` : ""}
               </button>
             );

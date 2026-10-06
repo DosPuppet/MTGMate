@@ -7,6 +7,7 @@ import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { bump, chars } from "../src/layers";
 import { legalActions } from "../src/legal";
+import { manaAbilitiesOf } from "../src/mana";
 import type { GameState, PlayerId } from "../src/types";
 import {
   act,
@@ -401,6 +402,24 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
   });
 
   describe("mana", () => {
+    it("Blightstep Pathway // Searstep Pathway : on choisit la face jouée (recto {B} ou verso {R})", () => {
+      const s = scenario({ p1: { hand: ["Blightstep Pathway // Searstep Pathway"] } });
+      const card0 = idOf(s, "p1", "hand", "Blightstep Pathway // Searstep Pathway");
+      const offers = legalActions(s, "p1").filter((a) => a.type === "playLand" && a.card === card0);
+      expect(offers.map((a) => (a.type === "playLand" ? (a.faceName ?? "recto") : ""))).toEqual(["recto", "Searstep Pathway"]);
+      const front = act(s, "p1", { type: "playLand", card: card0 });
+      const back = act(s, "p1", { type: "playLand", card: card0, back: true } as never);
+      const mana = (st: GameState) =>
+        manaAbilitiesOf(st, st.battlefield.find((id) => st.objects[id]?.controller === "p1") ?? "").flatMap((m) => m.produce);
+      expect(mana(front)).toEqual(["B"]);
+      expect(mana(back)).toEqual(["R"]);
+      // Une carte dont le recto seul est un terrain n'a pas de verso à jouer.
+      const forest = scenario({ p1: { hand: ["Forest"] } });
+      expect(() =>
+        act(forest, "p1", { type: "playLand", card: idOf(forest, "p1", "hand", "Forest"), back: true } as never),
+      ).toThrow();
+    });
+
     it("Rakdos Signet : {1}, {T} : {B}{R} ; Graven Cairns : {B/R}, {T} : deux mana noir ou rouge", () => {
       let s = scenario({ p1: { battlefield: ["Rakdos Signet", "Mountain"] } });
       s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Mountain"), ability: 0 } as never);

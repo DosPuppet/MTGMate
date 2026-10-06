@@ -211,7 +211,8 @@ export type Decision =
   | { type: "pass" }
   /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
   /** `chosen` : « en arrivant, choisissez… » (Cavern of Souls : un type de créature), parmi les options de l'action. */
-  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string; chosen?: string }
+  /** `back` : jouer le verso terrain d'une carte modale dont le recto est aussi un terrain (Blightstep Pathway). */
+  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string; chosen?: string; back?: boolean }
   | ({ type: "cast"; card: ObjectId } & CastChoices)
   | ({ type: "activate"; source: ObjectId; ability: number } & CastChoices)
   | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType }
@@ -271,7 +272,16 @@ export type ActionOption =
   | { type: "pass" }
   /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
   /** `choose` : la question « en arrivant, choisissez… » du terrain, à poser en le jouant (réponse : `chosen`). */
-  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string; choose?: ChoiceRequest }
+  /** `back` et `faceName` : le verso terrain d'une carte modale dont le recto est aussi un terrain. */
+  | {
+      type: "playLand";
+      card: ObjectId;
+      payLife?: boolean;
+      landType?: string;
+      choose?: ChoiceRequest;
+      back?: boolean;
+      faceName?: string;
+    }
   | {
       type: "cast";
       card: ObjectId;

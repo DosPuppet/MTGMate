@@ -38,6 +38,7 @@ import {
   isWebSlinging,
   kickerCostOptions,
   kickerCostPermanent,
+  landBackFace,
   landFace,
   modeConditionHolds,
   modesOf,
@@ -346,17 +347,26 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const land = landFace(d);
     if (land) {
       if (canPlayLand(s, player, card)) {
-        // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
-        // Multiversal Passage : une option par type de terrain de base choisi.
-        const types = land.chooseOnEnter === "landType" ? BASIC_LAND_TYPES : [undefined];
-        // « En arrivant, choisissez… » (Cavern of Souls) : la question posée en jouant le terrain.
-        const kind = land.chooseOnEnter;
-        const choose = kind && kind !== "landType" ? { choose: enterChoiceRequest(s, player, land.id, kind) } : {};
-        for (const landType of types) {
-          const extra = landType ? { landType, ...choose } : choose;
-          if (land.shockLand && payableLife(s, player) >= land.shockLand)
-            out.push({ type: "playLand", card, payLife: true, ...extra });
-          out.push({ type: "playLand", card, ...extra });
+        // Pathways : le recto et le verso sont des terrains ; une option par face.
+        const back = landBackFace(d);
+        for (const [face, side] of back
+          ? ([
+              [land, {}],
+              [back, { back: true, faceName: back.name }],
+            ] as const)
+          : ([[land, {}]] as const)) {
+          // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
+          // Multiversal Passage : une option par type de terrain de base choisi.
+          const types = face.chooseOnEnter === "landType" ? BASIC_LAND_TYPES : [undefined];
+          // « En arrivant, choisissez… » (Cavern of Souls) : la question posée en jouant le terrain.
+          const kind = face.chooseOnEnter;
+          const choose = kind && kind !== "landType" ? { choose: enterChoiceRequest(s, player, face.id, kind) } : {};
+          for (const landType of types) {
+            const extra = landType ? { landType, ...choose, ...side } : { ...choose, ...side };
+            if (face.shockLand && payableLife(s, player) >= face.shockLand)
+              out.push({ type: "playLand", card, payLife: true, ...extra });
+            out.push({ type: "playLand", card, ...extra });
+          }
         }
       }
       // Ville à aventure : l'Aventure reste lançable ; un terrain déguisé, face cachée (Branch of Vitu-Ghazi).

@@ -392,8 +392,10 @@ export const RECORD_VERSION = 1;
  *   déclenchements de son sacrifice.
  * - 146 : « défaussez une carte ou payez {2} » (Titania) : le paiement proposé tient compte de la taxe de commandant et des
  *   surcoûts (fuzz strict).
+ * - 147 : carte modale dont le recto et le verso sont des terrains (Pathways) : le joueur choisit la face jouée
+ *   (`playLand` et `back`).
  */
-export const RULES_VERSION = 146;
+export const RULES_VERSION = 147;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

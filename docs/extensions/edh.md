@@ -112,6 +112,7 @@ Ajouté le 06/10/2026 avec la recette « Ajouter un deck Commander ». Liste : �
   - copie de sort avec loyauté de départ (`copySpell(…, { loyalty })`, victime X d'Ob Nixilis) ; tour contrôlé suivi d'un tour supplémentaire (`controlNextTurn(…, thenExtraTurn)`, Emrakul, the Promised End) ;
   - cibles de valeurs de mana différentes (`TargetSpec.differentManaValues`) ; recherche bornée par un montant (`search` et `maxManaValue`, Grim Servant) ;
   - jeton Powerstone (mana réservé aux sorts d'artefact et aux capacités) ;
+  - cartes modales dont le recto et le verso sont des terrains (Blightstep Pathway // Searstep Pathway) : le joueur choisit la face jouée (`playLand` et `back`, une option par face ; règles 147) ;
   - correction : les déclenchements d'un sacrifice suivent la carte sacrifiée dans sa nouvelle zone (It That Betrays) ;
   - correction trouvée par le fuzz strict : un sort ne propose plus comme cible une créature à taxe de PV impayable (Terror of the Peaks, à 2 PV) ; test dans `offers.test.ts`.
 - **Tests :** `engine/test/edh-rakdos.test.ts` (30, dont la victime X d'Ob Nixilis avec une force modifiée : la loyauté de la copie est la force de la créature au moment du sacrifice) ; fumée EDH (225 cartes) ; fuzz Commander à 2, 3 et 4 joueurs, strict et « chaos » propres (quelques parties nulles par défaite simultanée : blessures à chaque joueur).

@@ -73,6 +73,7 @@ export function checkDecisionShape(s: GameState, raw: Decision): void {
       opt(d, "payLife", (v) => typeof v === "boolean");
       opt(d, "landType", (v) => typeof v === "string");
       opt(d, "chosen", (v) => typeof v === "string");
+      opt(d, "back", (v) => typeof v === "boolean");
       return;
     case "cast":
       objectRef(s, d, "card");

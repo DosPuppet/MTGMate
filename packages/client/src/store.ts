@@ -1665,14 +1665,27 @@ export const useGame = create<Store>((set, get) => {
     playLand(option) {
       if (option.choose) return set({ landChoice: option, abilityMenu: null });
       set({ abilityMenu: null });
-      get().decide({ type: "playLand", card: option.card, payLife: option.payLife, landType: option.landType });
+      get().decide({
+        type: "playLand",
+        card: option.card,
+        payLife: option.payLife,
+        landType: option.landType,
+        ...(option.back ? { back: true } : {}),
+      });
     },
 
     answerLandChoice(value) {
       const option = get().landChoice;
       set({ landChoice: null });
       if (!option || value === null) return;
-      get().decide({ type: "playLand", card: option.card, payLife: option.payLife, landType: option.landType, chosen: value });
+      get().decide({
+        type: "playLand",
+        card: option.card,
+        payLife: option.payLife,
+        landType: option.landType,
+        chosen: value,
+        ...(option.back ? { back: true } : {}),
+      });
     },
 
     confirmLegend() {

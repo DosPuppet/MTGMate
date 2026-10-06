@@ -322,6 +322,12 @@ export function landFace(d: CardDef | undefined): CardDef | undefined {
   return back?.types.includes("Land") ? back : undefined;
 }
 
+/** Verso terrain d'une carte modale dont le recto est aussi un terrain (Pathways : on choisit la face jouée). */
+export function landBackFace(d: CardDef | undefined): CardDef | undefined {
+  const back = d?.layout === "modal_dfc" && d.types.includes("Land") ? d.faceDefs?.[1] : undefined;
+  return back?.types.includes("Land") ? back : undefined;
+}
+
 export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): boolean {
   const o = s.objects[card];
   if (!o) return false;
@@ -390,11 +396,15 @@ export function playLand(
   payLife = false,
   landType?: string,
   chosen?: string,
+  back = false,
 ): void {
   if (!canPlayLand(s, player, card)) throw new RulesError("Vous ne pouvez pas jouer ce terrain maintenant");
   const o = obj(s, card);
-  // La face jouée : la carte, ou le verso terrain d'une carte modale (qui arrive alors verso visible).
-  const face = landFace(s.defs[o.defId]);
+  // La face jouée : la carte, ou le verso terrain d'une carte modale (qui arrive alors verso visible) ; Pathways : le
+  // verso si le joueur le choisit.
+  const backLand = back ? landBackFace(s.defs[o.defId]) : undefined;
+  if (back && !backLand) throw new RulesError("Cette carte n'a pas de verso terrain à jouer");
+  const face = backLand ?? landFace(s.defs[o.defId]);
   const backFace = !!face && face.id !== o.defId;
   // Multiversal Passage : « en arrivant, choisissez un type de terrain de base » (choisi avec la décision).
   const choosesType = face?.chooseOnEnter === "landType";
