@@ -370,8 +370,10 @@ export const RECORD_VERSION = 1;
  * - 139 : sorts communs des decks Commander (PLAN-E, E9) : protection d'un joueur (« des adversaires » ou « contre tout »,
  *   702.16j), « votre total de PV ne peut pas changer » (perte de PV prévenue, 119.8 : PV payables 0), verso terrain
  *   d'une carte modale joué comme terrain (712.12), « choisissez un ou plus » (`oneOrMore`).
+ * - 140 : deux sources « comme les terrains » (Exotic Orchard chez deux joueurs) ne se consultent plus l'une l'autre
+ *   (récursion infinie trouvée par le fuzz Commander à trois).
  */
-export const RULES_VERSION = 139;
+export const RULES_VERSION = 140;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -142,6 +142,9 @@ export interface ManaSource {
   key: string;
 }
 
+/** Sources « comme les terrains » en cours de calcul (garde contre la récursion entre deux telles sources). */
+const likeLandsComputing = new Set<ObjectId>();
+
 /** Capacités de mana d'un objet, y compris celles intrinsèques aux types de terrain de base (305.6). */
 export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
   // Sur le champ de bataille, types et capacités viennent des couches (Imprisoned in the Moon…).
@@ -171,12 +174,18 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
     else if (a.produceLikeLands) {
       const types = new Set<ManaType>();
       const anyController = a.produceLikeLands.controller !== undefined;
-      for (const pid of s.battlefield) {
-        if (pid === id || !chars(s, pid).types.includes("Land")) continue;
-        if (!anyController && obj(s, pid).controller !== o.controller) continue;
-        if (!matchesObjectFilter(s, o.controller, pid, a.produceLikeLands, id)) continue;
-        for (const m of manaAbilitiesOf(s, pid))
-          if (!m.produceLikeLands && !m.produceIdentity) for (const t of m.produce) types.add(t);
+      // Deux sources de ce genre (deux Exotic Orchard chez deux joueurs) ne se consultent pas l'une l'autre (106.7).
+      likeLandsComputing.add(id);
+      try {
+        for (const pid of s.battlefield) {
+          if (pid === id || likeLandsComputing.has(pid) || !chars(s, pid).types.includes("Land")) continue;
+          if (!anyController && obj(s, pid).controller !== o.controller) continue;
+          if (!matchesObjectFilter(s, o.controller, pid, a.produceLikeLands, id)) continue;
+          for (const m of manaAbilitiesOf(s, pid))
+            if (!m.produceLikeLands && !m.produceIdentity) for (const t of m.produce) types.add(t);
+        }
+      } finally {
+        likeLandsComputing.delete(id);
       }
       list.push({ ...a, produce: MANA_TYPES.filter((m) => types.has(m) && a.produce.includes(m)) });
     }

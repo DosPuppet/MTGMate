@@ -71,7 +71,9 @@ describe("sièges IA", () => {
     await a.next("update", (u) => u.view.turn.number >= 3, 30_000);
     a.bot = false;
     await new Promise((r) => setTimeout(r, 300));
-    const lines = readFileSync(join(dataDir, `${created.room.code}.jsonl`), "utf8").split("\n").filter(Boolean);
+    const lines = readFileSync(join(dataDir, `${created.room.code}.jsonl`), "utf8")
+      .split("\n")
+      .filter(Boolean);
     const aiDecisions = lines.slice(1).filter((l) => JSON.parse(l)[0] === "p2").length;
     expect(aiDecisions).toBeGreaterThan(0);
     await a.close();

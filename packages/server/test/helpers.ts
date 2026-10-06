@@ -16,7 +16,9 @@ export function server(
   config: Partial<RoomConfig> = {},
   opts: { maxPerIp?: number; pingMs?: number; rate?: { perSecond: number; burst: number } } = {},
 ): Promise<RunningServer> {
-  return startServer({ port: 0, host: "127.0.0.1", config, ...opts });
+  // Plafond du tas désactivé par défaut : le processus de test, après des dizaines de parties, peut dépasser celui de
+  // production (384 Mo de tas, 640 Mo de RSS) sans que cela concerne le test ; le test du plafond le fixe lui-même.
+  return startServer({ port: 0, host: "127.0.0.1", config: { maxHeapMb: 0, maxRssMb: 0, ...config }, ...opts });
 }
 
 export class Client {

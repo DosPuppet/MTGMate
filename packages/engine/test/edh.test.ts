@@ -151,3 +151,16 @@ describe("Commander (EDH)", () => {
     });
   });
 });
+
+describe("Exotic Orchard chez deux joueurs", () => {
+  it("deux sources « comme les terrains adverses » ne se consultent pas l'une l'autre (pas de récursion infinie)", () => {
+    const s = scenario({
+      players: 3,
+      p1: { battlefield: ["Exotic Orchard"] },
+      p2: { battlefield: ["Exotic Orchard", "Island"] },
+      p3: { battlefield: ["Fellwar Stone", "Mountain"] },
+    });
+    expect(produced(s, idOf(s, "p1", "battlefield", "Exotic Orchard"))).toEqual(["U", "R"]);
+    expect(produced(s, idOf(s, "p2", "battlefield", "Exotic Orchard"))).toEqual(["R"]);
+  });
+});

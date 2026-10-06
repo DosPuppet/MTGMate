@@ -151,7 +151,7 @@ export function Online() {
                 <p className="hint">Vous recevrez un code à partager.</p>
                 <div className="ai-count">
                   <span>Joueurs</span>
-                  <div className="seg" role="group" aria-label="Nombre de joueurs">
+                  <div className="seg">
                     {([2, 3, 4] as const).map((n) => (
                       <button key={n} type="button" className={players === n ? "on" : ""} onClick={() => setPlayers(n)}>
                         {n}
@@ -161,7 +161,7 @@ export function Online() {
                 </div>
                 <div className="ai-count">
                   <span>dont IA</span>
-                  <div className="seg" role="group" aria-label="Sièges tenus par l'IA">
+                  <div className="seg">
                     {Array.from({ length: players }, (_, n) => n).map((n) => (
                       <button key={n} type="button" className={ai === n ? "on" : ""} onClick={() => setAiSeats(n)}>
                         {n}
@@ -172,7 +172,7 @@ export function Online() {
                 {ai > 0 && (
                   <div className="ai-count">
                     <span>Niveau</span>
-                    <div className="seg" role="group" aria-label="Niveau de l'IA">
+                    <div className="seg">
                       {LEVELS.filter((l) => l.level !== "expert" || players === 2).map((l) => (
                         <button
                           key={l.level}

@@ -62,11 +62,13 @@ describe("salons à plusieurs", () => {
     const created = await a.next("room");
     b.send({ type: "join", code: created.room.code, name: "Bob", deck: RED });
     c.send({ type: "join", code: created.room.code, name: "Chloé", deck: GREEN });
-    await Promise.all([a, b, c].map((x) => x.next("update")));
+    const [, , up] = await Promise.all([a, b, c].map((x) => x.next("update")));
+    // Bob et Chloé arrivent en même temps : le siège de Chloé est celui que lui donne le serveur.
+    const seat = up.view.viewer;
     await c.close();
-    const after = await a.next("update", (m) => !!m.view.players.p3?.lost, 10_000);
+    const after = await a.next("update", (m) => !!m.view.players[seat]?.lost, 10_000);
     expect(after.view.over).toBe(false);
-    expect(after.view.players.p3?.lost).toBe(true);
+    expect(after.view.players[seat]?.lost).toBe(true);
   }, 20_000);
 });
 
@@ -116,7 +118,7 @@ describe("reprise d'un salon Commander à trois", () => {
       expect(srv.rooms.size).toBe(1);
       const back = await Promise.all([0, 1, 2].map(() => Client.connect(srv?.port ?? 0)));
       clients.push(...back);
-      back.forEach((x, i) => x.send({ type: "rejoin", token: tokens[i] as string }));
+      for (const [i, x] of back.entries()) x.send({ type: "rejoin", token: tokens[i] as string });
       const ups = await Promise.all(back.map((x) => x.next("update")));
       for (const u of ups) {
         expect(u.view.opponents).toHaveLength(2);
