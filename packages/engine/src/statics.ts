@@ -1,5 +1,5 @@
 import type { AmountMod } from "./modifiers";
-import { alivePlayers, chars, newId, nextTimestamp, obj, opponentsOf } from "./state";
+import { alivePlayers, chars, commandZoneAbilities, newId, nextTimestamp, obj, opponentsOf } from "./state";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -49,8 +49,9 @@ function current(s: GameState): Index {
     for (const ab of chars(s, id).abilities) add(p, { id, ab });
   }
   for (const p of s.playerOrder) {
+    // Zone de commandement : les emblèmes (un commandant qui attend d'être lancé n'a pas de capacité active, 113.6).
     for (const id of s.players[p]?.command ?? []) {
-      for (const ab of s.defs[obj(s, id).defId]?.abilities ?? []) add(p, { id, ab });
+      for (const ab of commandZoneAbilities(s, id)) add(p, { id, ab });
     }
   }
   const statics = new Map<PlayerId, Map<string, Entry[]>>();

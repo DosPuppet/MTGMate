@@ -29,6 +29,7 @@ import {
   bump,
   changeCounters,
   chars,
+  commanderOf,
   counterCount,
   creaturesControlledBy,
   emit,
@@ -1363,9 +1364,15 @@ export function checkGameOver(s: GameState): void {
     // Marina Vendrell's Grimoire : « vous ne perdez pas la partie pour avoir 0 point de vie ou moins ».
     const lifeLoss = player.life <= 0 && !playerStatic(s, p, "noLoseForLife");
     const poisoned = (player.poison ?? 0) >= 10;
-    if ((lifeLoss || player.drewFromEmptyLibrary || poisoned) && !playerStatic(s, p, "cantLose")) {
+    // 704.6c : 21 blessures de combat ou plus d'un même commandant au cours de la partie.
+    const commanderDamage = !!s.commander && Object.values(s.commander.cards).some((c) => (c.damage[p] ?? 0) >= 21);
+    if ((lifeLoss || player.drewFromEmptyLibrary || poisoned || commanderDamage) && !playerStatic(s, p, "cantLose")) {
       losers.push(p);
-      emit({ type: "lose", player: p, reason: lifeLoss ? "life" : poisoned ? "poison" : "draw" });
+      emit({
+        type: "lose",
+        player: p,
+        reason: lifeLoss ? "life" : poisoned ? "poison" : commanderDamage ? "commander" : "draw",
+      });
     }
     // 704.5b : seule compte une pioche impossible depuis la dernière vérification ; un joueur qui ne pouvait pas perdre
     // ne perd pas plus tard pour une pioche ancienne.
@@ -1659,12 +1666,55 @@ function stateBasedActionsOnce(s: GameState): boolean {
         },
         { kind: "legend" },
       );
+      return acted;
+    }
+    // 903.9a : un commandant arrivé dans un cimetière ou en exil depuis la dernière vérification : son propriétaire peut
+    // le remettre dans la zone de commandement (une question par objet ; un refus vaut jusqu'à son prochain changement de
+    // zone).
+    const offer = commanderReturnOffer(s);
+    if (offer) {
+      acted = true;
+      ask(
+        s,
+        offer.owner,
+        {
+          type: "yesNo",
+          intent: "commanderZone",
+          prompt: `Remettre ${cardRef(obj(s, offer.id).defId)} dans la zone de commandement ?`,
+          suggested: [1],
+        },
+        { kind: "commanderZone", card: offer.id },
+      );
     }
     return acted;
   }
   // Toujours des actions à faire après `MAX_SBA_PASSES` passes : une boucle d'actions obligatoires (104.4b).
   declareLoopDraw(s);
   return true;
+}
+
+/** 903.9a : le premier commandant au cimetière ou en exil dont le retour n'a pas encore été proposé. */
+function commanderReturnOffer(s: GameState): { owner: PlayerId; id: ObjectId } | undefined {
+  const cards = s.commander?.cards;
+  if (!cards) return undefined;
+  for (const rec of Object.values(cards)) {
+    const owner = s.players[rec.owner];
+    if (!owner || owner.lost) continue;
+    for (const id of [...owner.graveyard, ...s.exile]) {
+      const o = s.objects[id];
+      if (o && commanderOf(s, o) === rec && rec.offered !== id) {
+        rec.offered = id;
+        return { owner: rec.owner, id };
+      }
+    }
+  }
+  return undefined;
+}
+
+/** 903.9a : réponse du propriétaire ; oui, le commandant (toujours au cimetière ou en exil) va dans la zone de commandement. */
+export function answerCommanderZone(s: GameState, card: ObjectId, yes: boolean): void {
+  const zone = s.objects[card]?.zone;
+  if (yes && (zone === "graveyard" || zone === "exile")) moveObject(s, card, "command");
 }
 
 export function answerLegendChoice(s: GameState, keep: ObjectId, options: ObjectId[]): void {

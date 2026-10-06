@@ -17,6 +17,7 @@ import {
   apnapOrder,
   castInfoOf,
   chars,
+  commandZoneAbilities,
   emit,
   isCreature,
   isPlayer,
@@ -68,7 +69,7 @@ interface Source {
   view: LkiSnapshot;
 }
 
-const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((a) => a.kind === "triggered");
+const hasTriggers = (abilities: readonly AbilityDef[] | undefined) => !!abilities?.some((a) => a.kind === "triggered");
 
 /**
  * Sources en vigueur, mises en cache tant que l'état n'a pas changé (PLAN-C, lot C15) : version du cache des couches,
@@ -149,10 +150,11 @@ function computeLiveSources(s: GameState): Source[] {
     if (abs?.some((a) => a.kind === "triggered" && a.trigger.on === "castSelf"))
       out.push({ id: item.id, view: snapshot(s, item.id) });
   }
-  // Emblèmes (zone de commandement).
+  // Zone de commandement : emblèmes (un commandant qui attend d'être lancé n'y a pas de capacité active, 113.6).
   for (const p of s.playerOrder) {
     for (const id of s.players[p]?.command ?? []) {
-      if (hasTriggers(s.defs[obj(s, id).defId]?.abilities)) out.push({ id, view: snapshot(s, id) });
+      const abilities = commandZoneAbilities(s, id);
+      if (hasTriggers(abilities)) out.push({ id, view: { ...snapshot(s, id), abilities: [...abilities] } });
     }
   }
   return out;
@@ -1159,7 +1161,7 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
       !(ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature"))
     )
       return false;
-    if (m.emblems && s.objects[src.id]?.zone === "command") return true;
+    if (m.emblems && s.objects[src.id]?.zone === "command" && s.objects[src.id]?.isToken) return true;
     if (!m.sources) return permanent;
     const holder = id ? s.objects[id] : undefined;
     // L'hôte de la source peut avoir quitté le champ de bataille (sa capacité « quand elle meurt ») : l'attache n'est

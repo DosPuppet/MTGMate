@@ -30,6 +30,15 @@ export function outcomeHash(s: GameState): string {
       return [o.defId, o.owner, o.controller, o.tapped, o.damage, counters, def(o.attachedTo)];
     }),
     stack: s.stack.map((i) => [i.kind, i.sourceDefId, i.controller]),
+    // Commander (PLAN-E) : zone de commandement, taxes et blessures de commandant ; absent hors Commander.
+    ...(s.commander
+      ? {
+          command: s.playerOrder.map((p) => zone(s.players[p]?.command ?? [])),
+          commanders: Object.values(s.commander.cards)
+            .map((c) => [c.owner, c.defId, c.casts, Object.entries(c.damage).sort(([a], [b]) => (a < b ? -1 : 1))])
+            .sort((a, b) => (JSON.stringify(a) < JSON.stringify(b) ? -1 : 1)),
+        }
+      : {}),
   };
   return cyrb53(JSON.stringify(projection));
 }

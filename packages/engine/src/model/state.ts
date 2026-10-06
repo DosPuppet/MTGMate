@@ -746,6 +746,27 @@ export interface ContinuousEffect extends LayerMods {
 
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";
 
+/**
+ * Partie de Commander (903, PLAN-E). Les commandants sont désignés par identité physique (`uid`, stable d'une zone à
+ * l'autre, 903.3 : la désignation suit la carte ; un jeton ou une copie n'en est pas un).
+ */
+export interface CommanderState {
+  cards: Record<
+    string,
+    {
+      owner: PlayerId;
+      /** Définition de la carte (vue, empreinte), même quand l'objet a disparu (propriétaire éliminé). */
+      defId: string;
+      /** 903.8 : nombre de fois où il a été lancé depuis la zone de commandement. */
+      casts: number;
+      /** 903.10a : blessures de combat infligées à chaque joueur au cours de la partie. */
+      damage: Record<PlayerId, number>;
+      /** 903.9a : objet (cimetière ou exil) pour lequel le retour dans la zone de commandement a déjà été proposé. */
+      offered?: ObjectId;
+    }
+  >;
+}
+
 export interface GameState {
   /** Compteur des lots d'événements simultanés (déclencheurs « une ou plusieurs … »). */
   eventBatch?: number;
@@ -895,6 +916,8 @@ export interface GameState {
   playerEffects: PlayerEffect[];
   /** Impression choisie par le deck pour une carte, par identité physique (`uid` → `CardPrinting.key`, PLAN-G). */
   printings?: Record<string, string>;
+  /** Commander (903, PLAN-E) : absent hors d'une partie de Commander. */
+  commander?: CommanderState;
   winner: PlayerId | null;
   over: boolean;
 }

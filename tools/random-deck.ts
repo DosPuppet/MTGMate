@@ -5,8 +5,8 @@
  * basiques (docs/plans/PLAN-C.md, lot C2).
  */
 import { mulberry32 } from "@mtgx/ai";
-import { implementedCards } from "@mtgx/cards";
-import type { CardDef, Color } from "@mtgx/engine";
+import { implementedCards, legalityIssue } from "@mtgx/cards";
+import { type CardDef, type Color, colorIdentity, withinIdentity } from "@mtgx/engine";
 
 const BASICS: Record<Color, string> = { W: "Plains", U: "Island", B: "Swamp", R: "Mountain", G: "Forest" };
 let all: CardDef[] | null = null;
@@ -48,4 +48,44 @@ export function randomDeck(seed: number, set?: string): CardDef[] {
     if (land) deck.push(land);
   }
   return deck;
+}
+
+/**
+ * Deck Commander aléatoire (PLAN-E) : un commandant (créature légendaire gérée, d'au moins une couleur ; `set` : d'abord
+ * de l'extension), puis 99 cartes dans son identité de couleur, un exemplaire de chacune sauf les terrains de base :
+ * 61 sorts (trois quarts de l'extension ciblée s'il y en a), jusqu'à 10 terrains non basiques, des terrains de base.
+ * `commanders` : l'indice du commandant (0).
+ */
+export function randomCommanderDeck(seed: number, set?: string): { deck: CardDef[]; commanders: number[] } {
+  all ??= implementedCards();
+  const ALL = all.filter((c) => !legalityIssue(c, "commander"));
+  const rand = mulberry32(seed);
+  const pick = <T>(list: T[]) => list[Math.floor(rand() * list.length)] as T;
+  const legends = ALL.filter(
+    (c) => c.supertypes.includes("Legendary") && c.types.includes("Creature") && colorIdentity(c).length > 0,
+  );
+  const own = set ? legends.filter((c) => c.set === set) : [];
+  const commander = pick(own.length ? own : legends);
+  const identity = colorIdentity(commander);
+  const fits = (c: CardDef) => c.name !== commander.name && withinIdentity(colorIdentity(c), identity);
+  const spells = ALL.filter((c) => !c.types.includes("Land") && fits(c));
+  const ownSpells = set ? spells.filter((c) => c.set === set) : [];
+  const deck: CardDef[] = [commander];
+  const names = new Set<string>();
+  const add = (c: CardDef) => {
+    if (names.has(c.name)) return false;
+    names.add(c.name);
+    deck.push(c);
+    return true;
+  };
+  for (let tries = 0; deck.length < 62 && tries < 2000; tries++)
+    add(pick(ownSpells.length && rand() < 0.75 ? ownSpells : spells));
+  const lands = ALL.filter((c) => c.types.includes("Land") && !c.supertypes.includes("Basic") && fits(c));
+  for (let i = 0, n = lands.length ? 10 : 0; i < n * 3 && deck.length < 72; i++) add(pick(lands));
+  for (let i = 0; deck.length < 100; i++) {
+    const land = ALL.find((c) => c.name === BASICS[identity[i % identity.length] as Color]);
+    if (!land) break;
+    deck.push(land);
+  }
+  return { deck, commanders: [0] };
 }

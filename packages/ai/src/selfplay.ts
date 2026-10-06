@@ -2,7 +2,7 @@
  * Parties IA contre IA avec vérification d'invariants : sert au fuzzing du moteur et aux tests.
  */
 
-import type { CardDef } from "@mtgx/engine";
+import type { CardDef, GameVariant } from "@mtgx/engine";
 import {
   type Agent,
   chars,
@@ -73,6 +73,16 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
     // Éliminé en cours de partie : 0 carte ; éliminé par le coup final : ses cartes restent.
     const ok = s.players[p]?.lost ? n === 0 || n === size : n === size;
     if (!ok) errors.push(`${p} : ${n} cartes au lieu de ${size}`);
+  }
+  // Commander (PLAN-E) : un joueur en jeu a exactement un objet par commandant (903.3, la désignation suit la carte).
+  if (s.commander) {
+    const copies: Record<string, number> = {};
+    for (const id in s.objects) {
+      const o = s.objects[id] as GameState["objects"][string];
+      if (!o.isToken && s.commander.cards[o.uid]) copies[o.uid] = (copies[o.uid] ?? 0) + 1;
+    }
+    for (const [uid, c] of Object.entries(s.commander.cards))
+      if (!s.players[c.owner]?.lost && copies[uid] !== 1) errors.push(`commandant ${c.defId} : ${copies[uid] ?? 0} objet(s)`);
   }
   // Couche 2 : le contrôle est déjà à jour (un nouveau calcul ne change rien). Partie finie : les objets du perdant
   // restent en place, ses effets de contrôle aussi.
@@ -191,6 +201,9 @@ export function playGame(opts: {
   maxDecisions?: number;
   check?: boolean;
   startingLife?: number;
+  /** Commander (PLAN-E) : variante et indices des commandants de chaque deck. */
+  variant?: GameVariant;
+  commanders?: (number[] | undefined)[];
   /** Fuzz « chaos » : avant chaque décision, `perDecision` variantes corrompues sont soumises et doivent être refusées proprement. */
   chaos?: { seed: number; perDecision: number };
   /**
@@ -204,7 +217,8 @@ export function playGame(opts: {
   let { state } = createGame({
     seed: opts.seed,
     startingLife: opts.startingLife,
-    players: ids.map((id, i) => ({ id, name: `IA ${i + 1}`, deck: opts.decks[i] ?? [] })),
+    variant: opts.variant,
+    players: ids.map((id, i) => ({ id, name: `IA ${i + 1}`, deck: opts.decks[i] ?? [], commanders: opts.commanders?.[i] })),
   });
   const agents: Record<string, Agent> = Object.fromEntries(ids.map((id, i) => [id, opts.agents[i] as Agent]));
   const decisions: SelfPlayResult["decisions"] = [];

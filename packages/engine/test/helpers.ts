@@ -25,6 +25,8 @@ export interface Side {
   hand?: (string | CardDef)[];
   library?: (string | CardDef)[];
   graveyard?: (string | CardDef)[];
+  /** Commander (PLAN-E) : commandants dans la zone de commandement (la partie devient une partie de Commander). */
+  command?: (string | CardDef)[];
 }
 
 const def = (c: string | CardDef): CardDef => (typeof c === "string" ? card(c) : c);
@@ -83,6 +85,13 @@ export function scenario(opts: ScenarioOptions): GameState {
       for (const c of side.hand ?? []) add(c, "hand");
       for (const c of side.library ?? Array(10).fill("Forest")) add(c, "library");
       for (const c of side.graveyard ?? []) add(c, "graveyard");
+      for (const c of side.command ?? []) {
+        const d = def(c);
+        registerDef(s, d);
+        const o = createObject(s, d.id, p, "command");
+        s.commander ??= { cards: {} };
+        s.commander.cards[o.uid] = { owner: p, defId: d.id, casts: 0, damage: {} };
+      }
       for (const entry of side.battlefield ?? []) {
         const perm: Permanent =
           typeof entry === "object" && "name" in entry && !("types" in entry) ? entry : { name: entry as string | CardDef };

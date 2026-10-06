@@ -314,7 +314,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   // Dessus de la bibliothèque (Vizier of the Menagerie).
   const top = s.players[player]?.library[0];
   if (top && castTerms(s, player, top)) exiled.push(top);
-  for (const card of [...hand, ...graveyard, ...exiled]) {
+  // Zone de commandement : son commandant (903.8).
+  const command = (s.players[player]?.command ?? []).filter((id) => castTerms(s, player, id));
+  for (const card of [...hand, ...graveyard, ...exiled, ...command]) {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
     if (d.types.includes("Land")) {

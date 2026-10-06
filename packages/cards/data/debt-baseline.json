@@ -229,7 +229,7 @@
     "GameObject": 61,
     "StackItem": 29,
     "PlayerState": 22,
-    "GameState": 39,
+    "GameState": 40,
     "ObjectFilter": 86,
     "CostDef": 34,
     "ActivatedAbilityDef": 19,
@@ -300,6 +300,7 @@
     "PLAN-A A4 (intégration de A4a et A4b) : ref.grantor et ref.eventObjects ensemble : Ref 30 → 31, Ref (champs) 52 → 53",
     "PLAN-A A4c : phases et étapes ajoutées à leur place (extra.after \"step\" | \"main\" : Paradox Haze, Full Throttle ; file turn.addedPhases / addedSteps), rang de la phase principale (step \"main\" et nth : Survie, Carpet of Flowers) : Effect (champs) 629 → 630, TriggerSpec (champs) 159 → 160",
     "PLAN-A A4 (intégration de A4c après A4a et A4b) : Effect (champs) 633 → 634, TriggerSpec (champs) 158 → 159",
-    "PLAN-E E0 : CardDef.origin, impression d'origine des cartes du pseudo-ensemble Commander (EDH) importées par nom : CardDef 96 → 97"
+    "PLAN-E E0 : CardDef.origin, impression d'origine des cartes du pseudo-ensemble Commander (EDH) importées par nom : CardDef 96 → 97",
+    "PLAN-E E2 : GameState.commander, état d'une partie de Commander (903 : commandants par identité physique, taxe, blessures de commandant), absent hors Commander : GameState 39 → 40"
   ]
 }

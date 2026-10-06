@@ -25,7 +25,7 @@ import {
   replayChecked,
   submit,
 } from "@mtgx/engine";
-import { randomDeck } from "./random-deck";
+import { randomCommanderDeck, randomDeck } from "./random-deck";
 
 interface GoldenSpec {
   name: string;
@@ -36,6 +36,8 @@ interface GoldenSpec {
   /** IA aléatoire (parties variées, coupées à `maxDecisions`) ou heuristique (parties qui vont au bout). */
   agent: "random" | "heuristic";
   maxDecisions: number;
+  /** Partie de Commander (PLAN-E) : decks Commander aléatoires (`pools` : extension privilégiée, « all » : tout le pool). */
+  commander?: boolean;
 }
 
 const GOLDEN_GAMES: GoldenSpec[] = [
@@ -86,19 +88,36 @@ const GOLDEN_GAMES: GoldenSpec[] = [
   { name: "recentes-msh-contre-spm", seed: 22, pools: ["MSH", "SPM"], agent: "heuristic", maxDecisions: 6000 },
   { name: "recentes-hob-contre-tmt", seed: 23, pools: ["HOB", "TMT"], agent: "heuristic", maxDecisions: 6000 },
   { name: "recentes-woe-sos-mkm", seed: 24, pools: ["WOE", "SOS", "MKM"], agent: "heuristic", maxDecisions: 9000 },
+  // Commander (PLAN-E) : quatre decks Commander aléatoires, IA aléatoire (zone de commandement, taxe, retours, blessures).
+  {
+    name: "commandant-aleatoire-4j",
+    seed: 31,
+    pools: ["all", "all", "all", "all"],
+    agent: "random",
+    maxDecisions: 2000,
+    commander: true,
+  },
 ];
 
 function decksOf(spec: GoldenSpec): CardDef[][] {
+  if (spec.commander) return commanderDecksOf(spec).map((d) => d.deck);
   if (spec.decks) return spec.decks.map((id) => buildDeck(deckById(id)));
   return (spec.pools ?? []).map((set, i) => randomDeck(spec.seed * 100 + i, set));
+}
+
+/** Decks Commander aléatoires d'une partie dorée de Commander. */
+function commanderDecksOf(spec: GoldenSpec): { deck: CardDef[]; commanders: number[] }[] {
+  return (spec.pools ?? []).map((set, i) => randomCommanderDeck(spec.seed * 100 + i, set === "all" ? undefined : set));
 }
 
 /** Joue une partie dorée et renvoie son enregistrement. */
 function playGolden(spec: GoldenSpec): GameRecord {
   const decks = decksOf(spec);
+  const commanders = spec.commander ? commanderDecksOf(spec).map((d) => d.commanders) : undefined;
   let { state, record } = createRecordedGame({
     seed: spec.seed,
-    players: decks.map((deck, i) => ({ id: `p${i + 1}`, name: `IA ${i + 1}`, deck })),
+    ...(commanders ? { variant: "commander" as const } : {}),
+    players: decks.map((deck, i) => ({ id: `p${i + 1}`, name: `IA ${i + 1}`, deck, commanders: commanders?.[i] })),
   });
   const agents = Object.fromEntries(
     decks.map((_, i) => [`p${i + 1}`, spec.agent === "heuristic" ? heuristicAgent() : randomAgent(spec.seed * 10 + i)]),

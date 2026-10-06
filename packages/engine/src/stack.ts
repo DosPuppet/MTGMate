@@ -36,6 +36,7 @@ import {
   bump,
   changeCounters,
   chars,
+  commanderOf,
   createObject,
   emit,
   FACE_DOWN_DEF,
@@ -906,7 +907,7 @@ export interface CastTerms {
   costOverride?: ManaCost;
   /** Le coût de remplacement est un coût de maîtrise de l'eau (Hama, the Bloodbender). */
   waterbendOverride?: boolean;
-  source: "hand" | "graveyard" | "exile" | "flashback" | "library";
+  source: "hand" | "graveyard" | "exile" | "flashback" | "library" | "command";
   /** Doit être lancée sans payer son coût de mana (Etali). */
   free?: boolean;
   /** Peut être lancée sans payer son coût de mana, au choix (Omniscience). */
@@ -1413,6 +1414,13 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     const handPerm = exilePermission(s, player, card);
     if (handPerm) return { source: "hand", free: handPerm.free, anyTime: handPerm.anyTime, costOverride: handPerm.cost };
     return { source: "hand" };
+  }
+  // 903.8 : son propriétaire peut lancer son commandant depuis la zone de commandement, pour {2} de plus par lancer
+  // précédent depuis cette zone (taxe de commandant, payée même si le sort est gratuit).
+  if (o.zone === "command") {
+    const rec = o.owner === player ? commanderOf(s, o) : undefined;
+    if (!rec) return null;
+    return { source: "command", ...(rec.casts ? { extraCost: 2 * rec.casts } : {}) };
   }
   if (o.zone === "graveyard") {
     // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
@@ -2338,6 +2346,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   else if (kicked && kickerPermanent && d.kickerCost?.bounce) moveObject(s, kickerPermanent, "hand");
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
+  // 903.8 : un lancer de plus depuis la zone de commandement (la taxe du suivant augmente de {2}).
+  if (terms.source === "command") {
+    const rec = commanderOf(s, s.objects[stackId]);
+    if (rec) rec.casts += 1;
+  }
   const caster = s.players[player];
   const instantOrSorcery = d.types.includes("Instant") || d.types.includes("Sorcery");
   // Thousand-Year Storm : éphémères et rituels lancés avant celui-ci ce tour-ci (lu avant d'inscrire ce sort au journal).

@@ -24,6 +24,7 @@ Chaque entrée porte sa nature :
 - `choix auto` **Mana « en n'importe quelle combinaison » engagé à la main** (Vivi Ornitier, Flamebraider, Interdimensional Web Watch, Hermitic Herbalist) : tout le mana est d'une même couleur, choisie ; le paiement automatique d'un coût, lui, le répartit au mieux.
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
 - `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
+- `choix auto` **Commandant vers une main ou une bibliothèque (903.9b) :** le remplacement par la zone de commandement est choisi pour le propriétaire : vers une bibliothèque, il va dans la zone de commandement ; vers une main, il reste en main (relançable sans taxe). Le retour depuis un cimetière ou l'exil (903.9a) est demandé au propriétaire.
 - `règle` **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
 - `règle` **Terrains choc mis en jeu au hasard par un effet** (une carte prise au hasard) : ils arrivent engagés, sans proposer de payer 2 points de vie ; mis en jeu par les autres effets (recherche, retour du cimetière, cartes regardées ou révélées), la question est posée au joueur qui les contrôlera.
 - `timing` **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.

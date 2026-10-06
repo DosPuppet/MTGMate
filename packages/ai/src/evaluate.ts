@@ -188,9 +188,10 @@ export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): nu
     else v = 1 + Math.min(1, c.abilities.length * 0.3);
     score += sign * v;
   }
-  // Emblèmes : avantage permanent.
-  score += mine.command.length * 8;
-  for (const p of opps) score -= w * (s.players[p]?.command.length ?? 0) * 8;
+  // Emblèmes : avantage permanent (jetons de la zone de commandement ; un commandant qui attend n'en est pas un).
+  const emblems = (p: string) => (s.players[p]?.command ?? []).filter((id) => s.objects[id]?.isToken).length;
+  score += emblems(mine.id) * 8;
+  for (const p of opps) score -= w * emblems(p) * 8;
   for (const id of mine.hand) {
     const d = s.defs[s.objects[id]?.defId ?? ""];
     if (d) score += handCardValue(d);

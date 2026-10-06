@@ -2,13 +2,16 @@
  * Fuzzing du moteur : parties IA contre IA avec vérification d'invariants à chaque décision.
  *
  * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels|chaos] [--players 2] [--offers 4]
- *                        [--pool decks|all|meta|<SET>]
+ *                        [--pool decks|all|meta|<SET>] [--format commander]
  *                        [--jobs N]
  *         npx tsx tools/fuzz.ts --batch <fichier.json> --jobs N    (plusieurs séries, utilisé par verify)
  *
  * --pool all : decks aléatoires bicolores tirés de toutes les cartes gérées par le moteur.
  * --pool FIN : decks tirés d'abord des cartes de cette extension (complétés par les autres cartes gérées).
  * --pool meta : les decks du méta Standard déjà jouables (`docs/meta/`, plan P4), les uns contre les autres.
+ * --format commander : parties de Commander (PLAN-E) ; decks Commander aléatoires tirés du pool (`all` ou une extension :
+ * commandant légendaire et 99 cartes singleton dans son identité), ou `--pool commander` : les préconstruits Commander
+ * jouables.
  * --jobs N : les parties sont réparties sur N processus, par petits paquets de graines contiguës ; chaque partie ne dépend
  * que de sa graine, donc les résultats sont identiques quel que soit N.
  * --ai : heuristic = medium ; mixed : une IA moyenne contre des IA aléatoires ; levels : les trois niveaux mélangés
@@ -22,14 +25,14 @@ import { type ChildProcess, fork } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { inspect } from "node:util";
 import { type AiLevel, aiAgent, heuristicAgent, playGame, randomAgent } from "@mtgx/ai";
-import { buildDeck, DECKS } from "@mtgx/cards";
+import { buildDeck, buildGameDeck, CARDS, DECKS, validateDeck } from "@mtgx/cards";
 
 /** Préconstruits hors Commander (les decks Commander se jouent avec leurs règles, PLAN-E). */
 const PRECONS = DECKS.filter((d) => d.format !== "commander");
 
 import type { Agent, CardDef } from "@mtgx/engine";
 import { metaDecks } from "./meta-decks";
-import { randomDeck } from "./random-deck";
+import { randomCommanderDeck, randomDeck } from "./random-deck";
 
 /** Une série de parties. */
 interface Spec {
@@ -40,6 +43,8 @@ interface Spec {
   pool: string;
   /** Toutes les N priorités, chaque option proposée doit être acceptée avec ses choix par défaut (0 : jamais). */
   offers: number;
+  /** `commander` : parties de Commander (PLAN-E). */
+  format?: string;
 }
 
 const argOf = (argv: string[], name: string, def: string) => {
@@ -53,6 +58,7 @@ const specOf = (argv: string[]): Spec => ({
   players: Math.max(2, Number(argOf(argv, "players", "2"))),
   pool: argOf(argv, "pool", "decks"),
   offers: Number(argOf(argv, "offers", "0")),
+  ...(argOf(argv, "format", "") ? { format: argOf(argv, "format", "") } : {}),
 });
 
 const LEVELS: AiLevel[] = ["beginner", "medium", "expert"];
@@ -81,6 +87,24 @@ const deckFor = (spec: Spec, seed: number, g: number, i: number): CardDef[] =>
     : spec.pool === "meta"
       ? buildDeck(meta()[(g + i) % meta().length]!)
       : randomDeck(seed * 31 + i, spec.pool === "all" ? undefined : spec.pool.toUpperCase());
+
+/** Préconstruits Commander jouables (`--pool commander`). */
+let commanderPrecons: typeof DECKS | null = null;
+const commanderPool = () => {
+  commanderPrecons ??= DECKS.filter((d) => d.format === "commander" && validateDeck(d, CARDS, "commander").playable);
+  if (commanderPrecons.length === 0) throw new Error("Aucun préconstruit Commander n'est encore jouable");
+  return commanderPrecons;
+};
+
+/** Deck Commander d'un joueur : un préconstruit (`--pool commander`) ou un deck aléatoire. */
+const commanderDeckFor = (spec: Spec, seed: number, g: number, i: number): { deck: CardDef[]; commanders: number[] } => {
+  if (spec.pool === "commander") {
+    const pool = commanderPool();
+    const built = buildGameDeck(pool[(g + i) % pool.length]!);
+    return { deck: built.deck, commanders: built.commanders ?? [] };
+  }
+  return randomCommanderDeck(seed * 31 + i, spec.pool === "all" || spec.pool === "decks" ? undefined : spec.pool.toUpperCase());
+};
 
 interface Tally {
   wins: Record<string, number>;
@@ -119,11 +143,15 @@ function run(spec: Spec, first: number, count: number): Tally {
   for (let g = first - spec.seed0; g < first - spec.seed0 + count; g++) {
     const seed = spec.seed0 + g;
     const ids = Array.from({ length: spec.players }, (_, i) => i);
+    const commander = spec.format === "commander";
+    const cmd = commander ? ids.map((i) => commanderDeckFor(spec, seed, g, i)) : null;
     const r = playGame({
       seed,
-      decks: ids.map((i) => deckFor(spec, seed, g, i)),
+      decks: ids.map((i) => cmd?.[i]?.deck ?? deckFor(spec, seed, g, i)),
+      ...(cmd ? { variant: "commander" as const, commanders: cmd.map((c) => c.commanders) } : {}),
       agents: ids.map((i) => agentFor(spec, seed, i)),
-      maxDecisions: 5000 * spec.players,
+      // Commander : 40 PV et 100 cartes, des parties bien plus longues.
+      maxDecisions: (commander ? 15000 : 5000) * spec.players,
       check: true,
       chaos: spec.mode === "chaos" ? { seed: seed * 13 + 5, perDecision: 3 } : undefined,
       offers: spec.offers || undefined,
@@ -144,7 +172,7 @@ function run(spec: Spec, first: number, count: number): Tally {
 function summary(spec: Spec, total: Tally, ms: number): string {
   const { wins, turns, illegal, decisions, caps, print } = total;
   return [
-    `${spec.games} parties à ${spec.players} joueurs (${spec.mode}, pool ${spec.pool}) en ${(ms / 1000).toFixed(1)} s — ${(ms / Math.max(1, decisions)).toFixed(2)} ms/décision`,
+    `${spec.games} parties à ${spec.players} joueurs (${spec.mode}, pool ${spec.pool}${spec.format ? `, ${spec.format}` : ""}) en ${(ms / 1000).toFixed(1)} s — ${(ms / Math.max(1, decisions)).toFixed(2)} ms/décision`,
     `résultats : ${inspect(wins)}`,
     `tours moyens : ${(turns / spec.games).toFixed(1)}, décisions illégales de l'IA : ${illegal}, plafonds atteints : ${caps}`,
     `empreinte : ${print.toString(16).padStart(8, "0")} (${decisions} décisions)`,

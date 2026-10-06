@@ -3,8 +3,10 @@
  * événements, zones et caractéristiques calculées (couches).
  */
 import type {
+  AbilityDef,
   CardDef,
   CastInfo,
+  CommanderState,
   ContinuousEffect,
   GameObject,
   GameState,
@@ -480,6 +482,24 @@ export function createObject(
   return o;
 }
 
+/** Commander (903.3, PLAN-E) : l'entrée du commandant dont `o` est la carte (pas un jeton ni une copie), sinon undefined. */
+export function commanderOf(s: GameState, o: GameObject | undefined): CommanderState["cards"][string] | undefined {
+  return o && !o.isToken && s.commander ? s.commander.cards[o.uid] : undefined;
+}
+
+const NO_ABILITIES: readonly AbilityDef[] = [];
+
+/**
+ * Capacités qui fonctionnent dans la zone de commandement (113.6) : toutes celles d'un emblème ; aucune d'une carte
+ * (un commandant qui attend d'être lancé), sauf celles qui disent fonctionner depuis la zone de commandement.
+ */
+export function commandZoneAbilities(s: GameState, id: ObjectId): readonly AbilityDef[] {
+  const o = s.objects[id];
+  if (!o) return NO_ABILITIES;
+  const abilities = s.defs[o.defId]?.abilities ?? NO_ABILITIES;
+  return o.isToken ? abilities : NO_ABILITIES;
+}
+
 /**
  * Déplace un objet vers une autre zone. L'objet devient un nouvel objet (400.7) :
  * on renvoie son nouvel identifiant, ou null s'il cesse d'exister (jeton quittant le champ de bataille).
@@ -530,6 +550,12 @@ export function moveObject(
     to = r.to;
     shuffleIn = !!r.shuffle;
     linkTo = r.linkTo;
+  }
+  // 903.9b : un commandant qui devrait aller dans une bibliothèque va dans la zone de commandement à la place (son
+  // propriétaire le peut ; choix automatique, approximation : vers la main, il y reste et se relance sans taxe).
+  if (to === "library" && o.zone !== "command" && commanderOf(s, o)) {
+    to = "command";
+    shuffleIn = false;
   }
   if (opts.landed) opts.landed.to = to;
   const from = zoneArray(s, o);

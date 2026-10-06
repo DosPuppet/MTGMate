@@ -26,8 +26,10 @@ const opt = (n: string) => {
 const full = flag("full");
 const ci = flag("ci");
 const set = opt("set")?.toUpperCase();
-// Lot du méta : les cartes touchent plusieurs extensions ; le fuzz ciblé joue les decks du méta.
-const pool = set === "META" ? "meta" : set;
+// Lot du méta : les cartes touchent plusieurs extensions ; le fuzz ciblé joue les decks du méta. Commander (PLAN-E) :
+// `--set COMMANDER` joue les préconstruits Commander ; `--set EDH` ajoute des parties de Commander aux séries ciblées.
+const pool = set === "META" ? "meta" : set === "COMMANDER" ? "commander" : set;
+const commanderOnly = set === "COMMANDER" ? " --format commander" : "";
 if (!full && !ci && !set) {
   console.error("Préciser --set <extension> (vérification d'un lot), --full ou --ci.");
   process.exit(2);
@@ -155,7 +157,10 @@ ok &&= await group([
   { name: "biome", cmd: "npx biome check .", show: /^Found .*$/ },
   {
     name: "couverture",
-    cmd: `npx tsx tools/card-coverage.ts --set ${set && set !== "META" ? set : "standard"}`,
+    cmd:
+      set === "COMMANDER"
+        ? "npx tsx tools/card-coverage.ts --deck all"
+        : `npx tsx tools/card-coverage.ts --set ${set && set !== "META" ? set : "standard"}`,
     show: /^.* cartes gérées .*$/,
   },
   { name: "bundle", cmd: "npx tsx tools/bundle-size.ts", show: /^bundle : .*$/ },
@@ -170,6 +175,7 @@ const fuzzes = ci
       fuzz("fuzz niveaux d'IA", "--games 20 --pool all --ai levels"),
       fuzz("fuzz chaos 2 j.", "--games 100 --pool all --ai chaos --seed 3000"),
       fuzz("fuzz méta", "--games 60 --pool meta --ai mixed"),
+      fuzz("fuzz Commander 4 j.", "--games 20 --pool all --players 4 --format commander"),
     ]
   : full
     ? [
@@ -183,15 +189,24 @@ const fuzzes = ci
         fuzz("fuzz chaos 2 j.", "--games 300 --pool all --ai chaos --seed 3000"),
         fuzz("fuzz chaos 4 j.", "--games 60 --pool all --ai chaos --players 4"),
         fuzz("fuzz méta", "--games 100 --pool meta --ai levels"),
+        fuzz("fuzz Commander 2 j.", "--games 100 --pool all --format commander --offers 4"),
+        fuzz("fuzz Commander 4 j.", "--games 60 --pool all --players 4 --format commander"),
+        fuzz("fuzz Commander chaos 4 j.", "--games 30 --pool all --players 4 --format commander --ai chaos"),
       ]
     : [
-        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${pool} --seed 1 --offers 4`),
-        fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${pool} --players 3`),
-        fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${pool} --players 4`),
-        fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${pool} --ai mixed`),
-        fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${pool} --ai levels`),
+        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${pool} --seed 1 --offers 4${commanderOnly}`),
+        fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${pool} --players 3${commanderOnly}`),
+        fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${pool} --players 4${commanderOnly}`),
+        fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${pool} --ai mixed${commanderOnly}`),
+        fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${pool} --ai levels${commanderOnly}`),
         fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
-        fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${pool} --ai chaos`),
+        fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${pool} --ai chaos${commanderOnly}`),
+        ...(set === "EDH"
+          ? [
+              fuzz("fuzz Commander 2 j.", "--games 100 --pool EDH --format commander --offers 4"),
+              fuzz("fuzz Commander 4 j.", "--games 30 --pool EDH --players 4 --format commander"),
+            ]
+          : []),
       ];
 ok = (await runFuzz(fuzzes)) && ok;
 

@@ -16,7 +16,7 @@
 import { capReached, MAX_LAYER_PASSES } from "./limits";
 import { manaValue } from "./mana";
 import { grantedSpellKeywords } from "./stack";
-import { counterPT, obj } from "./state";
+import { commandZoneAbilities, counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
 import { ALL_CREATURE_TYPES, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
@@ -552,7 +552,7 @@ function cacheDeps(s: GameState, map: Map<ObjectId, Characteristics>): CacheDeps
   }
   for (const p of s.playerOrder)
     for (const id of s.players[p]?.command ?? [])
-      for (const ab of s.defs[s.objects[id]?.defId ?? ""]?.abilities ?? []) if (ab.kind === "static") merge(depsOf(ab));
+      for (const ab of commandZoneAbilities(s, id)) if (ab.kind === "static") merge(depsOf(ab));
   return out;
 }
 
@@ -803,14 +803,17 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
     const o = obj(s, id);
     const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
     const ownDef = s.defs[own];
-    // Salle : capacités de ses portes déverrouillées. Face cachée : aucune capacité statique.
+    // Salle : capacités de ses portes déverrouillées. Face cachée : aucune capacité statique. Zone de commandement :
+    // celles d'un emblème seulement (113.6).
     const printed = o.faceDown
       ? []
-      : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
-        ? roomBase(o, ownDef).abilities
-        : ownDef
-          ? levelAbilities(o, ownDef)
-          : [];
+      : o.zone === "command"
+        ? commandZoneAbilities(s, id)
+        : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
+          ? roomBase(o, ownDef).abilities
+          : ownDef
+            ? levelAbilities(o, ownDef)
+            : [];
     // Statiques accordées par un effet de résolution (Roar of the Fifth People, chapitre II : « gagne “Les
     // créatures que vous contrôlez ont…” »). Une statique accordée par une autre statique n'est pas gérée (613.8).
     // 613.7a : horodatage le plus récent entre l'objet et l'effet qui accorde la capacité.

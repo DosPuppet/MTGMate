@@ -8,7 +8,7 @@
 export { outcomeHash } from "./fingerprint";
 
 import { outcomeHash } from "./fingerprint";
-import { createGame, type GameOptions, type StepResult, submit } from "./game";
+import { createGame, type GameOptions, type GameVariant, type StepResult, submit } from "./game";
 import type { CardDef, Decision, GameEvent, GameState, PlayerId } from "./types";
 
 export const RECORD_FORMAT = "mtgx-game";
@@ -355,8 +355,11 @@ export const RECORD_VERSION = 1;
  *   ajoutées à leur place (files `turn.addedPhases`/`addedSteps`, rang de la phase principale), marqueurs retirés parmi
  *   plusieurs créatures choisis par le joueur ; le renvoi d'une créature par web-slinging est compté avant le mana.
  * - 132 : impressions de la table (`STA-42@<id>`, `printing.ts`) gardées par `createGame` et montrées par la vue.
+ * - 133 : Commander (PLAN-E, E2) : variante `commander` (40 PV, zone de commandement, lancer depuis elle avec la taxe,
+ *   retour dans la zone de commandement 903.9a et 903.9b, 21 blessures de commandant) ; seuls les emblèmes ont des
+ *   capacités actives dans la zone de commandement.
  */
-export const RULES_VERSION = 132;
+export const RULES_VERSION = 133;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
@@ -371,8 +374,13 @@ export interface GameRecord {
    */
   startingPlayer?: PlayerId;
   startingLife?: number;
-  /** `printings` : impression choisie pour chaque carte du deck (même ordre ; absente si aucune). */
-  players: { id: PlayerId; name: string; deck: string[]; printings?: (string | null)[] }[];
+  /** Variante de règles (PLAN-E : `commander`). */
+  variant?: GameVariant;
+  /**
+   * `printings` : impression choisie pour chaque carte du deck (même ordre ; absente si aucune) ; `commanders` : indices
+   * des commandants dans le deck (Commander).
+   */
+  players: { id: PlayerId; name: string; deck: string[]; printings?: (string | null)[]; commanders?: number[] }[];
   /** Décisions appliquées, dans l'ordre : [joueur qui a décidé, décision]. */
   decisions: [PlayerId, Decision][];
   /** Date de début (ISO), pour l'affichage. */
@@ -392,11 +400,13 @@ export function createRecordedGame(opts: GameOptions): StepResult & { record: Ga
     seed: opts.seed,
     startingPlayer: opts.startingPlayer,
     startingLife: opts.startingLife,
+    ...(opts.variant ? { variant: opts.variant } : {}),
     players: opts.players.map((p) => ({
       id: p.id,
       name: p.name,
       deck: p.deck.map((c) => c.name),
       ...(p.printings?.some(Boolean) ? { printings: p.deck.map((_, i) => p.printings?.[i] ?? null) } : {}),
+      ...(p.commanders?.length ? { commanders: [...p.commanders] } : {}),
     })),
     decisions: [],
     createdAt: new Date().toISOString(),
@@ -436,12 +446,15 @@ export function isGameRecord(x: unknown): x is GameRecord {
       (Array.isArray(r.checkpoints) &&
         r.checkpoints.every((c) => Array.isArray(c) && Number.isInteger(c[0]) && typeof c[1] === "string"))) &&
     (r.startingPlayer === undefined || typeof r.startingPlayer === "string") &&
+    (r.variant === undefined || r.variant === "commander") &&
     Array.isArray(r.players) &&
     r.players.every(
       (p) =>
         typeof p?.id === "string" &&
         typeof p.name === "string" &&
         Array.isArray(p.deck) &&
+        (p.commanders === undefined ||
+          (Array.isArray(p.commanders) && p.commanders.every((i) => Number.isInteger(i) && i >= 0 && i < p.deck.length))) &&
         (p.printings === undefined ||
           (Array.isArray(p.printings) && p.printings.every((k) => k === null || typeof k === "string"))),
     ) &&
@@ -455,7 +468,14 @@ function initial(record: GameRecord, resolve: (name: string) => CardDef): StepRe
     seed: record.seed,
     startingPlayer: record.startingPlayer,
     startingLife: record.startingLife,
-    players: record.players.map((p) => ({ id: p.id, name: p.name, deck: p.deck.map(resolve), printings: p.printings })),
+    variant: record.variant,
+    players: record.players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      deck: p.deck.map(resolve),
+      printings: p.printings,
+      commanders: p.commanders,
+    })),
   });
 }
 

@@ -9,6 +9,7 @@ import {
   bump,
   changeCounters,
   chars,
+  commanderOf,
   createObject,
   emit,
   hasKeyword,
@@ -481,6 +482,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     }
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     logDamage(s, source, target, target, true, amount, combat);
+    // 903.10a : blessures de combat d'un commandant, cumulées sur la partie (704.6c : 21, le joueur perd).
+    const commander = combat ? commanderOf(s, src) : undefined;
+    if (commander) commander.damage[target] = (commander.damage[target] ?? 0) + amount;
     // Infection (702.90b) : des marqueurs poison au lieu d'une perte de points de vie.
     // Phyrexian Unlife : à 0 PV ou moins, comme si la source avait l'infection.
     const pl = s.players[target];

@@ -30,6 +30,7 @@ import {
   advance,
   afterResolution,
   answerCombatAssignment,
+  answerCommanderZone,
   answerLegendChoice,
   answerLeylines,
   bottomCards,
@@ -50,6 +51,8 @@ export interface PlayerSetup {
   deck: CardDef[];
   /** Impression choisie pour chaque carte du deck (même ordre ; absente : l'illustration de la carte). */
   printings?: (string | null | undefined)[];
+  /** Commander (903.6, PLAN-E) : indices des commandants dans `deck` ; ils commencent dans la zone de commandement. */
+  commanders?: number[];
 }
 
 export interface GameOptions {
@@ -58,6 +61,16 @@ export interface GameOptions {
   players: PlayerSetup[];
   startingPlayer?: PlayerId;
   startingLife?: number;
+  /** Variante de partie : le Commander (903 : zone de commandement, taxe, blessures de commandant, 40 PV par défaut). */
+  variant?: GameVariant;
+}
+
+/** Variantes de règles d'une partie (PLAN-E). */
+export type GameVariant = "commander";
+
+/** Points de vie de départ par défaut : 20, ou 40 en Commander (903.7). */
+export function defaultStartingLife(variant?: GameVariant): number {
+  return variant === "commander" ? 40 : 20;
 }
 
 export interface StepResult {
@@ -70,6 +83,7 @@ export function blankState(opts: {
   seed: number;
   players: { id: PlayerId; name: string; life?: number }[];
   startingLife?: number;
+  variant?: GameVariant;
 }): GameState {
   if (opts.players.length < 2) throw new Error("Il faut au moins deux joueurs");
   const first = opts.players[0] as { id: PlayerId };
@@ -110,8 +124,10 @@ export function blankState(opts: {
     winner: null,
     over: false,
   };
+  const startingLife = opts.startingLife ?? defaultStartingLife(opts.variant);
+  if (opts.variant === "commander") s.commander = { cards: {} };
   for (const p of opts.players) {
-    const life = p.life ?? opts.startingLife ?? 20;
+    const life = p.life ?? startingLife;
     s.players[p.id] = {
       id: p.id,
       name: p.name,
@@ -126,7 +142,7 @@ export function blankState(opts: {
       lost: false,
       mulligans: 0,
       lastTurnStarted: 0,
-      startingLife: opts.startingLife ?? 20,
+      startingLife,
       turnStats: emptyTurnStats(),
     };
   }
@@ -139,7 +155,10 @@ export function createGame(opts: GameOptions): StepResult {
     for (const p of opts.players) {
       p.deck.forEach((card, i) => {
         registerDef(s, card);
-        const o = createObject(s, card.id, p.id, "library");
+        // 903.6 : le commandant commence la partie dans la zone de commandement.
+        const commander = !!s.commander && !!p.commanders?.includes(i);
+        const o = createObject(s, card.id, p.id, commander ? "command" : "library");
+        if (commander && s.commander) s.commander.cards[o.uid] = { owner: p.id, defId: card.id, casts: 0, damage: {} };
         // Illustration d'une autre impression (réédition, ou impression de la table, vérifiée par l'appelant) : notée
         // par identité physique, suivie d'une zone à l'autre.
         const key = p.printings?.[i];
@@ -252,6 +271,9 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
           return;
         case "stackChoice":
           answerStackChoice(s, p.purpose.stackId, p.request, d.values);
+          return;
+        case "commanderZone":
+          answerCommanderZone(s, p.purpose.card, d.values[0] === 1);
           return;
       }
       return;

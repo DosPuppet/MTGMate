@@ -8,7 +8,7 @@ import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
 import { keyedPrinting } from "./printing";
 import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
-import { chars, decider, HIDDEN_CARD_ID, isCreature, isSummoningSick, obj } from "./state";
+import { chars, commanderOf, decider, HIDDEN_CARD_ID, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic, playerStatics } from "./statics";
 import { pendingTriggerSource } from "./triggers";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
@@ -21,6 +21,7 @@ import type {
   ChoiceRequest,
   Color,
   GameEvent,
+  GameObject,
   GameState,
   Keyword,
   ManaType,
@@ -138,6 +139,13 @@ export interface PlayerView {
   lost: boolean;
   /** Emblèmes (zone de commandement). */
   emblems: { name: string; text: string }[];
+  /**
+   * Commander (PLAN-E) : les commandants de ce joueur (information publique), leur zone, leur objet quand il est dans
+   * une zone publique, et la taxe de leur prochain lancer depuis la zone de commandement (903.8).
+   */
+  commanders?: { defId: string; zone: Zone; id?: ObjectId; tax: number }[];
+  /** Commander : blessures de combat reçues de chaque commandant (903.10a ; 21 d'un même commandant, le joueur perd). */
+  commanderDamage?: { defId: string; owner: PlayerId; amount: number }[];
   /** Vitesse (702.179), absente tant qu'elle n'a pas démarré. */
   speed?: number;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd), absents s'il n'en a aucun. */
@@ -401,6 +409,28 @@ function exiledView(s: GameState, id: ObjectId, viewer: PlayerId): ObjectView {
   };
 }
 
+/** Zones publiques où l'objet d'un commandant est montré (sa zone seule ailleurs : main, bibliothèque). */
+const PUBLIC_ZONES: readonly Zone[] = ["command", "battlefield", "stack", "graveyard", "exile"];
+
+/** Commander (PLAN-E) : les commandants d'un joueur et les blessures de commandant qu'il a reçues. */
+function commanderViews(s: GameState, p: PlayerId): Pick<PlayerView, "commanders" | "commanderDamage"> {
+  const cards = s.commander?.cards ?? {};
+  const where = new Map<string, GameObject>();
+  for (const o of Object.values(s.objects)) if (cards[o.uid] && commanderOf(s, o)) where.set(o.uid, o);
+  const commanders: NonNullable<PlayerView["commanders"]> = [];
+  const commanderDamage: NonNullable<PlayerView["commanderDamage"]> = [];
+  for (const [uid, rec] of Object.entries(cards)) {
+    if (rec.owner === p) {
+      const o = where.get(uid);
+      const shown = o && PUBLIC_ZONES.includes(o.zone) && !o.faceDown;
+      commanders.push({ defId: rec.defId, zone: o?.zone ?? "exile", ...(shown ? { id: o.id } : {}), tax: 2 * rec.casts });
+    }
+    const amount = rec.damage[p] ?? 0;
+    if (amount > 0) commanderDamage.push({ defId: rec.defId, owner: rec.owner, amount });
+  }
+  return { commanders, ...(commanderDamage.length ? { commanderDamage } : {}) };
+}
+
 export function projectView(s: GameState, viewer: PlayerId): GameView {
   const players: Record<PlayerId, PlayerView> = {};
   for (const p of s.playerOrder) {
@@ -418,10 +448,13 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       manaPool: { ...pl.manaPool },
       ...(pl.restrictedMana?.length ? { restrictedMana: pl.restrictedMana.map((m) => m.type) } : {}),
       lost: pl.lost,
-      emblems: pl.command.map((id) => {
-        const d = s.defs[obj(s, id).defId];
-        return { name: d?.name ?? "Emblème", text: d?.text ?? "" };
-      }),
+      emblems: pl.command
+        .filter((id) => obj(s, id).isToken)
+        .map((id) => {
+          const d = s.defs[obj(s, id).defId];
+          return { name: d?.name ?? "Emblème", text: d?.text ?? "" };
+        }),
+      ...(s.commander ? commanderViews(s, p) : {}),
     };
   }
 
@@ -508,6 +541,8 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     exile: s.exile.map((id) => exiledView(s, id, viewer)),
     exiledWith: exiledWith(s),
     playableElsewhere: [
+      // Son commandant dans la zone de commandement (903.8), toujours montré : la pastille donne sa taxe.
+      ...(s.players[viewer]?.command ?? []).filter((id) => commanderOf(s, s.objects[id])),
       ...s.exile.filter((id) => castTerms(s, viewer, id) || landPermitted(s, viewer, id)),
       // Cimetières (le sien, et ceux des autres avec une permission : Tinybones).
       ...s.playerOrder.flatMap((p) =>

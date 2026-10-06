@@ -59,6 +59,8 @@ export type ChoiceIntent =
   | "keepWithinPower"
   | "reveal"
   | "discover"
+  /** 903.9a : remettre son commandant dans la zone de commandement (oui / non). */
+  | "commanderZone"
   | "other";
 
 interface ChoiceBase {
@@ -106,7 +108,9 @@ export type ChoicePurpose =
   | { kind: "triggerMode"; trigger: string }
   | { kind: "leyline"; player: PlayerId }
   /** Choix d'un élément déjà sur la pile : nouvelles cibles d'une copie, répartition (voir `StackItem.pendingChoices`). */
-  | { kind: "stackChoice"; stackId: string };
+  | { kind: "stackChoice"; stackId: string }
+  /** 903.9a : commandant au cimetière ou en exil, que son propriétaire peut remettre dans la zone de commandement. */
+  | { kind: "commanderZone"; card: ObjectId };
 
 export interface CastChoices {
   /** Sans payer le coût de mana (Omniscience). */
@@ -426,6 +430,7 @@ export type GameEvent =
   | { type: "scry"; player: PlayerId; top: number; bottom: number }
   | { type: "choice"; player: PlayerId; intent: ChoiceIntent }
   | { type: "trigger"; player: PlayerId; stackId: string; defId: string; targets: string[] }
-  | { type: "lose"; player: PlayerId; reason: "life" | "draw" | "poison" | "concede" }
+  /** `commander` : 21 blessures de combat d'un même commandant (704.6c). */
+  | { type: "lose"; player: PlayerId; reason: "life" | "draw" | "poison" | "concede" | "commander" }
   /** `reason` : « loop », partie nulle sur une boucle d'actions obligatoires (104.4b). */
   | { type: "gameOver"; winner: PlayerId | null; reason?: "loop" };

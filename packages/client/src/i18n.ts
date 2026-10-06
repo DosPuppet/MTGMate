@@ -45,11 +45,12 @@ const CAPS: Record<"tokens" | "amount" | "permutations" | "layers", string> = {
   layers: "dépendances de couches",
 };
 
-const LOSS_REASON: Record<"life" | "draw" | "poison" | "concede", string> = {
+const LOSS_REASON: Record<"life" | "draw" | "poison" | "concede" | "commander", string> = {
   life: "",
   draw: " (bibliothèque vide)",
   poison: " (10 marqueurs poison)",
   concede: " (abandon)",
+  commander: " (21 blessures d'un même commandant)",
 };
 
 export const KEYWORD_LABEL: Record<Keyword, string> = {
