@@ -9,7 +9,21 @@ import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { attackableDefenders } from "../src/turn";
 import type { GameState, PlayerId } from "../src/types";
-import { act, advanceUntil, attack, idOf, idsOf, lands, nameOf, picking, scenario, settle, throughCombat } from "./helpers";
+import { projectView } from "../src/view";
+import {
+  act,
+  advanceUntil,
+  attack,
+  idOf,
+  idsOf,
+  lands,
+  nameOf,
+  passBoth,
+  picking,
+  scenario,
+  settle,
+  throughCombat,
+} from "./helpers";
 
 const life = (s: GameState, p: PlayerId) => s.players[p]?.life ?? 0;
 const hand = (s: GameState, p: PlayerId) => s.players[p]?.hand.length ?? 0;
@@ -46,13 +60,53 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(s.monarch).toBe("p1");
       const h = hand(s, "p1");
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
+      // 724.2 : capacité déclenchée du monarque, sur la pile au début de son étape de fin.
+      expect(s.stack.map((x) => [x.sourceDefId, x.controller])).toEqual([["rules:monarch", "p1"]]);
+      expect(hand(s, "p1")).toBe(h);
+      s = passBoth(s);
       expect(hand(s, "p1")).toBe(h + 1);
+    });
+
+    it("le monarque : « ce joueur pioche », même s'il a cessé d'être le monarque avant la résolution ; vue de la pile", () => {
+      let s = scenario({ p1: { library: Array(5).fill("Opt") }, p2: { library: Array(5).fill("Opt") } });
+      s.monarch = "p1";
+      s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
+      const item = projectView(s, "p2").stack[0];
+      expect([item?.name, item?.fr?.name, item?.effect]).toEqual(["Monarch", "Monarque", "Monarque : piochez une carte"]);
+      const [h1, h2] = [hand(s, "p1"), hand(s, "p2")];
+      s.monarch = "p2";
+      s = passBoth(s);
+      expect([hand(s, "p1"), hand(s, "p2")]).toEqual([h1 + 1, h2]);
+    });
+
+    it("le monarque ne pioche pas à l'étape de fin d'un autre joueur", () => {
+      let s = scenario({ active: "p2", p1: { library: Array(5).fill("Opt") }, p2: { library: Array(5).fill("Opt") } });
+      s.monarch = "p1";
+      s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
+      expect(s.stack).toEqual([]);
     });
 
     it("une créature qui blesse le monarque au combat fait de son contrôleur le monarque", () => {
       let s = scenario({ active: "p2", p1: {}, p2: { battlefield: ["Bear Cub"] } });
       s.monarch = "p1";
       s = throughCombat(p2Attacks(s, [idOf(s, "p2", "battlefield", "Bear Cub")]));
+      expect(s.monarch).toBe("p2");
+    });
+
+    it("724.2 : le transfert passe par la pile, contrôlé par le monarque ; il ne change qu'à la résolution", () => {
+      let s = scenario({ active: "p2", p1: {}, p2: { battlefield: ["Bear Cub", "Bear Cub"] } });
+      s.monarch = "p1";
+      s = p2Attacks(s, idsOf(s, "p2", "battlefield", "Bear Cub"));
+      s = advanceUntil(s, (x) => x.stack.length > 0 || x.turn.step === "main2", 300);
+      // Une capacité par créature qui a blessé le monarque.
+      expect(s.stack.map((x) => [x.sourceDefId, x.controller])).toEqual([
+        ["rules:monarchSteal", "p1"],
+        ["rules:monarchSteal", "p1"],
+      ]);
+      expect(s.monarch).toBe("p1");
+      const item = projectView(s, "p2").stack[0];
+      expect([item?.fr?.name, item?.effect]).toEqual(["Monarque", "Monarque : le contrôleur de la créature devient le monarque"]);
+      s = passBoth(s);
       expect(s.monarch).toBe("p2");
     });
 

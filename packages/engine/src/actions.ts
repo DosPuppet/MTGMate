@@ -37,7 +37,7 @@ import {
   recipientMatches,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, sourceView, withChosen } from "./targets";
-import { pushInline, queueLifelink } from "./triggers";
+import { pushInline, queueLifelink, rulesTrigger } from "./triggers";
 import { countTurnEvents, logTurnEvent, zoneEntry } from "./turnlog";
 import type {
   CardDef,
@@ -227,12 +227,21 @@ export function loseLife(s: GameState, p: PlayerId, amount: number, damage = fal
   emit({ type: "life", player: p, delta: -amount, life: player.life });
   logTurnEvent(s, { e: "lifeLoss", player: p, amount });
   rulesEvent(s, { e: "lifeLoss", player: p, amount });
-  // 702.179 : une fois par tour, quand un adversaire perd des points de vie pendant votre tour, votre vitesse augmente.
-  const active = s.players[s.turn.active];
-  if (p !== s.turn.active && active?.speed !== undefined && active.speed < 4 && !s.turn.speedRaised) {
-    s.turn.speedRaised = true;
-    setSpeed(s, s.turn.active, active.speed + 1);
+  // 702.179 : « chaque fois qu'un ou plusieurs adversaires perdent des PV pendant votre tour, si votre vitesse est
+  // inférieure à 4, augmentez-la de 1 ; cette capacité ne se déclenche qu'une fois par tour » (capacité sur la pile).
+  const active = s.turn.active;
+  if (p !== active && s.players[active]?.speed !== undefined && !s.turn.onceFired.includes(SPEED_KEY)) {
+    if (rulesTrigger(s, active, "speed")) s.turn.onceFired.push(SPEED_KEY);
   }
+}
+
+/** Déclenchement de la vitesse ce tour-ci (702.179 : une fois par tour), dans `s.turn.onceFired`. */
+const SPEED_KEY = "rules:speed";
+
+/** Augmente de 1 la vitesse d'un joueur (702.179 : au plus 4). */
+export function increaseSpeed(s: GameState, p: PlayerId): void {
+  const speed = s.players[p]?.speed ?? 0;
+  if (speed < 4) setSpeed(s, p, speed + 1);
 }
 
 /** Fixe la vitesse d'un joueur (702.179). */

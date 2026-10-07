@@ -579,6 +579,13 @@ export type Effect =
   | { op: "exileUntil"; filter: ObjectFilter; store: string; who?: Ref; untilTotalManaValue?: number }
   /** Spikeshell Harrier : si sa vitesse dépasse celle de chaque autre joueur, elle baisse de 1 (pas sous 1). */
   | { op: "reduceSpeed"; who: Ref }
+  /** « Augmentez votre vitesse de 1 » (702.179, au plus 4) : capacité inhérente de la vitesse (`rulesTrigger`). */
+  | { op: "increaseSpeed" }
+  /**
+   * Radiation (Fallout, `rulesTrigger`) : le contrôleur meule autant de cartes qu'il a de marqueurs de radiation ; pour
+   * chaque carte non-terrain meulée, il perd 1 PV (il en gagne avec Strong, the Brutish Thespian) et retire un marqueur.
+   */
+  | { op: "radiation" }
   /** « Vous contrôlez [le joueur ciblé] pendant son prochain tour » (The Dominion Bracelet). */
   /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur. */
   /** Le joueur désigné (vous par défaut) devient le monarque (724). */

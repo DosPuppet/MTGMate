@@ -8,6 +8,7 @@ import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { changeCounters } from "../src/state";
 import type { GameState, PlayerId } from "../src/types";
+import { projectView } from "../src/view";
 import {
   act,
   advanceUntil,
@@ -46,15 +47,43 @@ describe("Mutant Menace (EDH)", () => {
       const p1 = s.players.p1;
       if (p1) p1.counters = { ...p1.counters, rad: 3 };
       s = toMain1Of(s, "p1");
+      // La radiation est une capacité déclenchée : sur la pile au début de la phase principale.
+      expect(s.stack.map((x) => [x.sourceDefId, x.controller])).toEqual([["rules:radiation", "p1"]]);
+      expect(s.players.p1?.graveyard.length).toBe(0);
+      s = settle(s);
       // Pioche (Opt), puis meule de trois : Forest, Shock, Opt → deux cartes non-terrain.
       expect([s.players.p1?.counters?.rad, s.players.p1?.life, s.players.p1?.graveyard.length]).toEqual([1, 18, 3]);
+    });
+
+    it("radiation : « si ce joueur a un ou plusieurs marqueurs », revérifié à la résolution ; le nombre est lu à la résolution", () => {
+      let s = scenario({ active: "p2", p1: { library: ["Opt", "Shock", "Shock", "Shock", "Opt"] } });
+      const p1 = s.players.p1;
+      if (p1) p1.counters = { ...p1.counters, rad: 1 };
+      s = toMain1Of(s, "p1");
+      const item = projectView(s, "p2").stack[0];
+      expect([item?.fr?.name, item?.effect]).toEqual(["Radiation", "Radiation : meulez une carte par marqueur"]);
+      // Plus de marqueurs avant la résolution : la capacité ne fait rien.
+      const q = s.players.p1;
+      if (q) q.counters = { ...q.counters, rad: 0 };
+      let t = settle(s);
+      expect([t.players.p1?.graveyard.length, t.players.p1?.life]).toEqual([0, 20]);
+      // Un marqueur de plus en réponse : le joueur meule selon le nombre au moment de la résolution.
+      if (q) q.counters = { ...q.counters, rad: 2 };
+      t = settle(s);
+      expect([t.players.p1?.graveyard.length, t.players.p1?.life, t.players.p1?.counters?.rad]).toEqual([2, 18, 0]);
+    });
+
+    it("radiation : sans marqueur au début de la phase principale, rien ne se déclenche", () => {
+      let s = scenario({ active: "p2", p1: { library: ["Opt", "Shock", "Opt"] } });
+      s = toMain1Of(s, "p1");
+      expect(s.stack).toEqual([]);
     });
 
     it("Strong, the Brutish Thespian : la radiation fait gagner des PV", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Strong, the Brutish Thespian"], library: ["Opt", "Shock", "Opt"] } });
       const p1 = s.players.p1;
       if (p1) p1.counters = { ...p1.counters, rad: 2 };
-      s = toMain1Of(s, "p1");
+      s = settle(toMain1Of(s, "p1"));
       expect([s.players.p1?.counters?.rad, s.players.p1?.life]).toEqual([0, 22]);
     });
 
@@ -69,7 +98,7 @@ describe("Mutant Menace (EDH)", () => {
       const moth = idOf(s, "p1", "battlefield", "The Wise Mothman");
       // L'adversaire subit la radiation à son tour : il meule une carte non-terrain (Shock, sous Opt pioché).
       s = toMain1Of(s, "p2");
-      s = settle(s, picking([bear, moth]));
+      s = settle(s, picking([bear]));
       expect(plusOne(s, bear) + plusOne(s, moth)).toBe(1);
     });
 

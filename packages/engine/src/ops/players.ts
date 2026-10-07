@@ -1,12 +1,23 @@
 /** Effets du moteur : joueurs (points de vie, pioche, tours et étapes supplémentaires, victoire). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { createTokens, dealDamage, drawCards, gainLife, loseLife, sacrifice, setMonarch, setSpeed } from "../actions";
+import {
+  createTokens,
+  dealDamage,
+  drawCards,
+  gainLife,
+  increaseSpeed,
+  loseLife,
+  sacrifice,
+  setMonarch,
+  setSpeed,
+} from "../actions";
 import type { OpHandlers } from "../effects";
 import {
   announceDiscard,
   announceDiscardBatch,
   damageSource,
   evalAmount,
+  millCards,
   moveDiscarded,
   nameOf,
   nextTurnOf,
@@ -243,6 +254,28 @@ export const HANDLERS: OpHandlers = {
       const others = s.playerOrder.filter((q) => q !== p && !s.players[q]?.lost).map((q) => s.players[q]?.speed ?? 0);
       if (speed > 1 && others.every((o) => speed > o)) setSpeed(s, p, speed - 1);
     }
+    return;
+  },
+  increaseSpeed(s, _r, _e, ctx) {
+    increaseSpeed(s, ctx.controller);
+    return;
+  },
+  radiation(s, _r, _e, ctx) {
+    const p = ctx.controller;
+    const pl = s.players[p];
+    const n = pl?.counters?.rad ?? 0;
+    if (!pl || pl.lost || n <= 0) return;
+    const milled = millCards(s, [[p, pl.library.slice(0, n)]]);
+    const nonland = milled.filter((id) => !s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land")).length;
+    if (nonland <= 0) return;
+    // Strong, the Brutish Thespian : des PV gagnés au lieu d'en perdre.
+    if (playerStatic(s, p, "radiationGains")) gainLife(s, p, nonland);
+    else loseLife(s, p, nonland);
+    pl.counters ??= {};
+    const counters = pl.counters;
+    counters.rad = Math.max(0, (counters.rad ?? 0) - nonland);
+    emit({ type: "rad", player: p, amount: -nonland, total: counters.rad });
+    bump(s); // des statiques en dépendent (Nightkin Ambusher)
     return;
   },
   becomeMonarch(s, _r, e, ctx) {

@@ -8,8 +8,6 @@ import {
   destroy,
   drawCard,
   drawCards,
-  gainLife,
-  loseLife,
   phaseIn,
   putIntoGraveyard,
   removeFromCombat,
@@ -19,7 +17,7 @@ import {
 } from "./actions";
 import { ask, cardRef } from "./choices";
 import { syncControl } from "./control";
-import { announceDiscard, announceDiscardBatch, evalAmount, millCards, moveDiscarded, staticContext } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount, moveDiscarded, staticContext } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { bumpFor, copiedDefId, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
@@ -64,7 +62,7 @@ import {
   playerStaticTotal,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
-import { processTriggers, pushInline, releaseDelayedTriggers, simultaneously } from "./triggers";
+import { processTriggers, pushInline, releaseDelayedTriggers, rulesTrigger, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type { CardDef, Effect, GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
@@ -142,37 +140,19 @@ function givePriority(s: GameState): void {
 /** Début d'étape : déclenche les capacités « au début de… ». */
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
-  // Monarque (724.2) : au début de son étape de fin, le monarque pioche une carte (approximation : sans passer par la pile).
-  if (s.turn.step === "end" && s.monarch === s.turn.active && !s.players[s.monarch]?.lost) drawCards(s, s.monarch, 1);
+  // Monarque (724.2) : « au début de l'étape de fin du monarque, ce joueur pioche une carte » (capacité sur la pile).
+  if (s.turn.step === "end" && s.monarch === s.turn.active && !s.players[s.monarch]?.lost) rulesTrigger(s, s.monarch, "monarch");
   if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
   if (s.turn.step === "main1" || s.turn.step === "main2") releaseDelayedTriggers(s, "main");
-  if (s.turn.step === "main1") radiation(s, s.turn.active);
+  // Radiation (Fallout) : au début de sa phase principale précombat, si le joueur actif a des marqueurs de radiation
+  // (condition revérifiée à la résolution).
+  if (s.turn.step === "main1" && s.turn.mainPhase === 1 && !s.players[s.turn.active]?.lost)
+    rulesTrigger(s, s.turn.active, "radiation");
   if (s.turn.step === "upkeep") {
     releaseDelayedTriggers(s, "upkeep");
     suspendUpkeep(s);
   }
   rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
-}
-
-/**
- * Radiation (Fallout) : au début de sa première phase principale, le joueur qui a des marqueurs de radiation meule autant
- * de cartes ; pour chaque carte non-terrain meulée, il perd 1 PV (il en gagne avec Strong, the Brutish Thespian) et un
- * marqueur. Approximation : sans passer par la pile.
- */
-function radiation(s: GameState, p: PlayerId): void {
-  const pl = s.players[p];
-  const n = pl?.counters?.rad ?? 0;
-  if (!pl || pl.lost || n <= 0 || s.turn.mainPhase !== 1) return;
-  const milled = millCards(s, [[p, pl.library.slice(0, n)]]);
-  const nonland = milled.filter((id) => !s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land")).length;
-  if (nonland <= 0) return;
-  if (playerStatic(s, p, "radiationGains")) gainLife(s, p, nonland);
-  else loseLife(s, p, nonland);
-  pl.counters ??= {};
-  const counters = pl.counters;
-  counters.rad = Math.max(0, n - nonland);
-  emit({ type: "rad", player: p, amount: -nonland, total: counters.rad });
-  bump(s); // des statiques en dépendent (Nightkin Ambusher)
 }
 
 /**
@@ -632,7 +612,6 @@ function endStep(s: GameState): void {
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
     s.turn.landsPlayed = 0;
-    s.turn.speedRaised = false;
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";
@@ -1397,11 +1376,10 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
       byPlayer.set(x.target, [...(byPlayer.get(x.target) ?? []), x.src.id]);
     }
     for (const [player, sources] of byPlayer) rulesEvent(s, { e: "combatDamageBatch", player, sources });
-    // Monarque (724.2) : une créature qui inflige des blessures de combat au monarque fait de son contrôleur le monarque
-    // (après les déclencheurs « … alors que vous êtes le monarque », Tamiyo, Upriser Crowned).
-    const monarchHitBy = s.monarch ? byPlayer.get(s.monarch)?.[0] : undefined;
-    const thief = monarchHitBy ? (s.objects[monarchHitBy]?.controller ?? s.lki[monarchHitBy]?.controller) : undefined;
-    if (thief && thief !== s.monarch) setMonarch(s, thief);
+    // Monarque (724.2) : chaque créature qui inflige des blessures de combat au monarque déclenche une capacité contrôlée par
+    // lui, qui fait du contrôleur de la créature le monarque à sa résolution.
+    const monarch = s.monarch;
+    if (monarch) for (const id of new Set(byPlayer.get(monarch))) rulesTrigger(s, monarch, "monarchSteal", { objectId: id });
   });
 }
 

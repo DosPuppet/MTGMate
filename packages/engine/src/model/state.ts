@@ -822,9 +822,7 @@ export interface GameState {
     /** Pendant l'exil des matériaux d'une fabrication (Market Gnome). */
     crafting?: boolean;
     landsPlayed: number;
-    /** La vitesse du joueur actif a déjà augmenté ce tour-ci. */
-    speedRaised?: boolean;
-    /** Capacités « une fois par tour » déjà déclenchées (source:index). */
+    /** Capacités « une fois par tour » déjà déclenchées (source:index ; `rules:speed` : la vitesse, 702.179). */
     onceFired: string[];
     /** 514.3a : une priorité a été donnée pendant le nettoyage ; il y aura une nouvelle étape de nettoyage. */
     cleanupAgain?: boolean;

@@ -421,8 +421,11 @@ export const RECORD_VERSION = 1;
  * - 153 : PLAN-H H4 : choisir un joueur sans le cibler (chooseAmong sur des joueurs, au hasard ; fx.chooseOpponent) :
  *   piles séparées par l'adversaire choisi, adversaire du cadeau choisi au lancement (et gardé par les copies),
  *   Discerning Financier, Sandstone Oracle, Zuko, Conflicted, Indoraptor.
+ * - 154 : PLAN-H H6 : actions de règle sur la pile (rulesTrigger, sources synthétiques rules:*) : pioche du monarque
+ *   (724.2) et passage du monarque après des blessures de combat, radiation (si revérifié à la résolution), vitesse
+ *   (702.179, une fois par tour).
  */
-export const RULES_VERSION = 153;
+export const RULES_VERSION = 154;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -138,10 +138,42 @@ describe("Aetherdrift : vitesse (702.179) et exhaust (702.177)", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     expect(s.players.p1?.speed).toBe(1); // actions basées sur l'état avant la priorité
     s = passBoth(s);
+    // La capacité de la vitesse se déclenche et va sur la pile (on peut y répondre).
+    expect(s.players.p1?.speed).toBe(1);
+    expect(s.stack.map((x) => x.sourceDefId)).toEqual(["rules:speed"]);
+    s = passBoth(s);
     expect(s.players.p1?.speed).toBe(2);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     s = passBoth(s);
-    expect(s.players.p1?.speed).toBe(2); // une seule fois par tour
+    expect(s.stack).toEqual([]); // une seule fois par tour
+    expect(s.players.p1?.speed).toBe(2);
+  });
+
+  it("vitesse (702.179) : « si votre vitesse est inférieure à 4 », vérifié au déclenchement et à la résolution", () => {
+    let s = scenario({
+      p1: { battlefield: ["Walking Sarcophagus", ...lands("Mountain", 4)], hand: ["Lightning Strike", "Lightning Strike"] },
+    });
+    s.players.p1!.speed = 4;
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } }));
+    // Vitesse maximale : la capacité ne se déclenche pas, et ne compte pas pour « une fois par tour ».
+    expect([s.players.p1?.speed, s.turn.onceFired.includes("rules:speed")]).toEqual([4, false]);
+    s.players.p1!.speed = 3;
+    s = passBoth(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } }));
+    expect(s.stack.map((x) => x.sourceDefId)).toEqual(["rules:speed"]);
+    // La vitesse atteint 4 avant la résolution : la capacité ne fait rien (et ne la porte pas au-delà de 4).
+    s.players.p1!.speed = 4;
+    s = passBoth(s);
+    expect([s.stack.length, s.players.p1?.speed]).toEqual([0, 4]);
+  });
+
+  it("vitesse : la capacité appartient au joueur actif ; ses propres pertes de PV ne la déclenchent pas", () => {
+    let s = scenario({
+      p1: { battlefield: ["Walking Sarcophagus", ...lands("Mountain", 4)], hand: ["Lightning Strike"] },
+      p2: { battlefield: ["Walking Sarcophagus"] },
+    });
+    s.players.p2!.speed = 1;
+    s = passBoth(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p1"] } }));
+    expect([s.stack.length, s.players.p1?.speed, s.players.p2?.speed]).toEqual([0, 1, 1]);
   });
 
   it("vitesse maximale : Walking Sarcophagus +1/+2 ; Spikeshell Harrier fait baisser la vitesse du plus rapide", () => {

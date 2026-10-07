@@ -1242,6 +1242,104 @@ export function pushInline(
   });
 }
 
+/**
+ * Capacités déclenchées inhérentes aux règles, sans objet source : la pioche et le transfert du monarque (724.2), la
+ * radiation (Fallout) et la vitesse (702.179). Elles passent par la pile comme les autres (on peut y répondre, les contrecarrer) ; leur
+ * condition « si… » est revérifiée à la résolution (603.4).
+ */
+const RULES_TRIGGERS = {
+  monarch: {
+    name: "Monarch",
+    fr: "Monarque",
+    text: "At the beginning of the monarch's end step, that player draws a card.",
+    frText: "Au début de l'étape de fin du monarque, ce joueur pioche une carte.",
+    ability: {
+      targets: [],
+      effects: [{ op: "draw", who: { kind: "you" }, amount: 1 }],
+      label: "Monarque : piochez une carte",
+    },
+  },
+  monarchSteal: {
+    name: "Monarch",
+    fr: "Monarque",
+    text: "Whenever a creature deals combat damage to the monarch, its controller becomes the monarch.",
+    frText: "Chaque fois qu'une créature inflige des blessures de combat au monarque, son contrôleur devient le monarque.",
+    ability: {
+      targets: [],
+      // La créature de l'événement : son contrôleur à la résolution (ses dernières informations si elle est partie).
+      effects: [{ op: "becomeMonarch", who: { kind: "controllerOf", ref: { kind: "eventObject" } } }],
+      label: "Monarque : le contrôleur de la créature devient le monarque",
+    },
+  },
+  radiation: {
+    name: "Radiation",
+    fr: "Radiation",
+    text:
+      "At the beginning of your precombat main phase, if you have one or more rad counters, mill that many cards. For each " +
+      "nonland card milled this way, you lose 1 life and a rad counter.",
+    frText:
+      "Au début de votre phase principale précombat, si vous avez un ou plusieurs marqueurs de radiation, meulez autant de " +
+      "cartes. Pour chaque carte non-terrain meulée de cette manière, vous perdez 1 point de vie et un marqueur de radiation.",
+    ability: {
+      targets: [],
+      effects: [{ op: "radiation" }],
+      condition: { kind: "amountAtLeast", amount: { kind: "poison", counter: "rad" }, n: 1 },
+      label: "Radiation : meulez une carte par marqueur",
+    },
+  },
+  speed: {
+    name: "Speed",
+    fr: "Vitesse",
+    text:
+      "Whenever one or more opponents lose life during your turn, if your speed is less than 4, increase your speed by 1. " +
+      "This ability triggers only once each turn.",
+    frText:
+      "Chaque fois qu'un ou plusieurs adversaires perdent des points de vie pendant votre tour, si votre vitesse est " +
+      "inférieure à 4, augmentez votre vitesse de 1. Cette capacité ne se déclenche qu'une fois par tour.",
+    ability: {
+      targets: [],
+      effects: [{ op: "increaseSpeed" }],
+      condition: { kind: "not", cond: { kind: "maxSpeed" } },
+      label: "Vitesse : augmentez votre vitesse de 1",
+    },
+  },
+} satisfies Record<string, { name: string; fr: string; text: string; frText: string; ability: InlineAbility }>;
+
+export type RulesTriggerName = keyof typeof RULES_TRIGGERS;
+
+/**
+ * Met en attente une capacité déclenchée inhérente aux règles (`RULES_TRIGGERS`), contrôlée par `player`. Sa source est
+ * une définition synthétique (`rules:<nom>`, enregistrée dans `s.defs` comme celle d'un emblème), sans objet : la pile
+ * l'affiche sous son nom (« Monarque », « Radiation », « Vitesse »). Renvoie false si sa condition « si… » n'est pas
+ * remplie (elle ne se déclenche pas). `event` : l'événement déclencheur (la créature qui blesse le monarque).
+ */
+export function rulesTrigger(s: GameState, player: PlayerId, name: RulesTriggerName, event: TriggerEventData = {}): boolean {
+  const r = RULES_TRIGGERS[name];
+  const ability: InlineAbility = structuredClone(r.ability);
+  const defId = `rules:${name}`;
+  // 603.4 : une capacité « si… » ne se déclenche que si la condition est remplie.
+  if (ability.condition && !checkCondition(s, ability.condition, player, defId)) return false;
+  s.defs[defId] ??= {
+    id: defId,
+    name: r.name,
+    typeLine: "Rules ability",
+    fr: { name: r.fr, typeLine: "Capacité inhérente aux règles", text: r.frText },
+    manaCost: null,
+    manaCostText: "",
+    colors: [],
+    supertypes: [],
+    types: [],
+    subtypes: [],
+    keywords: [],
+    abilities: [],
+    text: r.text,
+    implemented: true,
+    isToken: true,
+  };
+  pushInline(s, player, defId, defId, ability, event);
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // Mise sur la pile
 // ---------------------------------------------------------------------------
