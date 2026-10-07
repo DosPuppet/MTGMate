@@ -77,7 +77,7 @@ const SPRY_X = amount.max(
 export const GREEN: Record<string, CardScript> = {
   "Shimmerwilds Growth": {
     enchant: { filter: { types: ["Land"] }, label: "terrain" },
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       staticAbility("attached", { setColorsChosen: true }, { label: "Le terrain enchanté est de la couleur choisie" }),
       eventReplacement({

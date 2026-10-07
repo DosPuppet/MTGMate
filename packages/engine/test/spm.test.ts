@@ -4121,6 +4121,15 @@ describe("lot C3, cartes uniques", () => {
     expect(castable(s, "p2", idOf(s, "p2", "hand", "Lightning Strike"))).toBe(false);
   });
 
+  it("Arachne (PLAN-H H9) : la question « en arrivant » propose les types de carte autres que créature, en français", () => {
+    let s = scenario({ p1: { battlefield: lands("Plains", 3), hand: ["Arachne, Psionic Weaver"] } });
+    s = passAccepting(cast(s, "p1", "Arachne, Psionic Weaver"), (x) => x.pending?.kind === "choice");
+    const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
+    expect(req?.prompt).toBe("Choisissez un type de carte");
+    expect(req?.type === "pick" && req.options).not.toContain("Creature");
+    expect(req?.labels?.Instant).toBe("Éphémère");
+  });
+
   describe("With Great Power . . .", () => {
     it("+2/+2 pour chaque Aura et Équipement attachés à la créature enchantée", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["With Great Power . . ."] } });

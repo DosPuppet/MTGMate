@@ -154,7 +154,7 @@ export const CARDS: Record<string, CardScript> = {
       activated({ mana: "{1}{U}", sacrifice: true, effects: [fx.draw(1)], label: "Sacrifiez-le : piochez" }),
     ],
   },
-  "Copy Enchantment": { entersAsCopyOf: { types: ["Enchantment"] }, entersAsCopyAnyController: true },
+  "Copy Enchantment": { asEnters: [fx.chooseCopy({ types: ["Enchantment"] }, { anyController: true })] },
   Curiosity: {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
@@ -200,7 +200,7 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Kindred Discovery": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       triggered(when.enters({ ...YOUR_CREATURES, subtypeChosen: true }), [fx.draw(1)], {
         label: "Une créature du type choisi arrive : piochez",
@@ -503,7 +503,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Utopia Sprawl": {
     enchant: { filter: { types: ["Land"], subtype: "Forest" }, label: "Forêt" },
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       eventReplacement({
         event: "mana",

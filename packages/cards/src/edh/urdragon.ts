@@ -136,20 +136,14 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
       doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
     ],
   },
-  // Approximation : « si cet artefact devait arriver, vous pouvez défausser une carte de terrain à la place » est une
-  // capacité d'arrivée (il arrive, puis il est sacrifié si aucun terrain n'est défaussé ; docs/approximations.md).
+  // « Si cet artefact devait arriver, vous pouvez défausser une carte de terrain à la place. Si vous le faites, mettez-le sur
+  // le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire » : en arrivant (614.1c).
   "Mox Diamond": {
-    abilities: [
-      triggered(
-        when.entersSelf,
-        [
-          fx.discard(1, ref.you, { filter: { types: ["Land"] }, optional: true, store: "land" }),
-          fx.when(cond.not(cond.v("land")), fx.sacrificeIt(ref.self)),
-        ],
-        { label: "Défaussez une carte de terrain, sinon sacrifiez-le" },
-      ),
-      manaAbility(ANY_COLOR),
+    asEnters: [
+      fx.discard(1, ref.you, { filter: { types: ["Land"] }, optional: true, store: "land" }),
+      ...fx.when(cond.not(cond.v("land")), fx.moveTo(ref.self, { to: "graveyard" })),
     ],
+    abilities: [manaAbility(ANY_COLOR)],
   },
   "Chromatic Orrery": {
     abilities: [
@@ -263,7 +257,7 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
     ],
   },
   "Steely Resolve": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
         { types: ["Creature"], subtypeChosen: true },

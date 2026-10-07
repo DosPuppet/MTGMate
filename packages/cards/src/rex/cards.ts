@@ -147,7 +147,7 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Ravenous Tyrannosaurus": {
-    devour: { filter: { types: ["Creature"] }, n: 3 },
+    // Dévorer 3 : lu dans le texte.
     abilities: [
       triggered(
         when.attacksSelf,
@@ -352,21 +352,18 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Indominus Rex, Alpha": {
-    abilities: [
-      triggered(
-        when.entersSelf,
-        [
-          fx.discard(99, ref.you, { filter: { types: ["Creature"] }, optional: true, store: "d" }),
-          ...INDOMINUS_KEYWORDS.flatMap((k) =>
-            fx.when(
-              cond.amountAtLeast(amount.refCount(ref.filtered(ref.stored("d"), { keyword: k })), 1),
-              fx.counters(ref.self, k),
-              fx.draw(1),
-            ),
-          ),
-        ],
-        { label: "Arrivée : défaussez des cartes de créature ; un marqueur par capacité trouvée, et piochez pour chacun" },
+    // « En arrivant, défaussez un nombre quelconque de cartes de créature. Il arrive avec un marqueur de vol si une carte
+    // défaussée ainsi a le vol » (de même pour chaque capacité de la liste).
+    asEnters: [
+      fx.discard(99, ref.you, { filter: { types: ["Creature"] }, optional: true, store: "d" }),
+      ...INDOMINUS_KEYWORDS.flatMap((k) =>
+        fx.when(cond.amountAtLeast(amount.refCount(ref.filtered(ref.stored("d"), { keyword: k })), 1), fx.counters(ref.self, k)),
       ),
+    ],
+    abilities: [
+      triggered(when.entersSelf, [fx.draw(amount.countersOn(ref.self, "any"))], {
+        label: "Piochez une carte pour chaque marqueur sur Indominus Rex",
+      }),
     ],
   },
   "Welcome to . . .": {

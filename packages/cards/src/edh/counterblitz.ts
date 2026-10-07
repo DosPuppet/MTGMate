@@ -252,23 +252,22 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
   },
   // Vol, piétinement : lus dans le texte.
   "Sin, Unending Cataclysm": {
-    abilities: [
-      // Approximation : capacité d'arrivée qui retire les marqueurs des permanents adverses (pas « en arrivant »).
-      triggered(
-        when.entersSelf,
-        [
-          fx.removeCounters(
-            ref.permanentsOf(ref.eachOpponent, {
-              anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }, { types: ["Enchantment"] }],
-            }),
-            999,
-            undefined,
-            "n",
-          ),
-          fx.addCounters(ref.self, amount.plus(amount.v("n"), amount.v("n"))),
-        ],
-        { label: "Retirez les marqueurs des permanents adverses ; deux marqueurs +1/+1 par marqueur retiré" },
+    // « En arrivant, retirez tous les marqueurs d'un nombre quelconque d'artefacts, de créatures et d'enchantements. Sin
+    // arrive avec X marqueurs +1/+1, X étant le double du nombre de marqueurs retirés ainsi. »
+    asEnters: [
+      fx.chooseAmong(
+        ref.permanentsOf(ref.eachPlayer, {
+          anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }, { types: ["Enchantment"] }],
+          withCounter: "any",
+        }),
+        ref.you,
+        "sin",
+        { anyNumber: true, prompt: "Sin : retirez tous les marqueurs d'un nombre quelconque de ces permanents" },
       ),
+      fx.removeCounters(ref.stored("sin"), 999, undefined, "n"),
+      fx.addCounters(ref.self, amount.plus(amount.v("n"), amount.v("n"))),
+    ],
+    abilities: [
       triggered(
         when.diesSelf,
         [fx.lkiCountersTo(ref.target()), fx.moveTo(ref.eventObject, { to: "libraryTop" }), fx.shuffle(ref.you)],
@@ -330,12 +329,8 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
   // --- Autres créatures ---------------------------------------------------------------------------------------------
   "Altered Ego": {
     cantBeCountered: true,
-    entersAsCopyOf: { types: ["Creature"] },
-    entersAsCopyAnyController: true,
-    // Approximation : les X marqueurs viennent d'une capacité d'arrivée de la copie (et non « en arrivant »).
-    entersAsCopyMods: {
-      addAbilities: [triggered(when.entersSelf, [fx.addCounters(ref.self, amount.sourceX)], { label: "X marqueurs +1/+1" })],
-    },
+    // « … sauf qu'elle arrive avec X marqueurs +1/+1 supplémentaires » (X du sort ; 0 si elle n'a pas été lancée).
+    asEnters: [fx.chooseCopy({ types: ["Creature"] }, { anyController: true, counters: { kind: "+1/+1", n: amount.x } })],
   },
   "Bane of Progress": {
     abilities: [

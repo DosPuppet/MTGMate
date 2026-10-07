@@ -132,8 +132,9 @@ export const UNIQUE: Record<string, CardScript> = {
   // --- Lot C1 : copies et légendes ---------------------------------------------
   "Chameleon, Master of Disguise": {
     // Chaos {2}{U} : lu dans le texte.
-    entersAsCopyOf: { types: ["Creature"], controller: "you" },
-    entersAsCopyKeepName: true,
+    asEnters: [
+      fx.chooseCopy({ types: ["Creature"], controller: "you" }, { except: { setName: "Chameleon, Master of Disguise" } }),
+    ],
   },
   "The Clone Saga": {
     abilities: [
@@ -314,8 +315,11 @@ export const UNIQUE: Record<string, CardScript> = {
   // --- Lot C3 : cartes uniques --------------------------------------------------
   "Arachne, Psionic Weaver": {
     // Web-slinging {W} : lu dans le texte. Le type de carte est choisi comme un mode d'arrivée.
-    chooseOnEnter: "mode",
-    enterModes: ["Artifact", "Battle", "Enchantment", "Instant", "Kindred", "Planeswalker", "Sorcery"],
+    asEnters: [
+      fx.chooseForSelf("mode", {
+        options: ["Artifact", "Battle", "Enchantment", "Instant", "Kindred", "Planeswalker", "Sorcery"],
+      }),
+    ],
     abilities: [
       {
         kind: "costReduction",

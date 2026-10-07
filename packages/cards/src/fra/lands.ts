@@ -44,7 +44,7 @@ export const LANDS: Record<string, CardScript> = {
     ],
   },
   "Room of Refuge": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       entersWith({ tapped: true }),
       manaAbility(["W"], 1, { produceChosen: true }),

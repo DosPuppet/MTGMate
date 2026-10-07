@@ -6,7 +6,7 @@
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy, drawCards, gainLife } from "../src/actions";
-import { amount, fx, triggered, when } from "../src/dsl";
+import { amount, fx, ref, spell, target, triggered, when } from "../src/dsl";
 import { addPump, moveWithSpec } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
@@ -1379,6 +1379,25 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, block)).toEqual([3, 3]);
     });
 
+    it("Abuelo's Awakening (PLAN-H H9) : la carte arrive déjà créature (« quand une créature arrive » la voit)", () => {
+      const WATCH = customCard({
+        name: "Guetteur d'essai",
+        types: ["Enchantment"],
+        typeLine: "Enchantment",
+        abilities: [
+          triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.gainLife(1)], { label: "Vous gagnez 1 PV" }),
+        ],
+      });
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 4), WATCH], hand: ["Abuelo's Awakening"], graveyard: ["Nutrient Block"] },
+      });
+      s = resolve(
+        castCard(s, "p1", "Abuelo's Awakening", { x: 0, targets: { t: [idOf(s, "p1", "graveyard", "Nutrient Block")] } }),
+      );
+      expect(s.players.p1?.life).toBe(21);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Nutrient Block"))).toEqual([1, 1]);
+    });
+
     it("Akal Pakal : à chaque étape de fin, si un artefact est arrivé sous votre contrôle ce tour-ci, une carte en main et l'autre au cimetière", () => {
       const run = (withArtifact: boolean) => {
         let s = scenario({
@@ -1637,6 +1656,60 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, deeps).name).toBe("Restless Vents");
       expect(chars(s, deeps).subtypes).toContain("Cave");
       expect(s.objects[deeps]?.tapped).toBe(true);
+    });
+
+    it("Echoing Deeps (PLAN-H H9) : la carte copiée est choisie en jouant le terrain ; « aucune » : il arrive dégagé, sans copie", () => {
+      const base = () =>
+        scenario({ p1: { hand: ["Echoing Deeps"], graveyard: ["Forest"] }, p2: { graveyard: ["Restless Vents", "Opt"] } });
+      let s = base();
+      const deeps = idOf(s, "p1", "hand", "Echoing Deeps");
+      const forest = idOf(s, "p1", "graveyard", "Forest");
+      const vents = idOf(s, "p2", "graveyard", "Restless Vents");
+      // La question (une carte de terrain d'un cimetière, ou aucune) vient avec l'option de jouer le terrain.
+      const option = legalActions(s, "p1").find((a) => a.type === "playLand" && a.card === deeps);
+      const choose = option?.type === "playLand" ? option.choose : undefined;
+      expect(choose?.type === "pick" && [choose.options, choose.min, choose.max]).toEqual([[forest, vents], 0, 1]);
+      s = act(s, "p1", { type: "playLand", card: deeps, chosen: forest });
+      let land = idOf(s, "p1", "battlefield", "Echoing Deeps");
+      expect(chars(s, land).name).toBe("Forest");
+      expect(chars(s, land).subtypes).toEqual(expect.arrayContaining(["Forest", "Cave"]));
+      expect(s.objects[land]?.tapped).toBe(true);
+      // La carte copiée reste dans le cimetière.
+      expect(idsOf(s, "p1", "graveyard", "Forest")).toHaveLength(1);
+      s = act(base(), "p1", { type: "playLand", card: deeps, chosen: "" });
+      land = idOf(s, "p1", "battlefield", "Echoing Deeps");
+      expect([chars(s, land).name, s.objects[land]?.tapped]).toEqual(["Echoing Deeps", false]);
+      // Une carte qui n'est pas une option : refusée.
+      expect(() => act(base(), "p1", { type: "playLand", card: deeps, chosen: idOf(base(), "p2", "graveyard", "Opt") })).toThrow(
+        RulesError,
+      );
+      // Aucune carte de terrain dans les cimetières : pas de question.
+      const none = scenario({ p1: { hand: ["Echoing Deeps"] } });
+      const plain = legalActions(none, "p1").find((a) => a.type === "playLand");
+      expect(plain?.type === "playLand" && plain.choose).toBeUndefined();
+    });
+
+    it("Echoing Deeps remis sur le champ de bataille par un effet : la carte copiée est demandée pendant la résolution", () => {
+      const RETURN_LAND = customCard({
+        name: "Retour de terrain d'essai",
+        types: ["Sorcery"],
+        typeLine: "Sorcery",
+        spell: spell(
+          [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain")],
+          [fx.moveTo(ref.target(), { to: "battlefield" })],
+        ),
+      });
+      let s = scenario({ p1: { hand: [RETURN_LAND], graveyard: ["Echoing Deeps"] }, p2: { graveyard: ["Restless Vents"] } });
+      const vents = idOf(s, "p2", "graveyard", "Restless Vents");
+      const deeps = idOf(s, "p1", "graveyard", "Echoing Deeps");
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", RETURN_LAND.name), targets: { t: [deeps] } });
+      s = passAccepting(s, (x) => x.pending?.kind === "choice");
+      const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
+      expect(req?.type === "pick" && [req.intent, req.options, req.min]).toEqual(["pickCards", [vents], 0]);
+      s = resolve(act(s, "p1", { type: "choose", values: [vents] }));
+      const land = idOf(s, "p1", "battlefield", "Echoing Deeps");
+      expect(chars(s, land).name).toBe("Restless Vents");
+      expect(s.objects[land]?.tapped).toBe(true);
     });
 
     it("Fabrication Foundry : exilez d'autres artefacts de valeur de mana totale X pour renvoyer un artefact de VM X ou moins de votre cimetière (rituel)", () => {

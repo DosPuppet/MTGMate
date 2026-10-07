@@ -273,8 +273,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Coil and Catch": { spell: spell([], [fx.draw(3), fx.discard(1)]) },
   "Naga Fleshcrafter": {
-    entersAsCopyOf: { types: ["Creature"] },
-    entersAsCopyAnyController: true,
+    asEnters: [fx.chooseCopy({ types: ["Creature"] }, { anyController: true })],
     abilities: [
       renew(
         "{2}{U}",

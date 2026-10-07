@@ -964,7 +964,7 @@ export function moveWithSpec(
   controller: PlayerId,
   id: ObjectId,
   spec: EvaluatedMoveSpec,
-  choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid" | "attacking">,
+  choices?: Partial<EntersContext>,
 ): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
@@ -1008,11 +1008,12 @@ export function moveWithSpec(
     enters:
       spec.to === "battlefield"
         ? {
-            counters: spec.counters ? [spec.counters] : undefined,
             mods: { ...mods, setTypes: spec.setTypes, setSubtypes: spec.setSubtypes },
             // 508.4 : le défenseur choisi pendant la résolution (`chooseAttacked`), sinon celui d'une de vos créatures.
             attacking: spec.attacking === true && s.combat ? attackingDefender(s, newController ?? o.owner) : undefined,
             ...choices,
+            // Les marqueurs de l'effet, puis ceux des effets « en arrivant » (Altered Ego, Sin).
+            counters: [...(spec.counters ? [spec.counters] : []), ...(choices?.counters ?? [])],
           }
         : undefined,
   });
@@ -1236,8 +1237,17 @@ function handlers(): OpHandlers {
 }
 
 export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
-  const ctx = contextOf(r);
-  const key = (suffix: string) => `${r.pc}:${suffix}`;
+  return runEffectWith(s, r, e, contextOf(r), (suffix: string) => `${r.pc}:${suffix}`);
+}
+
+/** Exécute un effet avec un contexte et des clés de choix donnés (boucle « en arrivant », `asEntersChoices`). */
+export function runEffectWith(
+  s: GameState,
+  r: Resolution,
+  e: Effect,
+  ctx: EffectContext,
+  key: (suffix: string) => string,
+): OpResult {
   const handler = (handlers() as Record<string, AnyHandler | undefined>)[e.op];
   return handler ? handler(s, r, e as never, ctx, key) : undefined;
 }

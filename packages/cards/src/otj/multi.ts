@@ -442,7 +442,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Mirage Mesa": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [entersWith({ tapped: true }), manaAbility(["W"], 1, { produceChosen: true })],
   },
   "Sandstorm Verge": {

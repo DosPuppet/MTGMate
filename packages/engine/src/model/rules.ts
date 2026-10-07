@@ -192,7 +192,7 @@ export interface ObjectFilter {
   colorChosen?: boolean;
   /** Mise dans sa zone actuelle ce tour-ci (« carte mise dans un cimetière ce tour-ci »). */
   enteredThisTurn?: boolean;
-  /** Du type de carte choisi par la source (Arachne : le choix est un mode d'arrivée, `enterModes` = types de carte). */
+  /** Du type de carte choisi par la source (Arachne : un mode d'arrivée dont les options sont des types de carte). */
   typeChosen?: boolean;
   /** Attaché au permanent auquel la source est attachée (With Great Power : « chaque Aura et Équipement attachés à
    * elle »). */

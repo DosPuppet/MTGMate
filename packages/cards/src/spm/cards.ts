@@ -56,14 +56,29 @@ export const CARDS: Record<string, CardScript> = {
 
   // --- Lot M3 -----------------------------------------------------------------
   "Superior Spider-Man": {
-    entersAsCopyOfGraveyard: { filter: { types: ["Creature"] }, name: "Superior Spider-Man", power: 4, toughness: 4 },
-    entersAsCopyMods: { addSubtypes: ["Spider", "Human", "Hero"] },
+    // « … sauf que son nom est Superior Spider-Man et que c'est un 4/4 Araignée Humain Héros en plus de ses autres types.
+    // Quand vous le faites, exilez cette carte. »
+    asEnters: [
+      fx.chooseCopy(
+        { types: ["Creature"] },
+        {
+          fromGraveyards: true,
+          exile: true,
+          except: {
+            setName: "Superior Spider-Man",
+            setPower: 4,
+            setToughness: 4,
+            addSubtypes: ["Spider", "Human", "Hero"],
+          },
+        },
+      ),
+    ],
   },
 
   // --- Lot M4 -----------------------------------------------------------------
   "Multiversal Passage": {
     // Le type de terrain de base est choisi en jouant le terrain (une option par type) ; « payez 2 PV » est lu dans le texte.
-    chooseOnEnter: "landType",
+    asEnters: [fx.chooseForSelf("landType")],
     abilities: [staticAbility("self", { addChosen: "landType" }, { label: "Est du type choisi" })],
   },
 

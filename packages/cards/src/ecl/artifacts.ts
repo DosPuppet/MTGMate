@@ -46,7 +46,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Gathering Stone": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       costReducer({ subtypeChosen: true }, 1, "Vos sorts du type choisi coûtent {1} de moins"),
       ...[when.entersSelf, when.yourUpkeep].map((w) =>
@@ -86,7 +86,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
 
   // --- Artefacts ----------------------------------------------------------------
   "Chronicle of Victory": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
         { types: ["Creature"], controller: "you", subtypeChosen: true },
@@ -99,28 +99,20 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Dawn-Blessed Pennant": {
-    // Le choix est restreint aux huit tribus : un « mode » choisi en arrivant (comme les Sièges de Tarkir), chaque
-    // capacité étant écrite pour chaque tribu et conditionnée par le choix.
-    chooseOnEnter: "mode",
-    enterModes: LORWYN_TRIBES,
+    // Un type de créature choisi en arrivant, parmi les huit tribus de Lorwyn.
+    asEnters: [fx.chooseForSelf("creatureType", { options: LORWYN_TRIBES })],
     abilities: [
-      ...LORWYN_TRIBES.map((tribe) =>
-        triggered(when.enters({ controller: "you", subtype: tribe }), [fx.gainLife(1)], {
-          condition: cond.chosenMode(tribe),
-          label: `Un permanent ${tribe} arrive sous votre contrôle : vous gagnez 1 PV`,
-        }),
-      ),
-      ...LORWYN_TRIBES.map((tribe) =>
-        activated({
-          mana: "{2}",
-          tap: true,
-          sacrifice: true,
-          activationCondition: cond.chosenMode(tribe),
-          targets: [target.cardInGraveyard("t", { subtype: tribe }, "you", `carte de ${tribe} de votre cimetière`)],
-          effects: [fx.toHand(ref.target())],
-          label: `Renvoyez une carte de ${tribe} de votre cimetière dans votre main`,
-        }),
-      ),
+      triggered(when.enters({ controller: "you", subtypeChosen: true }), [fx.gainLife(1)], {
+        label: "Un permanent du type choisi arrive sous votre contrôle : vous gagnez 1 PV",
+      }),
+      activated({
+        mana: "{2}",
+        tap: true,
+        sacrifice: true,
+        targets: [target.cardInGraveyard("t", { subtypeChosen: true }, "you", "carte du type choisi de votre cimetière")],
+        effects: [fx.toHand(ref.target())],
+        label: "Renvoyez une carte du type choisi de votre cimetière dans votre main",
+      }),
     ],
   },
   "Foraging Wickermaw": {
@@ -176,7 +168,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   // --- Terrain --------------------------------------------------------------------
   "Eclipsed Realms": {
     // Approximation : le type est choisi parmi tous les types de créature.
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       manaAbility("C"),
       manaAbility([...ANY], 1, {

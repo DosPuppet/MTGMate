@@ -217,7 +217,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Edgewall Inn": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       entersWith({ tapped: true, label: "Arrive engagé" }),
       manaAbility([...ALL_COLORS], 1, { produceChosen: true }),

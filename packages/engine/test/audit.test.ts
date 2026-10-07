@@ -405,7 +405,7 @@ describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'évé
 });
 
 describe("N7, N8, N9, #13 : copies de permanents", () => {
-  const CLONE = customCard({ name: "Clone de test", power: 0, toughness: 0, entersAsCopyOf: {} });
+  const CLONE = customCard({ name: "Clone de test", power: 0, toughness: 0, asEnters: [fx.chooseCopy({})] });
 
   /** Un Clone qui arrive copie d'Ajani, Caller of the Pride (planeswalker à 4 marqueurs de loyauté, valeur de mana 3). */
   function cloneOfAjani() {
@@ -455,8 +455,7 @@ describe("#7 et 303.4f : choix d'un permanent qui arrive sans être lancé", () 
     name: "Clone réanimé",
     power: 0,
     toughness: 0,
-    entersAsCopyOf: { types: ["Creature"] },
-    entersAsCopyAnyController: true,
+    asEnters: [fx.chooseCopy({ types: ["Creature"] }, { anyController: true })],
   });
   type Asked = { ask?: { key: string; request: { options: string[] } } };
 

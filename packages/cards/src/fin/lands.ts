@@ -30,7 +30,7 @@ export const LANDS: Record<string, CardScript> = {
     ],
   },
   "Crossroads Village": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [entersWith({ tapped: true }), manaAbility(["W"], 1, { produceChosen: true })],
   },
   "Eden, Seat of the Sanctum": {

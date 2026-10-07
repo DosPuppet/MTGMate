@@ -139,8 +139,8 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Petrified Hamlet": {
-    // Le nom est choisi par la capacité déclenchée d'arrivée (`chooseOnEnter` : les effets qui le lisent).
-    chooseOnEnter: "landName",
+    // Le nom est choisi par la capacité déclenchée d'arrivée.
+    chosenNameAbilities: "forbid",
     abilities: [
       triggered(when.entersSelf, [fx.chooseForSelf("landName")], { label: "Choisissez un nom de carte de terrain" }),
       manaAbility("C"),

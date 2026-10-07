@@ -42,7 +42,7 @@ const onePerPlayer = (t: TargetSpec): TargetSpec => ({ ...target.upTo(MAX_PLAYER
 
 export const UNIQUE: Record<string, CardScript> = {
   // --- Blanc -----------------------------------------------------------------
-  "Skyseer's Chariot": { chooseOnEnter: "cardName", chosenNameTax: 2 },
+  "Skyseer's Chariot": { asEnters: [fx.chooseForSelf("cardName")], chosenNameAbilities: 2 },
 
   // --- Bleu ------------------------------------------------------------------
   "Possession Engine": {
@@ -83,7 +83,7 @@ export const UNIQUE: Record<string, CardScript> = {
       [fx.exchangeControl(ref.target("a"), ref.target("b"))],
     ),
   },
-  "Waxen Shapethief": { entersAsCopyOf: ARTIFACT_OR_CREATURE_YOU },
+  "Waxen Shapethief": { asEnters: [fx.chooseCopy(ARTIFACT_OR_CREATURE_YOU)] },
 
   // --- Noir ------------------------------------------------------------------
   "Ancient Vendetta": {
@@ -450,7 +450,9 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Mimeoplasm, Revered One": {
-    devour: { filter: { types: ["Creature"] }, n: 3, graveyardUpToX: true },
+    // « En arrivant, exilez jusqu'à X cartes de créature de votre cimetière ; trois marqueurs +1/+1 par carte exilée » :
+    // la forme de dévorer, depuis le cimetière (les cartes exilées sont liées à Mimeoplasm).
+    asEnters: [fx.devour({ types: ["Creature"] }, 3, { graveyardUpToX: true })],
     abilities: [
       activated({
         mana: "{2}",
@@ -569,7 +571,7 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Lifecraft Engine": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       // Approximation : tous vos Véhicules (créatures ou non) ont le type choisi ; un filtre « créature » serait figé
       // avant l'équipage, plus récent (dépendance 613.8a non gérée pour l'ensemble affecté en couche 4).

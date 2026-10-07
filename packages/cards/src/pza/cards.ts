@@ -112,7 +112,7 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Metallic Mimic": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility("self", { addChosen: "subtype" }, { label: "Est du type choisi" }),
       entersWith({

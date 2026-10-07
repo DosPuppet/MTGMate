@@ -11,10 +11,11 @@
  */
 
 import { gainLife } from "./actions";
-import { boardAmount, evalAmount, staticContext } from "./effects";
+import { boardAmount, type EffectContext, evalAmount, type OpResult, runEffectWith, staticContext } from "./effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "./layers";
 import { manaValue } from "./mana";
-import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
+import { willHaveRiot } from "./stack";
+import { changeCounters, chars, FACE_DOWN_ID, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen } from "./targets";
 import { checkCondition, pushInline } from "./triggers";
@@ -22,17 +23,21 @@ import { countTurnEvents } from "./turnlog";
 import type {
   Amount,
   CastInfo,
+  ChoiceRequest,
+  ChoiceValue,
   Color,
   Condition,
+  Effect,
   GameObject,
   GameState,
   LayerMods,
   ObjectId,
   PlayerId,
+  Resolution,
+  StackItem,
   TokenSpec,
   Zone,
 } from "./types";
-import { BASIC_LAND_TYPES } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
@@ -44,16 +49,20 @@ export interface EntersContext {
   cast?: CastInfo;
   /** Aura : l'objet auquel elle arrive attachée. */
   attachTo?: string;
-  /** Choix fait pendant la résolution (« en arrivant, choisissez… »). */
+  /** Choix « en arrivant, choisissez… » (614.12), faits par `asEntersChoices`. */
   chosen?: GameObject["chosen"];
   /** Terrain choc : les points de vie ont été payés (sinon il arrive engagé). */
   shockPaid?: boolean;
-  /** Dévorer : nombre de permanents sacrifiés en arrivant. */
-  devoured?: number;
-  /** Waxen Shapethief : définition copiée en arrivant (couche 1). */
+  /** « Arrive comme une copie » (707.9) : définition copiée en arrivant (couche 1). */
   copyOf?: string;
-  /** 707.9b : exceptions copiables du modèle (`copiableExceptions`), reprises par la copie. */
+  /** 707.9b : exceptions copiables du modèle (`copiableExceptions`) et de la copie (`chooseCopy.except`). */
   copyMods?: LayerMods;
+  /** Copie « jusqu'à la fin du tour » (Cursed Mirror) ; sinon tant qu'il reste sur le champ de bataille. */
+  copyDuration?: "endOfTurn";
+  /** Cartes liées au permanent (702.82 : exilées en arrivant par Mimeoplasm). */
+  linked?: ObjectId[];
+  /** « Quand vous le faites, exilez cette carte » : la carte copiée d'un cimetière (Superior Spider-Man, 603.12). */
+  exileCopied?: ObjectId;
   /** Émeute (702.136) : le choix fait en résolvant le sort (sinon le choix par défaut, `defaultRiot`). */
   riot?: "counter" | "haste";
   /**
@@ -71,21 +80,11 @@ export interface EntersContext {
   haste?: boolean;
   /** Imminence (702.176a) : N marqueurs de temps ; ce n'est pas une créature tant qu'il en a. */
   impending?: number;
-  /** « Arrive comme une copie » : le choix a été fait (même s'il était de ne rien copier) ; sinon choix automatique. */
-  copyChosen?: boolean;
-}
-
-/** Permanents qu'une carte « qui arrive comme une copie de … » peut copier en arrivant sous le contrôle de `controller`. */
-export function copyCandidates(s: GameState, controller: PlayerId, cardId: ObjectId): ObjectId[] {
-  const d = s.defs[s.objects[cardId]?.defId ?? ""];
-  const filter = d?.entersAsCopyOf;
-  if (!filter) return [];
-  return s.battlefield.filter(
-    (id) =>
-      id !== cardId &&
-      (d.entersAsCopyAnyController || s.objects[id]?.controller === controller) &&
-      matchesObjectFilter(s, controller, id, filter, cardId),
-  );
+  /**
+   * Les effets « en arrivant » ont été faits avant le déplacement (même sans rien choisir) ; sinon, ils le sont en
+   * arrivant, avec les réponses suggérées (`asEntersChoices`, mode `default`).
+   */
+  asEnters?: boolean;
 }
 
 /** 303.4f : ce qu'une Aura qui arrive sans être lancée peut enchanter (permanents ; pas les Auras de joueur). */
@@ -105,6 +104,245 @@ export function auraHosts(s: GameState, controller: PlayerId, cardId: ObjectId):
 export function defaultRiot(s: GameState, o: GameObject): "counter" | "haste" {
   const early = ["untap", "upkeep", "draw", "main1", "beginCombat"].includes(s.turn.step);
   return s.turn.active === o.controller && early && !chars(s, o.id).keywords.includes("haste") ? "haste" : "counter";
+}
+
+/** Ce que les effets « en arrivant » apportent à l'arrivée (614.1c, 614.12), lu par `applyEntersReplacements`. */
+export type EntersChoices = Pick<
+  EntersContext,
+  "asEnters" | "chosen" | "riot" | "copyOf" | "copyMods" | "copyDuration" | "counters" | "tapped" | "linked" | "exileCopied"
+>;
+
+/**
+ * Comment la boucle « en arrivant » répond à ses questions :
+ * - `ask` : elles sont posées (la résolution est suspendue, puis l'effet reprend avec la réponse) ;
+ * - `auto` : la réponse suggérée (après un tirage au hasard, qui ne serait pas rejoué) ;
+ * - `default` : la réponse suggérée, et seulement les choix (arrivée hors d'une résolution : retour d'un exil lié,
+ *   jeton copie, ninjutsu ; le permanent est déjà en train d'arriver, les autres effets ne sont pas faits) ;
+ * - `probe` : la première question seulement, sans rien faire (terrain proposé par `legalActions`) ;
+ * - `{ first }` : la réponse donnée avec la décision de jouer un terrain, puis les réponses suggérées.
+ */
+export type EntersMode = "ask" | "auto" | "default" | "probe" | { first: ChoiceValue[] };
+
+/** L'objet qui arrive : son identifiant (sur la pile, dans sa zone ou déjà sur le champ de bataille), sa face, son contrôleur. */
+export interface Entering {
+  id: ObjectId;
+  defId: string;
+  controller: PlayerId;
+  /** X et kicker du sort qui se résout (X vaut 0 pour une carte qui n'est pas lancée, 107.3). */
+  x?: number;
+  kicked?: boolean;
+}
+
+type EntersAsk = Extract<OpResult, { ask: unknown }>;
+
+/** Préfixe des choix « en arrivant » d'un sort de permanent qui se résout (opération `asEnters`, `finishResolution`). */
+export const ENTERS_PREFIX = "enter:";
+
+/** Effets « en arrivant » qui ne font que choisir : seuls faits hors d'une résolution, et sondés pour un terrain. */
+const CHOICE_OPS: ReadonlySet<Effect["op"]> = new Set(["chooseOnEnter", "chooseCopy"]);
+/** Résultats de ces choix, retirés avant chaque effet (un second choix du même genre est bien posé). */
+const RESULT_KEYS = ["$chosen", "$copyOf", "$copyCard", "$devoured", "$ids:devoured"];
+
+/** Émeute (702.136a) : un marqueur +1/+1 ou la célérité ; suggestion : la célérité s'il peut encore attaquer ce tour-ci. */
+function riotRequest(s: GameState, controller: PlayerId): ChoiceRequest {
+  const early = ["untap", "upkeep", "draw", "main1", "beginCombat"].includes(s.turn.step);
+  return {
+    type: "pick",
+    intent: "other",
+    prompt: "Émeute : un marqueur +1/+1 ou la célérité ?",
+    options: ["counter", "haste"],
+    labels: { counter: "Un marqueur +1/+1", haste: "La célérité" },
+    min: 1,
+    max: 1,
+    suggested: [s.turn.active === controller && early ? "haste" : "counter"],
+  };
+}
+
+/** Le choix « en arrivant » noté sur le permanent, d'après sa sorte et la réponse. */
+export function chosenValue(kind: string, value: string): GameObject["chosen"] {
+  if (kind === "cardName" || kind === "landName") return { cardName: value };
+  if (kind === "parity") return { parity: value === "odd" ? "odd" : "even" };
+  if (kind === "mode") return { mode: value };
+  if (kind === "number") return { number: Number(value) };
+  if (kind === "landType") return { landType: value };
+  return kind === "color" ? { color: value as Color } : { creatureType: value };
+}
+
+/** Ce qu'un effet « en arrivant » terminé apporte à l'arrivée, d'après les valeurs qu'il a mémorisées (`diff`). */
+function collectEntering(
+  s: GameState,
+  out: EntersChoices,
+  e: Effect,
+  diff: Record<string, ChoiceValue[]>,
+  ctx: EffectContext,
+): void {
+  if (e.op === "chooseOnEnter") {
+    const [kind, value] = (diff.$chosen ?? []).map(String);
+    if (kind && value) out.chosen = { ...out.chosen, ...chosenValue(kind, value), ...(e.secret ? { secret: true } : {}) };
+  } else if (e.op === "chooseCopy") {
+    const [defId, model] = (diff.$copyOf ?? []).map(String);
+    if (!defId) return;
+    out.copyOf = defId;
+    // 707.9b : les exceptions du modèle, puis celles de la copie, sont copiables.
+    out.copyMods = mergeMods(copiableExceptions(s, model), e.except);
+    if (e.duration) out.copyDuration = e.duration;
+    if (e.counters) {
+      const n = Math.max(0, evalAmount(s, ctx, e.counters.n));
+      if (n > 0) out.counters = [...(out.counters ?? []), { kind: e.counters.kind, n }];
+    }
+    if (e.tapped) out.tapped = true;
+    const card = diff.$copyCard?.[0];
+    if (e.exile && card !== undefined) out.exileCopied = String(card);
+  } else if (e.op === "devour") {
+    const n = Number(diff.$devoured?.[0] ?? 0);
+    if (n > 0) out.counters = [...(out.counters ?? []), { kind: P1P1, n: e.n * n }];
+    const exiled = diff["$ids:devoured"] ?? [];
+    if (exiled.length) out.linked = [...(out.linked ?? []), ...exiled.map(String)];
+  }
+}
+
+/**
+ * 614.1c, 614.12 (PLAN-H H9) : la seule boucle des effets « en arrivant » d'un permanent, quel que soit le chemin
+ * d'arrivée : sort de permanent qui se résout (opération `asEnters`, `specsAndEffects`), copie d'un sort de permanent
+ * (707.10 : le jeton), terrain joué (`playLand`, la réponse vient avec la décision), effet qui le met sur le champ de
+ * bataille (`arrivalChoices`, `ops/zones.ts`), toute autre arrivée (`applyEntersReplacements`, mode `default`).
+ *
+ * Dans l'ordre : l'émeute (702.136, imprimée ou donnée), puis les effets de `CardDef.asEnters` ; s'il arrive comme une
+ * copie, l'émeute et les effets « en arrivant » du modèle (707.9 : la copie fait les choix du permanent copié ; pas une
+ * seconde copie). Des marqueurs mis sur `ref.self` sont ceux avec lesquels il arrive. Un permanent face cachée n'a aucun
+ * effet « en arrivant » (708.2).
+ *
+ * Chaque effet terminé est noté dans `vars` (sous `prefix`) avec ce qu'il a mémorisé : la boucle rejouée (réponse à une
+ * question, fin de la résolution) ne le refait pas. Renvoie la question à poser, sinon ce qu'apporte l'arrivée.
+ */
+export function asEntersChoices(
+  s: GameState,
+  vars: Record<string, ChoiceValue[]>,
+  entering: Entering,
+  prefix: string,
+  mode: EntersMode,
+): EntersAsk | EntersChoices {
+  const out: EntersChoices = { asEnters: true };
+  const own = s.defs[entering.defId];
+  if (!own || entering.defId === FACE_DOWN_ID) return out;
+  // Rien à faire : la plupart des arrivées (seules l'émeute et `asEnters` posent des questions).
+  if (!own.asEnters?.length && (mode === "default" || mode === "probe" || !willHaveRiot(s, entering.controller, own))) return out;
+  const scratch: Record<string, ChoiceValue[]> = {};
+  const item: StackItem = {
+    id: `${prefix}enters`,
+    kind: "ability",
+    controller: entering.controller,
+    sourceId: entering.id,
+    sourceDefId: entering.defId,
+    abilityIndex: -1,
+    mode: 0,
+    targets: {},
+    x: entering.x ?? 0,
+    kicked: !!entering.kicked,
+    sourceSnapshot: { keywords: [], power: 0, controller: entering.controller },
+  };
+  const sub: Resolution = {
+    item,
+    effects: [],
+    pc: 0,
+    controller: entering.controller,
+    targets: {},
+    vars: scratch,
+    awaiting: null,
+  };
+  let given = 0;
+  // La réponse à une question selon le mode ; `null` : la poser.
+  const answer = (request: ChoiceRequest): ChoiceValue[] | null => {
+    if (mode === "ask" || mode === "probe") return null;
+    if (typeof mode === "object" && given++ === 0) return mode.first;
+    return request.suggested;
+  };
+  const phases = [own];
+  for (let phase = 0; phase < phases.length; phase++) {
+    const d = phases[phase] as NonNullable<typeof own>;
+    const ctx: EffectContext = {
+      controller: entering.controller,
+      sourceId: entering.id,
+      sourceDefId: d.id,
+      sourceSnapshot: item.sourceSnapshot,
+      targets: {},
+      x: entering.x ?? 0,
+      kicked: !!entering.kicked,
+      vars: scratch,
+    };
+    // 702.136 : émeute, imprimée ou donnée (Spider-Punk) ; hors d'une résolution, le choix par défaut (`defaultRiot`).
+    if (out.riot === undefined && mode !== "default" && mode !== "probe" && willHaveRiot(s, entering.controller, d)) {
+      const key = `${prefix}riot`;
+      let v = vars[key];
+      if (!v) {
+        const request = riotRequest(s, entering.controller);
+        const a = answer(request);
+        if (a === null) return { ask: { player: entering.controller, request, key } };
+        v = a;
+        vars[key] = a;
+      }
+      out.riot = String(v[0]) === "haste" ? "haste" : "counter";
+    }
+    // Le modèle d'une copie : ses effets, sauf une autre copie.
+    const effects = (d.asEnters ?? []).filter((e) => phase === 0 || e.op !== "chooseCopy");
+    let skip = 0;
+    for (let i = 0; i < effects.length; i++) {
+      const e = effects[i] as Effect;
+      if (skip > 0) {
+        skip -= 1;
+        continue;
+      }
+      // Hors d'une résolution (`default`) et pour sonder un terrain (`probe`) : les choix seulement.
+      if ((mode === "default" || mode === "probe") && !CHOICE_OPS.has(e.op)) continue;
+      // « Il arrive avec N marqueurs » : des marqueurs mis sur lui-même (614.1c).
+      if (e.op === "addCounters" && e.what.kind === "self") {
+        const n = Math.max(0, evalAmount(s, ctx, e.amount));
+        if (n > 0) out.counters = [...(out.counters ?? []), { kind: e.kind ?? P1P1, n }];
+        continue;
+      }
+      const slot = `${prefix}${phase}.${i}`;
+      const done = vars[`${slot}!`];
+      let diff: Record<string, ChoiceValue[]>;
+      if (done) {
+        diff = JSON.parse(String(done[0])) as Record<string, ChoiceValue[]>;
+        skip = Number(done[1] ?? 0);
+      } else {
+        for (const k of RESULT_KEYS) delete scratch[k];
+        const before = { ...scratch };
+        let res: OpResult;
+        for (let guard = 0; ; guard++) {
+          for (const k of Object.keys(vars)) if (k.startsWith(`${slot}:`)) scratch[k] = vars[k] as ChoiceValue[];
+          res = runEffectWith(s, sub, e, ctx, (k) => `${slot}:${k}`);
+          if (!res || !("ask" in res) || guard >= 20) break;
+          const a = answer(res.ask.request);
+          if (a === null) return res;
+          vars[res.ask.key] = a;
+        }
+        skip = res && "skip" in res ? res.skip : 0;
+        diff = {};
+        for (const [k, v] of Object.entries(scratch)) if (k.startsWith("$") && before[k] !== v) diff[k] = v;
+        if (mode !== "probe") vars[`${slot}!`] = [JSON.stringify(diff), skip];
+      }
+      Object.assign(scratch, diff);
+      collectEntering(s, out, e, diff, ctx);
+    }
+    const model = phase === 0 && out.copyOf ? s.defs[out.copyOf] : undefined;
+    if (model) phases.push(model);
+  }
+  return out;
+}
+
+/**
+ * Réunit le contexte d'arrivée et ce qu'apportent les effets « en arrivant » : ce que le contexte fixe déjà l'emporte
+ * (une copie imposée), les marqueurs s'ajoutent, « engagé » vient de l'un ou de l'autre.
+ */
+export function withEntersChoices(ctx: EntersContext, choices: EntersChoices): EntersContext {
+  const counters = [...(ctx.counters ?? []), ...(choices.counters ?? [])];
+  const out: EntersContext = { ...choices, asEnters: true };
+  for (const [k, v] of Object.entries(ctx)) if (v !== undefined) (out as Record<string, unknown>)[k] = v;
+  out.counters = counters.length ? counters : undefined;
+  out.tapped = ctx.tapped || choices.tapped || undefined;
+  return out;
 }
 
 /**
@@ -157,55 +395,6 @@ function conditionAtEntry(s: GameState, c: Condition, o: GameObject, ctx: Enters
   if (c.kind === "all") return c.of.every((x) => conditionAtEntry(s, x, o, ctx));
   if (c.kind === "any") return c.of.some((x) => conditionAtEntry(s, x, o, ctx));
   return checkCondition(s, c, o.controller, o.id);
-}
-
-/** Choix par défaut quand un permanent « à choix » arrive sans résolution : le type ou la couleur les plus présents. */
-function defaultChoice(
-  s: GameState,
-  o: GameObject,
-  kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number",
-): NonNullable<GameObject["chosen"]> {
-  // Multiversal Passage mis en jeu sans avoir été joué : le type de terrain de base le plus présent chez son contrôleur.
-  if (kind === "landType") {
-    const count = (t: string) =>
-      s.battlefield.filter((id) => s.objects[id]?.controller === o.controller && chars(s, id).subtypes.includes(t)).length;
-    const best = [...BASIC_LAND_TYPES].sort((a, b) => count(b) - count(a))[0];
-    return { landType: best };
-  }
-  // Siège mis en jeu sans résolution : le premier mode.
-  if (kind === "mode") return { mode: s.defs[o.defId]?.enterModes?.[0] ?? "—" };
-  // Gollum mis en jeu sans résolution : « pair » par défaut.
-  if (kind === "parity") return { parity: "even" };
-  // Talion mis en jeu sans résolution : 2.
-  if (kind === "number") return { number: 2 };
-  // Petrified Hamlet : le nom est choisi par sa capacité déclenchée d'arrivée ; rien avant sa résolution.
-  if (kind === "landName") return { cardName: "—" };
-  if (kind === "cardName") {
-    // Nom le plus présent chez les adversaires (un terrain pour Petrified Hamlet).
-    const names = s.battlefield
-      .filter((id) => s.objects[id]?.controller !== o.controller)
-      .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "");
-    return { cardName: names[0] ?? "—" };
-  }
-  const tally = new Map<string, number>();
-  const pl = s.players[o.controller];
-  const ids = [
-    ...s.battlefield.filter((id) => s.objects[id]?.controller === o.controller),
-    ...(pl?.hand ?? []),
-    ...(pl?.library ?? []),
-  ];
-  for (const id of ids) {
-    const d = s.defs[s.objects[id]?.defId ?? ""];
-    if (!d) continue;
-    const keys = kind === "color" ? d.colors : d.types.includes("Creature") ? d.subtypes : [];
-    for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
-  }
-  // Thriving Grove : seulement une des couleurs permises.
-  const allowed = kind === "color" ? s.defs[o.defId]?.enterModes : undefined;
-  const best = [...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => !allowed || allowed.includes(k))?.[0];
-  return kind === "color"
-    ? { color: (best as Color | undefined) ?? (allowed?.[0] as Color | undefined) ?? "W" }
-    : { creatureType: best ?? "Human" };
 }
 
 /** Un remplacement « exilez-le à la place » qui s'applique à un objet sur le point d'aller au cimetière. */
@@ -306,11 +495,40 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // le premier possible ; les opérations de déplacement le demandent pendant une résolution).
   const attachTo = ctx.attachTo ?? (own?.enchant && !own.enchant.player ? auraHosts(s, o.controller, o.id)[0] : undefined);
   if (attachTo) o.attachedTo = attachTo;
-  // 707.5 : « arrive comme une copie » aussi sans être lancé (réanimé, clignotant) ; choix automatique hors résolution.
-  if (!ctx.copyOf && !ctx.copyChosen && own?.entersAsCopyOf) {
-    const model = copyCandidates(s, o.controller, o.id)[0];
-    if (model) ctx = { ...ctx, copyOf: copiedDefId(s, model), copyMods: copiableExceptions(s, model) };
+  // 614.1c, 614.12 : les effets « en arrivant » qui n'ont pas été faits avant le déplacement (arrivée hors d'une
+  // résolution : retour d'un exil lié, jeton copie, ninjutsu) : les choix seulement, avec la réponse suggérée. Un permanent
+  // face cachée n'en a pas (708.2).
+  if (!ctx.asEnters && !ctx.copyOf) {
+    const res = asEntersChoices(s, {}, { id: o.id, defId: copiedDefId(s, o.id), controller: o.controller }, "", "default");
+    if (!("ask" in res)) ctx = withEntersChoices(ctx, res);
   }
+  // 707.9 : « arrive comme copie de … » (Waxen Shapethief), avant les autres remplacements (qui lisent la copie : émeute,
+  // loyauté). Les exceptions du modèle, puis les siennes (Visage Bandit : « … en plus de ses autres types » ; Superior
+  // Spider-Man : nom et F/E), sont copiables (707.9b) : une copie de ce permanent les reprend. Cursed Mirror : jusqu'à la
+  // fin du tour.
+  if (ctx.copyOf) {
+    s.effects.push({
+      id: newId(s, "e"),
+      timestamp: nextTimestamp(s),
+      affected: [o.id],
+      duration: ctx.copyDuration ?? "permanent",
+      copyOf: ctx.copyOf,
+      ...ctx.copyMods,
+      copiable: true,
+    });
+    s.version += 1; // cache des couches
+    // Superior Spider-Man : « quand vous le faites, exilez cette carte » : une capacité réflexive (603.12).
+    const card = ctx.exileCopied;
+    if (card && s.objects[card]?.zone === "graveyard")
+      pushInline(s, o.controller, o.id, o.defId, {
+        targets: [],
+        effects: [{ op: "moveTo", what: { kind: "target", id: "c" }, spec: { to: "exile" } }],
+        bound: { c: [card] },
+        label: "Exilez la carte copiée",
+      });
+  }
+  // 702.82 : les cartes exilées en arrivant (Mimeoplasm) sont liées au permanent.
+  if (ctx.linked?.length) o.linked = [...(o.linked ?? []), ...ctx.linked];
   // Modifications imposées par l'effet qui le met sur le champ de bataille, avant les autres remplacements (qui peuvent
   // dépendre des types ajoutés) et avant l'événement d'arrivée.
   if (ctx.tapped) o.tapped = true;
@@ -349,39 +567,11 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     } else changeCounters(s, o, P1P1, 1);
   }
   if (ctx.attacking && s.combat) s.combat.attackers.push({ id: o.id, defender: ctx.attacking, blockers: [], blocked: false });
-  // 707.9 : « arrive comme copie de … » (Waxen Shapethief). Les exceptions du modèle, puis les siennes, sont copiables
-  // (707.9b) : une copie de ce permanent les reprend.
-  if (ctx.copyOf) {
-    const own = s.defs[o.defId];
-    const graveyard = own?.entersAsCopyOfGraveyard;
-    // Visage Bandit : « sauf que c'est un Métamorphe Voleur en plus de ses autres types » ; Mockingbird : « … et elle a le
-    // vol » ; Phantasmal Image : une capacité en plus.
-    const mods = mergeMods(ctx.copyMods, own?.entersAsCopyMods, {
-      // Superior Spider-Man : « sauf que son nom est … et que c'est un 4/4 ».
-      setName: graveyard?.name ?? (own?.entersAsCopyKeepName ? own.name : undefined),
-      setPower: graveyard?.power,
-      setToughness: graveyard?.power !== undefined ? graveyard.toughness : undefined,
-    });
-    s.effects.push({
-      id: newId(s, "e"),
-      timestamp: nextTimestamp(s),
-      affected: [o.id],
-      duration: "permanent",
-      copyOf: ctx.copyOf,
-      ...mods,
-      copiable: true,
-    });
-    s.version += 1; // cache des couches
-  }
   // La suite lit la définition effective : celle que copie le permanent (707.9 : un Clone de planeswalker arrive avec la
   // loyauté de ce planeswalker), sinon sa face active (714.3a : une Saga au verso).
   const eff = s.defs[copiedDefId(s, o.id)];
-  // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
-  const choose = eff?.chooseOnEnter;
-  if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
-  // 702.82 : dévorer N (les permanents ont été sacrifiés pendant la résolution).
-  const devour = eff?.devour;
-  if (devour && ctx.devoured) changeCounters(s, o, P1P1, devour.n * ctx.devoured);
+  // 614.12 : « en arrivant, choisissez… » (faits par `asEntersChoices`).
+  if (ctx.chosen) o.chosen = ctx.chosen;
   // Terrain choc : engagé, sauf si les points de vie ont été payés en le jouant (mis en jeu par un effet : engagé).
   if (eff?.shockLand && !ctx.shockPaid) o.tapped = true;
   // 714.3a : une Saga arrive avec un marqueur de savoir.

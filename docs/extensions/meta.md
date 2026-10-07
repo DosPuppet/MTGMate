@@ -105,7 +105,7 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 - **Montée en puissance** (Power-up, Marvel Super Heroes) : `activated({ powerUp: true })`, une seule fois ; le coût est réduit du coût de mana de la source si elle est arrivée ce tour-ci (`abilityMana`).
 - **Réunir des preuves N** en coût additionnel facultatif (« you may collect evidence N ») : lu dans le texte (kicker {0}, `kickerCost.collectEvidence`) ; les cartes du cimetière sont choisies automatiquement (les plus chères d'abord).
 - **`fx.exileNamesakes`** (Deadly Cover-Up) : une carte du cimetière d'un adversaire et ses homonymes (cimetière, main, bibliothèque) ; il pioche autant que de cartes exilées de sa main.
-- **Nom de carte de terrain choisi** (Petrified Hamlet) : `chooseOnEnter: "landName"` et `fx.chooseForSelf("landName")` (capacité déclenchée d'arrivée), filtre `nameChosen` ; les capacités non de mana des sources du nom choisi sont bloquées, comme avec Sorcerous Spyglass.
+- **Nom de carte de terrain choisi** (Petrified Hamlet) : `fx.chooseForSelf("landName")` (capacité déclenchée d'arrivée), filtre `nameChosen` ; les capacités non de mana des sources du nom choisi sont bloquées, comme avec Sorcerous Spyglass (`chosenNameAbilities: "forbid"`, PLAN-H H9).
 - **Copie d'une carte de créature d'un cimetière en arrivant** (Superior Spider-Man, Échange d'esprit) : `entersAsCopyOfGraveyard` (nom, F/E) avec `entersAsCopyAddSubtypes` ; la carte copiée est exilée.
 
 ### Cartes, par extension
@@ -124,7 +124,7 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 
 ### Moteur
 
-- **Type de terrain de base choisi en jouant un terrain** (Multiversal Passage) : `chooseOnEnter: "landType"` ; `legalActions` propose une option `playLand` par type (`landType`, aussi pour payer ou non les 2 PV), et la statique `addChosen: "landType"` lui donne ce type (donc son mana). Le terrain choc « Then you may pay 2 life » est lu dans le texte.
+- **Type de terrain de base choisi en jouant un terrain** (Multiversal Passage) : `asEnters: [fx.chooseForSelf("landType")]` ; `legalActions` propose une option `playLand` par type (`landType`, aussi pour payer ou non les 2 PV), et la statique `addChosen: "landType"` lui donne ce type (donc son mana). Le terrain choc « Then you may pay 2 life » est lu dans le texte.
 - **Exploiter** (Harness, Marvel Super Heroes) : `fx.harness` et `cond.harnessed` pour les capacités ∞.
 - **Convergence** : `amount.colorsSpent`, les couleurs de mana dépensées pour lancer le sort.
 - **Maîtrise du feu N** (Firebending, Avatar) : lue dans le texte ; « chaque fois que cette créature attaque, ajoutez N {R} ».
@@ -177,7 +177,7 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 - **Maîtrise de l'air** (airbend, Avatar) : `fx.airbend(ref)` exile le permanent ou le sort (`exileSpell`, sans le contrecarrer) ; son propriétaire peut le lancer depuis l'exil pour {2} (permission `cost`, `CastTerms.costOverride`). « Chaque fois que vous lancez un sort depuis l'exil » : `castSpell` avec `fromExile`.
 - **Web-slinging** (Spider-Man) : lu dans le texte ; coût alternatif qui renvoie en main une créature engagée que vous contrôlez (la moins chère).
 - **« Payez X points de vie » en coût additionnel** (Vicious Rivalry) : lu dans le texte (`payLifeX`) ; le X du sort se paie en PV.
-- **Parité choisie** (Gollum) : `chooseOnEnter: "parity"`, filtre `parityChosen`.
+- **Parité choisie** (Gollum) : `asEnters: [fx.chooseForSelf("parity")]`, filtre `parityChosen`.
 - **Tours passés** (Ral Zarek) : effet de joueur `skipTurn`, un par tour passé (`fx.playerEffectTimes`), consommé au début du tour.
 - **Effets de joueur jusqu'à votre prochain tour** : `fx.untilYourNextTurn` (Avatar's Wrath : `castOnlyFromHand`).
 - **Divers :** référence `ref.except` (« toutes les autres créatures ») ; filtre `noCounters` ; cible « capacité déclenchée » (`stackItems.triggeredOnly`) ; `lookAtTop` avec une valeur de mana totale maximale (`maxTotalManaValue`) ; déclencheur `when.dealtDamage(filtre)` ; remplacement « au lieu du cimetière » qui crée un jeton (`graveyardReplacement.createToken`) ; `fx.exileWithNamesakes(cible)` (The End) ; capacité de mana qui engage une créature (`tapAnother: "creature"`) ; restriction `cantBeBlockedByNonSpirits` ; une carte modale recto-verso peut se transformer (Jennifer Walters).

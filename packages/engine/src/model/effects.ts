@@ -427,8 +427,12 @@ export type Effect =
       times?: Amount;
       skip: number;
     }
-  /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
-  /** `options` : les seuls choix possibles (A Killer Among Us : Humain, Ondin ou Gobelin) ; `secret` : caché aux adversaires. */
+  /**
+   * « En arrivant, choisissez un type de créature / une couleur / un nom / un mode… » (614.12, dans `CardDef.asEnters`), ou
+   * le même choix fait par une capacité déclenchée ou un sort (Petrified Hamlet, Harmonized Crescendo).
+   * `options` : les seuls choix possibles (A Killer Among Us : Humain, Ondin ou Gobelin ; Thriving Grove : une couleur
+   * autre que le vert ; Sièges : Abzan ou Mardu) ; `secret` : caché aux adversaires.
+   */
   | {
       op: "chooseOnEnter";
       kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
@@ -437,11 +441,32 @@ export type Effect =
       optionsFrom?: Ref;
       secret?: boolean;
     }
-  /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
-  | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
-  /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */
-  /** `anyController` : n'importe quel permanent sur le champ de bataille (Mockingbird). */
-  | { op: "chooseCopy"; filter: ObjectFilter; anyController?: boolean; fromGraveyards?: boolean }
+  /**
+   * Dévorer N (702.82, dans `CardDef.asEnters`) : sacrifier des permanents en arrivant ; N marqueurs +1/+1 par permanent
+   * sacrifié. `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
+   */
+  | { op: "devour"; filter: ObjectFilter; n: number; graveyardUpToX?: boolean }
+  /**
+   * « Vous pouvez faire arriver [ce permanent] comme une copie de … » (707.9, dans `CardDef.asEnters`) : le modèle est choisi
+   * en arrivant. `anyController` : n'importe quel permanent (Mockingbird), sinon un des vôtres ; `fromGraveyards` : une carte
+   * d'un cimetière (Superior Spider-Man, Echoing Deeps) ; `optional` : « vous pouvez » (sinon la copie est obligatoire s'il
+   * y a un modèle) ; `duration` : « jusqu'à la fin du tour » (Cursed Mirror) ; `except` : exceptions de la copie (707.9b,
+   * copiables : nom, F/E, types, capacités) ; s'il copie : `counters`, il arrive avec ces marqueurs (Altered Ego : X marqueurs
+   * +1/+1) ; `tapped`, il arrive engagé (Echoing Deeps) ; `exile`, « quand vous le faites, exilez cette carte » (capacité
+   * réflexive, 603.12).
+   */
+  | {
+      op: "chooseCopy";
+      filter: ObjectFilter;
+      anyController?: boolean;
+      fromGraveyards?: boolean;
+      optional?: boolean;
+      duration?: "endOfTurn";
+      except?: LayerMods;
+      counters?: { kind: string; n: Amount };
+      tapped?: boolean;
+      exile?: boolean;
+    }
   /** Mimeoplasm : la source devient une copie de la carte, 0/0, en gardant ses capacités activées. */
   | { op: "becomeCopyKeepAbilities"; what: Ref }
   /** Révèle des cartes jusqu'à N cartes correspondantes ; celles-ci vont selon `to`, le reste dessous au hasard. */
@@ -600,8 +625,11 @@ export type Effect =
    */
   /** `maxCount` : au plus N copies lancées (Baron Helmut Zemo : « jusqu'à trois »). */
   | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string; maxCount?: number }
-  /** Émeute (702.136) : le contrôleur du sort de créature qui se résout choisit un marqueur +1/+1 ou la célérité. */
-  | { op: "chooseRiot" }
+  /**
+   * Interne : les choix « en arrivant » du sort de permanent qui se résout (`CardDef.asEnters`, émeute 702.136, ceux du
+   * modèle d'une copie), ajouté par `specsAndEffects` ; la boucle `asEntersChoices` (`replacement.ts`).
+   */
+  | { op: "asEnters" }
   /** Deux joueurs échangent leurs totaux de points de vie (701.12b : chacun gagne ou perd la différence) ; `store` : les
    * points de vie perdus ainsi par le contrôleur (Mister Negative : « piochez autant de cartes »). */
   /** « Faites ceci une seule fois par tour » : la capacité déclenchée qui se résout ne se déclenche plus ce tour-ci. */

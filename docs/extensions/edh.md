@@ -165,7 +165,7 @@ Ajouté le 06/10/2026 à la demande de l'utilisateur. Liste officielle du préco
   - jetons qui attaquent un joueur désigné (`createTappedTokens(…, { attacking: p })`, Endless Foot Assault) ; copies sacrifiées à la fin du combat (`copyToken.atEnd`, Shredder ; la myriade les exile) ;
   - adversaires attaqués ce tour-ci (`amount.opponentsAttackedThisTurn`, Fast Forward) ; PV de départ (`amount.startingLife`, `cond.someoneAtHalfStartingLife`, Game Over) ; marqueurs de toutes sortes parmi des permanents (`countersAmong(…, "any")`) ;
   - déclenchements dus à une pioche doublés (`TriggerMod.on: "draw"`, Krang) ; blessures prévenues changées en marqueurs sur le permanent protégé (`onPrevent.countersOnDamaged`, Vigor) ;
-  - couleur exclue d'un choix en arrivant (`chooseOnEnter: "color"` et `enterModes`, terrains Thriving).
+  - couleur exclue d'un choix en arrivant (`fx.chooseForSelf("color", { options })` dans `asEnters`, terrains Thriving).
 - **Tests :** `engine/test/edh-turtles.test.ts` (18) ; menu de lancement de la fusion vérifié dans le navigateur (`test-results/fuse/`).
 - **Approximations :** Vigor (mise au cimetière), Shredder (attaque d'un planeswalker), Coin of Mastery (mana produit en trop).
 - **Équilibre** (IA moyenne, `--by-deck --deck cmd-turtle-power`) : en duel, 47,4 % ± 4,0 (597 parties décidées, 19 tours) ; à quatre (sièges A, B, A, B), 35,7 % ± 5,4 (297 parties décidées, 42 tours), sous la part équitable de 50 % ; à étudier dans l'IA d'abord (attaques groupées des Tortues, marqueurs), la liste officielle n'est pas retouchée.

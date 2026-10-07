@@ -145,7 +145,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Banner of Kinship": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       entersWith({
         counters: amount.count({ types: ["Creature"], controller: "you", subtypeChosen: true }),
@@ -160,7 +160,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Heraldic Banner": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       staticAbility({ types: ["Creature"], controller: "you", colorChosen: true }, { power: 1 }, { label: "+1/+0" }),
       manaAbility(["W"], 1, { produceChosen: true }),
@@ -169,7 +169,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
 
   // --- Réimpressions ---
   "Adaptive Automaton": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility("self", { addChosen: "subtype" }, { label: "A le type choisi" }),
       staticAbility(
@@ -189,7 +189,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Cultivator's Caravan": { abilities: [manaAbility(["W", "U", "B", "R", "G"])] },
   "Darksteel Colossus": { shuffleIntoLibrary: true },
   "Diamond Mare": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [triggered(when.castSpell("you", { colorChosen: true }), [fx.gainLife(1)], { label: "+1 PV" })],
   },
   "Expedition Map": {
@@ -285,7 +285,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       }),
     ],
   },
-  "Sorcerous Spyglass": { chooseOnEnter: "cardName" },
+  "Sorcerous Spyglass": { asEnters: [fx.chooseForSelf("cardName")], chosenNameAbilities: "forbid" },
   "Soul-Guide Lantern": {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target())], {

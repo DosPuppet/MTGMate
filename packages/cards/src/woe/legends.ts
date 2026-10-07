@@ -68,7 +68,7 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Talion, the Kindly Lord": {
-    chooseOnEnter: "number",
+    asEnters: [fx.chooseForSelf("number")],
     abilities: [
       triggered(when.castSpell("opponent", { numberChosen: true }), [fx.loseLife(2, ref.eventPlayer), fx.draw(1)], {
         label: "Sort adverse du nombre choisi : il perd 2 PV, vous piochez",

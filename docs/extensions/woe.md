@@ -142,7 +142,7 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Cartes :** Ashiok, Wicked Manipulator, Talion, the Kindly Lord, Sentinel of Lost Lore.
 - **Le moteur gagne :**
   - `payLife` (`actions.ts`) : tous les paiements de PV (coûts de capacités et de sorts, distorsion, terrains choc, « à moins que », Terror of the Peaks…) y passent ; le remplacement `eventReplacement({ event: "payLife", instead: { exileFromLibrary: true } })` (R1) exile autant de cartes du dessus de la bibliothèque si elle en a assez. Les vérifications « assez de PV » sont inchangées (rulings) ;
-  - le choix en arrivant `chooseOnEnter: "number"` (1 à 10, badge sur la carte) et le filtre `numberChosen` (valeur de mana, force ou endurance égale) ;
+  - le choix en arrivant `asEnters: [fx.chooseForSelf("number")]` (1 à 10, badge sur la carte) et le filtre `numberChosen` (valeur de mana, force ou endurance égale) ;
   - `amount.totalManaValue(filtre, "exile")` : les cartes que vous possédez en exil (face cachée : 0) ;
   - la cible de carte exilée `own: false` (« que vous ne possédez pas »).
 - **Tests :** 7 tests de règles (« lot C5 ») et 2 décisions officielles d'Ashiok (`rulings.test.ts`).

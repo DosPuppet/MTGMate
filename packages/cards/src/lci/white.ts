@@ -38,13 +38,20 @@ export const WHITE: Record<string, CardScript> = {
         ),
       ],
       [
-        // Les X marqueurs sont posés à l'arrivée (614.1c).
-        fx.moveTo(ref.target(), { to: "battlefield", counters: { kind: "+1/+1", n: amount.x } }, { name: "back" }),
-        fx.modify(
-          ref.stored("back"),
-          { addTypes: ["Creature"], addSubtypes: ["Spirit"], setPower: 1, setToughness: 1, addKeywords: ["flying"] },
-          "permanent",
+        // Les X marqueurs, le type Créature Esprit et le vol sont en place à l'arrivée (614.1c : « une créature arrive » la
+        // voit). Approximation : ses F/E de base deviennent 1/1 juste après son arrivée.
+        fx.moveTo(
+          ref.target(),
+          {
+            to: "battlefield",
+            counters: { kind: "+1/+1", n: amount.x },
+            addTypes: ["Creature"],
+            addSubtypes: ["Spirit"],
+            addKeywords: ["flying"],
+          },
+          { name: "back" },
         ),
+        fx.modify(ref.stored("back"), { setPower: 1, setToughness: 1 }, "permanent"),
       ],
     ),
   },

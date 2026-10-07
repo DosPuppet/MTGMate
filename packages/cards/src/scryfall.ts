@@ -267,11 +267,18 @@ function cumulativeUpkeep(text: string): CardDef["abilities"] {
 }
 
 /** Dévorer (702.82) : « Devour 2 », « Devour land 3 », « Devour artifact 1 ». */
-export function parseDevour(text: string): CardDef["devour"] {
+export function parseDevour(text: string): Effect | undefined {
   const m = /^Devour(?: (land|artifact))? (\d+)/m.exec(stripReminder(text));
   if (!m) return undefined;
   const type = m[1] === "land" ? "Land" : m[1] === "artifact" ? "Artifact" : "Creature";
-  return { filter: { types: [type] }, n: Number(m[2]) };
+  return dsl.fx.devour({ types: [type] }, Number(m[2]));
+}
+
+/** « En arrivant » (614.1c, 614.12) : les effets du script, et le dévorer lu dans le texte (sauf s'il est écrit). */
+function asEntersOf(script: Effect[] | undefined, text: string): Effect[] | undefined {
+  const devour = script?.some((e) => e.op === "devour") ? undefined : parseDevour(text);
+  const out = [...(devour ? [devour] : []), ...(script ?? [])];
+  return out.length ? out : undefined;
 }
 
 /** Distorsion (702.185) : « Warp {1}{W} » ou « Warp—{B}, Pay 2 life. » ; « …depuis votre cimetière avec sa distorsion ». */
@@ -1204,11 +1211,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
                       }
                     : impendingAltCost(raw.oracleText),
     forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
-    entersAsCopyAnyController: script?.entersAsCopyAnyController,
     impending: parseImpending(raw.oracleText)?.n,
     cdaPT: script?.cdaPT,
-    chooseOnEnter: script?.chooseOnEnter,
-    enterModes: script?.enterModes,
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
     // Retrace (702.81) : depuis le cimetière, en défaussant une carte de terrain en plus.
@@ -1217,10 +1221,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       (/^Retrace\b/m.test(raw.oracleText) ? { discard: 1, discardFilter: { types: ["Land"] } } : undefined),
     flashIf: script?.flashIf,
     exileOnResolve: script?.exileOnResolve,
-    entersAsCopyMods: script?.entersAsCopyMods,
-    entersAsCopyKeepName: script?.entersAsCopyKeepName,
-    entersAsCopyOfGraveyard: script?.entersAsCopyOfGraveyard,
-    chosenNameTax: script?.chosenNameTax,
+    chosenNameAbilities: script?.chosenNameAbilities,
     ward,
     cantBeCountered: script?.cantBeCountered,
     cantBeCopied: /This spell can't be copied\./.test(raw.oracleText) || undefined,
@@ -1289,8 +1290,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),
     foretell: parseForetell(raw.oracleText),
-    devour: script?.devour ?? parseDevour(raw.oracleText),
-    entersAsCopyOf: script?.entersAsCopyOf,
+    asEnters: asEntersOf(script?.asEnters, raw.oracleText),
     equipDiscountWhenTargeted: script?.equipDiscountWhenTargeted,
     evoke: evoke ? parseManaCost(evoke) : undefined,
     storied: storied || undefined,

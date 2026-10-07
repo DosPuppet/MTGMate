@@ -262,7 +262,7 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   donnée (`playFrom.exileOthers`, Underworld Breach) ; rôder accordé (`altCostAll` sous condition du journal, sous-type de
   la source des blessures ; Hunting Velociraptor) ; gagner le contrôle d'un sort (`fx.gainControl` sur la pile,
   Commandeer) ; lancer seulement au moment d'un rituel (`castLimit.sorceryTiming`, Teferi, Mage of Zhalfir) ; exceptions de
-  copie réunies dans `entersAsCopyMods` (Phantasmal Image, Flesh Duplicate avec sa disparition écrite en capacités) ;
+  copie réunies dans `entersAsCopyMods` (depuis PLAN-H H9 : `fx.chooseCopy(filtre, { except })` dans `asEnters`) (Phantasmal Image, Flesh Duplicate avec sa disparition écrite en capacités) ;
   As Foretold (`manaValueSourceCounters: { counter, atMost }`). Tests : `otp`, `rex`, `spg`, `wot`, `fca` (+10).
   `RULES_VERSION` 117.
 - **Bibliothèque et pioche ✅ :** statiques de joueur `skipDrawStep` (Necropotence, Necrodominance), `discardToLibraryTop`

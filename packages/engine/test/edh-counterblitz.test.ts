@@ -7,6 +7,7 @@ import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import type { GameState, PlayerId } from "../src/types";
 import {
+  type Answer,
   act,
   advanceUntil,
   attack,
@@ -134,6 +135,69 @@ describe("Counter Blitz (EDH)", () => {
       expect(plusOne(s, bear)).toBe(4);
       expect(s.players.p1?.library.map((id) => nameOf(s, id))).toContain("Sin, Unending Cataclysm");
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).not.toContain("Sin, Unending Cataclysm");
+    });
+  });
+
+  describe("« en arrivant » (PLAN-H H9)", () => {
+    /** Passe jusqu'à ce que la carte nommée soit sur le champ de bataille (avant toute capacité déclenchée). */
+    const untilOnField = (s: GameState, name: string, answer: Answer = () => undefined) => {
+      let cur = s;
+      for (let i = 0; i < 50 && onField(cur, "p1", name) === 0; i++) {
+        const p = cur.pending;
+        if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+        else if (p?.kind === "choice")
+          cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+        else break;
+      }
+      return cur;
+    };
+
+    it("Sin : retire tous les marqueurs des permanents choisis (des deux camps) et arrive avec deux fois plus de marqueurs +1/+1", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [
+            ...lands("Forest", 5),
+            ...lands("Island", 2),
+            { name: "Bear Cub", counters: { "+1/+1": 2 } },
+            { name: "Savannah Lions", counters: { "+1/+1": 1 } },
+          ],
+          hand: ["Sin, Unending Cataclysm"],
+        },
+        p2: { battlefield: [{ name: "Serra Angel", counters: { "+1/+1": 1, stun: 1 } }] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = castIt(s, "p1", "Sin, Unending Cataclysm");
+      s = untilOnField(s, "Sin, Unending Cataclysm", picking([bear, angel]));
+      // En arrivant : 2 + 1 + 1 marqueurs retirés, huit marqueurs +1/+1, déjà là quand il arrive.
+      const sin = idOf(s, "p1", "battlefield", "Sin, Unending Cataclysm");
+      expect(plusOne(s, sin)).toBe(8);
+      expect([plusOne(s, bear), plusOne(s, angel), s.objects[angel]?.counters.stun ?? 0, plusOne(s, lions)]).toEqual([
+        0, 0, 0, 1,
+      ]);
+    });
+
+    it("Altered Ego : arrive en copie avec X marqueurs +1/+1 de plus ; remis en jeu par un effet, X vaut 0", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 4), ...lands("Island", 2)], hand: ["Altered Ego"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = castIt(s, "p1", "Altered Ego", { x: 2 });
+      s = untilOnField(s, "Altered Ego", picking([angel]));
+      const ego = idOf(s, "p1", "battlefield", "Altered Ego");
+      expect(chars(s, ego).name).toBe("Serra Angel");
+      expect(plusOne(s, ego)).toBe(2);
+      let z = scenario({
+        p1: { battlefield: lands("Swamp", 4), hand: ["Zombify"], graveyard: ["Altered Ego"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel2 = idOf(z, "p2", "battlefield", "Serra Angel");
+      z = settle(castIt(z, "p1", "Zombify", { targets: { t: [idOf(z, "p1", "graveyard", "Altered Ego")] } }), picking([angel2]));
+      const back = idOf(z, "p1", "battlefield", "Altered Ego");
+      expect(chars(z, back).name).toBe("Serra Angel");
+      expect(plusOne(z, back)).toBe(0);
     });
   });
 

@@ -260,7 +260,7 @@ export const MULTI: Record<string, CardScript> = {
   "Hushwood Verge": verge("G", "W", ["Forest", "Plains"]),
   "Thornspire Verge": verge("R", "G", ["Mountain", "Forest"]),
   "Valgavoth's Lair": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [entersWith({ tapped: true }), manaAbility(["W", "U", "B", "R", "G"], 1, { produceChosen: true })],
   },
 };

@@ -182,7 +182,7 @@ export const RED: Record<string, CardScript> = {
   },
   "Collective Inferno": {
     // Convocation lue dans le texte.
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       eventReplacement({
         event: "damage",

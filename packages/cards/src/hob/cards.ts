@@ -258,7 +258,7 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [activated({ payLife: 2, oncePerTurn: true, effects: [fx.pump(ref.self, 2, 2)], label: "+2/+2" })],
   },
   "Gollum, Riddle Master": {
-    chooseOnEnter: "parity",
+    asEnters: [fx.chooseForSelf("parity")],
     abilities: [
       triggeredModal(
         when.castSpell("opponent", { parityChosen: true }),

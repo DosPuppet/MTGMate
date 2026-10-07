@@ -88,32 +88,21 @@ export interface CardScript {
   altCost?: { mana: string; condition: Condition; label: string; pay?: AltCostPay };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
   cdaPT?: Amount;
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
-  /** Sièges : les modes proposés en arrivant (avec `chooseOnEnter: "mode"`). */
-  enterModes?: string[];
+  /**
+   * « En arrivant » (614.1c, 614.12) : choix (`fx.chooseForSelf`, `fx.chooseCopy`, `fx.devour`) et autres effets faits
+   * pendant que le permanent arrive ; des marqueurs mis sur `ref.self` sont ceux avec lesquels il arrive.
+   */
+  asEnters?: Effect[];
   shuffleIntoLibrary?: boolean;
   graveyardCastRemoveCounters?: number;
-  /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus. */
-  chosenNameTax?: number;
-  /** Dévorer écrit dans le script (Mimeoplasm : « exilez jusqu'à X cartes de créature de votre cimetière »). */
-  devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  /** Capacités activées des sources du nom choisi : {N} de plus (Skyseer's Chariot) ou interdites hors mana (`"forbid"`). */
+  chosenNameAbilities?: number | "forbid";
   equipDiscountWhenTargeted?: number;
-  /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez ». */
-  entersAsCopyOf?: ObjectFilter;
   /** « [Cette carte] a le flash tant que … » */
   flashIf?: Condition;
   /** « … si vous contrôliez [X] en lançant ce sort » : évaluée au lancement (`cond.metWhenCast`). */
   whenCast?: Condition;
   exileOnResolve?: boolean;
-  /** Exceptions d'une copie à l'arrivée : sous-types, mots-clés, capacités en plus (707.9b). */
-  entersAsCopyMods?: LayerMods;
-  /** Copie à l'arrivée « sauf que son nom est [le sien] » (Chameleon, Master of Disguise). */
-  entersAsCopyKeepName?: boolean;
-  /**
-   * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
-   * et ses F/E (`entersAsCopyMods` pour les types en plus) ; la carte copiée est exilée.
-   */
-  entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
   castFromGraveyard?: CardDef["castFromGraveyard"];
   /** Seule la force est variable (Enigma Drake). */
@@ -141,8 +130,6 @@ export interface CardScript {
   caseSolved?: AbilityDef[];
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle). */
   forageOrPay?: string;
-  /** Copie à l'arrivée : de n'importe quel contrôleur (Mockingbird). */
-  entersAsCopyAnyController?: boolean;
 }
 
 export const target = {
@@ -1121,11 +1108,32 @@ export const fx = {
   exileWithNamesakes: (of: Ref): Effect => ({ op: "exileNamesakes", of, draw: true }),
   /** Surgical Extraction : la carte de cimetière désignée et ses homonymes (cimetière, main, bibliothèque de son propriétaire). */
   exileCardAndNamesakes: (of: Ref): Effect => ({ op: "exileNamesakes", of }),
-  /** « Quand ce permanent arrive, choisissez [un nom de carte de terrain…] » (capacité déclenchée). */
+  /**
+   * « Choisissez [un type de créature, une couleur, un nom, un mode…] » pour la source : en arrivant (dans `asEnters`,
+   * 614.12) ou par une capacité déclenchée (« quand ce terrain arrive, choisissez un nom de carte de terrain »).
+   * `options` : les seuls choix permis (Thriving Grove : une couleur autre que le vert ; Sièges : Abzan ou Mardu).
+   */
   chooseForSelf: (
-    kind: "creatureType" | "color" | "cardName" | "landName",
+    kind: Extract<Effect, { op: "chooseOnEnter" }>["kind"],
     opts: { options?: string[]; optionsFrom?: Ref; secret?: boolean } = {},
   ): Effect => ({ op: "chooseOnEnter", kind, ...opts }),
+  /**
+   * « Vous pouvez faire arriver [ce permanent] comme une copie de [filtre] » (707.9, dans `asEnters`) : voir l'effet
+   * `chooseCopy` (« vous pouvez » : `optional`, le cas de toutes les cartes jusqu'ici).
+   */
+  chooseCopy: (filter: ObjectFilter, opts: Omit<Extract<Effect, { op: "chooseCopy" }>, "op" | "filter"> = {}): Effect => ({
+    op: "chooseCopy",
+    filter,
+    optional: true,
+    ...opts,
+  }),
+  /** Dévorer N (702.82, dans `asEnters`) ; lu dans le texte (« Devour 2 »). */
+  devour: (filter: ObjectFilter, n: number, opts: { graveyardUpToX?: boolean } = {}): Effect => ({
+    op: "devour",
+    filter,
+    n,
+    ...opts,
+  }),
   payCostOf: (what: Ref, store: string, prompt: string): Effect => ({ op: "payCostOf", what, store, prompt }),
   reduceSpeed: (who: Ref): Effect => ({ op: "reduceSpeed", who }),
   /** « [Cette Monture] devient montée jusqu'à la fin du tour ». */

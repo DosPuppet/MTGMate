@@ -291,7 +291,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
     ],
   },
   "Unclaimed Territory": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       manaAbility("C"),
       manaAbility(ANY_COLOR, 1, { restriction: { spell: { types: ["Creature"], subtypeChosen: true } } }),

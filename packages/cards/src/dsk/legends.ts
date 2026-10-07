@@ -236,7 +236,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Leyline of Transformation": {
     leyline: true,
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     // Sorts et cartes hors du champ de bataille : non gérés.
     abilities: [staticAbility(CREATURE_YOU_CONTROL, { addChosen: "subtype" }, { label: "Vos créatures sont du type choisi" })],
   },

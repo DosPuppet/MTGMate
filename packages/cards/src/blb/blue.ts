@@ -277,9 +277,12 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   Mockingbird: {
-    entersAsCopyOf: { types: ["Creature"], maxManaValueManaSpent: true },
-    entersAsCopyAnyController: true,
-    entersAsCopyMods: { addSubtypes: ["Bird"], addKeywords: ["flying"] },
+    asEnters: [
+      fx.chooseCopy(
+        { types: ["Creature"], maxManaValueManaSpent: true },
+        { anyController: true, except: { addSubtypes: ["Bird"], addKeywords: ["flying"] } },
+      ),
+    ],
   },
   "Nightwhorl Hermit": {
     abilities: [

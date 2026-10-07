@@ -402,6 +402,33 @@ describe("Multiverse Reforged (EDH)", () => {
     });
   });
 
+  describe("Cursed Mirror (PLAN-H H9)", () => {
+    it("en arrivant, copie d'une créature jusqu'à la fin du tour, avec la célérité ; ses capacités d'arrivée se déclenchent", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Mountain", 3), hand: ["Cursed Mirror"] },
+        p2: { battlefield: ["Burglar Rat"], hand: ["Opt"] },
+      });
+      const rat = idOf(s, "p2", "battlefield", "Burglar Rat");
+      s = settle(castIt(s, "p1", "Cursed Mirror"), picking([rat]));
+      const mirror = idOf(s, "p1", "battlefield", "Cursed Mirror");
+      expect(chars(s, mirror).name).toBe("Burglar Rat");
+      expect(chars(s, mirror).types).toEqual(["Creature"]);
+      expect(chars(s, mirror).keywords).toContain("haste");
+      // Il est arrivé en Burglar Rat : « quand cette créature arrive, chaque adversaire défausse une carte ».
+      expect(hand(s, "p2")).toBe(0);
+      // Au nettoyage, la copie prend fin : c'est de nouveau un artefact qui produit {R}.
+      s = toTurnOf(s, "p2");
+      expect(chars(s, mirror).name).toBe("Cursed Mirror");
+      expect(chars(s, mirror).types).toEqual(["Artifact"]);
+    });
+
+    it("« vous pouvez » : sans copie, il arrive en artefact", () => {
+      let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Cursed Mirror"] }, p2: { battlefield: ["Bear Cub"] } });
+      s = settle(castIt(s, "p1", "Cursed Mirror"), (req) => (req.type === "pick" && req.min === 0 ? [] : undefined));
+      expect(chars(s, idOf(s, "p1", "battlefield", "Cursed Mirror")).name).toBe("Cursed Mirror");
+    });
+  });
+
   describe("Gingerbrute et Venser", () => {
     it("Ginger : monarque à l'arrivée ; à chaque entretien, si vous êtes le monarque, un Gingerbrute", () => {
       let s = scenario({ p1: { battlefield: lands("Wastes", 6), hand: ["Ginger, Queen of Sweets"] } });

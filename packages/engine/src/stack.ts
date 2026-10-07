@@ -28,9 +28,9 @@ import {
   withX,
 } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
-import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
+import { copiedDefId, effectivePower, hasKeyword } from "./layers";
 import { canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
-import { enterChoiceRequest } from "./ops/permanents";
+import { asEntersChoices, ENTERS_PREFIX, withEntersChoices } from "./replacement";
 import { copyStackItem } from "./stackChoices";
 import {
   bent,
@@ -379,6 +379,12 @@ export function webSlingingOptions(s: GameState, player: PlayerId): ObjectId[] {
     .sort((a, b) => mv(a) - mv(b));
 }
 
+/** Multiversal Passage : le premier choix « en arrivant » du terrain est un type de terrain de base (une option par type). */
+export function landTypeChoice(face: CardDef): boolean {
+  const first = face.asEnters?.find((e) => e.op === "chooseOnEnter" || e.op === "chooseCopy");
+  return first?.op === "chooseOnEnter" && first.kind === "landType";
+}
+
 export function playLand(
   s: GameState,
   player: PlayerId,
@@ -396,19 +402,23 @@ export function playLand(
   if (back && !backLand) throw new RulesError("Cette carte n'a pas de verso terrain à jouer");
   const face = backLand ?? landFace(s.defs[o.defId]);
   const backFace = !!face && face.id !== o.defId;
-  // Multiversal Passage : « en arrivant, choisissez un type de terrain de base » (choisi avec la décision).
-  const choosesType = face?.chooseOnEnter === "landType";
+  // 614.12 : la première question « en arrivant » du terrain (Cavern of Souls : un type de créature ; Multiversal Passage :
+  // un type de terrain de base, `landType` ; Echoing Deeps : la carte copiée, "" pour aucune) est répondue avec la
+  // décision ; sans réponse, et pour les suivantes, la réponse suggérée (`asEntersChoices`).
+  const entering = { id: card, defId: face?.id ?? o.defId, controller: player };
+  const choosesType = face ? landTypeChoice(face) : false;
   if (landType !== undefined && (!choosesType || !BASIC_LAND_TYPES.includes(landType)))
     throw new RulesError("Type de terrain de base invalide");
-  // 614.12 : « en arrivant, choisissez… » (Cavern of Souls) : le choix du joueur, parmi les options ; sans choix, le
-  // choix par défaut (`defaultChoice`).
-  const kind = face?.chooseOnEnter;
-  let enterChosen: GameObject["chosen"] | undefined;
-  if (chosen !== undefined) {
-    if (!kind || kind === "landType" || !face) throw new RulesError("Ce terrain ne demande pas de choix");
-    const request = enterChoiceRequest(s, player, face.id, kind);
-    if (request.type !== "pick" || !request.options.includes(chosen)) throw new RulesError("Choix invalide");
-    enterChosen = chosenValue(kind, chosen);
+  if (chosen !== undefined && choosesType) throw new RulesError("Ce terrain ne demande pas de choix");
+  let first: ChoiceValue[] | undefined;
+  const given = landType ?? chosen;
+  if (given !== undefined) {
+    const probe = asEntersChoices(s, {}, entering, "land:", "probe");
+    const request = "ask" in probe ? probe.ask.request : undefined;
+    if (request?.type !== "pick") throw new RulesError("Ce terrain ne demande pas de choix");
+    if (given === "" && request.min === 0) first = [];
+    else if (request.options.includes(given)) first = [given];
+    else throw new RulesError("Choix invalide");
   }
   // Terrains choc : « vous pouvez payer 2 points de vie ; sinon, il arrive engagé ».
   const shock = face?.shockLand;
@@ -421,9 +431,10 @@ export function playLand(
   const defId = o.defId;
   const fromZone = o.zone;
   const fromExile = o.zone === "exile" ? exilePermission(s, player, card) : undefined;
+  const choices = asEntersChoices(s, {}, entering, "land:", first ? { first } : "auto");
   const id = moveObject(s, card, "battlefield", {
     controller: player,
-    enters: { shockPaid: payLife, chosen: landType ? { landType } : enterChosen },
+    enters: { shockPaid: payLife, ...("ask" in choices ? {} : choices) },
     ...(backFace ? { modalBack: true } : {}),
   });
   s.turn.landsPlayed += 1;
@@ -2443,23 +2454,6 @@ function addCosts(a: ManaCost, b: ManaCost): ManaCost {
   };
 }
 
-/** Choix « en arrivant » fait pendant la résolution (voir l'effet chooseOnEnter). */
-function chosenFrom(vars: Record<string, ChoiceValue[]>): GameObject["chosen"] {
-  const [kind, value] = (vars.$chosen ?? []).map(String);
-  if (!kind || !value) return undefined;
-  return chosenValue(kind, value);
-}
-
-/** Le choix « en arrivant » noté sur le permanent, d'après sa sorte et la réponse. */
-export function chosenValue(kind: string, value: string): GameObject["chosen"] {
-  if (kind === "cardName" || kind === "landName") return { cardName: value };
-  if (kind === "parity") return { parity: value === "odd" ? "odd" : "even" };
-  if (kind === "mode") return { mode: value };
-  if (kind === "number") return { number: Number(value) };
-  if (kind === "landType") return { landType: value };
-  return kind === "color" ? { color: value as Color } : { creatureType: value };
-}
-
 /** Signale les cibles d'un élément mis sur la pile (garde, « devient la cible »). */
 export function announceTargets(s: GameState, stackId: string, controller: PlayerId, targets: Record<string, string[]>): void {
   const all = flatTargets(targets);
@@ -2639,25 +2633,24 @@ export function crewPower(s: GameState, id: ObjectId): number {
   return effectivePower(chars(s, id), "crew");
 }
 
-/** Une source dont le nom a été choisi par un Sorcerous Spyglass (ou un Petrified Hamlet). */
+/**
+ * Une source dont le nom a été choisi par un permanent dont la règle est `chosenNameAbilities: "forbid"` (Sorcerous
+ * Spyglass, Petrified Hamlet) ; la règle est celle de la définition effective (une copie de Spyglass l'a aussi).
+ */
 function spyglassed(s: GameState, source: ObjectId): boolean {
   const name = s.objects[source] && chars(s, source).name;
-  return s.battlefield.some((id) => {
-    const o = obj(s, id);
-    const d = s.defs[o.defId];
-    return (
-      o.chosen?.cardName === name && (d?.chooseOnEnter === "cardName" || d?.chooseOnEnter === "landName") && !d.chosenNameTax
-    );
-  });
+  return s.battlefield.some(
+    (id) => obj(s, id).chosen?.cardName === name && s.defs[copiedDefId(s, id)]?.chosenNameAbilities === "forbid",
+  );
 }
 
-/** Skyseer's Chariot : {N} de plus pour les capacités activées des sources du nom choisi. */
+/** Skyseer's Chariot : {N} de plus pour les capacités activées des sources du nom choisi (`chosenNameAbilities: N`). */
 function chosenNameTax(s: GameState, source: ObjectId): number {
   const name = s.objects[source] && chars(s, source).name;
   return s.battlefield.reduce((n, id) => {
-    const o = obj(s, id);
-    const tax = s.defs[o.defId]?.chosenNameTax ?? 0;
-    return n + (tax && o.chosen?.cardName === name ? tax : 0);
+    const rule = s.defs[copiedDefId(s, id)]?.chosenNameAbilities;
+    const tax = typeof rule === "number" ? rule : 0;
+    return n + (tax && obj(s, id).chosen?.cardName === name ? tax : 0);
   }, 0);
 }
 
@@ -3673,31 +3666,12 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
   if (!d) return { specs: [], effects: [] };
   if (item.kind === "spell") {
     const mode = modesOf(d)[item.mode];
-    // 702.136 : émeute — le choix (marqueur ou célérité) se fait en résolvant le sort de créature.
-    const riot: Effect[] = isPermanentCard(d) && willHaveRiot(s, item.controller, d) ? [{ op: "chooseRiot" }] : [];
-    const effects = [...(mode?.effects ?? []), ...riot];
-    // 614.12 : « en arrivant, choisissez… » — le choix se fait pendant la résolution du sort de permanent.
-    // Une copie d'un sort de permanent fait aussi ces choix : elle devient un jeton qui arrive de la même façon (707.10).
-    if (d.chooseOnEnter && isPermanentCard(d)) {
-      return { specs: mode?.targets ?? [], effects: [...effects, { op: "chooseOnEnter", kind: d.chooseOnEnter }] };
-    }
-    if (d.devour && isPermanentCard(d)) {
-      const op: Effect = { op: "devour", filter: d.devour.filter, graveyardUpToX: d.devour.graveyardUpToX };
-      return { specs: mode?.targets ?? [], effects: [...effects, op] };
-    }
-    if (d.entersAsCopyOf && isPermanentCard(d)) {
-      return {
-        specs: mode?.targets ?? [],
-        effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOf, anyController: d.entersAsCopyAnyController }],
-      };
-    }
-    if (d.entersAsCopyOfGraveyard && isPermanentCard(d)) {
-      return {
-        specs: mode?.targets ?? [],
-        effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOfGraveyard.filter, fromGraveyards: true }],
-      };
-    }
-    return { specs: mode?.targets ?? [], effects };
+    // 614.1c, 614.12 : les effets « en arrivant » (choix, copie, dévorer, émeute 702.136) se font pendant la résolution du
+    // sort de permanent (`asEntersChoices`). Une copie d'un sort de permanent aussi : elle devient un jeton qui arrive de
+    // la même façon (707.10).
+    const enters: Effect[] =
+      isPermanentCard(d) && (d.asEnters?.length || willHaveRiot(s, item.controller, d)) ? [{ op: "asEnters" }] : [];
+    return { specs: mode?.targets ?? [], effects: [...(mode?.effects ?? []), ...enters] };
   }
   // Capacité retardée, réflexive ou accordée : ses effets voyagent avec elle ; la condition d'une capacité accordée « si… »
   // aussi (603.4).
@@ -3849,24 +3823,40 @@ function finishResolution(
   if (i >= 0) s.stack.splice(i, 1);
   // 707.10 : une copie de sort cesse d'exister en quittant la pile ; celle d'un sort de permanent devient un jeton en se
   // résolvant (Double Down).
+  // 614.1c, 614.12 : ce qu'apportent les effets « en arrivant » faits pendant la résolution (opération `asEnters`).
+  const entering = (d: CardDef) =>
+    asEntersChoices(
+      s,
+      vars,
+      { id: item.sourceId, defId: d.id, controller: item.controller, x: item.x, kicked: item.kicked },
+      ENTERS_PREFIX,
+      "auto",
+    );
   if (item.kind === "spell" && item.copy) {
-    if (s.objects[item.sourceId]) removeFromGame(s, item.sourceId);
     const d = s.defs[item.sourceDefId];
-    if (d && isPermanentCard(d)) {
-      const token = createTokenCopy(s, item.controller, d.id, {
-        x: item.x,
-        kicked: item.kicked,
-        chosen: chosenFrom(vars),
-        riot: vars.$riot?.[0] === "haste" ? "haste" : vars.$riot?.[0] === "counter" ? "counter" : undefined,
-        copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
-        copyMods: copiableExceptions(s, vars.$copyOf?.[1] !== undefined ? String(vars.$copyOf[1]) : undefined),
-        copyChosen: vars.$copyOf !== undefined,
-        // Choreographed Sparks : « la copie gagne la célérité ».
-        counters: item.arrival?.counters,
-        ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
-        haste: item.arrival?.haste,
-        ...(item.arrival?.nonlegendary ? { mods: { removeSupertypes: ["Legendary"] }, modsCopiable: true } : {}),
-      });
+    const choices = d && isPermanentCard(d) ? entering(d) : undefined;
+    // Une copie que ses effets « en arrivant » ont envoyée ailleurs (Mox Diamond sans terrain défaussé) ne devient pas un
+    // jeton.
+    const stays = !!s.objects[item.sourceId];
+    if (stays) removeFromGame(s, item.sourceId);
+    if (d && stays && choices && !("ask" in choices)) {
+      const token = createTokenCopy(
+        s,
+        item.controller,
+        d.id,
+        withEntersChoices(
+          {
+            x: item.x,
+            kicked: item.kicked,
+            // Choreographed Sparks : « la copie gagne la célérité ».
+            counters: item.arrival?.counters,
+            ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
+            haste: item.arrival?.haste,
+            ...(item.arrival?.nonlegendary ? { mods: { removeSupertypes: ["Legendary"] }, modsCopiable: true } : {}),
+          },
+          choices,
+        ),
+      );
       // « … et "au début de l'étape de fin, sacrifiez ce jeton" ».
       if (item.arrival?.atEnd === "sacrifice" && s.objects[token]?.zone === "battlefield")
         createDelayed(s, item.controller, token, s.objects[token]?.defId ?? d.id, {
@@ -3880,50 +3870,36 @@ function finishResolution(
   }
   if (item.kind === "spell" && s.objects[item.sourceId]) {
     const d = s.defs[item.sourceDefId];
-    if (d && isPermanentCard(d)) {
+    const choices = d && isPermanentCard(d) ? entering(d) : undefined;
+    if (d && choices && !("ask" in choices)) {
       // Verso d'une carte recto-verso modale lancé : le permanent arrive avec cette face.
       const face = s.objects[item.sourceId]?.faceDefId;
       // 303.4f : une Aura arrive attachée à l'objet qu'elle ciblait.
       const enteredId = moveObject(s, item.sourceId, "battlefield", {
         controller: item.controller,
-        enters: {
-          x: item.x,
-          kicked: item.kicked,
-          cast: item.cast,
-          attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
-          chosen: chosenFrom(vars),
-          riot: vars.$riot?.[0] === "haste" ? "haste" : vars.$riot?.[0] === "counter" ? "counter" : undefined,
-          devoured: Number(vars.$devoured?.[0] ?? 0),
-          copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
-          copyMods: copiableExceptions(s, vars.$copyOf?.[1] !== undefined ? String(vars.$copyOf[1]) : undefined),
-          copyChosen: vars.$copyOf !== undefined,
-          // Faufilement : il arrive engagé et attaquant ce qu'attaquait la créature renvoyée.
-          ...(item.cast?.sneakDefender ? { tapped: true, attacking: item.cast.sneakDefender } : {}),
-          // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
-          counters: item.arrival?.counters,
-          ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
-          haste: item.arrival?.haste,
-          mods: item.arrival?.subtypes ? { addSubtypes: item.arrival.subtypes } : undefined,
-          impending: item.cast?.via === "impending" ? (d.impending ?? 0) : undefined,
-        },
+        enters: withEntersChoices(
+          {
+            x: item.x,
+            kicked: item.kicked,
+            cast: item.cast,
+            attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
+            // Faufilement : il arrive engagé et attaquant ce qu'attaquait la créature renvoyée.
+            ...(item.cast?.sneakDefender ? { tapped: true, attacking: item.cast.sneakDefender } : {}),
+            // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
+            counters: item.arrival?.counters,
+            ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
+            haste: item.arrival?.haste,
+            mods: item.arrival?.subtypes ? { addSubtypes: item.arrival.subtypes } : undefined,
+            impending: item.cast?.via === "impending" ? (d.impending ?? 0) : undefined,
+          },
+          choices,
+        ),
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
       if (arrived && item.x) arrived.x = item.x;
-      // Mimeoplasm : les cartes exilées en arrivant sont liées au permanent.
-      if (arrived && vars["$ids:devoured"]?.length)
-        arrived.linked = [...(arrived.linked ?? []), ...vars["$ids:devoured"].map(String)];
       // Fear of Abduction : les cartes exilées pour payer le coût additionnel sont liées au permanent.
       const exiled = item.paid?.exiled ?? [];
       if (arrived && exiled.length) arrived.linked = [...(arrived.linked ?? []), ...exiled];
-      // Superior Spider-Man : « quand vous le faites, exilez cette carte » : une capacité réflexive (603.12).
-      const copied = vars.$copyCard?.[0];
-      if (arrived && copied !== undefined && s.objects[String(copied)]?.zone === "graveyard")
-        pushInline(s, item.controller, arrived.id, arrived.defId, {
-          targets: [],
-          effects: [{ op: "moveTo", what: { kind: "target", id: "c" }, spec: { to: "exile" } }],
-          bound: { c: [String(copied)] },
-          label: "Exilez la carte copiée",
-        });
       // Distorsion : exilé au début de la prochaine étape de fin.
       if (item.cast?.via === "warp" && arrived) {
         createDelayed(s, item.controller, arrived.id, arrived.defId, {

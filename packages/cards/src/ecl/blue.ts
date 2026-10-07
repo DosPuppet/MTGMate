@@ -97,7 +97,7 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Rimefire Torque": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       triggered(when.enters({ permanent: true, controller: "you", subtypeChosen: true }), [fx.counters(ref.self, "charge")], {
         label: "Un permanent du type choisi arrive : marqueur de charge",
@@ -318,9 +318,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Omni-Changeling": {
     // Changelin et convocation lus dans le texte.
-    entersAsCopyOf: { types: ["Creature"] },
-    entersAsCopyAnyController: true,
-    entersAsCopyMods: { addKeywords: ["changeling"] },
+    asEnters: [fx.chooseCopy({ types: ["Creature"] }, { anyController: true, except: { addKeywords: ["changeling"] } })],
   },
   "Pestered Wellguard": {
     abilities: [triggered(when.tapsSelf, [fx.createTokens(FAERIE_UB)], { label: "Engagée : jeton Faerie 1/1 avec le vol" })],

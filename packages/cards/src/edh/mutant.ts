@@ -541,8 +541,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
     ],
   },
   "Struggle for Project Purity": {
-    chooseOnEnter: "mode",
-    enterModes: ["Brotherhood", "Enclave"],
+    asEnters: [fx.chooseForSelf("mode", { options: ["Brotherhood", "Enclave"] })],
     abilities: [
       triggered(when.yourUpkeep, [fx.draw(1, ref.eachOpponent), fx.draw(amount.refCount(ref.eachOpponent))], {
         condition: cond.chosenMode("Brotherhood"),

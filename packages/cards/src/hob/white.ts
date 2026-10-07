@@ -286,7 +286,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   // Aventure : An Unexpected Party // At the Door.
   "An Unexpected Party": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
         { ...CREATURES_YOU_CONTROL, subtypeChosen: true },

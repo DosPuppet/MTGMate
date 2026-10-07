@@ -190,7 +190,7 @@ export const EDH_STAPLES: Record<string, CardScript> = {
     ],
   },
   "Herald's Horn": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       costReducer(CREATURE_OF_CHOSEN_TYPE, 1, "Vos sorts de créature du type choisi coûtent {1} de moins"),
       triggered(when.yourUpkeep, [fx.lookAtTop(1, { filter: CREATURE_OF_CHOSEN_TYPE, rest: "top" })], {
@@ -199,7 +199,7 @@ export const EDH_STAPLES: Record<string, CardScript> = {
     ],
   },
   "Vanquisher's Banner": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
         { ...CREATURE_OF_CHOSEN_TYPE, controller: "you" },

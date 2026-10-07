@@ -3612,7 +3612,7 @@ describe("Lorwyn Eclipsed, lot A — incolores", () => {
 
     it("un permanent du type choisi (changelin compris) qui arrive sous votre contrôle vous fait gagner 1 PV ; les autres, non", () => {
       let s = withPennant("Goblin");
-      expect(s.objects[idOf(s, "p1", "battlefield", "Dawn-Blessed Pennant")]?.chosen?.mode).toBe("Goblin");
+      expect(s.objects[idOf(s, "p1", "battlefield", "Dawn-Blessed Pennant")]?.chosen?.creatureType).toBe("Goblin");
       s = cast(s, GOBLIN.name);
       expect(s.players.p1?.life).toBe(21);
       s = cast(s, BEAR.name);

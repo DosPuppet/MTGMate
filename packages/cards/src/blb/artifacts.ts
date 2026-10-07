@@ -88,7 +88,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Patchwork Banner": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
         { types: ["Creature"], controller: "you", subtypeChosen: true },
@@ -232,7 +232,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Three Tree City": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       manaAbility("C"),
       paidMana("{2}", { amountPer: { types: ["Creature"], controller: "you", subtypeChosen: true } }),

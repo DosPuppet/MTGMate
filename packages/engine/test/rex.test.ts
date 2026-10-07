@@ -247,6 +247,33 @@ describe("Jurassic World Collection", () => {
       expect(chars(s, rex).keywords).toContain("flying");
       expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Forest", "Llanowar Elves"]);
     });
+
+    it("Indominus Rex (PLAN-H H9) : les marqueurs sont là dès son arrivée ; une carte piochée pour chaque marqueur", () => {
+      const TRAMPLER = customCard({ name: "Piétineur volant d'essai", keywords: ["flying", "trample"], power: 3, toughness: 3 });
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 3), ...lands("Island", 2)],
+          hand: ["Indominus Rex, Alpha", "Shivan Dragon", TRAMPLER],
+          library: lands("Forest", 5),
+        },
+      });
+      const discard = [idOf(s, "p1", "hand", "Shivan Dragon"), idOf(s, "p1", "hand", TRAMPLER.name)];
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Indominus Rex, Alpha") });
+      for (let i = 0; i < 20 && idsOf(s, "p1", "battlefield", "Indominus Rex, Alpha").length === 0; i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice")
+          s = act(s, p.player, {
+            type: "choose",
+            values: p.request.type === "pick" && p.request.options.includes(discard[0] as string) ? discard : p.request.suggested,
+          });
+      }
+      const rex = idOf(s, "p1", "battlefield", "Indominus Rex, Alpha");
+      // Vol (deux cartes l'ont : un seul marqueur) et piétinement, en arrivant.
+      expect(s.objects[rex]?.counters).toMatchObject({ flying: 1, trample: 1 });
+      s = settle(s);
+      expect(s.players.p1?.hand).toHaveLength(2);
+    });
   });
   describe("G4e : dernières cartes (2)", () => {
     it("Welcome to . . . // Jurassic Park : Mur 0/4, Dinosaure 3/3, puis les Murs sont détruits et la Saga revient en terrain", () => {

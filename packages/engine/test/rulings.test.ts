@@ -1147,3 +1147,126 @@ describe("PLAN-H H8b : « ne peut pas » face aux remplacements et aux préventi
     expect(s.players.p1?.lost).toBe(false);
   });
 });
+
+describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.10)", () => {
+  /** Joue jusqu'à une pile vide : les choix de cartes reçoivent tour à tour les réponses données, les autres la suggestion. */
+  const play = (s: GameState, picks: string[][] = [], typed: string[] = []) => {
+    const asked: ChoiceRequest[] = [];
+    let cur = s;
+    for (let i = 0; i < 200; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice") {
+        asked.push(p.request);
+        const r = p.request;
+        const given = r.intent === "pickCards" ? picks.shift() : r.intent === "chooseOnEnter" ? typed.splice(0, 1) : undefined;
+        cur = act(cur, p.player, {
+          type: "choose",
+          values: given?.length || r.intent === "pickCards" ? (given ?? []) : r.suggested,
+        });
+      } else break;
+    }
+    return { s: cur, asked };
+  };
+  const castCard = (s: GameState, name: string) => act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name) });
+
+  it("707.10 : la copie d'un sort de Visage Bandit (Double Down) devient un jeton qui choisit lui-même ce qu'il copie", () => {
+    const s0 = scenario({
+      p1: { battlefield: ["Double Down", "Serra Angel", "Bear Cub", ...lands("Island", 4)], hand: ["Visage Bandit"] },
+    });
+    const angel = idOf(s0, "p1", "battlefield", "Serra Angel");
+    const cub = idOf(s0, "p1", "battlefield", "Bear Cub");
+    const { s, asked } = play(castCard(s0, "Visage Bandit"), [[angel], [cub]]);
+    // Deux questions : le jeton (la copie se résout d'abord), puis la carte.
+    expect(asked.filter((r) => r.intent === "pickCards")).toHaveLength(2);
+    const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
+    expect(chars(s, token).name).toBe("Serra Angel");
+    expect(chars(s, token).subtypes).toEqual(expect.arrayContaining(["Angel", "Shapeshifter", "Rogue"]));
+    const bandit = s.battlefield.find(
+      (id) => !s.objects[id]?.isToken && s.defs[s.objects[id]?.defId ?? ""]?.name === "Visage Bandit",
+    );
+    expect(bandit && chars(s, bandit).name).toBe("Bear Cub");
+  });
+
+  it("707.9 et 614.12 : Phantasmal Image qui copie Adaptive Automaton fait le choix « en arrivant » du modèle", () => {
+    const s0 = scenario({
+      p1: { battlefield: lands("Island", 2), hand: ["Phantasmal Image"] },
+      p2: { battlefield: ["Adaptive Automaton"] },
+    });
+    const automaton = idOf(s0, "p2", "battlefield", "Adaptive Automaton");
+    const { s, asked } = play(castCard(s0, "Phantasmal Image"), [[automaton]], ["Goblin"]);
+    expect(asked.map((r) => r.intent)).toEqual(["pickCards", "chooseOnEnter"]);
+    const image = idOf(s, "p1", "battlefield", "Phantasmal Image");
+    expect(chars(s, image).name).toBe("Adaptive Automaton");
+    expect(s.objects[image]?.chosen?.creatureType).toBe("Goblin");
+    expect(chars(s, image).subtypes).toEqual(expect.arrayContaining(["Construct", "Goblin", "Illusion"]));
+  });
+
+  it("708.2 : un permanent mis face cachée (cape) n'a aucun effet « en arrivant » : ni question, ni choix", () => {
+    const s = scenario({ p1: { hand: ["Adaptive Automaton"] } });
+    const card = idOf(s, "p1", "hand", "Adaptive Automaton");
+    const r = { ...resolution("p1"), targets: { t: [card] } };
+    expect(runEffect(s, r as never, fx.moveTo(ref.target(), { to: "battlefield", as: "cloak" }))).toBeUndefined();
+    const id = s.battlefield.find((x) => s.objects[x]?.owner === "p1") as string;
+    expect(s.objects[id]?.faceDown).toBeDefined();
+    expect(s.objects[id]?.chosen).toBeUndefined();
+  });
+
+  it("un permanent mis sur le champ de bataille sous le contrôle d'un autre joueur : celui-ci choisit, parmi ses permanents", () => {
+    const s = scenario({
+      p1: { battlefield: ["Serra Angel"], graveyard: ["Waxen Shapethief"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const wax = idOf(s, "p1", "graveyard", "Waxen Shapethief");
+    const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+    const r = { ...resolution("p2"), targets: { t: [wax] } };
+    const effect = fx.moveTo(ref.target(), { to: "battlefield", underYourControl: true });
+    const asked = runEffect(s, r as never, effect) as { ask?: { player: string; key: string; request: ChoiceRequest } };
+    expect(asked.ask?.player).toBe("p2");
+    expect(asked.ask?.request.type === "pick" && asked.ask.request.options).toEqual([cub]);
+    (r.vars as Record<string, ChoiceValue[]>)[asked.ask?.key ?? ""] = [cub];
+    expect(runEffect(s, r as never, effect)).toBeUndefined();
+    const back = s.battlefield.find((id) => s.objects[id]?.controller === "p2" && id !== cub) as string;
+    expect(chars(s, back).name).toBe("Bear Cub");
+  });
+
+  it("un jeton copie d'un permanent à choix (Electroduplicate sur Adaptive Automaton) : le choix par défaut, sans question", () => {
+    const s0 = scenario({
+      p1: { battlefield: ["Adaptive Automaton", ...lands("Mountain", 3)], hand: ["Electroduplicate"] },
+    });
+    const automaton = idOf(s0, "p1", "battlefield", "Adaptive Automaton");
+    const cast = act(s0, "p1", { type: "cast", card: idOf(s0, "p1", "hand", "Electroduplicate"), targets: { t: [automaton] } });
+    const { s, asked } = play(cast);
+    expect(asked.filter((r) => r.intent === "chooseOnEnter")).toHaveLength(0);
+    const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
+    expect(s.objects[token]?.chosen?.creatureType).toBeDefined();
+  });
+
+  it("702.136 : une créature avec l'émeute remise sur le champ de bataille par un effet (Zombify) demande le marqueur ou la célérité", () => {
+    const s0 = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Zombify"], graveyard: ["Spider-Punk"] } });
+    const punk = idOf(s0, "p1", "graveyard", "Spider-Punk");
+    const cast = act(s0, "p1", { type: "cast", card: idOf(s0, "p1", "hand", "Zombify"), targets: { t: [punk] } });
+    const { s, asked } = play(cast);
+    const riot = asked.find((r) => r.type === "pick" && r.options.includes("haste"));
+    expect(riot?.suggested).toEqual(["haste"]);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Spider-Punk")).keywords).toContain("haste");
+  });
+
+  it("Waxen Shapethief qui copie Sorcerous Spyglass nomme une carte ; les capacités activées des sources de ce nom sont interdites", () => {
+    const s0 = scenario({
+      p1: { battlefield: ["Sorcerous Spyglass", ...lands("Island", 6)], hand: ["Waxen Shapethief", "Waxen Shapethief"] },
+    });
+    const glass = idOf(s0, "p1", "battlefield", "Sorcerous Spyglass");
+    const cycling = (x: GameState) =>
+      legalActions(x, "p1").some((a) => a.type === "activate" && x.objects[a.source]?.zone === "hand");
+    expect(cycling(s0)).toBe(true);
+    const { s, asked } = play(castCard(s0, "Waxen Shapethief"), [[glass]], ["Waxen Shapethief"]);
+    expect(asked.map((r) => r.intent)).toEqual(["pickCards", "chooseOnEnter"]);
+    const wax = s.battlefield.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Waxen Shapethief") as string;
+    expect(chars(s, wax).name).toBe("Sorcerous Spyglass");
+    expect(s.objects[wax]?.chosen?.cardName).toBe("Waxen Shapethief");
+    // Le recyclage de l'autre Waxen Shapethief (une capacité activée depuis la main) ne peut plus être activé.
+    expect(cycling(s)).toBe(false);
+  });
+});

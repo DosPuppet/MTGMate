@@ -82,7 +82,7 @@ export const LANDS: Record<string, CardScript> = {
     ],
   },
   "Secluded Courtyard": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       manaAbility("C"),
       manaAbility(["W", "U", "B", "R", "G"], 1, {
@@ -175,7 +175,7 @@ export const LANDS: Record<string, CardScript> = {
     ],
   },
   "Uncharted Haven": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [entersWith({ tapped: true }), manaAbility(["W"], 1, { produceChosen: true })],
   },
 };

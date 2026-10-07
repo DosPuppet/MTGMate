@@ -443,8 +443,11 @@ export const RECORD_VERSION = 1;
  * - 161 : PLAN-H H8b : statiques de joueur fusionnées (cantGainLife du joueur enchanté, blessures impossibles à
  *   prévenir, cantLose, skips, maxHandSize, lookAt, cantAttack), « ne se dégage pas » en remplacement de l'étape de
  *   dégagement (Prop Room, perte des capacités), Hedge Whisperer : vrai choix (502.3)
+ * - 162 : PLAN-H H9 : « en arrivant » générique (asEnters : une boucle pour les quatre chemins d'arrivée ; une copie
+ *   fait les choix de son modèle, 707.9 ; rien pour une face cachée, 708.2) ; Echoing Deeps, Cursed Mirror, Altered
+ *   Ego, Sin, Dawn-Blessed Pennant, Indominus Rex, Mox Diamond
  */
-export const RULES_VERSION = 161;
+export const RULES_VERSION = 162;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

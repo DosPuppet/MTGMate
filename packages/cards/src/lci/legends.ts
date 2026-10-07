@@ -658,7 +658,7 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Roaming Throne": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility("self", { addChosen: "subtype" }, { label: "Du type choisi" }),
       playerStatic({
@@ -669,7 +669,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   // --- Terrains -------------------------------------------------------------------
   "Cavern of Souls": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       manaAbility("C"),
       manaAbility([...ANY], 1, {
@@ -679,24 +679,10 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Echoing Deeps": {
-    abilities: [
-      manaAbility("C"),
-      triggered(
-        when.entersSelf,
-        [
-          ...fx.may(
-            "Devenir une copie de ce terrain ?",
-            fx.becomeCopy(ref.self, ref.target(), "permanent"),
-            fx.modify(ref.self, { addSubtypes: ["Cave"] }, "permanent"),
-            fx.tap(ref.self),
-          ),
-        ],
-        {
-          targets: [target.optional(target.cardInGraveyard("t", { types: ["Land"] }, "any", "carte de terrain d'un cimetière"))],
-          label: "Copie d'une carte de terrain d'un cimetière",
-        },
-      ),
-    ],
+    // « … arriver engagé comme une copie de n'importe quelle carte de terrain d'un cimetière, sauf que c'est une Caverne
+    // en plus de ses autres types. »
+    asEnters: [fx.chooseCopy({ types: ["Land"] }, { fromGraveyards: true, tapped: true, except: { addSubtypes: ["Cave"] } })],
+    abilities: [manaAbility("C")],
   },
   "Pit of Offerings": {
     abilities: [
@@ -710,7 +696,7 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Sunken Citadel": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       entersWith({ tapped: true, label: "Arrive engagé" }),
       manaAbility([...ANY], 1, { produceChosen: true }),

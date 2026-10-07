@@ -4,6 +4,7 @@ import { type CostPick, costToText, type GameView, type ObjectView } from "@mtgx
 import { useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { faceName, type Lang } from "../i18n";
+import { useLocalize } from "../localize";
 import { myActions, type PlayableOption, useGame } from "../store";
 import { useTutorial } from "../tutorial/store";
 import { ChoicePrompt } from "./ChoicePrompt";
@@ -909,21 +910,32 @@ function GameOver({ view }: { view: GameView }) {
   );
 }
 
-/** Terrain joué avec une question « en arrivant, choisissez… » (Cavern of Souls : un type de créature). */
+/**
+ * Terrain joué avec une question « en arrivant » (Cavern of Souls : un type de créature ; Echoing Deeps : une carte de
+ * terrain d'un cimetière à copier, ou aucune).
+ */
 function LandChoice() {
   const option = useGame((s) => s.landChoice);
   const answer = useGame((s) => s.answerLandChoice);
+  const view = useGame((s) => s.view);
+  const lang = useGame((s) => s.lang);
+  const loc = useLocalize();
   const [filter, setFilter] = useState("");
   const request = option?.choose;
   if (request?.type !== "pick") return null;
   const suggested = String(request.suggested[0] ?? "");
-  const label = (v: string) => request.labels?.[v] ?? v;
+  // Une carte d'un cimetière (Echoing Deeps) : son nom ; sinon le libellé du moteur, ou la valeur.
+  const graveyards = Object.values(view?.players ?? {}).flatMap((pl) => pl.graveyard);
+  const label = (v: string) => {
+    const card = graveyards.find((o) => o.id === v);
+    return card ? faceName(card, lang) : loc(request.labels?.[v] ?? v);
+  };
   const shown = request.options
     .map(String)
     .filter((v) => !filter || label(v).toLowerCase().includes(filter.toLowerCase()))
     .sort((a, b) => (a === suggested ? -1 : b === suggested ? 1 : 0));
   return (
-    <Modal title={request.prompt}>
+    <Modal title={loc(request.prompt)}>
       {request.options.length > 12 && (
         <input className="choice-filter" placeholder="Filtrer…" value={filter} onChange={(e) => setFilter(e.target.value)} />
       )}
@@ -936,6 +948,11 @@ function LandChoice() {
         ))}
       </div>
       <div className="modal-actions">
+        {request.min === 0 && (
+          <button type="button" className="btn" onClick={() => answer("")}>
+            Aucune
+          </button>
+        )}
         <button type="button" className="btn ghost" onClick={() => answer(null)}>
           Annuler
         </button>

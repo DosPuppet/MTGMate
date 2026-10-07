@@ -17,10 +17,10 @@ Chaque entrée porte sa nature :
   - « une source qui perd toutes ses capacités n'applique plus ses statiques » : à un niveau seulement ;
   - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
 - `timing` **Répartition (601.2d), adversaire du cadeau promis (702.174a) et nouvelles cibles d'une copie (707.10c) :** demandés juste après la mise sur la pile (coûts payés), avant que quiconque reçoive la priorité, et non pendant l'annonce ; une copie faite pendant une résolution choisit ses cibles à la fin de celle-ci. Une copie faite avant que l'original ait annoncé sa répartition annonce la sienne (`stackChoices.ts`) ; l'adversaire du cadeau, lui, est toujours celui de l'original (707.10), reporté sur la copie une fois choisi.
-- `choix auto` **Aura ou « arrive comme une copie » sans être lancé, hors résolution** (retour d'un exil lié, actions basées sur l'état) : le premier hôte ou modèle possible est choisi pour le joueur. Pendant une résolution (`moveTo`), le choix est demandé (303.4f, 707.5).
+- `choix auto` **Aura qui arrive sans être lancée, hors résolution** (retour d'un exil lié, actions basées sur l'état) : le premier hôte possible est choisi pour le joueur. Pendant une résolution (`moveTo`), le choix est demandé (303.4f).
 - `règle` **Horodatage d'une Aura qui donne le contrôle (Confiscate) :** celui de son arrivée sur le champ de bataille, et non celui de son dernier attachement (613.7e). Eriette, the Beguiler est une statique : le contrôle dure tant que l'Aura reste attachée, que la condition de valeur de mana tient et qu'Eriette est sur le champ de bataille (sa perte rend les permanents volés ; une nouvelle Eriette vole rétroactivement).
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
-- `choix auto` **Choix « en arrivant » hors d'un sort ou d'un effet** (retour d'un exil lié, actions basées sur l'état, ninjutsu, faufilement) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur. Un terrain joué (Cavern of Souls) et un permanent mis en jeu par un effet (`moveTo`) posent la question au joueur.
+- `choix auto` **Effets « en arrivant » hors d'une résolution** (retour d'un exil lié, jeton copie créé par un effet, ninjutsu, faufilement, actions basées sur l'état ; 614.1c, 614.12) : seuls les choix sont faits (type, couleur, nom, mode, modèle d'une copie), avec la réponse suggérée ; les autres effets « en arrivant » ne le sont pas (Sin ne retire aucun marqueur, Mox Diamond arrive sans défausse, dévorer ne sacrifie rien), et l'émeute prend le choix par défaut. Un sort de permanent qui se résout, un terrain joué (la première question vient avec la décision, les suivantes prennent la suggestion) et un permanent mis sur le champ de bataille par un effet (`moveTo`, `arrivalChoices`) posent les questions au joueur (`asEntersChoices`, PLAN-H H9).
 - `choix auto` **Mana « en n'importe quelle combinaison » engagé à la main** (Vivi Ornitier, Flamebraider, Interdimensional Web Watch, Hermitic Herbalist) : tout le mana est d'une même couleur, choisie ; le paiement automatique d'un coût, lui, le répartit au mieux.
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
 - `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
@@ -98,12 +98,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Alania : un sort d'Alania lancé plus tôt dans le tour compte comme sort de Loutre (le sort de Loutre suivant n'est plus « le premier ») ; Ral (emblème) : la réplique est comptée à la résolution (un sort lancé en réponse au déclenchement compte).
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
-  - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : la carte devient un Esprit 1/1 volant juste après son arrivée (et non en arrivant) ;
+  - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : la carte arrive créature Esprit volante, mais ses F/E de base ne deviennent 1/1 que juste après son arrivée ;
   - `règle` Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
   - `timing` Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
   - `règle` Locus of Enlightenment : les capacités gagnées ne sont pas limitées à une activation par tour ;
   - `timing` Ojer Kaslem : la carte de créature est mise sur le champ de bataille juste avant la carte de terrain (et non en même temps) ;
-  - `règle` Echoing Deeps : devient une copie du terrain (et s'engage) par une capacité déclenchée d'arrivée, et non en arrivant ;
   - `règle` Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix.
 - **Reality Fracture (`docs/extensions/fra.md`) :**
   - `choix auto` Theorist's Sanctum : on contemple un Jace en arrivant dès que c'est possible, sans révéler la carte ;
@@ -126,7 +125,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Nameless Inversion : « perd tous ses types de créature » retire tous les sous-types et le changelin jusqu'à la fin du tour ;
   - `règle` Eclipsed Realms : le type choisi est pris parmi tous les types de créature ;
   - `règle` Foraging Wickermaw : cinq capacités (une par couleur), activables seulement tant qu'elle est incolore ;
-  - `règle` Dawn-Blessed Pennant : le type (une des huit tribus) est choisi comme un mode en arrivant ;
   - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
   - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
@@ -206,7 +204,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Maximum Carnage : au chapitre I, les exigences d'attaque (« attaque à chaque combat si possible, et un joueur autre que vous si possible ») ne visent que les créatures présentes à la résolution, pas celles qui arrivent ensuite ;
   - `règle` Spinneret and Spiderling : le seuil de 4 blessures se lit par blessure infligée ; des blessures de combat réparties entre plusieurs bloqueurs (2 + 2) ne le déclenchent pas ;
   - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse ;
-  - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type ; le type est choisi comme un mode d'arrivée.
+  - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type.
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
   - `règle` Turtles Forever : la recherche ne porte que sur la bibliothèque (rien hors de la partie), et « exactement quatre » n'est pas imposé (l'adversaire choisit parmi les cartes trouvées) ;
   - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci ;
@@ -237,7 +235,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Shared Animosity : un attaquant changelin partage un type avec toute autre créature attaquante ;
   - `règle` Outlaws' Merriment : le jeton « choisi au hasard » est tiré par un dé à trois faces (affiché au journal) ;
   - `choix auto` Cresting Mosasaurus (émerger) : la créature sacrifiée est celle de plus grande valeur de mana ;
-  - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà ; les trois marqueurs sont mis par une capacité d'arrivée ;
+  - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà (seulement en copiant un autre Flesh Duplicate : aucune carte gérée n'a la disparition imprimée) ;
   - `règle` Hunting Velociraptor : la maraude demande des blessures de combat d'un Dinosaure (pas de n'importe quel type commun au sort) ;
   - `règle` Ad Nauseam : le processus se répète au plus trente fois ;
   - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
@@ -245,7 +243,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;
   - `règle` Painter's Servant : seuls les permanents prennent la couleur choisie (pas les sorts ni les cartes des autres zones) ;
   - `règle` Sylvan Library : les deux cartes remises sont choisies parmi les cartes mises dans la main ce tour-ci (pas seulement celles piochées) ;
-  - `règle` Indominus Rex, Alpha : la défausse et les marqueurs viennent d'une capacité d'arrivée (pas « en arrivant ») ; seule une carte est piochée par marqueur de mot-clé ;
   - `règle` Expropriate : pour le vote « argent » d'un adversaire, le permanent est choisi parmi ceux qu'il contrôle et que possède un de vos adversaires (et non parmi ceux qu'il possède, quel que soit leur contrôleur) ;
   - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ;
   - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour »).
@@ -258,7 +255,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Rewind, Unwind, Frantic Search : « dégagez jusqu'à N terrains » ne dégage que vos terrains, choisis automatiquement ;
   - `choix auto` Phyrexian Altar : capacité de mana activée à la main ; le paiement automatique ne sacrifie jamais de créature ;
   - `règle` Teferi's Protection : une Aura déjà attachée au joueur (malédiction) ne tombe pas.
-  - `règle` Mox Diamond : « s'il devait arriver, vous pouvez défausser une carte de terrain à la place ; sinon, il va au cimetière » est une capacité d'arrivée : il arrive (ses capacités « quand un artefact arrive » le voient), puis il est sacrifié si aucun terrain n'est défaussé ;
   - `règle` Forbidden Orchard : « quand vous engagez ce terrain pour du mana » se déclenche quand il devient engagé, quelle qu'en soit la raison ;
   - `règle` Chromatic Orrery : « dépenser du mana comme s'il était de n'importe quelle couleur » vaut pour les sorts, pas pour les capacités activées ;
   - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ;
@@ -270,13 +266,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Wheel of Misfortune : les nombres sont choisis l'un après l'autre (dans l'ordre APNAP, sans voir ceux des autres), de 0 à 20 ;
   - `règle` Gray Merchant of Asphodel, Creeping Bloodsucker : les PV gagnés sont calculés (dévotion par adversaire, nombre d'adversaires), pas lus sur les pertes et blessures réelles (différent seulement si elles sont remplacées) ;
   - `règle` Keen Duelist : les cartes du dessus ne sont pas révélées explicitement.
-  - `règle` Cursed Mirror : la copie vient d'une capacité d'arrivée (et non « en arrivant ») ; la créature copiée est choisie comme une cible ;
   - `règle` Incubateur (701.53) : la transformation est une modification permanente (créature-artefact Phyrexian 0/0), pas un passage au verso ; le jeton garde son nom ;
   - `règle` The Ur-Sphinx : joueur par joueur, il meule puis vous pouvez lancer une de ses cartes (et non toutes les meules d'abord) ;
   - `règle` Vigor : « quand elle est mise dans un cimetière depuis n'importe où, mélangez-la dans la bibliothèque » est un remplacement : elle est mélangée sans passer par le cimetière (comme les Eldrazi) ;
   - `règle` Coin of Mastery : le mana produit en trop par des sources (Sol Ring pour un seul {1}) est d'abord retiré du mana des artefacts.
-  - `règle` Sin, Unending Cataclysm : capacité d'arrivée (et non « en arrivant ») qui retire les marqueurs des artefacts, créatures et enchantements de vos adversaires (pas au choix) ;
-  - `règle` Altered Ego : les X marqueurs viennent d'une capacité d'arrivée de la copie ;
   - `règle` Collective Effort : l'escalade se paie {1} par mode en plus (et non en engageant une créature) ;
   - `choix auto` Forgotten Ancient : tous ses marqueurs +1/+1 vont sur une seule autre créature ; Resourceful Defense : tous les marqueurs +1/+1 sont déplacés ;
   - `règle` Yuna, Grand Summoner : les deux marqueurs vont au sort de créature payé avec son mana (et non au prochain sort de créature du tour) ;

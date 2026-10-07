@@ -989,6 +989,23 @@ describe("Special Guests", () => {
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
       expect(s.objects[dup]?.counters.time).toBe(2);
     });
+
+    it("Flesh Duplicate (PLAN-H H9) : les trois marqueurs de temps sont là dès son arrivée, sans capacité sur la pile", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 2), hand: ["Flesh Duplicate"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Flesh Duplicate") });
+      for (let i = 0; i < 20 && idsOf(s, "p1", "battlefield", "Flesh Duplicate").length === 0; i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      }
+      const dup = idOf(s, "p1", "battlefield", "Flesh Duplicate");
+      expect(s.objects[dup]?.counters.time).toBe(3);
+      expect(s.stack).toHaveLength(0);
+      expect(s.triggers).toHaveLength(0);
+    });
   });
   describe("G4e : bibliothèque et pioche", () => {
     it("Necrodominance : étape de fin, payez X PV et piochez X ; main maximale cinq ; cimetière exilé", () => {

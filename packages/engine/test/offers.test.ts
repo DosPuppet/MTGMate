@@ -329,4 +329,21 @@ describe("options proposées, décisions acceptées", () => {
     s = act(s, "p1", fallbackDecision(s, p));
     expect(s.combat?.attackers ?? []).toHaveLength(0);
   });
+  it("terrain avec une question « en arrivant » (PLAN-H H9) : chaque réponse proposée, et « aucune » quand c'est permis, est acceptée", () => {
+    const s = scenario({
+      p1: { hand: ["Echoing Deeps", "Cavern of Souls", "Multiversal Passage"], graveyard: ["Forest"] },
+      p2: { graveyard: ["Restless Vents"] },
+    });
+    const offered = legalActions(s, "p1").filter((a): a is Extract<ActionOption, { type: "playLand" }> => a.type === "playLand");
+    expect(offered.length).toBeGreaterThan(3);
+    for (const option of offered) {
+      const { choose, faceName: _f, ...decision } = option;
+      const answers = choose?.type === "pick" ? [...choose.options, ...(choose.min === 0 ? [""] : [])] : [undefined];
+      for (const chosen of answers.slice(0, 5))
+        expect(() => act(s, "p1", { ...decision, ...(chosen !== undefined ? { chosen } : {}) })).not.toThrow();
+    }
+    // Multiversal Passage : le type de terrain de base vient de l'option, pas de `chosen`.
+    const passage = idOf(s, "p1", "hand", "Multiversal Passage");
+    expect(() => act(s, "p1", { type: "playLand", card: passage, chosen: "Island" })).toThrow(RulesError);
+  });
 });

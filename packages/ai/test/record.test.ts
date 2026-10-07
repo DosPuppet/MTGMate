@@ -40,6 +40,39 @@ describe("enregistrement et rejeu", () => {
     expect(replayGame(copy, card, 10).state).toEqual(states[10]);
   }, 60_000);
 
+  it("PLAN-H H9 : les choix « en arrivant » (copies, types, terrains, Mox Diamond) se rejouent à l'identique", async () => {
+    // Des cartes à choix « en arrivant » des deux côtés : la partie rejouée (décisions seules) retrouve l'état final.
+    const main: [number, string][] = [
+      [6, "Island"],
+      [6, "Mountain"],
+      [4, "Echoing Deeps"],
+      [4, "Cavern of Souls"],
+      [4, "Phantasmal Image"],
+      [4, "Adaptive Automaton"],
+      [4, "Cursed Mirror"],
+      [4, "Visage Bandit"],
+      [4, "Mox Diamond"],
+      [4, "Bear Cub"],
+      [4, "Serra Angel"],
+      [4, "Burglar Rat"],
+      [4, "Waxen Shapethief"],
+    ];
+    for (const seed of [5, 6]) {
+      const { state, events, record } = createRecordedGame({
+        seed,
+        players: [
+          { id: "p1", name: "Alice", deck: buildDeck({ main }) },
+          { id: "p2", name: "Bob", deck: buildDeck({ main }) },
+        ],
+      });
+      const host = new GameHost(state, { agents: { p1: randomAgent(seed), p2: heuristicAgent() }, record }, events);
+      await host.run();
+      const copy = JSON.parse(JSON.stringify(record));
+      expect(replayGame(copy, card).state).toEqual(host.state);
+      expect(replayChecked(copy, card).divergence).toBeNull();
+    }
+  }, 120_000);
+
   async function recorded(): Promise<{ record: GameRecord; final: ReturnType<typeof replayGame>["state"] }> {
     const { state, events, record } = createRecordedGame({
       seed: 99,

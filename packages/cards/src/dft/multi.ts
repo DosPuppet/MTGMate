@@ -317,7 +317,7 @@ export const MULTI: Record<string, CardScript> = {
   "Rocky Roads": road("R"),
   "Wild Roads": road("G"),
   "Night Market": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [entersWith({ tapped: true }), manaAbility(["W"], 1, { produceChosen: true })],
   },
 };

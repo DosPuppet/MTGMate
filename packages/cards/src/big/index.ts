@@ -494,7 +494,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
     ],
   },
   "Tarnation Vista": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       entersWith({ tapped: true }),
       manaAbility(["W"], 1, { produceChosen: true }),

@@ -1011,7 +1011,7 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Door of Destinies": {
-    chooseOnEnter: "creatureType",
+    asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       triggered(when.castSpell("you", { subtypeChosen: true }), [fx.counters(ref.self, "charge")], {
         label: "Sort du type choisi : un marqueur de charge",
@@ -1210,33 +1210,47 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Phantasmal Image": {
-    entersAsCopyOf: { types: ["Creature"] },
-    entersAsCopyAnyController: true,
-    entersAsCopyMods: {
-      addSubtypes: ["Illusion"],
-      addAbilities: [
-        triggered({ on: "becomesTarget", who: "self" }, [fx.sacrificeIt(ref.self)], {
-          label: "Devient la cible d'un sort ou d'une capacité : sacrifiez-la",
-        }),
-      ],
-    },
+    asEnters: [
+      fx.chooseCopy(
+        { types: ["Creature"] },
+        {
+          anyController: true,
+          except: {
+            addSubtypes: ["Illusion"],
+            addAbilities: [
+              triggered({ on: "becomesTarget", who: "self" }, [fx.sacrificeIt(ref.self)], {
+                label: "Devient la cible d'un sort ou d'une capacité : sacrifiez-la",
+              }),
+            ],
+          },
+        },
+      ),
+    ],
   },
   "Flesh Duplicate": {
-    entersAsCopyOf: { types: ["Creature"] },
-    entersAsCopyAnyController: true,
-    entersAsCopyMods: {
-      addAbilities: [
-        triggered(when.entersSelf, [fx.counters(ref.self, "time", 3)], { label: "Disparition 3 : trois marqueurs de temps" }),
-        triggered(
-          when.yourUpkeep,
-          [
-            fx.removeCounters(ref.self, 1, "time"),
-            ...fx.when(cond.not(cond.amountAtLeast(amount.countersOn(ref.self, "time"), 1)), fx.sacrificeIt(ref.self)),
-          ],
-          { label: "Disparition : retirez un marqueur de temps ; le dernier retiré, sacrifiez-la" },
-        ),
-      ],
-    },
+    // Disparition 3 (702.63) : elle arrive avec trois marqueurs de temps (en arrivant), et la capacité d'entretien est
+    // une exception de la copie. Approximation : donnée même si la créature copiée a déjà la disparition.
+    asEnters: [
+      fx.chooseCopy(
+        { types: ["Creature"] },
+        {
+          anyController: true,
+          counters: { kind: "time", n: 3 },
+          except: {
+            addAbilities: [
+              triggered(
+                when.yourUpkeep,
+                [
+                  fx.removeCounters(ref.self, 1, "time"),
+                  ...fx.when(cond.not(cond.amountAtLeast(amount.countersOn(ref.self, "time"), 1)), fx.sacrificeIt(ref.self)),
+                ],
+                { label: "Disparition : retirez un marqueur de temps ; le dernier retiré, sacrifiez-la" },
+              ),
+            ],
+          },
+        },
+      ),
+    ],
   },
   Necrodominance: {
     abilities: [
@@ -1295,7 +1309,7 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Painter's Servant": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [staticAbility({}, { setColorsChosen: "add" }, { label: "Les permanents sont aussi de la couleur choisie" })],
   },
   // « Deux cartes de votre main piochées ce tour-ci ».

@@ -398,8 +398,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Barrensteppe Siege": {
-    chooseOnEnter: "mode",
-    enterModes: ["Abzan", "Mardu"],
+    asEnters: [fx.chooseForSelf("mode", { options: ["Abzan", "Mardu"] })],
     abilities: [
       triggered(when.yourEndStep, [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)], {
         condition: cond.chosenMode("Abzan"),
@@ -412,8 +411,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Frostcliff Siege": {
-    chooseOnEnter: "mode",
-    enterModes: ["Jeskai", "Temur"],
+    asEnters: [fx.chooseForSelf("mode", { options: ["Jeskai", "Temur"] })],
     abilities: [
       triggered(when.combatDamageBatch(CREATURE_YOU_CONTROL), [fx.draw(1)], {
         condition: cond.chosenMode("Jeskai"),
@@ -427,8 +425,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Glacierwood Siege": {
-    chooseOnEnter: "mode",
-    enterModes: ["Temur", "Sultai"],
+    asEnters: [fx.chooseForSelf("mode", { options: ["Temur", "Sultai"] })],
     abilities: [
       triggered(when.castSpell("you", { types: ["Instant", "Sorcery"] }), [fx.mill(4, ref.target())], {
         targets: [target.player()],
@@ -443,8 +440,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Hollowmurk Siege": {
-    chooseOnEnter: "mode",
-    enterModes: ["Sultai", "Abzan"],
+    asEnters: [fx.chooseForSelf("mode", { options: ["Sultai", "Abzan"] })],
     abilities: [
       triggered(when.countersPut(CREATURE_YOU_CONTROL), [fx.draw(1)], {
         condition: cond.chosenMode("Sultai"),
@@ -459,8 +455,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Windcrag Siege": {
-    chooseOnEnter: "mode",
-    enterModes: ["Mardu", "Jeskai"],
+    asEnters: [fx.chooseForSelf("mode", { options: ["Mardu", "Jeskai"] })],
     abilities: [
       playerStatic({
         triggerMod: { effect: "again", on: "attack" },

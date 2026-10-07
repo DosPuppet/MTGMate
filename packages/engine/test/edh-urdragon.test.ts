@@ -3,6 +3,7 @@
  * qui arrivent ou attaquent, mana (créatures, artefacts, terrains), contresorts et sorts de masse.
  */
 import { describe, expect, it } from "vitest";
+import { fx, triggered, when } from "../src/dsl";
 import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
@@ -13,6 +14,7 @@ import {
   attack,
   attackPlayer,
   castable,
+  customCard,
   idOf,
   idsOf,
   lands,
@@ -137,6 +139,23 @@ describe("The Ur-Dragon (EDH)", () => {
       none = settle(castIt(none, "p1", "Mox Diamond"));
       expect(onField(none, "p1", "Mox Diamond")).toBe(0);
       expect(idsOf(none, "p1", "graveyard", "Mox Diamond")).toHaveLength(1);
+    });
+
+    it("Mox Diamond (PLAN-H H9) : sans terrain défaussé, il n'arrive jamais (« quand un artefact arrive » ne se déclenche pas)", () => {
+      const WATCH = customCard({
+        name: "Guetteur d'artefacts",
+        types: ["Enchantment"],
+        typeLine: "Enchantment",
+        abilities: [
+          triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.gainLife(1)], { label: "Vous gagnez 1 PV" }),
+        ],
+      });
+      let none = scenario({ p1: { battlefield: [WATCH], hand: ["Mox Diamond", "Opt"] } });
+      none = settle(castIt(none, "p1", "Mox Diamond"));
+      expect([onField(none, "p1", "Mox Diamond"), life(none, "p1")]).toEqual([0, 20]);
+      let kept = scenario({ p1: { battlefield: [WATCH], hand: ["Mox Diamond", "Forest"] } });
+      kept = settle(castIt(kept, "p1", "Mox Diamond"), (req, _p, cur) => picking(idsOf(cur, "p1", "hand", "Forest"))(req));
+      expect([onField(kept, "p1", "Mox Diamond"), life(kept, "p1")]).toEqual([1, 21]);
     });
 
     it("Arena of Glory : engagée sans Montagne ; épuisée, {R}{R} qui donne la célérité à une créature", () => {

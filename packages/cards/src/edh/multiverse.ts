@@ -170,21 +170,10 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
     ],
   },
   "Cursed Mirror": {
-    abilities: [
-      manaAbility("R"),
-      // Approximation : capacité d'arrivée (pas « en arrivant ») ; la créature copiée est choisie comme une cible.
-      triggered(
-        when.entersSelf,
-        fx.may(
-          "Devenir une copie d'une créature jusqu'à la fin du tour ?",
-          fx.becomeCopy(ref.self, ref.target(), "endOfTurn", { addKeywords: ["haste"] }),
-        ),
-        {
-          targets: [target.upTo(1, target.creature("t"))],
-          label: "Copie d'une créature jusqu'à la fin du tour, avec la célérité",
-        },
-      ),
+    asEnters: [
+      fx.chooseCopy({ types: ["Creature"] }, { anyController: true, duration: "endOfTurn", except: { addKeywords: ["haste"] } }),
     ],
+    abilities: [manaAbility("R")],
   },
   "Omnath, Locus of the Void": {
     // « +1/+1 pour chaque mana inutilisé que vous avez » : force et endurance de base 6 plus ce mana.
@@ -407,8 +396,11 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
   },
   "Serra's Emissary": {
     // Le type de carte est choisi comme un mode d'arrivée (comme Arachne, Psionic Weaver).
-    chooseOnEnter: "mode",
-    enterModes: ["Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Planeswalker", "Land", "Battle", "Kindred"],
+    asEnters: [
+      fx.chooseForSelf("mode", {
+        options: ["Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Planeswalker", "Land", "Battle", "Kindred"],
+      }),
+    ],
     abilities: [
       staticAbility(
         CREATURE_YOU,

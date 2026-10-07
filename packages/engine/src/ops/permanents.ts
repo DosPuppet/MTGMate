@@ -1,6 +1,7 @@
 /** Effets du moteur : modifications de permanents, contrôle, copies et jetons. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
 import { createTokenCopy, createTokens, phaseOut, tokenCopyCount, tokenCopyReplacement } from "../actions";
+import { cardRef } from "../choices";
 import { addControlEffect } from "../control";
 import type { EffectContext, OpHandlers, OpResult } from "../effects";
 import {
@@ -17,6 +18,7 @@ import {
 } from "../effects";
 import { blockRulePlaceholder, copiableExceptions, copiedDefId, mergeMods, resolveBlockRules } from "../layers";
 import { manaValue } from "../mana";
+import { asEntersChoices, chosenValue, ENTERS_PREFIX } from "../replacement";
 import {
   bump,
   chars,
@@ -34,7 +36,7 @@ import {
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
-import type { AbilityDef, CardDef, ChoiceRequest, Color, GameState, PlayerId, Resolution } from "../types";
+import type { AbilityDef, ChoiceRequest, Color, Effect, GameState, PlayerId, Resolution } from "../types";
 import { BASIC_LAND_TYPES } from "../types";
 
 /** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
@@ -71,6 +73,19 @@ const COMMON_CREATURE_TYPES = [
   "Zombie",
 ];
 
+/** Types de carte en français (un mode d'arrivée qui est un type de carte). */
+const CARD_TYPE_FR: Record<string, string> = {
+  Artifact: "Artefact",
+  Battle: "Bataille",
+  Creature: "Créature",
+  Enchantment: "Enchantement",
+  Instant: "Éphémère",
+  Kindred: "Tribal",
+  Land: "Terrain",
+  Planeswalker: "Planeswalker",
+  Sorcery: "Rituel",
+};
+
 /**
  * 614.12 : la question « en arrivant, choisissez… » d'un permanent (type de créature, couleur, nom, nombre, mode…), avec
  * sa suggestion : pendant la résolution d'un sort de permanent, en jouant un terrain, ou quand un effet le met en jeu.
@@ -80,7 +95,7 @@ export function enterChoiceRequest(
   s: GameState,
   controller: PlayerId,
   sourceDefId: string,
-  kind: NonNullable<CardDef["chooseOnEnter"]>,
+  kind: Extract<Effect, { op: "chooseOnEnter" }>["kind"],
   preset?: string[],
 ): ChoiceRequest {
   const ctx = { controller, sourceDefId };
@@ -88,12 +103,11 @@ export function enterChoiceRequest(
     let options: string[];
     if (preset) options = preset;
     else if (kind === "landType") options = [...BASIC_LAND_TYPES];
-    // « Choisissez une couleur autre que le vert » (Thriving Grove) : les couleurs permises dans `enterModes`.
-    else if (kind === "color") options = s.defs[ctx.sourceDefId]?.enterModes ?? ["W", "U", "B", "R", "G"];
+    else if (kind === "color") options = ["W", "U", "B", "R", "G"];
     else if (kind === "parity") options = ["odd", "even"];
     // Talion, the Kindly Lord : un nombre de 1 à 10.
     else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
-    else if (kind === "mode") options = s.defs[ctx.sourceDefId]?.enterModes ?? [];
+    else if (kind === "mode") options = [];
     else if (kind === "landName") {
       // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
       const opp = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
@@ -148,6 +162,8 @@ export function enterChoiceRequest(
             ? options[0]
             : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
     const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
+    // Un mode qui est un type de carte (Arachne, Serra's Emissary) : son nom français.
+    const typeModes = kind === "mode" && options.length > 0 && options.every((o) => CARD_TYPE_FR[o]);
     return {
       type: "pick",
       intent: "chooseOnEnter",
@@ -161,7 +177,9 @@ export function enterChoiceRequest(
               : kind === "parity"
                 ? "Choisissez : valeur de mana impaire ou paire"
                 : kind === "mode"
-                  ? `Choisissez : ${options.join(" ou ")}`
+                  ? typeModes
+                    ? "Choisissez un type de carte"
+                    : `Choisissez : ${options.join(" ou ")}`
                   : kind === "number"
                     ? "Choisissez un nombre entre 1 et 10"
                     : kind === "landType"
@@ -175,7 +193,7 @@ export function enterChoiceRequest(
             ? { odd: "Impaire", even: "Paire" }
             : kind === "landType"
               ? { Plains: "Plaine", Island: "Île", Swamp: "Marais", Mountain: "Montagne", Forest: "Forêt" }
-              : Object.fromEntries(options.map((o) => [o, o])),
+              : Object.fromEntries(options.map((o) => [o, (typeModes && CARD_TYPE_FR[o]) || o])),
       min: 1,
       max: 1,
       suggested: [best as string],
@@ -581,10 +599,13 @@ export const HANDLERS: OpHandlers = {
   },
   chooseCopy(s, r, e, ctx, key) {
     if (r.vars.$copyOf) return;
-    // Superior Spider-Man : une carte de créature de n'importe quel cimetière.
+    // Superior Spider-Man, Echoing Deeps : une carte d'un cimetière (pas elle-même, si elle en revient) ; sinon un
+    // permanent (le sien, ou de n'importe qui).
     const options = e.fromGraveyards
       ? s.playerOrder.flatMap((p) =>
-          (s.players[p]?.graveyard ?? []).filter((id) => matchesCard(s, ctx.controller, id, e.filter, ctx.sourceId)),
+          (s.players[p]?.graveyard ?? []).filter(
+            (id) => id !== ctx.sourceId && matchesCard(s, ctx.controller, id, e.filter, ctx.sourceId),
+          ),
         )
       : s.battlefield.filter(
           (id) =>
@@ -594,6 +615,9 @@ export const HANDLERS: OpHandlers = {
         );
     const answer = options.length ? r.vars[key("copy")] : [];
     if (!answer) {
+      const name = cardRef(s.objects[ctx.sourceId]?.defId ?? ctx.sourceDefId);
+      const what = e.fromGraveyards ? "d'une carte d'un cimetière" : "d'un permanent";
+      const until = e.duration === "endOfTurn" ? " jusqu'à la fin du tour" : "";
       return {
         ask: {
           player: ctx.controller,
@@ -601,22 +625,22 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: e.fromGraveyards
-              ? `${nameOf(s, ctx.sourceId)} : vous pouvez le faire arriver comme copie d'une carte de créature d'un cimetière`
-              : `${nameOf(s, ctx.sourceId)} : vous pouvez la faire arriver comme copie d'un permanent`,
+            prompt: e.optional
+              ? `${name} : vous pouvez le faire arriver comme copie ${what}${until}`
+              : `${name} : choisissez ce qu'il copie en arrivant${until}`,
             options,
-            min: 0,
+            min: e.optional ? 0 : 1,
             max: 1,
             suggested: options.slice(0, 1),
           },
         },
       };
     }
-    const picked = answer.map(String).find((id) => options.includes(id));
+    const picked = answer.map(String).find((id) => options.includes(id)) ?? (e.optional ? undefined : options[0]);
     // Le modèle (sur le champ de bataille) suit la définition : ses exceptions de copie sont reprises (707.9b).
     r.vars.$copyOf = picked ? (e.fromGraveyards ? [s.objects[picked]?.defId ?? ""] : [copiedDefId(s, picked), picked]) : [];
-    // La carte copiée depuis un cimetière est exilée une fois le permanent arrivé.
-    if (picked && e.fromGraveyards) r.vars.$copyCard = [picked];
+    // « Quand vous le faites, exilez cette carte » (Superior Spider-Man).
+    if (picked && e.exile) r.vars.$copyCard = [picked];
     return;
   },
   becomeCopyKeepAbilities(s, _r, e, ctx) {
@@ -655,22 +679,7 @@ export const HANDLERS: OpHandlers = {
     // sort qui se résout (Harmonized Crescendo : « choisissez un type de créature ; piochez pour chaque… »).
     const src = s.objects[ctx.sourceId];
     if (src?.zone === "battlefield" || src?.zone === "stack") {
-      const value = String(answer[0]);
-      src.chosen = {
-        ...src.chosen,
-        ...(e.secret ? { secret: true } : {}),
-        ...(kind === "color"
-          ? { color: value as Color }
-          : kind === "creatureType"
-            ? { creatureType: value }
-            : kind === "parity"
-              ? { parity: value === "odd" ? ("odd" as const) : ("even" as const) }
-              : kind === "mode"
-                ? { mode: value }
-                : kind === "number"
-                  ? { number: Number(value) }
-                  : { cardName: value }),
-      };
+      src.chosen = { ...src.chosen, ...(e.secret ? { secret: true } : {}), ...chosenValue(kind, String(answer[0])) };
       bump(s);
     }
     return;
@@ -782,29 +791,17 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  chooseRiot(s, r, _e, ctx, key) {
-    const answer = r.vars[key("riot")];
-    if (!answer) {
-      const early = ["untap", "upkeep", "draw", "main1", "beginCombat"].includes(s.turn.step);
-      return {
-        ask: {
-          player: ctx.controller,
-          key: key("riot"),
-          request: {
-            type: "pick",
-            intent: "other",
-            prompt: "Émeute : un marqueur +1/+1 ou la célérité ?",
-            options: ["counter", "haste"],
-            labels: { counter: "Un marqueur +1/+1", haste: "La célérité" },
-            min: 1,
-            max: 1,
-            suggested: [s.turn.active === ctx.controller && early ? "haste" : "counter"],
-          },
-        },
-      };
-    }
-    r.vars.$riot = [String(answer[0])];
-    return;
+  asEnters(s, r, _e, ctx) {
+    // 614.1c, 614.12 : les effets « en arrivant » du sort de permanent qui se résout, notés dans la résolution ; la fin de
+    // la résolution les relit (`finishResolution`).
+    const res = asEntersChoices(
+      s,
+      r.vars,
+      { id: ctx.sourceId, defId: ctx.sourceDefId, controller: ctx.controller, x: ctx.x, kicked: ctx.kicked },
+      ENTERS_PREFIX,
+      "ask",
+    );
+    return "ask" in res ? res : undefined;
   },
   doneOncePerTurn(s, r) {
     const key = onceKey(r.item.sourceDefId, r.item.sourceId, r.item.abilityIndex);

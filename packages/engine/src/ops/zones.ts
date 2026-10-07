@@ -24,11 +24,11 @@ import {
   zoneCards,
 } from "../effects";
 import { RulesError } from "../errors";
-import { copiableExceptions, copiedDefId, hasKeyword } from "../layers";
+import { hasKeyword } from "../layers";
 import { manaValue } from "../mana";
 import { chooseReplacementOrder } from "../modifiers";
-import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
-import { bounceSpell, chosenValue, exileSpell, spellToZone } from "../stack";
+import { asEntersChoices, auraHosts, type EntersContext } from "../replacement";
+import { bounceSpell, exileSpell, spellToZone } from "../stack";
 import {
   apnapOrder,
   bent,
@@ -58,7 +58,7 @@ import { holderOf, matchesCard, matchesObjectFilter, shareCreatureType } from ".
 import { logTurnEvent } from "../turnlog";
 import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
 import { PERMANENT_TYPES } from "../types";
-import { chooseAttacked, enterChoiceRequest } from "./permanents";
+import { chooseAttacked } from "./permanents";
 
 /** Noms français des types de permanent (questions de `keep`). */
 const TYPE_LABEL: Partial<Record<CardType, string>> = {
@@ -76,15 +76,16 @@ const ownerOr =
   (id: ObjectId): PlayerId =>
     spec.underYourControl ? you : (s.objects[id]?.owner ?? you);
 
-/** Choix d'arrivée d'un objet mis sur le champ de bataille par un effet. */
-type Arrival = Pick<EntersContext, "shockPaid" | "attacking">;
+/** Choix d'arrivée d'un objet mis sur le champ de bataille par un effet (terrain choc, défenseur, effets « en arrivant »). */
+type Arrival = Partial<EntersContext>;
 
 /**
  * Choix d'arrivée des objets mis sur le champ de bataille par un effet, demandés au joueur qui les contrôlera avant tout
  * déplacement (l'opération est rejouée avec la réponse) : terrains choc (« en arrivant, vous pouvez payer 2 points de vie ;
- * sinon, il arrive engagé ») ; ce qu'attaque un permanent mis sur le champ de bataille attaquant (508.4). `random` : après
- * un tirage au hasard, qui ne serait pas rejoué, aucune question (pas de points de vie payés, le défenseur suggéré).
- * Renvoie la question à poser, sinon les choix de chaque objet.
+ * sinon, il arrive engagé ») ; effets « en arrivant » (614.1c, 614.12 : `asEntersChoices`, comme pour un sort de permanent
+ * qui se résout ; aucun pour un permanent mis face cachée, 708.2) ; ce qu'attaque un permanent mis sur le champ de bataille
+ * attaquant (508.4). `random` : après un tirage au hasard, qui ne serait pas rejoué, aucune question (pas de points de vie
+ * payés, les réponses suggérées). Renvoie la question à poser, sinon les choix de chaque objet.
  */
 function arrivalChoices(
   s: GameState,
@@ -121,6 +122,14 @@ function arrivalChoices(
         };
       }
       if (answer[0] === 1) out.set(id, { shockPaid: true });
+    }
+    if (d && !spec.as) {
+      // La face qui arrive : le verso d'une carte transformable mise sur le champ de bataille transformée (712.14).
+      const face = spec.transformed && d.layout === "transform" ? (d.faceDefs?.[1] ?? d) : d;
+      const entering = { id, defId: face.id, controller: who };
+      const res = asEntersChoices(s, r.vars, entering, key(`enter-${id}:`), random ? "auto" : "ask");
+      if ("ask" in res) return res;
+      out.set(id, { ...out.get(id), ...res });
     }
     if (d && spec.attacking && !spec.as) {
       const prompt = `${cardRef(d.id)} : que doit-il attaquer ?`;
@@ -1035,11 +1044,9 @@ export const HANDLERS: OpHandlers = {
         ids.filter((id) => !f || matchesCard(s, ctx.controller, id, { ...f, controller: undefined })).length,
       );
     // Choix d'arrivée d'un permanent qui n'est pas lancé, demandés avant tout déplacement (la résolution reprend l'effet
-    // depuis le début une fois la réponse donnée) : ce que copie un Clone (707.5), ce qu'enchante une Aura (303.4f).
-    const choices: Record<
-      string,
-      Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid" | "attacking">
-    > = {};
+    // depuis le début une fois la réponse donnée) : ce qu'enchante une Aura (303.4f) ; puis `arrivalChoices` (effets « en
+    // arrivant », terrains choc, défenseur).
+    const choices: Record<string, Partial<EntersContext>> = {};
     if (e.spec.to === "battlefield") {
       const host = e.attachTo ? resolveRef(s, ctx, e.attachTo).find((x) => onBattlefield(s, x)) : undefined;
       for (const id of ids) {
@@ -1056,43 +1063,6 @@ export const HANDLERS: OpHandlers = {
         ) {
           choices[id] = { attachTo: host };
           continue;
-        }
-        if (d.entersAsCopyOf) {
-          const options = copyCandidates(s, who, id);
-          const k = key(`copy-${id}`);
-          if (options.length && !r.vars[k]) {
-            return {
-              ask: {
-                player: who,
-                key: k,
-                request: {
-                  type: "pick",
-                  intent: "pickCards",
-                  prompt: `${cardRef(d.id)} : vous pouvez le faire arriver comme copie d'un permanent`,
-                  options,
-                  min: 0,
-                  max: 1,
-                  suggested: options.slice(0, 1),
-                },
-              },
-            };
-          }
-          const picked = (r.vars[k] ?? []).map(String).find((x) => options.includes(x));
-          choices[id] = {
-            copyOf: picked ? copiedDefId(s, picked) : undefined,
-            copyMods: copiableExceptions(s, picked),
-            copyChosen: true,
-          };
-        }
-        // 614.12 : « en arrivant, choisissez… » (type de créature, couleur, nom…), demandé au joueur qui le contrôlera.
-        const kind = d.chooseOnEnter;
-        if (kind && !d.entersAsCopyOf) {
-          const k = key(`enter-${id}`);
-          const request = enterChoiceRequest(s, who, d.id, kind);
-          if (!r.vars[k]) return { ask: { player: who, key: k, request } };
-          const value = String(r.vars[k]?.[0] ?? "");
-          if (request.type === "pick" && request.options.includes(value))
-            choices[id] = { ...choices[id], chosen: chosenValue(kind, value) };
         }
         if (d.enchant && !d.enchant.player) {
           const options = auraHosts(s, who, id);

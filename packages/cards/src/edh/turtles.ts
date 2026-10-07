@@ -58,8 +58,7 @@ function chooseTwo(...modes: ModeDef[]): { modes: ModeDef[] } {
 
 /** Terrains « Thriving » : engagés ; {T} : la couleur imprimée ou la couleur choisie (autre que celle-là). */
 const thriving = (color: ManaType): CardScript => ({
-  chooseOnEnter: "color",
-  enterModes: ALL_COLORS.filter((c) => c !== color),
+  asEnters: [fx.chooseForSelf("color", { options: ALL_COLORS.filter((c) => c !== color) })],
   abilities: [entersWith({ tapped: true }), manaAbility(color), manaAbility([color], 1, { produceChosen: true })],
 });
 
@@ -708,7 +707,7 @@ export const EDH_TURTLES: Record<string, CardScript> = {
 
   // --- Terrains -----------------------------------------------------------------------------------------------------
   "Big Apple, 3 a.m.": {
-    chooseOnEnter: "color",
+    asEnters: [fx.chooseForSelf("color")],
     abilities: [
       entersWith({ tapped: true }),
       manaAbility(["W"], 1, { produceChosen: true }),

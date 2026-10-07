@@ -4,6 +4,7 @@
  */
 
 import { availableMana, canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
+import { asEntersChoices } from "./replacement";
 import {
   abilitiesOf,
   abilityManaCost,
@@ -40,6 +41,7 @@ import {
   kickerCostPermanent,
   landBackFace,
   landFace,
+  landTypeChoice,
   modeConditionHolds,
   modesOf,
   sacrificeOptions,
@@ -87,7 +89,6 @@ function tapXMax(
 }
 
 import { chars, snapshot } from "./layers";
-import { enterChoiceRequest } from "./ops/permanents";
 import { kickerPaidTimes, obj } from "./state";
 import { legalTargets } from "./targets";
 import type {
@@ -357,10 +358,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           : ([[land, {}]] as const)) {
           // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
           // Multiversal Passage : une option par type de terrain de base choisi.
-          const types = face.chooseOnEnter === "landType" ? BASIC_LAND_TYPES : [undefined];
-          // « En arrivant, choisissez… » (Cavern of Souls) : la question posée en jouant le terrain.
-          const kind = face.chooseOnEnter;
-          const choose = kind && kind !== "landType" ? { choose: enterChoiceRequest(s, player, face.id, kind) } : {};
+          const choosesType = landTypeChoice(face);
+          const types = choosesType ? BASIC_LAND_TYPES : [undefined];
+          // « En arrivant, choisissez… » (Cavern of Souls, Echoing Deeps) : la première question de la boucle « en
+          // arrivant », posée en jouant le terrain (aucune s'il n'y a rien à choisir).
+          const probe =
+            face.asEnters?.length && !choosesType
+              ? asEntersChoices(s, {}, { id: card, defId: face.id, controller: player }, "land:", "probe")
+              : undefined;
+          const choose = probe && "ask" in probe ? { choose: probe.ask.request } : {};
           for (const landType of types) {
             const extra = landType ? { landType, ...choose, ...side } : { ...choose, ...side };
             if (face.shockLand && payableLife(s, player) >= face.shockLand)

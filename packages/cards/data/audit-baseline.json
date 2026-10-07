@@ -9,7 +9,6 @@
  "Raphael's Technique | number | Raphael's Technique : 7 absent(s)": "équivalence : mayWheel défausse la main et pioche sept cartes par construction",
  "Groundchuck & Dirtbag | triggered | Groundchuck & Dirtbag : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un {G} de plus par terrain engagé) : remplacement de mana (R1, famille I), comme Badgermole Cub",
  "Vizier of the Menagerie | static | Vizier of the Menagerie : 3 dans le texte, 1 dans le script": "une seule permission playFrom (dessus de la bibliothèque, regard permanent compris) avec anyMana pour le mana de n'importe quel type",
- "Sorcerous Spyglass | static | Sorcerous Spyglass : 2 dans le texte, 1 dans le script": "chooseOnEnter « cardName » : regard de la main à l'arrivée (ops/permanents.ts) et interdiction d'activer les sources du nom choisi (stack.ts)",
  "Mm'menon, the Right Hand | static | Mm'menon, the Right Hand : 3 dans le texte, 2 dans le script": "la permission playFrom du dessus de la bibliothèque comprend le regard permanent",
  "Timeline Culler | static | Timeline Culler : 2 dans le texte, 1 dans le script": "distorsion lue dans le texte ; le lancer depuis le cimetière avec la distorsion est porté par le champ warp (stack.ts)",
  "Tapestry Warden | static | Tapestry Warden : 2 dans le texte, 1 dans le script": "une règle de force (powerFor.combatToughness) pour les deux usages : blessures de combat et station",
@@ -39,7 +38,6 @@
  "Kinnan, Bonder Prodigy | triggered | Kinnan, Bonder Prodigy : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus du même type) : remplacement de mana (R1, famille I), comme Shimmerwilds Growth",
  "Henry Wu, InGen Geneticist | triggered | Henry Wu, InGen Geneticist : 1 dans le texte, 0 dans le script": "« chaque fois qu'une de vos créatures exploite… » : intégré à la capacité d'exploitation que Henry Wu donne à ses Humains",
  "Ian Malcolm, Chaotician | static | Ian Malcolm, Chaotician : 1 dans le texte, 0 dans le script": "la permission « pendant le tour de chaque joueur, lancez une carte que vous ne possédez pas » est posée par la capacité déclenchée (grantPlay for: \"nonOwners\")",
- "Indominus Rex, Alpha | static | Indominus Rex, Alpha : 1 dans le texte, 0 dans le script": "« en arrivant, défaussez… » écrit dans la capacité d'arrivée (marqueurs mis puis cartes piochées), approximation documentée",
  "Omnath, Locus of the Void | number | Omnath, Locus of the Void : 1 absent(s)": "« +1/+1 pour chaque mana inutilisé » : force et endurance de base 6 plus le mana de la réserve (cdaPower et cdaToughness, amount.manaInPool)",
  "Vigor | triggered | Vigor : 1 dans le texte, 0 dans le script": "« quand Vigor est mise dans un cimetière depuis n'importe où, mélangez-la dans la bibliothèque » : remplacement shuffleIntoLibrary (comme les Eldrazi) ; elle ne passe pas par le cimetière (approximation documentée)"
 }

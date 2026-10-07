@@ -144,22 +144,17 @@ export interface CardDef {
   altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean; via?: CastVia; pay?: AltCostPay };
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
-  /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
   /**
-   * Sièges (TDM) : « en arrivant, choisissez Abzan ou Mardu » (avec `chooseOnEnter: "mode"`) ; lu par `cond.chosenMode`.
-   * Avec `chooseOnEnter: "color"`, les couleurs permises (Thriving Grove : « une couleur autre que le vert »).
+   * « En arrivant » (614.1c, 614.12, PLAN-H H9) : les effets faits pendant que le permanent arrive, avant l'événement
+   * d'arrivée, par une seule boucle (`asEntersChoices`, `replacement.ts`) quel que soit le chemin (sort de permanent qui se
+   * résout, terrain joué, effet qui le met sur le champ de bataille, autre arrivée). Choix : `chooseOnEnter` (type de
+   * créature, couleur, nom, mode…, `options` pour les choix permis), `chooseCopy` (« arrive comme une copie », 707.9),
+   * `devour` (702.82) ; tout autre effet s'y écrit aussi (Sin : retirer des marqueurs) ; des marqueurs mis sur
+   * `ref.self` sont ceux avec lesquels il arrive.
    */
-  enterModes?: string[];
-  /**
-   * Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ».
-   * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
-   */
-  devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  asEnters?: Effect[];
   /** Cloud, Planet's Champion : « les capacités d'équipement que vous activez qui la ciblent coûtent {N} de moins ». */
   equipDiscountWhenTargeted?: number;
-  /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez » (Waxen Shapethief). */
-  entersAsCopyOf?: ObjectFilter;
   /** « Si cette carte devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque à la place. » */
   shuffleIntoLibrary?: boolean;
   /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
@@ -173,24 +168,16 @@ export interface CardDef {
   whenCast?: Condition;
   /** « Exilez [ce sort] » à la résolution, au lieu du cimetière (Step Between Worlds). */
   exileOnResolve?: boolean;
-  /**
-   * Exceptions d'une copie à l'arrivée (707.9b, copiables) : sous-types (Visage Bandit), mots-clés (Mockingbird), capacités
-   * (Phantasmal Image : « quand elle devient la cible… sacrifiez-la »).
-   */
-  entersAsCopyMods?: LayerMods;
-  /** Copie à l'arrivée « sauf que son nom est [le sien] » (Chameleon, Master of Disguise). */
-  entersAsCopyKeepName?: boolean;
-  /**
-   * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
-   * et ses F/E (`entersAsCopyMods` pour les types en plus) ; la carte copiée est exilée.
-   */
-  entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** Plot (702.170) : coût de l'action spéciale « complotez cette carte » (lu dans le texte). */
   plot?: ManaCost;
   /** Présage (702.143) : coût pour lancer la carte présagée à un tour ultérieur (lu dans le texte). */
   foretell?: ManaCost;
-  /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
-  chosenNameTax?: number;
+  /**
+   * Les capacités activées des sources du nom choisi (`GameObject.chosen.cardName`) : coûtent {N} de plus (Skyseer's
+   * Chariot), ou ne peuvent être activées que si ce sont des capacités de mana (`"forbid"` : Sorcerous Spyglass, Petrified
+   * Hamlet).
+   */
+  chosenNameAbilities?: number | "forbid";
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
   /**
    * Lançable depuis le cimetière ; `discard` : en défaussant autant de cartes en plus (Alien Symbiosis), correspondant à
@@ -286,8 +273,6 @@ export interface CardDef {
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
   forageOrPay?: ManaCost;
-  /** Copie à l'arrivée : de n'importe quel contrôleur (Mockingbird). */
-  entersAsCopyAnyController?: boolean;
   /** Carte assemblée (verso commun de deux cartes) : elle ne se met pas dans un deck. */
   meldResult?: boolean;
   /** Définition de la carte assemblée, enregistrée dans la partie avec la carte (partie d'un assemblage). */

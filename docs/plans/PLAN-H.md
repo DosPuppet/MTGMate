@@ -345,17 +345,17 @@ Attendu : 12 à 18 entrées levées.
 
 ## Suivi
 
-**État au 07/10/2026 (règles 161) :** lots H0 à H8b faits ; H9 en cours ; restent H10 et H11.
+**État au 07/10/2026 (règles 162) :** lots H0 à H9 faits ; restent H10 et H11.
 
 | Mesure | Départ (règles 149) | Aujourd'hui | Cible après H11 |
 |---|---|---|---|
-| singleCardKeys | 100 | 63 | ~55 |
+| singleCardKeys | 100 | 62 | ~55 |
 | playerStatic / keyword / op | 62 / 15 / 23 | 52 / 12 / 16 | ~47 / 12 / 16 |
 | turnFields | 12 | 7 | ~1 |
-| CardDef / GameObject / PlayerState | 98 / 62 / 24 | 98 / 58 / 23 | ~91 / ~50 / 23 |
+| CardDef / GameObject / PlayerState | 98 / 62 / 24 | 91 / 58 / 23 | ~91 / ~50 / 23 |
 | ObjectFilter / CastPermissionAbilityDef | 89 / 21 | 89 / 10 | ~73 / 11 |
-| Effect (variantes / champs) | 154 / 654 | 149 / 632 | ~147 / ~620 |
-| Approximations (générales / par carte) | 24 / 267 | 27 / 223 | 22 / ~215 |
+| Effect (variantes / champs) | 154 / 654 | 149 / 639 | ~147 / ~620 |
+| Approximations (générales / par carte) | 24 / 267 | 27 / 216 | 22 / ~215 |
 
 Écarts avec le plan : la fusion `GraveyardReplacement` → `then` est écartée (H7a, deux évaluateurs resteraient) ; quatre statiques de combat restent séparées (H8b, règles différentes, 508.1 et 509.1). Les approximations générales ont augmenté parce que H0 et H5 ont documenté des approximations jusque-là non écrites. Hors plan : deux correctifs de cartes trouvés en partie (règles 157 et 159) et l'accélération des arènes Commander (voir plus bas).
 
@@ -417,3 +417,14 @@ Attendu : 12 à 18 entrées levées.
   - 14 tests (Hedge Whisperer ×3 et la vue, Grievous Wound et Angel of Vitality à trois joueurs, Frenzied Baloth et Diamond Weapon, Sunspine Lynx, Phyrexian Unlife et Angel's Grace face au poison, Diamond Weapon sans capacités, Intruder Alarm, Prop Room, Found Footage et Johann, « vos Jace », `skips`) ;
   - parties dorées identiques ; fuzz : seule diverge, sur tout le pool (200 parties, `--offers 4`), la partie 10, à la question de Hedge Whisperer ; en Commander à 4 joueurs (80 parties), des choix de l'IA moyenne changent (la partie 54 : Mana Vault vaut un peu plus, avec une capacité de plus) ; décisions illégales de l'IA aussi nombreuses qu'avant ;
   - dette : statiques de joueur 60 → 52, mots-clés non imprimés 15 → 12 ; EventReplacement 18 → 19 (`untapStep`).
+- **H9 (07/10/2026, règles 162) :** « en arrivant » générique (614.1c, 614.12), une vraie fusion :
+  - modèle : `CardDef.asEnters: Effect[]` remplace `chooseOnEnter`, `enterModes`, `devour`, `entersAsCopyOf`, `entersAsCopyMods`, `entersAsCopyKeepName`, `entersAsCopyOfGraveyard` et `entersAsCopyAnyController` ; les scripts écrivent `fx.chooseForSelf(sorte, { options })` (les modes des Sièges et la couleur exclue des terrains Thriving deviennent des `options`), `fx.chooseCopy(filtre, { anyController, fromGraveyards, optional, duration, except, counters, tapped, exile })`, `fx.devour(filtre, n)` (« Devour N » toujours lu dans le texte, `scryfall.ts`) ; tout autre effet peut y figurer, avec ses valeurs mémorisées ; des marqueurs mis sur `ref.self` sont ceux avec lesquels il arrive ; une soixantaine de scripts migrés ;
+  - une seule boucle, `asEntersChoices` (`replacement.ts`), pour les quatre chemins : sort de permanent qui se résout (opération interne `asEnters`, qui remplace `chooseRiot` : l'émeute est demandée dans la boucle ; aussi la copie d'un sort de permanent, 707.10), terrain joué (la première question vient avec la décision `playLand`, `chosen` ou `landType`, sondée par `legalActions` ; `""` pour « aucune »), effet qui le met sur le champ de bataille (`arrivalChoices` : `moveTo`, recherches…), toute autre arrivée (`applyEntersReplacements`, mode `default` : les choix seulement, avec la suggestion). Chaque effet terminé est noté dans les variables de la résolution (rejouer la boucle ne le refait pas) ; une copie fait ensuite les choix « en arrivant » de son modèle (707.9 : avant, le choix par défaut) ; rien pour un permanent face cachée (708.2). `defaultChoice` et `copyCandidates` retirés : la réponse par défaut est la suggestion de la question ;
+  - `chooseCopy` gagne `duration` (Cursed Mirror), `optional`, `except` (exceptions copiables, 707.9b : nom de Chameleon, nom et F/E de Superior Spider-Man), `counters` et `tapped` (s'il copie), `exile` (Superior Spider-Man : capacité réflexive, maintenant aussi hors d'une résolution) ; une carte qui revient d'un cimetière ne se copie pas elle-même ;
+  - Sorcerous Spyglass et Petrified Hamlet : la règle implicite du moteur (un permanent qui a nommé une carte en arrivant interdit…) devient `chosenNameAbilities: "forbid"` (Skyseer's Chariot : `chosenNameTax` → `chosenNameAbilities: 2`), lue sur la définition effective (un Waxen Shapethief copie de Spyglass interdit aussi) ; Petrified Hamlet ne demande plus son nom deux fois (en jouant le terrain, puis par sa capacité) ;
+  - cartes : Echoing Deeps, Cursed Mirror, Altered Ego, Sin, Unending Cataclysm (`chooseAmong` d'un nombre quelconque, des deux camps), Dawn-Blessed Pennant (un vrai type de créature, `subtypeChosen`), Indominus Rex, Alpha (marqueurs en arrivant, une carte par marqueur), Mox Diamond (sans terrain défaussé, il n'arrive jamais), Flesh Duplicate (marqueurs de temps en arrivant), Abuelo's Awakening (créature Esprit volante en arrivant), Arachne (libellés français des types de carte) ; `approximations.md` : 7 entrées levées (Echoing Deeps, Dawn-Blessed Pennant, Indominus Rex, Mox Diamond, Cursed Mirror, Sin, Altered Ego), 3 raccourcies (Arachne : la main n'est toujours pas montrée ; Flesh Duplicate ; Abuelo's Awakening : F/E 1/1 juste après), les deux entrées générales réécrites (Aura hors résolution ; effets « en arrivant » hors résolution : les choix seulement) ;
+  - client : la fenêtre du terrain joué (`LandChoice`) nomme les cartes d'un cimetière, localise la question et propose « Aucune » ; protocole et vue inchangés ;
+  - 20 tests : `rulings.test.ts` (Double Down et Visage Bandit, Phantasmal Image sur Adaptive Automaton, cape sans choix, permanent mis sous le contrôle d'un autre joueur, jeton copie sans question, émeute remise en jeu par Zombify, Waxen Shapethief copie de Spyglass), Echoing Deeps ×2, Abuelo's Awakening, Cursed Mirror ×2, Sin, Altered Ego, Flesh Duplicate, Indominus Rex, Mox Diamond, Arachne, offres de terrains (`offers.test.ts`), rejeu d'une partie (`ai/test/record.test.ts`) ; écart trouvé : une carte qui revient d'un cimetière se proposait comme modèle ;
+  - parties dorées identiques ; fuzz strict `--offers 4` (300 parties, tout le pool) : `c36bb230` (`62904124` avant), 4 décisions illégales de l'IA aléatoire, les mêmes qu'avant (taxes d'attaque, menace) ; Commander à 4 joueurs, IA mixte (80 parties) : `1f783377`, 1 ; 3 joueurs « chaos » (100 parties) : `3a60020a`, 5 ; aucune erreur ;
+  - dette : CardDef 98 → 91 ; Effect (champs) 632 → 639 (les exceptions de la copie passent de `CardDef` à `chooseCopy`, `devour.n`), variantes inchangées (`chooseRiot` → `asEnters`) ; singleCardKeys 63 → 62 (`options`) ;
+  - écartés : un jeton copie créé par un effet et les arrivées hors résolution ne posent pas de question (choix suggérés, sans les autres effets) ; le regard de la main d'Arachne (aucune forme générique « regarder une main ») ; `shockLand` reste à part (déjà une question d'arrivée commune, `arrivalChoices`) ; les F/E 1/1 d'Abuelo's Awakening en arrivant (il faudrait des `LayerMods` dans `MoveSpec`).
