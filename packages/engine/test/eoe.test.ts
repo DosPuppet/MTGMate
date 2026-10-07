@@ -1251,6 +1251,17 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(lifeOf(t, "p1")).toBe(10);
   });
 
+  it("The Endstone : la moitié de vos points de vie de départ, arrondie à l'unité supérieure (Commander : 20 ; 25 : 13)", () => {
+    const run = (starting: number) => {
+      let s = scenario({ p1: { life: 3, battlefield: ["The Endstone"] } });
+      (s.players.p1 as { startingLife: number }).startingLife = starting;
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      return lifeOf(s, "p1");
+    };
+    expect(run(40)).toBe(20);
+    expect(run(25)).toBe(13);
+  });
+
   it("Uthros, Titanic Godcore : à 12+, {U}, {T} : {U} par artefact que vous contrôlez", () => {
     let s = scenario({
       p1: {

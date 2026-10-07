@@ -261,17 +261,25 @@ describe("Aetherdrift, lot C", () => {
     expect(t.exile.filter((id) => t.objects[id]?.owner === "p2")).toHaveLength(4);
   });
 
-  it("Radiant Lotus : sacrifiez un ou plusieurs artefacts, trois mana par artefact", () => {
-    let s = scenario({ p1: { battlefield: ["Radiant Lotus", "Nutrient Block", "Scrap Compactor"] } });
-    const lotus = idOf(s, "p1", "battlefield", "Radiant Lotus");
-    s = act(s, "p1", { type: "activate", source: lotus, ability: 0, x: 2 });
-    // Le déclencheur de Nutrient Block (sacrifié) se résout d'abord.
-    for (let i = 0; i < 6 && s.stack.length > 0; i++) {
-      s = s.pending?.kind === "choice" ? act(s, "p1", { type: "choose", values: ["R"] }) : passBoth(s);
-    }
-    if (s.pending?.kind === "choice") s = act(s, "p1", { type: "choose", values: ["R"] });
-    expect(s.players.p1?.manaPool.R).toBe(6);
-    expect(idsOf(s, "p1", "battlefield", "Radiant Lotus")).toHaveLength(1);
+  it("Radiant Lotus : sacrifiez un ou plusieurs artefacts ; le joueur ciblé ajoute trois mana de la couleur choisie par artefact", () => {
+    const run = (who: "p1" | "p2") => {
+      let s = scenario({ p1: { battlefield: ["Radiant Lotus", "Nutrient Block", "Scrap Compactor"] } });
+      const lotus = idOf(s, "p1", "battlefield", "Radiant Lotus");
+      s = act(s, "p1", { type: "activate", source: lotus, ability: 0, x: 2, targets: { p: [who] } });
+      // Une capacité qui cible n'est pas une capacité de mana (605.1a) : elle passe par la pile.
+      expect(s.stack.length).toBeGreaterThan(0);
+      // Le déclencheur de Nutrient Block (sacrifié) se résout d'abord ; la couleur est choisie à la résolution (rouge).
+      for (let i = 0; i < 8 && (s.stack.length > 0 || s.pending?.kind === "choice"); i++) {
+        s = s.pending?.kind === "choice" ? act(s, s.pending.player, { type: "choose", values: ["3"] }) : passBoth(s);
+      }
+      return s;
+    };
+    const mine = run("p1");
+    expect(mine.players.p1?.manaPool.R).toBe(6);
+    expect(idsOf(mine, "p1", "battlefield", "Radiant Lotus")).toHaveLength(1);
+    const theirs = run("p2");
+    expect(theirs.players.p2?.manaPool.R).toBe(6);
+    expect(theirs.players.p1?.manaPool.R).toBe(0);
   });
 
   it("Ketramose : un seul déclenchement pour plusieurs cartes exilées en même temps", () => {

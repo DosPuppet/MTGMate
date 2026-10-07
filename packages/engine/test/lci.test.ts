@@ -989,6 +989,125 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run(8)).toBe(false);
     });
 
+    it("Ojer Kaslem : une seule carte de créature (et un seul terrain), même parmi plusieurs créatures révélées", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Ojer Kaslem, Deepest Growth // Temple of Cultivation"],
+          library: ["Bear Cub", "Hulking Raptor", "Forest", "Island", "Opt", "Opt", "Swamp"],
+        },
+      });
+      const ojer = idOf(s, "p1", "battlefield", "Ojer Kaslem, Deepest Growth // Temple of Cultivation");
+      const lib = s.players.p1?.library ?? [];
+      const maxes: number[] = [];
+      s = throughCombat(attack(s, [ojer]), (req) => {
+        if (req.type !== "pick" || req.intent !== "lookAtTop") return undefined;
+        maxes.push(req.max);
+        // Une carte par choix : la créature (Bear Cub, pas Hulking Raptor), puis le terrain.
+        return req.options.filter((id) => id === lib[0] || id === lib[2]);
+      });
+      expect(maxes).toEqual([1, 1]);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Hulking Raptor")).toHaveLength(0);
+      expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+      expect(libraryNames(s)[0]).toBe("Swamp");
+    });
+
+    it("Temple of the Dead : s'active seulement si un joueur (vous, ou n'importe quel adversaire) a une carte ou moins en main", () => {
+      const run = (hands: [number, number, number]) => {
+        const s = scenario({
+          players: 3,
+          p1: {
+            battlefield: ["Aclazotz, Deepest Betrayal // Temple of the Dead", ...lands("Swamp", 3)],
+            hand: lands("Island", hands[0]),
+          },
+          p2: { hand: lands("Island", hands[1]) },
+          p3: { hand: lands("Island", hands[2]) },
+        });
+        const temple = idOf(s, "p1", "battlefield", "Aclazotz, Deepest Betrayal // Temple of the Dead");
+        flip(s, temple);
+        return legalActions(s, "p1").some((a) => a.type === "activate" && a.source === temple);
+      };
+      expect(run([3, 3, 3])).toBe(false);
+      expect(run([1, 3, 3])).toBe(true);
+      expect(run([3, 1, 3])).toBe(true);
+      expect(run([3, 3, 0])).toBe(true);
+    });
+
+    it("Kitesail Larcenist : pour chaque joueur, jusqu'à un artefact ou une créature qu'il contrôle (quatre joueurs)", () => {
+      const setup = () =>
+        scenario({
+          players: 4,
+          p1: { battlefield: [...lands("Island", 3), "Bear Cub"], hand: ["Kitesail Larcenist"] },
+          p2: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+          p3: { battlefield: ["Serra Angel"] },
+          p4: { battlefield: ["Bear Cub"] },
+        });
+      let s = setup();
+      const chosen = [
+        idOf(s, "p1", "battlefield", "Bear Cub"),
+        idOf(s, "p2", "battlefield", "Shivan Dragon"),
+        idOf(s, "p3", "battlefield", "Serra Angel"),
+        idOf(s, "p4", "battlefield", "Bear Cub"),
+      ];
+      s = resolve(castCard(s, "p1", "Kitesail Larcenist"), (req) =>
+        req.type === "pick" && req.intent === "triggerTarget" ? chosen : undefined,
+      );
+      for (const id of chosen) expect(chars(s, id).subtypes).toEqual(["Treasure"]);
+      expect(chars(s, idOf(s, "p2", "battlefield", "Llanowar Elves")).types).toContain("Creature");
+      // Deux permanents du même joueur : refusé.
+      const t = setup();
+      const two = [idOf(t, "p2", "battlefield", "Shivan Dragon"), idOf(t, "p2", "battlefield", "Llanowar Elves")];
+      expect(() =>
+        resolve(castCard(t, "p1", "Kitesail Larcenist"), (req) =>
+          req.type === "pick" && req.intent === "triggerTarget" ? two : undefined,
+        ),
+      ).toThrow(RulesError);
+    });
+
+    it("Sandswirl Wanderglyph : seulement un adversaire qui lance un sort pendant son propre tour (multijoueur)", () => {
+      const setup = () => {
+        const s = scenario({
+          players: 3,
+          active: "p2",
+          p1: { battlefield: ["Unstable Glyphbridge // Sandswirl Wanderglyph"] },
+          p2: { battlefield: ["Island"], hand: ["Opt"] },
+          p3: { battlefield: ["Island"], hand: ["Opt"] },
+        });
+        flip(s, idOf(s, "p1", "battlefield", "Unstable Glyphbridge // Sandswirl Wanderglyph"));
+        return s;
+      };
+      // p3 lance un sort pendant le tour de p2 : rien ne se déclenche.
+      let s = setup();
+      s = act(s, "p2", { type: "pass" });
+      s = act(s, "p3", { type: "cast", card: idOf(s, "p3", "hand", "Opt") });
+      expect(s.stack.length + s.triggers.length).toBe(1);
+      // p2 lance un sort pendant son tour : il ne peut plus attaquer p1 ce tour-ci.
+      s = setup();
+      s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Opt") });
+      expect(s.stack.length + s.triggers.length).toBe(2);
+      s = resolve(s);
+      expect(playerStatic(s, "p2", "cantAttackPlayer")).toBeTruthy();
+    });
+
+    it("Brass's Tunnel-Grinder : défaussez autant de cartes que vous voulez (de zéro à toute votre main)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Mountain", 3),
+          hand: ["Brass's Tunnel-Grinder // Tecutlan, the Searing Rift", "Opt", "Forest", "Shock"],
+          library: lands("Island", 5),
+        },
+      });
+      let bounds: number[] = [];
+      s = resolve(castCard(s, "p1", "Brass's Tunnel-Grinder // Tecutlan, the Searing Rift"), (req, _p, cur) => {
+        if (req.type !== "pick" || req.intent !== "discard") return undefined;
+        bounds = [req.min, req.max];
+        return [idOf(cur, "p1", "hand", "Shock")];
+      });
+      expect(bounds).toEqual([0, 3]);
+      expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Shock"]);
+      expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Forest", "Island", "Island", "Opt"]);
+    });
+
     it("Quintorius Kand : +1 crée un Esprit 3/2 ; −3 découverte 4, et le sort lancé depuis l'exil inflige 2 blessures et vous fait gagner 2 PV", () => {
       let s = scenario({ p1: { battlefield: ["Quintorius Kand"], library: ["Forest", "Llanowar Elves", "Island"] } });
       const q = idOf(s, "p1", "battlefield", "Quintorius Kand");
@@ -2165,7 +2284,21 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       t = toMyMain(t);
       const smithy = idOf(t, "p1", "battlefield", "Thousand Moons Smithy // Barracks of the Thousand");
       expect(chars(t, smithy).name).toBe("Barracks of the Thousand");
-      expect(idsOf(t, "p1", "battlefield", "Bear Cub").every((id) => t.objects[id]?.tapped)).toBe(true);
+      // Exactement cinq permanents engagés parmi les six possibles (la Forge elle-même en est un).
+      const six = [smithy, ...idsOf(t, "p1", "battlefield", "Bear Cub")];
+      expect(six.filter((id) => t.objects[id]?.tapped)).toHaveLength(5);
+      // Engager quatre permanents seulement est refusé : il en faut cinq, ou aucun.
+      let u = scenario({
+        p1: { battlefield: ["Thousand Moons Smithy // Barracks of the Thousand", ...Array(5).fill("Bear Cub")] },
+        active: "p2",
+        step: "end",
+        turn: 2,
+      });
+      u = advanceUntil(u, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "pickCards");
+      const req = u.pending?.kind === "choice" ? u.pending.request : undefined;
+      expect(req?.type === "pick" && req.max).toBe(5);
+      const cubs = idsOf(u, "p1", "battlefield", "Bear Cub");
+      expect(() => act(u, "p1", { type: "choose", values: cubs.slice(0, 4) })).toThrow(RulesError);
     });
 
     it("Barracks of the Thousand : un sort d'artefact ou de créature payé avec son mana → un Gnome Soldat", () => {

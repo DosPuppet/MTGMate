@@ -1302,19 +1302,54 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
 
     it("Choco, Seeker of Paradise : les Oiseaux attaquants font regarder autant de cartes, une en main, les terrains en jeu engagés ; terrain : +1/+0", () => {
       let s = scenario({
-        p1: { battlefield: ["Choco, Seeker of Paradise", "Healer's Hawk"], library: ["Forest", "Bear Cub", "Opt"] },
+        p1: {
+          battlefield: ["Choco, Seeker of Paradise", "Healer's Hawk", "Healer's Hawk"],
+          library: ["Forest", "Bear Cub", "Shock", "Opt"],
+        },
       });
       const choco = idOf(s, "p1", "battlefield", "Choco, Seeker of Paradise");
-      const bird = idOf(s, "p1", "battlefield", "Healer's Hawk");
-      s = attack(s, [choco, bird]);
-      s = resolve(s, (req, _p, cur) =>
-        req.prompt === "Une carte en main" ? pickNamed(cur, req, "Bear Cub") : req.type === "pick" ? req.options : undefined,
-      );
+      const birds = idsOf(s, "p1", "battlefield", "Healer's Hawk");
+      s = attack(s, [choco, ...birds]);
+      // Trois Oiseaux : les trois cartes du dessus sont regardées (pas meulées : elles restent dans la bibliothèque le
+      // temps des choix) ; une en main, puis les terrains parmi les autres sur le champ de bataille, le reste au cimetière.
+      const offered: number[] = [];
+      s = resolve(s, (req, _p, cur) => {
+        if (req.type !== "pick") return undefined;
+        offered.push(req.options.length);
+        return req.max === 1 && offered.length === 1 ? pickNamed(cur, req, "Bear Cub") : req.options;
+      });
+      expect(offered).toEqual([3, 1]);
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
       const forest = idOf(s, "p1", "battlefield", "Forest");
       expect(s.objects[forest]?.tapped).toBe(true);
+      expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Shock"]);
       expect(namesIn(s, s.players.p1?.library)).toEqual(["Opt"]);
       expect(chars(s, choco).power).toBe(4);
+    });
+
+    it("Choco, Seeker of Paradise : « autant de cartes » que d'Oiseaux qui ont attaqué, même s'ils ont quitté le champ de bataille avant la résolution", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Choco, Seeker of Paradise", "Healer's Hawk", "Healer's Hawk"],
+          library: ["Forest", "Bear Cub", "Shock", "Opt"],
+        },
+      });
+      const choco = idOf(s, "p1", "battlefield", "Choco, Seeker of Paradise");
+      const birds = idsOf(s, "p1", "battlefield", "Healer's Hawk");
+      s = structuredClone(attack(s, [choco, ...birds]));
+      expect(s.stack.some((i) => i.kind === "ability" && s.defs[i.sourceDefId]?.name === "Choco, Seeker of Paradise")).toBe(true);
+      // Les deux Faucons et Choco lui-même meurent, capacité sur la pile : trois cartes restent regardées.
+      for (const id of [...birds, choco]) destroy(s, id);
+      const offered: number[] = [];
+      s = resolve(s, (req, _p, cur) => {
+        if (req.type !== "pick") return undefined;
+        offered.push(req.options.length);
+        return req.max === 1 && offered.length === 1 ? pickNamed(cur, req, "Bear Cub") : req.options;
+      });
+      expect(offered).toEqual([3, 1]);
+      expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
+      expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+      expect(namesIn(s, s.players.p1?.library)).toEqual(["Opt"]);
     });
 
     it("Clive's Hideaway : cachette 4 ; {2}, {T} : la carte exilée se joue gratuitement avec quatre créatures légendaires, pas avec trois", () => {

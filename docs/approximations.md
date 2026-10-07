@@ -58,7 +58,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
   - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
-  - `règle` Choco, Seeker of Paradise : les cartes regardées sont meulées, puis une va en main et les terrains sur le champ de bataille ;
   - `règle` Memories Returning : vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous) ;
   - `règle` Sin, Spira's Punishment : six copies au plus par déclenchement ;
   - `règle` Zenos, Shinryu : l'adversaire choisi est le premier qui perd la partie ;
@@ -66,10 +65,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Aetherdrift (`docs/extensions/dft.md`) :**
   - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
   - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte ;
-  - `règle` Radiant Lotus : c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ;
   - `règle` Oviya : le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
 - **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`) :**
-  - `règle` Hollow Marauder : une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus ;
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
   - `règle` Riku of Many Paths : un seul mode, quel que soit le nombre de modes du sort ;
   - `règle` Great Train Heist : les Trésors viennent des blessures infligées à n'importe quel adversaire.
@@ -77,12 +74,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Memory Vessel : on peut encore jouer les cartes de sa main ;
   - `règle` Grand Abolisher : les capacités de mana ne sont pas bloquées.
 - **Edge of Eternities (`docs/extensions/eoe.md`) :**
-  - `choix auto` Gene Pollinator : le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana) ;
-  - `règle` The Endstone : « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV).
+  - `choix auto` Gene Pollinator : le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
   - `timing` Sidisi, Regent of the Mire : la carte de VM X + 1 est ciblée par une capacité réflexive, une fois le coût payé ;
-  - `règle` Betor, Kin to All, Mardu Siegebreaker : en multijoueur, chaque adversaire perd la moitié des PV du premier adversaire (Betor) ; une seule copie, qui attaque le même joueur que Mardu Siegebreaker ;
+  - `règle` Mardu Siegebreaker : en multijoueur, une seule copie, qui attaque le même joueur que Mardu Siegebreaker ;
   - `règle` Teval (cave) : une carte exilée paie {1} générique, mais aussi un {C} ; hors contrôle total, le paiement automatique utilise d'abord le mana, puis exile les cartes dans l'ordre du cimetière (en contrôle total, le joueur les choisit) ;
   - `règle` New Way Forward : un sort choisi comme source est reconnu par sa carte et son contrôleur (une autre copie de la même carte serait aussi concernée) ; les blessures sont toutes prévenues, après les modifications (doublements) qui s'y appliquent ;
   - `règle` Neriv, Heart of the Storm : une créature qui n'est plus sur le champ de bataille n'est pas « arrivée ce tour-ci ».
@@ -101,7 +97,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Fourrager : choix automatique, trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois, sinon une Nourriture (un jeton de préférence) ;
   - `timing` The Infamous Cruelclaw : la carte est défaussée avant de lancer le sort (et non comme coût de remplacement pendant le lancement) ;
   - `choix auto` Portent of Calamity : les cartes exilées sont choisies automatiquement (une par type) ;
-  - `règle` Whiskervale Forerunner : pendant votre tour, la créature révélée va toujours sur le champ de bataille ;
   - `règle` Heirloom Epic : les créatures ne peuvent pas aider à payer ;
   - `règle` Rottenmouth Viper : on sacrifie au plus autant de permanents que le coût générique à payer (un sacrifice de plus ne réduirait rien, mais compterait pour « chaque fois que vous sacrifiez ») ;
   - `règle` Eluge : la réduction de coût est générique ({1} et non {U}) ;
@@ -109,23 +104,16 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
   - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : la carte devient un Esprit 1/1 volant juste après son arrivée (et non en arrivant) ;
-  - `règle` Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
   - `règle` Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
   - `timing` Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
-  - `règle` Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ;
-  - `règle` Unstable Glyphbridge : le choix des créatures épargnées se fait à la résolution ; Sandswirl Wanderglyph : « pendant son tour » est vérifié comme « pendant le tour d'un adversaire » ;
-  - `règle` Kitesail Larcenist : jusqu'à deux cibles contrôlées par des joueurs différents ;
   - `règle` Locus of Enlightenment : les capacités gagnées ne sont pas limitées à une activation par tour ;
-  - `règle` Ojer Kaslem : jusqu'à deux cartes parmi les créatures et terrains révélés ;
+  - `timing` Ojer Kaslem : la carte de créature est mise sur le champ de bataille juste avant la carte de terrain (et non en même temps) ;
   - `règle` Echoing Deeps : devient une copie du terrain (et s'engage) par une capacité déclenchée d'arrivée, et non en arrivant ;
-  - `règle` Temple of the Dead : « un joueur a une carte ou moins en main » est vérifié pour vous et vos adversaires ;
   - `règle` Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix.
 - **Reality Fracture (`docs/extensions/fra.md`) :**
   - `choix auto` Theorist's Sanctum : on contemple un Jace en arrivant dès que c'est possible, sans révéler la carte ;
   - `règle` Extrapolate the Impossible : ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu ») ;
-  - `règle` Garruk, Veiled Butcher −3 : pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur) ;
   - `règle` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 : emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez » ;
-  - `règle` Hapatra, the Desert Fang : une seule cible adverse, même en multijoueur ;
   - `timing` Seasoned Cryomancer : le nombre de cibles est choisi d'après les cartes non-terrain défaussées (1 ou 2), via deux déclencheurs réflexifs exclusifs ;
   - `règle` Molten Tide : le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite ;
   - `règle` Warrior's Blades : la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie ;

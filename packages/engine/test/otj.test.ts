@@ -3109,6 +3109,34 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(castable(t, "p1", idOf(t, "p1", "hand", "Hollow Marauder"))).toBe(false);
   });
 
+  it("Hollow Marauder : une carte piochée pour chaque adversaire ciblé qui n'a pas défaussé de carte de VM 4 ou plus (multijoueur)", () => {
+    const run = (p2Hand: string[], p3Hand: string[], targets: string[]) => {
+      const s = scenario({
+        players: 3,
+        p1: {
+          battlefield: lands("Swamp", 3),
+          hand: ["Hollow Marauder"],
+          graveyard: ["Bear Cub", "Bear Cub", "Serra Angel", "Swamp", "Swab Goblin"],
+        },
+        p2: { hand: p2Hand },
+        p3: { hand: p3Hand },
+      });
+      return settle(cast(s, "p1", "Hollow Marauder"), (req) =>
+        req.type === "pick" && req.intent === "triggerTarget" ? targets : undefined,
+      );
+    };
+    // p2 défausse Serra Angel (VM 5), p3 Bear Cub : une carte.
+    expect(run(["Serra Angel"], ["Bear Cub"], ["p2", "p3"]).players.p1?.hand).toHaveLength(1);
+    // Aucun ne défausse de carte de VM 4 ou plus (p3 n'a pas de carte) : deux cartes.
+    expect(run(["Bear Cub"], [], ["p2", "p3"]).players.p1?.hand).toHaveLength(2);
+    // Les deux défaussent une carte de VM 4 ou plus : rien.
+    expect(run(["Serra Angel"], ["Shivan Dragon"], ["p2", "p3"]).players.p1?.hand).toHaveLength(0);
+    // Seul p3 est ciblé : p2 ne défausse rien et ne compte pas.
+    const one = run(["Bear Cub"], ["Shivan Dragon"], ["p3"]);
+    expect(one.players.p2?.hand).toHaveLength(1);
+    expect(one.players.p1?.hand).toHaveLength(0);
+  });
+
   it("Honest Rutstein : en arrivant, reprend une carte de créature de votre cimetière ; vos sorts de créature coûtent {1} de moins", () => {
     let s = scenario({
       p1: {

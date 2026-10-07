@@ -22,6 +22,8 @@ const YOURS = { types: ["Creature" as const], controller: "you" as const };
 const ALL_COLORS = ["W", "U", "B", "R", "G"] as const;
 const PERMANENT_CARD = { permanent: true };
 const SAGA_YOU = { subtype: "Saga", controller: "you" as const };
+/** Choco : « regardez autant de cartes » que d'Oiseaux qui ont attaqué (compté au déclenchement). */
+const CHOCO_LOOK = amount.eventAmount;
 
 /** Sin : exilez une carte de permanent au hasard, copie engagée ; recommencez si c'était un terrain (au plus six fois). */
 const sinRound = (k: number): ReturnType<typeof fx.when> => {
@@ -143,25 +145,20 @@ export const LEGENDS3: Record<string, CardScript> = {
   },
   "Choco, Seeker of Paradise": {
     abilities: [
-      // Approximation : les cartes regardées sont meulées, puis une va en main et les terrains sur le champ de bataille.
+      // Les cartes regardées restent au-dessus le temps de choisir celle de la main, puis les terrains parmi les autres ;
+      // le reste va au cimetière (sans être meulé).
       triggered(
-        when.attacks({ ...YOURS, subtype: "Bird" }),
+        when.attackWith(1, { ...YOURS, subtype: "Bird" }),
         [
-          fx.mill(amount.count({ ...YOURS, subtype: "Bird", attacking: true }), ref.you, { name: "c" }),
-          fx.pickFromZone("graveyard", {}, { to: "hand" }, { pool: ref.stored("c"), min: 0, prompt: "Une carte en main" }),
-          fx.pickFromZone(
-            "graveyard",
-            { types: ["Land"] },
-            { to: "battlefield", tapped: true },
-            {
-              pool: ref.stored("c"),
-              count: 20,
-              min: 0,
-              prompt: "Les terrains sur le champ de bataille",
-            },
-          ),
+          fx.lookAtTop(CHOCO_LOOK, { count: 1, rest: "top", store: "h" }),
+          fx.lookAtTop(amount.plus(CHOCO_LOOK, amount.neg(amount.v("h"))), {
+            filter: { types: ["Land"] },
+            count: CHOCO_LOOK,
+            to: { to: "battlefield", tapped: true },
+            rest: "graveyard",
+          }),
         ],
-        { batched: true, label: "Oiseaux attaquants : regardez autant de cartes" },
+        { label: "Oiseaux attaquants : regardez autant de cartes" },
       ),
       triggered(when.landfall, [fx.pump(ref.self, 1, 0)], { label: "Landfall : +1/+0" }),
     ],

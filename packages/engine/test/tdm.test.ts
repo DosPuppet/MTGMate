@@ -1756,6 +1756,19 @@ describe("Tarkir: Dragonstorm, lot K8 : mythiques", () => {
     expect(lifeOf(s, "p2")).toBe(7);
   });
 
+  it("Betor, Kin to All : en multijoueur, chaque adversaire perd la moitié de ses propres PV, arrondie au supérieur", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [{ name: "Betor, Kin to All", counters: { "+1/+1": 33 } }] },
+      p2: { life: 15 },
+      p3: { life: 8 },
+    });
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(lifeOf(s, "p2")).toBe(7);
+    expect(lifeOf(s, "p3")).toBe(4);
+    expect(lifeOf(s, "p1")).toBe(20);
+  });
+
   it("Craterhoof Behemoth : célérité ; vos créatures gagnent le piétinement et +X/+X (X : vos créatures) jusqu'à la fin du tour", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 8), "Bear Cub"], hand: ["Craterhoof Behemoth"] },

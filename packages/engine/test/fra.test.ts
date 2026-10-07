@@ -2116,6 +2116,85 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       expect(graveOf(s, "p2")).toEqual(["Shivan Dragon"]);
     });
 
+    it("Hapatra, the Desert Fang : en multijoueur, jusqu'à une créature ciblée par adversaire", () => {
+      const setup = () =>
+        scenario({
+          players: 3,
+          p1: {
+            hand: ["Hapatra, the Desert Fang"],
+            battlefield: [...lands("Swamp", 3), ...lands("Forest", 2)],
+            graveyard: ["Serra Angel"],
+          },
+          p2: { battlefield: ["Shivan Dragon", "Bear Cub"] },
+          p3: { battlefield: ["Serra Angel"] },
+        });
+      let s = setup();
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      const angel = idOf(s, "p3", "battlefield", "Serra Angel");
+      let max = 0;
+      s = resolve(cast(s, "p1", "Hapatra, the Desert Fang"), (req) => {
+        if (req.type === "pick" && req.intent === "triggerTarget") {
+          max = req.max;
+          return [dragon, angel];
+        }
+        return undefined;
+      });
+      expect(max).toBeGreaterThanOrEqual(2);
+      // X = 5 (Serra Angel) : chacune reçoit cinq marqueurs −1/−1.
+      expect(graveOf(s, "p2")).toEqual(["Shivan Dragon"]);
+      expect(graveOf(s, "p3")).toEqual(["Serra Angel"]);
+      expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+      // Deux créatures du même adversaire : refusé.
+      const t = setup();
+      const cub = idOf(t, "p2", "battlefield", "Bear Cub");
+      const dragon2 = idOf(t, "p2", "battlefield", "Shivan Dragon");
+      expect(() =>
+        resolve(cast(t, "p1", "Hapatra, the Desert Fang"), (req) =>
+          req.type === "pick" && req.intent === "triggerTarget" ? [dragon2, cub] : undefined,
+        ),
+      ).toThrow(RulesError);
+    });
+
+    it("Garruk, Veiled Butcher −3 : chaque adversaire défausse deux cartes ; une carte par adversaire qui n'a pas défaussé deux cartes non-terrain", () => {
+      const minusThree = (s: S) => {
+        const garruk = idOf(s, "p1", "battlefield", "Garruk, Veiled Butcher");
+        const ability = chars(s, garruk).abilities.findIndex(
+          (ab) => ab.kind === "activated" && !!ab.label?.includes("Chaque adversaire"),
+        );
+        return resolve(act(s, "p1", { type: "activate", source: garruk, ability }));
+      };
+      const run = (p3Hand: string[]) => {
+        const s = scenario({
+          players: 3,
+          p1: { battlefield: ["Garruk, Veiled Butcher"] },
+          p2: { hand: ["Shock", "Opt", "Forest"] },
+          p3: { hand: p3Hand },
+        });
+        // Chaque adversaire défausse les deux premières cartes de sa main (réponse suggérée).
+        return minusThree(s);
+      };
+      // p2 défausse Shock et Opt (deux non-terrain) ; p3, un terrain et un Shock : une carte.
+      let s = run(["Forest", "Shock"]);
+      expect(graveOf(s, "p2")).toEqual(["Shock", "Opt"]);
+      expect(graveOf(s, "p3")).toHaveLength(2);
+      expect(handOf(s, "p1")).toHaveLength(1);
+      // p3 n'a qu'une carte : il n'en défausse qu'une, une carte aussi.
+      s = run(["Opt"]);
+      expect(handOf(s, "p1")).toHaveLength(1);
+      // Les deux défaussent deux cartes non-terrain : aucune carte.
+      s = run(["Opt", "Shock"]);
+      expect(handOf(s, "p1")).toHaveLength(0);
+      // Aucun ne le fait : deux cartes.
+      s = scenario({
+        players: 3,
+        p1: { battlefield: ["Garruk, Veiled Butcher"] },
+        p2: { hand: ["Forest"] },
+        p3: { hand: [] },
+      });
+      s = minusThree(s);
+      expect(handOf(s, "p1")).toHaveLength(2);
+    });
+
     it("Hapatra, the Desert Frost : à l'arrivée, engage une créature adverse et l'étourdit ; {2}{U} : dégagez une créature", () => {
       let s = scenario({
         p1: { hand: ["Hapatra, the Desert Frost"], battlefield: lands("Island", 7) },

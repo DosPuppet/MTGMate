@@ -105,10 +105,11 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        // Approximation : une carte piochée si au moins un adversaire n'a pas défaussé de carte de VM 4 ou plus.
+        // Chaque adversaire ciblé défausse une seule carte : ceux qui n'ont pas défaussé de carte de VM 4 ou plus sont les
+        // adversaires ciblés moins les cartes de VM 4 ou plus défaussées.
         [
           fx.discard(1, ref.target(), { store: "big", storeFilter: { minManaValue: 4 } }),
-          fx.when(cond.not(cond.v("big")), fx.draw(1)),
+          fx.draw(amount.plus(amount.refCount(ref.target()), amount.neg(amount.v("big")))),
         ],
         { targets: [target.upTo(3, target.player("t", "opponent"))], label: "Défausses ; piochez sinon" },
       ),

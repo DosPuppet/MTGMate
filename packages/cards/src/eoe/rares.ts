@@ -442,7 +442,10 @@ export const RARES: Record<string, CardScript> = {
     abilities: [
       triggered(when.playLand, [fx.draw(1)], { label: "Piochez" }),
       triggered(when.castSpell("you"), [fx.draw(1)], { label: "Piochez" }),
-      triggered(when.yourEndStep, [fx.setLife(10)], { label: "Vos PV deviennent 10" }),
+      // « la moitié de vos points de vie de départ, arrondie à l'unité supérieure » (10 en duel, 20 en Commander).
+      triggered(when.yourEndStep, [fx.setLife({ kind: "div", of: amount.startingLife, by: 2, up: true })], {
+        label: "Vos PV deviennent la moitié de vos PV de départ",
+      }),
     ],
   },
   "Secluded Starforge": {

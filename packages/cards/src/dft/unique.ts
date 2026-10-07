@@ -613,12 +613,31 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Radiant Lotus": {
     abilities: [
-      // Approximation : c'est vous qui ajoutez le mana (pas de joueur ciblé).
+      // « Choisissez une couleur. Le joueur ciblé ajoute trois mana de la couleur choisie par artefact sacrifié » : une
+      // cible, donc pas une capacité de mana (605.1a) ; la couleur est choisie à la résolution.
       activated({
         tap: true,
         sacrificeX: { types: ["Artifact"] },
-        effects: [fx.addManaChoice(amount.plus(amount.x, amount.x, amount.x))],
-        label: "Trois mana d'une couleur par artefact sacrifié",
+        targets: [target.player("p")],
+        effects: fx.yourChoice(
+          "Choisissez une couleur",
+          "color",
+          (
+            [
+              ["W", "Blanc"],
+              ["U", "Bleu"],
+              ["B", "Noir"],
+              ["R", "Rouge"],
+              ["G", "Vert"],
+            ] as const
+          ).map(([c, label]) => ({
+            label,
+            effects: [
+              { op: "addMana", mana: [c], times: amount.plus(amount.x, amount.x, amount.x), who: ref.target("p") } as const,
+            ],
+          })),
+        ),
+        label: "Trois mana d'une couleur par artefact sacrifié, pour le joueur ciblé",
       }),
     ],
   },

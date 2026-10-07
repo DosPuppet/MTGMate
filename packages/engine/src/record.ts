@@ -409,8 +409,11 @@ export const RECORD_VERSION = 1;
  *   permanent de chaque type hors terrains, sort mis au-dessous de la bibliothèque, sacrifice remplacé par un renvoi en
  *   main, F/E définies par le maximum de deux montants. Correction : « la première fois que cette capacité se résout ce
  *   tour-ci » est remis à zéro à chaque tour (Nissa, Leyline Tamer et Belladonna Took ne marchaient qu'une fois par partie).
+ * - 150 : PLAN-H H2a : approximations levées par les scripts (The Endstone, Hapatra, Kitesail Larcenist, Choco,
+ *   Radiant Lotus, Hollow Marauder, Garruk, Veiled Butcher, Betor, Whiskervale Forerunner, Thousand Moons Smithy,
+ *   Sandswirl Wanderglyph, Ojer Kaslem…).
  */
-export const RULES_VERSION = 149;
+export const RULES_VERSION = 150;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

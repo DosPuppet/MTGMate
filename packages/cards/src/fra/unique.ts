@@ -361,9 +361,18 @@ export const UNIQUE: Record<string, CardScript> = {
         label: "Chaque joueur sacrifie une créature",
       }),
       loyalty(-3, {
+        // « Pour chaque adversaire qui n'a pas défaussé deux cartes non-terrain » : les cartes non-terrain défaussées sont
+        // comptées pour chacun ; ceux qui en ont défaussé deux sont retranchés du nombre d'adversaires.
         effects: [
-          fx.discard(2, ref.eachOpponent, { store: "nl", storeFilter: { notTypes: ["Land"] } }),
-          fx.when(cond.not(cond.v("nl", 2)), fx.draw(1)),
+          ...fx.forEachPlayer(ref.eachOpponent, (p, n) => [
+            fx.discard(2, p, { store: `nl${n}`, storeFilter: { notTypes: ["Land"] } }),
+          ]),
+          fx.draw(
+            amount.plus(
+              amount.refCount(ref.eachOpponent),
+              ...Array.from({ length: 6 }, (_, n) => amount.neg(amount.per(amount.v(`nl${n}`), 2))),
+            ),
+          ),
         ],
         label: "Chaque adversaire défausse deux cartes",
       }),
@@ -643,7 +652,8 @@ export const UNIQUE: Record<string, CardScript> = {
   "Hapatra, the Desert Fang": {
     abilities: [
       triggered(when.entersSelf, [fx.counters(ref.target(), "-1/-1", amount.maxManaValueInGraveyard)], {
-        targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
+        // « pour chaque adversaire, … jusqu'à une créature ciblée que ce joueur contrôle » (trois adversaires au plus).
+        targets: [{ ...target.upTo(3, target.creature("t", { controller: "opponent" })), differentPlayers: true }],
         label: "Marqueurs -1/-1",
       }),
     ],

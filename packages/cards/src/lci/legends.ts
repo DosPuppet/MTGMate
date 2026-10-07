@@ -194,7 +194,7 @@ export const LEGENDS: Record<string, CardScript> = {
         [
           ...fx.may(
             "Engager cinq artefacts et/ou créatures pour la transformer ?",
-            fx.tapChosen(ARTIFACT_OR_CREATURE, "c"),
+            fx.tapChosen(ARTIFACT_OR_CREATURE, "c", { exactly: 5 }),
             ...fx.when(cond.v("c", 5), fx.transform()),
           ),
         ],
@@ -224,7 +224,8 @@ export const LEGENDS: Record<string, CardScript> = {
   "Sandswirl Wanderglyph": {
     abilities: [
       triggered(when.castSpell("opponent"), [fx.thisTurn({ cantAttackPlayer: "you" }, ref.eventPlayer)], {
-        condition: cond.opponentsTurn,
+        // « pendant son tour » : le lanceur est le joueur actif.
+        condition: cond.amountAtLeast(amount.refCount(ref.playersWhere(ref.eventPlayer, cond.yourTurn)), 1),
         label: "Il ne peut pas vous attaquer ce tour-ci",
       }),
       playerStatic({
@@ -262,7 +263,8 @@ export const LEGENDS: Record<string, CardScript> = {
         {
           targets: [
             {
-              ...target.upTo(2, targetObj("t", { ...ARTIFACT_OR_CREATURE, other: true }, "autre artefact ou créature")),
+              // « pour chaque joueur, jusqu'à un … que ce joueur contrôle » (quatre joueurs au plus).
+              ...target.upTo(4, targetObj("t", { ...ARTIFACT_OR_CREATURE, other: true }, "autre artefact ou créature")),
               differentPlayers: true,
             },
           ],
@@ -323,10 +325,8 @@ export const LEGENDS: Record<string, CardScript> = {
       returnsAsTemple(),
     ],
   },
-  "Temple of the Dead": temple(
-    "B",
-    cond.any(cond.amountAtLeast(amount.opponentsWithHandAtMost(1), 1), cond.not(cond.amountAtLeast(amount.cardsIn("hand"), 2))),
-  ),
+  // « Activez seulement si un joueur a une carte ou moins en main ».
+  "Temple of the Dead": temple("B", cond.handAtMost(ref.eachPlayer, 1)),
   "Bitter Triumph": {
     additionalCost: { discard: 1, discardOr: { life: 3 } },
     spell: spell([target.creatureOrPlaneswalker()], [fx.destroy(ref.target())]),
@@ -500,10 +500,13 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.combatDamageToPlayer,
+        // « une carte de créature et/ou une carte de terrain » : la créature d'abord (les cartes restent au-dessus), puis le
+        // terrain parmi les autres. Approximation (timing) : la créature arrive juste avant le terrain.
         [
-          fx.lookAtTop(amount.eventAmount, {
-            filter: { anyOf: [CREATURE, { types: ["Land"] }] },
-            count: 2,
+          fx.lookAtTop(amount.eventAmount, { filter: CREATURE, count: 1, to: { to: "battlefield" }, rest: "top", store: "c" }),
+          fx.lookAtTop(amount.plus(amount.eventAmount, amount.neg(amount.v("c"))), {
+            filter: { types: ["Land"] },
+            count: 1,
             to: { to: "battlefield" },
             rest: "bottom",
           }),

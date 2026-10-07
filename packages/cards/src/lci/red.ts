@@ -277,7 +277,8 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        [fx.discard(60, ref.you, { optional: true, store: "d" }), fx.draw(amount.plus(amount.v("d"), 1))],
+        // « défaussez autant de cartes que vous voulez » : de zéro à toute votre main.
+        [fx.discard(amount.cardsIn("hand"), ref.you, { optional: true, store: "d" }), fx.draw(amount.plus(amount.v("d"), 1))],
         { label: "Défaussez autant de cartes que voulu, piochez-en autant plus une" },
       ),
       triggered(

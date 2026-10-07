@@ -235,7 +235,11 @@ export const LEGENDS: Record<string, CardScript> = {
         [
           fx.draw(1),
           ...fx.when(cond.amountAtLeast(TOTAL_TOUGHNESS, 20), fx.untapAll({ types: ["Creature"] })),
-          ...fx.when(cond.amountAtLeast(TOTAL_TOUGHNESS, 40), fx.loseLife(amount.halfLife(ref.eachOpponent), ref.eachOpponent)),
+          // « chaque adversaire perd la moitié de ses points de vie » : chacun d'après les siens.
+          ...fx.when(
+            cond.amountAtLeast(TOTAL_TOUGHNESS, 40),
+            fx.forEachPlayer(ref.eachOpponent, (p) => [fx.loseLife(amount.halfLife(p), p)]),
+          ),
         ],
         {
           condition: cond.amountAtLeast(TOTAL_TOUGHNESS, 10),

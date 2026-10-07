@@ -392,15 +392,22 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [triggered(when.lifeChange, [fx.pump(ref.self, 1, 0)], { condition: cond.yourTurn, label: "+1/+0" })],
   },
   "Whiskervale Forerunner": {
-    // Approximation : pendant votre tour, la créature va toujours sur le champ de bataille.
+    // La carte choisie reste au-dessus de la bibliothèque (le reste dessous) ; pendant votre tour, vous pouvez la mettre
+    // sur le champ de bataille ; sinon, elle va dans votre main.
     abilities: [
       valiant(
         [
+          fx.lookAtTop(5, {
+            filter: { types: ["Creature"], maxManaValue: 3 },
+            to: { to: "libraryTop" },
+            rest: "bottom",
+            store: "w",
+          }),
           ...fx.when(
-            cond.yourTurn,
-            fx.lookAtTop(5, { filter: { types: ["Creature"], maxManaValue: 3 }, to: { to: "battlefield" } }),
+            cond.all(cond.yourTurn, cond.v("w")),
+            fx.mayForStore(ref.you, "Mettre la créature sur le champ de bataille ?", "bf", fx.toBattlefield(ref.stored("w"))),
           ),
-          ...fx.when(cond.not(cond.yourTurn), fx.lookAtTop(5, { filter: { types: ["Creature"], maxManaValue: 3 } })),
+          ...fx.when(cond.not(cond.v("bf")), fx.toHand(ref.stored("w"))),
         ],
         { label: "Regarde 5 cartes : une créature de VM 3 ou moins" },
       ),

@@ -2244,6 +2244,29 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
+  it("Whiskervale Forerunner : pendant votre tour, vous pouvez aussi la garder en main (« si vous ne la mettez pas sur le champ de bataille »)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Whiskervale Forerunner", "Forest"],
+        hand: ["Giant Growth"],
+        library: ["Bear Cub", "Forest", "Opt", "Island", "Plains", "Swamp"],
+      },
+    });
+    let asked = false;
+    s = resolve(
+      cast(s, "p1", "Giant Growth", { targets: { t: [idOf(s, "p1", "battlefield", "Whiskervale Forerunner")] } }),
+      (req) => {
+        if (req.type !== "yesNo") return undefined;
+        asked = true;
+        return [0];
+      },
+    );
+    expect(asked).toBe(true);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(handOf(s)).toEqual(["Bear Cub"]);
+    expect(namesIn(s, s.players.p1?.library)[0]).toBe("Swamp");
+  });
+
   it("Zoraline : vol et vigilance ; en arrivant, payez {W}{B} et 2 PV pour réanimer un permanent non-terrain de VM 3 ou moins avec un marqueur de finalité", () => {
     const setup = () =>
       scenario({
