@@ -2619,6 +2619,32 @@ export function crewAbility(n: number, oncePerTurn = false): ActivatedAbilityDef
   };
 }
 
+/**
+ * Équiper (702.6) écrit dans un script (jeton, coût autre que du mana, créature restreinte) : « [coût] : attachez cet
+ * Équipement à une créature ciblée que vous contrôlez. N'activez qu'en rituel. » Le drapeau `equip` en fait une capacité
+ * d'équipement pour le moteur (Kíli, mana de Freya, journal du tour) ; `filter` restreint la créature (« Équiper un
+ * Pirate »). « Equip {N} » imprimé sur une carte est lu dans le texte (`scryfall.ts`).
+ */
+export function equipAbility(
+  opts: Omit<Parameters<typeof activated>[0], "targets" | "effects" | "sorcerySpeed"> & {
+    filter?: ObjectFilter;
+    targetLabel?: string;
+    label: string;
+  },
+): ActivatedAbilityDef {
+  const { filter, targetLabel, ...rest } = opts;
+  const t = target.creature("t", { controller: "you", ...filter });
+  return {
+    ...activated({
+      ...rest,
+      sorcerySpeed: true,
+      targets: [targetLabel ? { ...t, label: targetLabel } : t],
+      effects: [fx.attach(ref.target())],
+    }),
+    equip: true,
+  };
+}
+
 /** Monture N (702.171) : « engagez des créatures de force totale N ou plus : cette Monture devient montée. Rituel. » */
 export function saddleAbility(n: number): ActivatedAbilityDef {
   return {

@@ -279,8 +279,8 @@ describe("Multiverse Reforged (EDH)", () => {
 
     it("Serra's Emissary : vous et vos créatures avez la protection contre le type de carte choisi", () => {
       let s = scenario({
-        p1: { battlefield: lands("Plains", 7), hand: ["Serra's Emissary"] },
-        p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+        p1: { battlefield: [...lands("Plains", 7), "Bear Cub"], hand: ["Serra's Emissary"] },
+        p2: { battlefield: ["Mountain", "Bear Cub"], hand: ["Shock"] },
       });
       s = settle(castIt(s, "p1", "Serra's Emissary"), (req) =>
         req.type === "pick" && req.options.includes("Instant") ? ["Instant"] : undefined,
@@ -291,6 +291,11 @@ describe("Multiverse Reforged (EDH)", () => {
       const legal = opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.legal ?? []) : [];
       expect(legal).not.toContain("p1");
       expect(legal).not.toContain(idOf(s, "p1", "battlefield", "Serra's Emissary"));
+      // Les autres créatures que vous contrôlez sont protégées du type choisi par l'Émissaire (pas par elles-mêmes) ;
+      // celles de l'adversaire ne le sont pas.
+      expect(legal).not.toContain(idOf(s, "p1", "battlefield", "Bear Cub"));
+      expect(legal).toContain(idOf(s, "p2", "battlefield", "Bear Cub"));
+      expect(legal).toContain("p2");
     });
 
     it("Niv-Mizzet, Ghost Counsel : vous gagnez des PV, payez-en autant pour piocher autant", () => {

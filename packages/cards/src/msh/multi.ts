@@ -13,6 +13,7 @@ import {
   chapter,
   cond,
   entersWith,
+  equipAbility,
   eventReplacement,
   fx,
   INSECT_G,
@@ -76,16 +77,7 @@ const STURDY_SHIELD: TokenSpec = {
   subtypes: ["Equipment"],
   abilities: [
     staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }),
-    {
-      ...activated({
-        mana: "{2}",
-        sorcerySpeed: true,
-        targets: [target.creature("t", { controller: "you" })],
-        effects: [fx.attach(ref.target())],
-        label: "Équiper {2}",
-      }),
-      equip: true,
-    },
+    equipAbility({ mana: "{2}", label: "Équiper {2}" }),
   ],
   text: "Equipped creature gets +1/+2.\nEquip {2}",
 };

@@ -10,6 +10,7 @@ import {
   type CardScript,
   chapter,
   cond,
+  equipAbility,
   FOOD_ABILITY,
   fx,
   INSECT_WARRIOR,
@@ -212,12 +213,9 @@ export const BLACK: Record<string, CardScript> = {
         targets: [target.creature("t", { controller: "you" })],
         label: "Attachez-le à une de vos créatures",
       }),
-      activated({
+      equipAbility({
         sacrificeOther: { filter: { notTypes: ["Land"] } },
         oncePerTurn: true,
-        sorcerySpeed: true,
-        targets: [target.creature("t", { controller: "you" })],
-        effects: [fx.attach(ref.target())],
         label: "Équiper — sacrifiez un autre permanent non-terrain",
       }),
     ],

@@ -7,6 +7,7 @@ import {
   type CardScript,
   cond,
   descend,
+  equipAbility,
   FUNGUS,
   fx,
   MAP,
@@ -60,20 +61,8 @@ export const BLACK: Record<string, CardScript> = {
   "Bloodthorn Flail": {
     abilities: [
       staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
-      activated({
-        mana: "{3}",
-        sorcerySpeed: true,
-        targets: [target.creature("t", { controller: "you" })],
-        effects: [fx.attach(ref.target())],
-        label: "Équiper — {3}",
-      }),
-      activated({
-        discard: 1,
-        sorcerySpeed: true,
-        targets: [target.creature("t", { controller: "you" })],
-        effects: [fx.attach(ref.target())],
-        label: "Équiper — défaussez une carte",
-      }),
+      equipAbility({ mana: "{3}", label: "Équiper — {3}" }),
+      equipAbility({ discard: 1, label: "Équiper — défaussez une carte" }),
     ],
   },
   "Chupacabra Echo": {

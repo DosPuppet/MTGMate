@@ -9,6 +9,7 @@ import {
   type CardScript,
   chapter,
   cond,
+  equipAbility,
   eventReplacement,
   fx,
   modal,
@@ -298,16 +299,7 @@ export const BLUE: Record<string, CardScript> = {
         triggerMod: { effect: "again", sources: { attachedToSource: true } },
         label: "Les capacités déclenchées de la créature équipée se déclenchent une fois de plus",
       }),
-      {
-        ...activated({
-          mana: "{1}",
-          sorcerySpeed: true,
-          targets: [target.creature("t", { controller: "you", subtype: "Wizard" })],
-          effects: [fx.attach(ref.target())],
-          label: "Équiper Sorcier {1}",
-        }),
-        equip: true,
-      },
+      equipAbility({ mana: "{1}", filter: { subtype: "Wizard" }, label: "Équiper Sorcier {1}" }),
     ],
   },
 };

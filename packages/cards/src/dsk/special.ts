@@ -10,6 +10,7 @@ import {
   CREATURE_YOU_CONTROL,
   EVERYWHERE,
   eerie,
+  equipAbility,
   fx,
   INSECT_2_1,
   manaAbility,
@@ -152,13 +153,7 @@ export const SPECIAL: Record<string, CardScript> = {
           label: "+2/+2, contact mortel et lien de vie",
         },
       ),
-      activated({
-        sacrificeOther: { filter: { types: ["Creature"] } },
-        sorcerySpeed: true,
-        targets: [target.creature("t", { controller: "you" })],
-        effects: [fx.attach(ref.target())],
-        label: "Équiper — sacrifiez une créature",
-      }),
+      equipAbility({ sacrificeOther: { filter: { types: ["Creature"] } }, label: "Équiper — sacrifiez une créature" }),
     ],
   },
 

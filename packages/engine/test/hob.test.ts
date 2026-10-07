@@ -286,6 +286,41 @@ describe("The Hobbit", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Mountain")]?.tapped).toBe(true);
     });
 
+    it("récit durable : la Hache (jeton) et Bloodthorn Flail ont des capacités d'équipement (premier du tour gratuit)", () => {
+      // Kíli (légendaire), Bloodthorn Flail et la Hache d'Iron Hills Blacksmith : récit durable au tour suivant.
+      const setup = () => {
+        let s = scenario({
+          p1: {
+            battlefield: ["Kíli the Resourceful", "Bloodthorn Flail", "Bear Cub", ...lands("Plains", 4)],
+            hand: ["Iron Hills Blacksmith"],
+          },
+        });
+        s = settle(cast(s, "p1", "Iron Hills Blacksmith"));
+        s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
+        expect(playerStatic(s, "p1", "enduringStory")).toBe(true);
+        return s;
+      };
+      const tappedPlains = (s: GameState) => idsOf(s, "p1", "battlefield", "Plains").filter((id) => s.objects[id]?.tapped).length;
+      // La Hache d'abord : gratuite ; Bloodthorn Flail ensuite : {3}.
+      let s = setup();
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const axe = idOf(s, "p1", "battlefield", "Axe");
+      const flail = idOf(s, "p1", "battlefield", "Bloodthorn Flail");
+      s = settle(activate(s, "p1", axe, "Équiper", { targets: { t: [bear] } }));
+      expect(s.objects[axe]?.attachedTo).toBe(bear);
+      expect(tappedPlains(s)).toBe(0);
+      s = settle(activate(s, "p1", flail, "{3}", { targets: { t: [bear] } }));
+      expect(s.objects[flail]?.attachedTo).toBe(bear);
+      expect(tappedPlains(s)).toBe(3);
+      // Bloodthorn Flail d'abord : gratuit ; la Hache ensuite se paie {2} (le journal du tour a vu le premier Équiper).
+      s = setup();
+      const ids = (name: string) => idOf(s, "p1", "battlefield", name);
+      s = settle(activate(s, "p1", ids("Bloodthorn Flail"), "{3}", { targets: { t: [ids("Bear Cub")] } }));
+      expect(tappedPlains(s)).toBe(0);
+      s = settle(activate(s, "p1", ids("Axe"), "Équiper", { targets: { t: [ids("Bear Cub")] } }));
+      expect(tappedPlains(s)).toBe(2);
+    });
+
     it("sans récit durable, Équiper se paie normalement", () => {
       const s = scenario({ p1: { battlefield: ["Kíli the Resourceful", "Fishing Pole", "Bear Cub"] } });
       expect(playerStatic(s, "p1", "enduringStory")).toBe(false);

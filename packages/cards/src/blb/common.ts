@@ -3,7 +3,7 @@
  * Vaillance, Dépense et Fourrager, filtres des familles d'animaux. Le DSL vient de Foundations (via dsk/common.ts).
  */
 import type { AbilityDef, dsl, ObjectFilter, TokenSpec } from "@mtgx/engine";
-import { activated, cond, fx, ref, staticAbility, target, triggered, when } from "../dsk/common";
+import { activated, cond, equipAbility, fx, staticAbility, triggered, when } from "../dsk/common";
 
 type Effects = dsl.Effects;
 type TriggerOpts = NonNullable<Parameters<typeof triggered>[2]>;
@@ -37,22 +37,16 @@ export const VREN_RAT = creature("Rat", ["B"], ["Rat"], 1, 1, {
   text: "This token gets +1/+1 for each other Rat you control.",
 });
 
-const equip = (mana: string): AbilityDef =>
-  activated({
-    mana,
-    sorcerySpeed: true,
-    targets: [target.creature("t", { controller: "you" })],
-    effects: [fx.attach(ref.target())],
-    label: `Équiper ${mana}`,
-  });
-
 /** Épée (Blacksmith's Talent) : Équipement incolore, « +1/+1 », équiper {2}. */
 export const SWORD: TokenSpec = {
   name: "Sword",
   colors: [],
   types: ["Artifact"],
   subtypes: ["Equipment"],
-  abilities: [staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }), equip("{2}")],
+  abilities: [
+    staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
+    equipAbility({ mana: "{2}", label: "Équiper {2}" }),
+  ],
   text: "Equipped creature gets +1/+1.\nEquip {2}",
 };
 /** Cragflame (Mabel) : Équipement légendaire, « +1/+1, vigilance, piétinement et célérité », équiper {2}. */
@@ -68,7 +62,7 @@ export const CRAGFLAME: TokenSpec = {
       { power: 1, toughness: 1, addKeywords: ["vigilance", "trample", "haste"] },
       { label: "+1/+1, vigilance, piétinement, célérité" },
     ),
-    equip("{2}"),
+    equipAbility({ mana: "{2}", label: "Équiper {2}" }),
   ],
   text: "Equipped creature gets +1/+1 and has vigilance, trample, and haste.\nEquip {2}",
 };

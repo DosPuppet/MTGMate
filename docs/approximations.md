@@ -117,7 +117,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
-  - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ;
+  - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ; seule la part de mana du coût d'équipement est remplacée : un coût autre (PV de Dark Knight's Greatsword, sacrifice de Shredder's Armor ou de Dissection Tools, défausse de Bloodthorn Flail) reste dû ;
   - `règle` Interdimensional Web Watch : les deux mana servent à tout sort lancé ailleurs que depuis la main (et non seulement depuis l'exil).
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
   - `choix auto` Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;

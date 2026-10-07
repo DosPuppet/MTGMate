@@ -188,6 +188,19 @@ describe("Reality Fracture, lot B", () => {
     expect(can(s)).toBe(false);
   });
 
+  it("exhaust : Liliana the Repentant est une capacité d'exhaust (Boom Scholar la réduit de {2}) ; un marqueur +1/+1 sur Liliana", () => {
+    // Boom Scholar : « Les capacités d'exhaust des autres permanents que vous contrôlez coûtent {2} de moins à activer. »
+    let s = scenario({
+      p1: { battlefield: ["Liliana the Repentant", "Boom Scholar", ...lands("Swamp", 4)], graveyard: ["Serra Angel"] },
+    });
+    const lili = idOf(s, "p1", "battlefield", "Liliana the Repentant");
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === lili)).toBe(true);
+    s = activate(s, "p1", lili, 1, { targets: { t: [idOf(s, "p1", "graveyard", "Serra Angel")] } });
+    s = passBoth(s);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    expect(s.objects[lili]?.counters["+1/+1"]).toBe(1);
+  });
+
   it("domaine et recherche de noms différents : Fblthp, Knows the Way", () => {
     const s = scenario({ p1: { battlefield: ["Fblthp, Knows the Way", "Plains", "Island", "Island"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Fblthp, Knows the Way")).power).toBe(2);

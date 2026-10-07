@@ -9,6 +9,7 @@ import {
   cost,
   costReducer,
   entersWith,
+  equipAbility,
   fx,
   INSTANT_SORCERY,
   manaAbility,
@@ -157,17 +158,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         { label: "Défense talismanique, ne peut pas être bloquée" },
       ),
       // « Équiper—{2}, payez 2 points de vie » : non lu dans le texte (coût composé).
-      {
-        ...activated({
-          mana: "{2}",
-          payLife: 2,
-          sorcerySpeed: true,
-          targets: [target.creature("t", { controller: "you" })],
-          effects: [fx.attach(ref.target())],
-          label: "Équiper {2}, 2 PV",
-        }),
-        equip: true,
-      },
+      equipAbility({ mana: "{2}", payLife: 2, label: "Équiper {2}, 2 PV" }),
     ],
   },
   "Allure of Power": {

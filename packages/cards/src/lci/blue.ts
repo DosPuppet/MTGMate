@@ -8,6 +8,7 @@ import {
   type CardScript,
   cond,
   descend,
+  equipAbility,
   fx,
   MAP,
   MERFOLK_HEXPROOF,
@@ -127,13 +128,7 @@ export const BLUE: Record<string, CardScript> = {
         },
         { label: "+1/+1 et pillage en attaquant" },
       ),
-      activated({
-        mana: "{1}",
-        sorcerySpeed: true,
-        targets: [target.creature("t", { controller: "you", subtype: "Pirate" })],
-        effects: [fx.attach(ref.target())],
-        label: "Équiper un Pirate {1}",
-      }),
+      equipAbility({ mana: "{1}", filter: { subtype: "Pirate" }, label: "Équiper un Pirate {1}" }),
     ],
   },
   "Relic's Roar": {

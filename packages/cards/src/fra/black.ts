@@ -9,6 +9,7 @@ import {
   cost,
   empower,
   entersWith,
+  exhaust,
   fx,
   loyalty,
   modal,
@@ -108,10 +109,8 @@ export const BLACK: Record<string, CardScript> = {
         [fx.mill(2)],
         { label: "meule 2" },
       ),
-      // Exhaust : une seule activation.
-      activated({
+      exhaust({
         mana: "{5}{B}",
-        once: true,
         sorcerySpeed: true,
         targets: [
           target.cardInGraveyard(
@@ -122,7 +121,7 @@ export const BLACK: Record<string, CardScript> = {
           ),
         ],
         effects: [fx.toBattlefield(ref.target()), fx.addCounters(ref.self, 1)],
-        label: "Épuisement : réanimer",
+        label: "réanimer, marqueur +1/+1",
       }),
     ],
   },

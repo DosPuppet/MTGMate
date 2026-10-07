@@ -7,6 +7,7 @@ import {
   type CardScript,
   cond,
   entersWith,
+  equipAbility,
   fx,
   manaAbility,
   ref,
@@ -58,16 +59,7 @@ const restless = (
 });
 
 /** Everflame, Heroes' Legacy (The Irencrag transformé) : Équiper {3} et « la créature équipée gagne +3/+3 ». */
-const EVERFLAME_EQUIP = {
-  ...activated({
-    mana: "{3}",
-    sorcerySpeed: true,
-    targets: [target.creature("t", { controller: "you" })],
-    effects: [fx.attach(ref.target())],
-    label: "Équiper {3}",
-  }),
-  equip: true,
-};
+const EVERFLAME_EQUIP = equipAbility({ mana: "{3}", label: "Équiper {3}" });
 /** L'Irencrag n'est pas encore devenu Everflame (ses capacités d'origine ne s'appliquent qu'avant). */
 const NOT_EVERFLAME = cond.sourceMatches({ notSubtype: "Equipment" });
 

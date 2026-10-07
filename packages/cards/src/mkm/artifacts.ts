@@ -6,6 +6,7 @@ import {
   type CardScript,
   cond,
   entersWith,
+  equipAbility,
   fx,
   investigate,
   manaAbility,
@@ -24,22 +25,12 @@ const surveilLand: CardScript = {
 };
 
 /** « Équiper [Détective] {1} » : comme Équiper, mais seulement sur un Détective que vous contrôlez. */
-const EQUIP_DETECTIVE = {
-  ...activated({
-    mana: "{1}",
-    sorcerySpeed: true,
-    targets: [
-      {
-        id: "t",
-        label: "Détective que vous contrôlez",
-        filter: { objects: { types: ["Creature"], subtype: "Detective", controller: "you" } },
-      },
-    ],
-    effects: [fx.attach(ref.target())],
-    label: "Équiper Détective {1}",
-  }),
-  equip: true,
-} as ReturnType<typeof activated>;
+const EQUIP_DETECTIVE = equipAbility({
+  mana: "{1}",
+  filter: { subtype: "Detective" },
+  targetLabel: "Détective que vous contrôlez",
+  label: "Équiper Détective {1}",
+});
 
 export const ARTIFACTS: Record<string, CardScript> = {
   // --- Incolores ---------------------------------------------------------------

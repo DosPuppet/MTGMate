@@ -435,8 +435,10 @@ export const RECORD_VERSION = 1;
  * - 158 : PLAN-H H5 : joueur attaqué en multijoueur (508.4 : le contrôleur choisit ce qu'attaque un permanent mis en
  *   jeu attaquant), ninjutsu (702.49c : le défenseur de la créature renvoyée), conditions sur le joueur attaqué (vous
  *   seulement ou vos planeswalkers aussi), taxe d'attaque contre vous seulement
+ * - 159 : Serra's Emissary protège vos créatures du type choisi ; capacités d'équipement écrites à la main reconnues
+ *   comme telles (Kíli, Freya…) ; Épuisement de Liliana the Repentant
  */
-export const RULES_VERSION = 158;
+export const RULES_VERSION = 159;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

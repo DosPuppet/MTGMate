@@ -162,6 +162,11 @@ function hasSubtype(v: LkiSnapshot, t: string): boolean {
   return v.subtypes.includes(ALL_CREATURE_TYPES) && v.types.includes("Creature") && !NON_CREATURE_SUBTYPES.has(t);
 }
 
+/** Le filtre lit-il un choix fait par sa source (« du type / de la couleur / du nom choisis ») ? */
+export function hasChosen(f: ObjectFilter): boolean {
+  return !!(f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen || f.numberChosen || f.typeChosen);
+}
+
 /** Remplace « du type / de la couleur choisis » par le choix fait par la source en arrivant. */
 export function withChosen(
   f: ObjectFilter,
@@ -178,7 +183,7 @@ export function withChosen(
       }
     | undefined,
 ): ObjectFilter {
-  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen && !f.parityChosen && !f.numberChosen && !f.typeChosen) return f;
+  if (!hasChosen(f)) return f;
   const out: ObjectFilter = {
     ...f,
     typeChosen: undefined,
@@ -217,8 +222,7 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
 export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
   // « Du type / de la couleur choisis » : le choix de la source (en jeu, sort qui se résout, sinon dernière information).
-  if (f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen || f.numberChosen || f.typeChosen)
-    f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
+  if (hasChosen(f)) f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
   // Formation Breaker : « de force inférieure à celle de cette créature ».
   if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
   if (f.powerAboveSource) f = { ...f, powerAboveSource: undefined, minPower: sourcePower(s, sourceId) + 1 };

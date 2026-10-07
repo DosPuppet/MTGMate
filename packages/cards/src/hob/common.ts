@@ -1,6 +1,6 @@
 /** Éléments de The Hobbit (HOB) : jetons. Le DSL et les jetons communs viennent de lci/common.ts. */
-import type { AbilityDef, Effect, TokenSpec } from "@mtgx/engine";
-import { activated, cond, fx, ref, staticAbility, target } from "../lci/common";
+import type { Effect, TokenSpec } from "@mtgx/engine";
+import { cond, equipAbility, fx, ref, staticAbility } from "../lci/common";
 
 export * from "../lci/common";
 
@@ -66,22 +66,13 @@ export const STONE_BOULDER: TokenSpec = {
   keywords: ["defender"],
 };
 
-const equip = (mana: string): AbilityDef =>
-  activated({
-    mana,
-    sorcerySpeed: true,
-    targets: [target.creature("t", { controller: "you" })],
-    effects: [fx.attach(ref.target())],
-    label: `Équiper ${mana}`,
-  });
-
 /** Axe : Équipement incolore, « la créature équipée a +1/+0 », équiper {2}. */
 export const AXE: TokenSpec = {
   name: "Axe",
   colors: [],
   types: ["Artifact"],
   subtypes: ["Equipment"],
-  abilities: [staticAbility("attached", { power: 1 }, { label: "+1/+0" }), equip("{2}")],
+  abilities: [staticAbility("attached", { power: 1 }, { label: "+1/+0" }), equipAbility({ mana: "{2}", label: "Équiper {2}" })],
   text: "Equipped creature gets +1/+0.\nEquip {2}",
 };
 

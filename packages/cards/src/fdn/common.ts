@@ -33,6 +33,7 @@ export const {
   cost,
   wardAbility,
   exhaust,
+  equipAbility,
   craft,
   spree,
   oneOrMore,

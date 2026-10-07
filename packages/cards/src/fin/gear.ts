@@ -1,6 +1,6 @@
 /** Final Fantasy — Équipements de job et autres Équipements (lot B). */
 import type { CardScript } from "@mtgx/engine";
-import { activated, amount, cond, fx, jobGear, ref, staticAbility, target, triggered, wardAbility, when } from "./common";
+import { amount, cond, equipAbility, fx, jobGear, ref, staticAbility, target, triggered, wardAbility, when } from "./common";
 
 /** Équipement : « la créature équipée a “[capacité]” ». */
 const grants = (label: string, ...abilities: Parameters<typeof staticAbility>[1]["addAbilities"] & object) =>
@@ -22,14 +22,7 @@ export const GEAR: Record<string, CardScript> = {
   "Dark Knight's Greatsword": {
     abilities: [
       ...(jobGear("Knight", 3, 0) ?? []),
-      activated({
-        payLife: 3,
-        oncePerTurn: true,
-        sorcerySpeed: true,
-        targets: [target.creature("t", { controller: "you" })],
-        effects: [fx.attach(ref.target())],
-        label: "Équiper — payez 3 points de vie",
-      }),
+      equipAbility({ payLife: 3, oncePerTurn: true, label: "Équiper — payez 3 points de vie" }),
     ],
   },
   "Dragoon's Lance": {

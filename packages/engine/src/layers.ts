@@ -18,7 +18,7 @@ import { manaValue } from "./mana";
 import { grantedSpellKeywords } from "./stack";
 import { commandZoneAbilities, counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
-import { ALL_CREATURE_TYPES, matchesObjectFilter, matchesView, withChosen } from "./targets";
+import { ALL_CREATURE_TYPES, hasChosen, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import { countTurnEvents, onTurnLogged } from "./turnlog";
 import type {
@@ -998,6 +998,21 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
   }
   if (mods.addChosen === "landType" && o.chosen?.landType) {
     mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.landType] };
+  }
+  // « Vos créatures ont la protection contre le type de carte choisi » (Serra's Emissary) : le choix est celui de la
+  // source de la statique, pas celui du permanent protégé (que `protectedFrom` lirait sinon).
+  if (mods.addProtections?.some((p) => hasChosen(p.from))) {
+    mods = {
+      ...mods,
+      addProtections: mods.addProtections.map((p) => (hasChosen(p.from) ? { ...p, from: withChosen(p.from, o) } : p)),
+    };
+    // Seule une statique réévaluée à chaque passe porte sa part de signature (les autres sont figées après la première).
+    if (dependent) {
+      const c = o.chosen;
+      sig.push(
+        `pc${c?.mode ?? ""}|${c?.color ?? ""}|${c?.creatureType ?? ""}|${c?.cardName ?? ""}|${c?.parity ?? ""}|${c?.number ?? ""}`,
+      );
+    }
   }
   return {
     entry: { timestamp: slot.ts, mods, affected: { sourceId: id, controller: o.controller, filter: affects } },

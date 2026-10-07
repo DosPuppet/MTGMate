@@ -2464,6 +2464,19 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     });
 
+    it("Pirate Hat : « Équiper un Pirate {1} » est une capacité d'équipement (payable avec le mana de Freya Crescent)", () => {
+      // Freya : « Ne dépensez ce mana que pour lancer un sort d'Équipement ou activer une capacité d'équipement. »
+      let s = scenario({ p1: { battlefield: ["Pirate Hat", "Swab Goblin", "Bear Cub", "Freya Crescent"] } });
+      const hat = idOf(s, "p1", "battlefield", "Pirate Hat");
+      const goblin = idOf(s, "p1", "battlefield", "Swab Goblin");
+      const options = legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === hat);
+      // Équiper {2} demande un mana de plus ; seul le Pirate peut être équipé pour {1}.
+      expect(options.map((a) => (a.type === "activate" ? a.label : ""))).toEqual(["Équiper un Pirate {1}"]);
+      s = resolve(activateLabel(s, "p1", hat, "Pirate", { targets: { t: [goblin] } }));
+      expect(s.objects[hat]?.attachedTo).toBe(goblin);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Freya Crescent")]?.tapped).toBe(true);
+    });
+
     it("Calamitous Cave-In : X blessures à chaque créature et planeswalker, X = vos Cavernes plus les cartes de Caverne de votre cimetière", () => {
       let s = scenario({
         p1: {
