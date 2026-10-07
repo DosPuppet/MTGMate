@@ -175,6 +175,8 @@ describe("Mutant Menace (EDH)", () => {
       const back = idOf(s, "p1", "battlefield", "Hancock, Ghoulish Mayor");
       expect(plusOne(s, back)).toBe(1);
       expect(chars(s, idOf(s, "p1", "battlefield", "Glowing One")).power).toBe(3);
+      // « Chaque autre créature » : Hancock (2/1, un marqueur +1/+1) ne se renforce pas lui-même.
+      expect([chars(s, back).power, chars(s, back).toughness]).toEqual([3, 2]);
     });
 
     it("Nuclear Fallout : chaque créature -2X/-2X, chaque joueur X marqueurs de radiation", () => {

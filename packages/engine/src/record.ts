@@ -459,8 +459,9 @@ export const RECORD_VERSION = 1;
  *   du champ de bataille reste désigné (Zoyowa's Justice sur un jeton fait découvrir X)
  * - 168 : Molten Tide ajoute un {R} ; Virtue of Strength triple le mana ; Eclipsed Realms : les huit tribus de Lorwyn
  *   ; Talion ne suggère plus d'après des cartes exilées face cachée
+ * - 169 : Hancock, Ghoulish Mayor ne se renforce plus lui-même (« chaque autre créature »)
  */
-export const RULES_VERSION = 168;
+export const RULES_VERSION = 169;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -100,7 +100,11 @@ export const EDH_MUTANT: Record<string, CardScript> = {
     abilities: [
       // Approximation : X compte ses marqueurs +1/+1 (pas les autres sortes).
       {
-        ...staticAbility(ZOMBIE_OR_MUTANT_YOU, { power: 1, toughness: 1 }, { label: "+X/+X aux Zombies et Mutants" }),
+        ...staticAbility(
+          { ...ZOMBIE_OR_MUTANT_YOU, other: true },
+          { power: 1, toughness: 1 },
+          { label: "+X/+X à vos autres Zombies et Mutants" },
+        ),
         perCounter: "+1/+1",
       },
       // Persistance du mort-vivant (Undying, 702.93).

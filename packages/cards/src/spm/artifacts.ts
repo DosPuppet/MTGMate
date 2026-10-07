@@ -188,7 +188,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Spider-Slayer, Hatred Honed": {
     abilities: [
       // Approximation : se déclenche quand une Araignée qu'il a déjà blessée ce tour-ci subit des blessures (le
-      // déclencheur « inflige des blessures » ne filtre pas l'objet blessé).
+      // déclencheur « inflige des blessures » ne désigne pas l'objet blessé).
       triggered(
         when.dealtDamage({ types: ["Creature"], subtype: "Spider", damagedBySource: true }),
         [fx.destroy(ref.eventObject)],

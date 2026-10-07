@@ -23,7 +23,8 @@ Chaque entrée porte sa nature :
 - `choix auto` **Effets « en arrivant » hors d'une résolution** (retour d'un exil lié, jeton copie créé par un effet, ninjutsu, faufilement, actions basées sur l'état ; 614.1c, 614.12) : seuls les choix sont faits (type, couleur, nom, mode, modèle d'une copie), avec la réponse suggérée ; les autres effets « en arrivant » ne le sont pas (Sin ne retire aucun marqueur, Mox Diamond arrive sans défausse, dévorer ne sacrifie rien), et l'émeute prend le choix par défaut. Un sort de permanent qui se résout, un terrain joué (la première question vient avec la décision, les suivantes prennent la suggestion) et un permanent mis sur le champ de bataille par un effet (`moveTo`, `arrivalChoices`) posent les questions au joueur (`asEntersChoices`, PLAN-H H9).
 - `choix auto` **Mana « en n'importe quelle combinaison » engagé à la main** (Vivi Ornitier, Flamebraider, Interdimensional Web Watch, Hermitic Herbalist) : tout le mana est d'une même couleur, choisie ; le paiement automatique d'un coût, lui, le répartit au mieux.
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
-- `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
+- `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder, Phyrexian Altar, Phyrexian Tower, Sunken Ruins… ; le paiement automatique ne sacrifie jamais de créature).
+- `choix auto` **Amasser (701.47a) :** les marqueurs vont sur votre première Armée (pas de choix quand vous en contrôlez plusieurs).
 - `timing` **Commandant vers une main ou une bibliothèque (903.9b) :** c'est un remplacement, mais la question (« Remettre … dans la zone de commandement ? ») est posée juste après son arrivée en main ou dans la bibliothèque, à la vérification suivante, comme depuis un cimetière ou l'exil (903.9a) ; un déclencheur « quand une carte est mise dans votre main » le verrait donc passer. Jamais répondue par l'automatisme.
 - `règle` **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
 - `règle` **Terrains choc mis en jeu au hasard par un effet** (une carte prise au hasard) : ils arrivent engagés, sans proposer de payer 2 points de vie ; mis en jeu par les autres effets (recherche, retour du cimetière, cartes regardées ou révélées), la question est posée au joueur qui les contrôlera.
@@ -168,7 +169,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Maîtrise de l'eau, convocation, improvisation, cave : hors contrôle total, les objets qui paient sont choisis par le paiement automatique, après les terrains (comme sur Arena) ; en contrôle total, le joueur les choisit ;
   - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact) ;
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
-  - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée ;
   - `timing` Elemental Teachings : les cartes trouvées passent par votre main (révélées), puis l'adversaire en choisit deux ;
   - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition ;
   - `règle` Azula, Cunning Usurper : les cartes exilées se lancent pendant votre tour avec du mana de n'importe quel type, mais sans le flash ;
@@ -176,16 +176,16 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui de l'adversaire choisi ;
   - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges ;
-  - `règle` Secret of Bloodbending : sans maîtrise de l'eau, vous contrôlez l'adversaire pendant la première phase de combat de son prochain tour (une phase de combat supplémentaire de ce tour lui revient) ;
+  - `règle` Secret of Bloodbending : sans maîtrise de l'eau, le contrôle vaut pour une phase de combat du prochain tour de l'adversaire ; si ce tour n'en a pas, il n'est pas reporté sur un tour suivant ;
   - `règle` Firebender Ascension : « cette capacité » est la plus récente capacité de la créature sur la pile ; si elle s'est déjà résolue, rien n'est copié ;
-  - `choix auto` Koh, the Face Stealer : une carte exilée et liée ne quitte pas le choix quand une autre carte de même nom est exilée (les capacités sont les mêmes).
+  - `règle` Koh, the Face Stealer : le choix retient un nom : si la carte choisie quitte l'exil, Koh garde ses capacités tant qu'une autre carte de même nom est exilée avec lui.
 - **Marvel Super Heroes (`docs/extensions/msh.md`) :**
   - `règle` Raft Security Officer : « coûte {1} de moins si elle cible une créature de force 3 ou moins » est deux capacités ({1} avec une telle cible, {2} sinon) ; si la force de la cible dépasse 3 avant la résolution, la version à {1} perd sa cible ;
   - `règle` Nick Fury, Agent of S.H.I.E.L.D. : une carte recto-verso mise sur le champ de bataille ne peut pas être transformée ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
   - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
   - `règle` Cloak and Dagger, Entwined : la main n'est montrée qu'à travers ses cartes non-terrain proposées ; à la résolution, la créature ciblée n'est revérifiée que comme créature d'un adversaire (passée sous le contrôle d'un autre adversaire, elle reste une cible légale) ;
-  - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
+  - `règle` The Kingpin of Crime : « blessent selon leur endurance » ne touche que les créatures présentes à la résolution ;
   - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ;
   - `règle` Cosmic Cube : la carte choisie parmi les six passe par l'exil le temps d'être lancée (visible de tous), puis va au-dessous si vous renoncez ;
   - `règle` Kang the Conqueror : « pendant ce tour, les montées en puissance ne peuvent pas être activées » n'est pas appliqué au tour supplémentaire ;
@@ -210,12 +210,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Old Fat Spider Can't See Me : au chapitre II, la prévention est une capacité donnée à la créature, tant que la Saga reste ;
   - `règle` Galion, Elvenking's Butler : « ses F/E de base deviennent celles de Galion » donne des F/E de base X/X (la force de Galion), puis corrige l'endurance d'un bonus ; un effet ultérieur qui fixe les F/E de base garderait ce bonus ;
   - `règle` Bard, King of Dale : « la première carte que vous piochez pendant chacune de vos étapes de pioche » se lit « une pioche pendant votre étape de pioche, si vous n'avez encore pioché aucune carte ce tour-ci » ;
-  - `règle` Goblin Plate Mail : l'Équipement s'attache à votre première Armée.
+  - `choix auto` Goblin Plate Mail : l'Équipement s'attache à l'Armée qui reçoit les marqueurs d'amasser (voir l'entrée générale).
 - **Rééditions, « Sans limite » (`docs/extensions/reeditions.md`) :**
   - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » : une carte modale recto-verso dont le verso est un terrain pourrait être jouée par ce verso ;
   - `règle` Cytoplast Manipulator : le contrôle dure tant que vous contrôlez le Manipulator (et non « tant qu'il reste sur le champ de bataille ») ;
   - `choix auto` Gemstone Caverns : la carte exilée de la main est la carte non-terrain de plus petite valeur de mana (un terrain s'il n'y en a pas) ;
-  - `règle` Reflecting Pool : les types que produiraient d'autres terrains du même genre (Reflecting Pool) ne comptent pas ;
+  - `règle` Reflecting Pool : les types que produiraient les terrains du même genre (Reflecting Pool, Exotic Orchard) ou Command Tower ne comptent pas ;
   - `règle` Drown in the Loch : « valeur de mana inférieure ou égale au nombre de cartes du cimetière de son contrôleur » est vérifiée à la résolution, pas au ciblage ;
   - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
   - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous ;
@@ -226,7 +226,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Laboratory Maniac : la victoire qui remplace la pioche est constatée avec les actions basées sur l'état qui suivent (comme la défaite qu'elle remplace) ;
   - `règle` Nyxbloom Ancient : le mana « en plus » d'un autre type (Utopia Sprawl, Shimmerwilds Growth) n'est pas triplé ;
   - `règle` Mirri, Weatherlight Duelist : « ce combat » dure le tour (un combat supplémentaire reste limité) ;
-  - `règle` Shared Animosity : un attaquant changelin partage un type avec toute autre créature attaquante ;
+  - `règle` Shared Animosity : un attaquant changelin est compté comme partageant un type avec toute autre créature attaquante, même sans type de créature ;
   - `règle` Outlaws' Merriment : le jeton « choisi au hasard » est tiré par un dé à trois faces (affiché au journal) ;
   - `choix auto` Cresting Mosasaurus (émerger) : la créature sacrifiée est celle de plus grande valeur de mana ;
   - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà (seulement en copiant un autre Flesh Duplicate : aucune carte gérée n'a la disparition imprimée) ;
@@ -241,18 +241,18 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ;
   - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour »).
 - **Commander, pseudo-ensemble EDH (`docs/extensions/edh.md`) :**
-  - `choix auto` Relic of Legends : la créature légendaire engagée est choisie par le moteur (d'abord une sans capacité de mana, comme Gene Pollinator) ; le paiement automatique ne s'en sert qu'une fois par capacité ; Phyrexian Tower et Sunken Ruins (coût de sacrifice ou de mana) s'activent à la main.
+  - `choix auto` Relic of Legends : la créature légendaire engagée est choisie par le moteur (d'abord une sans capacité de mana) ; le paiement automatique ne s'en sert qu'une fois par capacité ;
   - `règle` New Blood : le changement de texte (612, « remplacez toutes les occurrences d'un type de créature par Vampire ») n'est pas fait ; la créature volée devient un Vampire en plus de ses autres types ;
-  - `règle` Ascension (702.131) : seule celle d'un permanent est gérée (action basée sur l'état), pas celle d'un éphémère ou d'un rituel.
   - `règle` Orcish Bowmasters : « la première carte piochée lors de son étape de pioche » est la pioche de l'étape (504.1) ; si elle est remplacée ou passée, une pioche ultérieure de la même étape déclenche quand même.
   - `choix auto` Rewind, Unwind, Frantic Search : « dégagez jusqu'à N terrains » ne dégage que vos terrains, choisis automatiquement ;
-  - `choix auto` Phyrexian Altar : capacité de mana activée à la main ; le paiement automatique ne sacrifie jamais de créature ;
   - `règle` Teferi's Protection : une Aura déjà attachée au joueur (malédiction) ne tombe pas.
   - `règle` Forbidden Orchard : « quand vous engagez ce terrain pour du mana » se déclenche quand il devient engagé, quelle qu'en soit la raison ;
   - `règle` Chromatic Orrery : « dépenser du mana comme s'il était de n'importe quelle couleur » vaut pour les sorts, pas pour les capacités activées ;
   - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ;
   - `choix auto` Zurgo and Ojutai : les deux cartes qui ne vont pas en main sont mises au-dessous dans un ordre aléatoire (pas au choix).
-  - `choix auto` Foreboding Ruins : une carte de Marais ou de Montagne de la main est révélée d'office si possible ;
+  - `choix auto` Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl : une carte du bon type de la main est révélée d'office si possible ;
+  - `choix auto` Scholar of New Horizons : la carte de Plaine va sur le champ de bataille dès que c'est permis (sans proposer de la mettre en main) ; `règle` seul un marqueur +1/+1 peut être retiré pour le coût (et non un marqueur de n'importe quelle sorte) ;
+  - `règle` O'aka, Traveling Merchant : seul un marqueur +1/+1 peut être retiré pour le coût ;
   - `règle` Pandemonium : la cible des blessures est choisie par le contrôleur de Pandemonium, pas par celui de la créature qui arrive (exact quand c'est la même personne) ;
   - `règle` Emrakul, the World Anew : « protection contre les sorts » se lit contre les éphémères et les rituels (pas contre un sort d'Aura ou de permanent) ;
   - `choix auto` Cryptolith Fragment : sa capacité de mana s'active à la main (le paiement automatique ne s'en sert pas) ;
@@ -267,11 +267,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Forgotten Ancient : tous ses marqueurs +1/+1 vont sur une seule autre créature ; Resourceful Defense : tous les marqueurs +1/+1 sont déplacés ;
   - `règle` Yuna, Grand Summoner : les deux marqueurs vont au sort de créature payé avec son mana (et non au prochain sort de créature du tour) ;
   - `règle` Fathom Mage : une seule question pour un groupe de marqueurs, autant de cartes que de marqueurs ;
-  - `choix auto` Promise of Loyalty : chaque joueur choisit la créature qu'il garde en sacrifiant les autres ;
+  - `timing` Promise of Loyalty : chaque joueur, à son tour, garde une créature et sacrifie les autres (et non simultanément) ;
   - `règle` Deep Analysis : le flashback coûte {1}{U}, sans les 3 points de vie ;
   - `règle` First Family : seules les couleurs de vos permanents comptent (pas celles des sorts lancés ce tour-ci) ;
   - `règle` Willie Lumpkin : l'interdiction d'attaquer dure jusqu'au prochain tour de son contrôleur (ce qui couvre le prochain tour du joueur blessé) ;
-  - `choix auto` Cut a Deal : chaque adversaire est compté comme ayant pioché ;
+  - `règle` Cut a Deal : vous piochez une carte par adversaire, même si sa pioche n'a pas eu lieu (bibliothèque vide, pioche remplacée) ;
   - `règle` Hancock : X compte ses marqueurs +1/+1 seulement ; Jason Bright : « une force différente de sa force de base » se lit « supérieure » ;
   - `règle` Harold and Bob : la Forêt choisie gagne sa capacité pour toujours, et la carte reste au cimetière (elle ne devient pas une Aura) ;
   - `règle` Lumbering Megasloth : seuls les marqueurs des permanents comptent (pas ceux des joueurs) ; Winding Constrictor : la clause « si vous deviez recevoir des marqueurs » n'est pas gérée ;
