@@ -430,8 +430,10 @@ export const RECORD_VERSION = 1;
  *   from the Rampart, Galactus, Silver Surfer, Maximum Carnage.
  * - 156 : 800.4a : une question posée pendant une résolution à un joueur qui a quitté la partie n'est pas posée ;
  *   abandon en pleine résolution (la capacité d'un joueur parti cesse d'exister)
+ * - 157 : Mutant Menace : Mirelurk Queen, Nightkin Ambusher et The Master, Transcendent donnent leurs marqueurs de
+ *   radiation au joueur ciblé (la cible était lue sous un autre nom)
  */
-export const RULES_VERSION = 156;
+export const RULES_VERSION = 157;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

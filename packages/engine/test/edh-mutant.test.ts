@@ -312,3 +312,17 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
     expect(s.objects[cub]?.damage).toBe(0);
   });
 });
+
+describe("Mutant Menace : marqueurs de radiation du joueur ciblé à l'arrivée", () => {
+  // Le joueur ciblé (ici le second adversaire) reçoit bien les marqueurs : la cible était demandée, puis perdue.
+  it.each([
+    ["Mirelurk Queen", lands("Island", 5), 2],
+    ["Nightkin Ambusher", [...lands("Island", 2), ...lands("Swamp", 2)], 4],
+    ["The Master, Transcendent", ["Plains", "Swamp", "Forest", "Island"], 2],
+  ] as const)("%s : le joueur ciblé reçoit ses marqueurs de radiation", (name, mana, n) => {
+    let s = scenario({ players: 3, p1: { battlefield: [...mana], hand: [name] } });
+    s = settle(castIt(s, "p1", name), picking(["p3"]));
+    expect(idsOf(s, "p1", "battlefield", name)).toHaveLength(1);
+    expect([s.players.p1?.counters?.rad ?? 0, s.players.p2?.counters?.rad ?? 0, s.players.p3?.counters?.rad]).toEqual([0, 0, n]);
+  });
+});

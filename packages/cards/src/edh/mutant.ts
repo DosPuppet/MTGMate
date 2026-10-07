@@ -213,7 +213,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   },
   "The Master, Transcendent": {
     abilities: [
-      triggered(when.entersSelf, [fx.rad(ref.target(), 2)], {
+      triggered(when.entersSelf, [fx.rad(ref.target("p"), 2)], {
         targets: [target.player("p")],
         label: "Le joueur ciblé reçoit deux marqueurs de radiation",
       }),
@@ -309,7 +309,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   // Vigilance : lue dans le texte.
   "Mirelurk Queen": {
     abilities: [
-      triggered(when.entersSelf, [fx.rad(ref.target(), 2)], {
+      triggered(when.entersSelf, [fx.rad(ref.target("p"), 2)], {
         targets: [target.player("p")],
         label: "Le joueur ciblé reçoit deux marqueurs de radiation",
       }),
@@ -322,7 +322,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   // Garde {2} : lue dans le texte.
   "Nightkin Ambusher": {
     abilities: [
-      triggered(when.entersSelf, [fx.rad(ref.target(), 4)], {
+      triggered(when.entersSelf, [fx.rad(ref.target("p"), 4)], {
         targets: [target.player("p")],
         label: "Le joueur ciblé reçoit quatre marqueurs de radiation",
       }),
