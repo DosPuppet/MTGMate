@@ -96,6 +96,8 @@ await shot("debut");
 
 let castCommander = false;
 let commanderInPlay = false;
+let lastProgress = "";
+let stuck = 0;
 const TRACE = !!process.env.TRACE;
 for (let i = 0; i < MAX; i++) {
   await page.waitForTimeout(120);
@@ -193,7 +195,12 @@ for (let i = 0; i < MAX; i++) {
     continue;
   }
   const playable = page.locator(".hand .glow-playable");
-  if ((await playable.count()) && !/Résoudre/.test(label)) {
+  // Sous charge, un clic sur une carte peut rester sans effet : après quelques essais sans progrès (même bouton, même
+  // main, même journal), on passe par le bouton principal au lieu de recliquer la même carte jusqu'à la fin de la boucle.
+  const progress = `${label}|${await page.locator(".hand > *").count()}|${await page.locator(".log .log-line").count()}`;
+  stuck = progress === lastProgress ? stuck + 1 : 0;
+  lastProgress = progress;
+  if ((await playable.count()) && !/Résoudre/.test(label) && stuck < 4) {
     await playable.first().hover({ force: true });
     await page.waitForTimeout(150);
     await playable.first().click({ force: true });
