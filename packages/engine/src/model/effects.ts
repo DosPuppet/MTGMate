@@ -168,8 +168,6 @@ export type Effect =
       halfLibrary?: boolean | "up";
       graveyardSize?: boolean;
     }
-  /** Chaque joueur désigné sacrifie un permanent correspondant ; celui qui ne peut pas défausse une carte (Momentum Breaker). */
-  | { op: "sacrificeElseDiscard"; who: Ref; filter: ObjectFilter }
   /** Retire un marqueur de chacun de N permanents correspondants (choisis automatiquement) ; `store` : 1 si fait. */
   /** Effets avec choix pendant la résolution. */
   /** `who` : le joueur qui regarde (« le joueur ciblé regarde 3 », Bumi) ; vous par défaut. */
@@ -595,8 +593,6 @@ export type Effect =
   | { op: "setLife"; who: Ref; amount?: Amount; exchange?: Ref; store?: string }
   /** Chaque joueur désigné exile une carte de sa main (à son choix), mémorisée (Lightstall Inquisitor). */
   | { op: "exileFromOwnHand"; who: Ref; store: string }
-  /** « Sacrifiez-le à moins d'engager un permanent dégagé que vous contrôlez » (Command Bridge). */
-  | { op: "tapOrSacrifice" }
   /** Copie les cartes désignées et permet d'en lancer gratuitement, pour une valeur de mana totale limitée (Uldaros). */
   /**
    * Copies des cartes désignées, lancées pendant la résolution (valeur de mana totale limitée) ; `paid` : en payant
@@ -653,8 +649,6 @@ export type Effect =
    * ce permanent perd toutes ses capacités tant que la source de l'effet reste sur le champ de bataille.
    */
   | { op: "counterAbilitySilence"; what: Ref }
-  /** Unstable Glyphbridge : pour chaque joueur, choisissez une créature correspondante ; détruisez toutes les autres. */
-  | { op: "destroyAllButOnePerPlayer"; keep: ObjectFilter }
   /**
    * Fabrication Foundry : exilez des [artefacts] que vous contrôlez de valeur de mana totale au moins N (les moins chers
    * d'abord) ; `store` vaut 1 si c'est fait.
@@ -790,8 +784,6 @@ export type Effect =
   | { op: "addMana"; mana: ManaType[]; times?: Amount; who?: Ref; rider?: ManaAbilityDef["rider"] }
   /** Chaque joueur peut défausser sa main et piocher sept cartes (Arc of Fortune). */
   | { op: "mayWheel" }
-  /** « Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi. » */
-  | { op: "destroyAllButChosenType" }
   /** Le joueur désigné révèle sa main ; le contrôleur y choisit une carte correspondante, exilée et liée à la source. */
   /** `reveal` : le joueur ne révèle que ce nombre de cartes de sa main, qu'il choisit (Taster of Wares). */
   /** `optional` : « vous pouvez choisir une carte » (Severance Priest). */
@@ -805,19 +797,27 @@ export type Effect =
   | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" | "yourNextEndStep" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
   | { op: "damageDivided"; total: Amount; to: Ref }
-  /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
-  /** `nonland` : les terrains ne comptent pas et restent (Tragic Arrogance : « tous les autres permanents non-terrains »). */
-  | { op: "keepOnePerType"; who: Ref; nonland?: boolean }
   /**
-   * Chaque joueur choisit un nombre quelconque de ses permanents du filtre, de force totale au plus `maxTotalPower`, puis
-   * sacrifie les autres (Destined Confrontation).
+   * « Gardez les permanents choisis » : pour chaque joueur désigné (`who`), dans l'ordre APNAP, des permanents qu'il
+   * contrôle sont choisis, par lui (`chooser: "each"`) ou par le contrôleur de l'effet (`"you"`) ; puis tous ses autres
+   * permanents du filtre (`filter`) subissent leur sort (`fate`), ceux de tous les joueurs en même temps.
+   * `pick` : `"one"` (un seul), `"onePerType"` (un de chaque type de permanent : Liliana, Dreadhorde General, Tragic
+   * Arrogance), `"totalPower"` (un nombre quelconque, de force totale `max` ou moins : Destined Confrontation),
+   * `"sharesType"` (un seul ; ceux qui partagent un type de créature avec lui sont gardés aussi : Winnowing).
+   * `among` : les permanents qui peuvent être choisis, s'ils diffèrent du filtre (Unstable Glyphbridge : de force 2 ou
+   * moins ; Tragic Arrogance : un artefact, une créature, un enchantement et un planeswalker, terrains compris) ; ses
+   * types bornent aussi ceux de `"onePerType"`.
    */
-  | { op: "keepWithinTotalPower"; who: Ref; filter: ObjectFilter; maxTotalPower: Amount }
-  /**
-   * Winnowing : pour chaque joueur désigné, le contrôleur de l'effet choisit une créature qu'il contrôle ; puis chacun
-   * sacrifie ses autres créatures qui ne partagent aucun type de créature avec elle.
-   */
-  | { op: "keepSharingCreatureType"; who: Ref }
+  | {
+      op: "keep";
+      who: Ref;
+      chooser: "each" | "you";
+      pick: "one" | "onePerType" | "totalPower" | "sharesType";
+      filter: ObjectFilter;
+      fate: "sacrifice" | "destroy";
+      among?: ObjectFilter;
+      max?: Amount;
+    }
   /** Le contrôleur reçoit un emblème (114) portant ces capacités. */
   | {
       op: "emblem";
@@ -894,8 +894,6 @@ export type Effect =
   | { op: "collectEvidence"; n?: Amount; skip: number; store?: string; exclude?: Ref }
   /** Cadeau (702.174) : l'adversaire choisi reçoit le cadeau promis. */
   | { op: "gift"; kind: GiftKind; token?: TokenSpec }
-  /** Chaque joueur subit des blessures égales au nombre de ses permanents correspondants (Sunspine Lynx). */
-  | { op: "damageEachPlayerPer"; filter: ObjectFilter }
   /**
    * Portent of Calamity : révéler X cartes, en exiler une par type de carte (choix automatique), le reste au cimetière.
    * Mémorise `$ids:free` (le sort à lancer gratuitement si quatre cartes ou plus ont été exilées) et `$ids:rest`.

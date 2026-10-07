@@ -77,7 +77,7 @@ export const PLANESWALKERS: Record<string, CardScript> = {
         label: "chaque joueur sacrifie 2 créatures",
       }),
       loyalty(-9, {
-        effects: [fx.keepOnePerType(ref.eachOpponent)],
+        effects: [fx.keep(ref.eachOpponent, "onePerType", {})],
         label: "chaque adversaire garde un permanent de chaque type",
       }),
     ],

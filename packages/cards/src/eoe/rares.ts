@@ -466,7 +466,12 @@ export const RARES: Record<string, CardScript> = {
   "Command Bridge": {
     abilities: [
       entersWith({ tapped: true }),
-      triggered(when.entersSelf, [fx.tapOrSacrifice], { label: "Engagez un permanent ou sacrifiez-le" }),
+      // « Sacrifiez-le à moins d'engager un permanent dégagé que vous contrôlez » (lui compris, s'il est dégagé).
+      triggered(
+        when.entersSelf,
+        [fx.tapChosen({}, "bridge", { exactly: 1 }), ...fx.when(cond.not(cond.v("bridge")), fx.sacrificeIt(ref.self))],
+        { label: "Engagez un permanent ou sacrifiez-le" },
+      ),
       manaAbility([...FIVE_COLORS]),
     ],
   },

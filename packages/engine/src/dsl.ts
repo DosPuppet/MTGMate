@@ -690,12 +690,26 @@ export const fx = {
   bounce: (what: Ref): Effect => ({ op: "bounce", what }),
   /** Maîtrise de l'air : exile ; son propriétaire peut le lancer pour {2} tant qu'il est exilé. */
   airbend: (what: Ref): Effect => ({ op: "airbend", what }),
-  /** « Chaque joueur choisit des [permanents] de force totale N ou moins, puis sacrifie les autres. » */
-  keepWithinTotalPower: (who: Ref, filter: ObjectFilter, maxTotalPower: Amount): Effect => ({
-    op: "keepWithinTotalPower",
+  /**
+   * « Gardez les permanents choisis » : pour chaque joueur de `who` (ordre APNAP), des permanents qu'il contrôle sont
+   * choisis (`pick`), par lui (`chooser: "each"`, par défaut) ou par vous (`"you"`) ; puis ses autres permanents du filtre
+   * sont sacrifiés (`fate`, par défaut) ou détruits, tous en même temps. `among` : ceux qui peuvent être choisis (le
+   * filtre par défaut) ; `max` : la force totale de `"totalPower"`.
+   */
+  keep: (
+    who: Ref,
+    pick: "one" | "onePerType" | "totalPower" | "sharesType",
+    filter: ObjectFilter,
+    opts: { chooser?: "each" | "you"; fate?: "sacrifice" | "destroy"; among?: ObjectFilter; max?: Amount } = {},
+  ): Effect => ({
+    op: "keep",
     who,
+    chooser: opts.chooser ?? "each",
+    pick,
     filter,
-    maxTotalPower,
+    fate: opts.fate ?? "sacrifice",
+    ...(opts.among ? { among: opts.among } : {}),
+    ...(opts.max !== undefined ? { max: opts.max } : {}),
   }),
   /** Effet de joueur jusqu'à la fin du tour, pour son contrôleur (`damageUnpreventable` : « les blessures ne peuvent pas être prévenues ce tour-ci »). */
   thisTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({ op: "playerEffect", ability, who }),
@@ -736,7 +750,6 @@ export const fx = {
   millHalf: (who: Ref, roundUp = false): Effect => ({ op: "mill", who, amount: 0, halfLibrary: roundUp ? "up" : true }),
   /** Chaque joueur désigné meule autant de cartes qu'il y en a dans son cimetière. */
   millGraveyardSize: (who: Ref): Effect => ({ op: "mill", who, amount: 0, graveyardSize: true }),
-  sacrificeElseDiscard: (who: Ref, filter: ObjectFilter): Effect => ({ op: "sacrificeElseDiscard", who, filter }),
   scry: (n: Amount, who?: Ref): Effect => ({ op: "scry", amount: n, ...(who ? { who } : {}) }),
   surveil: (n: Amount, toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }, store?: string): Effect => ({
     op: "surveil",
@@ -1125,7 +1138,6 @@ export const fx = {
     duration: "endOfTurn",
   }),
   exileFromOwnHand: (who: Ref, store: string): Effect => ({ op: "exileFromOwnHand", who, store }),
-  tapOrSacrifice: { op: "tapOrSacrifice" } as Effect,
   /** Manifester (sans garde) ou envelopper d'une cape (`ward`) les cartes désignées. */
   putFaceDown: (what: Ref, ward = false, opts: { store?: string; ownerControl?: boolean } = {}): Effect => ({
     op: "putFaceDown",
@@ -1344,8 +1356,6 @@ export const fx = {
   },
   /** Blessures réparties entre les cibles désignées. */
   damageDivided: (total: Amount, to: Ref): Effect => ({ op: "damageDivided", total, to }),
-  keepOnePerType: (who: Ref, nonland?: boolean): Effect => ({ op: "keepOnePerType", who, ...(nonland ? { nonland } : {}) }),
-  keepSharingCreatureType: (who: Ref = ref.eachPlayer): Effect => ({ op: "keepSharingCreatureType", who }),
   /** « Vous obtenez un emblème avec … » */
   emblem: (
     name: string,
@@ -1371,7 +1381,6 @@ export const fx = {
   }),
   addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
   mayWheel: { op: "mayWheel" } as Effect,
-  destroyAllButChosenType: { op: "destroyAllButChosenType" } as Effect,
   exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean, reveal?: Amount, optional?: boolean): Effect => ({
     op: "exileFromHandLinked",
     who,
@@ -1700,7 +1709,6 @@ export const fx = {
     what: { kind: "zone", zone: "battlefield", who: { kind: "you" }, filter },
     untap: true,
   }),
-  damageEachPlayerPer: (filter: ObjectFilter): Effect => ({ op: "damageEachPlayerPer", filter }),
   portent: { op: "portent" } as Effect,
   drain: (n: Amount, who: Ref = ref.eachOpponent): Effect[] => [
     { op: "loseLife", who, amount: n },

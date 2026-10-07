@@ -4706,6 +4706,33 @@ describe("lot C3 : cartes uniques", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
+  it("Destined Confrontation à trois : chaque joueur choisit à son tour (APNAP), puis tous sacrifient en même temps", () => {
+    let s = scenario({
+      players: 3,
+      active: "p2",
+      p1: { battlefield: ["Serra Angel"] },
+      p2: { battlefield: [...lands("Plains", 4), "Bear Cub", "Llanowar Elves"], hand: ["Destined Confrontation"] },
+      p3: { battlefield: ["Shivan Dragon", "Savannah Lions"] },
+    });
+    s = cast(s, "p2", "Destined Confrontation");
+    const field = s.battlefield.length;
+    const asked: string[] = [];
+    s = settle(s, (req, p, cur) => {
+      if (req.type !== "pick" || !cur) return undefined;
+      // Chaque joueur choisit parmi ses propres créatures ; rien n'est sacrifié avant la fin des choix.
+      expect(cur.battlefield.length).toBe(field);
+      asked.push(`${p}:${cur.objects[String(req.options[0])]?.controller}`);
+      // p1 garde son Ange (force 4) ; p3 ne garde rien.
+      return p === "p3" ? [] : undefined;
+    });
+    expect(asked).toEqual(["p2:p2", "p3:p3", "p1:p1"]);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    expect(idsOf(s, "p3", "graveyard", "Shivan Dragon")).toHaveLength(1);
+    expect(idsOf(s, "p3", "graveyard", "Savannah Lions")).toHaveLength(1);
+  });
+
   it("Fated Firepower : X marqueurs de feu ; vos sources infligent autant de blessures en plus aux adversaires et à leurs permanents", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 7), hand: ["Fated Firepower", "Lightning Strike", "Lightning Strike"] },

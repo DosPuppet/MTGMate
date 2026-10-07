@@ -437,8 +437,11 @@ export const RECORD_VERSION = 1;
  *   seulement ou vos planeswalkers aussi), taxe d'attaque contre vous seulement
  * - 159 : Serra's Emissary protège vos créatures du type choisi ; capacités d'équipement écrites à la main reconnues
  *   comme telles (Kíli, Freya…) ; Épuisement de Liliana the Repentant
+ * - 160 : PLAN-H H8a : une seule opération « garder » (choix en ordre APNAP, puis sacrifice ou destruction simultanés
+ *   ; Tragic Arrogance : le lanceur choisit), Kindred Judgment, Sunspine Lynx, Momentum Breaker et Command Bridge sur
+ *   des formes communes
  */
-export const RULES_VERSION = 159;
+export const RULES_VERSION = 160;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

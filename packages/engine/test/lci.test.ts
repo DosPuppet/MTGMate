@@ -511,6 +511,31 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
     });
 
+    it("Unstable Glyphbridge à trois : vous choisissez pour chaque joueur parmi ses créatures de force 2 ou moins", () => {
+      // « for each player, choose a creature with power 2 or less that player controls. Then destroy all creatures except
+      // creatures chosen this way. »
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: [...lands("Plains", 5), "Llanowar Elves"], hand: ["Unstable Glyphbridge // Sandswirl Wanderglyph"] },
+        p2: { battlefield: ["Bear Cub", "Savannah Lions", "Shivan Dragon"] },
+        p3: { battlefield: ["Serra Angel"] },
+      });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Unstable Glyphbridge // Sandswirl Wanderglyph") });
+      const asked: (string | undefined)[][] = [];
+      s = resolve(s, (req, p, cur) => {
+        if (req.type !== "pick" || !cur) return undefined;
+        asked.push([p ?? "", ...namesIn(cur, req.options.map(String)).sort()]);
+        return pickNamed(cur, req, "Savannah Lions");
+      });
+      // Une seule question : celle de p2 (p1 n'a qu'une créature possible, p3 aucune).
+      expect(asked).toEqual([["p1", "Bear Cub", "Savannah Lions"]]);
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Savannah Lions")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+      expect(idsOf(s, "p3", "graveyard", "Serra Angel")).toHaveLength(1);
+    });
+
     it("The Mycotyrant : F/E égales au nombre de Champignons et Saprolings", () => {
       const s = scenario({ p1: { battlefield: ["The Mycotyrant", "Deathcap Marionette", "Llanowar Elves"] } });
       const myco = idOf(s, "p1", "battlefield", "The Mycotyrant");

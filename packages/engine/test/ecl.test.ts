@@ -15,7 +15,19 @@ import { bump, chars } from "../src/state";
 import { ALL_CREATURE_TYPES, isLegalTarget, matchesObjectFilter } from "../src/targets";
 import { simultaneously } from "../src/triggers";
 import type { CardDef, ChoiceRequest, ChoiceValue, Color, GameState, ManaCost, TokenSpec } from "../src/types";
-import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, scenario, steal, untilCastNow } from "./helpers";
+import {
+  act,
+  advanceUntil,
+  castNowOf,
+  customCard,
+  idOf,
+  idsOf,
+  passAccepting,
+  scenario,
+  settle as settleAnswering,
+  steal,
+  untilCastNow,
+} from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -4097,6 +4109,31 @@ describe("Lorwyn Eclipsed, lot C", () => {
     expect(idsOf(s, "p1", "battlefield", goblin.name)).toHaveLength(0);
     expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+  });
+
+  it("Winnowing à trois : vous choisissez pour chaque joueur, puis tous sacrifient en même temps", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [...lands("Plains", 6), elf, goblin], hand: ["Winnowing"] },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+      p3: { battlefield: ["Shivan Dragon", "Savannah Lions"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Winnowing") });
+    const field = s.battlefield.length;
+    const asked: string[] = [];
+    const want = [elf.name, "Llanowar Elves", "Savannah Lions"];
+    s = settleAnswering(s, (req, p, cur) => {
+      if (req.type !== "pick" || !cur) return undefined;
+      expect(cur.battlefield.length).toBe(field);
+      asked.push(`${p}:${cur.objects[String(req.options[0])]?.controller}`);
+      return req.options.filter((id) => want.includes(nameOf(cur, id) ?? ""));
+    });
+    expect(asked).toEqual(["p1:p1", "p1:p2", "p1:p3"]);
+    expect(idsOf(s, "p1", "battlefield", goblin.name)).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p3", "battlefield", "Savannah Lions")).toHaveLength(1);
+    expect(idsOf(s, "p3", "battlefield", "Shivan Dragon")).toHaveLength(0);
   });
 
   it("Glen Elendra's Answer : contrecarre tous les sorts adverses, une Faerie par sort contrecarré", () => {

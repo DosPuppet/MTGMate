@@ -123,7 +123,7 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 
 - **Cartes (5) :** Destined Confrontation, Fated Firepower, Firebender Ascension, Koh, the Face Stealer, The Rise of Sozin // Fire Lord Sozin.
 - **Le moteur gagne :**
-  - `fx.keepWithinTotalPower(joueurs, filtre, N)` : chaque joueur choisit des permanents de force totale N ou moins (un choix au-delà est refusé), puis tous sacrifient les autres en même temps (entrée de dette justifiée, famille « gardez, sacrifiez le reste ») ;
+  - `fx.keep(joueurs, "totalPower", filtre, { max: N })` (opération `keep` depuis PLAN-H H8a) : chaque joueur choisit des permanents de force totale N ou moins (un choix au-delà est refusé), puis tous sacrifient les autres en même temps ;
   - `eventReplacement({ modify: { add: amount.countersOn(ref.self, kind) } })` (`addSourceCounters` avant PLAN-H H7a) : autant de blessures en plus que de marqueurs de ce type sur la source du remplacement (Fated Firepower) ;
   - l'événement « une créature attaquante a fait se déclencher une de ses capacités » (`when.attackAbilityTriggered`) et la référence `ref.abilitiesFromEventObject` (la capacité à copier) ;
   - le nom choisi parmi des cartes désignées (`fx.chooseForSelf("cardName", { optionsFrom })`) et `gainLinkedActivated: { triggered, chosenName }` : les capacités activées et déclenchées de la dernière carte liée choisie (Koh) ;

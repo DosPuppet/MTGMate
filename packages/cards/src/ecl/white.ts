@@ -47,7 +47,9 @@ const removeACounter = (opts: Omit<Parameters<typeof activated>[0], "removeCount
 
 export const WHITE: Record<string, CardScript> = {
   // Convocation lue dans le texte.
-  Winnowing: { spell: spell([], [fx.keepSharingCreatureType()]) },
+  Winnowing: {
+    spell: spell([], [fx.keep(ref.eachPlayer, "sharesType", { types: ["Creature"] }, { chooser: "you" })]),
+  },
   Kinbinding: {
     abilities: [
       staticAbility(

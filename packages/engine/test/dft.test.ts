@@ -3463,6 +3463,19 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     expect(idsOf(t, "p2", "battlefield", "Island")).toHaveLength(1);
   });
 
+  it("Momentum Breaker à trois : seul l'adversaire qui ne peut pas sacrifier défausse ; vous n'êtes pas touché", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Momentum Breaker", "Opt"] },
+      p2: { battlefield: ["Bear Cub"], hand: ["Opt"] },
+      p3: { battlefield: ["Island"], hand: ["Opt"] },
+    });
+    s = settle(cast(s, "p1", "Momentum Breaker"));
+    expect([idsOf(s, "p2", "graveyard", "Bear Cub").length, s.players.p2?.hand.length]).toEqual([1, 1]);
+    expect([idsOf(s, "p3", "graveyard", "Opt").length, s.players.p3?.hand.length]).toEqual([1, 0]);
+    expect([idsOf(s, "p1", "battlefield", "Bear Cub").length, s.players.p1?.hand.length]).toEqual([1, 1]);
+  });
+
   it("Momentum Breaker : {2}, sacrifiez-le : vous gagnez autant de PV que votre vitesse", () => {
     let s = scenario({ p1: { battlefield: ["Momentum Breaker", ...lands("Swamp", 2)] } });
     s.players.p1!.speed = 3;

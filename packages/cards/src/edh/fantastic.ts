@@ -555,9 +555,20 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
   Terramorph: {
     spell: spell([], [fx.search(BASIC_LAND, { to: "battlefield" })]),
   },
-  // Approximation : chaque joueur choisit lui-même ce qu'il garde (et non vous).
+  // Vous choisissez pour chaque joueur, parmi tous ses permanents (un artefact-terrain peut être « l'artefact » gardé) ;
+  // seuls ses permanents non-terrains sont sacrifiés.
   "Tragic Arrogance": {
-    spell: spell([], [fx.keepOnePerType(ref.eachPlayer, true)]),
+    spell: spell(
+      [],
+      [
+        fx.keep(
+          ref.eachPlayer,
+          "onePerType",
+          { notTypes: ["Land"] },
+          { chooser: "you", among: { types: ["Artifact", "Creature", "Enchantment", "Planeswalker"] } },
+        ),
+      ],
+    ),
   },
   "Ultimate Nullification": {
     additionalCost: { sacrifice: { filter: { types: ["Creature"], legendary: true }, count: 1 } },

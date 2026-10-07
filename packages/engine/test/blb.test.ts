@@ -375,6 +375,17 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
+  it("Sunspine Lynx à trois : chaque joueur, autant de blessures que ses propres terrains non de base", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: lands("Mountain", 4), hand: ["Sunspine Lynx"] },
+      p2: { battlefield: ["Fabled Passage", "Forest"] },
+      p3: { battlefield: ["Fabled Passage", "Three Tree City", "Hidden Grotto"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sunspine Lynx") }));
+    expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([20, 19, 17]);
+  });
+
   it("Agate-Blade Assassin : le joueur défenseur perd 1 PV", () => {
     let s = scenario({ p1: { battlefield: ["Agate-Blade Assassin"] } });
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");

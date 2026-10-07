@@ -26,7 +26,7 @@ import {
   stateBasedActions,
 } from "../src/turn";
 import { countTurnEvents } from "../src/turnlog";
-import type { CardDef, GameState } from "../src/types";
+import type { CardDef, ChoiceRequest, ChoiceValue, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, lands, passAccepting, passUntil, scenario } from "./helpers";
 
 const ench = (name: string, ab: CardDef["abilities"][number]) =>
@@ -1038,5 +1038,55 @@ describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ d
     expect(defenderQuestions).toBe(0);
     const entered = idsOf(s, "p1", "battlefield", "Kinscaer Sentry").find((id) => id !== sentry) as string;
     expect(defenderOf(s, entered)).toBe("p2");
+  });
+});
+
+describe("« Gardez les permanents choisis » : les choix dans l'ordre APNAP, puis le sort en même temps (PLAN-H H8a)", () => {
+  /** Résout la pile en répondant aux choix par `answer`. */
+  const resolveAll = (s: GameState, answer: (req: ChoiceRequest, player: string, cur: GameState) => ChoiceValue[]) => {
+    let cur = s;
+    for (let i = 0; i < 100; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice") cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) });
+      else break;
+    }
+    return cur;
+  };
+  const nameIs = (s: GameState, id: unknown) => s.defs[s.objects[String(id)]?.defId ?? ""]?.name;
+
+  it("Liliana, Dreadhorde General −9 à trois : chaque adversaire choisit à son tour ; un permanent compte pour chacun de ses types", () => {
+    // Décisions officielles : en commençant par l'adversaire suivant dans l'ordre du tour, chaque adversaire choisit en
+    // connaissant les choix précédents, puis tous sacrifient en même temps ; un artefact-créature peut être choisi à la
+    // fois comme artefact et comme créature.
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [{ name: "Liliana, Dreadhorde General", counters: { loyalty: 9 } }] },
+      p2: { battlefield: ["Adaptive Automaton", "Sol Ring", "Bear Cub", "Forest"] },
+      p3: { battlefield: ["Forest", "Island", "Bear Cub"] },
+    });
+    const lili = idOf(s, "p1", "battlefield", "Liliana, Dreadhorde General");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === lili && x.label?.includes("chaque type"));
+    if (a?.type !== "activate") throw new Error("capacité −9 indisponible");
+    s = act(s, "p1", { type: "activate", source: lili, ability: a.ability });
+    const field = s.battlefield.length;
+    const asked: string[] = [];
+    s = resolveAll(s, (req, player, cur) => {
+      if (req.type !== "pick") return req.suggested;
+      // Rien n'est sacrifié avant la fin des choix.
+      expect(cur.battlefield.length).toBe(field);
+      asked.push(`${player}:${cur.objects[String(req.options[0])]?.controller}`);
+      const keep = req.options.find((id) => ["Adaptive Automaton", "Island"].includes(nameIs(cur, id) ?? ""));
+      return [keep ?? (req.options[0] as string)];
+    });
+    expect(asked).toEqual(["p2:p2", "p2:p2", "p3:p3"]);
+    const left = (p: string) =>
+      s.battlefield
+        .filter((id) => s.objects[id]?.controller === p)
+        .map((id) => nameIs(s, id))
+        .sort();
+    expect(left("p2")).toEqual(["Adaptive Automaton", "Forest"]);
+    expect(left("p3")).toEqual(["Bear Cub", "Island"]);
   });
 });

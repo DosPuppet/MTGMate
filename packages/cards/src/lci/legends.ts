@@ -213,10 +213,21 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Unstable Glyphbridge": {
     abilities: [
-      triggered(when.entersSelf, [{ op: "destroyAllButOnePerPlayer", keep: { types: ["Creature"], maxPower: 2 } }], {
-        condition: cond.wasCast,
-        label: "Une créature de force 2 ou moins épargnée par joueur",
-      }),
+      triggered(
+        when.entersSelf,
+        [
+          fx.keep(
+            ref.eachPlayer,
+            "one",
+            { types: ["Creature"] },
+            { chooser: "you", fate: "destroy", among: { types: ["Creature"], maxPower: 2 } },
+          ),
+        ],
+        {
+          condition: cond.wasCast,
+          label: "Une créature de force 2 ou moins épargnée par joueur",
+        },
+      ),
       craft("{3}{W}{W}", { filter: { types: ["Artifact"] }, count: 1 }),
     ],
   },

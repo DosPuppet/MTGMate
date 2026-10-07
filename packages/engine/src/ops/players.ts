@@ -116,18 +116,6 @@ export const HANDLERS: OpHandlers = {
     rulesEvent(s, { e: "gift", player: ctx.controller });
     return;
   },
-  damageEachPlayerPer(s, _r, e, ctx) {
-    // Sunspine Lynx : chaque joueur, autant de blessures que de permanents correspondants qu'il contrôle.
-    const src = damageSource(s, ctx);
-    if (!src) return;
-    for (const p of s.playerOrder.filter((q) => !s.players[q]?.lost)) {
-      const n = s.battlefield.filter(
-        (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, { ...e.filter, controller: undefined }),
-      ).length;
-      dealDamage(s, src, p, n, false);
-    }
-    return;
-  },
   mayWheel(s, r, _e, ctx, key) {
     // « Chaque joueur peut défausser sa main et piocher sept cartes » : choix dans l'ordre APNAP, puis tout se fait ensemble.
     const order = apnapOrder(s);

@@ -14,7 +14,7 @@ import { addPlayerEffect } from "../src/statics";
 import { combatPower, declareAttackers } from "../src/turn";
 import type { GameState } from "../src/types";
 import { objectView } from "../src/view";
-import { act, castNowOf, idOf, idsOf, passAccepting, passBoth, scenario, untilCastNow } from "./helpers";
+import { act, castNowOf, customCard, idOf, idsOf, passAccepting, passBoth, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
 const cast = (s: S, p: string, name: string, extra: Record<string, unknown> = {}) =>
@@ -178,6 +178,31 @@ describe("Reality Fracture, lot F", () => {
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+  });
+
+  it("Kindred Judgment : tout type de créature peut être choisi ; un changelin est de chaque type", () => {
+    const shifter = customCard({
+      name: "Changelin d'essai",
+      subtypes: ["Shapeshifter"],
+      keywords: ["changeling"],
+      power: 1,
+      toughness: 1,
+    });
+    const run = (type: string) => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 7), "Llanowar Elves", shifter], hand: ["Kindred Judgment"] },
+        p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+      });
+      s = passBoth(cast(s, "p1", "Kindred Judgment"));
+      const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
+      // Les types proposés ne se limitent pas à ceux des créatures en jeu.
+      expect(req?.type === "pick" && req.options.includes("Dragon")).toBe(true);
+      s = act(s, "p1", { type: "choose", values: [type] });
+      return s.battlefield.filter((id) => chars(s, id).types.includes("Creature")).length;
+    };
+    // Dragon : seul le changelin reste ; Ange : l'Ange et le changelin.
+    expect(run("Dragon")).toBe(1);
+    expect(run("Angel")).toBe(2);
   });
 
   it("Fatehold Charm : renvoie un sort dans la main de son propriétaire", () => {

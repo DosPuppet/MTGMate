@@ -225,6 +225,34 @@ describe("station (702.184)", () => {
 });
 
 describe("Edge of Eternities, lot C", () => {
+  it("Command Bridge : sacrifiée à moins d'engager un permanent dégagé que vous contrôlez", () => {
+    const play = (battlefield: string[], answer: (ids: string[], s: S) => string[] | undefined) => {
+      let s = scenario({ p1: { battlefield, hand: ["Command Bridge"] } });
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Command Bridge") });
+      let questions = 0;
+      s = settle(s, (req, _p, cur) => {
+        if (req.type !== "pick" || !cur) return undefined;
+        questions++;
+        return answer(req.options.map(String), cur);
+      });
+      return { s, questions };
+    };
+    // Un permanent engagé : elle reste (et arrive engagée).
+    const kept = play(["Bear Cub", "Forest"], (ids, s) => ids.filter((id) => nameOf(s, id) === "Forest"));
+    const bridge = idOf(kept.s, "p1", "battlefield", "Command Bridge");
+    expect([kept.s.objects[bridge]?.tapped, kept.s.objects[idOf(kept.s, "p1", "battlefield", "Forest")]?.tapped]).toEqual([
+      true,
+      true,
+    ]);
+    expect(kept.s.objects[idOf(kept.s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(false);
+    // Rien d'engagé : elle est sacrifiée.
+    const declined = play(["Bear Cub"], () => []);
+    expect(idsOf(declined.s, "p1", "graveyard", "Command Bridge")).toHaveLength(1);
+    // Aucun permanent dégagé : pas de question, elle est sacrifiée.
+    const none = play([], () => undefined);
+    expect([none.questions, idsOf(none.s, "p1", "graveyard", "Command Bridge").length]).toEqual([0, 1]);
+  });
+
   it("Unravel : piochez seulement si le mana dépensé est inférieur à la valeur de mana (distorsion)", () => {
     const setup = () =>
       scenario({

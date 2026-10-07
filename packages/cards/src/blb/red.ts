@@ -360,9 +360,15 @@ export const RED: Record<string, CardScript> = {
         label: "Les joueurs ne peuvent pas gagner de points de vie",
       }),
       playerStatic({ damageUnpreventable: true, label: "Les blessures ne peuvent pas être prévenues" }),
-      triggered(when.entersSelf, [fx.damageEachPlayerPer({ types: ["Land"], basic: false })], {
-        label: "Blessures selon les terrains non de base",
-      }),
+      triggered(
+        when.entersSelf,
+        fx.forEachPlayer(ref.eachPlayer, (p) => [
+          fx.damage(amount.refCount(ref.permanentsOf(p, { types: ["Land"], basic: false })), p),
+        ]),
+        {
+          label: "Blessures selon les terrains non de base",
+        },
+      ),
     ],
   },
   "Take Out the Trash": {

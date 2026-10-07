@@ -60,6 +60,16 @@ import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, Pla
 import { PERMANENT_TYPES } from "../types";
 import { chooseAttacked, enterChoiceRequest } from "./permanents";
 
+/** Noms français des types de permanent (questions de `keep`). */
+const TYPE_LABEL: Partial<Record<CardType, string>> = {
+  Artifact: "artefact",
+  Creature: "créature",
+  Enchantment: "enchantement",
+  Land: "terrain",
+  Planeswalker: "planeswalker",
+  Battle: "bataille",
+};
+
 /** Le joueur qui contrôlera l'objet mis sur le champ de bataille : vous, ou son propriétaire. */
 const ownerOr =
   (s: GameState, spec: MoveSpec, you: PlayerId) =>
@@ -357,43 +367,6 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  destroyAllButChosenType(s, r, _e, ctx, key) {
-    const creatures = s.battlefield.filter((id) => isCreature(s, id));
-    const tally = new Map<string, number>();
-    for (const id of creatures) {
-      const mine = s.objects[id]?.controller === ctx.controller;
-      for (const t of chars(s, id).subtypes) tally.set(t, (tally.get(t) ?? 0) + (mine ? 1 : -1));
-    }
-    const options = [...tally.keys()].sort();
-    let chosen: string | undefined;
-    if (options.length > 0) {
-      const answer = r.vars[key("type")];
-      if (!answer) {
-        const best = [...tally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? options[0];
-        return {
-          ask: {
-            player: ctx.controller,
-            key: key("type"),
-            request: {
-              type: "pick",
-              intent: "chooseOnEnter",
-              prompt: "Choisissez un type de créature (les autres créatures seront détruites)",
-              options,
-              labels: Object.fromEntries(options.map((o) => [o, o])),
-              min: 1,
-              max: 1,
-              suggested: [best as string],
-            },
-          },
-        };
-      }
-      chosen = String(answer[0]);
-    }
-    const kept = chosen;
-    const doomed = creatures.filter((id) => !kept || !matchesObjectFilter(s, ctx.controller, id, { subtype: kept }));
-    for (const id of doomed) destroy(s, id, false, ctx.controller);
-    return;
-  },
   exileFromHandLinked(s, r, e, ctx, key) {
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
     if (!p) return;
@@ -466,130 +439,140 @@ export const HANDLERS: OpHandlers = {
     if (moved && src) src.linked = [...(src.linked ?? []), moved];
     return;
   },
-  keepOnePerType(s, r, e, ctx, key) {
-    for (const p of resolveRef(s, ctx, e.who)) {
-      if (!isPlayer(s, p) || r.vars[key(`kdone-${p}`)]) continue;
-      const mine = s.battlefield.filter(
-        (id) => s.objects[id]?.controller === p && !(e.nonland && chars(s, id).types.includes("Land")),
+  keep(s, r, e, ctx, key) {
+    // « Gardez les permanents choisis » : tous les choix d'abord, joueur par joueur dans l'ordre APNAP (101.4), par chacun
+    // ou par le contrôleur de l'effet ; rien ne bouge avant la fin des choix. Puis le sort tombe en même temps sur tous
+    // les autres permanents du filtre des joueurs désignés.
+    const who = resolveRef(s, ctx, e.who);
+    const players = apnapOrder(s).filter((p) => who.includes(p) && !s.players[p]?.lost);
+    const among = e.among ?? e.filter;
+    const max = e.max !== undefined ? evalAmount(s, ctx, e.max) : 0;
+    const power = (id: ObjectId) => Math.max(0, chars(s, id).power);
+    const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+    const noun = among.types?.length === 1 && among.types[0] === "Creature" ? "créature" : "permanent";
+    const fem = noun === "créature" ? "e" : "";
+    const fate = `${e.fate === "destroy" ? "détruit" : "sacrifié"}${fem}s`;
+    const kept = new Set<ObjectId>();
+    for (const p of players) {
+      const chooser = e.chooser === "you" ? ctx.controller : p;
+      // Suggestion : le meilleur pour soi, le moins bon pour un autre joueur.
+      const forSelf = chooser === p;
+      const whose = forSelf ? "" : ` de ${s.players[p]?.name ?? p}`;
+      const candidates = s.battlefield.filter(
+        (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, ctx.controller, id, among, ctx.sourceId),
       );
-      const kept = new Set<string>();
-      for (const t of PERMANENT_TYPES) {
-        if (e.nonland && t === "Land") continue;
-        const ofType = mine.filter((id) => chars(s, id).types.includes(t));
-        if (ofType.length === 0) continue;
-        if (ofType.length === 1) {
-          kept.add(ofType[0] as string);
-          continue;
-        }
-        const answer = r.vars[key(`keep-${p}-${t}`)];
-        if (!answer) {
-          return {
-            ask: {
-              player: p,
-              key: key(`keep-${p}-${t}`),
-              request: {
-                type: "pick",
-                intent: "keepPerType",
-                prompt: `Choisissez le permanent de type ${t} que vous gardez`,
-                options: ofType,
-                min: 1,
-                max: 1,
-                suggested: [ofType[0] as string],
-              },
-            },
-          };
-        }
-        kept.add(String(answer[0]));
-      }
-      r.vars[key(`kdone-${p}`)] = [1];
-      for (const id of mine) if (!kept.has(id) && onBattlefield(s, id)) sacrifice(s, id);
-    }
-    return;
-  },
-  keepWithinTotalPower(s, r, e, ctx, key) {
-    const max = evalAmount(s, ctx, e.maxTotalPower);
-    const power = (id: string) => Math.max(0, chars(s, id).power);
-    const players = resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p) && !s.players[p]?.lost);
-    const mineOf = (p: string) =>
-      s.battlefield.filter((id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId));
-    // Chaque joueur choisit (dans l'ordre APNAP), puis tous sacrifient ensemble.
-    const kept = new Map<string, Set<string>>();
-    for (const p of players) {
-      const options = mineOf(p);
-      const answer = r.vars[key(`keepPow-${p}`)];
-      if (!answer && options.length > 0) {
-        // Suggestion : les plus fortes qui tiennent dans la limite.
-        const suggested: string[] = [];
-        let total = 0;
-        for (const id of [...options].sort((a, b) => power(b) - power(a))) {
-          if (total + power(id) > max) continue;
-          suggested.push(id);
-          total += power(id);
-        }
-        return {
-          ask: {
-            player: p,
-            key: key(`keepPow-${p}`),
-            request: {
-              type: "pick",
-              intent: "keepWithinPower",
-              prompt: `Choisissez les créatures que vous gardez (force totale ${max} ou moins) ; les autres seront sacrifiées`,
-              options,
-              min: 0,
-              max: options.length,
-              suggested,
-            },
-          },
-        };
-      }
-      const chosen = (answer ?? []).map(String).filter((id) => options.includes(id));
-      if (chosen.reduce((n, id) => n + power(id), 0) > max) throw new RulesError(`Force totale supérieure à ${max}`);
-      kept.set(p, new Set(chosen));
-    }
-    for (const p of players) for (const id of mineOf(p)) if (!kept.get(p)?.has(id) && onBattlefield(s, id)) sacrifice(s, id);
-    return;
-  },
-  keepSharingCreatureType(s, r, e, ctx, key) {
-    const players = resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p) && !s.players[p]?.lost);
-    const creaturesOf = (p: string) => s.battlefield.filter((id) => s.objects[id]?.controller === p && isCreature(s, id));
-    // Créatures qui partagent un type avec `id` (elle comprise) : on garde le plus chez soi, le moins chez l'adversaire.
-    const keptWith = (p: string, id: string) => creaturesOf(p).filter((x) => x === id || shareCreatureType(s, [id, x])).length;
-    const chosen: Record<string, string> = {};
-    for (const p of players) {
-      const options = creaturesOf(p);
-      if (options.length === 0) continue;
-      const answer = r.vars[key(`winnow-${p}`)];
-      if (answer) {
-        chosen[p] = String(answer[0]);
-        continue;
-      }
-      const sign = p === ctx.controller ? -1 : 1;
-      const best = [...options].sort((a, b) => sign * (keptWith(p, a) - keptWith(p, b)))[0] as string;
-      if (options.length === 1) {
-        chosen[p] = best;
-        continue;
-      }
-      return {
+      const ask = (k: string, prompt: string, options: ObjectId[], min: number, most: number, suggested: ObjectId[]) => ({
         ask: {
-          player: ctx.controller,
-          key: key(`winnow-${p}`),
+          player: chooser,
+          key: key(k),
           request: {
-            type: "pick",
-            intent: "other",
-            prompt: `Choisissez une créature de ${p === ctx.controller ? "vous" : "cet adversaire"} : ses autres créatures sans type en commun seront sacrifiées`,
+            type: "pick" as const,
+            intent:
+              e.pick === "onePerType"
+                ? ("keepPerType" as const)
+                : e.pick === "totalPower"
+                  ? ("keepWithinPower" as const)
+                  : ("pickCards" as const),
+            prompt,
             options,
-            min: 1,
-            max: 1,
-            suggested: [best],
+            min,
+            max: most,
+            suggested,
           },
         },
+      });
+      // Un seul permanent parmi `options` : sans question s'il n'y en a qu'un.
+      const pickOne = (k: string, options: ObjectId[], prompt: string, best: (a: ObjectId, b: ObjectId) => number) => {
+        if (options.length <= 1) return options[0];
+        const answer = r.vars[key(k)];
+        if (!answer) {
+          const sorted = [...options].sort(best);
+          return ask(k, prompt, options, 1, 1, [(forSelf ? sorted[0] : sorted[sorted.length - 1]) as string]);
+        }
+        const id = String(answer[0]);
+        if (answer.length !== 1 || !options.includes(id)) throw new RulesError("Choisissez un des permanents proposés");
+        return id;
       };
+      if (e.pick === "onePerType") {
+        for (const t of PERMANENT_TYPES) {
+          if (among.types && !among.types.includes(t)) continue;
+          const ofType = candidates.filter((id) => chars(s, id).types.includes(t));
+          const label = TYPE_LABEL[t] ?? t;
+          const got = pickOne(
+            `keep-${p}-${t}`,
+            ofType,
+            forSelf
+              ? `Choisissez le permanent de type ${label} que vous gardez (les autres seront ${fate})`
+              : `Choisissez le permanent de type ${label}${whose} qui sera gardé`,
+            (a, b) => mv(b) - mv(a),
+          );
+          if (typeof got === "object") return got;
+          if (got) kept.add(got);
+        }
+      } else if (e.pick === "totalPower") {
+        if (candidates.length === 0) continue;
+        const answer = r.vars[key(`keep-${p}`)];
+        if (!answer) {
+          // Suggestion : les plus fortes qui tiennent dans la limite.
+          const suggested: ObjectId[] = [];
+          let total = 0;
+          for (const id of forSelf ? [...candidates].sort((a, b) => power(b) - power(a)) : []) {
+            if (total + power(id) > max) continue;
+            suggested.push(id);
+            total += power(id);
+          }
+          return ask(
+            `keep-${p}`,
+            `Choisissez les ${noun}s${whose} gardé${fem}s (force totale ${max} ou moins) ; les autres seront ${fate}`,
+            candidates,
+            0,
+            candidates.length,
+            suggested,
+          );
+        }
+        const chosen = answer.map(String);
+        if (chosen.some((id) => !candidates.includes(id)) || new Set(chosen).size !== chosen.length)
+          throw new RulesError("Choisissez parmi les permanents proposés");
+        if (chosen.reduce((n, id) => n + power(id), 0) > max) throw new RulesError(`Force totale supérieure à ${max}`);
+        for (const id of chosen) kept.add(id);
+      } else if (e.pick === "sharesType") {
+        // Créatures qui partagent un type avec `id` (elle comprise) : on en garde le plus chez soi, le moins ailleurs.
+        const keptWith = (id: ObjectId) => candidates.filter((x) => x === id || shareCreatureType(s, [id, x])).length;
+        const got = pickOne(
+          `keep-${p}`,
+          candidates,
+          forSelf
+            ? `Choisissez une de vos ${noun}s : vos autres ${noun}s sans type en commun avec elle seront ${fate}`
+            : `Choisissez une ${noun}${whose} : ses autres ${noun}s sans type en commun avec elle seront ${fate}`,
+          (a, b) => keptWith(b) - keptWith(a),
+        );
+        if (typeof got === "object") return got;
+        if (got) {
+          kept.add(got);
+          for (const id of candidates) if (shareCreatureType(s, [got, id])) kept.add(id);
+        }
+      } else {
+        const got = pickOne(
+          `keep-${p}`,
+          candidates,
+          forSelf
+            ? `Choisissez ${noun === "créature" ? "la créature" : "le permanent"} que vous gardez (les autres seront ${fate})`
+            : `${noun === "créature" ? "Créature épargnée" : "Permanent épargné"} chez ${s.players[p]?.name ?? p}`,
+          (a, b) => power(b) - power(a),
+        );
+        if (typeof got === "object") return got;
+        if (got) kept.add(got);
+      }
     }
-    const doomed = players.flatMap((p) => {
-      const keep = chosen[p];
-      return keep ? creaturesOf(p).filter((id) => id !== keep && !shareCreatureType(s, [keep, id])) : [];
+    const doomed = s.battlefield.filter((id) => {
+      const c = s.objects[id]?.controller;
+      return !!c && players.includes(c) && !kept.has(id) && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId);
     });
-    for (const id of doomed) if (onBattlefield(s, id)) sacrifice(s, id);
+    for (const id of doomed) {
+      if (!onBattlefield(s, id)) continue;
+      if (e.fate === "destroy") destroy(s, id, false, ctx.controller);
+      else sacrifice(s, id);
+    }
     return;
   },
   craftReturn(s, _r, _e, ctx) {
@@ -1038,49 +1021,6 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, 1);
     return;
   },
-  destroyAllButOnePerPlayer(s, r, e, ctx, key) {
-    // Le contrôleur choisit, pour chaque joueur, une créature correspondante qu'il contrôle ; les autres sont détruites.
-    const keep: ObjectId[] = [];
-    for (const p of s.playerOrder) {
-      if (s.players[p]?.lost) continue;
-      const options = s.battlefield.filter(
-        (id) =>
-          s.objects[id]?.controller === p &&
-          isCreature(s, id) &&
-          matchesObjectFilter(s, ctx.controller, id, e.keep, ctx.sourceId),
-      );
-      if (options.length === 0) continue;
-      if (options.length === 1) {
-        keep.push(options[0] as ObjectId);
-        continue;
-      }
-      const answer = r.vars[key(`keep-${p}`)];
-      if (!answer) {
-        // Suggestion : la plus forte chez soi, la plus faible chez un adversaire.
-        const byPower = [...options].sort((a, b) => chars(s, b).power - chars(s, a).power);
-        const suggested = p === ctx.controller ? byPower[0] : byPower[byPower.length - 1];
-        return {
-          ask: {
-            player: ctx.controller,
-            key: key(`keep-${p}`),
-            request: {
-              type: "pick",
-              intent: "pickCards",
-              prompt: `Créature épargnée chez ${s.players[p]?.name ?? p}`,
-              options,
-              min: 1,
-              max: 1,
-              suggested: [suggested as string],
-            },
-          },
-        };
-      }
-      const chosen = String(answer[0]);
-      if (options.includes(chosen)) keep.push(chosen);
-    }
-    for (const id of s.battlefield.filter((x) => isCreature(s, x) && !keep.includes(x))) destroy(s, id, false, ctx.controller);
-    return;
-  },
   sacrificeIt(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) sacrifice(s, id);
     return;
@@ -1436,55 +1376,6 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  sacrificeElseDiscard(s, r, e, ctx, key) {
-    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
-      if (r.vars[key(`sed-${p}`)]) continue;
-      const candidates = s.battlefield.filter(
-        (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId),
-      );
-      const hand = s.players[p]?.hand ?? [];
-      const pool = candidates.length ? candidates : hand;
-      if (pool.length === 0) {
-        r.vars[key(`sed-${p}`)] = [1];
-        continue;
-      }
-      let chosen = pool.length === 1 ? [pool[0] as string] : null;
-      if (!chosen) {
-        const answer = r.vars[key(`sedpick-${p}`)];
-        if (!answer) {
-          return {
-            ask: {
-              player: p,
-              key: key(`sedpick-${p}`),
-              request: {
-                type: "pick",
-                intent: candidates.length ? "sacrifice" : "discard",
-                prompt: candidates.length ? "Sacrifiez un permanent" : "Défaussez une carte",
-                options: pool,
-                min: 1,
-                max: 1,
-                suggested: [pool[0] as string],
-              },
-            },
-          };
-        }
-        chosen = answer
-          .map(String)
-          .filter((id) => pool.includes(id))
-          .slice(0, 1);
-        if (chosen.length === 0) chosen = [pool[0] as string];
-      }
-      r.vars[key(`sed-${p}`)] = [1];
-      const id = chosen[0] as string;
-      if (candidates.length) sacrifice(s, id);
-      else {
-        emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-        announceDiscard(s, p, moveDiscarded(s, p, id, true));
-        announceDiscardBatch(s, p, 1);
-      }
-    }
-    return;
-  },
   devour(s, r, e, ctx, key) {
     if (r.vars.$devoured) return;
     const fromGy = !!e.graveyardUpToX;
@@ -1787,36 +1678,6 @@ export const HANDLERS: OpHandlers = {
       const moved = moveWithSpec(s, p, id, { to: "exile" });
       if (moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
     }
-    return;
-  },
-  tapOrSacrifice(s, r, _e, ctx, key) {
-    // Command Bridge : engager un permanent dégagé (au choix), sinon sacrifier la source.
-    const src = s.objects[ctx.sourceId];
-    if (src?.zone !== "battlefield") return;
-    const untapped = s.battlefield.filter(
-      (id) => id !== src.id && s.objects[id]?.controller === ctx.controller && !s.objects[id]?.tapped,
-    );
-    const answer = untapped.length ? r.vars[key("tapOrSac")] : [];
-    if (!answer) {
-      return {
-        ask: {
-          player: ctx.controller,
-          key: key("tapOrSac"),
-          request: {
-            type: "pick",
-            intent: "pickCards",
-            prompt: `${nameOf(s, ctx.sourceId)} : engagez un permanent dégagé (sinon il est sacrifié)`,
-            options: untapped,
-            min: 0,
-            max: 1,
-            suggested: untapped.slice(0, 1),
-          },
-        },
-      };
-    }
-    const picked = answer.map(String).find((id) => untapped.includes(id));
-    if (picked) tapObject(s, s.objects[picked] as NonNullable<(typeof s.objects)[string]>);
-    else sacrifice(s, src.id);
     return;
   },
   transform(s, _r, e, ctx) {

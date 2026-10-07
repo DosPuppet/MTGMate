@@ -28,7 +28,7 @@ Les scripts sont dans `packages/cards/src/blb/` : `white`, `blue`, `black`, `red
   - les conditions `any`, `opponentHasMore` (Beza), `lostLife`, `refLostLife`, `handAtMost`, `targetChosen`, `sacrificedFood`, `canForage` ; la référence `defendingPlayer` ;
   - les montants `inExile`, `yourCreaturesDiedThisTurn`, `opponentCreaturesExiledThisTurn` (Vren), `opponentsWithHandAtMost`, `lkiPower`, `instantSorceryCast`, `cardsLeftGraveyardThisTurn` ;
   - les statiques de joueur `noncombatDamageBonusAmount` (Artist's Talent), `damageUnpreventable` (Sunspine Lynx), `instantsSorceriesFromGraveyardLife` (Festival of Embers), `flashFor` (Valley Floodcaller), `damagePlusOneFrom` (Valley Flamecaller), `creaturesFromGraveyardForage` (Osteomancer Adept) ;
-  - les effets `untapAll`, `damageEachPlayerPer`, `portent` ; `modifyAll` jusqu'à votre prochain tour ; `punisher` répété (`times`) ; `sacrifice` de plus grande force ; `copyToken` exilé à l'étape de fin ; les cibles réflexives de valeur de mana variable (`manaValueAmount`, Wishing Well) ;
+  - les effets `untapAll`, `forEachPlayer` avec `damage` (Sunspine Lynx, PLAN-H H8a), `portent` ; `modifyAll` jusqu'à votre prochain tour ; `punisher` répété (`times`) ; `sacrifice` de plus grande force ; `copyToken` exilé à l'étape de fin ; les cibles réflexives de valeur de mana variable (`manaValueAmount`, Wishing Well) ;
   - la copie à l'arrivée d'une créature de n'importe quel contrôleur, avec des mots-clés en plus (Mockingbird) ;
   - le mot-clé `cantBeBlockedByPowerGE2` (Azure Beastbinder).
 

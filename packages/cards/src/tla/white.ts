@@ -401,6 +401,6 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   "Destined Confrontation": {
-    spell: spell([], [fx.keepWithinTotalPower(ref.eachPlayer, { types: ["Creature"] }, 4)]),
+    spell: spell([], [fx.keep(ref.eachPlayer, "totalPower", { types: ["Creature"] }, { max: 4 })]),
   },
 };

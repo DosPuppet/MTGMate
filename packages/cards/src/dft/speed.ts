@@ -228,9 +228,17 @@ export const SPEED: Record<string, CardScript> = {
   },
   "Momentum Breaker": {
     abilities: [
-      triggered(when.entersSelf, [fx.sacrificeElseDiscard(ref.eachOpponent, CREATURE_OR_VEHICLE)], {
-        label: "Chaque adversaire sacrifie une créature ou un Véhicule (sinon défausse)",
-      }),
+      // « Chaque adversaire qui ne peut pas » : celui qui n'a rien sacrifié défausse une carte.
+      triggered(
+        when.entersSelf,
+        fx.forEachPlayer(ref.eachOpponent, (p, n) => [
+          fx.sacrifice(p, CREATURE_OR_VEHICLE, 1, { store: `breaker${n}` }),
+          fx.when(cond.all(cond.amountAtLeast(amount.refCount(p), 1), cond.not(cond.v(`breaker${n}`))), fx.discard(1, p)),
+        ]),
+        {
+          label: "Chaque adversaire sacrifie une créature ou un Véhicule (sinon défausse)",
+        },
+      ),
       activated({ mana: "{2}", sacrifice: true, effects: [fx.gainLife(amount.speed)], label: "PV égaux à votre vitesse" }),
     ],
   },

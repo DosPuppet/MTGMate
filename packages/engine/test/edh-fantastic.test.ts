@@ -13,6 +13,7 @@ import {
   advanceUntil,
   attackPlayer,
   castable,
+  customCard,
   idOf,
   idsOf,
   lands,
@@ -126,6 +127,40 @@ describe("The Fantastic Four (EDH)", () => {
     expect(onField(s, "p2", "Bear Cub") + onField(s, "p2", "Savannah Lions")).toBe(1);
     expect(onField(s, "p2", "Sol Ring") + onField(s, "p2", "Arcane Signet")).toBe(1);
     expect(onField(s, "p1", "Plains")).toBe(5);
+  });
+
+  it("Tragic Arrogance à trois : vous choisissez pour chaque joueur, puis tous sacrifient en même temps", () => {
+    // Oracle : « For each player, you choose from among the permanents that player controls an artifact, a creature, an
+    // enchantment, and a planeswalker. Then each player sacrifices all other nonland permanents they control. »
+    const vault = customCard({ name: "Test Vault", typeLine: "Artifact Land", types: ["Artifact", "Land"] });
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [...lands("Plains", 5), "Bear Cub", "Savannah Lions"], hand: ["Tragic Arrogance"] },
+      p2: { battlefield: [vault, "Sol Ring", "Arcane Signet", "Serra Angel", "Bear Cub"] },
+      p3: { battlefield: ["Adaptive Automaton", "Arcane Signet", "Llanowar Elves"] },
+    });
+    const field = s.battlefield.length;
+    const asked: string[] = [];
+    // p2 : l'artefact-terrain comme artefact (ses vrais artefacts sont sacrifiés) ; p3 : l'artefact-créature deux fois.
+    const want = ["Savannah Lions", "Test Vault", "Bear Cub", "Adaptive Automaton"];
+    s = settle(castIt(s, "p1", "Tragic Arrogance"), (req, p, cur) => {
+      if (req.type !== "pick" || req.intent !== "keepPerType" || !cur) return undefined;
+      // Aucun permanent n'est sacrifié avant la fin des choix.
+      expect(cur.battlefield.length).toBe(field);
+      const owner = cur.objects[req.options[0] as string]?.controller;
+      asked.push(`${p}:${owner}`);
+      const name = want.find((w) => req.options.some((id) => nameOf(cur, id) === w));
+      return req.options.filter((id) => nameOf(cur, id) === name).slice(0, 1);
+    });
+    expect(asked).toEqual(["p1:p1", "p1:p2", "p1:p2", "p1:p3", "p1:p3"]);
+    expect([onField(s, "p1", "Savannah Lions"), onField(s, "p1", "Bear Cub"), onField(s, "p1", "Plains")]).toEqual([1, 0, 5]);
+    expect(onField(s, "p2", "Test Vault") + onField(s, "p2", "Bear Cub")).toBe(2);
+    expect(onField(s, "p2", "Sol Ring") + onField(s, "p2", "Arcane Signet") + onField(s, "p2", "Serra Angel")).toBe(0);
+    expect([
+      onField(s, "p3", "Adaptive Automaton"),
+      onField(s, "p3", "Arcane Signet"),
+      onField(s, "p3", "Llanowar Elves"),
+    ]).toEqual([1, 0, 0]);
   });
 
   it("Ultimate Nullification : sacrifiez une créature légendaire ; exile créatures et cimetières ; au-dessous de la bibliothèque", () => {

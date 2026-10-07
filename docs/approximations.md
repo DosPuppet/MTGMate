@@ -286,7 +286,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Deep Analysis : le flashback coûte {1}{U}, sans les 3 points de vie ;
   - `règle` First Family : seules les couleurs de vos permanents comptent (pas celles des sorts lancés ce tour-ci) ;
   - `règle` Willie Lumpkin : l'interdiction d'attaquer dure jusqu'au prochain tour de son contrôleur (ce qui couvre le prochain tour du joueur blessé) ;
-  - `choix auto` Tragic Arrogance : chaque joueur choisit lui-même ce qu'il garde ; Cut a Deal : chaque adversaire est compté comme ayant pioché ;
+  - `choix auto` Cut a Deal : chaque adversaire est compté comme ayant pioché ;
   - `règle` Hancock : X compte ses marqueurs +1/+1 seulement ; Jason Bright : « une force différente de sa force de base » se lit « supérieure » ;
   - `règle` Harold and Bob : la Forêt choisie gagne sa capacité pour toujours, et la carte reste au cimetière (elle ne devient pas une Aura) ;
   - `règle` Lumbering Megasloth : seuls les marqueurs des permanents comptent (pas ceux des joueurs) ; Winding Constrictor : la clause « si vous deviez recevoir des marqueurs » n'est pas gérée ;
