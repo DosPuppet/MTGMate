@@ -2902,6 +2902,26 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(lib[0]).toBe("Swamp");
     expect([...lib.slice(1)].sort()).toEqual(["Lightning Strike", "Opt", "Serra Angel"]);
   });
+
+  it("Zimone's Experiment : le terrain révélé va de la bibliothèque au champ de bataille, sans passer par la main (PLAN-H, H2)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Forest", 4),
+        hand: ["Zimone's Experiment"],
+        library: ["Island", "Opt", "Swamp", "Serra Angel", "Lightning Strike", "Forest"],
+      },
+    });
+    s = settle(cast(s, "p1", "Zimone's Experiment"), (req) =>
+      req.type === "pick" ? req.options.filter((id) => ["Island", "Swamp"].includes(nameOf(s, id) ?? "")) : undefined,
+    );
+    expect(idsOf(s, "p1", "battlefield", "Island")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Swamp")).toHaveLength(1);
+    // Aucune carte de terrain n'est entrée dans la main ; les deux arrivent depuis la bibliothèque.
+    const moves = s.turnLog.filter((e) => e.e === "zone" && e.types.includes("Land"));
+    expect(moves.some((e) => e.e === "zone" && e.to === "hand")).toBe(false);
+    expect(moves.filter((e) => e.e === "zone" && e.from === "library" && e.to === "battlefield")).toHaveLength(2);
+    expect(s.players.p1?.hand).toHaveLength(0);
+  });
 });
 
 describe("Secrets of Strixhaven, lot A — multicolores", () => {

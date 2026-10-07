@@ -201,15 +201,24 @@ export const WHITE: Record<string, CardScript> = {
   },
   "The Legend of Yangchen": {
     abilities: [
-      // Approximation : vous choisissez un permanent adverse de valeur de mana 3 ou plus (obligatoire s'il y en a un) ;
-      // les adversaires ne choisissent pas (en duel, ils ne pourraient choisir que parmi leurs propres permanents).
+      // « En commençant par vous, chaque joueur choisit jusqu'à un permanent de valeur de mana 3 ou plus parmi ceux de
+      // vos adversaires » ; les permanents choisis sont exilés ensemble, une fois tous les choix faits.
       chapter(
         [1],
         [
-          fx.chooseAmong(ref.permanentsOf(ref.eachOpponent, { permanent: true, minManaValue: 3 }), ref.you, "y"),
-          fx.exile(ref.stored("y")),
+          ...fx.forEachPlayer(ref.union(ref.you, ref.eachOpponent), (p, n) =>
+            // Un siège absent (moins de six joueurs) ne choisit pas.
+            fx.when(
+              cond.amountAtLeast(amount.refCount(p), 1),
+              fx.chooseAmong(ref.permanentsOf(ref.eachOpponent, { permanent: true, minManaValue: 3 }), p, `y${n}`, {
+                optional: true,
+                prompt: "Vous pouvez choisir un permanent de valeur de mana 3 ou plus à exiler",
+              }),
+            ),
+          ),
+          fx.exile(ref.union(...Array.from({ length: 6 }, (_, n) => ref.stored(`y${n}`)))),
         ],
-        { label: "Exile un permanent adverse de valeur de mana 3 ou plus" },
+        { label: "Chaque joueur choisit jusqu'à un permanent adverse de valeur de mana 3 ou plus : exilez-les" },
       ),
       chapter([2], [...fx.may("Faire piocher trois cartes à l'adversaire ciblé ?", fx.draw(3, ref.target()), fx.draw(3))], {
         targets: [target.player("t", "opponent")],

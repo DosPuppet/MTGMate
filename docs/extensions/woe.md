@@ -146,4 +146,4 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
   - `amount.totalManaValue(filtre, "exile")` : les cartes que vous possédez en exil (face cachée : 0) ;
   - la cible de carte exilée `own: false` (« que vous ne possédez pas »).
 - **Tests :** 7 tests de règles (« lot C5 ») et 2 décisions officielles d'Ashiok (`rulings.test.ts`).
-- **Écarts :** Sentinel of Lost Lore (« un ou plusieurs » en cibles facultatives), approximation documentée.
+- **Écarts :** Sentinel of Lost Lore (« un ou plusieurs » en cibles facultatives), approximation documentée ; levée au PLAN-H (H2) : capacité déclenchée modale (`oneOrMore`).

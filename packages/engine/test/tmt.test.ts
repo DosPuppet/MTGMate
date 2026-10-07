@@ -1220,6 +1220,24 @@ describe("lot A, bleu", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Kitsune, Dragon's Daughter")).keywords).toContain("vigilance");
     });
 
+    it("Kitsune, Dragon's Daughter à plusieurs : deux créatures de deux adversaires différents s'échangent (PLAN-H, H2)", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: lands("Island", 6), hand: ["Kitsune, Dragon's Daughter"] },
+        p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+        p3: { battlefield: ["Shivan Dragon"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      const dragon = idOf(s, "p3", "battlefield", "Shivan Dragon");
+      s = settle(cast(s, "p1", "Kitsune, Dragon's Daughter"), (req) =>
+        req.intent === "may" ? [1] : pickIds(req, [angel, dragon]),
+      );
+      expect(s.objects[angel]?.controller).toBe("p3");
+      expect(s.objects[dragon]?.controller).toBe("p2");
+      expect(s.objects[cub]?.controller).toBe("p2");
+    });
+
     it("Kitsune, Dragon's Daughter : on peut refuser l'échange", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 6), "Bear Cub"], hand: ["Kitsune, Dragon's Daughter"] },
@@ -1686,6 +1704,20 @@ describe("lot A, noir", () => {
         expect(asked).toBe(false);
         expect(s.players.p1?.life).toBe(1);
       });
+
+      it("ce sont des PV payés : Ashiok, Wicked Manipulator les remplace par l'exil de cartes du dessus (PLAN-H, H2)", () => {
+        let s = scenario({
+          p1: {
+            battlefield: ["Madame Null, Power Broker", "Ashiok, Wicked Manipulator", ...lands("Forest", 2)],
+            hand: ["Bear Cub"],
+            library: lands("Forest", 6),
+          },
+        });
+        s = settle(cast(s, "p1", "Bear Cub"), (req) => (req.intent === "may" ? [1] : undefined));
+        expect(s.players.p1?.life).toBe(20);
+        expect(s.players.p1?.library).toHaveLength(4);
+        expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(2);
+      });
     });
 
     it("Oroku Saki, Shredder Rising : blessures de combat à un joueur — vous piochez une carte et perdez 1 PV", () => {
@@ -1877,6 +1909,19 @@ describe("lot A, noir", () => {
       t = settle(cast(t, "p1", "Shredder's Technique", { targets: { t: [idOf(t, "p2", "battlefield", "Bear Cub")] } }));
       expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(t.players.p1?.life).toBe(20);
+    });
+
+    it("Shredder's Technique : un enchantement indestructible n'est pas détruit, pas de PV perdus (PLAN-H, H2)", () => {
+      const ward = customCard({
+        name: "Enchantement indestructible",
+        typeLine: "Enchantment",
+        types: ["Enchantment"],
+        keywords: ["indestructible"],
+      });
+      let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Shredder's Technique"] }, p2: { battlefield: [ward] } });
+      s = settle(cast(s, "p1", "Shredder's Technique", { targets: { t: [idOf(s, "p2", "battlefield", ward.name)] } }));
+      expect(idsOf(s, "p2", "battlefield", ward.name)).toHaveLength(1);
+      expect(s.players.p1?.life).toBe(20);
     });
 
     it("South Wind Avatar : une autre de vos créatures meurt — PV égaux à son endurance ; chaque gain fait perdre 1 PV à chaque adversaire", () => {

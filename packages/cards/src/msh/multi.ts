@@ -250,7 +250,15 @@ export const MULTI: Record<string, CardScript> = {
           ),
         ],
         {
-          targets: [target.player("p", "opponent"), target.upTo(1, target.creature("c", { controller: "opponent" }))],
+          targets: [
+            target.player("p", "opponent"),
+            // « Que ce joueur contrôle » n'est vérifié qu'au ciblage ; le filtre « adversaire » est revérifié à la résolution.
+            target.of(
+              ref.target("p"),
+              target.upTo(1, target.creature("c", { controller: "opponent" })),
+              "créature que contrôle cet adversaire",
+            ),
+          ],
           label: "Exile une carte non-terrain de sa main ou la créature choisie",
         },
       ),

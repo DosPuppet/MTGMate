@@ -53,7 +53,7 @@ import {
   untapObject,
 } from "../state";
 import { payableLife, playerStatic, quantityMods, recipientMatches } from "../statics";
-import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
+import { holderOf, matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import { logTurnEvent } from "../turnlog";
 import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
 import { PERMANENT_TYPES } from "../types";
@@ -182,6 +182,11 @@ export const HANDLERS: OpHandlers = {
     if (e.optional) {
       const answer = r.vars[key("among")];
       if (!answer) {
+        // Suggestion : d'abord un objet d'un autre joueur (Light of Judgment, The Legend of Yangchen) ; parmi les siens
+        // seulement, le premier quand le joueur choisit pour son propre effet (champion, Deepfathom Echo), rien quand il
+        // choisit pour l'effet d'un autre (un adversaire de The Legend of Yangchen n'exile pas l'un des siens).
+        const others = ids.filter((id) => holderOf(s, id) !== chooser);
+        const suggested = others.length > 0 ? others.slice(0, 1) : chooser === ctx.controller ? ids.slice(0, 1) : [];
         return {
           ask: {
             player: chooser,
@@ -193,7 +198,7 @@ export const HANDLERS: OpHandlers = {
               options: ids,
               min: 0,
               max: 1,
-              suggested: ids.slice(0, 1),
+              suggested,
             },
           },
         };

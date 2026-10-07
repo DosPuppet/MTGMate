@@ -32,6 +32,7 @@ import {
   picking,
   scenario,
   settle,
+  steal,
   untilCastNow,
 } from "./helpers";
 
@@ -1333,6 +1334,26 @@ describe("lot A, bleu", () => {
       s = settle(activate(s, "p1", st, { x: 2 }));
       expect(pt(s, st)).toEqual([3, 3]);
       expect(chars(s, st).keywords).not.toContain("unblockable");
+    });
+
+    it("Super Intelligence à plusieurs : seulement à l'entretien du contrôleur de la créature, pas des autres adversaires (PLAN-H, H2)", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Island"], hand: ["Super Intelligence"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Super Intelligence", { targets: { enchant: [bear] } }));
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(s.players.p2?.hand).toHaveLength(2);
+      s = advanceUntil(s, (x) => x.turn.active === "p3" && x.turn.step === "main1");
+      expect(s.players.p2?.hand).toHaveLength(2);
+      expect(s.players.p3?.hand).toHaveLength(1);
+      // La créature passe sous le contrôle de p3 : c'est désormais à son entretien que p3 pioche.
+      steal(s, bear, "p3");
+      s = advanceUntil(s, (x) => x.turn.active === "p3" && x.turn.step === "main1" && x.turn.number > 5);
+      expect(s.players.p3?.hand).toHaveLength(3);
+      expect(s.players.p2?.hand).toHaveLength(3);
     });
 
     it("Super Intelligence : le contrôleur de la créature enchantée pioche à son entretien", () => {
@@ -3463,6 +3484,52 @@ describe("lot A, multicolores", () => {
       s = settle(cast(s, "p1", "Cloak and Dagger, Entwined"), answering(["p2", angel]));
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
       expect(handNames(s, "p2")).toEqual(["Forest"]);
+    });
+
+    it("Cloak and Dagger à plusieurs : la créature ciblée est une créature que contrôle l'adversaire ciblé (PLAN-H, H2)", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: [...lands("Plains", 2), ...lands("Swamp", 2)], hand: ["Cloak and Dagger, Entwined"] },
+        p2: { hand: ["Forest"], battlefield: ["Bear Cub"] },
+        p3: { battlefield: ["Serra Angel"] },
+      });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      const angel = idOf(s, "p3", "battlefield", "Serra Angel");
+      let offered: string[] = [];
+      s = settle(cast(s, "p1", "Cloak and Dagger, Entwined"), (req, player, cur) => {
+        if (req.type === "pick" && req.options.includes(bear)) offered = req.options.map(String);
+        return answering(["p2", bear])(req, player, cur);
+      });
+      // L'Ange de p3 n'est pas proposé une fois p2 ciblé.
+      expect(offered).toContain(bear);
+      expect(offered).not.toContain(angel);
+      expect(exiled(s, "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p3", "battlefield", "Serra Angel")).toHaveLength(1);
+    });
+
+    it("Cloak and Dagger : la créature ciblée passée sous votre contrôle en réponse n'est plus une cible légale (608.2b)", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 2), ...lands("Swamp", 2)], hand: ["Cloak and Dagger, Entwined"] },
+        p2: { hand: ["Forest"], battlefield: ["Bear Cub"] },
+      });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = cast(s, "p1", "Cloak and Dagger, Entwined");
+      // Jusqu'à la capacité déclenchée sur la pile, cibles choisies.
+      for (let i = 0; i < 50 && !s.stack.some((x) => x.kind !== "spell"); i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice")
+          s = act(s, p.player, {
+            type: "choose",
+            values: answering(["p2", bear])(p.request, p.player, s) ?? p.request.suggested,
+          });
+        else break;
+      }
+      expect(s.stack.some((x) => x.kind !== "spell")).toBe(true);
+      steal(s, bear, "p1");
+      s = settle(s);
+      expect(exiled(s, "Bear Cub")).toHaveLength(0);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
     it("The Coming of Galactus : I détruit un permanent non-terrain ; IV crée Galactus, 16/16 légendaire, vol et piétinement", () => {

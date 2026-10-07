@@ -102,14 +102,15 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Madame Null, Power Broker": {
     abilities: [
-      // Approximation : payer des PV est écrit comme une perte de PV facultative, proposée seulement si vos PV suffisent.
+      // « Vous pouvez payer des PV égaux à sa force » (119.4 : seulement si vos PV suffisent ; la question n'est pas posée
+      // sinon).
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true }),
         fx.when(
           cond.not(cond.amountGreater(amount.powerOf(ref.eventObject), amount.lifeTotal)),
-          fx.may(
+          fx.mayPayLife(
+            amount.powerOf(ref.eventObject),
             "Payer des PV égaux à sa force pour y mettre autant de marqueurs +1/+1 ?",
-            fx.loseLife(amount.powerOf(ref.eventObject)),
             fx.addCounters(ref.eventObject, amount.powerOf(ref.eventObject)),
           ),
         ),
@@ -232,19 +233,13 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Shredder's Technique": {
-    // Faufilement {B} : lu dans le texte. « Si un enchantement a été détruit » : la cible était un enchantement et n'est
-    // plus sur le champ de bataille.
+    // Faufilement {B} : lu dans le texte. « Si un enchantement a été détruit de cette façon » : la cible a été détruite
+    // (nombre mémorisé) et c'était un enchantement (dernières informations connues).
     spell: spell(
       [target.permanent("t", ["Creature", "Enchantment"], {}, "créature ou enchantement")],
       [
-        fx.destroy(ref.target()),
-        ...fx.when(
-          cond.all(
-            cond.targetMatches("t", { types: ["Enchantment"] }),
-            cond.not(cond.amountAtLeast(amount.refCount(ref.filtered(ref.target(), {})), 1)),
-          ),
-          fx.loseLife(2),
-        ),
+        fx.destroy(ref.target(), "d"),
+        ...fx.when(cond.all(cond.v("d"), cond.targetMatches("t", { types: ["Enchantment"] })), fx.loseLife(2)),
       ],
     ),
   },

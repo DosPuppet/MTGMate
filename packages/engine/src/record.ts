@@ -412,8 +412,11 @@ export const RECORD_VERSION = 1;
  * - 150 : PLAN-H H2a : approximations levées par les scripts (The Endstone, Hapatra, Kitesail Larcenist, Choco,
  *   Radiant Lotus, Hollow Marauder, Garruk, Veiled Butcher, Betor, Whiskervale Forerunner, Thousand Moons Smithy,
  *   Sandswirl Wanderglyph, Ojer Kaslem…).
+ * - 151 : PLAN-H H2b : approximations levées par les scripts (Krenko's Buzzcrusher, Kaya, Spirits' Justice, Jetsam,
+ *   Super Intelligence, Sentinel of Lost Lore, The Legend of Yangchen, Kitsune, Madame Null, Shredder's Technique…) ;
+ *   le choix facultatif de chooseAmong suggère d'abord l'objet d'un autre joueur.
  */
-export const RULES_VERSION = 150;
+export const RULES_VERSION = 151;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -370,13 +370,10 @@ export const BLUE: Record<string, CardScript> = {
   "Super Intelligence": {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
-      // L'entretien du contrôleur de la créature enchantée (approché à plus de deux joueurs : celui de chaque adversaire
-      // quand elle est chez un adversaire).
-      triggered(when.step("upkeep", "any"), [fx.draw(1, ref.controllerOf(ref.attached))], {
-        condition: cond.any(
-          cond.all(cond.yourTurn, cond.controls({ attachedToSource: true })),
-          cond.all(cond.opponentsTurn, cond.battlefieldCount({ attachedToSource: true, controller: "opponent" }, 1)),
-        ),
+      // « Au début de l'entretien du contrôleur de la créature enchantée » : le joueur actif la contrôle (condition du
+      // déclencheur, sans « si ») ; « ce joueur » pioche.
+      triggered(when.step("upkeep", "any"), [fx.draw(1, ref.eventPlayer)], {
+        triggerCondition: cond.amountAtLeast(amount.refCount(ref.playersWhere(ref.controllerOf(ref.attached), cond.yourTurn)), 1),
         label: "Son contrôleur pioche une carte",
       }),
     ],

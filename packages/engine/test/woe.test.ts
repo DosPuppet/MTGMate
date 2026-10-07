@@ -4886,9 +4886,11 @@ describe("Wilds of Eldraine, lot C5 : payer des PV, nombre choisi, cartes à Ave
     toExile(s, theirs);
     const [myExiled, theirExiled] = s.exile;
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sentinel of Lost Lore") });
-    // Cibles du déclencheur : les suggestions retiennent les trois modes ; on vérifie qu'elles sont les bonnes.
+    // « Choisissez un ou plusieurs » : les trois modes, puis leurs cibles.
     s = settleAll(s, (req) => {
       if (req.type !== "pick") return undefined;
+      if (req.intent === "triggerMode")
+        return req.options.filter((o) => (req.labels?.[String(o)] ?? "").split(" + ").length === 3);
       if (req.options.includes(myExiled as string) && !req.options.includes(theirExiled as string)) return [myExiled as string];
       if (req.options.includes(theirExiled as string) && !req.options.includes(myExiled as string))
         return [theirExiled as string];
@@ -4898,6 +4900,35 @@ describe("Wilds of Eldraine, lot C5 : payer des PV, nombre choisi, cartes à Ave
     expect(idsOf(s, "p1", "hand", BRAMBLE)).toHaveLength(1);
     expect(nameOf(s, s.players.p2?.library.at(-1) as string)).toBe(BRAMBLE);
     expect(exiled(s, "Opt")).toHaveLength(1);
+  });
+
+  it("Sentinel of Lost Lore : « un ou plusieurs » modes ; un mode sans cible possible n'est pas proposé (PLAN-H, H2)", () => {
+    const BRAMBLE = "Bramble Familiar // Fetch Quest";
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 3), hand: ["Sentinel of Lost Lore"], graveyard: [BRAMBLE] },
+      p2: { graveyard: ["Opt"] },
+    });
+    toExile(s, idOf(s, "p1", "graveyard", BRAMBLE));
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sentinel of Lost Lore") });
+    let labels: string[] = [];
+    // Seul le mode « exilez un cimetière » est choisi : la carte à Aventure reste en exil.
+    s = settleAll(s, (req) => {
+      if (req.type !== "pick") return undefined;
+      if (req.intent === "triggerMode") {
+        labels = req.options.map((o) => req.labels?.[String(o)] ?? "");
+        return req.options.filter(
+          (o) => !(req.labels?.[String(o)] ?? "").includes("+") && /cimetière/.test(req.labels?.[String(o)] ?? ""),
+        );
+      }
+      if (req.options.includes("p2")) return ["p2"];
+      return undefined;
+    });
+    // Pas de carte à Aventure adverse en exil : trois combinaisons (votre carte, le cimetière, les deux).
+    expect(labels).toHaveLength(3);
+    expect(labels.some((l) => /ne possédez pas/.test(l))).toBe(false);
+    expect(exiled(s, "Opt")).toHaveLength(1);
+    expect(exiled(s, BRAMBLE)).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", BRAMBLE)).toHaveLength(0);
   });
 });
 

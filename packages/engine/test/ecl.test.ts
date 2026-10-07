@@ -2638,6 +2638,15 @@ describe("Lorwyn Eclipsed, lot A — vert", () => {
     expect(pt(s, bear)).toEqual([2, 2]);
   });
 
+  it("Spry and Mighty (décision officielle) : sans deux créatures à la résolution, le sort ne fait rien", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 5).concat("Pelakka Wurm"), hand: ["Spry and Mighty"] } });
+    const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+    const hand = (s.players.p1?.hand.length ?? 0) - 1;
+    s = chooseWanted(cast(s, "Spry and Mighty"), [wurm]);
+    expect(s.players.p1?.hand).toHaveLength(hand);
+    expect(pt(s, wurm)).toEqual([7, 7]);
+  });
+
   it("Tend the Sprigs : un terrain de base engagé ; avec sept terrains et/ou Sylvins, un Sylvin 3/4 avec la portée", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Tend the Sprigs"], library: ["Plains", "Opt"] } });
     s = settle(cast(s, "Tend the Sprigs"));
@@ -4331,6 +4340,19 @@ describe("Lorwyn Eclipsed, lot C", () => {
     expect(s.players.p2?.library).toHaveLength(1);
     const dragon = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
     expect(castable(s, dragon)).toBe(true);
+  });
+
+  it("Dream Harvest : seules les cartes exilées qui se lancent sont permises ; une carte de terrain ne se joue pas (PLAN-H, H2)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 7), hand: ["Dream Harvest"] },
+      p2: { library: ["Forest", "Shivan Dragon", "Bear Cub"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dream Harvest") }));
+    const forest = s.exile.find((id) => nameOf(s, id) === "Forest") as string;
+    const dragon = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
+    expect(forest).toBeDefined();
+    expect(castable(s, dragon)).toBe(true);
+    expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === forest)).toBe(false);
   });
 
   it("Lluwen : défaussez une carte de terrain (et seulement de terrain) : un Ver par terrain du cimetière", () => {

@@ -134,11 +134,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Dawn-Blessed Pennant : le type (une des huit tribus) est choisi comme un mode en arrivant ;
   - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
-  - `règle` Spry and Mighty : sans deux créatures, la carte ne fait rien ;
   - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
   - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte ;
   - `règle` Swat Away : « si une créature vous attaque » est vrai dès qu'une créature adverse attaque (en multijoueur, même un autre joueur) ;
-  - `règle` Dream Harvest : les terrains exilés peuvent aussi être joués (comme terrain du tour), pas seulement les sorts lancés ;
+  - `règle` Dream Harvest : une carte modale à verso terrain exilée peut aussi être jouée comme terrain (seuls ses sorts devraient se lancer) ;
   - `timing` Raiding Schemes : la conspiration passe par une capacité déclenchée ; les deux créatures sont engagées à sa résolution, et non en lançant le sort ;
   - `timing` Celestial Reunion : le coût additionnel facultatif est vérifié à la résolution, pour un type de la carte trouvée (le joueur le paie toujours quand il le peut) ; la carte passe par la main avant le champ de bataille ;
   - `règle` Lasting Tarfire : « vous avez mis un marqueur » : le joueur qui met les marqueurs est le contrôleur de ce qui se résout, sinon (coût) le contrôleur du permanent ;
@@ -155,11 +154,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
   - `timing` Likeness Looter : la valeur de mana X de la carte ciblée est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage ;
   - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur ;
-  - `règle` Sentinel of Lost Lore : « choisissez un ou plusieurs » : chaque mode est une cible facultative (on peut n'en choisir aucun) ;
   - `règle` Extraordinary Journey : une créature lancée depuis l'exil est reconnue à son arrivée (elle vient alors de la pile) ;
   - `choix auto` Talion, the Kindly Lord : le nombre proposé est la valeur de mana la plus fréquente parmi les cartes adverses vues.
 - **Secrets of Strixhaven (`docs/extensions/sos.md`) :**
-  - `règle` Zimone's Experiment : les cartes de terrain révélées passent par la main avant d'arriver engagées sur le champ de bataille ;
+  - `règle` Zimone's Experiment : les cartes révélées repassent sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main (comme Break Out) ;
   - `règle` Silverquill, the Disputant : la victime accordée est une capacité déclenchée au lancement (sacrifice d'une créature, puis copie), et non un coût : on peut y répondre ;
   - `timing` Prismari, the Inspiration : la tempête accordée compte les sorts lancés avant celui-ci à la résolution de la capacité (un sort lancé en réponse est compté) ;
   - `règle` Dina's Guidance : la carte cherchée va en main, puis vous pouvez la mettre au cimetière ;
@@ -173,7 +171,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Bubble Smuggler : « en étant retournée face visible, quatre marqueurs +1/+1 » est une capacité déclenchée (on peut y répondre) ;
   - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
   - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe) ;
-  - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ;
   - `timing` Archdruid's Charm, Flourishing Bloom-Kin : les cartes cherchées passent par la main avant que le terrain arrive engagé ; le mélange a lieu avant ;
   - `timing` Crowd-Control Warden : retournée face visible, les marqueurs viennent d'une capacité déclenchée (à l'arrivée, c'est un remplacement) ;
   - `règle` Break Out : la créature révélée repasse sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main ;
@@ -182,11 +179,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée) ;
   - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ;
   - `choix auto` Hedge Whisperer : elle reste engagée pendant votre étape de dégagement tant que son effet (le terrain 5/5) dure, et se dégage sinon ;
-  - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution ;
-  - `règle` Kaya, Spirits' Justice (−2), Jetsam : « pour chaque autre joueur » et « les cimetières de vos adversaires » sont exacts en duel ; à plusieurs, une seule créature adverse est ciblée.
+  - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`) :**
   - `choix auto` Maîtrise de l'eau, convocation, improvisation, cave : hors contrôle total, les objets qui paient sont choisis par le paiement automatique, après les terrains (comme sur Arena) ; en contrôle total, le joueur les choisit ;
-  - `règle` The Legend of Yangchen (chapitre I) : vous seul choisissez un permanent adverse de valeur de mana 3 ou plus (exact en duel ; à plusieurs, chaque joueur devrait en choisir un à tour de rôle), et le choix est obligatoire s'il en existe un ;
   - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact) ;
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
   - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée ;
@@ -204,11 +199,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Raft Security Officer : « coûte {1} de moins si elle cible une créature de force 3 ou moins » est deux capacités ({1} avec une telle cible, {2} sinon) ; si la force de la cible dépasse 3 avant la résolution, la version à {1} perd sa cible ;
   - `règle` Nick Fury, Agent of S.H.I.E.L.D. : une carte recto-verso mise sur le champ de bataille ne peut pas être transformée ;
   - `règle` Crowd of True Believers : « attaque seule » demande que la créature attaque un joueur ;
-  - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
   - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
-  - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
+  - `règle` Cloak and Dagger, Entwined : la main n'est montrée qu'à travers ses cartes non-terrain proposées ; à la résolution, la créature ciblée n'est revérifiée que comme créature d'un adversaire (passée sous le contrôle d'un autre adversaire, elle reste une cible légale) ;
   - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
   - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ;
   - `règle` Cosmic Cube : la carte choisie parmi les six passe par l'exil le temps d'être lancée (visible de tous), puis va au-dessous si vous renoncez ;
@@ -217,7 +211,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Worlds Within Worlds : chaque joueur choisit et met ses créatures à tour de rôle (ordre APNAP), et non simultanément ;
   - `règle` The Ruinous Wrecking Crew : « jusqu'à X modes » est écrit en combinaisons de modes, chacune sous la condition X ≥ son nombre de modes.
 - **Marvel's Spider-Man (`docs/extensions/spm.md`) :**
-  - `règle` Mysterio, Master of Illusion : si Mysterio quitte le champ de bataille avant la résolution de sa capacité d'arrivée, les jetons créés ne sont pas exilés ;
   - `règle` Parker Luck : la carte du dessus n'est pas révélée explicitement ; chaque joueur perd ses PV puis la met en main (même résultat) ;
   - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ;
   - `règle` Maximum Carnage : au chapitre I, l'obligation d'attaquer ne vise que les créatures adverses présentes à la résolution, et « un joueur autre que vous si possible » n'est pas imposé (exact en duel, sauf pour attaquer vos planeswalkers) ;
@@ -226,11 +219,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type ; le type est choisi comme un mode d'arrivée.
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
   - `règle` Turtles Forever : la recherche ne porte que sur la bibliothèque (rien hors de la partie), et « exactement quatre » n'est pas imposé (l'adversaire choisit parmi les cartes trouvées) ;
-  - `règle` Kitsune, Dragon's Daughter : l'échange se fait entre votre créature et celle d'un adversaire (deux créatures de deux adversaires ne s'échangent pas, à plus de deux joueurs) ;
   - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci ;
-  - `règle` Madame Null : « payez des PV égaux à sa force » est une perte de PV facultative, proposée seulement si vos PV suffisent ;
   - `règle` Shark Shredder : la créature arrive attaquant le joueur qu'attaque votre première créature attaquante, pas forcément le joueur blessé (exact en duel) ;
-  - `règle` Shredder's Technique : « si un enchantement a été détruit » se lit « la cible était un enchantement et n'est plus sur le champ de bataille » ;
   - `règle` Party Dude : au niveau 3, « chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » se lit « chaque fois que vous attaquez » (exact en duel, sauf une attaque contre un planeswalker seul) ;
   - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet ;
   - `choix auto` Ninja Teen : un sort de créature lancé du cimetière par le faufilement donné renvoie l'attaquant non bloqué le plus faible.

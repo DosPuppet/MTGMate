@@ -160,7 +160,14 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Dream Harvest": {
-    spell: spell([], [fx.exileUntilTotalManaValue(ref.eachOpponent, 5, "h"), fx.grantPlay(ref.stored("h"), { free: true })]),
+    // « Vous pouvez lancer les cartes exilées » : pas les cartes de terrain (qui se jouent, sans se lancer).
+    spell: spell(
+      [],
+      [
+        fx.exileUntilTotalManaValue(ref.eachOpponent, 5, "h"),
+        fx.grantPlay(ref.filtered(ref.stored("h"), { notTypes: ["Land"] }), { free: true }),
+      ],
+    ),
   },
   // Vol lu dans le texte.
   "Maralen, Fae Ascendant": {

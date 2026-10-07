@@ -10,12 +10,14 @@ import {
   fx,
   INSTANT_SORCERY,
   loyalty,
+  oneOrMore,
   playerStatic,
   ref,
   spell,
   staticAbility,
   target,
   triggered,
+  triggeredModal,
   when,
 } from "./common";
 
@@ -40,8 +42,6 @@ const NIGHTMARE: TokenSpec = {
 const exiledAdventure = (id: string, own: boolean, label: string): TargetSpec => ({
   id,
   label,
-  count: 1,
-  optional: true,
   filter: { exiled: { filter: { adventure: true }, own } },
 });
 
@@ -77,22 +77,27 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Sentinel of Lost Lore": {
     abilities: [
-      // « Choisissez un ou plusieurs » : chaque mode est une cible facultative (approximation documentée).
-      triggered(
+      // « Choisissez un ou plusieurs — » : toutes les combinaisons de modes (700.2).
+      triggeredModal(
         when.entersSelf,
-        [
-          fx.moveTo(ref.target("a"), { to: "hand" }),
-          fx.moveTo(ref.target("b"), { to: "libraryBottom" }),
-          fx.moveAll("graveyard", ref.target("p"), {}, { to: "exile" }),
-        ],
-        {
-          targets: [
-            exiledAdventure("a", true, "carte à Aventure que vous possédez en exil"),
-            exiledAdventure("b", false, "carte à Aventure que vous ne possédez pas en exil"),
-            { ...target.player("p"), count: 1, optional: true },
-          ],
-          label: "Un ou plusieurs : reprenez, renvoyez sous la bibliothèque, exilez un cimetière",
-        },
+        oneOrMore(
+          {
+            label: "Reprenez une carte à Aventure que vous possédez en exil",
+            targets: [exiledAdventure("a", true, "carte à Aventure que vous possédez en exil")],
+            effects: [fx.moveTo(ref.target("a"), { to: "hand" })],
+          },
+          {
+            label: "Mettez sous sa bibliothèque une carte à Aventure en exil que vous ne possédez pas",
+            targets: [exiledAdventure("b", false, "carte à Aventure que vous ne possédez pas en exil")],
+            effects: [fx.moveTo(ref.target("b"), { to: "libraryBottom" })],
+          },
+          {
+            label: "Exilez le cimetière du joueur ciblé",
+            targets: [target.player("p")],
+            effects: [fx.moveAll("graveyard", ref.target("p"), {}, { to: "exile" })],
+          },
+        ),
+        { label: "Un ou plusieurs : reprenez, renvoyez sous la bibliothèque, exilez un cimetière" },
       ),
     ],
   },

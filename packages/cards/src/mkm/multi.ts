@@ -904,9 +904,13 @@ export const MULTI: Record<string, CardScript> = {
       }),
       loyalty(1, { effects: [fx.createTokens(SPIRIT_WB)], label: "Un Esprit 1/1 volant" }),
       loyalty(-2, {
-        targets: [target.creature("a", { controller: "you" }), target.upTo(1, target.creature("b", { controller: "opponent" }))],
+        // « Pour chaque autre joueur, jusqu'à une créature ciblée que ce joueur contrôle » : au plus une par adversaire.
+        targets: [
+          target.creature("a", { controller: "you" }),
+          { ...target.upTo(5, target.creature("b", { controller: "opponent" })), differentPlayers: true },
+        ],
         effects: [fx.exile(ref.target("a")), fx.exile(ref.target("b"))],
-        label: "Exilez une de vos créatures et jusqu'à une créature adverse",
+        label: "Exilez une de vos créatures et jusqu'à une créature de chaque adversaire",
       }),
     ],
   },
@@ -930,7 +934,10 @@ export const MULTI: Record<string, CardScript> = {
       [],
       [
         fx.mill(3, ref.eachOpponent),
-        fx.castNow(ref.filtered(ref.graveyardOf(ref.eachOpponent), { notTypes: ["Land"] }), { free: true, after: "exile" }),
+        // « Un sort depuis le cimetière de chaque adversaire » : un par cimetière.
+        ...fx.forEachPlayer(ref.eachOpponent, (p) => [
+          fx.castNow(ref.filtered(ref.graveyardOf(p), { notTypes: ["Land"] }), { free: true, after: "exile" }),
+        ]),
       ],
     ),
   },

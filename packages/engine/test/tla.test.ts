@@ -717,6 +717,57 @@ describe("lot A, blanc", () => {
       expect(c.keywords).toContain("flying");
     });
 
+    it("The Legend of Yangchen (I) à plusieurs : en commençant par vous, chaque joueur choisit jusqu'à un permanent adverse de VM 3+ ; exilés ensemble (PLAN-H, H2)", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: [...lands("Plains", 5), "Serra Angel"], hand: ["The Legend of Yangchen // Avatar Yangchen"] },
+        p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+        p3: { battlefield: ["Shivan Dragon", "Pelakka Wurm"] },
+      });
+      const mine = idOf(s, "p1", "battlefield", "Serra Angel");
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      const dragon = idOf(s, "p3", "battlefield", "Shivan Dragon");
+      const wurm = idOf(s, "p3", "battlefield", "Pelakka Wurm");
+      const asked: { player: PlayerId; options: string[] }[] = [];
+      s = settle(cast(s, "p1", "The Legend of Yangchen // Avatar Yangchen"), (req, player) => {
+        if (req.type !== "pick" || req.intent !== "pickCards") return undefined;
+        asked.push({ player: player as PlayerId, options: req.options.map(String).sort() });
+        // La réponse suggérée est un permanent d'un autre joueur que celui qui choisit.
+        expect(req.suggested).toHaveLength(1);
+        expect(s.objects[String(req.suggested[0])]?.controller).not.toBe(player);
+        // p1 choisit l'Ange de p2, p2 le Dragon de p3, p3 ne choisit rien.
+        if (player === "p1") return [angel];
+        if (player === "p2") return [dragon];
+        return [];
+      });
+      // Chacun choisit parmi les permanents des adversaires du contrôleur (pas parmi ceux de p1), p1 d'abord.
+      expect(asked.map((a) => a.player)).toEqual(["p1", "p2", "p3"]);
+      for (const a of asked) expect(a.options).toEqual([angel, dragon, wurm].sort());
+      expect(s.objects[mine]?.zone).toBe("battlefield");
+      expect(exiled(s, "Serra Angel")).toHaveLength(1);
+      expect(exiled(s, "Shivan Dragon")).toHaveLength(1);
+      expect(idsOf(s, "p3", "battlefield", "Pelakka Wurm")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("The Legend of Yangchen (I) en duel : l'adversaire ne se voit suggérer aucun de ses propres permanents", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Plains", 5), hand: ["The Legend of Yangchen // Avatar Yangchen"] },
+        p2: { battlefield: ["Serra Angel", "Shivan Dragon"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      const suggested: Partial<Record<PlayerId, ChoiceValue[]>> = {};
+      s = settle(cast(s, "p1", "The Legend of Yangchen // Avatar Yangchen"), (req, player) => {
+        if (req.type !== "pick" || req.intent !== "pickCards") return undefined;
+        suggested[player as PlayerId] = req.suggested;
+        return player === "p1" ? [angel] : undefined;
+      });
+      expect(suggested.p1).toHaveLength(1);
+      expect(suggested.p2).toEqual([]);
+      expect(exiled(s, "Serra Angel")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
+    });
+
     it("Avatar Yangchen : votre deuxième sort du tour donne la maîtrise de l'air d'un autre permanent non-terrain", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 2), "The Legend of Yangchen // Avatar Yangchen"], hand: ["Yip Yip!", "Yip Yip!"] },

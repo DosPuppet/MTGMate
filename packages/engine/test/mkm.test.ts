@@ -16,7 +16,7 @@ import { legalActions } from "../src/legal";
 import { chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { isLegalTarget, matchesObjectFilter } from "../src/targets";
 import { canBlock, requiredBlocks } from "../src/turn";
-import type { ChoiceRequest, Decision, GameState } from "../src/types";
+import type { ChoiceRequest, ChoiceValue, Decision, GameState } from "../src/types";
 import { projectView } from "../src/view";
 import {
   type Answer,
@@ -2651,6 +2651,8 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       steal(s, falls, "p1");
       s = settle(cast(s, "p1", "Krenko's Buzzcrusher"), (req) => {
         if (req.type !== "pick") return undefined;
+        // Le terrain volé est désormais l'un des vôtres : « Oui », détruire un de vos terrains non-base.
+        if (req.intent === "other") return ["1"];
         if (req.options.includes(falls)) return [falls];
         return req.options.filter((id) => nameOf(s, String(id)) === "Mountain").slice(0, 1);
       });
@@ -5476,6 +5478,108 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     // Opt de l'adversaire lancé gratuitement (vous piochez), puis exilé.
     expect(t.exile.some((id) => nameOf(t, id) === "Opt")).toBe(true);
     expect(t.players.p1?.hand).toHaveLength(hand + 1);
+  });
+
+  it("Jetsam à plusieurs : un sort lancé gratuitement depuis le cimetière de chaque adversaire (PLAN-H, H2)", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: lands("Island", 6), hand: ["Flotsam // Jetsam"], library: lands("Island", 6) },
+      p2: { library: ["Opt", "Island", "Island", "Island"] },
+      p3: { library: ["Opt", "Island", "Island", "Island"] },
+    });
+    const hand = (s.players.p1?.hand.length ?? 0) - 1;
+    s = castAll(cast(s, "p1", "Flotsam // Jetsam", undefined, { face: 1 }));
+    // Les deux Opt (un par cimetière) sont lancés, puis exilés ; vous piochez deux cartes.
+    expect(s.exile.filter((id) => nameOf(s, id) === "Opt")).toHaveLength(2);
+    expect(s.players.p1?.hand).toHaveLength(hand + 2);
+  });
+
+  it("Jetsam : un seul sort par cimetière adverse, même s'il en contient plusieurs (PLAN-H, H2)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Flotsam // Jetsam"], library: lands("Island", 6) },
+      p2: { library: ["Opt", "Opt", "Opt", "Island"] },
+    });
+    const hand = (s.players.p1?.hand.length ?? 0) - 1;
+    s = castAll(cast(s, "p1", "Flotsam // Jetsam", undefined, { face: 1 }));
+    expect(s.exile.filter((id) => nameOf(s, id) === "Opt")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Opt")).toHaveLength(2);
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+  });
+
+  it("Kaya, Spirits' Justice (−2) à plusieurs : jusqu'à une créature ciblée de chaque autre joueur (PLAN-H, H2)", () => {
+    const setup = () =>
+      scenario({
+        players: 3,
+        p1: { battlefield: [{ name: "Kaya, Spirits' Justice", counters: { loyalty: 5 } }, "Bear Cub"] },
+        p2: { battlefield: ["Serra Angel", "Llanowar Elves"] },
+        p3: { battlefield: ["Shivan Dragon"] },
+      });
+    const minus = (s: S) => {
+      const kaya = idOf(s, "p1", "battlefield", "Kaya, Spirits' Justice");
+      const a = legalActions(s, "p1").find(
+        (x) => x.type === "activate" && x.source === kaya && /chaque adversaire/.test(x.label ?? ""),
+      );
+      return { kaya, ability: a?.type === "activate" ? a.ability : -1 };
+    };
+    let s = setup();
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    const dragon = idOf(s, "p3", "battlefield", "Shivan Dragon");
+    const { kaya, ability } = minus(s);
+    // Deux créatures du même adversaire : refusé.
+    expect(() => act(s, "p1", { type: "activate", source: kaya, ability, targets: { a: [bear], b: [angel, elves] } })).toThrow(
+      RulesError,
+    );
+    s = settle(act(s, "p1", { type: "activate", source: kaya, ability, targets: { a: [bear], b: [angel, dragon] } }));
+    expect(s.exile.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Serra Angel", "Shivan Dragon"]);
+    expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(1);
+  });
+
+  it("Krenko's Buzzcrusher à plusieurs : un terrain non-base par joueur, choisi sans le cibler (PLAN-H, H2)", () => {
+    let s = scenario({
+      players: 3,
+      p1: {
+        battlefield: [...lands("Mountain", 4), "Thundering Falls"],
+        hand: ["Krenko's Buzzcrusher"],
+        library: lands("Mountain", 3),
+      },
+      p2: { battlefield: ["Thundering Falls", "Thundering Falls"], library: ["Island", "Opt"] },
+      p3: { battlefield: ["Thundering Falls"], library: ["Island", "Opt"] },
+    });
+    const mine = idOf(s, "p1", "battlefield", "Thundering Falls");
+    const both = idsOf(s, "p2", "battlefield", "Thundering Falls");
+    const theirs = both[0] as string;
+    const third = idOf(s, "p3", "battlefield", "Thundering Falls");
+    const prompts: string[][] = [];
+    const mineAsked: ChoiceValue[][] = [];
+    s = settle(cast(s, "p1", "Krenko's Buzzcrusher"), (req) => {
+      if (req.type !== "pick") return undefined;
+      // Vos propres terrains : une question oui / non, « Non » suggéré ; vous gardez votre terrain.
+      if (req.intent === "other") {
+        mineAsked.push(req.suggested);
+        return ["0"];
+      }
+      if (req.intent === "pickCards") {
+        prompts.push(req.options.map(String));
+        expect(req.options).not.toContain(mine);
+        // Un terrain de chaque adversaire, suggéré d'office.
+        expect(req.suggested).toEqual(req.options.slice(0, 1));
+        return req.options.filter((id) => id === theirs || id === third);
+      }
+      return req.options.filter((id) => nameOf(s, String(id)) === "Island").slice(0, 1);
+    });
+    expect(mineAsked).toEqual([["0"]]);
+    // Une question par adversaire qui contrôle un terrain non-base ; les choix ne sont pas des cibles (rien sur la pile).
+    expect(prompts).toEqual([both, [third]]);
+    expect(idsOf(s, "p1", "battlefield", "Thundering Falls")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Thundering Falls")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Thundering Falls")).toHaveLength(1);
+    expect(idsOf(s, "p3", "graveyard", "Thundering Falls")).toHaveLength(1);
+    // Chaque contrôleur d'un terrain détruit cherche un terrain de base, qui arrive engagé.
+    expect(s.objects[idOf(s, "p2", "battlefield", "Island")]?.tapped).toBe(true);
+    expect(s.objects[idOf(s, "p3", "battlefield", "Island")]?.tapped).toBe(true);
+    expect(idsOf(s, "p1", "battlefield", "Mountain")).toHaveLength(4);
   });
 
   it("Buried in the Garden : exile un permanent adverse jusqu'à son départ ; le terrain enchanté produit un mana de plus", () => {

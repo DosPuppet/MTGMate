@@ -2,7 +2,6 @@
  * Murders at Karlov Manor — cartes rouges (lot A). Le déguisement, la garde, la prouesse et les autres mots-clés sont
  * lus dans le texte ; « enquêtez » crée un Indice (`investigate`), « suspectez » passe par `fx.suspect`.
  */
-import type { TargetSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -30,8 +29,7 @@ const ARTIFACT = { types: ["Artifact" as const] };
 /** « {2}, sacrifiez [cet Indice] : piochez une carte. » */
 const clueAbility = activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" });
 
-/** « Pour chaque joueur, … jusqu'à un [permanent] que ce joueur contrôle » : au plus un par joueur. */
-const onePerPlayer = (t: TargetSpec): TargetSpec => ({ ...target.upTo(4, t), differentPlayers: true });
+const NONBASIC_LAND = { types: ["Land" as const], basic: false };
 
 export const RED: Record<string, CardScript> = {
   "Anzrag's Rampage": {
@@ -258,17 +256,36 @@ export const RED: Record<string, CardScript> = {
   },
   "Krenko's Buzzcrusher": {
     abilities: [
-      // Approximation : les terrains sont ciblés (un par joueur au plus) ; l'Oracle ne cible pas.
+      // « Pour chaque joueur, détruisez jusqu'à un terrain non-base que ce joueur contrôle » : un choix par joueur (sans
+      // cible), puis une seule destruction ; le contrôleur de chaque terrain détruit peut chercher un terrain de base.
+      // Pour vos propres terrains, une question oui / non d'abord : la réponse suggérée (« Non ») ne détruit pas le vôtre.
       triggered(
         when.entersSelf,
         [
-          fx.destroy(ref.target(), "d"),
+          ...fx.when(
+            cond.amountAtLeast(amount.refCount(ref.permanentsOf(ref.you, NONBASIC_LAND)), 1),
+            fx.yourChoice("Détruire aussi un de vos terrains non-base ?", "bzMine", [
+              { label: "Non", effects: [] },
+              {
+                label: "Oui",
+                effects: [
+                  fx.chooseAmong(ref.permanentsOf(ref.you, NONBASIC_LAND), ref.you, "bzYou", {
+                    prompt: "Choisissez un de vos terrains non-base à détruire",
+                  }),
+                ],
+              },
+            ]),
+          ),
+          ...fx.forEachPlayer(ref.eachOpponent, (p, n) => [
+            fx.chooseAmong(ref.permanentsOf(p, NONBASIC_LAND), ref.you, `bz${n}`, {
+              optional: true,
+              prompt: "Choisissez jusqu'à un terrain non-base de ce joueur à détruire",
+            }),
+          ]),
+          fx.destroy(ref.union(ref.stored("bzYou"), ...Array.from({ length: 6 }, (_, n) => ref.stored(`bz${n}`))), "d"),
           fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.stored("d"))),
         ],
-        {
-          targets: [onePerPlayer(target.permanent("t", ["Land"], { basic: false }, "terrain non-base"))],
-          label: "Détruisez jusqu'à un terrain non-base par joueur ; son contrôleur cherche un terrain de base",
-        },
+        { label: "Détruisez jusqu'à un terrain non-base par joueur ; son contrôleur cherche un terrain de base" },
       ),
     ],
   },

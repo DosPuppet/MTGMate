@@ -253,12 +253,14 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell([], [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.addCounters(ref.stored("f"), amount.x), fx.surveil(2)]),
   },
   "Zimone's Experiment": {
-    // Les cartes révélées passent par la main ; les terrains en repartent aussitôt, engagés.
+    // Les cartes révélées restent sur le dessus de la bibliothèque (le reste va dessous dans un ordre aléatoire), puis
+    // les terrains arrivent engagés et les créatures vont en main (comme Break Out).
     spell: spell(
       [],
       [
-        fx.lookAtTop(5, { filter: CREATURE_OR_LAND, count: 2, store: "z" }),
+        fx.lookAtTop(5, { filter: CREATURE_OR_LAND, count: 2, to: { to: "libraryTop" }, store: "z" }),
         fx.moveTo(ref.filtered(ref.stored("z"), { types: ["Land"] }), { to: "battlefield", tapped: true }),
+        fx.toHand(ref.filtered(ref.stored("z"), { types: ["Creature"] })),
       ],
     ),
   },

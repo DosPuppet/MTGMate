@@ -1022,6 +1022,30 @@ describe("lot A, bleu", () => {
       expect(idsOf(s, "p1", "battlefield", "Doc Ock's Henchmen")).toHaveLength(1);
     });
 
+    it("Mysterio, Master of Illusion (décision officielle) : parti avant la création des jetons, ils ne sont jamais exilés", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Island", 4), ...lands("Mountain", 2), "Doc Ock's Henchmen"],
+          hand: ["Mysterio, Master of Illusion", "Lightning Strike"],
+        },
+      });
+      s = cast(s, "p1", "Mysterio, Master of Illusion");
+      // Mysterio est sur le champ de bataille, sa capacité d'arrivée sur la pile : on le tue en réponse.
+      s = passAccepting(
+        s,
+        (x) =>
+          x.stack.length > 0 &&
+          idsOf(x, "p1", "battlefield", "Mysterio, Master of Illusion").length === 1 &&
+          x.pending?.kind === "priority" &&
+          x.pending.player === "p1",
+      );
+      const mysterio = idOf(s, "p1", "battlefield", "Mysterio, Master of Illusion");
+      s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: [mysterio] } }));
+      expect(idsOf(s, "p1", "graveyard", "Mysterio, Master of Illusion")).toHaveLength(1);
+      // Un seul Méchant non-jeton à la résolution (les Hommes de main) : une Illusion, qui reste.
+      expect(idsOf(s, "p1", "battlefield", "Illusion Villain")).toHaveLength(1);
+    });
+
     it("Mysterio's Phantasm : meule une carte en attaquant", () => {
       let s = scenario({ p1: { battlefield: ["Mysterio's Phantasm"], library: ["Opt", "Island"] } });
       s = attackAndFinish(s, [idOf(s, "p1", "battlefield", "Mysterio's Phantasm")]);

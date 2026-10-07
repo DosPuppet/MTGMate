@@ -53,8 +53,8 @@ const tapOrUntapCreature = [
 ];
 
 /**
- * Kitsune : « deux autres créatures ciblées contrôlées par des joueurs différents ». L'échange se fait entre la vôtre et
- * celle d'un adversaire (approximation : deux créatures de deux adversaires, à plus de deux joueurs, ne s'échangent pas).
+ * Kitsune : « deux autres créatures ciblées contrôlées par des joueurs différents », qu'elles soient à vous ou à deux
+ * adversaires.
  */
 const KITSUNE_TARGETS: TargetSpec = {
   ...target.exactly(2, target.creature("t", { other: true })),
@@ -63,10 +63,8 @@ const KITSUNE_TARGETS: TargetSpec = {
 };
 const kitsuneExchange = fx.may(
   "Échanger le contrôle des deux créatures ciblées ?",
-  fx.exchangeControl(
-    ref.except(ref.target(), ref.permanentsOf(ref.eachOpponent, {})),
-    ref.except(ref.target(), ref.permanentsOf(ref.you, {})),
-  ),
+  // Les deux créatures ciblées, quels que soient leurs contrôleurs (rien si l'une d'elles n'est plus une cible légale).
+  fx.exchangeControl(ref.nth(ref.target(), 0), ref.nth(ref.target(), 1)),
 );
 
 export const BLUE: Record<string, CardScript> = {
