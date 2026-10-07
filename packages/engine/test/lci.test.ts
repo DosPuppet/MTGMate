@@ -5,7 +5,7 @@
 
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { destroy, drawCards, gainLife } from "../src/actions";
+import { createTokenCopy, destroy, drawCards, gainLife } from "../src/actions";
 import { amount, fx, ref, spell, target, triggered, when } from "../src/dsl";
 import { addPump, moveWithSpec } from "../src/effects";
 import { RulesError } from "../src/errors";
@@ -3583,6 +3583,21 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       // La découverte (VM 5) trouve Bear Cub ou l'Ange mélangé ; refusée, la carte va en main.
       expect(s.players.p2?.hand).toHaveLength(1);
       expect(s.players.p2?.library).toHaveLength(3);
+    });
+
+    it("Zoyowa's Justice : un jeton ciblé fait quand même découvrir X (dernières informations connues)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Mountain", "Mountain"], hand: ["Zoyowa's Justice"] },
+        p2: { battlefield: ["Serra Angel"], library: ["Forest", "Bear Cub", "Island"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      const token = createTokenCopy(s, "p2", s.objects[angel]?.defId as string);
+      bump(s);
+      s = resolve(castCard(s, "p1", "Zoyowa's Justice", { targets: { t: [token] } }));
+      expect(s.objects[token]).toBeUndefined();
+      // Le jeton cesse d'exister ; son propriétaire découvre 5 : Bear Cub, refusée, va en main.
+      expect(s.players.p2?.hand).toHaveLength(1);
+      expect(s.players.p2?.library).toHaveLength(2);
     });
 
     it("Zoyowa's Justice : une créature volée retourne chez son propriétaire, et c'est lui qui découvre", () => {

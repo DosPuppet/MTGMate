@@ -633,7 +633,10 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
     case "manaValueOf": {
       const id = resolveRef(s, ctx, a.ref)[0];
-      return id ? (viewOf(s, id)?.manaValue ?? manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)) : 0;
+      if (!id) return 0;
+      // Un objet qui a cessé d'exister (jeton déplacé hors du champ de bataille) : ses dernières informations connues.
+      if (!s.objects[id]) return s.lki[id]?.manaValue ?? manaValue(s.defs[s.lki[id]?.defId ?? ""]?.manaCost);
+      return viewOf(s, id)?.manaValue ?? manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
     }
     case "toughnessOf": {
       const gone = a.ref.kind === "eventObject" ? ctx.event?.objectId : undefined;

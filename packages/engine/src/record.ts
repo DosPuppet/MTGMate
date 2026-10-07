@@ -455,8 +455,10 @@ export const RECORD_VERSION = 1;
  *   provocation conservée malgré la perte des capacités (701.38), joueur défenseur figé au déclenchement (Namor,
  *   myriade, Specimen Freighter)
  * - 166 : Raid Bombardment blesse le joueur ou le planeswalker que la créature attaque
+ * - 167 : Valeur de mana d'un objet qui a cessé d'exister : ses dernières informations connues ; un jeton déplacé hors
+ *   du champ de bataille reste désigné (Zoyowa's Justice sur un jeton fait découvrir X)
  */
-export const RULES_VERSION = 166;
+export const RULES_VERSION = 167;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

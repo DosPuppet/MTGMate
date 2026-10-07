@@ -1,6 +1,6 @@
 /**
- * Duskmourn, lot B : Imminence (Overlords), Enduring, coûts additionnels choisis automatiquement, Équipements qui
- * manifestent l'effroi, portes à déverrouiller ou à verrouiller.
+ * Duskmourn, lot B : Imminence (Overlords), Enduring, coûts additionnels (choisis par le joueur, avec une
+ * suggestion), Équipements qui manifestent l'effroi, portes à déverrouiller ou à verrouiller.
  */
 import {
   activated,
@@ -115,7 +115,7 @@ export const SPECIAL: Record<string, CardScript> = {
     ],
   },
 
-  // Coûts additionnels (choisis automatiquement)
+  // Coûts additionnels (choisis par le joueur, avec une suggestion)
   "Fear of Abduction": {
     additionalCost: { exile: { filter: { types: ["Creature"] }, count: 1 } },
     abilities: [

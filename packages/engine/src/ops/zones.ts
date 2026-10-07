@@ -1096,6 +1096,9 @@ export const HANDLERS: OpHandlers = {
     for (const id of ids) {
       const n = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), choices[id]);
       if (n) moved.push(n);
+      // Un jeton qui cesse d'exister (hors du champ de bataille) : son ancien identifiant, pour ses dernières
+      // informations connues (Zoyowa's Justice : propriétaire et valeur de mana).
+      else if (!s.objects[id] && s.lki[id]) moved.push(id);
     }
     if (e.store) r.vars[`$ids:${e.store.name}`] = moved;
     return;
