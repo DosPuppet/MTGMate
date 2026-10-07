@@ -155,9 +155,17 @@ export function unionVariants(name: string, discriminant: string): Map<string, s
   return out;
 }
 
-/** Noms de champs déclarés dans tout le modèle (interfaces et variantes). */
+/**
+ * Noms de champs déclarés dans tout le modèle (interfaces et variantes) : en début de ligne, et aussi après `{`, `;` ou
+ * `,` (variante d'union écrite sur une ligne, objet imbriqué), sans quoi ces clés échappaient à la garde (audit du
+ * 07/10/2026).
+ */
 export function declaredFieldNames(): Set<string> {
-  return new Set([...model().matchAll(/^\s*(?:readonly\s+)?(\w+)\??:/gm)].map((m) => m[1] as string));
+  const text = model();
+  return new Set([
+    ...[...text.matchAll(/^\s*(?:readonly\s+)?(\w+)\??:/gm)].map((m) => m[1] as string),
+    ...[...text.matchAll(/[{;,]\s*(?:readonly\s+)?(\w+)\??\s*:/g)].map((m) => m[1] as string),
+  ]);
 }
 
 /** Imports d'exécution (hors `import type`) entre les fichiers de `engine/src`, puis plus grand cycle (Tarjan). */

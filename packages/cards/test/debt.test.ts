@@ -61,6 +61,8 @@ function singleCardKeys(): string[] {
     if (Array.isArray(v)) for (const x of v) walk(x, name);
     else if (v && typeof v === "object") {
       for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+        // Une clé écrite sans valeur (`toCardDef`, `activated()` recopient toutes les options) n'est pas utilisée.
+        if (x === undefined) continue;
         if (declared.has(k) && !statics.has(k)) users.set(k, (users.get(k) ?? new Set()).add(name));
         walk(x, name);
       }
