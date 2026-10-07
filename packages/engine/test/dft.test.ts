@@ -28,6 +28,7 @@ import {
   namesIn,
   passAccepting,
   passBoth,
+  passUntil,
   picking,
   pickNamed,
   scenario,
@@ -4399,5 +4400,22 @@ describe("joueur attaqué (PLAN-H, lot H5)", () => {
     });
     s = settle(s);
     expect([chars(s, bear as string).power, chars(s, elves as string).power]).toEqual([2, 0]);
+  });
+});
+
+describe("nom de carte choisi : seulement des informations publiques", () => {
+  it("Skyseer's Chariot : la main adverse ne transparaît ni dans l'ordre des noms ni dans la suggestion", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 2), hand: ["Skyseer's Chariot"] },
+      p2: { battlefield: ["Engine Rat"], hand: ["Shock"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Skyseer's Chariot") } as never);
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    const p = s.pending;
+    if (p?.kind !== "choice" || p.request.type !== "pick") throw new Error("pas de choix de nom");
+    // Le permanent adverse (public) d'abord ; Shock, dans la main adverse, n'est pas mis en avant.
+    expect(p.request.options[0]).toBe("Engine Rat");
+    expect(p.request.suggested).toEqual(["Engine Rat"]);
+    expect(p.request.options.indexOf("Shock")).toBeGreaterThan(p.request.options.indexOf("Engine Rat"));
   });
 });

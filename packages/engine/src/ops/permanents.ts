@@ -121,13 +121,14 @@ export function enterChoiceRequest(
         ]),
       ].filter(Boolean);
     } else if (kind === "cardName") {
-      // Sorcerous Spyglass : on regarde la main d'un adversaire (ses cartes d'abord), puis on nomme une carte.
-      const opp = opponentsOf(s, ctx.controller)[0];
-      const inHand = (opp ? (s.players[opp]?.hand ?? []) : []).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "");
+      // Seulement des informations publiques (la suggestion de l'IA est la première option) : les permanents adverses
+      // d'abord, puis les vôtres, puis tous les noms. La main regardée par Sorcerous Spyglass n'est pas montrée.
       const all = Object.values(s.defs)
         .filter((d) => !d.isToken)
         .map((d) => d.name);
-      options = [...new Set([...inHand.filter(Boolean), ...s.battlefield.map((id) => chars(s, id).name), ...all.sort()])];
+      const theirs = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
+      const mine = s.battlefield.filter((id) => s.objects[id]?.controller === ctx.controller);
+      options = [...new Set([...[...theirs, ...mine].map((id) => chars(s, id).name), ...all.sort()])];
     } else {
       // Types des créatures connues de la partie (cartes, et jetons qu'elles créent : An Unexpected Party nomme les
       // Nains que créent ses jetons), et toujours les plus courants (un deck sans créature en a besoin).
@@ -171,7 +172,7 @@ export function enterChoiceRequest(
         kind === "color"
           ? "Choisissez une couleur"
           : kind === "cardName"
-            ? "Choisissez un nom de carte (les cartes de la main adverse sont en tête)"
+            ? "Choisissez un nom de carte (ceux des permanents adverses sont en tête)"
             : kind === "landName"
               ? "Choisissez un nom de carte de terrain (ceux de vos adversaires sont en tête)"
               : kind === "parity"

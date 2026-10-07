@@ -51,6 +51,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Soulstone Sanctuary (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus ;
   - `choix auto` Moonlit Meditation, Mirrormind Crown : « vous pouvez » est demandé pour les jetons créés par un effet de création de jetons ; ceux d'amasser, d'endurer ou d'un cadeau sont toujours remplacés par des copies.
 - **Foundations (`docs/extensions/fdn.md`) :**
+  - `règle` Sorcerous Spyglass : la main de l'adversaire n'est pas montrée avant le choix du nom (les noms des permanents adverses sont proposés en tête) ;
   - `choix auto` Quilled Greatwurm (et Dawnhand Dissident) : vous répartissez les marqueurs retirés entre vos créatures, mais la sorte des marqueurs retirés d'une même créature est choisie pour vous (les −1/−1 d'abord, les +1/+1 en dernier) ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
 - **Final Fantasy (`docs/extensions/fin.md`) :**

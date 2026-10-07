@@ -446,8 +446,10 @@ export const RECORD_VERSION = 1;
  * - 162 : PLAN-H H9 : « en arrivant » générique (asEnters : une boucle pour les quatre chemins d'arrivée ; une copie
  *   fait les choix de son modèle, 707.9 ; rien pour une face cachée, 708.2) ; Echoing Deeps, Cursed Mirror, Altered
  *   Ego, Sin, Dawn-Blessed Pennant, Indominus Rex, Mox Diamond
+ * - 163 : Nom de carte choisi (Skyseer's Chariot, Sorcerous Spyglass, The Clone Saga) : les noms proposés et la
+ *   suggestion ne s'appuient plus sur la main adverse (information cachée), mais sur les permanents
  */
-export const RULES_VERSION = 162;
+export const RULES_VERSION = 163;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

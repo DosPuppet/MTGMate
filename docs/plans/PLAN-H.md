@@ -345,7 +345,7 @@ Attendu : 12 à 18 entrées levées.
 
 ## Suivi
 
-**État au 07/10/2026 (règles 162) :** lots H0 à H9 faits ; restent H10 et H11.
+**État au 07/10/2026 (règles 163) :** lots H0 à H9 faits ; restent H10 et H11.
 
 | Mesure | Départ (règles 149) | Aujourd'hui | Cible après H11 |
 |---|---|---|---|
@@ -355,7 +355,7 @@ Attendu : 12 à 18 entrées levées.
 | CardDef / GameObject / PlayerState | 98 / 62 / 24 | 91 / 58 / 23 | ~91 / ~50 / 23 |
 | ObjectFilter / CastPermissionAbilityDef | 89 / 21 | 89 / 10 | ~73 / 11 |
 | Effect (variantes / champs) | 154 / 654 | 149 / 639 | ~147 / ~620 |
-| Approximations (générales / par carte) | 24 / 267 | 27 / 216 | 22 / ~215 |
+| Approximations (générales / par carte) | 24 / 267 | 27 / 217 | 22 / ~215 |
 
 Écarts avec le plan : la fusion `GraveyardReplacement` → `then` est écartée (H7a, deux évaluateurs resteraient) ; quatre statiques de combat restent séparées (H8b, règles différentes, 508.1 et 509.1). Les approximations générales ont augmenté parce que H0 et H5 ont documenté des approximations jusque-là non écrites. Hors plan : deux correctifs de cartes trouvés en partie (règles 157 et 159) et l'accélération des arènes Commander (voir plus bas).
 
@@ -428,3 +428,4 @@ Attendu : 12 à 18 entrées levées.
   - parties dorées identiques ; fuzz strict `--offers 4` (300 parties, tout le pool) : `c36bb230` (`62904124` avant), 4 décisions illégales de l'IA aléatoire, les mêmes qu'avant (taxes d'attaque, menace) ; Commander à 4 joueurs, IA mixte (80 parties) : `1f783377`, 1 ; 3 joueurs « chaos » (100 parties) : `3a60020a`, 5 ; aucune erreur ;
   - dette : CardDef 98 → 91 ; Effect (champs) 632 → 639 (les exceptions de la copie passent de `CardDef` à `chooseCopy`, `devour.n`), variantes inchangées (`chooseRiot` → `asEnters`) ; singleCardKeys 63 → 62 (`options`) ;
   - écartés : un jeton copie créé par un effet et les arrivées hors résolution ne posent pas de question (choix suggérés, sans les autres effets) ; le regard de la main d'Arachne (aucune forme générique « regarder une main ») ; `shockLand` reste à part (déjà une question d'arrivée commune, `arrivalChoices`) ; les F/E 1/1 d'Abuelo's Awakening en arrivant (il faudrait des `LayerMods` dans `MoveSpec`).
+- **Correctif hors plan (07/10/2026, règles 163) :** « choisissez un nom de carte » mettait en tête les cartes de la main du premier adversaire, quelle que soit la carte, et l'IA nommait la première : une information cachée (Skyseer's Chariot, The Clone Saga). Les noms proposés partent maintenant des permanents adverses, puis des vôtres ; pour Sorcerous Spyglass, la main regardée devient une approximation documentée (aucune forme « regarder une main » pour l'instant, comme Arachne). Test dans `dft.test.ts`. Reste à traiter : la liste « tous les noms » vient des définitions de la partie, donc des decks de tous les joueurs (voir le compte rendu).
