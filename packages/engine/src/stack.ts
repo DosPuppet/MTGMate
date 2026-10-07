@@ -3891,7 +3891,7 @@ function finishResolution(
         ...(item.arrival?.nonlegendary ? { mods: { removeSupertypes: ["Legendary"] }, modsCopiable: true } : {}),
       });
       // « … et "au début de l'étape de fin, sacrifiez ce jeton" ».
-      if (item.arrival?.sacrificeAtEndStep && s.objects[token]?.zone === "battlefield")
+      if (item.arrival?.atEnd === "sacrifice" && s.objects[token]?.zone === "battlefield")
         createDelayed(s, item.controller, token, s.objects[token]?.defId ?? d.id, {
           targets: [],
           effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }],

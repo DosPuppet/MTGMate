@@ -463,7 +463,7 @@ export const LEGENDS: Record<string, CardScript> = {
         source: { controller: "you", colors: ["R"] },
         to: "opponent",
         combat: false,
-        modify: { atLeastSourcePower: true },
+        modify: { atLeast: amount.powerOf(ref.self) },
         label: "Sources rouges : au moins sa force en blessures",
       }),
       returnsAsTemple(),
@@ -472,7 +472,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Temple of Power": temple(
     "R",
     cond.amountAtLeast(
-      amount.turnEvents({ event: "damage", combat: false, sourceYours: true, sourceColors: ["R"], sum: true }),
+      amount.turnEvents({ event: "damage", combat: false, source: { controller: "you", colors: ["R"] }, sum: true }),
       4,
     ),
   ),

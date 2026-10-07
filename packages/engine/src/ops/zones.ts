@@ -93,7 +93,7 @@ function arrivalChoices(
     const d = s.defs[s.objects[id]?.defId ?? ""];
     const who = controllerOf(id);
     const n = d?.shockLand;
-    if (d && n && !random && !spec.tapped && !spec.cloak && payableLife(s, who) >= n) {
+    if (d && n && !random && !spec.tapped && spec.as !== "cloak" && payableLife(s, who) >= n) {
       const k = key(`shock-${id}`);
       const answer = r.vars[k];
       if (!answer) {
@@ -112,7 +112,7 @@ function arrivalChoices(
       }
       if (answer[0] === 1) out.set(id, { shockPaid: true });
     }
-    if (d && spec.attacking && !spec.cloak && !spec.manifest) {
+    if (d && spec.attacking && !spec.as) {
       const prompt = `${cardRef(d.id)} : que doit-il attaquer ?`;
       const c = chooseAttacked(s, r, ctx, key(`attack-${id}`), who, designated, prompt, { ask: !random });
       if ("ask" in c) return c;

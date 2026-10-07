@@ -301,7 +301,12 @@ export const CARDS: Record<string, CardScript> = {
       playerStatic({
         altCostAll: { mana: cost("{2}{R}"), filter: { subtype: "Dinosaur" } },
         condition: cond.amountAtLeast(
-          amount.turnEvents({ event: "damage", combat: true, toPlayer: true, sourceYours: true, sourceSubtype: "Dinosaur" }),
+          amount.turnEvents({
+            event: "damage",
+            combat: true,
+            toPlayer: true,
+            source: { controller: "you", subtype: "Dinosaur" },
+          }),
           1,
         ),
         label: "Vos sorts de Dinosaure ont la maraude {2}{R}",

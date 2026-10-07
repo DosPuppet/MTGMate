@@ -482,11 +482,11 @@ export const HANDLERS: OpHandlers = {
       for (let i = 0; i < n; i++) {
         const id = copyStackItem(s, item, ctx.controller);
         const copy = id ? s.stack.find((x) => x.id === id) : undefined;
-        if (copy && (e.haste || e.sacrificeAtEndStep || e.nonlegendary || e.loyalty !== undefined))
+        if (copy && (e.haste || e.atEnd || e.nonlegendary || e.loyalty !== undefined))
           copy.arrival = {
             ...copy.arrival,
             ...(e.haste ? { haste: true } : {}),
-            ...(e.sacrificeAtEndStep ? { sacrificeAtEndStep: true } : {}),
+            ...(e.atEnd ? { atEnd: e.atEnd } : {}),
             ...(e.nonlegendary ? { nonlegendary: true } : {}),
             ...(e.loyalty !== undefined ? { loyalty: Math.max(0, evalAmount(s, ctx, e.loyalty)) } : {}),
           };
@@ -636,13 +636,14 @@ export const HANDLERS: OpHandlers = {
       for (const id of ids) {
         const owner = s.objects[id]?.owner ?? ctx.controller;
         // « jusqu'à votre prochain tour » : le tour qui précède le prochain tour du contrôleur de l'effet.
-        const until = e.forever
-          ? "forever"
-          : e.untilOwnersNextTurn
-            ? "yourNextTurn"
-            : e.untilYourNextTurn
-              ? nextTurnOf(s, ctx.controller) - 1
-              : "thisTurn";
+        const until =
+          e.duration === "forever"
+            ? "forever"
+            : e.duration === "untilOwnersNextTurn"
+              ? "yourNextTurn"
+              : e.duration === "untilYourNextTurn"
+                ? nextTurnOf(s, ctx.controller) - 1
+                : "thisTurn";
         grantPlay(s, owner, [id], until, {
           free: e.free,
           anyTime: e.anyTime,
@@ -652,13 +653,14 @@ export const HANDLERS: OpHandlers = {
       }
       return;
     }
-    const until = e.forever
-      ? "forever"
-      : e.untilYourNextTurn
-        ? "yourNextTurn"
-        : e.untilYourNextEndStep
-          ? "yourNextEndStep"
-          : "thisTurn";
+    const until =
+      e.duration === "forever"
+        ? "forever"
+        : e.duration === "untilYourNextTurn"
+          ? "yourNextTurn"
+          : e.duration === "untilYourNextEndStep"
+            ? "yourNextEndStep"
+            : "thisTurn";
     const opts = {
       free: e.free,
       anyTime: e.anyTime,

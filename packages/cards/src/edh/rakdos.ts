@@ -577,7 +577,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       triggered(
         CAST_SELF,
         fx.forEachPlayer(ref.target(), (p, n) => [
-          fx.pickFromZone("hand", {}, { to: "battlefield", manifest: true }, { who: p, count: 2, store: `kozilek${n}` }),
+          fx.pickFromZone("hand", {}, { to: "battlefield", as: "manifest" }, { who: p, count: 2, store: `kozilek${n}` }),
           fx.draw(amount.v(`kozilek${n}`)),
         ]),
         {

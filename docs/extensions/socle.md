@@ -6,7 +6,7 @@ Lot 0.1 : le moteur gagne :
 - la **couche 1** (`LayerMods.copyOf`, effet `becomeCopy`, `copiedDefId`) : copie pour une durée, statiques et déclencheurs de la définition copiée, face copiée dans l'interface ;
 - le déclencheur « quand vous lancez ce sort » (`castSelf`, source sur la pile) ;
 - la garde « sacrifiez N permanents » ;
-- les effets qui durent tant qu'une carte reste en exil (`untilExiledUid`) et la permission de lancer « tant qu'elle reste exilée » (`grantPlay` avec `forever`) ;
+- les effets qui durent tant qu'une carte reste en exil (`untilExiledUid`) et la permission de lancer « tant qu'elle reste exilée » (`grantPlay` avec `duration: "forever"`) ;
 - les copies de cartes (`GameObject.cardCopy` : elles quittent l'exil seulement pour la pile et deviennent des jetons en arrivant) ;
 - la règle des légendes suspendue pour le tour (`noLegendRuleThisTurn`).
 

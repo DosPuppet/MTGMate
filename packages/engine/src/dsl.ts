@@ -18,6 +18,7 @@ import type {
   CastVia,
   Color,
   Condition,
+  CopyFate,
   CostReductionAbilityDef,
   Effect,
   EventReplacement,
@@ -559,7 +560,7 @@ export const fx = {
   /** « Déplacez un marqueur de [ce permanent] sur [cet autre] » (sorte au choix). */
   moveCounter: (from: Ref, to: Ref): Effect => ({ op: "moveCounter", from, to }),
   /** « Il ne peut plus gagner de points de vie de la partie » (Screaming Nemesis). */
-  cantGainLife: (who: Ref): Effect => ({ op: "playerEffect", ability: { cantGainLife: true }, who, forever: true }),
+  cantGainLife: (who: Ref): Effect => ({ op: "playerEffect", ability: { cantGainLife: true }, who, duration: "forever" }),
   millWhileShared: { op: "millWhileShared", draw: true } as Effect,
   /** « [Le joueur] meule deux cartes ; si deux cartes [non-terrain] qui partagent une couleur ont été meulées, recommencez. » */
   millWhileSharingColor: (who: Ref, nonland = false): Effect => ({
@@ -598,7 +599,7 @@ export const fx = {
     what,
     mods,
     duration: "permanent",
-    whileHasCounter: kind,
+    while: { counter: kind },
   }),
   /** Modification qui dure « tant que cette créature reste engagée » (Hedge Whisperer). */
   modifyWhileTapped: (what: Ref, mods: LayerMods): Effect => ({
@@ -606,7 +607,7 @@ export const fx = {
     what,
     mods,
     duration: "permanent",
-    whileSourceTapped: true,
+    while: "sourceTapped",
   }),
   draw: (n: Amount, who: Ref = ref.you): Effect => ({ op: "draw", who, amount: n }),
   gainLife: (n: Amount, who: Ref = ref.you): Effect => ({ op: "gainLife", who, amount: n }),
@@ -704,13 +705,13 @@ export const fx = {
     op: "playerEffect",
     ability,
     who,
-    untilTheirNextTurn: true,
+    duration: "untilTheirNextTurn",
   }),
   untilYourNextTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({
     op: "playerEffect",
     ability,
     who,
-    untilYourNextTurn: true,
+    duration: "untilYourNextTurn",
   }),
   /** N effets à usage unique sur ces joueurs (Ral Zarek : « passe ses X prochains tours »). */
   playerEffectTimes: (ability: Omit<PlayerStaticAbilityDef, "kind">, times: Amount, who?: Ref): Effect => ({
@@ -943,12 +944,16 @@ export const fx = {
   copySpell: (
     what: Ref,
     count: Amount,
-    opts: { haste?: boolean; sacrificeAtEndStep?: boolean; nonlegendary?: boolean; loyalty?: Amount } = {},
+    {
+      sacrificeAtEndStep,
+      ...opts
+    }: { haste?: boolean; sacrificeAtEndStep?: boolean; nonlegendary?: boolean; loyalty?: Amount } = {},
   ): Effect => ({
     op: "copySpell",
     what,
     count,
     ...opts,
+    ...(sacrificeAtEndStep ? { atEnd: "sacrifice" as const } : {}),
   }),
   millUntil: (who: Ref, filter: ObjectFilter): Effect => ({ op: "millUntil", who, filter }),
   /** « Exilez les N cartes du dessus » ; `faceDown` : face cachée, et qui peut les regarder (406.3). */
@@ -983,11 +988,19 @@ export const fx = {
       payLifeManaValue?: boolean;
       adventureOnly?: boolean;
     } = {},
-  ): Effect => ({
-    op: "grantPlay",
-    what,
-    ...opts,
-  }),
+  ): Effect => {
+    const { forever, untilYourNextTurn, untilYourNextEndStep, untilOwnersNextTurn, ...rest } = opts;
+    const duration = forever
+      ? "forever"
+      : untilOwnersNextTurn
+        ? "untilOwnersNextTurn"
+        : untilYourNextTurn
+          ? "untilYourNextTurn"
+          : untilYourNextEndStep
+            ? "untilYourNextEndStep"
+            : undefined;
+    return { op: "grantPlay", what, ...rest, ...(duration ? { duration } : {}) };
+  },
   /**
    * « Vous pouvez lancer [ces cartes] » pendant la résolution (608.2g) : `free` sans payer leur coût de mana, `many`
    * autant qu'on veut, `after` exilé (`exile`) ou au-dessous de la bibliothèque (`bottom`, Kylox's Voltstrider) au lieu
@@ -1074,7 +1087,7 @@ export const fx = {
             what,
             mods: { addKeywords: ["cantAttack", "cantBlock"] },
             duration: "permanent",
-            whileSource: true,
+            while: "source",
           } as Effect,
         ]
       : []),
@@ -1137,7 +1150,7 @@ export const fx = {
     what,
     mods,
     duration: "permanent",
-    whileSource: true,
+    while: "source",
   }),
   /** « … tant que vous contrôlez [cette source] » (Ty Lee, Spider-Woman). */
   modifyWhileYouControl: (what: Ref, mods: LayerMods): Effect => ({
@@ -1145,7 +1158,7 @@ export const fx = {
     what,
     mods,
     duration: "permanent",
-    whileYouControlSource: true,
+    while: "youControlSource",
   }),
   /** « … tant qu'il reste engagé » : pour chaque objet touché, jusqu'à ce qu'il se dégage (Braided Net). */
   modifyWhileAffectedTapped: (what: Ref, mods: LayerMods): Effect => ({
@@ -1153,7 +1166,7 @@ export const fx = {
     what,
     mods,
     duration: "permanent",
-    whileTapped: true,
+    while: "tapped",
   }),
   /** Tishana's Tidebinder : contrecarre la capacité ; son permanent perd ses capacités tant que la source reste. */
   counterAbilitySilence: (what: Ref): Effect => ({ op: "counterAbilitySilence", what }),
@@ -1199,7 +1212,7 @@ export const fx = {
     what,
     mods,
     duration: "permanent",
-    untilLeavesExile: card,
+    while: { exiled: card },
   }),
   giveControl: (what: Ref, to: Ref): Effect => ({ op: "gainControl", what, to, duration: "permanent" }),
   /** Chaque objet désigné revient sous le contrôle de son propriétaire. */
@@ -1260,7 +1273,7 @@ export const fx = {
     op: "playerEffect",
     ability: { replacement: { event: "damage", to: "yourSide", modify: { times: 2 } } },
     who,
-    untilYourNextTurn: true,
+    duration: "untilYourNextTurn",
   }),
   /** « Prévenez toutes les blessures qui seraient infligées aux créatures que vous contrôlez ce tour-ci » (Summon: Alexander). */
   preventDamageToYourCreatures: {
@@ -1587,11 +1600,19 @@ export const fx = {
       equipDiscount?: number;
       sacrificeAtNextUpkeep?: boolean;
     } = {},
-  ): Effect => ({
-    op: "copyToken",
-    of,
-    ...opts,
-  }),
+  ): Effect => {
+    const { sacrificeAtEndStep, exileAtEndStep, atEndOfCombat, sacrificeAtNextUpkeep, ...rest } = opts;
+    const atEnd: CopyFate | undefined = atEndOfCombat
+      ? { fate: atEndOfCombat, at: "endOfCombat" }
+      : sacrificeAtNextUpkeep
+        ? { fate: "sacrifice", at: "nextUpkeep" }
+        : exileAtEndStep
+          ? "exile"
+          : sacrificeAtEndStep
+            ? "sacrifice"
+            : undefined;
+    return { op: "copyToken", of, ...rest, ...(atEnd ? { atEnd } : {}) };
+  },
   /** Capacité retardée « au début de la prochaine étape de fin ». `bind` fige des références maintenant. */
   delayed: (effects: Effects, bind?: Record<string, Ref>, vars?: Record<string, Amount>): Effect => ({
     op: "delayed",
@@ -2456,8 +2477,7 @@ export const cond = {
     who: "opponent",
     toPlayer: true,
     combat: true,
-    sourceTypes: ["Creature"],
-    sourceSupertype: "Legendary",
+    source: { types: ["Creature"], supertype: "Legendary" },
   }),
   /** Un joueur a subi N blessures de combat ou plus ce tour-ci. */
   playerCombatDamageAtLeast: (n: number): Condition =>

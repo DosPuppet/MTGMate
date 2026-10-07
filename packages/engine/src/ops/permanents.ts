@@ -278,12 +278,14 @@ export const HANDLERS: OpHandlers = {
         item.sourceSnapshot = { ...item.sourceSnapshot, keywords: kw };
       }
     }
+    const w = e.while;
+    const counter = typeof w === "object" && "counter" in w ? w.counter : undefined;
     const ids = resolveRef(s, ctx, e.what).filter(
-      (id) => onBattlefield(s, id) && (!e.whileHasCounter || (s.objects[id]?.counters[e.whileHasCounter] ?? 0) > 0),
+      (id) => onBattlefield(s, id) && (!counter || (s.objects[id]?.counters[counter] ?? 0) > 0),
     );
     if (ids.length === 0) return;
     // 611.2b : un effet « tant que [la source] reste… » ne fait rien si elle est déjà partie.
-    if (e.whileSource && !onBattlefield(s, ctx.sourceId)) return;
+    if (w === "source" && !onBattlefield(s, ctx.sourceId)) return;
     // « Devient de la couleur choisie et gagne la défense talismanique contre elle » (Mondo Gecko) : la couleur choisie
     // par cet effet est figée dans l'effet (une autre activation en choisit une autre).
     const chosen = r.vars.$chosen?.[0] === "color" ? (String(r.vars.$chosen[1]) as Color) : undefined;
@@ -305,12 +307,12 @@ export const HANDLERS: OpHandlers = {
       duration: e.duration,
       ...(e.duration === "untilYourNextTurn" ? { until: ctx.controller } : {}),
       ...(e.duration === "endOfYourNextTurn" ? { until: ctx.controller, sinceTurn: s.turn.number } : {}),
-      ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
-      ...(e.whileSource || e.whileYouControlSource ? { whileSource: ctx.sourceId } : {}),
-      ...(e.whileYouControlSource ? { whileControlledBy: ctx.controller } : {}),
-      ...(e.whileSourceTapped ? { whileSourceTapped: ctx.sourceId } : {}),
-      ...(e.whileTapped ? { whileAffectedTapped: true } : {}),
-      ...(e.whileHasCounter ? { whileAffectedHasCounter: e.whileHasCounter } : {}),
+      ...(typeof w === "object" && "exiled" in w ? { untilExiledUid: exiledUid(s, ctx, w.exiled) } : {}),
+      ...(w === "source" || w === "youControlSource" ? { whileSource: ctx.sourceId } : {}),
+      ...(w === "youControlSource" ? { whileControlledBy: ctx.controller } : {}),
+      ...(w === "sourceTapped" ? { whileSourceTapped: ctx.sourceId } : {}),
+      ...(w === "tapped" ? { whileAffectedTapped: true } : {}),
+      ...(counter ? { whileAffectedHasCounter: counter } : {}),
       ...mods,
       // Joueurs et objets figés à la résolution : « provoquez » (le contrôleur de l'effet), « ne peut pas vous attaquer »
       // (Promise of Loyalty), « attaque ce joueur » (Silver Surfer), « bloque ce Loup si possible » (Tolsimir).
@@ -543,16 +545,6 @@ export const HANDLERS: OpHandlers = {
             );
             if (equips.length) addEffect(s, [token], { addAbilities: equips }, "permanent");
           }
-          if (e.sacrificeAtNextUpkeep) {
-            createDelayed(
-              s,
-              ctx.controller,
-              token,
-              s.objects[token]?.defId ?? defId,
-              { targets: [], effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }], bound: { c: [token] } },
-              "nextUpkeep",
-            );
-          }
           if ((e.attacking || attackEach) && s.combat) {
             // Calamity : « engagé et attaquant » ; myriade : le défenseur choisi pour le joueur de sa copie (les copies en
             // plus d'un doubleur se répartissent entre eux et gardent ce choix).
@@ -562,37 +554,25 @@ export const HANDLERS: OpHandlers = {
             if (defender) s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
             bump(s);
           }
-          if (e.atEndOfCombat) {
-            const exile = e.atEndOfCombat === "exile";
+          if (e.atEnd) {
+            // Sacrifiée ou exilée au début de la prochaine étape de fin, à la fin du combat ou au prochain entretien.
+            const { fate, at } = typeof e.atEnd === "string" ? { fate: e.atEnd, at: undefined } : e.atEnd;
+            const it = { kind: "target", id: "copy" } as const;
+            // Firion (prochain entretien) : la capacité retardée a pour source le jeton lui-même, sans libellé.
+            const upkeep = at === "nextUpkeep";
             createDelayed(
               s,
               ctx.controller,
-              ctx.sourceId,
-              ctx.sourceDefId,
+              upkeep ? token : ctx.sourceId,
+              upkeep ? (s.objects[token]?.defId ?? defId) : ctx.sourceDefId,
               {
                 targets: [],
-                effects: [
-                  exile
-                    ? { op: "exile", what: { kind: "target", id: "copy" } }
-                    : { op: "sacrificeIt", what: { kind: "target", id: "copy" } },
-                ],
+                effects: [fate === "exile" ? { op: "exile", what: it } : { op: "sacrificeIt", what: it }],
                 bound: { copy: [token] },
-                label: exile ? "exiler la copie" : "sacrifier la copie",
+                ...(upkeep ? {} : { label: fate === "exile" ? "exiler la copie" : "sacrifier la copie" }),
               },
-              "endOfCombat",
+              at,
             );
-          }
-          if (e.sacrificeAtEndStep || e.exileAtEndStep) {
-            createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
-              targets: [],
-              effects: [
-                e.exileAtEndStep
-                  ? { op: "exile", what: { kind: "target", id: "copy" } }
-                  : { op: "sacrificeIt", what: { kind: "target", id: "copy" } },
-              ],
-              bound: { copy: [token] },
-              label: e.exileAtEndStep ? "exiler la copie" : "sacrifier la copie",
-            });
           }
         }
       }

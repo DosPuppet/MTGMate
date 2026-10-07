@@ -36,6 +36,8 @@ import {
   preventions,
   quantityMods,
   recipientMatches,
+  replacementAdd,
+  replacementAtLeast,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, sourceView, withChosen } from "./targets";
 import { pushInline, queueLifelink, rulesTrigger } from "./triggers";
@@ -214,7 +216,8 @@ export function loseLife(s: GameState, p: PlayerId, amount: number, damage = fal
     // « Votre total de points de vie ne peut pas changer » (Teferi's Protection) : aucune perte (les blessures, elles,
     // sont bien infligées).
     if (a.r.modify.prevent) return;
-    if (a.r.modify.add) mods.push({ add: a.r.modify.add });
+    const add = replacementAdd(s, a);
+    if (add) mods.push({ add });
     if (a.r.modify.times) mods.push({ times: a.r.modify.times });
   }
   amount = chooseReplacementOrder(amount, mods, "min");
@@ -460,20 +463,13 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // blessé (ou le contrôleur du permanent blessé), ici le moins de blessures pour lui (`chooseReplacementOrder`).
   const mods: AmountMod[] = [];
   for (const a of reps) {
-    const m = a.r.modify;
-    if (m.add) mods.push({ add: m.add });
-    if (m.addSourcePower && a.sourceId && s.objects[a.sourceId]?.zone === "battlefield") {
-      const p = Math.max(0, chars(s, a.sourceId).power);
-      if (p > 0) mods.push({ add: p });
-    }
-    if (m.addSourceCounters && a.sourceId) {
-      const n = s.objects[a.sourceId]?.counters[m.addSourceCounters] ?? 0;
-      if (n > 0) mods.push({ add: n });
-    }
-    if (m.times) mods.push({ times: m.times });
+    // Hawkeye, Young Avenger : « autant en plus que sa force » ; Fated Firepower : « que de marqueurs de feu ».
+    const add = replacementAdd(s, a);
+    if (add) mods.push({ add });
+    if (a.r.modify.times) mods.push({ times: a.r.modify.times });
     // Ojer Axonil : « au moins autant de blessures que la force de [cette créature] ».
-    if (m.atLeastSourcePower && a.sourceId && s.objects[a.sourceId]?.zone === "battlefield")
-      mods.push({ atLeast: chars(s, a.sourceId).power });
+    const atLeast = replacementAtLeast(s, a);
+    if (atLeast !== undefined) mods.push({ atLeast });
   }
   const _toOpponent = !!victim && victim !== source.controller;
   amount = chooseReplacementOrder(amount, mods, "min");
@@ -780,7 +776,7 @@ export function createTokens(
     const model = copyDeclined ? undefined : s.objects[copies.host];
     if (model) {
       const out: ObjectId[] = [];
-      const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(tokenReps(snapshot(s, model.id))), "max"));
+      const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(s, tokenReps(snapshot(s, model.id))), "max"));
       for (let i = 0; i < n; i++) out.push(createTokenCopy(s, controller, model.defId));
       return out;
     }
@@ -813,7 +809,7 @@ export function createTokens(
   }
   // Doubling Season : « crée deux fois plus de ces jetons » ; Ojer Taq : trois fois plus de jetons de créature.
   const reps = tokenReps(tokenView(t, controller));
-  const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(reps), "max"));
+  const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(s, reps), "max"));
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
@@ -868,11 +864,12 @@ function tokenView(t: TokenSpec, controller: PlayerId): LkiSnapshot {
 }
 
 /** Modifications du nombre de jetons : « le double » (Doubling Season), « le triple » (Ojer Taq), « autant plus N ». */
-function tokenModifiers(reps: ActiveReplacement[]): AmountMod[] {
+function tokenModifiers(s: GameState, reps: ActiveReplacement[]): AmountMod[] {
   const mods: AmountMod[] = [];
   for (const a of reps) {
     if (a.r.modify.times) mods.push({ times: a.r.modify.times });
-    if (a.r.modify.add) mods.push({ add: a.r.modify.add });
+    const add = replacementAdd(s, a);
+    if (add) mods.push({ add });
   }
   return mods;
 }
@@ -885,5 +882,5 @@ export function tokenCopyCount(s: GameState, controller: PlayerId, model: LkiSna
   const reps = eventReplacements(s, "tokens").filter(
     (a) => playerSide(s, a, controller) && (!a.r.toFilter || matchesView(model, a.r.toFilter, a.controller, a.sourceId)),
   );
-  return tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(reps), "max"));
+  return tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(s, reps), "max"));
 }

@@ -124,13 +124,11 @@ describe("drapeaux des capacités", () => {
 const COUNTER_KEYS = new Set([
   "counter",
   "perCounter",
-  "whileHasCounter",
   "withCounter",
   "removeCountersX",
   "addCounter",
   "removeCounter",
   "counterKind",
-  "addSourceCounters",
   "manaValueSourceCounters",
 ]);
 const COUNTER_HOLDERS = new Set(["addCounters", "removeCounters", "removeCounterFrom", "counters", "moveCounter"]);

@@ -115,7 +115,7 @@ Ajouté le 06/10/2026 avec la recette « Ajouter un deck Commander ». Liste : �
   - nombres choisis secrètement : `fx.chooseNumbers`, `ref.numberChoosers`, `amount.numberChosen` (Wheel of Misfortune) ;
   - « à moins qu'il ne paie {B} ou {3} » : `unlessPays(…, { mana, orMana })` sans défausse ;
   - annihilateur N et exhumation lus dans le texte (`scryfall.ts`) ; exhumé : `MoveSpec.exileIfLeaves`, `GameObject.exileIfLeaves` (exilé s'il devait quitter le champ de bataille) ; folie écrite en toutes lettres (« Madness—Pay six {C} ») ;
-  - manifester depuis la main : `MoveSpec.manifest`, avec le choix de chaque joueur dans sa main (`pickFromZone` et `who`) ;
+  - manifester depuis la main : `MoveSpec.as: "manifest"`, avec le choix de chaque joueur dans sa main (`pickFromZone` et `who`) ;
   - copie de sort avec loyauté de départ (`copySpell(…, { loyalty })`, victime X d'Ob Nixilis) ; tour contrôlé suivi d'un tour supplémentaire (`controlNextTurn(…, thenExtraTurn)`, Emrakul, the Promised End) ;
   - cibles de valeurs de mana différentes (`TargetSpec.differentManaValues`) ; recherche bornée par un montant (`search` et `maxManaValue`, Grim Servant) ;
   - jeton Powerstone (mana réservé aux sorts d'artefact et aux capacités) ;
@@ -162,7 +162,7 @@ Ajouté le 06/10/2026 à la demande de l'utilisateur. Liste officielle du préco
   - fusion (702.102), lue dans le texte : une troisième face des cartes scindées (cibles et effets des deux moitiés, coût total), lançable depuis la main seulement ;
   - évolution (Ray Fillet) : la comparaison de montants (`cond.amountGreater`) est évaluée au déclenchement ; le X d'un permanent est connu dès son arrivée ;
   - mana d'artefact dépensé pour lancer un sort (`amount.artifactManaSpent`, Coin of Mastery ; le mana produit en trop n'est pas compté) ;
-  - jetons qui attaquent un joueur désigné (`createTappedTokens(…, { attacking: p })`, Endless Foot Assault) ; copies sacrifiées à la fin du combat (`atEndOfCombat: "sacrifice"`, Shredder ; la myriade les exile) ;
+  - jetons qui attaquent un joueur désigné (`createTappedTokens(…, { attacking: p })`, Endless Foot Assault) ; copies sacrifiées à la fin du combat (`copyToken.atEnd`, Shredder ; la myriade les exile) ;
   - adversaires attaqués ce tour-ci (`amount.opponentsAttackedThisTurn`, Fast Forward) ; PV de départ (`amount.startingLife`, `cond.someoneAtHalfStartingLife`, Game Over) ; marqueurs de toutes sortes parmi des permanents (`countersAmong(…, "any")`) ;
   - déclenchements dus à une pioche doublés (`TriggerMod.on: "draw"`, Krang) ; blessures prévenues changées en marqueurs sur le permanent protégé (`onPrevent.countersOnDamaged`, Vigor) ;
   - couleur exclue d'un choix en arrivant (`chooseOnEnter: "color"` et `enterModes`, terrains Thriving).

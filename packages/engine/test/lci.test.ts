@@ -383,7 +383,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(s.players.p2?.life).toBe(16);
       // Journal du tour : 4 blessures non de combat d'une source rouge (condition de Temple of Power).
       expect(
-        countTurnEvents(s, { event: "damage", combat: false, sourceYours: true, sourceColors: ["R"], sum: true }, "p1"),
+        countTurnEvents(s, { event: "damage", combat: false, source: { controller: "you", colors: ["R"] }, sum: true }, "p1"),
       ).toBe(4);
     });
 

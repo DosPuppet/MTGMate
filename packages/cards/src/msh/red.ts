@@ -347,7 +347,7 @@ export const RED: Record<string, CardScript> = {
         source: { controller: "you" },
         to: "opponentSide",
         combat: false,
-        modify: { addSourcePower: true },
+        modify: { add: amount.powerOf(ref.self) },
         label: "Vos sources infligent autant de blessures non de combat en plus que sa force",
       }),
     ],

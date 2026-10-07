@@ -51,6 +51,21 @@ function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
 const hasAny = <T>(have: readonly T[] | undefined, want: readonly T[] | undefined) =>
   !want || want.some((x) => have?.includes(x));
 
+type Chars = {
+  types?: readonly CardType[];
+  subtypes?: readonly string[];
+  supertypes?: readonly string[];
+  colors?: readonly Color[];
+};
+
+/** Le comparateur des caractéristiques (`TurnLogQuery` : de l'objet de l'entrée, ou de la source des blessures). */
+function charsMatch(have: Chars, q: Pick<TurnLogQuery, "types" | "subtype" | "supertype" | "colors">): boolean {
+  if (!hasAny<CardType>(have.types, q.types)) return false;
+  if (q.subtype && !have.subtypes?.includes(q.subtype)) return false;
+  if (q.supertype && !have.supertypes?.includes(q.supertype)) return false;
+  return hasAny<Color>(have.colors, q.colors);
+}
+
 function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): boolean {
   if (e.e !== q.event) return false;
   const who = subjectOf(e, q.byOwner);
@@ -58,14 +73,11 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
   const opponent = () => who !== me && !!who && !s.players[who]?.lost;
   if (subject !== undefined ? who !== subject : q.who === "you" ? who !== me : q.who === "opponent" ? !opponent() : false)
     return false;
-  if (!hasAny<CardType>(e.types, q.types)) return false;
+  if (!charsMatch(e, q)) return false;
   if (q.notTypes?.some((x) => e.types?.includes(x))) return false;
-  if (q.subtype && !e.subtypes?.includes(q.subtype)) return false;
   if (q.notSubtype && e.subtypes?.includes(q.notSubtype)) return false;
   if (q.keyword && !(e as { keywords?: string[] }).keywords?.includes(q.keyword)) return false;
-  const extra = e as { supertypes?: string[]; token?: boolean };
-  if (q.supertype && !extra.supertypes?.includes(q.supertype)) return false;
-  if (q.token !== undefined && !!extra.token !== q.token) return false;
+  if (q.token !== undefined && !!(e as { token?: boolean }).token !== q.token) return false;
   if (q.faceDown !== undefined && !!(e as { faceDown?: boolean }).faceDown !== q.faceDown) return false;
   if (e.e === "zone") {
     if (q.from && e.from !== q.from) return false;
@@ -73,7 +85,6 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
   }
   if ((e.e === "cast" || e.e === "playLand") && q.fromZone && e.fromZone !== q.fromZone) return false;
   if (e.e === "cast" && q.warped && !e.warped) return false;
-  if (e.e === "cast" && !hasAny<Color>(e.colors, q.colors)) return false;
   if (e.e === "cast" && q.minManaValue !== undefined && (e.manaValue ?? 0) < q.minManaValue) return false;
   if (e.e === "activate" && q.equip && !e.equip) return false;
   if (e.e === "activate" && q.loyalty && !e.loyalty) return false;
@@ -82,11 +93,16 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
   if (e.e === "damage") {
     if (q.combat !== undefined && e.combat !== q.combat) return false;
     if (q.toPlayer !== undefined && e.toPlayer !== q.toPlayer) return false;
-    if (q.sourceYours && e.sourceController !== me) return false;
-    if (!hasAny<Color>(e.sourceColors, q.sourceColors)) return false;
-    if (!hasAny<CardType>(e.sourceTypes, q.sourceTypes)) return false;
-    if (q.sourceSupertype && !e.sourceSupertypes?.includes(q.sourceSupertype)) return false;
-    if (q.sourceSubtype && !e.sourceSubtypes?.includes(q.sourceSubtype)) return false;
+    const src = q.source;
+    if (src?.controller === "you" && e.sourceController !== me) return false;
+    if (
+      src &&
+      !charsMatch(
+        { types: e.sourceTypes, subtypes: e.sourceSubtypes, supertypes: e.sourceSupertypes, colors: e.sourceColors },
+        src,
+      )
+    )
+      return false;
   }
   return true;
 }

@@ -79,15 +79,22 @@ export const HANDLERS: OpHandlers = {
     const who = (e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller]).filter(
       (p) => p !== ability.cantAttackPlayer,
     );
-    const until = e.untilYourNextTurn
-      ? nextTurnOf(s, ctx.controller) - 1
-      : e.forever || (e.times !== undefined && !e.once)
-        ? null
-        : s.turn.number;
+    const until =
+      e.duration === "untilYourNextTurn"
+        ? nextTurnOf(s, ctx.controller) - 1
+        : e.duration === "forever" || (e.times !== undefined && !e.once)
+          ? null
+          : s.turn.number;
     const times = e.times !== undefined ? evalAmount(s, ctx, e.times) : 1;
     for (const p of who)
       for (let i = 0; i < times; i++)
-        addPlayerEffect(s, p, ability, e.untilTheirNextTurn ? nextTurnOf(s, p) - 1 : until, e.times !== undefined || !!e.once);
+        addPlayerEffect(
+          s,
+          p,
+          ability,
+          e.duration === "untilTheirNextTurn" ? nextTurnOf(s, p) - 1 : until,
+          e.times !== undefined || !!e.once,
+        );
     return;
   },
   gift(s, r, e, ctx) {

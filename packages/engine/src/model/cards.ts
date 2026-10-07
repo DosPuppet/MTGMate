@@ -901,18 +901,15 @@ export interface EventReplacement {
   extraMana?: "same" | "chosen" | "any" | ManaType;
   /** true : seulement les blessures de combat ; false : seulement les autres. */
   combat?: boolean;
-  /** « autant plus N », « le double », « au moins la force de [la source du remplacement] », « prévenez-les ». */
   /**
-   * `addSourceCounters` : en plus, autant que de marqueurs de ce type sur la source du remplacement (Fated Firepower :
-   * « plus le nombre de marqueurs de feu sur cet enchantement »).
+   * « autant plus N », « le double », « au moins N », « prévenez-les ». `add` et `atLeast` sont évalués du point de vue du
+   * remplacement (`ref.self` : sa source) : les marqueurs de feu de Fated Firepower, la force de Hawkeye, Young Avenger ou
+   * d'Ojer Axonil ; un montant qui n'est pas un nombre écrit est borné à 0 (voir `replacementAmounts`, statics.ts).
    */
   modify: {
-    add?: number;
-    addSourceCounters?: string;
-    /** En plus, autant que la force de la source du remplacement (Hawkeye, Young Avenger). */
-    addSourcePower?: boolean;
+    add?: Amount;
     times?: number;
-    atLeastSourcePower?: boolean;
+    atLeast?: Amount;
     prevent?: boolean;
   };
   /** Après une prévention : chaque adversaire du contrôleur meule autant (The Mindskinner) ; capacité réflexive
@@ -1424,15 +1421,17 @@ export interface MoveSpec {
   fromTop?: number;
   /** Avec `libraryTop` : « mélangez-le dans la bibliothèque de son propriétaire ». */
   shuffle?: boolean;
-  /** Sur le champ de bataille enveloppé d'une cape (701.58 : face cachée, 2/2, garde {2}) (Vannifar). */
-  cloak?: boolean;
   /**
    * Exilée face cachée (406.3) : qui peut la regarder — le contrôleur de l'effet (« vous pouvez la regarder »), son
    * propriétaire (présage) ou personne (Doomsday Excruciator).
    */
   faceDown?: "you" | "owner" | "nobody";
-  /** Sur le champ de bataille : manifesté (701.40, face cachée 2/2) ; Kozilek, the Broken Reality : depuis la main. */
-  manifest?: boolean;
+  /**
+   * Sur le champ de bataille face cachée, 2/2 : enveloppé d'une cape (`cloak`, 701.58 : avec la garde {2}, sous le contrôle
+   * du contrôleur de l'effet ; Vannifar) ou manifesté (`manifest`, 701.40 : sous le contrôle de son propriétaire, sauf
+   * `underYourControl` ; Kozilek, the Broken Reality : depuis la main).
+   */
+  as?: "cloak" | "manifest";
   /** Sur le champ de bataille : s'il devait le quitter, il est exilé à la place (exhumation, 702.84a). */
   exileIfLeaves?: boolean;
 }

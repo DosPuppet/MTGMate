@@ -690,7 +690,7 @@ export const MULTI: Record<string, CardScript> = {
               fx.pickFromZone(
                 "hand",
                 {},
-                { to: "battlefield", cloak: true },
+                { to: "battlefield", as: "cloak" },
                 { count: 1, min: 1, prompt: "La carte à envelopper d'une cape" },
               ),
             ],

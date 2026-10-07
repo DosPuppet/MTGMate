@@ -52,7 +52,7 @@ describe("journal du tour", () => {
     dealDamage(s, cub, "p1", 3, false);
     const combat: TurnLogQuery = { event: "damage", toPlayer: true, combat: true, sum: true, perPlayer: true };
     expect(countTurnEvents(s, combat, "p1")).toBe(7);
-    expect(countTurnEvents(s, { event: "damage", sum: true, sourceColors: ["R"], sourceYours: true }, "p1")).toBe(5);
+    expect(countTurnEvents(s, { event: "damage", sum: true, source: { colors: ["R"], controller: "you" } }, "p1")).toBe(5);
     expect(countTurnEvents(s, { event: "damage", combat: false, who: "you", sum: true }, "p1")).toBe(3);
   });
 

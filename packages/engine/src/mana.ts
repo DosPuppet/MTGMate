@@ -21,7 +21,7 @@ import {
   snapshot,
   tapObject,
 } from "./state";
-import { type ActiveReplacement, eventReplacements, payableLife, playerSide } from "./statics";
+import { type ActiveReplacement, eventReplacements, payableLife, playerSide, replacementAdd } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -253,20 +253,20 @@ function manaReplacements(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?:
  * Remplacements du mana du même type, quel que soit le type produit (connus du solveur) : « un mana de plus » (Molten
  * Tide, Lavaleaper, Roxanne), « trois fois autant » (Nyxbloom Ancient), dans l'ordre le plus favorable (616.1).
  */
-const sameTypeMods = (reps: ActiveReplacement[]): AmountMod[] =>
+const sameTypeMods = (s: GameState, reps: ActiveReplacement[]): AmountMod[] =>
   reps
     .filter((a) => !a.r.manaProduced && (a.r.extraMana ?? "same") === "same")
-    .flatMap((a) => [
-      ...(a.r.modify.add ? [{ add: a.r.modify.add }] : []),
-      ...(a.r.modify.times ? [{ times: a.r.modify.times }] : []),
-    ]);
+    .flatMap((a) => {
+      const add = replacementAdd(s, a);
+      return [...(add ? [{ add }] : []), ...(a.r.modify.times ? [{ times: a.r.modify.times }] : [])];
+    });
 
 /** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »), remplacements compris. */
 function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?: ReadonlySet<ObjectId>): number {
   // Source déjà sacrifiée pour payer le coût (Trésor) : quantité imprimée.
   const o = s.objects[id];
   if (!o) return ab.amount;
-  const mods = sameTypeMods(manaReplacements(s, id, ab, gone));
+  const mods = sameTypeMods(s, manaReplacements(s, id, ab, gone));
   const base = baseManaAmount(s, id, o.controller, ab);
   return mods.length ? chooseReplacementOrder(base, mods, "max") : base;
 }
@@ -630,7 +630,7 @@ export function activateManaAbility(
             ? c
             : (a.r.extraMana as ManaType);
     if (!type) continue;
-    pool[type] += a.r.modify.add ?? 0;
+    pool[type] += replacementAdd(s, a);
     if (type !== c) otherBonus = true;
   }
   const amount = (pool?.[c] ?? 0) - poolBefore;

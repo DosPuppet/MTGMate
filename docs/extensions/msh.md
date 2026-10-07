@@ -101,7 +101,7 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Le moteur gagne :**
   - le filtre `countersPutByYouThisTurn` (« sur lesquelles vous avez mis des marqueurs ce tour-ci ») lu aussi par les capacités statiques et les déclencheurs, et limité à une sorte (`countersPutByYouThisTurn: "+1/+1"`, Kid Loki) ;
   - `playerStatic({ activateAsThoughHaste: filtre })` : activer les capacités {T} de ces créatures malgré le mal d'invocation, sans pouvoir attaquer (Shang-Chi ; entrée de dette justifiée) ;
-  - `modify.addSourcePower` : des blessures augmentées de la force de la source du remplacement (Hawkeye, avec `combat: false`) ;
+  - `modify.add: amount.powerOf(ref.self)` (`addSourcePower` avant PLAN-H H7a) : des blessures augmentées de la force de la source du remplacement (Hawkeye, avec `combat: false`) ;
   - le coût `removeCountersX` (« retirez un nombre quelconque de marqueurs de cette créature », X = le nombre retiré) ;
   - le montant `manaSymbolsOf(ref, couleur)` (symboles de mana d'une couleur dans un coût, hybrides compris : Namor) ;
   - `fx.proliferate(n, cible)` : la prolifération sur les seuls objets ou joueurs désignés (Powerful Broker).

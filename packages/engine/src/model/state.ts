@@ -271,13 +271,13 @@ export interface StackItem {
   /** Esper Origins : après la résolution, exilé puis mis sur le champ de bataille transformé avec un marqueur de finalité. */
   toBattlefieldTransformed?: boolean;
   /** Modifications à l'arrivée du permanent (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
-  /** `sacrificeAtEndStep` : le jeton (copie d'un sort de créature) est sacrifié au début de la prochaine étape de fin. */
+  /** `atEnd` : le jeton (copie d'un sort de créature) est sacrifié au début de la prochaine étape de fin. */
   /** `nonlegendary` : la copie n'est pas légendaire (exception de copie, 707.9b ; Jackal, The Clone Saga). */
   arrival?: {
     counters?: { kind: string; n: number }[];
     haste?: boolean;
     subtypes?: string[];
-    sacrificeAtEndStep?: boolean;
+    atEnd?: "sacrifice";
     nonlegendary?: boolean;
     /** Loyauté de départ à la place de celle imprimée (copie d'Ob Nixilis, the Adversary). */
     loyalty?: number;
@@ -551,16 +551,20 @@ export interface TurnLogQuery {
   who?: "you" | "opponent";
   /** Déplacement : le joueur concerné est le propriétaire (« mise dans votre cimetière », Descente). */
   byOwner?: boolean;
+  /**
+   * Caractéristiques de l'objet de l'entrée (un seul comparateur, `turnlog.ts`, aussi pour `source`) : au moins un de ces
+   * types, ce sous-type, ce supertype, au moins une de ces couleurs (seuls les sorts lancés en ont : « un sort bleu ou
+   * noir »).
+   */
   types?: CardType[];
+  subtype?: string;
+  supertype?: string;
+  colors?: Color[];
   /** Aucun de ces types (« sort non-créature »). */
   notTypes?: CardType[];
-  subtype?: string;
   notSubtype?: string;
-  supertype?: string;
   /** Un sort lancé qui a ce mot-clé (« sort de créature avec le vol »). */
   keyword?: Keyword;
-  /** Un sort lancé d'au moins une de ces couleurs (« un sort bleu ou noir »). */
-  colors?: Color[];
   token?: boolean;
   /** Déplacement : arrivé face cachée (ou non). */
   faceDown?: boolean;
@@ -577,11 +581,11 @@ export interface TurnLogQuery {
   fromZone?: Zone;
   combat?: boolean;
   toPlayer?: boolean;
-  sourceYours?: boolean;
-  sourceColors?: Color[];
-  sourceTypes?: CardType[];
-  sourceSupertype?: string;
-  sourceSubtype?: string;
+  /**
+   * Blessures : leur source, comparée comme l'objet de l'entrée (types, sous-type, supertype, couleurs) ; `controller` :
+   * une source que contrôlait le joueur qui interroge.
+   */
+  source?: Pick<TurnLogQuery, "types" | "subtype" | "supertype" | "colors"> & { controller?: "you" };
   /** La somme des quantités (blessures, vie, cartes défaussées) plutôt que le nombre d'entrées. */
   sum?: boolean;
   perPlayer?: boolean;

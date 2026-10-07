@@ -349,7 +349,7 @@ export const RED: Record<string, CardScript> = {
         event: "damage",
         source: { controller: "you" },
         to: "opponentSide",
-        modify: { addSourceCounters: "fire" },
+        modify: { add: amount.countersOn(ref.self, "fire") },
         label: "Vos sources infligent autant de blessures en plus que de marqueurs de feu",
       }),
     ],

@@ -40,20 +40,20 @@ export type Effect =
   /** `of` : la cible (The End) plutôt qu'une carte choisie dans un cimetière adverse. */
   /** `of` : un permanent (homonymes chez son contrôleur) ou une carte de cimetière (chez son propriétaire) ; `draw` : il pioche autant que de cartes exilées de sa main. */
   | { op: "exileNamesakes"; of?: Ref; draw?: boolean }
-  /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
-  /** `untilYourNextTurn` : jusqu'au début du prochain tour du contrôleur ; `times` : autant d'effets à usage unique. */
+  /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci ») ; `times` : autant d'effets à usage unique. */
   | {
       op: "playerEffect";
       ability: Omit<PlayerStaticAbilityDef, "kind">;
       who?: Ref;
-      untilYourNextTurn?: boolean;
-      /** Jusqu'au prochain tour de chaque joueur touché (Teferi's Reproach : « jusqu'au prochain tour de ce joueur »). */
-      untilTheirNextTurn?: boolean;
+      /**
+       * Jusqu'au début du prochain tour du contrôleur (`untilYourNextTurn`), de chaque joueur touché (`untilTheirNextTurn`,
+       * Teferi's Reproach : « jusqu'au prochain tour de ce joueur ») ou pour le reste de la partie (`forever` : « il ne peut
+       * plus gagner de points de vie de la partie », Screaming Nemesis) ; absente : jusqu'à la fin du tour.
+       */
+      duration?: "untilYourNextTurn" | "untilTheirNextTurn" | "forever";
       times?: Amount;
       /** À usage unique, jusqu'à la fin du tour (« le prochain sort que vous lancez ce tour-ci »). */
       once?: boolean;
-      /** Pour le reste de la partie (« il ne peut plus gagner de points de vie de la partie », Screaming Nemesis). */
-      forever?: boolean;
     }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
   /** `what` : seulement les objets ou joueurs désignés, sans choix (Powerful Broker). */
@@ -90,23 +90,13 @@ export type Effect =
   /** `double` : chaque objet gagne +X/+Y, X et Y étant sa force et son endurance (« doublez la force et l'endurance »). */
   | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[]; double?: boolean }
   /** Effet continu quelconque sur des objets (couches 4 à 7) : « devient 0/1 et perd toutes ses capacités »… */
-  /** `untilLeavesExile` : l'effet cesse quand cette carte quitte l'exil (Emrakul). */
   | {
       op: "modify";
       what: Ref;
       mods: LayerMods;
       duration: "endOfTurn" | "permanent" | "untilYourNextTurn" | "endOfYourNextTurn";
-      untilLeavesExile?: Ref;
-      /** « tant que [la source] reste sur le champ de bataille » (Kitesail Larcenist). */
-      whileSource?: boolean;
-      /** « tant que cette créature reste engagée » (Hedge Whisperer). */
-      whileSourceTapped?: boolean;
-      /** « tant que vous contrôlez [la source] » (Ty Lee, Spider-Woman) : cesse si elle part ou change de contrôleur. */
-      whileYouControlSource?: boolean;
-      /** « tant qu'il reste engagé » : l'effet cesse pour chaque objet touché qui se dégage (Braided Net). */
-      whileTapped?: boolean;
-      /** « tant qu'il a un marqueur [sorte] » : l'effet cesse pour chaque objet touché qui n'en a plus (Ultima). */
-      whileHasCounter?: string;
+      /** Durée liée à un état (avec `duration: "permanent"`) : voir `ModifyWhile`. */
+      while?: ModifyWhile;
       /** F/E de base fixées à ce montant, évalué à la résolution (couche 7b). */
       basePT?: Amount;
     }
@@ -341,9 +331,8 @@ export type Effect =
       addKeywords?: Keyword[];
       /** « … excepté que c'est un Cauchemar en plus de ses autres types » */
       addSubtypes?: string[];
-      sacrificeAtEndStep?: boolean;
-      /** « Exilez ce jeton au début de la prochaine étape de fin » (Stormsplitter). */
-      exileAtEndStep?: boolean;
+      /** Sort des copies : voir `CopyFate`. */
+      atEnd?: CopyFate;
       /** « … sauf que c'est légendaire » (Adagia, Windswept Bastion) ; « … sauf qu'elle n'est pas légendaire » (Yenna). */
       legendary?: boolean;
       nonlegendary?: boolean;
@@ -358,17 +347,15 @@ export type Effect =
       /**
        * Myriade (702.116), Shredder : une copie engagée et attaquante pour chacun des joueurs désignés, qui attaque ce joueur
        * (ou l'un de ses planeswalkers désignés, au choix : `ref.withPlaneswalkers`) ; `count` est ignoré. `optional` : « vous
-       * pouvez » (myriade), demandé joueur par joueur. `atEndOfCombat` : les copies sont exilées (myriade) ou sacrifiées
-       * (Shredder) à la fin du combat.
+       * pouvez » (myriade), demandé joueur par joueur ; les copies sont exilées (myriade) ou sacrifiées (Shredder) à la fin
+       * du combat (`atEnd`).
        */
       attackEach?: Ref;
       optional?: boolean;
-      atEndOfCombat?: "exile" | "sacrifice";
       /** F/E de base fixées (Nexus of Becoming : 3/3). */
       pt?: number;
-      /** « … sauf que ses capacités d'équipement coûtent {N} de moins » (Firion) ; `sacrificeAtNextUpkeep` en plus. */
+      /** « … sauf que ses capacités d'équipement coûtent {N} de moins » (Firion). */
       equipDiscount?: number;
-      sacrificeAtNextUpkeep?: boolean;
       /** « … sauf que c'est un Démon noir » (Ardyn, the Usurper) : couleurs et sous-types remplacés. */
       setColors?: Color[];
       /** « … en plus de ses autres couleurs » (The Jolly Balloon Man). */
@@ -512,7 +499,7 @@ export type Effect =
   | { op: "spellFate"; fate: "exile" | "plot" | "rebound" | "battlefieldTransformed" | "bottom"; what?: Ref; counter?: string }
   /** Copies d'un sort sur la pile (mêmes cibles). */
   /**
-   * `haste`, `sacrificeAtEndStep` : la copie d'un sort de créature a la célérité et est sacrifiée au début de la
+   * `haste`, `atEnd: "sacrifice"` : la copie d'un sort de créature a la célérité et est sacrifiée au début de la
    * prochaine étape de fin (même option que `copyToken`).
    */
   /** `loyalty` : la copie (un planeswalker) a cette loyauté de départ (victime X d'Ob Nixilis, the Adversary). */
@@ -521,7 +508,7 @@ export type Effect =
       what: Ref;
       count: Amount;
       haste?: boolean;
-      sacrificeAtEndStep?: boolean;
+      atEnd?: "sacrifice";
       nonlegendary?: boolean;
       loyalty?: Amount;
     }
@@ -532,21 +519,21 @@ export type Effect =
   | { op: "exileTop"; who: Ref; n?: Amount; allBut?: Amount; store?: string; faceDown?: MoveSpec["faceDown"] }
   /** Permet au contrôleur de jouer ces cartes exilées ce tour-ci. `spellsOnly` : lancer seulement, sans timing, gratuitement. */
   /**
-   * `forever` : « tant qu'elle reste exilée » (Emrakul) ; `condition` : seulement tant qu'elle est remplie ;
+   * `condition` : seulement tant qu'elle est remplie ;
    * `for` : qui peut la jouer à la place du contrôleur de l'effet (voir ce champ), `extraCost` et `tapped`.
    */
   | {
       op: "grantPlay";
       what: Ref;
-      /** « jusqu'à la fin de votre prochain tour » ; avec `for: "owner"` : « jusqu'à votre prochain tour » (Memory Vessel). */
-      untilYourNextTurn?: boolean;
-      /** Avec `for: "owner"` : « jusqu'à la fin de son prochain tour » (Suspend Aggression). */
-      untilOwnersNextTurn?: boolean;
-      /** « jusqu'à votre prochaine étape de fin » (Shadow Urchin). */
-      untilYourNextEndStep?: boolean;
+      /**
+       * Absente : jusqu'à la fin du tour. `untilYourNextTurn` : « jusqu'à la fin de votre prochain tour », avec
+       * `for: "owner"` : « jusqu'à votre prochain tour » (Memory Vessel) ; `untilOwnersNextTurn`, avec `for: "owner"` :
+       * « jusqu'à la fin de son prochain tour » (Suspend Aggression) ; `untilYourNextEndStep` : « jusqu'à votre prochaine
+       * étape de fin » (Shadow Urchin) ; `forever` : sans limite (« tant qu'elle reste exilée », Emrakul).
+       */
+      duration?: "untilYourNextTurn" | "untilOwnersNextTurn" | "untilYourNextEndStep" | "forever";
       free?: boolean;
       anyTime?: boolean;
-      forever?: boolean;
       /** « … jusqu'à ce que vous exiliez une autre carte avec cette créature » : les permissions précédentes de la source
        * prennent fin (Superior Foes of Spider-Man). */
       replacePrevious?: boolean;
@@ -917,6 +904,34 @@ export type Effect =
 
 /** Ce qu'offre un cadeau : une carte, une Nourriture, un Poisson engagé, un Trésor. */
 export type GiftKind = "card" | "food" | "fish" | "treasure";
+
+/**
+ * Durée d'un effet `modify` liée à un état (611.2b) : `source`, tant que la source reste sur le champ de bataille (Kitesail
+ * Larcenist) ; `sourceTapped`, tant qu'elle reste engagée (Hedge Whisperer) ; `youControlSource`, tant que vous la
+ * contrôlez (Ty Lee, Spider-Woman : cesse si elle part ou change de contrôleur) ; `tapped`, pour chaque objet touché, tant
+ * qu'il reste engagé (Braided Net) ; `{ counter }`, pour chaque objet touché, tant qu'il a un marqueur de cette sorte
+ * (Ultima) ; `{ exiled }`, jusqu'à ce que la carte désignée quitte l'exil (Emrakul).
+ */
+export type ModifyWhile =
+  | "source"
+  | "sourceTapped"
+  | "youControlSource"
+  | "tapped"
+  | { counter: string }
+  | {
+      exiled: Ref;
+    };
+
+/**
+ * Sort des jetons copies (`copyToken`) : sacrifiés (`sacrifice`) ou exilés (`exile`, Stormsplitter) au début de la
+ * prochaine étape de fin ; avec `at`, à la fin du combat (`endOfCombat` : myriade, Shredder) ou au début du prochain
+ * entretien (`nextUpkeep`, Firion).
+ */
+export type CopyFate =
+  | "sacrifice"
+  | "exile"
+  | { fate: "sacrifice" | "exile"; at: "endOfCombat" }
+  | { fate: "sacrifice"; at: "nextUpkeep" };
 
 // ---------------------------------------------------------------------------
 // État de partie

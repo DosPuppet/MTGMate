@@ -1,3 +1,4 @@
+import { evalAmount, staticContext } from "./effects";
 import type { AmountMod } from "./modifiers";
 import { alivePlayers, chars, commandZoneAbilities, newId, nextTimestamp, obj, opponentsOf, snapshot } from "./state";
 import { matchesObjectFilter, matchesView, withChosen } from "./targets";
@@ -139,6 +140,22 @@ export interface ActiveReplacement {
 }
 
 /**
+ * « Autant plus N » d'un remplacement (`modify.add`), évalué de son point de vue (`ref.self` : sa source, Fated
+ * Firepower, Hawkeye) ; un montant qui n'est pas un nombre écrit est borné à 0 (« autant que sa force »). 0 : rien à ajouter.
+ */
+export function replacementAdd(s: GameState, a: ActiveReplacement): number {
+  const add = a.r.modify.add;
+  if (add === undefined || typeof add === "number") return add ?? 0;
+  return Math.max(0, evalAmount(s, staticContext(s, a.controller, a.sourceId ?? ""), add));
+}
+
+/** « Au moins N » d'un remplacement (`modify.atLeast`, Ojer Axonil : sa force), évalué de son point de vue. */
+export function replacementAtLeast(s: GameState, a: ActiveReplacement): number | undefined {
+  const min = a.r.modify.atLeast;
+  return min === undefined ? undefined : evalAmount(s, staticContext(s, a.controller, a.sourceId ?? ""), min);
+}
+
+/**
  * Remplacements d'événements chiffrés en vigueur (R1) : capacités `eventReplacement` des permanents et emblèmes de chaque
  * joueur encore en partie (condition remplie), puis effets de joueur qui portent un `replacement`.
  */
@@ -213,7 +230,8 @@ export function quantityMods(
   for (const a of eventReplacements(s, event)) {
     if (!applies(a)) continue;
     if (a.r.modify.prevent) prevented = true;
-    if (a.r.modify.add) mods.push({ add: a.r.modify.add });
+    const add = replacementAdd(s, a);
+    if (add) mods.push({ add });
     if (a.r.modify.times) mods.push({ times: a.r.modify.times });
     consumeReplacement(s, a);
   }

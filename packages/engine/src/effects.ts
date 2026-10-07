@@ -968,10 +968,12 @@ export function moveWithSpec(
 ): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
-  // Vannifar : « enveloppez d'une cape une carte de votre main ».
-  if (spec.to === "battlefield" && spec.cloak) return putFaceDown(s, controller, id, true);
-  // Manifester (701.40) : face cachée, 2/2, sous le contrôle de son propriétaire (sauf « sous votre contrôle »).
-  if (spec.to === "battlefield" && spec.manifest) return putFaceDown(s, spec.underYourControl ? controller : o.owner, id, false);
+  // Face cachée, 2/2 : enveloppée d'une cape (701.58, Vannifar : « enveloppez d'une cape une carte de votre main »), avec la
+  // garde {2}, sous votre contrôle ; manifestée (701.40), sous le contrôle de son propriétaire (sauf « sous votre contrôle »).
+  if (spec.to === "battlefield" && spec.as) {
+    const cloak = spec.as === "cloak";
+    return putFaceDown(s, cloak || spec.underYourControl ? controller : o.owner, id, cloak);
+  }
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
   // Exilée face cachée (406.3) : les joueurs qui peuvent la regarder.
   const viewers =
