@@ -98,7 +98,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 2. `npm run import-cards -- edh` (cartes absentes du catalogue, impression d'origine, texte français), puis `npm run import-printings` (impressions ; il compare aussi l'identité de couleur à Scryfall).
 3. `npm run coverage -- --deck <id> --text` : cartes à scripter ; mécaniques nouvelles d'abord (formes génériques), puis les cartes dans `packages/cards/src/edh/<fichier>.ts`, tests de règles dans `packages/engine/test/edh*.test.ts`.
 4. Préconstruit `packages/cards/decks/cmd-<id>.json` (enregistré dans `decks.ts`), identique à la liste (`cards/test/commander-decks.test.ts`) ; il devient jouable quand toutes ses cartes le sont (liste `commanderPlayable` de `decklist.test.ts`).
-5. Équilibre : `npm run arena -- --a medium --b medium --format commander --pool commander --by-deck --deck cmd-<id> --games 600` (à 2 puis `--players 4`) contre les autres précons ; `npm run verify -- --set COMMANDER`.
+5. Équilibre : `npm run arena -- --a medium --b medium --format commander --pool commander --by-deck --deck cmd-<id> --games 600` (à 2 puis `--players 4`) contre les autres précons (par défaut sur tous les cœurs moins deux, parties distribuées une à une ; avancement toutes les 10 s ; le compte rendu cite les cinq décisions les plus lentes et la commande qui rejoue leur partie) ; `npm run verify -- --set COMMANDER`.
 
 ## Règle : pas de dette propre à une carte
 
