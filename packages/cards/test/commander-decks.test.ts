@@ -14,8 +14,11 @@ describe("decks Commander", () => {
 
   it("les decks Commander : 100 cartes, un commandant, tous les noms connus du catalogue", () => {
     expect(decks.map((d) => d.id)).toEqual([
+      "counter-blitz",
       "edgar-markov",
+      "fantastic-four",
       "multiverse-reforged",
+      "mutant-menace",
       "rakdos",
       "turtle-power",
       "ur-dragon",

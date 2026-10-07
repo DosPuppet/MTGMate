@@ -13,6 +13,7 @@ import {
   cond,
   entersWith,
   eventReplacement,
+  evolve,
   FOOD,
   fx,
   manaAbility,
@@ -315,13 +316,7 @@ export const EDH_TURTLES: Record<string, CardScript> = {
   // Vol : lu dans le texte. Évolution (702.100) : vérifiée au déclenchement et à la résolution.
   "Ray Fillet, Wave Warrior": {
     abilities: [
-      triggered(when.enters({ ...CREATURE_YOU, other: true }), [fx.addCounters(ref.self, 1)], {
-        condition: cond.any(
-          cond.amountGreater(amount.powerOf(ref.eventObject), amount.powerOf(ref.self)),
-          cond.amountGreater(amount.toughnessOf(ref.eventObject), amount.toughnessOf(ref.self)),
-        ),
-        label: "Évolution",
-      }),
+      evolve,
       triggered(when.combatDamage(COUNTERED_YOU, true), [fx.draw(1)], {
         label: "Une de vos créatures avec un marqueur blesse un joueur : piochez une carte",
       }),

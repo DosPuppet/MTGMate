@@ -403,8 +403,14 @@ export const RECORD_VERSION = 1;
  *   montants), X d'un permanent connu dès son arrivée, mana d'artefact dépensé, jetons qui attaquent un joueur désigné,
  *   copies sacrifiées à la fin du combat, déclenchements de pioche doublés (Krang), prévention changée en marqueurs sur
  *   le permanent protégé (Vigor), couleur exclue d'un choix en arrivant (Thriving).
+ * - 149 : préconstruits Commander « Counter Blitz », « The Fantastic Four » et « Mutant Menace » : marqueurs de
+ *   radiation (radiation au début de la première phase principale, prolifération des joueurs), meule groupée (déclencheur
+ *   `milled`, « meulée ce tour-ci »), multikicker, équiper un commandant, contrôle rendu aux propriétaires, garder un
+ *   permanent de chaque type hors terrains, sort mis au-dessous de la bibliothèque, sacrifice remplacé par un renvoi en
+ *   main, F/E définies par le maximum de deux montants. Correction : « la première fois que cette capacité se résout ce
+ *   tour-ci » est remis à zéro à chaque tour (Nissa, Leyline Tamer et Belladonna Took ne marchaient qu'une fois par partie).
  */
-export const RULES_VERSION = 148;
+export const RULES_VERSION = 149;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

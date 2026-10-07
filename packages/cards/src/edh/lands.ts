@@ -72,6 +72,41 @@ const battleLand: CardScript = {
 /** Triomes et tours de New Capenna : arrivent engagés (types de terrain et cycle lus dans le texte). */
 const tappedTriland: CardScript = { abilities: [entersWith({ tapped: true })] };
 
+/** Terrains « à révélation » : engagés, sauf si vous révélez une carte de [type] ou de [type] de votre main (choix auto). */
+const revealLand = (a: ManaType, b: ManaType, typeA: string, typeB: string): CardScript => ({
+  abilities: [
+    entersWith({
+      tapped: true,
+      condition: cond.not(cond.amountAtLeast(amount.countIn("hand", { anySubtype: [typeA, typeB] }), 1)),
+      label: `Engagé, sauf si vous révélez ${LAND_FR[typeA] ?? typeA} ou ${LAND_FR[typeB] ?? typeB} de votre main`,
+    }),
+    manaAbility([a, b]),
+  ],
+});
+
+/** Terrains filtres : {T} : {C} ; {A/B}, {T} : deux mana parmi ces deux couleurs. */
+const filterLand = (a: ManaType, b: ManaType): CardScript => ({
+  abilities: [
+    manaAbility("C"),
+    activated({
+      mana: `{${a}/${b}}`,
+      tap: true,
+      effects: [fx.addManaCombination(2, [a, b])],
+      label: `{${a}}{${a}}, {${a}}{${b}} ou {${b}}{${b}}`,
+    }),
+  ],
+});
+
+/** Terrains « contaminés » : {C}, ou l'une de deux couleurs si vous contrôlez un Marais. */
+const taintedLand = (a: ManaType, b: ManaType): CardScript => ({
+  abilities: [manaAbility("C"), manaAbility([a, b], 1, { condition: cond.controls({ types: ["Land"], subtype: "Swamp" }) })],
+});
+
+/** Terrains « {1}, {T} : ajoutez {A}{B} » (Overflowing Basin). */
+const pairLand = (a: ManaType, b: ManaType): CardScript => ({
+  abilities: [activated({ mana: "{1}", tap: true, effects: [fx.addMana(a, b)], label: `{${a}}{${b}}` })],
+});
+
 /** Terrains « fetch » : {T}, 1 PV, sacrifice : une carte de [type] ou [type] sur le champ de bataille. */
 const fetchland = (a: string, b: string): CardScript => ({
   abilities: [
@@ -105,6 +140,35 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Clifftop Retreat": checkLand("R", "W", "Mountain", "Plains"),
   "Sulfur Falls": checkLand("U", "R", "Island", "Mountain"),
   "Radiant Summit": battleLand,
+  // Counter Blitz (Final Fantasy X).
+  Brushland: painSource("G", "W"),
+  "Canopy Vista": battleLand,
+  "Scorched Geyser": battleLand,
+  "Sunpetal Grove": checkLand("G", "W", "Forest", "Plains"),
+  "Idyllic Beachfront": tappedTriland,
+  "Radiant Grove": tappedTriland,
+  "Tangled Islet": tappedTriland,
+  "Seaside Citadel": { abilities: [entersWith({ tapped: true }), manaAbility(["G", "W", "U"])] },
+  "Flooded Grove": filterLand("G", "U"),
+  // Choix automatique : une carte du bon type de la main est révélée d'office si possible (docs/approximations.md).
+  "Fortified Village": revealLand("G", "W", "Forest", "Plains"),
+  "Port Town": revealLand("W", "U", "Plains", "Island"),
+  "Vineglimmer Snarl": revealLand("G", "U", "Forest", "Island"),
+  "Overflowing Basin": pairLand("G", "U"),
+  "Skycloud Expanse": pairLand("W", "U"),
+  "Sungrass Prairie": pairLand("G", "W"),
+  // Mutant Menace (Fallout).
+  "Darkwater Catacombs": pairLand("U", "B"),
+  "Viridescent Bog": pairLand("B", "G"),
+  "Fetid Pools": tappedTriland,
+  "Woodland Cemetery": checkLand("B", "G", "Swamp", "Forest"),
+  "Talisman of Curiosity": painSource("G", "U"),
+  "Talisman of Resilience": painSource("B", "G"),
+  "Tainted Isle": taintedLand("U", "B"),
+  "Tainted Wood": taintedLand("B", "G"),
+  "Temple of the False God": {
+    abilities: [manaAbility("C", 2, { condition: cond.controls({ types: ["Land"] }, 5) })],
+  },
   "Cinder Glade": battleLand,
   "Sodden Verdure": battleLand,
   "Vernal Fen": battleLand,

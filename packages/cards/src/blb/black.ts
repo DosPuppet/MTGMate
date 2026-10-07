@@ -140,7 +140,7 @@ export const BLACK: Record<string, CardScript> = {
       mode(
         "Un adversaire exile un enchantement",
         [target.player("p", "opponent")],
-        [fx.sacrifice(ref.target("p"), { types: ["Enchantment"] }, 1, { exile: true })],
+        [fx.sacrifice(ref.target("p"), { types: ["Enchantment"] }, 1, { to: "exile" })],
       ),
     ),
   },

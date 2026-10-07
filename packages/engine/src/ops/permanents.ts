@@ -665,12 +665,14 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   gainControl(s, _r, e, ctx) {
-    const to = e.to ? resolveRef(s, ctx, e.to).find((x) => isPlayer(s, x)) : ctx.controller;
-    if (!to) return;
+    const to0 = e.to ? resolveRef(s, ctx, e.to).find((x) => isPlayer(s, x)) : ctx.controller;
+    if (!to0 && !e.toOwner) return;
     // 611.2b : « tant que vous contrôlez [la source] » ne fait rien si elle est déjà partie.
     if (e.duration === "whileYouControlSource" && !onBattlefield(s, ctx.sourceId)) return;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
+      const to = e.toOwner ? (o?.owner ?? "") : (to0 ?? "");
+      if (!to) continue;
       // Commandeer : « gagnez le contrôle du sort ciblé » (un permanent qui en résulte arrive sous votre contrôle).
       const item = s.stack.find((x) => x.id === id && x.kind === "spell");
       if (item && o && item.controller !== to) {

@@ -3,6 +3,7 @@
  * extensions (par Tarkir: Dragonstorm), plus ceux des decks Commander.
  */
 import type { ManaType, TokenSpec } from "@mtgx/engine";
+import { amount, cond, fx, ref, triggered, when } from "../tdm/common";
 
 export * from "../tdm/common";
 
@@ -23,3 +24,19 @@ export const VAMPIRE_FLYING: TokenSpec = creature("Vampire", ["B"], ["Vampire"],
 export const VAMPIRE_WB_LIFELINK: TokenSpec = creature("Vampire", ["W", "B"], ["Vampire"], 1, 1, { keywords: ["lifelink"] });
 /** Les cinq couleurs, pour « un mana de n'importe quelle couleur ». */
 export const ANY_COLOR: ManaType[] = ["W", "U", "B", "R", "G"];
+
+/**
+ * Évolution (702.100) : « chaque fois qu'une créature arrive sous votre contrôle, si elle a une force ou une endurance plus
+ * grande que celle-ci, mettez un marqueur +1/+1 sur celle-ci » (vérifiée au déclenchement et à la résolution).
+ */
+export const evolve = triggered(
+  when.enters({ types: ["Creature"], controller: "you", other: true }),
+  [fx.addCounters(ref.self, 1)],
+  {
+    condition: cond.any(
+      cond.amountGreater(amount.powerOf(ref.eventObject), amount.powerOf(ref.self)),
+      cond.amountGreater(amount.toughnessOf(ref.eventObject), amount.toughnessOf(ref.self)),
+    ),
+    label: "Évolution",
+  },
+);

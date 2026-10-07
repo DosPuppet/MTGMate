@@ -17,6 +17,9 @@ dans `packages/ai/test/smoke/edh.test.ts`. Couverture par deck : `npm run covera
 | `rakdos` | Rakdos, Lord of Riots (gros sorts gratuits) | 57 |
 | `multiverse-reforged` | Jace, Multiverse Architect (préconstruit officiel de Réalité fracturée) | 57 |
 | `turtle-power` | Heroes in a Half Shell (préconstruit officiel des Tortues Ninja) | 68 |
+| `counter-blitz` | Tidus, Yuna's Guardian (préconstruit officiel de Final Fantasy X) | 67 |
+| `fantastic-four` | Invisible Woman (préconstruit officiel des Quatre Fantastiques) | 47 (6 en commun avec Counter Blitz) |
+| `mutant-menace` | The Wise Mothman (préconstruit officiel de Fallout) | 57 (3 en commun avec Counter Blitz) |
 
 ## E0 — import ✅
 
@@ -166,3 +169,37 @@ Ajouté le 06/10/2026 à la demande de l'utilisateur. Liste officielle du préco
 - **Tests :** `engine/test/edh-turtles.test.ts` (18) ; menu de lancement de la fusion vérifié dans le navigateur (`test-results/fuse/`).
 - **Approximations :** Fast Forward (provocation), Vigor (mise au cimetière), Shredder (attaque d'un planeswalker), Coin of Mastery (mana produit en trop).
 - **Équilibre** (IA moyenne, `--by-deck --deck cmd-turtle-power`) : en duel, 47,4 % ± 4,0 (597 parties décidées, 19 tours) ; à quatre (sièges A, B, A, B), 35,7 % ± 5,4 (297 parties décidées, 42 tours), sous la part équitable de 50 % ; à étudier dans l'IA d'abord (attaques groupées des Tortues, marqueurs), la liste officielle n'est pas retouchée.
+
+## Préconstruits Counter Blitz, The Fantastic Four et Mutant Menace ✅ (521 / 521)
+
+Ajoutés le 07/10/2026 à la demande de l'utilisateur : trois listes officielles relevées dans MTGJSON (`docs/commander/decks/counter-blitz.txt`, `fantastic-four.txt`, `mutant-menace.txt`) ; préconstruits `cmd-counter-blitz` (Tidus, Yuna's Guardian, vert, blanc, bleu ; un Game Changer, Farewell, tranche estimée 3), `cmd-fantastic-four` (Invisible Woman, blanc, bleu, rouge, vert ; aucun Game Changer) et `cmd-mutant-menace` (The Wise Mothman, bleu, noir, vert ; aucun Game Changer).
+
+**Import :** 171 cartes absentes du catalogue ajoutées à EDH. Resourceful Defense n'a chez Scryfall qu'une impression française au texte anglais : texte français complété à la main (`french-overrides.json`) ; l'import par nom trouve maintenant ces textes aussi par le nom complet d'une carte à plusieurs faces (Double Jump // Flying Kick).
+
+**Counter Blitz (67, `edh/counterblitz.ts`, `edh/lands.ts`) :** Tidus, Yuna's Guardian ; gardiens et légendes : Auron, Gatta and Luzzu, Kimahri, Lord Jyscal Guado, Lulu, Maester Seymour, O'aka, Rikku, Shelinda, Sin, Tromell, Wakka, Yuna, Grand Summoner ; créatures : Altered Ego, Bane of Progress, Chasm Skulker, Chocobo Knights, Duskshell Crawler, Fathom Mage, Forgotten Ancient, Generous Patron, Grateful Apparition, Gyre Sage, Incubation Druid, Luminous Broodmoth, Rampant Rejuvenator, Scholar of New Horizons, Sunscorch Regent ; invocations : Summon: Ixion, Magus Sisters, Valefor, Yojimbo ; artefacts et enchantements : Blitzball Stadium, Bred for the Hunt, Everflowing Chalice, Fight Rigging, Inexorable Tide, Path of Discovery, Resourceful Defense, Sphere Grid, Summoner's Sending ; sorts : Collective Effort, Damning Verdict, Destroy Evil, Promise of Loyalty, Protection Magic, Pull from Tomorrow, Three Visits, Yuna's Decision, Yuna's Whistle ; terrains : Brushland, Canopy Vista, Flooded Grove, Forge of Heroes, Fortified Village, Idyllic Beachfront, Overflowing Basin, Port Town, Radiant Grove, Seaside Citadel, Skycloud Expanse, Sungrass Prairie, Sunpetal Grove, Tangled Islet, Temple of the False God, Vineglimmer Snarl.
+
+**The Fantastic Four (47, `edh/fantastic.ts`) :** Invisible Woman ; héros : Alicia Masters, Black Bolt, Council of Reeds, Crystal, Dragon Man, Franklin Richards, Galactus, H.E.R.B.I.E., Human Torch, Lockjaw, Medusa, Mister Fantastic, Namor, Power Pack, Silver Surfer, The Thing, Valeria Richards, Willie Lumpkin ; artefacts et enchantements : Cosmic Crucible, Mind's Dilation, Mirage Mirror, Monologue Tax, Negative Zone Portal, The Fantasticar, Unstable Molecule Suit ; sorts : Cleansing Nova, Clever Concealment, Cut a Deal, Deep Analysis, Fantastic Elasticity, First Family, Flame On!, Galvanic Iteration, Hull Breach, Into the Time Vortex, Invisible Force Field, It's Clobberin' Time!, Nova Flame, Recurring Insight, Seize the Day, Taunt from the Rampart, Terramorph, Tragic Arrogance, Ultimate Nullification ; terrains : Rejuvenating Springs, Scorched Geyser.
+
+**Mutant Menace (57, `edh/mutant.ts`, `edh/lands.ts`) :** The Wise Mothman ; Mutants et légendes : Agent Frank Horrigan, Alpha Deathclaw, Hancock, Harold and Bob, Jason Bright, Lily Bowen, Marcus, Piper Wright, Raul, Strong, The Master ; créatures : Bloatfly Swarm, Cathedral Acolyte, Feral Ghoul, Glowing One, Infesting Radroach, Lumbering Megasloth, Mirelurk Queen, Nightkin Ambusher, Rampaging Yao Guai, Screeching Scorchbeast, Tato Farmer, Vexing Radgull, Watchful Radstag, Winding Constrictor, Young Deathclaws ; artefacts et enchantements : Branching Evolution, Contagion Clasp, Guardian Project, Nuka-Nuke Launcher, Power Fist, Recon Craft Theta, Strength Bobblehead, Struggle for Project Purity, Vault 12: The Necropolis, Vault 87: Forced Evolution ; sorts : Atomize, Biomass Mutation, Casualties of War, Contaminated Drink, Find // Finality, Mutational Advantage, Nuclear Fallout, Putrefy, Radstorm, Rampant Growth ; terrains : Darkwater Catacombs, Fetid Pools, Mariposa Military Base, Mortuary Mire, Tainted Isle, Tainted Wood, Viridescent Bog, Woodland Cemetery ; talismans : Curiosity, Resilience.
+
+- **Moteur :**
+  - marqueurs de radiation (Fallout) : `PlayerState.rad`, `fx.rad`, `amount.rad` ; au début de sa première phase principale, un joueur qui en a meule autant de cartes et perd 1 PV et un marqueur par carte non-terrain meulée (Strong : il gagne des PV, `radiationGains`) ; la prolifération en donne un de plus ; pastille ☢ sur le plateau et ligne du journal ;
+  - meule groupée : `millCards` (une seule meule, un seul événement `milled`), déclencheur « chaque fois qu'une ou plusieurs cartes [non-terrain] sont meulées » (`{ on: "milled", whose, nonland }`, `amount.eventAmount` : leur nombre), filtre « meulée ce tour-ci » (`milledThisTurn`, carte arrivée de la bibliothèque au cimetière pendant ce tour) ;
+  - multikicker (702.33c, Everflowing Chalice), lu dans le texte comme l'escouade ; « Equip commander {N} » lu dans le texte (une capacité d'Équiper de plus, qui ne cible qu'un commandant) ;
+  - contrôle rendu à chaque propriétaire (`fx.returnControlToOwners`, Alicia Masters) ; « garder un permanent de chaque type » sans les terrains (`keepOnePerType(…, true)`, Tragic Arrogance) ; sort mis au-dessous de la bibliothèque (`fx.bottomOnResolve`) ; « chaque adversaire renvoie en main une créature de plus grande valeur de mana » (`sacrifice(…, { to: "hand" })`, l'ancien `exile: true` devient `to: "exile"`) ;
+  - F/E définies par le maximum de deux montants et par la plus grande valeur de mana d'un cimetière (Dragon Man) ; total d'un montant parmi les joueurs (`amount.sumOverPlayers`, Vault 12) ; évolution partagée (`evolve`, `edh/common.ts`).
+  - correction signalée par l'utilisateur : « la première fois que cette capacité se résout ce tour-ci » n'était jamais remis à zéro (Nissa, Leyline Tamer ne révélait une créature qu'une fois par partie ; Belladonna Took aussi) ; test dans `edh-multiverse.test.ts` ;
+  - corrections trouvées par le fuzz strict : les marqueurs de radiation et poison font avancer le cache des caractéristiques (Nightkin Ambusher, corrompu).
+- **Tests :** `engine/test/edh-counterblitz.test.ts` (17), `edh-fantastic.test.ts` (11), `edh-mutant.test.ts` (13), Nissa (1) ; fumée EDH (521 cartes).
+- **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-<id>`, contre les huit autres préconstruits à tour de rôle ; 400 parties en duel, 150 à quatre, sièges A, B, A, B, part équitable 50 %) :
+
+  | Préconstruit | Duel | À quatre |
+  |---|---|---|
+  | Counter Blitz | 46,8 % ± 4,9 | 45,0 % ± 8,0 |
+  | The Fantastic Four | 30,1 % ± 4,5 | 32,4 % ± 7,5 |
+  | Mutant Menace | 42,7 % ± 4,9 | 39,2 % ± 7,9 |
+
+  The Fantastic Four est nettement faible : l'IA joue peu de sorts non-créature avant le combat (ce qui éveille ses héros) et paie rarement {R}{G}{W}{U} ; à étudier dans l'IA d'abord, la liste officielle n'est pas retouchée. Une décision de l'IA moyenne de 50 s à quatre joueurs (plateau chargé).
+- **Outils :** budgets du bundle relevés (chunk `commander` 551 Ko pour un budget de 800 Ko, table des impressions 466 Ko pour 600 Ko).
+- **Approximations :** voir `docs/approximations.md` (radiation sans la pile, Sin, Altered Ego, Collective Effort, Forgotten Ancient, Resourceful Defense, Yuna, Grand Summoner, Fathom Mage, Promise of Loyalty, Deep Analysis, First Family, Galactus, Namor, Black Bolt, Silver Surfer, Willie Lumpkin, Tragic Arrogance, Negative Zone Portal, Cut a Deal, Taunt from the Rampart, Hancock, Harold and Bob, Jason Bright, Lumbering Megasloth, Nightkin Ambusher, Nuka-Nuke Launcher, Young Deathclaws, Winding Constrictor, Mariposa Military Base, Finality, Mutational Advantage).
+

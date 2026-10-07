@@ -60,6 +60,7 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
   "Sea of Clouds": twoOpponentsLand("W", "U"),
   "Spire Garden": twoOpponentsLand("R", "G"),
   "Undergrowth Stadium": twoOpponentsLand("B", "G"),
+  "Rejuvenating Springs": twoOpponentsLand("G", "U"),
   "Fierce Guardianship": {
     altCost: freeWithCommander,
     spell: spell([target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")], [fx.counter(ref.target())]),

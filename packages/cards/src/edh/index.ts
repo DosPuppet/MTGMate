@@ -4,9 +4,12 @@
  */
 import type { CardScript } from "@mtgx/engine";
 import { COMMANDER_CARDS } from "./commander";
+import { EDH_COUNTER_BLITZ } from "./counterblitz";
 import { EDH_EDGAR } from "./edgar";
+import { EDH_FANTASTIC } from "./fantastic";
 import { EDH_LANDS } from "./lands";
 import { EDH_MULTIVERSE } from "./multiverse";
+import { EDH_MUTANT } from "./mutant";
 import { EDH_RAKDOS } from "./rakdos";
 import { EDH_STAPLES } from "./staples";
 import { EDH_TURTLES } from "./turtles";
@@ -23,4 +26,7 @@ export const EDH_SCRIPTS: Record<string, CardScript> = {
   ...EDH_RAKDOS,
   ...EDH_MULTIVERSE,
   ...EDH_TURTLES,
+  ...EDH_COUNTER_BLITZ,
+  ...EDH_FANTASTIC,
+  ...EDH_MUTANT,
 };

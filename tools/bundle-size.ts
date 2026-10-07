@@ -13,11 +13,12 @@ const BUDGET: Record<string, number> = {
   "game.worker": 600 * KB,
   index: 2300 * KB,
   cartes: 6500 * KB,
-  // Cartes des decks Commander (pseudo-ensemble EDH, PLAN-E).
-  commander: 400 * KB,
+  // Cartes des decks Commander (pseudo-ensemble EDH, PLAN-E) : 551 Ko avec neuf préconstruits (07/10/2026) ; au-delà
+  // d'environ 1 Mo, les charger à la demande (PLAN-E, principe 1).
+  commander: 800 * KB,
   bibliotheques: 450 * KB,
-  // Table des impressions (éditeur de deck), chargée à la demande.
-  printings: 450 * KB,
+  // Table des impressions (éditeur de deck), chargée à la demande ; 466 Ko avec les cartes Commander (07/10/2026).
+  printings: 600 * KB,
 };
 
 execSync("npm run build -w @mtgx/client", { stdio: "pipe" });

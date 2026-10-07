@@ -399,6 +399,8 @@ export type GameEvent =
   | { type: "fizzle"; stackId: string; defId: string }
   | { type: "copy"; stackId: string; defId: string; player: PlayerId }
   | { type: "poison"; player: PlayerId; amount: number; total: number }
+  /** Marqueurs de radiation reçus (`amount` > 0) ou retirés par la radiation (`amount` < 0) ; `total` : après. */
+  | { type: "rad"; player: PlayerId; amount: number; total: number }
   /** Le joueur devient le monarque (724). */
   | { type: "monarch"; player: PlayerId }
   | { type: "endTurn"; player: PlayerId }

@@ -10,6 +10,7 @@ import {
   evalAmount,
   evalMoveSpec,
   grantPlay,
+  millCards,
   moveAndLog,
   moveDiscarded,
   moveWithSpec,
@@ -288,7 +289,7 @@ export const HANDLERS: OpHandlers = {
         const top = (s.players[p]?.library ?? []).slice(0, 2);
         if (top.length === 0) break;
         const [a, b] = top.map(traits);
-        for (const id of top) moveAndLog(s, id, "graveyard");
+        millCards(s, [[p, top]]);
         if (top.length < 2 || !a?.some((t) => b?.includes(t))) break;
         if (e.draw) drawCards(s, p, 1);
       }
@@ -407,9 +408,12 @@ export const HANDLERS: OpHandlers = {
   keepOnePerType(s, r, e, ctx, key) {
     for (const p of resolveRef(s, ctx, e.who)) {
       if (!isPlayer(s, p) || r.vars[key(`kdone-${p}`)]) continue;
-      const mine = s.battlefield.filter((id) => s.objects[id]?.controller === p);
+      const mine = s.battlefield.filter(
+        (id) => s.objects[id]?.controller === p && !(e.nonland && chars(s, id).types.includes("Land")),
+      );
       const kept = new Set<string>();
       for (const t of PERMANENT_TYPES) {
+        if (e.nonland && t === "Land") continue;
         const ofType = mine.filter((id) => chars(s, id).types.includes(t));
         if (ofType.length === 0) continue;
         if (ofType.length === 1) {
@@ -718,6 +722,7 @@ export const HANDLERS: OpHandlers = {
     const n = evalAmount(s, ctx, e.amount);
     let matching = 0;
     const f = e.store?.filter;
+    const batch: [PlayerId, ObjectId[]][] = [];
     for (const p of resolveRef(s, ctx, e.who)) {
       const library = s.players[p]?.library ?? [];
       const base = e.halfLibrary
@@ -728,16 +733,13 @@ export const HANDLERS: OpHandlers = {
       // Remplacements de la meule (R1, famille I) : The Water Crystal (« il en meule autant plus quatre »).
       const q = quantityMods(s, "mill", (a) => recipientMatches(s, a, p));
       const count = base > 0 && !q.prevented ? chooseReplacementOrder(base, q.mods, "min") : 0;
-      for (const id of library.slice(0, count)) {
-        if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
-        const uid = s.objects[id]?.uid;
-        moveAndLog(s, id, "graveyard");
-        // Les cartes meulées sont mémorisées (Dredger's Insight : « parmi les cartes meulées »).
-        const gy = s.players[p]?.graveyard ?? [];
-        const now = gy.find((x) => s.objects[x]?.uid === uid);
-        if (e.store && now) r.vars[`$ids:${e.store.name}`] = [...(r.vars[`$ids:${e.store.name}`] ?? []), now];
-      }
+      const cards = library.slice(0, count);
+      for (const id of cards) if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
+      batch.push([p, cards]);
     }
+    // Les cartes meulées sont mémorisées (Dredger's Insight : « parmi les cartes meulées »).
+    const milled = millCards(s, batch);
+    if (e.store) r.vars[`$ids:${e.store.name}`] = [...(r.vars[`$ids:${e.store.name}`] ?? []), ...milled];
     if (e.store) store(r, e.store.name, f ? matching : n);
     return;
   },
@@ -913,7 +915,12 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "sacrifice",
-                prompt: `${e.optional ? "Vous pouvez sacrifier" : "Sacrifiez"} ${n} permanent(s)`,
+                prompt:
+                  e.to === "hand"
+                    ? `Renvoyez ${n} permanent(s) dans la main de leur propriétaire`
+                    : e.to === "exile"
+                      ? `Exilez ${n} permanent(s)`
+                      : `${e.optional ? "Vous pouvez sacrifier" : "Sacrifiez"} ${n} permanent(s)`,
                 options: candidates,
                 min: e.optional ? 0 : max,
                 max,
@@ -926,11 +933,11 @@ export const HANDLERS: OpHandlers = {
       }
       r.vars[key(`done-${p}`)] = [1];
       store(r, e.store, readVar(ctx, e.store ?? "") + chosen.length);
-      if (e.exile) {
-        // « … l'exile » : les cartes exilées sont mémorisées (pour les lier à la source).
+      if (e.to) {
+        // « … l'exile » : les cartes exilées sont mémorisées (pour les lier à la source) ; « … la renvoie en main ».
         const exiled = chosen
           .filter((id) => onBattlefield(s, id))
-          .map((id) => moveWithSpec(s, ctx.controller, id, { to: "exile" }))
+          .map((id) => moveWithSpec(s, ctx.controller, id, { to: e.to ?? "exile" }))
           .filter((x): x is string => !!x);
         if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...exiled];
         continue;
@@ -1610,7 +1617,7 @@ export const HANDLERS: OpHandlers = {
       if (!pl) continue;
       const i = pl.library.findIndex((id) => matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }));
       const cards = i < 0 ? [...pl.library] : pl.library.slice(0, i + 1);
-      for (const id of cards) moveAndLog(s, id, "graveyard");
+      millCards(s, [[p, cards]]);
     }
     return;
   },

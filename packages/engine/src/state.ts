@@ -101,6 +101,8 @@ export type RulesEvent =
   | { e: "block"; blocker: ObjectId; attacker: ObjectId }
   /** Des créatures ont infligé des blessures de combat à ce joueur (une étape de blessures). */
   | { e: "combatDamageBatch"; player: PlayerId; sources: ObjectId[] }
+  /** Des cartes ont été meulées (701.13), en une fois : par joueur, le nombre de cartes non-terrain (Fallout). */
+  | { e: "milled"; byPlayer: { player: PlayerId; nonland: number; cards: number }[] }
   /** Un permanent est sacrifié (par son contrôleur). */
   | { e: "sacrifice"; objectId: ObjectId; player: PlayerId }
   /** Un joueur perd la partie. */
@@ -680,8 +682,9 @@ export function moveObject(
     if (back) moved.faceDefId = back.id;
   }
   if (to === "battlefield" && opts.tapped) moved.tapped = true;
-  // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders).
-  if (from0 === "battlefield") moved.arrivedFrom = "battlefield";
+  // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders) ; « meulée ce tour-ci » : de la
+  // bibliothèque au cimetière (Raul, Tato Farmer).
+  if (from0 === "battlefield" || (from0 === "library" && to === "graveyard")) moved.arrivedFrom = from0;
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
   const linker = linkTo ? s.objects[linkTo] : undefined;
   if (linker) {
@@ -828,5 +831,9 @@ export {
   snapshot,
 } from "./layers";
 
-/** Kicker payé un nombre quelconque de fois, compté comme le X du sort : réplique (702.56), escouade (702.157). */
-export const kickerPaidTimes = (d: CardDef): boolean => d.kickerKind === "replicate" || d.kickerKind === "squad";
+/**
+ * Kicker payé un nombre quelconque de fois, compté comme le X du sort : réplique (702.56), escouade (702.157),
+ * multikicker (702.33c).
+ */
+export const kickerPaidTimes = (d: CardDef): boolean =>
+  d.kickerKind === "replicate" || d.kickerKind === "squad" || d.kickerKind === "multikicker";

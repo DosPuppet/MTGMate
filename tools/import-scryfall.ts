@@ -231,7 +231,8 @@ async function importByName(SET: string): Promise<void> {
       continue;
     }
     // Texte français complété à la main quand aucune impression française n'a le sien (`french-overrides.json`).
-    const fix = FRENCH_OVERRIDES[name];
+    // Par le nom de la decklist (le recto d'une carte à plusieurs faces) ou par le nom complet de la carte.
+    const fix = FRENCH_OVERRIDES[name] ?? FRENCH_OVERRIDES[String(entry.name)];
     const { faces: faceFixes, ...cardFix } = fix ?? {};
     const withFr = fix ? { ...entry, fr: { ...(entry.fr as object | undefined), ...cardFix } } : entry;
     // Carte à plusieurs faces : le texte de chaque face (Double Jump // Flying Kick, sans impression française).

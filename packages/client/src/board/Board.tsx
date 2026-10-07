@@ -162,6 +162,14 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
               ☠ {player.poison}
             </span>
           )}
+          {!!player.rad && (
+            <span
+              className="poison-chip rad-chip"
+              title="Marqueurs de radiation : au début de sa première phase principale, le joueur meule autant de cartes et perd 1 point de vie (et un marqueur) par carte non-terrain meulée"
+            >
+              ☢ {player.rad}
+            </span>
+          )}
           {player.speed !== undefined && <SpeedGauge player={player.id} speed={player.speed} />}
           {player.emblems.map((e, i) => (
             <span key={`${e.name}-${i}`} className="emblem-chip" title={e.text}>

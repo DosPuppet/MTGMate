@@ -427,10 +427,14 @@ export const amount = {
   manaInPool: { kind: "manaInPool" } as Amount,
   /** Vos marqueurs poison. */
   poison: { kind: "poison" } as Amount,
+  /** Vos marqueurs de radiation (Fallout). */
+  rad: { kind: "poison", counter: "rad" } as Amount,
   /** Le plus grand nombre choisi (`fx.chooseNumbers`). */
   numberChosen: (store: string): Amount => ({ kind: "numberChosen", store }),
   /** La plus grande valeur du montant, vu de chacun des joueurs désignés (« … qu'un adversaire contrôle »). */
   maxOverPlayers: (players: Ref, of: Amount): Amount => ({ kind: "maxOverPlayers", players, amount: of }),
+  /** Le total d'un montant parmi les joueurs désignés (vu de chacun). */
+  sumOverPlayers: (players: Ref, of: Amount): Amount => ({ kind: "maxOverPlayers", players, amount: of, sum: true }),
   opponentsLostLife: turnEvents({ event: "lifeLoss", who: "opponent", distinct: "player" }),
   sacrificedThisTurn: turnEvents({ event: "sacrifice", who: "you" }),
   /** Portes déverrouillées parmi les Salles que vous contrôlez. */
@@ -742,7 +746,7 @@ export const fx = {
       store?: string;
       greatestManaValue?: boolean;
       greatestPower?: boolean;
-      exile?: boolean;
+      to?: "exile" | "hand";
       half?: boolean;
     } = {},
   ): Effect => ({
@@ -1170,9 +1174,15 @@ export const fx = {
     untilLeavesExile: card,
   }),
   giveControl: (what: Ref, to: Ref): Effect => ({ op: "gainControl", what, to, duration: "permanent" }),
+  /** Chaque objet désigné revient sous le contrôle de son propriétaire. */
+  returnControlToOwners: (what: Ref): Effect => ({ op: "gainControl", what, toOwner: true, duration: "permanent" }),
   untapUpTo: (filter: ObjectFilter, n: number): Effect => ({ op: "untapUpTo", filter, n }),
   exileOnResolve: { op: "spellFate", fate: "exile" } as Effect,
+  /** « Mettez [ce sort] au-dessous de la bibliothèque de son propriétaire » (Ultimate Nullification). */
+  bottomOnResolve: { op: "spellFate", fate: "bottom" } as Effect,
   poison: (who: Ref, n: Amount): Effect => ({ op: "poison", who, n }),
+  /** « [Le joueur] reçoit N marqueurs de radiation » (Fallout). */
+  rad: (who: Ref, n: Amount): Effect => ({ op: "poison", who, n, counter: "rad" }),
   /** Détruit l'objet et tous les autres permanents du même nom (Maelstrom Pulse). */
   destroySameName: (what: Ref): Effect => ({ op: "destroy", what: { kind: "sameName", ref: what, zone: "battlefield" } }),
   countersDivided: (total: Amount, to: Ref, opts: { counter?: string; anyNumber?: boolean } = {}): Effect => ({
@@ -1280,7 +1290,7 @@ export const fx = {
   },
   /** Blessures réparties entre les cibles désignées. */
   damageDivided: (total: Amount, to: Ref): Effect => ({ op: "damageDivided", total, to }),
-  keepOnePerType: (who: Ref): Effect => ({ op: "keepOnePerType", who }),
+  keepOnePerType: (who: Ref, nonland?: boolean): Effect => ({ op: "keepOnePerType", who, ...(nonland ? { nonland } : {}) }),
   keepSharingCreatureType: (who: Ref = ref.eachPlayer): Effect => ({ op: "keepSharingCreatureType", who }),
   /** « Vous obtenez un emblème avec … » */
   emblem: (

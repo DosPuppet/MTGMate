@@ -618,6 +618,7 @@ export const HANDLERS: OpHandlers = {
       if (e.fate === "plot") item.plotOnResolve = true;
       else if (e.fate === "rebound") item.rebound = true;
       else if (e.fate === "battlefieldTransformed") item.toBattlefieldTransformed = true;
+      else if (e.fate === "bottom") item.bottomInstead = true;
       else if (e.what) item.exileWithCounter = e.counter ?? "";
       else item.flashback = true;
     }

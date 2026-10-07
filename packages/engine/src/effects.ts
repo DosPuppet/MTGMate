@@ -650,16 +650,15 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return Object.values(pl.manaPool).reduce((n, v) => n + v, 0) + (pl.restrictedMana?.length ?? 0);
     }
     case "poison":
-      return s.players[ctx.controller]?.poison ?? 0;
+      return (a.counter === "rad" ? s.players[ctx.controller]?.rad : s.players[ctx.controller]?.poison) ?? 0;
     case "numberChosen":
       return Math.max(0, ...numbersChosen(ctx, a.store).map(([, n]) => n));
-    case "maxOverPlayers":
-      return Math.max(
-        0,
-        ...resolveRef(s, ctx, a.players)
-          .filter((p) => isPlayer(s, p))
-          .map((p) => evalAmount(s, { ...ctx, controller: p }, a.amount)),
-      );
+    case "maxOverPlayers": {
+      const values = resolveRef(s, ctx, a.players)
+        .filter((p) => isPlayer(s, p))
+        .map((p) => evalAmount(s, { ...ctx, controller: p }, a.amount));
+      return a.sum ? values.reduce((n, v) => n + v, 0) : Math.max(0, ...values);
+    }
     case "unlockedDoorNames": {
       const names = new Set<string>();
       for (const id of s.battlefield) {
@@ -901,6 +900,31 @@ export function moveAndLog(s: GameState, id: ObjectId, to: "hand" | "exile" | "g
   emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to });
   if (o.zone === "battlefield") removeFromCombat(s, id);
   return moveObject(s, id, to);
+}
+
+/**
+ * Meule (701.13) : les cartes désignées, de la bibliothèque de chaque joueur, vont dans son cimetière ; un seul
+ * événement groupé (« chaque fois qu'une ou plusieurs cartes non-terrain sont meulées », Fallout). Renvoie les cartes
+ * dans les cimetières.
+ */
+export function millCards(s: GameState, byPlayer: [PlayerId, ObjectId[]][]): ObjectId[] {
+  const out: ObjectId[] = [];
+  const counts: { player: PlayerId; nonland: number; cards: number }[] = [];
+  for (const [player, ids] of byPlayer) {
+    let nonland = 0;
+    let cards = 0;
+    for (const id of ids) {
+      const land = !!s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land");
+      const now = moveAndLog(s, id, "graveyard");
+      if (!now) continue;
+      out.push(now);
+      cards++;
+      if (!land) nonland++;
+    }
+    if (cards) counts.push({ player, nonland, cards });
+  }
+  if (counts.length) rulesEvent(s, { e: "milled", byPlayer: counts });
+  return out;
 }
 
 /** Ajoute un effet continu (couches) à des objets. */

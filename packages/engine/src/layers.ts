@@ -151,6 +151,9 @@ export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
   "aggregate:distinct:color",
   "aggregate:sum:counters",
   "aggregate:max:manaValue",
+  // Dragon Man, Reformed Robot : la plus grande valeur de mana parmi vos permanents et vos cartes de cimetière.
+  "max",
+  "aggregate:max:manaValue:graveyard:you",
   // Unlicensed Hearse : nombre de cartes exilées avec lui (cartes liées encore en exil).
   "refCount:linked",
 ]);
@@ -203,6 +206,14 @@ function cdaAggregate(s: GameState, o: GameObject, a: Extract<Amount, { kind: "a
       return permanents().reduce((n, id) => n + Math.max(0, obj(s, id).counters[a.counter ?? ""] ?? 0), 0);
     case "aggregate:max:manaValue":
       return Math.max(0, ...permanents().map((id) => manaValue(s.defs[obj(s, id).defId]?.manaCost)));
+    case "aggregate:max:manaValue:graveyard:you":
+      return Math.max(
+        0,
+        ...(s.players[o.controller]?.graveyard ?? [])
+          .map((id) => s.defs[obj(s, id).defId])
+          .filter((d) => printedMatch(d, filter))
+          .map((d) => manaValue(d?.manaCost)),
+      );
   }
   return 0;
 }
@@ -210,6 +221,7 @@ function cdaAggregate(s: GameState, o: GameObject, a: Extract<Amount, { kind: "a
 function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + cdaValue(s, o, x), 0);
+  if (a.kind === "max") return Math.max(0, ...a.of.map((x) => cdaValue(s, o, x)));
   // Master's Councillors : cimetières de N cartes ou plus.
   if (a.kind === "graveyardsWithAtLeast")
     return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;

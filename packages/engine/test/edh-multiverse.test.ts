@@ -162,6 +162,29 @@ describe("Multiverse Reforged (EDH)", () => {
   });
 
   describe("créatures", () => {
+    it("Nissa, Leyline Tamer : la première accalmie de chaque tour révèle une créature, pas la deuxième, et de nouveau au tour suivant", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Nissa, Leyline Tamer"],
+          hand: ["Forest", "Plains"],
+          library: ["Opt", "Bear Cub", "Island", "Island", "Island", "Savannah Lions", ...lands("Island", 6)],
+        },
+        p2: { library: lands("Island", 10) },
+      });
+      s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") } as never));
+      expect(onField(s, "p1", "Bear Cub")).toBe(1);
+      // Deuxième terrain du tour (permis par un effet ici simulé) : la créature n'est pas révélée.
+      s.turn.landsPlayed = 0;
+      s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Plains") } as never));
+      expect(onField(s, "p1", "Savannah Lions")).toBe(0);
+      // Au tour suivant de p1, la première accalmie révèle de nouveau une créature.
+      s = toTurnOf(s, "p2");
+      s = toTurnOf(s, "p1");
+      const land = idsOf(s, "p1", "hand", "Island")[0] ?? "";
+      s = settle(act(s, "p1", { type: "playLand", card: land } as never));
+      expect(onField(s, "p1", "Savannah Lions")).toBe(1);
+    });
+
     it("Jace, Multiverse Architect : l'adversaire qui ne paie pas {2} ne peut pas attaquer vos Jace ce tour-ci", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Jace, Multiverse Architect"] }, p2: { battlefield: ["Bear Cub"] } });
       s = advanceUntil(

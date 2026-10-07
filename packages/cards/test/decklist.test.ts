@@ -116,6 +116,9 @@ describe("règles de construction", () => {
       "cmd-rakdos",
       "cmd-multiverse-reforged",
       "cmd-turtle-power",
+      "cmd-counter-blitz",
+      "cmd-fantastic-four",
+      "cmd-mutant-menace",
     ];
     for (const d of DECKS) {
       if (d.format === "commander") {

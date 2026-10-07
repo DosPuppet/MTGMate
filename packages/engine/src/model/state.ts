@@ -233,6 +233,11 @@ export interface PlayerState {
   turnStats: TurnStats;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd). */
   poison?: number;
+  /**
+   * Marqueurs de radiation (Fallout) : au début de sa première phase principale, le joueur meule autant de cartes ; pour
+   * chaque carte non-terrain meulée, il perd 1 PV et un marqueur (`radiation`, turn.ts).
+   */
+  rad?: number;
   /** Nombre de tours commencés par ce joueur (Jace Reawakened). */
   turnsTaken?: number;
   /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */

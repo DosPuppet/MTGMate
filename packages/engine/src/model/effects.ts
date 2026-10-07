@@ -218,8 +218,11 @@ export type Effect =
       store?: string;
       /** « … avec la plus grande valeur de mana parmi … » (Break Under Pressure). */
       greatestManaValue?: boolean;
-      /** « … choisit une créature qu'il contrôle et l'exile » (Sothera) : `store` mémorise les cartes exilées. */
-      exile?: boolean;
+      /**
+       * Au lieu de sacrifier : « … choisit une créature qu'il contrôle et l'exile » (Sothera : `store` mémorise les cartes
+       * exilées) ou « … la renvoie dans la main de son propriétaire » (Summon: Valefor).
+       */
+      to?: "exile" | "hand";
       /** La moitié des permanents correspondants, arrondie à l'inférieur (Zodiark). */
       half?: boolean;
       /** « … avec la plus grande force parmi … » (Consumed by Greed). */
@@ -475,6 +478,9 @@ export type Effect =
    */
   | {
       op: "gainControl";
+      /** Chaque objet passe sous le contrôle de son propriétaire (Alicia Masters : « chaque joueur gagne le contrôle de
+       * toutes les créatures qu'il possède ») ; `to` est alors ignoré. */
+      toOwner?: boolean;
       what: Ref;
       to?: Ref;
       duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "permanent";
@@ -497,7 +503,8 @@ export type Effect =
    * `counter`, Goliath Daydreamer), comploté (Lilah), avec le rebond (702.88), ou mis sur le champ de bataille transformé
    * avec un marqueur de finalité (Esper Origins).
    */
-  | { op: "spellFate"; fate: "exile" | "plot" | "rebound" | "battlefieldTransformed"; what?: Ref; counter?: string }
+  /** `bottom` : le sort qui se résout va au-dessous de la bibliothèque de son propriétaire (Ultimate Nullification). */
+  | { op: "spellFate"; fate: "exile" | "plot" | "rebound" | "battlefieldTransformed" | "bottom"; what?: Ref; counter?: string }
   /** Copies d'un sort sur la pile (mêmes cibles). */
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature a la célérité et est sacrifiée en fin de tour. */
   /** `loyalty` : la copie (un planeswalker) a cette loyauté de départ (victime X d'Ob Nixilis, the Adversary). */
@@ -703,7 +710,8 @@ export type Effect =
    * avec ce marqueur (Goliath Daydreamer : « exilez cette carte avec un marqueur de rêve »).
    */
   /** Marqueurs poison (122.1f) ; 10 ou plus : le joueur perd. */
-  | { op: "poison"; who: Ref; n: Amount }
+  /** Marqueurs poison ; `counter: "rad"` : marqueurs de radiation (Fallout : « le joueur ciblé reçoit N marqueurs de radiation »). */
+  | { op: "poison"; who: Ref; n: Amount; counter?: "rad" }
   /** Marqueurs +1/+1 répartis entre les cibles (au moins 1 chacune). */
   /**
    * Répartir des marqueurs (+1/+1 par défaut, `counter`) entre les cibles, ou à la résolution entre les objets désignés ;
@@ -791,7 +799,8 @@ export type Effect =
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
   | { op: "damageDivided"; total: Amount; to: Ref }
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
-  | { op: "keepOnePerType"; who: Ref }
+  /** `nonland` : les terrains ne comptent pas et restent (Tragic Arrogance : « tous les autres permanents non-terrains »). */
+  | { op: "keepOnePerType"; who: Ref; nonland?: boolean }
   /**
    * Chaque joueur choisit un nombre quelconque de ses permanents du filtre, de force totale au plus `maxTotalPower`, puis
    * sacrifie les autres (Destined Confrontation).

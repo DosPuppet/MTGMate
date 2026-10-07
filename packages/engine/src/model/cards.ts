@@ -278,7 +278,9 @@ export interface CardDef {
     /** Réplique (702.56) : le kicker est payé X fois (X du sort) ; le sort est copié X fois. */
     | "replicate"
     /** Escouade (702.157) : le kicker est payé X fois ; en arrivant, le permanent crée X jetons qui sont ses copies. */
-    | "squad";
+    | "squad"
+    /** Multikicker (702.33c) : le kicker est payé X fois (X du sort, lu par `amount.x`). */
+    | "multikicker";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
@@ -1153,6 +1155,8 @@ export interface PlayerStaticAbilityDef {
   cantLose?: boolean;
   /** « Vous n'avez pas de taille de main maximale. » */
   noMaxHandSize?: boolean;
+  /** « Vous gagnez des points de vie au lieu d'en perdre à cause de la radiation » (Strong, the Brutish Thespian). */
+  radiationGains?: boolean;
   /** Mots-clés des sorts correspondants que le joueur contrôle (Lo and Li : « vos sorts de Leçon ont le lien de vie »). */
   spellKeywords?: { filter: ObjectFilter; keywords: Keyword[] };
   /**

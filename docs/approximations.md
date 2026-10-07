@@ -318,3 +318,23 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Vigor : « quand elle est mise dans un cimetière depuis n'importe où, mélangez-la dans la bibliothèque » est un remplacement : elle est mélangée sans passer par le cimetière (comme les Eldrazi) ;
   - `règle` Shredder, Shadow Master : la capacité se déclenche aussi quand il attaque un planeswalker (les copies attaquent les autres adversaires) ;
   - `règle` Coin of Mastery : le mana produit en trop par des sources (Sol Ring pour un seul {1}) est d'abord retiré du mana des artefacts.
+  - `règle` Radiation (Fallout) : la meule et la perte de PV du début de la première phase principale se font sans passer par la pile ;
+  - `règle` Sin, Unending Cataclysm : capacité d'arrivée (et non « en arrivant ») qui retire les marqueurs des artefacts, créatures et enchantements de vos adversaires (pas au choix) ;
+  - `règle` Altered Ego : les X marqueurs viennent d'une capacité d'arrivée de la copie ;
+  - `règle` Collective Effort : l'escalade se paie {1} par mode en plus (et non en engageant une créature) ;
+  - `choix auto` Forgotten Ancient : tous ses marqueurs +1/+1 vont sur une seule autre créature ; Resourceful Defense : tous les marqueurs +1/+1 sont déplacés ;
+  - `règle` Yuna, Grand Summoner : les deux marqueurs vont au sort de créature payé avec son mana (et non au prochain sort de créature du tour) ;
+  - `règle` Fathom Mage : une seule question pour un groupe de marqueurs, autant de cartes que de marqueurs ;
+  - `choix auto` Promise of Loyalty : chaque joueur choisit la créature qu'il garde en sacrifiant les autres ;
+  - `règle` Deep Analysis : le flashback coûte {1}{U}, sans les 3 points de vie ;
+  - `règle` First Family : seules les couleurs de vos permanents comptent (pas celles des sorts lancés ce tour-ci) ;
+  - `règle` Galactus : il attaque à chaque combat si possible, sans viser l'adversaire qui a le plus de PV ; Silver Surfer : la créature attaque à chaque combat si possible, sans viser ce joueur ; Taunt from the Rampart : « provoquez » se lit « attaquent à chaque combat si possible » ;
+  - `règle` Namor : « un joueur qui a plus de PV que vous » se lit « un adversaire a plus de PV que vous » ; Black Bolt : le permanent détruit est choisi parmi ceux de n'importe quel adversaire ;
+  - `règle` Willie Lumpkin : l'interdiction d'attaquer dure jusqu'au prochain tour de son contrôleur (ce qui couvre le prochain tour du joueur blessé) ;
+  - `choix auto` Tragic Arrogance : chaque joueur choisit lui-même ce qu'il garde ; Negative Zone Portal : la carte rendue est la première exilée (pas au hasard) ; Cut a Deal : chaque adversaire est compté comme ayant pioché ;
+  - `règle` Hancock : X compte ses marqueurs +1/+1 seulement ; Jason Bright : « une force différente de sa force de base » se lit « supérieure » ;
+  - `règle` Harold and Bob : la Forêt choisie gagne sa capacité pour toujours, et la carte reste au cimetière (elle ne devient pas une Aura) ;
+  - `règle` Lumbering Megasloth : seuls les marqueurs des permanents comptent (pas ceux des joueurs) ; Winding Constrictor : la clause « si vous deviez recevoir des marqueurs » n'est pas gérée ;
+  - `règle` Nightkin Ambusher : imblocable si un adversaire a un marqueur de radiation (pas seulement le joueur défenseur) ; Nuka-Nuke Launcher : l'intimidation se lit « ne peut être bloquée que par des créatures-artefacts », et les marqueurs de radiation frappent chaque adversaire jusqu'à votre prochain tour ;
+  - `règle` Young Deathclaws : la récupération coûte {4} (et non le coût de mana de la carte) et c'est une capacité de Young Deathclaws ;
+  - `règle` Mariposa Military Base : elle arrive toujours dégagée, sans marqueurs de radiation ; Finality : la créature qui reçoit les marqueurs est choisie comme une cible ; Mutational Advantage : les blessures sont prévenues sur vos permanents qui ont des marqueurs au moment des blessures.

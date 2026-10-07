@@ -13,6 +13,7 @@ import {
   changeCounters,
   chars,
   counterCount,
+  emit,
   isCreature,
   isRoom,
   onBattlefield,
@@ -87,7 +88,10 @@ export const HANDLERS: OpHandlers = {
     for (let t = 0; t < times; t++) {
       if (r.vars[key(`done${t}`)]) continue;
       const withCounters = s.battlefield.filter((id) => Object.values(s.objects[id]?.counters ?? {}).some((n) => n > 0));
-      const poisoned = s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.poison ?? 0) > 0);
+      // Joueurs avec des marqueurs poison ou de radiation (Fallout).
+      const poisoned = s.playerOrder.filter(
+        (p) => !s.players[p]?.lost && ((s.players[p]?.poison ?? 0) > 0 || (s.players[p]?.rad ?? 0) > 0),
+      );
       const options = [...withCounters, ...poisoned];
       if (options.length === 0) return;
       // Powerful Broker : « donnez au permanent ou joueur ciblé un marqueur de plus de chaque sorte » (sans choix).
@@ -128,6 +132,11 @@ export const HANDLERS: OpHandlers = {
         } else {
           const pl = s.players[v];
           if (pl && (pl.poison ?? 0) > 0) pl.poison = (pl.poison ?? 0) + 1;
+          if (pl && (pl.rad ?? 0) > 0) {
+            pl.rad = (pl.rad ?? 0) + 1;
+            bump(s); // des statiques en dépendent (Nightkin Ambusher)
+            emit({ type: "rad", player: v, amount: 1, total: pl.rad });
+          }
         }
       }
       r.vars[key(`done${t}`)] = [1];

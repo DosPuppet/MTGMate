@@ -18,7 +18,10 @@ export function outcomeHash(s: GameState, collapse = false): string {
     over: [s.over, s.winner],
     players: s.playerOrder.map((p) => {
       const pl = s.players[p];
-      return pl ? [p, pl.life, pl.poison ?? 0, pl.lost, zone(pl.library), zone(pl.hand), zone(pl.graveyard)] : [p, null];
+      // Marqueurs de radiation : seulement s'il y en a (les empreintes des parties sans Fallout ne changent pas).
+      return pl
+        ? [p, pl.life, pl.poison ?? 0, pl.lost, zone(pl.library), zone(pl.hand), zone(pl.graveyard), ...(pl.rad ? [pl.rad] : [])]
+        : [p, null];
     }),
     exile: zone(s.exile),
     battlefield: once(

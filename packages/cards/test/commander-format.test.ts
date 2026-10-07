@@ -44,9 +44,12 @@ describe("règles de construction du Commander (903.5)", () => {
   const rakdos = DECKS.find((d) => d.id === "cmd-rakdos")!;
   const multiverse = DECKS.find((d) => d.id === "cmd-multiverse-reforged")!;
   const turtles = DECKS.find((d) => d.id === "cmd-turtle-power")!;
+  const blitz = DECKS.find((d) => d.id === "cmd-counter-blitz")!;
+  const fantastic = DECKS.find((d) => d.id === "cmd-fantastic-four")!;
+  const mutant = DECKS.find((d) => d.id === "cmd-mutant-menace")!;
 
   it("les préconstruits sont légaux ; Game Changers et tranche estimée", () => {
-    for (const d of [edgar, yshtola, urDragon, rakdos, multiverse, turtles]) {
+    for (const d of [edgar, yshtola, urDragon, rakdos, multiverse, turtles, blitz, fantastic, mutant]) {
       const v = validateDeck(d, CARDS, "commander");
       expect(v.errors, d.id).toEqual([]);
       expect(v.legal).toBe(true);
@@ -95,6 +98,12 @@ describe("règles de construction du Commander (903.5)", () => {
     expect(t.commanders).toEqual(["Heroes in a Half Shell"]);
     expect(t.identity).toEqual(["W", "U", "B", "R", "G"]);
     expect(t.gameChangers).toEqual([]);
+    const b = validateDeck(blitz, CARDS, "commander");
+    expect(b.identity).toEqual(["W", "U", "G"]);
+    expect(b.gameChangers).toEqual(["Farewell"]);
+    expect(b.bracket).toBe("3");
+    expect(validateDeck(fantastic, CARDS, "commander").identity).toEqual(["W", "U", "R", "G"]);
+    expect(validateDeck(mutant, CARDS, "commander").identity).toEqual(["U", "B", "G"]);
   });
 
   const base = (): { commander: DeckEntries; main: DeckEntries } => ({

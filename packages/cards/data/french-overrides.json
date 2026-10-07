@@ -70,5 +70,8 @@
         "text": "Une créature ciblée que vous contrôlez inflige des blessures égales à sa force à une créature ciblée qu'un adversaire contrôle.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)"
       }
     ]
+  },
+  "Resourceful Defense": {
+    "text": "Chaque fois qu'un permanent que vous contrôlez quitte le champ de bataille, s'il avait des marqueurs sur lui, mettez ces marqueurs sur un permanent ciblé que vous contrôlez.\n{4}{W} : Déplacez n'importe quel nombre de marqueurs d'un permanent ciblé que vous contrôlez sur un autre permanent ciblé que vous contrôlez."
   }
 }

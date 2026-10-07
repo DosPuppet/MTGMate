@@ -48,7 +48,7 @@ export const CARDS: Record<string, CardScript> = {
     spell: spell(
       [target.player("t", "opponent")],
       [
-        fx.sacrifice(ref.target(), { types: ["Creature"] }, 1, { exile: true }),
+        fx.sacrifice(ref.target(), { types: ["Creature"] }, 1, { to: "exile" }),
         fx.moveAll("graveyard", ref.target(), {}, { to: "exile" }),
       ],
     ),

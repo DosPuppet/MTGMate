@@ -214,6 +214,8 @@ export interface ObjectFilter {
   prepared?: boolean;
   /** A attaqué ce tour-ci. */
   attackedThisTurn?: boolean;
+  /** Carte mise dans le cimetière depuis la bibliothèque ce tour-ci (meulée : Raul, Tato Farmer, The Master). */
+  milledThisTurn?: boolean;
   maxToughness?: number;
   /** Valeur de mana au plus égale au X du sort qui a mis la source en jeu (Dune Drifter). */
   maxManaValueX?: boolean;
@@ -468,6 +470,11 @@ export type TriggerSpec =
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
   /** `toYou` : seulement les blessures qui vous sont infligées (Tamiyo, Upriser Crowned). */
   | { on: "combatDamageBatch"; who: ObjectFilter; toYou?: boolean }
+  /**
+   * « Chaque fois qu'une ou plusieurs cartes [non-terrain] sont meulées » (une fois par meule) ; `whose` : par ce joueur
+   * (« chaque fois qu'un adversaire meule une carte non-terrain ») ; `amount.eventAmount` : le nombre de ces cartes.
+   */
+  | { on: "milled"; whose?: "you" | "opponent" | "any"; nonland?: boolean }
   /** « Chaque fois qu'une [créature] bloque » */
   /** `eventObject: "attacker"` : l'objet de l'événement est l'attaquant bloqué (Skewer Slinger : « cette créature »). */
   | { on: "blocks"; who: "self" | ObjectFilter; attacker?: ObjectFilter; eventObject?: "attacker" }
@@ -814,11 +821,13 @@ export type Amount =
    * La plus grande valeur du montant, évalué du point de vue de chacun des joueurs désignés (« le plus grand nombre
    * d'artefacts que contrôle un adversaire », Cavern-Hoard Dragon) ; 0 sans joueur.
    */
-  | { kind: "maxOverPlayers"; players: Ref; amount: Amount }
+  /** Le plus grand montant parmi les joueurs (vu de chacun) ; `sum` : leur total (Vault 12 : « marqueurs de radiation parmi les joueurs »). */
+  | { kind: "maxOverPlayers"; players: Ref; amount: Amount; sum?: boolean }
   /** Mana inutilisé de votre réserve, mana marqué compris (Omnath, Locus of the Void). */
   | { kind: "manaInPool" }
   /** Vos marqueurs poison (corrompu : `amount.maxOverPlayers(ref.eachOpponent, amount.poison)`). */
-  | { kind: "poison" }
+  /** Marqueurs poison de votre contrôleur ; `counter: "rad"` : ses marqueurs de radiation (Mariposa Military Base). */
+  | { kind: "poison"; counter?: "rad" }
   /** Le plus grand nombre choisi (`fx.chooseNumbers`, Wheel of Misfortune). */
   | { kind: "numberChosen"; store: string }
   /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */

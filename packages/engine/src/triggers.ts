@@ -783,6 +783,15 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
     }
+    // Fallout : « chaque fois qu'une ou plusieurs cartes non-terrain sont meulées » (une fois par meule, tous joueurs).
+    case "milled": {
+      if (ev.e !== "milled") return null;
+      const rows = ev.byPlayer.filter((x) =>
+        t.whose === "you" ? x.player === me : t.whose === "opponent" ? x.player !== me : true,
+      );
+      const n = rows.reduce((sum, x) => sum + (t.nonland ? x.nonland : x.cards), 0);
+      return n > 0 ? { player: rows[0]?.player, amount: n } : null;
+    }
     case "combatDamageBatch": {
       if (ev.e !== "combatDamageBatch" || (t.toYou && ev.player !== me)) return null;
       // Les créatures du lot qui correspondent (« ces créatures », « un de ces Dragons »).

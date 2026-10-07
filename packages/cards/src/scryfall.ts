@@ -139,9 +139,11 @@ export function parseEquip(text: string): string | undefined {
  * Variantes d'Équiper lues dans le texte : « Equip worthy {1} » (Marvel Super Heroes : créature légendaire non-Méchant
  * rouge et/ou blanche) ; « coûte {1} de moins par couleur de la créature ciblée » (Dragonfire Blade).
  */
-function equipVariant(text: string): { worthy?: boolean; byColors?: boolean } {
+function equipVariant(text: string): { worthy?: boolean; byColors?: boolean; commander?: string } {
   return {
     worthy: /^Equip worthy /m.test(text) || undefined,
+    // « Equip commander {2} » (Commander) : une capacité d'Équiper de plus, qui ne cible qu'un commandant.
+    commander: /^Equip commander ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1],
     byColors: /costs \{1\} less to activate for each color of the creature it targets/.test(text) || undefined,
   };
 }
@@ -449,7 +451,7 @@ function intrinsicAbilities(
   equipReduced?: boolean,
   saddle?: number,
   crewOnce?: boolean,
-  equipKind: { worthy?: boolean; byColors?: boolean } = {},
+  equipKind: { worthy?: boolean; byColors?: boolean; commander?: string } = {},
   prowessCount = 1,
 ): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
@@ -480,6 +482,23 @@ function intrinsicAbilities(
       reduceByTargetColors: equipKind.byColors,
       equip: true,
       label: `Équiper ${equipKind.worthy ? "(digne) " : ""}${equip}`,
+    });
+  }
+  if (equipKind.commander) {
+    out.push({
+      kind: "activated",
+      cost: { mana: parseManaCost(equipKind.commander) },
+      targets: [
+        {
+          id: "t",
+          label: "commandant que vous contrôlez",
+          filter: { objects: { types: ["Creature"], controller: "you", commander: true } },
+        },
+      ],
+      effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
+      sorcerySpeed: true,
+      equip: true,
+      label: `Équiper un commandant ${equipKind.commander}`,
     });
   }
   if (ward) out.push(dsl.wardAbility(ward));
@@ -891,6 +910,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const replicate = /^Replicate ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Escouade (702.157) : le coût d'escouade est payé X fois (kicker de sorte « squad ») ; autant de copies en arrivant.
   const squad = /^Squad ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Multikicker (702.33c) : payé X fois, comme la réplique ; le script lit X (`amount.x`).
+  const multikicker = /^Multikicker ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Suspension (702.62) : action spéciale depuis la main, la carte exilée avec N marqueurs de temps.
   const suspend = /^Suspend (\d+)—((?:\{[^}]+\})+)/m.exec(raw.oracleText);
   // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
@@ -1207,8 +1228,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     spell,
     kicker: script?.kicker
       ? parseManaCost(script.kicker)
-      : replicate || squad
-        ? parseManaCost(replicate ?? squad ?? "")
+      : replicate || squad || multikicker
+        ? parseManaCost(replicate ?? squad ?? multikicker ?? "")
         : offspring
           ? parseManaCost(offspring)
           : waterbendKicker
@@ -1220,25 +1241,27 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? "replicate"
       : squad
         ? "squad"
-        : offspring
-          ? "offspring"
-          : waterbendKicker
-            ? "waterbend"
-            : lifeOrPay
-              ? "life"
-              : gift
-                ? "gift"
-                : bargain
-                  ? "bargain"
-                  : blight
-                    ? "blight"
-                    : teamwork
-                      ? "teamwork"
-                      : evidence
-                        ? "evidence"
-                        : exileGraveyard
-                          ? "exileGraveyard"
-                          : undefined,
+        : multikicker
+          ? "multikicker"
+          : offspring
+            ? "offspring"
+            : waterbendKicker
+              ? "waterbend"
+              : lifeOrPay
+                ? "life"
+                : gift
+                  ? "gift"
+                  : bargain
+                    ? "bargain"
+                    : blight
+                      ? "blight"
+                      : teamwork
+                        ? "teamwork"
+                        : evidence
+                          ? "evidence"
+                          : exileGraveyard
+                            ? "exileGraveyard"
+                            : undefined,
     gift,
     kickerCost:
       script?.kickerCost ??

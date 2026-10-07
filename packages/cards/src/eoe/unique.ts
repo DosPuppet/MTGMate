@@ -116,7 +116,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.dies(CREATURE_YOU_CONTROL),
-        [fx.sacrifice(ref.eachOpponent, CREATURES, 1, { exile: true, store: "x" }), fx.link(ref.stored("x"))],
+        [fx.sacrifice(ref.eachOpponent, CREATURES, 1, { to: "exile", store: "x" }), fx.link(ref.stored("x"))],
         { label: "Chaque adversaire exile une de ses créatures" },
       ),
       triggered(

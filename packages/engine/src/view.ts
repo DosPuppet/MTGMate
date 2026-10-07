@@ -154,6 +154,8 @@ export interface PlayerView {
   monarch?: true;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd), absents s'il n'en a aucun. */
   poison?: number;
+  /** Marqueurs de radiation (Fallout), absents s'il n'en a aucun. */
+  rad?: number;
 }
 
 export type PendingView =
@@ -453,6 +455,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       ...(pl.citysBlessing ? { citysBlessing: true as const } : {}),
       ...(s.monarch === p ? { monarch: true as const } : {}),
       ...(pl.poison ? { poison: pl.poison } : {}),
+      ...(pl.rad ? { rad: pl.rad } : {}),
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },
       ...(pl.restrictedMana?.length ? { restrictedMana: pl.restrictedMana.map((m) => m.type) } : {}),

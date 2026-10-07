@@ -76,7 +76,7 @@ export const BLACK: Record<string, CardScript> = {
     // L'adversaire choisit parmi ses créatures et planeswalkers de plus grande valeur de mana, et l'exile.
     spell: spell(
       [target.player("t", "opponent")],
-      [fx.sacrifice(ref.target(), { types: ["Creature", "Planeswalker"] }, 1, { greatestManaValue: true, exile: true })],
+      [fx.sacrifice(ref.target(), { types: ["Creature", "Planeswalker"] }, 1, { greatestManaValue: true, to: "exile" })],
     ),
   },
   "Eternal Student": {

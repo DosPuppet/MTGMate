@@ -68,7 +68,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.sacrifice(ref.target("p"), { types: ["Creature"], token: false }, 1, { exile: true, store: "c" }),
+          fx.sacrifice(ref.target("p"), { types: ["Creature"], token: false }, 1, { to: "exile", store: "c" }),
           fx.link(ref.stored("c")),
           fx.chooseAmong(ref.filtered(ref.graveyardOf(ref.target("p")), { notTypes: ["Land"] }), ref.target("p"), "g", {
             anyZone: true,

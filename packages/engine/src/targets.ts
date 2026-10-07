@@ -257,6 +257,9 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   if (f.discardedThisTurn && o.discardedTurn !== s.turn.number) return false;
   // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders).
   if (f.fromBattlefieldThisTurn && (o.arrivedFrom !== "battlefield" || o.controlledSince !== s.turn.number)) return false;
+  // « meulée ce tour-ci » : arrivée dans le cimetière depuis la bibliothèque pendant ce tour (Raul, Tato Farmer).
+  if (f.milledThisTurn && (o.zone !== "graveyard" || o.arrivedFrom !== "library" || o.controlledSince !== s.turn.number))
+    return false;
   if (f.sameNameAs) {
     const name = s.defs[o.defId]?.name;
     const like = f.sameNameAs;

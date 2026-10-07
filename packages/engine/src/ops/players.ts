@@ -13,7 +13,19 @@ import {
   resolveRef,
   store,
 } from "../effects";
-import { apnapOrder, chars, emit, isPlayer, moveObject, onBattlefield, opponentsOf, random, rulesEvent, shuffle } from "../state";
+import {
+  apnapOrder,
+  bump,
+  chars,
+  emit,
+  isPlayer,
+  moveObject,
+  onBattlefield,
+  opponentsOf,
+  random,
+  rulesEvent,
+  shuffle,
+} from "../state";
 import { addPlayerEffect, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
@@ -333,8 +345,15 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who)) {
       const pl = s.players[p];
       if (!pl || n <= 0) continue;
+      if (e.counter === "rad") {
+        pl.rad = (pl.rad ?? 0) + n;
+        emit({ type: "rad", player: p, amount: n, total: pl.rad });
+        bump(s);
+        continue;
+      }
       pl.poison = (pl.poison ?? 0) + n;
       emit({ type: "poison", player: p, amount: n, total: pl.poison });
+      bump(s); // corrompu : des statiques en dépendent
     }
     return;
   },

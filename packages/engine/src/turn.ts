@@ -8,6 +8,8 @@ import {
   destroy,
   drawCard,
   drawCards,
+  gainLife,
+  loseLife,
   phaseIn,
   putIntoGraveyard,
   removeFromCombat,
@@ -17,7 +19,7 @@ import {
 } from "./actions";
 import { ask, cardRef } from "./choices";
 import { syncControl } from "./control";
-import { announceDiscard, announceDiscardBatch, evalAmount, moveDiscarded, staticContext } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount, millCards, moveDiscarded, staticContext } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { bumpFor, copiedDefId, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
@@ -144,11 +146,31 @@ function stepEvent(s: GameState): void {
   if (s.turn.step === "end" && s.monarch === s.turn.active && !s.players[s.monarch]?.lost) drawCards(s, s.monarch, 1);
   if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
   if (s.turn.step === "main1" || s.turn.step === "main2") releaseDelayedTriggers(s, "main");
+  if (s.turn.step === "main1") radiation(s, s.turn.active);
   if (s.turn.step === "upkeep") {
     releaseDelayedTriggers(s, "upkeep");
     suspendUpkeep(s);
   }
   rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
+}
+
+/**
+ * Radiation (Fallout) : au début de sa première phase principale, le joueur qui a des marqueurs de radiation meule autant
+ * de cartes ; pour chaque carte non-terrain meulée, il perd 1 PV (il en gagne avec Strong, the Brutish Thespian) et un
+ * marqueur. Approximation : sans passer par la pile.
+ */
+function radiation(s: GameState, p: PlayerId): void {
+  const pl = s.players[p];
+  const n = pl?.rad ?? 0;
+  if (!pl || pl.lost || n <= 0 || s.turn.mainPhase !== 1) return;
+  const milled = millCards(s, [[p, pl.library.slice(0, n)]]);
+  const nonland = milled.filter((id) => !s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land")).length;
+  if (nonland <= 0) return;
+  if (playerStatic(s, p, "radiationGains")) gainLife(s, p, nonland);
+  else loseLife(s, p, nonland);
+  pl.rad = Math.max(0, n - nonland);
+  emit({ type: "rad", player: p, amount: -nonland, total: pl.rad });
+  bump(s); // des statiques en dépendent (Nightkin Ambusher)
 }
 
 /**
@@ -683,6 +705,9 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
   // Effets sur les joueurs « ce tour-ci » (ou jusqu'à un tour passé) : expirés.
   s.playerEffects = s.playerEffects.filter((e) => e.until === null || e.until >= s.turn.number);
   s.turn.onceFired = [];
+  // « la première fois que cette capacité se résout ce tour-ci » (Nissa, Leyline Tamer ; Belladonna Took) : compteurs remis
+  // à zéro à chaque tour.
+  s.turn.resolutionCounts = undefined;
   // « Jusqu'à votre prochain tour » : effets et emblèmes temporaires de ce joueur.
   const before = s.effects.length;
   s.effects = s.effects.filter((e) => !(e.duration === "untilYourNextTurn" && e.until === p));

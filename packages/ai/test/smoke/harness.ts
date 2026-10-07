@@ -43,6 +43,8 @@ const LIBRARY = [
 
 /** Permanents supplémentaires du joueur 1 pour les cartes qui en exigent (« Enchant artifact you control »). */
 const EXTRA_P1: Record<string, string[]> = {
+  // « En coût additionnel, sacrifiez une créature légendaire » (Commander).
+  "Ultimate Nullification": ["Invisible Woman"],
   // Lorwyn Eclipsed : « contemplez un [type] et exilez-le » (un changelin convient).
   "Champion of the Weird": ["Changeling Wayfinder"],
   "Champion of the Path": ["Changeling Wayfinder"],

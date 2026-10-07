@@ -292,6 +292,14 @@ export function describeEvents(
         if (e.defIds.length)
           add(`${who(e.player)} ${e.player === me ? "révélez" : "révèle"} ${e.defIds.map(name).join(", ")}.`, kind(e.player));
         break;
+      case "rad":
+        add(
+          e.amount > 0
+            ? `${who(e.player)} ${e.player === me ? "recevez" : "reçoit"} ${e.amount} marqueur${e.amount > 1 ? "s" : ""} de radiation (${e.total}).`
+            : `Radiation : ${who(e.player)} ${e.player === me ? "perdez" : "perd"} ${-e.amount} marqueur${e.amount < -1 ? "s" : ""} de radiation (${e.total}).`,
+          kind(e.player),
+        );
+        break;
       case "poison":
         add(
           `${who(e.player)} ${e.player === me ? "recevez" : "reçoit"} ${e.amount} marqueur${e.amount > 1 ? "s" : ""} poison (${e.total}).`,
