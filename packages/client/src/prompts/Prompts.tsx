@@ -581,6 +581,8 @@ function CastingPrompt() {
 function faceLabel(source: ObjectView | undefined, face: string | undefined, lang: Lang): string {
   if (!source) return "";
   if (!face) return lang === "fr" && source.fr?.name ? source.fr.name : (source.name.split(" // ")[0] ?? source.name);
+  // Fusion (702.102) : les deux moitiés, sous le nom complet de la carte.
+  if (face === source.name) return (lang === "fr" && source.fr?.name) || face;
   const f = source.otherFaces?.find((x) => x?.name === face);
   return (lang === "fr" && f?.fr?.name) || face;
 }
@@ -613,6 +615,7 @@ function AbilityMenu() {
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
                 Lancer {faceLabel(source, o.faceName, lang)}
                 {o.warp ? " (distorsion)" : ""}
+                {o.faceName && o.faceName === source?.name ? " — fusion, les deux moitiés" : ""}
                 {/* Surcharge, fendre : le mode (et son coût) distingue les deux façons de lancer. */}
                 {o.modes.length === 1 && o.modes[0]?.label ? ` — ${o.modes[0].label}` : ""}
               </button>

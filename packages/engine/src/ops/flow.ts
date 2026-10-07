@@ -24,9 +24,10 @@ export const HANDLERS: OpHandlers = {
       };
     }
     if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
-    if (e.life && payableLife(s, ctx.controller) < e.life) return { skip: e.skip };
+    const life = e.lifeAmount !== undefined ? Math.max(0, evalAmount(s, ctx, e.lifeAmount)) : e.life;
+    if (life && payableLife(s, ctx.controller) < life) return { skip: e.skip };
     payMana(s, ctx.controller, e.cost);
-    if (e.life) payLife(s, ctx.controller, e.life);
+    if (life) payLife(s, ctx.controller, life);
     return;
   },
   forage(s, r, e, ctx, key) {

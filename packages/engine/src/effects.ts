@@ -605,7 +605,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "var":
       return readVar(ctx, a.name);
     case "lifeTotal":
-      return Math.max(0, s.players[ctx.controller]?.life ?? 0);
+      return Math.max(0, (a.starting ? s.players[ctx.controller]?.startingLife : s.players[ctx.controller]?.life) ?? 0);
     case "graveyardsWithAtLeast":
       return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
     case "manaValueOf": {
@@ -644,6 +644,13 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "max":
       return Math.max(0, ...a.of.map((x) => evalAmount(s, ctx, x)));
+    case "manaInPool": {
+      const pl = s.players[ctx.controller];
+      if (!pl) return 0;
+      return Object.values(pl.manaPool).reduce((n, v) => n + v, 0) + (pl.restrictedMana?.length ?? 0);
+    }
+    case "poison":
+      return s.players[ctx.controller]?.poison ?? 0;
     case "numberChosen":
       return Math.max(0, ...numbersChosen(ctx, a.store).map(([, n]) => n));
     case "maxOverPlayers":
@@ -745,6 +752,8 @@ function propertyValues(s: GameState, id: ObjectId, property: AggregateProperty,
         .filter(([, n]) => n > 0)
         .map(([k]) => k);
     case "counters":
+      // « le nombre de marqueurs parmi les permanents que vous contrôlez » (Dimension X Pizzasaur) : toutes sortes.
+      if (counter === "any") return [Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0)];
       return [Math.max(0, counters[counter ?? ""] ?? 0)];
   }
 }
@@ -801,7 +810,7 @@ function aggregate(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: 
 /**
  * Ce qui a été dépensé pour lancer l'objet : le sort sur la pile (ou qui se résout), sinon le permanent qu'il est devenu.
  */
-function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "cave"): number {
+function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "cave" | "artifact"): number {
   switch (what) {
     case "x": {
       const item = s.resolving?.item.id === id ? s.resolving.item : s.stack.find((x) => x.id === id);
@@ -815,6 +824,8 @@ function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "ca
     }
     case "cave":
       return castInfoOf(s, id, true)?.caveMana ?? 0;
+    case "artifact":
+      return castInfoOf(s, id, true)?.artifactMana ?? 0;
   }
 }
 

@@ -69,6 +69,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   hexproof: "Défense talismanique",
   shroud: "Défense totale",
   infect: "Infection",
+  toxic: "Toxique",
   indestructible: "Indestructible",
   prowess: "Prouesse",
   ward: "Garde",
@@ -194,6 +195,9 @@ export function describeEvents(
         if (view.turn.number === 0) break; // mains de départ : pas de bruit dans le journal
         if (e.player === me && e.defId) add(`Vous piochez ${name(e.defId)}.`, "me");
         else if (e.player !== me) add(`${who(e.player)} pioche une carte.`, "opp");
+        break;
+      case "monarch":
+        add(`${who(e.player)} ${e.player === me ? "devenez" : "devient"} le monarque.`, kind(e.player));
         break;
       case "playLand":
         add(`${who(e.player)} ${e.player === me ? "jouez" : "joue"} ${name(e.defId)}.`, kind(e.player));

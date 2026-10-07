@@ -11,6 +11,7 @@ import {
   phaseIn,
   putIntoGraveyard,
   removeFromCombat,
+  setMonarch,
   setSpeed,
   sourceFromObject,
 } from "./actions";
@@ -139,6 +140,8 @@ function givePriority(s: GameState): void {
 /** Début d'étape : déclenche les capacités « au début de… ». */
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
+  // Monarque (724.2) : au début de son étape de fin, le monarque pioche une carte (approximation : sans passer par la pile).
+  if (s.turn.step === "end" && s.monarch === s.turn.active && !s.players[s.monarch]?.lost) drawCards(s, s.monarch, 1);
   if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
   if (s.turn.step === "main1" || s.turn.step === "main2") releaseDelayedTriggers(s, "main");
   if (s.turn.step === "upkeep") {
@@ -804,8 +807,14 @@ export function attackableDefenders(s: GameState, player: PlayerId): string[] {
   const banned = new Set(playerEffectValues(s, player, "cantAttackPlayer"));
   const opps = opponentsOf(s, player).filter((p) => !banned.has(p));
   // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
+  // Jace, Multiverse Architect : « ses créatures ne peuvent pas attaquer vos Jace ce tour-ci ».
+  const walkerBans = playerEffectValues(s, player, "cantAttackPlaneswalkers");
   const walkers = s.battlefield.filter(
-    (id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker") && !obj(s, id).attachedTo,
+    (id) =>
+      opps.includes(obj(s, id).controller) &&
+      hasType(s, id, "Planeswalker") &&
+      !obj(s, id).attachedTo &&
+      !walkerBans.some((b) => b && b.of === obj(s, id).controller && chars(s, id).subtypes.includes(b.subtype)),
   );
   return [...opps, ...walkers];
 }
@@ -1361,6 +1370,11 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
       byPlayer.set(x.target, [...(byPlayer.get(x.target) ?? []), x.src.id]);
     }
     for (const [player, sources] of byPlayer) rulesEvent(s, { e: "combatDamageBatch", player, sources });
+    // Monarque (724.2) : une créature qui inflige des blessures de combat au monarque fait de son contrôleur le monarque
+    // (après les déclencheurs « … alors que vous êtes le monarque », Tamiyo, Upriser Crowned).
+    const monarchHitBy = s.monarch ? byPlayer.get(s.monarch)?.[0] : undefined;
+    const thief = monarchHitBy ? (s.objects[monarchHitBy]?.controller ?? s.lki[monarchHitBy]?.controller) : undefined;
+    if (thief && thief !== s.monarch) setMonarch(s, thief);
   });
 }
 
@@ -1416,6 +1430,12 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
   }
   // Tous les perdants sont marqués avant que les déclencheurs ne relisent les caractéristiques.
   bump(s);
+  // 724.4 : le monarque quitte la partie : le joueur actif le devient (le suivant si c'est lui qui part).
+  if (s.monarch && losers.includes(s.monarch)) {
+    const next = [s.turn.active, ...s.playerOrder].find((p) => !s.players[p]?.lost);
+    s.monarch = undefined;
+    if (next) setMonarch(s, next);
+  }
   for (const p of losers) rulesEvent(s, { e: "playerLost", player: p });
   const alive = alivePlayers(s);
   if (alive.length <= 1) {

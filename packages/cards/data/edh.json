@@ -1,5 +1,37 @@
 [
  {
+  "name": "Acidic Slime",
+  "number": "218",
+  "rarity": "uncommon",
+  "manaCost": "{3}{G}{G}",
+  "cmc": 5,
+  "typeLine": "Creature — Ooze",
+  "oracleText": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhen this creature enters, destroy target artifact, enchantment, or land.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Deathtouch"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/d/7dfeb1d1-7b2d-4235-902f-22a62af5dc0f.jpg?1783911373",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/d/7dfeb1d1-7b2d-4235-902f-22a62af5dc0f.jpg?1783911373",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Boue acide",
+   "typeLine": "Créature — limon",
+   "text": "Contact mortel\nQuand la Boue acide arrive sur le champ de bataille, détruisez une cible, artefact, enchantement ou terrain.",
+   "image": "https://cards.scryfall.io/normal/front/0/a/0ac8fbf1-e60c-49a1-bec9-c44cb97bbf38.jpg?1782794770"
+  },
+  "origin": "M3C",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
   "name": "Adarkar Wastes",
   "number": "147",
   "rarity": "rare",
@@ -96,6 +128,40 @@
   ]
  },
  {
+  "name": "Akroma, Angel of Fury",
+  "number": "19",
+  "rarity": "mythic",
+  "manaCost": "{5}{R}{R}{R}",
+  "cmc": 8,
+  "typeLine": "Legendary Creature — Angel",
+  "oracleText": "This spell can't be countered.\nFlying, trample, protection from white and from blue\n{R}: Akroma gets +1/+0 until end of turn.\nMorph {3}{R}{R}{R} (You may cast this card face down as a 2/2 creature for {3}. Turn her face up any time for her morph cost.)",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Flying",
+   "Morph",
+   "Protection",
+   "Trample"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/b/2b5ac7bd-3788-4c8b-b945-c1105986807a.jpg?1789644294",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2b5ac7bd-3788-4c8b-b945-c1105986807a.jpg?1789644294",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Akroma, ange de la Fureur",
+   "text": "Ce sort ne peut pas être contrecarré.\nVol, piétinement, protection contre le blanc et contre le bleu\n{R} : Akroma gagne +1/+0 jusqu'à la fin du tour.\nMue {3}{R}{R}{R} (Vous pouvez lancer cette carte face cachée comme une créature 2/2 pour {3}. Retournez-la face visible à tout moment pour son coût de mue.)",
+   "image": "https://cards.scryfall.io/normal/front/5/c/5cccb4ad-b9b3-4374-bd15-9bcebe65d08a.jpg?1790692739"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Ancient Cellarspawn",
   "number": "16",
   "rarity": "rare",
@@ -186,6 +252,63 @@
   ]
  },
  {
+  "name": "April O'Neil, Live on the Scene",
+  "number": "9",
+  "rarity": "mythic",
+  "manaCost": "{1}{U}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Human Detective",
+  "oracleText": "Whenever a Mutant, Ninja, or Turtle you control enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nPartner—Character select",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Investigate",
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/2/7265ab42-5434-4127-acd6-8905ab63d62d.jpg?1783904171",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/7265ab42-5434-4127-acd6-8905ab63d62d.jpg?1783904171",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "April O'Neil, en direct sur place",
+   "text": "À chaque fois qu'un mutant, un ninja ou une tortue terrestre que vous contrôlez arrive, enquêtez. (Créez un jeton Indice. C'est un artefact avec « {2}, sacrifiez ce jeton : Piochez une carte. »)\nPartenariat - Sélection du personnage",
+   "image": "https://cards.scryfall.io/normal/front/b/a/ba74aa1e-7aea-420b-8f45-24b0e8e7e26d.jpg?1782761438"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Arcade Cabinet",
+  "number": "36",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "When this artifact enters, put a +1/+1 counter on each of up to four target creatures.\n{2}, {T}, Sacrifice a token: Double the number of each kind of counter on target creature.",
+  "colors": [],
+  "keywords": [
+   "Double"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/2/b2fd1df8-cc67-4209-af9d-5cf18c68cca9.jpg?1783904163",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b2fd1df8-cc67-4209-af9d-5cf18c68cca9.jpg?1783904163",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Borne d'arcade",
+   "text": "Quand cet artefact arrive, ciblez jusqu'à quatre créatures. Mettez un marqueur +1/+1 sur chacune d'elles.\n{2}, {T}, Sacrifiez un jeton : Doublez le nombre de marqueurs sur une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/4/4/44fbe5e1-4511-4a95-bdbf-c318688df391.jpg?1782761374"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
   "name": "Arcane Sanctum",
   "number": "373",
   "rarity": "uncommon",
@@ -248,6 +371,68 @@
   "colorIdentity": []
  },
  {
+  "name": "Archfiend of Despair",
+  "number": "46",
+  "rarity": "mythic",
+  "manaCost": "{6}{B}{B}",
+  "cmc": 8,
+  "typeLine": "Creature — Demon",
+  "oracleText": "Flying\nYour opponents can't gain life.\nAt the beginning of each end step, each opponent loses life equal to the life that player lost this turn. (Damage causes loss of life.)",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/3/137b69ad-3296-49f1-bddf-24818a03830f.jpg?1789599815",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/137b69ad-3296-49f1-bddf-24818a03830f.jpg?1789599815",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Archifielleux du désespoir",
+   "text": "Vol\nVos adversaires ne peuvent pas gagner de points de vie.\nAu début de chaque étape de fin, chaque adversaire perd un nombre de points de vie égal au nombre de points de vie que ce joueur a perdus ce tour-ci. (Les blessures provoquent la perte de points de vie.)",
+   "image": "https://cards.scryfall.io/normal/front/f/f/fff7bd9c-f868-471f-9562-28532935fbfe.jpg?1790693491"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Archon of Cruelty",
+  "number": "47",
+  "rarity": "mythic",
+  "manaCost": "{6}{B}{B}",
+  "cmc": 8,
+  "typeLine": "Creature — Archon",
+  "oracleText": "Flying\nWhenever this creature enters or attacks, target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life.",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/5/95ff951b-a098-409c-86c8-373b6c9f8331.jpg?1789599818",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/5/95ff951b-a098-409c-86c8-373b6c9f8331.jpg?1789599818",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Archonte de la cruauté",
+   "text": "Vol\nÀ chaque fois que cette créature arrive ou attaque, un adversaire ciblé sacrifie une créature ou un planeswalker de son choix, se défausse d'une carte et perd 3 points de vie. Vous piochez une carte et vous gagnez 3 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/4/d/4d46b4d5-18ce-42ba-92ac-d76d755f22e2.jpg?1790693513"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Arena of Glory",
   "number": "215",
   "rarity": "rare",
@@ -276,6 +461,99 @@
   "origin": "MH3",
   "colorIdentity": [
    "R"
+  ]
+ },
+ {
+  "name": "Ash Barrens",
+  "number": "374",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\nBasic landcycling {1} ({1}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)",
+  "colors": [],
+  "keywords": [
+   "Landcycling",
+   "Basic landcycling",
+   "Typecycling",
+   "Cycling"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/7/77df073b-49dc-4743-82a3-d595bc938761.jpg?1783906229",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/7/77df073b-49dc-4743-82a3-d595bc938761.jpg?1783906229",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Landes cendreuses",
+   "text": "{T} : Ajoutez {C}.\nRecyclage de terrain de base {1} ({1}, défaussez-vous de cette carte : Cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.)",
+   "image": "https://cards.scryfall.io/normal/front/a/8/a8e7b7c7-debf-4f9e-8652-f6cada59848d.jpg?1782769096"
+  },
+  "origin": "FIC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Avacyn, Angel of Horror",
+  "number": "7",
+  "rarity": "rare",
+  "manaCost": "{5}{B}{B}{B}",
+  "cmc": 8,
+  "typeLine": "Legendary Creature — Angel",
+  "oracleText": "Flying, deathtouch\nWhenever Avacyn or another nontoken creature you control dies, return that card to the battlefield under your control at the beginning of the next end step.",
+  "power": "8",
+  "toughness": "8",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Deathtouch",
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/f/ff65f46b-0f82-49b8-93b9-7ac0243ce941.jpg?1789644252",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/f/ff65f46b-0f82-49b8-93b9-7ac0243ce941.jpg?1789644252",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Avacyn, ange de l'horreur",
+   "text": "Vol, contact mortel\nÀ chaque fois qu'Avacyn ou une autre créature non-jeton que vous contrôlez meurt, renvoyez cette carte sur le champ de bataille sous votre contrôle au début de la prochaine étape de fin.",
+   "image": "https://cards.scryfall.io/normal/front/d/2/d2eeb9d7-f530-446a-8d76-2fd528959449.jpg?1790692417"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Azorius Signet",
+  "number": "53",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}: Add {W}{U}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cachet d'Azorius",
+   "text": "{1}, {T} : Ajoutez {W}{U}.",
+   "image": "https://cards.scryfall.io/normal/front/d/6/d64f214d-d8b0-4439-b5f7-1f9aae9c1800.jpg?1790693693"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U",
+   "W"
   ]
  },
  {
@@ -310,6 +588,66 @@
   ]
  },
  {
+  "name": "Battlefield Forge",
+  "number": "65",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {R} or {W}. This land deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C",
+   "R",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/f/ef7d3676-b1db-4329-9201-18f8a6c54ea6.jpg?1789599856",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/f/ef7d3676-b1db-4329-9201-18f8a6c54ea6.jpg?1789599856",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Forge de campagne",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {R} ou {W}. Ce terrain vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/8/d/8d8d1ab3-610c-410d-876f-9601e48a1e14.jpg?1790694108"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "W"
+  ]
+ },
+ {
+  "name": "Baxter, Fly in the Ointment",
+  "number": "10",
+  "rarity": "rare",
+  "manaCost": "{3}{U}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Insect Mutant Scientist",
+  "oracleText": "Whenever Baxter enters or attacks, each creature you control with a counter on it gains flying until end of turn.\nWhenever you draw a card, put a +1/+1 counter on Baxter.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/5/f5ee290f-03cd-48a8-ba6e-d934cb3f4ff4.jpg?1783904171",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f5ee290f-03cd-48a8-ba6e-d934cb3f4ff4.jpg?1783904171",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Baxter, mouche du coche",
+   "text": "À chaque fois que Baxter arrive ou attaque, chaque créature que vous contrôlez avec un marqueur sur elle acquiert le vol jusqu'à la fin du tour.\nÀ chaque fois que vous piochez une carte, mettez un marqueur +1/+1 sur Baxter.",
+   "image": "https://cards.scryfall.io/normal/front/c/7/c7e4b264-ef85-470d-9246-24fb1d0fadd0.jpg?1782761434"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Bayou",
   "number": "279",
   "rarity": "rare",
@@ -337,6 +675,126 @@
   "origin": "LEB",
   "colorIdentity": [
    "B",
+   "G"
+  ]
+ },
+ {
+  "name": "Bebop, Skull & Crossbones",
+  "number": "15",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Boar Mutant",
+  "oracleText": "Partner with Rocksteady, Mutant Marauder (When this creature enters, target player may put Rocksteady into their hand from their library, then shuffle.)\nDeathtouch\nWhenever Bebop deals combat damage to a player, you may draw X cards, where X is the number of counters on Bebop. If you do, you lose X life.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Partner with",
+   "Partner",
+   "Deathtouch"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/f/af2a1494-9c0d-4590-999b-2c52725dc5d0.jpg?1783904171",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/f/af2a1494-9c0d-4590-999b-2c52725dc5d0.jpg?1783904171",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bebop, crâne et tibias",
+   "text": "Partenariat avec Rocksteady, maraudeur mutant (Quand cette créature arrive, un joueur ciblé peut mettre Rocksteady dans sa main depuis sa bibliothèque, puis mélanger.)\nContact mortel\nÀ chaque fois que Bebop inflige des blessures de combat à un joueur, vous pouvez piocher X cartes, X étant le nombre de marqueurs sur Bebop. Si vous faites ainsi, vous perdez X points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/c/0/c00b45ac-8b76-407e-9e7d-a0a567c250aa.jpg?1782761421"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Big Apple, 3 a.m.",
+  "number": "42",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color.\n{5}, {T}: Create a 1/1 black Rat creature token for each opponent you have.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/9/b9cc16f9-fea3-4527-9b81-3c84ce9c5e01.jpg?1783904160",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/9/b9cc16f9-fea3-4527-9b81-3c84ce9c5e01.jpg?1783904160",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "New-York, 3 h du matin",
+   "text": "Ce terrain arrive engagé. Au moment où il arrive, choisissez une couleur.\n{T} : Ajoutez un mana de la couleur choisie.\n{5}, {T} : Créez un jeton de créature 1/1 noire Rat pour chaque adversaire que vous avez.",
+   "image": "https://cards.scryfall.io/normal/front/1/1/110e9866-2dd5-4f41-926e-56d7735ad41f.jpg?1782761364"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Big Mother Mouser",
+  "number": "37",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Artifact Creature — Robot",
+  "oracleText": "This creature enters with two +1/+1 counters on it.\nWhenever this creature attacks, double the number of +1/+1 counters on it.\nWhen this creature dies, create a number of 1/1 colorless Robot artifact creature tokens equal to the number of +1/+1 counters on this creature.",
+  "power": "0",
+  "toughness": "0",
+  "colors": [],
+  "keywords": [
+   "Double"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/9/c9ae6898-6b5a-43bd-8c84-4d8add285f7d.jpg?1783904160",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/9/c9ae6898-6b5a-43bd-8c84-4d8add285f7d.jpg?1783904160",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Matriarche des Dératiseurs",
+   "text": "Cette créature arrive avec deux marqueurs +1/+1 sur elle.\nÀ chaque fois que cette créature attaque, doublez le nombre de marqueurs +1/+1 sur elle.\nQuand cette créature meurt, créez un nombre de jetons de créature-artefact 1/1 incolore Robot égal au nombre de marqueurs +1/+1 sur cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/d/e/de388561-2723-40ec-948f-3fa27a226983.jpg?1782761373"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Biogenic Ooze",
+  "number": "122",
+  "rarity": "mythic",
+  "manaCost": "{3}{G}{G}",
+  "cmc": 5,
+  "typeLine": "Creature — Ooze",
+  "oracleText": "When this creature enters, create a 2/2 green Ooze creature token.\nAt the beginning of your end step, put a +1/+1 counter on each Ooze you control.\n{1}{G}{G}{G}: Create a 2/2 green Ooze creature token.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/f/6f11029a-b24d-4248-834f-b852b56857f6.jpg?1783933671",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/f/6f11029a-b24d-4248-834f-b852b56857f6.jpg?1783933671",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Limon biosynthétique",
+   "typeLine": "Créature : limon",
+   "text": "Quand le Limon biosynthétique arrive sur le champ de bataille, créez un jeton de créature 2/2 verte Limon.\nAu début de votre étape de fin, mettez un marqueur +1/+1 sur chaque limon que vous contrôlez.\n{1}{G}{G}{G} : Créez un jeton de créature 2/2 verte Limon.",
+   "image": "https://cards.scryfall.io/normal/front/f/9/f9e0c1c6-b10a-4b03-a7bb-441d402fcc15.jpg?1782924142"
+  },
+  "origin": "RNA",
+  "colorIdentity": [
    "G"
   ]
  },
@@ -466,6 +924,33 @@
   },
   "origin": "LCC",
   "colorIdentity": []
+ },
+ {
+  "name": "Blasphemous Act",
+  "number": "140",
+  "rarity": "rare",
+  "manaCost": "{8}{R}",
+  "cmc": 9,
+  "typeLine": "Sorcery",
+  "oracleText": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/0/40ca082c-22e2-4edd-b4c2-a07032d4e360.jpg?1789753069",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40ca082c-22e2-4edd-b4c2-a07032d4e360.jpg?1789753069",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Acte blasphématoire",
+   "text": "Ce sort coûte {1} de moins à lancer pour chaque créature sur le champ de bataille.\nL'Acte blasphématoire inflige 13 blessures à chaque créature.",
+   "image": "https://cards.scryfall.io/normal/front/c/9/c963b6c6-38df-4c8d-9175-bd34fab0838a.jpg?1785263591"
+  },
+  "origin": "FDC",
+  "colorIdentity": [
+   "R"
+  ]
  },
  {
   "name": "Blightsteel Colossus",
@@ -841,6 +1326,33 @@
   ]
  },
  {
+  "name": "Brainsurge",
+  "number": "40",
+  "rarity": "uncommon",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Draw four cards, then put two cards from your hand on top of your library in any order.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/d/2dc20172-4cf0-4ada-a4f3-4ef951cb8207.jpg?1789599807",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/d/2dc20172-4cf0-4ada-a4f3-4ef951cb8207.jpg?1789599807",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Déferlement cérébral",
+   "text": "Piochez quatre cartes et mettez ensuite deux cartes de votre main au-dessus de votre bibliothèque dans l'ordre de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/5/d/5dc3e5b3-8b8a-43f3-b09c-2c35bb3b92a5.jpg?1790693309"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Captivating Vampire",
   "number": "100",
   "rarity": "rare",
@@ -868,6 +1380,37 @@
   "origin": "INR",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Casey Jones, Back Alley Brute",
+  "number": "22",
+  "rarity": "rare",
+  "manaCost": "{3}{R}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Human Berserker",
+  "oracleText": "Menace\nWhenever Casey Jones attacks, put a +1/+1 counter on target attacking creature.\nWhenever you put one or more +1/+1 counters on a creature you control, Casey Jones deals that much damage to target opponent.",
+  "power": "4",
+  "toughness": "2",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/1/416d888d-2699-49bd-830b-bf5bda25c91f.jpg?1783904167",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/1/416d888d-2699-49bd-830b-bf5bda25c91f.jpg?1783904167",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Casey Jones, brute des ruelles",
+   "text": "Menace\nÀ chaque fois que Casey Jones attaque, mettez un marqueur +1/+1 sur une créature attaquante ciblée.\nÀ chaque fois que vous mettez au moins un marqueur +1/+1 sur une créature que vous contrôlez, Casey Jones inflige autant de blessures à un adversaire ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/2/2/22e21eea-2b9b-4571-bee9-f26e1f5b7d47.jpg?1782761404"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -1026,6 +1569,36 @@
   "colorIdentity": []
  },
  {
+  "name": "Cinder Glade",
+  "number": "230",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Mountain Forest",
+  "oracleText": "({T}: Add {R} or {G}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/c/ec93087a-5728-40e8-8625-a1d175d5252c.jpg?1783903207",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/c/ec93087a-5728-40e8-8625-a1d175d5252c.jpg?1783903207",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Clairière de scories",
+   "text": "({T} : Ajoutez {R} ou {G}.)\nCe terrain arrive engagé à moins que vous ne contrôliez au moins deux terrains de base.",
+   "image": "https://cards.scryfall.io/normal/front/6/2/628f4965-15dc-4a5f-ba58-077c8b29fcd9.jpg?1785266279"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "G",
+   "R"
+  ]
+ },
+ {
   "name": "City of Brass",
   "number": "321",
   "rarity": "rare",
@@ -1118,6 +1691,68 @@
   ]
  },
  {
+  "name": "Clifftop Retreat",
+  "number": "67",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control a Mountain or a Plains.\n{T}: Add {R} or {W}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/d/cd112d5c-102f-45a6-b26c-f80cc97d4df2.jpg?1789599889",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/d/cd112d5c-102f-45a6-b26c-f80cc97d4df2.jpg?1789599889",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rectorat du haut des falaises",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez une montagne ou une plaine.\n{T} : Ajoutez {R} ou {W}.",
+   "image": "https://cards.scryfall.io/normal/front/3/9/39e626df-6eda-4e26-ba81-a33b95da720b.jpg?1790694200"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "W"
+  ]
+ },
+ {
+  "name": "Coin of Mastery",
+  "number": "38",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Artifact",
+  "oracleText": "Each creature you control enters with an additional +1/+1 counter on it for each mana from an artifact source spent to cast it.\n{T}: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "colors": [],
+  "keywords": [
+   "Treasure"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/a/ca053574-2ac9-4814-955d-87a97e0aca7e.jpg?1783904161",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/ca053574-2ac9-4814-955d-87a97e0aca7e.jpg?1783904161",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Jeton de maîtrise",
+   "text": "Chaque créature que vous contrôlez arrive avec un marqueur +1/+1 supplémentaire sur elle pour chaque mana d'une source artefact dépensée pour la lancer.\n{T} : Créez un jeton Trésor. (C'est un artefact avec « {T}, sacrifiez ce jeton : Ajoutez un mana de la couleur de votre choix. »)",
+   "image": "https://cards.scryfall.io/normal/front/c/a/ca50be9d-4391-4146-bf2a-659353e5d457.jpg?1782761372"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
   "name": "Command Tower",
   "number": "22",
   "rarity": "common",
@@ -1148,6 +1783,65 @@
   "colorIdentity": []
  },
  {
+  "name": "Contaminated Landscape",
+  "number": "68",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Sacrifice this land: Search your library for a basic Plains, Island, or Swamp card, put it onto the battlefield tapped, then shuffle.\nCycling {W}{U}{B} ({W}{U}{B}, Discard this card: Draw a card.)",
+  "colors": [],
+  "keywords": [
+   "Cycling"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/9/f9274fad-3f30-454a-8d61-d487165090d7.jpg?1789599890",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/9/f9274fad-3f30-454a-8d61-d487165090d7.jpg?1789599890",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Paysage contaminé",
+   "text": "{T} : Ajoutez {C}.\n{T}, sacrifiez ce terrain : Cherchez dans votre bibliothèque une carte de plaine, d'île ou de marais de base, mettez-la sur le champ de bataille engagée, puis mélangez.\nRecyclage {W}{U}{B} ({W}{U}{B}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/d/4/d46959fc-d60f-49ec-bd23-26bb5b793229.jpg?1790694234"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Continue?",
+  "number": "7",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Choose up to four target creature cards in your graveyard that were put there from the battlefield this turn. Return them to the battlefield.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/c/2c99c472-8820-43d8-9dfa-508dc3d07478.jpg?1783904172",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/c/2c99c472-8820-43d8-9dfa-508dc3d07478.jpg?1783904172",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Continuer ?",
+   "text": "Choisissez jusqu'à quatre cartes de créature ciblées de votre cimetière qui y ont été mises ce tour-ci depuis le champ de bataille. Renvoyez-les sur le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/8/4/841f0b10-e487-464d-88bf-6805a487116d.jpg?1782761442"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Cordial Vampire",
   "number": "189",
   "rarity": "rare",
@@ -1175,6 +1869,38 @@
   "origin": "LCC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Corpsejack Menace",
+  "number": "214",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}{G}",
+  "cmc": 4,
+  "typeLine": "Creature — Fungus",
+  "oracleText": "If one or more +1/+1 counters would be put on a creature you control, twice that many +1/+1 counters are put on it instead.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/b/fb08ac43-f138-47b6-9bff-6248c315b0ca.jpg?1785650753",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fb08ac43-f138-47b6-9bff-6248c315b0ca.jpg?1785650753",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Menace guidecorps",
+   "typeLine": "Créature — fongus",
+   "text": "Si au moins un marqueur +1/+1 devait être mis sur une créature que vous contrôlez, mettez deux fois ce nombre de marqueurs +1/+1 sur cette créature à la place.",
+   "image": "https://cards.scryfall.io/normal/front/2/e/2ebf5aec-f2eb-4821-8e32-58ffe3a8783a.jpg?1782799955"
+  },
+  "origin": "PIP",
+  "colorIdentity": [
+   "B",
+   "G"
   ]
  },
  {
@@ -1335,6 +2061,117 @@
   "colorIdentity": []
  },
  {
+  "name": "Cultivate",
+  "number": "172",
+  "rarity": "common",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/6/e60deb92-f7dd-4f4e-9036-e47dd586f985.jpg?1783903229",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e60deb92-f7dd-4f4e-9036-e47dd586f985.jpg?1783903229",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Culture",
+   "text": "Cherchez dans votre bibliothèque jusqu'à deux cartes de terrain de base, révélez ces cartes, mettez-en une sur le champ de bataille engagée et l'autre dans votre main, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/2/0/20ff7985-a927-435b-8b63-a6e8bf85eb5e.jpg?1785263996"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
+  "name": "Currency Converter",
+  "number": "55",
+  "rarity": "rare",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "Whenever you discard a card, you may exile that card from your graveyard.\n{2}, {T}: Draw a card, then discard a card.\n{T}: Put a card exiled with this artifact into its owner's graveyard. If it's a land card, create a Treasure token. If it's a nonland card, create a 2/2 black Rogue creature token.",
+  "colors": [],
+  "keywords": [
+   "Treasure"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/9/f91b18ef-ac8a-4d4c-9586-b101681d33e2.jpg?1789599836",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/9/f91b18ef-ac8a-4d4c-9586-b101681d33e2.jpg?1789599836",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Convertisseur de devises",
+   "text": "À chaque fois que vous vous défaussez d'une carte, vous pouvez exiler cette carte depuis votre cimetière.\n{2}, {T} : Piochez une carte, puis défaussez-vous d'une carte.\n{T} : Mettez une carte exilée par cet artefact dans le cimetière de son propriétaire. Si c'est une carte de terrain, créez un jeton Trésor. Si c'est une carte non-terrain, créez un jeton de créature 2/2 noire Gredin.",
+   "image": "https://cards.scryfall.io/normal/front/3/2/32f5e7f2-976d-475b-a4c0-c9f4780b0a32.jpg?1790693759"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Cursed Mirror",
+  "number": "149",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {R}.\nAs this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/6/e69eef8f-f3fe-49fd-a567-6425c8f30d4c.jpg?1789753073",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e69eef8f-f3fe-49fd-a567-6425c8f30d4c.jpg?1789753073",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Miroir maudit",
+   "text": "{T} : Ajoutez {R}.\nAu moment où cet artefact arrive, vous pouvez faire qu'il devienne une copie de n'importe quelle créature sur le champ de bataille jusqu'à la fin du tour, excepté qu'il a la célérité.",
+   "image": "https://cards.scryfall.io/normal/front/7/4/74c74f21-0e25-4f3e-bcea-2cf8dd5755ca.jpg?1790693565"
+  },
+  "origin": "FDC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Dack Fayden, Helping Hand",
+  "number": "4",
+  "rarity": "rare",
+  "manaCost": "{4}{W}{W}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Human Advisor",
+  "oracleText": "When Dack Fayden enters, reveal cards from the top of your library until you reveal X creature cards, where X is the number of opponents you have. Put those creature cards onto the battlefield, then shuffle. They're goaded for the rest of the game. For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen.",
+  "power": "4",
+  "toughness": "6",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/0/b0db02cb-d029-46d5-9df2-dee980047758.jpg?1789644199",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b0db02cb-d029-46d5-9df2-dee980047758.jpg?1789644199",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dack Fayden, la main tendue",
+   "text": "Quand Dack Fayden arrive, révélez les cartes du dessus de votre bibliothèque jusqu'à ce que vous révéliez X cartes de créature, X étant le nombre d'adversaires que vous avez. Mettez ces cartes de créature sur le champ de bataille, puis mélangez. Elles sont incitées pour le reste de la partie. Pour chacun de ces permanents, choisissez un adversaire différent. Chaque adversaire acquiert le contrôle du permanent pour lequel il a été choisi.",
+   "image": "https://cards.scryfall.io/normal/front/b/7/b78f31e0-35a5-499c-9e3b-62c6abb8fdd2.jpg?1790692335"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Damn",
   "number": "89",
   "rarity": "rare",
@@ -1364,6 +2201,34 @@
    "B",
    "W"
   ]
+ },
+ {
+  "name": "Darksteel Angel",
+  "number": "13",
+  "rarity": "rare",
+  "manaCost": "{9}",
+  "cmc": 9,
+  "typeLine": "Artifact Creature — Angel",
+  "oracleText": "Flying, indestructible\nYou can't lose the game and your opponents can't win the game.\nCreatures you control can't have -1/-1 counters put on them.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [],
+  "keywords": [
+   "Flying",
+   "Indestructible"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/c/0c33024e-9473-4d5b-8433-9898380282c4.jpg?1784325693",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0c33024e-9473-4d5b-8433-9898380282c4.jpg?1784325693",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ange de sombracier",
+   "text": "Vol, indestructible\nVous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas gagner la partie.\nLes créatures que vous contrôlez ne peuvent pas avoir de marqueurs -1/-1 mis sur elles.",
+   "image": "https://cards.scryfall.io/normal/front/2/b/2bbfb368-22be-4b6c-851d-2e10fb196a64.jpg?1790692576"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
  },
  {
   "name": "Deadly Rollick",
@@ -1549,6 +2414,181 @@
   ]
  },
  {
+  "name": "Despark",
+  "number": "50",
+  "rarity": "uncommon",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Exile target permanent with mana value 4 or greater.",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/c/2c09f45f-54a5-47b5-afd7-9ac7c05438e7.jpg?1789599827",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/c/2c09f45f-54a5-47b5-afd7-9ac7c05438e7.jpg?1789599827",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Suppression d'étincelle",
+   "text": "Exilez un permanent ciblé avec une valeur de mana supérieure ou égale à 4.",
+   "image": "https://cards.scryfall.io/normal/front/7/d/7d43b73d-02bd-461b-ba30-7137ed00787a.jpg?1790693594"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Dimension X Pizzasaur",
+  "number": "16",
+  "rarity": "rare",
+  "manaCost": "{3}{B}",
+  "cmc": 4,
+  "typeLine": "Artifact Creature — Food Alien Mutant",
+  "oracleText": "When this creature enters, put two +1/+1 counters on target creature. When you do, destroy up to one target creature with mana value less than or equal to the number of counters among permanents you control.\n{2}, {T}, Sacrifice this creature: You gain 3 life and each opponent loses 3 life.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/e/fe4ab58f-3fb5-45fa-8ea1-794efa6f7da9.jpg?1783904336",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe4ab58f-3fb5-45fa-8ea1-794efa6f7da9.jpg?1783904336",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pizzasaure de la Dimension X",
+   "text": "Quand cette créature arrive, mettez deux marqueurs +1/+1 sur une créature ciblée. Quand vous faites ainsi, détruisez jusqu'à une créature ciblée avec une valeur de mana inférieure ou égale au nombre de marqueurs parmi les permanents que vous contrôlez.\n{2}, {T}, Sacrifiez cette créature : Vous gagnez 3 points de vie et chaque adversaire perd 3 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/a/6/a66b9c98-3e23-479d-bf8c-c8c97920d6c9.jpg?1782761419"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Dimir Signet",
+  "number": "56",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}: Add {U}{B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/8/0862060d-3198-4eeb-af8c-efeb27f42a99.jpg?1789599833",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/0862060d-3198-4eeb-af8c-efeb27f42a99.jpg?1789599833",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cachet de Dimir",
+   "text": "{1}, {T} : Ajoutez {U}{B}.",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f359fa91-39e5-48ec-9521-3ec58942ab88.jpg?1790693795"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Donatello, the Brains",
+  "number": "2",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Mutant Ninja Turtle",
+  "oracleText": "If one or more tokens would be created under your control, those tokens plus a Mutagen token are created instead.\nPartner—Character select (You can have two commanders if both have this ability.)",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/7/774716f4-d211-497a-be91-69cd700edbf2.jpg?1783904175",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/7/774716f4-d211-497a-be91-69cd700edbf2.jpg?1783904175",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Donatello, le cerveau",
+   "text": "Si au moins un jeton devait être créé sous votre contrôle, ces jetons plus un jeton Mutagène sont créés à la place.\nPartenariat - Sélection du personnage (Vous pouvez avoir deux commandants si les deux ont cette capacité.)",
+   "image": "https://cards.scryfall.io/normal/front/9/3/93a339ca-e7c6-4214-a3d9-7ea2b0031bad.jpg?1782761455"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Double Jump // Flying Kick",
+  "number": "35",
+  "rarity": "rare",
+  "layout": "split",
+  "manaCost": "{1}{U}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "Put a flying counter on target creature you control. Until end of turn, it has base power and toughness 5/5.\nFuse (You may cast one or both halves of this card from your hand.)",
+  "colors": [
+   "R",
+   "U"
+  ],
+  "keywords": [
+   "Fuse"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/0/c0b94a92-48d5-4d08-a8fa-6f3a992db941.jpg?1783904163",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c0b94a92-48d5-4d08-a8fa-6f3a992db941.jpg?1783904163",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Double Jump",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Put a flying counter on target creature you control. Until end of turn, it has base power and toughness 5/5.\nFuse (You may cast one or both halves of this card from your hand.)",
+    "fr": {
+     "name": "Double saut",
+     "typeLine": "Éphémère",
+     "text": "Mettez un marqueur de vol sur une créature ciblée que vous contrôlez. Jusqu'à la fin du tour, elle a une force et une endurance de base de 5/5.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)"
+    }
+   },
+   {
+    "name": "Flying Kick",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature you control deals damage equal to its power to target creature an opponent controls.\nFuse (You may cast one or both halves of this card from your hand.)",
+    "fr": {
+     "name": "Coup de pied volant",
+     "typeLine": "Éphémère",
+     "text": "Une créature ciblée que vous contrôlez inflige des blessures égales à sa force à une créature ciblée qu'un adversaire contrôle.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)"
+    }
+   }
+  ],
+  "origin": "TMC",
+  "colorIdentity": [
+   "R",
+   "U"
+  ],
+  "fr": {
+   "name": "Double saut // Coup de pied volant",
+   "typeLine": "Éphémère",
+   "text": "Mettez un marqueur de vol sur une créature ciblée que vous contrôlez. Jusqu'à la fin du tour, elle a une force et une endurance de base de 5/5.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)"
+  }
+ },
+ {
   "name": "Dragon Tempest",
   "number": "150",
   "rarity": "rare",
@@ -1710,6 +2750,35 @@
   ]
  },
  {
+  "name": "Dreadhorde Invasion",
+  "number": "48",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, you lose 1 life and amass Zombies 1. (Put a +1/+1 counter on an Army you control. It's also a Zombie. If you don't control an Army, create a 0/0 black Zombie Army creature token first.)\nWhenever a Zombie token you control with power 6 or greater attacks, it gains lifelink until end of turn.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Amass"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/b/9bbfad2d-a3b5-4119-aea4-0793b7a9da88.jpg?1789599825",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/b/9bbfad2d-a3b5-4119-aea4-0793b7a9da88.jpg?1789599825",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Invasion de la Horde de l'effroi",
+   "text": "Au début de votre entretien, vous perdez 1 point de vie et amassez des zombies 1. (Mettez un marqueur +1/+1 sur une armée que vous contrôlez. C'est aussi un zombie. Si vous ne contrôlez pas d'armée, créez d'abord un jeton de créature 0/0 noire Zombie et Armée.)\nÀ chaque fois qu'un jeton Zombie de force supérieure ou égale à 6 que vous contrôlez attaque, il acquiert le lien de vie jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/b/e/be206e7d-d499-4ff7-bc72-d9e29fa4fbe4.jpg?1790693544"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Drowned Catacomb",
   "number": "69",
   "rarity": "rare",
@@ -1851,6 +2920,38 @@
   ]
  },
  {
+  "name": "Electric Seaweed",
+  "number": "23",
+  "rarity": "rare",
+  "manaCost": "{2}{R}{R}",
+  "cmc": 4,
+  "typeLine": "Creature — Plant Wall",
+  "oracleText": "Defender, haste\nWhen this creature enters, until end of turn, whenever another creature dies, this creature deals 1 damage to each non-Wall creature.\n{T}: This creature deals 1 damage to any target.",
+  "power": "0",
+  "toughness": "4",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Haste",
+   "Defender"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/e/1ead9586-2b40-498e-90d3-c8a3aa81ef92.jpg?1783904167",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1ead9586-2b40-498e-90d3-c8a3aa81ef92.jpg?1783904167",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Algue électrique",
+   "text": "Défenseur, célérité\nQuand cette créature arrive, jusqu'à la fin du tour, à chaque fois qu'une autre créature meurt, cette créature inflige 1 blessure à chaque créature non-Mur.\n{T} : Cette créature inflige 1 blessure à n'importe quelle cible.",
+   "image": "https://cards.scryfall.io/normal/front/9/7/973be3c9-96a9-4be5-83c3-36ddda0cb45b.jpg?1782761401"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Elenda, the Dusk Rose",
   "number": "268",
   "rarity": "mythic",
@@ -1881,6 +2982,34 @@
   "origin": "LCC",
   "colorIdentity": [
    "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Elspeth, Sun's Champion",
+  "number": "24",
+  "rarity": "mythic",
+  "manaCost": "{4}{W}{W}",
+  "cmc": 6,
+  "typeLine": "Legendary Planeswalker — Elspeth",
+  "oracleText": "+1: Create three 1/1 white Soldier creature tokens.\n−3: Destroy all creatures with power 4 or greater.\n−7: You get an emblem with \"Creatures you control get +2/+2 and have flying.\"",
+  "loyalty": "4",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/9/a91d9163-c1f2-4eae-acab-5dabbc71d7d4.jpg?1789613307",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a91d9163-c1f2-4eae-acab-5dabbc71d7d4.jpg?1789613307",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Elspeth, championne du Soleil",
+   "text": "+1: Créez trois jetons de créature 1/1 blanche Soldat.\n-3: Détruisez toutes les créatures de force supérieure ou égale à 4.\n-7: Vous gagnez un emblème avec « Les créatures que vous contrôlez gagnent +2/+2 et ont le vol. »",
+   "image": "https://cards.scryfall.io/normal/front/d/4/d44563ce-3299-443e-9608-e13ac8e439ea.jpg?1790692881"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
    "W"
   ]
  },
@@ -1974,6 +3103,35 @@
   },
   "origin": "MH3",
   "colorIdentity": []
+ },
+ {
+  "name": "Endless Foot Assault",
+  "number": "8",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Squad {1}{W} (As an additional cost to cast this spell, you may pay {1}{W} any number of times. When this enchantment enters, create that many tokens that are copies of it.)\nWhenever you attack, for each opponent, create a 1/1 black Ninja creature token that's tapped and attacking that player.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Squad"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/8/387f6f60-69da-4965-9ab9-57bdb763a013.jpg?1783904172",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/387f6f60-69da-4965-9ab9-57bdb763a013.jpg?1783904172",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Assaut sans fin des Foot",
+   "text": "Escouade {1W} (En tant que coût supplémentaire pour lancer ce sort, vous pouvez payer {1W} autant de fois que vous le souhaitez. Quand cet enchantement arrive, créez autant de jetons qui en sont des copies.)\nÀ chaque fois que vous attaquez, pour chaque adversaire, créez un jeton de créature 1/1 noire Ninja qui est engagé et attaquant ce joueur.",
+   "image": "https://cards.scryfall.io/normal/front/1/9/19bbfc77-c031-444e-b125-c43654c54edd.jpg?1782761439"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "W"
+  ]
  },
  {
   "name": "Enlightened Tutor",
@@ -2097,6 +3255,36 @@
   "colorIdentity": []
  },
  {
+  "name": "Exploding Barrel",
+  "number": "39",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add one mana of any color. Put a pressure counter on this artifact.\n{8}, {T}, Sacrifice this artifact: It deals 20 damage to target creature. This ability costs {1} less to activate for each pressure counter on this artifact. Activate only as a sorcery.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/e/dee26c1c-f890-46ca-81bb-2bd63fa691c9.jpg?1783904161",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/e/dee26c1c-f890-46ca-81bb-2bd63fa691c9.jpg?1783904161",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tonneau explosif",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix. Mettez un marqueur « pression » sur cet artefact.\n{8}, {T}, sacrifiez cet artefact : Il inflige 20 blessures à une créature ciblée. Cette capacité coûte {1} de moins à activer pour chaque marqueur « pression » sur cet artefact. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/4/8/4880a4ce-6d76-4d2a-8855-1da026c9706d.jpg?1782761367"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
   "name": "Exquisite Blood",
   "number": "195",
   "rarity": "rare",
@@ -2122,6 +3310,33 @@
   "origin": "LCC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Fact or Fiction",
+  "number": "41",
+  "rarity": "uncommon",
+  "manaCost": "{3}{U}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/b/eb1a25c5-1918-40f3-b54f-5d31cf6b4eb2.jpg?1789599811",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/b/eb1a25c5-1918-40f3-b54f-5d31cf6b4eb2.jpg?1789599811",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fait ou fiction",
+   "text": "Révélez les cinq cartes du dessus de votre bibliothèque. Un adversaire sépare ces cartes en deux tas. Mettez un tas dans votre main et l'autre dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/b/5/b5780b62-a232-4bd0-8c34-4c1e6bfe9e86.jpg?1790693336"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -2182,6 +3397,35 @@
   ]
  },
  {
+  "name": "Fast Forward",
+  "number": "24",
+  "rarity": "rare",
+  "manaCost": "{4}{R}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "This spell costs {1} less to cast for each opponent you attacked this turn.\nGoad all creatures your opponents control. (Until your next turn, those creatures attack each combat if able and attack a player other than you if able.)",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Goad"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/e/fe07512e-46c1-4f45-a06f-5875acaf8928.jpg?1783904167",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe07512e-46c1-4f45-a06f-5875acaf8928.jpg?1783904167",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Accélérer",
+   "text": "Ce sort coûte {1} de moins à lancer pour chaque adversaire que vous avez attaqué ce tour-ci.\nIncitez toutes les créatures que vos adversaires contrôlent. (Jusqu'à votre prochain tour, ces créatures attaquent à chaque combat si possible et attaquent un joueur autre que vous si possible.)",
+   "image": "https://cards.scryfall.io/normal/front/e/e/eec43a7a-0709-48e3-93e9-9fc78db9983d.jpg?1782761400"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Fellwar Stone",
   "number": "57",
   "rarity": "uncommon",
@@ -2210,6 +3454,37 @@
   },
   "origin": "FRC",
   "colorIdentity": []
+ },
+ {
+  "name": "Fetid Heath",
+  "number": "72",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{W/B}, {T}: Add {W}{W}, {W}{B}, or {B}{B}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/e/ae07ff9f-d5a8-4220-b08f-fe8fad5adcb7.jpg?1789599906",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/e/ae07ff9f-d5a8-4220-b08f-fe8fad5adcb7.jpg?1789599906",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lande fétide",
+   "text": "{T} : Ajoutez {C}.\n{W/B}, {T} : Ajoutez {W}{W}, {W}{B} ou {B}{B}.",
+   "image": "https://cards.scryfall.io/normal/front/c/9/c98e83ff-4d28-43a9-a0cd-71b2bd0f9c9b.jpg?1790694378"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
  },
  {
   "name": "Fierce Guardianship",
@@ -2322,6 +3597,35 @@
   "colorIdentity": [
    "B",
    "R"
+  ]
+ },
+ {
+  "name": "Foot Chopper",
+  "number": "17",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "When this Equipment enters, create a 1/1 black Ninja creature token, then attach this Equipment to it.\nEquipped creature has flying.\nWhenever equipped creature deals combat damage to a player, you may sacrifice it. If you do, draw cards equal to its power.\nEquip {2}",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/4/f43fa5c7-51e6-4824-95f8-837ccc77a6ce.jpg?1783904170",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f43fa5c7-51e6-4824-95f8-837ccc77a6ce.jpg?1783904170",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Hélicoptère des Foot",
+   "text": "Quand cet équipement arrive, créez un jeton de créature 1/1 noire Ninja, puis attachez-lui cet équipement.\nLa créature équipée a le vol.\nÀ chaque fois que la créature équipée inflige des blessures de combat à un joueur, vous pouvez la sacrifier. Si vous faites ainsi, piochez un nombre de cartes égal à sa force.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/5/4/549eb227-0d84-47d7-b9c2-bf518b660609.jpg?1782761419"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
   ]
  },
  {
@@ -2472,6 +3776,33 @@
   ]
  },
  {
+  "name": "Game Over",
+  "number": "18",
+  "rarity": "rare",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "This spell costs {2} less to cast if a player's life total is less than or equal to half their starting life total.\nDestroy all creatures.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/1/f1eb50a6-07e2-41de-b948-8075bba197ee.jpg?1783904170",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/1/f1eb50a6-07e2-41de-b948-8075bba197ee.jpg?1783904170",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fin de la partie",
+   "text": "Ce sort coûte {2} de moins à lancer si le total de points de vie d'un joueur est inférieur ou égal à la moitié de son total de points de vie de départ.\nDétruisez toutes les créatures.",
+   "image": "https://cards.scryfall.io/normal/front/3/3/33c22799-2285-4dc7-840f-baf8393c1e3a.jpg?1782761414"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Ganax, Astral Hunter",
   "number": "176",
   "rarity": "uncommon",
@@ -2511,6 +3842,31 @@
   "colorIdentity": [
    "R"
   ]
+ },
+ {
+  "name": "Ginger, Queen of Sweets",
+  "number": "14",
+  "rarity": "rare",
+  "manaCost": "{6}",
+  "cmc": 6,
+  "typeLine": "Legendary Artifact Creature — Food Noble",
+  "oracleText": "When Ginger enters, you become the monarch.\n{2}, {T}, Sacrifice Ginger: You gain 6 life.\nAt the beginning of each upkeep, if you're the monarch, create a Gingerbrute token. (It's a {1} 1/1 Food Golem artifact creature with haste, \"{1}: This token can't be blocked this turn except by creatures with haste,\" and \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+  "power": "6",
+  "toughness": "4",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/4/f4ff6bf9-89a9-4c2a-84a2-d4ceb7168adf.jpg?1790343341",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f4ff6bf9-89a9-4c2a-84a2-d4ceb7168adf.jpg?1790343341",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Gingembre, reine des sucreries",
+   "text": "Quand Gingembre arrive, vous devenez le monarque.\n{2}, {T}, sacrifiez Gingembre : Vous gagnez 6 points de vie.\nAu début de chaque entretien, si vous êtes le monarque, créez un jeton Brute en pain d'épices. (C'est une créature-artefact 1/1 {1} Nourriture et Golem avec la célérité, « {1} : Ce jeton ne peut pas être bloqué ce tour-ci excepté par des créatures avec la célérité » et « {2}, {T}, sacrifiez ce jeton : Vous gagnez 3 points de vie. »)",
+   "image": "https://cards.scryfall.io/normal/front/f/2/f29270a6-b8b1-429f-b104-92b097a47651.jpg?1790692602"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
  },
  {
   "name": "Glacial Fortress",
@@ -2617,6 +3973,65 @@
   ]
  },
  {
+  "name": "Grand Coliseum",
+  "number": "299",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add {C}.\n{T}: Add one mana of any color. This land deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/e/0ea85b58-a396-4ee9-ba77-afc0b0742cf1.jpg?1783937027",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/e/0ea85b58-a396-4ee9-ba77-afc0b0742cf1.jpg?1783937027",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Grand Colisée",
+   "typeLine": "Terrain",
+   "text": "Le Grand Colisée arrive sur le champ de bataille engagé.\n{T} : Ajoutez {C} à votre réserve.\n{T} : Ajoutez un mana de la couleur de votre choix à votre réserve. Le Grand Colisée vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/c/1/c11d8b20-1298-4d69-8b15-19246c597874.jpg?1782945970"
+  },
+  "origin": "C16",
+  "colorIdentity": []
+ },
+ {
+  "name": "Grand Crescendo",
+  "number": "26",
+  "rarity": "rare",
+  "manaCost": "{X}{W}{W}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Create X 1/1 green and white Citizen creature tokens. Creatures you control gain indestructible until end of turn.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/6/a60834b0-38ab-40c9-9fd9-db3a23b13076.jpg?1789599802",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/6/a60834b0-38ab-40c9-9fd9-db3a23b13076.jpg?1789599802",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Grand crescendo",
+   "text": "Créez X jetons de créature 1/1 verte et blanche Citoyen. Les créatures que vous contrôlez acquièrent l'indestructible jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/b/1/b15d4fdb-0d23-48d2-b968-a1638c9d1b62.jpg?1790692934"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Graven Cairns",
   "number": "401",
   "rarity": "rare",
@@ -2710,6 +4125,33 @@
   ]
  },
  {
+  "name": "Harmonize",
+  "number": "209",
+  "rarity": "uncommon",
+  "manaCost": "{2}{G}{G}",
+  "cmc": 4,
+  "typeLine": "Sorcery",
+  "oracleText": "Draw three cards.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/6/36bd3fb1-deeb-422e-a29e-b50e7aa3c334.jpg?1789753274",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/6/36bd3fb1-deeb-422e-a29e-b50e7aa3c334.jpg?1789753274",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Harmonisation",
+   "text": "Piochez trois cartes.",
+   "image": "https://cards.scryfall.io/normal/front/f/b/fb8259b2-1dfd-4fdd-b28a-dc3ad51da851.jpg?1785264138"
+  },
+  "origin": "FDC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
   "name": "Hellkite Courser",
   "number": "218",
   "rarity": "mythic",
@@ -2795,6 +4237,162 @@
   },
   "origin": "FDC",
   "colorIdentity": []
+ },
+ {
+  "name": "Here Comes a New Hero!",
+  "number": "11",
+  "rarity": "rare",
+  "manaCost": "{X}{2}{U}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Target player draws X cards. Create a token that's a copy of up to one target creature with mana value X or less.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/9/096a07e2-c213-4f8a-852f-813435bf1655.jpg?1783904174",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/9/096a07e2-c213-4f8a-852f-813435bf1655.jpg?1783904174",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Un nouveau héros vient d'arriver !",
+   "text": "Un joueur ciblé pioche X cartes. Créez un jeton qui est une copie de jusqu'à une créature ciblée avec une valeur de mana inférieure ou égale à X.",
+   "image": "https://cards.scryfall.io/normal/front/4/2/427505b1-db35-4fc8-9063-ca5491762ad7.jpg?1782761431"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Heroes in a Half Shell",
+  "number": "6",
+  "rarity": "mythic",
+  "manaCost": "{W}{U}{B}{R}{G}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Mutant Ninja Turtle",
+  "oracleText": "Vigilance, menace, trample, haste\nWhenever one or more Mutants, Ninjas, and/or Turtles you control deal combat damage to a player, put a +1/+1 counter on each of those creatures and draw a card.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Vigilance",
+   "Haste",
+   "Trample",
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/c/ccc2a4e6-f505-4040-9d8a-c7b8e1a2b55e.jpg?1783904172",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/c/ccc2a4e6-f505-4040-9d8a-c7b8e1a2b55e.jpg?1783904172",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chevaliers d'écaille et de vinyle",
+   "text": "Vigilance, menace, piétinement, célérité\nÀ chaque fois qu'au moins un mutant, un ninja et/ou une tortue terrestre que vous contrôlez inflige des blessures de combat à un joueur, mettez un marqueur +1/+1 sur chacune de ces créatures et piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/6/a/6a3ca756-4c25-4a0d-902b-ba8fd319af79.jpg?1782761445"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Hidden Hideout",
+  "number": "43",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity.\n{2}, {T}: Target creature you control with a counter on it gains lifelink until end of turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/3/f356522c-018d-43c7-988a-9ef9829ae75c.jpg?1783904160",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/3/f356522c-018d-43c7-988a-9ef9829ae75c.jpg?1783904160",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Repaire caché",
+   "text": "Ce terrain arrive engagé.\n{T} : Ajoutez un mana de la couleur de votre choix de l'identité couleur de votre commandant.\n{2}, {T} : Une créature ciblée que vous contrôlez avec un marqueur sur elle acquiert le lien de vie jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/4/a/4ab62d4b-15d1-4605-abff-ef682f5ab95a.jpg?1782761359"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
+  "name": "High Score",
+  "number": "29",
+  "rarity": "rare",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.\nAt the beginning of your end step, draw a card if you control a creature with the greatest power among creatures on the battlefield.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/9/b9077ef5-d19a-4106-950b-bb49b3b37510.jpg?1783904165",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/9/b9077ef5-d19a-4106-950b-bb49b3b37510.jpg?1783904165",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Meilleur score",
+   "text": "Si au moins un marqueur +1/+1 devait être mis sur une créature que vous contrôlez, autant de marqueurs +1/+1 plus un sont mis sur elle à la place.\nAu début de votre étape de fin, piochez une carte si vous contrôlez une créature qui a la force la plus élevée parmi les créatures sur le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/f/4/f49ee901-cb0d-4446-9f5a-954f2f3b3d3b.jpg?1782761390"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
+  "name": "Hinterland Harbor",
+  "number": "250",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control a Forest or an Island.\n{T}: Add {G} or {U}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/9/892451a1-5527-4857-84f8-62028d147489.jpg?1783903199",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/9/892451a1-5527-4857-84f8-62028d147489.jpg?1783903199",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Port de l'arrière-pays",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez une forêt ou une île.\n{T} : Ajoutez {G} ou {U}.",
+   "image": "https://cards.scryfall.io/normal/front/4/c/4c8346a2-ec02-4698-976a-20bfc85a1983.jpg?1785267015"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "G",
+   "U"
+  ]
  },
  {
   "name": "Horizon of Progress",
@@ -2956,6 +4554,35 @@
   ]
  },
  {
+  "name": "Irma, Part-Time Mutant",
+  "number": "12",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Mutant Shapeshifter",
+  "oracleText": "At the beginning of combat on your turn, Irma becomes a copy of up to one other target creature you control, except her name is Irma, Part-Time Mutant and she has this ability. Then put a +1/+1 counter on her.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/3/c3128529-4ccd-4809-8388-03f7faa0eabe.jpg?1783904172",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c3128529-4ccd-4809-8388-03f7faa0eabe.jpg?1783904172",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Irma, mutante à temps partiel",
+   "text": "Au début du combat pendant votre tour, Irma devient une copie de jusqu'à une autre créature ciblée que vous contrôlez, excepté que son nom est Irma, mutante à temps partiel et qu'elle a cette capacité. Puis mettez un marqueur +1/+1 sur elle.",
+   "image": "https://cards.scryfall.io/normal/front/8/b/8b0d19e1-8e0f-4532-b258-ee5e70f4a2f7.jpg?1782761429"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Isolated Chapel",
   "number": "74",
   "rarity": "rare",
@@ -3012,6 +4639,99 @@
   },
   "origin": "CMM",
   "colorIdentity": []
+ },
+ {
+  "name": "Izzet Signet",
+  "number": "58",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}: Add {U}{R}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/5/d5e141ad-5cb8-416b-9acf-bce1baeb6b6b.jpg?1789599844",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d5e141ad-5cb8-416b-9acf-bce1baeb6b6b.jpg?1789599844",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cachet d'Izzet",
+   "text": "{1}, {T} : Ajoutez {U}{R}.",
+   "image": "https://cards.scryfall.io/normal/front/2/f/2fcbcb01-fc7b-46d7-a17a-fefddc447846.jpg?1790693854"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "U"
+  ]
+ },
+ {
+  "name": "Jace, Multiverse Architect",
+  "number": "1",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}{U}{B}{R}",
+  "cmc": 5,
+  "typeLine": "Legendary Planeswalker — Jace",
+  "oracleText": "At the beginning of combat on each opponent's turn, they may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn.\n+1: Draw two cards, then put a card from your hand on the bottom of your library.\n−3: Exile another target planeswalker or creature you control. Reveal cards from the top of your library until you reveal a creature or planeswalker card. Put that card onto the battlefield and the rest on the bottom of your library in a random order.\nJace, Multiverse Architect can be your commander.",
+  "loyalty": "4",
+  "colors": [
+   "B",
+   "R",
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/5/55cd03d9-2535-4cf3-a8b2-1418e1190f4a.jpg?1789644316",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/5/55cd03d9-2535-4cf3-a8b2-1418e1190f4a.jpg?1789644316",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Jace, architecte du Multivers",
+   "text": "Au début du combat pendant le tour de chaque adversaire, il peut payer {2}. S'il ne le fait pas, les créatures qu'il contrôle ne peuvent pas attaquer les Jace que vous contrôlez ce tour-ci.\n+1: Piochez deux cartes, puis mettez une carte de votre main au-dessous de votre bibliothèque.\n-3: Exilez une autre cible que vous contrôlez, planeswalker ou créature. Révélez les cartes du dessus de votre bibliothèque jusqu'à ce que vous révéliez une carte de créature ou de planeswalker. Mettez cette carte sur le champ de bataille et le reste au-dessous de votre bibliothèque dans un ordre aléatoire.\nJace, architecte du Multivers peut être votre commandant.",
+   "image": "https://cards.scryfall.io/normal/front/5/3/537ac85a-b0bf-4920-a9d6-b226bd562ada.jpg?1790692261"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "R",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Jhoira, Weatherlight Corsair",
+  "number": "8",
+  "rarity": "rare",
+  "manaCost": "{4}{B}{B}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Human Pirate",
+  "oracleText": "Whenever Jhoira enters or attacks, target opponent reveals cards from the top of their library until they reveal a historic permanent card. You put that card onto the battlefield under your control and lose life equal to that permanent's mana value. That player puts the rest of the revealed cards on the bottom of their library in a random order. (Artifacts, legendaries, and Sagas are historic.)",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/8/1874c58d-00ce-4973-a318-50ce21d1a675.jpg?1789644258",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/1874c58d-00ce-4973-a318-50ce21d1a675.jpg?1789644258",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Djoïra, corsaire de l'Aquilon",
+   "text": "À chaque fois que Djoïra arrive ou attaque, un adversaire ciblé révèle les cartes du dessus de sa bibliothèque jusqu'à ce qu'il révèle une carte de permanent historique. Vous mettez cette carte sur le champ de bataille sous votre contrôle et vous perdez un nombre de points de vie égal à la valeur de mana de ce permanent. Ce joueur met le reste des cartes révélées au-dessous de sa bibliothèque dans un ordre aléatoire. (Les artefacts, les légendaires et les sagas sont historiques.)",
+   "image": "https://cards.scryfall.io/normal/front/7/1/71f3689b-37f8-49d7-9fea-55ddc1acf90b.jpg?1790692443"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B"
+  ]
  },
  {
   "name": "Kambal, Consul of Allocation",
@@ -3107,6 +4827,34 @@
    "G",
    "R",
    "U"
+  ]
+ },
+ {
+  "name": "Kher Keep",
+  "number": "75",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {C}.\n{1}{R}, {T}: Create a 0/1 red Kobold creature token named Kobolds of Kher Keep.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/5/15ca0b68-33a1-4d25-b622-d3f5ba05b0a5.jpg?1789599901",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/5/15ca0b68-33a1-4d25-b622-d3f5ba05b0a5.jpg?1789599901",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Castel Kher",
+   "text": "{T} : Ajoutez {C}.\n{1}{R}, {T} : Créez un jeton de créature 0/1 rouge Kobold appelé Kobolds de Castel Kher.",
+   "image": "https://cards.scryfall.io/normal/front/b/e/be3d9706-50c8-4a1b-95c1-7ec9ae2dd5f3.jpg?1790694476"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -3337,6 +5085,67 @@
   "colorIdentity": []
  },
  {
+  "name": "Krang, the All-Powerful",
+  "number": "13",
+  "rarity": "rare",
+  "manaCost": "{4}{U}",
+  "cmc": 5,
+  "typeLine": "Legendary Artifact Creature — Utrom Robot",
+  "oracleText": "If a player drawing a card causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.\nWhenever a player draws their second card each turn, put a +1/+1 counter on Krang.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/8/08a0ca58-e29e-477e-9377-f8b00e4b28a0.jpg?1783904172",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08a0ca58-e29e-477e-9377-f8b00e4b28a0.jpg?1783904172",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Krang, le tout-puissant",
+   "text": "Si la pioche d'une carte par un joueur provoque le déclenchement d'une capacité déclenchée d'un permanent que vous contrôlez, cette capacité se déclenche une fois de plus.\nÀ chaque fois qu'un joueur pioche sa deuxième carte à chaque tour, mettez un marqueur +1/+1 sur Krang.",
+   "image": "https://cards.scryfall.io/normal/front/7/7/775570e4-7897-4496-9743-1a915eb318ed.jpg?1782761429"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Leatherhead, Iron Gator",
+  "number": "30",
+  "rarity": "rare",
+  "manaCost": "{5}{G}{G}",
+  "cmc": 7,
+  "typeLine": "Legendary Creature — Crocodile Mutant Rogue",
+  "oracleText": "Trample, haste\nWhenever Leatherhead attacks, put two +1/+1 counters on each creature you control.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Haste",
+   "Trample"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/0/c0cacd61-bdce-46c6-ac7f-b084987d9aec.jpg?1783904165",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c0cacd61-bdce-46c6-ac7f-b084987d9aec.jpg?1783904165",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Leatherhead, alligator de fer",
+   "text": "Piétinement, célérité\nÀ chaque fois que Leatherhead attaque, mettez deux marqueurs +1/+1 sur chaque créature que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/5/5/5593a7ef-6044-4ab3-aded-587f49a68633.jpg?1782761385"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
   "name": "Legion Lieutenant",
   "number": "275",
   "rarity": "uncommon",
@@ -3366,6 +5175,71 @@
   "colorIdentity": [
    "B",
    "W"
+  ]
+ },
+ {
+  "name": "Leonardo, the Balance",
+  "number": "1",
+  "rarity": "mythic",
+  "manaCost": "{3}{W}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Mutant Ninja Turtle",
+  "oracleText": "Whenever a token you control enters, you may put a +1/+1 counter on each creature you control. Do this only once each turn.\n{W}{U}{B}{R}{G}: Creatures you control gain menace, trample, and lifelink until end of turn.\nPartner—Character select (You can have two commanders if both have this ability.)",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/2/72e637db-7112-406f-809b-0eda248488b5.jpg?1783904176",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/72e637db-7112-406f-809b-0eda248488b5.jpg?1783904176",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Leonardo, l'équilibre",
+   "text": "À chaque fois qu'un jeton que vous contrôlez arrive, vous pouvez mettre un marqueur +1/+1 sur chaque créature que vous contrôlez. Ne faites ceci qu'une seule fois par tour.\n{W}{U}{B}{R}{G} : Les créatures que vous contrôlez acquièrent la menace, le piétinement et le lien de vie jusqu'à la fin du tour.\nPartenariat - Sélection du personnage (Vous pouvez avoir deux commandants si les deux ont cette capacité.)",
+   "image": "https://cards.scryfall.io/normal/front/1/a/1aed4db9-02af-4b20-abeb-edfe8d3ba802.jpg?1789506532"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Level Up",
+  "number": "31",
+  "rarity": "rare",
+  "manaCost": "{1}{G}",
+  "cmc": 2,
+  "typeLine": "Enchantment — Aura",
+  "oracleText": "Enchant creature\nWhen this Aura enters, put a +1/+1 counter on enchanted creature.\nEnchanted creature has \"Whenever this creature attacks, double the number of +1/+1 counters on it. Then if it has power 10 or greater, draw a card.\"",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Enchant",
+   "Double"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/4/d4398907-17d2-4fad-bfa9-56925fb75834.jpg?1783904165",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/4/d4398907-17d2-4fad-bfa9-56925fb75834.jpg?1783904165",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Passer un niveau",
+   "text": "Enchanter : créature\nQuand cette aura arrive, mettez un marqueur +1/+1 sur la créature enchantée.\nLa créature enchantée a « À chaque fois que cette créature attaque, doublez le nombre de marqueurs +1/+1 sur elle. Puis, si sa force est supérieure ou égale à 10, piochez une carte. »",
+   "image": "https://cards.scryfall.io/normal/front/b/8/b8624d60-bd59-44ba-b2d4-ec4feeed3a0f.jpg?1782761383"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "G"
   ]
  },
  {
@@ -3419,6 +5293,36 @@
   "origin": "ICE",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Lingering Souls",
+  "number": "27",
+  "rarity": "uncommon",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Create two 1/1 white Spirit creature tokens with flying.\nFlashback {1}{B} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Flashback"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/5/e5b16141-d185-4be2-97c1-5b0ef5483728.jpg?1789599791",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/5/e5b16141-d185-4be2-97c1-5b0ef5483728.jpg?1789599791",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Âmes persistantes",
+   "text": "Créez deux jetons de créature 1/1 blanche Esprit avec le vol.\nFlashback {1}{B} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/6/e/6edab73f-4413-445c-9017-92cdeb4d0a6d.jpg?1790692966"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "W"
   ]
  },
  {
@@ -3648,6 +5552,60 @@
   ]
  },
  {
+  "name": "Martial Coup",
+  "number": "28",
+  "rarity": "rare",
+  "manaCost": "{X}{W}{W}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Create X 1/1 white Soldier creature tokens. If X is 5 or more, destroy all other creatures.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/c/5c4d0ad9-4d57-4e5c-b478-059220f5b1dd.jpg?1789599791",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/c/5c4d0ad9-4d57-4e5c-b478-059220f5b1dd.jpg?1789599791",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Coup d'état militaire",
+   "text": "Créez X jetons de créature 1/1 blanche Soldat. Si X est supérieur ou égal à 5, détruisez toutes les autres créatures.",
+   "image": "https://cards.scryfall.io/normal/front/8/1/81bd8977-05a9-43ba-87a0-75010334d0d7.jpg?1790692987"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Mass Polymorph",
+  "number": "42",
+  "rarity": "rare",
+  "manaCost": "{5}{U}",
+  "cmc": 6,
+  "typeLine": "Sorcery",
+  "oracleText": "Exile all creatures you control, then reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/2/b29db023-28d0-411d-864a-8f1e22ae1f74.jpg?1789599820",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b29db023-28d0-411d-864a-8f1e22ae1f74.jpg?1789599820",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Polymorphisme de masse",
+   "text": "Exilez toutes les créatures que vous contrôlez, puis révélez les cartes du dessus de votre bibliothèque jusqu'à ce que vous révéliez autant de cartes de créature. Mettez toutes les cartes de créature révélées de cette manière sur le champ de bataille et mélangez ensuite le reste des cartes révélées dans votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/c/e/ce2f66cc-712b-4a14-a0be-fcdd0758defa.jpg?1790693364"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Master of Dark Rites",
   "number": "83",
   "rarity": "rare",
@@ -3708,6 +5666,66 @@
   "origin": "LCC",
   "colorIdentity": [
    "W"
+  ]
+ },
+ {
+  "name": "Memnarch, the Warden",
+  "number": "15",
+  "rarity": "rare",
+  "manaCost": "{10}",
+  "cmc": 10,
+  "typeLine": "Legendary Artifact Creature — Wizard",
+  "oracleText": "Indestructible\nWhen Memnarch enters, create two 1/1 colorless Myr artifact creature tokens.\nWhenever Memnarch attacks, draw a card for each artifact you control.",
+  "power": "8",
+  "toughness": "9",
+  "colors": [],
+  "keywords": [
+   "Indestructible"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/0/60d05210-c2b1-4248-a470-e0f8123d33f8.jpg?1789644424",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/60d05210-c2b1-4248-a470-e0f8123d33f8.jpg?1789644424",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Memnarch, le gardien",
+   "text": "Indestructible\nQuand Memnarch arrive, créez deux jetons de créature-artefact 1/1 incolore Myr.\nÀ chaque fois que Memnarch attaque, piochez une carte pour chaque artefact que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/3/1/314bfc85-b6fc-4524-a9f0-73b0266dfe76.jpg?1790692633"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Michelangelo, the Heart",
+  "number": "5",
+  "rarity": "mythic",
+  "manaCost": "{1}{G}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Mutant Ninja Turtle",
+  "oracleText": "Trample\nRaid (the Fridge) — At the beginning of your second main phase, if you attacked this turn, put a +1/+1 counter on target creature and create a Food token.\nPartner—Character select (You can have two commanders if both have this ability.)",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Food",
+   "Partner",
+   "Trample"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/a/bac2d744-db65-4b56-8634-c87fd00c090e.jpg?1783904173",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/a/bac2d744-db65-4b56-8634-c87fd00c090e.jpg?1783904173",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Michelangelo, le cœur",
+   "text": "Piétinement\nSaccage (du frigo) - Au début de votre deuxième phase principale, si vous avez attaqué ce tour-ci, mettez un marqueur +1/+1 sur une créature ciblée et créez un jeton Nourriture.\nPartenariat - Sélection du personnage (Vous pouvez avoir deux commandants si les deux ont cette capacité.)",
+   "image": "https://cards.scryfall.io/normal/front/1/b/1b5f5f56-e329-499a-b521-05f6204d9b7f.jpg?1782761447"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "G"
   ]
  },
  {
@@ -3774,6 +5792,35 @@
   "colorIdentity": []
  },
  {
+  "name": "Mole Module",
+  "number": "40",
+  "rarity": "rare",
+  "manaCost": "{5}",
+  "cmc": 5,
+  "typeLine": "Artifact — Vehicle",
+  "oracleText": "Menace\nWhenever this Vehicle deals combat damage to a player, mill four cards. You may put a permanent card from among them onto the battlefield.\nCrew 2",
+  "power": "6",
+  "toughness": "6",
+  "colors": [],
+  "keywords": [
+   "Crew",
+   "Menace",
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/4/248757d9-f590-4f90-98a5-3df947b2bff6.jpg?1783904161",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/248757d9-f590-4f90-98a5-3df947b2bff6.jpg?1783904161",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Module de taupe",
+   "text": "Menace\nÀ chaque fois que ce véhicule inflige des blessures de combat à un joueur, meulez quatre cartes. Vous pouvez mettre sur le champ de bataille une carte de permanent parmi elles.\nPilotage 2",
+   "image": "https://cards.scryfall.io/normal/front/a/b/ab59069e-1809-4319-aab5-d4ef8ef96cfa.jpg?1782761365"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
   "name": "Morphic Pool",
   "number": "357",
   "rarity": "rare",
@@ -3836,6 +5883,37 @@
   "colorIdentity": []
  },
  {
+  "name": "Mystic Gate",
+  "number": "76",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{W/U}, {T}: Add {W}{W}, {W}{U}, or {U}{U}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/a/fa32d90e-1153-42ab-b8ff-0eb82698692c.jpg?1789599906",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/a/fa32d90e-1153-42ab-b8ff-0eb82698692c.jpg?1789599906",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Porte mystique",
+   "text": "{T} : Ajoutez {C}.\n{W/U}, {T} : Ajoutez {W}{W}, {W}{U} ou {U}{U}.",
+   "image": "https://cards.scryfall.io/normal/front/9/9/996540e0-af91-46fe-9cb5-433cfddd9207.jpg?1790694508"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
   "name": "Mystic Remora",
   "number": "59",
   "rarity": "rare",
@@ -3891,6 +5969,114 @@
   "origin": "LCC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Ninja Pizza",
+  "number": "32",
+  "rarity": "rare",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Foods you control have \"{T}, Sacrifice this artifact: Add one mana of any color.\"\nAt the beginning of your second main phase, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Food"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/4/74c24ff9-d3d2-4ffb-bf8b-dba803481a99.jpg?1783904164",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/74c24ff9-d3d2-4ffb-bf8b-dba803481a99.jpg?1783904164",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pizza ninja",
+   "text": "Les nourritures que vous contrôlez ont « {T}, sacrifiez cet artefact : Ajoutez un mana de la couleur de votre choix. »\nAu début de votre deuxième phase principale, créez un jeton Nourriture. (C'est un artefact avec « {2}, {T}, sacrifiez ce jeton : Vous gagnez 3 points de vie. »)",
+   "image": "https://cards.scryfall.io/normal/front/9/9/99941867-dd53-4672-8575-155a46ba7f85.jpg?1782761382"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
+  "name": "Nissa, Leyline Tamer",
+  "number": "2",
+  "rarity": "mythic",
+  "manaCost": "{3}{W}{U}{B}{R}",
+  "cmc": 7,
+  "typeLine": "Legendary Creature — Elf Wizard",
+  "oracleText": "Deathtouch, vigilance\nLandfall — Whenever a land you control enters, draw a card. Then if this is the first time this ability has resolved this turn, reveal cards from the top of your library until you reveal a creature card. Put that card onto the battlefield and the rest on the bottom of your library in a random order.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "B",
+   "R",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Vigilance",
+   "Deathtouch",
+   "Landfall"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/9/e969d1f3-9595-498b-81cb-6cf4df2cad5d.jpg?1789644323",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/9/e969d1f3-9595-498b-81cb-6cf4df2cad5d.jpg?1789644323",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nissa, dompteuse des lignes ley",
+   "text": "Contact mortel, vigilance\nToucheterre - À chaque fois qu'un terrain que vous contrôlez arrive, piochez une carte. Puis, si c'est la première fois que cette capacité s'est résolue ce tour-ci, révélez les cartes du dessus de votre bibliothèque jusqu'à ce que vous révéliez une carte de créature. Mettez cette carte sur le champ de bataille et le reste au-dessous de votre bibliothèque dans un ordre aléatoire.",
+   "image": "https://cards.scryfall.io/normal/front/1/4/14fe25e5-7441-439a-8473-bb41a52da30f.jpg?1790692286"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "R",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Niv-Mizzet, Ghost Counsel",
+  "number": "10",
+  "rarity": "rare",
+  "manaCost": "{2}{W}{W}{B}{B}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Spirit Dragon",
+  "oracleText": "Flying\nWhenever you gain life, you may pay that much life. If you do, draw that many cards.\n{T}: Each opponent loses 1 life and you gain 1 life.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/a/0ad0e168-ac5c-4e1b-83f2-0488067a58d7.jpg?1789644348",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0ad0e168-ac5c-4e1b-83f2-0488067a58d7.jpg?1789644348",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Niv-Mizzet, conseiller fantôme",
+   "text": "Vol\nÀ chaque fois que vous gagnez des points de vie, vous pouvez payer autant de points de vie. Si vous faites ainsi, piochez autant de cartes.\n{T} : Chaque adversaire perd 1 point de vie et vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/b/4/b4a74140-d765-4828-8c80-285bac9a0308.jpg?1790692494"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "W"
   ]
  },
  {
@@ -3966,6 +6152,64 @@
   ]
  },
  {
+  "name": "Ob Nixilis, the Ascended",
+  "number": "5",
+  "rarity": "rare",
+  "manaCost": "{5}{W}{W}",
+  "cmc": 7,
+  "typeLine": "Legendary Creature — Angel",
+  "oracleText": "Flying\nWhen Ob Nixilis enters, destroy all tapped creatures your opponents control. You gain 1 life for each creature destroyed this way.\nAt the beginning of each end step, if you gained life this turn, create a 4/4 white Angel creature token with flying.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/0/a022d35a-9d24-4818-9ff3-a522cfcb178e.jpg?1789644205",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/0/a022d35a-9d24-4818-9ff3-a522cfcb178e.jpg?1789644205",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ob Nixilis, l'ascendu",
+   "text": "Vol\nQuand Ob Nixilis arrive, détruisez toutes les créatures engagées que vos adversaires contrôlent. Vous gagnez 1 point de vie pour chaque créature détruite de cette manière.\nAu début de chaque étape de fin, si vous avez gagné des points de vie ce tour-ci, créez un jeton de créature 4/4 blanche Ange avec le vol.",
+   "image": "https://cards.scryfall.io/normal/front/4/b/4b3954c1-5971-4417-98ac-a009925ee9aa.jpg?1790692360"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Occult Epiphany",
+  "number": "43",
+  "rarity": "rare",
+  "manaCost": "{X}{U}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Draw X cards, then discard X cards. Create a 1/1 white Spirit creature token with flying for each card type among cards discarded this way.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/5/e5fcfaff-2fd0-46d8-b863-ad25558c9e95.jpg?1789599813",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/5/e5fcfaff-2fd0-46d8-b863-ad25558c9e95.jpg?1789599813",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Révélation occulte",
+   "text": "Piochez X cartes, puis défaussez-vous de X cartes. Créez un jeton de créature 1/1 blanche Esprit avec le vol pour chaque type de carte parmi les cartes défaussées de cette manière.",
+   "image": "https://cards.scryfall.io/normal/front/0/a/0a779d17-97d7-4220-9495-90ada7c0622d.jpg?1790693388"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Old Gnawbone",
   "number": "197",
   "rarity": "mythic",
@@ -4025,6 +6269,36 @@
   "colorIdentity": [
    "B"
   ]
+ },
+ {
+  "name": "Omnath, Locus of the Void",
+  "number": "3",
+  "rarity": "rare",
+  "manaCost": "{7}",
+  "cmc": 7,
+  "typeLine": "Legendary Creature — Elemental",
+  "oracleText": "Omnath gets +1/+1 for each unspent mana you have.\nIf you would lose unspent mana, that mana becomes colorless instead.\nLandfall — Whenever a land you control enters, add {C}{C}.",
+  "power": "6",
+  "toughness": "6",
+  "colors": [],
+  "keywords": [
+   "Landfall"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/2/727511d8-be1a-4c2e-92f6-5cc9d67a2b0c.jpg?1789644395",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/727511d8-be1a-4c2e-92f6-5cc9d67a2b0c.jpg?1789644395",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Omnath, Locus du Vide",
+   "text": "Omnath gagne +1/+1 pour chaque mana non dépensé que vous avez.\nSi vous deviez perdre du mana non dépensé, ce mana devient incolore à la place.\nToucheterre - À chaque fois qu'un terrain que vous contrôlez arrive, ajoutez {C}{C}.",
+   "image": "https://cards.scryfall.io/normal/front/6/8/68cfd654-ef91-4598-8de6-d9054639ac71.jpg?1790692301"
+  },
+  "origin": "FRC",
+  "colorIdentity": []
  },
  {
   "name": "Ophidian Eye",
@@ -4239,6 +6513,38 @@
   },
   "origin": "FRC",
   "colorIdentity": []
+ },
+ {
+  "name": "Perilous Landscape",
+  "number": "78",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Sacrifice this land: Search your library for a basic Island, Mountain, or Plains card, put it onto the battlefield tapped, then shuffle.\nCycling {U}{R}{W} ({U}{R}{W}, Discard this card: Draw a card.)",
+  "colors": [],
+  "keywords": [
+   "Cycling"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/e/fec4ca25-ef4c-4500-9bec-60d29c060b83.jpg?1789599914",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fec4ca25-ef4c-4500-9bec-60d29c060b83.jpg?1789599914",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Paysage périlleux",
+   "text": "{T} : Ajoutez {C}.\n{T}, sacrifiez ce terrain : Cherchez dans votre bibliothèque une carte d'île, de montagne ou de plaine de base, mettez-la sur le champ de bataille engagée, puis mélangez.\nRecyclage {U}{R}{W} ({U}{R}{W}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5e1a15bb-2042-4b13-9eea-337e2cd2a3c1.jpg?1790694572"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "U",
+   "W"
+  ]
  },
  {
   "name": "Phyrexian Altar",
@@ -4533,6 +6839,31 @@
   ]
  },
  {
+  "name": "Proteus Staff",
+  "number": "59",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "{2}{U}, {T}: Put target creature on the bottom of its owner's library. That creature's controller reveals cards from the top of their library until they reveal a creature card. The player puts that card onto the battlefield and the rest on the bottom of their library in any order. Activate only as a sorcery.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/6/e6fcedb4-4152-47c3-a97e-34f4483ff94d.jpg?1789599838",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e6fcedb4-4152-47c3-a97e-34f4483ff94d.jpg?1789599838",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bâton de Protée",
+   "text": "{2}{U}, {T} : Mettez une créature ciblée au-dessous de la bibliothèque de son propriétaire. Le contrôleur de cette créature révèle les cartes du dessus de sa bibliothèque jusqu'à ce qu'il révèle une carte de créature. Le joueur met cette carte sur le champ de bataille et le reste au-dessous de sa bibliothèque dans l'ordre de son choix. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/d/1/d169cc71-7c48-469d-bacd-f979cf422686.jpg?1790693877"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Quantum Misalignment",
   "number": "152",
   "rarity": "rare",
@@ -4559,6 +6890,36 @@
   "origin": "MSC",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Radiant Summit",
+  "number": "80",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Mountain Plains",
+  "oracleText": "({T}: Add {R} or {W}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/8/f8cd6aae-a1cb-43b1-aca9-09fe2778969f.jpg?1790063310",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/8/f8cd6aae-a1cb-43b1-aca9-09fe2778969f.jpg?1790063310",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sommet radieux",
+   "text": "{T} : Ajoutez {R} ou {W}.\nCe terrain arrive engagé à moins que vous ne contrôliez au moins deux terrains de base.",
+   "image": "https://cards.scryfall.io/normal/front/2/a/2a6f41e1-3279-4068-a238-4b13c72a4ef1.jpg?1790694639"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "W"
   ]
  },
  {
@@ -4594,6 +6955,38 @@
    "B",
    "U",
    "W"
+  ]
+ },
+ {
+  "name": "Rain-Slicked Copse",
+  "number": "397",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Forest Island",
+  "oracleText": "({T}: Add {G} or {U}.)\nThis land enters tapped.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "colors": [],
+  "keywords": [
+   "Cycling"
+  ],
+  "producedMana": [
+   "G",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/f/3f967dee-1c2e-423a-823b-9fc74e8053bc.jpg?1783903722",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/f/3f967dee-1c2e-423a-823b-9fc74e8053bc.jpg?1783903722",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bosquet pluvieux glissant",
+   "text": "({T} : Ajoutez {G} ou {U}.)\nCe terrain arrive engagé.\nRecyclage {2} ({2}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/f/1/f188e644-68cc-4fd7-8d07-0dc3e025af95.jpg?1782763031"
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "G",
+   "U"
   ]
  },
  {
@@ -4688,6 +7081,101 @@
   "colorIdentity": [
    "B",
    "R"
+  ]
+ },
+ {
+  "name": "Raphael, the Muscle",
+  "number": "4",
+  "rarity": "mythic",
+  "manaCost": "{4}{R}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Mutant Ninja Turtle",
+  "oracleText": "Double all damage that creatures you control with counters on them would deal.\nWhen Raphael enters, create a Mutagen token.\nPartner—Character select (You can have two commanders if both have this ability.)",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Partner",
+   "Double"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/c/bccdd54c-e64b-44d2-87b3-e80029672529.jpg?1783904174",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bccdd54c-e64b-44d2-87b3-e80029672529.jpg?1783904174",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Raphael, les muscles",
+   "text": "Doublez toutes les blessures que les créatures que vous contrôlez avec des marqueurs sur elles devraient infliger.\nQuand Raphael arrive, créez un jeton Mutagène.\nPartenariat - Sélection du personnage (Vous pouvez avoir deux commandants si les deux ont cette capacité.)",
+   "image": "https://cards.scryfall.io/normal/front/6/e/6e4bcf81-880c-4c9b-9a23-d3a9565126e0.jpg?1782761450"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Rat King, Pale Piper",
+  "number": "19",
+  "rarity": "rare",
+  "manaCost": "{3}{B}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Rat Avatar",
+  "oracleText": "Menace\nWhenever Rat King or another nontoken creature you control leaves the battlefield, create a 1/1 black Rat creature token.\n{2}, Sacrifice a token: Draw a card.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/b/9b215ce4-a085-4627-99b1-f4f1344ad41b.jpg?1783904169",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/b/9b215ce4-a085-4627-99b1-f4f1344ad41b.jpg?1783904169",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Roi des rats, joueur de flûte pâle",
+   "text": "Menace\nÀ chaque fois que le Roi des rats ou qu'une autre créature non-jeton que vous contrôlez quitte le champ de bataille, créez un jeton de créature 1/1 noire Rat.\n{2}, sacrifiez un jeton : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/d/c/dcfaba4c-0b4e-412c-ab9e-682e21d3d141.jpg?1782761412"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Ray Fillet, Wave Warrior",
+  "number": "14",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Fish Mutant",
+  "oracleText": "Flying\nEvolve (Whenever a creature you control enters, if that creature has greater power or toughness than this creature, put a +1/+1 counter on this creature.)\nWhenever a creature you control with a counter on it deals combat damage to a player, draw a card.",
+  "power": "0",
+  "toughness": "2",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying",
+   "Evolve"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/9/796c1b1c-c701-4c7e-922b-0964f04e03a6.jpg?1783904171",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/9/796c1b1c-c701-4c7e-922b-0964f04e03a6.jpg?1783904171",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ray Fillet, guerrier des vagues",
+   "text": "Vol\nÉvolution (À chaque fois qu'une créature que vous contrôlez arrive, si sa force ou son endurance est supérieure à celle de cette créature, mettez un marqueur +1/+1 sur cette créature.)\nÀ chaque fois qu'une créature que vous contrôlez avec un marqueur sur elle inflige des blessures de combat à un joueur, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/2/3/23f244fe-8cfe-4be8-9518-782277d6d00b.jpg?1782761424"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -4806,6 +7294,97 @@
   "origin": "M21",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Roadkill Rodney",
+  "number": "41",
+  "rarity": "rare",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact Creature — Robot",
+  "oracleText": "Squad {3} (As an additional cost to cast this spell, you may pay {3} any number of times. When this creature enters, create that many tokens that are copies of it.)\nDeathtouch\nWhenever this creature deals combat damage to a player, create a Mutagen token.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [],
+  "keywords": [
+   "Squad",
+   "Deathtouch"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/f/3fc23e7a-5059-4c8d-85bd-224f4c1bfc1c.jpg?1783904161",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/f/3fc23e7a-5059-4c8d-85bd-224f4c1bfc1c.jpg?1783904161",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Roadkill Rodney",
+   "text": "Escouade {3} (En tant que coût supplémentaire pour lancer ce sort, vous pouvez payer {3} autant de fois que vous le souhaitez. Quand cette créature arrive, créez autant de jetons qui en sont des copies.)\nContact mortel\nÀ chaque fois que cette créature inflige des blessures de combat à un joueur, créez un jeton Mutagène.",
+   "image": "https://cards.scryfall.io/normal/front/9/5/956e16d9-10b6-4967-9ecd-6867391ef34f.jpg?1782761364"
+  },
+  "origin": "TMC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Rocksteady, Mutant Marauder",
+  "number": "33",
+  "rarity": "rare",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Rhino Mutant",
+  "oracleText": "Partner with Bebop, Skull & Crossbones (When this creature enters, target player may put Bebop into their hand from their library, then shuffle.)\nTrample\nWhenever another nontoken creature you control enters, put a +1/+1 counter on target creature.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Partner with",
+   "Partner",
+   "Trample"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/e/ae25d91f-5489-4cd8-8634-42bcd32d4cf1.jpg?1783904165",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/e/ae25d91f-5489-4cd8-8634-42bcd32d4cf1.jpg?1783904165",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rocksteady, maraudeur mutant",
+   "text": "Partenariat avec Bebop, crâne et tibias (Quand cette créature arrive, un joueur ciblé peut mettre Bebop dans sa main depuis sa bibliothèque, puis mélanger.)\nPiétinement\nÀ chaque fois qu'une autre créature non-jeton que vous contrôlez arrive, mettez un marqueur +1/+1 sur une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/3/e/3e9644a3-f1be-4dcf-bb2e-8fda6c6a4891.jpg?1782761381"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
+  "name": "Rootbound Crag",
+  "number": "261",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control a Mountain or a Forest.\n{T}: Add {R} or {G}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/2/42d174e5-b8c2-45eb-8e08-1b94fc27cbee.jpg?1783903194",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/42d174e5-b8c2-45eb-8e08-1b94fc27cbee.jpg?1783903194",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mont enraciné",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez une montagne ou une forêt.\n{T} : Ajoutez {R} ou {G}.",
+   "image": "https://cards.scryfall.io/normal/front/3/1/31a1db73-cf18-413d-b51b-63178c06af03.jpg?1785267512"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "G",
+   "R"
   ]
  },
  {
@@ -5088,6 +7667,33 @@
   ]
  },
  {
+  "name": "Secure the Wastes",
+  "number": "31",
+  "rarity": "rare",
+  "manaCost": "{X}{W}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Create X 1/1 white Warrior creature tokens.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/3/83a01121-e5cd-45ba-97c2-7bd7d50158e6.jpg?1789599800",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/3/83a01121-e5cd-45ba-97c2-7bd7d50158e6.jpg?1789599800",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Conquête des landes",
+   "text": "Créez X jetons de créature 1/1 blanche Guerrier.",
+   "image": "https://cards.scryfall.io/normal/front/a/e/ae631896-cbe1-4a24-9cf9-5fa4f3e5f253.jpg?1790693070"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Selvala, Heart of the Wilds",
   "number": "116",
   "rarity": "mythic",
@@ -5121,6 +7727,66 @@
   "origin": "ECC",
   "colorIdentity": [
    "G"
+  ]
+ },
+ {
+  "name": "Serra's Emissary",
+  "number": "32",
+  "rarity": "mythic",
+  "manaCost": "{4}{W}{W}{W}",
+  "cmc": 7,
+  "typeLine": "Creature — Angel",
+  "oracleText": "Flying\nAs this creature enters, choose a card type.\nYou and creatures you control have protection from the chosen card type.",
+  "power": "7",
+  "toughness": "7",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/a/0a69b668-7b7c-4da9-af49-e8cbc13797cc.jpg?1789599789",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0a69b668-7b7c-4da9-af49-e8cbc13797cc.jpg?1789599789",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Émissaire de Serra",
+   "text": "Vol\nAu moment où cette créature arrive, choisissez un type de carte.\nVous et les créatures que vous contrôlez avez la protection contre le type de carte choisi.",
+   "image": "https://cards.scryfall.io/normal/front/6/e/6eeb133b-4534-44d0-a2f8-19240aec0e34.jpg?1790693092"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Shark Typhoon",
+  "number": "44",
+  "rarity": "rare",
+  "manaCost": "{5}{U}",
+  "cmc": 6,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever you cast a noncreature spell, create an X/X blue Shark creature token with flying, where X is that spell's mana value.\nCycling {X}{1}{U} ({X}{1}{U}, Discard this card: Draw a card.)\nWhen you cycle this card, create an X/X blue Shark creature token with flying.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Cycling"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/0/605ca3c0-7c9a-4bc1-9795-82aeb6f552ee.jpg?1789599836",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/605ca3c0-7c9a-4bc1-9795-82aeb6f552ee.jpg?1789599836",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Typhon de requins",
+   "text": "À chaque fois que vous lancez un sort non-créature, créez un jeton de créature X/X bleue Requin avec le vol, X étant la valeur de mana de ce sort.\nRecyclage {X}{1}{U} ({X}{1}{U}, défaussez-vous de cette carte : Piochez une carte.)\nQuand vous recyclez cette carte, créez un jeton de créature X/X bleue Requin avec le vol.",
+   "image": "https://cards.scryfall.io/normal/front/3/5/35f77c0a-6d4a-4eff-8b64-029e64883380.jpg?1790693420"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -5183,6 +7849,33 @@
    "image": "https://cards.scryfall.io/normal/front/7/a/7a29b734-4a5d-47ba-8ad9-78dbdd206b8a.jpg?1782900239"
   },
   "origin": "ZNR",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Shellshock",
+  "number": "25",
+  "rarity": "rare",
+  "manaCost": "{X}{R}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "For each opponent, choose up to one target creature that player controls. Shellshock deals X damage to each of those creatures. You create a Mutagen token for each creature dealt damage this way. (They're artifacts with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/d/7d180bb8-6a33-4c55-b4c0-2abbf6595d7b.jpg?1783904166",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/d/7d180bb8-6a33-4c55-b4c0-2abbf6595d7b.jpg?1783904166",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Décharge de carapace",
+   "text": "Pour chaque adversaire, choisissez jusqu'à une créature ciblée que ce joueur contrôle. La Décharge de carapace inflige X blessures à chacune de ces créatures. Vous créez un jeton Mutagène pour chaque créature qui a subi des blessures de cette manière. (Ce sont des artefacts avec « {1}, {T}, sacrifiez ce jeton : Mettez un marqueur +1/+1 sur une créature ciblée. N'activez que lorsque vous pourriez lancer un rituel. »)",
+   "image": "https://cards.scryfall.io/normal/front/4/6/46751f02-924a-4bd0-b61f-321635051c3f.jpg?1782761399"
+  },
+  "origin": "TMC",
   "colorIdentity": [
    "R"
   ]
@@ -5283,6 +7976,66 @@
   ]
  },
  {
+  "name": "Shivan Reef",
+  "number": "83",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {R}. This land deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C",
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/f/9fb3938c-9ecf-46cc-865a-0091455419f9.jpg?1789599919",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/f/9fb3938c-9ecf-46cc-865a-0091455419f9.jpg?1789599919",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Brisants shivâns",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {U} ou {R}. Ce terrain vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/1/c/1cc5f5dd-cfd8-4e11-9909-98bd23584df1.jpg?1790694759"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "U"
+  ]
+ },
+ {
+  "name": "Shredder, Shadow Master",
+  "number": "20",
+  "rarity": "rare",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Human Ninja",
+  "oracleText": "Whenever Shredder attacks a player, for each other opponent, create a token that's a copy of Shredder tapped and attacking that player, except it isn't legendary. Sacrifice those tokens at end of combat.\nWhenever Shredder deals combat damage to a player, that player loses half their life, rounded up.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/d/ddf4d3c9-bef9-4796-91ef-3d5beebae571.jpg?1783904169",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/ddf4d3c9-bef9-4796-91ef-3d5beebae571.jpg?1783904169",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Shredder, maître des ombres",
+   "text": "À chaque fois que Shredder attaque un joueur, pour chaque autre adversaire, créez, engagé et attaquant ce joueur, un jeton qui est une copie de Shredder, excepté qu'il n'est pas légendaire. Sacrifiez ces jetons à la fin du combat.\nÀ chaque fois que Shredder inflige des blessures de combat à un joueur, ce joueur perd la moitié de ses points de vie, arrondie à l'unité supérieure.",
+   "image": "https://cards.scryfall.io/normal/front/2/4/24744940-4bd1-45a3-b3a7-a3555b3449a1.jpg?1782761409"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Sink into Stupor // Soporific Springs",
   "number": "241",
   "rarity": "uncommon",
@@ -5344,6 +8097,35 @@
   "origin": "MH3",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Skrelv's Hive",
+  "number": "33",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of your upkeep, you lose 1 life and create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and \"This token can't block.\"\nCorrupted — As long as an opponent has three or more poison counters, creatures you control with toxic have lifelink.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Corrupted"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/2/e2652c4d-38a7-4014-94bb-7efd277de992.jpg?1789599795",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e2652c4d-38a7-4014-94bb-7efd277de992.jpg?1789599795",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Essaim de Skrelv",
+   "text": "Au début de votre entretien, vous perdez 1 point de vie et vous créez un jeton de créature-artefact 1/1 incolore Phyrexian et Puce avec toxique 1 et « Ce jeton ne peut pas bloquer. » (Les joueurs qui subissent des blessures de combat de cet enchantement gagnent aussi un marqueur « poison ».)\nCorrompu - Tant qu'un adversaire a au moins trois marqueurs « poison », les créatures avec le toxique que vous contrôlez ont le lien de vie.",
+   "image": "https://cards.scryfall.io/normal/front/d/8/d844a742-a441-4900-8f50-da5ea448386c.jpg?1790693125"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
   ]
  },
  {
@@ -5426,6 +8208,36 @@
   "origin": "FIC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Sodden Verdure",
+  "number": "267",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Forest Island",
+  "oracleText": "({T}: Add {G} or {U}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/a/0a451ab5-6244-48a0-a638-07da72b156b5.jpg?1783903194",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0a451ab5-6244-48a0-a638-07da72b156b5.jpg?1783903194",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Verdure détrempée",
+   "text": "({T} : Ajoutez {G} ou {U}.)\nCe terrain arrive engagé à moins que vous ne contrôliez au moins deux terrains de base.",
+   "image": "https://cards.scryfall.io/normal/front/2/e/2e4c52fa-3160-4e1a-8c81-b846a61a8ab7.jpg?1785267789"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "G",
+   "U"
   ]
  },
  {
@@ -5513,6 +8325,157 @@
   "origin": "J22",
   "colorIdentity": [
    "R"
+  ]
+ },
+ {
+  "name": "Special Move",
+  "number": "26",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Choose two —\n• Jump Kick — Destroy target artifact.\n• Dash Attack — Put two +1/+1 counters on target attacking or blocking creature you control.\n• Foot Toss — Target creature you control deals damage equal to its power to any other target. Then sacrifice it.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Foot Toss",
+   "Dash Attack",
+   "Jump Kick"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/0/600e2c3f-dfbd-4d5c-813a-47ae2d75ac12.jpg?1783904166",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/600e2c3f-dfbd-4d5c-813a-47ae2d75ac12.jpg?1783904166",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Coup spécial",
+   "text": "Choisissez deux -\n* Coup de pied sauté - Détruisez un artefact ciblé.\n* Attaque précipitée - Mettez deux marqueurs +1/+1 sur une créature attaquante ou bloqueuse ciblée que vous contrôlez.\n* Lancer par le pied -Une créature ciblée que vous contrôlez inflige un nombre de blessures égal à sa force à n'importe quelle autre cible. Puis sacrifiez-la.",
+   "image": "https://cards.scryfall.io/normal/front/d/5/d5ecef0e-3db5-4c6a-939f-4baf6511c03e.jpg?1782761394"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Spire Garden",
+  "number": "361",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you have two or more opponents.\n{T}: Add {R} or {G}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "G",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/2/72aed540-7833-4442-90a9-aa5468014c65.jpg?1783922655",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/72aed540-7833-4442-90a9-aa5468014c65.jpg?1783922655",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Jardin des cimes",
+   "typeLine": "Terrain",
+   "text": "Le Jardin des cimes arrive sur le champ de bataille engagé à moins que vous n'ayez au moins deux adversaires.\n{T} : Ajoutez {R} ou {G}.",
+   "image": "https://cards.scryfall.io/normal/front/8/c/8cc83f77-cc6b-4fd5-a791-4f836638aa2b.jpg?1782851134"
+  },
+  "origin": "CLB",
+  "colorIdentity": [
+   "G",
+   "R"
+  ]
+ },
+ {
+  "name": "Splinter, the Mentor",
+  "number": "3",
+  "rarity": "mythic",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Mutant Ninja Rat",
+  "oracleText": "Menace\nWhenever Splinter or another nontoken creature you control leaves the battlefield, create a Mutagen token.\nPartner—Character select (You can have two commanders if both have this ability.)",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Partner",
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/6/06c595fa-55ff-46f3-afaf-17edae465864.jpg?1783904174",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/6/06c595fa-55ff-46f3-afaf-17edae465864.jpg?1783904174",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Splinter, le mentor",
+   "text": "Menace\nÀ chaque fois que Splinter ou une autre créature non-jeton que vous contrôlez quitte le champ de bataille, créez un jeton Mutagène.\nPartenariat - Sélection du personnage (Vous pouvez avoir deux commandants si les deux ont cette capacité.)",
+   "image": "https://cards.scryfall.io/normal/front/9/9/995f1c0c-5563-43c5-b8d7-098d956d8de7.jpg?1782761451"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Staff of the Storyteller",
+  "number": "34",
+  "rarity": "rare",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "When this artifact enters, create a 1/1 white Spirit creature token with flying.\nWhenever you create one or more creature tokens, put a story counter on this artifact.\n{W}, {T}, Remove a story counter from this artifact: Draw a card.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/9/f9321060-c1bf-4190-aaf6-253d6df64237.jpg?1789599795",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/9/f9321060-c1bf-4190-aaf6-253d6df64237.jpg?1789599795",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bâton du conteur",
+   "text": "Quand cet artefact arrive, créez un jeton de créature 1/1 blanche Esprit avec le vol.\nÀ chaque fois que vous créez au moins un jeton de créature, mettez un marqueur « histoire » sur cet artefact.\n{W}, {T}, retirez un marqueur « histoire » de cet artefact : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/e/0/e03624e4-724f-46d9-b91c-8a94733e2a0f.jpg?1790693152"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Steelbane Hydra",
+  "number": "288",
+  "rarity": "rare",
+  "manaCost": "{X}{G}{G}",
+  "cmc": 2,
+  "typeLine": "Creature — Turtle Hydra",
+  "oracleText": "This creature enters with X +1/+1 counters on it.\n{2}{G}, Remove a +1/+1 counter from this creature: Destroy target artifact or enchantment.",
+  "power": "0",
+  "toughness": "0",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/9/c9889a59-519c-4adb-9002-dbed400a0d33.jpg?1783903760",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/9/c9889a59-519c-4adb-9002-dbed400a0d33.jpg?1783903760",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Hydre fléau d'acier",
+   "typeLine": "Créature — tortue terrestre et hydre",
+   "text": "L'Hydre fléau d'acier arrive sur le champ de bataille avec X marqueurs +1/+1 sur elle.\n{2}{G}, retirez un marqueur +1/+1 de l'Hydre fléau d'acier : Détruisez une cible, artefact ou enchantement.",
+   "image": "https://cards.scryfall.io/normal/front/2/0/20e6d19f-0002-46c9-8426-5a8626a36277.jpg?1782857908"
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "G"
   ]
  },
  {
@@ -5642,6 +8605,36 @@
   ]
  },
  {
+  "name": "Sulfur Falls",
+  "number": "84",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you control an Island or a Mountain.\n{T}: Add {U} or {R}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/b/2b20fa73-c6de-49c1-b3d0-6ebd543a00d0.jpg?1789599921",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2b20fa73-c6de-49c1-b3d0-6ebd543a00d0.jpg?1789599921",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chutes de soufre",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez une île ou une montagne.\n{T} : Ajoutez {U} ou {R}.",
+   "image": "https://cards.scryfall.io/normal/front/3/1/31666772-237a-486d-9088-b8a6bd76c714.jpg?1790694793"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "U"
+  ]
+ },
+ {
   "name": "Sulfurous Springs",
   "number": "85",
   "rarity": "rare",
@@ -5670,6 +8663,36 @@
   "colorIdentity": [
    "B",
    "R"
+  ]
+ },
+ {
+  "name": "Sunfall",
+  "number": "36",
+  "rarity": "rare",
+  "manaCost": "{3}{W}{W}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Exile all creatures. Incubate X, where X is the number of creatures exiled this way. (Create an Incubator token with X +1/+1 counters on it and \"{2}: Transform this token.\" It transforms into a 0/0 Phyrexian artifact creature.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Incubate",
+   "Transform"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/5/a560b9a7-4c00-4c0c-b63d-774d3f6b9aa9.jpg?1789611521",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a560b9a7-4c00-4c0c-b63d-774d3f6b9aa9.jpg?1789611521",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fin du soleil",
+   "text": "Exilez toutes les créatures. Incubez X, X étant le nombre de créatures exilées de cette manière. (Créez un jeton Incubateur avec X marqueurs +1/+1 sur lui et « {2} : Transformez ce jeton. » Il se transforme en une créature-artefact 0/0 Phyrexian.)",
+   "image": "https://cards.scryfall.io/normal/front/2/3/2370f427-7111-494d-accc-8b8fddb36825.jpg?1790693204"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
   ]
  },
  {
@@ -5734,6 +8757,35 @@
   ]
  },
  {
+  "name": "Super Combo",
+  "number": "34",
+  "rarity": "rare",
+  "manaCost": "{1}{G}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Replicate {2} (When you cast this spell, copy it for each time you paid its replicate cost. You may choose new targets for the copies.)\nTarget creature you control deals damage equal to its power to target creature an opponent controls.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Replicate"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/2/52bed0d4-3bcf-4770-b9c9-2a1d0666d220.jpg?1783904166",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/2/52bed0d4-3bcf-4770-b9c9-2a1d0666d220.jpg?1783904166",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Super combo",
+   "text": "Duplication {2} (Quand vous lancez ce sort, copiez-le pour chaque fois que vous avez payé son coût de duplication. Vous pouvez choisir de nouvelles cibles pour ces copies.)\nUne créature ciblée que vous contrôlez inflige un nombre de blessures égal à sa force à une créature ciblée qu'un adversaire contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/c/c/ccef7340-9f9c-4718-89d4-3e1258ef3e43.jpg?1782761377"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
   "name": "Swan Song",
   "number": "46",
   "rarity": "rare",
@@ -5757,6 +8809,60 @@
    "image": "https://cards.scryfall.io/normal/front/2/7/275f6b21-1c81-49c0-91f2-7dcb934b07b4.jpg?1782819110"
   },
   "origin": "EOC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Swift Demise",
+  "number": "21",
+  "rarity": "rare",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Swift Demise deals 1 damage to target creature. Then destroy each creature you don't control that was dealt damage this turn.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/4/442feb65-9c0f-4962-8518-78e6d314c916.jpg?1783904168",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/442feb65-9c0f-4962-8518-78e6d314c916.jpg?1783904168",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Défaite rapide",
+   "text": "La Défaite rapide inflige 1 blessure à une créature ciblée. Puis détruisez chaque créature que vous ne contrôlez pas qui a subi des blessures ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/6/c/6ce78965-17e8-440a-93d6-18ec22f998e8.jpg?1782761409"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Synthetic Destiny",
+  "number": "45",
+  "rarity": "rare",
+  "manaCost": "{4}{U}{U}",
+  "cmc": 6,
+  "typeLine": "Instant",
+  "oracleText": "Exile all creatures you control. At the beginning of the next end step, reveal cards from the top of your library until you reveal that many creature cards, put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/8/78ab1d69-da01-424b-9d09-ef985aef4cbd.jpg?1789599820",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/8/78ab1d69-da01-424b-9d09-ef985aef4cbd.jpg?1789599820",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Destinée synthétique",
+   "text": "Exilez toutes les créatures que vous contrôlez. Au début de la prochaine étape de fin, révélez les cartes du dessus de votre bibliothèque jusqu'à ce que vous révéliez autant de cartes de créature, mettez toutes les cartes de créature révélées de cette manière sur le champ de bataille et mélangez ensuite le reste des cartes révélées dans votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/7/d/7db329c8-2fa4-4872-9afd-08ac6592234a.jpg?1790693458"
+  },
+  "origin": "FRC",
   "colorIdentity": [
    "U"
   ]
@@ -5790,6 +8896,37 @@
   "colorIdentity": [
    "G",
    "R"
+  ]
+ },
+ {
+  "name": "Talisman of Creativity",
+  "number": "61",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {U} or {R}. This artifact deals 1 damage to you.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C",
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/4/d4ba86c8-8052-4c9e-a0d0-ac6ad0b2679c.jpg?1789599844",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/4/d4ba86c8-8052-4c9e-a0d0-ac6ad0b2679c.jpg?1789599844",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Talisman de créativité",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {U} ou {R}. Cet artefact vous inflige 1 blessure.",
+   "image": "https://cards.scryfall.io/normal/front/5/8/58afe052-fa65-4b88-bd67-4ac00464539e.jpg?1790693937"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "U"
   ]
  },
  {
@@ -5917,6 +9054,41 @@
   ]
  },
  {
+  "name": "Tamiyo, Upriser Crowned",
+  "number": "11",
+  "rarity": "rare",
+  "manaCost": "{4}{R}{W}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Moonfolk Warrior",
+  "oracleText": "Flying, double strike, haste\nWhen Tamiyo enters, you become the monarch.\nWhenever one or more creatures deal combat damage to you while you're the monarch, tap those creatures and put a stun counter on each of them.",
+  "power": "3",
+  "toughness": "5",
+  "colors": [
+   "R",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Haste",
+   "Double strike"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/d/0d52b0fd-60a4-4e90-bc4a-3200493779d3.jpg?1789644358",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0d52b0fd-60a4-4e90-bc4a-3200493779d3.jpg?1789644358",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tamiyo, insurrectionnaire couronnée",
+   "text": "Vol, double initiative, célérité\nQuand Tamiyo arrive, vous devenez le monarque.\nÀ chaque fois qu'au moins une créature vous inflige des blessures de combat pendant que vous êtes le monarque, engagez ces créatures et mettez un marqueur « étourdissement » sur chacune d'elles.",
+   "image": "https://cards.scryfall.io/normal/front/3/d/3de2c454-074c-4e83-9b34-8c6314695706.jpg?1790692525"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "W"
+  ]
+ },
+ {
   "name": "Tataru Taru",
   "number": "30",
   "rarity": "rare",
@@ -5977,6 +9149,33 @@
   ]
  },
  {
+  "name": "Teferi's Reproach",
+  "number": "6",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Choose target opponent. Until that player's next turn, they gain protection from everything and their life total can't change. All nonland permanents they control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before that player untaps during their next untap step.)\nExile Teferi's Reproach.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/b/fb4a1f07-4c1f-4d08-af5d-17f1bb77f9e5.jpg?1789644215",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fb4a1f07-4c1f-4d08-af5d-17f1bb77f9e5.jpg?1789644215",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Reproche de Téfeiri",
+   "text": "Choisissez un adversaire ciblé. Jusqu'au prochain tour de ce joueur, il acquiert la protection contre tout et son total de points de vie ne peut pas changer. Tous les permanents non-terrain qu'il contrôle passent hors phase. (Tant qu'ils sont hors phase, ils sont traités comme s'ils n'existaient pas. Ils passent en phase avant que ce joueur ne dégage pendant sa prochaine étape de dégagement.)\nExilez le Reproche de Téfeiri.",
+   "image": "https://cards.scryfall.io/normal/front/5/9/59ed3d78-b894-46b5-9fbd-02882970eeea.jpg?1790692385"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Teferi, Time Raveler",
   "number": "232",
   "rarity": "mythic",
@@ -6005,6 +9204,35 @@
   "colorIdentity": [
    "U",
    "W"
+  ]
+ },
+ {
+  "name": "Tempestra, Dame of Games",
+  "number": "27",
+  "rarity": "rare",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Elemental Illusion",
+  "oracleText": "{2}{R}, {T}, Sacrifice an artifact: Create a token that's a copy of another target creature you control, except it isn't legendary. It gains haste. Sacrifice it at the beginning of the next end step.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/c/4ccb74c9-046a-4d6b-b8c2-641e2a238d52.jpg?1783904166",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/c/4ccb74c9-046a-4d6b-b8c2-641e2a238d52.jpg?1783904166",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tempestra, dame des jeux",
+   "text": "{2R}, {T}, Sacrifiez un artefact : Créez un jeton qui est une copie d'une autre créature ciblée que vous contrôlez, excepté qu'il n'est pas légendaire. Il acquiert la célérité. Sacrifiez-le au début de la prochaine étape de fin.",
+   "image": "https://cards.scryfall.io/normal/front/1/4/14555969-c547-465f-8448-62e3a2dd4338.jpg?1782761392"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -6107,6 +9335,43 @@
   ]
  },
  {
+  "name": "The Ur-Sphinx",
+  "number": "12",
+  "rarity": "rare",
+  "manaCost": "{6}{W}{U}{B}",
+  "cmc": 9,
+  "typeLine": "Legendary Creature — Sphinx Avatar",
+  "oracleText": "Eminence — As long as The Ur-Sphinx is in the command zone or on the battlefield, other Sphinx spells you cast cost {1} less to cast.\nFlying\nWhenever one or more Sphinxes you control attack, each player mills that many cards. For each player, you may cast a card that player milled this way without paying its mana cost.",
+  "power": "10",
+  "toughness": "10",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Eminence",
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/9/d9e9d9a8-86c2-4e58-b818-466247725259.jpg?1789644369",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/9/d9e9d9a8-86c2-4e58-b818-466247725259.jpg?1789644369",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "L'Ur-Sphinx",
+   "text": "Éminence - Tant que L'Ur-Sphinx est dans la zone de commandement ou sur le champ de bataille, les autres sorts de sphinx que vous lancez coûtent {1} de moins à lancer.\nVol\nÀ chaque fois qu'au moins un sphinx que vous contrôlez attaque, chaque joueur meule autant de cartes. Pour chaque joueur, vous pouvez lancer une carte que ce joueur a meulée de cette manière sans payer son coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/0/0/00aa63cf-7e85-4245-a6e8-fc541b4c89e0.jpg?1790692549"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
   "name": "Thermo-Alchemist",
   "number": "174",
   "rarity": "uncommon",
@@ -6165,6 +9430,102 @@
   "colorIdentity": []
  },
  {
+  "name": "Thriving Grove",
+  "number": "579",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped. As it enters, choose a color other than green.\n{T}: Add {G} or one mana of the chosen color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/e/eef65ebc-12d6-4438-a908-2a0c28329124.jpg?1783903090",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/e/eef65ebc-12d6-4438-a908-2a0c28329124.jpg?1783903090",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bosquet prospère",
+   "text": "Ce terrain arrive engagé. Au moment où il arrive, choisissez une couleur autre que le vert.\n{T} : Ajoutez {G} ou un mana de la couleur choisie.",
+   "image": "https://cards.scryfall.io/normal/front/9/0/90e613c0-d928-4984-9604-5846673681cc.jpg?1785277743"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
+  "name": "Thriving Isle",
+  "number": "581",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped. As it enters, choose a color other than blue.\n{T}: Add {U} or one mana of the chosen color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/8/58a3b5a5-eba0-4b4e-869a-5387ec7dd2b8.jpg?1783903089",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/8/58a3b5a5-eba0-4b4e-869a-5387ec7dd2b8.jpg?1783903089",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Île prospère",
+   "text": "Ce terrain arrive engagé. Au moment où il arrive, choisissez une couleur autre que le bleu.\n{T} : Ajoutez {U} ou un mana de la couleur choisie.",
+   "image": "https://cards.scryfall.io/normal/front/e/b/eb5fd011-6f3c-48db-99ae-15b8a6159fd6.jpg?1785277827"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Thriving Moor",
+  "number": "582",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped. As it enters, choose a color other than black.\n{T}: Add {B} or one mana of the chosen color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/d/5d5eea5f-b9e8-4a10-8e7f-c42493a728cd.jpg?1783903088",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/d/5d5eea5f-b9e8-4a10-8e7f-c42493a728cd.jpg?1783903088",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lande prospère",
+   "text": "Ce terrain arrive engagé. Au moment où il arrive, choisissez une couleur autre que le noir.\n{T} : Ajoutez {B} ou un mana de la couleur choisie.",
+   "image": "https://cards.scryfall.io/normal/front/6/6/665bba10-0c90-4de6-9ccd-4eca950af59a.jpg?1785277874"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Tiamat",
   "number": "235",
   "rarity": "mythic",
@@ -6202,6 +9563,67 @@
    "R",
    "U",
    "W"
+  ]
+ },
+ {
+  "name": "Together Forever",
+  "number": "257",
+  "rarity": "rare",
+  "manaCost": "{W}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, support 2. (Put a +1/+1 counter on each of up to two target creatures.)\n{1}: Choose target creature with a counter on it. When that creature dies this turn, return that card to its owner's hand.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Support"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/3/834c5cf1-69a7-462c-822e-47a43a86f9a9.jpg?1783906281",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/3/834c5cf1-69a7-462c-822e-47a43a86f9a9.jpg?1783906281",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ensemble pour toujours",
+   "text": "Quand cet enchantement arrive, soutenez 2. (Ciblez jusqu'à deux créatures. Mettez un marqueur +1/+1 sur chacune d'elles.)\n{1} : Choisissez une créature ciblée avec un marqueur sur elle. Quand cette créature meurt ce tour-ci, renvoyez cette carte dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/c/5/c568124e-ccb5-4351-b7fb-dc9f5548ec60.jpg?1782769563"
+  },
+  "origin": "FIC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Tokka & Rahzar, Unsupervised",
+  "number": "28",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Turtle Wolf Mutant",
+  "oracleText": "First strike\nWhenever another nontoken creature you control leaves the battlefield, put a +1/+1 counter on Tokka & Rahzar and create a Treasure token. This ability triggers only once each turn.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "First strike",
+   "Treasure"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/b/8bc5a0ac-5979-43ce-8a65-98c5f09f4aa6.jpg?1783904165",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/b/8bc5a0ac-5979-43ce-8a65-98c5f09f4aa6.jpg?1783904165",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tokka et Rahzar, sans surveillance",
+   "text": "Initiative\nÀ chaque fois qu'une autre créature non-jeton que vous contrôlez quitte le champ de bataille, mettez un marqueur +1/+1 sur Tokka et Razhar et créez un jeton Trésor. Cette capacité ne se déclenche qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/a/8/a8580096-902d-4d03-90dc-73fe4a99ed16.jpg?1782761391"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -6324,6 +9746,96 @@
   "colorIdentity": [
    "U",
    "W"
+  ]
+ },
+ {
+  "name": "Turbulent Crater",
+  "number": "16",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Swamp Mountain",
+  "oracleText": "({T}: Add {B} or {R}.)\nThis land enters tapped unless your opponents control eight or more lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/c/0cb04417-063e-45f7-86d3-7648111d04d7.jpg?1789644165",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0cb04417-063e-45f7-86d3-7648111d04d7.jpg?1789644165",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cratère turbulent",
+   "text": "({T} : Ajoutez {B} ou {R}.)\nCe terrain arrive engagé à moins que vos adversaires ne contrôlent au moins huit terrains.",
+   "image": "https://cards.scryfall.io/normal/front/1/0/10001374-d3a3-4acc-b4e8-45285542f5a1.jpg?1790692656"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "R"
+  ]
+ },
+ {
+  "name": "Turbulent Shore",
+  "number": "17",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Plains Island",
+  "oracleText": "({T}: Add {W} or {U}.)\nThis land enters tapped unless your opponents control eight or more lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/2/92039341-152a-4797-a3df-e89e8d5145d3.jpg?1789644173",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/92039341-152a-4797-a3df-e89e8d5145d3.jpg?1789644173",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rivage turbulent",
+   "text": "({T} : Ajoutez {W} ou {U}.)\nCe terrain arrive engagé à moins que vos adversaires ne contrôlent au moins huit terrains.",
+   "image": "https://cards.scryfall.io/normal/front/1/1/116a2538-809d-4ad0-8ebc-967462abb99f.jpg?1790692689"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "Turbulent Wetlands",
+  "number": "18",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Island Swamp",
+  "oracleText": "({T}: Add {U} or {B}.)\nThis land enters tapped unless your opponents control eight or more lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/d/8d86f7f8-492d-4e19-8b61-39084c6299ac.jpg?1789644179",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/d/8d86f7f8-492d-4e19-8b61-39084c6299ac.jpg?1789644179",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Marais turbulents",
+   "text": "({T} : Ajoutez {U} ou {B}.)\nCe terrain arrive engagé à moins que vos adversaires ne contrôlent au moins huit terrains.",
+   "image": "https://cards.scryfall.io/normal/front/f/4/f47234ac-370b-47bc-bbb8-a401b3fff276.jpg?1790692711"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "B",
+   "U"
   ]
  },
  {
@@ -6535,6 +10047,37 @@
   "colorIdentity": [
    "B",
    "U"
+  ]
+ },
+ {
+  "name": "Undergrowth Stadium",
+  "number": "435",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {G}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/e/ae16c7da-912c-4d66-b1e7-17480cd3af99.jpg?1783915582",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/e/ae16c7da-912c-4d66-b1e7-17480cd3af99.jpg?1783915582",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Stade des sous-bois",
+   "typeLine": "Terrain",
+   "text": "Le Stade des sous-bois arrive sur le champ de bataille engagé à moins que vous n'ayez au moins deux adversaires.\n{T} : Ajoutez {B} ou {G}.",
+   "image": "https://cards.scryfall.io/normal/front/b/3/b3bbd2bd-e120-44e3-a7ca-64e133e914d5.jpg?1782815892"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "B",
+   "G"
   ]
  },
  {
@@ -6761,6 +10304,33 @@
   ]
  },
  {
+  "name": "Vanquish the Horde",
+  "number": "146",
+  "rarity": "rare",
+  "manaCost": "{6}{W}{W}",
+  "cmc": 8,
+  "typeLine": "Sorcery",
+  "oracleText": "This spell costs {1} less to cast for each creature on the battlefield.\nDestroy all creatures.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/3/f392782b-7464-4617-b421-6b5d0e2880fc.jpg?1783903241",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/3/f392782b-7464-4617-b421-6b5d0e2880fc.jpg?1783903241",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Victoire contre la horde",
+   "text": "Ce sort coûte {1} de moins à lancer pour chaque créature sur le champ de bataille.\nDétruisez toutes les créatures.",
+   "image": "https://cards.scryfall.io/normal/front/9/0/908e3aaf-2d9d-4eb9-823a-03ee4c8df3c3.jpg?1785262847"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Vanquisher's Banner",
   "number": "294",
   "rarity": "rare",
@@ -6813,6 +10383,99 @@
   "colorIdentity": [
    "B",
    "W"
+  ]
+ },
+ {
+  "name": "Venser, Fervent Forger",
+  "number": "9",
+  "rarity": "rare",
+  "manaCost": "{4}{R}{R}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Human Sorcerer",
+  "oracleText": "Flash\nWhen Venser enters, choose one —\n• Copy target instant or sorcery spell an opponent controls twice. You may choose new targets for the copies.\n• Create two tokens that are copies of target permanent an opponent controls. They gain haste. At the beginning of the next end step, sacrifice them.",
+  "power": "5",
+  "toughness": "3",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/d/0de6353b-5c19-40f7-951a-2b600db21846.jpg?1790242646",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0de6353b-5c19-40f7-951a-2b600db21846.jpg?1790242646",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Venser, forgeron fervent",
+   "text": "Flash\nQuand Venser arrive, choisissez l'un -\n* Copiez deux fois un sort d'éphémère ou de rituel ciblé qu'un adversaire contrôle. Vous pouvez choisir de nouvelles cibles pour ces copies.\n* Créez deux jetons qui sont des copies d'un permanent ciblé qu'un adversaire contrôle. Ils acquièrent la célérité. Au début de la prochaine étape de fin, sacrifiez-les.",
+   "image": "https://cards.scryfall.io/normal/front/f/9/f910284b-607c-4479-9ffb-2a52944c56a6.jpg?1790692465"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Vernal Fen",
+  "number": "419",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Swamp Forest",
+  "oracleText": "({T}: Add {B} or {G}.)\nThis land enters tapped unless you control two or more basic lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/4/0466cf57-bb3e-4359-8fe8-d6cc1288fdc6.jpg?1783903715",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/4/0466cf57-bb3e-4359-8fe8-d6cc1288fdc6.jpg?1783903715",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Maremme vernale",
+   "text": "({T} : Ajoutez {B} or {G}.)\nCe terrain arrive engagé à moins que vous ne contrôliez au moins deux terrains de base.",
+   "image": "https://cards.scryfall.io/normal/front/8/3/83e2f285-d4a5-444d-8d9a-aa8637164925.jpg?1782762928"
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "B",
+   "G"
+  ]
+ },
+ {
+  "name": "Vigor",
+  "number": "215",
+  "rarity": "rare",
+  "manaCost": "{3}{G}{G}{G}",
+  "cmc": 6,
+  "typeLine": "Creature — Elemental Incarnation",
+  "oracleText": "Trample\nIf damage would be dealt to another creature you control, prevent that damage. Put a +1/+1 counter on that creature for each 1 damage prevented this way.\nWhen Vigor is put into a graveyard from anywhere, shuffle it into its owner's library.",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Trample"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/a/ea7047d8-8d32-48a3-829b-7eb5427ed53a.jpg?1783934797",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/a/ea7047d8-8d32-48a3-829b-7eb5427ed53a.jpg?1783934797",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ardeur",
+   "typeLine": "Créature : élémental et incarnation",
+   "text": "Piétinement\nSi des blessures devaient être infligées à une créature que vous contrôlez autre que l'Ardeur, prévenez ces blessures. Mettez un marqueur +1/+1 sur cette créature pour chaque 1 blessure prévenue de cette manière.\nQuand l'Ardeur est mise dans un cimetière d'où qu'elle vienne, mélangez-la dans la bibliothèque de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/2/6/2640ffd2-0e93-4441-a52a-62125b19b9c7.jpg?1783008509"
+  },
+  "origin": "BBD",
+  "colorIdentity": [
+   "G"
   ]
  },
  {
@@ -6997,6 +10660,40 @@
   "colorIdentity": []
  },
  {
+  "name": "Voracious Hydra",
+  "number": "200",
+  "rarity": "rare",
+  "manaCost": "{X}{G}{G}",
+  "cmc": 2,
+  "typeLine": "Creature — Hydra",
+  "oracleText": "Trample\nThis creature enters with X +1/+1 counters on it.\nWhen this creature enters, choose one —\n• Double the number of +1/+1 counters on this creature.\n• This creature fights target creature you don't control.",
+  "power": "0",
+  "toughness": "1",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Trample",
+   "Fight",
+   "Double"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/4/74bbe44f-864a-446c-bfc9-5f5188e663b8.jpg?1783932954",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/74bbe44f-864a-446c-bfc9-5f5188e663b8.jpg?1783932954",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Hydre vorace",
+   "typeLine": "Créature : hydre",
+   "text": "Piétinement\nL'Hydre vorace arrive sur le champ de bataille avec X marqueurs +1/+1 sur elle.\nQuand l'Hydre vorace arrive sur le champ de bataille, choisissez l'un —\n• Doublez le nombre de marqueurs +1/+1 sur l'Hydre vorace.\n• L'Hydre vorace se bat contre une créature ciblée que vous ne contrôlez pas.",
+   "image": "https://cards.scryfall.io/normal/front/b/f/bfc52416-0f4b-490f-b986-ae048b93fef4.jpg?1782916870"
+  },
+  "origin": "M20",
+  "colorIdentity": [
+   "G"
+  ]
+ },
+ {
   "name": "Walking Ballista",
   "number": "371",
   "rarity": "rare",
@@ -7020,6 +10717,34 @@
   },
   "origin": "FIC",
   "colorIdentity": []
+ },
+ {
+  "name": "Wave Goodbye",
+  "number": "79",
+  "rarity": "rare",
+  "manaCost": "{2}{U}{U}",
+  "cmc": 4,
+  "typeLine": "Sorcery",
+  "oracleText": "Return each creature without a +1/+1 counter on it to its owner's hand.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/5/45803e98-5d99-4bd9-adac-37c854649167.jpg?1783913912",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/45803e98-5d99-4bd9-adac-37c854649167.jpg?1783913912",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Au creux de la vague",
+   "typeLine": "Rituel",
+   "text": "Renvoyez chaque créature sans marqueur +1/+1 sur elle dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/e/5/e51b1e2f-a5c7-40a7-91cf-c527061d338b.jpg?1782810835"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "U"
+  ]
  },
  {
   "name": "Welcoming Vampire",
@@ -7079,6 +10804,64 @@
   "origin": "CMR",
   "colorIdentity": [
    "R"
+  ]
+ },
+ {
+  "name": "Whirlwind of Thought",
+  "number": "51",
+  "rarity": "rare",
+  "manaCost": "{1}{U}{R}{W}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever you cast a noncreature spell, draw a card.",
+  "colors": [
+   "R",
+   "U",
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/1/e1de5fb8-7206-44a6-b827-5c6a21c25296.jpg?1789599828",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/1/e1de5fb8-7206-44a6-b827-5c6a21c25296.jpg?1789599828",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tourbillon de pensée",
+   "text": "À chaque fois que vous lancez un sort non-créature, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/5/9/596a9164-90eb-4b60-92cc-cde502539a11.jpg?1790693628"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "R",
+   "U",
+   "W"
+  ]
+ },
+ {
+  "name": "White Sun's Twilight",
+  "number": "38",
+  "rarity": "rare",
+  "manaCost": "{X}{W}{W}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "You gain X life. Create X 1/1 colorless Phyrexian Mite artifact creature tokens with toxic 1 and \"This token can't block.\" If X is 5 or more, destroy all other creatures. (Players dealt combat damage by a creature with toxic 1 also get a poison counter.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/e/ae7a778c-f4a7-447f-90f0-146997e03398.jpg?1789599802",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/e/ae7a778c-f4a7-447f-90f0-146997e03398.jpg?1789599802",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Crépuscule de Blancsoleil",
+   "text": "Vous gagnez X points de vie. Créez X jetons de créature-artefact 1/1 incolore Phyrexian et Puce avec toxique 1 et « Ce jeton ne peut pas bloquer. » Si X est supérieur ou égal à 5, détruisez toutes les autres créatures. (Les joueurs qui subissent des blessures de combat d'une créature avec toxique 1 gagnent aussi un marqueur « poison ».)",
+   "image": "https://cards.scryfall.io/normal/front/c/7/c79062b4-c6b2-427e-878c-5ee736dc75cb.jpg?1790693254"
+  },
+  "origin": "FRC",
+  "colorIdentity": [
+   "W"
   ]
  },
  {

@@ -1,5 +1,5 @@
 {
-  "_note": "Textes français complétés à la main, appliqués par l'import par nom (npm run import-cards -- edh) : cartes dont aucune impression française n'a son texte chez Scryfall (impressions de 1994 à 1998, ou texte anglais dans une impression française). Règle : les cartes en français de préférence.",
+  "_note": "Textes français complétés à la main, appliqués par l'import par nom (npm run import-cards -- edh) : cartes dont aucune impression française n'a son texte chez Scryfall (impressions de 1994 à 1998, texte anglais dans une impression française, ou carte jamais imprimée en français : Double Jump // Flying Kick, traduite à la main). Règle : les cartes en français de préférence.",
   "Badlands": {
     "typeLine": "Terrain : marais et montagne",
     "text": "({T} : Ajoutez {B} ou {R}.)"
@@ -53,5 +53,22 @@
   "Lim-Dûl's Hex": {
     "typeLine": "Enchantement",
     "text": "Au début de votre entretien, pour chaque joueur, cet enchantement inflige 1 blessure à ce joueur à moins qu'il ne paie {B} ou {3}."
+  },
+  "Double Jump // Flying Kick": {
+    "name": "Double saut // Coup de pied volant",
+    "typeLine": "Éphémère",
+    "text": "Mettez un marqueur de vol sur une créature ciblée que vous contrôlez. Jusqu'à la fin du tour, elle a une force et une endurance de base de 5/5.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)",
+    "faces": [
+      {
+        "name": "Double saut",
+        "typeLine": "Éphémère",
+        "text": "Mettez un marqueur de vol sur une créature ciblée que vous contrôlez. Jusqu'à la fin du tour, elle a une force et une endurance de base de 5/5.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)"
+      },
+      {
+        "name": "Coup de pied volant",
+        "typeLine": "Éphémère",
+        "text": "Une créature ciblée que vous contrôlez inflige des blessures égales à sa force à une créature ciblée qu'un adversaire contrôle.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)"
+      }
+    ]
   }
 }

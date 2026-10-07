@@ -150,6 +150,8 @@ export interface PlayerView {
   speed?: number;
   /** Bénédiction de la cité (702.131, ascension), absente tant que le joueur ne l'a pas. */
   citysBlessing?: true;
+  /** Monarque (724), absent si le joueur ne l'est pas. */
+  monarch?: true;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd), absents s'il n'en a aucun. */
   poison?: number;
 }
@@ -266,7 +268,8 @@ export function cardFace(d: CardDef): CardFace {
  */
 function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
   const faces = d.faceDefs ?? [];
-  return (d.layout === "split" ? faces : faces.slice(1)).map((f) => ({
+  // Carte scindée : ses deux moitiés (pas la face fusionnée, 702.102).
+  return (d.layout === "split" ? faces.slice(0, 2) : faces.slice(1)).map((f) => ({
     name: f.name,
     manaCost: f.manaCostText,
     typeLine: f.typeLine,
@@ -448,6 +451,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       handCount: pl.hand.length,
       speed: pl.speed,
       ...(pl.citysBlessing ? { citysBlessing: true as const } : {}),
+      ...(s.monarch === p ? { monarch: true as const } : {}),
       ...(pl.poison ? { poison: pl.poison } : {}),
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },

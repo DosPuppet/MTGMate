@@ -43,6 +43,7 @@ import {
   FACE_DOWN_DEF,
   FACE_DOWN_ID,
   isCreature,
+  kickerPaidTimes,
   moveObject,
   newId,
   nextTimestamp,
@@ -875,8 +876,8 @@ export function spellCost(
   // Maîtrise de l'eau en coût additionnel (Avatar) : {N} ou {X} de plus, à payer même sans payer le coût de mana.
   const bend = (d.waterbend ?? 0) + (d.xCost === "waterbend" ? Math.max(0, opts.x ?? 0) : 0);
   const bendCost: ManaCost | undefined = bend ? { generic: bend, colored: {}, x: 0 } : undefined;
-  // Réplique (702.56) : le coût de réplique payé X fois.
-  const replicated = d.kickerKind === "replicate" && d.kicker && (opts.x ?? 0) > 0 ? timesCost(d.kicker, opts.x ?? 0) : undefined;
+  // Réplique (702.56), escouade (702.157) : le coût payé X fois.
+  const replicated = kickerPaidTimes(d) && d.kicker && (opts.x ?? 0) > 0 ? timesCost(d.kicker, opts.x ?? 0) : undefined;
   const kick = replicated ?? (opts.kicked && d.kicker ? d.kicker : undefined);
   const extra = kick ? (bendCost ? totalCost(kick, 0, bendCost) : kick) : bendCost;
   let cost0 = totalCost(
@@ -1297,12 +1298,16 @@ export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number
       [undefined, d],
       [1, adventure],
     ];
-  // Carte scindée (709.3) : l'une ou l'autre moitié se lance (portes d'une Salle comprises).
-  if (d.layout === "split" && d.faceDefs?.length === 2)
-    return [
-      [0, d.faceDefs[0] as CardDef],
-      [1, d.faceDefs[1] as CardDef],
+  // Carte scindée (709.3) : l'une ou l'autre moitié se lance (portes d'une Salle comprises) ; avec la fusion (702.102),
+  // les deux moitiés ensemble depuis la main (troisième face, construite à l'import).
+  if (d.layout === "split" && (d.faceDefs?.length ?? 0) >= 2) {
+    const halves: [number, CardDef][] = [
+      [0, d.faceDefs?.[0] as CardDef],
+      [1, d.faceDefs?.[1] as CardDef],
     ];
+    const fused = d.faceDefs?.[2];
+    return fused && o?.zone === "hand" ? [...halves, [2, fused]] : halves;
+  }
   // Carte recto-verso modale (712.12) : l'une ou l'autre face se lance.
   const back = d.layout === "modal_dfc" ? d.faceDefs?.[1] : undefined;
   if (back && !back.types.includes("Land"))
@@ -2022,14 +2027,13 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceId: card,
     x: choices.x,
   });
-  const hasX =
-    (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost || d.kickerKind === "replicate";
+  const hasX = (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost || kickerPaidTimes(d);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
   if (d.xCost === "life" && x > payableLife(s, player)) throw new RulesError("Pas assez de points de vie");
   // Soul Immolation : « flétrissez X ; X ne peut pas dépasser la plus grande endurance parmi vos créatures ».
   if (d.xCost === "blight" && x > greatestToughness(s, player)) throw new RulesError("X dépasse la plus grande endurance");
-  const kicked = !!choices.kicked && !!d.kicker && d.kickerKind !== "replicate";
+  const kicked = !!choices.kicked && !!d.kicker && !kickerPaidTimes(d);
   // Part du coût payable par la maîtrise de l'eau : coût additionnel, kicker, ou coût de remplacement (Hama).
   const bendPaid =
     waterbendAmount(d, kicked, x) +
@@ -2319,6 +2323,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       const subtypes = (id: ObjectId) => (s.objects[id] ? chars(s, id).subtypes : (s.lki[id]?.subtypes ?? []));
       const caves = taps.filter((t) => subtypes(t.id).includes("Cave")).reduce((n, t) => n + t.amount, 0);
       if (caves && item.cast) item.cast.caveMana = caves;
+      // Coin of Mastery : mana dépensé venant de sources d'artefact (un Trésor sacrifié, par ses dernières informations).
+      // Le mana produit en trop (Sol Ring pour un seul {1}) reste dans la réserve : il est d'abord compté aux artefacts.
+      const types = (id: ObjectId) => (s.objects[id] ? chars(s, id).types : (s.lki[id]?.types ?? []));
+      const artifacts = taps.filter((t) => types(t.id).includes("Artifact")).reduce((n, t) => n + t.amount, 0);
+      const excess = Math.max(0, taps.reduce((n, t) => n + t.amount, 0) - Object.values(spent).reduce((n, k) => n + (k ?? 0), 0));
+      if (artifacts > excess && item.cast) item.cast.artifactMana = artifacts - excess;
     }
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles ; Cavern of Souls :
     // « du type choisi » se lit sur la source ; Path of Ancestry : « qui partage un type de créature avec votre

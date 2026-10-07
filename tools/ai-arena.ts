@@ -129,6 +129,12 @@ interface Tally {
   time: Record<"a" | "b", number[]>;
 }
 
+/**
+ * Commander : au-delà de 150 tours (en moyenne 19 en duel, 42 à quatre), la partie est comptée inachevée. Sans ce
+ * plafond, une partie où personne ne peut perdre (Darksteel Angel chez chaque joueur) durait des heures.
+ */
+const COMMANDER_MAX_TURNS = 150;
+
 /** Enveloppe un agent pour mesurer son temps de réflexion. */
 const SLOW_MS = Number(process.env.MTGX_SLOW_MS ?? 0);
 function timed(inner: Agent, into: number[]): Agent {
@@ -169,6 +175,7 @@ function runMulti(first: number, count: number): Tally {
       ...(commander ? { variant: "commander" as const, commanders: decks.map((d) => d.commanders) } : {}),
       agents,
       maxDecisions: (commander ? 15000 : 4000) * players,
+      maxTurns: commander ? COMMANDER_MAX_TURNS : undefined,
     });
     t.turns += r.turns;
     if (!r.state.over) t.unfinished++;
@@ -200,6 +207,7 @@ function run(first: number, count: number): Tally {
         ...(commander ? { variant: "commander" as const, commanders: decks.map((d) => d.commanders) } : {}),
         agents: !byDeck && swap ? [agentB, agentA] : [agentA, agentB],
         maxDecisions: commander ? 30000 : 8000,
+        maxTurns: commander ? COMMANDER_MAX_TURNS : undefined,
       });
     } catch (e) {
       // Partie à rejouer pour reproduire l'erreur : son numéro (--first N --games 1) et sa graine.

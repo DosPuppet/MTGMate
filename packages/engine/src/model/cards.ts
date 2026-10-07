@@ -145,7 +145,10 @@ export interface CardDef {
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
   chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
-  /** Sièges (TDM) : « en arrivant, choisissez Abzan ou Mardu » (avec `chooseOnEnter: "mode"`) ; lu par `cond.chosenMode`. */
+  /**
+   * Sièges (TDM) : « en arrivant, choisissez Abzan ou Mardu » (avec `chooseOnEnter: "mode"`) ; lu par `cond.chosenMode`.
+   * Avec `chooseOnEnter: "color"`, les couleurs permises (Thriving Grove : « une couleur autre que le vert »).
+   */
   enterModes?: string[];
   /**
    * Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ».
@@ -249,6 +252,8 @@ export interface CardDef {
   morph?: true;
   /** Folie (702.35) : défaussée, la carte va en exil et peut être lancée pour ce coût (lu dans le texte). */
   madness?: ManaCost;
+  /** Toxique N (702.164) : le nombre de marqueurs poison (le mot-clé est dans `keywords`). */
+  toxic?: number;
   /** « Ce coût est réduit de {1} pour chaque… » (Fugitive Codebreaker) : réduction du coût de déguisement. */
   disguiseReduction?: Amount;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
@@ -271,7 +276,9 @@ export interface CardDef {
     | "waterbend"
     | "life"
     /** Réplique (702.56) : le kicker est payé X fois (X du sort) ; le sort est copié X fois. */
-    | "replicate";
+    | "replicate"
+    /** Escouade (702.157) : le kicker est payé X fois ; en arrivant, le permanent crée X jetons qui sont ses copies. */
+    | "squad";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
@@ -894,8 +901,9 @@ export interface EventReplacement {
   };
   /** Après une prévention : chaque adversaire du contrôleur meule autant (The Mindskinner) ; capacité réflexive
    * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source) ;
-   * autant de marqueurs de ce type sur la source du remplacement, dans le même remplacement (Anti-Venom). */
-  onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[]; counters?: string };
+   * autant de marqueurs de ce type sur la source du remplacement, dans le même remplacement (Anti-Venom), ou sur le
+   * permanent qui devait les subir (`countersOnDamaged` : Vigor). */
+  onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[]; counters?: string; countersOnDamaged?: string };
   /** Blessures : infligées à la place au permanent auquel la source est attachée (With Great Power). */
   redirectToAttached?: boolean;
   /** Bouclier : seulement cette source, choisie à la création (`sourceDefIs` pour un sort sans objet). */
@@ -1018,6 +1026,8 @@ export interface TriggerMod {
   entering?: ObjectFilter;
   /** Seulement les déclenchements dus à la mort d'une créature (The Masamune). */
   onDies?: boolean;
+  /** Seulement les déclenchements dus à la pioche d'une carte, par n'importe quel joueur (Krang, the All-Powerful). */
+  onDraw?: boolean;
   /**
    * Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). `attachedToSource` : le
    * permanent auquel la source de la statique est attachée, y compris s'il vient de quitter le champ de bataille.
@@ -1159,7 +1169,13 @@ export interface PlayerStaticAbilityDef {
    * (`everything`, 702.16j : Teferi's Protection, The One Ring). Le joueur ne peut pas être ciblé par les sorts et
    * capacités de ces sources, et les blessures qu'elles devraient lui infliger sont prévenues ; on peut l'attaquer.
    */
-  protection?: "opponents" | "everything";
+  /** Un filtre : protection contre les sources qui y correspondent (Serra's Emissary : le type de carte choisi). */
+  protection?: "opponents" | "everything" | ObjectFilter;
+  /**
+   * Ses créatures ne peuvent pas attaquer les planeswalkers de ce joueur qui ont ce sous-type (Jace, Multiverse Architect :
+   * « vos Jace ») ; dans un effet, `"you"` désigne le contrôleur de l'effet.
+   */
+  cantAttackPlaneswalkers?: { of: PlayerId; subtype: string };
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
   winFirstCoinFlips?: boolean;
   /**
@@ -1356,6 +1372,8 @@ export interface TokenSpec {
   cdaPT?: Amount;
   /** Jeton Aura (Rôles de Wilds of Eldraine) : ce qu'il peut enchanter. */
   enchant?: CardDef["enchant"];
+  /** Toxique N (702.164). */
+  toxic?: number;
 }
 
 /** Destination d'un déplacement d'objet. */

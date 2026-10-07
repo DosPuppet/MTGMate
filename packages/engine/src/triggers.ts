@@ -336,6 +336,8 @@ export function checkCondition(
       return playerStatic(s, controller, "enduringStory");
     case "citysBlessing":
       return !!s.players[controller]?.citysBlessing;
+    case "monarch":
+      return s.monarch === controller;
     case "harnessed":
       return !!sourceId && !!s.objects[sourceId]?.harnessed;
     case "eventObjectGreatestPower": {
@@ -409,8 +411,13 @@ export function checkCondition(
       return !!v && matchesView(v, c.filter, controller, sourceId);
     }
     case "xAtLeast":
+      return false; // évalué au lancement (stack.ts) ou pendant la résolution (effects.ts)
+    // Évolution (702.100) : « si cette créature a une force ou une endurance plus grande ».
     case "amountGreater":
-      return false; // évalués au lancement (stack.ts) ou pendant la résolution (effects.ts)
+      return (
+        checkAmount(s, c.a, controller, sourceId, eventObject, event) >
+        checkAmount(s, c.b, controller, sourceId, eventObject, event)
+      );
     case "manaPoolAtLeast": {
       const pool = s.players[controller]?.manaPool;
       const n = pool ? (Object.values(pool) as number[]).reduce((a, b) => a + b, 0) : 0;
@@ -777,12 +784,15 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
     }
     case "combatDamageBatch": {
-      if (ev.e !== "combatDamageBatch") return null;
-      const ok = ev.sources.some((id) => {
+      if (ev.e !== "combatDamageBatch" || (t.toYou && ev.player !== me)) return null;
+      // Les créatures du lot qui correspondent (« ces créatures », « un de ces Dragons »).
+      const matching = ev.sources.filter((id) => {
         const v = liveView(s, id) ?? s.lki[id];
         return !!v && matchesView(v, t.who, me, src.id);
       });
-      return ok ? { player: ev.player } : null;
+      if (!matching.length) return null;
+      const [first, ...rest] = matching;
+      return { player: ev.player, objectId: first, others: rest.map((id) => ({ objectId: id })) };
     }
     case "sacrifice": {
       if (ev.e !== "sacrifice" || (ev.player !== me && !t.anyPlayer) || (t.byOpponent && ev.player === me)) return null;
@@ -1154,7 +1164,7 @@ export function createDelayed(
  * Traveling Chocobo (l'arrivée d'un terrain ou d'un Oiseau à vous), Annie Joins Up (vos créatures légendaires),
  * Roaming Throne (les autres créatures du type choisi), Windcrag Siege (une créature qui attaque), Cloud, Midgar
  * Mercenary (elle-même et ses Équipements, tant qu'elle est équipée), The Masamune (morts : la créature équipée et vos
- * emblèmes).
+ * emblèmes), Krang (pioches).
  */
 function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
   const player = src.view.controller;
@@ -1167,6 +1177,8 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
     if (m.onEnter && !entered) return false;
     // Windcrag Siege : « si une créature qui attaque fait se déclencher une capacité d'un permanent que vous contrôlez ».
     if (m.onAttack && ev.e !== "attack" && ev.e !== "attackWith") return false;
+    // Krang : « si la pioche d'une carte par un joueur fait se déclencher une capacité d'un permanent que vous contrôlez ».
+    if (m.onDraw && ev.e !== "draw") return false;
     if (m.entering && !(entered && s.objects[entered] && matchesObjectFilter(s, player, entered, m.entering, id))) return false;
     if (
       m.onDies &&

@@ -42,9 +42,11 @@ describe("règles de construction du Commander (903.5)", () => {
   const yshtola = DECKS.find((d) => d.id === "cmd-yshtola")!;
   const urDragon = DECKS.find((d) => d.id === "cmd-ur-dragon")!;
   const rakdos = DECKS.find((d) => d.id === "cmd-rakdos")!;
+  const multiverse = DECKS.find((d) => d.id === "cmd-multiverse-reforged")!;
+  const turtles = DECKS.find((d) => d.id === "cmd-turtle-power")!;
 
   it("les préconstruits sont légaux ; Game Changers et tranche estimée", () => {
-    for (const d of [edgar, yshtola, urDragon, rakdos]) {
+    for (const d of [edgar, yshtola, urDragon, rakdos, multiverse, turtles]) {
       const v = validateDeck(d, CARDS, "commander");
       expect(v.errors, d.id).toEqual([]);
       expect(v.legal).toBe(true);
@@ -83,6 +85,16 @@ describe("règles de construction du Commander (903.5)", () => {
     expect(r.identity).toEqual(["B", "R"]);
     expect(r.gameChangers?.sort()).toEqual(["Demonic Tutor", "Vampiric Tutor"]);
     expect(r.bracket).toBe("3");
+    // Préconstruits officiels : aucun Game Changer.
+    const m = validateDeck(multiverse, CARDS, "commander");
+    expect(m.commanders).toEqual(["Jace, Multiverse Architect"]);
+    expect(m.identity).toEqual(["W", "U", "B", "R"]);
+    expect(m.gameChangers).toEqual([]);
+    expect(m.bracket).toBe("1–2");
+    const t = validateDeck(turtles, CARDS, "commander");
+    expect(t.commanders).toEqual(["Heroes in a Half Shell"]);
+    expect(t.identity).toEqual(["W", "U", "B", "R", "G"]);
+    expect(t.gameChangers).toEqual([]);
   });
 
   const base = (): { commander: DeckEntries; main: DeckEntries } => ({

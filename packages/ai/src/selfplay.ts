@@ -199,6 +199,11 @@ export function playGame(opts: {
   decks: CardDef[][];
   agents: Agent[];
   maxDecisions?: number;
+  /**
+   * Plafond de tours : au-delà, la partie s'arrête inachevée. Une partie peut ne jamais finir selon les règles (chaque
+   * joueur contrôle une Darksteel Angel : « vous ne pouvez pas perdre ») et l'IA ralentit quand le plateau grossit.
+   */
+  maxTurns?: number;
   check?: boolean;
   startingLife?: number;
   /** Commander (PLAN-E) : variante et indices des commandants de chaque deck. */
@@ -227,6 +232,7 @@ export function playGame(opts: {
   const max = opts.maxDecisions ?? 5000;
   const chaosRand = opts.chaos ? mulberry32(opts.chaos.seed) : null;
   for (let i = 0; i < max && state.pending && !state.over; i++) {
+    if (opts.maxTurns && state.turn.number > opts.maxTurns) break;
     const p = state.pending;
     if (opts.offers && p.kind === "priority" && i % opts.offers === 0)
       checkOffers(state, p.player, `seed ${opts.seed}, décision ${i}`);

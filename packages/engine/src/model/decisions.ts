@@ -399,6 +399,8 @@ export type GameEvent =
   | { type: "fizzle"; stackId: string; defId: string }
   | { type: "copy"; stackId: string; defId: string; player: PlayerId }
   | { type: "poison"; player: PlayerId; amount: number; total: number }
+  /** Le joueur devient le monarque (724). */
+  | { type: "monarch"; player: PlayerId }
   | { type: "endTurn"; player: PlayerId }
   | { type: "countered"; stackId: string; defId: string; by: string }
   | { type: "attach"; objectId: ObjectId; defId: string; to: ObjectId; toDefId: string }

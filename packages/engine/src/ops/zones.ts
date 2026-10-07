@@ -1472,8 +1472,10 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   revealUntilN(s, r, e, ctx, key) {
-    const player = s.players[ctx.controller];
-    if (!player) return;
+    // La bibliothèque d'un autre joueur (Jhoira, Weatherlight Corsair : un adversaire ciblé).
+    const owner = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
+    const player = owner ? s.players[owner] : undefined;
+    if (!player || !owner) return;
     const found: string[] = [];
     const n = evalAmount(s, ctx, e.n);
     let i = 0;
@@ -1484,14 +1486,19 @@ export const HANDLERS: OpHandlers = {
     const revealed = player.library.slice(0, i);
     const shock = e.to ? shockLandChoices(s, r, found, e.to, ownerOr(s, e.to, ctx.controller), key) : new Set<ObjectId>();
     if (!(shock instanceof Set)) return shock;
-    emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
+    emit({ type: "reveal", player: owner, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
     if (!e.to) {
       if (e.store) r.vars[`$ids:${e.store}`] = found;
       return;
     }
     const rest = revealed.filter((id) => !found.includes(id));
-    for (const id of found)
-      moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined);
+    const moved: string[] = [];
+    for (const id of found) {
+      const m = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined);
+      if (m) moved.push(m);
+    }
+    // Les cartes déplacées (Jhoira : « perdez autant de PV que sa valeur de mana »).
+    if (e.store) r.vars[`$ids:${e.store}`] = moved;
     const lib = player.library.filter((id) => !rest.includes(id));
     shuffle(s, rest);
     player.library = [...lib, ...rest];
@@ -1502,11 +1509,19 @@ export const HANDLERS: OpHandlers = {
     if (!player) return;
     const top = player.library.slice(0, e.n);
     if (top.length === 0) return;
+    // Fact or Fiction : un adversaire sépare les cartes révélées, le contrôleur choisit sa pile.
+    const opp = opponentsOf(s, ctx.controller)[0];
+    const separator = e.opponentSeparates && opp ? opp : ctx.controller;
+    const chooser = e.opponentSeparates ? ctx.controller : opp;
+    if (e.opponentSeparates && !r.vars[key("revealed")]) {
+      r.vars[key("revealed")] = [1];
+      emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
+    }
     const down = r.vars[key("down")];
     if (!down) {
       return {
         ask: {
-          player: ctx.controller,
+          player: separator,
           key: key("down"),
           request: {
             type: "pick",
@@ -1524,27 +1539,29 @@ export const HANDLERS: OpHandlers = {
     }
     const faceDown = down.map(String);
     const faceUp = top.filter((id) => !faceDown.includes(id));
-    const opp = opponentsOf(s, ctx.controller)[0];
     let pick = r.vars[key("pile")]?.[0];
-    if (pick === undefined && opp) {
+    if (pick === undefined && chooser) {
       const names = faceUp.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
       const downNames = faceDown.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
-      if (e.revealed) emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
+      if (e.revealed && !e.opponentSeparates)
+        emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
       return {
         ask: {
-          player: opp,
+          player: chooser,
           key: key("pile"),
           request: {
             type: "pick",
             intent: "piles",
-            prompt: `${nameOf(s, ctx.sourceId)} : choisissez la pile que l'adversaire met dans sa main (l'autre va au cimetière)`,
+            prompt: e.opponentSeparates
+              ? `${nameOf(s, ctx.sourceId)} : choisissez la pile à mettre dans votre main (l'autre va au cimetière)`
+              : `${nameOf(s, ctx.sourceId)} : choisissez la pile que l'adversaire met dans sa main (l'autre va au cimetière)`,
             options: ["down", "up"],
             labels: e.revealed
               ? { down: `Première pile : ${downNames}`, up: `Seconde pile : ${names}` }
               : { down: `Pile face cachée (${faceDown.length} carte(s))`, up: `Pile face visible : ${names}` },
             min: 1,
             max: 1,
-            suggested: [faceDown.length >= faceUp.length ? "up" : "down"],
+            suggested: [faceDown.length >= faceUp.length !== !!e.opponentSeparates ? "up" : "down"],
           },
         },
       };

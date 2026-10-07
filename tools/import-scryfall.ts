@@ -23,7 +23,7 @@ const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "packages",
 /** Textes français complétés à la main (cartes sans impression française qui ait son texte). */
 const FRENCH_OVERRIDES = JSON.parse(readFileSync(join(DATA_DIR, "french-overrides.json"), "utf8")) as Record<
   string,
-  { name?: string; typeLine?: string; text?: string }
+  { name?: string; typeLine?: string; text?: string; faces?: { name?: string; typeLine?: string; text?: string }[] }
 >;
 const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "application/json" };
 
@@ -232,7 +232,13 @@ async function importByName(SET: string): Promise<void> {
     }
     // Texte français complété à la main quand aucune impression française n'a le sien (`french-overrides.json`).
     const fix = FRENCH_OVERRIDES[name];
-    const withFr = fix ? { ...entry, fr: { ...(entry.fr as object | undefined), ...fix } } : entry;
+    const { faces: faceFixes, ...cardFix } = fix ?? {};
+    const withFr = fix ? { ...entry, fr: { ...(entry.fr as object | undefined), ...cardFix } } : entry;
+    // Carte à plusieurs faces : le texte de chaque face (Double Jump // Flying Kick, sans impression française).
+    if (faceFixes && Array.isArray(withFr.faces))
+      withFr.faces = (withFr.faces as { fr?: object }[]).map((face, i) =>
+        faceFixes[i] ? { ...face, fr: { ...face.fr, ...faceFixes[i] } } : face,
+      );
     out.push({ ...withFr, origin: chosen.set.toUpperCase(), colorIdentity: chosen.color_identity });
   }
   const OUT = join(DATA_DIR, `${SET}.json`);

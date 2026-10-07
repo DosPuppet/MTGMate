@@ -85,6 +85,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   hexproof: "hexproof",
   shroud: "shroud",
   infect: "infect",
+  toxic: "toxic",
   indestructible: "indestructible",
   convoke: "convoke",
   improvise: "improvise",
@@ -590,6 +591,42 @@ export function toCardDef(
         ab.kind === "triggered" && ab.trigger.on === "unlockDoor" ? { ...ab, trigger: { on: "unlockDoor", door } } : ab,
       );
     });
+    // Fusion (702.102) : une troisième face, les deux moitiés lancées ensemble depuis la main (coût total, cibles et
+    // effets de la gauche puis de la droite ; les mots « cible » des deux moitiés ont des noms différents).
+    const [left, right] = halves;
+    const fuse = /^Fuse\b/m.test(raw.faces[0]?.oracleText ?? "");
+    if (fuse && left?.spell && right?.spell) {
+      const mode = (h: CardDef) => h.spell?.modes[0] ?? { targets: [], effects: [] };
+      card.faceDefs = [
+        ...faceDefs,
+        {
+          ...left,
+          id: `${slug(raw.name)}__fuse`,
+          name: raw.name,
+          manaCost: card.manaCost,
+          manaCostText: card.manaCostText,
+          colors: card.colors,
+          typeLine: card.typeLine,
+          text: [left.text, right.text].join("\n"),
+          fr:
+            left.fr && right.fr
+              ? {
+                  ...left.fr,
+                  name: raw.fr?.name ?? `${left.fr.name} // ${right.fr.name}`,
+                  text: [left.fr.text, right.fr.text].join("\n"),
+                }
+              : undefined,
+          spell: {
+            modes: [
+              {
+                targets: [...mode(left).targets, ...mode(right).targets],
+                effects: [...mode(left).effects, ...mode(right).effects],
+              },
+            ],
+          },
+        } as CardDef,
+      ];
+    }
     card.abilities = room
       ? halves.map((h, door) => ({
           kind: "activated" as const,
@@ -852,6 +889,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const storm = /^Storm\b/m.test(raw.oracleText);
   // Réplique (702.56) : le coût de réplique est payé X fois (kicker de sorte « replicate ») ; le sort est copié X fois.
   const replicate = /^Replicate ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Escouade (702.157) : le coût d'escouade est payé X fois (kicker de sorte « squad ») ; autant de copies en arrivant.
+  const squad = /^Squad ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Suspension (702.62) : action spéciale depuis la main, la carte exilée avec N marqueurs de temps.
   const suspend = /^Suspend (\d+)—((?:\{[^}]+\})+)/m.exec(raw.oracleText);
   // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
@@ -930,7 +969,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
           "Myriade : créer des copies qui attaquent vos autres adversaires ?",
           dsl.fx.copyToken(dsl.ref.self, {
             attackEach: dsl.ref.except(dsl.ref.eachOpponent, dsl.ref.defendingPlayer),
-            exileAtEndOfCombat: true,
+            atEndOfCombat: "exile",
           }),
         ),
         { label: "Myriade : une copie attaque chacun de vos autres adversaires" },
@@ -1008,6 +1047,14 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.castSelf, [dsl.fx.copySpell(dsl.ref.self, dsl.amount.sourceX)], {
         label: "Réplique : copiez-le pour chaque coût de réplique payé",
+      }),
+    );
+  }
+  if (squad) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.entersSelf, [dsl.fx.copyToken(dsl.ref.self, { count: dsl.amount.sourceX })], {
+        condition: dsl.cond.amountAtLeast(dsl.amount.sourceX, 1),
+        label: "Escouade : une copie pour chaque coût d'escouade payé",
       }),
     );
   }
@@ -1160,8 +1207,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     spell,
     kicker: script?.kicker
       ? parseManaCost(script.kicker)
-      : replicate
-        ? parseManaCost(replicate)
+      : replicate || squad
+        ? parseManaCost(replicate ?? squad ?? "")
         : offspring
           ? parseManaCost(offspring)
           : waterbendKicker
@@ -1171,25 +1218,27 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
               : undefined,
     kickerKind: replicate
       ? "replicate"
-      : offspring
-        ? "offspring"
-        : waterbendKicker
-          ? "waterbend"
-          : lifeOrPay
-            ? "life"
-            : gift
-              ? "gift"
-              : bargain
-                ? "bargain"
-                : blight
-                  ? "blight"
-                  : teamwork
-                    ? "teamwork"
-                    : evidence
-                      ? "evidence"
-                      : exileGraveyard
-                        ? "exileGraveyard"
-                        : undefined,
+      : squad
+        ? "squad"
+        : offspring
+          ? "offspring"
+          : waterbendKicker
+            ? "waterbend"
+            : lifeOrPay
+              ? "life"
+              : gift
+                ? "gift"
+                : bargain
+                  ? "bargain"
+                  : blight
+                    ? "blight"
+                    : teamwork
+                      ? "teamwork"
+                      : evidence
+                        ? "evidence"
+                        : exileGraveyard
+                          ? "exileGraveyard"
+                          : undefined,
     gift,
     kickerCost:
       script?.kickerCost ??

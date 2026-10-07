@@ -116,6 +116,8 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
   if (a.kind === "spent" && !a.of && a.what === "mana") return ctx.cast?.manaSpent ?? 0;
+  // Coin of Mastery : « pour chaque mana d'une source d'artefact dépensé pour la lancer » (la créature qui arrive).
+  if (a.kind === "spent" && !a.of && a.what === "artifact") return ctx.cast?.artifactMana ?? 0;
   // Scarlet Spider, Ben Reilly : « X étant la valeur de mana de la créature renvoyée » (Web-slinging).
   if (a.kind === "manaValueOf" && a.ref.kind === "cost" && a.ref.paid === "bounced")
     return manaValue(s.defs[s.objects[ctx.cast?.costBounced?.[0] ?? ""]?.defId ?? ""]?.manaCost);
@@ -198,8 +200,12 @@ function defaultChoice(
     const keys = kind === "color" ? d.colors : d.types.includes("Creature") ? d.subtypes : [];
     for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
   }
-  const best = [...tally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  return kind === "color" ? { color: (best as Color | undefined) ?? "W" } : { creatureType: best ?? "Human" };
+  // Thriving Grove : seulement une des couleurs permises.
+  const allowed = kind === "color" ? s.defs[o.defId]?.enterModes : undefined;
+  const best = [...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => !allowed || allowed.includes(k))?.[0];
+  return kind === "color"
+    ? { color: (best as Color | undefined) ?? (allowed?.[0] as Color | undefined) ?? "W" }
+    : { creatureType: best ?? "Human" };
 }
 
 /** Un remplacement « exilez-le à la place » qui s'applique à un objet sur le point d'aller au cimetière. */
@@ -383,6 +389,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
   const loyalty = ctx.loyalty ?? eff?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);
+  // X du sort qui l'a fait arriver, connu dès l'arrivée (escouade : « s'il a été payé », vérifié au déclenchement).
+  if (ctx.x) o.x = ctx.x;
   // Marqueurs imposés par l'effet (« avec un marqueur +1/+1 », Imminence) : mis en arrivant (122.6).
   for (const c of ctx.counters ?? []) changeCounters(s, o, c.kind, c.n);
   if (ctx.impending) changeCounters(s, o, "time", ctx.impending);

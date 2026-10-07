@@ -47,6 +47,8 @@ export type Effect =
       ability: Omit<PlayerStaticAbilityDef, "kind">;
       who?: Ref;
       untilYourNextTurn?: boolean;
+      /** Jusqu'au prochain tour de chaque joueur touché (Teferi's Reproach : « jusqu'au prochain tour de ce joueur »). */
+      untilTheirNextTurn?: boolean;
       times?: Amount;
       /** À usage unique, jusqu'à la fin du tour (« le prochain sort que vous lancez ce tour-ci »). */
       once?: boolean;
@@ -132,7 +134,11 @@ export type Effect =
   | { op: "millWhileShared"; who?: Ref; share?: "color"; nonland?: boolean; draw?: boolean }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
-  /** `tapped` : jetons engagés ; `attacking` : engagés et attaquants (le même défenseur que la source, sinon le premier adversaire). */
+  /**
+   * `tapped` : jetons engagés ; `attacking` : engagés et attaquants (le même défenseur que la source, sinon le premier
+   * adversaire), ou qui attaquent le joueur désigné (Endless Foot Assault : « … attaquant ce joueur » ; aucun s'il n'y en
+   * a pas).
+   */
   /** `pt` : jeton X/X (force et endurance égales au montant, Dance of the Tumbleweeds). */
   | {
       op: "createTokens";
@@ -146,7 +152,7 @@ export type Effect =
        */
       attachTo?: Ref;
       tapped?: boolean;
-      attacking?: boolean;
+      attacking?: boolean | Ref;
       pt?: Amount;
     }
   /** Marqueurs (par défaut +1/+1) ; un montant négatif en retire. */
@@ -220,7 +226,8 @@ export type Effect =
       greatestPower?: boolean;
     }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
-  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
+  /** `lifeAmount` : des PV variables (Niv-Mizzet, Ghost Counsel : « autant de PV »). */
+  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number; lifeAmount?: Amount }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
   | { op: "may"; prompt: string; skip: number; who?: Ref; store?: string }
   /** « Vous pouvez contempler [filtre]. Si vous le faites, … » pendant la résolution : sinon, les `skip` effets sont sautés. */
@@ -347,10 +354,10 @@ export type Effect =
       attacking?: boolean;
       /**
        * Myriade (702.116) : une copie engagée et attaquante pour chacun des joueurs désignés, qui attaque ce joueur ; `count`
-       * est ignoré. `exileAtEndOfCombat` : les copies sont exilées à la fin du combat.
+       * est ignoré. `atEndOfCombat` : les copies sont exilées (myriade) ou sacrifiées (Shredder) à la fin du combat.
        */
       attackEach?: Ref;
-      exileAtEndOfCombat?: boolean;
+      atEndOfCombat?: "exile" | "sacrifice";
       /** F/E de base fixées (Nexus of Becoming : 3/3). */
       pt?: number;
       /** « … sauf que ses capacités d'équipement coûtent {N} de moins » (Firion) ; `sacrificeAtNextUpkeep` en plus. */
@@ -451,10 +458,12 @@ export type Effect =
    * Révèle jusqu'à N cartes correspondantes ; elles vont dans `to`, le reste au-dessous dans un ordre aléatoire. Sans
    * `to` : rien ne bouge, les cartes correspondantes sont mémorisées (`store`, Sanar).
    */
-  | { op: "revealUntilN"; filter: ObjectFilter; n: Amount; to?: MoveSpec; store?: string }
+  /** `who` : la bibliothèque révélée (vous par défaut ; Jhoira : un adversaire ciblé). */
+  | { op: "revealUntilN"; filter: ObjectFilter; n: Amount; to?: MoveSpec; store?: string; who?: Ref }
   /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
   /** `revealed` : deux piles révélées (Intrude on the Mind) ; `storeGraveyard` : nombre de cartes mises au cimetière. */
-  | { op: "piles"; n: number; revealed?: boolean; storeGraveyard?: string }
+  /** `opponentSeparates` : un adversaire sépare les cartes révélées, le contrôleur choisit sa pile (Fact or Fiction). */
+  | { op: "piles"; n: number; revealed?: boolean; storeGraveyard?: string; opponentSeparates?: boolean }
   /** « Terminez le tour » (723). */
   | { op: "endTurn" }
   /** Le contrôleur de l'effet prend le contrôle de l'objet jusqu'à la fin du tour. */
@@ -556,6 +565,8 @@ export type Effect =
   | { op: "reduceSpeed"; who: Ref }
   /** « Vous contrôlez [le joueur ciblé] pendant son prochain tour » (The Dominion Bracelet). */
   /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur. */
+  /** Le joueur désigné (vous par défaut) devient le monarque (724). */
+  | { op: "becomeMonarch"; who?: Ref }
   /**
    * Chaque joueur désigné choisit secrètement un nombre (de 0 à `max`), dans l'ordre APNAP, sans voir ceux des autres ;
    * mémorisés sous `store`, lus par `ref.numberChoosers` et `amount.numberChosen` (Wheel of Misfortune).

@@ -375,7 +375,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     )
       return false;
     // Protection du joueur (702.16) : contre ses adversaires, ou contre tout (même ses propres sorts).
-    if (playerProtectedFrom(s, id, controller)) return false;
+    if (playerProtectedFrom(s, id, controller, sourceId)) return false;
     if (spec.filter.players === "you") return id === controller;
     if (spec.filter.players === "opponent") return id !== controller;
     return true;

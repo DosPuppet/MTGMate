@@ -13,7 +13,14 @@ describe("decks Commander", () => {
   const decks = commanderDecks();
 
   it("les decks Commander : 100 cartes, un commandant, tous les noms connus du catalogue", () => {
-    expect(decks.map((d) => d.id)).toEqual(["edgar-markov", "rakdos", "ur-dragon", "yshtola"]);
+    expect(decks.map((d) => d.id)).toEqual([
+      "edgar-markov",
+      "multiverse-reforged",
+      "rakdos",
+      "turtle-power",
+      "ur-dragon",
+      "yshtola",
+    ]);
     for (const d of decks) {
       expect(d.unknown, d.id).toEqual([]);
       expect(d.commander.length, d.id).toBe(1);

@@ -88,7 +88,7 @@ function tapXMax(
 
 import { chars, snapshot } from "./layers";
 import { enterChoiceRequest } from "./ops/permanents";
-import { obj } from "./state";
+import { kickerPaidTimes, obj } from "./state";
 import { legalTargets } from "./targets";
 import type {
   ActionOption,
@@ -530,8 +530,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
     // Travail d'équipe : les créatures engagées pour le kicker ne paient pas le mana.
     const kickerCrew = d.kickerCost?.tapPower !== undefined ? suggestedCrew(s, player, card, d.kickerCost.tapPower) : [];
-    // Réplique (702.56) : le coût se paie X fois (X choisi comme pour un sort à X), pas comme un kicker.
-    const replicate = d.kickerKind === "replicate";
+    // Réplique (702.56), escouade (702.157) : le coût se paie X fois (X choisi comme pour un sort à X), pas comme un kicker.
+    const replicate = kickerPaidTimes(d);
     const kickerAffordable =
       !sneakOnly &&
       !!d.kicker &&

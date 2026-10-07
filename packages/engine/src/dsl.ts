@@ -388,6 +388,7 @@ export const amount = {
   /** Vivid (ECL) : nombre de couleurs parmi les permanents que vous contrôlez (ou correspondant au filtre). */
   colorsAmong: (filter: ObjectFilter = { permanent: true, controller: "you" }): Amount => agg("distinct", "color", { filter }),
   lifeTotal: { kind: "lifeTotal" } as Amount,
+  startingLife: { kind: "lifeTotal", starting: true } as Amount,
   /** Marqueurs sur la source d'après ses dernières informations connues (capacité « quand elle meurt »). */
   /** Marqueurs d'un type sur la source, ou d'après ses dernières informations connues (« si elle avait un marqueur… »). */
   lkiCounters: (counter: string): Amount => ({ kind: "countersOn", ref: { kind: "self" }, counter }),
@@ -422,6 +423,10 @@ export const amount = {
   /** X du sort qui a mis la source en jeu. */
   sourceX: spent("x"),
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
+  /** Mana inutilisé de votre réserve (Omnath, Locus of the Void). */
+  manaInPool: { kind: "manaInPool" } as Amount,
+  /** Vos marqueurs poison. */
+  poison: { kind: "poison" } as Amount,
   /** Le plus grand nombre choisi (`fx.chooseNumbers`). */
   numberChosen: (store: string): Amount => ({ kind: "numberChosen", store }),
   /** La plus grande valeur du montant, vu de chacun des joueurs désignés (« … qu'un adversaire contrôle »). */
@@ -458,6 +463,8 @@ export const amount = {
   creaturesDiedThisTurn: turnEvents(DIED),
   /** Créatures avec lesquelles vous avez attaqué ce tour-ci. */
   attackersThisTurn: turnEvents({ event: "attack", who: "you" }),
+  /** Adversaires que vous avez attaqués ce tour-ci (Fast Forward). */
+  opponentsAttackedThisTurn: turnEvents({ event: "attack", who: "you", distinct: "defender" }),
   totalManaValue: (filter: ObjectFilter, zone?: "exile"): Amount =>
     agg("sum", "manaValue", { filter, ...(zone ? { zone } : {}) }),
   eventManaSpent: spent("mana", EVENT_OBJECT),
@@ -497,6 +504,8 @@ export const amount = {
   descendedThisTurn: turnEvents(DESCENT),
   /** « pour chaque mana d'une Caverne dépensé pour la lancer » */
   caveManaSpent: spent("cave"),
+  /** Mana de sources d'artefact dépensé pour lancer ce sort (Coin of Mastery). */
+  artifactManaSpent: spent("artifact"),
   /** Force totale des cartes exilées pour fabriquer la source. */
   linkedTotalPower: agg("sum", "power", { of: { kind: "linked" } }),
   /** Couleurs parmi les cartes exilées pour fabriquer la source. */
@@ -586,7 +595,11 @@ export const fx = {
   /** Jetons engagés (et attaquants si `attacking`). */
   /** Jeton X/X : force et endurance égales au montant. */
   createXXToken: (token: TokenSpec, pt: Amount, count: Amount = 1): Effect => ({ op: "createTokens", token, count, pt }),
-  createTappedTokens: (token: TokenSpec, count: Amount = 1, opts: { attacking?: boolean; store?: string } = {}): Effect => ({
+  createTappedTokens: (
+    token: TokenSpec,
+    count: Amount = 1,
+    opts: { attacking?: boolean | Ref; store?: string } = {},
+  ): Effect => ({
     op: "createTokens",
     token,
     count,
@@ -659,6 +672,13 @@ export const fx = {
   /** Effet de joueur jusqu'à la fin du tour, pour son contrôleur (`damageUnpreventable` : « les blessures ne peuvent pas être prévenues ce tour-ci »). */
   thisTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({ op: "playerEffect", ability, who }),
   /** Effet de joueur jusqu'au début de votre prochain tour (Avatar's Wrath). */
+  /** Effet de joueur jusqu'au prochain tour du joueur touché (Teferi's Reproach). */
+  untilTheirNextTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who: Ref): Effect => ({
+    op: "playerEffect",
+    ability,
+    who,
+    untilTheirNextTurn: true,
+  }),
   untilYourNextTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({
     op: "playerEffect",
     ability,
@@ -858,12 +878,13 @@ export const fx = {
     combination: true,
     ...(keep ? { keep } : {}),
   }),
-  revealUntilN: (filter: ObjectFilter, n: Amount, to?: MoveSpec, store?: string): Effect => ({
+  revealUntilN: (filter: ObjectFilter, n: Amount, to?: MoveSpec, store?: string, who?: Ref): Effect => ({
     op: "revealUntilN",
     filter,
     n,
     to,
     store,
+    ...(who ? { who } : {}),
   }),
   becomeCopyKeepAbilities: (what: Ref): Effect => ({ op: "becomeCopyKeepAbilities", what }),
   /** « Exilez les N cartes du dessus. Choisissez-en une. Vous pouvez la jouer ce tour-ci (ou jusqu'à la fin de votre prochain tour). » */
@@ -872,7 +893,11 @@ export const fx = {
     n,
     until,
   }),
-  piles: (n: number, opts: { revealed?: boolean; storeGraveyard?: string } = {}): Effect => ({ op: "piles", n, ...opts }),
+  piles: (n: number, opts: { revealed?: boolean; storeGraveyard?: string; opponentSeparates?: boolean } = {}): Effect => ({
+    op: "piles",
+    n,
+    ...opts,
+  }),
   grantFlashback: (what: Ref): Effect => ({ op: "grantPlay", what, flashback: true }),
   /** « [Cette carte] gagne l'harmonie jusqu'à la fin du tour ; son coût d'harmonie est son coût de mana » (702.180). */
   grantHarmonize: (what: Ref): Effect => ({ op: "grantPlay", what, flashback: "harmonize" }),
@@ -978,6 +1003,8 @@ export const fx = {
   }),
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
+  /** « Vous devenez le monarque » (724). */
+  becomeMonarch: (who?: Ref): Effect => ({ op: "becomeMonarch", ...(who ? { who } : {}) }),
   /** Chaque joueur désigné choisit secrètement un nombre de 0 à `max` (Wheel of Misfortune). */
   chooseNumbers: (who: Ref, store: string, max = 20): Effect => ({ op: "chooseNumbers", who, store, max }),
   /** `thenExtraTurn` : « après ce tour, ce joueur prend un tour supplémentaire » (Emrakul, the Promised End). */
@@ -1246,9 +1273,10 @@ export const fx = {
     ...opts,
   }),
   /** « Vous pouvez payer N points de vie. Si vous le faites, … » */
-  mayPayLife: (life: number, prompt: string, ...effects: Effects): Effect[] => {
+  mayPayLife: (life: Amount, prompt: string, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
-    return [{ op: "mayPay", cost: { generic: 0, colored: {}, x: 0 }, life, prompt, skip: flat.length }, ...flat];
+    const paid = typeof life === "number" ? { life } : { lifeAmount: life };
+    return [{ op: "mayPay", cost: { generic: 0, colored: {}, x: 0 }, ...paid, prompt, skip: flat.length }, ...flat];
   },
   /** Blessures réparties entre les cibles désignées. */
   damageDivided: (total: Amount, to: Ref): Effect => ({ op: "damageDivided", total, to }),
@@ -1497,7 +1525,7 @@ export const fx = {
       tapped?: boolean;
       attacking?: boolean;
       attackEach?: Ref;
-      exileAtEndOfCombat?: boolean;
+      atEndOfCombat?: "exile" | "sacrifice";
       addTypes?: CardType[];
       pt?: number;
       setColors?: Color[];
@@ -2147,7 +2175,11 @@ export const when = {
   /** « Chaque fois que la créature enchantée (ou équipée) subit des blessures » */
   attachedIsDealtDamage: { on: "isDealtDamage", who: "attached" } as TriggerSpec,
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » */
-  combatDamageBatch: (who: ObjectFilter): TriggerSpec => ({ on: "combatDamageBatch", who }),
+  combatDamageBatch: (who: ObjectFilter, toYou?: boolean): TriggerSpec => ({
+    on: "combatDamageBatch",
+    who,
+    ...(toYou ? { toYou } : {}),
+  }),
   /** « Quand ce permanent est mis dans un cimetière depuis le champ de bataille » */
   putIntoGraveyardSelf: { on: "leaves", who: "self", to: "graveyard" } as TriggerSpec,
   blocks: (who: "self" | ObjectFilter, attacker?: ObjectFilter): TriggerSpec => ({ on: "blocks", who, attacker }),
@@ -2390,6 +2422,8 @@ export const cond = {
   enduringStory: { kind: "enduringStory" } as Condition,
   /** Ascension (702.131) : « si vous avez la bénédiction de la cité ». */
   citysBlessing: { kind: "citysBlessing" } as Condition,
+  /** Vous êtes le monarque. */
+  monarch: { kind: "monarch" } as Condition,
   /** « Si le coût de faufilement de ce sort a été payé ». */
   sneaked: { kind: "cast", via: "sneak" } as Condition,
   sneakWindow: { kind: "sneakWindow" } as Condition,
@@ -2409,6 +2443,22 @@ export const cond = {
   playerWithoutCreatures: someone(
     { kind: "eachPlayer" },
     { kind: "not", cond: { kind: "controls", filter: { types: ["Creature"] } } },
+  ),
+  /** Un joueur a au plus la moitié de ses points de vie de départ (Game Over). */
+  someoneAtHalfStartingLife: someone(
+    { kind: "eachPlayer" },
+    {
+      kind: "amountAtLeast",
+      amount: {
+        kind: "sum",
+        of: [
+          { kind: "lifeTotal", starting: true },
+          { kind: "neg", of: { kind: "lifeTotal" } },
+          { kind: "neg", of: { kind: "lifeTotal" } },
+        ],
+      },
+      n: 0,
+    },
   ),
   /** Un adversaire a N points de vie ou moins (Bloodghast). */
   opponentLifeAtMost: (n: number): Condition =>

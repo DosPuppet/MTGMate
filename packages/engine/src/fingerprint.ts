@@ -36,6 +36,8 @@ export function outcomeHash(s: GameState, collapse = false): string {
       s.stack.map((i) => [i.kind, i.sourceDefId, i.controller]),
       () => collapse,
     ),
+    // Monarque (724) : absent tant que personne ne l'est.
+    ...(s.monarch ? { monarch: s.monarch } : {}),
     // Commander (PLAN-E) : zone de commandement, taxes et blessures de commandant ; absent hors Commander.
     ...(s.commander
       ? {

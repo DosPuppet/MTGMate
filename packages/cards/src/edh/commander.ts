@@ -58,6 +58,8 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
   "Vault of Champions": twoOpponentsLand("W", "B"),
   "Morphic Pool": twoOpponentsLand("U", "B"),
   "Sea of Clouds": twoOpponentsLand("W", "U"),
+  "Spire Garden": twoOpponentsLand("R", "G"),
+  "Undergrowth Stadium": twoOpponentsLand("B", "G"),
   "Fierce Guardianship": {
     altCost: freeWithCommander,
     spell: spell([target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")], [fx.counter(ref.target())]),

@@ -59,7 +59,8 @@
     "discardToLibraryTop": "Library of Leng : une carte défaussée par un effet va au-dessus de la bibliothèque (famille J, défausse)",
     "stealsOpponentDraws": "Notion Thief : remplacement de la pioche d'un adversaire par la vôtre (famille I, pioche ; un remplacement chiffré ne change pas de joueur)",
     "skipExtraTurns": "Trouble in Pairs (affects: opponents) : tours supplémentaires passés (famille J)",
-    "fromCommand": "Deck The Ur-Dragon (PLAN-E, recette « Ajouter un deck Commander ») : éminence d'une statique de joueur (réduction du coût des sorts de Dragon depuis la zone de commandement) ; même famille que le déclencheur d'éminence d'Edgar Markov (fromCommand)"
+    "fromCommand": "Deck The Ur-Dragon (PLAN-E, recette « Ajouter un deck Commander ») : éminence d'une statique de joueur (réduction du coût des sorts de Dragon depuis la zone de commandement) ; même famille que le déclencheur d'éminence d'Edgar Markov (fromCommand)",
+    "cantAttackPlaneswalkers": "Jace, Multiverse Architect : « ses créatures ne peuvent pas attaquer vos Jace ce tour-ci » ; famille des restrictions d'attaque d'un joueur (cantAttackPlayer)"
   },
   "keyword": {
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",
@@ -136,7 +137,6 @@
     "firstOf": "Alania, Divergent Storm — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "firstThisTurnFree": "Kíli the Resourceful — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "freeMaxManaValueCreatures": "Omnipresence — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "fromBattlefieldThisTurn": "Supper for Spiders — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "gainActivatedFrom": "Marvin, Murderous Mimic — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "gainActivatedFromGraveyard": "Thranduil, the Elvenking — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "gainLife": "The Darkness Crystal — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -185,7 +185,6 @@
     "spellToSoleTarget": "Imodane, the Pyrohammer — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "stash": "Tinybones, Bauble Burglar — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "supertype": "Serah Farron // Crystallized Serah — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "typeChosen": "Arachne, Psionic Weaver — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "untilLeavesExile": "Emrakul, the Exigent Doom — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "usingManaFrom": "Smaug, Wicked Worm — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "wasAttachedToSource": "Zack Fair — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -205,11 +204,11 @@
     "forNonOwners": "Ian Malcolm, Chaotician : permission de jouer donnée à chaque joueur autre que le propriétaire (grantPlay, famille C)",
     "withWarp": "Blade of the Swarm — cible « carte exilée avec la distorsion » (une carte qui a la distorsion) ; Close Encounter, qui l'utilisait, lit `warped` (carte exilée par la distorsion, PLAN-A A3) : à réutiliser pour toute carte exilée « avec la distorsion »",
     "nameOf": "Dragonlord Kolaghan : « du même nom que [l'objet désigné] », relation résolue par withX comme sharesCreatureTypeWith ; famille des bornes dynamiques des filtres",
-    "attackEach": "Goldlust Triad : myriade (702.116), lue dans le texte (scryfall.ts) ; famille du mot-clé myriade (une copie attaque chacun des autres adversaires)",
-    "exileAtEndOfCombat": "Goldlust Triad : myriade (702.116), copies exilées à la fin du combat ; famille du mot-clé myriade",
     "differentManaValues": "Agadeem's Awakening : cibles de valeurs de mana différentes, sur le modèle de differentNames (même mécanisme de groupe)",
     "exileIfLeaves": "Exhumation (702.84a, lue dans le texte : Cityscape Leveler) : « s'il devait quitter le champ de bataille, exilez-le à la place » ; famille des retours temporaires (exhumation, Whip of Erebos…)",
-    "manifest": "Kozilek, the Broken Reality : manifester depuis la main (701.40) ; famille de la manifestation (manifestDread existant, à rattacher)"
+    "manifest": "Kozilek, the Broken Reality : manifester depuis la main (701.40) ; famille de la manifestation (manifestDread existant, à rattacher)",
+    "untilTheirNextTurn": "Teferi's Reproach : effet de joueur « jusqu'au prochain tour de ce joueur » (le joueur touché, pas le lanceur) ; famille des durées d'effets de joueur",
+    "onDraw": "Krang, the All-Powerful : déclenchements supplémentaires dus à une pioche (TriggerMod) ; famille des doubleurs de déclenchements par événement (onEnter, onAttack, onDies)"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -227,25 +226,25 @@
   },
   "engineCardLiterals": {},
   "ceilings": {
-    "CardDef": 97,
+    "CardDef": 98,
     "GameObject": 62,
     "StackItem": 29,
     "PlayerState": 23,
-    "GameState": 40,
+    "GameState": 41,
     "ObjectFilter": 88,
     "CostDef": 34,
     "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 17,
     "LayerMods": 31,
-    "Effect": 153,
-    "Effect (champs)": 645,
+    "Effect": 154,
+    "Effect (champs)": 651,
     "TriggerSpec": 60,
-    "TriggerSpec (champs)": 160,
-    "Condition": 53,
-    "Condition (champs)": 98,
-    "Amount": 33,
-    "Amount (champs)": 72,
+    "TriggerSpec (champs)": 161,
+    "Condition": 54,
+    "Condition (champs)": 99,
+    "Amount": 35,
+    "Amount (champs)": 75,
     "Ref": 34,
     "Ref (champs)": 61
   },
@@ -309,6 +308,8 @@
     "PLAN-E E12 : entretien cumulatif (unlessPay.times, coût payé une fois par marqueur d'âge, lu dans le texte) ; « sauf la première pioche de son étape de pioche » (draw.exceptTurnDraw, Orcish Bowmasters) : Effect (champs) 634 → 635, TriggerSpec (champs) 159 → 160",
     "Ref commanders (PLAN-E, Path of Ancestry) : « votre commandant », où qu'il soit ; forme générique pour les cartes Commander qui citent le commandant : Ref 31 → 32, Ref (champs) 53 → 55",
     "Deck The Ur-Dragon (Commander) : ObjectFilter.nameOf (Dragonlord Kolaghan), Amount maxOverPlayers (Cavern-Hoard Dragon), zone de commandement dans Ref zone et MoveSpec (Hellkite Courser, Majestic Genesis), myriade (copyToken attackEach, exileAtEndOfCombat), mana marqué gardé (Klauth) et porteur d'un effet (Arena of Glory), éminence d'une statique de joueur : ObjectFilter 87 → 88, Effect (champs) 635 → 638, Condition (champs) 97 → 98, Amount 31 → 32, Amount (champs) 67 → 70",
-    "Deck Rakdos, Lord of Riots (Commander) : GameObject.exileIfLeaves (exhumation), MoveSpec manifest et exileIfLeaves, Ref nth (fx.forEachPlayer) et numberChoosers, Amount numberChosen, op chooseNumbers (Wheel of Misfortune), TargetSpec differentManaValues, unlessPay orMana sans défausse, copie de sort avec loyauté, recherche bornée par un montant, tour contrôlé suivi d'un tour supplémentaire : GameObject 61 → 62, Effect 152 → 153, Effect (champs) 638 → 645, Amount 32 → 33, Amount (champs) 70 → 72, Ref 32 → 34, Ref (champs) 55 → 61"
+    "Deck Rakdos, Lord of Riots (Commander) : GameObject.exileIfLeaves (exhumation), MoveSpec manifest et exileIfLeaves, Ref nth (fx.forEachPlayer) et numberChoosers, Amount numberChosen, op chooseNumbers (Wheel of Misfortune), TargetSpec differentManaValues, unlessPay orMana sans défausse, copie de sort avec loyauté, recherche bornée par un montant, tour contrôlé suivi d'un tour supplémentaire : GameObject 61 → 62, Effect 152 → 153, Effect (champs) 638 → 645, Amount 32 → 33, Amount (champs) 70 → 72, Ref 32 → 34, Ref (champs) 55 → 61",
+    "Préconstruit Multiverse Reforged (Commander) : CardDef.toxic (toxique), monarque (GameState.monarch, effet becomeMonarch, condition monarch), piles opponentSeparates, revealUntilN who, cantAttackPlaneswalkers, protection d'un joueur par filtre, untilTheirNextTurn, mayPay lifeAmount, montants manaInPool et poison, combatDamageBatch toYou : CardDef 97 → 98, GameState 40 → 41, Effect 153 → 154, Effect (champs) 645 → 651, TriggerSpec (champs) 160 → 161, Condition 53 → 54, Condition (champs) 98 → 99, Amount 33 → 35, Amount (champs) 72 → 74",
+    "Préconstruit Turtle Power! (Commander) : Amount lifeTotal starting (Game Over : « la moitié de ses PV de départ ») ; escouade (kicker payé X fois, comme la réplique), fusion (troisième face des cartes scindées), couleur exclue des terrains Thriving (enterModes), mana d'artefact dépensé (CastInfo.artifactMana), adversaires attaqués (distinct defender), TriggerMod onDraw, onPrevent countersOnDamaged, jetons attaquant un joueur désigné, copies sacrifiées à la fin du combat (atEndOfCombat) : Amount (champs) 74 → 75 : Amount (champs) 74 → 75"
   ]
 }

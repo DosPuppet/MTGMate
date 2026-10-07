@@ -55,6 +55,8 @@ const ICONS = {
   // Un vortex (spirale) pour l'exil.
   exile:
     "M12 3a9 9 0 1 1-9 9h2a7 7 0 1 0 7-7 5 5 0 0 0-5 5 3 3 0 0 0 3 3 1 1 0 0 0 1-1h2a3 3 0 0 1-3 3 5 5 0 0 1-5-5 7 7 0 0 1 7-7z",
+  // Une couronne à trois pointes.
+  crown: "M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7zm3 14h12v2H6v-2z",
   // Une cité : trois tours crénelées.
   city: "M2 21V10h2V8h2v2h1V5h2v2h2V5h2v2h2V5h2v5h1V8h2v2h2v11h-8v-4a2 2 0 0 0-4 0v4H2z",
 };
@@ -540,6 +542,9 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   return (
     <div ref={ref} className={`battlefield ${isMe ? "me" : "opp"}`} data-tuto={isMe ? "field-me" : "field-opp"} style={style}>
       {view.players[player]?.citysBlessing && <CitysBlessing name={isMe ? null : (view.players[player]?.name ?? "")} />}
+      {view.players[player]?.monarch && (
+        <Monarch name={isMe ? null : (view.players[player]?.name ?? "")} slot={view.players[player]?.citysBlessing ? 1 : 0} />
+      )}
       <div className="bf-rows">{isMe ? rows : rows.reverse()}</div>
       {walkers.length > 0 && (
         // Zone des planeswalkers (et batailles), tout à droite comme sur MTGA.
@@ -586,6 +591,33 @@ function CitysBlessing({ name }: { name: string | null }) {
         <span>{who} la bénédiction de la cité, pour le reste de la partie.</span>
         <span className="citys-blessing-rule">
           Elle s'obtient par l'ascension, en contrôlant dix permanents ou plus ; les capacités qui l'exigent sont actives.
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Monarque (724) : une couronne dans le coin du champ de bataille de celui qui l'est (à côté de la bénédiction de la cité
+ * s'il l'a aussi) ; au survol (ou au toucher), ce que c'est et qui l'est.
+ */
+function Monarch({ name, slot }: { name: string | null; slot: number }) {
+  const who = name === null ? "Vous êtes" : `${name} est`;
+  return (
+    <button
+      type="button"
+      className="citys-blessing monarch-badge"
+      style={{ left: 4 + slot * 32 }}
+      aria-label={`Monarque : ${who} le monarque`}
+      data-testid="monarch"
+    >
+      <Icon d={ICONS.crown} />
+      <span className="citys-blessing-tip" role="tooltip">
+        <strong>Monarque</strong>
+        <span>{who} le monarque.</span>
+        <span className="citys-blessing-rule">
+          Au début de son étape de fin, le monarque pioche une carte. Une créature qui lui inflige des blessures de combat fait de
+          son contrôleur le monarque.
         </span>
       </span>
     </button>

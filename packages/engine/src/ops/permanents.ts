@@ -88,7 +88,8 @@ export function enterChoiceRequest(
     let options: string[];
     if (preset) options = preset;
     else if (kind === "landType") options = [...BASIC_LAND_TYPES];
-    else if (kind === "color") options = ["W", "U", "B", "R", "G"];
+    // « Choisissez une couleur autre que le vert » (Thriving Grove) : les couleurs permises dans `enterModes`.
+    else if (kind === "color") options = s.defs[ctx.sourceDefId]?.enterModes ?? ["W", "U", "B", "R", "G"];
     else if (kind === "parity") options = ["odd", "even"];
     // Talion, the Kindly Lord : un nombre de 1 à 10.
     else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
@@ -330,7 +331,12 @@ export const HANDLERS: OpHandlers = {
     // 508.4 : des jetons « engagés et attaquants » attaquent sans avoir été déclarés ; leur contrôleur choisit ce qu'ils
     // attaquent (par défaut, ce qu'attaque la source, sinon son premier adversaire).
     let attacking: string | undefined;
-    if (e.attacking && s.combat) {
+    if (typeof e.attacking === "object") {
+      // « … engagé et attaquant ce joueur » : le joueur désigné, s'il peut être attaqué (sinon, aucun jeton).
+      const defender = resolveRef(s, ctx, e.attacking).find((p) => isPlayer(s, p));
+      if (!defender || !s.combat || !attackableDefenders(s, ctx.controller).includes(defender)) return;
+      attacking = defender;
+    } else if (e.attacking && s.combat) {
       const suggested = s.combat.attackers.find((a) => a.id === ctx.sourceId)?.defender ?? attackingDefender(s, ctx.controller);
       const options = attackableDefenders(s, ctx.controller);
       const answer = r.vars[key("defender")];
@@ -507,7 +513,8 @@ export const HANDLERS: OpHandlers = {
             s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
             bump(s);
           }
-          if (e.exileAtEndOfCombat) {
+          if (e.atEndOfCombat) {
+            const exile = e.atEndOfCombat === "exile";
             createDelayed(
               s,
               ctx.controller,
@@ -515,9 +522,13 @@ export const HANDLERS: OpHandlers = {
               ctx.sourceDefId,
               {
                 targets: [],
-                effects: [{ op: "exile", what: { kind: "target", id: "copy" } }],
+                effects: [
+                  exile
+                    ? { op: "exile", what: { kind: "target", id: "copy" } }
+                    : { op: "sacrificeIt", what: { kind: "target", id: "copy" } },
+                ],
                 bound: { copy: [token] },
-                label: "exiler la copie",
+                label: exile ? "exiler la copie" : "sacrifier la copie",
               },
               "endOfCombat",
             );

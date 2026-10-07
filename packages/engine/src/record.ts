@@ -394,8 +394,17 @@ export const RECORD_VERSION = 1;
  *   surcoûts (fuzz strict).
  * - 147 : carte modale dont le recto et le verso sont des terrains (Pathways) : le joueur choisit la face jouée
  *   (`playLand` et `back`).
+ * - 148 : préconstruit Commander « Multiverse Reforged » : monarque (724 : pioche à l'étape de fin, transfert par
+ *   des blessures de combat, départ du monarque), toxique (702.164), piles séparées par l'adversaire, révélation dans la
+ *   bibliothèque d'un autre joueur, restriction « ne peut pas attaquer vos Jace », protection d'un joueur contre un
+ *   filtre, effets « jusqu'au prochain tour de ce joueur », PV variables payés, mana inutilisé et marqueurs poison comme
+ *   montants ; le déclencheur des blessures de combat groupées transmet les créatures concernées. Préconstruit
+ *   « Turtle Power! » : escouade (702.157), fusion (702.102), évolution vérifiée au déclenchement (comparaison de
+ *   montants), X d'un permanent connu dès son arrivée, mana d'artefact dépensé, jetons qui attaquent un joueur désigné,
+ *   copies sacrifiées à la fin du combat, déclenchements de pioche doublés (Krang), prévention changée en marqueurs sur
+ *   le permanent protégé (Vigor), couleur exclue d'un choix en arrivant (Thriving).
  */
-export const RULES_VERSION = 147;
+export const RULES_VERSION = 148;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

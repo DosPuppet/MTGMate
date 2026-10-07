@@ -282,7 +282,13 @@ function damageReplacementApplies(
  * les adversaires, New Way Forward a une capacité réflexive (« quand des blessures sont prévenues ainsi »), Anti-Venom
  * reçoit autant de marqueurs +1/+1.
  */
-function preventByReplacement(s: GameState, a: ActiveReplacement, source: DamageSource, amount: number): void {
+function preventByReplacement(
+  s: GameState,
+  a: ActiveReplacement,
+  source: DamageSource,
+  amount: number,
+  target: ObjectId | PlayerId,
+): void {
   consumeReplacement(s, a);
   const after = a.r.onPrevent;
   if (after?.opponentsMill) {
@@ -296,6 +302,8 @@ function preventByReplacement(s: GameState, a: ActiveReplacement, source: Damage
   }
   if (after?.counters && a.sourceId && s.objects[a.sourceId]?.zone === "battlefield")
     changeCounters(s, obj(s, a.sourceId), after.counters, amount);
+  if (after?.countersOnDamaged && s.objects[target]?.zone === "battlefield")
+    changeCounters(s, obj(s, target), after.countersOnDamaged, amount);
   if (after?.reflexive) {
     const origin = a.r.origin ?? (a.sourceId ? { id: a.sourceId, defId: obj(s, a.sourceId).defId } : undefined);
     if (origin)
@@ -407,7 +415,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     return;
   // Protection du joueur (702.16) : les blessures des sources adverses (Absolute Virtue) ou de toute source (Teferi's
   // Protection) sont prévenues.
-  if (!unpreventable && isPlayer(s, target) && playerProtectedFrom(s, target, source.controller)) return;
+  if (!unpreventable && isPlayer(s, target) && playerProtectedFrom(s, target, source.controller, source.id)) return;
   const targetObj = s.objects[target];
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
   // Remplacements et préventions des blessures (R1, 616.1) : le joueur blessé choisit l'ordre, le moins de blessures
@@ -418,7 +426,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   );
   const foreignPrevention = unpreventable ? undefined : reps.find((a) => a.r.modify.prevent && a.controller !== victim);
   if (foreignPrevention) {
-    preventByReplacement(s, foreignPrevention, source, amount);
+    preventByReplacement(s, foreignPrevention, source, amount, target);
     return;
   }
   // 702.16e : protection — les blessures d'une source qui correspond à sa qualité sont prévenues.
@@ -461,7 +469,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   amount = chooseReplacementOrder(amount, mods, "min");
   const ownPrevention = unpreventable ? undefined : reps.find((a) => a.r.modify.prevent && a.controller === victim);
   if (ownPrevention) {
-    preventByReplacement(s, ownPrevention, source, amount);
+    preventByReplacement(s, ownPrevention, source, amount, target);
     return;
   }
   if (amount <= 0) return;
@@ -491,6 +499,13 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     // 903.10a : blessures de combat d'un commandant, cumulées sur la partie (704.6c : 21, le joueur perd).
     const commander = combat ? commanderOf(s, src) : undefined;
     if (commander) commander.damage[target] = (commander.damage[target] ?? 0) + amount;
+    // Toxique N (702.164) : des blessures de combat à un joueur lui donnent aussi N marqueurs poison.
+    const toxic = combat && src && source.keywords.includes("toxic") ? (s.defs[src.defId]?.toxic ?? 1) : 0;
+    const poisoned = s.players[target];
+    if (toxic && poisoned) {
+      poisoned.poison = (poisoned.poison ?? 0) + toxic;
+      emit({ type: "poison", player: target, amount: toxic, total: poisoned.poison });
+    }
     // Infection (702.90b) : des marqueurs poison au lieu d'une perte de points de vie.
     // Phyrexian Unlife : à 0 PV ou moins, comme si la source avait l'infection.
     const pl = s.players[target];
@@ -667,7 +682,15 @@ export function removeFromCombat(s: GameState, id: ObjectId): void {
 
 export function tokenDefId(t: TokenSpec): string {
   const kw = (t.keywords ?? []).join("-");
-  return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}`;
+  return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}${t.toxic ? `-toxic${t.toxic}` : ""}`;
+}
+
+/** Monarque (724) : le joueur désigné le devient (un seul monarque à la fois). */
+export function setMonarch(s: GameState, player: PlayerId): void {
+  if (s.monarch === player || !s.players[player] || s.players[player]?.lost) return;
+  s.monarch = player;
+  emit({ type: "monarch", player });
+  bump(s);
 }
 
 /** `enters` : modifications d'arrivée imposées par l'effet (engagés, attaquants, marqueurs), avant l'événement d'arrivée. */
@@ -763,7 +786,8 @@ export function createTokens(
       toughness: t.toughness,
       cdaPT: t.cdaPT,
       enchant: t.enchant,
-      keywords: t.keywords ?? [],
+      keywords: t.toxic ? [...new Set([...(t.keywords ?? []), "toxic" as const])] : (t.keywords ?? []),
+      ...(t.toxic ? { toxic: t.toxic } : {}),
       abilities: t.abilities ?? [],
       text: t.text ?? "",
       implemented: true,

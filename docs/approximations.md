@@ -310,3 +310,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Wheel of Misfortune : les nombres sont choisis l'un après l'autre (dans l'ordre APNAP, sans voir ceux des autres), de 0 à 20 ;
   - `règle` Gray Merchant of Asphodel, Creeping Bloodsucker : les PV gagnés sont calculés (dévotion par adversaire, nombre d'adversaires), pas lus sur les pertes et blessures réelles (différent seulement si elles sont remplacées) ;
   - `règle` Keen Duelist : les cartes du dessus ne sont pas révélées explicitement.
+  - `règle` Dack Fayden, Helping Hand, Fast Forward : « provoquée » (701.38) se lit « attaque à chaque combat si possible », sans l'obligation d'attaquer un autre joueur que celui qui provoque ; pour toujours avec Dack, jusqu'à votre prochain tour avec Fast Forward ;
+  - `règle` Cursed Mirror : la copie vient d'une capacité d'arrivée (et non « en arrivant ») ; la créature copiée est choisie comme une cible ;
+  - `règle` Monarque (724) : la pioche du monarque au début de son étape de fin se fait sans passer par la pile ;
+  - `règle` Incubateur (701.53) : la transformation est une modification permanente (créature-artefact Phyrexian 0/0), pas un passage au verso ; le jeton garde son nom ;
+  - `règle` The Ur-Sphinx : joueur par joueur, il meule puis vous pouvez lancer une de ses cartes (et non toutes les meules d'abord) ;
+  - `règle` Vigor : « quand elle est mise dans un cimetière depuis n'importe où, mélangez-la dans la bibliothèque » est un remplacement : elle est mélangée sans passer par le cimetière (comme les Eldrazi) ;
+  - `règle` Shredder, Shadow Master : la capacité se déclenche aussi quand il attaque un planeswalker (les copies attaquent les autres adversaires) ;
+  - `règle` Coin of Mastery : le mana produit en trop par des sources (Sol Ring pour un seul {1}) est d'abord retiré du mana des artefacts.

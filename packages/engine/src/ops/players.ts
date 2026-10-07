@@ -1,6 +1,6 @@
 /** Effets du moteur : joueurs (points de vie, pioche, tours et étapes supplémentaires, victoire). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { createTokens, dealDamage, drawCards, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
+import { createTokens, dealDamage, drawCards, gainLife, loseLife, sacrifice, setMonarch, setSpeed } from "../actions";
 import type { OpHandlers } from "../effects";
 import {
   announceDiscard,
@@ -46,7 +46,12 @@ export const HANDLERS: OpHandlers = {
           }
         : e0;
     // « Ne peut pas vous attaquer » (Sandswirl Wanderglyph) : « vous » est le contrôleur de l'effet.
-    const ability = e.ability.cantAttackPlayer === "you" ? { ...e.ability, cantAttackPlayer: ctx.controller } : e.ability;
+    const ability0 = e.ability.cantAttackPlayer === "you" ? { ...e.ability, cantAttackPlayer: ctx.controller } : e.ability;
+    // Jace, Multiverse Architect : « vos Jace » : le contrôleur de l'effet.
+    const ability =
+      ability0.cantAttackPlaneswalkers?.of === "you"
+        ? { ...ability0, cantAttackPlaneswalkers: { ...ability0.cantAttackPlaneswalkers, of: ctx.controller } }
+        : ability0;
     const who = (e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller]).filter(
       (p) => p !== ability.cantAttackPlayer,
     );
@@ -56,7 +61,9 @@ export const HANDLERS: OpHandlers = {
         ? null
         : s.turn.number;
     const times = e.times !== undefined ? evalAmount(s, ctx, e.times) : 1;
-    for (const p of who) for (let i = 0; i < times; i++) addPlayerEffect(s, p, ability, until, e.times !== undefined || !!e.once);
+    for (const p of who)
+      for (let i = 0; i < times; i++)
+        addPlayerEffect(s, p, ability, e.untilTheirNextTurn ? nextTurnOf(s, p) - 1 : until, e.times !== undefined || !!e.once);
     return;
   },
   gift(s, _r, e, ctx) {
@@ -220,6 +227,11 @@ export const HANDLERS: OpHandlers = {
       const others = s.playerOrder.filter((q) => q !== p && !s.players[q]?.lost).map((q) => s.players[q]?.speed ?? 0);
       if (speed > 1 && others.every((o) => speed > o)) setSpeed(s, p, speed - 1);
     }
+    return;
+  },
+  becomeMonarch(s, _r, e, ctx) {
+    const p = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
+    if (p) setMonarch(s, p);
     return;
   },
   chooseNumbers(s, r, e, ctx, key) {

@@ -112,6 +112,8 @@ function distinctValues(e: TurnLogEntry, d: NonNullable<TurnLogQuery["distinct"]
     }
     case "object":
       return e.e === "attack" && e.id ? [e.id] : [];
+    case "defender":
+      return e.e === "attack" ? [e.defender] : [];
   }
 }
 

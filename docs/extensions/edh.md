@@ -13,6 +13,10 @@ dans `packages/ai/test/smoke/edh.test.ts`. Couverture par deck : `npm run covera
 |---|---|---|
 | `edgar-markov` | Edgar Markov (Mardu, vampires) | 61 à faire au 06/10/2026 |
 | `yshtola` | Y'shtola, Night's Blessed (Esper, drain et contrôle) | 66 à faire (10 en commun avec Edgar) |
+| `ur-dragon` | The Ur-Dragon (Dragons, cinq couleurs) | 51 |
+| `rakdos` | Rakdos, Lord of Riots (gros sorts gratuits) | 57 |
+| `multiverse-reforged` | Jace, Multiverse Architect (préconstruit officiel de Réalité fracturée) | 57 |
+| `turtle-power` | Heroes in a Half Shell (préconstruit officiel des Tortues Ninja) | 68 |
 
 ## E0 — import ✅
 
@@ -120,3 +124,45 @@ Ajouté le 06/10/2026 avec la recette « Ajouter un deck Commander ». Liste : �
 - **Dette :** `chooseNumbers`, `differentManaValues`, `exileIfLeaves`, `manifest` justifiés ; `cast` n'est plus propre à une carte ; plafonds relevés (GameObject 62, Effect 153, Ref 34, Amount 33…).
 - **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-rakdos`, contre les trois autres préconstruits à tour de rôle) : en duel, Rakdos gagne 33,2 % ± 3,8 (599 parties décidées, 18 tours) ; à quatre, 26,6 % ± 5,0 (297 parties décidées, 35 tours). Nettement sous la cible de 45 à 55 % ; à étudier dans l'IA d'abord (lancer Rakdos et les Eldrazi au bon moment, garder les pertes de PV pour la réduction), la liste n'est pas retouchée. Deux décisions de plus de 20 s sur un plateau de 270 permanents (limite connue du niveau moyen, `docs/ia.md`).
 
+
+## Préconstruit Multiverse Reforged (Réalité fracturée) : Jace, architecte du multivers ✅ (282 / 282)
+
+Ajouté le 06/10/2026 à la demande de l'utilisateur. Liste officielle du préconstruit « Multiverse Reforged » de Reality Fracture (MTGJSON, relevée le 06/10/2026), dans `docs/commander/decks/multiverse-reforged.txt` ; préconstruit `cmd-multiverse-reforged` (blanc, bleu, noir, rouge ; aucun Game Changer, tranche estimée 1–2).
+
+**Import :** 57 cartes absentes du catalogue ajoutées à EDH, toutes avec leur texte français.
+
+**Cartes (57, `edh/multiverse.ts` et `edh/lands.ts`) :** Jace, Multiverse Architect ; créatures : Akroma, Angel of Fury, Archfiend of Despair, Archon of Cruelty, Avacyn, Angel of Horror, Dack Fayden, Helping Hand, Darksteel Angel, Ginger, Queen of Sweets, Jhoira, Weatherlight Corsair, Memnarch, the Warden, Nissa, Leyline Tamer, Niv-Mizzet, Ghost Counsel, Ob Nixilis, the Ascended, Omnath, Locus of the Void, Serra's Emissary, Tamiyo, Upriser Crowned, The Ur-Sphinx, Venser, Fervent Forger ; Elspeth, Sun's Champion ; artefacts et enchantements : Azorius, Dimir et Izzet Signet, Talisman of Creativity, Currency Converter, Cursed Mirror, Proteus Staff, Staff of the Storyteller, Dreadhorde Invasion, Shark Typhoon, Skrelv's Hive, Whirlwind of Thought ; sorts : Brainsurge, Despark, Fact or Fiction, Grand Crescendo, Lingering Souls, Martial Coup, Mass Polymorph, Occult Epiphany, Secure the Wastes, Sunfall, Synthetic Destiny, Teferi's Reproach, White Sun's Twilight ; terrains : Battlefield Forge, Clifftop Retreat, Contaminated Landscape, Fetid Heath, Kher Keep, Mystic Gate, Perilous Landscape, Radiant Summit, Shivan Reef, Sulfur Falls, Turbulent Crater, Turbulent Shore, Turbulent Wetlands.
+
+- **Moteur :**
+  - monarque (724) : `GameState.monarch`, `fx.becomeMonarch`, `cond.monarch` ; pioche au début de l'étape de fin du monarque, transfert à un joueur dont une créature lui inflige des blessures de combat, monarchie transmise quand le monarque quitte la partie ; couronne sur le plateau, avec une bulle d'aide ;
+  - toxique (702.164) : `CardDef.toxic` et `TokenSpec.toxic`, marqueurs poison en plus des blessures de combat à un joueur ; corrompu par `amount.poison` ;
+  - piles séparées par un adversaire (`piles` et `opponentSeparates`, Fact or Fiction) ; révélation dans la bibliothèque d'un autre joueur (`revealUntilN` et `who`, Dack Fayden) ;
+  - « ses créatures ne peuvent pas attaquer vos Jace » (`cantAttackPlaneswalkers`) ; protection d'un joueur contre un filtre (Serra's Emissary : le type de carte choisi) ;
+  - effets « jusqu'au prochain tour de ce joueur » (`fx.untilTheirNextTurn`, Teferi's Reproach) ; PV payés en montant variable (`fx.mayPayLife`, Niv-Mizzet) ;
+  - mana inutilisé comme montant (`amount.manaInPool`, Omnath) ; incuber (701.53) ;
+  - le déclencheur des blessures de combat groupées transmet toutes les créatures concernées (`ref.eventObjects`), et peut se limiter à celles qui vous blessent (`toYou`, Tamiyo).
+  - correction trouvée par le fuzz strict : une F/E définie par le mana inutilisé (Omnath) fait dépendre le cache des caractéristiques de la réserve de mana.
+- **Tests :** `engine/test/edh-multiverse.test.ts` (21) ; fuzz Commander strict à 2 et 4 joueurs propre.
+- **Approximations :** Dack Fayden (provocation), Cursed Mirror, monarque (pioche sans la pile), Incubateur, The Ur-Sphinx.
+- **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-multiverse-reforged`, contre les cinq autres préconstruits à tour de rôle) : en duel, 52,3 % ± 4,0 (596 parties décidées, 19 tours) ; à quatre (sièges A, B, A, B), 48,3 % ± 5,7 (294 parties décidées, 45 tours). Dans la cible. Une partie à quatre ne finissait jamais : Dack Fayden avait distribué des Darksteel Angel, et chaque joueur, à PV négatifs, ne pouvait pas perdre (conforme aux règles) ; l'arène compte désormais inachevée une partie de Commander de plus de 150 tours (`maxTurns`). Des décisions de l'IA moyenne de plus de 3 minutes sur un plateau de 160 permanents (limite connue, `docs/ia.md`).
+
+## Préconstruit Turtle Power! (Tortues Ninja) : Heroes in a Half Shell ✅ (350 / 350)
+
+Ajouté le 06/10/2026 à la demande de l'utilisateur. Liste officielle du préconstruit « Turtle Power! » de Teenage Mutant Ninja Turtles (MTGJSON, relevée le 06/10/2026), dans `docs/commander/decks/turtle-power.txt` ; préconstruit `cmd-turtle-power` (cinq couleurs ; aucun Game Changer, tranche estimée 1–2). Les 20 cartes de Teenage Mutant Ninja Turtles (TMT) du deck étaient déjà jouables.
+
+**Import :** 68 cartes absentes du catalogue ajoutées à EDH ; Double Jump // Flying Kick n'a jamais été imprimée en français : texte traduit à la main (« Double saut // Coup de pied volant », `french-overrides.json`, qui accepte désormais le texte de chaque face).
+
+**Cartes (68, `edh/turtles.ts`, `edh/lands.ts` et `edh/commander.ts`) :** Heroes in a Half Shell ; personnages : April O'Neil, Live on the Scene, Baxter, Fly in the Ointment, Bebop, Skull & Crossbones, Casey Jones, Back Alley Brute, Donatello, the Brains, Irma, Part-Time Mutant, Krang, the All-Powerful, Leatherhead, Iron Gator, Leonardo, the Balance, Michelangelo, the Heart, Raphael, the Muscle, Rat King, Pale Piper, Ray Fillet, Wave Warrior, Rocksteady, Mutant Marauder, Shredder, Shadow Master, Splinter, the Mentor, Tempestra, Dame of Games, Tokka & Rahzar, Unsupervised ; autres créatures : Acidic Slime, Big Mother Mouser, Biogenic Ooze, Corpsejack Menace, Dimension X Pizzasaur, Electric Seaweed, Roadkill Rodney, Steelbane Hydra, Vigor, Voracious Hydra ; artefacts : Arcade Cabinet, Coin of Mastery, Exploding Barrel, Foot Chopper, Mole Module ; enchantements : Endless Foot Assault, High Score, Level Up, Ninja Pizza, Together Forever ; sorts : Blasphemous Act, Continue?, Cultivate, Double Jump // Flying Kick, Fast Forward, Game Over, Harmonize, Here Comes a New Hero!, Shellshock, Special Move, Super Combo, Swift Demise, Vanquish the Horde, Wave Goodbye ; terrains : Ash Barrens, Big Apple, 3 a.m., Cinder Glade, Grand Coliseum, Hidden Hideout, Hinterland Harbor, Rain-Slicked Copse, Rootbound Crag, Sodden Verdure, Spire Garden, Thriving Grove, Thriving Isle, Thriving Moor, Undergrowth Stadium, Vernal Fen.
+
+- **Moteur :**
+  - escouade (702.157), lue dans le texte : le coût d'escouade est un kicker payé X fois, comme la réplique (`kickerKind: "squad"`, `kickerPaidTimes`) ; en arrivant, autant de jetons copies ;
+  - fusion (702.102), lue dans le texte : une troisième face des cartes scindées (cibles et effets des deux moitiés, coût total), lançable depuis la main seulement ;
+  - évolution (Ray Fillet) : la comparaison de montants (`cond.amountGreater`) est évaluée au déclenchement ; le X d'un permanent est connu dès son arrivée ;
+  - mana d'artefact dépensé pour lancer un sort (`amount.artifactManaSpent`, Coin of Mastery ; le mana produit en trop n'est pas compté) ;
+  - jetons qui attaquent un joueur désigné (`createTappedTokens(…, { attacking: p })`, Endless Foot Assault) ; copies sacrifiées à la fin du combat (`atEndOfCombat: "sacrifice"`, Shredder ; la myriade les exile) ;
+  - adversaires attaqués ce tour-ci (`amount.opponentsAttackedThisTurn`, Fast Forward) ; PV de départ (`amount.startingLife`, `cond.someoneAtHalfStartingLife`, Game Over) ; marqueurs de toutes sortes parmi des permanents (`countersAmong(…, "any")`) ;
+  - déclenchements dus à une pioche doublés (`TriggerMod.onDraw`, Krang) ; blessures prévenues changées en marqueurs sur le permanent protégé (`onPrevent.countersOnDamaged`, Vigor) ;
+  - couleur exclue d'un choix en arrivant (`chooseOnEnter: "color"` et `enterModes`, terrains Thriving).
+- **Tests :** `engine/test/edh-turtles.test.ts` (18) ; menu de lancement de la fusion vérifié dans le navigateur (`test-results/fuse/`).
+- **Approximations :** Fast Forward (provocation), Vigor (mise au cimetière), Shredder (attaque d'un planeswalker), Coin of Mastery (mana produit en trop).
+- **Équilibre** (IA moyenne, `--by-deck --deck cmd-turtle-power`) : en duel, 47,4 % ± 4,0 (597 parties décidées, 19 tours) ; à quatre (sièges A, B, A, B), 35,7 % ± 5,4 (297 parties décidées, 42 tours), sous la part équitable de 50 % ; à étudier dans l'IA d'abord (attaques groupées des Tortues, marqueurs), la liste officielle n'est pas retouchée.

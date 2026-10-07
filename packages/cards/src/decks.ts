@@ -7,7 +7,9 @@ import bienvenueNoir from "../decks/bienvenue-noir.json";
 import bienvenueRouge from "../decks/bienvenue-rouge.json";
 import bienvenueVert from "../decks/bienvenue-vert.json";
 import cmdEdgarMarkov from "../decks/cmd-edgar-markov.json";
+import cmdMultiverseReforged from "../decks/cmd-multiverse-reforged.json";
 import cmdRakdos from "../decks/cmd-rakdos.json";
+import cmdTurtlePower from "../decks/cmd-turtle-power.json";
 import cmdUrDragon from "../decks/cmd-ur-dragon.json";
 import cmdYshtola from "../decks/cmd-yshtola.json";
 import finCloud from "../decks/fin-cloud.json";
@@ -57,6 +59,8 @@ export const DECKS: DeckList[] = [
   cmdYshtola,
   cmdUrDragon,
   cmdRakdos,
+  cmdMultiverseReforged,
+  cmdTurtlePower,
 ].map((d) => ({ ...(d as DeckList), builtin: true }));
 
 const deckKey = (main: DeckEntries) => {

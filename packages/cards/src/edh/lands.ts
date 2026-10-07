@@ -37,13 +37,22 @@ const painSource = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [manaAbility("C"), manaAbility([a, b], 1, { drawback: { damageYou: 1 } })],
 });
 
+/** Types de terrain de base, avec leur article, pour les libellés. */
+const LAND_FR: Record<string, string> = {
+  Plains: "une Plaine",
+  Island: "une Île",
+  Swamp: "un Marais",
+  Mountain: "une Montagne",
+  Forest: "une Forêt",
+};
+
 /** Terrains « à contrôle » : arrive engagé sauf si vous contrôlez un terrain de l'un de ces deux types. */
 const checkLand = (a: ManaType, b: ManaType, typeA: string, typeB: string): CardScript => ({
   abilities: [
     entersWith({
       tapped: true,
       condition: cond.not(cond.controls({ types: ["Land"], anySubtype: [typeA, typeB] })),
-      label: `Engagé, sauf si vous contrôlez une ${typeA === "Plains" ? "Plaine" : typeA} ou un ${typeB}`,
+      label: `Engagé, sauf si vous contrôlez ${LAND_FR[typeA] ?? typeA} ou ${LAND_FR[typeB] ?? typeB}`,
     }),
     manaAbility([a, b]),
   ],
@@ -90,6 +99,19 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Talisman of Hierarchy": painSource("W", "B"),
   "Talisman of Progress": painSource("W", "U"),
   "Sulfurous Springs": painSource("B", "R"),
+  "Battlefield Forge": painSource("R", "W"),
+  "Shivan Reef": painSource("U", "R"),
+  "Talisman of Creativity": painSource("U", "R"),
+  "Clifftop Retreat": checkLand("R", "W", "Mountain", "Plains"),
+  "Sulfur Falls": checkLand("U", "R", "Island", "Mountain"),
+  "Radiant Summit": battleLand,
+  "Cinder Glade": battleLand,
+  "Sodden Verdure": battleLand,
+  "Vernal Fen": battleLand,
+  "Hinterland Harbor": checkLand("G", "U", "Forest", "Island"),
+  "Rootbound Crag": checkLand("R", "G", "Mountain", "Forest"),
+  // Recyclage de terrain de base {1} : lu dans le texte.
+  "Ash Barrens": { abilities: [manaAbility("C")] },
   "Talisman of Indulgence": painSource("B", "R"),
 
   // --- Terrains à contrôle ---

@@ -136,6 +136,8 @@ function typesOf(s: GameState, id: ObjectId): { types: CardType[]; subtypes: str
  */
 export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
   "sum",
+  // Omnath, Locus of the Void : le mana inutilisé de son contrôleur.
+  "manaInPool",
   "graveyardsWithAtLeast",
   "turnEvents",
   "count",
@@ -214,6 +216,10 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   // Journal du tour (Duelist of the Mind : cartes piochées ce tour-ci), vu du contrôleur.
   if (a.kind === "turnEvents" && !a.of) return countTurnEvents(s, a.query, o.controller);
   if (a.kind === "aggregate") return cdaAggregate(s, o, a);
+  if (a.kind === "manaInPool") {
+    const pl = s.players[o.controller];
+    return pl ? Object.values(pl.manaPool).reduce((n, v) => n + v, 0) + (pl.restrictedMana?.length ?? 0) : 0;
+  }
   if (a.kind === "refCount" && a.ref.kind === "linked")
     return (o.linked ?? []).filter((id) => s.objects[id]?.zone === "exile").length;
   // Sorte non prise en charge (`CDA_AMOUNT_KINDS`) : aucune carte n'en utilise (cards/test/cda.test.ts).
@@ -480,7 +486,7 @@ interface Applied {
 
 /**
  * Ce dont dépend le calcul en cache (PLAN-C, lot C15) : l'état engagé des permanents (filtre `tapped`, condition « tant
- * qu'elle est engagée ») et la réserve de mana (`manaPoolAtLeast`). Engager, dégager ou payer du mana n'invalide le cache
+ * qu'elle est engagée ») et la réserve de mana (`manaPoolAtLeast`, `amount.manaInPool`). Engager, dégager ou payer du mana n'invalide le cache
  * que si une capacité statique, un effet ou une F/E définie par une capacité en vigueur les lit (`bumpFor`).
  */
 interface CacheDeps {
@@ -508,7 +514,8 @@ function scanDeps(x: unknown, out: CacheDeps): void {
     return;
   }
   if (!x || typeof x !== "object") {
-    if (x === "manaPoolAtLeast") out.mana = true;
+    // La réserve de mana : condition « tant que vous avez N mana » ou montant « mana inutilisé » (Omnath).
+    if (x === "manaPoolAtLeast" || x === "manaInPool") out.mana = true;
     if (x === "turnEvents") out.turnLog = true;
     return;
   }

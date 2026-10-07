@@ -1,6 +1,6 @@
 import type { AmountMod } from "./modifiers";
-import { alivePlayers, chars, commandZoneAbilities, newId, nextTimestamp, obj, opponentsOf } from "./state";
-import { matchesObjectFilter } from "./targets";
+import { alivePlayers, chars, commandZoneAbilities, newId, nextTimestamp, obj, opponentsOf, snapshot } from "./state";
+import { matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
@@ -249,10 +249,22 @@ export function payableLife(s: GameState, player: PlayerId): number {
  * Le joueur a-t-il la protection contre une source contrôlée par `from` (702.16) ? Contre tout (702.16j), ou contre ses
  * adversaires (une source d'un autre joueur).
  */
-export function playerProtectedFrom(s: GameState, player: PlayerId, from: PlayerId | undefined): boolean {
-  return playerStatics(s, player, "protection").some(
-    ({ ab }) => ab.protection === "everything" || (ab.protection === "opponents" && from !== player),
-  );
+export function playerProtectedFrom(
+  s: GameState,
+  player: PlayerId,
+  from: PlayerId | undefined,
+  /** La source (Serra's Emissary : protection contre le type de carte choisi). */
+  sourceId?: ObjectId,
+): boolean {
+  return playerStatics(s, player, "protection").some(({ id, ab }) => {
+    const p = ab.protection;
+    if (p === "everything") return true;
+    if (p === "opponents") return from !== player;
+    if (!p || !sourceId) return false;
+    const holder = id ? s.objects[id] : undefined;
+    const v = s.objects[sourceId] ? snapshot(s, sourceId) : s.lki[sourceId];
+    return !!v && matchesView(v, holder ? withChosen(p, holder) : p, player, id);
+  });
 }
 
 /** Somme d'une statique de joueur numérique (un booléen vaut 1) : capacités contrôlées et effets en vigueur. */

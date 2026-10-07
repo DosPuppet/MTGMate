@@ -436,6 +436,8 @@ export interface CastInfo {
   manaSpent?: number;
   spentColors?: Partial<Record<ManaType, number>>;
   caveMana?: number;
+  /** Mana produit par des sources d'artefact (Coin of Mastery). */
+  artifactMana?: number;
   /** Créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
   costBounced?: ObjectId[];
   /** Faufilement : ce qu'attaquait la créature renvoyée (le permanent arrive engagé et attaquant). */
@@ -573,9 +575,10 @@ export interface TurnLogQuery {
    * Le nombre de valeurs différentes parmi les entrées : sources des blessures (Case of the Burning Masks), sortes de
    * maîtrise (Avatar Aang), types de carte (April O'Neil : « chaque type parmi les sorts lancés »), joueurs concernés
    * (Kaito : « adversaires qui ont perdu des points de vie »), objets (attaques : « chaque créature qui a attaqué ce
-   * tour-ci », une créature qui attaque lors de deux combats compte une fois).
+   * tour-ci », une créature qui attaque lors de deux combats compte une fois), joueurs attaqués (Fast Forward : « chaque
+   * adversaire que vous avez attaqué ce tour-ci »).
    */
-  distinct?: "source" | "kind" | "type" | "player" | "object";
+  distinct?: "source" | "kind" | "type" | "player" | "object" | "defender";
 }
 
 export interface CombatState {
@@ -913,6 +916,8 @@ export interface GameState {
    */
   /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur (Secret of Bloodbending). */
   turnControl?: { player: PlayerId; by: PlayerId; turn?: number; combatOnly?: boolean; thenExtraTurn?: boolean };
+  /** Monarque (724) : le joueur qui pioche une carte au début de son étape de fin ; absent tant que personne ne l'est. */
+  monarch?: PlayerId;
   /** Tours supplémentaires à venir (500.7 : le plus récent d'abord). */
   extraTurns?: PlayerId[];
   /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */

@@ -80,6 +80,8 @@ export type Keyword =
   | "wither"
   /** Infection (702.90) : marqueurs −1/−1 aux créatures, marqueurs poison aux joueurs. */
   | "infect"
+  /** Toxique N (702.164) : un joueur qu'elle blesse au combat reçoit aussi N marqueurs poison (N : `CardDef.toxic`). */
+  | "toxic"
   /** « Doit être bloquée si possible » (509.1c). */
   | "mustBeBlocked"
   /** Wolverine : « si des blessures devaient lui être infligées, elles le sont, mais les autres blessures sont guéries ». */

@@ -466,7 +466,8 @@ export type TriggerSpec =
   /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès [non de combat] » (120.4a). */
   | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
-  | { on: "combatDamageBatch"; who: ObjectFilter }
+  /** `toYou` : seulement les blessures qui vous sont infligées (Tamiyo, Upriser Crowned). */
+  | { on: "combatDamageBatch"; who: ObjectFilter; toYou?: boolean }
   /** « Chaque fois qu'une [créature] bloque » */
   /** `eventObject: "attacker"` : l'objet de l'événement est l'attaquant bloqué (Skewer Slinger : « cette créature »). */
   | { on: "blocks"; who: "self" | ObjectFilter; attacker?: ObjectFilter; eventObject?: "attacker" }
@@ -576,6 +577,8 @@ export type Condition =
   | { kind: "enduringStory" }
   /** Vous avez la bénédiction de la cité (ascension, 702.131). */
   | { kind: "citysBlessing" }
+  /** Vous êtes le monarque (724). */
+  | { kind: "monarch" }
   /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
   | { kind: "harnessed" }
   /** L'objet de l'événement (parti du champ de bataille) avait la plus grande force parmi les créatures de son contrôleur,
@@ -761,7 +764,7 @@ export type Amount =
    * Ce qui a été dépensé pour lancer la source (le sort qui se résout, ou le permanent qu'il est devenu), ou les objets
    * désignés (`of` : le sort de l'événement…) : X, mana, nombre de couleurs de mana, mana des Cavernes.
    */
-  | { kind: "spent"; what: "x" | "mana" | "colors" | "cave"; of?: Ref }
+  | { kind: "spent"; what: "x" | "mana" | "colors" | "cave" | "artifact"; of?: Ref }
   /**
    * Symboles de mana de cette couleur, hybrides compris, dans les coûts de mana des objets désignés (Namor : le sort de
    * l'événement) ; sans `of`, de vos permanents (dévotion, 700.5).
@@ -789,7 +792,8 @@ export type Amount =
   | { kind: "pow"; base: number; of: Amount }
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
   | { kind: "var"; name: string }
-  | { kind: "lifeTotal" }
+  /** Vos points de vie ; `starting` : vos points de vie de départ (Game Over : « la moitié de ses PV de départ »). */
+  | { kind: "lifeTotal"; starting?: boolean }
   /** Blessures marquées sur la source (dernières informations connues : Tangled Colony, « les blessures subies ce tour-ci »). */
   | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }
@@ -811,6 +815,10 @@ export type Amount =
    * d'artefacts que contrôle un adversaire », Cavern-Hoard Dragon) ; 0 sans joueur.
    */
   | { kind: "maxOverPlayers"; players: Ref; amount: Amount }
+  /** Mana inutilisé de votre réserve, mana marqué compris (Omnath, Locus of the Void). */
+  | { kind: "manaInPool" }
+  /** Vos marqueurs poison (corrompu : `amount.maxOverPlayers(ref.eachOpponent, amount.poison)`). */
+  | { kind: "poison" }
   /** Le plus grand nombre choisi (`fx.chooseNumbers`, Wheel of Misfortune). */
   | { kind: "numberChosen"; store: string }
   /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */

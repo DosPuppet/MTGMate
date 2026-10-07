@@ -827,3 +827,6 @@ export {
   sickForActivation,
   snapshot,
 } from "./layers";
+
+/** Kicker payé un nombre quelconque de fois, compté comme le X du sort : réplique (702.56), escouade (702.157). */
+export const kickerPaidTimes = (d: CardDef): boolean => d.kickerKind === "replicate" || d.kickerKind === "squad";
