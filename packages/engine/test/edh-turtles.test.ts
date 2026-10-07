@@ -238,3 +238,23 @@ describe("Turtle Power! (EDH)", () => {
     });
   });
 });
+
+describe("Turtle Power! (EDH) : provocation (PLAN-H, lot H3)", () => {
+  it("Fast Forward : les créatures adverses sont provoquées jusqu'à votre prochain tour", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: lands("Mountain", 5), hand: ["Fast Forward"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(castIt(s, "p1", "Fast Forward"));
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    expect(chars(s, bear).blockRules.map((r) => r.goadedBy)).toEqual(["p1"]);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2");
+    const to = (defender: string) => act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender }] });
+    expect(() => act(s, "p2", { type: "declareAttackers", attackers: [] })).toThrow();
+    expect(() => to("p1")).toThrow();
+    s = to("p3");
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+    expect(chars(s, bear).blockRules).toEqual([]);
+  });
+});

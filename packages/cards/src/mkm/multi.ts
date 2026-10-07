@@ -730,7 +730,7 @@ export const MULTI: Record<string, CardScript> = {
         [
           fx.modify(
             ref.target(),
-            { addBlockRules: [{ mustBlockEventObject: true, label: "Bloque ce Loup si possible" }] },
+            { addBlockRules: [{ mustBlockAttacker: "eventObject", label: "Bloque ce Loup si possible" }] },
             "endOfTurn",
           ),
         ],

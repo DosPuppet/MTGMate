@@ -3,7 +3,7 @@
  */
 import {
   type Agent,
-  attackableDefenders,
+  allowedDefenders,
   attackCandidates,
   blockCandidates,
   type Decision,
@@ -11,6 +11,7 @@ import {
   type GameState,
   legalActions,
   type PlayerId,
+  repairAttacks,
 } from "@mtgx/engine";
 import { mulberryChoice } from "./choices";
 import { buildCastDecision } from "./options";
@@ -48,13 +49,16 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
         return { type: "bottom", cards: sample(rand, hand, p.count) };
       case "discard":
         return { type: "discard", cards: sample(rand, hand, p.count) };
-      case "declareAttackers":
-        return {
-          type: "declareAttackers",
-          attackers: attackCandidates(s, me)
-            .filter((id) => rand() < 0.6 || forcedAttackers(s, me).includes(id))
-            .map((id) => ({ id, defender: pick(rand, attackableDefenders(s, me)) as string })),
-        };
+      case "declareAttackers": {
+        // Chaque créature attaque au hasard ce qu'elle peut attaquer ; les exigences d'attaque (508.1d) sont réparées.
+        const attackers = attackCandidates(s, me)
+          .filter((id) => rand() < 0.6 || forcedAttackers(s, me).includes(id))
+          .flatMap((id) => {
+            const defender = pick(rand, allowedDefenders(s, id));
+            return defender ? [{ id, defender }] : [];
+          });
+        return { type: "declareAttackers", attackers: repairAttacks(s, me, attackers) };
+      }
       case "declareBlockers": {
         const blocks: { blocker: string; attacker: string }[] = [];
         for (const c of blockCandidates(s, me)) {

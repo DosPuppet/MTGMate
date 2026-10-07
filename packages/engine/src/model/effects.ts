@@ -95,7 +95,7 @@ export type Effect =
       op: "modify";
       what: Ref;
       mods: LayerMods;
-      duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
+      duration: "endOfTurn" | "permanent" | "untilYourNextTurn" | "endOfYourNextTurn";
       untilLeavesExile?: Ref;
       /** « tant que [la source] reste sur le champ de bataille » (Kitesail Larcenist). */
       whileSource?: boolean;

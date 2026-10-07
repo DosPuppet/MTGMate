@@ -628,12 +628,8 @@ export const EDH_TURTLES: Record<string, CardScript> = {
     ),
   },
   "Fast Forward": {
-    // Approximation : « provoquez » se lit « attaquent à chaque combat si possible » jusqu'à votre prochain tour.
     costReduction: { generic: amount.opponentsAttackedThisTurn },
-    spell: spell(
-      [],
-      [fx.modifyAll({ types: ["Creature"], controller: "opponent" }, { addKeywords: ["mustAttack"] }, "untilYourNextTurn")],
-    ),
+    spell: spell([], [fx.goad(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"], controller: "opponent" }))]),
   },
   "Game Over": {
     costReduction: { generic: 2, condition: cond.someoneAtHalfStartingLife },

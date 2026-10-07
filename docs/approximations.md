@@ -210,7 +210,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Marvel's Spider-Man (`docs/extensions/spm.md`) :**
   - `règle` Parker Luck : la carte du dessus n'est pas révélée explicitement ; chaque joueur perd ses PV puis la met en main (même résultat) ;
   - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ;
-  - `règle` Maximum Carnage : au chapitre I, l'obligation d'attaquer ne vise que les créatures adverses présentes à la résolution, et « un joueur autre que vous si possible » n'est pas imposé (exact en duel, sauf pour attaquer vos planeswalkers) ;
+  - `règle` Maximum Carnage : au chapitre I, les exigences d'attaque (« attaque à chaque combat si possible, et un joueur autre que vous si possible ») ne visent que les créatures présentes à la résolution, pas celles qui arrivent ensuite ;
   - `règle` Spinneret and Spiderling : le seuil de 4 blessures se lit par blessure infligée ; des blessures de combat réparties entre plusieurs bloqueurs (2 + 2) ne le déclenchent pas ;
   - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse ;
   - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type ; le type est choisi comme un mode d'arrivée.
@@ -283,7 +283,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Wheel of Misfortune : les nombres sont choisis l'un après l'autre (dans l'ordre APNAP, sans voir ceux des autres), de 0 à 20 ;
   - `règle` Gray Merchant of Asphodel, Creeping Bloodsucker : les PV gagnés sont calculés (dévotion par adversaire, nombre d'adversaires), pas lus sur les pertes et blessures réelles (différent seulement si elles sont remplacées) ;
   - `règle` Keen Duelist : les cartes du dessus ne sont pas révélées explicitement.
-  - `règle` Dack Fayden, Helping Hand, Fast Forward : « provoquée » (701.38) se lit « attaque à chaque combat si possible », sans l'obligation d'attaquer un autre joueur que celui qui provoque ; pour toujours avec Dack, jusqu'à votre prochain tour avec Fast Forward ;
   - `règle` Cursed Mirror : la copie vient d'une capacité d'arrivée (et non « en arrivant ») ; la créature copiée est choisie comme une cible ;
   - `règle` Incubateur (701.53) : la transformation est une modification permanente (créature-artefact Phyrexian 0/0), pas un passage au verso ; le jeton garde son nom ;
   - `règle` The Ur-Sphinx : joueur par joueur, il meule puis vous pouvez lancer une de ses cartes (et non toutes les meules d'abord) ;
@@ -299,7 +298,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Promise of Loyalty : chaque joueur choisit la créature qu'il garde en sacrifiant les autres ;
   - `règle` Deep Analysis : le flashback coûte {1}{U}, sans les 3 points de vie ;
   - `règle` First Family : seules les couleurs de vos permanents comptent (pas celles des sorts lancés ce tour-ci) ;
-  - `règle` Galactus : il attaque à chaque combat si possible, sans viser l'adversaire qui a le plus de PV ; Silver Surfer : la créature attaque à chaque combat si possible, sans viser ce joueur ; Taunt from the Rampart : « provoquez » se lit « attaquent à chaque combat si possible » ;
   - `règle` Namor : toutes vos autres créatures attaquantes gagnent +2/+0 (pas seulement celles qui attaquent ce joueur), et l'attaque d'un planeswalker compte comme celle de son contrôleur ;
   - `règle` Willie Lumpkin : l'interdiction d'attaquer dure jusqu'au prochain tour de son contrôleur (ce qui couvre le prochain tour du joueur blessé) ;
   - `choix auto` Tragic Arrogance : chaque joueur choisit lui-même ce qu'il garde ; Cut a Deal : chaque adversaire est compté comme ayant pioché ;

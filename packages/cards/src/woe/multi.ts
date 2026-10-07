@@ -167,7 +167,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         { types: ["Creature"], enchanted: "byYou" },
-        { addBlockRules: [{ cantAttackSourceController: true, label: "Ne peut pas attaquer le contrôleur d'Eriette" }] },
+        { addBlockRules: [{ cantAttackPlayer: "you", label: "Ne peut pas attaquer le contrôleur d'Eriette" }] },
         { label: "Les créatures enchantées par vos Auras ne peuvent pas vous attaquer" },
       ),
       triggered(

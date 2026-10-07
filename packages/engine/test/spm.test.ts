@@ -1821,12 +1821,29 @@ describe("lot A, rouge", () => {
         });
         s = settle(cast(s, "p1", "Maximum Carnage"));
         const bear = idOf(s, "p2", "battlefield", "Bear Cub");
-        expect(chars(s, bear).keywords).toContain("mustAttack");
+        expect(chars(s, bear).blockRules.map((r) => r.goadedBy)).toEqual(["p1"]);
         s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
         expect(() => act(s, "p2", { type: "declareAttackers", attackers: [] })).toThrow();
         s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] });
         s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
-        expect(chars(s, bear).keywords).not.toContain("mustAttack");
+        expect(chars(s, bear).blockRules).toEqual([]);
+      });
+
+      it("I, à trois joueurs : chaque créature attaque un joueur autre que vous si possible", () => {
+        let s = scenario({
+          players: 3,
+          p1: { battlefield: lands("Mountain", 5), hand: ["Maximum Carnage"] },
+          p2: { battlefield: ["Bear Cub"] },
+          p3: { battlefield: ["Ajani Resolute"] },
+        });
+        s = settle(cast(s, "p1", "Maximum Carnage"));
+        const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
+        const attackTo = (d: string) => act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: d }] });
+        expect(() => attackTo("p1")).toThrow();
+        // Un planeswalker ne satisfait pas « un joueur autre que vous ».
+        expect(() => attackTo(idOf(s, "p3", "battlefield", "Ajani Resolute"))).toThrow();
+        expect(() => attackTo("p3")).not.toThrow();
       });
 
       it("II : ajoutez {R}{R}{R} ; III : 5 blessures à chaque adversaire, puis elle est sacrifiée", () => {

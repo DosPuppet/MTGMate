@@ -302,13 +302,12 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
     ],
   },
   "Dack Fayden, Helping Hand": {
-    // Approximation : « provoquées » se lit « attaquent à chaque combat si possible » (docs/approximations.md).
     abilities: [
       triggered(
         when.entersSelf,
         [
           fx.revealUntilN({ types: ["Creature"] }, amount.refCount(ref.eachOpponent), { to: "battlefield" }, "dack"),
-          fx.modify(ref.stored("dack"), { addKeywords: ["mustAttack"] }, "permanent"),
+          fx.goad(ref.stored("dack"), "permanent"),
           ...fx.forEachPlayer(ref.eachOpponent, (p, n) => [fx.giveControl(ref.nth(ref.stored("dack"), n), p)]),
         ],
         { label: "Une créature par adversaire arrive, provoquée, et chaque adversaire en prend une" },

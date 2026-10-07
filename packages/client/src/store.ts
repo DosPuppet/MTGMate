@@ -1413,12 +1413,11 @@ export const useGame = create<Store>((set, get) => {
         top.controller !== view.viewer
       )
         sendSettings({ ...st, passUntilTurn: null });
-      // Créatures qui doivent attaquer : déjà sélectionnées (et impossibles à retirer côté moteur).
+      // Attaques obligées (508.1d : « attaque à chaque combat si possible », provocation) : déjà sélectionnées, vers le
+      // défenseur qui satisfait leurs exigences (impossibles à retirer côté moteur).
       const p = view.pending;
-      const forced =
-        p?.kind === "declareAttackers" && p.player === view.viewer
-          ? (p.candidates ?? []).filter((id) => view.battlefield.find((o) => o.id === id)?.keywords.includes("mustAttack"))
-          : [];
+      const forcedAttacks = p?.kind === "declareAttackers" && p.player === view.viewer ? (p.forced ?? []) : [];
+      const forced = forcedAttacks.map((a) => a.id);
       set((s) => ({
         view,
         faces,
@@ -1428,7 +1427,7 @@ export const useGame = create<Store>((set, get) => {
               casting: null,
               abilityMenu: null,
               attackers: forced,
-              attackTargets: {},
+              attackTargets: Object.fromEntries(forcedAttacks.map((a) => [a.id, a.defender])),
               aimingAttacker: null,
               legendConfirm: null,
               blocks: {},
@@ -1779,7 +1778,8 @@ export const useGame = create<Store>((set, get) => {
       const cur = get().attackers;
       // Créature déjà attaquante : elle n'attaque plus.
       if (cur.includes(id)) return set({ attackers: cur.filter((a) => a !== id), aimingAttacker: null });
-      const defenders = p.defenders ?? [];
+      // Ce que cette créature peut attaquer (« ne peut pas vous attaquer » : pas tous les défenseurs).
+      const defenders = p.allowed?.[id] ?? p.defenders ?? [];
       // Plusieurs cibles possibles (façon MTGA) : la créature est « en visée », on clique ensuite sa cible.
       if (defenders.length > 1) return set({ aimingAttacker: get().aimingAttacker === id ? null : id });
       const target = defenders[0];
@@ -1789,6 +1789,9 @@ export const useGame = create<Store>((set, get) => {
     aimAttackAt(defender) {
       const aiming = get().aimingAttacker;
       if (!aiming) return get().notify("Cliquez d'abord la créature qui attaque, puis sa cible.");
+      const p = get().view?.pending;
+      const allowed = p?.kind === "declareAttackers" ? p.allowed?.[aiming] : undefined;
+      if (allowed && !allowed.includes(defender)) return get().notify("Cette créature ne peut pas attaquer cette cible.");
       set({
         attackers: get().attackers.includes(aiming) ? get().attackers : [...get().attackers, aiming],
         attackTargets: { ...get().attackTargets, [aiming]: defender },
@@ -1803,10 +1806,18 @@ export const useGame = create<Store>((set, get) => {
       // ceux dont la cible est déjà choisie la gardent.
       const chosen = Object.values(get().attackTargets).at(-1);
       const target = chosen && p.defenders?.includes(chosen) ? chosen : p.defenders?.[0];
-      const ids = p.candidates ?? [];
+      const forced = new Map((p.forced ?? []).map((a) => [a.id, a.defender]));
+      // Chaque créature garde sa cible ; sinon son attaque obligée ; sinon la cible commune si elle peut l'attaquer.
+      const targetOf = (id: string) => {
+        const allowed = p.allowed?.[id] ?? p.defenders ?? [];
+        const chosenFor = get().attackTargets[id] ?? forced.get(id);
+        if (chosenFor) return chosenFor;
+        return target && allowed.includes(target) ? target : allowed[0];
+      };
+      const ids = (p.candidates ?? []).filter((id) => !!targetOf(id));
       set({
         attackers: [...ids],
-        attackTargets: target ? Object.fromEntries(ids.map((id) => [id, get().attackTargets[id] ?? target])) : {},
+        attackTargets: Object.fromEntries(ids.map((id) => [id, targetOf(id) as string])),
       });
     },
 

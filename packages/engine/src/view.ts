@@ -11,7 +11,7 @@ import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./sta
 import { chars, commanderOf, decider, HIDDEN_CARD_ID, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic, playerStatics } from "./statics";
 import { pendingTriggerSource } from "./triggers";
-import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
+import { allowedDefenders, attackableDefenders, attackCandidates, blockCandidates, forcedAttacks } from "./turn";
 import type {
   ActionOption,
   CardDef,
@@ -69,6 +69,11 @@ export interface ObjectView extends CardFace {
   keywords: Keyword[];
   /** Règles de blocage (« imblocable par les Humains »…) : leurs libellés. */
   blockRules?: string[];
+  /**
+   * Provocation (701.38) et exigences du même genre (Maximum Carnage) : le joueur qui provoque et le libellé. Elle attaque
+   * à chaque combat si possible, et un joueur autre que lui si possible. Ces règles ne sont pas dans `blockRules`.
+   */
+  goaded?: { by: PlayerId; label: string }[];
   /** Protections et défenses talismaniques « contre [filtre] » : leurs libellés. */
   protections?: string[];
   /** Règles « utilise son endurance pour » : leurs libellés. */
@@ -164,7 +169,18 @@ export type PendingView =
   /** `castNow` : lancer une carte pendant une résolution (608.2g), seulement pour le joueur qui décide. */
   | { kind: "priority"; player: PlayerId; actions?: ActionOption[]; castNow?: CastNowRequest }
   /** `defenders` : adversaires et planeswalkers adverses attaquables. */
-  | { kind: "declareAttackers"; player: PlayerId; candidates?: ObjectId[]; defenders?: string[] }
+  /**
+   * `forced` : les attaques obligées (508.1d), présélectionnées par l'interface ; `allowed` : ce que peut attaquer une
+   * créature qui ne peut pas attaquer tous les `defenders` (« ne peut pas vous attaquer »).
+   */
+  | {
+      kind: "declareAttackers";
+      player: PlayerId;
+      candidates?: ObjectId[];
+      defenders?: string[];
+      forced?: { id: ObjectId; defender: string }[];
+      allowed?: Record<ObjectId, string[]>;
+    }
   | { kind: "declareBlockers"; player: PlayerId; candidates?: { blocker: ObjectId; attackers: ObjectId[] }[] }
   | { kind: "discard"; player: PlayerId; count: number }
   | {
@@ -245,6 +261,35 @@ function playedEffect(s: GameState, item: GameState["stack"][number]): string | 
   return "Capacité";
 }
 
+/**
+ * Ce que l'interface propose pour déclarer les attaquants : les créatures, les défenseurs, les attaques obligées (508.1d,
+ * présélectionnées) et, pour une créature qui ne peut pas attaquer tous les défenseurs, ceux qu'elle peut attaquer.
+ */
+function attackChoices(
+  s: GameState,
+  who: PlayerId,
+): {
+  candidates: ObjectId[];
+  defenders: string[];
+  forced?: { id: ObjectId; defender: string }[];
+  allowed?: Record<ObjectId, string[]>;
+} {
+  const candidates = attackCandidates(s, who);
+  const defenders = attackableDefenders(s, who);
+  const forced = forcedAttacks(s, who);
+  const allowed: Record<ObjectId, string[]> = {};
+  for (const id of candidates) {
+    const mine = allowedDefenders(s, id);
+    if (mine.length < defenders.length) allowed[id] = mine;
+  }
+  return {
+    candidates,
+    defenders,
+    ...(forced.length ? { forced } : {}),
+    ...(Object.keys(allowed).length ? { allowed } : {}),
+  };
+}
+
 export function cardFace(d: CardDef): CardFace {
   return {
     defId: d.id,
@@ -319,7 +364,14 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     power: isCreature ? c.power : undefined,
     toughness: isCreature ? c.toughness : undefined,
     keywords: c.keywords,
-    ...(c.blockRules.length ? { blockRules: c.blockRules.map((r) => r.label) } : {}),
+    ...(c.blockRules.some((r) => !r.goadedBy) ? { blockRules: c.blockRules.filter((r) => !r.goadedBy).map((r) => r.label) } : {}),
+    ...(c.blockRules.some((r) => r.goadedBy && r.goadedBy !== "you")
+      ? {
+          goaded: c.blockRules
+            .filter((r) => r.goadedBy && r.goadedBy !== "you")
+            .map((r) => ({ by: r.goadedBy as PlayerId, label: r.label })),
+        }
+      : {}),
     ...(c.protections.length ? { protections: c.protections.map((r) => r.label) } : {}),
     ...(c.powerRules.length ? { powerRules: c.powerRules.map((r) => r.label) } : {}),
     sick: o.zone === "battlefield" && isSummoningSick(s, id),
@@ -501,7 +553,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
         pending = mine ? { ...p, actions: legalActions(s, who) } : { kind: "priority", player: p.player };
         break;
       case "declareAttackers":
-        pending = mine ? { ...p, candidates: attackCandidates(s, who), defenders: attackableDefenders(s, who) } : { ...p };
+        pending = mine ? { ...p, ...attackChoices(s, who) } : { ...p };
         break;
       case "declareBlockers":
         pending = mine ? { ...p, candidates: blockCandidates(s, who) } : { ...p };

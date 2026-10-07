@@ -85,6 +85,37 @@ const KEYWORD_COUNTERS: Record<string, Keyword> = {
   decayed: "decayed",
 };
 
+/** Une règle de blocage qui désigne « vous », le joueur ou l'objet de l'événement (à figer, `resolveBlockRules`). */
+export function blockRulePlaceholder(r: BlockRule): boolean {
+  return (
+    r.cantAttackPlayer === "you" ||
+    r.goadedBy === "you" ||
+    r.mustAttackPlayer === "eventPlayer" ||
+    r.mustBlockAttacker === "eventObject"
+  );
+}
+
+/**
+ * Fige les joueurs et objets désignés dans un script : « vous » devient le contrôleur de la source (statique) ou de
+ * l'effet (résolution), le joueur et l'objet de l'événement ceux de l'événement déclencheur. Sans événement, l'exigence
+ * correspondante disparaît.
+ */
+export function resolveBlockRules(
+  rules: BlockRule[],
+  you: PlayerId,
+  event?: { player?: PlayerId; objectId?: ObjectId },
+): BlockRule[] {
+  return rules.map((r) => {
+    if (!blockRulePlaceholder(r)) return r;
+    const out: BlockRule = { ...r };
+    if (r.cantAttackPlayer === "you") out.cantAttackPlayer = you;
+    if (r.goadedBy === "you") out.goadedBy = you;
+    if (r.mustAttackPlayer === "eventPlayer") out.mustAttackPlayer = event?.player;
+    if (r.mustBlockAttacker === "eventObject") out.mustBlockAttacker = event?.objectId;
+    return out;
+  });
+}
+
 /** Invalide le cache des caractéristiques. */
 export function bump(s: GameState): void {
   s.version += 1;
@@ -903,11 +934,8 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     dependent = true;
     sig.push(`a${extra.length}`);
   }
-  if (mods.addBlockRules?.some((r) => r.cantAttackSourceController)) {
-    const rules = mods.addBlockRules.map((r) =>
-      r.cantAttackSourceController ? { ...r, cantAttackSourceController: undefined, cantAttackPlayer: o.controller } : r,
-    );
-    mods = { ...mods, addBlockRules: rules };
+  if (mods.addBlockRules?.some(blockRulePlaceholder)) {
+    mods = { ...mods, addBlockRules: resolveBlockRules(mods.addBlockRules, o.controller) };
     sig.push(`ca${o.controller}`);
   }
   if (mods.setColorsChosen) {

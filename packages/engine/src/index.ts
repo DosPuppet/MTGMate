@@ -61,8 +61,11 @@ export {
 } from "./state";
 export { isLegalTarget, legalTargets } from "./targets";
 export {
+  type AttackRequirement,
+  allowedDefenders,
   attackableDefenders,
   attackCandidates,
+  attackRequirements,
   blockCandidates,
   canAttack,
   canBlock,
@@ -70,8 +73,11 @@ export {
   forcedAttackers,
   forcedAttacks,
   MAX_HAND_SIZE,
+  preferredDefenders,
+  repairAttacks,
   repairBlocks,
   requiredBlocks,
+  unmetAttackRequirement,
   unmetBlockRequirement,
 } from "./turn";
 export * from "./types";

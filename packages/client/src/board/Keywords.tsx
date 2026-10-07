@@ -7,6 +7,7 @@ import { RESTRICTIONS } from "@mtgx/engine";
 import { type ReactNode, useState } from "react";
 import { createPortal } from "react-dom";
 import { KEYWORD_LABEL } from "../i18n";
+import { useGame } from "../store";
 
 /** Mots-clés sans intérêt sur le champ de bataille (ou déjà affichés ailleurs). */
 const HIDDEN: ReadonlySet<Keyword> = new Set<Keyword>(["flash", "convoke", "startYourEngines"]);
@@ -125,6 +126,14 @@ const RESTRICTION_ICON = (
   </g>
 );
 
+/** Icône de la provocation (701.38) : flèche d'attaque. */
+const GOAD_ICON = (
+  <g {...stroke}>
+    <path d="M5 19 L17 7" />
+    <path d="M10 7 H17 V14" />
+  </g>
+);
+
 interface Tip {
   x: number;
   y: number;
@@ -138,7 +147,12 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
   const rules = obj.blockRules ?? [];
   const protections = obj.protections ?? [];
   const powerRules = obj.powerRules ?? [];
-  if (shown.length === 0 && rules.length === 0 && protections.length === 0 && powerRules.length === 0) return null;
+  const goaded = obj.goaded ?? [];
+  const view = useGame((s) => s.view);
+  if (shown.length === 0 && rules.length === 0 && protections.length === 0 && powerRules.length === 0 && goaded.length === 0)
+    return null;
+  // Provocation : par qui, et ce qu'elle impose (un joueur autre que lui).
+  const goader = (by: string) => (by === view?.viewer ? "vous" : (view?.players[by]?.name ?? by));
   const hover = (title: string, help?: string) => (ev: React.MouseEvent<HTMLElement>) => {
     const r = ev.currentTarget.getBoundingClientRect();
     setTip({ x: r.right + 6, y: r.top + r.height / 2, title, help });
@@ -178,6 +192,24 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
             </svg>
           </span>
         ))}
+        {goaded.map((g) => {
+          const title = `Provoquée par ${goader(g.by)}`;
+          return (
+            <span
+              key={`${g.by}-${g.label}`}
+              className="kw-badge restriction"
+              data-goaded={g.by}
+              role="img"
+              aria-label={title}
+              onMouseEnter={hover(title, g.label)}
+              onMouseLeave={() => setTip(null)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                {GOAD_ICON}
+              </svg>
+            </span>
+          );
+        })}
         {rules.map((title) => (
           <span
             key={title}

@@ -127,14 +127,17 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
         targets: [target.permanent("t", [], {}, "permanent")],
         label: "Exilez un permanent",
       }),
-      // Approximation : il attaque à chaque combat si possible, sans viser l'adversaire qui a le plus de PV.
       staticAbility(
         "self",
-        { addKeywords: ["mustAttack"] },
         {
-          condition: cond.not(cond.controls({ name: "Silver Surfer, Galactus's Herald" })),
-          label: "Faim insatiable : attaque à chaque combat si possible",
+          addBlockRules: [
+            {
+              mustAttackPlayer: "mostLifeOpponent",
+              label: "Faim insatiable : attaque un adversaire qui a le plus de points de vie à chaque combat si possible",
+            },
+          ],
         },
+        { condition: cond.not(cond.controls({ name: "Silver Surfer, Galactus's Herald" })), label: "Faim insatiable" },
       ),
     ],
   },
@@ -248,11 +251,17 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
         fx.may("Chercher Galactus, Devourer of Worlds ?", fx.search({ name: "Galactus, Devourer of Worlds" }, { to: "hand" })),
         { label: "Cherchez Galactus" },
       ),
-      // Approximation : la créature attaque à chaque combat si possible, sans viser ce joueur.
-      triggered(when.combatDamageToPlayer, [fx.modify(ref.target(), { addKeywords: ["mustAttack"] }, "untilYourNextTurn")], {
-        targets: [target.creature()],
-        label: "Une créature attaque ce joueur à chaque combat si possible",
-      }),
+      triggered(
+        when.combatDamageToPlayer,
+        [
+          fx.modify(
+            ref.target(),
+            { addBlockRules: [{ mustAttackPlayer: "eventPlayer", label: "Attaque ce joueur à chaque combat si possible" }] },
+            "endOfYourNextTurn",
+          ),
+        ],
+        { targets: [target.creature()], label: "Une créature attaque ce joueur à chaque combat si possible" },
+      ),
     ],
   },
   // Piétinement : lu dans le texte.
@@ -535,15 +544,12 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.untap(ref.target()), fx.extraCombatAfterMain]),
   },
   "Taunt from the Rampart": {
-    // Approximation : « provoquez » se lit « attaquent à chaque combat si possible ».
     spell: spell(
       [],
       [
-        fx.modifyAll(
-          { types: ["Creature"], controller: "opponent" },
-          { addKeywords: ["mustAttack", "cantBlock"] },
-          "untilYourNextTurn",
-        ),
+        fx.goad(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"], controller: "opponent" }), "untilYourNextTurn", {
+          addKeywords: ["cantBlock"],
+        }),
       ],
     ),
   },

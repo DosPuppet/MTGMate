@@ -122,11 +122,27 @@ export const RED: Record<string, CardScript> = {
   },
   "Maximum Carnage": {
     abilities: [
-      // Approximation : seules les créatures présentes à la résolution sont concernées, et « attaque un joueur autre
-      // que vous si possible » n'est pas imposé (sans effet à deux joueurs, hors planeswalkers).
-      chapter([1], [fx.modifyAll({ types: ["Creature"] }, { addKeywords: ["mustAttack"] }, "untilYourNextTurn")], {
-        label: "Chapitre I — jusqu'à votre prochain tour, chaque créature attaque si possible",
-      }),
+      // Approximation : seules les créatures présentes à la résolution sont concernées. Les exigences sont celles d'une
+      // provocation par vous (`goadedBy`), sans le mot.
+      chapter(
+        [1],
+        [
+          fx.modifyAll(
+            { types: ["Creature"] },
+            {
+              addBlockRules: [
+                {
+                  goadedBy: "you",
+                  label:
+                    "Maximum Carnage : attaque à chaque combat si possible, et un joueur autre que son contrôleur si possible",
+                },
+              ],
+            },
+            "untilYourNextTurn",
+          ),
+        ],
+        { label: "Chapitre I — jusqu'à votre prochain tour, chaque créature attaque si possible, et un autre joueur que vous" },
+      ),
       chapter([2], [fx.addMana("R", "R", "R")], { label: "Chapitre II — ajoutez {R}{R}{R}" }),
       chapter([3], [fx.damage(5, ref.eachOpponent)], { label: "Chapitre III — 5 blessures à chaque adversaire" }),
     ],

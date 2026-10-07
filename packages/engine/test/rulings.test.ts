@@ -15,10 +15,19 @@ import { counterItem } from "../src/stack";
 import { changeCounters, chars, createObject, moveObject, registerDef } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
 import { matchesObjectFilter } from "../src/targets";
-import { blockRequirements, requiredBlocks, stateBasedActions } from "../src/turn";
+import {
+  allowedDefenders,
+  attackRequirements,
+  blockRequirements,
+  forcedAttacks,
+  preferredDefenders,
+  repairAttacks,
+  requiredBlocks,
+  stateBasedActions,
+} from "../src/turn";
 import { countTurnEvents } from "../src/turnlog";
 import type { CardDef, GameState } from "../src/types";
-import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
+import { act, advanceUntil, customCard, idOf, idsOf, lands, passAccepting, passUntil, scenario } from "./helpers";
 
 const ench = (name: string, ab: CardDef["abilities"][number]) =>
   customCard({ name, types: ["Enchantment"], typeLine: "Enchantment", abilities: [ab] });
@@ -701,5 +710,211 @@ describe("mana d'une source sacrifiée pour son coût (dernière information con
     s = act(s, "p1", { type: "tapForMana", source: treasure, ability: 0, color: "R" });
     expect(s.players.p1?.manaPool.R).toBe(2);
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
+  });
+});
+
+describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)", () => {
+  /** p1 contrôle un Ourson provoqué par `goaders` ; position de la déclaration des attaquants de p1. */
+  const goaded = (players: number, goaders: string[], extra: Parameters<typeof scenario>[0] = {}) => {
+    let s = scenario({ players, ...extra, p1: { battlefield: ["Bear Cub", ...(extra.p1?.battlefield ?? [])] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    for (const by of goaders) addEffect(s, [bear], { addBlockRules: [{ goadedBy: by, label: "Provoquée" }] }, "permanent");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    return { s, bear };
+  };
+  const declare = (s: GameState, attackers: { id: string; defender: string }[]) =>
+    act(s, "p1", { type: "declareAttackers", attackers });
+
+  it("provoquée par un joueur : elle doit attaquer, et un autre joueur que lui si possible", () => {
+    const { s, bear } = goaded(3, ["p2"]);
+    expect(() => declare(s, [])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p2" }])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
+    // La déclaration par défaut (hôte, automatisme) attaque l'autre joueur.
+    expect(forcedAttacks(s, "p1")).toEqual([{ id: bear, defender: "p3" }]);
+    expect(preferredDefenders(s, bear)).toEqual(["p3"]);
+    expect(fallbackDecision(s, s.pending as never)).toEqual({
+      type: "declareAttackers",
+      attackers: [{ id: bear, defender: "p3" }],
+    });
+  });
+
+  it("en duel, provoquée par le seul adversaire : elle l'attaque (exigence « attaque si possible »)", () => {
+    const { s, bear } = goaded(2, ["p2"]);
+    expect(() => declare(s, [])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p2" }])).not.toThrow();
+  });
+
+  it("provoquée par deux joueurs : un adversaire qui ne l'a pas provoquée, sinon l'un des deux (701.38c)", () => {
+    const three = goaded(3, ["p2", "p3"]);
+    expect(() => declare(three.s, [])).toThrow(RulesError);
+    expect(() => declare(three.s, [{ id: three.bear, defender: "p2" }])).not.toThrow();
+    expect(() => declare(three.s, [{ id: three.bear, defender: "p3" }])).not.toThrow();
+    const four = goaded(4, ["p2", "p3"]);
+    expect(() => declare(four.s, [{ id: four.bear, defender: "p2" }])).toThrow(RulesError);
+    expect(() => declare(four.s, [{ id: four.bear, defender: "p3" }])).toThrow(RulesError);
+    expect(() => declare(four.s, [{ id: four.bear, defender: "p4" }])).not.toThrow();
+  });
+
+  it("provoquée deux fois par le même joueur : les mêmes exigences, une seule fois", () => {
+    const { s, bear } = goaded(3, ["p2", "p2"]);
+    expect(attackRequirements(s, bear)).toHaveLength(2);
+    expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
+  });
+
+  it("un planeswalker ne satisfait pas « un joueur autre que vous » : attaquer ce joueur, pas son planeswalker", () => {
+    const { s, bear } = goaded(3, ["p2"], { p3: { battlefield: ["Ajani Resolute"] } });
+    const walker = idOf(s, "p3", "battlefield", "Ajani Resolute");
+    expect(() => declare(s, [{ id: bear, defender: walker }])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
+  });
+
+  it("une obligation n'impose pas de payer : l'autre joueur exige une taxe, elle peut attaquer celui qui l'a provoquée", () => {
+    const { s, bear } = goaded(3, ["p2"], { p1: { battlefield: lands("Plains", 2) }, p3: { battlefield: ["Propaganda"] } });
+    expect(() => declare(s, [])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p2" }])).not.toThrow();
+    // Payer la taxe pour attaquer p3 respecte davantage d'exigences : permis.
+    expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
+    expect(forcedAttacks(s, "p1")).toEqual([{ id: bear, defender: "p2" }]);
+  });
+
+  it("taxe partout : provoquée, elle n'est pas obligée d'attaquer", () => {
+    const { s } = goaded(3, ["p2"], { p2: { battlefield: ["Propaganda"] }, p3: { battlefield: ["Propaganda"] } });
+    expect(() => declare(s, [])).not.toThrow();
+    expect(forcedAttacks(s, "p1")).toEqual([]);
+  });
+
+  it("restriction et provocation : elle ne peut pas attaquer l'autre joueur, elle attaque donc celui qui l'a provoquée", () => {
+    const { s, bear } = goaded(3, ["p2"]);
+    addEffect(s, [bear], { addBlockRules: [{ cantAttackPlayer: "p3", label: "Ne peut pas attaquer p3" }] }, "permanent");
+    expect(allowedDefenders(s, bear)).toEqual(["p2"]);
+    expect(() => declare(s, [])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p2" }])).not.toThrow();
+  });
+
+  it("« attaque ce joueur à chaque combat si possible » : seule une attaque contre ce joueur la satisfait", () => {
+    const { s, bear } = goaded(3, []);
+    addEffect(s, [bear], { addBlockRules: [{ mustAttackPlayer: "p3", label: "Attaque p3" }] }, "permanent");
+    expect(() => declare(s, [])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p2" }])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
+    // Elle ne peut pas attaquer ce joueur : aucune obligation.
+    addEffect(s, [bear], { addBlockRules: [{ cantAttackPlayer: "p3", label: "Ne peut pas attaquer p3" }] }, "permanent");
+    expect(() => declare(s, [])).not.toThrow();
+  });
+
+  it("508.1d : le plus d'exigences possible ; une attaque volontaire ne peut pas en faire respecter moins (Mirri)", () => {
+    // Mirri, Weatherlight Duelist (p3), engagée : une seule créature peut attaquer p3 à chaque combat.
+    const { s, bear } = goaded(3, ["p2"], {
+      p1: { battlefield: ["Savannah Lions"] },
+      p3: { battlefield: [{ name: "Mirri, Weatherlight Duelist", tapped: true }] },
+    });
+    const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+    // Une seule créature sur p3.
+    expect(() =>
+      declare(s, [
+        { id: lions, defender: "p3" },
+        { id: bear, defender: "p3" },
+      ]),
+    ).toThrow(RulesError);
+    // Les Lions sur p3 obligeraient l'Ourson provoqué à attaquer p2 (une exigence au lieu de deux) : refusé.
+    const wrong = [
+      { id: lions, defender: "p3" },
+      { id: bear, defender: "p2" },
+    ];
+    expect(() => declare(s, wrong)).toThrow(RulesError);
+    expect(() =>
+      declare(s, [
+        { id: lions, defender: "p2" },
+        { id: bear, defender: "p3" },
+      ]),
+    ).not.toThrow();
+    // L'IA qui voulait envoyer les Lions sur p3 voit sa déclaration réparée : l'Ourson prend p3, les Lions attaquent p2.
+    const repaired = repairAttacks(s, "p1", wrong);
+    expect(repaired).toEqual(
+      expect.arrayContaining([
+        { id: bear, defender: "p3" },
+        { id: lions, defender: "p2" },
+      ]),
+    );
+    expect(repaired).toHaveLength(2);
+    expect(() => declare(s, repaired)).not.toThrow();
+  });
+
+  it("508.1d : payer une taxe pour une créature ne dispense pas une autre de ses exigences sans coût", () => {
+    // Deux créatures provoquées par p2, Propaganda chez p3 : l'Ourson paie pour attaquer p3, les Lions doivent attaquer p2.
+    const { s, bear } = goaded(3, ["p2"], {
+      p1: { battlefield: ["Savannah Lions", ...lands("Plains", 2)] },
+      p3: { battlefield: ["Propaganda"] },
+    });
+    const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+    addEffect(s, [lions], { addBlockRules: [{ goadedBy: "p2", label: "Provoquée" }] }, "permanent");
+    expect(() => declare(s, [{ id: bear, defender: "p3" }])).toThrow(RulesError);
+    expect(() =>
+      declare(s, [
+        { id: bear, defender: "p3" },
+        { id: lions, defender: "p2" },
+      ]),
+    ).not.toThrow();
+    // Même chose avec « attaque à chaque combat si possible ».
+    const t = goaded(3, ["p2"], {
+      p1: { battlefield: ["Savannah Lions", ...lands("Plains", 2)] },
+      p3: { battlefield: ["Propaganda"] },
+    });
+    const lions2 = idOf(t.s, "p1", "battlefield", "Savannah Lions");
+    addEffect(t.s, [lions2], { addKeywords: ["mustAttack"] }, "permanent");
+    expect(() => declare(t.s, [{ id: t.bear, defender: "p3" }])).toThrow(RulesError);
+  });
+
+  it("« ne peut pas attaquer seule » : provoquée, elle attaque avec une autre créature plutôt que de rester chez elle", () => {
+    let s = scenario({ players: 2, p1: { battlefield: ["Bear Cub", "Savannah Lions"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+    addEffect(
+      s,
+      [bear],
+      {
+        addBlockRules: [
+          { notAlone: true, label: "Ne peut pas attaquer seule" },
+          { goadedBy: "p2", label: "Provoquée" },
+        ],
+      },
+      "permanent",
+    );
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    expect(forcedAttacks(s, "p1")).toEqual([
+      { id: bear, defender: "p2" },
+      { id: lions, defender: "p2" },
+    ]);
+    expect(() => declare(s, [])).toThrow(RulesError);
+    expect(() => declare(s, [{ id: bear, defender: "p2" }])).toThrow(RulesError);
+    expect(() => declare(s, forcedAttacks(s, "p1"))).not.toThrow();
+  });
+
+  it("une règle de même forme qui n'est pas une provocation garde ses exigences à côté d'une provocation du même joueur", () => {
+    // Maximum Carnage (p2) puis une provocation de p2 : quatre exigences ; une seconde provocation de p2 n'ajoute rien.
+    const { s, bear } = goaded(3, ["p2"], {
+      p1: { battlefield: ["Savannah Lions"] },
+      p3: { battlefield: [{ name: "Mirri, Weatherlight Duelist", tapped: true }] },
+    });
+    addEffect(s, [bear], { addBlockRules: [{ goadedBy: "p2", label: "Maximum Carnage" }] }, "permanent");
+    expect(attackRequirements(s, bear)).toHaveLength(4);
+    addEffect(s, [bear], { addBlockRules: [{ goadedBy: "p2", label: "Provoquée" }] }, "permanent");
+    expect(attackRequirements(s, bear)).toHaveLength(4);
+    // Les Lions, provoqués par p2 (deux exigences), cèdent la seule place sur p3 (Mirri) à l'Ourson (quatre).
+    const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+    addEffect(s, [lions], { addBlockRules: [{ goadedBy: "p2", label: "Provoquée" }] }, "permanent");
+    expect(() =>
+      declare(s, [
+        { id: lions, defender: "p3" },
+        { id: bear, defender: "p2" },
+      ]),
+    ).toThrow(RulesError);
+    expect(() =>
+      declare(s, [
+        { id: lions, defender: "p2" },
+        { id: bear, defender: "p3" },
+      ]),
+    ).not.toThrow();
   });
 });

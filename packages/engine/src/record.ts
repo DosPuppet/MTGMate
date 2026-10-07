@@ -424,8 +424,12 @@ export const RECORD_VERSION = 1;
  * - 154 : PLAN-H H6 : actions de règle sur la pile (rulesTrigger, sources synthétiques rules:*) : pioche du monarque
  *   (724.2) et passage du monarque après des blessures de combat, radiation (si revérifié à la résolution), vitesse
  *   (702.179, une fois par tour).
+ * - 155 : PLAN-H H3 : provocation (701.38, fx.goad, BlockRule.goadedBy) et exigences d'attaque (508.1d,
+ *   mustAttackPlayer) : le plus grand nombre d'exigences satisfaites, jamais de taxe imposée ; l'IA et la déclaration
+ *   par défaut les respectent (restrictions d'attaque de chaque créature comprises) ; Dack Fayden, Fast Forward, Taunt
+ *   from the Rampart, Galactus, Silver Surfer, Maximum Carnage.
  */
-export const RULES_VERSION = 154;
+export const RULES_VERSION = 155;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

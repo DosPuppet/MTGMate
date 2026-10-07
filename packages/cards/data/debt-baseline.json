@@ -148,7 +148,6 @@
     "manaValueSourcePower": "Jackal, Genius Geneticist — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "maxToughnessX": "Zero Point Ballad — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "modal": "Riku of Many Paths — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "mustBlockEventObject": "Tolsimir, Midnight's Light — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "noManaSpent": "Satoru, the Infiltrator — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "notAlone": "Toby, Beastie Befriender — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "notControlledByYou": "Valgavoth, Terror Eater — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -190,7 +189,8 @@
     "nameOf": "Dragonlord Kolaghan : « du même nom que [l'objet désigné] », relation résolue par withX comme sharesCreatureTypeWith ; famille des bornes dynamiques des filtres",
     "exileIfLeaves": "Exhumation (702.84a, lue dans le texte : Cityscape Leveler) : « s'il devait quitter le champ de bataille, exilez-le à la place » ; famille des retours temporaires (exhumation, Whip of Erebos…)",
     "manifest": "Kozilek, the Broken Reality : manifester depuis la main (701.40) ; famille de la manifestation (manifestDread existant, à rattacher)",
-    "untilTheirNextTurn": "Teferi's Reproach : effet de joueur « jusqu'au prochain tour de ce joueur » (le joueur touché, pas le lanceur) ; famille des durées d'effets de joueur"
+    "untilTheirNextTurn": "Teferi's Reproach : effet de joueur « jusqu'au prochain tour de ce joueur » (le joueur touché, pas le lanceur) ; famille des durées d'effets de joueur",
+    "mustBlockAttacker": "Tolsimir, Midnight's Light : « bloque cette créature si possible » (l'objet de l'événement, figé à la résolution ; PLAN-H H3 a fondu mustBlockEventObject dans mustBlockAttacker) ; famille des exigences de combat (BlockRule)"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",

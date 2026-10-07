@@ -327,6 +327,15 @@ function someone(of: Ref, where: Condition): Condition {
 }
 
 /**
+ * Provocation (701.38) : règle d'attaque figée à la résolution sur le contrôleur de l'effet (`fx.goad`). Son libellé la
+ * distingue d'une règle de même forme qui n'est pas une provocation (`attackRequirements`).
+ */
+const GOADED: BlockRule = {
+  goadedBy: "you",
+  label: "Provoquée : attaque à chaque combat si possible, et un joueur autre que celui qui l'a provoquée si possible",
+};
+
+/**
  * Les permanents du filtre, comme référence (`zone`) : chez vous, chez vos adversaires ou chez tous les joueurs selon son
  * `controller` (« chaque créature que vous contrôlez », « toutes les créatures »).
  */
@@ -557,11 +566,22 @@ export const fx = {
     share: "color",
     ...(nonland ? { nonland } : {}),
   }),
+  /**
+   * Provoquez (701.38) : jusqu'à votre prochain tour (ou pour toujours : Dack Fayden), ces créatures attaquent à chaque
+   * combat si possible, et un joueur autre que vous si possible. « Vous » est figé à la résolution (`goadedBy`).
+   * `extra` : d'autres modifications pour la même durée (Taunt from the Rampart : « ne peuvent pas bloquer »).
+   */
+  goad: (what: Ref, duration: "permanent" | "untilYourNextTurn" = "untilYourNextTurn", extra: LayerMods = {}): Effect => ({
+    op: "modify",
+    what,
+    mods: { ...extra, addBlockRules: [...(extra.addBlockRules ?? []), GOADED] },
+    duration,
+  }),
   /** `basePT` : F/E de base fixées à ce montant, évalué à la résolution (Fractalize : « X+1/X+1 »). */
   modify: (
     what: Ref,
     mods: LayerMods,
-    duration: "endOfTurn" | "permanent" | "untilYourNextTurn" = "endOfTurn",
+    duration: "endOfTurn" | "permanent" | "untilYourNextTurn" | "endOfYourNextTurn" = "endOfTurn",
     basePT?: Amount,
   ): Effect => ({
     op: "modify",

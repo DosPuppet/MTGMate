@@ -107,7 +107,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
     !!resolvingTargets?.includes(player.id) ||
     (casting?.stage === "target" && casting.spec?.legal.includes(player.id)) ||
     (!!pick && !picked && pick.options.includes(player.id)) ||
-    (!!aiming && p?.kind === "declareAttackers" && !!p.defenders?.includes(player.id));
+    (!!aiming && p?.kind === "declareAttackers" && !!(p.allowed?.[aiming] ?? p.defenders)?.includes(player.id));
   const thinking = view.pending?.player === player.id && !isMe;
   const active = view.turn.active === player.id;
   const top = player.graveyard[player.graveyard.length - 1];
@@ -299,7 +299,7 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
     }
     // Planeswalker attaquable : en surbrillance quand un attaquant est en visée.
     if (mine && p?.kind === "declareAttackers" && p.defenders?.includes(o.id)) {
-      return aiming ? "target" : null;
+      return aiming && (p.allowed?.[aiming] ?? p.defenders).includes(o.id) ? "target" : null;
     }
     if (mine && p?.kind === "declareAttackers") {
       if (aiming === o.id) return "selected";
@@ -1087,7 +1087,7 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
             type: "declareAttackers",
             attackers: s.attackers.map((id) => ({
               id,
-              defender: s.attackTargets[id] ?? p.defenders?.[0] ?? (v.opponents[0] as string),
+              defender: s.attackTargets[id] ?? p.allowed?.[id]?.[0] ?? p.defenders?.[0] ?? (v.opponents[0] as string),
             })),
           }),
       };
@@ -1130,7 +1130,10 @@ function CombatPreviewLine() {
   const p = view.pending;
   const choosingAttack = p?.kind === "declareAttackers" && p.player === view.viewer;
   const atk = choosingAttack
-    ? attackers.map((id) => ({ id, defender: attackTargets[id] ?? p.defenders?.[0] ?? (view.opponents[0] as string) }))
+    ? attackers.map((id) => ({
+        id,
+        defender: attackTargets[id] ?? p.allowed?.[id]?.[0] ?? p.defenders?.[0] ?? (view.opponents[0] as string),
+      }))
     : (view.combat?.attackers ?? []);
   const declared = Object.fromEntries((view.combat?.attackers ?? []).flatMap((a) => a.blockers.map((b) => [b, a.id])));
   const choosingBlocks = p?.kind === "declareBlockers" && p.player === view.viewer;

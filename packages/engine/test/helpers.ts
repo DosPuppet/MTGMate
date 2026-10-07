@@ -6,7 +6,7 @@ import { addControlEffect, syncControl } from "../src/control";
 import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { cloneState, createObject, registerDef } from "../src/state";
-import { advance, emptyCombat } from "../src/turn";
+import { advance, emptyCombat, forcedAttacks } from "../src/turn";
 import type { CardDef, CastNowRequest, ChoiceRequest, ChoiceValue, Decision, GameState, PlayerId, Step } from "../src/types";
 
 export interface Permanent {
@@ -195,8 +195,8 @@ export function customCard(partial: Partial<CardDef> & { name: string }): CardDe
 }
 
 /**
- * Avance la partie jusqu'à la condition : passe la priorité, n'attaque ni ne bloque, défausse l'excédent et
- * accepte les choix suggérés.
+ * Avance la partie jusqu'à la condition : passe la priorité, n'attaque (sauf les attaques obligées, 508.1d) ni ne bloque,
+ * défausse l'excédent et accepte les choix suggérés.
  */
 export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max = 600): GameState {
   let cur = s;
@@ -204,7 +204,8 @@ export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max
     const p = cur.pending;
     if (!p) break;
     if (p.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p.kind === "declareAttackers") cur = act(cur, p.player, { type: "declareAttackers", attackers: [] });
+    else if (p.kind === "declareAttackers")
+      cur = act(cur, p.player, { type: "declareAttackers", attackers: forcedAttacks(cur, p.player) });
     else if (p.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
     else if (p.kind === "discard") {
       const hand = cur.players[p.player]?.hand ?? [];

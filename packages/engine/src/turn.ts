@@ -750,25 +750,228 @@ export function canAttack(s: GameState, id: ObjectId): boolean {
 }
 
 /**
- * Créatures qui « attaquent à chaque combat si possible » (508.1d). Une obligation n'impose jamais de payer un coût :
- * si chaque défenseur possible exige une taxe d'attaque (Archangel of Tithes), elles ne sont pas obligées d'attaquer.
+ * Exigence d'attaque d'une créature (508.1d) : attaquer (« attaque à chaque combat si possible », provocation), attaquer
+ * un joueur autre que `not` (provocation, 701.38a), ou l'un des joueurs `players` (Silver Surfer, Galactus). Une attaque
+ * contre un planeswalker ne satisfait que la première.
  */
-export function forcedAttackers(s: GameState, player: PlayerId): ObjectId[] {
-  const defenders = untaxedDefenders(s, player);
-  if (defenders.length === 0) return [];
-  // Une créature qui ne peut attaquer aucun de ces défenseurs (« ne peut pas vous attaquer ») n'est pas obligée.
-  return attackCandidates(s, player).filter(
-    (id) => hasKeyword(s, id, "mustAttack") && defenders.some((d) => !attackRestriction(s, id, d)),
-  );
+export type AttackRequirement =
+  | { kind: "attack" }
+  | { kind: "otherPlayer"; not: PlayerId }
+  | { kind: "player"; players: PlayerId[] };
+
+/** Les exigences d'attaque d'une créature. */
+export function attackRequirements(s: GameState, id: ObjectId): AttackRequirement[] {
+  const out: AttackRequirement[] = [];
+  if (hasKeyword(s, id, "mustAttack")) out.push({ kind: "attack" });
+  const goaders = new Set<string>();
+  for (const r of chars(s, id).blockRules) {
+    // 701.38c : chaque joueur qui la provoque ajoute ses exigences ; le même joueur, une seule fois. Les règles de `fx.goad`
+    // ont toutes le même libellé : une règle de même forme qui n'est pas une provocation (Maximum Carnage) a le sien et
+    // garde ses exigences à côté d'une provocation du même joueur.
+    const key = `${r.goadedBy}|${r.label}`;
+    if (r.goadedBy && r.goadedBy !== "you" && !goaders.has(key)) {
+      goaders.add(key);
+      out.push({ kind: "attack" }, { kind: "otherPlayer", not: r.goadedBy });
+    }
+    if (r.mustAttackPlayer === "mostLifeOpponent") {
+      // Galactus : un adversaire qui a le plus de points de vie parmi les adversaires de son contrôleur.
+      const opps = opponentsOf(s, obj(s, id).controller);
+      const top = Math.max(...opps.map((p) => s.players[p]?.life ?? 0));
+      out.push({ kind: "player", players: opps.filter((p) => (s.players[p]?.life ?? 0) === top) });
+    } else if (r.mustAttackPlayer && r.mustAttackPlayer !== "eventPlayer")
+      out.push({ kind: "player", players: [r.mustAttackPlayer] });
+  }
+  return out;
 }
 
-/** Les attaques obligées, chacune vers un défenseur sans taxe d'attaque qu'elle peut attaquer (automatisme : « Fin du tour »). */
-export function forcedAttacks(s: GameState, player: PlayerId): { id: ObjectId; defender: string }[] {
-  const defenders = untaxedDefenders(s, player);
-  return forcedAttackers(s, player).map((id) => {
-    const allowed = defenders.filter((d) => !attackRestriction(s, id, d));
-    return { id, defender: (allowed.find((d) => !!s.players[d]) ?? allowed[0]) as string };
+/** Nombre d'exigences satisfaites par une attaque contre ce défenseur (`null` : elle n'attaque pas). */
+function obeyedAttack(s: GameState, reqs: AttackRequirement[], defender: string | null): number {
+  if (!defender) return 0;
+  const player = s.players[defender] ? defender : null;
+  return reqs.filter(
+    (r) => r.kind === "attack" || (player !== null && (r.kind === "otherPlayer" ? player !== r.not : r.players.includes(player))),
+  ).length;
+}
+
+/** Ce que cette créature peut attaquer : les défenseurs de son contrôleur, moins ses restrictions (taxe comprise). */
+export function allowedDefenders(s: GameState, id: ObjectId): string[] {
+  if (!canAttack(s, id)) return [];
+  return attackableDefenders(s, obj(s, id).controller).filter((d) => !attackRestriction(s, id, d));
+}
+
+/**
+ * Les défenseurs qui satisfont le plus d'exigences de cette créature sans payer de taxe (provocation : un joueur autre
+ * que celui qui l'a provoquée) ; tous ceux qu'elle peut attaquer si elle n'a pas d'exigence ou n'en peut satisfaire aucune.
+ */
+export function preferredDefenders(s: GameState, id: ObjectId): string[] {
+  const allowed = allowedDefenders(s, id);
+  const reqs = attackRequirements(s, id);
+  if (reqs.length === 0) return allowed;
+  const free = allowed.filter((d) => attackTaxFor(s, d) === 0);
+  const best = Math.max(0, ...free.map((d) => obeyedAttack(s, reqs, d)));
+  return best > 0 ? free.filter((d) => obeyedAttack(s, reqs, d) === best) : allowed;
+}
+
+type Attack = { id: ObjectId; defender: string };
+
+/** Tomik, Orzhov Lawmage : une seule créature attaque chacun de ses planeswalkers ; Mirri : une seule attaque son contrôleur. */
+function oneAttackerOnly(s: GameState, defender: string): boolean {
+  const walker = s.objects[defender];
+  return walker
+    ? playerStatics(s, walker.controller, "maxOneAttacker").some(({ ab }) => ab.maxOneAttacker === "walkers")
+    : playerStatics(s, defender, "maxOneAttacker").some(({ ab }) => ab.maxOneAttacker === "you");
+}
+
+/** La déclaration respecte-t-elle « une seule créature attaque » (Mirri, Tomik) ? */
+function oneAttackerLegal(s: GameState, attacks: Attack[]): boolean {
+  for (const d of new Set(attacks.map((a) => a.defender)))
+    if (oneAttackerOnly(s, d) && attacks.filter((a) => a.defender === d).length > 1) return false;
+  return true;
+}
+
+/** La créature seule de cette déclaration ne peut pas attaquer seule (Toby, Beastie Befriender). */
+function loneNotAlone(s: GameState, attacks: Attack[]): boolean {
+  const lone = attacks.length === 1 ? attacks[0]?.id : undefined;
+  return !!lone && chars(s, lone).blockRules.some((r) => r.notAlone);
+}
+
+/** La déclaration respecte-t-elle « une seule créature attaque » et « pas seule » ? */
+function attackShapeLegal(s: GameState, attacks: Attack[]): boolean {
+  return oneAttackerLegal(s, attacks) && !loneNotAlone(s, attacks);
+}
+
+/**
+ * « Pas seule » : une autre créature qui peut accompagner cette attaque seule sans coût, sinon null. Elle rend légale une
+ * déclaration qui respecte les exigences de la première (508.1d).
+ */
+function attackCompanion(s: GameState, player: PlayerId, attacks: Attack[]): Attack | null {
+  for (const id of attackCandidates(s, player)) {
+    if (attacks.some((a) => a.id === id)) continue;
+    for (const defender of allowedDefenders(s, id)) {
+      const a = { id, defender };
+      if (attackTaxFor(s, defender) === 0 && oneAttackerLegal(s, [...attacks, a])) return a;
+    }
+  }
+  return null;
+}
+
+/** Nœuds au plus de la recherche du maximum (comme pour les blocages). */
+const ATTACK_SEARCH_NODES = 50_000;
+
+/**
+ * 508.1d : le plus grand nombre d'exigences d'attaque qu'une déclaration légale peut respecter sans payer de coût, et une
+ * telle déclaration (pour les seules créatures qui ont des exigences, plus une compagne si l'une d'elles ne peut pas
+ * attaquer seule). `prefer` : les attaques voulues, essayées d'abord. `paid` : les attaques dont la déclaration paie la
+ * taxe ; chacune s'ajoute aux choix de sa créature, sans dispenser les autres de leurs exigences sans coût.
+ */
+function bestRequiredAttacks(
+  s: GameState,
+  player: PlayerId,
+  prefer: Attack[] = [],
+  paid: Attack[] = [],
+): { max: number; best: Attack[] } {
+  const relevant = attackCandidates(s, player)
+    .map((id) => ({ id, reqs: attackRequirements(s, id) }))
+    .filter((x) => x.reqs.length > 0);
+  if (relevant.length === 0) return { max: 0, best: [] };
+  // Pour chaque créature : les défenseurs sans taxe qui satisfont au moins une exigence, du meilleur au moins bon (à
+  // égalité, l'attaque voulue, puis les joueurs avant les planeswalkers), puis « n'attaque pas ».
+  const domains = relevant.map(({ id, reqs }) => {
+    const wanted = prefer.find((a) => a.id === id)?.defender;
+    const opts = allowedDefenders(s, id)
+      .filter((d) => attackTaxFor(s, d) === 0 || paid.some((a) => a.id === id && a.defender === d))
+      .map((d) => ({ d: d as string | null, n: obeyedAttack(s, reqs, d) }))
+      .filter((o) => o.n > 0)
+      .sort((a, b) => b.n - a.n || Number(b.d === wanted) - Number(a.d === wanted));
+    return [...opts, { d: null, n: 0 }];
   });
+  const rest = domains.map((d) => d[0]?.n ?? 0);
+  for (let i = rest.length - 2; i >= 0; i--) rest[i] = (rest[i] as number) + (rest[i + 1] as number);
+  const bound = rest[0] ?? 0;
+  let best: Attack[] = [];
+  let max = -1;
+  let nodes = 0;
+  const current: Attack[] = [];
+  const visit = (i: number, score: number): void => {
+    if (++nodes > ATTACK_SEARCH_NODES || max === bound) return;
+    if (i === relevant.length) {
+      if (score <= max || !oneAttackerLegal(s, current)) return;
+      const companion = loneNotAlone(s, current) ? attackCompanion(s, player, current) : undefined;
+      if (companion === null) return;
+      max = score;
+      best = companion ? [...current, companion] : [...current];
+      return;
+    }
+    if (score + (rest[i] ?? 0) <= max) return;
+    for (const o of domains[i] ?? []) {
+      if (o.d) current.push({ id: relevant[i]?.id as ObjectId, defender: o.d });
+      visit(i + 1, score + o.n);
+      if (o.d) current.pop();
+    }
+  };
+  visit(0, 0);
+  return { max: Math.max(0, max), best };
+}
+
+/** Nombre d'exigences d'attaque respectées par une déclaration (une attaque payée compte aussi). */
+function obeyedAttacks(s: GameState, attacks: Attack[]): number {
+  return attacks.reduce((n, a) => n + obeyedAttack(s, attackRequirements(s, a.id), a.defender), 0);
+}
+
+/**
+ * 508.1d : pourquoi cette déclaration respecte moins d'exigences d'attaque qu'une autre déclaration légale (sans coût),
+ * sinon null.
+ */
+export function unmetAttackRequirement(s: GameState, player: PlayerId, attacks: Attack[]): string | null {
+  const paid = attacks.filter((a) => attackTaxFor(s, a.defender) > 0);
+  const { max, best } = bestRequiredAttacks(s, player, [], paid);
+  if (max === 0 || obeyedAttacks(s, attacks) >= max) return null;
+  for (const b of best) {
+    const reqs = attackRequirements(s, b.id);
+    const mine = attacks.find((a) => a.id === b.id);
+    if (obeyedAttack(s, reqs, mine?.defender ?? null) >= obeyedAttack(s, reqs, b.defender)) continue;
+    const name = chars(s, b.id).name;
+    if (!mine) return `${name} doit attaquer si elle le peut`;
+    if (reqs.some((r) => r.kind === "player")) return `${name} doit attaquer le joueur imposé si possible`;
+    return `${name} est provoquée : elle doit attaquer un joueur autre que celui qui l'a provoquée si possible`;
+  }
+  return "Cette déclaration ne respecte pas autant d'exigences d'attaque que possible";
+}
+
+/**
+ * Créatures obligées d'attaquer (508.1d) : celles de la meilleure déclaration des exigences. Une obligation n'impose
+ * jamais de payer un coût : si chaque défenseur possible exige une taxe d'attaque (Archangel of Tithes), elles ne sont pas
+ * obligées d'attaquer.
+ */
+export function forcedAttackers(s: GameState, player: PlayerId): ObjectId[] {
+  return forcedAttacks(s, player).map((a) => a.id);
+}
+
+/**
+ * Les attaques obligées, chacune vers le défenseur qui satisfait le plus d'exigences (provocation : un joueur autre que
+ * celui qui l'a provoquée ; à défaut, un joueur avant un planeswalker) : déclaration par défaut et automatisme.
+ */
+export function forcedAttacks(s: GameState, player: PlayerId): Attack[] {
+  return bestRequiredAttacks(s, player).best;
+}
+
+/**
+ * Attaques voulues (par l'IA) complétées pour respecter le plus d'exigences possible : les créatures qui en ont reprennent
+ * la meilleure attaque proche de celle voulue ; les autres gardent la leur, ou attaquent un autre défenseur sans taxe si
+ * « une seule créature attaque » (Mirri, Tomik) l'interdit désormais, ou restent chez elles.
+ */
+export function repairAttacks(s: GameState, player: PlayerId, attacks: Attack[]): Attack[] {
+  if (!unmetAttackRequirement(s, player, attacks)) return attacks;
+  const { best } = bestRequiredAttacks(s, player, attacks);
+  const fixed = new Set(best.map((a) => a.id));
+  const merged = [...best];
+  for (const a of attacks) {
+    if (fixed.has(a.id)) continue;
+    const others = allowedDefenders(s, a.id).filter((d) => d !== a.defender && attackTaxFor(s, d) === 0);
+    const defender = [a.defender, ...others].find((d) => oneAttackerLegal(s, [...merged, { id: a.id, defender: d }]));
+    if (defender) merged.push({ id: a.id, defender });
+  }
+  return attackShapeLegal(s, merged) && !unmetAttackRequirement(s, player, merged) ? merged : best;
 }
 
 /**
@@ -791,10 +994,6 @@ function attackRestriction(s: GameState, id: ObjectId, defender: string): string
 /** Taxe d'attaque (Archangel of Tithes) pour attaquer ce défenseur ou ses planeswalkers : {N} par créature. */
 export function attackTaxFor(s: GameState, defender: string): number {
   return playerStaticTotal(s, defendingPlayer(s, defender), "attackTax");
-}
-
-function untaxedDefenders(s: GameState, player: PlayerId): string[] {
-  return attackableDefenders(s, player).filter((d) => attackTaxFor(s, d) === 0);
 }
 
 export function attackCandidates(s: GameState, player: PlayerId): ObjectId[] {
@@ -863,18 +1062,14 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur ; Mirri, Weatherlight
   // Duelist : au plus une créature attaque son contrôleur.
   for (const w of new Set(attackers.map((a) => a.defender))) {
-    const walker = s.objects[w];
-    const limited = walker
-      ? playerStatics(s, walker.controller, "maxOneAttacker").some(({ ab }) => ab.maxOneAttacker === "walkers")
-      : playerStatics(s, w, "maxOneAttacker").some(({ ab }) => ab.maxOneAttacker === "you");
-    if (limited && attackers.filter((a) => a.defender === w).length > 1) {
-      throw new RulesError(`Une seule créature peut attaquer ${walker ? chars(s, w).name : "ce joueur"}`);
+    if (oneAttackerOnly(s, w) && attackers.filter((a) => a.defender === w).length > 1) {
+      throw new RulesError(`Une seule créature peut attaquer ${s.objects[w] ? chars(s, w).name : "ce joueur"}`);
     }
   }
-  // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées (sauf si attaquer
-  // coûte quelque chose partout : une obligation n'impose pas de payer).
-  const forced = forcedAttackers(s, player).filter((id) => !seen.has(id));
-  if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
+  // 508.1d : la déclaration respecte autant d'exigences d'attaque que possible (« attaque à chaque combat si possible »,
+  // provocation, « attaque ce joueur ») ; une obligation n'impose pas de payer une taxe d'attaque.
+  const unmet = unmetAttackRequirement(s, player, attackers);
+  if (unmet) throw new RulesError(unmet);
   // Toby, Beastie Befriender : « ce jeton ne peut pas attaquer seul ».
   const alone = attackers.length === 1 ? attackers[0]?.id : undefined;
   if (alone && chars(s, alone).blockRules.some((r) => r.notAlone))

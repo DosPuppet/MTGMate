@@ -211,6 +211,10 @@ describe("Counter Blitz (EDH)", () => {
       expect([onField(s, "p2", "Serra Angel"), onField(s, "p2", "Savannah Lions")]).toEqual([1, 0]);
       expect(s.objects[angel]?.counters.vow).toBe(1);
       expect(onField(s, "p1", "Bear Cub")).toBe(1);
+      // Les créatures avec un marqueur de serment ne peuvent pas attaquer le lanceur (ni ses planeswalkers).
+      expect(chars(s, angel).blockRules.map((r) => r.cantAttackPlayer)).toEqual(["p1"]);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2");
+      expect(() => act(s, "p2", { type: "declareAttackers", attackers: [{ id: angel, defender: "p1" }] })).toThrow();
     });
 
     it("Yuna's Whistle : la première créature révélée va en main ; X marqueurs, X sa valeur de mana", () => {

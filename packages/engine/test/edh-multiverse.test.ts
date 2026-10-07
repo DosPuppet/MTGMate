@@ -356,7 +356,34 @@ describe("Multiverse Reforged (EDH)", () => {
       s = settle(castIt(s, "p1", "Dack Fayden, Helping Hand"));
       const bear = s.battlefield.find((id) => nameOf(s, id) === "Bear Cub") ?? "";
       expect(s.objects[bear]?.controller).toBe("p2");
-      expect(chars(s, bear).keywords).toContain("mustAttack");
+      expect(chars(s, bear).blockRules.map((r) => r.goadedBy)).toEqual(["p1"]);
+      // En duel, elle attaque p1 (le seul adversaire) si possible.
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2", 100);
+      expect(() => act(s, "p2", { type: "declareAttackers", attackers: [] })).toThrow();
+      expect(() => act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] })).not.toThrow();
+    });
+
+    it("Dack Fayden à trois : chaque créature, provoquée pour toujours, attaque un autre joueur que vous si possible", () => {
+      let s = scenario({
+        players: 3,
+        p1: {
+          battlefield: lands("Plains", 6),
+          hand: ["Dack Fayden, Helping Hand"],
+          library: ["Opt", "Bear Cub", "Savannah Lions", "Opt"],
+        },
+      });
+      s = settle(castIt(s, "p1", "Dack Fayden, Helping Hand"));
+      const bear = s.battlefield.find((id) => nameOf(s, id) === "Bear Cub") ?? "";
+      const lions = s.battlefield.find((id) => nameOf(s, id) === "Savannah Lions") ?? "";
+      const p2Gets = s.objects[bear]?.controller === "p2" ? bear : lions;
+      expect([s.objects[bear]?.controller, s.objects[lions]?.controller].sort()).toEqual(["p2", "p3"]);
+      // Deux tours plus tard (p2 puis p3, puis encore p2), toujours provoquée.
+      for (let round = 0; round < 2; round++) {
+        s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2", 600);
+        const no = (d: string) => act(s, "p2", { type: "declareAttackers", attackers: [{ id: p2Gets, defender: d }] });
+        expect(() => no("p1")).toThrow();
+        s = no("p3");
+      }
     });
 
     it("Proteus Staff : la créature au-dessous de la bibliothèque ; son contrôleur révèle jusqu'à une créature et la met en jeu", () => {

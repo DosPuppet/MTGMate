@@ -21,6 +21,7 @@ import {
   scenario,
   settle,
   steal,
+  throughCombat,
 } from "./helpers";
 
 const hand = (s: GameState, p: PlayerId) => s.players[p]?.hand.length ?? 0;
@@ -214,5 +215,82 @@ describe("The Fantastic Four : approximations levées (PLAN-H, H2c)", () => {
       returned.add(hand[0]);
     }
     expect(returned.size).toBeGreaterThan(1);
+  });
+});
+
+describe("The Fantastic Four (EDH) : provocation et exigences d'attaque (PLAN-H, lot H3)", () => {
+  const declare = (s: GameState, p: PlayerId, attackers: { id: string; defender: string }[]) =>
+    act(s, p, { type: "declareAttackers", attackers });
+  const toAttacks = (s: GameState, p: PlayerId) =>
+    advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === p);
+
+  it("Taunt from the Rampart : créatures adverses provoquées, qui ne peuvent pas bloquer, jusqu'à votre prochain tour", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [...lands("Mountain", 3), ...lands("Plains", 2)], hand: ["Taunt from the Rampart"] },
+      p2: { battlefield: ["Bear Cub"] },
+      p3: { battlefield: ["Savannah Lions"] },
+    });
+    s = settle(castIt(s, "p1", "Taunt from the Rampart"));
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    const lions = idOf(s, "p3", "battlefield", "Savannah Lions");
+    expect(chars(s, lions).keywords).toContain("cantBlock");
+    s = toAttacks(s, "p2");
+    expect(() => declare(s, "p2", [])).toThrow();
+    // Provoquée par p1 : un joueur autre que p1 si possible.
+    expect(() => declare(s, "p2", [{ id: bear, defender: "p1" }])).toThrow();
+    s = declare(s, "p2", [{ id: bear, defender: "p3" }]);
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+    expect(chars(s, bear).blockRules).toEqual([]);
+    expect(chars(s, lions).keywords).not.toContain("cantBlock");
+  });
+
+  it("Galactus : il attaque à chaque combat un adversaire qui a le plus de points de vie, sauf avec Silver Surfer", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Galactus, Devourer of Worlds"] },
+      p2: { life: 25 },
+      p3: { life: 30 },
+    });
+    const galactus = idOf(s, "p1", "battlefield", "Galactus, Devourer of Worlds");
+    s = toAttacks(s, "p1");
+    expect(() => declare(s, "p1", [])).toThrow();
+    expect(() => declare(s, "p1", [{ id: galactus, defender: "p2" }])).toThrow();
+    expect(() => declare(s, "p1", [{ id: galactus, defender: "p3" }])).not.toThrow();
+    // Égalité : l'un ou l'autre.
+    let tie = scenario({ players: 3, p1: { battlefield: ["Galactus, Devourer of Worlds"] } });
+    tie = toAttacks(tie, "p1");
+    expect(() => declare(tie, "p1", [{ id: galactus, defender: "p2" }])).not.toThrow();
+    expect(() => declare(tie, "p1", [{ id: galactus, defender: "p3" }])).not.toThrow();
+    let surfer = scenario({
+      players: 3,
+      p1: { battlefield: ["Galactus, Devourer of Worlds", "Silver Surfer, Galactus's Herald"] },
+      p3: { life: 30 },
+    });
+    surfer = toAttacks(surfer, "p1");
+    expect(() => declare(surfer, "p1", [])).not.toThrow();
+  });
+
+  it("Silver Surfer : la créature ciblée attaque le joueur blessé à chaque combat si possible, jusqu'à la fin de votre prochain tour", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Silver Surfer, Galactus's Herald"] },
+      p3: { battlefield: ["Bear Cub"] },
+    });
+    const surfer = idOf(s, "p1", "battlefield", "Silver Surfer, Galactus's Herald");
+    const bear = idOf(s, "p3", "battlefield", "Bear Cub");
+    s = attackPlayer(s, [surfer], "p2");
+    s = throughCombat(s, (req) => (req.type === "pick" && req.intent === "triggerTarget" ? [bear] : undefined));
+    expect(s.players.p2?.life).toBe(16);
+    expect(chars(s, bear).blockRules.map((r) => r.mustAttackPlayer)).toEqual(["p2"]);
+    s = toAttacks(s, "p3");
+    expect(() => declare(s, "p3", [])).toThrow();
+    expect(() => declare(s, "p3", [{ id: bear, defender: "p1" }])).toThrow();
+    s = declare(s, "p3", [{ id: bear, defender: "p2" }]);
+    // Pendant le prochain tour de p1, encore en vigueur ; ensuite, plus rien.
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main2");
+    expect(chars(s, bear).blockRules).toHaveLength(1);
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect(chars(s, bear).blockRules).toEqual([]);
   });
 });

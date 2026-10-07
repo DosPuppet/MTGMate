@@ -683,7 +683,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         { types: ["Creature"], keyword: "flying", controller: "opponent" },
-        { addBlockRules: [{ cantAttackSourceController: true, label: "Ne peut pas attaquer le contrôleur de Storm" }] },
+        { addBlockRules: [{ cantAttackPlayer: "you", label: "Ne peut pas attaquer le contrôleur de Storm" }] },
         { label: "Les créatures avec le vol ne peuvent pas vous attaquer" },
       ),
       staticAbility(

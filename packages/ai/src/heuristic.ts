@@ -22,6 +22,8 @@ import {
   type ObjectId,
   opponentsOf,
   type PlayerId,
+  preferredDefenders,
+  repairAttacks,
   repairBlocks,
 } from "@mtgx/engine";
 import { heuristicChoice, keepValue } from "./choices";
@@ -74,12 +76,21 @@ export function decide(s: GameState, me: PlayerId, pr: Profile): Decision {
  * Répartition des attaquants : on envoie sur chaque planeswalker adverse (le plus chargé d'abord) juste assez
  * de force pour l'abattre, en commençant par les créatures évasives ; le reste attaque le joueur.
  * Si les attaquants suffisent à tuer le joueur, tout va sur le joueur.
+ * Chaque créature n'attaque que ce qu'elle peut attaquer (« ne peut pas vous attaquer ») et, si elle a des exigences
+ * d'attaque (provocation, « attaque ce joueur »), ce qui en satisfait le plus ; la déclaration est enfin complétée pour
+ * respecter le plus d'exigences possible (508.1d).
  */
 export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[]): { id: string; defender: string }[] {
   const opp = attackTarget(s, me, attackers);
   const power = (id: string) => Math.max(0, chars(s, id).power);
   const total = attackers.reduce((n, id) => n + power(id), 0);
-  const out = new Map(attackers.map((id) => [id, opp as string]));
+  const preferred = new Map(attackers.map((id) => [id, preferredDefenders(s, id)]));
+  // Le joueur visé s'il est permis, sinon le premier joueur permis, sinon un planeswalker permis.
+  const fallback = (id: string) => {
+    const list = preferred.get(id) ?? [];
+    return list.includes(opp) ? opp : (list.find((d) => !!s.players[d]) ?? list[0]);
+  };
+  const out = new Map<string, string | undefined>(attackers.map((id) => [id, fallback(id)]));
   if (total < (s.players[opp]?.life ?? 0)) {
     const walkers = attackableDefenders(s, me)
       .filter((d) => !s.players[d])
@@ -89,14 +100,20 @@ export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[])
     );
     for (const w of walkers) {
       let need = s.objects[w]?.counters.loyalty ?? 0;
-      while (need > 0 && free.length) {
-        const id = free.shift() as string;
+      for (const id of [...free]) {
+        if (need <= 0) break;
+        if (!preferred.get(id)?.includes(w)) continue;
+        free.splice(free.indexOf(id), 1);
         out.set(id, w);
         need -= power(id);
       }
     }
   }
-  return attackers.map((id) => ({ id, defender: out.get(id) as string }));
+  const decl = attackers.flatMap((id) => {
+    const defender = out.get(id);
+    return defender ? [{ id, defender }] : [];
+  });
+  return repairAttacks(s, me, decl);
 }
 
 /**

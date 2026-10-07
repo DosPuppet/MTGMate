@@ -722,7 +722,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         fx.modifyWhileCounter(
           ref.permanentsOf(p, { types: ["Creature"], withCounter: "vow" }),
           {
-            addBlockRules: [{ cantAttackSourceController: true, label: "Ne peut pas attaquer le lanceur de Promise of Loyalty" }],
+            addBlockRules: [{ cantAttackPlayer: "you", label: "Ne peut pas attaquer le lanceur de Promise of Loyalty" }],
           },
           "vow",
         ),

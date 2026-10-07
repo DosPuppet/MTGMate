@@ -15,7 +15,7 @@ import {
   resolveRef,
   store,
 } from "../effects";
-import { copiableExceptions, copiedDefId, mergeMods } from "../layers";
+import { blockRulePlaceholder, copiableExceptions, copiedDefId, mergeMods, resolveBlockRules } from "../layers";
 import { manaValue } from "../mana";
 import {
   bump,
@@ -255,6 +255,7 @@ export const HANDLERS: OpHandlers = {
       affected: ids,
       duration: e.duration,
       ...(e.duration === "untilYourNextTurn" ? { until: ctx.controller } : {}),
+      ...(e.duration === "endOfYourNextTurn" ? { until: ctx.controller, sinceTurn: s.turn.number } : {}),
       ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
       ...(e.whileSource || e.whileYouControlSource ? { whileSource: ctx.sourceId } : {}),
       ...(e.whileYouControlSource ? { whileControlledBy: ctx.controller } : {}),
@@ -262,13 +263,10 @@ export const HANDLERS: OpHandlers = {
       ...(e.whileTapped ? { whileAffectedTapped: true } : {}),
       ...(e.whileHasCounter ? { whileAffectedHasCounter: e.whileHasCounter } : {}),
       ...mods,
-      // Tolsimir : « bloque ce Loup si possible » (l'attaquant de l'événement).
-      ...(e.mods.addBlockRules?.some((r) => r.mustBlockEventObject)
-        ? {
-            addBlockRules: e.mods.addBlockRules.map((r) =>
-              r.mustBlockEventObject ? { ...r, mustBlockEventObject: undefined, mustBlockAttacker: ctx.event?.objectId } : r,
-            ),
-          }
+      // Joueurs et objets figés à la résolution : « provoquez » (le contrôleur de l'effet), « ne peut pas vous attaquer »
+      // (Promise of Loyalty), « attaque ce joueur » (Silver Surfer), « bloque ce Loup si possible » (Tolsimir).
+      ...(e.mods.addBlockRules?.some(blockRulePlaceholder)
+        ? { addBlockRules: resolveBlockRules(e.mods.addBlockRules, ctx.controller, ctx.event) }
         : {}),
       ...(e.basePT !== undefined ? { setPower: evalAmount(s, ctx, e.basePT), setToughness: evalAmount(s, ctx, e.basePT) } : {}),
     });

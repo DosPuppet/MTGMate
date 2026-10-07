@@ -685,22 +685,33 @@ export interface BlockRule {
   /** Ne peut ni attaquer ni bloquer seule (Toby, Beastie Befriender). */
   notAlone?: boolean;
   /**
-   * Ne peut pas attaquer ce joueur ni ses planeswalkers. Dans un script : `cantAttackSourceController` (Eriette of the
-   * Charmed Apple : « ne peut pas vous attaquer »), remplacé par le contrôleur de la source quand la statique s'applique.
+   * Ne peut pas attaquer ce joueur ni ses planeswalkers. Dans un script : `"you"` (Eriette of the Charmed Apple : « ne
+   * peut pas vous attaquer »), remplacé par le contrôleur de la source quand la statique s'applique, ou par celui de
+   * l'effet à sa résolution (Promise of Loyalty) ; voir `resolveBlockRules`.
    */
-  cantAttackPlayer?: PlayerId;
-  cantAttackSourceController?: boolean;
+  cantAttackPlayer?: PlayerId | "you";
+  /**
+   * Provocation (701.38) : elle attaque à chaque combat si possible, et un joueur autre que celui-ci si possible (508.1d).
+   * Dans un script, `"you"` (`fx.goad`) : le contrôleur de l'effet, figé à la résolution. Plusieurs joueurs peuvent la
+   * provoquer (701.38c) : autant d'exigences. Maximum Carnage impose les mêmes exigences sans le mot « provoquer ».
+   */
+  goadedBy?: PlayerId | "you";
+  /**
+   * Exigence d'attaque (508.1d) : elle attaque ce joueur à chaque combat si possible (Silver Surfer : `"eventPlayer"`, le
+   * joueur de l'événement, figé à la résolution), ou un adversaire qui a le plus de points de vie parmi les adversaires
+   * de son contrôleur (Galactus : `"mostLifeOpponent"`, lu à chaque déclaration). Un planeswalker ne la satisfait pas.
+   */
+  mustAttackPlayer?: PlayerId | "eventPlayer" | "mostLifeOpponent";
   /** Traversée de terrain (702.14) : imblocable tant que le joueur défenseur contrôle un permanent correspondant. */
   unblockableIfDefenderControls?: ObjectFilter;
   /** « Ne peut pas attaquer un joueur qu'elle a déjà attaqué ce tour-ci » (Port Razer). */
   notDefendersAttackedThisTurn?: boolean;
   /**
    * Exigence de blocage (509.1c) : elle bloque ce tour-ci si possible (Culvert Ambusher, Hustle), ou bloque cet attaquant
-   * si possible (Tolsimir : `mustBlockEventObject` dans un script, remplacé à la résolution par l'objet de l'événement).
+   * si possible (Tolsimir : `"eventObject"` dans un script, remplacé à la résolution par l'objet de l'événement).
    */
   mustBlock?: boolean;
-  mustBlockAttacker?: ObjectId;
-  mustBlockEventObject?: boolean;
+  mustBlockAttacker?: ObjectId | "eventObject";
   label: string;
 }
 
