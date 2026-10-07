@@ -152,7 +152,8 @@ export const LEGENDS2: Record<string, CardScript> = {
         mana: "{1}{U}{B}",
         fromHand: true,
         returnUnblockedAttacker: true,
-        effects: [fx.toBattlefield(ref.self, { tapped: true, attacking: true })],
+        // 702.49c : il attaque ce qu'attaquait la créature renvoyée.
+        effects: [fx.toBattlefield(ref.self, { tapped: true, attacking: ref.cost("defender") })],
         label: "Ninjutsu {1}{U}{B}",
       }),
       staticAbility(

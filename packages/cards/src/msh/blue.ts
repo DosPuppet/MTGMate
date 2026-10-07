@@ -99,7 +99,9 @@ export const BLUE: Record<string, CardScript> = {
         { power: 1, toughness: 1 },
         { label: "Les autres Ondins que vous contrôlez ont +1/+1" },
       ),
-      triggered(when.attackWith(1, { subtype: "Merfolk" }), [fx.draw(1)], { label: "Des Ondins attaquent : piochez" }),
+      triggered(when.attackWith(1, { subtype: "Merfolk", attacking: "opponent" }), [fx.draw(1)], {
+        label: "Des Ondins attaquent un joueur : piochez",
+      }),
     ],
   },
   "Bold Biochemist": {

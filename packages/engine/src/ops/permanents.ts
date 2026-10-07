@@ -2,7 +2,7 @@
 
 import { createTokenCopy, createTokens, phaseOut, tokenCopyCount, tokenCopyReplacement } from "../actions";
 import { addControlEffect } from "../control";
-import type { OpHandlers } from "../effects";
+import type { EffectContext, OpHandlers, OpResult } from "../effects";
 import {
   addEffect,
   addPump,
@@ -34,7 +34,7 @@ import {
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
-import type { AbilityDef, CardDef, ChoiceRequest, Color, GameState, PlayerId } from "../types";
+import type { AbilityDef, CardDef, ChoiceRequest, Color, GameState, PlayerId, Resolution } from "../types";
 import { BASIC_LAND_TYPES } from "../types";
 
 /** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
@@ -183,6 +183,55 @@ export function enterChoiceRequest(
   }
 }
 
+/**
+ * 508.4 : ce qu'attaque un permanent mis sur le champ de bataille attaquant (sans avoir été déclaré : ni restriction ni
+ * taxe d'attaque). Son contrôleur choisit parmi les défenseurs désignés (« ce joueur », « ce joueur ou un planeswalker qu'il
+ * contrôle »), sinon parmi ses adversaires et leurs planeswalkers ; un défenseur désigné qui ne peut plus être attaqué
+ * (joueur parti, planeswalker disparu) est écarté, et sans défenseur il n'attaque pas (508.4a). Aucune question pour une
+ * seule option ; la suggestion est ce qu'attaque la source, sinon ce qu'attaque une créature de ce joueur. `optional` :
+ * « vous pouvez » (myriade) : ne rien choisir est permis, et la question est posée même pour une seule option. `ask` : faux
+ * après un tirage au hasard (qui ne serait pas rejoué) : la suggestion, sans question. Renvoie la question, sinon le
+ * défenseur choisi (`undefined` : il n'attaque pas, ou rien n'a été choisi).
+ */
+export function chooseAttacked(
+  s: GameState,
+  r: Resolution,
+  ctx: EffectContext,
+  k: string,
+  player: PlayerId,
+  designated: readonly string[] | undefined,
+  prompt: string,
+  opts: { optional?: boolean; ask?: boolean } = {},
+): Extract<OpResult, { ask: unknown }> | { defender: string | undefined } {
+  if (!s.combat) return { defender: undefined };
+  const all = attackableDefenders(s, player, false);
+  const options = designated ? all.filter((d) => designated.includes(d)) : all;
+  if (options.length === 0) return { defender: undefined };
+  const source = s.combat.attackers.find((a) => a.id === ctx.sourceId)?.defender;
+  const suggested = [source, attackingDefender(s, player)].find((d) => d && options.includes(d)) ?? (options[0] as string);
+  const answer = r.vars[k];
+  if (!answer && opts.ask !== false && (options.length > 1 || opts.optional)) {
+    return {
+      ask: {
+        player,
+        key: k,
+        request: {
+          type: "pick",
+          intent: "other",
+          prompt,
+          options,
+          min: opts.optional ? 0 : 1,
+          max: 1,
+          suggested: [suggested],
+        },
+      },
+    };
+  }
+  if (!answer) return { defender: suggested };
+  const picked = answer.map(String).find((d) => options.includes(d));
+  return { defender: picked ?? (opts.optional ? undefined : suggested) };
+}
+
 export const HANDLERS: OpHandlers = {
   phaseOut(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) phaseOut(s, id);
@@ -326,40 +375,23 @@ export const HANDLERS: OpHandlers = {
     const created: string[] = [];
     const pt = e.pt !== undefined ? evalAmount(s, ctx, e.pt) : undefined;
     const token = pt === undefined ? e.token : { ...e.token, power: pt, toughness: pt };
-    // 508.4 : des jetons « engagés et attaquants » attaquent sans avoir été déclarés ; leur contrôleur choisit ce qu'ils
-    // attaquent (par défaut, ce qu'attaque la source, sinon son premier adversaire).
-    let attacking: string | undefined;
-    if (typeof e.attacking === "object") {
-      // « … engagé et attaquant ce joueur » : le joueur désigné, s'il peut être attaqué (sinon, aucun jeton).
-      const defender = resolveRef(s, ctx, e.attacking).find((p) => isPlayer(s, p));
-      if (!defender || !s.combat || !attackableDefenders(s, ctx.controller).includes(defender)) return;
-      attacking = defender;
-    } else if (e.attacking && s.combat) {
-      const suggested = s.combat.attackers.find((a) => a.id === ctx.sourceId)?.defender ?? attackingDefender(s, ctx.controller);
-      const options = attackableDefenders(s, ctx.controller);
-      const answer = r.vars[key("defender")];
-      if (options.length > 1 && !answer) {
-        return {
-          ask: {
-            player: ctx.controller,
-            key: key("defender"),
-            request: {
-              type: "pick",
-              intent: "other",
-              prompt: "Que doivent attaquer les jetons ?",
-              options,
-              min: 1,
-              max: 1,
-              suggested: [options.includes(suggested) ? suggested : (options[0] as string)],
-              autoOk: true,
-            },
-          },
-        };
-      }
-      attacking = answer ? String(answer[0]) : suggested;
-    }
-    const enters = { tapped: !!(e.tapped || e.attacking), attacking };
     const creators = e.attachTo || !e.for ? [ctx.controller] : resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x));
+    // 508.4 : des jetons « engagés et attaquants » attaquent sans avoir été déclarés ; leur contrôleur choisit ce qu'ils
+    // attaquent parmi ses adversaires, une fois pour tous ses jetons de l'effet (Najeela : le contrôleur du Guerrier).
+    const attacking = new Map<string, string | undefined>();
+    if (e.attacking) {
+      // « … engagé et attaquant ce joueur » : rien à créer sans joueur désigné (`fx.forEachPlayer`).
+      const designated = typeof e.attacking === "object" ? resolveRef(s, ctx, e.attacking) : undefined;
+      if (designated?.length === 0) return;
+      const prompt = n > 1 ? "Que doivent attaquer les jetons ?" : "Que doit attaquer le jeton ?";
+      for (const p of creators) {
+        const k = key(p === ctx.controller ? "defender" : `defender:${p}`);
+        const c = chooseAttacked(s, r, ctx, k, p, designated, prompt);
+        if ("ask" in c) return c;
+        attacking.set(p, c.defender);
+      }
+    }
+    const enters = (p: string) => ({ tapped: !!(e.tapped || e.attacking), attacking: attacking.get(p) });
     // Moonlit Meditation, Mirrormind Crown : « vous pouvez à la place créer des copies » — demandé avant toute création.
     const declined = new Set<string>();
     for (const p of creators) {
@@ -384,14 +416,14 @@ export const HANDLERS: OpHandlers = {
     }
     if (e.attachTo) {
       for (const host of resolveRef(s, ctx, e.attachTo).filter((x) => onBattlefield(s, x))) {
-        const made = createTokens(s, ctx.controller, token, n, true, enters, declined.has(ctx.controller));
+        const made = createTokens(s, ctx.controller, token, n, true, enters(ctx.controller), declined.has(ctx.controller));
         for (const id of made) attach(s, id, host);
         created.push(...made);
       }
       if (e.store) r.vars[`$ids:${e.store}`] = created;
       return;
     }
-    for (const p of creators) created.push(...createTokens(s, p, token, n, true, enters, declined.has(p)));
+    for (const p of creators) created.push(...createTokens(s, p, token, n, true, enters(p), declined.has(p)));
     if (e.store) r.vars[`$ids:${e.store}`] = created;
     return;
   },
@@ -430,16 +462,39 @@ export const HANDLERS: OpHandlers = {
     r.vars.$name = [String(answer[0])];
     return;
   },
-  copyToken(s, r, e, ctx) {
+  copyToken(s, r, e, ctx, key) {
     const made: string[] = [];
-    // Myriade : une copie par joueur désigné (un adversaire autre que le joueur défenseur), qui l'attaque.
-    const attackEach = e.attackEach
-      ? resolveRef(s, ctx, e.attackEach).filter((p) => isPlayer(s, p) && p !== ctx.controller)
-      : undefined;
-    // Doubling Season s'applique aussi aux jetons copies.
-    const base = attackEach ? attackEach.length : e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
+    // Myriade, Shredder : une copie par joueur désigné (un adversaire autre que le joueur défenseur), qui attaque ce joueur
+    // ou l'un de ses planeswalkers désignés ; chaque défenseur est choisi avant toute copie (508.4).
+    let attackEach: (string | undefined)[] | undefined;
+    if (e.attackEach) {
+      attackEach = [];
+      const designated = resolveRef(s, ctx, e.attackEach);
+      for (const p of designated.filter((x) => isPlayer(s, x) && x !== ctx.controller)) {
+        const among = designated.filter((x) => x === p || (!isPlayer(s, x) && s.objects[x]?.controller === p));
+        const prompt = e.optional
+          ? "Vous pouvez créer une copie qui attaque l'un d'eux (aucun choix : pas de copie)"
+          : "Que doit attaquer la copie ?";
+        const c = chooseAttacked(s, r, ctx, key(`defender:${p}`), ctx.controller, among, prompt, { optional: e.optional });
+        if ("ask" in c) return c;
+        if (e.optional && !c.defender) continue;
+        attackEach.push(c.defender);
+      }
+    }
     // Fractured Identity : « chaque joueur autre que son contrôleur crée un jeton qui est une copie ».
     const creators = e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller];
+    // « Engagée et attaquante » : un seul choix pour toutes les copies d'un même contrôleur, fait par celui-ci.
+    const attacking = new Map<string, string | undefined>();
+    if (e.attacking && !attackEach) {
+      for (const p of creators) {
+        const k = key(p === ctx.controller ? "defender" : `defender:${p}`);
+        const c = chooseAttacked(s, r, ctx, k, p, undefined, "Que doit attaquer la copie ?");
+        if ("ask" in c) return c;
+        attacking.set(p, c.defender);
+      }
+    }
+    // Doubling Season s'applique aussi aux jetons copies.
+    const base = attackEach ? attackEach.length : e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
     for (const who of creators)
       for (const id of resolveRef(s, ctx, e.of)) {
         const model = s.objects[id] ?? undefined;
@@ -499,16 +554,12 @@ export const HANDLERS: OpHandlers = {
             );
           }
           if ((e.attacking || attackEach) && s.combat) {
-            // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures) ; myriade : le joueur de
-            // sa copie (les copies en plus d'un doubleur se répartissent entre eux).
+            // Calamity : « engagé et attaquant » ; myriade : le défenseur choisi pour le joueur de sa copie (les copies en
+            // plus d'un doubleur se répartissent entre eux et gardent ce choix).
             const tok = s.objects[token];
             if (tok) tok.tapped = true;
-            const defender =
-              attackEach?.[Math.floor((i * attackEach.length) / n)] ??
-              s.combat.attackers.find((a) => s.objects[a.id]?.controller === ctx.controller)?.defender ??
-              opponentsOf(s, ctx.controller)[0] ??
-              "";
-            s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
+            const defender = attackEach ? attackEach[Math.floor((i * attackEach.length) / n)] : attacking.get(who);
+            if (defender) s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
             bump(s);
           }
           if (e.atEndOfCombat) {

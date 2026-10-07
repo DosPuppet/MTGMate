@@ -307,9 +307,11 @@ export const LEGENDS: Record<string, CardScript> = {
         targets: [target.optional(target.creature("t", { controller: "you", other: true }))],
         label: "Exilez une autre de vos créatures tant qu'il reste",
       }),
-      triggered(when.attacksSelf, [fx.copyToken(ref.exiledWith, { tapped: true, attacking: true, sacrificeAtEndStep: true })], {
-        label: "Un jeton copie de la carte exilée, engagé et attaquant",
-      }),
+      triggered(
+        when.attacksSelf,
+        [fx.copyToken(ref.exiledWith, { tapped: true, attackEach: ref.eachOpponent, sacrificeAtEndStep: true })],
+        { label: "Pour chaque adversaire, un jeton copie de la carte exilée, engagé et l'attaquant" },
+      ),
     ],
   },
   "Narset, Jeskai Waymaster": {

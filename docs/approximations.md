@@ -34,7 +34,7 @@ Chaque entrée porte sa nature :
 - `choix auto` **« Le reste au-dessous de votre bibliothèque dans l'ordre de votre choix » :** dans un ordre aléatoire (Rediscover the Way, Commune with Nature, Avengers Tower) ; « remises au-dessus dans l'ordre de votre choix » : l'ordre n'est pas choisi (Rowan's Grim Search).
 - `règle` **Suspension (702.62) :** la célérité est donnée au prochain sort de créature lancé ce tour-ci, même si ce n'est pas la carte suspendue (aussi Taigam, Master Opportunist).
 - `choix auto` **Contrôler le tour d'un autre joueur** (Mindslaver, The Dominion Bracelet) : une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
-- `règle` **Ninjutsu en multijoueur (702.49c) :** la créature arrive engagée et attaquant le même défenseur qu'une de vos créatures attaquantes (sinon le premier adversaire), pas forcément celui qu'attaquait la créature renvoyée.
+- `règle` **Jetons créés attaquants (508.4) :** un seul choix de défenseur pour tous les jetons qu'un même effet crée pour un même joueur (mobilisation…), alors que chaque jeton pourrait attaquer un défenseur différent ; les copies en plus d'un doubleur gardent le défenseur choisi pour leur joueur (myriade).
 - `règle` **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`engine/src/limits.ts`). Chaque coupure est notée au journal de la partie (« Plafond de sécurité atteint »).
 
 ### Hors règles du jeu
@@ -62,8 +62,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X.
 - **Aetherdrift (`docs/extensions/dft.md`) :**
   - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
-  - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte ;
-  - `règle` Oviya : le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
+  - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
 - **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`) :**
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
   - `règle` Riku of Many Paths : un seul mode, quel que soit le nombre de modes du sort ;
@@ -76,15 +75,13 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
   - `timing` Sidisi, Regent of the Mire : la carte de VM X + 1 est ciblée par une capacité réflexive, une fois le coût payé ;
-  - `règle` Mardu Siegebreaker : en multijoueur, une seule copie, qui attaque le même joueur que Mardu Siegebreaker ;
   - `règle` Teval (cave) : une carte exilée paie {1} générique, mais aussi un {C} ; hors contrôle total, le paiement automatique utilise d'abord le mana, puis exile les cartes dans l'ordre du cimetière (en contrôle total, le joueur les choisit) ;
   - `règle` New Way Forward : un sort choisi comme source est reconnu par sa carte et son contrôleur (une autre copie de la même carte serait aussi concernée) ; les blessures sont toutes prévenues, après les modifications (doublements) qui s'y appliquent ;
   - `règle` Neriv, Heart of the Storm : une créature qui n'est plus sur le champ de bataille n'est pas « arrivée ce tour-ci ».
 - **Duskmourn (`docs/extensions/dsk.md`) :**
   - `règle` Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
-  - `règle` Kaito (Monstrous Emergence) : en multijoueur, il attaque le joueur qu'attaque une de vos créatures ;
   - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
-  - `règle` conditions non vérifiées : l'attaque d'un joueur (Dollmaker's Shop : une créature non-Jouet qui attaque un planeswalker ou une bataille compte aussi), la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
+  - `règle` conditions non vérifiées : la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
   - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
   - `règle` Leyline of Transformation : seulement les créatures sur le champ de bataille (pas les sorts ni les cartes) ;
   - `choix auto` Say Its Name : Altanak est cherché dans le cimetière, puis la main, puis la bibliothèque ;
@@ -134,7 +131,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
   - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
   - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte ;
-  - `règle` Swat Away : « si une créature vous attaque » est vrai dès qu'une créature adverse attaque (en multijoueur, même un autre joueur) ;
   - `règle` Dream Harvest : une carte modale à verso terrain exilée peut aussi être jouée comme terrain (seuls ses sorts devraient se lancer) ;
   - `timing` Raiding Schemes : la conspiration passe par une capacité déclenchée ; les deux créatures sont engagées à sa résolution, et non en lançant le sort ;
   - `timing` Celestial Reunion : le coût additionnel facultatif est vérifié à la résolution, pour un type de la carte trouvée (le joueur le paie toujours quand il le peut) ; la carte passe par la main avant le champ de bataille ;
@@ -195,8 +191,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Marvel Super Heroes (`docs/extensions/msh.md`) :**
   - `règle` Raft Security Officer : « coûte {1} de moins si elle cible une créature de force 3 ou moins » est deux capacités ({1} avec une telle cible, {2} sinon) ; si la force de la cible dépasse 3 avant la résolution, la version à {1} perd sa cible ;
   - `règle` Nick Fury, Agent of S.H.I.E.L.D. : une carte recto-verso mise sur le champ de bataille ne peut pas être transformée ;
-  - `règle` Crowd of True Believers : « attaque seule » demande que la créature attaque un joueur ;
-  - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
   - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
   - `règle` Cloak and Dagger, Entwined : la main n'est montrée qu'à travers ses cartes non-terrain proposées ; à la résolution, la créature ciblée n'est revérifiée que comme créature d'un adversaire (passée sous le contrôle d'un autre adversaire, elle reste une cible légale) ;
@@ -217,8 +211,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
   - `règle` Turtles Forever : la recherche ne porte que sur la bibliothèque (rien hors de la partie), et « exactement quatre » n'est pas imposé (l'adversaire choisit parmi les cartes trouvées) ;
   - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci ;
-  - `règle` Shark Shredder : la créature arrive attaquant le joueur qu'attaque votre première créature attaquante, pas forcément le joueur blessé (exact en duel) ;
-  - `règle` Party Dude : au niveau 3, « chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » se lit « chaque fois que vous attaquez » (exact en duel, sauf une attaque contre un planeswalker seul) ;
   - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet ;
   - `choix auto` Ninja Teen : un sort de créature lancé du cimetière par le faufilement donné renvoie l'attaquant non bloqué le plus faible.
 - **The Hobbit (`docs/extensions/hob.md`) :**
@@ -236,8 +228,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Drown in the Loch : « valeur de mana inférieure ou égale au nombre de cartes du cimetière de son contrôleur » est vérifiée à la résolution, pas au ciblage ;
   - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
   - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous ;
-  - `règle` Adeline, Resplendent Cathar : les Humains créés attaquent tous le même défenseur (un par adversaire, en multijoueur) ;
-  - `règle` Mangara, the Diplomat : « deux créatures ou plus vous attaquent » compte les attaques contre vous du tour entier ;
   - `règle` All Will Be One : seuls les marqueurs mis sur des permanents déclenchent la capacité ;
   - `choix auto` Force of Will, Force of Vigor, Daze : la carte exilée de la main est la moins chère qui convient ; l'Île renvoyée, une engagée d'abord ;
   - `règle` Grim Giganotosaurus : « monstrueuse » est noté par un marqueur (visible) ;
@@ -264,7 +254,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Relic of Legends : la créature légendaire engagée est choisie par le moteur (d'abord une sans capacité de mana, comme Gene Pollinator) ; le paiement automatique ne s'en sert qu'une fois par capacité ; Phyrexian Tower et Sunken Ruins (coût de sacrifice ou de mana) s'activent à la main.
   - `règle` New Blood : le changement de texte (612, « remplacez toutes les occurrences d'un type de créature par Vampire ») n'est pas fait ; la créature volée devient un Vampire en plus de ses autres types ;
   - `règle` Ascension (702.131) : seule celle d'un permanent est gérée (action basée sur l'état), pas celle d'un éphémère ou d'un rituel.
-  - `règle` Propaganda : la taxe vaut aussi pour les attaques contre les planeswalkers de son contrôleur (forme `attackTax` d'Archangel of Tithes) ;
   - `règle` Orcish Bowmasters : « la première carte piochée lors de son étape de pioche » est la pioche de l'étape (504.1) ; si elle est remplacée ou passée, une pioche ultérieure de la même étape déclenche quand même.
   - `règle` Enlightened Tutor, Herald's Horn : la carte cherchée ou mise en main n'est pas révélée explicitement ;
   - `choix auto` Rewind, Unwind, Frantic Search : « dégagez jusqu'à N terrains » ne dégage que vos terrains, choisis automatiquement ;
@@ -273,7 +262,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Mox Diamond : « s'il devait arriver, vous pouvez défausser une carte de terrain à la place ; sinon, il va au cimetière » est une capacité d'arrivée : il arrive (ses capacités « quand un artefact arrive » le voient), puis il est sacrifié si aucun terrain n'est défaussé ;
   - `règle` Forbidden Orchard : « quand vous engagez ce terrain pour du mana » se déclenche quand il devient engagé, quelle qu'en soit la raison ;
   - `règle` Chromatic Orrery : « dépenser du mana comme s'il était de n'importe quelle couleur » vaut pour les sorts, pas pour les capacités activées ;
-  - `choix auto` Myriade (Goldlust Triad) : une seule question pour toutes les copies ; chacune attaque le joueur, jamais un de ses planeswalkers ;
   - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ;
   - `choix auto` Zurgo and Ojutai : les deux cartes qui ne vont pas en main sont mises au-dessous dans un ordre aléatoire (pas au choix).
   - `choix auto` Foreboding Ruins : une carte de Marais ou de Montagne de la main est révélée d'office si possible ;
@@ -287,7 +275,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Incubateur (701.53) : la transformation est une modification permanente (créature-artefact Phyrexian 0/0), pas un passage au verso ; le jeton garde son nom ;
   - `règle` The Ur-Sphinx : joueur par joueur, il meule puis vous pouvez lancer une de ses cartes (et non toutes les meules d'abord) ;
   - `règle` Vigor : « quand elle est mise dans un cimetière depuis n'importe où, mélangez-la dans la bibliothèque » est un remplacement : elle est mélangée sans passer par le cimetière (comme les Eldrazi) ;
-  - `règle` Shredder, Shadow Master : la capacité se déclenche aussi quand il attaque un planeswalker (les copies attaquent les autres adversaires) ;
   - `règle` Coin of Mastery : le mana produit en trop par des sources (Sol Ring pour un seul {1}) est d'abord retiré du mana des artefacts.
   - `règle` Sin, Unending Cataclysm : capacité d'arrivée (et non « en arrivant ») qui retire les marqueurs des artefacts, créatures et enchantements de vos adversaires (pas au choix) ;
   - `règle` Altered Ego : les X marqueurs viennent d'une capacité d'arrivée de la copie ;
@@ -298,7 +285,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Promise of Loyalty : chaque joueur choisit la créature qu'il garde en sacrifiant les autres ;
   - `règle` Deep Analysis : le flashback coûte {1}{U}, sans les 3 points de vie ;
   - `règle` First Family : seules les couleurs de vos permanents comptent (pas celles des sorts lancés ce tour-ci) ;
-  - `règle` Namor : toutes vos autres créatures attaquantes gagnent +2/+0 (pas seulement celles qui attaquent ce joueur), et l'attaque d'un planeswalker compte comme celle de son contrôleur ;
   - `règle` Willie Lumpkin : l'interdiction d'attaquer dure jusqu'au prochain tour de son contrôleur (ce qui couvre le prochain tour du joueur blessé) ;
   - `choix auto` Tragic Arrogance : chaque joueur choisit lui-même ce qu'il garde ; Cut a Deal : chaque adversaire est compté comme ayant pioché ;
   - `règle` Hancock : X compte ses marqueurs +1/+1 seulement ; Jason Bright : « une force différente de sa force de base » se lit « supérieure » ;

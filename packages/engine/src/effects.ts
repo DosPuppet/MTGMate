@@ -4,7 +4,7 @@
  */
 
 import { type DamageSource, payLife, removeFromCombat, sourceFromObject } from "./actions";
-import { copiedDefId } from "./layers";
+import { copiedDefId, hasType } from "./layers";
 import { manaValue } from "./mana";
 import { HANDLERS as COUNTERS_HANDLERS } from "./ops/counters";
 import { HANDLERS as DAMAGE_HANDLERS } from "./ops/damage";
@@ -115,6 +115,9 @@ export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): Object
       ? { ...f, sharesCreatureTypeWith: undefined, types: [...(f.types ?? []), "Creature"] }
       : { ...f, sharesCreatureTypeWith: undefined, anySubtype: types };
   }
+  // « … qui attaquent ce joueur » (Namor, Atlantean King) : les joueurs désignés.
+  if (f.attacking && typeof f.attacking === "object" && !Array.isArray(f.attacking))
+    f = { ...f, attacking: resolveRef(s, ctx, f.attacking).filter((p) => isPlayer(s, p)) };
   if (f.nameOf) {
     const id = resolveRef(s, ctx, f.nameOf).find((x) => s.objects[x] || s.lki[x]);
     const name = id ? (s.defs[s.objects[id]?.defId ?? s.lki[id]?.defId ?? ""]?.name ?? "") : "";
@@ -520,8 +523,17 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
           return [...(ctx.paid?.bounced ?? s.objects[ctx.sourceId]?.cast?.costBounced ?? [])];
         case "beheld":
           return [...(ctx.paid?.beheld ?? [])];
+        case "defender":
+          return ctx.paid?.defender ? [ctx.paid.defender] : [];
       }
       return [];
+    case "withPlaneswalkers": {
+      const players = resolveRef(s, ctx, ref.of).filter((p) => isPlayer(s, p));
+      const walkers = s.battlefield.filter(
+        (id) => players.includes(s.objects[id]?.controller ?? "") && hasType(s, id, "Planeswalker"),
+      );
+      return [...players, ...walkers];
+    }
     case "zone":
       return zoneObjects(s, ctx, ref);
     case "attachmentsOf": {
@@ -952,7 +964,7 @@ export function moveWithSpec(
   controller: PlayerId,
   id: ObjectId,
   spec: EvaluatedMoveSpec,
-  choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid">,
+  choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid" | "attacking">,
 ): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
@@ -989,14 +1001,15 @@ export function moveWithSpec(
     controller: newController,
     position: spec.to === "libraryBottom" ? "bottom" : "top",
     transformed: spec.transformed,
-    tapped: spec.tapped || spec.attacking,
+    tapped: spec.tapped || !!spec.attacking,
     // Marqueurs, types et attaque : en place avant l'événement d'arrivée (614.1c, 614.12, 508.4).
     enters:
       spec.to === "battlefield"
         ? {
             counters: spec.counters ? [spec.counters] : undefined,
             mods: { ...mods, setTypes: spec.setTypes, setSubtypes: spec.setSubtypes },
-            attacking: spec.attacking && s.combat ? attackingDefender(s, newController ?? o.owner) : undefined,
+            // 508.4 : le défenseur choisi pendant la résolution (`chooseAttacked`), sinon celui d'une de vos créatures.
+            attacking: spec.attacking === true && s.combat ? attackingDefender(s, newController ?? o.owner) : undefined,
             ...choices,
           }
         : undefined,

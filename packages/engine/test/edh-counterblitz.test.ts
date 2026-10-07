@@ -239,3 +239,47 @@ describe("Counter Blitz (EDH)", () => {
     });
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  /** p1 attaque : chaque créature nommée vers le défenseur donné (joueur, ou « walker » : l'Ajani de p2). */
+  const attackWith = (s: GameState, attackers: [string, string][]) => {
+    const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    return act(cur, "p1", {
+      type: "declareAttackers",
+      attackers: attackers.map(([name, d]) => ({
+        id: idOf(s, "p1", "battlefield", name),
+        defender: d === "walker" ? walker : d,
+      })),
+    });
+  };
+
+  it("Lulu, Stern Guardian : « un adversaire vous attaque » — pas vos planeswalkers ; la cible est une créature qui vous attaque", () => {
+    const base = () =>
+      scenario({
+        players: 3,
+        p1: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+        p2: { battlefield: ["Lulu, Stern Guardian", "Ajani Resolute"] },
+      });
+    let s = base();
+    s = settle(attackWith(s, [["Bear Cub", "walker"]]));
+    expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters.stun ?? 0).toBe(0);
+
+    s = base();
+    const offered: string[][] = [];
+    s = settle(
+      attackWith(s, [
+        ["Bear Cub", "p3"],
+        ["Llanowar Elves", "p2"],
+      ]),
+      (req, _p, cur) => {
+        if (req.type === "pick") offered.push(req.options.map((o) => nameOf(cur, String(o)) ?? String(o)));
+        return undefined;
+      },
+    );
+    // Une seule cible possible : choisie sans question ; la créature qui attaque p3 n'est jamais proposée.
+    expect(offered.flat()).not.toContain("Bear Cub");
+    expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.counters.stun).toBe(1);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters.stun ?? 0).toBe(0);
+  });
+});

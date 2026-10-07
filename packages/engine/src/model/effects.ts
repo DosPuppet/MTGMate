@@ -135,9 +135,9 @@ export type Effect =
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
   /**
-   * `tapped` : jetons engagés ; `attacking` : engagés et attaquants (le même défenseur que la source, sinon le premier
-   * adversaire), ou qui attaquent le joueur désigné (Endless Foot Assault : « … attaquant ce joueur » ; aucun s'il n'y en
-   * a pas).
+   * `tapped` : jetons engagés ; `attacking` : engagés et attaquants (508.4), ce que choisit leur contrôleur (une question
+   * pour tous les jetons), ou le joueur ou planeswalker désigné (Endless Foot Assault : « … attaquant ce joueur » ; Adeline :
+   * `ref.withPlaneswalkers`, au choix ; aucun jeton si rien n'est désigné).
    */
   /** `pt` : jeton X/X (force et endurance égales au montant, Dance of the Tumbleweeds). */
   | {
@@ -353,13 +353,16 @@ export type Effect =
       addAbilities?: AbilityDef[];
       /** Copie engagée (Kambal). */
       tapped?: boolean;
-      /** Engagée et attaquante (Calamity, Galloping Inferno). */
+      /** Engagée et attaquante (Calamity, Galloping Inferno) : son contrôleur choisit ce qu'elle attaque (508.4). */
       attacking?: boolean;
       /**
-       * Myriade (702.116) : une copie engagée et attaquante pour chacun des joueurs désignés, qui attaque ce joueur ; `count`
-       * est ignoré. `atEndOfCombat` : les copies sont exilées (myriade) ou sacrifiées (Shredder) à la fin du combat.
+       * Myriade (702.116), Shredder : une copie engagée et attaquante pour chacun des joueurs désignés, qui attaque ce joueur
+       * (ou l'un de ses planeswalkers désignés, au choix : `ref.withPlaneswalkers`) ; `count` est ignoré. `optional` : « vous
+       * pouvez » (myriade), demandé joueur par joueur. `atEndOfCombat` : les copies sont exilées (myriade) ou sacrifiées
+       * (Shredder) à la fin du combat.
        */
       attackEach?: Ref;
+      optional?: boolean;
       atEndOfCombat?: "exile" | "sacrifice";
       /** F/E de base fixées (Nexus of Becoming : 3/3). */
       pt?: number;

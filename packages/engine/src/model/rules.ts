@@ -153,8 +153,12 @@ export interface ObjectFilter {
   colors?: Color[];
   /** Porte au moins un marqueur de ce type. */
   withCounter?: string;
-  /** Créature attaquante. */
-  attacking?: boolean;
+  /**
+   * Créature attaquante ; `"you"` : qui vous attaque (vous, pas vos planeswalkers) ; `"opponent"` : qui attaque l'un de vos
+   * adversaires (un joueur) ; une référence : qui attaque l'un des joueurs désignés (résolue par `withX` en liste de
+   * joueurs).
+   */
+  attacking?: boolean | "you" | "opponent" | Ref | PlayerId[];
   /** Bloqueuse. */
   blocking?: boolean;
   /** Multicolore (au moins deux couleurs). */
@@ -316,11 +320,14 @@ export type TriggerSpec =
   | { on: "search"; whose: "you" | "opponent" | "any" }
   /** « Quand un adversaire perd la partie » (Shinryu). */
   | { on: "playerLoses"; whose: "opponent" | "any" }
-  /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
   /** « Chaque fois qu'un adversaire acquiert le contrôle d'un permanent qui était à vous » (Zidane). */
   | { on: "controlChange" }
-  /** `alone` : « chaque fois qu'une créature que vous contrôlez attaque seule » (Squall, Seifer). */
-  | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you"; alone?: boolean }
+  /**
+   * `alone` : « chaque fois qu'une créature que vous contrôlez attaque seule » (Squall, Seifer). `defending: "you"` : elle
+   * attaque le contrôleur (pas ses planeswalkers) ; `"youOrYourPlaneswalkers"` : le contrôleur ou un planeswalker qu'il
+   * contrôle ; `"player"` : elle attaque un joueur (pas un planeswalker).
+   */
+  | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you" | "youOrYourPlaneswalkers" | "player"; alone?: boolean }
   /**
    * `to` : ce qui reçoit les blessures, joueurs (`players`, relatif au contrôleur de la capacité) ou objets (`objects`) :
    * « à un joueur » (`{ players: "any" }`), « à l'un de vos adversaires », « à un joueur ou un planeswalker » (Flitterwing
@@ -375,10 +382,16 @@ export type TriggerSpec =
   /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
   /** `anyPlayer` : « chaque fois qu'un joueur attaque avec N créatures ou plus » (Aurelia, the Law Above). */
   /**
-   * `defending: "you"` : un adversaire attaque, et seuls comptent ses attaquants qui vous attaquent, vous ou vos
-   * planeswalkers (Tomik, Wielder of Law) ; le joueur de l'événement est alors l'attaquant.
+   * `defending` : un adversaire attaque, et seuls comptent ses attaquants qui vous attaquent (`"you"`, Lulu), vous et/ou vos
+   * planeswalkers (`"youOrYourPlaneswalkers"`, Tomik, Wielder of Law) ; le joueur de l'événement est alors l'attaquant.
    */
-  | { on: "attackWith"; min?: number; filter?: ObjectFilter; anyPlayer?: boolean; defending?: "you" }
+  | {
+      on: "attackWith";
+      min?: number;
+      filter?: ObjectFilter;
+      anyPlayer?: boolean;
+      defending?: "you" | "youOrYourPlaneswalkers";
+    }
   /** « Chaque fois que des marqueurs sont placés sur … » */
   /** `firstThisTurn` : « si c'est la première fois ce tour-ci que des marqueurs sont mis sur elle » (Stalwart Successor). */
   /** `by: "you"` : « chaque fois que vous mettez des marqueurs » (celui qui les met : contrôleur de ce qui se résout, sinon
@@ -719,7 +732,10 @@ export type Ref =
    * Ce qui a été payé en objets pour le coût du sort ou de la capacité qui se résout (dernières informations connues) :
    * permanents sacrifiés, cartes défaussées (encore présentes), cartes exilées, créature renvoyée pour le Web-slinging.
    */
-  | { kind: "cost"; paid: "sacrificed" | "discarded" | "exiled" | "bounced" | "beheld" }
+  /** `defender` : ce qu'attaquait l'attaquant non bloqué renvoyé pour le ninjutsu (702.49c). */
+  | { kind: "cost"; paid: "sacrificed" | "discarded" | "exiled" | "bounced" | "beheld" | "defender" }
+  /** Les joueurs désignés et les planeswalkers qu'ils contrôlent (« ce joueur ou un planeswalker qu'il contrôle »). */
+  | { kind: "withPlaneswalkers"; of: Ref }
   /**
    * Les objets d'une zone des joueurs désignés, correspondant au filtre : permanents qu'ils contrôlent, cartes de leur
    * cimetière, de leur main (valeur de mana au plus `maxManaValue`), cartes qu'ils possèdent exilées face visible, sorts et

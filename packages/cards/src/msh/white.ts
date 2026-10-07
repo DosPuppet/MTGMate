@@ -124,8 +124,8 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       activated({
         tap: true,
-        // « attaquant seule » : la seule créature attaquante (approché : elle attaque un joueur, `cond.attackingAlone`).
-        activationCondition: cond.attackingAlone,
+        // « attaquant seule » (506.5) : la seule créature attaquante, quoi qu'elle attaque.
+        activationCondition: cond.not(cond.amountAtLeast(amount.count({ types: ["Creature"], attacking: true }), 2)),
         targets: [
           {
             id: "t",

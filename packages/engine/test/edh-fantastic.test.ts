@@ -294,3 +294,32 @@ describe("The Fantastic Four (EDH) : provocation et exigences d'attaque (PLAN-H,
     expect(chars(s, bear).blockRules).toEqual([]);
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  it("Namor, Atlantean King : seules vos autres créatures qui attaquent ce joueur gagnent +2/+0 ; rien contre un planeswalker", () => {
+    const run = (namorAt: "p2" | "walker") => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Namor, Atlantean King", "Bear Cub", "Llanowar Elves"], life: 10 },
+        p2: { battlefield: ["Ajani Resolute"] },
+      });
+      const [namor, bear, elves] = ["Namor, Atlantean King", "Bear Cub", "Llanowar Elves"].map((n) =>
+        idOf(s, "p1", "battlefield", n),
+      );
+      const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", {
+        type: "declareAttackers",
+        attackers: [
+          { id: namor as string, defender: namorAt === "walker" ? walker : "p2" },
+          { id: bear as string, defender: "p2" },
+          { id: elves as string, defender: "p3" },
+        ],
+      });
+      s = settle(s);
+      return [bear, elves].map((id) => chars(s, id as string).power);
+    };
+    expect(run("p2")).toEqual([4, 1]);
+    expect(run("walker")).toEqual([2, 1]);
+  });
+});

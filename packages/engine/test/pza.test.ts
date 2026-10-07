@@ -223,3 +223,27 @@ describe("Source Material : approximations levées (PLAN-H, H2c)", () => {
     expect(["p1", "p2", "p3"].map((p) => idsOf(s, p, "battlefield", "Rat").length)).toEqual([3, 2, 1]);
   });
 });
+
+describe("joueur attaqué (PLAN-H, lot H5)", () => {
+  it("Trouble in Pairs : « vous attaque avec deux créatures ou plus » — celles qui attaquent vos planeswalkers ne comptent pas", () => {
+    const run = (elvesAtWalker: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+        p2: { battlefield: ["Trouble in Pairs", "Ajani Resolute"], library: lands("Plains", 5) },
+      });
+      const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+      const [bear, elves] = ["Bear Cub", "Llanowar Elves"].map((n) => idOf(s, "p1", "battlefield", n));
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", {
+        type: "declareAttackers",
+        attackers: [
+          { id: bear as string, defender: "p2" },
+          { id: elves as string, defender: elvesAtWalker ? walker : "p2" },
+        ],
+      });
+      return settle(s).players.p2?.hand.length;
+    };
+    expect(run(true)).toBe(0);
+    expect(run(false)).toBe(1);
+  });
+});

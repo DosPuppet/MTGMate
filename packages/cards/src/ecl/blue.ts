@@ -75,10 +75,10 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Swat Away": {
-    // « Coûte {2} de moins si une créature vous attaque » : une créature adverse attaquante (en duel, c'est vous).
+    // « Coûte {2} de moins si une créature vous attaque » : vous, pas un de vos planeswalkers.
     costReduction: {
       generic: 2,
-      condition: cond.amountAtLeast(amount.count({ types: ["Creature"], controller: "opponent", attacking: true }), 1),
+      condition: cond.amountAtLeast(amount.count({ types: ["Creature"], attacking: "you" }), 1),
     },
     spell: spell(
       [{ id: "t", label: "sort ou créature", filter: { spells: {}, objects: { types: ["Creature"] } } }],

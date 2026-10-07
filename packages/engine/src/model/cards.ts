@@ -14,6 +14,7 @@ import type {
   ObjectFilter,
   ObjectId,
   PlayerId,
+  Ref,
   TargetSpec,
   TriggerSpec,
   TurnLogQuery,
@@ -1217,8 +1218,12 @@ export interface PlayerStaticAbilityDef {
   affects?: "opponents" | "each";
   /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
   lookAtTopCard?: boolean;
-  /** Archangel of Tithes : les créatures ne peuvent vous attaquer que si leur contrôleur paie {1} pour chacune. */
-  attackTax?: number;
+  /**
+   * Taxe d'attaque : les créatures ne peuvent vous attaquer que si leur contrôleur paie {N} pour chacune (Propaganda : pas
+   * les attaques contre vos planeswalkers) ; `defending: "youOrYourPlaneswalkers"` : vous ou vos planeswalkers (Archangel of
+   * Tithes).
+   */
+  attackTax?: number | { amount: number; defending: "youOrYourPlaneswalkers" };
   /** Archangel of Tithes (attaquant) : les créatures adverses ne bloquent que si leur contrôleur paie {1} pour chacune. */
   blockTax?: number;
   /** Terror of the Peaks : les sorts adverses qui ciblent cette créature coûtent N PV de plus. */
@@ -1410,8 +1415,11 @@ export interface MoveSpec {
   setSubtypes?: string[];
   /** Arrive transformé (verso d'une carte recto-verso). */
   transformed?: boolean;
-  /** Engagé et attaquant (Chorale of the Void) : il attaque le joueur qu'attaque une de vos créatures. */
-  attacking?: boolean;
+  /**
+   * Engagé et attaquant (508.4) : ce que choisit son contrôleur parmi ses adversaires et leurs planeswalkers (Chorale of the
+   * Void), ou le joueur ou planeswalker désigné (Shark Shredder : « ce joueur » ; ninjutsu : `ref.cost("defender")`).
+   */
+  attacking?: boolean | Ref;
   /** Avec `libraryTop` : N-ième depuis le dessus (Riptide Gearhulk : 3). */
   fromTop?: number;
   /** Avec `libraryTop` : « mélangez-le dans la bibliothèque de son propriétaire ». */

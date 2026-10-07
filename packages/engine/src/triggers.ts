@@ -564,17 +564,25 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "attack") return null;
       const v = liveView(s, ev.attacker);
       if (!v || !matchWho(t.who, v, src)) return null;
+      // « … vous attaque » (Sabotage Strategist) : vous, pas vos planeswalkers.
+      if (t.defending === "you" && ev.defender !== me) return null;
       // « … vous attaque ou attaque un planeswalker que vous contrôlez » (Jace, Reality Sculptor).
-      if (t.defending === "you" && ev.defender !== me && s.objects[ev.defender]?.controller !== me) return null;
+      if (t.defending === "youOrYourPlaneswalkers" && ev.defender !== me && s.objects[ev.defender]?.controller !== me)
+        return null;
+      // « … attaque un joueur » (Shredder, Namor) : pas un planeswalker.
+      if (t.defending === "player" && !s.players[ev.defender]) return null;
       if (t.alone && (s.combat?.attackers.length ?? 0) !== 1) return null;
       return { objectId: ev.attacker, player: ev.defender };
     }
     case "attackWith": {
-      if (t.defending === "you") {
+      if (t.defending) {
         if (ev.e !== "attackWith" || !opponentsOf(s, me).includes(ev.player)) return null;
-        // Attaquants de cet adversaire qui vous attaquent, vous ou un planeswalker que vous contrôlez.
+        // Attaquants de cet adversaire qui vous attaquent (Lulu), ou vous et/ou vos planeswalkers (Tomik).
+        const walkers = t.defending === "youOrYourPlaneswalkers";
         const count = (s.combat?.attackers ?? []).filter(
-          (a) => s.objects[a.id]?.controller === ev.player && (a.defender === me || s.objects[a.defender]?.controller === me),
+          (a) =>
+            s.objects[a.id]?.controller === ev.player &&
+            (a.defender === me || (walkers && s.objects[a.defender]?.controller === me)),
         ).length;
         return count >= (t.min ?? 1) ? { player: ev.player, amount: count } : null;
       }

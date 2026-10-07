@@ -431,6 +431,8 @@ export interface CostPaid {
    * ou carte exilée choisie (Close Encounter).
    */
   beheld?: ObjectId[];
+  /** Ninjutsu (702.49c) : ce qu'attaquait l'attaquant non bloqué renvoyé (joueur ou planeswalker). */
+  defender?: string;
 }
 
 /**
@@ -674,6 +676,8 @@ export interface LkiSnapshot {
   keywords: Keyword[];
   isToken: boolean;
   attacking?: boolean;
+  /** Le joueur qu'elle attaque (absent si elle attaque un planeswalker ou n'attaque pas). */
+  attackedPlayer?: PlayerId;
   blocking?: boolean;
   attachedTo?: ObjectId;
   /** Identité physique (suit la carte d'une zone à l'autre). */

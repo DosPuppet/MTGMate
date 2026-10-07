@@ -473,3 +473,29 @@ describe("The Ur-Dragon (EDH)", () => {
     });
   });
 });
+
+describe("myriade en multijoueur (PLAN-H, lot H5)", () => {
+  it("Goldlust Triad : pour chaque autre adversaire, vous pouvez créer une copie qui attaque ce joueur ou un de ses planeswalkers", () => {
+    let s = scenario({
+      players: 4,
+      p1: { battlefield: ["Goldlust Triad"] },
+      p3: { battlefield: ["Ajani Resolute"] },
+    });
+    const walker = idOf(s, "p3", "battlefield", "Ajani Resolute");
+    s = attackPlayer(s, [idOf(s, "p1", "battlefield", "Goldlust Triad")], "p2");
+    const asked: { options: string[]; min: number }[] = [];
+    s = settle(s, (req) => {
+      if (req.type !== "pick" || req.intent !== "other") return undefined;
+      asked.push({ options: [...req.options].sort(), min: req.min });
+      // Pour p3 : son planeswalker ; pour p4 : pas de copie.
+      return req.options.includes(walker) ? [walker] : [];
+    });
+    // Une question par adversaire autre que le joueur défenseur, chacune facultative.
+    expect(asked).toEqual([
+      { options: ["p3", walker].sort(), min: 0 },
+      { options: ["p4"], min: 0 },
+    ]);
+    const copies = tokens(s, "p1", "Goldlust Triad");
+    expect(copies.map((id) => s.combat?.attackers.find((a) => a.id === id)?.defender)).toEqual([walker]);
+  });
+});

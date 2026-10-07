@@ -112,9 +112,13 @@ export const CARDS: Record<string, CardScript> = {
   "Adeline, Resplendent Cathar": {
     cdaPower: amount.count(YOUR_CREATURES),
     abilities: [
-      triggered(when.attackWith(), [fx.createTappedTokens(HUMAN, amount.refCount(ref.eachOpponent), { attacking: true })], {
-        label: "Vous attaquez : un Humain 1/1 engagé et attaquant par adversaire",
-      }),
+      triggered(
+        when.attackWith(),
+        fx.forEachPlayer(ref.eachOpponent, (p) => [fx.createTappedTokens(HUMAN, 1, { attacking: ref.withPlaneswalkers(p) })]),
+        {
+          label: "Vous attaquez : un Humain 1/1 engagé et attaquant par adversaire",
+        },
+      ),
     ],
   },
   "Ranger-Captain of Eos": {
@@ -318,8 +322,8 @@ export const CARDS: Record<string, CardScript> = {
   // Lien de vie : lu dans le texte.
   "Mangara, the Diplomat": {
     abilities: [
-      triggered({ on: "attackWith", min: 2, anyPlayer: true }, [fx.draw(1)], {
-        condition: cond.amountAtLeast(amount.turnEvents({ event: "attack", againstYou: true }), 2),
+      // « … si deux de ces créatures ou plus vous attaquent, vous et/ou vos planeswalkers ».
+      triggered(when.opponentAttacksYouWith(2, true), [fx.draw(1)], {
         label: "Un adversaire vous attaque avec deux créatures ou plus : piochez",
       }),
       triggered({ on: "castSpell", by: "opponent", nth: 2 }, [fx.draw(1)], { label: "Deuxième sort d'un adversaire : piochez" }),

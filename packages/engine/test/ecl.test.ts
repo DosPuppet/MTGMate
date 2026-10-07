@@ -4915,3 +4915,29 @@ describe("PLAN-A A3 : Pyrrhic Strike, « si le coût additionnel a été payé, 
     ]);
   });
 });
+
+describe("joueur attaqué (PLAN-H, lot H5)", () => {
+  it("Swat Away : {2} de moins seulement si une créature vous attaque (pas un autre joueur, pas votre planeswalker)", () => {
+    const run = (defender: "p1" | "p3" | "walker") => {
+      let s = scenario({
+        players: 3,
+        active: "p2",
+        p1: { battlefield: ["Island", "Island", "Ajani Resolute"], hand: ["Swat Away"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const target = defender === "walker" ? idOf(s, "p1", "battlefield", "Ajani Resolute") : defender;
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p2", {
+        type: "declareAttackers",
+        attackers: [{ id: idOf(s, "p2", "battlefield", "Bear Cub"), defender: target }],
+      });
+      for (let i = 0; i < 5 && !(s.pending?.kind === "priority" && s.pending.player === "p1"); i++)
+        if (s.pending?.kind === "priority") s = act(s, s.pending.player, { type: "pass" });
+      const swat = idOf(s, "p1", "hand", "Swat Away");
+      return legalActions(s, "p1").some((a) => a.type === "cast" && a.card === swat);
+    };
+    expect(run("p1")).toBe(true);
+    expect(run("p3")).toBe(false);
+    expect(run("walker")).toBe(false);
+  });
+});

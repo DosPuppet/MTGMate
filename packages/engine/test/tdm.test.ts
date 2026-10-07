@@ -3962,3 +3962,28 @@ describe("Tarkir: Dragonstorm : approximations levées (lot A1)", () => {
     expect(namesIn(s, s.players.p1?.library)).toContain("Bloomvine Regent // Claim Territory");
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  it("Mardu Siegebreaker à trois joueurs : un jeton copie pour chaque adversaire, qui attaque ce joueur", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Mountain", "Plains", "Swamp", "Swamp", "Bear Cub"], hand: ["Mardu Siegebreaker"] },
+      p3: { battlefield: ["Ajani Resolute"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Mardu Siegebreaker"), picking([bear]));
+    const breaker = idOf(s, "p1", "battlefield", "Mardu Siegebreaker");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: breaker, defender: "p2" }] });
+    // « … attaquant cet adversaire » : jamais un planeswalker, donc aucune question.
+    let asked = 0;
+    s = settle(s, (req) => {
+      if (req.intent === "other") asked++;
+      return undefined;
+    });
+    expect(asked).toBe(0);
+    const copies = tokensOf(s, "p1", "Bear Cub");
+    expect(copies.map((id) => s.combat?.attackers.find((a) => a.id === id)?.defender).sort()).toEqual(["p2", "p3"]);
+    expect(copies.every((id) => s.objects[id]?.tapped)).toBe(true);
+  });
+});

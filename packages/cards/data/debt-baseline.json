@@ -180,7 +180,6 @@
     "whileCrafting": "Market Gnome — déclencheur « quitte le champ de bataille » limité à l'exil comme matériau d'une fabrication (702.167) : champ de la famille `leaves`, compté depuis que sa déclaration tient sur plusieurs lignes (PLAN-S, S7)",
     "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte",
     "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »",
-    "againstYou": "Mangara, the Diplomat — requête du journal du tour (attaques contre vous) déjà employée par le moteur (castLimit attackedYou) : à réutiliser pour toute carte « créatures qui vous attaquent »",
     "powerAboveOf": "Fell the Mighty : relation à un objet désigné résolue par withX (« de force supérieure à celle de la créature ciblée »), famille des bornes dynamiques des filtres",
     "atMost": "As Foretold : variante « au plus » de manaValueSourceCounters (bornes dynamiques des filtres)",
     "sacrificeReduce": "Cresting Mosasaurus : émerger (702.119), coût alternatif payé par un sacrifice qui le réduit (altCost.pay)",
@@ -230,15 +229,15 @@
     "CastLimit": 9,
     "NextSpell": 9,
     "Effect": 156,
-    "Effect (champs)": 654,
+    "Effect (champs)": 655,
     "TriggerSpec": 61,
     "TriggerSpec (champs)": 162,
     "Condition": 53,
     "Condition (champs)": 97,
     "Amount": 34,
     "Amount (champs)": 77,
-    "Ref": 34,
-    "Ref (champs)": 61
+    "Ref": 35,
+    "Ref (champs)": 63
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -307,6 +306,7 @@
     "PLAN-H H0 : dix structures suivies désormais (elles grandissaient sans plafond) : TriggerMod — → 9, EventReplacement — → 18, CastInfo — → 10, TurnLogQuery — → 31, MoveSpec — → 18, BlockRule — → 13, TargetSpec — → 24, AdditionalCost — → 13, CastLimit — → 9, NextSpell — → 9",
     "PLAN-H H1 : renommages exacts (sacrificeAtEndStep, nonlegendary, after, TriggerMod.on, to \"owner\", grantPlay for/tapped, reduce, loyalty \"X\", discardOr, addChosen, distinct, becomesTarget by) et retours sur le PLAN-E (PlayerState.counters, CastInfo.spentFrom, halfLife et lifeAboveStart exprimés par lifeTotal et div) : PlayerState 24 → 23, CostDef 34 → 33, LayerMods 31 → 30, TriggerMod 9 → 6, CastInfo 10 → 9, TargetSpec 24 → 23, AdditionalCost 13 → 11, Effect (champs) 654 → 651, TriggerSpec (champs) 164 → 162, Condition 54 → 53, Condition (champs) 99 → 97, Amount 35 → 34",
     "PLAN-H H4 : CastInfo.giftTo (adversaire du cadeau, 702.174a), option random de chooseAmong : CastInfo 9 → 10, Effect (champs) 651 → 652",
-    "PLAN-H H6 : opérations des capacités inhérentes mises sur la pile (increaseSpeed 702.179, radiation de Fallout), utilisées par rulesTrigger et non par les cartes : Effect 154 → 156, Effect (champs) 652 → 654"
+    "PLAN-H H6 : opérations des capacités inhérentes mises sur la pile (increaseSpeed 702.179, radiation de Fallout), utilisées par rulesTrigger et non par les cartes : Effect 154 → 156, Effect (champs) 652 → 654",
+    "PLAN-H H5 : joueur attaqué en multijoueur — référence withPlaneswalkers (« ce joueur ou un planeswalker qu'il contrôle » : Adeline, myriade) et copyToken.optional (myriade : « vous pouvez » pour chaque adversaire) : Effect (champs) 654 → 655, Ref 34 → 35, Ref (champs) 61 → 63"
   ]
 }

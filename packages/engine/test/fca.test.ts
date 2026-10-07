@@ -446,3 +446,77 @@ describe("Through the Ages : approximations levées (PLAN-H, H2c)", () => {
     expect(legalActions(s, "p1").some((a) => "card" in a && a.card === forest)).toBe(false);
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  it("Adeline à trois joueurs : un Humain par adversaire, qui attaque ce joueur ou un planeswalker qu'il contrôle", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Adeline, Resplendent Cathar", "Bear Cub"] },
+      p3: { battlefield: ["Ajani Resolute"] },
+    });
+    const walker = idOf(s, "p3", "battlefield", "Ajani Resolute");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }] });
+    const asked: string[][] = [];
+    s = settle(s, (req) => {
+      if (req.type !== "pick" || req.intent !== "other") return undefined;
+      asked.push([...req.options].sort());
+      return [walker];
+    });
+    // Une question pour le Humain de p3 seulement (celui de p2 n'a qu'un défenseur possible).
+    expect(asked).toEqual([["p3", walker].sort()]);
+    const humans = idsOf(s, "p1", "battlefield", "Human");
+    expect(humans.map((id) => s.combat?.attackers.find((a) => a.id === id)?.defender).sort()).toEqual(["p2", walker].sort());
+  });
+
+  describe("Mangara, the Diplomat : « si deux de ces créatures ou plus vous attaquent, vous et/ou vos planeswalkers »", () => {
+    const run = (defenders: ("p1" | "p3" | "walker")[]) => {
+      let s = scenario({
+        players: 3,
+        active: "p2",
+        p1: { battlefield: ["Mangara, the Diplomat", "Ajani Resolute"], library: lands("Plains", 5) },
+        p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+      });
+      const walker = idOf(s, "p1", "battlefield", "Ajani Resolute");
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      const hand = s.players.p1?.hand.length ?? 0;
+      const ids = ["Bear Cub", "Llanowar Elves"].map((n) => idOf(s, "p2", "battlefield", n));
+      s = act(s, "p2", {
+        type: "declareAttackers",
+        attackers: defenders.map((d, i) => ({ id: ids[i] as string, defender: d === "walker" ? walker : d })),
+      });
+      s = settle(s);
+      return (s.players.p1?.hand.length ?? 0) - hand;
+    };
+    it("deux créatures vous attaquent, vous et votre planeswalker : piochez", () => {
+      expect(run(["p1", "p1"])).toBe(1);
+      expect(run(["p1", "walker"])).toBe(1);
+    });
+    it("une seule vous attaque, l'autre un autre joueur : rien", () => expect(run(["p1", "p3"])).toBe(0));
+  });
+});
+
+describe("jetons créés attaquants pour un autre joueur (PLAN-H, lot H5)", () => {
+  it("Najeela, the Blade-Blossom : le contrôleur du jeton choisit ce qu'il attaque, parmi ses propres adversaires (508.4)", () => {
+    const run = (players: 2 | 3) => {
+      let s = scenario({
+        players,
+        p1: { battlefield: ["Highborn Vampire"] },
+        p2: { battlefield: ["Najeela, the Blade-Blossom"] },
+      });
+      const vampire = idOf(s, "p1", "battlefield", "Highborn Vampire");
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: vampire, defender: "p2" }] });
+      const asked: [string, string[]][] = [];
+      s = settle(s, (req, player) => {
+        if (req.intent === "may") return [1];
+        if (req.type === "pick") asked.push([player as string, req.options.map(String)]);
+        return players === 3 && req.type === "pick" ? ["p3"] : undefined;
+      });
+      const token = idOf(s, "p1", "battlefield", "Warrior");
+      return { asked, defender: s.combat?.attackers.find((a) => a.id === token)?.defender };
+    };
+    expect(run(2)).toEqual({ asked: [], defender: "p2" });
+    expect(run(3)).toEqual({ asked: [["p1", ["p2", "p3"]]], defender: "p3" });
+  });
+});

@@ -74,7 +74,11 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Archangel of Tithes": {
     abilities: [
-      playerStatic({ attackTax: 1, condition: cond.sourceMatches({ tapped: false }), label: "Attaquer : {1} par créature" }),
+      playerStatic({
+        attackTax: { amount: 1, defending: "youOrYourPlaneswalkers" },
+        condition: cond.sourceMatches({ tapped: false }),
+        label: "Vous attaquer ou attaquer vos planeswalkers : {1} par créature",
+      }),
       playerStatic({ blockTax: 1, condition: cond.sourceMatches({ attacking: true }), label: "Bloquer : {1} par créature" }),
     ],
   },

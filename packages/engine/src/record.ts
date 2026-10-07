@@ -432,8 +432,11 @@ export const RECORD_VERSION = 1;
  *   abandon en pleine résolution (la capacité d'un joueur parti cesse d'exister)
  * - 157 : Mutant Menace : Mirelurk Queen, Nightkin Ambusher et The Master, Transcendent donnent leurs marqueurs de
  *   radiation au joueur ciblé (la cible était lue sous un autre nom)
+ * - 158 : PLAN-H H5 : joueur attaqué en multijoueur (508.4 : le contrôleur choisit ce qu'attaque un permanent mis en
+ *   jeu attaquant), ninjutsu (702.49c : le défenseur de la créature renvoyée), conditions sur le joueur attaqué (vous
+ *   seulement ou vos planeswalkers aussi), taxe d'attaque contre vous seulement
  */
-export const RULES_VERSION = 157;
+export const RULES_VERSION = 158;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

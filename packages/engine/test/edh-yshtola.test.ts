@@ -596,3 +596,20 @@ describe("Commander (EDH) : deck de Y'shtola", () => {
 
 const namesInGraveyard = (s: GameState, p: PlayerId) => (s.players[p]?.graveyard ?? []).map((id) => nameOf(s, id));
 const namesIn = (s: GameState, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
+
+describe("taxe d'attaque et planeswalkers (PLAN-H, lot H5)", () => {
+  it("Propaganda : attaquer un planeswalker de son contrôleur ne coûte rien", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Plains", 2)] },
+      p2: { battlefield: ["Propaganda", "Ajani Resolute"] },
+    });
+    const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: walker }],
+    });
+    expect(idsOf(s, "p1", "battlefield", "Plains").filter((id) => s.objects[id]?.tapped)).toHaveLength(0);
+    expect(s.combat?.attackers.map((a) => a.defender)).toEqual([walker]);
+  });
+});

@@ -258,3 +258,17 @@ describe("Turtle Power! (EDH) : provocation (PLAN-H, lot H3)", () => {
     expect(chars(s, bear).blockRules).toEqual([]);
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  it("Shredder, Shadow Master : « attaque un joueur » — rien quand il attaque un planeswalker", () => {
+    const run = (atWalker: boolean) => {
+      let s = scenario({ players: 3, p1: { battlefield: ["Shredder, Shadow Master"] }, p2: { battlefield: ["Ajani Resolute"] } });
+      const defender = atWalker ? idOf(s, "p2", "battlefield", "Ajani Resolute") : "p2";
+      s = attackPlayer(s, [idOf(s, "p1", "battlefield", "Shredder, Shadow Master")], defender);
+      s = settle(s);
+      return tokens(s, "p1", "Shredder, Shadow Master").map((id) => s.combat?.attackers.find((a) => a.id === id)?.defender);
+    };
+    expect(run(false)).toEqual(["p3"]);
+    expect(run(true)).toEqual([]);
+  });
+});

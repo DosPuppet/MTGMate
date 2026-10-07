@@ -207,7 +207,7 @@ export const CARDS: Record<string, CardScript> = {
   "Trouble in Pairs": {
     abilities: [
       playerStatic({ skipExtraTurns: true, affects: "opponents", label: "Vos adversaires passent leurs tours supplémentaires" }),
-      triggered({ on: "attackWith", min: 2, defending: "you" }, [fx.draw(1)], {
+      triggered(when.opponentAttacksYouWith(2), [fx.draw(1)], {
         label: "Un adversaire vous attaque avec deux créatures ou plus : piochez",
       }),
       triggered({ on: "draw", whose: "opponent", nth: 2 }, [fx.draw(1)], {

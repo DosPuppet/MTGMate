@@ -339,7 +339,7 @@ export const EDH_TURTLES: Record<string, CardScript> = {
   "Shredder, Shadow Master": {
     abilities: [
       triggered(
-        when.attacksSelf,
+        when.attacksAPlayer,
         [
           fx.copyToken(ref.self, {
             attackEach: ref.except(ref.eachOpponent, ref.defendingPlayer),

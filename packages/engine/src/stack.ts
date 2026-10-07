@@ -3552,6 +3552,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.returnUnblockedAttacker) {
     const weakest = pick("returnAttacker")[0];
     if (!weakest) throw new RulesError("Aucun attaquant non bloqué");
+    // 702.49c : le ninja attaquera ce qu'attaquait la créature renvoyée (`ref.cost("defender")`).
+    const defender = s.combat?.attackers.find((a) => a.id === weakest)?.defender;
+    if (defender) item.paid = { ...item.paid, defender };
     removeFromCombat(s, weakest);
     moveObject(s, weakest, "hand");
   }

@@ -3586,3 +3586,22 @@ describe("Duskmourn, PLAN-A A4a : « que ce joueur contrôle »", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });
+
+describe("joueur attaqué (PLAN-H, lot H5)", () => {
+  it("Dollmaker's Shop : une créature non-Jouet qui attaque un planeswalker n'attaque pas un joueur", () => {
+    const run = (atWalker: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Dollmaker's Shop // Porcelain Gallery", "Bear Cub"] },
+        p2: { battlefield: ["Ajani Resolute"] },
+      });
+      openDoors(s, "Dollmaker's Shop // Porcelain Gallery", [0]);
+      const defender = atWalker ? idOf(s, "p2", "battlefield", "Ajani Resolute") : "p2";
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender }] });
+      s = settle(s);
+      return idsOf(s, "p1", "battlefield", "Toy").length;
+    };
+    expect(run(true)).toBe(0);
+    expect(run(false)).toBe(1);
+  });
+});

@@ -980,19 +980,19 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       }),
     );
   }
-  // Myriade (702.116) : quand elle attaque, pour chaque adversaire autre que le joueur défenseur, une copie engagée et
-  // attaquante qui attaque ce joueur, exilée à la fin du combat (l'attaque d'un de ses planeswalkers n'est pas proposée).
+  // Myriade (702.116) : quand elle attaque, pour chaque adversaire autre que le joueur défenseur, vous pouvez créer une
+  // copie engagée qui attaque ce joueur ou un planeswalker qu'il contrôle, exilée à la fin du combat.
   if (myriad) {
     bloomburrowAbilities.push(
       dsl.triggered(
         dsl.when.attacksSelf,
-        dsl.fx.may(
-          "Myriade : créer des copies qui attaquent vos autres adversaires ?",
+        [
           dsl.fx.copyToken(dsl.ref.self, {
-            attackEach: dsl.ref.except(dsl.ref.eachOpponent, dsl.ref.defendingPlayer),
+            attackEach: dsl.ref.withPlaneswalkers(dsl.ref.except(dsl.ref.eachOpponent, dsl.ref.defendingPlayer)),
+            optional: true,
             atEndOfCombat: "exile",
           }),
-        ),
+        ],
         { label: "Myriade : une copie attaque chacun de vos autres adversaires" },
       ),
     );

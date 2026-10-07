@@ -4343,3 +4343,48 @@ describe("Aetherdrift : capacités retardées liées à un objet (PLAN-A, lot A4
     expect(s.triggers).toHaveLength(0);
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  it("Oviya : le piétinement pour toute créature qui attaque l'un de vos adversaires, pas pour celles qui vous attaquent ni pour un planeswalker", () => {
+    let s = scenario({
+      players: 3,
+      active: "p2",
+      p1: { battlefield: ["Oviya, Automech Artisan"] },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Savannah Lions"] },
+      p3: { battlefield: ["Ajani Resolute"] },
+    });
+    const [bear, elves, lions] = ["Bear Cub", "Llanowar Elves", "Savannah Lions"].map((n) => idOf(s, "p2", "battlefield", n));
+    const walker = idOf(s, "p3", "battlefield", "Ajani Resolute");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p2", {
+      type: "declareAttackers",
+      attackers: [
+        { id: bear as string, defender: "p3" },
+        { id: elves as string, defender: "p1" },
+        { id: lions as string, defender: walker },
+      ],
+    });
+    expect([bear, elves, lions].map((id) => chars(s, id as string).keywords.includes("trample"))).toEqual([true, false, false]);
+  });
+});
+
+describe("joueur attaqué (PLAN-H, lot H5)", () => {
+  it("Sabotage Strategist : « attaquent vous » — rien pour les créatures qui attaquent vos planeswalkers", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+      p2: { battlefield: ["Sabotage Strategist", "Ajani Resolute"] },
+    });
+    const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+    const [bear, elves] = ["Bear Cub", "Llanowar Elves"].map((n) => idOf(s, "p1", "battlefield", n) as string);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: bear as string, defender: walker },
+        { id: elves as string, defender: "p2" },
+      ],
+    });
+    s = settle(s);
+    expect([chars(s, bear as string).power, chars(s, elves as string).power]).toEqual([2, 0]);
+  });
+});

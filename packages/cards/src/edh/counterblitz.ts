@@ -176,7 +176,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
   "Lulu, Stern Guardian": {
     abilities: [
       triggered(when.opponentAttacksYouWith(1), [fx.counters(ref.target(), "stun")], {
-        targets: [{ ...target.creature("t", { controller: "opponent", attacking: true }), label: "créature qui vous attaque" }],
+        targets: [{ ...target.creature("t", { attacking: "you" }), label: "créature qui vous attaque" }],
         label: "Un marqueur d'étourdissement sur une créature qui vous attaque",
       }),
       activated({ mana: "{3}{U}", effects: [fx.proliferate()], label: "Proliférez" }),

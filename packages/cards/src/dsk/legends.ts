@@ -93,9 +93,9 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Dollmaker's Shop": {
-    // « une ou plusieurs créatures non-Jouets attaquent un joueur » : l'attaque d'un planeswalker ou d'une bataille compte aussi.
+    // « une ou plusieurs créatures non-Jouets attaquent un joueur » : pas un planeswalker.
     abilities: [
-      triggered(when.attackWith(1, { types: ["Creature"], notSubtype: "Toy" }), [fx.createTokens(TOY)], {
+      triggered(when.attackWith(1, { types: ["Creature"], notSubtype: "Toy", attacking: "opponent" }), [fx.createTokens(TOY)], {
         label: "Jeton Jouet 1/1",
       }),
     ],

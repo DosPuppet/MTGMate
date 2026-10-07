@@ -4335,3 +4335,82 @@ describe("Teenage Mutant Ninja Turtles, PLAN-A A4a : « ce joueur » à plusieur
     expect(idsOf(run.s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  it("Shark Shredder : la créature arrive engagée et attaquante sans avoir « attaqué » (508.4)", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Bear Cub", "Shark Shredder, Killer Clone"] },
+      p3: { graveyard: ["Serra Angel"] },
+    });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" },
+        { id: idOf(s, "p1", "battlefield", "Shark Shredder, Killer Clone"), defender: "p3" },
+      ],
+    });
+    s = throughCombat(s, (req, _p, cur) => (req.intent === "triggerTarget" ? pickNamed(cur, req, "Serra Angel") : undefined));
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    expect(s.objects[angel]?.tapped).toBe(true);
+    expect(s.turnLog.some((e) => e.e === "attack" && e.id === angel)).toBe(false);
+  });
+
+  it("Shark Shredder : elle attaque le joueur blessé, pas celui qu'attaque votre première créature", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Bear Cub", "Shark Shredder, Killer Clone"] },
+      p3: { graveyard: ["Serra Angel"] },
+    });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" },
+        { id: idOf(s, "p1", "battlefield", "Shark Shredder, Killer Clone"), defender: "p3" },
+      ],
+    });
+    let defender: string | undefined;
+    for (let i = 0; i < 80 && s.turn.step !== "main2"; i++) {
+      const angel = idsOf(s, "p1", "battlefield", "Serra Angel")[0];
+      if (angel && defender === undefined) defender = s.combat?.attackers.find((a) => a.id === angel)?.defender;
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        s = act(s, p.player, {
+          type: "choose",
+          values:
+            (p.request.intent === "triggerTarget" ? pickNamed(s, p.request, "Serra Angel") : undefined) ?? p.request.suggested,
+        });
+      else if (p?.kind === "declareBlockers") s = act(s, p.player, { type: "declareBlockers", blocks: [] });
+      else break;
+    }
+    expect(defender).toBe("p3");
+  });
+
+  describe("Party Dude, niveau 3 : « chaque fois qu'un ou plusieurs de vos adversaires sont attaqués »", () => {
+    const run = (defender: "p1" | "p3" | "walker") => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Party Dude", ...lands("Forest", 7)], hand: ["Opt", "Opt", "Island"] },
+        p2: { battlefield: ["Bear Cub"] },
+        p3: { battlefield: ["Ajani Resolute"] },
+      });
+      const dude = idOf(s, "p1", "battlefield", "Party Dude");
+      s = settle(activate(s, "p1", dude));
+      s = settle(activate(s, "p1", dude));
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      const target = defender === "walker" ? idOf(s, "p3", "battlefield", "Ajani Resolute") : defender;
+      s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: target }] });
+      s = settle(s, (req) => (req.type === "pick" && req.options.includes(bear) ? [bear] : undefined));
+      return [chars(s, bear).power, chars(s, bear).toughness];
+    };
+    it("un adversaire attaque un autre adversaire : +X/+X", () => expect(run("p3")).toEqual([5, 5]));
+    it("vous êtes attaqué, ou seulement un planeswalker : rien", () => {
+      expect(run("p1")).toEqual([2, 2]);
+      expect(run("walker")).toEqual([2, 2]);
+    });
+  });
+});

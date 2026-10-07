@@ -326,3 +326,35 @@ describe("Mutant Menace : marqueurs de radiation du joueur ciblé à l'arrivée"
     expect([s.players.p1?.counters?.rad ?? 0, s.players.p2?.counters?.rad ?? 0, s.players.p3?.counters?.rad]).toEqual([0, 0, n]);
   });
 });
+
+describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
+  it("Struggle for Project Purity (Enclave) : seules comptent les créatures qui vous attaquent, pas celles qui attaquent vos planeswalkers", () => {
+    const run = (attackers: [string, "p2" | "walker"][]) => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+        p2: { battlefield: ["Struggle for Project Purity", "Ajani Resolute"] },
+      });
+      const struggle = s.objects[idOf(s, "p2", "battlefield", "Struggle for Project Purity")];
+      if (struggle) struggle.chosen = { ...struggle.chosen, mode: "Enclave" };
+      const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+      const ids = attackers.map(([n, d]) => ({ id: idOf(s, "p1", "battlefield", n), defender: d === "walker" ? walker : d }));
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = settle(act(s, "p1", { type: "declareAttackers", attackers: ids }));
+      return s.players.p1?.counters?.rad ?? 0;
+    };
+    expect(run([["Bear Cub", "walker"]])).toBe(0);
+    expect(
+      run([
+        ["Bear Cub", "p2"],
+        ["Llanowar Elves", "walker"],
+      ]),
+    ).toBe(2);
+    expect(
+      run([
+        ["Bear Cub", "p2"],
+        ["Llanowar Elves", "p2"],
+      ]),
+    ).toBe(4);
+  });
+});

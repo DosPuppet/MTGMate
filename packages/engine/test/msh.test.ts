@@ -4998,3 +4998,40 @@ describe("Marvel Super Heroes, PLAN-A A4a", () => {
     expect(run.s.objects[idOf(run.s, "p2", "battlefield", "Serra Angel")]?.tapped).toBe(false);
   });
 });
+
+describe("joueur attaqué (PLAN-H, lot H5)", () => {
+  const declare = (s: S, attacks: { id: string; defender: string }[]) =>
+    act(
+      advanceUntil(s, (x) => x.pending?.kind === "declareAttackers"),
+      "p1",
+      { type: "declareAttackers", attackers: attacks },
+    );
+
+  it("Crowd of True Believers : « attaque seule » vaut aussi pour une créature qui attaque un planeswalker", () => {
+    let s = scenario({
+      p1: { battlefield: ["Crowd of True Believers", "Bear Cub"] },
+      p2: { battlefield: ["Ajani Resolute"] },
+    });
+    const crowd = idOf(s, "p1", "battlefield", "Crowd of True Believers");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = declare(s, [{ id: bear, defender: idOf(s, "p2", "battlefield", "Ajani Resolute") }]);
+    s = settle(activate(s, "p1", crowd, { targets: { t: [bear] } }));
+    expect(pt(s, bear)).toEqual([3, 2]);
+    expect(s.players.p1?.life).toBe(21);
+  });
+
+  it("Attuma : des Ondins qui attaquent seulement un planeswalker n'attaquent pas un joueur", () => {
+    const run = (atWalker: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Attuma, Atlantean Warlord", "Brineborn Cutthroat"] },
+        p2: { battlefield: ["Ajani Resolute"] },
+      });
+      const merfolk = idOf(s, "p1", "battlefield", "Brineborn Cutthroat");
+      s = declare(s, [{ id: merfolk, defender: atWalker ? idOf(s, "p2", "battlefield", "Ajani Resolute") : "p2" }]);
+      s = settle(s);
+      return s.players.p1?.hand.length;
+    };
+    expect(run(true)).toBe(0);
+    expect(run(false)).toBe(1);
+  });
+});

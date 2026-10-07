@@ -642,7 +642,8 @@ function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
 /** Vue sans marqueur mis ce tour-ci : un tableau partagé (pas d'allocation, forme d'objet constante pour V8). */
 const NO_COUNTERS_PUT: string[] = [];
 
-function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, attacking: boolean): LkiSnapshot {
+/** `defender` : ce qu'attaque l'objet (joueur ou planeswalker), s'il attaque. */
+function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, defender: string | undefined): LkiSnapshot {
   return {
     id,
     defId: o.defId,
@@ -658,7 +659,8 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     keywords: c.keywords,
     isToken: o.isToken,
     countersPutThisTurn: o.countersPutTurn === s.turn.number && o.countersPutKinds ? o.countersPutKinds : NO_COUNTERS_PUT,
-    attacking,
+    attacking: defender !== undefined,
+    attackedPlayer: defender !== undefined && s.players[defender] ? defender : undefined,
     name: c.name,
     manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),
     suspected: o.suspected || undefined,
@@ -697,11 +699,11 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
 /** Vue d'un objet pendant le calcul des couches : caractéristiques de la passe précédente, sinon imprimées. */
 function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
   const o = obj(s, id);
-  if (o.zone !== "battlefield") return view(s, id, base(s, o), o, false);
+  if (o.zone !== "battlefield") return view(s, id, base(s, o), o, undefined);
   reads++;
   const hit = viewCache?.get(id);
   if (hit) return hit;
-  const v = view(s, id, provisional?.get(id) ?? base(s, o), o, false);
+  const v = view(s, id, provisional?.get(id) ?? base(s, o), o, undefined);
   viewCache?.set(id, v);
   return v;
 }
@@ -1017,7 +1019,7 @@ function replacedSubtypes(old: string[], set: string[]): string[] {
 /** Applique les couches 1 et 4 à 7 aux objets du champ de bataille. */
 function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) => string): Map<ObjectId, Characteristics> {
   const out = new Map<ObjectId, Characteristics>();
-  const attacking = new Set(s.combat?.attackers.map((a) => a.id) ?? []);
+  const attacking = new Map(s.combat?.attackers.map((a) => [a.id, a.defender]) ?? []);
   // Couche 1 : copie (valeurs copiables de la définition copiée).
   for (const id of s.battlefield) out.set(id, base(s, obj(s, id), defOfId(id)));
 
@@ -1031,7 +1033,7 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
     }
     const ids: ObjectId[] = [];
     for (const [id, c] of out) {
-      if (matchesView(view(s, id, c, obj(s, id), attacking.has(id)), filter, controller, sourceId)) ids.push(id);
+      if (matchesView(view(s, id, c, obj(s, id), attacking.get(id)), filter, controller, sourceId)) ids.push(id);
     }
     return ids;
   };
@@ -1293,7 +1295,7 @@ export function snapshot(s: GameState, id: ObjectId): LkiSnapshot {
   const o = obj(s, id);
   const c = chars(s, id);
   return {
-    ...view(s, id, c, o, !!s.combat?.attackers.some((a) => a.id === id)),
+    ...view(s, id, c, o, s.combat?.attackers.find((a) => a.id === id)?.defender),
     abilities: c.abilities,
     counters: { ...o.counters },
     // Choix fait en arrivant (type, couleur…) : lu par « du type choisi » même après son départ (dernière information).

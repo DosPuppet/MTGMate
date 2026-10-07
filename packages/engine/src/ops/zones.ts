@@ -58,55 +58,68 @@ import { holderOf, matchesCard, matchesObjectFilter, shareCreatureType } from ".
 import { logTurnEvent } from "../turnlog";
 import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
 import { PERMANENT_TYPES } from "../types";
-import { enterChoiceRequest } from "./permanents";
+import { chooseAttacked, enterChoiceRequest } from "./permanents";
 
-/**
- * Terrains choc mis sur le champ de bataille par un effet (« en arrivant, vous pouvez payer 2 points de vie ; sinon, il
- * arrive engagé ») : demandé au joueur qui le contrôlera, avant tout déplacement (l'opération est rejouée avec la
- * réponse). Renvoie la question à poser, sinon les terrains dont les points de vie seront payés.
- */
 /** Le joueur qui contrôlera l'objet mis sur le champ de bataille : vous, ou son propriétaire. */
 const ownerOr =
   (s: GameState, spec: MoveSpec, you: PlayerId) =>
   (id: ObjectId): PlayerId =>
     spec.underYourControl ? you : (s.objects[id]?.owner ?? you);
 
-function shockLandChoices(
+/** Choix d'arrivée d'un objet mis sur le champ de bataille par un effet. */
+type Arrival = Pick<EntersContext, "shockPaid" | "attacking">;
+
+/**
+ * Choix d'arrivée des objets mis sur le champ de bataille par un effet, demandés au joueur qui les contrôlera avant tout
+ * déplacement (l'opération est rejouée avec la réponse) : terrains choc (« en arrivant, vous pouvez payer 2 points de vie ;
+ * sinon, il arrive engagé ») ; ce qu'attaque un permanent mis sur le champ de bataille attaquant (508.4). `random` : après
+ * un tirage au hasard, qui ne serait pas rejoué, aucune question (pas de points de vie payés, le défenseur suggéré).
+ * Renvoie la question à poser, sinon les choix de chaque objet.
+ */
+function arrivalChoices(
   s: GameState,
   r: Resolution,
+  ctx: EffectContext,
   ids: readonly ObjectId[],
   spec: MoveSpec,
   controllerOf: (id: ObjectId) => PlayerId,
   key: (k: string) => string,
-): Extract<OpResult, { ask: unknown }> | Set<ObjectId> {
-  const paid = new Set<ObjectId>();
-  if (spec.to !== "battlefield" || spec.tapped || spec.cloak) return paid;
+  random = false,
+): Extract<OpResult, { ask: unknown }> | Map<ObjectId, Arrival> {
+  const out = new Map<ObjectId, Arrival>();
+  if (spec.to !== "battlefield") return out;
+  const designated = typeof spec.attacking === "object" ? resolveRef(s, ctx, spec.attacking) : undefined;
   for (const id of ids) {
     const d = s.defs[s.objects[id]?.defId ?? ""];
-    const n = d?.shockLand;
-    if (!d || !n) continue;
     const who = controllerOf(id);
-    const life = payableLife(s, who);
-    if (life < n) continue;
-    const k = key(`shock-${id}`);
-    const answer = r.vars[k];
-    if (!answer) {
-      return {
-        ask: {
-          player: who,
-          key: k,
-          request: {
-            type: "yesNo",
-            intent: "may",
-            prompt: `${cardRef(d.id)} : payer ${n} points de vie pour qu'il arrive dégagé ?`,
-            suggested: [life > 2 * n + 4 ? 1 : 0],
+    const n = d?.shockLand;
+    if (d && n && !random && !spec.tapped && !spec.cloak && payableLife(s, who) >= n) {
+      const k = key(`shock-${id}`);
+      const answer = r.vars[k];
+      if (!answer) {
+        return {
+          ask: {
+            player: who,
+            key: k,
+            request: {
+              type: "yesNo",
+              intent: "may",
+              prompt: `${cardRef(d.id)} : payer ${n} points de vie pour qu'il arrive dégagé ?`,
+              suggested: [payableLife(s, who) > 2 * n + 4 ? 1 : 0],
+            },
           },
-        },
-      };
+        };
+      }
+      if (answer[0] === 1) out.set(id, { shockPaid: true });
     }
-    if (answer[0] === 1) paid.add(id);
+    if (d && spec.attacking && !spec.cloak && !spec.manifest) {
+      const prompt = `${cardRef(d.id)} : que doit-il attaquer ?`;
+      const c = chooseAttacked(s, r, ctx, key(`attack-${id}`), who, designated, prompt, { ask: !random });
+      if ("ask" in c) return c;
+      out.set(id, { ...out.get(id), attacking: c.defender });
+    }
   }
-  return paid;
+  return out;
 }
 
 /** Chaque carte reçoit un type de carte qu'elle a, tous différents (couplage, au plus dix cartes) : possible ? */
@@ -684,12 +697,10 @@ export const HANDLERS: OpHandlers = {
     if (e.distinct === "name" && new Set(picked.map(cardName)).size !== picked.length)
       throw new RulesError("Des cartes de noms différents");
     // Un tirage au hasard n'est pas rejoué : pas de question après lui.
-    const shock = e.random ? new Set<ObjectId>() : shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, ctx.controller), key);
-    if (!(shock instanceof Set)) return shock;
+    const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
+    if (!(arrival instanceof Map)) return arrival;
     const moved = picked
-      .map((id) =>
-        moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined),
-      )
+      .map((id) => moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), arrival.get(id)))
       .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     store(r, e.store, moved.length);
@@ -1087,7 +1098,7 @@ export const HANDLERS: OpHandlers = {
     // depuis le début une fois la réponse donnée) : ce que copie un Clone (707.5), ce qu'enchante une Aura (303.4f).
     const choices: Record<
       string,
-      Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid">
+      Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid" | "attacking">
     > = {};
     if (e.spec.to === "battlefield") {
       const host = e.attachTo ? resolveRef(s, ctx, e.attachTo).find((x) => onBattlefield(s, x)) : undefined;
@@ -1168,16 +1179,9 @@ export const HANDLERS: OpHandlers = {
         }
       }
     }
-    const shock = shockLandChoices(
-      s,
-      r,
-      ids,
-      e.spec,
-      (id) => (e.spec.underYourControl ? ctx.controller : (s.objects[id]?.owner ?? ctx.controller)),
-      key,
-    );
-    if (!(shock instanceof Set)) return shock;
-    for (const id of shock) choices[id] = { ...choices[id], shockPaid: true };
+    const arrival = arrivalChoices(s, r, ctx, ids, e.spec, ownerOr(s, e.spec, ctx.controller), key);
+    if (!(arrival instanceof Map)) return arrival;
+    for (const [id, a] of arrival) choices[id] = { ...choices[id], ...a };
     const moved: string[] = [];
     for (const id of ids) {
       const n = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), choices[id]);
@@ -1266,12 +1270,10 @@ export const HANDLERS: OpHandlers = {
         : zoneCards(s, players, e.from).filter((id) =>
             matchesCard(s, ctx.controller, id, { ...filter, controller: undefined }, ctx.sourceId),
           );
-    const shock = shockLandChoices(s, r, ids, e.spec, ownerOr(s, e.spec, ctx.controller), key);
-    if (!(shock instanceof Set)) return shock;
+    const arrival = arrivalChoices(s, r, ctx, ids, e.spec, ownerOr(s, e.spec, ctx.controller), key);
+    if (!(arrival instanceof Map)) return arrival;
     const moved = ids
-      .map((id) =>
-        moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), shock.has(id) ? { shockPaid: true } : undefined),
-      )
+      .map((id) => moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), arrival.get(id)))
       .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     return;
@@ -1341,13 +1343,11 @@ export const HANDLERS: OpHandlers = {
       }
     }
     const rest = top.filter((id) => !picked.includes(id));
-    const shock = e.random ? new Set<ObjectId>() : shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, ctx.controller), key);
-    if (!(shock instanceof Set)) return shock;
+    const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
+    if (!(arrival instanceof Map)) return arrival;
     store(r, e.store, picked.length);
     const taken = picked
-      .map((id) =>
-        moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined),
-      )
+      .map((id) => moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), arrival.get(id)))
       .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = taken;
     if (e.rest === "graveyard") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
@@ -1419,8 +1419,8 @@ export const HANDLERS: OpHandlers = {
           });
         }
       }
-      const shock = shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
-      if (!(shock instanceof Set)) return shock;
+      const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
+      if (!(arrival instanceof Map)) return arrival;
       r.vars[key(`sdone-${p}`)] = [1];
       rulesEvent(s, { e: "search", player: p });
       logTurnEvent(s, { e: "search", player: p });
@@ -1428,7 +1428,7 @@ export const HANDLERS: OpHandlers = {
       const toTop = e.to.to === "libraryTop";
       for (const id of picked) {
         if (toTop) continue;
-        const moved = moveWithSpec(s, p, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined);
+        const moved = moveWithSpec(s, p, id, evalMoveSpec(s, ctx, e.to), arrival.get(id));
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
       }
       shuffle(s, player.library);
@@ -1538,8 +1538,10 @@ export const HANDLERS: OpHandlers = {
       if (matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined })) found.push(id);
     }
     const revealed = player.library.slice(0, i);
-    const shock = e.to ? shockLandChoices(s, r, found, e.to, ownerOr(s, e.to, ctx.controller), key) : new Set<ObjectId>();
-    if (!(shock instanceof Set)) return shock;
+    const arrival = e.to
+      ? arrivalChoices(s, r, ctx, found, e.to, ownerOr(s, e.to, ctx.controller), key)
+      : new Map<ObjectId, Arrival>();
+    if (!(arrival instanceof Map)) return arrival;
     emit({ type: "reveal", player: owner, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
     if (!e.to) {
       if (e.store) r.vars[`$ids:${e.store}`] = found;
@@ -1548,7 +1550,7 @@ export const HANDLERS: OpHandlers = {
     const rest = revealed.filter((id) => !found.includes(id));
     const moved: string[] = [];
     for (const id of found) {
-      const m = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined);
+      const m = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), arrival.get(id));
       if (m) moved.push(m);
     }
     // Les cartes déplacées (Jhoira : « perdez autant de PV que sa valeur de mana »).

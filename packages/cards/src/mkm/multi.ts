@@ -971,7 +971,7 @@ export const MULTI: Record<string, CardScript> = {
     // Affinité pour les planeswalkers : {1} de moins par planeswalker que vous contrôlez. Vol, vigilance : lus dans le texte.
     costReduction: { generic: amount.count({ types: ["Planeswalker"], controller: "you" }) },
     abilities: [
-      triggered(when.opponentAttacksYouWith(2), [fx.loseLife(3, ref.eventPlayer), fx.draw(1)], {
+      triggered(when.opponentAttacksYouWith(2, true), [fx.loseLife(3, ref.eventPlayer), fx.draw(1)], {
         label: "L'adversaire perd 3 PV, vous piochez",
       }),
     ],

@@ -297,7 +297,7 @@ export const UNIQUE: Record<string, CardScript> = {
             "Emblème de Jace (jusqu'à votre prochain tour)",
             "Chaque fois qu'une créature vous attaque ou attaque un planeswalker que vous contrôlez, elle gagne -5/-0.",
             [
-              triggered(when.attacksYou(CREATURE), [fx.pump(ref.eventObject, -5, 0)], {
+              triggered(when.attacksYou(CREATURE, true), [fx.pump(ref.eventObject, -5, 0)], {
                 label: "L'attaquant gagne -5/-0",
               }),
             ],

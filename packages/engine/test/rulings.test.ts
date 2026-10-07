@@ -918,3 +918,125 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
     ).not.toThrow();
   });
 });
+
+describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ de bataille attaquant (PLAN-H, lot H5)", () => {
+  /** Déclare les attaques de p1, puis aucun blocage. */
+  const attackThenNoBlocks = (s: GameState, attacks: { id: string; defender: string }[]): GameState => {
+    let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    cur = act(cur, "p1", { type: "declareAttackers", attackers: attacks });
+    // Jusqu'à la priorité du joueur actif dans l'étape de déclaration des bloqueurs.
+    for (let i = 0; i < 20 && !(cur.turn.step === "declareBlockers" && cur.pending?.kind === "priority"); i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
+      else break;
+    }
+    return cur;
+  };
+  const ninjutsuOn = (s: GameState, returned: string): GameState => {
+    const kaito = idOf(s, "p1", "hand", "Kaito, Bane of Nightmares");
+    const option = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === kaito);
+    const ability = option?.type === "activate" ? option.ability : -1;
+    let cur = act(s, "p1", { type: "activate", source: kaito, ability, targets: {}, picks: { returnAttacker: [returned] } });
+    cur = passAccepting(cur, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    return cur;
+  };
+  const defenderOf = (s: GameState, id: string) => s.combat?.attackers.find((a) => a.id === id)?.defender;
+
+  it("702.49c : le ninja attaque ce qu'attaquait la créature renvoyée, pas ce qu'attaque votre première créature", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Bear Cub", "Llanowar Elves", "Island", "Swamp", "Swamp"], hand: ["Kaito, Bane of Nightmares"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = attackThenNoBlocks(s, [
+      { id: bear, defender: "p2" },
+      { id: elves, defender: "p3" },
+    ]);
+    s = ninjutsuOn(s, elves);
+    expect(defenderOf(s, idOf(s, "p1", "battlefield", "Kaito, Bane of Nightmares"))).toBe("p3");
+  });
+
+  it("702.49c : la créature renvoyée attaquait un planeswalker, le ninja l'attaque aussi", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Llanowar Elves", "Island", "Swamp", "Swamp"], hand: ["Kaito, Bane of Nightmares"] },
+      p2: { battlefield: ["Ajani Resolute"] },
+    });
+    const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = attackThenNoBlocks(s, [
+      { id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" },
+      { id: elves, defender: walker },
+    ]);
+    s = ninjutsuOn(s, elves);
+    expect(defenderOf(s, idOf(s, "p1", "battlefield", "Kaito, Bane of Nightmares"))).toBe(walker);
+  });
+
+  it("508.4 : son contrôleur choisit ce qu'attaque le permanent mis sur le champ de bataille attaquant ; il n'a pas « attaqué »", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Kinscaer Sentry", "Bear Cub"], hand: ["Kinscaer Sentry", "Savannah Lions"] },
+      p3: { battlefield: ["Ajani Resolute"] },
+    });
+    const walker = idOf(s, "p3", "battlefield", "Ajani Resolute");
+    const sentry = idOf(s, "p1", "battlefield", "Kinscaer Sentry");
+    const inHand = idOf(s, "p1", "hand", "Kinscaer Sentry");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: sentry, defender: "p2" },
+        { id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" },
+      ],
+    });
+    const asked: string[][] = [];
+    let handPrompts = 0;
+    for (let i = 0; i < 60 && s.turn.step === "declareAttackers"; i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice" && p.request.type === "pick" && p.request.intent === "other") {
+        asked.push([...p.request.options].sort());
+        expect(p.request.suggested).toEqual(["p2"]);
+        s = act(s, p.player, { type: "choose", values: [walker] });
+      } else if (p?.kind === "choice" && p.request.type === "pick") {
+        handPrompts++;
+        s = act(s, p.player, { type: "choose", values: p.request.options.includes(inHand) ? [inHand] : [] });
+      } else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      else break;
+    }
+    // Ses adversaires et leurs planeswalkers ; le nouveau Kinscaer Sentry attaque le planeswalker choisi.
+    expect(asked).toEqual([["p2", "p3", walker].sort()]);
+    const entered = idsOf(s, "p1", "battlefield", "Kinscaer Sentry").find((id) => id !== sentry) as string;
+    expect(defenderOf(s, entered)).toBe(walker);
+    // Mis sur le champ de bataille attaquant, il n'a pas attaqué : sa capacité « quand elle attaque » ne se déclenche pas.
+    expect(handPrompts).toBe(1);
+    expect(idsOf(s, "p1", "hand", "Savannah Lions")).toHaveLength(1);
+  });
+
+  it("508.4 : une seule option (duel sans planeswalker), aucune question", () => {
+    let s = scenario({ p1: { battlefield: ["Kinscaer Sentry", "Bear Cub"], hand: ["Kinscaer Sentry"] } });
+    const sentry = idOf(s, "p1", "battlefield", "Kinscaer Sentry");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: sentry, defender: "p2" },
+        { id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" },
+      ],
+    });
+    let defenderQuestions = 0;
+    for (let i = 0; i < 60 && s.turn.step === "declareAttackers"; i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice") {
+        if (p.request.intent === "other") defenderQuestions++;
+        const yes = p.request.type === "pick" ? p.request.options.slice(0, 1) : p.request.suggested;
+        s = act(s, p.player, { type: "choose", values: yes });
+      } else break;
+    }
+    expect(defenderQuestions).toBe(0);
+    const entered = idsOf(s, "p1", "battlefield", "Kinscaer Sentry").find((id) => id !== sentry) as string;
+    expect(defenderOf(s, entered)).toBe("p2");
+  });
+});

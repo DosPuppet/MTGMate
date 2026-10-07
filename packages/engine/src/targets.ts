@@ -68,6 +68,15 @@ export function countersPutBy(entries: string[] | undefined, player: PlayerId, k
   return !!entries?.some((x) => (kind === true ? x.startsWith(`${player}|`) : x === `${player}|${kind}`));
 }
 
+/** `ObjectFilter.attacking` : attaquante, qui vous attaque, qui attaque un adversaire ou l'un des joueurs désignés. */
+function attackingMatches(v: LkiSnapshot, a: NonNullable<ObjectFilter["attacking"]>, perspective: PlayerId): boolean {
+  if (typeof a === "boolean") return !!v.attacking === a;
+  if (a === "you") return v.attackedPlayer === perspective;
+  if (a === "opponent") return !!v.attackedPlayer && v.attackedPlayer !== perspective;
+  // Une référence non résolue (hors `withX`) : toute créature attaquante.
+  return Array.isArray(a) ? !!v.attackedPlayer && a.includes(v.attackedPlayer) : !!v.attacking;
+}
+
 export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: PlayerId, sourceId?: ObjectId): boolean {
   if (f.types && !f.types.some((t) => v.types.includes(t))) return false;
   if (f.notTypes?.some((t) => v.types.includes(t))) return false;
@@ -86,7 +95,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.hasX !== undefined && !!v.hasX !== f.hasX) return false;
   if (f.suspected !== undefined && !!v.suspected !== f.suspected) return false;
   if (f.minPower !== undefined && v.power < f.minPower) return false;
-  if (f.attacking !== undefined && !!v.attacking !== f.attacking) return false;
+  if (f.attacking !== undefined && !attackingMatches(v, f.attacking, perspective)) return false;
   if (f.maxManaValue !== undefined && (v.manaValue ?? 0) > f.maxManaValue) return false;
   if (f.manaValue !== undefined && (v.manaValue ?? 0) !== f.manaValue) return false;
   if (f.name && v.name !== f.name) return false;

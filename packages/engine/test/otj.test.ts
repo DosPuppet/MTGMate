@@ -4450,3 +4450,44 @@ describe("Outlaws of Thunder Junction, PLAN-A A4a : « le joueur défenseur », 
     expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
   });
 });
+
+describe("taxe d'attaque et planeswalkers (PLAN-H, lot H5)", () => {
+  it("Archangel of Tithes : attaquer un planeswalker de son contrôleur coûte aussi {1}", () => {
+    const s = scenario({
+      p1: { battlefield: ["Bear Cub"] },
+      p2: { battlefield: ["Archangel of Tithes", "Ajani Resolute"] },
+      step: "declareAttackers",
+    });
+    const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+    expect(() => declareAttackers(s, "p1", [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: walker }])).toThrow();
+  });
+});
+
+describe("copies attaquantes en multijoueur (PLAN-H, lot H5)", () => {
+  const activate = (s: GameState, source: string, label: string, extra: object = {}) => {
+    const opt = legalActions(s, "p1").find(
+      (a) => a.type === "activate" && a.source === source && (a.label ?? "").startsWith(label),
+    );
+    if (opt?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    return act(s, "p1", { type: "activate", source, ability: opt.ability, ...extra });
+  };
+  it("Calamity, Galloping Inferno : « répétez ce processus » — chaque copie choisit ce qu'elle attaque (508.4)", () => {
+    let s = scenario({ players: 3, p1: { battlefield: ["Calamity, Galloping Inferno", "Bear Cub", "Swab Goblin"] } });
+    const cal = idOf(s, "p1", "battlefield", "Calamity, Galloping Inferno");
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = activate(s, cal, "Monture", { tap: [cub, idOf(s, "p1", "battlefield", "Swab Goblin")] });
+    s = passBoth(s);
+    s = attack(s, [cal]);
+    const defenders = ["p2", "p3"];
+    let asked = 0;
+    s = settleNoBlocks(s, (req) => {
+      if (req.type !== "pick") return undefined;
+      if (req.options.includes(cub)) return [cub];
+      asked++;
+      return [defenders.shift() as string];
+    });
+    expect(asked).toBe(2);
+    const copies = idsOf(s, "p1", "battlefield", "Bear Cub").filter((id) => id !== cub);
+    expect(copies.map((id) => s.combat?.attackers.find((a) => a.id === id)?.defender)).toEqual(["p2", "p3"]);
+  });
+});

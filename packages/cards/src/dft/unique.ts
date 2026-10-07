@@ -295,11 +295,8 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Oviya, Automech Artisan": {
     abilities: [
-      staticAbility(
-        { types: ["Creature"], controller: "you", attacking: true },
-        { addKeywords: ["trample"] },
-        { label: "Piétinement" },
-      ),
+      // « Chaque créature qui attaque l'un de vos adversaires » : de tout contrôleur, et pas un planeswalker.
+      staticAbility({ types: ["Creature"], attacking: "opponent" }, { addKeywords: ["trample"] }, { label: "Piétinement" }),
       activated({
         mana: "{G}",
         tap: true,

@@ -177,7 +177,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.combatDamageToPlayer,
-        [fx.toBattlefield(ref.target(), { underYourControl: true, tapped: true, attacking: true })],
+        [fx.toBattlefield(ref.target(), { underYourControl: true, tapped: true, attacking: ref.eventPlayer })],
         {
           targets: [
             target.upTo(

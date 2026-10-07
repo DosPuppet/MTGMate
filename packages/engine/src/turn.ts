@@ -1002,9 +1002,19 @@ function attackRestriction(s: GameState, id: ObjectId, defender: string): string
   return null;
 }
 
-/** Taxe d'attaque (Archangel of Tithes) pour attaquer ce défenseur ou ses planeswalkers : {N} par créature. */
+/**
+ * Taxe d'attaque pour attaquer ce défenseur : {N} par créature. Propaganda ne taxe que les attaques contre son contrôleur,
+ * Archangel of Tithes (`defending: "youOrYourPlaneswalkers"`) aussi celles contre ses planeswalkers.
+ */
 export function attackTaxFor(s: GameState, defender: string): number {
-  return playerStaticTotal(s, defendingPlayer(s, defender), "attackTax");
+  const walker = !s.players[defender];
+  let n = 0;
+  for (const { ab } of playerStatics(s, defendingPlayer(s, defender), "attackTax")) {
+    const tax = ab.attackTax;
+    if (typeof tax === "number") n += walker ? 0 : tax;
+    else if (tax) n += tax.amount;
+  }
+  return n;
 }
 
 export function attackCandidates(s: GameState, player: PlayerId): ObjectId[] {
@@ -1017,14 +1027,17 @@ export function defendingPlayer(s: GameState, defender: string): PlayerId {
   return s.objects[defender]?.controller ?? s.lki[defender]?.controller ?? defender;
 }
 
-/** Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). */
-export function attackableDefenders(s: GameState, player: PlayerId): string[] {
+/**
+ * Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). `declared` : faux pour un permanent mis
+ * sur le champ de bataille attaquant (508.4), que les restrictions d'attaque des joueurs ne concernent pas.
+ */
+export function attackableDefenders(s: GameState, player: PlayerId, declared = true): string[] {
   // Sandswirl Wanderglyph : « il ne peut pas vous attaquer, ni les planeswalkers que vous contrôlez, ce tour-ci ».
-  const banned = new Set(playerEffectValues(s, player, "cantAttackPlayer"));
+  const banned = new Set(declared ? playerEffectValues(s, player, "cantAttackPlayer") : []);
   const opps = opponentsOf(s, player).filter((p) => !banned.has(p));
   // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
   // Jace, Multiverse Architect : « ses créatures ne peuvent pas attaquer vos Jace ce tour-ci ».
-  const walkerBans = playerEffectValues(s, player, "cantAttackPlaneswalkers");
+  const walkerBans = declared ? playerEffectValues(s, player, "cantAttackPlaneswalkers") : [];
   const walkers = s.battlefield.filter(
     (id) =>
       opps.includes(obj(s, id).controller) &&

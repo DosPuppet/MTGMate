@@ -292,6 +292,8 @@ export const ref = {
   playersWithMost: (filter: ObjectFilter): Ref => ({ kind: "playersWithMost", filter }),
   /** Le joueur défenseur de la créature attaquante source (ou le contrôleur du planeswalker attaqué). */
   defendingPlayer: { kind: "defendingPlayer" } as Ref,
+  /** « Ce joueur ou un planeswalker qu'il contrôle » : les joueurs désignés et leurs planeswalkers. */
+  withPlaneswalkers: (of: Ref): Ref => ({ kind: "withPlaneswalkers", of }),
   handOf: (player: Ref, filter: ObjectFilter = {}, maxManaValue?: Amount): Ref => ({
     kind: "zone",
     zone: "hand",
@@ -1574,6 +1576,8 @@ export const fx = {
       tapped?: boolean;
       attacking?: boolean;
       attackEach?: Ref;
+      /** Avec `attackEach` : « vous pouvez », pour chaque joueur (myriade). */
+      optional?: boolean;
       atEndOfCombat?: "exile" | "sacrifice";
       addTypes?: CardType[];
       pt?: number;
@@ -2164,13 +2168,22 @@ export const when = {
   search: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "search", whose }),
   opponentLoses: { on: "playerLoses", whose: "opponent" } as TriggerSpec,
   attacksSelf: { on: "attacks", who: "self" } as TriggerSpec,
+  /** « Chaque fois que [cette créature] attaque un joueur » (pas un planeswalker). */
+  attacksAPlayer: { on: "attacks", who: "self", defending: "player" } as TriggerSpec,
   attacks: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter }),
   /** « Chaque fois qu'un adversaire acquiert le contrôle d'un permanent qui était à vous » */
   opponentGainsControl: { on: "controlChange" } as TriggerSpec,
   /** « Chaque fois qu'une créature [filtre] attaque seule » */
   attacksAlone: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter, alone: true }),
-  /** « Chaque fois qu'une [créature] vous attaque ou attaque un planeswalker que vous contrôlez » */
-  attacksYou: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter, defending: "you" }),
+  /**
+   * « Chaque fois qu'une [créature] vous attaque » (vous, pas vos planeswalkers) ; `orYourPlaneswalkers` : « … vous attaque
+   * ou attaque un planeswalker que vous contrôlez » (Jace, Reality Sculptor).
+   */
+  attacksYou: (filter: ObjectFilter, orYourPlaneswalkers = false): TriggerSpec => ({
+    on: "attacks",
+    who: filter,
+    defending: orYourPlaneswalkers ? "youOrYourPlaneswalkers" : "you",
+  }),
   /** « Chaque fois que cette créature inflige des blessures de combat à un joueur » */
   combatDamageToPlayer: { on: "dealsCombatDamage", who: "self", to: TO_PLAYER } as TriggerSpec,
   castSpell: (
@@ -2263,8 +2276,15 @@ export const when = {
     filter,
     ...(anyPlayer ? { anyPlayer } : {}),
   }),
-  /** « Chaque fois qu'un adversaire attaque avec des créatures, si N ou plus vous attaquent, vous ou vos planeswalkers ». */
-  opponentAttacksYouWith: (min = 1): TriggerSpec => ({ on: "attackWith", min, defending: "you" }),
+  /**
+   * « Chaque fois qu'un adversaire vous attaque avec N créatures ou plus » (vous, pas vos planeswalkers) ;
+   * `orYourPlaneswalkers` : « … si N ou plus vous attaquent, vous et/ou vos planeswalkers » (Tomik, Mangara).
+   */
+  opponentAttacksYouWith: (min = 1, orYourPlaneswalkers = false): TriggerSpec => ({
+    on: "attackWith",
+    min,
+    defending: orYourPlaneswalkers ? "youOrYourPlaneswalkers" : "you",
+  }),
   countersPut: (who: "self" | ObjectFilter, kind?: string, firstThisTurn?: boolean): TriggerSpec => ({
     on: "countersPut",
     who,

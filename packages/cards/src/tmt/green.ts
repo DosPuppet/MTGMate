@@ -213,12 +213,16 @@ export const GREEN: Record<string, CardScript> = {
         }),
       ],
       [
-        // « Chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » : lu comme « chaque fois que vous attaquez »
-        // (exact à deux joueurs ; voir docs/approximations.md).
-        triggered(when.attackWith(1), [fx.pump(ref.target(), amount.cardsIn("hand"), amount.cardsIn("hand"))], {
-          targets: [target.upTo(1, target.creature("t", { attacking: true }))],
-          label: "Une créature attaquante gagne +X/+X (cartes en main)",
-        }),
+        // « Chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » : par n'importe quel joueur, et un joueur
+        // (pas un planeswalker).
+        triggered(
+          when.attackWith(1, { attacking: "opponent" }, true),
+          [fx.pump(ref.target(), amount.cardsIn("hand"), amount.cardsIn("hand"))],
+          {
+            targets: [target.upTo(1, target.creature("t", { attacking: true }))],
+            label: "Une créature attaquante gagne +X/+X (cartes en main)",
+          },
+        ),
       ],
     ],
   },

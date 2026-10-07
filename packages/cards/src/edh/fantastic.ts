@@ -221,10 +221,9 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
   "Namor, Atlantean King": {
     abilities: [
       triggered(when.castSpell("you", NONCREATURE), [fx.createTokens(MERFOLK)], { label: "Sort non-créature : un Ondin 1/1" }),
-      // « Attaque un joueur qui a plus de PV que vous » : le joueur défenseur, comparé au déclenchement.
-      // Approximation : toutes vos autres créatures attaquantes gagnent +2/+0 (pas seulement celles qui attaquent ce
-      // joueur), et l'attaque d'un planeswalker compte comme celle de son contrôleur.
-      triggered(when.attacksSelf, [fx.pumpAll({ ...CREATURE_YOU, attacking: true, other: true }, 2, 0)], {
+      // « Attaque un joueur qui a plus de PV que vous » : le joueur défenseur, comparé au déclenchement ; seules vos autres
+      // créatures qui attaquent ce joueur gagnent +2/+0.
+      triggered(when.attacksAPlayer, [fx.pumpAll({ ...CREATURE_YOU, attacking: ref.defendingPlayer, other: true }, 2, 0)], {
         triggerCondition: cond.amountGreater({ kind: "lifeTotal", who: ref.defendingPlayer }, amount.lifeTotal),
         label: "Vos autres créatures attaquantes gagnent +2/+0",
       }),
