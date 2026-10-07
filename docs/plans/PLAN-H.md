@@ -345,9 +345,9 @@ Attendu : 12 à 18 entrées levées.
 
 ## Suivi
 
-**État au 07/10/2026 (règles 164) :** lots H0 à H10 faits ; H11 : journal du tour fait, reste le bilan.
+**Plan fait le 07/10/2026 (règles 164) :** lots H0 à H11 faits ; bilan en fin de document.
 
-| Mesure | Départ (règles 149) | Aujourd'hui | Cible après H11 |
+| Mesure | Départ (règles 149) | Fin (règles 164) | Cible |
 |---|---|---|---|
 | singleCardKeys | 100 | 54 | ~55 |
 | playerStatic / keyword / op | 62 / 15 / 23 | 52 / 12 / 16 | ~47 / 12 / 16 |
@@ -448,3 +448,21 @@ Attendu : 12 à 18 entrées levées.
   - parties dorées identiques ; empreintes du fuzz identiques (graine 7 : `f6d9c346` sur tout le pool, 300 parties ; `3bacd5a6` en Commander, 200 parties ; `adfbe732` en Commander à 4 joueurs, 60 parties ; fuzz strict `--offers 4`, 200 parties : `b131cce1`) ; bench dans le bruit (avant et après en alternance, `git stash`, minimum de plusieurs passes : `legalActions` 7 831 à 7 996 ms avant, 7 749 à 7 890 ms après ; IA heuristique, 14 parties, 1 586 à 1 606 ms avant, 1 549 à 1 595 ms après ; `npm run bench` dans le bruit de la machine) ;
   - dette : turnFields 7 → 0 (le garde-fou admet désormais une section vide) ; GameObject 58 → 49.
 - **Correctif hors plan (07/10/2026, règles 164, protocole 4) :** nommer une carte, une carte de terrain ou un type de créature ne révèle plus les decks adverses (choix de l'utilisateur : le catalogue complet). Catalogue des noms hors de l'état (`engine/src/names.ts`, `registerNameCatalog`, enregistré par le serveur, le client et le worker) ; nouvelle question `{ type: "name", of, featured }` : noms publics en tête (permanents adverses, puis les vôtres, cimetières, exil face visible, zone de commandement), recherche dans tout le catalogue côté client (noms français, nom anglais envoyé) ; liste officielle des types de créature (205.3m, 324 types). Une réponse hors catalogue est refusée (`RulesError`) ; les anciennes réponses restent acceptées (rejeu des parties). Tests : `engine/test/names.test.ts`, audit dans `ai/test/hidden-info.test.ts`, `cards/test/names.test.ts`, `client/test/names.test.ts`.
+
+## Bilan (07/10/2026)
+
+- **Lots :** H0 à H11 faits le 07/10/2026 sur `dev`, règles 149 → 164. Les lots sans changement de règles (H1, H7a, H7b, H10, H11) ont gardé à l'identique les empreintes de fuzz et les parties dorées ; aucune partie dorée n'a été régénérée pendant tout le plan.
+- **Dette :** clés propres à une carte 100 → 54 ; statiques de joueur 62 → 52 ; mots-clés non imprimés 15 → 12 ; ops 23 → 16 ; champs « ce tour-ci » 12 → 0 ; CardDef 98 → 91, GameObject 62 → 49, ObjectFilter 89 → 71, CastPermissionAbilityDef 21 → 10, Effect 154 → 149 variantes et 654 → 639 champs. Hausses justifiées dans `ceilingNotes` : PlayFromZone 17 → 21 (H7b), EventReplacement 18 → 19 (H8b), Amount 34 → 35 (H10), Ref 34 → 35 (H5), et dix structures désormais mesurées (H0).
+- **Approximations :** par carte 267 → 217 (`règle` 202 → 157, `choix auto` 42 → 36, `timing` 23 → 25) ; générales 24 → 27, parce que H0, H5 et H9 ont écrit des approximations qui ne l'étaient pas.
+- **Écarts avec le plan :** `GraveyardReplacement` → `then` écarté (deux évaluateurs resteraient) ; quatre statiques de combat gardées séparées (508.1 et 509.1) ; durée `while: { exiled }` d'Emrakul propre à une carte mais non comptée (nom `exiled` partagé dans un autre sens).
+- **Hors plan, trouvés en route :** cibles lues sous un autre nom (Mutant Menace, règles 157, garde `target-refs.test.ts`) ; capacités d'équipement et d'épuisement non reconnues, protection de Serra's Emissary, libellés des marqueurs (règles 159, garde `ability-flags.test.ts`) ; marqueurs de poison sans `bump` (trouvé par les invariants) ; noms de cartes révélant la main puis les decks adverses (règles 163 et 164, catalogue complet, protocole 4) ; arènes Commander environ vingt fois plus rapides.
+- **Reports :**
+  - Nuka-Nuke Launcher : radiation sur chaque adversaire au lieu du seul joueur défenseur (il faudrait un emblème détenu par ce joueur) ;
+  - faufilement : le défenseur gardé n'est pas revérifié (508.4a), comme l'était le ninjutsu avant H5 ;
+  - Kíli : seule la part en mana d'un coût d'équipement est remplacée ;
+  - « regarder une main » (Sorcerous Spyglass, Arachne) : aucune forme générique ;
+  - Promise of Loyalty pourrait passer par `keep` ; Quilled Greatwurm par `removeCountersAmong` ;
+  - arrivées hors d'une résolution (copies créées par un effet, retours d'exil lié) : choix « en arrivant » par défaut, sans question ;
+  - décisions illégales de l'IA moyenne en Commander (refusées proprement, la partie continue) : à examiner ;
+  - pistes de performance non faites (jetons créés par lot, sources des déclencheurs paresseuses, copie d'état moins chère, bornes de l'IA sur les très grands plateaux).
+
