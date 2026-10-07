@@ -457,8 +457,10 @@ export const RECORD_VERSION = 1;
  * - 166 : Raid Bombardment blesse le joueur ou le planeswalker que la créature attaque
  * - 167 : Valeur de mana d'un objet qui a cessé d'exister : ses dernières informations connues ; un jeton déplacé hors
  *   du champ de bataille reste désigné (Zoyowa's Justice sur un jeton fait découvrir X)
+ * - 168 : Molten Tide ajoute un {R} ; Virtue of Strength triple le mana ; Eclipsed Realms : les huit tribus de Lorwyn
+ *   ; Talion ne suggère plus d'après des cartes exilées face cachée
  */
-export const RULES_VERSION = 167;
+export const RULES_VERSION = 168;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

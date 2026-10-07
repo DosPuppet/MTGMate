@@ -462,7 +462,11 @@ export const UNIQUE: Record<string, CardScript> = {
   "Pyre Rhymer": {
     prepareSpell: spell(
       [],
-      [fx.thisTurn({ replacement: { event: "mana", to: "you", source: { subtype: "Mountain" }, modify: { add: 1 } } })],
+      [
+        fx.thisTurn({
+          replacement: { event: "mana", to: "you", source: { subtype: "Mountain" }, extraMana: "R", modify: { add: 1 } },
+        }),
+      ],
     ),
     abilities: [entersWith({ prepared: true })],
   },

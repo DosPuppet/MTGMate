@@ -128,7 +128,6 @@ export const MULTI: Record<string, CardScript> = {
       }),
     ],
   },
-  // Le mode est choisi au déclenchement, puis {1} est payé ou non (au lieu de « payez {1} ; quand vous le faites, choisissez »).
   "Hylda of the Icy Crown": {
     abilities: [
       // « Vous pouvez payer {1}. Quand vous le faites, choisissez un — » : le mode est choisi par la capacité réflexive.

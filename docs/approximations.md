@@ -30,6 +30,7 @@ Chaque entrée porte sa nature :
 - `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** un déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape de blessures de combat, une passe d'actions basées sur l'état) ; les événements hors d'un lot (coûts payés en lançant un sort ou en activant une capacité) comptent comme un seul lot.
 - `règle` **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
 - `timing` **Coûts payés avant le mana :** un permanent exilé, renvoyé ou sacrifié pour un coût additionnel ou alternatif quitte le champ de bataille avant le paiement du mana : ses capacités de mana et ses remplacements de mana (Lavaleaper) ne servent plus à payer ce sort (601.2g-h permettrait d'engager du mana avant). Pour une capacité activée, les capacités de mana des permanents sacrifiés pour le coût servent d'abord.
+- `règle` **Recherche (701.23) :** une carte cherchée « et révélée » n'est pas révélée aux adversaires (Strixhaven Skycoach, Brave the Wilds, Celestial Reunion, Archdruid's Charm, Flourishing Bloom-Kin, Enlightened Tutor ; Herald's Horn ne révèle pas non plus la carte mise en main).
 - `choix auto` **Mana phyrexian :** le mana disponible paie d'abord ; des PV ne sont payés que pour les symboles qu'il ne couvre pas.
 - `choix auto` **« Le reste au-dessous de votre bibliothèque dans l'ordre de votre choix » :** dans un ordre aléatoire (Rediscover the Way, Commune with Nature, Avengers Tower) ; « remises au-dessus dans l'ordre de votre choix » : l'ordre n'est pas choisi (Rowan's Grim Search).
 - `règle` **Suspension (702.62) :** la célérité est donnée au prochain sort de créature lancé ce tour-ci, même si ce n'est pas la carte suspendue (aussi Taigam, Master Opportunist).
@@ -53,7 +54,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Foundations (`docs/extensions/fdn.md`) :**
   - `règle` Sorcerous Spyglass : la main de l'adversaire n'est pas montrée avant le choix du nom (tout nom du catalogue peut être choisi ; les noms des permanents adverses sont proposés en tête) ;
   - `choix auto` Quilled Greatwurm (et Dawnhand Dissident) : vous répartissez les marqueurs retirés entre vos créatures, mais la sorte des marqueurs retirés d'une même créature est choisie pour vous (les −1/−1 d'abord, les +1/+1 en dernier) ;
-  - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
+  - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre .
 - **Final Fantasy (`docs/extensions/fin.md`) :**
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
   - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
@@ -109,28 +110,23 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Reality Fracture (`docs/extensions/fra.md`) :**
   - `choix auto` Theorist's Sanctum : on contemple un Jace en arrivant dès que c'est possible, sans révéler la carte ;
   - `règle` Extrapolate the Impossible : ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu ») ;
-  - `règle` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 : emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez » ;
-  - `timing` Seasoned Cryomancer : le nombre de cibles est choisi d'après les cartes non-terrain défaussées (1 ou 2), via deux déclencheurs réflexifs exclusifs ;
-  - `règle` Molten Tide : le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite ;
-  - `règle` Warrior's Blades : la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie ;
+  - `règle` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 : emblèmes temporaires ; Garruk se déclenche quand vous attaquez (pas quand un autre joueur attaque un de vos adversaires, en multijoueur) et renforce toutes vos créatures attaquantes, même celles qui attaquent un planeswalker ou une bataille ;
   - `règle` Emrakul, the Exigent Doom : la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée) ; lancée, elle dure jusqu'à ce que le sort soit lancé (601.2i) et peut servir à le payer.
 - **Méta Standard (plan P4, `docs/extensions/meta.md`) :**
   - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
-  - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ; seule la part de mana du coût d'équipement est remplacée : un coût autre (PV de Dark Knight's Greatsword, sacrifice de Shredder's Armor ou de Dissection Tools, défausse de Bloodthorn Flail) reste dû ;
+  - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ; seul le générique est retiré : les symboles colorés ({R} de Cori-Steel Cutter, {U} de The Key to the Vault) et un coût autre (PV de Dark Knight's Greatsword, sacrifice de Shredder's Armor ou de Dissection Tools, défausse de Bloodthorn Flail) restent dus ;
   - `règle` Interdimensional Web Watch : les deux mana servent à tout sort lancé ailleurs que depuis la main (et non seulement depuis l'exil).
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
-  - `choix auto` Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
-  - `timing` Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;
+  - `règle` Rhys, the Evermore : retire tous les marqueurs −1/−1 de la cible, et seulement ceux-là (ni le nombre ni les autres sortes de marqueurs ne se choisissent) ;
+  - `règle` Kindle the Inner Flame : contempler trois Élémentaux (flashback) est une condition de lancement : rien n'est choisi ni révélé ;
   - `règle` Isilu, Carrier of Twilight, Rhys, the Evermore : la persistance accordée est une capacité déclenchée nommée « Persistance » (sans badge de mot-clé) ;
   - `règle` Nameless Inversion : « perd tous ses types de créature » retire tous les sous-types et le changelin jusqu'à la fin du tour ;
-  - `règle` Eclipsed Realms : le type choisi est pris parmi tous les types de créature ;
   - `règle` Foraging Wickermaw : cinq capacités (une par couleur), activables seulement tant qu'elle est incolore ;
   - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
   - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
-  - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte ;
   - `règle` Dream Harvest : une carte modale à verso terrain exilée peut aussi être jouée comme terrain (seuls ses sorts devraient se lancer) ;
   - `timing` Raiding Schemes : la conspiration passe par une capacité déclenchée ; les deux créatures sont engagées à sa résolution, et non en lançant le sort ;
   - `timing` Celestial Reunion : le coût additionnel facultatif est vérifié à la résolution, pour un type de la carte trouvée (le joueur le paie toujours quand il le peut) ; la carte passe par la main avant le champ de bataille ;
@@ -139,16 +135,13 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Wilds of Eldraine (`docs/extensions/woe.md`) :**
   - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
   - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
-  - `règle` Virtue of Strength : « trois fois plus de mana » est « deux mana de plus » (exact pour un terrain de base qui produit un mana) ;
   - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
   - `timing` Feral Encounter : « au début de la prochaine phase de combat de ce tour » passe par un emblème du tour ;
   - `règle` Will, Scion of Peace, Rowan, Scion of War : la réduction « ce tour-ci » est accordée à la créature et cesse si elle quitte le champ de bataille ; X est relu à chaque sort ;
   - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
   - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
   - `timing` Likeness Looter : la valeur de mana X de la carte ciblée est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage ;
-  - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur ;
-  - `règle` Extraordinary Journey : une créature lancée depuis l'exil est reconnue à son arrivée (elle vient alors de la pile) ;
-  - `choix auto` Talion, the Kindly Lord : le nombre proposé est la valeur de mana la plus fréquente parmi les cartes adverses vues.
+  - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur .
 - **Secrets of Strixhaven (`docs/extensions/sos.md`) :**
   - `règle` Zimone's Experiment : les cartes révélées repassent sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main (comme Break Out) ;
   - `règle` Silverquill, the Disputant : la victime accordée est une capacité déclenchée au lancement (sacrifice d'une créature, puis copie), et non un coût : on peut y répondre ;
@@ -156,7 +149,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Dina's Guidance : la carte cherchée va en main, puis vous pouvez la mettre au cimetière ;
   - `choix auto` Abstract Paintmage : {U}{R} est ajouté en deux choix d'une couleur (deux questions sans alternative) ;
   - `règle` Transcendent Archaic : « si vous piochez une ou plusieurs cartes de cette façon » est « si X vaut 1 ou plus » ;
-  - `règle` Strixhaven Skycoach : la carte cherchée n'est pas révélée ;
   - `règle` cascade (Quandrix, the Proof) : la carte non lancée va au-dessous après les autres cartes exilées (et non dans un ordre aléatoire avec elles) ;
   - `règle` Lorehold, the Historian : le miracle accordé est une capacité déclenchée à la première pioche du tour (la carte n'est pas révélée), qui propose de la lancer pour {2}.
 - **Murders at Karlov Manor (`docs/extensions/mkm.md`) :**
@@ -253,7 +245,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` New Blood : le changement de texte (612, « remplacez toutes les occurrences d'un type de créature par Vampire ») n'est pas fait ; la créature volée devient un Vampire en plus de ses autres types ;
   - `règle` Ascension (702.131) : seule celle d'un permanent est gérée (action basée sur l'état), pas celle d'un éphémère ou d'un rituel.
   - `règle` Orcish Bowmasters : « la première carte piochée lors de son étape de pioche » est la pioche de l'étape (504.1) ; si elle est remplacée ou passée, une pioche ultérieure de la même étape déclenche quand même.
-  - `règle` Enlightened Tutor, Herald's Horn : la carte cherchée ou mise en main n'est pas révélée explicitement ;
   - `choix auto` Rewind, Unwind, Frantic Search : « dégagez jusqu'à N terrains » ne dégage que vos terrains, choisis automatiquement ;
   - `choix auto` Phyrexian Altar : capacité de mana activée à la main ; le paiement automatique ne sacrifie jamais de créature ;
   - `règle` Teferi's Protection : une Aura déjà attachée au joueur (malédiction) ne tombe pas.

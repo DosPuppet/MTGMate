@@ -844,6 +844,8 @@ function suggestedNumber(s: GameState, controller: string): string {
   const tally = new Map<number, number>();
   for (const o of Object.values(s.objects)) {
     if (o.owner === controller || !["battlefield", "graveyard", "exile"].includes(o.zone)) continue;
+    // Une carte face cachée (exil face cachée, permanent face cachée) est une information cachée.
+    if (o.faceDown || o.exiledFaceDown) continue;
     const d = s.defs[o.defId];
     if (!d || d.types.includes("Land") || d.isToken) continue;
     const mv = manaValue(d.manaCost);

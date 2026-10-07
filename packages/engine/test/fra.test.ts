@@ -10,6 +10,7 @@ import { eventReplacement } from "../src/dsl";
 import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
+import { manaAbilitiesOf } from "../src/mana";
 import { spellCost } from "../src/stack";
 import { chars, setPrepared } from "../src/state";
 import { simultaneously } from "../src/triggers";
@@ -1250,7 +1251,7 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
     });
 
     it("Pyre Rhymer : prouesse, arrive préparée ; Molten Tide : jusqu'à la fin du tour, une Montagne engagée pour du mana ajoute {R} de plus", () => {
-      let s = scenario({ p1: { hand: ["Pyre Rhymer"], battlefield: lands("Mountain", 5) } });
+      let s = scenario({ p1: { hand: ["Pyre Rhymer"], battlefield: [...lands("Mountain", 5), "Stomping Ground"] } });
       s = resolve(cast(s, "p1", "Pyre Rhymer"));
       const r = idOf(s, "p1", "battlefield", "Pyre Rhymer");
       expect(prepared(s, r)).toBe(true);
@@ -1259,6 +1260,11 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       const m = s.battlefield.find((id) => nameOf(s, id) === "Mountain" && !s.objects[id]?.tapped) as string;
       s = act(s, "p1", { type: "tapForMana", source: m, ability: 0 });
       expect(s.players.p1?.manaPool.R).toBe(2);
+      // Une Montagne Forêt engagée pour {G} : le mana en plus est {R}, pas {G}.
+      const ground = idOf(s, "p1", "battlefield", "Stomping Ground");
+      const g = manaAbilitiesOf(s, ground).findIndex((ab) => ab.produce.includes("G"));
+      s = act(s, "p1", { type: "tapForMana", source: ground, ability: g, color: "G" });
+      expect([s.players.p1?.manaPool.G, s.players.p1?.manaPool.R]).toEqual([1, 3]);
     });
   });
 

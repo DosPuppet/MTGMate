@@ -431,13 +431,11 @@ export const GREEN: Record<string, CardScript> = {
   // --- Virtue of Strength // Garenbrig Growth ---------------------------------
   "Virtue of Strength": {
     abilities: [
-      // Approximation : « trois fois plus » est écrit « deux de plus » (un terrain de base produit un seul mana), car les
-      // remplacements de mana n'appliquent que `add` ; l'ordre avec un autre remplacement de mana peut donc différer.
       eventReplacement({
         event: "mana",
         source: { types: ["Land"], basic: true },
         to: "you",
-        modify: { add: 2 },
+        modify: { times: 3 },
         label: "Vos terrains de base engagés pour du mana en produisent trois fois plus",
       }),
     ],

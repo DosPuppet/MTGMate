@@ -4849,6 +4849,23 @@ describe("Wilds of Eldraine, lot C5 : payer des PV, nombre choisi, cartes à Ave
     expect(s.players.p2?.library).toHaveLength(3);
   });
 
+  it("Talion : le nombre proposé ne compte pas les cartes adverses exilées face cachée (information cachée)", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 2)], hand: ["Talion, the Kindly Lord"] },
+      p2: { graveyard: ["Bear Cub", "Serra Angel", "Serra Angel"] },
+    });
+    // Les deux Anges (VM 5) sont exilés face cachée : seul Bear Cub (VM 2), public, compte.
+    for (const id of idsOf(s, "p2", "graveyard", "Serra Angel")) {
+      moveObject(s, id, "exile");
+      const o = s.objects[s.exile.at(-1) as string];
+      if (o) o.exiledFaceDown = [];
+    }
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Talion, the Kindly Lord") });
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    const p = s.pending;
+    expect(p?.kind === "choice" ? p.request.suggested : null).toEqual(["2"]);
+  });
+
   it("Talion : un nombre choisi en arrivant ; un sort adverse de cette valeur de mana, force ou endurance : il perd 2 PV, vous piochez", () => {
     let s = scenario({ p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 2)], hand: ["Talion, the Kindly Lord"] } });
     s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Talion, the Kindly Lord") }), (req) =>

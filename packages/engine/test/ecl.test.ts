@@ -3753,6 +3753,26 @@ describe("Lorwyn Eclipsed, lot A — incolores", () => {
       return settle(s);
     };
 
+    it("le type se choisit parmi les huit tribus de Lorwyn", () => {
+      let s = scenario({ p1: { hand: ["Eclipsed Realms"] } });
+      const play = legalActions(s, "p1").find(
+        (a) => a.type === "playLand" && a.card === idOf(s, "p1", "hand", "Eclipsed Realms"),
+      );
+      const choose = play?.type === "playLand" ? play.choose : undefined;
+      expect(choose && "options" in choose ? [...choose.options].sort() : choose).toEqual([
+        "Elemental",
+        "Elf",
+        "Faerie",
+        "Giant",
+        "Goblin",
+        "Kithkin",
+        "Merfolk",
+        "Treefolk",
+      ]);
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Eclipsed Realms"), chosen: "Goblin" } as never);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Eclipsed Realms")]?.chosen?.creatureType).toBe("Goblin");
+    });
+
     it("joué sans résolution : le type choisi est celui par défaut (le plus présent chez son contrôleur)", () => {
       const s = withRealms();
       expect(s.objects[idOf(s, "p1", "battlefield", "Eclipsed Realms")]?.chosen?.creatureType).toBe("Elf");

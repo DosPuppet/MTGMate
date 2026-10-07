@@ -167,8 +167,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
 
   // --- Terrain --------------------------------------------------------------------
   "Eclipsed Realms": {
-    // Approximation : le type est choisi parmi tous les types de créature.
-    asEnters: [fx.chooseForSelf("creatureType")],
+    asEnters: [fx.chooseForSelf("creatureType", { options: LORWYN_TRIBES })],
     abilities: [
       manaAbility("C"),
       manaAbility([...ANY], 1, {
