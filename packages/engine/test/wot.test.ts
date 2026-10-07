@@ -444,6 +444,23 @@ describe("Enchanting Tales", () => {
     // 1 (Bear Cub seul déclenche) + 2 + 4 de combat.
     expect(s.players.p2?.life).toBe(13);
   });
+
+  it("Raid Bombardment : une créature qui attaque un planeswalker le blesse, lui (pas son contrôleur)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Raid Bombardment", "Bear Cub"] },
+      p2: { battlefield: [{ name: "Ajani, Caller of the Pride", counters: { loyalty: 4 } }] },
+    });
+    const ajani = idOf(s, "p2", "battlefield", "Ajani, Caller of the Pride");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: ajani }],
+    });
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    // 1 blessure du déclenchement et 2 de combat, toutes à Ajani (4 → 1) ; p2 ne perd rien.
+    expect(s.objects[ajani]?.counters.loyalty).toBe(1);
+    expect(s.players.p2?.life).toBe(20);
+  });
 });
 
 /** Identifiant de la cible d'enchantement d'une Aura. */

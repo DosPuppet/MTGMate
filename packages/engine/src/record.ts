@@ -454,8 +454,9 @@ export const RECORD_VERSION = 1;
  * - 165 : Audit du 07/10 : noms des cartes à plusieurs faces (709.4, 715.4, 712.8a ; « A // B » n'est pas un nom),
  *   provocation conservée malgré la perte des capacités (701.38), joueur défenseur figé au déclenchement (Namor,
  *   myriade, Specimen Freighter)
+ * - 166 : Raid Bombardment blesse le joueur ou le planeswalker que la créature attaque
  */
-export const RULES_VERSION = 165;
+export const RULES_VERSION = 166;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

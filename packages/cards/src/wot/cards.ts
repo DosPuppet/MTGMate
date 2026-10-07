@@ -377,8 +377,9 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Raid Bombardment": {
     abilities: [
-      triggered(when.attacks({ ...YOUR_CREATURES, maxPower: 2 }), [fx.damage(1, ref.defendingPlayer)], {
-        label: "Une de vos créatures de force 2 ou moins attaque : 1 blessure au défenseur",
+      // « Le joueur ou planeswalker que cette créature attaque » : celui de l'événement d'attaque.
+      triggered(when.attacks({ ...YOUR_CREATURES, maxPower: 2 }), [fx.damage(1, ref.eventPlayer)], {
+        label: "Une de vos créatures de force 2 ou moins attaque : 1 blessure à ce qu'elle attaque",
       }),
     ],
   },
