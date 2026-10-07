@@ -4,7 +4,6 @@ import {
   amount,
   beholdOrPay,
   type CardScript,
-  castPermission,
   champion,
   cond,
   ELF_BG,
@@ -15,6 +14,7 @@ import {
   GOBLIN_BR,
   modal,
   mode,
+  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -78,11 +78,8 @@ export const BLACK: Record<string, CardScript> = {
           label: "L'adversaire révèle X cartes de sa main ; vous en choisissez une, qu'il exile",
         },
       ),
-      castPermission({
-        linkedCards: true,
-        linkedFilter: { types: ["Instant", "Sorcery"] },
-        linkedAnyOwner: true,
-        linkedAnyMana: true,
+      playerStatic({
+        playFrom: { zone: "linked", what: "spells", filter: { types: ["Instant", "Sorcery"] }, anyMana: true },
         label: "Tant que vous la contrôlez : lancez l'éphémère ou le rituel exilé (mana de n'importe quel type)",
       }),
     ],
@@ -97,10 +94,8 @@ export const BLACK: Record<string, CardScript> = {
         effects: [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))],
         label: "Flétrir 2 : exilez une carte d'un cimetière",
       }),
-      castPermission({
-        linkedCards: true,
-        linkedFilter: { types: ["Creature"] },
-        linkedRemoveCounters: 3,
+      playerStatic({
+        playFrom: { zone: "linked", what: "spells", filter: { types: ["Creature"], owner: "you" }, removeCountersAmong: 3 },
         condition: cond.yourTurn,
         label: "Pendant votre tour : lancez une créature exilée avec elle en retirant trois marqueurs parmi vos créatures",
       }),

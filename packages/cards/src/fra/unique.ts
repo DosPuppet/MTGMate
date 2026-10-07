@@ -616,7 +616,11 @@ export const UNIQUE: Record<string, CardScript> = {
         condition: cond.wasCast,
         label: "Exilez une carte non-terrain de sa main",
       }),
-      castPermission({ linkedCards: true, condition: cond.threshold, label: "Seuil : lancez la carte exilée" }),
+      playerStatic({
+        playFrom: { zone: "linked", what: "spells", anyMana: true },
+        condition: cond.threshold,
+        label: "Seuil : lancez la carte exilée",
+      }),
     ],
   },
   "Recursive Recruitment": {

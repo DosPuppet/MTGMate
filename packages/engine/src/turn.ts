@@ -451,12 +451,7 @@ function finishCleanup(s: GameState): void {
   );
   s.replacements = [];
   // Emblèmes « jusqu'à la fin du tour » (Jace Reawakened −6, Prairie Dog).
-  for (const p of s.playerOrder) {
-    for (const id of [...(s.players[p]?.command ?? [])]) {
-      const until = s.objects[id]?.expiresEndOfTurn;
-      if (until !== undefined && s.turn.number >= until) moveObject(s, id, "exile");
-    }
-  }
+  expireEmblems(s);
   // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment) : couche 2 recalculée.
   syncControl(s);
   for (const p of s.playerOrder) {
@@ -671,6 +666,21 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
   emit({ type: "endTurn", player: r.item.controller });
 }
 
+/**
+ * Emblèmes temporaires (`GameObject.expires`) : au nettoyage (sans joueur), ceux dont le tour de fin est atteint ; au
+ * début du tour de `startOf`, ceux qui durent jusqu'à son prochain tour.
+ */
+function expireEmblems(s: GameState, startOf?: PlayerId): void {
+  for (const p of s.playerOrder) {
+    for (const id of [...(s.players[p]?.command ?? [])]) {
+      const x = s.objects[id]?.expires;
+      if (!x) continue;
+      const due = "endOfTurn" in x ? startOf === undefined && s.turn.number >= x.endOfTurn : x.turnOf === startOf;
+      if (due) moveObject(s, id, "exile");
+    }
+  }
+}
+
 export function startTurnOf(s: GameState, p: PlayerId): void {
   // 722 : le tour contrôlé commence (ou le contrôle précédent se termine).
   if (s.turnControl?.turn !== undefined && s.turnControl.turn !== s.turn.number) s.turnControl = undefined;
@@ -703,10 +713,7 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
   const before = s.effects.length;
   s.effects = s.effects.filter((e) => !(e.duration === "untilYourNextTurn" && e.until === p));
   if (s.effects.length !== before) bump(s);
-  for (const pl of s.playerOrder) {
-    const cmd = s.players[pl]?.command ?? [];
-    for (const id of [...cmd]) if (s.objects[id]?.expiresAtTurnOf === p) moveObject(s, id, "exile");
-  }
+  expireEmblems(s, p);
   s.turn.graveyardTypesUsed = [];
   // Permissions de jouer depuis l'exil : celles qui ont expiré disparaissent. Découverte (701.57a) : une carte
   // qui n'a pas été lancée va dans la main de son propriétaire.

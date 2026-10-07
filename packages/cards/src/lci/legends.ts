@@ -10,7 +10,6 @@ import {
   blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
-  castPermission,
   cond,
   craft,
   DINOSAUR_YOU,
@@ -488,10 +487,13 @@ export const LEGENDS: Record<string, CardScript> = {
         effects: [fx.exileCard(ref.target(), { name: "p" }), fx.link(ref.stored("p"))],
         label: "Exilez une carte d'un cimetière",
       }),
-      castPermission({
-        linkedCards: true,
-        linkedFilter: { types: ["Creature"], subtype: "Dinosaur" },
-        linkedFinality: true,
+      playerStatic({
+        playFrom: {
+          zone: "linked",
+          what: "spells",
+          filter: { types: ["Creature"], subtype: "Dinosaur", owner: "you" },
+          finality: true,
+        },
         label: "Dinosaures exilés : lançables (finalité)",
       }),
     ],

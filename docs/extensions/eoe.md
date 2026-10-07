@@ -15,7 +15,7 @@
 - Lot A ✅ (170/260). Il couvre :
   - distorsion (702.185) :
     - option de lancement « (distorsion) » depuis la main (`CardDef.warp`, lue dans le texte, points de vie compris) ;
-    - le permanent est exilé à la prochaine étape de fin, puis relançable depuis l'exil un tour suivant (`warpExiledTurn`) ;
+    - le permanent est exilé à la prochaine étape de fin, puis relançable depuis l'exil un tour suivant (`exiledVia` de sorte `warp`) ;
     - Timeline Culler : depuis le cimetière ; filtre `warped` ;
   - vide : condition `cond.void` (un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci) ;
   - déclencheurs et outils génériques :

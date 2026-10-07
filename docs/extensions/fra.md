@@ -6,7 +6,7 @@
 - **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
 - Lot 0 (infrastructure multi-extensions) et lot A (cartes faisables avec le moteur, jetons Cadet, Heartwood, Lotus, Forêt Tentacule et Thopter, terrains lents) : ✅.
 - Lot F (**cartes uniques**) : ✅, 50 cartes. Le moteur gagne :
-  - durée « jusqu'à votre prochain tour » (`modify`, `untilYourNextTurn`) et emblèmes temporaires (`expiresAtTurnOf`) ;
+  - durée « jusqu'à votre prochain tour » (`modify`, `untilYourNextTurn`) et emblèmes temporaires (`GameObject.expires`) ;
   - déclencheurs « subit des blessures », « bloque », « vous attaque » (`defending: "you"`), « lance un sort qui cible… » (`targeting`, `orFilter`) ;
   - hybride monocolore {2/W} (`ManaCost.twoHybrid`), loyauté −X (`loyalty: "X"`), coût « exilez une autre carte de votre cimetière » ;
   - garde « défaussez une carte », flashback avec défausse (`flashbackDiscard`), Équiper réduit par les marqueurs +1/+1 ;

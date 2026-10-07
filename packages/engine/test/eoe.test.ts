@@ -10,7 +10,7 @@ import { GameHost } from "../src/host";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, decider, moveObject } from "../src/state";
 import { canBlock, declareBlockers } from "../src/turn";
-import type { ChoiceRequest, ChoiceValue, GameState, PlayerId, TokenSpec } from "../src/types";
+import type { ChoiceRequest, ChoiceValue, GameObject, GameState, PlayerId, TokenSpec } from "../src/types";
 import { projectView } from "../src/view";
 import {
   act,
@@ -2045,7 +2045,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     // Starwinder exilée par la distorsion ; Bygone Colossus exilée autrement (pas distordue).
     const warped = moveObject(s, idOf(s, "p1", "graveyard", "Starwinder"), "exile") as string;
-    (s.objects[warped] as { warpExiledTurn?: number }).warpExiledTurn = s.turn.number - 1;
+    (s.objects[warped] as GameObject).exiledVia = { kind: "warp", turn: s.turn.number - 1 };
     moveObject(s, idOf(s, "p1", "graveyard", "Bygone Colossus"), "exile");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
     const pick = opt?.type === "cast" ? opt.picks?.find((p) => p.slot === "behold") : undefined;

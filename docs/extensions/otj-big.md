@@ -12,7 +12,7 @@
 | hideaway (BIG) | 1 | C |
 
 - Lot A ✅ (OTJ 221/269). Il couvre :
-  - plot (702.170) : « Plot {coût} » est lu dans le texte ; action spéciale depuis la main au moment d'un rituel (`plotCard`, `GameObject.plottedTurn`) ; la carte complotée se lance gratuitement depuis l'exil à un tour ultérieur, au moment d'un rituel (`CastTerms.sorceryTiming`) ; `fx.plot` (Aven Interrupter, Kellan Joins Up) et « quand cette carte devient complotée » (déclenché depuis l'exil) ;
+  - plot (702.170) : « Plot {coût} » est lu dans le texte ; action spéciale depuis la main au moment d'un rituel (`plotCard`, `GameObject.exiledVia` de sorte `plot`) ; la carte complotée se lance gratuitement depuis l'exil à un tour ultérieur, au moment d'un rituel (`CastTerms.sorceryTiming`) ; `fx.plot` (Aven Interrupter, Kellan Joins Up) et « quand cette carte devient complotée » (déclenché depuis l'exil) ;
   - spree (702.172) : aide `spree(...)`, qui génère toutes les combinaisons de modes (`ModeDef.extraCost` additionnés, payés même si le sort est gratuit ; un mode trop cher n'est pas proposé) ;
   - crimes (700.13) : cibler un adversaire, un objet qu'il contrôle ou une carte de son cimetière (`checkCrime` à la mise sur la pile des sorts, capacités et déclencheurs) ; `when.crime`, `cond.crime` ;
   - marqueurs de capacité (122.1b : vol, lien de vie, contact mortel…), « si vous n'avez pas lancé de sort depuis votre main ce tour-ci », flash sous condition (`flashIf`), jetons X/X (`fx.createXXToken`), `perHand`, « jusqu'à la fin de votre prochain tour » pour les cartes exilées jouables ;

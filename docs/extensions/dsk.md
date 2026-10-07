@@ -45,7 +45,7 @@ Les scripts sont dans `packages/cards/src/dsk/` : `white`, `blue`, `black`, `red
   - `when.becomesBlocked` (Norin) ;
   - les cibles en nombre variable d'une capacité réflexive (`TargetSpec.countAmount` : Miasma Demon, The Rollercrusher Ride) ;
   - le doublement des blessures non de combat sous condition (`doubler({ noncombatDamage, condition })`) ;
-  - Valgavoth : l'exil lié des cartes adverses (`exileOpponentsCardsLinked`, dans `moveObject`) et le droit de les jouer pendant votre tour contre des PV (`playLinkedPayLife`) ; la garde « sacrifiez trois permanents non-terrains » ;
+  - Valgavoth : l'exil lié des cartes adverses (`exileOpponentsCardsLinked`, dans `moveObject`) et le droit de les jouer pendant votre tour contre des PV (`playFrom: { zone: "linked", payLifeManaValue }`, PLAN-H H7b) ; la garde « sacrifiez trois permanents non-terrains » ;
   - le ninjutsu (`returnUnblockedAttacker`, Kaito) ;
   - un coût alternatif pour tous vos sorts (`altCostAll`, Leyline of Mutation, via `altCostFor`) ;
   - Warped Space (`freeFromExileOncePerTurn`) et Winter (`opponentMaxHandSize`) ;

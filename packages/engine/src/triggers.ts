@@ -1482,13 +1482,8 @@ function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
   if (!modes) return true;
   // Seuls les modes dont les cibles requises existent sont proposés (et, pour Demonic Pact, pas encore choisis).
   const o = s.objects[t.sourceId];
-  const used = !ab?.uniqueModes
-    ? []
-    : ab.uniqueModes === "turn"
-      ? o?.usedModesTurn === s.turn.number
-        ? (o?.usedModes ?? [])
-        : []
-      : (o?.usedModes ?? []);
+  const used =
+    !ab?.uniqueModes || (ab.uniqueModes === "turn" && o?.usedModes?.turn !== s.turn.number) ? [] : (o?.usedModes?.modes ?? []);
   const possible = modes
     .map((m, i) => ({ m, i }))
     .filter(({ i }) => !used.includes(i))
@@ -1649,11 +1644,9 @@ function markModeUsed(s: GameState, t: PendingTrigger): void {
   const o = s.objects[t.sourceId];
   if (!o) return;
   // « … ce tour-ci » : la liste repart de zéro à chaque tour.
-  if (triggeredAbility(s, t)?.uniqueModes === "turn" && o.usedModesTurn !== s.turn.number) {
-    o.usedModes = [];
-    o.usedModesTurn = s.turn.number;
-  }
-  o.usedModes = [...(o.usedModes ?? []), t.mode];
+  const turn = triggeredAbility(s, t)?.uniqueModes === "turn" ? s.turn.number : o.usedModes?.turn;
+  const modes = turn === o.usedModes?.turn ? (o.usedModes?.modes ?? []) : [];
+  o.usedModes = { modes: [...modes, t.mode], ...(turn !== undefined ? { turn } : {}) };
 }
 
 /**

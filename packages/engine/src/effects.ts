@@ -1031,7 +1031,7 @@ export function moveWithSpec(
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (moved && zone === "exile" && viewers) moved.exiledFaceDown = viewers;
   // Distorsion : lançable depuis l'exil à partir du tour suivant.
-  if (moved && zone === "exile" && spec.warp) moved.warpExiledTurn = s.turn.number;
+  if (moved && zone === "exile" && spec.warp) moved.exiledVia = { kind: "warp", turn: s.turn.number };
   // Exhumation (702.84a) : « s'il devait quitter le champ de bataille, exilez-le à la place ».
   if (moved && zone === "battlefield" && spec.exileIfLeaves) moved.exileIfLeaves = true;
   // Le verso (712.14), l'état engagé, les marqueurs, les types et l'attaque sont posés par `moveObject` avant l'événement

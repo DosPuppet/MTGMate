@@ -355,7 +355,7 @@ export function matchesExiled(s: GameState, controller: PlayerId, id: ObjectId, 
   const o = s.objects[id];
   if (o?.zone !== "exile" || o.faceDown || o.cardCopy || o.preparedFor) return false;
   if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
-  if (ex.warped && o.warpExiledTurn === undefined) return false;
+  if (ex.warped && o.exiledVia?.kind !== "warp") return false;
   if (ex.own !== undefined && (o.owner === controller) !== ex.own) return false;
   if (
     ex.linked &&

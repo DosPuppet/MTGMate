@@ -358,9 +358,9 @@ export const HANDLERS: OpHandlers = {
       isToken: true,
     };
     const emblem = createObject(s, defId, ctx.controller, "command", { isToken: true });
-    if (e.duration === "untilYourNextTurn") emblem.expiresAtTurnOf = ctx.controller;
-    if (e.duration === "endOfTurn") emblem.expiresEndOfTurn = s.turn.number;
-    if (e.duration === "endOfYourNextTurn") emblem.expiresEndOfTurn = nextTurnOf(s, ctx.controller);
+    if (e.duration === "untilYourNextTurn") emblem.expires = { turnOf: ctx.controller };
+    if (e.duration === "endOfTurn") emblem.expires = { endOfTurn: s.turn.number };
+    if (e.duration === "endOfYourNextTurn") emblem.expires = { endOfTurn: nextTurnOf(s, ctx.controller) };
     // Oko, Shadowmoor Scion : « choisissez un type de créature ; vous obtenez un emblème avec "les créatures du type
     // choisi…" » : l'emblème garde le choix fait par l'effet.
     const chosen = r.vars.$chosen;

@@ -123,14 +123,17 @@ export interface GameObject {
    * la garde {2} (déguisement, cape) et les coûts pour la retourner face visible sont gardés ici.
    */
   faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
-  /** Carte exilée par la distorsion : tour de l'exil. */
   /** Tour où la carte a été défaussée (Chaos / Mayhem : « si vous l'avez défaussée ce tour-ci »). */
   discardedTurn?: number;
   /** Zone d'où l'objet est venu dans sa zone actuelle (Supper for Spiders : « depuis le champ de bataille »). */
   arrivedFrom?: Zone;
   /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
   harnessed?: boolean;
-  warpExiledTurn?: number;
+  /**
+   * Carte exilée par une mécanique qui la rend lançable depuis l'exil à un tour ultérieur, et tour de l'exil : la
+   * distorsion (702.185a, `warp`), le complot (702.170d, `plot`), le présage (702.143a, `foretell`).
+   */
+  exiledVia?: { kind: "warp" | "plot" | "foretell"; turn: number };
   /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
   saddledTurn?: number;
   /** Épuisé : ne se dégage pas lors de la prochaine étape de dégagement de son contrôleur. */
@@ -147,10 +150,11 @@ export interface GameObject {
   onAdventure?: boolean;
   /** Copie d'une carte (Uldaros) : quitte l'exil seulement pour la pile ; devient un jeton sur le champ de bataille. */
   cardCopy?: boolean;
-  /** Emblème temporaire : disparaît au début du prochain tour de ce joueur. */
-  expiresAtTurnOf?: PlayerId;
-  /** Emblème qui disparaît à la fin de ce tour (son numéro) : ce tour-ci, ou la fin de votre prochain tour. */
-  expiresEndOfTurn?: number;
+  /**
+   * Emblème temporaire : il disparaît à la fin du tour `endOfTurn` (son numéro : ce tour-ci, ou la fin de votre prochain
+   * tour), ou au début du prochain tour du joueur `turnOf` (« jusqu'à votre prochain tour »).
+   */
+  expires?: { endOfTurn: number } | { turnOf: PlayerId };
   /** A déjà infligé des blessures de combat (Ruric Thar). */
   dealtCombatDamage?: boolean;
   /** Carte exilée suspendue (702.62) : un marqueur de temps est retiré à chaque entretien de son propriétaire. */
@@ -170,10 +174,6 @@ export interface GameObject {
   /** Engagements de ce tour (`tapTurn` : le tour du décompte), pour « la première fois qu'elle devient engagée ce tour-ci ». */
   tapTurn?: number;
   tapsThisTurn?: number;
-  /** Plot : tour où la carte est devenue « complotée » (exilée face visible, lançable gratuitement plus tard). */
-  plottedTurn?: number;
-  /** Présage (702.143) : tour où la carte a été exilée de la main pour {2}, lançable plus tard pour son coût de présage. */
-  foretoldTurn?: number;
   /** Exilée face cachée (406.3) : les joueurs qui peuvent la regarder (vide : personne). */
   exiledFaceDown?: PlayerId[];
   /** Exhumé (702.84a) : s'il devait quitter le champ de bataille, il est exilé à la place. */
@@ -186,10 +186,11 @@ export interface GameObject {
   combatDamagedPlayers?: PlayerId[];
   /** Tour de la dernière activation « une fois par tour », par indice de capacité. */
   activatedTurn?: Record<number, number>;
-  /** Modes déjà choisis (Demonic Pact). */
-  usedModes?: number[];
-  /** Tour auquel se rapportent `usedModes` pour les modes uniques « ce tour-ci ». */
-  usedModesTurn?: number;
+  /**
+   * Modes déjà choisis (Demonic Pact) ; `turn` : le tour auquel ils se rapportent pour les modes uniques « ce tour-ci »
+   * (la liste repart de zéro à un autre tour).
+   */
+  usedModes?: { modes: number[]; turn?: number };
 }
 
 /** Un mana marqué de la réserve (`PlayerState.restrictedMana`). */

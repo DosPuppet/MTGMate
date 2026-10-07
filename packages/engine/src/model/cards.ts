@@ -949,31 +949,6 @@ export interface CastPermissionAbilityDef {
   freeOncePerTurn?: true;
   /** Omnipresence : seulement les sorts de valeur de mana ≤ nombre de créatures que vous contrôlez. */
   freeMaxManaValueCreatures?: true;
-  /** Null Summoner : lancer les cartes liées exilées (mana de n'importe quel type), sous condition. */
-  linkedCards?: true;
-  /**
-   * Hama, the Bloodbender : les cartes liées se lancent en maîtrisant l'eau {X} plutôt qu'en payant leur coût de mana,
-   * X étant leur valeur de mana.
-   */
-  linkedWaterbend?: true;
-  /** Intrepid Paleontologist : seulement les cartes liées que vous possédez et qui correspondent (mana ordinaire). */
-  linkedFilter?: ObjectFilter;
-  /** … et le permanent arrive avec un marqueur de finalité. */
-  linkedFinality?: true;
-  /**
-   * Variantes des cartes liées (Lorwyn Eclipsed) : de n'importe quel propriétaire (`linkedAnyOwner`, Maralen) ; sans
-   * payer le coût de mana (`linkedFree`) ; valeur de mana au plus ce montant (`linkedMaxManaValue`) ; une fois par tour
-   * (`linkedOncePerTurn`) ; seulement les cartes exilées ce tour-ci (`linkedThisTurn`) ; en retirant N marqueurs parmi
-   * vos créatures (`linkedRemoveCounters`, Dawnhand Dissident).
-   */
-  linkedAnyOwner?: true;
-  linkedFree?: true;
-  linkedMaxManaValue?: Amount;
-  linkedOncePerTurn?: true;
-  linkedThisTurn?: true;
-  linkedRemoveCounters?: number;
-  /** … avec du mana de n'importe quel type (Taster of Wares). */
-  linkedAnyMana?: true;
   condition?: Condition;
   /** Tinybones : pendant votre tour, jouer les cartes exilées avec un marqueur de butin que vous ne possédez pas (mana de n'importe quel type). */
   stash?: true;
@@ -1078,11 +1053,21 @@ export interface AbilityCostMod {
 /**
  * Permission de jouer depuis une zone (famille C, R4.4) : les cartes de son cimetière ou la carte du dessus de sa
  * bibliothèque, qui correspondent au filtre, se jouent (terrains) ou se lancent (sorts), avec d'éventuels coûts ou
- * effets en plus.
+ * effets en plus. `linked` : les cartes exilées liées à la source (`GameObject.linked`), de tout propriétaire sauf filtre
+ * `owner` (Null Summoner, Intrepid Paleontologist, Taster of Wares, Maralen, Hama, Valgavoth…).
  */
 export interface PlayFromZone {
-  zone: "graveyard" | "libraryTop";
+  zone: "graveyard" | "libraryTop" | "linked";
+  /** Lu par `matchesCard` (« que vous possédez » : `owner` ; « exilées ce tour-ci » : `enteredThisTurn`). */
   filter?: ObjectFilter;
+  /** Valeur de mana au plus égale à ce montant, évalué pour la source (Maralen : vos Elfes et Faeries). */
+  maxManaValue?: Amount;
+  /** Sans payer son coût de mana (Maralen). */
+  free?: boolean;
+  /** En maîtrisant l'eau {X} plutôt qu'en payant son coût de mana, X étant sa valeur de mana (Hama, the Bloodbender). */
+  waterbend?: boolean;
+  /** En retirant en plus N marqueurs parmi les créatures que vous contrôlez (Dawnhand Dissident). */
+  removeCountersAmong?: number;
   /** Terrains, sorts, ou les deux (par défaut). */
   what?: "lands" | "spells";
   /** Points de vie payés en plus (Noctis, Festival of Embers). */
@@ -1110,7 +1095,7 @@ export interface PlayFromZone {
   /** Faufilement donné (Ninja Teen : « vos cartes de créature du cimetière ont le faufilement {3}{B} ») : la carte se
    * lance pour ce coût pendant la fenêtre de faufilement, en renvoyant un attaquant non bloqué. */
   sneak?: ManaCost;
-  /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Gwenom, Remorseless). */
+  /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Gwenom, Remorseless ; Valgavoth, Terror Eater). */
   payLifeManaValue?: boolean;
   /** La carte a le chaos (Goblin Formula) : lancée depuis le cimetière pour son coût de chaos, son coût de mana. */
   mayhem?: boolean;
@@ -1267,8 +1252,6 @@ export interface PlayerStaticAbilityDef {
    * Guide (`affects: "opponents"`) ; la plus petite s'applique.
    */
   maxHandSize?: Amount;
-  /** Valgavoth : pendant votre tour, jouer les cartes liées à la source ; un sort ainsi lancé coûte des PV égaux à sa VM. */
-  playLinkedPayLife?: boolean;
   /** Found Footage : vous pouvez regarder les créatures face cachée de vos adversaires à tout moment. */
   seeFaceDown?: boolean;
   /** Marina Vendrell's Grimoire : vous ne perdez pas la partie pour avoir 0 point de vie ou moins. */
@@ -1396,7 +1379,7 @@ export interface TokenSpec {
 export interface MoveSpec {
   /** `command` : la zone de commandement de son propriétaire (Hellkite Courser : « renvoyez-le dans la zone de commandement »). */
   to: "hand" | "battlefield" | "graveyard" | "exile" | "libraryTop" | "libraryBottom" | "command";
-  /** Exilé par la distorsion : lançable depuis l'exil un tour suivant (`warpExiledTurn`). */
+  /** Exilé par la distorsion : lançable depuis l'exil un tour suivant (`exiledVia` de sorte `warp`). */
   warp?: boolean;
   tapped?: boolean;
   /** Sur le champ de bataille : sous le contrôle du contrôleur de l'effet (sinon du propriétaire). */

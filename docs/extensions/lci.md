@@ -42,7 +42,7 @@ Les scripts sont dans `packages/cards/src/lci/` : `white`, `blue`, `black`, `red
   - Locus of Enlightenment : l'événement `activated` et le déclencheur `activateAbility` ; le filtre `withActivatedAbility` (The Enigma Jewel) ;
   - Roaming Throne : `doubleTriggersFor` (type choisi) ; Twists and Turns : `scryBeforeExplore` ;
   - les capacités de mana `produceLinkedColors` (Pit of Offerings) et `amountGraveyard` (The Core), et le rider `uncounterable` (Cavern of Souls ; le type choisi se lit sur la source) ;
-  - Intrepid Paleontologist : `castPermission` avec `linkedFilter` et `linkedFinality` ;
+  - Intrepid Paleontologist : `playFrom: { zone: "linked", filter, finality }` (PLAN-H H7b) ;
   - **correctif** : `cdaValue` (F/E définies par une capacité) tient compte du filtre complet, y compris dans les cimetières (Souls of the Lost) ; le journal nomme les arrivées sur le champ de bataille.
 
 Tests : `engine/test/lci.test.ts` et le test de fumée `ai/test/smoke/lci.test.ts`.

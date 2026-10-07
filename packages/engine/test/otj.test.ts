@@ -53,7 +53,7 @@ describe("Outlaws of Thunder Junction", () => {
     s = act(s, "p1", { type: "activate", source: djinn, ability: abilityIndex(s, djinn, "Complot") });
     // Action spéciale : pas de pile, la carte est exilée et complotée.
     expect(s.stack).toHaveLength(0);
-    const plotted = s.exile.find((id) => s.objects[id]?.plottedTurn !== undefined) as string;
+    const plotted = s.exile.find((id) => s.objects[id]?.exiledVia?.kind === "plot") as string;
     expect(plotted).toBeDefined();
     // Pas ce tour-ci.
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === plotted)).toBe(false);
@@ -345,7 +345,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     const plot = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === card);
     expect(plot).toBeDefined();
     s = act(s, "p1", { type: "activate", source: card, ability: plot?.type === "activate" ? plot.ability : -1 });
-    expect(s.exile.some((id) => nameOf(s, id) === "Longhorn Sharpshooter" && s.objects[id]?.plottedTurn !== undefined)).toBe(
+    expect(s.exile.some((id) => nameOf(s, id) === "Longhorn Sharpshooter" && s.objects[id]?.exiledVia?.kind === "plot")).toBe(
       true,
     );
     const noDoc = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Longhorn Sharpshooter"] } });
@@ -500,7 +500,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(idsOf(s, "p1", "battlefield", "Aven Interrupter")).toHaveLength(1);
     const plotted = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
     expect(plotted).toBeDefined();
-    expect(s.objects[plotted]?.plottedTurn).toBeDefined();
+    expect(s.objects[plotted]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(0);
     // Au tour suivant de p2 : lancé sans payer son coût de mana, mais {2} de plus.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.number > 3 && x.turn.step === "main1" && x.stack.length === 0);
@@ -1449,7 +1449,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(chars(small, plain).keywords).not.toContain("lifelink");
     let p = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Dust Animus"] } });
     p = activate(p, idOf(p, "p1", "hand", "Dust Animus"), "Complot");
-    expect(p.exile.some((id) => nameOf(p, id) === "Dust Animus" && p.objects[id]?.plottedTurn !== undefined)).toBe(true);
+    expect(p.exile.some((id) => nameOf(p, id) === "Dust Animus" && p.objects[id]?.exiledVia?.kind === "plot")).toBe(true);
   });
 
   it("Eriette, the Beguiler : une Aura attachée à un permanent adverse de VM inférieure ou égale à la sienne vous en donne le contrôle", () => {
@@ -1477,7 +1477,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     s = activate(s, fblthp, "Complotez");
     s = settle(s, (req) => (req.type === "yesNo" ? [1] : undefined));
     const cub = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
-    expect(s.objects[cub]?.plottedTurn).toBeDefined();
+    expect(s.objects[cub]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p1", "battlefield", "Forest").every((id) => s.objects[id]?.tapped)).toBe(true);
     // Un terrain sur le dessus : rien.
     let l = scenario({ p1: { battlefield: ["Fblthp, Lost on the Range", ...lands("Forest", 2)] } });
@@ -1808,7 +1808,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
       return [elves];
     });
     expect(options.sort()).toEqual(["Llanowar Elves", "Malcolm, the Eyes", "Swab Goblin"]);
-    expect(s.exile.some((id) => nameOf(s, id) === "Llanowar Elves" && s.objects[id]?.plottedTurn !== undefined)).toBe(true);
+    expect(s.exile.some((id) => nameOf(s, id) === "Llanowar Elves" && s.objects[id]?.exiledVia?.kind === "plot")).toBe(true);
     // Une créature non légendaire : rien.
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Swab Goblin") });
     s = settle(s);
@@ -1866,7 +1866,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.players.p2?.life).toBe(18);
     expect([chars(s, lilah).power, chars(s, lilah).toughness]).toEqual([4, 4]);
     const plotted = exiled(s, "Slick Sequence")[0] as string;
-    expect(s.objects[plotted]?.plottedTurn).toBeDefined();
+    expect(s.objects[plotted]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p1", "graveyard", "Slick Sequence")).toHaveLength(0);
     // Un éphémère monocolore va au cimetière.
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } }));
@@ -3363,7 +3363,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     // La Plaine n'est pas proposée (carte non-terrain).
     expect(options.sort()).toEqual(["Bear Cub", "Swab Goblin"]);
     const plotted = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
-    expect(s.objects[plotted]?.plottedTurn).toBeDefined();
+    expect(s.objects[plotted]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p1", "hand", "Plains")).toHaveLength(1);
     expect(idsOf(s, "p1", "hand", "Swab Goblin")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Swamp"]);
@@ -4017,7 +4017,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     const card = idOf(s, "p1", "hand", "Slickshot Lockpicker");
     s = act(s, "p1", { type: "activate", source: card, ability: abilityIndex(s, card, "Complot") });
     const plotted = s.exile.find((id) => nameOf(s, id) === "Slickshot Lockpicker") as string;
-    expect(s.objects[plotted]?.plottedTurn).toBeDefined();
+    expect(s.objects[plotted]?.exiledVia?.kind).toBe("plot");
     expect(s.stack).toHaveLength(0);
   });
 

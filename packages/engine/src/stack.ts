@@ -272,19 +272,6 @@ function exilePermission(s: GameState, player: PlayerId, card: ObjectId) {
   );
 }
 
-/** Valgavoth, Terror Eater : carte exilée liée à un permanent de ce joueur qui permet de la jouer (pendant son tour). */
-function valgavothLinked(s: GameState, player: PlayerId, card: ObjectId): boolean {
-  if (s.turn.active !== player) return false;
-  return s.battlefield.some((id) => {
-    const src = s.objects[id];
-    return (
-      src?.controller === player &&
-      !!src.linked?.includes(card) &&
-      chars(s, id).abilities.some((ab) => ab.kind === "playerStatic" && ab.playLinkedPayLife)
-    );
-  });
-}
-
 /** Muldrotha : type de permanent encore disponible pour jouer cette carte depuis le cimetière ce tour-ci. */
 function graveyardTypeAvailable(s: GameState, player: PlayerId, card: ObjectId): string | null {
   if (s.turn.active !== player) return null;
@@ -338,7 +325,8 @@ export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): b
   return (
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
-    (o.zone === "exile" && valgavothLinked(s, player, card)) ||
+    // Valgavoth : les cartes liées, terrains compris.
+    (o.zone === "exile" && playFromRules(s, player, card, "linked", "lands").length > 0) ||
     // Tinybones : « jouer » les cartes de butin, terrains compris.
     stashPlayable(s, player, o) ||
     (o.zone === "library" &&
@@ -591,7 +579,8 @@ export function equipDiscount(s: GameState, player: PlayerId, ab: ActivatedAbili
 
 /**
  * Permissions « jouer depuis une zone » (famille C) qui s'appliquent à cette carte, sans coût ni effet en plus d'abord
- * (Case of the Uneaten Feast avant Noctis), puis celles qui laissent dépenser du mana de n'importe quel type.
+ * (Case of the Uneaten Feast avant Noctis), puis celles qui laissent dépenser du mana de n'importe quel type. `linked` :
+ * seulement celles d'un permanent auquel la carte est liée (pas les effets, qui n'ont pas de source).
  */
 export function playFromRules(
   s: GameState,
@@ -610,7 +599,14 @@ export function playFromRules(
     .flatMap(({ id, ab }) => {
       const r = ab.playFrom;
       if (!r || r.zone !== zone || (r.what && r.what !== what)) return [];
+      if (zone === "linked" && !(id && s.objects[id]?.linked?.includes(card))) return [];
       if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
+      // Maralen : valeur de mana au plus égale à un montant évalué pour la source.
+      if (r.maxManaValue !== undefined && id) {
+        const max = evalAmount(s, reductionContext(s, player, id, obj(s, id).defId), r.maxManaValue);
+        if (manaValue(s.defs[obj(s, card).defId]?.manaCost) > max) return [];
+      }
+      if (r.removeCountersAmong && countersAmongCreatures(s, player) < r.removeCountersAmong) return [];
       if (r.payLife && payableLife(s, player) < r.payLife) return [];
       if (r.forage && !canForage(s, player, card)) return [];
       if (r.exileOthers && !graveyardToExile(s, player, card, r.exileOthers)) return [];
@@ -991,7 +987,7 @@ export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
   const exiled = o.zone === "exile" ? id : moveObject(s, id, "exile");
   const card = exiled ? s.objects[exiled] : undefined;
   if (!card) return null;
-  card.plottedTurn = s.turn.number;
+  card.exiledVia = { kind: "plot", turn: s.turn.number };
   emit({ type: "plotted", player, defId: card.defId });
   rulesEvent(s, { e: "plotted", card: card.id });
   // « Quand cette carte devient complotée » : la carte est en exil, la capacité se déclenche de là.
@@ -1029,7 +1025,7 @@ export function foretellCard(s: GameState, id: ObjectId): void {
   const exiled = moveObject(s, id, "exile");
   const card = exiled ? s.objects[exiled] : undefined;
   if (!card) return;
-  card.foretoldTurn = s.turn.number;
+  card.exiledVia = { kind: "foretell", turn: s.turn.number };
   // Exilée face cachée : seul son propriétaire peut la regarder (702.143a).
   card.exiledFaceDown = [card.owner];
   emit({ type: "foretold", player: card.owner, defId: card.defId });
@@ -1530,14 +1526,13 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
   }
   if (o.zone === "exile") {
     // 702.143a : une carte présagée se lance à un tour ultérieur pour son coût de présage.
-    if (o.foretoldTurn !== undefined) {
-      return o.owner === player && o.foretoldTurn < s.turn.number && d.foretell
-        ? { source: "exile", costOverride: d.foretell }
-        : null;
+    const via = o.exiledVia;
+    if (via?.kind === "foretell") {
+      return o.owner === player && via.turn < s.turn.number && d.foretell ? { source: "exile", costOverride: d.foretell } : null;
     }
     // 702.170d : une carte complotée se lance sans payer son coût, à un tour ultérieur, au moment d'un rituel.
-    if (o.plottedTurn !== undefined) {
-      return o.owner === player && o.plottedTurn < s.turn.number ? { source: "exile", free: true, sorceryTiming: true } : null;
+    if (via?.kind === "plot") {
+      return o.owner === player && via.turn < s.turn.number ? { source: "exile", free: true, sorceryTiming: true } : null;
     }
     // Reality Fracture : la copie du sort d'un permanent préparé, lançable par le contrôleur actuel de ce permanent.
     if (o.preparedFor) {
@@ -1546,50 +1541,32 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         ? { source: "exile" }
         : null;
     }
-    // Null Summoner : la carte exilée et liée, lançable sous condition, avec du mana de n'importe quel type.
-    for (const id of s.battlefield) {
-      const src = obj(s, id);
-      if (src.controller !== player || !src.linked?.includes(card)) continue;
-      const ab = chars(s, id).abilities.find((a) => a.kind === "castPermission" && a.linkedCards);
-      if (ab?.kind === "castPermission" && (!ab.condition || checkCondition(s, ab.condition, player, id))) {
-        if (ab.linkedWaterbend) {
-          const generic = manaValue(d.manaCost);
-          return { source: "exile", costOverride: { generic, colored: {}, x: 0 }, waterbendOverride: true };
-        }
-        if (!ab.linkedFilter) return { source: "exile", anyMana: true };
-        const onceKey = ab.linkedOncePerTurn ? `linkedCast:${id}` : undefined;
-        if (onceKey && s.turn.onceFired.includes(onceKey)) continue;
-        if (ab.linkedThisTurn && o.controlledSince !== s.turn.number) continue;
-        if (ab.linkedRemoveCounters && countersAmongCreatures(s, player) < ab.linkedRemoveCounters) continue;
-        const maxMv =
-          ab.linkedMaxManaValue !== undefined
-            ? evalAmount(s, reductionContext(s, player, id, src.defId), ab.linkedMaxManaValue)
-            : undefined;
-        if (maxMv !== undefined && manaValue(d.manaCost) > maxMv) continue;
-        if (
-          (ab.linkedAnyOwner || o.owner === player) &&
-          matchesCard(s, player, card, { ...ab.linkedFilter, controller: undefined }, id)
-        )
-          return {
-            source: "exile",
-            finality: ab.linkedFinality,
-            free: ab.linkedFree,
-            anyMana: ab.linkedAnyMana,
-            removeCounters: ab.linkedRemoveCounters,
-            onceKey,
-          };
-      }
+    // Cartes exilées liées à un permanent (famille C, `zone: "linked"`) : Null Summoner, Intrepid Paleontologist (finalité),
+    // Taster of Wares (mana de n'importe quel type), Maralen (gratuit, une fois par tour), Dawnhand Dissident (marqueurs
+    // retirés), Hama (maîtrise de l'eau), Valgavoth (des PV égaux à sa valeur de mana).
+    const linked = playFromRules(s, player, card, "linked", "spells")[0];
+    if (linked?.waterbend) {
+      const generic = manaValue(d.manaCost);
+      return { source: "exile", costOverride: { generic, colored: {}, x: 0 }, waterbendOverride: true };
     }
-    // Valgavoth : pendant votre tour, les cartes liées ; un sort ainsi lancé coûte des PV égaux à sa valeur de mana.
-    if (valgavothLinked(s, player, card)) {
+    if (linked?.payLifeManaValue) {
       const life = manaValue(d.manaCost);
       if (life > 0 && payableLife(s, player) < life) return null;
       return { source: "exile", free: true, payLife: life || undefined };
     }
+    if (linked)
+      return {
+        source: "exile",
+        ...(linked.finality ? { finality: true } : {}),
+        ...(linked.free ? { free: true } : {}),
+        ...(linked.anyMana ? { anyMana: true } : {}),
+        ...(linked.removeCountersAmong ? { removeCounters: linked.removeCountersAmong } : {}),
+        ...(linked.onceKey ? { onceKey: linked.onceKey } : {}),
+      };
     // 715.4 : la carte « en aventure » : son propriétaire peut lancer la créature.
     if (o.onAdventure && o.owner === player) return { source: "exile" };
     // 702.185a : exilée par la distorsion, lançable depuis l'exil à partir du tour suivant.
-    if (o.warpExiledTurn !== undefined && o.owner === player && s.turn.number > o.warpExiledTurn) return { source: "exile" };
+    if (via?.kind === "warp" && o.owner === player && s.turn.number > via.turn) return { source: "exile" };
     const perm = exilePermission(s, player, card);
     // Inside Information : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
     if (perm?.payLifeManaValue && !d.types.includes("Land")) {

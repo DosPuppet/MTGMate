@@ -72,7 +72,7 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Le moteur gagne :**
   - la maîtrise de l'eau en coût additionnel de sort, lue dans le texte : obligatoire (« waterbend {5} », `CardDef.waterbend`), en X (« waterbend {X} », `xCost: "waterbend"`) ou facultative (« you may waterbend {N} », un kicker `kickerKind: "waterbend"`, lu par `cond.kicked`) ; la part payable en engageant artefacts et créatures est exactement celle de la maîtrise (`waterbendAmount`, `ManaPurpose.waterbend`), selon le kicker et X ;
   - la garde « Ward—Waterbend {4} » (`ward.waterbend`), « à moins de maîtriser l'eau {2} » (`fx.unlessPays(…, { waterbend: true })`) et « vous pouvez maîtriser l'eau » (`fx.mayWaterbend`) ;
-  - les cartes liées lancées en maîtrisant l'eau {X}, X étant leur valeur de mana (`castPermission({ linkedCards, linkedWaterbend })`, Hama) ;
+  - les cartes liées lancées en maîtrisant l'eau {X}, X étant leur valeur de mana (`playFrom: { zone: "linked", waterbend }`, Hama ; PLAN-H H7b) ;
   - le contrôle d'un joueur pendant sa seule prochaine phase de combat (`fx.controlNextTurn(who, true)`, `turnControl.combatOnly`), annoncé au journal ;
   - `fx.countersDivided(total, objets, { counter, anyNumber })` : une autre sorte de marqueur (étourdissement), répartie à la résolution entre un nombre quelconque d'objets.
 - **Dette :** le contrôle d'un autre joueur (`controlNextTurn`) sert désormais à deux cartes : son entrée est retirée.
@@ -109,7 +109,7 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 
 - **Cartes (7) :** Redirect Lightning, Sozin's Comet, The Last Agni Kai, Lo and Li, Twin Tutors, Iroh, Grand Lotus, Ozai, the Phoenix King, Planetarium of Wan Shi Tong.
 - **Le moteur gagne :**
-  - le présage (702.143) : « Foretell {2}{R} » lu dans le texte, action spéciale pendant votre tour (payer {2}, exiler la carte de la main), lancement à un tour ultérieur pour le coût de présage (`foretoldTurn`) ; entrée de dette justifiée (une seule carte) ;
+  - le présage (702.143) : « Foretell {2}{R} » lu dans le texte, action spéciale pendant votre tour (payer {2}, exiler la carte de la main), lancement à un tour ultérieur pour le coût de présage (`exiledVia` de sorte `foretell`) ; entrée de dette justifiée (une seule carte) ;
   - « en coût additionnel, payez N PV ou payez {M} » (`kickerCost.life` avec `kickerOrPay`, lu dans le texte) ;
   - `playFrom` avec `flashback` et `cost` : le flashback donné aux cartes du cimetière (Iroh, Grand Lotus : leur coût de mana, ou {1} pour les Leçons) ;
   - la carte du dessus de la bibliothèque lancée par une permission (`castNow`, Planetarium of Wan Shi Tong) ;

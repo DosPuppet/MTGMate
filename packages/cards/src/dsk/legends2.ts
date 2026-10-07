@@ -62,7 +62,8 @@ export const LEGENDS2: Record<string, CardScript> = {
         label: "Les cartes adverses sont exilées",
       }),
       playerStatic({
-        playLinkedPayLife: true,
+        playFrom: { zone: "linked", payLifeManaValue: true },
+        condition: cond.yourTurn,
         label: "Les cartes adverses sont exilées ; jouables pendant votre tour contre des PV",
       }),
     ],

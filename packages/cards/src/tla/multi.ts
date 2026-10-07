@@ -10,7 +10,6 @@ import {
   amount,
   type CardScript,
   CLUE,
-  castPermission,
   cond,
   costReducer,
   entersWith,
@@ -81,7 +80,11 @@ export const MULTI: Record<string, CardScript> = {
           label: "L'adversaire exile une de ses créatures non-jetons, puis une carte non-terrain de son cimetière",
         },
       ),
-      castPermission({ linkedCards: true, condition: cond.yourTurn, label: "Pendant votre tour, lancez les cartes exilées" }),
+      playerStatic({
+        playFrom: { zone: "linked", what: "spells", anyMana: true },
+        condition: cond.yourTurn,
+        label: "Pendant votre tour, lancez les cartes exilées",
+      }),
     ],
   },
   "Beifong's Bounty Hunters": {
@@ -561,9 +564,8 @@ export const MULTI: Record<string, CardScript> = {
           label: "Un adversaire meule trois cartes ; exilez jusqu'à une carte non-créature, non-terrain de son cimetière",
         },
       ),
-      castPermission({
-        linkedCards: true,
-        linkedWaterbend: true,
+      playerStatic({
+        playFrom: { zone: "linked", what: "spells", waterbend: true },
         condition: cond.yourTurn,
         label: "Pendant votre tour, lancez la carte exilée en maîtrisant l'eau {X} (X : sa valeur de mana)",
       }),
