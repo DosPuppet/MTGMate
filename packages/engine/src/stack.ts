@@ -12,7 +12,7 @@ import {
   removeFromCombat,
   sacrifice as sacrificePermanent,
 } from "./actions";
-import { ask } from "./choices";
+import { absentAnswer, ask } from "./choices";
 import { counterLabel } from "./counterLabels";
 import {
   announceDiscard,
@@ -42,6 +42,7 @@ import {
   emit,
   FACE_DOWN_DEF,
   FACE_DOWN_ID,
+  isAlive,
   isCreature,
   kickerPaidTimes,
   moveObject,
@@ -3798,6 +3799,16 @@ export function continueResolution(s: GameState): boolean {
   while (r.pc < r.effects.length && !s.over) {
     // Chaque effet est un ensemble d'événements simultanés (regard en arrière des déclencheurs).
     const result = simultaneously(s, () => runEffect(s, r, r.effects[r.pc] as Effect));
+    // 800.4a : un joueur qui a quitté la partie (« ce joueur peut… » adressé à l'adversaire blessé, éliminé par ces
+    // blessures) n'a plus rien à décider : sa réponse est celle d'un absent, et l'effet est repris avec elle.
+    if (result && "ask" in result && !isAlive(s, result.ask.player)) {
+      r.vars[result.ask.key] = absentAnswer(result.ask.request);
+      continue;
+    }
+    if (result && "castNow" in result && !isAlive(s, result.castNow.player)) {
+      r.vars[result.castNow.key] = [];
+      continue;
+    }
     if (result && "ask" in result) {
       r.awaiting = result.ask.key;
       ask(s, result.ask.player, result.ask.request, { kind: "effect" });

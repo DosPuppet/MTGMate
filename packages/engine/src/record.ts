@@ -428,8 +428,10 @@ export const RECORD_VERSION = 1;
  *   mustAttackPlayer) : le plus grand nombre d'exigences satisfaites, jamais de taxe imposée ; l'IA et la déclaration
  *   par défaut les respectent (restrictions d'attaque de chaque créature comprises) ; Dack Fayden, Fast Forward, Taunt
  *   from the Rampart, Galactus, Silver Surfer, Maximum Carnage.
+ * - 156 : 800.4a : une question posée pendant une résolution à un joueur qui a quitté la partie n'est pas posée ;
+ *   abandon en pleine résolution (la capacité d'un joueur parti cesse d'exister)
  */
-export const RULES_VERSION = 155;
+export const RULES_VERSION = 156;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

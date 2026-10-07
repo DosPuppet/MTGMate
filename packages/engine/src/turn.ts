@@ -15,14 +15,14 @@ import {
   setSpeed,
   sourceFromObject,
 } from "./actions";
-import { ask, cardRef } from "./choices";
+import { absentAnswer, ask, cardRef } from "./choices";
 import { syncControl } from "./control";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveDiscarded, staticContext } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { bumpFor, copiedDefId, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
 import { manaValue, payMana } from "./mana";
-import { RulesError, resolveTop } from "./stack";
+import { answerCastNow, answerResolutionChoice, dropNowPermissions, RulesError, resolveTop } from "./stack";
 import { announceNext } from "./stackChoices";
 import {
   alivePlayers,
@@ -64,7 +64,18 @@ import {
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
 import { processTriggers, pushInline, releaseDelayedTriggers, rulesTrigger, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
-import type { CardDef, Effect, GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
+import type {
+  CardDef,
+  Effect,
+  GameState,
+  ManaType,
+  ObjectFilter,
+  ObjectId,
+  PendingDecision,
+  PlayerId,
+  StackItem,
+  Step,
+} from "./types";
 import { STEPS } from "./types";
 
 export const MAX_HAND_SIZE = 7;
@@ -1649,9 +1660,18 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
   for (const p of losers) removePlayerObjects(s, p);
   s.mulliganQueue = s.mulliganQueue.filter((q) => !losers.includes(q));
   if (s.mulliganTaken) s.mulliganTaken = s.mulliganTaken.filter((q) => !losers.includes(q));
-  const pendingLeaving = !!s.pending && losers.includes(s.pending.player);
+  const pending = s.pending;
+  const pendingLeaving = !!pending && losers.includes(pending.player);
   if (pendingLeaving) s.pending = null;
   if (s.flow === "mulligan") return;
+  // Abandon en pleine résolution (800.4a) : le joueur à qui la question était posée, ou le contrôleur de ce qui se
+  // résout, quitte la partie ; la résolution reprend sans lui, ou s'arrête si l'objet a quitté la pile avec lui.
+  const resolvingGone = !!s.resolving && !s.stack.some((x) => x.id === s.resolving?.item.id);
+  const resume = s.flow === "resolving" && !!s.resolving?.awaiting && (pendingLeaving || resolvingGone);
+  if (resume) {
+    s.pending = null;
+    resumeWithoutLeaver(s, pending);
+  }
   if (activeLeaving) {
     // Simplification : le tour d'un joueur qui quitte la partie s'arrête immédiatement.
     s.combat = null;
@@ -1660,9 +1680,34 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
     s.flow = "stepEnd";
   } else if (pendingLeaving && s.flow === "tba") {
     nextBlockingPlayer(s); // seul cas où un joueur non actif doit une action de tour
-  } else if (holderLeaving) {
+  } else if (holderLeaving && !resume) {
+    // Après une résolution reprise, la priorité a déjà été rendue (au joueur actif, 117.3b).
     s.priority = { holder: nextPlayer(s, s.priority.holder), passes: 0 };
   }
+}
+
+/**
+ * 800.4a : le joueur à qui une résolution posait une question, ou le contrôleur de ce qui se résout, quitte la partie
+ * (abandon). Le sort ou la capacité d'un joueur qui part a quitté la pile avec lui : la résolution s'arrête. Sinon, elle reprend avec la réponse d'un absent
+ * (`absentAnswer`, refus d'un « lancez-la maintenant »), comme `continueResolution` pour les questions suivantes.
+ */
+function resumeWithoutLeaver(s: GameState, pending: PendingDecision | null): void {
+  const r = s.resolving;
+  if (!r?.awaiting) return;
+  if (!pending || !s.stack.some((x) => x.id === r.item.id)) {
+    s.resolving = null;
+    dropNowPermissions(s);
+    afterResolution(s);
+    return;
+  }
+  // Capacité de mana (605.3b) : la priorité revient au joueur qui l'a activée.
+  const back = r.returnPriority;
+  const done = pending.kind === "choice" ? answerResolutionChoice(s, absentAnswer(pending.request)) : answerCastNow(s, null);
+  if (!done) return;
+  if (back) {
+    s.priority = back;
+    s.flow = "priority";
+  } else afterResolution(s);
 }
 
 function removePlayerObjects(s: GameState, p: PlayerId): void {

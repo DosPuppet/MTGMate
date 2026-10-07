@@ -147,6 +147,63 @@ describe("multijoueur", () => {
     expect(s.objects[spell]).toBeUndefined();
     expect(s.exile.map((id) => [s.objects[id]?.owner, s.defs[s.objects[id]?.defId ?? ""]?.name])).toEqual([["p1", "Shock"]]);
   });
+
+  // Fuzz strict, Commander à 4 (seed 62) : Willie Lumpkin tue p2 par ses blessures de combat ; sa capacité se résout
+  // ensuite et demandait à p2, éliminé, s'il voulait piocher.
+  const willieHits = (life: number, defender: "p2" | "p4" = "p2") => {
+    let s = scenario({
+      players: 4,
+      p1: { battlefield: ["Willie Lumpkin, Postman"], library: ["Forest", "Forest"] },
+      [defender]: { life, library: ["Forest", "Forest"] },
+    });
+    s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const willie = idOf(s, "p1", "battlefield", "Willie Lumpkin, Postman");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: willie, defender }] });
+    // Willie ne peut pas être bloqué : aucune déclaration de bloqueurs.
+    return passUntil(s, (x) => x.stack.length > 0 || x.pending?.kind === "choice");
+  };
+
+  it("800.4a : une question posée pendant une résolution à un joueur éliminé n'est pas posée (il ne fait rien)", () => {
+    let s = willieHits(1);
+    expect(s.players.p2?.lost).toBe(true);
+    expect(s.stack).toHaveLength(1);
+    s = passUntil(s, (x) => x.stack.length === 0 || x.pending?.kind === "choice");
+    expect(s.pending).toEqual({ kind: "priority", player: "p1" });
+    expect(s.players.p1?.hand).toHaveLength(1);
+  });
+
+  it("800.4a : un joueur qui abandonne pendant une question qui lui est posée en cours de résolution, la résolution se termine", () => {
+    let s = willieHits(20);
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    expect(s.pending?.player).toBe("p2");
+    s = act(s, "p2", { type: "concede" });
+    expect(s.players.p2?.lost).toBe(true);
+    expect(s.stack).toHaveLength(0);
+    expect(s.pending).toEqual({ kind: "priority", player: "p1" });
+    expect(s.players.p1?.hand).toHaveLength(1);
+  });
+
+  it("800.4a : le dernier joueur à avoir passé abandonne pendant sa question : la priorité revient au joueur actif (117.3b)", () => {
+    let s = willieHits(20, "p4");
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    expect(s.pending?.player).toBe("p4");
+    s = act(s, "p4", { type: "concede" });
+    expect(s.stack).toHaveLength(0);
+    expect(s.pending).toEqual({ kind: "priority", player: "p1" });
+  });
+
+  it("800.4a : le contrôleur de la capacité qui se résout abandonne pendant la question d'un autre : elle cesse d'exister", () => {
+    let s = willieHits(20);
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    expect(s.pending?.player).toBe("p2");
+    const before = s.players.p2?.hand.length ?? 0;
+    s = act(s, "p1", { type: "concede" });
+    expect(s.players.p1?.lost).toBe(true);
+    expect(s.pending?.kind).not.toBe("choice");
+    expect(s.stack).toHaveLength(0);
+    // p2 n'a pas pioché grâce à la capacité de Willie, partie avec son contrôleur.
+    expect(s.players.p2?.hand.length ?? 0).toBe(before);
+  });
 });
 
 describe("mulligan gratuit (103.5c)", () => {

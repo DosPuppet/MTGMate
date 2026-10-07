@@ -16,6 +16,24 @@ export function ask(s: GameState, player: PlayerId, request: ChoiceRequest, purp
   s.pending = { kind: "choice", player, request, purpose };
 }
 
+/**
+ * Réponse à la place d'un joueur qui a quitté la partie (800.4a) : il ne prend plus aucune décision, donc ne fait rien
+ * de ce qui est facultatif (« peut » refusé, aucun objet choisi si c'est permis, le minimum d'un nombre) ; sinon, la
+ * réponse proposée par le moteur.
+ */
+export function absentAnswer(req: ChoiceRequest): ChoiceValue[] {
+  switch (req.type) {
+    case "yesNo":
+      return [0];
+    case "pick":
+      return req.min === 0 ? [] : req.suggested;
+    case "number":
+      return [req.min];
+    default:
+      return req.suggested;
+  }
+}
+
 const isInt = (v: ChoiceValue): v is number => typeof v === "number" && Number.isInteger(v);
 
 /** Vérifie qu'une réponse respecte la demande ; lève une RulesError sinon. */
