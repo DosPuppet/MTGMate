@@ -1,7 +1,7 @@
 import type { AiLevel } from "@mtgx/ai";
 import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
 import { type Format, isGameRecord } from "@mtgx/engine";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
 import { deckCover, useAllDecks } from "../decks/store";
@@ -39,6 +39,16 @@ export function deckCategory(d: DeckList): Category {
   return "welcome";
 }
 
+/** Ordre des tranches Commander (bracket estimé d'après les Game Changers, `validateDeck`). */
+const BRACKET_ORDER = ["1–2", "3", "4+"] as const;
+type Bracket = (typeof BRACKET_ORDER)[number];
+
+/** Bracket estimé d'un deck Commander (indicatif) ; rien pour un autre deck. */
+export function deckBracket(d: DeckList): Bracket | undefined {
+  if (d.format !== "commander" && !d.commander?.length) return undefined;
+  return validateDeck(d, CARDS, "commander").bracket;
+}
+
 export function DeckChoice({
   label,
   value,
@@ -57,7 +67,15 @@ export function DeckChoice({
   // Une catégorie à la fois ; au départ, celle du deck choisi.
   const chosen = decks.find((d) => d.id === value);
   const [category, setCategory] = useState<Category>(chosen ? deckCategory(chosen) : "welcome");
-  const shown = decks.filter((d) => deckCategory(d) === category);
+  const brackets = useMemo(() => new Map(decks.map((d) => [d.id, deckBracket(d)])), [decks]);
+  const rank = (d: DeckList) => {
+    const b = brackets.get(d.id);
+    return b ? BRACKET_ORDER.indexOf(b) : BRACKET_ORDER.length;
+  };
+  // Commander : classés par bracket, du plus doux au plus optimisé.
+  const shown = decks
+    .filter((d) => deckCategory(d) === category)
+    .sort((a, b) => (category === "commander" ? rank(a) - rank(b) : 0));
   return (
     <div className="deck-choice">
       <div className="deck-choice-label">{label}</div>
@@ -85,6 +103,7 @@ export function DeckChoice({
         {shown.map((d) => {
           const status = deckStatus(d, format);
           const cover = deckCover(d);
+          const bracket = brackets.get(d.id);
           return (
             <div
               key={d.id}
@@ -92,7 +111,13 @@ export function DeckChoice({
               title={status.reason}
             >
               <button type="button" className="deck-tile-main" disabled={!status.ok} onClick={() => onChange(d.id)}>
-                <div className="deck-art" style={{ backgroundImage: cover ? `url(${cover})` : undefined }} />
+                <div className="deck-art" style={{ backgroundImage: cover ? `url(${cover})` : undefined }}>
+                  {bracket && (
+                    <span className="deck-bracket" title="Bracket estimé d'après les Game Changers du deck">
+                      Bracket {bracket}
+                    </span>
+                  )}
+                </div>
                 <div className="deck-body">
                   <div className="deck-name">
                     {d.name} <ManaCost cost={d.colors.map((c) => `{${c}}`).join("")} size={14} />

@@ -2035,9 +2035,24 @@ button {
   box-shadow: 0 0 18px rgba(240, 184, 74, 0.3);
 }
 .deck-art {
+  position: relative;
   height: 110px;
   background-size: cover;
   background-position: center 30%;
+}
+/* Bracket estimé d'un deck Commander, sur l'illustration. */
+.deck-bracket {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(10, 14, 22, 0.82);
+  border: 1px solid rgba(240, 184, 74, 0.6);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 .deck-body {
   padding: 10px 12px;

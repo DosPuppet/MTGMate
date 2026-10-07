@@ -26,13 +26,24 @@ await page.goto("http://localhost:5173/?fast");
 await page.getByRole("button", { name: "Jouer contre l'IA" }).waitFor({ timeout: 30_000 });
 // Le format Commander est proposé à l'accueil.
 await page.getByRole("button", { name: "Commander", exact: true }).first().click();
+// Les préconstruits Commander, classés par bracket estimé (pastille sur l'illustration).
+await page
+  .locator(".deck-choice")
+  .first()
+  .getByRole("tab", { name: /^Commander/ })
+  .click();
+const brackets = await page.locator(".deck-choice").first().locator(".deck-tile .deck-bracket").allInnerTexts();
+const order = ["Bracket 1–2", "Bracket 3", "Bracket 4+"];
+const ranks = brackets.map((b) => order.indexOf(b.trim()));
+if (brackets.length < 3 || ranks.some((r, i) => r < 0 || (i > 0 && r < (ranks[i - 1] ?? 0))))
+  errors.push(`decks Commander non classés par bracket : ${brackets.join(", ")}`);
 await page.screenshot({ path: join(OUT, "01-accueil-commander.png") });
 
-// Éditeur de deck : le préconstruit Edgar Markov, validé en Commander (100 cartes, Game Changers, tranche estimée).
+// Éditeur de deck : le préconstruit Edgar Markov, validé en Commander (100 cartes, Game Changers, bracket estimé).
 await page.getByRole("button", { name: "Mes decks" }).click();
 await page.locator(".deck-select").selectOption("cmd-edgar-markov");
 const summary = await page.locator("[data-testid=commander-summary]").innerText({ timeout: 10_000 });
-if (!/Game Changers : 5 · tranche estimée 4\+/.test(summary)) errors.push(`éditeur : « ${summary} »`);
+if (!/Game Changers : 5 · bracket estimé 4\+/.test(summary)) errors.push(`éditeur : « ${summary} »`);
 const deckTab = await page.locator(".deck-tabs button").first().innerText();
 if (!/100\s*\/\s*100/.test(deckTab)) errors.push(`éditeur : onglet du deck « ${deckTab} »`);
 await page.screenshot({ path: join(OUT, "01b-editeur-commander.png") });

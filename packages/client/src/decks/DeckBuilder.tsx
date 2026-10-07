@@ -717,7 +717,7 @@ export function DeckBuilder() {
                   className="format-badge"
                   title={v.gameChangers.length ? `Game Changers : ${v.gameChangers.join(", ")}` : "Aucun Game Changer"}
                 >
-                  Game Changers : {v.gameChangers.length} · tranche estimée {v.bracket}
+                  Game Changers : {v.gameChangers.length} · bracket estimé {v.bracket}
                 </span>
               )}
             </div>
