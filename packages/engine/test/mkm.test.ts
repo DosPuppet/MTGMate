@@ -5346,6 +5346,36 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(s.objects[thopter]?.counters["+1/+1"]).toBe(toGraveyard);
   });
 
+  it("Intrude on the Mind (trois joueurs) : vous choisissez l'adversaire qui choisit la pile", () => {
+    let s = scenario({
+      players: 3,
+      p1: {
+        battlefield: lands("Island", 5),
+        hand: ["Intrude on the Mind"],
+        library: ["Opt", "Opt", "Bear Cub", "Island", "Shivan Dragon"],
+      },
+    });
+    const offered: string[][] = [];
+    let chooser: string | undefined;
+    s = settle(cast(s, "p1", "Intrude on the Mind"), (req, p) => {
+      if (req.type === "pick" && req.options.includes("p3")) {
+        offered.push([p, ...req.options]);
+        return ["p3"];
+      }
+      if (req.type === "pick" && req.intent === "piles" && req.options.length === 5) return req.options.slice(0, 2);
+      if (req.type === "pick" && req.intent === "piles") {
+        chooser = p;
+        return ["down"];
+      }
+      return undefined;
+    });
+    expect(offered).toEqual([["p1", "p2", "p3"]]);
+    expect(chooser).toBe("p3");
+    // La première pile (deux cartes) en main, les trois autres au cimetière : un Thopter avec trois marqueurs.
+    expect(s.players.p1?.hand).toHaveLength(2);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Thopter")]?.counters["+1/+1"]).toBe(3);
+  });
+
   it("Hedge Whisperer : un terrain devient un Sanglier 5/5 tant qu'elle reste engagée ; elle peut rester engagée", () => {
     let s = scenario({ p1: { battlefield: ["Hedge Whisperer", ...lands("Forest", 5)], graveyard: ["Shivan Dragon"] } });
     const whisperer = idOf(s, "p1", "battlefield", "Hedge Whisperer");

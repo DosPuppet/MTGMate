@@ -390,16 +390,16 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
     ],
   },
   "Sandstone Oracle": {
-    // Choix automatique : l'adversaire qui a le plus de cartes en main (docs/approximations.md).
     abilities: [
       triggered(
         when.entersSelf,
         [
+          fx.chooseOpponent("o"),
           fx.draw(
-            amount.plus(amount.maxOverPlayers(ref.eachOpponent, amount.cardsIn("hand")), amount.neg(amount.cardsIn("hand"))),
+            amount.plus(amount.maxOverPlayers(ref.stored("o"), amount.cardsIn("hand")), amount.neg(amount.cardsIn("hand"))),
           ),
         ],
-        { label: "Piochez la différence avec la main de l'adversaire qui en a le plus" },
+        { label: "Choisissez un adversaire : piochez la différence s'il a plus de cartes en main que vous" },
       ),
     ],
   },

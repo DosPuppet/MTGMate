@@ -620,3 +620,29 @@ describe("capacités retardées : références figées", () => {
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
   });
 });
+
+describe("piles à plusieurs adversaires (PLAN-H H4)", () => {
+  it("Curator of Destinies : après la séparation, vous choisissez l'adversaire qui choisit la pile", () => {
+    let s = scenario({
+      players: 3,
+      p1: {
+        battlefield: lands("Island", 6),
+        hand: ["Curator of Destinies"],
+        library: ["Opt", "Forest", "Shivan Dragon", "Island", "Stab"],
+      },
+    });
+    s = cast(s, "p1", "Curator of Destinies");
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "piles");
+    const req = s.pending?.kind === "choice" ? s.pending.request : null;
+    const top = req?.type === "pick" ? req.options : [];
+    s = choose(s, top.slice(0, 2));
+    const who = s.pending?.kind === "choice" ? s.pending.request : null;
+    expect(s.pending?.player).toBe("p1");
+    expect(who?.type === "pick" ? who.options : []).toEqual(["p2", "p3"]);
+    s = choose(s, ["p3"]);
+    expect(s.pending?.player).toBe("p3");
+    s = choose(s, ["up"]);
+    expect(s.players.p1?.hand).toHaveLength(3);
+    expect(s.players.p1?.graveyard).toHaveLength(2);
+  });
+});

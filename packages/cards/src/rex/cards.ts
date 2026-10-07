@@ -193,17 +193,20 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.isDealtDamage,
         [
-          // L'adversaire choisi au hasard : le premier adversaire (exact en duel).
+          fx.chooseOpponent("o", { random: true }),
           {
             op: "unlessPay",
-            who: ref.eachOpponent,
+            who: ref.stored("o"),
             sacrifice: 1,
             sacrificeFilter: { types: ["Creature"], token: false },
             skip: 1,
           } as Effect,
-          fx.damage(amount.powerOf(ref.self), ref.eachOpponent),
+          fx.damage(amount.powerOf(ref.self), ref.stored("o")),
         ],
-        { label: "Rage : un adversaire subit des blessures égales à sa force, à moins de sacrifier une créature non-jeton" },
+        {
+          label:
+            "Rage : un adversaire au hasard subit des blessures égales à sa force, à moins de sacrifier une créature non-jeton",
+        },
       ),
     ],
   },

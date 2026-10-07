@@ -117,6 +117,98 @@ describe("Bloomburrow", () => {
     expect(idsOf(s, "p2", "battlefield", "Anthem of Champions")).toHaveLength(0);
   });
 
+  it("Cadeau à plusieurs adversaires : l'adversaire est choisi en lançant le sort, avant la priorité (702.174a)", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: lands("Swamp", 3), hand: ["Nocturnal Hunger"] },
+      p2: { battlefield: ["Shivan Dragon"] },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Nocturnal Hunger"), kicked: true, targets: { t: [dragon] } });
+    // Le sort est sur la pile ; personne n'a encore la priorité : son contrôleur choisit l'adversaire.
+    expect(s.pending?.kind).toBe("choice");
+    expect(s.pending?.player).toBe("p1");
+    const req = s.pending?.kind === "choice" ? s.pending.request : null;
+    expect(req?.type === "pick" ? req.options : []).toEqual(["p2", "p3"]);
+    expect(req?.suggested).toEqual(["p2"]);
+    expect(() => act(s, "p1", { type: "choose", values: ["p1"] })).toThrow(RulesError);
+    s = settle(act(s, "p1", { type: "choose", values: ["p3"] }));
+    expect(idsOf(s, "p3", "battlefield", "Food")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Food")).toHaveLength(0);
+    expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Cadeau d'un permanent à plusieurs adversaires : l'adversaire choisi en le lançant pioche à l'arrivée (Scrapshooter)", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: lands("Forest", 3), hand: ["Scrapshooter"] },
+      p2: { battlefield: ["Anthem of Champions"], library: ["Forest", "Island"] },
+      p3: { library: ["Forest", "Island"] },
+    });
+    const hand2 = s.players.p2?.hand.length ?? 0;
+    const hand3 = s.players.p3?.hand.length ?? 0;
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Scrapshooter"), kicked: true });
+    s = settle(act(s, "p1", { type: "choose", values: ["p3"] }));
+    expect(s.players.p3?.hand.length).toBe(hand3 + 1);
+    expect(s.players.p2?.hand.length).toBe(hand2);
+  });
+
+  it("Cadeau en duel, ou à plusieurs sans cadeau promis : aucune question", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Scrapshooter"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Scrapshooter"), kicked: true });
+    expect(s.pending?.kind).toBe("priority");
+    let t = scenario({ players: 3, p1: { battlefield: lands("Forest", 3), hand: ["Scrapshooter"] } });
+    t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Scrapshooter") });
+    expect(t.pending?.kind).toBe("priority");
+  });
+
+  it("Cadeau copié pendant le lancement (Teach by Example) : la copie garde l'adversaire choisi pour l'original (707.10)", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 3)], hand: ["Teach by Example", "Nocturnal Hunger"] },
+      p2: { battlefield: ["Shivan Dragon", "Shivan Dragon"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Teach by Example") }));
+    const [a, b] = idsOf(s, "p2", "battlefield", "Shivan Dragon") as [string, string];
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Nocturnal Hunger"), kicked: true, targets: { t: [a] } });
+    expect(s.stack).toHaveLength(2);
+    // D'abord l'adversaire du cadeau de l'original (plus bas sur la pile), puis les nouvelles cibles de la copie.
+    const req = s.pending?.kind === "choice" ? s.pending.request : null;
+    expect(req?.type === "pick" ? req.options : []).toEqual(["p2", "p3"]);
+    s = act(s, "p1", { type: "choose", values: ["p3"] });
+    expect(s.stack.every((x) => x.cast?.giftTo === "p3")).toBe(true);
+    const retarget = s.pending?.kind === "choice" ? s.pending.request : null;
+    expect(retarget?.type === "pick" ? retarget.options : []).toContain(b);
+    s = settle(act(s, "p1", { type: "choose", values: [b] }));
+    expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(2);
+    expect(idsOf(s, "p3", "battlefield", "Food")).toHaveLength(2);
+    expect(idsOf(s, "p2", "battlefield", "Food")).toHaveLength(0);
+    expect(s.players.p1?.life).toBe(20);
+  });
+
+  it("Cadeau copié par l'adversaire en duel (Return the Favor) : le cadeau va toujours à l'adversaire promis (707.10)", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 3), "Llanowar Elves"], hand: ["Nocturnal Hunger"] },
+      p2: { battlefield: [...lands("Mountain", 3), "Shivan Dragon"], hand: ["Return the Favor"] },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Nocturnal Hunger"), kicked: true, targets: { t: [dragon] } });
+    const hunger = s.stack[0]?.id as string;
+    s = act(s, "p1", { type: "pass" });
+    const favor = idOf(s, "p2", "hand", "Return the Favor");
+    const opt = legalActions(s, "p2").find((x) => x.type === "cast" && x.card === favor);
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Copiez un sort ou une capacité")?.index : undefined;
+    s = act(s, "p2", { type: "cast", card: favor, mode, targets: { c: [hunger] } });
+    s = passAccepting(s, (x) => x.stack.length === 2 && x.pending?.kind === "choice" && x.pending.player === "p2");
+    // La copie, contrôlée par p2, vise les Llanowar Elves de p1.
+    s = settle(act(s, "p2", { type: "choose", values: [elves] }));
+    expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Food")).toHaveLength(2);
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
+  });
+
   it("Fourrager : trois cartes du cimetière exilées, sinon une Nourriture sacrifiée", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 4), hand: ["Treetop Sentries"], graveyard: ["Opt", "Forest", "Stab"] },

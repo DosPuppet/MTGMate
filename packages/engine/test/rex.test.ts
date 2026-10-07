@@ -293,3 +293,26 @@ describe("Jurassic World Collection", () => {
     });
   });
 });
+
+describe("Jurassic World Collection : adversaire choisi au hasard (PLAN-H H4)", () => {
+  it("Indoraptor : rage, un seul adversaire tiré au hasard subit les blessures (aucune question)", () => {
+    let s = scenario({
+      players: 3,
+      p1: {
+        battlefield: [{ name: "Indoraptor, the Perfect Hybrid", counters: { "+1/+1": 2 } }, "Mountain"],
+        hand: ["Shock"],
+      },
+    });
+    const raptor = idOf(s, "p1", "battlefield", "Indoraptor, the Perfect Hybrid");
+    let asked = 0;
+    s = settle(castIt(s, "Shock", { targets: { t: [raptor] } }), (req) => {
+      if (req.type === "pick" && req.options.includes("p2") && req.options.includes("p3")) asked++;
+      return undefined;
+    });
+    expect(asked).toBe(0);
+    const power = chars(s, raptor).power;
+    expect(power).toBe(5);
+    const lost = [20 - (s.players.p2?.life ?? 0), 20 - (s.players.p3?.life ?? 0)].sort((a, b) => a - b);
+    expect(lost).toEqual([0, power]);
+  });
+});

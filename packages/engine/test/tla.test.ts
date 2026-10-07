@@ -5423,3 +5423,21 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
     });
   });
 });
+
+describe("Avatar: The Last Airbender : un adversaire choisi (PLAN-H H4)", () => {
+  it("Zuko, Conflicted : quatrième mode, Zuko passe sous le contrôle de l'adversaire choisi ; vous perdez 2 PV", () => {
+    let s = scenario({ players: 3, step: "upkeep", p1: { battlefield: ["Zuko, Conflicted"] } });
+    s = advanceUntil(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "triggerMode");
+    s = act(s, "p1", { type: "choose", values: ["3"] });
+    const offered: string[][] = [];
+    s = settle(s, (req) => {
+      if (req.type !== "pick" || !req.options.includes("p3")) return undefined;
+      offered.push(req.options);
+      return ["p3"];
+    });
+    expect(offered).toEqual([["p2", "p3"]]);
+    expect(idsOf(s, "p3", "battlefield", "Zuko, Conflicted")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Zuko, Conflicted")).toHaveLength(0);
+    expect(s.players.p1?.life).toBe(18);
+  });
+});

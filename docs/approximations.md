@@ -16,7 +16,7 @@ Chaque entrée porte sa nature :
 - `règle` **Dépendances de couches (613.8) :** les conditions des statiques, les « pour chaque » et les F/E définies par une capacité qui lisent des permanents sont réévalués sur le résultat des couches jusqu'à stabilité (trois passes au plus), plutôt que par l'ordre de dépendance de 613.8 : même résultat sauf en cas de dépendance circulaire. Restent :
   - « une source qui perd toutes ses capacités n'applique plus ses statiques » : à un niveau seulement ;
   - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
-- `timing` **Répartition (601.2d) et nouvelles cibles d'une copie (707.10c) :** demandées juste après la mise sur la pile (coûts payés), avant que quiconque reçoive la priorité, et non pendant l'annonce ; une copie faite pendant une résolution choisit ses cibles à la fin de celle-ci. Une copie faite avant que l'original ait annoncé sa répartition annonce la sienne (`stackChoices.ts`).
+- `timing` **Répartition (601.2d), adversaire du cadeau promis (702.174a) et nouvelles cibles d'une copie (707.10c) :** demandés juste après la mise sur la pile (coûts payés), avant que quiconque reçoive la priorité, et non pendant l'annonce ; une copie faite pendant une résolution choisit ses cibles à la fin de celle-ci. Une copie faite avant que l'original ait annoncé sa répartition annonce la sienne (`stackChoices.ts`) ; l'adversaire du cadeau, lui, est toujours celui de l'original (707.10), reporté sur la copie une fois choisi.
 - `choix auto` **Aura ou « arrive comme une copie » sans être lancé, hors résolution** (retour d'un exil lié, actions basées sur l'état) : le premier hôte ou modèle possible est choisi pour le joueur. Pendant une résolution (`moveTo`), le choix est demandé (303.4f, 707.5).
 - `règle` **Horodatage d'une Aura qui donne le contrôle (Confiscate) :** celui de son arrivée sur le champ de bataille, et non celui de son dernier attachement (613.7e). Eriette, the Beguiler est une statique : le contrôle dure tant que l'Aura reste attachée, que la condition de valeur de mana tient et qu'Eriette est sur le champ de bataille (sa perte rend les permanents volés ; une nouvelle Eriette vole rétroactivement).
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
@@ -54,7 +54,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Foundations (`docs/extensions/fdn.md`) :**
   - `choix auto` Quilled Greatwurm (et Dawnhand Dissident) : vous répartissez les marqueurs retirés entre vos créatures, mais la sorte des marqueurs retirés d'une même créature est choisie pour vous (les −1/−1 d'abord, les +1/+1 en dernier) ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
-  - `choix auto` Piles séparées par un adversaire (Curator of Destinies, Fact or Fiction, Intrude on the Mind, Riddles in the Dark) : en multijoueur, c'est l'adversaire suivant qui sépare ou choisit (et non un adversaire choisi).
 - **Final Fantasy (`docs/extensions/fin.md`) :**
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
   - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
@@ -93,7 +92,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Marvin, Murderous Mimic : seulement les capacités activées imprimées des autres créatures (pas celles accordées) ;
   - `choix auto` Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R}.
 - **Bloomburrow (`docs/extensions/blb.md`) :**
-  - `choix auto` Cadeau : il va à l'adversaire suivant dans l'ordre du tour (pas de choix de l'adversaire en multijoueur) ;
+  - `règle` Cadeau d'un permanent : s'il a quitté le champ de bataille avant que son déclencheur « cadeau promis » se résolve, le cadeau va à l'adversaire suivant dans l'ordre du tour, et non à l'adversaire choisi (exact en duel) ;
   - `choix auto` Fourrager : choix automatique, trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois, sinon une Nourriture (un jeton de préférence) ;
   - `timing` The Infamous Cruelclaw : la carte est défaussée avant de lancer le sort (et non comme coût de remplacement pendant le lancement) ;
   - `choix auto` Portent of Calamity : les cartes exilées sont choisies automatiquement (une par type) ;
@@ -144,7 +143,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Lavaleaper, Shimmerwilds Growth : le mana en plus (capacité de mana déclenchée, 605.1b) est ajouté avec le mana du terrain, comme un remplacement ; le solveur de paiement compte celui du même type, pas celui d'une autre couleur (Shimmerwilds Growth).
 - **Wilds of Eldraine (`docs/extensions/woe.md`) :**
   - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
-  - `choix auto` Discerning Financier : « un autre joueur » est le premier adversaire ;
   - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
   - `règle` Virtue of Strength : « trois fois plus de mana » est « deux mana de plus » (exact pour un terrain de base qui produit un mana) ;
   - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
@@ -189,7 +187,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition ;
   - `règle` Azula, Cunning Usurper : les cartes exilées se lancent pendant votre tour avec du mana de n'importe quel type, mais sans le flash ;
   - `règle` Bumi, Unleashed : « seules les créatures-terrains peuvent attaquer pendant ce combat » interdit d'attaquer, jusqu'à la fin du tour, aux créatures non-terrains présentes à la résolution ;
-  - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui du premier adversaire ;
+  - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui de l'adversaire choisi ;
   - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges ;
   - `règle` Secret of Bloodbending : sans maîtrise de l'eau, vous contrôlez l'adversaire pendant la première phase de combat de son prochain tour (une phase de combat supplémentaire de ce tour lui revient) ;
@@ -244,7 +242,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` All Will Be One : seuls les marqueurs mis sur des permanents déclenchent la capacité ;
   - `choix auto` Force of Will, Force of Vigor, Daze : la carte exilée de la main est la moins chère qui convient ; l'Île renvoyée, une engagée d'abord ;
   - `règle` Grim Giganotosaurus : « monstrueuse » est noté par un marqueur (visible) ;
-  - `règle` Indoraptor : l'adversaire « choisi au hasard » est chaque adversaire (exact en duel) ;
   - `règle` Henry Wu : la pioche et le Trésor font partie de la capacité d'exploitation qu'il donne (ils n'ont lieu que s'il est sur le champ de bataille quand elle se résout) ;
   - `règle` Laboratory Maniac : la victoire qui remplace la pioche est constatée avec les actions basées sur l'état qui suivent (comme la défaite qu'elle remplace) ;
   - `règle` Nyxbloom Ancient : le mana « en plus » d'un autre type (Utopia Sprawl, Shimmerwilds Growth) n'est pas triplé ;
@@ -282,7 +279,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Zurgo and Ojutai : les deux cartes qui ne vont pas en main sont mises au-dessous dans un ordre aléatoire (pas au choix).
   - `choix auto` Foreboding Ruins : une carte de Marais ou de Montagne de la main est révélée d'office si possible ;
   - `règle` Pandemonium : la cible des blessures est choisie par le contrôleur de Pandemonium, pas par celui de la créature qui arrive (exact quand c'est la même personne) ;
-  - `choix auto` Sandstone Oracle : l'adversaire choisi est celui qui a le plus de cartes en main ;
   - `règle` Emrakul, the World Anew : « protection contre les sorts » se lit contre les éphémères et les rituels (pas contre un sort d'Aura ou de permanent) ;
   - `choix auto` Cryptolith Fragment : sa capacité de mana s'active à la main (le paiement automatique ne s'en sert pas) ;
   - `règle` Wheel of Misfortune : les nombres sont choisis l'un après l'autre (dans l'ordre APNAP, sans voir ceux des autres), de 0 à 20 ;

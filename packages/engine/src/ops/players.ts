@@ -18,6 +18,7 @@ import {
   bump,
   chars,
   emit,
+  isAlive,
   isPlayer,
   moveObject,
   onBattlefield,
@@ -78,10 +79,13 @@ export const HANDLERS: OpHandlers = {
         addPlayerEffect(s, p, ability, e.untilTheirNextTurn ? nextTurnOf(s, p) - 1 : until, e.times !== undefined || !!e.once);
     return;
   },
-  gift(s, _r, e, ctx) {
-    // 702.174 : l'adversaire choisi reçoit le cadeau (approximation : le prochain adversaire dans l'ordre du tour).
-    const to = opponentsOf(s, ctx.controller)[0];
-    if (!to) return;
+  gift(s, r, e, ctx) {
+    // 702.174 : l'adversaire choisi en lançant le sort reçoit le cadeau (`CastInfo.giftTo`, sur le sort ou sur le permanent
+    // qu'il est devenu) ; avec un seul adversaire, rien n'a été demandé : c'est lui. Parti de la partie : rien.
+    // Approximation : un permanent qui a déjà quitté le champ de bataille n'a plus son choix (l'adversaire suivant).
+    const cast = r.item.kind === "spell" ? r.item.cast : s.objects[ctx.sourceId]?.cast;
+    const to = cast?.giftTo ?? opponentsOf(s, ctx.controller)[0];
+    if (!to || !isAlive(s, to)) return;
     if (e.kind === "card") drawCards(s, to, 1);
     else if (e.token) {
       const created = createTokens(s, to, e.token, 1);

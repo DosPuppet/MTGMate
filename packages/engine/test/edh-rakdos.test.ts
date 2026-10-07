@@ -308,15 +308,28 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(life(s, "p2")).toBe(14);
     });
 
-    it("Sandstone Oracle : piochez la différence avec la plus grande main adverse", () => {
-      let s = scenario({
-        players: 3,
-        p1: { battlefield: lands("Wastes", 7), hand: ["Sandstone Oracle"], library: Array(6).fill("Opt") },
-        p2: { hand: Array(5).fill("Opt") },
-        p3: { hand: ["Opt"] },
-      });
-      s = settle(castIt(s, "p1", "Sandstone Oracle"));
-      expect(hand(s, "p1")).toBe(5);
+    it("Sandstone Oracle : choisissez un adversaire ; s'il a plus de cartes en main que vous, piochez la différence", () => {
+      const run = (who: PlayerId) => {
+        const offered: string[][] = [];
+        let s = scenario({
+          players: 3,
+          p1: { battlefield: lands("Wastes", 7), hand: ["Sandstone Oracle"], library: Array(6).fill("Opt") },
+          p2: { hand: Array(5).fill("Opt") },
+          p3: { hand: ["Opt"] },
+        });
+        s = settle(castIt(s, "p1", "Sandstone Oracle"), (req) => {
+          if (req.type !== "pick" || !req.options.includes("p3")) return undefined;
+          offered.push(req.options);
+          return [who];
+        });
+        return { s, offered };
+      };
+      const p2 = run("p2");
+      // Choix non ciblé parmi les adversaires.
+      expect(p2.offered).toEqual([["p2", "p3"]]);
+      expect(hand(p2.s, "p1")).toBe(5);
+      // L'adversaire qui a une carte : vous (aucune carte) en piochez une.
+      expect(hand(run("p3").s, "p1")).toBe(1);
     });
 
     it("Ancient Cellarspawn : sort de Démon {1} de moins ; sort lancé pour moins que sa valeur de mana, l'adversaire perd la différence", () => {

@@ -111,6 +111,30 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(s.players.p1?.graveyard.length).toBe(2);
     });
 
+    it("Fact or Fiction (trois joueurs) : vous choisissez l'adversaire qui sépare les cartes", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: lands("Island", 4), hand: ["Fact or Fiction"], library: ["Opt", "Opt", "Shock", "Shock", "Bear Cub"] },
+      });
+      s = castIt(s, "p1", "Fact or Fiction");
+      const offered: string[][] = [];
+      let separator: PlayerId | undefined;
+      s = settle(s, (req, p) => {
+        if (req.type === "pick" && req.options.includes("p3")) {
+          offered.push([p, ...req.options]);
+          return ["p3"];
+        }
+        if (req.type === "pick" && req.intent === "piles" && req.max > 1) {
+          separator = p;
+          return req.options.slice(0, 1);
+        }
+        return req.type === "pick" && req.intent === "piles" ? ["up"] : undefined;
+      });
+      expect(offered).toEqual([["p1", "p2", "p3"]]);
+      expect(separator).toBe("p3");
+      expect(hand(s, "p1")).toBe(4);
+    });
+
     it("Teferi's Reproach : protection et PV figés jusqu'au prochain tour de l'adversaire ; ses non-terrains disparaissent", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Teferi's Reproach"] },

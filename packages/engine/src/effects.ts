@@ -397,8 +397,9 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         return p ? [p] : [];
       });
     case "stored":
-      // Objets mémorisés, encore présents ou connus par leurs dernières informations (sacrifiés…).
-      return (ctx.vars?.[`$ids:${ref.name}`] ?? []).map(String).filter((id) => !!s.objects[id] || !!s.lki[id]);
+      // Objets mémorisés, encore présents ou connus par leurs dernières informations (sacrifiés…), ou joueurs choisis
+      // (`fx.chooseOpponent`).
+      return (ctx.vars?.[`$ids:${ref.name}`] ?? []).map(String).filter((id) => !!s.objects[id] || !!s.lki[id] || isPlayer(s, id));
     case "selfCard": {
       // « Cette carte » : l'objet qui porte la même identité physique que la source, où qu'il soit.
       const uid = s.objects[ctx.sourceId]?.uid ?? s.lki[ctx.sourceId]?.uid;

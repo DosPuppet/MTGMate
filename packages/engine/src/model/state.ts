@@ -335,7 +335,12 @@ export interface StackItem {
 }
 
 /** Choix d'un élément de pile qui reste à faire (voir `StackItem.pendingChoices`). */
-export type PendingStackChoice = { step: "target"; spec: string } | { step: "announce" } | { step: "divide" };
+export type PendingStackChoice =
+  | { step: "target"; spec: string }
+  | { step: "announce" }
+  | { step: "divide" }
+  /** L'adversaire qui recevra le cadeau promis (702.174a). */
+  | { step: "gift" };
 
 /** Capacité créée pendant la partie (retardée, réflexive) : pas d'index dans la définition de sa source. */
 export interface InlineAbility {
@@ -452,6 +457,11 @@ export interface CastInfo {
   beheld?: boolean;
   /** `CardDef.whenCast` remplie au lancement (« si vous contrôliez une Fée en lançant ce sort »). */
   metWhenCast?: boolean;
+  /**
+   * Cadeau promis (702.174a) : l'adversaire choisi en lançant le sort, annoncé comme une répartition (`announceNext`) ;
+   * absent avec un seul adversaire (c'est lui), sauf sur une copie, qui garde l'adversaire de l'original (707.10).
+   */
+  giftTo?: PlayerId;
 }
 
 /** Événement du tour (`turnlog.ts`) : déplacement, sort lancé, sacrifice, blessures. */

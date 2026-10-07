@@ -5,7 +5,11 @@
  *   pouvez choisir de nouvelles cibles » ; les cibles d'origine sont proposées. Changée ou non, chaque cible devient
  *   la cible de la copie (garde, vaillance ; pas l'héroïsme : une copie n'est pas lancée) ;
  * - répartition de blessures ou de marqueurs entre les cibles (601.2d, 602.2b, 603.3d), gardée dans
- *   `StackItem.division` : à la résolution, la part d'une cible devenue illégale est perdue (608.2b).
+ *   `StackItem.division` : à la résolution, la part d'une cible devenue illégale est perdue (608.2b) ;
+ * - adversaire qui recevra le cadeau promis (702.174a : « en lançant ce sort, vous pouvez choisir un adversaire »), gardé
+ *   dans `CastInfo.giftTo` (sur le permanent aussi, pour le cadeau donné à l'arrivée). Avec un seul adversaire, rien
+ *   n'est demandé. Une copie garde l'adversaire de l'original (707.10), reporté sur elle s'il est choisi après qu'elle
+ *   a été faite.
  *
  * Une copie faite pendant un lancement (Pyromancer's Goggles) ou pendant une résolution (Thousand-Year Storm) passe
  * par le même chemin : ses cibles sont choisies dès que la priorité devrait être donnée.
@@ -14,7 +18,7 @@ import { ask } from "./choices";
 import { type EffectContext, evalAmount } from "./effects";
 import { RulesError } from "./errors";
 import { specsAndEffects, stackItemSpecs } from "./stack";
-import { createObject, emit, newId, rulesEvent } from "./state";
+import { createObject, emit, newId, opponentsOf, rulesEvent } from "./state";
 import { legalTargets } from "./targets";
 import type { ChoiceRequest, ChoiceValue, Effect, GameState, PendingStackChoice, PlayerId, StackItem } from "./types";
 
@@ -37,6 +41,31 @@ function queueDivision(s: GameState, item: StackItem): void {
   const d = dividedEffect(s, item);
   if (!d || (item.targets[d.spec]?.length ?? 0) < 2) return;
   item.pendingChoices = [...(item.pendingChoices ?? []), { step: "divide" }];
+}
+
+/** Sort au cadeau promis dont l'adversaire n'est pas encore choisi (sans compter le nombre d'adversaires). */
+function giftChoiceNeeded(s: GameState, item: StackItem): boolean {
+  return (
+    item.kind === "spell" && !!item.kicked && !!item.cast && !item.cast.giftTo && s.defs[item.sourceDefId]?.kickerKind === "gift"
+  );
+}
+
+/**
+ * Adversaire du cadeau promis déjà fixé pour un sort : choisi, ou le seul adversaire de son contrôleur (rien n'a été
+ * demandé). Undefined s'il reste à choisir ou si rien n'est promis.
+ */
+function giftRecipient(s: GameState, item: StackItem): PlayerId | undefined {
+  if (item.cast?.giftTo) return item.cast.giftTo;
+  if (!giftChoiceNeeded(s, item) || item.copy) return undefined;
+  const opponents = opponentsOf(s, item.controller);
+  return opponents.length === 1 ? opponents[0] : undefined;
+}
+
+/** L'adversaire du cadeau promis est à choisir s'il y en a au moins deux (sort lancé ; une copie reçoit le sien : 707.10). */
+function queueGift(s: GameState, item: StackItem): void {
+  if (item.copy || !giftChoiceNeeded(s, item) || item.pendingChoices?.some((c) => c.step === "gift")) return;
+  if (opponentsOf(s, item.controller).length < 2) return;
+  item.pendingChoices = [{ step: "gift" }, ...(item.pendingChoices ?? [])];
 }
 
 /**
@@ -66,6 +95,11 @@ export function copyStackItem(s: GameState, item: StackItem, controller: PlayerI
     // La répartition de l'original n'est pas encore annoncée (copie faite pendant le lancement).
     ...(item.pendingChoices?.some((c) => c.step === "divide") ? [{ step: "divide" } as const] : []),
   ];
+  // Cadeau promis : la copie garde l'adversaire choisi pour l'original (707.10), même si un autre joueur la contrôle.
+  // Pas encore choisi (copie faite pendant le lancement) : la réponse de l'original lui est reportée (`answerStackChoice`).
+  const giftTo = giftRecipient(s, item);
+  const giftPending = !giftTo && giftChoiceNeeded(s, item);
+  if (giftPending) pending.unshift({ step: "gift" });
   const copy: StackItem = {
     ...item,
     id,
@@ -76,7 +110,7 @@ export function copyStackItem(s: GameState, item: StackItem, controller: PlayerI
     // Les modifications d'arrivée accordées au sort (marqueurs, célérité) ne sont pas copiables (707.2).
     arrival: undefined,
     manaSources: undefined,
-    cast: item.cast ? { ...item.cast, spentFrom: undefined } : undefined,
+    cast: item.cast ? { ...item.cast, spentFrom: undefined, ...(giftTo ? { giftTo } : {}) } : undefined,
     targets: { ...item.targets },
     pendingChoices: pending.length ? pending : undefined,
   };
@@ -92,6 +126,7 @@ export function copyStackItem(s: GameState, item: StackItem, controller: PlayerI
  */
 export function announceNext(s: GameState): boolean {
   for (const item of s.stack) {
+    queueGift(s, item);
     queueDivision(s, item);
     while (item.pendingChoices?.length) {
       const c = item.pendingChoices[0] as PendingStackChoice;
@@ -113,7 +148,19 @@ export function answerStackChoice(s: GameState, stackId: string, request: Choice
   const c = item?.pendingChoices?.[0];
   if (!item || !c) throw new RulesError("Aucun choix en attente pour cet élément de la pile");
   if (c.step === "target" && request.type === "pick") applyRetarget(s, item, c.spec, request, values);
-  else if (c.step === "divide" && request.type === "divide") {
+  else if (c.step === "gift" && request.type === "pick") {
+    const to = String(values[0] ?? "");
+    if (!request.options.includes(to) || !item.cast) throw new RulesError("Cet adversaire ne peut pas recevoir le cadeau");
+    item.cast = { ...item.cast, giftTo: to };
+    // Copies faites pendant ce lancement (Pyromancer's Goggles, Teach by Example), plus haut sur la pile : même adversaire
+    // (707.10). Seul le sort en cours d'annonce peut en avoir dont le cadeau attend.
+    for (const x of s.stack) {
+      if (!x.copy || x.sourceDefId !== item.sourceDefId || !x.cast || !x.pendingChoices?.some((p) => p.step === "gift")) continue;
+      x.cast = { ...x.cast, giftTo: to };
+      x.pendingChoices = x.pendingChoices.filter((p) => p.step !== "gift");
+      if (!x.pendingChoices.length) x.pendingChoices = undefined;
+    }
+  } else if (c.step === "divide" && request.type === "divide") {
     const d = dividedEffect(s, item);
     if (!d) throw new RulesError("Rien à répartir");
     item.division = { ...item.division, [d.spec]: values.map(Number) };
@@ -157,6 +204,22 @@ function requestFor(s: GameState, item: StackItem, c: PendingStackChoice): Choic
     return null;
   }
   if (c.step === "target") return retargetRequest(s, item, c.spec, `${name} (copie)`);
+  if (c.step === "gift") {
+    // Copie : l'adversaire vient de l'original (`answerStackChoice`) ; sans réponse, rien n'est demandé.
+    if (item.copy) return null;
+    const options = opponentsOf(s, item.controller);
+    if (options.length < 2 || !item.cast) return null;
+    return {
+      type: "pick",
+      intent: "other",
+      prompt: `${name} : choisissez l'adversaire à qui vous offrez le cadeau`,
+      options,
+      min: 1,
+      max: 1,
+      // L'adversaire suivant dans l'ordre du tour (le choix fait d'office jusqu'ici).
+      suggested: options.slice(0, 1),
+    };
+  }
   const d = dividedEffect(s, item);
   const among = d ? (item.targets[d.spec] ?? []) : [];
   if (!d || among.length < 2) return null;

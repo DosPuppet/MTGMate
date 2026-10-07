@@ -509,7 +509,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Zuko, Conflicted": {
-    // Approximation : Zuko revient d'abord sous votre contrôle, puis passe sous celui du premier adversaire.
+    // Approximation : Zuko revient d'abord sous votre contrôle, puis passe sous celui de l'adversaire choisi.
     abilities: [
       triggeredModal(
         when.step("main1"),
@@ -521,9 +521,10 @@ export const MULTI: Record<string, CardScript> = {
             "Zuko passe chez un adversaire",
             [],
             [
+              fx.chooseOpponent("zo"),
               fx.exileCard(ref.self, { name: "z" }),
               fx.moveTo(ref.stored("z"), { to: "battlefield" }, { name: "zb" }),
-              fx.giveControl(ref.stored("zb"), ref.eachOpponent),
+              fx.giveControl(ref.stored("zb"), ref.stored("zo")),
               fx.loseLife(2),
             ],
           ),

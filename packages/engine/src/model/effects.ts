@@ -769,6 +769,8 @@ export type Effect =
   /** `anyNumber` : un nombre quelconque (Expose the Culprit) ; `anyZone` : aussi des cartes hors du champ de bataille (Lazav). */
   /** `prompt` : le texte de la question (« Choisissez le terrain à renvoyer ») ; par défaut, « ces créatures ». */
   /** `optional` : « jusqu'à un » (Light of Judgment) ou « vous pouvez » (Unexpected Request) : aucun choix possible. */
+  /** `what` peut désigner des joueurs : « choisissez un adversaire », sans le cibler (`fx.chooseOpponent`). */
+  /** `random` : un seul, choisi au hasard (Indoraptor : « choisissez un adversaire au hasard »). */
   | {
       op: "chooseAmong";
       what: Ref;
@@ -778,6 +780,7 @@ export type Effect =
       anyZone?: boolean;
       prompt?: string;
       optional?: boolean;
+      random?: boolean;
     }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   /** `store` : nombre d'objets réellement attachés (701.3b : un objet déjà attaché ne « devient » pas attaché ; Thorin). */

@@ -4991,3 +4991,45 @@ describe("Wilds of Eldraine, PLAN-D D9 : dernières cartes", () => {
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
   });
 });
+
+describe("Wilds of Eldraine : un joueur choisi sans être ciblé (PLAN-H H4)", () => {
+  it("Discerning Financier : le joueur choisi gagne le contrôle du Trésor ciblé, vous piochez", () => {
+    const treasure = customCard({
+      name: "Test Treasure",
+      typeLine: "Artifact — Treasure",
+      types: ["Artifact"],
+      subtypes: ["Treasure"],
+    });
+    let s = scenario({ players: 3, p1: { battlefield: ["Discerning Financier", treasure, ...lands("Plains", 3)] } });
+    const t = idOf(s, "p1", "battlefield", "Test Treasure");
+    const hand = s.players.p1?.hand.length ?? 0;
+    const offered: string[][] = [];
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Discerning Financier"), { t: [t] }), (req, p) => {
+      if (req.type !== "pick" || !req.options.includes("p3")) return undefined;
+      offered.push([p, ...req.options]);
+      return ["p3"];
+    });
+    // « Choisissez un autre joueur » : vous choisissez parmi les autres joueurs, pas d'office le suivant.
+    expect(offered).toEqual([["p1", "p2", "p3"]]);
+    expect(s.objects[t]?.controller).toBe("p3");
+    expect(s.players.p1?.hand.length).toBe(hand + 1);
+  });
+
+  it("Discerning Financier en duel : aucune question, l'adversaire reçoit le Trésor", () => {
+    const treasure = customCard({
+      name: "Test Treasure",
+      typeLine: "Artifact — Treasure",
+      types: ["Artifact"],
+      subtypes: ["Treasure"],
+    });
+    let s = scenario({ p1: { battlefield: ["Discerning Financier", treasure, ...lands("Plains", 3)] } });
+    const t = idOf(s, "p1", "battlefield", "Test Treasure");
+    let asked = 0;
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Discerning Financier"), { t: [t] }), (req) => {
+      if (req.type === "pick" && req.options.includes("p2")) asked++;
+      return undefined;
+    });
+    expect(asked).toBe(0);
+    expect(s.objects[t]?.controller).toBe("p2");
+  });
+});

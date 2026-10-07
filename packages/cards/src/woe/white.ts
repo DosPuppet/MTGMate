@@ -165,11 +165,15 @@ export const WHITE: Record<string, CardScript> = {
         condition: cond.opponentHasMore("lands"),
         label: "Un adversaire a plus de terrains : un Trésor",
       }),
-      // « Choisissez un autre joueur » : l'adversaire (approximation à plus de deux joueurs : le premier adversaire).
+      // « Choisissez un autre joueur » (sans le cibler) : il gagne le contrôle du Trésor ciblé.
       activated({
         mana: "{2}{W}",
         targets: [target.permanent("t", ["Artifact"], { subtype: "Treasure", controller: "you" }, "Trésor que vous contrôlez")],
-        effects: [fx.giveControl(ref.target(), ref.eachOpponent), fx.draw(1)],
+        effects: [
+          fx.chooseOpponent("p", { prompt: "Choisissez le joueur qui gagne le contrôle du Trésor" }),
+          fx.giveControl(ref.target(), ref.stored("p")),
+          fx.draw(1),
+        ],
         label: "Donnez un Trésor, piochez",
       }),
     ],

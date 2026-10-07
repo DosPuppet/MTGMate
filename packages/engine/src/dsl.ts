@@ -1280,13 +1280,26 @@ export const fx = {
     what: Ref,
     chooser: Ref,
     store: string,
-    opts: { anyNumber?: boolean; anyZone?: boolean; prompt?: string; optional?: boolean } = {},
+    opts: { anyNumber?: boolean; anyZone?: boolean; prompt?: string; optional?: boolean; random?: boolean } = {},
   ): Effect => ({
     op: "chooseAmong",
     what,
     chooser,
     store,
     ...opts,
+  }),
+  /**
+   * « Choisissez un adversaire » (« un autre joueur »), sans le cibler : le contrôleur choisit, ou le hasard (`random`) ;
+   * `ref.stored(store)` le désigne ensuite. Aucune question avec un seul adversaire ; suggestion : l'adversaire suivant
+   * dans l'ordre du tour.
+   */
+  chooseOpponent: (store: string, opts: { random?: boolean; prompt?: string } = {}): Effect => ({
+    op: "chooseAmong",
+    what: { kind: "eachOpponent" },
+    chooser: { kind: "you" },
+    store,
+    prompt: opts.prompt ?? "Choisissez un adversaire",
+    ...(opts.random ? { random: true } : {}),
   }),
   /** « Vous pouvez payer N points de vie. Si vous le faites, … » */
   mayPayLife: (life: Amount, prompt: string, ...effects: Effects): Effect[] => {

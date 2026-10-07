@@ -221,7 +221,7 @@
     "LayerMods": 30,
     "TriggerMod": 6,
     "EventReplacement": 18,
-    "CastInfo": 9,
+    "CastInfo": 10,
     "TurnLogQuery": 31,
     "MoveSpec": 18,
     "BlockRule": 13,
@@ -230,7 +230,7 @@
     "CastLimit": 9,
     "NextSpell": 9,
     "Effect": 154,
-    "Effect (champs)": 651,
+    "Effect (champs)": 652,
     "TriggerSpec": 61,
     "TriggerSpec (champs)": 162,
     "Condition": 53,
@@ -305,6 +305,7 @@
     "Préconstruit Turtle Power! (Commander) : Amount lifeTotal starting (Game Over : « la moitié de ses PV de départ ») ; escouade (kicker payé X fois, comme la réplique), fusion (troisième face des cartes scindées), couleur exclue des terrains Thriving (enterModes), mana d'artefact dépensé (CastInfo.artifactMana), adversaires attaqués (distinct defender), TriggerMod onDraw, onPrevent countersOnDamaged, jetons attaquant un joueur désigné, copies sacrifiées à la fin du combat (atEndOfCombat) : Amount (champs) 74 → 75",
     "Préconstruits Counter Blitz, The Fantastic Four et Mutant Menace (Commander) : marqueurs de radiation (PlayerState.rad, op poison counter rad, montant rad, prolifération, radiation au début de la première phase principale), meule groupée (déclencheur milled, filtre milledThisTurn), contrôle rendu aux propriétaires (toOwner), garder un permanent par type hors terrains (nonland), sort mis au-dessous de la bibliothèque (fate bottom), total d'un montant parmi les joueurs (sum), sacrifice remplacé par un renvoi en main (to) : PlayerState 23 → 24, ObjectFilter 88 → 89, Effect (champs) 651 → 654, TriggerSpec 60 → 61, TriggerSpec (champs) 161 → 164, Amount (champs) 75 → 77",
     "PLAN-H H0 : dix structures suivies désormais (elles grandissaient sans plafond) : TriggerMod — → 9, EventReplacement — → 18, CastInfo — → 10, TurnLogQuery — → 31, MoveSpec — → 18, BlockRule — → 13, TargetSpec — → 24, AdditionalCost — → 13, CastLimit — → 9, NextSpell — → 9",
-    "PLAN-H H1 : renommages exacts (sacrificeAtEndStep, nonlegendary, after, TriggerMod.on, to \"owner\", grantPlay for/tapped, reduce, loyalty \"X\", discardOr, addChosen, distinct, becomesTarget by) et retours sur le PLAN-E (PlayerState.counters, CastInfo.spentFrom, halfLife et lifeAboveStart exprimés par lifeTotal et div) : PlayerState 24 → 23, CostDef 34 → 33, LayerMods 31 → 30, TriggerMod 9 → 6, CastInfo 10 → 9, TargetSpec 24 → 23, AdditionalCost 13 → 11, Effect (champs) 654 → 651, TriggerSpec (champs) 164 → 162, Condition 54 → 53, Condition (champs) 99 → 97, Amount 35 → 34"
+    "PLAN-H H1 : renommages exacts (sacrificeAtEndStep, nonlegendary, after, TriggerMod.on, to \"owner\", grantPlay for/tapped, reduce, loyalty \"X\", discardOr, addChosen, distinct, becomesTarget by) et retours sur le PLAN-E (PlayerState.counters, CastInfo.spentFrom, halfLife et lifeAboveStart exprimés par lifeTotal et div) : PlayerState 24 → 23, CostDef 34 → 33, LayerMods 31 → 30, TriggerMod 9 → 6, CastInfo 10 → 9, TargetSpec 24 → 23, AdditionalCost 13 → 11, Effect (champs) 654 → 651, TriggerSpec (champs) 164 → 162, Condition 54 → 53, Condition (champs) 99 → 97, Amount 35 → 34",
+    "PLAN-H H4 : CastInfo.giftTo (adversaire du cadeau, 702.174a), option random de chooseAmong : CastInfo 9 → 10, Effect (champs) 651 → 652"
   ]
 }

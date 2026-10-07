@@ -418,8 +418,11 @@ export const RECORD_VERSION = 1;
  * - 152 : PLAN-H H2c : approximations levées par les scripts (Finality, Black Bolt, Nightkin Ambusher, Negative Zone
  *   Portal, Mutational Advantage ; Namor, Ragavan, Sylvan Library, Expropriate, Plague of Vermin raccourcies) ;
  *   prévention des blessures sur des objets fixés à la résolution (objectReplacement preventDamage).
+ * - 153 : PLAN-H H4 : choisir un joueur sans le cibler (chooseAmong sur des joueurs, au hasard ; fx.chooseOpponent) :
+ *   piles séparées par l'adversaire choisi, adversaire du cadeau choisi au lancement (et gardé par les copies),
+ *   Discerning Financier, Sandstone Oracle, Zuko, Conflicted, Indoraptor.
  */
-export const RULES_VERSION = 152;
+export const RULES_VERSION = 153;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

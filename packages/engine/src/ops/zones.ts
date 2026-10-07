@@ -44,6 +44,7 @@ import {
   onBattlefield,
   opponentsOf,
   P1P1,
+  random,
   registerDef,
   removeFromGame,
   rulesEvent,
@@ -134,6 +135,35 @@ function greedyOnePerType(s: GameState, ids: ObjectId[]): ObjectId[] {
   return out;
 }
 
+/**
+ * « Un adversaire … » sans le cibler, au milieu d'un effet (piles : celui qui sépare ou qui choisit) : le contrôleur le
+ * choisit par `chooseAmong` (aucune question avec un seul adversaire ; suggestion : l'adversaire suivant).
+ */
+function opponentChoice(
+  s: GameState,
+  r: Resolution,
+  ctx: EffectContext,
+  key: (k: string) => string,
+  separates?: boolean,
+): Extract<OpResult, { ask: unknown }> | { player: PlayerId | undefined } {
+  const store = key("opponent");
+  const res = HANDLERS.chooseAmong?.(
+    s,
+    r,
+    {
+      op: "chooseAmong",
+      what: { kind: "eachOpponent" },
+      chooser: { kind: "you" },
+      store,
+      prompt: `${nameOf(s, ctx.sourceId)} : choisissez l'adversaire qui ${separates ? "sépare les cartes en deux piles" : "choisit une des piles"}`,
+    },
+    ctx,
+    (x) => key(`opponent-${x}`),
+  );
+  if (res && "ask" in res) return res;
+  return { player: r.vars[`$ids:${store}`]?.map(String)[0] };
+}
+
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
     const stored: string[] = [];
@@ -150,8 +180,12 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   chooseAmong(s, r, e, ctx, key) {
-    const ids = resolveRef(s, ctx, e.what).filter((id) => (e.anyZone ? !!s.objects[id] : onBattlefield(s, id)));
+    // Des objets, ou des joueurs (« choisissez un adversaire », sans le cibler : `fx.chooseOpponent`).
+    const ids = resolveRef(s, ctx, e.what).filter((id) =>
+      isPlayer(s, id) ? !s.players[id]?.lost : e.anyZone ? !!s.objects[id] : onBattlefield(s, id),
+    );
     if (ids.length === 0) return;
+    const players = ids.every((id) => isPlayer(s, id));
     const chooser = resolveRef(s, ctx, e.chooser).find((x) => isPlayer(s, x)) ?? ctx.controller;
     // « Un nombre quelconque » (Expose the Culprit) : de zéro à toutes.
     if (e.anyNumber) {
@@ -212,21 +246,30 @@ export const HANDLERS: OpHandlers = {
       return;
     }
     let picked = ids.length === 1 ? ids[0] : r.vars[key("among")]?.map(String)[0];
+    // « … au hasard » (Indoraptor) : le tirage est gardé avec les réponses (la résolution reprise ne le refait pas) ; aucun
+    // tirage pour une seule option.
+    if (picked === undefined && e.random) {
+      picked = ids[Math.floor(random(s) * ids.length)] as string;
+      r.vars[key("among")] = [picked];
+    }
     if (picked === undefined) {
-      // Suggestion : celle qui a la plus grande endurance.
-      const sturdy = [...ids].sort((a, b) => chars(s, b).toughness - chars(s, a).toughness)[0] as string;
+      // Suggestion : un joueur, le premier désigné (l'adversaire suivant dans l'ordre du tour) ; un objet, celui qui a la
+      // plus grande endurance.
+      const suggested = players
+        ? (ids[0] as string)
+        : ([...ids].sort((a, b) => chars(s, b).toughness - chars(s, a).toughness)[0] as string);
       return {
         ask: {
           player: chooser,
           key: key("among"),
           request: {
             type: "pick",
-            intent: "pickCards",
-            prompt: e.prompt ?? "Choisissez l'une de ces créatures",
+            intent: players ? "other" : "pickCards",
+            prompt: e.prompt ?? (players ? "Choisissez un joueur" : "Choisissez l'une de ces créatures"),
             options: ids,
             min: 1,
             max: 1,
-            suggested: [sturdy],
+            suggested: [suggested],
           },
         },
       };
@@ -1521,13 +1564,17 @@ export const HANDLERS: OpHandlers = {
     const top = player.library.slice(0, e.n);
     if (top.length === 0) return;
     // Fact or Fiction : un adversaire sépare les cartes révélées, le contrôleur choisit sa pile.
-    const opp = opponentsOf(s, ctx.controller)[0];
-    const separator = e.opponentSeparates && opp ? opp : ctx.controller;
-    const chooser = e.opponentSeparates ? ctx.controller : opp;
     if (e.opponentSeparates && !r.vars[key("revealed")]) {
       r.vars[key("revealed")] = [1];
       emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
     }
+    // « Un adversaire sépare » (après la révélation) ou « un adversaire choisit » (après la séparation) : le contrôleur
+    // choisit lequel, sans le cibler (aucune question s'il n'y en a qu'un).
+    const asked = r.vars[key("down")] || e.opponentSeparates ? opponentChoice(s, r, ctx, key, e.opponentSeparates) : null;
+    if (asked && "ask" in asked) return asked;
+    const opp = asked?.player;
+    const separator = e.opponentSeparates && opp ? opp : ctx.controller;
+    const chooser = e.opponentSeparates ? ctx.controller : opp;
     const down = r.vars[key("down")];
     if (!down) {
       return {

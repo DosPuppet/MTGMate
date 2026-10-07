@@ -1245,6 +1245,34 @@ describe("lot A, bleu", () => {
       expect(namesIn(s, s.players.p1?.library)).toEqual(["Serra Angel"]);
     });
 
+    it("Riddles in the Dark (trois joueurs) : vous choisissez l'adversaire qui choisit la pile", () => {
+      let s = scenario({
+        players: 3,
+        p1: {
+          battlefield: lands("Island", 3),
+          hand: ["Riddles in the Dark"],
+          library: ["Opt", "Bear Cub", "Forest", "Island", "Serra Angel"],
+        },
+      });
+      const offered: string[][] = [];
+      let chooser: PlayerId | undefined;
+      s = settle(cast(s, "p1", "Riddles in the Dark"), (req, player, cur) => {
+        if (req.type === "pick" && req.options.includes("p3")) {
+          offered.push([player, ...req.options]);
+          return ["p3"];
+        }
+        if (req.type !== "pick" || req.intent !== "piles") return undefined;
+        if (req.options.includes("down")) {
+          chooser = player;
+          return ["down"];
+        }
+        return pickNamed(cur, req, "Opt");
+      });
+      expect(offered).toEqual([["p1", "p2", "p3"]]);
+      expect(chooser).toBe("p3");
+      expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
+    });
+
     it("Roll-Roll-Roll-Roll : exile une de vos créatures, qui revient au début de la prochaine étape de fin", () => {
       let s = scenario({
         p1: {

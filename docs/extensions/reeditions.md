@@ -236,7 +236,7 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   of Vigor (OTP). Tests : `altcosts.test.ts` (4).
 - **Mots-clés d'une carte ✅ :** Grim Giganotosaurus (monstruosité notée par un marqueur « monstrous », déclencheur
   `countersPut`), Indoraptor (soif de sang : `entersWith` des blessures infligées aux adversaires ce tour-ci ; l'adversaire
-  « au hasard » est le premier), Henry Wu (exploitation donnée aux Humains, la pioche et le Trésor dans la même capacité).
+  « au hasard » : `fx.chooseOpponent(…, { random: true })`, PLAN-H H4), Henry Wu (exploitation donnée aux Humains, la pioche et le Trésor dans la même capacité).
   Tests : `rex.test.ts` (+3).
 - **Règles de joueur ✅ :** statiques de joueur `winOnEmptyDraw` (Laboratory Maniac : la pioche impossible devient une
   victoire), `damageLifeFloor` (Angel's Grace, avec `cantLose` posé par `fx.thisTurn`), `infectDamageAtZeroLife`
