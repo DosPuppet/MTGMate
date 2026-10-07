@@ -328,7 +328,7 @@ export const LEGENDS: Record<string, CardScript> = {
     cond.any(cond.amountAtLeast(amount.opponentsWithHandAtMost(1), 1), cond.not(cond.amountAtLeast(amount.cardsIn("hand"), 2))),
   ),
   "Bitter Triumph": {
-    additionalCost: { discard: 1, discardOrLife: 3 },
+    additionalCost: { discard: 1, discardOr: { life: 3 } },
     spell: spell([target.creatureOrPlaneswalker()], [fx.destroy(ref.target())]),
   },
   "Bloodletter of Aclazotz": {
@@ -381,7 +381,7 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Souls of the Lost": {
-    additionalCost: { discard: 1, discardOrSacrifice: true },
+    additionalCost: { discard: 1, discardOr: { sacrifice: true } },
     cdaPower: PERMANENT_CARDS,
     cdaToughness: amount.plus(PERMANENT_CARDS, 1),
   },
@@ -644,7 +644,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Roaming Throne": {
     chooseOnEnter: "creatureType",
     abilities: [
-      staticAbility("self", { addChosenSubtype: true }, { label: "Du type choisi" }),
+      staticAbility("self", { addChosen: "subtype" }, { label: "Du type choisi" }),
       playerStatic({
         triggerMod: { effect: "again", sources: { types: ["Creature"], subtypeChosen: true, other: true } },
         label: "Déclencheurs du type choisi doublés",

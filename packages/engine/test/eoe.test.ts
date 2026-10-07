@@ -3114,7 +3114,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     s.version += 1;
     s = attack(s, [idOf(s, "p1", "battlefield", "Rust Harvester"), idOf(s, "p1", "battlefield", "Bear Cub"), robot]);
     s = throughCombat(s);
-    expect(s.players.p2?.poison).toBe(2);
+    expect(s.players.p2?.counters?.poison).toBe(2);
     expect(lifeOf(s, "p2")).toBe(15);
   });
 

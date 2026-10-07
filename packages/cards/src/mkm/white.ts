@@ -94,7 +94,7 @@ export const WHITE: Record<string, CardScript> = {
   "Doorkeeper Thrull": {
     abilities: [
       playerStatic({
-        triggerMod: { effect: "none", onEnter: true, entering: { types: ["Artifact", "Creature"] }, everyone: true },
+        triggerMod: { effect: "none", on: "enter", entering: { types: ["Artifact", "Creature"] }, everyone: true },
         label: "L'arrivée d'artefacts et de créatures ne déclenche rien",
       }),
     ],

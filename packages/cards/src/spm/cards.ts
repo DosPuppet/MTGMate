@@ -64,7 +64,7 @@ export const CARDS: Record<string, CardScript> = {
   "Multiversal Passage": {
     // Le type de terrain de base est choisi en jouant le terrain (une option par type) ; « payez 2 PV » est lu dans le texte.
     chooseOnEnter: "landType",
-    abilities: [staticAbility("self", { addChosenLandType: true }, { label: "Est du type choisi" })],
+    abilities: [staticAbility("self", { addChosen: "landType" }, { label: "Est du type choisi" })],
   },
 
   // --- Lot M5 -----------------------------------------------------------------

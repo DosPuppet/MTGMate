@@ -77,7 +77,7 @@ export const BLUE: Record<string, CardScript> = {
         when.attacksSelf,
         [
           fx.castNow(ref.filtered(ref.graveyardOf(ref.you), { types: ["Artifact", "Instant", "Sorcery"] }), {
-            exileAfter: true,
+            after: "exile",
           }),
         ],
         { label: "Lancez un artefact, un éphémère ou un rituel de votre cimetière" },

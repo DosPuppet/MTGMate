@@ -100,7 +100,7 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **Cartes :** Pox Plague, Suspend Aggression, Fractal Tender, Mana Sculpt.
 - **Le moteur gagne :**
   - `fx.loseHalfLife(qui)` et `fx.discard(…, { half: true })` : la moitié des PV ou de la main de chaque joueur, arrondie à l'inférieur (comme `sacrifice({ half })`) ;
-  - `fx.grantPlay(…, { forOwner, untilOwnersNextTurn })` : « son propriétaire peut la jouer jusqu'à la fin de son prochain tour » ; avec `forOwner`, `untilYourNextTurn` vaut « jusqu'à votre prochain tour » ;
+  - `fx.grantPlay(…, { for: "owner", untilOwnersNextTurn })` : « son propriétaire peut la jouer jusqu'à la fin de son prochain tour » ; avec `for: "owner"`, `untilYourNextTurn` vaut « jusqu'à votre prochain tour » ;
   - qui a mis des marqueurs sur un objet ce tour-ci (`GameObject.countersPutBy`) et le filtre `countersPutByYouThisTurn` ;
   - le moment `yourNextMain` des capacités retardées (« au début de votre prochaine phase principale », celle d'après combat comprise), `fx.delayedAt(…, vars)` et `amount.manaSpentOf(ref)` (mana dépensé pour le sort ciblé).
 - **[règles] Correctif :** Memory Vessel (BIG) ne rendait les cartes jouables que ce tour-ci, au lieu de « jusqu'à votre prochain tour ». `RULES_VERSION` = 30.

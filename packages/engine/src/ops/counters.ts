@@ -90,7 +90,7 @@ export const HANDLERS: OpHandlers = {
       const withCounters = s.battlefield.filter((id) => Object.values(s.objects[id]?.counters ?? {}).some((n) => n > 0));
       // Joueurs avec des marqueurs poison ou de radiation (Fallout).
       const poisoned = s.playerOrder.filter(
-        (p) => !s.players[p]?.lost && ((s.players[p]?.poison ?? 0) > 0 || (s.players[p]?.rad ?? 0) > 0),
+        (p) => !s.players[p]?.lost && ((s.players[p]?.counters?.poison ?? 0) > 0 || (s.players[p]?.counters?.rad ?? 0) > 0),
       );
       const options = [...withCounters, ...poisoned];
       if (options.length === 0) return;
@@ -131,11 +131,12 @@ export const HANDLERS: OpHandlers = {
           for (const [kind, n] of Object.entries(o.counters)) if (n > 0) changeCounters(s, o, kind, 1);
         } else {
           const pl = s.players[v];
-          if (pl && (pl.poison ?? 0) > 0) pl.poison = (pl.poison ?? 0) + 1;
-          if (pl && (pl.rad ?? 0) > 0) {
-            pl.rad = (pl.rad ?? 0) + 1;
+          const counters = pl?.counters;
+          if (counters && (counters.poison ?? 0) > 0) counters.poison = (counters.poison ?? 0) + 1;
+          if (counters && (counters.rad ?? 0) > 0) {
+            counters.rad = (counters.rad ?? 0) + 1;
             bump(s); // des statiques en dépendent (Nightkin Ambusher)
-            emit({ type: "rad", player: v, amount: 1, total: pl.rad });
+            emit({ type: "rad", player: v, amount: 1, total: counters.rad });
           }
         }
       }

@@ -457,7 +457,8 @@ export const amount = {
   manaSymbolsOf: (r: Ref, color: ManaType): Amount => ({ kind: "manaSymbols", color, of: r }),
   /** Plus grand nombre de permanents du filtre qui ont un type de créature en commun (White Lotus Tile). */
   maxSharingCreatureType: (filter: ObjectFilter): Amount => agg("mostShared", "subtype", { filter }),
-  halfLife: (who: Ref): Amount => ({ kind: "halfLife", who }),
+  /** La moitié des points de vie du joueur désigné, arrondie à l'unité supérieure (Alpharael). */
+  halfLife: (who: Ref): Amount => ({ kind: "div", of: { kind: "lifeTotal", who }, by: 2, up: true }),
   landsEnteredThisTurn: turnEvents({ event: "zone", to: "battlefield", types: ["Land"], who: "you" }),
   manaSpent: spent("mana"),
   /** Votre vitesse. */
@@ -911,11 +912,14 @@ export const fx = {
     what,
     ...(opts.untilEndOfYourNextTurn ? { duration: "endOfYourNextTurn" } : {}),
   }),
-  /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature (un jeton) a la célérité, est sacrifiée en fin de tour. */
+  /**
+   * `haste`, `sacrificeAtEndStep` : la copie d'un sort de créature (un jeton) a la célérité, est sacrifiée au début de
+   * la prochaine étape de fin.
+   */
   copySpell: (
     what: Ref,
     count: Amount,
-    opts: { haste?: boolean; sacrificeAtEnd?: boolean; nonlegendary?: boolean; loyalty?: Amount } = {},
+    opts: { haste?: boolean; sacrificeAtEndStep?: boolean; nonlegendary?: boolean; loyalty?: Amount } = {},
   ): Effect => ({
     op: "copySpell",
     what,
@@ -943,12 +947,13 @@ export const fx = {
       untilYourNextEndStep?: boolean;
       untilOwnersNextTurn?: boolean;
       condition?: Condition;
-      forOwner?: boolean;
-      /** Chaque joueur autre que le propriétaire de la carte (Ian Malcolm). */
-      forNonOwners?: boolean;
+      /** Le propriétaire de la carte (`owner`) ou chaque joueur autre que lui (`nonOwners`, Ian Malcolm). */
+      for?: "owner" | "nonOwners";
       extraCost?: number;
-      landsTapped?: boolean;
-      exileAfter?: boolean;
+      /** Un terrain joué ainsi arrive engagé (avec `for: "owner"`). */
+      tapped?: boolean;
+      /** Exilé (`exile`) ou au-dessous de la bibliothèque (`bottom`) au lieu d'aller au cimetière. */
+      after?: "exile" | "bottom";
       oneOf?: boolean;
       replacePrevious?: boolean;
       payLifeManaValue?: boolean;
@@ -961,22 +966,21 @@ export const fx = {
   }),
   /**
    * « Vous pouvez lancer [ces cartes] » pendant la résolution (608.2g) : `free` sans payer leur coût de mana, `many`
-   * autant qu'on veut, `exileAfter` exilé au lieu d'aller au cimetière ; `storeCast` / `storeRest` pour la suite.
+   * autant qu'on veut, `after` exilé (`exile`) ou au-dessous de la bibliothèque (`bottom`, Kylox's Voltstrider) au lieu
+   * d'aller au cimetière ; `storeCast` / `storeRest` pour la suite.
    */
   castNow: (
     what: Ref,
     opts: {
       free?: boolean;
       many?: boolean;
-      exileAfter?: boolean;
+      after?: "exile" | "bottom";
       anyMana?: boolean;
       storeCast?: string;
       storeRest?: string;
       maxManaValue?: Amount;
       /** Coût remplaçant le coût de mana, ex. "{2}" (miracle). */
       cost?: string;
-      /** « S'il devait aller au cimetière, mettez-le au-dessous de la bibliothèque » (Kylox's Voltstrider). */
-      bottomAfter?: boolean;
     } = {},
   ): Effect => {
     const { cost, ...rest } = opts;
@@ -1175,7 +1179,7 @@ export const fx = {
   }),
   giveControl: (what: Ref, to: Ref): Effect => ({ op: "gainControl", what, to, duration: "permanent" }),
   /** Chaque objet désigné revient sous le contrôle de son propriétaire. */
-  returnControlToOwners: (what: Ref): Effect => ({ op: "gainControl", what, toOwner: true, duration: "permanent" }),
+  returnControlToOwners: (what: Ref): Effect => ({ op: "gainControl", what, to: "owner", duration: "permanent" }),
   untapUpTo: (filter: ObjectFilter, n: number): Effect => ({ op: "untapUpTo", filter, n }),
   exileOnResolve: { op: "spellFate", fate: "exile" } as Effect,
   /** « Mettez [ce sort] au-dessous de la bibliothèque de son propriétaire » (Ultimate Nullification). */
@@ -1480,7 +1484,7 @@ export const fx = {
     pool: opts.pool,
     random: opts.random,
     onePerColorOf: opts.onePerColorOf,
-    ...(opts.differentNames ? { differentNames: true } : {}),
+    ...(opts.differentNames ? { distinct: "name" as const } : {}),
   }),
   topOrBottom: (what: Ref, topDamage?: number, fromTop?: number): Effect => ({
     op: "libraryTopOrBottom",
@@ -2006,7 +2010,7 @@ export function activated(opts: {
             filter: opts.sacrificeOther.filter,
             count: opts.sacrificeOther.count ?? 1,
             ...(opts.sacrificeOther.includeSelf ? { includeSelf: true } : {}),
-            ...(opts.sacrificeOther.differentNames ? { differentNames: true } : {}),
+            ...(opts.sacrificeOther.differentNames ? { distinct: "name" as const } : {}),
           }
         : undefined,
       removeCounters: opts.removeCounters,
@@ -2090,7 +2094,7 @@ export function loyalty(n: number, opts: { targets?: TargetSpec[]; effects: Effe
 export function loyaltyX(opts: { targets?: TargetSpec[]; effects: Effects; label: string }): ActivatedAbilityDef {
   return {
     kind: "activated",
-    cost: { loyalty: 0, loyaltyX: true },
+    cost: { loyalty: "X" },
     targets: opts.targets ?? [],
     effects: opts.effects.flat(),
     sorcerySpeed: true,
@@ -2259,7 +2263,7 @@ export const when = {
   discard: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "discard", whose }),
   tapsSelf: { on: "taps", who: "self" } as TriggerSpec,
   /** « Chaque fois que vous lancez un sort qui cible cette créature » */
-  targetedBySpellYouCast: { on: "becomesTarget", who: "self", bySpellYouControl: true } as TriggerSpec,
+  targetedBySpellYouCast: { on: "becomesTarget", who: "self", by: "yourSpell" } as TriggerSpec,
   /** « Chaque fois que vous regardez ou surveillez » */
   scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
   /** « Quand vous défaussez cette carte » (avec `fromGraveyard`). */
@@ -2311,13 +2315,13 @@ export const when = {
   eachMain: { on: "step", step: "main", whose: "you" } as TriggerSpec,
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » */
   /** Vaillance : « chaque fois que cette créature devient la cible d'un sort ou d'une capacité que vous contrôlez ». */
-  valiant: { on: "becomesTarget", who: "self", byYou: true } as TriggerSpec,
+  valiant: { on: "becomesTarget", who: "self", by: "you" } as TriggerSpec,
   /** « Chaque fois qu'une [créature que vous contrôlez] devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle » */
   /** `spells` : « … ou un sort de [créature] que vous contrôlez » (Surrak, Elusive Hunter). */
   targetedByOpponent: (who: ObjectFilter, spells?: boolean): TriggerSpec => ({
     on: "becomesTarget",
     who,
-    byOpponent: true,
+    by: "opponent",
     spells,
   }),
   /** Dépense N : « chaque fois que vous dépensez votre N-ième mana total pour lancer des sorts pendant un tour ». */
@@ -2356,7 +2360,15 @@ export const cond = {
   yourTurn: { kind: "yourTurn" } as Condition,
   opponentsTurn: { kind: "opponentsTurn" } as Condition,
   opponentLostLife: turnAtLeast({ event: "lifeLoss", who: "opponent" }),
-  lifeAboveStart: (by: number): Condition => ({ kind: "lifeAboveStart", by }),
+  /**
+   * Votre total de vie dépasse votre total de départ d'au moins `by` (vie − vie de départ ≥ `by`). Les points de vie sont
+   * comptés à partir de 0 : à moins de 0 PV, la condition reste fausse dès que `by` ≥ 1.
+   */
+  lifeAboveStart: (by: number): Condition => ({
+    kind: "amountAtLeast",
+    amount: { kind: "sum", of: [{ kind: "lifeTotal" }, { kind: "neg", of: { kind: "lifeTotal", starting: true } }] },
+    n: by,
+  }),
   counterAtLeast: (counter: string, n: number): Condition => ({ kind: "counterAtLeast", counter, n }),
   lifeAtLeast: (n: number): Condition => ({ kind: "amountAtLeast", amount: { kind: "lifeTotal" }, n }),
   v: (name: string, atLeast = 1): Condition => ({ kind: "var", name, atLeast }),
@@ -2591,7 +2603,7 @@ export function cumulativeUpkeepAbility(cost: { mana?: ManaCost; life?: number }
 export function wardAbility(ward: NonNullable<CardDef["ward"]>): TriggeredAbilityDef {
   return {
     kind: "triggered",
-    trigger: { on: "becomesTarget", who: "self", byOpponent: true },
+    trigger: { on: "becomesTarget", who: "self", by: "opponent" },
     targets: [],
     effects: [
       {

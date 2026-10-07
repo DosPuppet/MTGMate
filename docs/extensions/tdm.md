@@ -36,7 +36,7 @@ Les scripts sont dans `packages/cards/src/tdm/` : `cards` (cartes du méta, phas
 - **Le moteur gagne :**
   - l'endurance (701.64) : effet `endure` (`fx.endure(ref, n)`, `ops/counters.ts`). Le contrôleur choisit N marqueurs +1/+1 ou un jeton Esprit blanc N/N ; si le permanent n'est plus sur le champ de bataille, le jeton est créé ; endurer 0 ne fait rien ;
   - le choix d'un mode en arrivant (Sièges, 614.12) : `chooseOnEnter: "mode"` et `enterModes` (script), le mode retenu dans `chosen.mode` (badge sur la carte), lu par `cond.chosenMode("Abzan")` ;
-  - `triggerMod.onAttack` (famille G) : « si une créature qui attaque fait se déclencher une capacité d'un permanent que vous contrôlez, elle se déclenche une fois de plus » (Windcrag Siege, mode Mardu : mobilisation comprise) ;
+  - `triggerMod.on: "attack"` (famille G) : « si une créature qui attaque fait se déclencher une capacité d'un permanent que vous contrôlez, elle se déclenche une fois de plus » (Windcrag Siege, mode Mardu : mobilisation comprise) ;
   - le mot-clé décomposition (`decayed`, 702.147 : ne peut pas bloquer ; sacrifiée à la fin du combat après avoir attaqué), et le marqueur du même nom ;
   - `amount.countersOn(ref, "any")` : tous les marqueurs de l'objet (Warden of the Grove).
 - **Aides :** `flurry(effets, libellé, cibles)` (rafale : `when.castNthSpell(2)`) et `renew(mana, cibles, effets, libellé)` dans `tdm/common.ts`.

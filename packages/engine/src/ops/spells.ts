@@ -392,8 +392,10 @@ export const HANDLERS: OpHandlers = {
     // The Serpent Society : « Garde — Recevez cinq marqueurs poison ».
     const pl = s.players[p];
     if (e.poison && pl) {
-      pl.poison = (pl.poison ?? 0) + e.poison;
-      emit({ type: "poison", player: p, amount: e.poison, total: pl.poison });
+      pl.counters ??= {};
+      const counters = pl.counters;
+      counters.poison = (counters.poison ?? 0) + e.poison;
+      emit({ type: "poison", player: p, amount: e.poison, total: counters.poison });
     }
     // « S'il le fait, … » (Divert Disaster).
     store(r, e.paidStore, 1);
@@ -479,11 +481,11 @@ export const HANDLERS: OpHandlers = {
       for (let i = 0; i < n; i++) {
         const id = copyStackItem(s, item, ctx.controller);
         const copy = id ? s.stack.find((x) => x.id === id) : undefined;
-        if (copy && (e.haste || e.sacrificeAtEnd || e.nonlegendary || e.loyalty !== undefined))
+        if (copy && (e.haste || e.sacrificeAtEndStep || e.nonlegendary || e.loyalty !== undefined))
           copy.arrival = {
             ...copy.arrival,
             ...(e.haste ? { haste: true } : {}),
-            ...(e.sacrificeAtEnd ? { sacrificeAtEnd: true } : {}),
+            ...(e.sacrificeAtEndStep ? { sacrificeAtEndStep: true } : {}),
             ...(e.nonlegendary ? { nonlegendary: true } : {}),
             ...(e.loyalty !== undefined ? { loyalty: Math.max(0, evalAmount(s, ctx, e.loyalty)) } : {}),
           };
@@ -629,7 +631,7 @@ export const HANDLERS: OpHandlers = {
       (id) => s.objects[id]?.zone === "exile" || s.objects[id]?.zone === "graveyard" || s.objects[id]?.zone === "hand",
     );
     if (e.replacePrevious && ids.length) s.playPermissions = (s.playPermissions ?? []).filter((p) => p.source !== ctx.sourceId);
-    if (e.forOwner) {
+    if (e.for === "owner") {
       for (const id of ids) {
         const owner = s.objects[id]?.owner ?? ctx.controller;
         // « jusqu'à votre prochain tour » : le tour qui précède le prochain tour du contrôleur de l'effet.
@@ -644,7 +646,7 @@ export const HANDLERS: OpHandlers = {
           free: e.free,
           anyTime: e.anyTime,
           extraCost: e.extraCost,
-          landsTapped: e.landsTapped,
+          tapped: e.tapped,
         });
       }
       return;
@@ -663,13 +665,13 @@ export const HANDLERS: OpHandlers = {
       anyMana: e.anyMana,
       condition: e.condition,
       source: ctx.sourceId,
-      exileAfter: e.exileAfter,
+      after: e.after,
       payLifeManaValue: e.payLifeManaValue,
       group: e.oneOf ? newId(s, "g") : undefined,
       adventureOnly: e.adventureOnly,
     };
     // Ian Malcolm : chaque joueur autre que le propriétaire de la carte.
-    if (e.forNonOwners) {
+    if (e.for === "nonOwners") {
       for (const id of ids)
         for (const p of alivePlayers(s).filter((q) => q !== s.objects[id]?.owner)) grantPlay(s, p, [id], until, opts);
     } else grantPlay(s, ctx.controller, ids, until, opts);
@@ -745,7 +747,7 @@ function castNowLoop(
   player: PlayerId,
   source: ObjectId,
   cards: ObjectId[],
-  opts: { free?: boolean; many?: boolean; exileAfter?: boolean; anyMana?: boolean; cost?: ManaCost; bottomAfter?: boolean },
+  opts: { free?: boolean; many?: boolean; after?: "exile" | "bottom"; anyMana?: boolean; cost?: ManaCost },
 ): { ask?: OpResult; cast: ObjectId[]; rest: ObjectId[] } {
   const cast: ObjectId[] = [];
   let declined = false;
@@ -767,11 +769,10 @@ function castNowLoop(
       free: opts.free,
       anyTime: true,
       anyMana: opts.anyMana,
-      exileAfter: opts.exileAfter,
+      after: opts.after,
       source,
       now: true,
       ...(opts.cost ? { cost: opts.cost } : {}),
-      ...(opts.bottomAfter ? { bottomAfter: true } : {}),
     });
     // Seules les cartes qu'on peut vraiment lancer (cibles, coûts additionnels) sont proposées.
     const castable = open.filter((id) => castTerms(s, player, id));

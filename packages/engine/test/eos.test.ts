@@ -275,7 +275,7 @@ describe("Stellar Sights", () => {
       (s.objects[nexus] as { tapped: boolean }).tapped = false;
       s = attack(s, [nexus]);
       s = advanceUntil(s, (x) => x.turn.step === "main2");
-      expect([s.players.p2?.life, s.players.p2?.poison]).toEqual([20, 1]);
+      expect([s.players.p2?.life, s.players.p2?.counters?.poison]).toEqual([20, 1]);
     });
 
     it("Swarmyard : la régénération remplace la prochaine destruction ce tour-ci (engagé, blessures retirées)", () => {

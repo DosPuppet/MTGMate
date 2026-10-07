@@ -578,7 +578,7 @@ export const UNIQUE: Record<string, CardScript> = {
       // avant l'équipage, plus récent (dépendance 613.8a non gérée pour l'ensemble affecté en couche 4).
       staticAbility(
         { subtype: "Vehicle", controller: "you" },
-        { addChosenSubtype: true },
+        { addChosen: "subtype" },
         {
           label: "Vos Véhicules créatures ont le type choisi",
         },

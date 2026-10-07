@@ -505,9 +505,9 @@ export function validateTargets(
     if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
       throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
-    if (spec.differentNames && new Set(ids.map((id) => snapshot(s, id).name)).size !== ids.length)
+    if (spec.distinct === "name" && new Set(ids.map((id) => snapshot(s, id).name)).size !== ids.length)
       throw new RulesError("Les cibles doivent avoir des noms différents");
-    if (spec.differentManaValues && new Set(ids.map((id) => snapshot(s, id).manaValue)).size !== ids.length)
+    if (spec.distinct === "manaValue" && new Set(ids.map((id) => snapshot(s, id).manaValue)).size !== ids.length)
       throw new RulesError("Les cibles doivent avoir des valeurs de mana différentes");
     if (spec.shareCreatureType && ids.length > 1 && !shareCreatureType(s, ids))
       throw new RulesError("Les cibles doivent partager un type de créature");

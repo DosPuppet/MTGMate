@@ -2013,7 +2013,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     const clue = s.battlefield.find((id) => nameOf(s, id) === "Clue") as string;
     expect(clue).toBeDefined();
     s = settle(activate(s, "p1", clue, ""));
-    expect(s.players.p2?.poison).toBe(2);
+    expect(s.players.p2?.counters?.poison).toBe(2);
     expect(s.players.p1?.hand).toHaveLength(1);
   });
 

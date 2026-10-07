@@ -237,7 +237,7 @@ export const LEGENDS: Record<string, CardScript> = {
     leyline: true,
     chooseOnEnter: "creatureType",
     // Sorts et cartes hors du champ de bataille : non gérés.
-    abilities: [staticAbility(CREATURE_YOU_CONTROL, { addChosenSubtype: true }, { label: "Vos créatures sont du type choisi" })],
+    abilities: [staticAbility(CREATURE_YOU_CONTROL, { addChosen: "subtype" }, { label: "Vos créatures sont du type choisi" })],
   },
   "Marina Vendrell's Grimoire": {
     abilities: [

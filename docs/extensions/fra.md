@@ -8,7 +8,7 @@
 - Lot F (**cartes uniques**) : ✅, 50 cartes. Le moteur gagne :
   - durée « jusqu'à votre prochain tour » (`modify`, `untilYourNextTurn`) et emblèmes temporaires (`expiresAtTurnOf`) ;
   - déclencheurs « subit des blessures », « bloque », « vous attaque » (`defending: "you"`), « lance un sort qui cible… » (`targeting`, `orFilter`) ;
-  - hybride monocolore {2/W} (`ManaCost.twoHybrid`), loyauté −X (`loyaltyX`), coût « exilez une autre carte de votre cimetière » ;
+  - hybride monocolore {2/W} (`ManaCost.twoHybrid`), loyauté −X (`loyalty: "X"`), coût « exilez une autre carte de votre cimetière » ;
   - garde « défaussez une carte », flashback avec défausse (`flashbackDiscard`), Équiper réduit par les marqueurs +1/+1 ;
   - combat : blessures selon l'endurance (Ghalta), valeur absolue d'une force négative (Loot), attaque malgré le défenseur, un seul attaquant par planeswalker (Tomik) ;
   - statiques de joueur : taxe adverse (Thalia), +1 marqueur (Yoshimaru), +1 blessure non de combat (Tomik), pas de déclencheur d'arrivée (Karn), pas de sorts en combat (Yuriko), jetons d'artefact → Dragons, créatures adverses exilées au lieu de mourir ;

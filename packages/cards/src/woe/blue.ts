@@ -316,7 +316,7 @@ export const BLUE: Record<string, CardScript> = {
   "Virtue of Knowledge": {
     abilities: [
       playerStatic({
-        triggerMod: { effect: "again", onEnter: true },
+        triggerMod: { effect: "again", on: "enter" },
         label: "Déclencheurs d'arrivée de vos permanents doublés",
       }),
     ],
@@ -382,7 +382,7 @@ export const BLUE: Record<string, CardScript> = {
       // « jusqu'à X créatures ciblées » : X est évalué au ciblage (`countAmount`).
       triggered(
         when.entersSelf,
-        [fx.exileCard(ref.target(), { name: "j" }), fx.grantPlay(ref.stored("j"), { forever: true, forOwner: true })],
+        [fx.exileCard(ref.target(), { name: "j" }), fx.grantPlay(ref.stored("j"), { forever: true, for: "owner" })],
         {
           targets: [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
           label: "Exilez jusqu'à X créatures ; leurs propriétaires pourront les jouer",

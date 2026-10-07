@@ -345,14 +345,16 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who)) {
       const pl = s.players[p];
       if (!pl || n <= 0) continue;
+      pl.counters ??= {};
+      const counters = pl.counters;
       if (e.counter === "rad") {
-        pl.rad = (pl.rad ?? 0) + n;
-        emit({ type: "rad", player: p, amount: n, total: pl.rad });
+        counters.rad = (counters.rad ?? 0) + n;
+        emit({ type: "rad", player: p, amount: n, total: counters.rad });
         bump(s);
         continue;
       }
-      pl.poison = (pl.poison ?? 0) + n;
-      emit({ type: "poison", player: p, amount: n, total: pl.poison });
+      counters.poison = (counters.poison ?? 0) + n;
+      emit({ type: "poison", player: p, amount: n, total: counters.poison });
       bump(s); // corrompu : des statiques en dépendent
     }
     return;

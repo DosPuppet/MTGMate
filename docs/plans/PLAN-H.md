@@ -349,3 +349,12 @@ Attendu : 12 à 18 entrées levées.
   - commentaires périmés corrigés : sept cartes de recherche cachée exilent déjà face cachée, Boommobile, et Codie, Ravenous Codex (avec un test : la copie redemande ses cibles) ;
   - `approximations.md` : Officious Interrogation et The Death of Gwen Stacy III retirés (au plus quatre joueurs) ; piles du premier adversaire (Fact or Fiction, Intrude on the Mind, Riddles in the Dark) et défenseur du ninjutsu documentés ;
   - dette : `affects` traité comme une méta-clé (playerStatic 62 → 61), une seule liste des surfaces (`debtSurface.ts`), notes de plafonds sans doublon, dix structures mesurées (TriggerMod 9, EventReplacement 18, CastInfo 10, TurnLogQuery 31, MoveSpec 18, BlockRule 13, TargetSpec 24, AdditionalCost 13, CastLimit 9, NextSpell 9).
+- **H1 (07/10/2026) :** renommages exacts, sans changement de règles (parties dorées et empreintes de fuzz identiques : `880c4c6c` sur tout le pool, `32593805` en Commander, graine 7) :
+  - `sacrificeAtEnd` → `sacrificeAtEndStep` (copie de sort et arrivée) ; `copyNonlegendary` → `nonlegendary` ; `exileAfter` / `bottomAfter` → `after` (castNow, grantPlay et permissions de jouer) ;
+  - TriggerMod `onEnter` / `onAttack` / `onDies` / `onDraw` → `on` ; gainControl `to: "owner"` ; grantPlay `for`, `tapped` ;
+  - AbilityCostMod `reduce: number | Amount` ; CostDef `loyalty: number | "X"` ; AdditionalCost `discardOr` ; LayerMods `addChosen` ;
+  - `distinct: "name" | "manaValue"` (cibles, pickFromZone, sacrifice en coût) ; becomesTarget `by` ;
+  - retours sur le PLAN-E : `PlayerState.counters { poison, rad }` (la vue garde ses noms), `CastInfo.spentFrom`, `halfLife` et `lifeAboveStart` exprimés par `lifeTotal` (`who`, `starting`) et `div` (`up`) ;
+  - écartés (pas de gain réel) : `maxOverPlayers.sum`, `createTokens.attacking` (revu en H5), `onPrevent.countersOnDamaged`, couleurs « Thriving » ;
+  - dette : singleCardKeys 100 → 86 ; PlayerState 24 → 23, CostDef 34 → 33, LayerMods 31 → 30, TriggerMod 9 → 6, CastInfo 10 → 9, TargetSpec 24 → 23, AdditionalCost 13 → 11, Effect 654 → 651 champs, TriggerSpec 164 → 162 champs, Condition 54 → 53 (99 → 97 champs), Amount 35 → 34.
+

@@ -231,13 +231,12 @@ export interface PlayerState {
   /** Total de vie de départ (conditions « au-dessus de votre total de départ »). */
   startingLife: number;
   turnStats: TurnStats;
-  /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd). */
-  poison?: number;
   /**
-   * Marqueurs de radiation (Fallout) : au début de sa première phase principale, le joueur meule autant de cartes ; pour
-   * chaque carte non-terrain meulée, il perd 1 PV et un marqueur (`radiation`, turn.ts).
+   * Marqueurs sur le joueur (122.1). `poison` : marqueurs poison (104.3d : 10 ou plus, le joueur perd) ; `rad` : marqueurs
+   * de radiation (Fallout : au début de sa première phase principale, le joueur meule autant de cartes ; pour chaque
+   * carte non-terrain meulée, il perd 1 PV et un marqueur, `radiation`, turn.ts).
    */
-  rad?: number;
+  counters?: { poison?: number; rad?: number };
   /** Nombre de tours commencés par ce joueur (Jace Reawakened). */
   turnsTaken?: number;
   /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */
@@ -272,13 +271,13 @@ export interface StackItem {
   /** Esper Origins : après la résolution, exilé puis mis sur le champ de bataille transformé avec un marqueur de finalité. */
   toBattlefieldTransformed?: boolean;
   /** Modifications à l'arrivée du permanent (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
-  /** `sacrificeAtEnd` : le jeton (copie d'un sort de créature) est sacrifié au début de la prochaine étape de fin. */
+  /** `sacrificeAtEndStep` : le jeton (copie d'un sort de créature) est sacrifié au début de la prochaine étape de fin. */
   /** `nonlegendary` : la copie n'est pas légendaire (exception de copie, 707.9b ; Jackal, The Clone Saga). */
   arrival?: {
     counters?: { kind: string; n: number }[];
     haste?: boolean;
     subtypes?: string[];
-    sacrificeAtEnd?: boolean;
+    sacrificeAtEndStep?: boolean;
     nonlegendary?: boolean;
     /** Loyauté de départ à la place de celle imprimée (copie d'Ob Nixilis, the Adversary). */
     loyalty?: number;
@@ -437,12 +436,14 @@ export interface CastInfo {
   /** Zone d'où il a été lancé. */
   from: Zone;
   via?: CastVia;
-  /** Mana dépensé pour le lancer, en tout et par type ; dont le mana des Cavernes (Bat Colony). */
+  /** Mana dépensé pour le lancer, en tout et par type. */
   manaSpent?: number;
   spentColors?: Partial<Record<ManaType, number>>;
-  caveMana?: number;
-  /** Mana produit par des sources d'artefact (Coin of Mastery). */
-  artifactMana?: number;
+  /**
+   * Part du mana dépensé selon sa source : `cave`, produit par des Cavernes (Bat Colony) ; `artifact`, par des sources
+   * d'artefact (Coin of Mastery). Non copiable (`copyStackItem`).
+   */
+  spentFrom?: { cave?: number; artifact?: number };
   /** Créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
   costBounced?: ObjectId[];
   /** Faufilement : ce qu'attaquait la créature renvoyée (le permanent arrive engagé et attaquant). */
@@ -879,7 +880,7 @@ export interface GameState {
   /** Cartes qu'un joueur peut jouer depuis l'exil jusqu'à la fin du tour `until` (impulsion, Etali…). */
   /**
    * Cartes exilées jouables. `condition` : seulement tant qu'elle est remplie (Possibility Technician) ; `extraCost` :
-   * {N} de plus ; `landsTapped` : un terrain joué ainsi arrive engagé (Lightstall Inquisitor).
+   * {N} de plus ; `tapped` : un terrain joué ainsi arrive engagé (Lightstall Inquisitor).
    */
   playPermissions?: {
     card: ObjectId;
@@ -892,14 +893,15 @@ export interface GameState {
     condition?: Condition;
     source?: ObjectId;
     extraCost?: number;
-    landsTapped?: boolean;
+    tapped?: boolean;
     anyMana?: boolean;
-    /** « S'il devait être mis dans un cimetière, exilez-le à la place » (Quistis Trepe). */
-    exileAfter?: boolean;
+    /**
+     * « S'il devait être mis dans un cimetière, exilez-le à la place » (`exile`, Quistis Trepe) ou « mettez-le au-dessous
+     * de la bibliothèque de son propriétaire » (`bottom`, Kylox's Voltstrider).
+     */
+    after?: "exile" | "bottom";
     /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Inside Information). */
     payLifeManaValue?: boolean;
-    /** « S'il devait aller au cimetière, mettez-le au-dessous de la bibliothèque de son propriétaire » (Kylox's Voltstrider). */
-    bottomAfter?: boolean;
     /** Une seule carte du groupe peut être lancée (Buster Sword : « un sort de votre main »). */
     group?: string;
     /** Découverte : si la carte n'a pas été lancée quand la permission expire, elle va dans la main. */

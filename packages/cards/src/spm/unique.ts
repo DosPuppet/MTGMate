@@ -143,7 +143,7 @@ export const UNIQUE: Record<string, CardScript> = {
         [
           {
             op: "playerEffect",
-            ability: { nextSpell: { filter: { types: ["Creature"] }, copy: true, copyNonlegendary: true } },
+            ability: { nextSpell: { filter: { types: ["Creature"] }, copy: true, nonlegendary: true } },
             once: true,
           },
         ],
@@ -194,7 +194,7 @@ export const UNIQUE: Record<string, CardScript> = {
       [
         {
           ...target.upTo(6, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")),
-          differentNames: true,
+          distinct: "name",
         },
       ],
       [fx.toBattlefield(ref.target())],

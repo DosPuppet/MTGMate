@@ -123,7 +123,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
               "cartes de créature de valeurs de mana différentes, X ou moins",
             ),
           ),
-          differentManaValues: true,
+          distinct: "manaValue",
           maxManaValueAmount: amount.x,
         },
       ],

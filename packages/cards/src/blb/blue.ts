@@ -73,7 +73,7 @@ export const BLUE: Record<string, CardScript> = {
   "Daring Waverider": {
     // Lancé pendant la résolution (608.2g), exilé au lieu d'aller au cimetière.
     abilities: [
-      triggered(when.entersSelf, [fx.castNow(ref.target(), { free: true, exileAfter: true })], {
+      triggered(when.entersSelf, [fx.castNow(ref.target(), { free: true, after: "exile" })], {
         targets: [
           target.cardInGraveyard(
             "t",
@@ -458,7 +458,7 @@ export const BLUE: Record<string, CardScript> = {
                 manaValueAmount: amount.countersOn(ref.self, "coin"),
               },
             ],
-            [fx.castNow(ref.target(), { free: true, exileAfter: true })],
+            [fx.castNow(ref.target(), { free: true, after: "exile" })],
           ),
         ],
         label: "Marqueur de pièce, lance un sort du cimetière",

@@ -149,7 +149,7 @@ export const RED: Record<string, CardScript> = {
           ref.controllerOf(ref.eventObject),
           "Exiler autant de cartes du dessus de votre bibliothèque (jouables jusqu'à la fin de votre prochain tour) ?",
           fx.exileTop(ref.controllerOf(ref.eventObject), amount.eventAmount, "x"),
-          fx.grantPlay(ref.stored("x"), { forOwner: true, untilOwnersNextTurn: true }),
+          fx.grantPlay(ref.stored("x"), { for: "owner", untilOwnersNextTurn: true }),
         ),
         { label: "Son contrôleur peut exiler autant de cartes du dessus de sa bibliothèque" },
       ),
@@ -416,7 +416,7 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   "Demand Answers": {
-    additionalCost: { discard: 1, discardOrSacrifice: { types: ["Artifact"] } },
+    additionalCost: { discard: 1, discardOr: { sacrifice: { types: ["Artifact"] } } },
     spell: spell([], [fx.draw(2)]),
   },
 };

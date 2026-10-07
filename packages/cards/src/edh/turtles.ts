@@ -240,7 +240,7 @@ export const EDH_TURTLES: Record<string, CardScript> = {
   "Krang, the All-Powerful": {
     abilities: [
       playerStatic({
-        triggerMod: { effect: "again", onDraw: true },
+        triggerMod: { effect: "again", on: "draw" },
         label: "Les capacités de vos permanents déclenchées par une pioche se déclenchent une fois de plus",
       }),
       triggered(when.draw(2, "any"), [fx.addCounters(ref.self, 1)], {

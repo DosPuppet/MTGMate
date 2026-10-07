@@ -124,7 +124,7 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 
 ### Moteur
 
-- **Type de terrain de base choisi en jouant un terrain** (Multiversal Passage) : `chooseOnEnter: "landType"` ; `legalActions` propose une option `playLand` par type (`landType`, aussi pour payer ou non les 2 PV), et la statique `addChosenLandType` lui donne ce type (donc son mana). Le terrain choc « Then you may pay 2 life » est lu dans le texte.
+- **Type de terrain de base choisi en jouant un terrain** (Multiversal Passage) : `chooseOnEnter: "landType"` ; `legalActions` propose une option `playLand` par type (`landType`, aussi pour payer ou non les 2 PV), et la statique `addChosen: "landType"` lui donne ce type (donc son mana). Le terrain choc « Then you may pay 2 life » est lu dans le texte.
 - **Exploiter** (Harness, Marvel Super Heroes) : `fx.harness` et `cond.harnessed` pour les capacités ∞.
 - **Convergence** : `amount.colorsSpent`, les couleurs de mana dépensées pour lancer le sort.
 - **Maîtrise du feu N** (Firebending, Avatar) : lue dans le texte ; « chaque fois que cette créature attaque, ajoutez N {R} ».

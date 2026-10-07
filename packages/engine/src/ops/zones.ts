@@ -597,9 +597,8 @@ export const HANDLERS: OpHandlers = {
     );
     // Eerie Ultimatum : « de noms différents » (au plus une carte par nom).
     const cardName = (id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? id;
-    const onePerName = e.differentNames
-      ? pool.filter((id, i) => pool.findIndex((x) => cardName(x) === cardName(id)) === i)
-      : pool;
+    const onePerName =
+      e.distinct === "name" ? pool.filter((id, i) => pool.findIndex((x) => cardName(x) === cardName(id)) === i) : pool;
     const count = Math.min(
       allowed ? Math.min(evalAmount(s, ctx, e.count), allowed.size) : evalAmount(s, ctx, e.count),
       onePerName.length,
@@ -634,7 +633,7 @@ export const HANDLERS: OpHandlers = {
       picked = answer.map(String);
     }
     if (allowed && !distinctColors(picked.map(colorsOf))) throw new RulesError("Une carte au plus par couleur");
-    if (e.differentNames && new Set(picked.map(cardName)).size !== picked.length)
+    if (e.distinct === "name" && new Set(picked.map(cardName)).size !== picked.length)
       throw new RulesError("Des cartes de noms différents");
     // Un tirage au hasard n'est pas rejoué : pas de question après lui.
     const shock = e.random ? new Set<ObjectId>() : shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, ctx.controller), key);

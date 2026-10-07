@@ -250,7 +250,7 @@ export const RED: Record<string, CardScript> = {
         cost: "{0}",
         label: "Copiez un sort de créature que vous contrôlez (célérité, sacrifiée en fin de tour)",
         targets: [target.spell("b", { types: ["Creature"], controller: "you" }, "sort de créature que vous contrôlez")],
-        effects: [fx.copySpell(ref.target("b"), 1, { haste: true, sacrificeAtEnd: true })],
+        effects: [fx.copySpell(ref.target("b"), 1, { haste: true, sacrificeAtEndStep: true })],
       },
     ),
   },

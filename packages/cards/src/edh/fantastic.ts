@@ -232,7 +232,7 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
         when.combatDamageToPlayer,
         [
           fx.pickFromZone("graveyard", { types: ["Instant", "Sorcery"] }, { to: "exile" }, { random: true, store: "p" }),
-          fx.delayedAt("yourNextUpkeep", [fx.castNow(ref.target("p"), { free: true, exileAfter: true })], { p: ref.stored("p") }),
+          fx.delayedAt("yourNextUpkeep", [fx.castNow(ref.target("p"), { free: true, after: "exile" })], { p: ref.stored("p") }),
         ],
         { label: "Exilez un éphémère ou un rituel au hasard ; lancez-le gratuitement à votre prochain entretien" },
       ),

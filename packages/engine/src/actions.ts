@@ -503,15 +503,19 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     const toxic = combat && src && source.keywords.includes("toxic") ? (s.defs[src.defId]?.toxic ?? 1) : 0;
     const poisoned = s.players[target];
     if (toxic && poisoned) {
-      poisoned.poison = (poisoned.poison ?? 0) + toxic;
-      emit({ type: "poison", player: target, amount: toxic, total: poisoned.poison });
+      poisoned.counters ??= {};
+      const counters = poisoned.counters;
+      counters.poison = (counters.poison ?? 0) + toxic;
+      emit({ type: "poison", player: target, amount: toxic, total: counters.poison });
     }
     // Infection (702.90b) : des marqueurs poison au lieu d'une perte de points de vie.
     // Phyrexian Unlife : à 0 PV ou moins, comme si la source avait l'infection.
     const pl = s.players[target];
     if (pl && (source.keywords.includes("infect") || (pl.life <= 0 && playerStatic(s, target, "infectDamageAtZeroLife")))) {
-      pl.poison = (pl.poison ?? 0) + amount;
-      emit({ type: "poison", player: target, amount, total: pl.poison });
+      pl.counters ??= {};
+      const counters = pl.counters;
+      counters.poison = (counters.poison ?? 0) + amount;
+      emit({ type: "poison", player: target, amount, total: counters.poison });
     } else loseLife(s, target, amount, true);
   } else {
     const o = s.objects[target];

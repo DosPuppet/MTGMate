@@ -229,7 +229,7 @@ export const GREEN: Record<string, CardScript> = {
   "Old Fat Spider": {
     abilities: [
       blockAbility(block.notBy({ types: ["Creature"], maxPower: 2 }, "Imblocable par les créatures de force 2 ou moins")),
-      triggered({ on: "becomesTarget", who: "self", byOpponent: true }, [fx.draw(1)], {
+      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, [fx.draw(1)], {
         label: "Ciblée par un adversaire : piochez une carte",
       }),
     ],

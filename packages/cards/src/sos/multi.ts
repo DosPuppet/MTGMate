@@ -699,7 +699,7 @@ export const MULTI: Record<string, CardScript> = {
         targets: [
           target.cardInGraveyard("t", INSTANT_SORCERY, "opponent", "carte d'éphémère ou de rituel d'un cimetière adverse"),
         ],
-        effects: [fx.exileCard(ref.target(), { name: "e" }), fx.grantPlay(ref.stored("e"), { anyMana: true, exileAfter: true })],
+        effects: [fx.exileCard(ref.target(), { name: "e" }), fx.grantPlay(ref.stored("e"), { anyMana: true, after: "exile" })],
         label: "Exilez un éphémère ou un rituel adverse : vous pouvez le lancer ce tour-ci",
       }),
     ],
@@ -733,8 +733,8 @@ export const MULTI: Record<string, CardScript> = {
       [
         fx.exileCard(ref.target(), { name: "a" }),
         fx.exileTop(ref.you, 1, "b"),
-        fx.grantPlay(ref.stored("a"), { forOwner: true, untilOwnersNextTurn: true }),
-        fx.grantPlay(ref.stored("b"), { forOwner: true, untilOwnersNextTurn: true }),
+        fx.grantPlay(ref.stored("a"), { for: "owner", untilOwnersNextTurn: true }),
+        fx.grantPlay(ref.stored("b"), { for: "owner", untilOwnersNextTurn: true }),
       ],
     ),
   },

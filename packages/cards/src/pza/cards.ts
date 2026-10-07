@@ -113,7 +113,7 @@ export const CARDS: Record<string, CardScript> = {
   "Metallic Mimic": {
     chooseOnEnter: "creatureType",
     abilities: [
-      staticAbility("self", { addChosenSubtype: true }, { label: "Est du type choisi" }),
+      staticAbility("self", { addChosen: "subtype" }, { label: "Est du type choisi" }),
       entersWith({
         counters: 1,
         affects: { types: ["Creature"], controller: "you", subtypeChosen: true, other: true },

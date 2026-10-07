@@ -20,7 +20,7 @@ import {
 export const GREEN: Record<string, CardScript> = {
   "Altanak, the Thrice-Called": {
     abilities: [
-      triggered({ on: "becomesTarget", who: "self", byOpponent: true }, [fx.draw(1)], { label: "Piochez une carte" }),
+      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, [fx.draw(1)], { label: "Piochez une carte" }),
       activated({
         mana: "{1}{G}",
         fromHand: true,

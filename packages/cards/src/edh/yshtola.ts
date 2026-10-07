@@ -64,7 +64,7 @@ export const EDH_YSHTOLA: Record<string, CardScript> = {
       // « Faites ceci une seule fois par tour » : la limite n'est consommée que si le sort est lancé.
       triggered(
         when.loseLife("opponent"),
-        [fx.castNow(ref.target(), { exileAfter: true, storeCast: "cast" }), ...fx.when(cond.v("cast"), fx.doneOncePerTurn)],
+        [fx.castNow(ref.target(), { after: "exile", storeCast: "cast" }), ...fx.when(cond.v("cast"), fx.doneOncePerTurn)],
         {
           targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "carte d'éphémère ou de rituel")],
           batched: true,

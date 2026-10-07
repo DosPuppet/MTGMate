@@ -164,7 +164,7 @@ Ajouté le 06/10/2026 à la demande de l'utilisateur. Liste officielle du préco
   - mana d'artefact dépensé pour lancer un sort (`amount.artifactManaSpent`, Coin of Mastery ; le mana produit en trop n'est pas compté) ;
   - jetons qui attaquent un joueur désigné (`createTappedTokens(…, { attacking: p })`, Endless Foot Assault) ; copies sacrifiées à la fin du combat (`atEndOfCombat: "sacrifice"`, Shredder ; la myriade les exile) ;
   - adversaires attaqués ce tour-ci (`amount.opponentsAttackedThisTurn`, Fast Forward) ; PV de départ (`amount.startingLife`, `cond.someoneAtHalfStartingLife`, Game Over) ; marqueurs de toutes sortes parmi des permanents (`countersAmong(…, "any")`) ;
-  - déclenchements dus à une pioche doublés (`TriggerMod.onDraw`, Krang) ; blessures prévenues changées en marqueurs sur le permanent protégé (`onPrevent.countersOnDamaged`, Vigor) ;
+  - déclenchements dus à une pioche doublés (`TriggerMod.on: "draw"`, Krang) ; blessures prévenues changées en marqueurs sur le permanent protégé (`onPrevent.countersOnDamaged`, Vigor) ;
   - couleur exclue d'un choix en arrivant (`chooseOnEnter: "color"` et `enterModes`, terrains Thriving).
 - **Tests :** `engine/test/edh-turtles.test.ts` (18) ; menu de lancement de la fusion vérifié dans le navigateur (`test-results/fuse/`).
 - **Approximations :** Fast Forward (provocation), Vigor (mise au cimetière), Shredder (attaque d'un planeswalker), Coin of Mastery (mana produit en trop).

@@ -419,7 +419,7 @@ function stationTraits(o: GameObject, d: CardDef): { creature: boolean; keywords
 const FACE_DOWN_WARD: AbilityDef = {
   kind: "triggered",
   ward: true,
-  trigger: { on: "becomesTarget", who: "self", byOpponent: true },
+  trigger: { on: "becomesTarget", who: "self", by: "opponent" },
   targets: [],
   effects: [
     { op: "unlessPay", who: { kind: "eventPlayer" }, mana: { generic: 2, colored: {}, x: 0 }, skip: 1 },
@@ -963,10 +963,10 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
   }
   const affects = typeof ab.affects === "string" ? ab.affects : withChosen(ab.affects, o);
-  if (mods.addChosenSubtype && o.chosen?.creatureType) {
+  if (mods.addChosen === "subtype" && o.chosen?.creatureType) {
     mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.creatureType] };
   }
-  if (mods.addChosenLandType && o.chosen?.landType) {
+  if (mods.addChosen === "landType" && o.chosen?.landType) {
     mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.landType] };
   }
   return {

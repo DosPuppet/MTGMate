@@ -323,7 +323,7 @@ describe("Enchanting Tales", () => {
       expect(s.players.p1?.lost).toBe(false);
       dealDamage(s, src, "p1", 4, false);
       expect(s.players.p1?.life).toBe(-1);
-      expect(s.players.p1?.poison).toBe(4);
+      expect(s.players.p1?.counters?.poison).toBe(4);
     });
 
     it("Ground Seal : arrivée, piochez ; les cartes des cimetières ne peuvent être ciblées par personne", () => {

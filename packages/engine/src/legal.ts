@@ -237,13 +237,13 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       opt.group = { kind: t.samePlayer ? "same" : "different", holders };
     }
     // Noms différents : même contrainte « différents », le nom tenant lieu de joueur.
-    if (t.differentNames) {
+    if (t.distinct === "name") {
       const holders: Record<string, string> = {};
       for (const id of legal) holders[id] = (s.objects[id] ? snapshot(s, id).name : undefined) ?? id;
       opt.group = { kind: "different", holders };
     }
     // Valeurs de mana différentes : la valeur de mana tient lieu de joueur.
-    if (t.differentManaValues) {
+    if (t.distinct === "manaValue") {
       const holders: Record<string, string> = {};
       for (const id of legal) holders[id] = String((s.objects[id] ? snapshot(s, id).manaValue : undefined) ?? id);
       opt.group = { kind: "different", holders };
@@ -728,33 +728,34 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
               canPay(s, player, abilityManaCost(s, player, id, ab, c), exclude, abilityPurpose(id, ab)),
             );
       if (!targetsAvailable(targets)) return;
-      const xMax0 = ab.cost.loyaltyX
-        ? (o.counters.loyalty ?? 0)
-        : ab.cost.removeCountersX
-          ? (o.counters[ab.cost.removeCountersX] ?? 0)
-          : ab.cost.tapX
-            ? tapXMax(
-                s,
-                player,
-                id,
-                ab.cost.tapX,
-                (tapped, x) =>
-                  !ab.cost.mana ||
-                  canPay(
-                    s,
-                    player,
-                    abilityManaCost(s, player, id, ab, "best", x),
-                    new Set([...(exclude ?? []), ...tapped]),
-                    purpose,
-                  ),
-              )
-            : ab.cost.discardX
-              ? (s.players[player]?.hand ?? []).filter((c) => c !== id).length
-              : ab.cost.exileFromGraveyardX
-                ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
-                : ab.cost.sacrificeX
-                  ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
-                  : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
+      const xMax0 =
+        ab.cost.loyalty === "X"
+          ? (o.counters.loyalty ?? 0)
+          : ab.cost.removeCountersX
+            ? (o.counters[ab.cost.removeCountersX] ?? 0)
+            : ab.cost.tapX
+              ? tapXMax(
+                  s,
+                  player,
+                  id,
+                  ab.cost.tapX,
+                  (tapped, x) =>
+                    !ab.cost.mana ||
+                    canPay(
+                      s,
+                      player,
+                      abilityManaCost(s, player, id, ab, "best", x),
+                      new Set([...(exclude ?? []), ...tapped]),
+                      purpose,
+                    ),
+                )
+              : ab.cost.discardX
+                ? (s.players[player]?.hand ?? []).filter((c) => c !== id).length
+                : ab.cost.exileFromGraveyardX
+                  ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
+                  : ab.cost.sacrificeX
+                    ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
+                    : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
       // Krumar Initiate : « payez X points de vie » — X ne dépasse pas les points de vie.
       const xMax = ab.cost.payLifeX && xMax0 !== null ? Math.min(xMax0, Math.max(0, payableLife(s, player))) : xMax0;
       // « X ne peut pas être 0 » (et « sacrifiez X permanents », Radiant Lotus) : proposée seulement si X peut atteindre son

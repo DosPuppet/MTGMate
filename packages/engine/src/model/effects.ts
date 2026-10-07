@@ -478,11 +478,13 @@ export type Effect =
    */
   | {
       op: "gainControl";
-      /** Chaque objet passe sous le contrôle de son propriétaire (Alicia Masters : « chaque joueur gagne le contrôle de
-       * toutes les créatures qu'il possède ») ; `to` est alors ignoré. */
-      toOwner?: boolean;
       what: Ref;
-      to?: Ref;
+      /**
+       * Le joueur qui prend le contrôle (par défaut, le contrôleur de l'effet) ; `owner` : chaque objet passe sous le
+       * contrôle de son propriétaire (Alicia Masters : « chaque joueur gagne le contrôle de toutes les créatures qu'il
+       * possède »).
+       */
+      to?: Ref | "owner";
       duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "permanent";
     }
   /**
@@ -506,14 +508,17 @@ export type Effect =
   /** `bottom` : le sort qui se résout va au-dessous de la bibliothèque de son propriétaire (Ultimate Nullification). */
   | { op: "spellFate"; fate: "exile" | "plot" | "rebound" | "battlefieldTransformed" | "bottom"; what?: Ref; counter?: string }
   /** Copies d'un sort sur la pile (mêmes cibles). */
-  /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature a la célérité et est sacrifiée en fin de tour. */
+  /**
+   * `haste`, `sacrificeAtEndStep` : la copie d'un sort de créature a la célérité et est sacrifiée au début de la
+   * prochaine étape de fin (même option que `copyToken`).
+   */
   /** `loyalty` : la copie (un planeswalker) a cette loyauté de départ (victime X d'Ob Nixilis, the Adversary). */
   | {
       op: "copySpell";
       what: Ref;
       count: Amount;
       haste?: boolean;
-      sacrificeAtEnd?: boolean;
+      sacrificeAtEndStep?: boolean;
       nonlegendary?: boolean;
       loyalty?: Amount;
     }
@@ -525,14 +530,14 @@ export type Effect =
   /** Permet au contrôleur de jouer ces cartes exilées ce tour-ci. `spellsOnly` : lancer seulement, sans timing, gratuitement. */
   /**
    * `forever` : « tant qu'elle reste exilée » (Emrakul) ; `condition` : seulement tant qu'elle est remplie ;
-   * `forOwner` : le propriétaire de la carte peut la jouer (Lightstall Inquisitor), `extraCost` et `landsTapped`.
+   * `for` : qui peut la jouer à la place du contrôleur de l'effet (voir ce champ), `extraCost` et `tapped`.
    */
   | {
       op: "grantPlay";
       what: Ref;
-      /** « jusqu'à la fin de votre prochain tour » ; avec `forOwner` : « jusqu'à votre prochain tour » (Memory Vessel). */
+      /** « jusqu'à la fin de votre prochain tour » ; avec `for: "owner"` : « jusqu'à votre prochain tour » (Memory Vessel). */
       untilYourNextTurn?: boolean;
-      /** Avec `forOwner` : « jusqu'à la fin de son prochain tour » (Suspend Aggression). */
+      /** Avec `for: "owner"` : « jusqu'à la fin de son prochain tour » (Suspend Aggression). */
       untilOwnersNextTurn?: boolean;
       /** « jusqu'à votre prochaine étape de fin » (Shadow Urchin). */
       untilYourNextEndStep?: boolean;
@@ -545,15 +550,19 @@ export type Effect =
       /** « Si vous lancez un sort ainsi, payez des PV égaux à sa valeur de mana plutôt que son coût » (Inside Information). */
       payLifeManaValue?: boolean;
       condition?: Condition;
-      forOwner?: boolean;
-      /** Chaque joueur autre que le propriétaire de la carte peut la jouer (Ian Malcolm, Chaotician). */
-      forNonOwners?: boolean;
+      /**
+       * Qui peut jouer la carte, à la place du contrôleur de l'effet : `owner`, son propriétaire (Lightstall
+       * Inquisitor) ; `nonOwners`, chaque joueur autre que son propriétaire (Ian Malcolm, Chaotician).
+       */
+      for?: "owner" | "nonOwners";
+      /** {N} de plus (avec `for: "owner"`). */
       extraCost?: number;
-      landsTapped?: boolean;
+      /** Un terrain joué ainsi arrive engagé (avec `for: "owner"`, Lightstall Inquisitor). */
+      tapped?: boolean;
       /** Du mana de n'importe quel type peut être dépensé (Tinybones, Laughing Jasper Flint). */
       anyMana?: boolean;
-      /** Le sort est exilé au lieu d'aller au cimetière (Quistis Trepe). */
-      exileAfter?: boolean;
+      /** Le sort est exilé (`exile`, Quistis Trepe) ou mis au-dessous de la bibliothèque (`bottom`) au lieu d'aller au cimetière. */
+      after?: "exile" | "bottom";
       /** Une seule des cartes désignées peut être lancée (Buster Sword). */
       oneOf?: boolean;
       /** Seulement en Aventure (Mosswood Dreadknight : « vous pouvez la lancer depuis votre cimetière en Aventure »). */
@@ -623,20 +632,18 @@ export type Effect =
   | { op: "discover"; n: Amount; who?: Ref; store?: string; cascade?: boolean; filter?: ObjectFilter }
   /**
    * 608.2g : « vous pouvez lancer [ces cartes] » pendant la résolution. Le joueur lance tout de suite une des cartes
-   * (puis une autre si `many`), ou refuse. `free` : sans payer leur coût de mana ; `exileAfter` : exilé au lieu d'aller
-   * au cimetière. `storeCast` / `storeRest` : cartes lancées / restées dans leur zone, pour les effets suivants.
+   * (puis une autre si `many`), ou refuse. `free` : sans payer leur coût de mana ; `after` : exilé (`exile`) ou mis
+   * au-dessous de la bibliothèque (`bottom`, Kylox's Voltstrider) au lieu d'aller au cimetière. `storeCast` / `storeRest` : cartes lancées / restées dans leur zone, pour les effets suivants.
    */
   | {
       op: "castNow";
       what: Ref;
       free?: boolean;
       many?: boolean;
-      exileAfter?: boolean;
+      after?: "exile" | "bottom";
       anyMana?: boolean;
       storeCast?: string;
       storeRest?: string;
-      /** Au-dessous de la bibliothèque au lieu du cimetière (Kylox's Voltstrider). */
-      bottomAfter?: boolean;
       /** Seulement les cartes de valeur de mana au plus égale à ce montant (Kotis). */
       maxManaValue?: Amount;
       /** Lancée pour ce coût plutôt que pour son coût de mana (miracle : Lorehold, the Historian). */
@@ -853,8 +860,11 @@ export type Effect =
        * des permanents correspondants (les vôtres).
        */
       onePerColorOf?: ObjectFilter;
-      /** Cartes de noms différents (Eerie Ultimatum : « un nombre quelconque de cartes de permanent de noms différents »). */
-      differentNames?: boolean;
+      /**
+       * Cartes deux à deux différentes par cette caractéristique : `name`, noms différents (Eerie Ultimatum : « un nombre
+       * quelconque de cartes de permanent de noms différents »).
+       */
+      distinct?: "name";
     }
   /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
   /** `topDamage` : si le propriétaire la met au-dessus, la source lui inflige N blessures (Clash of Elements). */

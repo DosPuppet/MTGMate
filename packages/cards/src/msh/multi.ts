@@ -738,7 +738,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   // « Défaussez une carte ou payez {2} » (coût additionnel) et la garde du même nom : la garde est lue dans le texte.
   "Titania, Rugged Rumbler": {
-    additionalCost: { discard: 1, discardOrPay: { generic: 2, colored: {}, x: 0 } },
+    additionalCost: { discard: 1, discardOr: { mana: { generic: 2, colored: {}, x: 0 } } },
   },
   "Worlds Within Worlds": {
     spell: spell(

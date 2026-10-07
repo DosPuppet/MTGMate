@@ -29,18 +29,18 @@ describe("Mutant Menace (EDH)", () => {
     it("au début de sa première phase principale, le joueur meule ; chaque carte non-terrain : 1 PV et un marqueur en moins", () => {
       let s = scenario({ active: "p2", p1: { library: ["Opt", "Forest", "Shock", "Opt", "Opt"] } });
       const p1 = s.players.p1;
-      if (p1) p1.rad = 3;
+      if (p1) p1.counters = { ...p1.counters, rad: 3 };
       s = toMain1Of(s, "p1");
       // Pioche (Opt), puis meule de trois : Forest, Shock, Opt → deux cartes non-terrain.
-      expect([s.players.p1?.rad, s.players.p1?.life, s.players.p1?.graveyard.length]).toEqual([1, 18, 3]);
+      expect([s.players.p1?.counters?.rad, s.players.p1?.life, s.players.p1?.graveyard.length]).toEqual([1, 18, 3]);
     });
 
     it("Strong, the Brutish Thespian : la radiation fait gagner des PV", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Strong, the Brutish Thespian"], library: ["Opt", "Shock", "Opt"] } });
       const p1 = s.players.p1;
-      if (p1) p1.rad = 2;
+      if (p1) p1.counters = { ...p1.counters, rad: 2 };
       s = toMain1Of(s, "p1");
-      expect([s.players.p1?.rad, s.players.p1?.life]).toEqual([0, 22]);
+      expect([s.players.p1?.counters?.rad, s.players.p1?.life]).toEqual([0, 22]);
     });
 
     it("The Wise Mothman : chaque joueur reçoit un marqueur ; des cartes non-terrain meulées mettent des marqueurs +1/+1", () => {
@@ -49,7 +49,7 @@ describe("Mutant Menace (EDH)", () => {
         p2: { library: ["Opt", "Shock", "Forest"] },
       });
       s = settle(castIt(s, "p1", "The Wise Mothman"));
-      expect([s.players.p1?.rad, s.players.p2?.rad]).toEqual([1, 1]);
+      expect([s.players.p1?.counters?.rad, s.players.p2?.counters?.rad]).toEqual([1, 1]);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const moth = idOf(s, "p1", "battlefield", "The Wise Mothman");
       // L'adversaire subit la radiation à son tour : il meule une carte non-terrain (Shock, sous Opt pioché).
@@ -64,11 +64,11 @@ describe("Mutant Menace (EDH)", () => {
         p2: { battlefield: ["Bear Cub"] },
       });
       const p2 = s.players.p2;
-      if (p2) p2.rad = 2;
+      if (p2) p2.counters = { ...p2.counters, rad: 2 };
       s = settle(castIt(s, "p1", "Atomize", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }), (req) =>
         req.type === "pick" && req.intent === "proliferate" ? ["p2"] : undefined,
       );
-      expect(s.players.p2?.rad).toBe(3);
+      expect(s.players.p2?.counters?.rad).toBe(3);
     });
   });
 
@@ -110,7 +110,7 @@ describe("Mutant Menace (EDH)", () => {
     it("Glowing One : il donne quatre marqueurs de radiation au joueur qu'il blesse", () => {
       let s = scenario({ p1: { battlefield: ["Glowing One"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Glowing One")]));
-      expect(s.players.p2?.rad).toBe(4);
+      expect(s.players.p2?.counters?.rad).toBe(4);
     });
 
     it("Bloatfly Swarm : les blessures retirent des marqueurs +1/+1 et irradient chaque joueur", () => {
@@ -119,7 +119,9 @@ describe("Mutant Menace (EDH)", () => {
       });
       const fly = idOf(s, "p1", "battlefield", "Bloatfly Swarm");
       s = settle(castIt(s, "p1", "Shock", { targets: { t: [fly] } }));
-      expect([s.objects[fly]?.damage, plusOne(s, fly), s.players.p1?.rad, s.players.p2?.rad]).toEqual([0, 3, 2, 2]);
+      expect([s.objects[fly]?.damage, plusOne(s, fly), s.players.p1?.counters?.rad, s.players.p2?.counters?.rad]).toEqual([
+        0, 3, 2, 2,
+      ]);
     });
 
     it("Hancock : +X/+X aux autres Zombies et Mutants, X ses marqueurs ; undying le ramène avec un marqueur", () => {
@@ -138,15 +140,15 @@ describe("Mutant Menace (EDH)", () => {
       });
       s = settle(castIt(s, "p1", "Nuclear Fallout", { x: 1 }));
       expect([onField(s, "p2", "Bear Cub"), onField(s, "p2", "Serra Angel")]).toEqual([0, 1]);
-      expect([s.players.p1?.rad, s.players.p2?.rad]).toEqual([1, 1]);
+      expect([s.players.p1?.counters?.rad, s.players.p2?.counters?.rad]).toEqual([1, 1]);
     });
 
     it("Vault 12 : chapitre II, un Zombie Mutant par marqueur de radiation parmi les joueurs", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 6), hand: ["Vault 12: The Necropolis"] } });
       s = settle(castIt(s, "p1", "Vault 12: The Necropolis"));
-      expect([s.players.p1?.rad, s.players.p2?.rad]).toEqual([3, 3]);
+      expect([s.players.p1?.counters?.rad, s.players.p2?.counters?.rad]).toEqual([3, 3]);
       const p1 = s.players.p1;
-      if (p1) p1.rad = 0;
+      if (p1) p1.counters = { ...p1.counters, rad: 0 };
       s = advanceUntil(
         s,
         (x) =>
@@ -168,7 +170,7 @@ describe("Mutant Menace (EDH)", () => {
       const h = hand(s, "p1");
       s = settle(castIt(s, "p1", "Contaminated Drink", { x: 2 }));
       expect(hand(s, "p1")).toBe(h - 1 + 2);
-      expect(s.players.p1?.rad).toBe(1);
+      expect(s.players.p1?.counters?.rad).toBe(1);
     });
   });
 });

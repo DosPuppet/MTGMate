@@ -47,7 +47,7 @@ function attackWith(s: S, names: string[]): S {
 describe("Réimpressions : combat", () => {
   it("Fynn : deux marqueurs poison ; dix marqueurs, le joueur perd", () => {
     let s = scenario({ step: "beginCombat", p1: { battlefield: ["Fynn, the Fangbearer"] } });
-    s.players.p2!.poison = 8;
+    s.players.p2!.counters = { poison: 8 };
     s = attackWith(s, ["Fynn, the Fangbearer"]);
     s = advance(s, (x) => x.over || x.turn.step === "main2");
     expect(s.over).toBe(true);

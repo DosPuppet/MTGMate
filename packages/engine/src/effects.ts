@@ -599,13 +599,16 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "neg":
       return -evalAmount(s, ctx, a.of);
     case "div":
-      return Math.floor(evalAmount(s, ctx, a.of) / a.by);
+      return (a.up ? Math.ceil : Math.floor)(evalAmount(s, ctx, a.of) / a.by);
     case "pow":
       return a.base ** Math.min(20, Math.max(0, evalAmount(s, ctx, a.of)));
     case "var":
       return readVar(ctx, a.name);
-    case "lifeTotal":
-      return Math.max(0, (a.starting ? s.players[ctx.controller]?.startingLife : s.players[ctx.controller]?.life) ?? 0);
+    case "lifeTotal": {
+      const p = a.who ? resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x)) : ctx.controller;
+      const pl = p ? s.players[p] : undefined;
+      return Math.max(0, (a.starting ? pl?.startingLife : pl?.life) ?? 0);
+    }
     case "graveyardsWithAtLeast":
       return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
     case "manaValueOf": {
@@ -618,10 +621,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       if (lki) return Math.max(0, lki.toughness);
       const id = resolveRef(s, ctx, a.ref)[0];
       return id ? Math.max(0, viewOf(s, id)?.toughness ?? 0) : 0;
-    }
-    case "halfLife": {
-      const p = resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x));
-      return p ? Math.ceil(Math.max(0, s.players[p]?.life ?? 0) / 2) : 0;
     }
     case "speed":
       return s.players[ctx.controller]?.speed ?? 0;
@@ -650,7 +649,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return Object.values(pl.manaPool).reduce((n, v) => n + v, 0) + (pl.restrictedMana?.length ?? 0);
     }
     case "poison":
-      return (a.counter === "rad" ? s.players[ctx.controller]?.rad : s.players[ctx.controller]?.poison) ?? 0;
+      return s.players[ctx.controller]?.counters?.[a.counter ?? "poison"] ?? 0;
     case "numberChosen":
       return Math.max(0, ...numbersChosen(ctx, a.store).map(([, n]) => n));
     case "maxOverPlayers": {
@@ -822,9 +821,9 @@ function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "ca
       return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
     }
     case "cave":
-      return castInfoOf(s, id, true)?.caveMana ?? 0;
+      return castInfoOf(s, id, true)?.spentFrom?.cave ?? 0;
     case "artifact":
-      return castInfoOf(s, id, true)?.artifactMana ?? 0;
+      return castInfoOf(s, id, true)?.spentFrom?.artifact ?? 0;
   }
 }
 
@@ -1120,10 +1119,9 @@ export function grantPlay(
     condition?: Condition;
     source?: ObjectId;
     extraCost?: number;
-    landsTapped?: boolean;
+    tapped?: boolean;
     anyMana?: boolean;
-    exileAfter?: boolean;
-    bottomAfter?: boolean;
+    after?: "exile" | "bottom";
     group?: string;
     orHand?: boolean;
     now?: boolean;

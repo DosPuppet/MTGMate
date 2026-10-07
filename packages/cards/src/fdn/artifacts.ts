@@ -171,7 +171,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Adaptive Automaton": {
     chooseOnEnter: "creatureType",
     abilities: [
-      staticAbility("self", { addChosenSubtype: true }, { label: "A le type choisi" }),
+      staticAbility("self", { addChosen: "subtype" }, { label: "A le type choisi" }),
       staticAbility(
         { ...CREATURE_YOU_CONTROL, other: true, subtypeChosen: true },
         { power: 1, toughness: 1 },

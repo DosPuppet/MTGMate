@@ -270,10 +270,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
         tap: true,
         exileSelf: true,
         sorcerySpeed: true,
-        effects: [
-          fx.exileTop(ref.eachPlayer, 7, "m"),
-          fx.grantPlay(ref.stored("m"), { forOwner: true, untilYourNextTurn: true }),
-        ],
+        effects: [fx.exileTop(ref.eachPlayer, 7, "m"), fx.grantPlay(ref.stored("m"), { for: "owner", untilYourNextTurn: true })],
         label: "Chaque joueur exile sept cartes, jouables",
       }),
     ],
@@ -459,7 +456,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   "Torpor Orb": {
     abilities: [
       playerStatic({
-        triggerMod: { effect: "none", onEnter: true, entering: { types: ["Creature"] }, everyone: true },
+        triggerMod: { effect: "none", on: "enter", entering: { types: ["Creature"] }, everyone: true },
         label: "L'arrivée de créatures ne déclenche rien",
       }),
     ],

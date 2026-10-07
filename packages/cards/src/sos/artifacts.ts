@@ -45,7 +45,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     // Portée : lue dans le texte.
     costReduction: { generic: amount.countIn("graveyard", INSTANT_SORCERY) },
     abilities: [
-      triggered(when.attacksSelf, [fx.castNow(ref.target(), { free: true, exileAfter: true })], {
+      triggered(when.attacksSelf, [fx.castNow(ref.target(), { free: true, after: "exile" })], {
         targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "carte d'éphémère ou de rituel de votre cimetière")],
         label: "Lancez gratuitement un éphémère ou un rituel de votre cimetière",
       }),

@@ -68,7 +68,7 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Quistis Trepe": {
     abilities: [
-      triggered(when.entersSelf, [fx.castNow(ref.target(), { anyMana: true, exileAfter: true })], {
+      triggered(when.entersSelf, [fx.castNow(ref.target(), { anyMana: true, after: "exile" })], {
         targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "any", "carte d'éphémère ou de rituel")],
         label: "Magie bleue : lancez un sort d'un cimetière",
       }),
@@ -132,7 +132,7 @@ export const LEGENDS2: Record<string, CardScript> = {
       triggered(when.attacksAlone(YOURS), [fx.pump(ref.eventObject, 0, 0, ["doubleStrike"])], {
         label: "Attaque seule : double initiative",
       }),
-      triggered(when.combatDamageToPlayer, [fx.castNow(ref.target(), { free: true, exileAfter: true })], {
+      triggered(when.combatDamageToPlayer, [fx.castNow(ref.target(), { free: true, after: "exile" })], {
         targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"], maxManaValue: 3 }, "you", "éphémère ou rituel")],
         label: "Croix de feu",
       }),

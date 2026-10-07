@@ -215,7 +215,7 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Tenured Concocter": {
     abilities: [
-      triggered({ on: "becomesTarget", who: "self", byOpponent: true }, fx.may("Piocher une carte ?", fx.draw(1)), {
+      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, fx.may("Piocher une carte ?", fx.draw(1)), {
         label: "Ciblée par un adversaire : vous pouvez piocher",
       }),
       staticAbility("self", { power: 2 }, { condition: INFUSION, label: "Infusion : +2/+0" }),

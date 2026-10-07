@@ -439,7 +439,7 @@ export const CARDS: Record<string, CardScript> = {
   "Isshin, Two Heavens as One": {
     abilities: [
       playerStatic({
-        triggerMod: { effect: "again", onAttack: true },
+        triggerMod: { effect: "again", on: "attack" },
         label: "Les déclenchements dus à une créature qui attaque se déclenchent une fois de plus",
       }),
     ],

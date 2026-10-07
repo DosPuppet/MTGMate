@@ -853,7 +853,7 @@ export const MULTI: Record<string, CardScript> = {
         effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"] }, "endOfTurn")],
         label: "Réunissez des preuves 6 : devient une créature-artefact jusqu'à la fin du tour",
       }),
-      triggered(when.attacksSelf, [fx.castNow(ref.filtered(ref.linked, INSTANT_SORCERY), { bottomAfter: true })], {
+      triggered(when.attacksSelf, [fx.castNow(ref.filtered(ref.linked, INSTANT_SORCERY), { after: "bottom" })], {
         label: "Vous pouvez lancer un éphémère ou un rituel parmi les cartes exilées avec lui",
       }),
     ],
@@ -930,7 +930,7 @@ export const MULTI: Record<string, CardScript> = {
       [],
       [
         fx.mill(3, ref.eachOpponent),
-        fx.castNow(ref.filtered(ref.graveyardOf(ref.eachOpponent), { notTypes: ["Land"] }), { free: true, exileAfter: true }),
+        fx.castNow(ref.filtered(ref.graveyardOf(ref.eachOpponent), { notTypes: ["Land"] }), { free: true, after: "exile" }),
       ],
     ),
   },

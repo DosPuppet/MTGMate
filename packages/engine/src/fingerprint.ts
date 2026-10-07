@@ -20,7 +20,16 @@ export function outcomeHash(s: GameState, collapse = false): string {
       const pl = s.players[p];
       // Marqueurs de radiation : seulement s'il y en a (les empreintes des parties sans Fallout ne changent pas).
       return pl
-        ? [p, pl.life, pl.poison ?? 0, pl.lost, zone(pl.library), zone(pl.hand), zone(pl.graveyard), ...(pl.rad ? [pl.rad] : [])]
+        ? [
+            p,
+            pl.life,
+            pl.counters?.poison ?? 0,
+            pl.lost,
+            zone(pl.library),
+            zone(pl.hand),
+            zone(pl.graveyard),
+            ...(pl.counters?.rad ? [pl.counters.rad] : []),
+          ]
         : [p, null];
     }),
     exile: zone(s.exile),

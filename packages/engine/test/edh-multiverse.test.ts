@@ -79,9 +79,9 @@ describe("Multiverse Reforged (EDH)", () => {
         600,
       );
       s = throughCombat(attack(s, [tokens(s, "p1", "Phyrexian Mite")[0] ?? ""]));
-      expect(s.players.p2?.poison).toBe(1);
+      expect(s.players.p2?.counters?.poison).toBe(1);
       const p2 = s.players.p2;
-      if (p2) p2.poison = 3;
+      if (p2) p2.counters = { ...p2.counters, poison: 3 };
       s.version += 1;
       expect(chars(s, mite).keywords).toContain("lifelink");
     });

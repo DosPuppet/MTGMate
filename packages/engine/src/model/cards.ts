@@ -396,10 +396,13 @@ export interface AdditionalCost {
   discard?: number;
   /** Seulement des cartes correspondantes (retrace, 702.81 : une carte de terrain). */
   discardFilter?: ObjectFilter;
-  /** « Défaussez une carte ou payez N points de vie » (Bitter Triumph) : sans défausse, le joueur paie ces PV. */
-  discardOrLife?: number;
-  /** « Défaussez une carte ou payez [mana] » (Titania) : sans défausse, ce mana s'ajoute au coût. */
-  discardOrPay?: ManaCost;
+  /**
+   * Alternative à la défausse : « Défaussez une carte ou … ». `life` : « … payez N points de vie » (Bitter Triumph : sans
+   * défausse, le joueur paie ces PV) ; `mana` : « … payez [mana] » (Titania : sans défausse, ce mana s'ajoute au coût) ;
+   * `sacrifice` : « … sacrifiez un permanent » (Souls of the Lost : un permanent choisi est sacrifié), un filtre :
+   * « … sacrifiez un artefact » (Demand Answers).
+   */
+  discardOr?: { life?: number; mana?: ManaCost; sacrifice?: boolean | ObjectFilter };
   /**
    * Contempler (701.65) : choisir un permanent correspondant que vous contrôlez ou révéler une telle carte de votre main.
    * « Vous pouvez contempler » (les Exhales) ; avec `orPay` : « contemplez … ou payez [mana] » (ce mana s'ajoute sans
@@ -408,9 +411,6 @@ export interface AdditionalCost {
    * Monstrous Emergence) ; `exiled` : une carte exilée correspondante au lieu d'une carte de la main (Close Encounter).
    */
   behold?: { filter: ObjectFilter; orPay?: ManaCost; required?: boolean; exiled?: ExiledFilter };
-  /** « Défaussez une carte ou sacrifiez un permanent » (Souls of the Lost) : un permanent choisi est sacrifié. */
-  /** « … ou sacrifiez un permanent » ; un filtre : « … ou sacrifiez un artefact » (Demand Answers). */
-  discardOrSacrifice?: boolean | ObjectFilter;
   /** Réunir des preuves X, X étant la valeur de mana totale des permanents ciblés (Urgent Necropsy). */
   collectEvidenceTargetsManaValue?: boolean;
   /**
@@ -592,8 +592,8 @@ export interface CostDef {
   };
   /** Sacrifier d'autres permanents (choisis par le joueur). */
   /** `includeSelf` : la source peut faire partie des permanents sacrifiés (Rat King : « sacrifiez trois Rats »). */
-  /** `differentNames` : des permanents de noms différents (Transmutation Font : « trois jetons d'artefact de noms différents »). */
-  sacrifice?: { filter: ObjectFilter; count: number; includeSelf?: boolean; differentNames?: boolean };
+  /** `distinct: "name"` : des permanents de noms différents (Transmutation Font : « trois jetons d'artefact de noms différents »). */
+  sacrifice?: { filter: ObjectFilter; count: number; includeSelf?: boolean; distinct?: "name" };
   /** Flétrir N (ECL) : N marqueurs −1/−1 sur une créature que vous contrôlez (choisie automatiquement : `blightTarget`). */
   blight?: number;
   /** Réunir des preuves N (701.59, MKM) : cartes du cimetière de valeur de mana totale N ou plus (choisies automatiquement). */
@@ -628,10 +628,11 @@ export interface CostDef {
    * Pole », « Exilez The Dominion Bracelet », « Sacrifiez Deconstruction Hammer »).
    */
   grantor?: "tap" | "exile" | "sacrifice";
-  /** Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N). */
-  loyalty?: number;
-  /** « −X » : X marqueurs de loyauté retirés (X choisi à l'activation). */
-  loyaltyX?: boolean;
+  /**
+   * Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N) ; `"X"` : « −X », X marqueurs de
+   * loyauté retirés (X choisi à l'activation).
+   */
+  loyalty?: number | "X";
   /** Retirer un marqueur d'un permanent que vous contrôlez (choisi automatiquement : Sunstar Chaplain). */
   /** Retirer `n` marqueurs (1 par défaut) parmi des permanents correspondants que vous contrôlez (Iron Spider : deux). */
   removeCounterFrom?: { filter: ObjectFilter; kind: string; n?: number };
@@ -765,10 +766,11 @@ export interface LayerMods {
   addColors?: Color[];
   /** Couche 4 : a tous les types de créature (Soulstone Sanctuary, changelin). */
   allCreatureTypes?: boolean;
-  /** Couche 4 : a en plus le type de terrain de base choisi par la source (Multiversal Passage). */
-  addChosenLandType?: boolean;
-  /** Couche 4 : a en plus le type de créature choisi par la source (Adaptive Automaton). */
-  addChosenSubtype?: boolean;
+  /**
+   * Couche 4 : a en plus le sous-type choisi par la source : `"subtype"`, le type de créature choisi (Adaptive
+   * Automaton) ; `"landType"`, le type de terrain de base choisi (Multiversal Passage).
+   */
+  addChosen?: "subtype" | "landType";
   /** Couche 6 : capacités (mots-clés) ajoutées ou retirées. */
   addKeywords?: Keyword[];
   removeKeywords?: Keyword[];
@@ -978,8 +980,8 @@ export interface CastPermissionAbilityDef {
 export interface NextSpell {
   filter?: ObjectFilter;
   copy?: boolean;
-  /** La copie n'est pas légendaire (The Clone Saga). */
-  copyNonlegendary?: boolean;
+  /** Avec `copy` : la copie n'est pas légendaire (exception de copie, 707.9b ; The Clone Saga). */
+  nonlegendary?: boolean;
   /** Réduction du coût générique de ce sort (Don & Raph : l'affinité pour les artefacts, `amount.count(…)`). */
   reduce?: Amount;
   uncounterable?: boolean;
@@ -1021,15 +1023,13 @@ export interface CastLimit {
  */
 export interface TriggerMod {
   effect: "again" | "none";
-  /** Seulement les déclenchements dus à l'arrivée d'un permanent, qui correspond à `entering`. */
-  onEnter?: boolean;
-  /** Seulement les déclenchements dus à une créature qui attaque (« chaque fois que … attaque », « … que vous attaquez »). */
-  onAttack?: boolean;
+  /**
+   * Seulement les déclenchements dus à un événement : `enter`, l'arrivée d'un permanent, qui correspond à `entering` ;
+   * `attack`, une créature qui attaque (« chaque fois que … attaque », « … que vous attaquez ») ; `dies`, la mort d'une
+   * créature (The Masamune) ; `draw`, la pioche d'une carte, par n'importe quel joueur (Krang, the All-Powerful).
+   */
+  on?: "enter" | "attack" | "dies" | "draw";
   entering?: ObjectFilter;
-  /** Seulement les déclenchements dus à la mort d'une créature (The Masamune). */
-  onDies?: boolean;
-  /** Seulement les déclenchements dus à la pioche d'une carte, par n'importe quel joueur (Krang, the All-Powerful). */
-  onDraw?: boolean;
   /**
    * Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). `attachedToSource` : le
    * permanent auquel la source de la statique est attachée, y compris s'il vient de quitter le champ de bataille.
@@ -1051,12 +1051,11 @@ export interface AbilityCostMod {
   source?: ObjectFilter;
   /** Pas les capacités de la source de la statique (Boom Scholar : « vos autres permanents »). */
   notSelf?: boolean;
-  reduce?: number;
   /**
-   * Réduction variable, évaluée pour la source de la statique (Agatha of the Vile Cauldron : sa force) ; `minOneMana` :
-   * le coût en mana ne descend pas sous un mana.
+   * {N} de moins ; une quantité variable est évaluée pour la source de la statique (Agatha of the Vile Cauldron : sa
+   * force). `minOneMana` : le coût en mana ne descend pas sous un mana.
    */
-  reduceAmount?: Amount;
+  reduce?: number | Amount;
   minOneMana?: boolean;
   /**
    * Le mana se dépense pour ces capacités comme s'il était de n'importe quel type (Agatha's Soul Cauldron : capacités

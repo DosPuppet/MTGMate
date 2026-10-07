@@ -379,10 +379,6 @@ export function checkCondition(
       const counters = sourceId ? (s.objects[sourceId]?.counters ?? s.lki[sourceId]?.counters) : undefined;
       return !!counters && (counters[c.counter] ?? 0) >= c.n;
     }
-    case "lifeAboveStart": {
-      const p = s.players[controller];
-      return !!p && p.life >= p.startingLife + c.by;
-    }
     case "not":
       return !checkCondition(s, c.cond, controller, sourceId, eventObject, event);
     case "all":
@@ -510,7 +506,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
           playerStatics(s, p, "triggerMod").some(
             ({ id, ab }) =>
               ab.triggerMod?.effect === "none" &&
-              ab.triggerMod.onEnter &&
+              ab.triggerMod.on === "enter" &&
               (!ab.triggerMod.entering || matchesView(v, ab.triggerMod.entering, p, id)),
           ),
         )
@@ -959,13 +955,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
             });
       if (!hit) return null;
       if (t.abilitiesOnly && s.stack.find((x) => x.id === ev.stackId)?.kind === "spell") return null;
-      if (t.byOpponent && ev.controller === me) return null;
+      if (t.by === "opponent" && ev.controller === me) return null;
       // Vaillance : un sort ou une capacité que vous contrôlez.
-      if (t.byYou && ev.controller !== me) return null;
+      if (t.by === "you" && ev.controller !== me) return null;
       if (who !== "self") return { objectId: hit, player: ev.controller };
       // « Chaque fois que vous lancez un sort qui cible cette créature » : une copie n'est pas lancée.
       const byItem = s.stack.find((x) => x.id === ev.stackId);
-      if (t.bySpellYouControl && (ev.controller !== me || byItem?.kind !== "spell" || byItem.copy)) return null;
+      if (t.by === "yourSpell" && (ev.controller !== me || byItem?.kind !== "spell" || byItem.copy)) return null;
       return { objectId: ev.stackId, player: ev.controller };
     }
     case "expend":
@@ -1183,14 +1179,14 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
   return playerStatics(s, player, "triggerMod").filter(({ id, ab }) => {
     const m = ab.triggerMod;
     if (m?.effect !== "again") return false;
-    if (m.onEnter && !entered) return false;
+    if (m.on === "enter" && !entered) return false;
     // Windcrag Siege : « si une créature qui attaque fait se déclencher une capacité d'un permanent que vous contrôlez ».
-    if (m.onAttack && ev.e !== "attack" && ev.e !== "attackWith") return false;
+    if (m.on === "attack" && ev.e !== "attack" && ev.e !== "attackWith") return false;
     // Krang : « si la pioche d'une carte par un joueur fait se déclencher une capacité d'un permanent que vous contrôlez ».
-    if (m.onDraw && ev.e !== "draw") return false;
+    if (m.on === "draw" && ev.e !== "draw") return false;
     if (m.entering && !(entered && s.objects[entered] && matchesObjectFilter(s, player, entered, m.entering, id))) return false;
     if (
-      m.onDies &&
+      m.on === "dies" &&
       !(ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature"))
     )
       return false;

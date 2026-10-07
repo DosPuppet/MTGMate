@@ -144,7 +144,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Pumpkin Bombardment": {
     // « Défaussez une carte ou payez {2} » (coût additionnel).
-    additionalCost: { discard: 1, discardOrPay: { generic: 2, colored: {}, x: 0 } },
+    additionalCost: { discard: 1, discardOr: { mana: { generic: 2, colored: {}, x: 0 } } },
     spell: spell([target.creature()], [fx.damage(3, ref.target())]),
   },
   "Rhino's Rampage": {

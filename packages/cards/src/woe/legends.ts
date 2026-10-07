@@ -110,7 +110,7 @@ export const LEGENDS: Record<string, CardScript> = {
       playerStatic({
         abilityCost: {
           source: { types: ["Creature"], controller: "you" },
-          reduceAmount: amount.powerOf(ref.self),
+          reduce: amount.powerOf(ref.self),
           minOneMana: true,
         },
         label: "Capacités activées de vos créatures : {X} de moins (X = sa force, au moins un mana)",

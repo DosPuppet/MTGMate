@@ -129,7 +129,7 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Cartes (8) :** Trickster's Stratagem, Baron Helmut Zemo, Black Widow, Super Spy, Klaw, Sonic Subjugator, The Ruinous Wrecking Crew, The Serpent Society, Titania, Rugged Rumbler, Worlds Within Worlds.
 - **Le moteur gagne :**
   - `fx.topOrBottom(…, fromTop)` : « en deuxième position depuis le dessus ou au-dessous » ;
-  - « défaussez une carte ou payez {M} », en coût additionnel (`additionalCost.discardOrPay`, choix proposé par l'interface et l'IA) et en garde (`ward.orMana`, lue dans le texte) ;
+  - « défaussez une carte ou payez {M} », en coût additionnel (`additionalCost.discardOr.mana`, choix proposé par l'interface et l'IA) et en garde (`ward.orMana`, lue dans le texte) ;
   - la garde « recevez N marqueurs poison » (`ward.poison`, lue dans le texte) ;
   - `fx.discard(…, { chooser: "controller", reveal })` : le joueur révèle d'abord N cartes de son choix, vous choisissez parmi elles ;
   - `fx.pickFromZone(…, { who })` : chaque joueur choisit dans sa propre zone, pour lui-même ;

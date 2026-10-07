@@ -99,7 +99,7 @@ export const RARES: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.exileFromOwnHand(ref.eachOpponent, "h"),
-          fx.grantPlay(ref.stored("h"), { forever: true, forOwner: true, extraCost: 1, landsTapped: true }),
+          fx.grantPlay(ref.stored("h"), { forever: true, for: "owner", extraCost: 1, tapped: true }),
         ],
         { label: "Chaque adversaire exile une carte de sa main" },
       ),
@@ -133,7 +133,7 @@ export const RARES: Record<string, CardScript> = {
     ],
   },
   "Starfield Vocalist": {
-    abilities: [playerStatic({ triggerMod: { effect: "again", onEnter: true }, label: "Déclencheurs d'arrivée doublés" })],
+    abilities: [playerStatic({ triggerMod: { effect: "again", on: "enter" }, label: "Déclencheurs d'arrivée doublés" })],
   },
   "Quantum Riddler": {
     abilities: [

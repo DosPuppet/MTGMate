@@ -117,7 +117,7 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
   if (a.kind === "spent" && !a.of && a.what === "mana") return ctx.cast?.manaSpent ?? 0;
   // Coin of Mastery : « pour chaque mana d'une source d'artefact dépensé pour la lancer » (la créature qui arrive).
-  if (a.kind === "spent" && !a.of && a.what === "artifact") return ctx.cast?.artifactMana ?? 0;
+  if (a.kind === "spent" && !a.of && a.what === "artifact") return ctx.cast?.spentFrom?.artifact ?? 0;
   // Scarlet Spider, Ben Reilly : « X étant la valeur de mana de la créature renvoyée » (Web-slinging).
   if (a.kind === "manaValueOf" && a.ref.kind === "cost" && a.ref.paid === "bounced")
     return manaValue(s.defs[s.objects[ctx.cast?.costBounced?.[0] ?? ""]?.defId ?? ""]?.manaCost);

@@ -466,7 +466,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Loki, God of Mischief": {
     abilities: [
-      triggered({ on: "becomesTarget", who: {}, players: true, abilitiesOnly: true, byYou: true }, [fx.draw(1)], {
+      triggered({ on: "becomesTarget", who: {}, players: true, abilitiesOnly: true, by: "you" }, [fx.draw(1)], {
         oncePerTurn: true,
         label: "Un joueur ou un permanent devient la cible d'une de vos capacités : piochez (une fois par tour)",
       }),

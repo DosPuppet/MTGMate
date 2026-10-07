@@ -128,7 +128,7 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
   - `ref.playersWithMost(filtre)` (« chaque joueur qui contrôle le plus de créatures ») ;
   - les montants `opponentsWithMoreInHand`, `greatestManaValueOf(ref)` et `colorPairsAmong(filtre)` ;
   - `costPerExtraTarget` (« coûte {W}{U} de plus pour chaque cible au-delà de la première ») ;
-  - `discardOrSacrifice` filtré (« défaussez une carte ou sacrifiez un artefact ») ;
+  - `discardOr.sacrifice` filtré (« défaussez une carte ou sacrifiez un artefact ») ;
   - `collectEvidenceTargetsManaValue` (« réunissez des preuves X, X étant la valeur de mana totale des permanents ciblés ») ;
   - le filtre `dealtDamageThisTurn` (« une créature qui a infligé des blessures ce tour-ci ») ;
   - `when.attackWith(N, filtre, anyPlayer)` (« chaque fois qu'un joueur attaque avec N créatures ou plus »).

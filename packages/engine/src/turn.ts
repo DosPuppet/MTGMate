@@ -161,15 +161,17 @@ function stepEvent(s: GameState): void {
  */
 function radiation(s: GameState, p: PlayerId): void {
   const pl = s.players[p];
-  const n = pl?.rad ?? 0;
+  const n = pl?.counters?.rad ?? 0;
   if (!pl || pl.lost || n <= 0 || s.turn.mainPhase !== 1) return;
   const milled = millCards(s, [[p, pl.library.slice(0, n)]]);
   const nonland = milled.filter((id) => !s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land")).length;
   if (nonland <= 0) return;
   if (playerStatic(s, p, "radiationGains")) gainLife(s, p, nonland);
   else loseLife(s, p, nonland);
-  pl.rad = Math.max(0, n - nonland);
-  emit({ type: "rad", player: p, amount: -nonland, total: pl.rad });
+  pl.counters ??= {};
+  const counters = pl.counters;
+  counters.rad = Math.max(0, n - nonland);
+  emit({ type: "rad", player: p, amount: -nonland, total: counters.rad });
   bump(s); // des statiques en dépendent (Nightkin Ambusher)
 }
 
@@ -1422,7 +1424,7 @@ export function checkGameOver(s: GameState): void {
     // Herald of Eternal Dawn : « vous ne pouvez pas perdre la partie ». 704.5c : 10 marqueurs poison ou plus.
     // Marina Vendrell's Grimoire : « vous ne perdez pas la partie pour avoir 0 point de vie ou moins ».
     const lifeLoss = player.life <= 0 && !playerStatic(s, p, "noLoseForLife");
-    const poisoned = (player.poison ?? 0) >= 10;
+    const poisoned = (player.counters?.poison ?? 0) >= 10;
     // 704.6c : 21 blessures de combat ou plus d'un même commandant au cours de la partie.
     const commanderDamage = !!s.commander && Object.values(s.commander.cards).some((c) => (c.damage[p] ?? 0) >= 21);
     if ((lifeLoss || player.drewFromEmptyLibrary || poisoned || commanderDamage) && !playerStatic(s, p, "cantLose")) {

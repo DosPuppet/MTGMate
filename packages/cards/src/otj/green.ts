@@ -65,7 +65,7 @@ export const GREEN: Record<string, CardScript> = {
   Cactarantula: {
     costReduction: { generic: 1, condition: cond.controls({ subtype: "Desert" }) },
     abilities: [
-      triggered({ on: "becomesTarget", who: "self", byOpponent: true }, fx.may("Piocher une carte ?", fx.draw(1)), {
+      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, fx.may("Piocher une carte ?", fx.draw(1)), {
         label: "Ciblée : piochez",
       }),
     ],

@@ -463,7 +463,7 @@ export const MULTI: Record<string, CardScript> = {
     enterModes: ["Mardu", "Jeskai"],
     abilities: [
       playerStatic({
-        triggerMod: { effect: "again", onAttack: true },
+        triggerMod: { effect: "again", on: "attack" },
         condition: cond.chosenMode("Mardu"),
         label: "Mardu — une créature qui attaque déclenche vos capacités une fois de plus",
       }),

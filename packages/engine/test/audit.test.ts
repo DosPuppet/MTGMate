@@ -64,7 +64,7 @@ describe("#8 : 704.5b, seule une pioche impossible depuis la dernière vérifica
     expect(s.winner).toBe("p2");
     const poisoned = scenario({});
     const p2 = poisoned.players.p2;
-    if (p2) p2.poison = 10;
+    if (p2) p2.counters = { ...p2.counters, poison: 10 };
     const r = submit(poisoned, "p1", { type: "pass" });
     events.push(...r.events);
     expect(events.find((e) => e.type === "lose")).toMatchObject({ player: "p2", reason: "poison" });

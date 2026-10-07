@@ -337,7 +337,7 @@ export const CARDS: Record<string, CardScript> = {
         [
           fx.exileTop(ref.eventPlayer, 1, "i"),
           fx.link(ref.stored("i")),
-          fx.grantPlay(ref.stored("i"), { forever: true, anyMana: true, forNonOwners: true, condition: cond.yourTurn }),
+          fx.grantPlay(ref.stored("i"), { forever: true, anyMana: true, for: "nonOwners", condition: cond.yourTurn }),
         ],
         { label: "Un joueur pioche sa deuxième carte du tour : il exile la carte du dessus de sa bibliothèque" },
       ),

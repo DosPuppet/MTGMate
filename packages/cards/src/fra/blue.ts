@@ -132,7 +132,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       // « Prouesse, prouesse » : le second exemplaire (le premier est lu dans le texte).
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pump(ref.self, 1, 1)], { label: "Prouesse" }),
-      triggered({ on: "becomesTarget", who: "self", byOpponent: true }, [fx.draw(1)], { label: "ciblée : piochez" }),
+      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, [fx.draw(1)], { label: "ciblée : piochez" }),
     ],
   },
   "Tetsuko Umezawa, Fugitive": {

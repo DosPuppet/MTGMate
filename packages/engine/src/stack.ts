@@ -444,7 +444,7 @@ export function playLand(
   logTurnEvent(s, { e: "playLand", player, fromZone, types: land?.types ?? [], subtypes: land?.subtypes ?? [] });
   // Lightstall Inquisitor : un terrain joué depuis l'exil ainsi arrive engagé.
   const landed = id ? s.objects[id] : undefined;
-  if (landed && fromExile?.landsTapped) {
+  if (landed && fromExile?.tapped) {
     landed.tapped = true;
     bump(s);
   }
@@ -967,10 +967,8 @@ export interface CastTerms {
   payLife?: number;
   /** Seulement au moment où l'on pourrait lancer un rituel (carte complotée). */
   sorceryTiming?: boolean;
-  /** Exilé au lieu d'aller au cimetière (Quistis Trepe). */
-  exileAfter?: boolean;
-  /** Au-dessous de la bibliothèque au lieu du cimetière (Kylox's Voltstrider). */
-  bottomAfter?: boolean;
+  /** Exilé (`exile`, Quistis Trepe) ou au-dessous de la bibliothèque (`bottom`, Kylox's Voltstrider) au lieu du cimetière. */
+  after?: "exile" | "bottom";
   /** Le permanent arrive avec un marqueur de finalité (Noctis). */
   finality?: boolean;
   /** Il faut fourrager en plus (Osteomancer Adept). */
@@ -1080,8 +1078,11 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
     } else {
       const by = id ?? source;
       let k =
-        (m.reduce ?? 0) +
-        (m.reduceAmount ? evalAmount(s, reductionContext(s, player, by, s.objects[by]?.defId ?? ""), m.reduceAmount) : 0);
+        m.reduce === undefined
+          ? 0
+          : typeof m.reduce === "number"
+            ? m.reduce
+            : evalAmount(s, reductionContext(s, player, by, s.objects[by]?.defId ?? ""), m.reduce);
       // « Ne peut pas réduire le mana de ce coût à moins d'un mana » : au plus la valeur de mana moins un.
       if (m.minOneMana) k = Math.min(k, Math.max(0, manaValue(ab.cost.mana ?? null) - 1));
       n += Math.max(0, k);
@@ -1474,7 +1475,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         free: gyPerm.free,
         // « Vous pouvez lancer [la carte] » pendant une résolution (608.2g) : le moment de lancement est ignoré.
         anyTime: gyPerm.anyTime,
-        exileAfter: gyPerm.exileAfter,
+        after: gyPerm.after === "exile" ? "exile" : undefined,
         ...(gyPerm.adventureOnly ? { adventureOnly: true } : {}),
       };
     if (o.owner !== player) return null;
@@ -1514,7 +1515,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         source: "library",
         anyMana: libPerm.anyMana,
         free: libPerm.free,
-        exileAfter: libPerm.exileAfter,
+        after: libPerm.after === "exile" ? "exile" : undefined,
         anyTime: libPerm.anyTime,
       };
     const rule = playFromRules(s, player, card, "libraryTop", "spells")[0];
@@ -1604,8 +1605,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         anyMana: perm.anyMana,
         costOverride: perm.cost,
         // « … puis exilez-la » (Nita, Forum Conciliator), comme depuis le cimetière.
-        exileAfter: perm.exileAfter,
-        bottomAfter: perm.bottomAfter,
+        after: perm.after,
       };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
     if (stashPlayable(s, player, o)) return { source: "exile", anyMana: true };
@@ -1692,20 +1692,22 @@ export function additionalOptions(
       (id) => id !== card && (!df || matchesCard(s, player, id, { ...df, controller: undefined })),
     );
     // Souls of the Lost : « … ou sacrifiez un permanent ».
-    const sf = typeof add.discardOrSacrifice === "object" ? add.discardOrSacrifice : undefined;
-    const perms = add.discardOrSacrifice
+    const sf = typeof add.discardOr?.sacrifice === "object" ? add.discardOr.sacrifice : undefined;
+    const perms = add.discardOr?.sacrifice
       ? s.battlefield.filter((id) => obj(s, id).controller === player && (!sf || matchesObjectFilter(s, player, id, sf)))
       : [];
     const options = [...hand, ...perms];
     // Bitter Triumph : « … ou payez 3 points de vie » (il faut en avoir au moins autant, 119.4).
-    const orLife = add.discardOrLife !== undefined && payableLife(s, player) >= add.discardOrLife ? add.discardOrLife : undefined;
-    if (options.length < add.discard && orLife === undefined && !add.discardOrPay) return null;
+    const life = add.discardOr?.life;
+    const orLife = life !== undefined && payableLife(s, player) >= life ? life : undefined;
+    const orPay = add.discardOr?.mana;
+    if (options.length < add.discard && orLife === undefined && !orPay) return null;
     out.discard = {
       count: add.discard,
       options,
       ...(orLife !== undefined ? { orLife } : {}),
-      ...(add.discardOrPay ? { orPay: add.discardOrPay } : {}),
-      ...(add.discardOrSacrifice ? { orSacrifice: true } : {}),
+      ...(orPay ? { orPay } : {}),
+      ...(add.discardOr?.sacrifice ? { orSacrifice: true } : {}),
     };
   }
   if (add.sacrifice) {
@@ -2261,8 +2263,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     kicked,
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
     // Quistis Trepe : exilé en quittant la pile, comme un flashback.
-    flashback: flashback || !!terms.exileAfter,
-    ...(terms.bottomAfter ? { bottomInstead: true } : {}),
+    flashback: flashback || terms.after === "exile",
+    ...(terms.after === "bottom" ? { bottomInstead: true } : {}),
     arrival: arrivalFor(terms, next),
     adventure: adventure || undefined,
     cast: {
@@ -2322,13 +2324,13 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       // Une source sacrifiée pour son mana (Trésor) est connue par ses dernières informations.
       const subtypes = (id: ObjectId) => (s.objects[id] ? chars(s, id).subtypes : (s.lki[id]?.subtypes ?? []));
       const caves = taps.filter((t) => subtypes(t.id).includes("Cave")).reduce((n, t) => n + t.amount, 0);
-      if (caves && item.cast) item.cast.caveMana = caves;
+      if (caves && item.cast) item.cast.spentFrom = { ...item.cast.spentFrom, cave: caves };
       // Coin of Mastery : mana dépensé venant de sources d'artefact (un Trésor sacrifié, par ses dernières informations).
       // Le mana produit en trop (Sol Ring pour un seul {1}) reste dans la réserve : il est d'abord compté aux artefacts.
       const types = (id: ObjectId) => (s.objects[id] ? chars(s, id).types : (s.lki[id]?.types ?? []));
       const artifacts = taps.filter((t) => types(t.id).includes("Artifact")).reduce((n, t) => n + t.amount, 0);
       const excess = Math.max(0, taps.reduce((n, t) => n + t.amount, 0) - Object.values(spent).reduce((n, k) => n + (k ?? 0), 0));
-      if (artifacts > excess && item.cast) item.cast.artifactMana = artifacts - excess;
+      if (artifacts > excess && item.cast) item.cast.spentFrom = { ...item.cast.spentFrom, artifact: artifacts - excess };
     }
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles ; Cavern of Souls :
     // « du type choisi » se lit sur la source ; Path of Ancestry : « qui partage un type de créature avec votre
@@ -2372,7 +2374,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const n of next) {
     if (!n.copy) continue;
     const id = copyStackItem(s, item, player);
-    const copy = n.copyNonlegendary && id ? s.stack.find((x) => x.id === id) : undefined;
+    const copy = n.nonlegendary && id ? s.stack.find((x) => x.id === id) : undefined;
     if (copy) copy.arrival = { ...copy.arrival, nonlegendary: true };
   }
   // Bitter Triumph : sans carte défaussée, les points de vie sont payés.
@@ -2582,7 +2584,7 @@ export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectI
   // Choix par défaut (les premiers) : d'abord ce qui ne produit pas de mana (un Trésor peut encore payer le coût).
   const makesMana = (id: ObjectId) => manaAbilitiesOf(s, id).length > 0;
   const ordered = [...ids.filter((id) => !makesMana(id)), ...ids.filter(makesMana)];
-  if (!ab.cost.sacrifice?.differentNames) return ordered;
+  if (ab.cost.sacrifice?.distinct !== "name") return ordered;
   // « de noms différents » (Transmutation Font) : un permanent par nom d'abord, pour que le choix par défaut soit permis.
   const first = ordered.filter((id, i) => ordered.findIndex((x) => chars(s, x).name === chars(s, id).name) === i);
   return [...first, ...ordered.filter((id) => !first.includes(id))];
@@ -2883,7 +2885,8 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   // 606.3 : une seule capacité de loyauté par planeswalker et par tour ; on ne peut pas retirer plus que sa loyauté.
   if (ab.cost.loyalty !== undefined) {
     if (o.loyaltyTurn === s.turn.number) return false;
-    if (ab.cost.loyalty < 0 && (o.counters.loyalty ?? 0) < -ab.cost.loyalty) return false;
+    const lc = ab.cost.loyalty === "X" ? 0 : ab.cost.loyalty;
+    if (lc < 0 && (o.counters.loyalty ?? 0) < -lc) return false;
   }
   if (ab.cost.exileFromGraveyard && graveyardExileOptions(s, source, ab).length < ab.cost.exileFromGraveyard.count) return false;
   if (ab.cost.removeCounterFrom && !counterSources(s, who, source, ab)) return false;
@@ -2900,7 +2903,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.payLife && payableLife(s, player) < ab.cost.payLife) return false;
   if (ab.cost.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
-    const n = ab.cost.sacrifice.differentNames ? distinctNames(s, options) : options.length;
+    const n = ab.cost.sacrifice.distinct === "name" ? distinctNames(s, options) : options.length;
     if (n < ab.cost.sacrifice.count) return false;
   }
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
@@ -3330,12 +3333,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (sacrificed.length !== ab.cost.sacrifice.count || sacrificed.some((id) => !options.includes(id))) {
       throw new RulesError("Sacrifice invalide");
     }
-    if (ab.cost.sacrifice.differentNames && distinctNames(s, sacrificed) !== sacrificed.length)
+    if (ab.cost.sacrifice.distinct === "name" && distinctNames(s, sacrificed) !== sacrificed.length)
       throw new RulesError("Les permanents sacrifiés doivent avoir des noms différents");
   }
   const x =
     ab.cost.mana?.x ||
-    ab.cost.loyaltyX ||
+    ab.cost.loyalty === "X" ||
     ab.cost.tapX ||
     ab.cost.exileFromGraveyardX ||
     ab.cost.sacrificeX ||
@@ -3348,7 +3351,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.payLifeX && x > 0 && payableLife(s, player) < x) throw new RulesError("Pas assez de points de vie");
   if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
   if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(`X doit valoir au moins ${ab.cost.minX}`);
-  if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
+  if (ab.cost.loyalty === "X" && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
   if (ab.cost.removeCountersX && x > (o.counters[ab.cost.removeCountersX] ?? 0)) throw new RulesError("Pas assez de marqueurs");
   // « Engagez X artefacts dégagés » : choisis maintenant, ils ne paient pas le mana de la capacité.
   const tapXOptions = ab.cost.tapX ? tapXCandidates(s, player, source, ab.cost.tapX) : [];
@@ -3464,7 +3467,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.grantor === "tap" && grantor) tapObject(s, obj(s, grantor));
   if (ab.cost.loyalty !== undefined) {
     o.loyaltyTurn = s.turn.number;
-    const cost = ab.cost.loyaltyX ? -x : ab.cost.loyalty;
+    const cost = ab.cost.loyalty === "X" ? -x : ab.cost.loyalty;
     if (cost !== 0) changeCounters(s, o, "loyalty", cost, true);
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
   }
@@ -3646,7 +3649,7 @@ function addsMana(effects: readonly Effect[]): boolean {
  * capacité de mana (Ramos, Capital City, Loot, the Pathfinder…).
  */
 export function isManaAbility(ab: ActivatedAbilityDef): boolean {
-  return ab.targets.length === 0 && ab.cost.loyalty === undefined && !ab.cost.loyaltyX && addsMana(ab.effects);
+  return ab.targets.length === 0 && ab.cost.loyalty === undefined && addsMana(ab.effects);
 }
 
 /** 605.3b : résout une capacité de mana sans passer par la pile ; le joueur garde la priorité. */
@@ -3874,7 +3877,7 @@ function finishResolution(
         ...(item.arrival?.nonlegendary ? { mods: { removeSupertypes: ["Legendary"] }, modsCopiable: true } : {}),
       });
       // « … et "au début de l'étape de fin, sacrifiez ce jeton" ».
-      if (item.arrival?.sacrificeAtEnd && s.objects[token]?.zone === "battlefield")
+      if (item.arrival?.sacrificeAtEndStep && s.objects[token]?.zone === "battlefield")
         createDelayed(s, item.controller, token, s.objects[token]?.defId ?? d.id, {
           targets: [],
           effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }],

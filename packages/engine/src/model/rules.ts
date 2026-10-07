@@ -29,10 +29,11 @@ export interface TargetSpec {
   differentPlayers?: boolean;
   /** Les cibles partagent un type de créature (Unbury : « deux cartes de créature ciblées qui partagent un type »). */
   shareCreatureType?: boolean;
-  /** Cibles de noms différents (Behold the Sinister Six! : « cartes de créature ciblées de noms différents »). */
-  differentNames?: boolean;
-  /** Cibles de valeurs de mana différentes (Agadeem's Awakening). */
-  differentManaValues?: boolean;
+  /**
+   * Cibles deux à deux différentes par cette caractéristique : `name`, noms différents (Behold the Sinister Six! :
+   * « cartes de créature ciblées de noms différents ») ; `manaValue`, valeurs de mana différentes (Agadeem's Awakening).
+   */
+  distinct?: "name" | "manaValue";
   /** Nombre de cibles variable (« jusqu'à X créatures ciblées ») : remplace `count` au moment de choisir les cibles. */
   countAmount?: Amount;
   /** Filtre si le sort est kické ou si le cadeau est promis (« à la place, un permanent non-terrain ciblé »). */
@@ -403,14 +404,16 @@ export type TriggerSpec =
   /** « Chaque fois qu'un adversaire défausse une carte » */
   | { on: "discard"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que [cette créature] devient la cible d'un sort ou d'une capacité [qu'un adversaire contrôle] » */
-  /** `byYou` : un sort ou une capacité que le contrôleur de la source contrôle (Vaillance, Bloomburrow). */
   /** `spells` : les sorts correspondants aussi (« une créature ou un sort de créature que vous contrôlez », Surrak). */
   | {
       on: "becomesTarget";
       who: "self" | ObjectFilter;
-      byOpponent?: boolean;
-      bySpellYouControl?: boolean;
-      byYou?: boolean;
+      /**
+       * Qui cible : `opponent`, un sort ou une capacité qu'un adversaire contrôle (garde) ; `you`, un sort ou une
+       * capacité que le contrôleur de la source contrôle (Vaillance, Bloomburrow) ; `yourSpell`, un sort que vous
+       * lancez, pas une copie (« chaque fois que vous lancez un sort qui cible cette créature », avec `who: "self"`).
+       */
+      by?: "opponent" | "you" | "yourSpell";
       spells?: boolean;
       /** Un joueur ciblé compte aussi (Loki, God of Mischief : « un joueur ou un permanent »). */
       players?: boolean;
@@ -531,8 +534,6 @@ export type Condition =
   | { kind: "opponentsTurn" }
   /** La source a au moins N marqueurs de ce type. */
   | { kind: "counterAtLeast"; counter: string; n: number }
-  /** Votre total de vie dépasse votre total de départ d'au moins `by`. */
-  | { kind: "lifeAboveStart"; by: number }
   | { kind: "not"; cond: Condition }
   /**
    * La source a été lancée (le sort qui se résout, ou le permanent qu'il est devenu) : depuis cette zone, ou pour ce coût
@@ -792,23 +793,27 @@ export type Amount =
   /** Marqueurs d'un type sur un objet. */
   | { kind: "countersOn"; ref: Ref; counter: string }
   | { kind: "sum"; of: Amount[] }
-  /** Opposé (« -X/-0 ») et division entière (« pour chaque tranche de sept cartes »). */
+  /**
+   * Opposé (« -X/-0 ») et division entière (« pour chaque tranche de sept cartes ») ; `up` : arrondie à l'unité
+   * supérieure (« la moitié de ses points de vie, arrondie à l'unité supérieure », `amount.halfLife`).
+   */
   | { kind: "neg"; of: Amount }
-  | { kind: "div"; of: Amount; by: number }
+  | { kind: "div"; of: Amount; by: number; up?: boolean }
   /** Puissance : `base` à la puissance `of` (Mathemagics : « 2^X cartes »), bornée à 2^20. */
   | { kind: "pow"; base: number; of: Amount }
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
   | { kind: "var"; name: string }
-  /** Vos points de vie ; `starting` : vos points de vie de départ (Game Over : « la moitié de ses PV de départ »). */
-  | { kind: "lifeTotal"; starting?: boolean }
+  /**
+   * Vos points de vie (0 au plus bas) ; `starting` : vos points de vie de départ (Game Over : « la moitié de ses PV de
+   * départ ») ; `who` : ceux du premier joueur désigné plutôt que les vôtres (0 s'il n'y en a aucun).
+   */
+  | { kind: "lifeTotal"; starting?: boolean; who?: Ref }
   /** Blessures marquées sur la source (dernières informations connues : Tangled Colony, « les blessures subies ce tour-ci »). */
   | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }
   | { kind: "toughnessOf"; ref: Ref }
   /** Nombre de cartes dans une zone du contrôleur. */
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
-  /** La moitié des points de vie du joueur désigné, arrondie à l'unité supérieure (Alpharael). */
-  | { kind: "halfLife"; who: Ref }
   /** Votre vitesse (0 si vous n'en avez pas). */
   | { kind: "speed" }
   /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
