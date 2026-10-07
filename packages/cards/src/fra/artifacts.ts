@@ -89,7 +89,6 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Codie, Ravenous Codex": {
     abilities: [
-      // Approximation : la copie garde les cibles du sort (pas de nouveau choix).
       triggered(when.castSpell("you", { preparedSpell: true }), [fx.copySpell(ref.eventObject, 1)], {
         label: "copie le sort préparé",
       }),

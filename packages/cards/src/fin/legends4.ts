@@ -261,7 +261,7 @@ export const LEGENDS4: Record<string, CardScript> = {
   },
   "Clive's Hideaway": {
     abilities: [
-      // Hideaway 4 (approximation : la carte est exilée face visible, comme Collector's Cage).
+      // Hideaway 4 : la carte est exilée face cachée (vous seul la voyez).
       triggered(
         when.entersSelf,
         [

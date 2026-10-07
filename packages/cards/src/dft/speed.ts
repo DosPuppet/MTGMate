@@ -258,7 +258,6 @@ export const SPEED: Record<string, CardScript> = {
   },
   Boommobile: {
     abilities: [
-      // Approximation : le mana n'est pas restreint aux capacités.
       // « Ne dépensez ce mana que pour activer des capacités » : réserve marquée, toute capacité activée.
       triggered(when.entersSelf, [fx.addManaChoice(4, undefined, { abilityOfSource: {} })], {
         label: "Quatre mana d'une couleur (seulement pour des capacités)",

@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import baseline from "../data/debt-baseline.json";
 import { implementedCards } from "../src/index";
-import { declaredFieldNames, engineLiterals, interfaceFields, largestImportCycle, unionVariants } from "./debtSurface";
+import { declaredFieldNames, engineLiterals, interfaceFields, largestImportCycle, measureSurfaces } from "./debtSurface";
 
 const source = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
@@ -15,9 +15,12 @@ const source = (path: string) => readFileSync(new URL(`../../${path}`, import.me
 function playerStaticKeys(): string[] {
   const body = /export interface PlayerStaticAbilityDef \{([\s\S]*?)\n\}/.exec(source("engine/src/model/cards.ts"))?.[1];
   if (!body) throw new Error("PlayerStaticAbilityDef introuvable");
-  return [...body.matchAll(/^ {2}(\w+)\??:/gm)]
-    .map((m) => m[1] as string)
-    .filter((k) => !["kind", "condition", "label"].includes(k));
+  return (
+    [...body.matchAll(/^ {2}(\w+)\??:/gm)]
+      .map((m) => m[1] as string)
+      // Méta-clés (portée et conditions), comme `NOT_KEYS` dans engine/src/statics.ts.
+      .filter((k) => !["kind", "condition", "label", "affects"].includes(k))
+  );
 }
 
 /** Membres de Keyword qui ne sont pas des mots-clés imprimés (valeurs de KEYWORD_NAMES dans scryfall.ts). */
@@ -82,37 +85,6 @@ function engineCardLiterals(): string[] {
   return [...found];
 }
 
-/** Taille de chaque surface du modèle : champs d'une interface, variantes d'une union, champs de toutes ses variantes. */
-function surfaces(): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const name of [
-    "CardDef",
-    "GameObject",
-    "StackItem",
-    "PlayerState",
-    "GameState",
-    "ObjectFilter",
-    "CostDef",
-    "ActivatedAbilityDef",
-    "CastPermissionAbilityDef",
-    "PlayFromZone",
-    "LayerMods",
-  ])
-    out[name] = interfaceFields(name).length;
-  for (const [name, discriminant] of [
-    ["Effect", "op"],
-    ["TriggerSpec", "on"],
-    ["Condition", "kind"],
-    ["Amount", "kind"],
-    ["Ref", "kind"],
-  ] as const) {
-    const variants = unionVariants(name, discriminant);
-    out[name] = variants.size;
-    out[`${name} (champs)`] = [...variants.values()].reduce((n, f) => n + f.length, 0);
-  }
-  return out;
-}
-
 const RULE = "voir « Règle pour la suite » en fin de CLAUDE.md : chercher une forme générique, sinon justifier l'entrée";
 
 describe("garde-fou de la dette (data/debt-baseline.json)", () => {
@@ -139,7 +111,7 @@ describe("garde-fou de la dette (data/debt-baseline.json)", () => {
   });
 
   it("plafonds des surfaces du modèle (ceilings) : ni dépassés, ni trop hauts", () => {
-    const measured = surfaces();
+    const measured = measureSurfaces();
     const ceilings = baseline.ceilings as Record<string, number>;
     for (const [name, n] of Object.entries(measured)) {
       const max = ceilings[name];

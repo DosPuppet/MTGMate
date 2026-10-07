@@ -84,7 +84,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   // --- Blanc -----------------------------------------------------------------
   "Collector's Cage": {
     abilities: [
-      // Hideaway 5 (approximation : la carte est exilée face visible).
+      // Hideaway 5 : la carte est exilée face cachée (vous seul la voyez).
       triggered(
         when.entersSelf,
         [

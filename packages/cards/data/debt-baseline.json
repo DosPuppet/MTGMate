@@ -48,7 +48,6 @@
     "keepUnspentMana": "mana non dépensé gardé (500.4) : par type (The Last Agni Kai, posé par fx.thisTurn) ou converti (Ozai, the Phoenix King) ; une seule capacité imprimée pour l'instant",
     "powerUpExtraUses": "Wonder Man, Hollywood Hero : chaque montée en puissance peut être activée une fois de plus (compte d'usages des capacités « once ») ; une seule carte pour l'instant",
     "activateAsThoughHaste": "Shang-Chi, Master of Kung Fu : activer les capacités des créatures du filtre comme si elles avaient la célérité (mal d'invocation levé pour {T}, pas pour attaquer) ; famille paramétrée par un filtre, une seule carte pour l'instant",
-    "affects": "portée générique d'une statique de joueur (contrôleur, adversaires, chaque joueur) : Rampaging Ferocidon « les joueurs ne peuvent pas gagner de PV » ; à réutiliser pour toute statique qui touche d'autres joueurs",
     "phyrexianMana": "K'rrik, Son of Yawgmoth — les symboles d'une couleur de vos coûts deviennent phyrexians (107.4f), sur la forme générique ManaCost.phyrexian",
     "infectDamageAtZeroLife": "Phyrexian Unlife : à 0 PV ou moins, les blessures infligées au joueur le sont comme par l'infection (famille J, exceptions aux règles, avec noLoseForLife)",
     "damageLifeFloor": "Angel's Grace : plancher de PV pour les blessures (famille E, blessures aux joueurs ; un remplacement chiffré ne voit pas les PV restants)",
@@ -234,6 +233,16 @@
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 17,
     "LayerMods": 31,
+    "TriggerMod": 9,
+    "EventReplacement": 18,
+    "CastInfo": 10,
+    "TurnLogQuery": 31,
+    "MoveSpec": 18,
+    "BlockRule": 13,
+    "TargetSpec": 24,
+    "AdditionalCost": 13,
+    "CastLimit": 9,
+    "NextSpell": 9,
     "Effect": 154,
     "Effect (champs)": 654,
     "TriggerSpec": 61,
@@ -307,7 +316,8 @@
     "Deck The Ur-Dragon (Commander) : ObjectFilter.nameOf (Dragonlord Kolaghan), Amount maxOverPlayers (Cavern-Hoard Dragon), zone de commandement dans Ref zone et MoveSpec (Hellkite Courser, Majestic Genesis), myriade (copyToken attackEach, exileAtEndOfCombat), mana marqué gardé (Klauth) et porteur d'un effet (Arena of Glory), éminence d'une statique de joueur : ObjectFilter 87 → 88, Effect (champs) 635 → 638, Condition (champs) 97 → 98, Amount 31 → 32, Amount (champs) 67 → 70",
     "Deck Rakdos, Lord of Riots (Commander) : GameObject.exileIfLeaves (exhumation), MoveSpec manifest et exileIfLeaves, Ref nth (fx.forEachPlayer) et numberChoosers, Amount numberChosen, op chooseNumbers (Wheel of Misfortune), TargetSpec differentManaValues, unlessPay orMana sans défausse, copie de sort avec loyauté, recherche bornée par un montant, tour contrôlé suivi d'un tour supplémentaire : GameObject 61 → 62, Effect 152 → 153, Effect (champs) 638 → 645, Amount 32 → 33, Amount (champs) 70 → 72, Ref 32 → 34, Ref (champs) 55 → 61",
     "Préconstruit Multiverse Reforged (Commander) : CardDef.toxic (toxique), monarque (GameState.monarch, effet becomeMonarch, condition monarch), piles opponentSeparates, revealUntilN who, cantAttackPlaneswalkers, protection d'un joueur par filtre, untilTheirNextTurn, mayPay lifeAmount, montants manaInPool et poison, combatDamageBatch toYou : CardDef 97 → 98, GameState 40 → 41, Effect 153 → 154, Effect (champs) 645 → 651, TriggerSpec (champs) 160 → 161, Condition 53 → 54, Condition (champs) 98 → 99, Amount 33 → 35, Amount (champs) 72 → 74",
-    "Préconstruit Turtle Power! (Commander) : Amount lifeTotal starting (Game Over : « la moitié de ses PV de départ ») ; escouade (kicker payé X fois, comme la réplique), fusion (troisième face des cartes scindées), couleur exclue des terrains Thriving (enterModes), mana d'artefact dépensé (CastInfo.artifactMana), adversaires attaqués (distinct defender), TriggerMod onDraw, onPrevent countersOnDamaged, jetons attaquant un joueur désigné, copies sacrifiées à la fin du combat (atEndOfCombat) : Amount (champs) 74 → 75 : Amount (champs) 74 → 75",
-    "Préconstruits Counter Blitz, The Fantastic Four et Mutant Menace (Commander) : marqueurs de radiation (PlayerState.rad, op poison counter rad, montant rad, prolifération, radiation au début de la première phase principale), meule groupée (déclencheur milled, filtre milledThisTurn), contrôle rendu aux propriétaires (toOwner), garder un permanent par type hors terrains (nonland), sort mis au-dessous de la bibliothèque (fate bottom), total d'un montant parmi les joueurs (sum), sacrifice remplacé par un renvoi en main (to) : PlayerState 23 → 24, ObjectFilter 88 → 89, Effect (champs) 651 → 654, TriggerSpec 60 → 61, TriggerSpec (champs) 161 → 164, Amount (champs) 75 → 77 : PlayerState 23 → 24, ObjectFilter 88 → 89, Effect (champs) 651 → 654, TriggerSpec 60 → 61, TriggerSpec (champs) 161 → 164, Amount (champs) 75 → 77"
+    "Préconstruit Turtle Power! (Commander) : Amount lifeTotal starting (Game Over : « la moitié de ses PV de départ ») ; escouade (kicker payé X fois, comme la réplique), fusion (troisième face des cartes scindées), couleur exclue des terrains Thriving (enterModes), mana d'artefact dépensé (CastInfo.artifactMana), adversaires attaqués (distinct defender), TriggerMod onDraw, onPrevent countersOnDamaged, jetons attaquant un joueur désigné, copies sacrifiées à la fin du combat (atEndOfCombat) : Amount (champs) 74 → 75",
+    "Préconstruits Counter Blitz, The Fantastic Four et Mutant Menace (Commander) : marqueurs de radiation (PlayerState.rad, op poison counter rad, montant rad, prolifération, radiation au début de la première phase principale), meule groupée (déclencheur milled, filtre milledThisTurn), contrôle rendu aux propriétaires (toOwner), garder un permanent par type hors terrains (nonland), sort mis au-dessous de la bibliothèque (fate bottom), total d'un montant parmi les joueurs (sum), sacrifice remplacé par un renvoi en main (to) : PlayerState 23 → 24, ObjectFilter 88 → 89, Effect (champs) 651 → 654, TriggerSpec 60 → 61, TriggerSpec (champs) 161 → 164, Amount (champs) 75 → 77",
+    "PLAN-H H0 : dix structures suivies désormais (elles grandissaient sans plafond) : TriggerMod — → 9, EventReplacement — → 18, CastInfo — → 10, TurnLogQuery — → 31, MoveSpec — → 18, BlockRule — → 13, TargetSpec — → 24, AdditionalCost — → 13, CastLimit — → 9, NextSpell — → 9"
   ]
 }

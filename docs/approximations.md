@@ -35,6 +35,7 @@ Chaque entrée porte sa nature :
 - `choix auto` **« Le reste au-dessous de votre bibliothèque dans l'ordre de votre choix » :** dans un ordre aléatoire (Rediscover the Way, Commune with Nature, Avengers Tower) ; « remises au-dessus dans l'ordre de votre choix » : l'ordre n'est pas choisi (Rowan's Grim Search).
 - `règle` **Suspension (702.62) :** la célérité est donnée au prochain sort de créature lancé ce tour-ci, même si ce n'est pas la carte suspendue (aussi Taigam, Master Opportunist).
 - `choix auto` **Contrôler le tour d'un autre joueur** (Mindslaver, The Dominion Bracelet) : une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
+- `règle` **Ninjutsu en multijoueur (702.49c) :** la créature arrive engagée et attaquant le même défenseur qu'une de vos créatures attaquantes (sinon le premier adversaire), pas forcément celui qu'attaquait la créature renvoyée.
 - `règle` **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`engine/src/limits.ts`). Chaque coupure est notée au journal de la partie (« Plafond de sécurité atteint »).
 
 ### Hors règles du jeu
@@ -53,7 +54,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Foundations (`docs/extensions/fdn.md`) :**
   - `choix auto` Quilled Greatwurm (et Dawnhand Dissident) : vous répartissez les marqueurs retirés entre vos créatures, mais la sorte des marqueurs retirés d'une même créature est choisie pour vous (les −1/−1 d'abord, les +1/+1 en dernier) ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
-  - `choix auto` Curator of Destinies : en multijoueur, c'est l'adversaire suivant qui choisit la pile.
+  - `choix auto` Piles séparées par un adversaire (Curator of Destinies, Fact or Fiction, Intrude on the Mind, Riddles in the Dark) : en multijoueur, c'est l'adversaire suivant qui sépare ou choisit (et non un adversaire choisi).
 - **Final Fantasy (`docs/extensions/fin.md`) :**
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
   - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
@@ -192,7 +193,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Rakdos, Patron of Chaos : un adversaire qui accepte sacrifie ce qu'il peut, et vous piochez quand même ;
   - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée) ;
   - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ;
-  - `règle` Officious Interrogation : au plus huit joueurs ciblés ;
   - `choix auto` Hedge Whisperer : elle reste engagée pendant votre étape de dégagement tant que son effet (le terrain 5/5) dure, et se dégage sinon ;
   - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution ;
   - `règle` Kaya, Spirits' Justice (−2), Jetsam : « pour chaque autre joueur » et « les cimetières de vos adversaires » sont exacts en duel ; à plusieurs, une seule créature adverse est ciblée.
@@ -231,7 +231,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Marvel's Spider-Man (`docs/extensions/spm.md`) :**
   - `règle` Mysterio, Master of Illusion : si Mysterio quitte le champ de bataille avant la résolution de sa capacité d'arrivée, les jetons créés ne sont pas exilés ;
   - `règle` Parker Luck : la carte du dessus n'est pas révélée explicitement ; chaque joueur perd ses PV puis la met en main (même résultat) ;
-  - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ; au chapitre III, « n'importe quel nombre de joueurs ciblés » s'écrit « jusqu'à quatre » ;
+  - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ;
   - `règle` Maximum Carnage : au chapitre I, l'obligation d'attaquer ne vise que les créatures adverses présentes à la résolution, et « un joueur autre que vous si possible » n'est pas imposé (exact en duel, sauf pour attaquer vos planeswalkers) ;
   - `règle` Spinneret and Spiderling : le seuil de 4 blessures se lit par blessure infligée ; des blessures de combat réparties entre plusieurs bloqueurs (2 + 2) ne le déclenchent pas ;
   - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse ;

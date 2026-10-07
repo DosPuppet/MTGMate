@@ -118,7 +118,7 @@ export const BLACK: Record<string, CardScript> = {
     ],
   },
   "Beseech the Mirror": {
-    // Approximation : la carte est exilée face visible (et non face cachée).
+    // La carte est exilée face cachée (vous seul la voyez).
     spell: spell(
       [],
       [

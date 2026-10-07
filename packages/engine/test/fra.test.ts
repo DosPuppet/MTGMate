@@ -280,6 +280,21 @@ describe("Reality Fracture, lot C : préparé", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
+  it("Codie : la copie du sort préparé peut changer de cible (707.10c)", () => {
+    let s = scenario({
+      players: 3,
+      p1: { hand: ["Stingerquill Voxmancer"], battlefield: ["Codie, Ravenous Codex", ...lands("Swamp", 3)] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Stingerquill Voxmancer") });
+    s = settle(s);
+    const v = idOf(s, "p1", "battlefield", "Stingerquill Voxmancer");
+    setPrepared(s, s.objects[v] as NonNullable<S["objects"][string]>, true);
+    s = castPrepared(s, "p1", "Vicious Verse", { targets: { t: ["p2"] } });
+    // La copie demande sa cible : l'autre adversaire.
+    s = settle(s, (req) => (req.type === "pick" && req.options.includes("p3") ? ["p3"] : undefined));
+    expect([s.players.p2?.life, s.players.p3?.life]).toEqual([19, 19]);
+  });
+
   it("Heartwood Crafter : son mana ne paie pas un sort lancé depuis la main", () => {
     const s = scenario({ p1: { hand: ["Llanowar Elves"], battlefield: ["Heartwood Crafter"] } });
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Llanowar Elves"))).toBe(

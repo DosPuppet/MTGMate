@@ -244,3 +244,51 @@ export function engineLiterals(): string[] {
   walk("");
   return out;
 }
+
+/**
+ * Surfaces mesurées par le garde-fou de la dette (`debt.test.ts`, section `ceilings`, et `tools/debt-ceilings.ts`) :
+ * interfaces du modèle (nombre de champs) et unions à discriminant (variantes, et champs de toutes les variantes).
+ * PLAN-H H0 : dix structures ajoutées, qui grandissaient sans être suivies.
+ */
+export const INTERFACE_SURFACES = [
+  "CardDef",
+  "GameObject",
+  "StackItem",
+  "PlayerState",
+  "GameState",
+  "ObjectFilter",
+  "CostDef",
+  "ActivatedAbilityDef",
+  "CastPermissionAbilityDef",
+  "PlayFromZone",
+  "LayerMods",
+  "TriggerMod",
+  "EventReplacement",
+  "CastInfo",
+  "TurnLogQuery",
+  "MoveSpec",
+  "BlockRule",
+  "TargetSpec",
+  "AdditionalCost",
+  "CastLimit",
+  "NextSpell",
+] as const;
+export const UNION_SURFACES = [
+  ["Effect", "op"],
+  ["TriggerSpec", "on"],
+  ["Condition", "kind"],
+  ["Amount", "kind"],
+  ["Ref", "kind"],
+] as const;
+
+/** Taille de chaque surface du modèle : champs d'une interface, variantes d'une union, champs de toutes ses variantes. */
+export function measureSurfaces(): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const name of INTERFACE_SURFACES) out[name] = interfaceFields(name).length;
+  for (const [name, discriminant] of UNION_SURFACES) {
+    const variants = unionVariants(name, discriminant);
+    out[name] = variants.size;
+    out[`${name} (champs)`] = [...variants.values()].reduce((n, f) => n + f.length, 0);
+  }
+  return out;
+}

@@ -121,7 +121,7 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   Flameshape: {
-    // Approximation : les cartes sont exilées face visible (le moteur n'a pas d'exil face cachée).
+    // Les cartes sont exilées face cachée (vous seul les voyez).
     spell: spell(
       [],
       [

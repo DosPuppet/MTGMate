@@ -591,7 +591,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
   },
   "Fight Rigging": {
     abilities: [
-      // Dissimulation 5 (approximation : la carte est exilée face visible, comme Collector's Cage).
+      // Dissimulation 5 : la carte est exilée face cachée (vous seul la voyez).
       triggered(
         when.entersSelf,
         [

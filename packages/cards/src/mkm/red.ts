@@ -94,7 +94,7 @@ export const RED: Record<string, CardScript> = {
   },
   "Connecting the Dots": {
     abilities: [
-      // Approximation : la carte est exilée face visible.
+      // La carte est exilée face cachée (personne ne la voit).
       triggered(
         when.attacks({ types: ["Creature"], controller: "you" }),
         [fx.exileTop(ref.you, 1, "x", "nobody"), fx.link(ref.stored("x"))],
