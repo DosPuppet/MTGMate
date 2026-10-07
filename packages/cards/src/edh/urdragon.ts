@@ -8,6 +8,7 @@ import {
   activated,
   amount,
   cond,
+  doesntUntap,
   entersWith,
   fx,
   loyalty,
@@ -122,7 +123,6 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
     ],
   },
   "Mana Vault": {
-    keywords: ["doesntUntap"],
     abilities: [
       manaAbility("C", 3),
       triggered(when.yourUpkeep, fx.mayPay("{4}", "Payer {4} pour dégager Mana Vault ?", fx.untap(ref.self)), {
@@ -133,6 +133,7 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
         condition: cond.sourceMatches({ tapped: true }),
         label: "Engagé : 1 blessure à vous",
       }),
+      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
     ],
   },
   // Approximation : « si cet artefact devait arriver, vous pouvez défausser une carte de terrain à la place » est une

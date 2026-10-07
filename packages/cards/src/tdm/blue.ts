@@ -8,6 +8,7 @@ import {
   cond,
   costReducer,
   devotee,
+  doesntUntap,
   dragonstorm,
   flurry,
   fx,
@@ -152,12 +153,10 @@ export const BLUE: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature enchantée" }),
       staticAbility(
         "attached",
-        {
-          addKeywords: ["doesntUntap"],
-          addAbilities: [activated({ mana: "{5}", effects: [fx.untap(ref.self)], label: "{5} : dégagez cette créature" })],
-        },
-        { label: "Ne se dégage pas ; « {5} : dégagez cette créature »" },
+        { addAbilities: [activated({ mana: "{5}", effects: [fx.untap(ref.self)], label: "{5} : dégagez cette créature" })] },
+        { label: "« {5} : dégagez cette créature »" },
       ),
+      doesntUntap("attached"),
     ],
   },
   "Riverwalk Technique": {

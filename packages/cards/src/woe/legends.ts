@@ -103,7 +103,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Johann, Apprentice Sorcerer": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: INSTANT_SORCERY, what: "spells", oncePerTurn: true },
         label: "Une fois par tour : éphémère ou rituel du dessus de votre bibliothèque",

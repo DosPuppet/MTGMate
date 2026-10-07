@@ -5872,3 +5872,93 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     expect(c.s.objects[c.bear]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 });
+
+describe("Hedge Whisperer : « vous pouvez choisir de ne pas dégager cette créature lors de votre étape de dégagement » (PLAN-H, H8b)", () => {
+  /** Va jusqu'à la question de l'étape de dégagement du prochain tour de p1 (ou à sa phase principale, sans question). */
+  const toUntapQuestion = (s: GameState): GameState =>
+    advanceUntil(
+      s,
+      (x) =>
+        (x.pending?.kind === "choice" && x.pending.purpose.kind === "untap") ||
+        (x.turn.active === "p1" && x.turn.number > s.turn.number && x.turn.step === "main1"),
+    );
+
+  it("un vrai choix (502.3) : la garder engagée ou la dégager ; sans effet qui en dépend, la réponse proposée la dégage", () => {
+    const s = scenario({
+      active: "p2",
+      p1: {
+        battlefield: [
+          { name: "Hedge Whisperer", tapped: true },
+          { name: "Forest", tapped: true },
+        ],
+      },
+    });
+    const hw = idOf(s, "p1", "battlefield", "Hedge Whisperer");
+    const forest = idOf(s, "p1", "battlefield", "Forest");
+    const q = toUntapQuestion(s);
+    expect(q.pending?.kind === "choice" && q.pending.player).toBe("p1");
+    const req = q.pending?.kind === "choice" ? q.pending.request : undefined;
+    // Seule Hedge Whisperer est proposée ; la Forêt se dégage d'office.
+    expect(req?.type === "pick" && [req.options, req.min, req.max, req.suggested]).toEqual([[hw], 0, 1, []]);
+    const kept = act(q, "p1", { type: "choose", values: [hw] });
+    expect([kept.objects[hw]?.tapped, kept.objects[forest]?.tapped]).toEqual([true, false]);
+    const untapped = act(q, "p1", { type: "choose", values: [] });
+    expect([untapped.objects[hw]?.tapped, untapped.objects[forest]?.tapped]).toEqual([false, false]);
+  });
+
+  it("pas de question si elle est dégagée ; tant que le terrain 5/5 dépend d'elle, la réponse proposée la garde engagée", () => {
+    const quiet = toUntapQuestion(scenario({ active: "p2", p1: { battlefield: ["Hedge Whisperer"] } }));
+    expect(quiet.pending?.kind).toBe("priority");
+    expect(quiet.turn.step).toBe("main1");
+
+    let s = scenario({ p1: { battlefield: ["Hedge Whisperer", ...lands("Forest", 5)], graveyard: ["Shivan Dragon"] } });
+    const hw = idOf(s, "p1", "battlefield", "Hedge Whisperer");
+    const land = idsOf(s, "p1", "battlefield", "Forest")[4] as string;
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === hw);
+    s = settle(
+      act(s, "p1", {
+        type: "activate",
+        source: hw,
+        ability: opt?.type === "activate" ? opt.ability : -1,
+        targets: { t: [land] },
+      }),
+    );
+    expect(chars(s, land).types).toContain("Creature");
+    const q = toUntapQuestion(s);
+    const req = q.pending?.kind === "choice" ? q.pending.request : undefined;
+    expect(req?.suggested).toEqual([hw]);
+    const kept = act(q, "p1", { type: "choose", values: [hw] });
+    expect([kept.objects[hw]?.tapped, chars(kept, land).types.includes("Creature")]).toEqual([true, true]);
+    const untapped = act(q, "p1", { type: "choose", values: [] });
+    expect([untapped.objects[hw]?.tapped, chars(untapped, land).types.includes("Creature")]).toEqual([false, false]);
+  });
+
+  it("le choix ne vaut que pour l'étape de dégagement : un effet la dégage", () => {
+    const UNTAP = customCard({
+      name: "Dégagement d'essai",
+      typeLine: "Instant",
+      types: ["Instant"],
+      spell: dsl.spell([dsl.target.creature()], [dsl.fx.untap(dsl.ref.target())]),
+    });
+    let s = scenario({ p1: { battlefield: [{ name: "Hedge Whisperer", tapped: true }], hand: [UNTAP] } });
+    const hw = idOf(s, "p1", "battlefield", "Hedge Whisperer");
+    s = settle(cast(s, "p1", "Dégagement d'essai", { t: [hw] }));
+    expect(s.objects[hw]?.tapped).toBe(false);
+  });
+});
+
+describe("vue : la restriction de dégagement est montrée sur le permanent (PLAN-H, H8b)", () => {
+  it("Hedge Whisperer « peut ne pas se dégager » ; une créature enchantée par Starlight Snare « ne se dégage pas »", () => {
+    let s = scenario({
+      p1: { battlefield: ["Hedge Whisperer", ...lands("Island", 3)], hand: ["Starlight Snare"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const hw = idOf(s, "p1", "battlefield", "Hedge Whisperer");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    const ruleOf = (x: GameState, id: string) => projectView(x, "p1").battlefield.find((o) => o.id === id)?.untapRule;
+    expect([ruleOf(s, hw), ruleOf(s, bear)]).toEqual(["Peut ne pas se dégager", undefined]);
+    s = settle(cast(s, "p1", "Starlight Snare", { enchant: [bear] }));
+    expect(s.objects[bear]?.tapped).toBe(true);
+    expect(ruleOf(s, bear)).toBe("Ne se dégage pas lors de l'étape de dégagement");
+  });
+});

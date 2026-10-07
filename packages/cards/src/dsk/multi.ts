@@ -157,7 +157,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Steaming Sauna": {
     abilities: [
-      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
       triggered(when.yourEndStep, [fx.draw(1)], { label: "Piochez une carte" }),
     ],
   },

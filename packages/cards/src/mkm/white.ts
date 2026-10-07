@@ -47,7 +47,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Assemble the Players": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { types: ["Creature"], maxPower: 2 }, what: "spells", oncePerTurn: true },
         label: "Une fois par tour, lancez une créature de force 2 ou moins du dessus de votre bibliothèque",

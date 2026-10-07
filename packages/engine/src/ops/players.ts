@@ -38,7 +38,7 @@ import {
   rulesEvent,
   shuffle,
 } from "../state";
-import { addPlayerEffect, playerStatic } from "../statics";
+import { addPlayerEffect, cantLose, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
 import type { EventReplacement, Step } from "../types";
@@ -69,15 +69,14 @@ export const HANDLERS: OpHandlers = {
             },
           }
         : e0;
-    // « Ne peut pas vous attaquer » (Sandswirl Wanderglyph) : « vous » est le contrôleur de l'effet.
-    const ability0 = e.ability.cantAttackPlayer === "you" ? { ...e.ability, cantAttackPlayer: ctx.controller } : e.ability;
-    // Jace, Multiverse Architect : « vos Jace » : le contrôleur de l'effet.
+    // « Ne peut pas vous attaquer » (Sandswirl Wanderglyph), « vos Jace » (Jace, Multiverse Architect) : « vous » est
+    // le contrôleur de l'effet, qui n'est pas concerné lui-même.
     const ability =
-      ability0.cantAttackPlaneswalkers?.of === "you"
-        ? { ...ability0, cantAttackPlaneswalkers: { ...ability0.cantAttackPlaneswalkers, of: ctx.controller } }
-        : ability0;
+      e.ability.cantAttack?.of === "you"
+        ? { ...e.ability, cantAttack: { ...e.ability.cantAttack, of: ctx.controller } }
+        : e.ability;
     const who = (e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller]).filter(
-      (p) => p !== ability.cantAttackPlayer,
+      (p) => p !== ability.cantAttack?.of,
     );
     const until =
       e.duration === "untilYourNextTurn"
@@ -394,7 +393,7 @@ export const HANDLERS: OpHandlers = {
   winGame(s, _r, _e, ctx) {
     // Herald of Eternal Dawn (`cantLose`) : « vous ne pouvez pas perdre et vos adversaires ne peuvent pas gagner ».
     const opponents = opponentsOf(s, ctx.controller);
-    if (opponents.some((p) => playerStatic(s, p, "cantLose"))) return;
+    if (opponents.some((p) => cantLose(s, p))) return;
     eliminate(s, opponents);
     return;
   },
@@ -402,7 +401,7 @@ export const HANDLERS: OpHandlers = {
     const who = e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller];
     eliminate(
       s,
-      who.filter((p) => !playerStatic(s, p, "cantLose")),
+      who.filter((p) => !cantLose(s, p)),
     );
     return;
   },

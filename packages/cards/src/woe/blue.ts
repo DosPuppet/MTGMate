@@ -13,6 +13,7 @@ import {
   chapter,
   cond,
   createRole,
+  doesntUntap,
   entersWith,
   fx,
   INSTANT_SORCERY,
@@ -20,7 +21,6 @@ import {
   ref,
   SORCERER_ROLE,
   spell,
-  staticAbility,
   target,
   triggered,
   when,
@@ -122,7 +122,7 @@ export const BLUE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature enchantée" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
+      doesntUntap("attached"),
       triggered(
         when.putIntoGraveyardSelf,
         [fx.mayPay("{1}", "Payer {1} pour regard 1, puis piocher ?", fx.scry(1), fx.draw(1))],

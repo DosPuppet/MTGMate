@@ -134,7 +134,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Mikey & Don, Party Planners": {
     // Garde {2} : lue dans le texte.
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
       playerStatic({
         playFrom: {
           zone: "libraryTop",

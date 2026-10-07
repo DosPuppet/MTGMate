@@ -8,6 +8,7 @@ import {
   blockAbility,
   type CardScript,
   cond,
+  doesntUntap,
   entersWith,
   escalate,
   eventReplacement,
@@ -947,7 +948,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Goblin Sharpshooter": {
     abilities: [
-      staticAbility("self", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas lors de votre étape de dégagement" }),
+      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
       triggered(when.dies({ types: ["Creature"] }), [fx.untap(ref.self)], { label: "Une créature meurt : dégagez-la" }),
       activated({
         tap: true,
@@ -1239,7 +1240,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   Necrodominance: {
     abilities: [
-      playerStatic({ skipDrawStep: true, label: "Passez votre étape de pioche" }),
+      playerStatic({ skips: "drawStep", label: "Passez votre étape de pioche" }),
       triggered(
         when.step("end"),
         [fx.payLifeX("payez autant de points de vie que vous voulez (et piochez autant)", "x"), fx.draw(amount.v("x"))],
@@ -1260,7 +1261,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Library of Leng": {
     abilities: [
-      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
       playerStatic({
         discardToLibraryTop: true,
         label: "Une carte défaussée par un effet peut aller au-dessus de votre bibliothèque",

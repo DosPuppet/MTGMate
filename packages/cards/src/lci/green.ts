@@ -158,7 +158,7 @@ export const GREEN: Record<string, CardScript> = {
         "attached",
         {
           addAbilities: [
-            playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus" }),
+            playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus" }),
             triggered(when.attacksSelf, [fx.explore()], { label: "Explore" }),
           ],
         },

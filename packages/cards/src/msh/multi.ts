@@ -268,7 +268,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Daredevil, Man Without Fear": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Sens radar — Vous pouvez regarder le dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "Sens radar — Vous pouvez regarder le dessus de votre bibliothèque" }),
       triggered(
         when.attackWith(),
         fx.may(

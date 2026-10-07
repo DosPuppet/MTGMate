@@ -254,7 +254,7 @@ export const BLUE: Record<string, CardScript> = {
       [
         fx.moveAll("graveyard", ref.you, INSTANT_SORCERY, { to: "hand" }),
         fx.emblem("Wisdom of Ages", "You have no maximum hand size.", [
-          playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+          playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
         ]),
       ],
     ),

@@ -259,7 +259,7 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Ka-Zar of the Savage Land": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus" }),
       playerStatic({ playFrom: { zone: "libraryTop", what: "lands" }, label: "Jouez des terrains depuis le dessus" }),
       triggered(when.entersSelf, [fx.createTokens(ZABU)], { label: "Zabu, Chat 2/2 légendaire" }),
     ],

@@ -12,6 +12,7 @@ import {
   fx,
   HERO,
   playerStatic,
+  prevention,
   ref,
   spell,
   staticAbility,
@@ -160,7 +161,7 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Diamond Weapon": {
     costReduction: { generic: amount.countIn("graveyard", PERMANENT_CARD) },
-    abilities: [staticAbility("self", { addKeywords: ["combatDamageImmune"] }, { label: "Immunité" })],
+    abilities: [prevention({ self: true }, { combatOnly: true, label: "Immunité — blessures de combat prévenues" })],
   },
   "Quina, Qu Gourmet": {
     abilities: [

@@ -3605,3 +3605,25 @@ describe("joueur attaqué (PLAN-H, lot H5)", () => {
     expect(run(false)).toBe(1);
   });
 });
+
+describe("Duskmourn : statiques de joueur et dégagement (PLAN-H, H8b)", () => {
+  it("Found Footage (regarder les créatures face cachée) ne montre pas la carte du dessus de votre bibliothèque ; Johann (regarder le dessus), si", () => {
+    const s = scenario({
+      p1: { battlefield: ["Found Footage"], library: ["Shivan Dragon", "Forest"] },
+      p2: { battlefield: ["Johann, Apprentice Sorcerer"], library: ["Opt", "Forest"] },
+    });
+    const top1 = s.players.p1?.library[0];
+    const top2 = s.players.p2?.library[0];
+    expect(projectView(s, "p1").playableElsewhere.map((o) => o.id)).not.toContain(top1);
+    expect(projectView(s, "p2").playableElsewhere.map((o) => o.id)).toContain(top2);
+  });
+
+  it("Prop Room : une créature qui « ne se dégage pas lors de l'étape de dégagement de son contrôleur » se dégage pendant celle d'un autre joueur", () => {
+    const STUCK = customCard({ name: "Statue d'essai", power: 1, toughness: 1, abilities: [dsl.doesntUntap("self")] });
+    let s = scenario({ p1: { battlefield: ["Dazzling Theater // Prop Room", { name: STUCK, tapped: true }] } });
+    openDoors(s, "Dazzling Theater // Prop Room", [1]);
+    const stuck = idOf(s, "p1", "battlefield", "Statue d'essai");
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect(s.objects[stuck]?.tapped).toBe(false);
+  });
+});

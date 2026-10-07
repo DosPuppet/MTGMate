@@ -8,6 +8,7 @@ import {
   type CardScript,
   cond,
   costReducer,
+  doesntUntap,
   eventReplacement,
   fx,
   INSTANT_SORCERY,
@@ -223,7 +224,7 @@ export const BLUE: Record<string, CardScript> = {
     enchant: ENCHANT_CREATURE,
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature enchantée" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
+      doesntUntap("attached"),
       activated({
         mana: "{U}{U}",
         effects: [fx.moveTo(ref.attached, { to: "libraryTop", shuffle: true })],
@@ -367,7 +368,7 @@ export const BLUE: Record<string, CardScript> = {
   "Proft's Eidetic Memory": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
-      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
       triggered(when.yourCombat, [fx.addCounters(ref.target(), amount.plus(amount.cardsDrawnThisTurn, -1))], {
         targets: [target.creature("t", { controller: "you" })],
         condition: cond.drewAtLeast(2),

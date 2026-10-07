@@ -1111,7 +1111,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Opt") });
       expect(s.stack.length + s.triggers.length).toBe(2);
       s = resolve(s);
-      expect(playerStatic(s, "p2", "cantAttackPlayer")).toBeTruthy();
+      expect(playerStatic(s, "p2", "cantAttack")).toBeTruthy();
     });
 
     it("Brass's Tunnel-Grinder : défaussez autant de cartes que vous voulez (de zéro à toute votre main)", () => {
@@ -2912,9 +2912,9 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       let s = scenario({ p1: { battlefield: ["Glowcap Lantern", "Bear Cub", "Forest", "Forest"], library: ["Opt", "Island"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       // Non attachée, la Lanterne ne donne rien (PLAN-D, D8) ; attachée, la créature équipée a « vous pouvez regarder ».
-      expect(playerStatic(s, "p1", "lookAtTopCard")).toBe(false);
+      expect(playerStatic(s, "p1", "lookAt")).toBe(false);
       s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Glowcap Lantern"), "Équiper", { targets: { t: [bear] } }));
-      expect(playerStatic(s, "p1", "lookAtTopCard")).toBe(true);
+      expect(playerStatic(s, "p1", "lookAt")).toBe(true);
       s = resolve(attack(s, [bear]));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });

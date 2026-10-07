@@ -111,7 +111,9 @@ export type ChoicePurpose =
   /** Choix d'un élément déjà sur la pile : nouvelles cibles d'une copie, répartition (voir `StackItem.pendingChoices`). */
   | { kind: "stackChoice"; stackId: string }
   /** 903.9a : commandant au cimetière ou en exil, que son propriétaire peut remettre dans la zone de commandement. */
-  | { kind: "commanderZone"; card: ObjectId };
+  | { kind: "commanderZone"; card: ObjectId }
+  /** 502.3 : permanents que le joueur actif peut choisir de ne pas dégager (Hedge Whisperer). */
+  | { kind: "untap"; player: PlayerId };
 
 export interface CastChoices {
   /** Sans payer le coût de mana (Omniscience). */

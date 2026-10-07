@@ -4,6 +4,7 @@ import {
   activated,
   amount,
   cond,
+  doesntUntap,
   fx,
   hero,
   manaAbility,
@@ -130,7 +131,7 @@ export const BLUE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
+      doesntUntap("attached"),
       triggered(when.attachedIsDealtDamage, [fx.sacrificeIt(ref.self)], { label: "Blessée : sacrifiez l'Aura" }),
     ],
   },

@@ -33,6 +33,7 @@ import {
   answerCommanderZone,
   answerLegendChoice,
   answerLeylines,
+  answerUntapStep,
   bottomCards,
   declareAttackers,
   declareBlockers,
@@ -274,6 +275,9 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
           return;
         case "commanderZone":
           answerCommanderZone(s, p.purpose.card, d.values[0] === 1);
+          return;
+        case "untap":
+          answerUntapStep(s, d.values.map(String));
           return;
       }
       return;

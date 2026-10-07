@@ -3,6 +3,7 @@ import {
   activated,
   type CardScript,
   cond,
+  doesntUntap,
   empower,
   fx,
   manaAbility,
@@ -80,11 +81,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Traxos, Scourge Eternal": {
-    keywords: ["doesntUntap"],
     abilities: [
       triggered(when.castSpell("you", { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }), [fx.untap(ref.self)], {
         label: "se dégage",
       }),
+      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
     ],
   },
   "Codie, Ravenous Codex": {

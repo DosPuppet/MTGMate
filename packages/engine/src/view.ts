@@ -8,8 +8,8 @@ import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
 import { keyedPrinting } from "./printing";
 import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
-import { chars, commanderOf, decider, HIDDEN_CARD_ID, isCreature, isSummoningSick, obj } from "./state";
-import { playerStatic, playerStatics } from "./statics";
+import { chars, commanderOf, decider, HIDDEN_CARD_ID, isSummoningSick, obj } from "./state";
+import { mayLookAt, untapStepRule } from "./statics";
 import { pendingTriggerSource } from "./triggers";
 import { allowedDefenders, attackableDefenders, attackCandidates, blockCandidates, forcedAttacks } from "./turn";
 import type {
@@ -78,6 +78,11 @@ export interface ObjectView extends CardFace {
   protections?: string[];
   /** Règles « utilise son endurance pour » : leurs libellés. */
   powerRules?: string[];
+  /**
+   * Étape de dégagement de son contrôleur (502.3) : « ne se dégage pas » ou « peut ne pas se dégager » (Hedge Whisperer),
+   * d'après les remplacements `untap` limités à cette étape (`untapStepRule`) ; affiché comme une restriction.
+   */
+  untapRule?: string;
   /** Engagé pour son mana, encore annulable par son contrôleur (décision `undoMana`). Seulement dans sa propre vue. */
   undoMana?: boolean;
   sick: boolean;
@@ -340,6 +345,13 @@ function printedFace(s: GameState, uid: string, defId: string, d: CardDef): Card
   return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };
 }
 
+/** `ObjectView.untapRule` d'un permanent. */
+function untapRuleView(s: GameState, id: ObjectId | undefined): { untapRule?: string } {
+  const rule = id ? untapStepRule(s, id) : undefined;
+  if (!rule) return {};
+  return { untapRule: rule === true ? "Ne se dégage pas lors de l'étape de dégagement" : "Peut ne pas se dégager" };
+}
+
 export function objectView(s: GameState, id: ObjectId): ObjectView {
   const o = obj(s, id);
   // Une copie (couche 1) s'affiche avec la face de ce qu'elle copie.
@@ -374,6 +386,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
       : {}),
     ...(c.protections.length ? { protections: c.protections.map((r) => r.label) } : {}),
     ...(c.powerRules.length ? { powerRules: c.powerRules.map((r) => r.label) } : {}),
+    ...untapRuleView(s, o.zone === "battlefield" ? id : undefined),
     sick: o.zone === "battlefield" && isSummoningSick(s, id),
     attacking,
     blocking,
@@ -425,7 +438,7 @@ function wardCost(abilities: CardDef["abilities"]): string | undefined {
 function withFaceDownCard(s: GameState, v: ObjectView, viewer: PlayerId): ObjectView {
   const o = s.objects[v.id];
   // Found Footage : « vous pouvez regarder les créatures face cachée de vos adversaires à tout moment ».
-  const sees = o?.controller === viewer || (!!o && playerStatic(s, viewer, "seeFaceDown") && isCreature(s, o.id));
+  const sees = o?.controller === viewer || (!!o && mayLookAt(s, viewer, o.id));
   const card = o?.faceDown && sees ? s.defs[o.faceDown.card] : undefined;
   return card ? { ...v, faceDownCard: cardFace(card) } : v;
 }
@@ -619,11 +632,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       ),
       // « Vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment » : Vizier of the Menagerie, et
       // toute permission de jouer depuis le dessus de la bibliothèque (famille C).
-      ...((playerStatics(s, viewer, "playFrom").some(({ ab }) => ab.playFrom?.zone === "libraryTop") ||
-        playerStatic(s, viewer, "lookAtTopCard")) &&
-      s.players[viewer]?.library[0]
-        ? [s.players[viewer]?.library[0] as string]
-        : []),
+      ...(s.players[viewer]?.library.slice(0, 1) ?? []).filter((id) => mayLookAt(s, viewer, id)),
     ].map((id) => withCastCost(s, viewer, objectView(s, id))),
     combat: s.combat
       ? { attackers: s.combat.attackers.map((a) => ({ id: a.id, defender: a.defender, blockers: [...a.blockers] })) }

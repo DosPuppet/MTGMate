@@ -233,7 +233,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Sandswirl Wanderglyph": {
     abilities: [
-      triggered(when.castSpell("opponent"), [fx.thisTurn({ cantAttackPlayer: "you" }, ref.eventPlayer)], {
+      triggered(when.castSpell("opponent"), [fx.thisTurn({ cantAttack: { of: "you" } }, ref.eventPlayer)], {
         // « pendant son tour » : le lanceur est le joueur actif.
         condition: cond.amountAtLeast(amount.refCount(ref.playersWhere(ref.eventPlayer, cond.yourTurn)), 1),
         label: "Il ne peut pas vous attaquer ce tour-ci",
@@ -582,7 +582,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.emblem(
             "The Belligerent",
             "Until end of turn, you may look at the top card of your library any time, and you may play lands and cast spells from the top of your library.",
-            [playerStatic({ playFrom: { zone: "libraryTop" }, lookAtTopCard: true })],
+            [playerStatic({ playFrom: { zone: "libraryTop" }, lookAt: "libraryTop" })],
             undefined,
             true,
           ),

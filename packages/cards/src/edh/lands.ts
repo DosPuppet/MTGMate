@@ -122,7 +122,7 @@ const fetchland = (a: string, b: string): CardScript => ({
 
 /** « Vous n'avez pas de taille maximale de main », et {T} : ajoutez du mana. */
 const noMaxHand = (...mana: ReturnType<typeof manaAbility>[]): CardScript => ({
-  abilities: [playerStatic({ noMaxHandSize: true, label: "Pas de taille maximale de main" }), ...mana],
+  abilities: [playerStatic({ maxHandSize: "none", label: "Pas de taille maximale de main" }), ...mana],
 });
 
 export const EDH_LANDS: Record<string, CardScript> = {

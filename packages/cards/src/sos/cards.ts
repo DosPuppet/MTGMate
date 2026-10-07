@@ -327,7 +327,7 @@ export const CARDS: Record<string, CardScript> = {
           fx.coinFlip("h4"),
           fx.coinFlip("h5"),
           fx.playerEffectTimes(
-            { skipTurn: true },
+            { skips: "turn" },
             amount.plus(amount.v("h1"), amount.v("h2"), amount.v("h3"), amount.v("h4"), amount.v("h5")),
             ref.target(),
           ),

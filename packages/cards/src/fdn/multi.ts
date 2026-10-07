@@ -187,7 +187,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Niv-Mizzet, Visionary": {
     abilities: [
-      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
       triggered(
         when.dealsDamage({}, { anySourceYouControl: true, noncombatOnly: true, to: { players: "opponent" } }),
         [fx.draw(amount.eventAmount)],

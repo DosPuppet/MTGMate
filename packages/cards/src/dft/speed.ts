@@ -179,7 +179,7 @@ export const SPEED: Record<string, CardScript> = {
   },
   "Vnwxt, Verbose Host": {
     abilities: [
-      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
       eventReplacement({
         event: "draw",
         to: "you",

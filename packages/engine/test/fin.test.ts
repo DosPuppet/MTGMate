@@ -2,9 +2,9 @@
  * Final Fantasy, lot A : job select, tiered, « si au moins quatre mana ont été dépensés », Syncopate, Villes à aventure.
  */
 import { describe, expect, it } from "vitest";
-import { destroy } from "../src/actions";
+import { dealDamage, destroy } from "../src/actions";
 import { activated, fx, ref, spell, target, triggered, when } from "../src/dsl";
-import { moveWithSpec } from "../src/effects";
+import { addEffect, moveWithSpec } from "../src/effects";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, moveObject } from "../src/state";
@@ -4297,5 +4297,20 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(s.players.p1?.graveyard).toHaveLength(2);
       expect(chars(s, idOf(s, "p1", "battlefield", "Valkyrie Aerial Unit")).keywords).toContain("flying");
     });
+  });
+});
+
+describe("Diamond Weapon : l'Immunité est une prévention de la créature (PLAN-H, H8b)", () => {
+  it("seulement les blessures de combat ; si elle perd ses capacités, plus rien n'est prévenu", () => {
+    const s = scenario({ p1: { battlefield: ["Diamond Weapon"] } });
+    const dw = idOf(s, "p1", "battlefield", "Diamond Weapon");
+    const src = { defId: "test", controller: "p2", keywords: [] };
+    dealDamage(s, src, dw, 3, true);
+    expect(s.objects[dw]?.damage).toBe(0);
+    dealDamage(s, src, dw, 2, false);
+    expect(s.objects[dw]?.damage).toBe(2);
+    addEffect(s, [dw], { loseAllAbilities: true }, "endOfTurn");
+    dealDamage(s, src, dw, 3, true);
+    expect(s.objects[dw]?.damage).toBe(5);
   });
 });

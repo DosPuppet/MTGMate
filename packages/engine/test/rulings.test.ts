@@ -4,7 +4,7 @@
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { createTokens, dealDamage, destroy, sacrifice, sourceFromObject } from "../src/actions";
+import { createTokens, dealDamage, destroy, gainLife, sacrifice, sourceFromObject } from "../src/actions";
 import { eventReplacement, fx, graveyardReplacement, ref, spell, target, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { RulesError } from "../src/errors";
@@ -1088,5 +1088,62 @@ describe("« Gardez les permanents choisis » : les choix dans l'ordre APNAP, pu
         .sort();
     expect(left("p2")).toEqual(["Adaptive Automaton", "Forest"]);
     expect(left("p3")).toEqual(["Bear Cub", "Island"]);
+  });
+});
+
+describe("PLAN-H H8b : « ne peut pas » face aux remplacements et aux préventions", () => {
+  /** « Chaque fois que vous gagnez des points de vie, piochez une carte. » */
+  const GAIN_DRAW = ench("Gain d'essai", triggered(when.gainLife, [fx.draw(1)], { label: "Piochez une carte" }));
+
+  it("Grievous Wound (119.7, 101.2) : le joueur enchanté ne gagne pas de PV, même avec Angel of Vitality, et rien ne se déclenche ; les autres joueurs, si", () => {
+    const s = scenario({
+      players: 3,
+      p2: { battlefield: ["Angel of Vitality", GAIN_DRAW] },
+      p3: { battlefield: ["Angel of Vitality"] },
+    });
+    const def = card("Grievous Wound") as CardDef;
+    registerDef(s, def);
+    createObject(s, def.id, "p1", "battlefield").attachedTo = "p2";
+    bump(s);
+    for (const p of ["p1", "p2", "p3"]) gainLife(s, p, 3);
+    expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([23, 20, 24]);
+    expect(countTurnEvents(s, { event: "lifeGain" }, "p2", "p2")).toBe(0);
+    expect(s.triggers).toHaveLength(0);
+  });
+
+  /** Prévient toutes les blessures qui seraient infligées aux créatures de son contrôleur (combat ou non). */
+  const SHIELD = ench("Bouclier d'essai", { kind: "prevention", filter: { types: ["Creature"], controller: "you" } });
+  const src = { defId: "test", controller: "p2", keywords: [] };
+
+  it("Frenzied Baloth : les blessures de combat ne peuvent pas être prévenues (ni l'Immunité de Diamond Weapon, ni une prévention) ; les autres, si", () => {
+    const s = scenario({ p1: { battlefield: ["Diamond Weapon", "Bear Cub", SHIELD] }, p2: { battlefield: ["Frenzied Baloth"] } });
+    const dw = idOf(s, "p1", "battlefield", "Diamond Weapon");
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    dealDamage(s, src, dw, 3, true);
+    dealDamage(s, src, cub, 1, true);
+    dealDamage(s, src, cub, 1, false);
+    expect([s.objects[dw]?.damage, s.objects[cub]?.damage]).toEqual([3, 1]);
+  });
+
+  it("Sunspine Lynx : aucune blessure ne peut être prévenue, de combat ou non", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub", SHIELD] }, p2: { battlefield: ["Sunspine Lynx"] } });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    dealDamage(s, src, cub, 1, false);
+    expect(s.objects[cub]?.damage).toBe(1);
+  });
+
+  it("perdre la partie (104.3) : Phyrexian Unlife n'empêche que la défaite à 0 PV ; Angel's Grace empêche aussi celle par le poison", () => {
+    const poisoned = (life: number, effect?: boolean) => {
+      const s = scenario({ p1: { life, battlefield: ["Phyrexian Unlife"] } });
+      if (effect) addPlayerEffect(s, "p1", { cantLose: true }, s.turn.number);
+      (s.players.p1 as { counters?: { poison?: number } }).counters = { poison: 10 };
+      stateBasedActions(s);
+      return s.players.p1?.lost;
+    };
+    expect(poisoned(0)).toBe(true);
+    expect(poisoned(0, true)).toBe(false);
+    const s = scenario({ p1: { life: 0, battlefield: ["Phyrexian Unlife"] } });
+    stateBasedActions(s);
+    expect(s.players.p1?.lost).toBe(false);
   });
 });

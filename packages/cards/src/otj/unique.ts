@@ -184,7 +184,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Fblthp, Lost on the Range": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Vous regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Vous regardez la carte du dessus" }),
       // Approximation : une capacité (qui passe par la pile) paie le coût de mana de la carte du dessus pour la comploter.
       activated({
         sorcerySpeed: true,

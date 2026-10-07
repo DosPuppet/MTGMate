@@ -29,6 +29,7 @@ export const {
   playerStatic,
   graveyardReplacement,
   eventReplacement,
+  doesntUntap,
   prevention,
   cost,
   wardAbility,

@@ -973,7 +973,7 @@ describe("Méta, lot M6", () => {
         targets: { t: ["p2"] },
       }),
     );
-    const skips = s.playerEffects.filter((e) => e.player === "p2" && e.ability.skipTurn).length;
+    const skips = s.playerEffects.filter((e) => e.player === "p2" && e.ability.skips === "turn").length;
     s = advanceUntil(s, (x) => x.turn.number > 3 && x.turn.step === "main1");
     expect(s.turn.active).toBe(skips > 0 ? "p1" : "p2");
   });

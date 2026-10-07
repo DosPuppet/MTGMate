@@ -59,6 +59,7 @@ export {
   opponentsOf,
   registerDef,
 } from "./state";
+export { untapStepRule } from "./statics";
 export { isLegalTarget, legalTargets } from "./targets";
 export {
   type AttackRequirement,

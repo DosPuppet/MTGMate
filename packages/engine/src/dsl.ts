@@ -2761,6 +2761,29 @@ export function eventReplacement(opts: Omit<EventReplacementAbilityDef, "kind">)
   return { kind: "eventReplacement", ...opts };
 }
 
+/**
+ * « Ne se dégage pas lors de l'étape de dégagement de son contrôleur » (502.3) : un remplacement `untap` limité à cette
+ * étape (`untapStep`), pour la source (`self`), le permanent auquel elle est attachée (`attached`) ou les permanents d'un
+ * filtre ; `may` : « vous pouvez choisir de ne pas la dégager » (Hedge Whisperer : une question à l'étape de dégagement).
+ * Accordé par un effet : `addAbilities: [doesntUntap("self")]`.
+ */
+export function doesntUntap(
+  affects: "self" | "attached" | ObjectFilter,
+  opts: { may?: boolean; condition?: Condition; label?: string } = {},
+): EventReplacementAbilityDef {
+  const toFilter: ObjectFilter =
+    affects === "self" ? { self: true } : affects === "attached" ? { attachedToSource: true } : affects;
+  return {
+    kind: "eventReplacement",
+    event: "untap",
+    toFilter,
+    untapStep: opts.may ? "may" : true,
+    modify: { prevent: true },
+    ...(opts.condition ? { condition: opts.condition } : {}),
+    label: opts.label ?? (opts.may ? "Vous pouvez choisir de ne pas la dégager" : "Ne se dégage pas"),
+  };
+}
+
 /** Capacité statique qui s'applique à son contrôleur (défense talismanique, « ne peut pas perdre »…). */
 export function playerStatic(opts: Omit<PlayerStaticAbilityDef, "kind">): PlayerStaticAbilityDef {
   return { kind: "playerStatic", ...opts };

@@ -54,11 +54,14 @@ import {
 } from "./state";
 import {
   addPlayerEffect,
+  cantLose,
   consumePlayerEffect,
   playerEffectValues,
   playerStatic,
   playerStatics,
   playerStaticTotal,
+  skips,
+  untapStepRule,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
 import { processTriggers, pushInline, releaseDelayedTriggers, rulesTrigger, simultaneously } from "./triggers";
@@ -145,6 +148,40 @@ function firstPriority(s: GameState): PlayerId {
 function givePriority(s: GameState): void {
   s.priority = { holder: firstPriority(s), passes: 0 };
   s.flow = "priority";
+}
+
+/**
+ * Étape de dégagement (502.3) : les permanents du joueur actif se dégagent, sauf ceux qu'il a choisi de garder engagés
+ * (`keep`), ceux qui ne se dégagent pas lors de son étape de dégagement (remplacement `untap` avec `untapStep`) et ceux
+ * qui sont épuisés (701.43). Prop Room : les créatures d'un autre joueur se dégagent aussi (ce n'est pas l'étape de
+ * dégagement de leur contrôleur).
+ */
+function untapStep(s: GameState, keep: ObjectId[]): void {
+  const active = s.turn.active;
+  for (const id of s.battlefield) {
+    const o = obj(s, id);
+    // Prop Room : les créatures de ce joueur se dégagent aussi pendant l'étape de dégagement des autres joueurs.
+    const propRoom = o.controller !== active && isCreature(s, id) && playerStatic(s, o.controller, "untapCreaturesOnOthersUntap");
+    if (o.controller !== active && !propRoom) continue;
+    // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement (de son contrôleur).
+    if (o.exerted && !propRoom) {
+      o.exerted = undefined;
+      continue;
+    }
+    if (!o.tapped || keep.includes(id)) continue;
+    if (!propRoom && untapStepRule(s, id) === true) continue;
+    // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement (`untapObject`).
+    if (untapObject(s, o)) {
+      const stats = s.players[o.controller]?.turnStats;
+      if (stats && o.controller === active) stats.untappedInUntapStep = (stats.untappedInUntapStep ?? 0) + 1;
+    }
+  }
+  s.flow = "stepEnd"; // pas de priorité pendant l'étape de dégagement
+}
+
+/** Réponse à la question de l'étape de dégagement : les permanents gardés engagés. */
+export function answerUntapStep(s: GameState, keep: string[]): void {
+  untapStep(s, keep);
 }
 
 /** Début d'étape : déclenche les capacités « au début de… ». */
@@ -333,32 +370,37 @@ function beginStep(s: GameState): void {
   else if (s.turn.step === "main2") s.turn.mainPhase = (s.turn.mainPhase ?? 1) + 1;
   if (s.turn.step !== "untap" && s.turn.step !== "cleanup") stepEvent(s);
   switch (s.turn.step) {
-    case "untap":
+    case "untap": {
       // 502.1 : le retour en phase précède le dégagement.
       phaseIn(s, active);
-      for (const id of s.battlefield) {
+      // 502.3 : le joueur actif choisit d'abord les permanents qu'il peut ne pas dégager (Hedge Whisperer : « vous pouvez
+      // choisir de ne pas dégager cette créature lors de votre étape de dégagement »), puis tout se dégage en même temps.
+      const optional = s.battlefield.filter((id) => {
         const o = obj(s, id);
-        // Prop Room : les créatures de ce joueur se dégagent aussi pendant l'étape de dégagement des autres joueurs.
-        const propRoom =
-          o.controller !== active && isCreature(s, id) && playerStatic(s, o.controller, "untapCreaturesOnOthersUntap");
-        if (o.controller !== active && !propRoom) continue;
-        // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement (de son contrôleur).
-        if (o.exerted && !propRoom) {
-          o.exerted = undefined;
-          continue;
-        }
-        if (!o.tapped) continue;
-        if (hasKeyword(s, id, "doesntUntap")) continue;
-        // Hedge Whisperer : « vous pouvez choisir de ne pas la dégager » (choix automatique : tant que son effet dure).
-        if (hasKeyword(s, id, "mayNotUntap") && s.effects.some((e) => e.whileSourceTapped === id)) continue;
-        // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement (`untapObject`).
-        if (untapObject(s, o)) {
-          const stats = s.players[o.controller]?.turnStats;
-          if (stats && o.controller === active) stats.untappedInUntapStep = (stats.untappedInUntapStep ?? 0) + 1;
-        }
+        return o.controller === active && o.tapped && !o.exerted && untapStepRule(s, id) === "may";
+      });
+      if (optional.length === 0) {
+        untapStep(s, []);
+        return;
       }
-      s.flow = "stepEnd"; // pas de priorité pendant l'étape de dégagement
+      ask(
+        s,
+        active,
+        {
+          type: "pick",
+          intent: "other",
+          prompt: "Permanents que vous ne dégagez pas lors de cette étape de dégagement",
+          options: optional,
+          min: 0,
+          max: optional.length,
+          // Réponse proposée : les garder engagés tant qu'un effet dure « tant qu'ils restent engagés ».
+          suggested: optional.filter((id) => s.effects.some((e) => e.whileSourceTapped === id)),
+        },
+        { kind: "untap", player: active },
+      );
+      s.flow = "tba";
       return;
+    }
     case "draw":
       // 103.8a : en duel, le joueur qui commence ne pioche pas lors de son premier tour
       // (103.8c : en multijoueur, personne ne saute sa pioche).
@@ -591,7 +633,7 @@ function endStep(s: GameState): void {
   s.lki = {};
   let next = nextStep(s);
   // 500.11 : une étape passée n'a pas lieu (Necropotence : « passez votre étape de pioche »).
-  if (next === "draw" && playerStatic(s, s.turn.active, "skipDrawStep")) next = "main1";
+  if (next === "draw" && skips(s, s.turn.active, "drawStep")) next = "main1";
   // 500.8, 500.10 : étapes ajoutées après celle-ci, puis phases ajoutées après la phase qui finit.
   next = addedNext(s, next);
   if (next) {
@@ -605,10 +647,10 @@ function endStep(s: GameState): void {
     // 500.7 : un tour supplémentaire (le dernier créé d'abord), sinon le joueur suivant.
     let extra = s.extraTurns?.pop();
     // Trouble in Pairs : un adversaire qui devrait commencer un tour supplémentaire le passe.
-    while (extra && playerStatic(s, extra, "skipExtraTurns")) extra = s.extraTurns?.pop();
+    while (extra && skips(s, extra, "extraTurns")) extra = s.extraTurns?.pop();
     s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
     // Ral Zarek : un joueur qui doit passer son tour le passe (un effet consommé par tour passé).
-    for (let guard = 0; guard < s.playerOrder.length && consumePlayerEffect(s, s.turn.active, "skipTurn"); guard++)
+    for (let guard = 0; guard < s.playerOrder.length && consumePlayerEffect(s, s.turn.active, "skips", "turn"); guard++)
       s.turn.active = nextPlayer(s, s.turn.active);
     s.turn.endSteps = 0;
     clearAdded(s);
@@ -1038,20 +1080,21 @@ export function defendingPlayer(s: GameState, defender: string): PlayerId {
  * sur le champ de bataille attaquant (508.4), que les restrictions d'attaque des joueurs ne concernent pas.
  */
 export function attackableDefenders(s: GameState, player: PlayerId, declared = true): string[] {
-  // Sandswirl Wanderglyph : « il ne peut pas vous attaquer, ni les planeswalkers que vous contrôlez, ce tour-ci ».
-  const banned = new Set(declared ? playerEffectValues(s, player, "cantAttackPlayer") : []);
-  const opps = opponentsOf(s, player).filter((p) => !banned.has(p));
+  // « Ne peut pas attaquer [ce joueur ni ses planeswalkers] » (`cantAttack`) : Sandswirl Wanderglyph (« il ne peut pas
+  // vous attaquer, ni les planeswalkers que vous contrôlez, ce tour-ci ») ; avec un sous-type, seulement ces
+  // planeswalkers (Jace, Multiverse Architect : « ses créatures ne peuvent pas attaquer vos Jace ce tour-ci »).
+  const bans = declared ? playerEffectValues(s, player, "cantAttack") : [];
+  const banned = (d: string) => {
+    const walker = s.objects[d];
+    const of = walker ? walker.controller : d;
+    return bans.some((b) => b.of === of && (!b.subtype || (!!walker && chars(s, d).subtypes.includes(b.subtype))));
+  };
+  const opps = opponentsOf(s, player);
   // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
-  // Jace, Multiverse Architect : « ses créatures ne peuvent pas attaquer vos Jace ce tour-ci ».
-  const walkerBans = declared ? playerEffectValues(s, player, "cantAttackPlaneswalkers") : [];
   const walkers = s.battlefield.filter(
-    (id) =>
-      opps.includes(obj(s, id).controller) &&
-      hasType(s, id, "Planeswalker") &&
-      !obj(s, id).attachedTo &&
-      !walkerBans.some((b) => b && b.of === obj(s, id).controller && chars(s, id).subtypes.includes(b.subtype)),
+    (id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker") && !obj(s, id).attachedTo,
   );
-  return [...opps, ...walkers];
+  return [...opps, ...walkers].filter((d) => !banned(d));
 }
 
 /**
@@ -1064,11 +1107,13 @@ function maxHandSize(s: GameState, player: PlayerId): number | null {
   const set: { ts: number; value: () => number | null }[] = [];
   const tsOf = (id: ObjectId | undefined, timestamp: number | undefined) =>
     timestamp ?? (id ? (s.objects[id]?.timestamp ?? 0) : 0);
-  for (const { id, timestamp } of playerStatics(s, player, "noMaxHandSize"))
-    set.push({ ts: tsOf(id, timestamp), value: () => null });
   for (const { id, ab, timestamp } of playerStatics(s, player, "maxHandSize")) {
     const amount = ab.maxHandSize;
     if (amount === undefined) continue;
+    if (amount === "none") {
+      set.push({ ts: tsOf(id, timestamp), value: () => null });
+      continue;
+    }
     const ctx = staticContext(s, (id && s.objects[id]?.controller) || player, id, { sourceDefId: "" });
     set.push({ ts: tsOf(id, timestamp), value: () => Math.max(0, evalAmount(s, ctx, amount)) });
   }
@@ -1621,16 +1666,16 @@ export function checkGameOver(s: GameState): void {
     if (player.drewFromEmptyLibrary === "win") {
       player.drewFromEmptyLibrary = false;
       const opponents = opponentsOf(s, p);
-      if (!opponents.some((q) => playerStatic(s, q, "cantLose"))) losers.push(...opponents.filter((q) => !losers.includes(q)));
+      if (!opponents.some((q) => cantLose(s, q))) losers.push(...opponents.filter((q) => !losers.includes(q)));
       continue;
     }
     // Herald of Eternal Dawn : « vous ne pouvez pas perdre la partie ». 704.5c : 10 marqueurs poison ou plus.
     // Marina Vendrell's Grimoire : « vous ne perdez pas la partie pour avoir 0 point de vie ou moins ».
-    const lifeLoss = player.life <= 0 && !playerStatic(s, p, "noLoseForLife");
+    const lifeLoss = player.life <= 0 && !cantLose(s, p, "life");
     const poisoned = (player.counters?.poison ?? 0) >= 10;
     // 704.6c : 21 blessures de combat ou plus d'un même commandant au cours de la partie.
     const commanderDamage = !!s.commander && Object.values(s.commander.cards).some((c) => (c.damage[p] ?? 0) >= 21);
-    if ((lifeLoss || player.drewFromEmptyLibrary || poisoned || commanderDamage) && !playerStatic(s, p, "cantLose")) {
+    if ((lifeLoss || player.drewFromEmptyLibrary || poisoned || commanderDamage) && !cantLose(s, p)) {
       losers.push(p);
       emit({
         type: "lose",

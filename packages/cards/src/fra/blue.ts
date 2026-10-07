@@ -7,6 +7,7 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   costReducer,
+  doesntUntap,
   empower,
   entersWith,
   fx,
@@ -177,13 +178,8 @@ export const BLUE: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.tap(ref.attached), fx.prepare(ref.attached, false)], {
         label: "engage et dé-prépare la créature",
       }),
-      staticAbility(
-        "attached",
-        { loseAllAbilities: true, addKeywords: ["doesntUntap"] },
-        {
-          label: "Perd toutes ses capacités, ne se dégage pas",
-        },
-      ),
+      staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
+      doesntUntap("attached"),
     ],
   },
   "Semester Foreseer": {

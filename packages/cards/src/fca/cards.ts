@@ -6,6 +6,7 @@ import {
   amount,
   type CardScript,
   cond,
+  doesntUntap,
   entersWith,
   eventReplacement,
   fx,
@@ -254,7 +255,7 @@ export const CARDS: Record<string, CardScript> = {
   "Traxos, Scourge of Kroog": {
     abilities: [
       entersWith({ tapped: true, label: "Arrive engagé" }),
-      staticAbility("self", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas lors de votre étape de dégagement" }),
+      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
       triggered(
         when.castSpell("you", { anyOf: [{ types: ["Artifact"] }, { legendary: true }, { subtype: "Saga" }] }),
         [fx.untap(ref.self)],
@@ -632,7 +633,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Bolas's Citadel": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
       playerStatic({
         playFrom: { zone: "libraryTop", what: "lands" },
         label: "Vous pouvez jouer des terrains du dessus de votre bibliothèque",

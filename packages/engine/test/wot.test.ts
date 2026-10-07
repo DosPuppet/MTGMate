@@ -513,3 +513,21 @@ describe("Rééditions de WOT, PLAN-A A4a", () => {
     expect(s.players.p2?.graveyard).toHaveLength(2);
   });
 });
+
+describe("Intruder Alarm (PLAN-H, H8b)", () => {
+  it("les créatures ne se dégagent pas lors de l'étape de dégagement de leur contrôleur (les terrains, si) ; une créature qui arrive les dégage toutes", () => {
+    let s = scenario({
+      active: "p2",
+      p1: {
+        battlefield: ["Intruder Alarm", { name: "Bear Cub", tapped: true }, { name: "Forest", tapped: true }],
+        hand: ["Llanowar Elves"],
+      },
+    });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    const forest = idOf(s, "p1", "battlefield", "Forest");
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+    expect([s.objects[cub]?.tapped, s.objects[forest]?.tapped]).toEqual([true, false]);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Llanowar Elves") }));
+    expect(s.objects[cub]?.tapped).toBe(false);
+  });
+});

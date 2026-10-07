@@ -21,6 +21,7 @@ import {
   type PlayerId,
   RulesError,
   submit,
+  untapStepRule,
 } from "@mtgx/engine";
 
 // ---------------------------------------------------------------------------
@@ -29,11 +30,17 @@ import {
 
 type Profile = Pick<Characteristics, "power" | "toughness" | "keywords" | "abilities">;
 
+/** Une créature qui ne se dégage pas lors de l'étape de dégagement de son contrôleur (Claustrophobia, Mana Vault…). */
+export function staysTapped(s: GameState, id: ObjectId): boolean {
+  return untapStepRule(s, id) === true;
+}
+
 /**
  * Valeur d'une créature : une part offensive (force, évasion) et une part défensive (endurance, blocage).
  * « Ne peut pas attaquer » annule la première, « ne peut pas bloquer » l'essentiel de la seconde (Pacifisme : les deux).
+ * `stuck` : elle ne se dégage pas lors de l'étape de dégagement de son contrôleur (`staysTapped`).
  */
-export function profileValue(c: Profile): number {
+export function profileValue(c: Profile, stuck = false): number {
   const p = Math.max(0, c.power);
   const t = c.toughness;
   if (t <= 0) return 0;
@@ -57,7 +64,7 @@ export function profileValue(c: Profile): number {
   let v = 0.5 + offense + defense;
   if (k.has("hexproof")) v += 0.6;
   if (k.has("indestructible")) v += 1.5;
-  if (k.has("doesntUntap")) v *= 0.4;
+  if (stuck) v *= 0.4;
   for (const a of c.abilities) v += a.kind === "mana" ? 0.6 : 0.4;
   return v;
 }
@@ -159,7 +166,7 @@ export function incomingDamage(s: GameState, me: PlayerId, dc = durableChars(s))
     for (const id of creatures(p)) {
       const k = dc(id).keywords;
       if ((k.includes("cantAttack") || k.includes("defender")) && !k.includes("attacksDespiteDefender")) continue;
-      if (k.includes("doesntUntap") && s.objects[id]?.tapped) continue;
+      if (s.objects[id]?.tapped && staysTapped(s, id)) continue;
       const dmg = Math.max(0, dc(id).power) * (k.includes("doubleStrike") ? 2 : 1);
       if (dmg === 0) continue;
       if (k.includes("unblockable") || (k.includes("flying") && airBlockers === 0)) air += dmg;
@@ -205,7 +212,7 @@ export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): nu
     const c = dc(id);
     const sign = c.controller === me ? 1 : -w;
     let v: number;
-    if (c.types.includes("Creature")) v = profileValue(c);
+    if (c.types.includes("Creature")) v = profileValue(c, staysTapped(s, id));
     // Planeswalker : vaut d'autant plus qu'il a de loyauté (source d'avantage à chaque tour).
     else if (c.types.includes("Planeswalker")) v = 3 + (o.counters.loyalty ?? 0) * 0.9;
     else if (c.types.includes("Land")) {

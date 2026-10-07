@@ -1,6 +1,6 @@
 import { evalAmount, staticContext } from "./effects";
 import type { AmountMod } from "./modifiers";
-import { alivePlayers, chars, commandZoneAbilities, newId, nextTimestamp, obj, opponentsOf, snapshot } from "./state";
+import { alivePlayers, chars, commandZoneAbilities, isCreature, newId, nextTimestamp, obj, opponentsOf, snapshot } from "./state";
 import { matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -70,7 +70,7 @@ function current(s: GameState): Index {
     keysOf(p);
     for (const e of list) {
       if (e.ab.kind === "playerStatic") {
-        const affected = e.ab.affects === "each" ? alivePlayers(s) : e.ab.affects === "opponents" ? opponentsOf(s, p) : [p];
+        const affected = affectedPlayers(s, p, e.id, e.ab.affects);
         for (const k of Object.keys(e.ab)) {
           if (NOT_KEYS.has(k) || !(e.ab as unknown as Record<string, unknown>)[k]) continue;
           for (const q of affected) {
@@ -90,6 +90,23 @@ function current(s: GameState): Index {
   const out = { key, byPlayer, statics, replacements };
   cache.set(s, out);
   return out;
+}
+
+/** Joueurs que touche une statique de joueur contrôlée par `p` (`affects`). */
+function affectedPlayers(s: GameState, p: PlayerId, sourceId: ObjectId, affects: PlayerStaticAbilityDef["affects"]): PlayerId[] {
+  switch (affects) {
+    case "each":
+      return alivePlayers(s);
+    case "opponents":
+      return opponentsOf(s, p);
+    case "enchanted": {
+      // Grievous Wound : le joueur que la source enchante (aucun si elle n'est pas attachée à un joueur).
+      const host = s.objects[sourceId]?.attachedTo;
+      return host && s.players[host] && !s.players[host]?.lost ? [host] : [];
+    }
+    default:
+      return [p];
+  }
 }
 
 function index(s: GameState): Map<PlayerId, Entry[]> {
@@ -249,6 +266,69 @@ export function playerStatic(s: GameState, player: PlayerId, key: PlayerStaticKe
   return playerStatics(s, player, key).length > 0;
 }
 
+/**
+ * Le joueur ne peut-il pas perdre la partie (104.3) ? `reason: "life"` : pour avoir 0 point de vie ou moins (704.5a),
+ * que `cantLose: "life"` suffit à empêcher (Marina Vendrell's Grimoire) ; sinon seul `cantLose: true` (Herald of Eternal
+ * Dawn), qui empêche aussi ses adversaires de gagner.
+ */
+export function cantLose(s: GameState, player: PlayerId, reason?: "life"): boolean {
+  return playerStatics(s, player, "cantLose").some(({ ab }) => ab.cantLose === true || (reason && ab.cantLose === reason));
+}
+
+/** Le joueur passe-t-il son étape de pioche, ou les tours supplémentaires qu'il devrait commencer (500.11) ? */
+export function skips(s: GameState, player: PlayerId, what: "drawStep" | "extraTurns"): boolean {
+  return playerStatics(s, player, "skips").some(({ ab }) => ab.skips === what);
+}
+
+/**
+ * Les blessures ne peuvent-elles pas être prévenues (Sunspine Lynx ; Frenzied Baloth : celles de combat) ? Ces statiques
+ * concernent tous les joueurs : il suffit qu'un joueur en ait une.
+ */
+export function damageUnpreventable(s: GameState, combat: boolean): boolean {
+  return s.playerOrder.some((p) =>
+    playerStatics(s, p, "damageUnpreventable").some(({ ab }) => ab.damageUnpreventable === true || combat),
+  );
+}
+
+/**
+ * Le joueur peut-il regarder cet objet caché à tout moment (`lookAt`) ? La carte du dessus de sa bibliothèque (Vizier of
+ * the Menagerie, et toute permission de jouer depuis le dessus de la bibliothèque, famille C) ou une créature face cachée
+ * d'un adversaire (Found Footage ; 708.5 : son contrôleur la voit toujours).
+ */
+export function mayLookAt(s: GameState, viewer: PlayerId, id: ObjectId): boolean {
+  const o = s.objects[id];
+  if (!o) return false;
+  if (o.zone === "library") {
+    if (s.players[viewer]?.library[0] !== id) return false;
+    return (
+      playerStatics(s, viewer, "lookAt").some(({ ab }) => ab.lookAt === "libraryTop") ||
+      playerStatics(s, viewer, "playFrom").some(({ ab }) => ab.playFrom?.zone === "libraryTop")
+    );
+  }
+  return (
+    o.zone === "battlefield" &&
+    !!o.faceDown &&
+    o.controller !== viewer &&
+    isCreature(s, id) &&
+    playerStatics(s, viewer, "lookAt").some(({ ab }) => ab.lookAt === "faceDown")
+  );
+}
+
+/**
+ * 502.3 : comment ce permanent se dégage lors de l'étape de dégagement de son contrôleur, d'après les remplacements
+ * `untap` limités à cette étape (`untapStep`) : `true`, il ne se dégage pas ; `"may"`, son contrôleur peut choisir de ne
+ * pas le dégager (Hedge Whisperer) ; `undefined`, normalement.
+ */
+export function untapStepRule(s: GameState, id: ObjectId): true | "may" | undefined {
+  let rule: true | "may" | undefined;
+  for (const a of eventReplacements(s, "untap")) {
+    if (!a.r.untapStep || !a.r.modify.prevent || !recipientMatches(s, a, id)) continue;
+    if (a.r.untapStep === true) return true;
+    rule = "may";
+  }
+  return rule;
+}
+
 /** Le joueur ne peut pas perdre de points de vie (« votre total de points de vie ne peut pas changer ») ? */
 export function lifeLossPrevented(s: GameState, player: PlayerId): boolean {
   return eventReplacements(s, "lifeLoss").some((a) => a.r.modify.prevent && recipientMatches(s, a, player));
@@ -325,9 +405,19 @@ export function addPlayerEffect(
   s.version += 1; // des caractéristiques peuvent en dépendre
 }
 
-/** Retire le premier effet à usage unique de ce joueur qui porte `key` ; true s'il y en avait un. */
-export function consumePlayerEffect(s: GameState, player: PlayerId, key: PlayerStaticKey): boolean {
-  const live = liveEffects(s, player).find((e) => e.once && !!e.ability[key]);
+/**
+ * Retire le premier effet à usage unique de ce joueur qui porte `key` (avec cette valeur, si elle est donnée) ; true s'il
+ * y en avait un.
+ */
+export function consumePlayerEffect<K extends PlayerStaticKey>(
+  s: GameState,
+  player: PlayerId,
+  key: K,
+  value?: PlayerStaticAbilityDef[K],
+): boolean {
+  const live = liveEffects(s, player).find(
+    (e) => e.once && !!e.ability[key] && (value === undefined || e.ability[key] === value),
+  );
   if (!live) return false;
   s.playerEffects = s.playerEffects.filter((e) => e !== live);
   // Des capacités statiques ou des F/E peuvent dépendre des effets du joueur (comme `consumeReplacement`).

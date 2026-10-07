@@ -216,7 +216,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Iron Lad, Diverging Destiny": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
       activated({
         tap: true,
         effects: [fx.when(cond.refMatches(ref.libraryTop(ref.you), { types: ["Artifact"] }), fx.draw(1))],
@@ -258,7 +258,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Ms. Marvel, Kamala Khan": {
     abilities: [
-      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
       triggered(
         when.castSpell("you", undefined, { objects: { types: ["Creature"], controller: "you" } }),
         [

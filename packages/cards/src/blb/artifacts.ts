@@ -7,6 +7,7 @@ import {
   type CardScript,
   cond,
   cost,
+  doesntUntap,
   FISH,
   FOOD,
   fx,
@@ -249,10 +250,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Charmed Sleep": {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
-    abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
-    ],
+    abilities: [triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature" }), doesntUntap("attached")],
   },
   "Mind Spring": { spell: spell([], [fx.draw(amount.x)]) },
   "Thieving Otter": {

@@ -6,6 +6,7 @@ import {
   BASIC_LAND,
   type CardScript,
   cond,
+  doesntUntap,
   entersWith,
   eventReplacement,
   fx,
@@ -192,7 +193,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Intruder Alarm": {
     abilities: [
-      staticAbility({ types: ["Creature"] }, { addKeywords: ["doesntUntap"] }, { label: "Les créatures ne se dégagent pas" }),
+      doesntUntap({ types: ["Creature"] }, { label: "Les créatures ne se dégagent pas" }),
       triggered(when.enters({ types: ["Creature"] }), [fx.untap(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }))], {
         label: "Une créature arrive : dégagez toutes les créatures",
       }),
@@ -516,7 +517,7 @@ export const CARDS: Record<string, CardScript> = {
   "Phyrexian Unlife": {
     abilities: [
       playerStatic({
-        noLoseForLife: true,
+        cantLose: "life",
         infectDamageAtZeroLife: true,
         label: "Vous ne perdez pas pour 0 PV ou moins ; à 0 PV ou moins, les blessures vous sont infligées comme par l'infection",
       }),
@@ -582,7 +583,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   Necropotence: {
     abilities: [
-      playerStatic({ skipDrawStep: true, label: "Passez votre étape de pioche" }),
+      playerStatic({ skips: "drawStep", label: "Passez votre étape de pioche" }),
       triggered({ on: "discard", whose: "you" }, [fx.exileCard(ref.eventObject)], {
         label: "Vous défaussez une carte : exilez-la de votre cimetière",
       }),

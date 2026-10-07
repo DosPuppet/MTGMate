@@ -91,15 +91,12 @@ export type Keyword =
   | "cantAttack"
   | "unblockable"
   | "mustAttack"
-  | "doesntUntap"
   /** Stuck in Summoner's Sanctum : « ses capacités activées ne peuvent pas être activées ». */
   | "noActivatedAbilities"
   /** Ancient Adamantoise : « les blessures ne sont pas retirées de cette créature pendant l'étape de nettoyage ». */
   | "keepsDamage"
   /** Ancient Adamantoise : les blessures infligées à son contrôleur et à ses autres permanents lui sont infligées à la place. */
   | "absorbsDamage"
-  /** Diamond Weapon : « prévenez toutes les blessures de combat qui devraient lui être infligées ». */
-  | "combatDamageImmune"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
   | "convoke"
   /** Improvisation (702.126) : les artefacts dégagés peuvent payer {1} chacun du coût du sort. */
@@ -123,9 +120,7 @@ export type Keyword =
   /** « Ne peut pas être sacrifié » (Zurgo, Thunder's Decree : ses jetons Guerrier pendant votre étape de fin). */
   | "cantBeSacrificed"
   /** « Ne peut pas devenir suspecte » (Airtight Alibi, 701.60). */
-  | "cantBeSuspected"
-  /** « Vous pouvez choisir de ne pas dégager cette créature lors de votre étape de dégagement » (Hedge Whisperer). */
-  | "mayNotUntap";
+  | "cantBeSuspected";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -133,15 +128,12 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "cantAttack",
   "unblockable",
   "mustAttack",
-  "doesntUntap",
   "noActivatedAbilities",
   "keepsDamage",
   "absorbsDamage",
-  "combatDamageImmune",
   "damageHealsFirst",
   "cantBeSacrificed",
   "cantBeSuspected",
-  "mayNotUntap",
 ];
 
 export const KEYWORDS: readonly Keyword[] = [

@@ -333,7 +333,7 @@ export const RARES: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         uncounterable: { filter: { types: ["Creature"] } },
-        combatDamageUnpreventable: true,
+        damageUnpreventable: "combat",
         label: "Sorts de créature incontrecarrables, blessures de combat imprévenables",
       }),
     ],

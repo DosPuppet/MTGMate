@@ -10,6 +10,7 @@ import {
   costReducer,
   DRAGON,
   DRAGON_5,
+  doesntUntap,
   entersWith,
   eventReplacement,
   fx,
@@ -193,8 +194,10 @@ export const RED: Record<string, CardScript> = {
     abilities: [triggered(when.castSpell("you", INSTANT_SORCERY), [fx.createTokens(DRAGON_5)], { label: "Dragon 5/5 volant" })],
   },
   "Slumbering Cerberus": {
-    keywords: ["doesntUntap"],
-    abilities: [triggered(when.eachEndStep, [fx.untap(ref.self)], { condition: cond.morbid, label: "Morbide : se dégage" })],
+    abilities: [
+      triggered(when.eachEndStep, [fx.untap(ref.self)], { condition: cond.morbid, label: "Morbide : se dégage" }),
+      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
+    ],
   },
   "Sower of Chaos": {
     abilities: [

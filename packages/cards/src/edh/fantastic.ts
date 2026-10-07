@@ -303,7 +303,7 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
             fx.draw(1, ref.eventPlayer),
           ),
           // « pendant son prochain tour » : jusqu'au prochain tour du contrôleur de Willie (son tour à lui passe avant).
-          ...fx.when(cond.v("d"), fx.untilYourNextTurn({ cantAttackPlayer: "you" }, ref.eventPlayer)),
+          ...fx.when(cond.v("d"), fx.untilYourNextTurn({ cantAttack: { of: "you" } }, ref.eventPlayer)),
         ],
         { label: "Vous piochez ; ce joueur peut piocher, il ne pourra alors pas vous attaquer" },
       ),

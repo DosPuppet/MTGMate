@@ -5,6 +5,7 @@ import {
   amount,
   cond,
   costReducer,
+  doesntUntap,
   entersWith,
   fx,
   OUTLAW,
@@ -252,11 +253,8 @@ export const BLUE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Artifact", "Creature"] }, label: "artefact ou créature" },
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez le permanent enchanté" }),
-      staticAbility(
-        "attached",
-        { loseAllAbilities: true, addKeywords: ["doesntUntap"] },
-        { label: "Sans capacité, ne se dégage pas" },
-      ),
+      staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
+      doesntUntap("attached"),
     ],
   },
   "Take the Fall": {

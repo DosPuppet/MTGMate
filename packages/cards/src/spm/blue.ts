@@ -123,7 +123,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Madame Web, Clairvoyant": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { anyOf: [{ subtype: "Spider" }, { notTypes: ["Creature"] }] }, what: "spells" },
         label: "Lancez des sorts d'Araignée et des sorts non-créature depuis le dessus de votre bibliothèque",

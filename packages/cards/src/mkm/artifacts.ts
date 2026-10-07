@@ -66,7 +66,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       activated({
         mana: "{2}",
-        effects: [fx.thisTurn({ seeFaceDown: true })],
+        effects: [fx.thisTurn({ lookAt: "faceDown" })],
         label: "Ce tour-ci, vous voyez les créatures face cachée adverses",
       }),
     ],

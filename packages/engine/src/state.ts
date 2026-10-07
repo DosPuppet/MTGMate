@@ -356,8 +356,9 @@ export function tapObject(s: GameState, o: GameObject, cause?: "teamwork"): void
  */
 export function untapObject(s: GameState, o: GameObject): boolean {
   if (!o.tapped) return false;
-  // Blossombind : « la créature enchantée ne peut pas être dégagée ».
-  if (quantityMods(s, "untap", (a) => recipientMatches(s, a, o.id)).prevented) return false;
+  // Blossombind : « la créature enchantée ne peut pas être dégagée ». Ceux de l'étape de dégagement seulement
+  // (`untapStep`) sont lus par cette étape (`untapStepRule`), pas ici.
+  if (quantityMods(s, "untap", (a) => !a.r.untapStep && recipientMatches(s, a, o.id)).prevented) return false;
   if ((o.counters.stun ?? 0) > 0) {
     changeCounters(s, o, "stun", -1);
     return false;

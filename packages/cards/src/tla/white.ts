@@ -173,7 +173,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Hakoda, Selfless Commander": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Regardez la carte du dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus de votre bibliothèque" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { subtype: "Ally" }, what: "spells" },
         label: "Lancez des sorts d'Allié du dessus de votre bibliothèque",

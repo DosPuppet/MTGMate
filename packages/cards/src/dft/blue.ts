@@ -5,6 +5,7 @@ import {
   amount,
   CREATURE_OR_VEHICLE,
   cond,
+  doesntUntap,
   fx,
   manaAbility,
   ref,
@@ -39,11 +40,8 @@ export const BLUE: Record<string, CardScript> = {
     enchant: { filter: CREATURE_OR_VEHICLE, label: "créature ou Véhicule" },
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez le permanent enchanté" }),
-      staticAbility(
-        "attached",
-        { loseAllAbilities: true, addKeywords: ["doesntUntap"] },
-        { label: "Sans capacité, ne se dégage pas" },
-      ),
+      staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
+      doesntUntap("attached"),
     ],
   },
   "Gearseeker Serpent": {

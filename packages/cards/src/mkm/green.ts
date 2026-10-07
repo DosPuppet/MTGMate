@@ -14,6 +14,7 @@ import {
   type CardScript,
   cond,
   DETECTIVE,
+  doesntUntap,
   fx,
   GOBLIN,
   HUMAN,
@@ -115,7 +116,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [playerStatic({ extraLands: 1, label: "Un terrain supplémentaire à chacun de vos tours" })],
     caseToSolve: cond.controls({ types: ["Land"] }, 7),
     caseSolved: [
-      playerStatic({ lookAtTopCard: true, label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { anyOf: [{ types: ["Land"] }, { types: ["Creature", "Enchantment"] }] } },
         label: "Terrains, sorts de créature et d'enchantement du dessus de votre bibliothèque",
@@ -406,7 +407,7 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Hedge Whisperer": {
     abilities: [
-      staticAbility("self", { addKeywords: ["mayNotUntap"] }, { label: "Vous pouvez choisir de ne pas la dégager" }),
+      doesntUntap("self", { may: true }),
       activated({
         mana: "{3}{G}",
         tap: true,

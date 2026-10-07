@@ -440,8 +440,11 @@ export const RECORD_VERSION = 1;
  * - 160 : PLAN-H H8a : une seule opération « garder » (choix en ordre APNAP, puis sacrifice ou destruction simultanés
  *   ; Tragic Arrogance : le lanceur choisit), Kindred Judgment, Sunspine Lynx, Momentum Breaker et Command Bridge sur
  *   des formes communes
+ * - 161 : PLAN-H H8b : statiques de joueur fusionnées (cantGainLife du joueur enchanté, blessures impossibles à
+ *   prévenir, cantLose, skips, maxHandSize, lookAt, cantAttack), « ne se dégage pas » en remplacement de l'étape de
+ *   dégagement (Prop Room, perte des capacités), Hedge Whisperer : vrai choix (502.3)
  */
-export const RULES_VERSION = 160;
+export const RULES_VERSION = 161;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -113,7 +113,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
         fx.unlessPays(
           ref.eventPlayer,
           { mana: "{2}" },
-          fx.thisTurn({ cantAttackPlaneswalkers: { of: "you", subtype: "Jace" } }, ref.eventPlayer),
+          fx.thisTurn({ cantAttack: { of: "you", subtype: "Jace" } }, ref.eventPlayer),
         ),
         { label: "L'adversaire paie {2}, sinon ses créatures ne peuvent pas attaquer vos Jace ce tour-ci" },
       ),

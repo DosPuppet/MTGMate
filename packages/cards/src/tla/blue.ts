@@ -7,6 +7,7 @@ import {
   chapter,
   cond,
   costReducer,
+  doesntUntap,
   exhaust,
   fx,
   manaAbility,
@@ -293,7 +294,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        [fx.tap(ref.target()), fx.modifyWhileYouControl(ref.target(), { addKeywords: ["doesntUntap"] })],
+        [fx.tap(ref.target()), fx.modifyWhileYouControl(ref.target(), { addAbilities: [doesntUntap("self")] })],
         {
           targets: [target.upTo(1, target.creature())],
           label: "Engagez une créature ; elle ne se dégage plus tant que vous contrôlez Ty Lee",
@@ -331,7 +332,7 @@ export const BLUE: Record<string, CardScript> = {
   "Watery Grasp": {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
+      doesntUntap("attached"),
       activated({
         mana: "{5}",
         waterbend: true,
@@ -378,7 +379,7 @@ export const BLUE: Record<string, CardScript> = {
           fx.moveTo(ref.graveyardOf(ref.you), { to: "libraryTop", shuffle: true }),
           fx.draw(7),
           fx.emblem("Spirit Water Revival", "Vous n'avez pas de taille maximale de main.", [
-            playerStatic({ noMaxHandSize: true, label: "Pas de taille maximale de main" }),
+            playerStatic({ maxHandSize: "none", label: "Pas de taille maximale de main" }),
           ]),
         ),
         ...fx.when(cond.not(cond.kicked), fx.draw(2)),

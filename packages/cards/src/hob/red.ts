@@ -7,6 +7,7 @@ import {
   chapter,
   cond,
   DRAGON_6,
+  doesntUntap,
   fx,
   modal,
   mode,
@@ -41,13 +42,7 @@ export const RED: Record<string, CardScript> = {
   },
   // Storied : lu dans le texte.
   "Bombur, Gentle Dreamer": {
-    abilities: [
-      staticAbility(
-        "self",
-        { addKeywords: ["doesntUntap"] },
-        { condition: cond.not(cond.enduringStory), label: "Ne se dégage pas sans récit durable" },
-      ),
-    ],
+    abilities: [doesntUntap("self", { condition: cond.not(cond.enduringStory), label: "Ne se dégage pas sans récit durable" })],
   },
   "Bothersome Noisemaker": {
     abilities: [

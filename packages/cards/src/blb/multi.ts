@@ -170,7 +170,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Glarb, Calamity's Augur": {
     abilities: [
-      playerStatic({ lookAtTopCard: true, label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { anyOf: [{ types: ["Land"] }, { minManaValue: 4, notTypes: ["Land"] }] } },
         label: "Terrains et sorts de VM 4 ou plus depuis le dessus",

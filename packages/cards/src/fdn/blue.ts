@@ -7,6 +7,7 @@ import {
   cond,
   costReducer,
   DRAKE,
+  doesntUntap,
   FAERIE,
   flashForAll,
   fx,
@@ -290,7 +291,7 @@ export const BLUE: Record<string, CardScript> = {
           fx.draw(amount.x),
           fx.untapUpTo({ types: ["Land"] }, 5),
           fx.emblem("Finale of Revelation", "Vous n'avez pas de taille de main maximale.", [
-            playerStatic({ noMaxHandSize: true }),
+            playerStatic({ maxHandSize: "none" }),
           ]),
         ),
         fx.exileOnResolve,
@@ -371,10 +372,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Starlight Snare": {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
-    abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "engage la créature" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
-    ],
+    abilities: [triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "engage la créature" }), doesntUntap("attached")],
   },
   "Storm Fleet Spy": {
     abilities: [triggered(when.entersSelf, [fx.draw(1)], { condition: cond.raid, label: "Raid : piochez une carte" })],

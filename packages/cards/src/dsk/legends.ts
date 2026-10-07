@@ -15,6 +15,7 @@ import {
   chapter,
   cond,
   costReducer,
+  doesntUntap,
   eerie,
   eventReplacement,
   fx,
@@ -242,7 +243,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Marina Vendrell's Grimoire": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(5)], { condition: cond.wasCast, label: "Piochez cinq cartes" }),
-      playerStatic({ noMaxHandSize: true, noLoseForLife: true, label: "Pas de main maximale ; pas de défaite à 0 PV" }),
+      playerStatic({ maxHandSize: "none", cantLose: "life", label: "Pas de main maximale ; pas de défaite à 0 PV" }),
       triggered(when.gainLife, [fx.draw(amount.eventAmount)], { label: "Piochez autant de cartes" }),
       triggered(
         when.loseLife("you"),
@@ -286,7 +287,7 @@ export const LEGENDS: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature enchantée" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
+      doesntUntap("attached"),
       activated({
         mana: "{4}{U}{U}",
         sorcerySpeed: true,
@@ -906,7 +907,7 @@ export const LEGENDS: Record<string, CardScript> = {
   // Artefacts
   "Found Footage": {
     abilities: [
-      playerStatic({ seeFaceDown: true, label: "Vous voyez les créatures face cachée adverses" }),
+      playerStatic({ lookAt: "faceDown", label: "Vous voyez les créatures face cachée adverses" }),
       activated({ mana: "{2}", sacrifice: true, effects: [fx.surveil(2), fx.draw(1)], label: "Surveillance 2, piochez" }),
     ],
   },

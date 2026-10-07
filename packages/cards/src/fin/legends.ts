@@ -6,6 +6,7 @@ import {
   chapter,
   cond,
   costReducer,
+  doesntUntap,
   entersWith,
   eventReplacement,
   fx,
@@ -126,7 +127,8 @@ export const LEGENDS: Record<string, CardScript> = {
     enchant: { filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }, label: "artefact ou créature" },
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez le permanent" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap", "noActivatedAbilities"] }, { label: "Bloqué" }),
+      staticAbility("attached", { addKeywords: ["noActivatedAbilities"] }, { label: "Capacités activées bloquées" }),
+      doesntUntap("attached"),
     ],
   },
 

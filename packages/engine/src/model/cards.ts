@@ -863,7 +863,8 @@ export interface EventReplacement {
   /**
    * L'événement chiffré : blessures et perte de PV (familles E et F) ; jetons créés et marqueurs mis (famille H) ; PV
    * gagnés, cartes piochées, cartes meulées, mana produit (famille I) ; `untap` : un permanent qui se dégage (seule la
-   * prévention s'y applique : Blossombind, « ne peut pas être dégagée ») ; `payLife` : des PV payés (Ashiok, Wicked
+   * prévention s'y applique : Blossombind, « ne peut pas être dégagée » ; avec `untapStep`, « ne se dégage pas lors de
+   * l'étape de dégagement de son contrôleur ») ; `payLife` : des PV payés (Ashiok, Wicked
    * Manipulator : `instead.exileFromLibrary`, autant de cartes du dessus de la bibliothèque exilées à la place).
    */
   /** `connive` : une créature va comploter ; `modify.add` : son contrôleur pioche d'abord autant de cartes (Leader). */
@@ -924,6 +925,13 @@ export interface EventReplacement {
   sourceDefIs?: string;
   /** Bouclier : l'objet qui l'a créé (source de la capacité réflexive). */
   origin?: { id: ObjectId; defId: string };
+  /**
+   * `untap` : seulement lors de l'étape de dégagement du contrôleur du permanent (502.3, « ne se dégage pas lors de
+   * l'étape de dégagement de son contrôleur ») ; `"may"` : son contrôleur choisit de le dégager ou non (Hedge Whisperer :
+   * « vous pouvez choisir de ne pas dégager cette créature lors de votre étape de dégagement »). Sans ce champ, il ne
+   * peut pas être dégagé du tout (Blossombind).
+   */
+  untapStep?: true | "may";
 }
 
 /** Remplacement d'un événement chiffré imprimé sur un permanent (« si une source que vous contrôlez devait… »). */
@@ -1131,23 +1139,30 @@ export interface PlayerStaticAbilityDef {
   noLegendRule?: boolean | ObjectFilter;
   /** Jace's Machinations : capacités de loyauté de vos Jace à vitesse d'éphémère. */
   jaceLoyaltyInstant?: boolean;
-  /** Screaming Nemesis : vous ne pouvez pas gagner de points de vie. */
+  /**
+   * « Ne peut pas gagner de points de vie » (119.7) : Screaming Nemesis (effet), Rampaging Ferocidon (`affects: "each"`),
+   * Archfiend of Despair (`affects: "opponents"`), Grievous Wound (`affects: "enchanted"`). Un « ne peut pas » l'emporte (101.2) : aucun remplacement du gain ne s'applique alors
+   * (ni « autant plus N », ni « le double »), et rien ne se déclenche.
+   */
   cantGainLife?: boolean;
   /** K'rrik : chaque symbole de cette couleur de vos coûts se paie aussi avec 2 PV (mana phyrexian, 107.4f). */
   phyrexianMana?: ManaType;
   /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
   copyNextExhaust?: boolean;
   /**
-   * Sandswirl Wanderglyph : vous ne pouvez pas attaquer ce joueur (ni ses planeswalkers) ; dans un effet (`fx.thisTurn`),
-   * `"you"` désigne le contrôleur de l'effet, fixé à la résolution.
+   * Les créatures de ce joueur ne peuvent pas attaquer `of` ni ses planeswalkers (Sandswirl Wanderglyph) ; avec `subtype`,
+   * seulement ses planeswalkers de ce sous-type (Jace, Multiverse Architect : « vos Jace »). Dans un effet
+   * (`fx.thisTurn`), `"you"` désigne le contrôleur de l'effet, fixé à la résolution. Lu par `attackableDefenders`.
    */
-  cantAttackPlayer?: PlayerId;
+  cantAttack?: { of: PlayerId; subtype?: string };
   /** « Vous avez la défense talismanique » ; un filtre : seulement contre ces sources (Veil of Summer : bleues et noires). */
   hexproof?: boolean | ObjectFilter;
-  /** « Vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner. » */
-  cantLose?: boolean;
-  /** « Vous n'avez pas de taille de main maximale. » */
-  noMaxHandSize?: boolean;
+  /**
+   * `true` : « vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner » (Herald of Eternal Dawn,
+   * Angel's Grace) ; `"life"` : vous ne perdez pas la partie pour avoir 0 point de vie ou moins (Marina Vendrell's
+   * Grimoire, Phyrexian Unlife). Lu par `cantLose` (statics.ts).
+   */
+  cantLose?: true | "life";
   /** « Vous gagnez des points de vie au lieu d'en perdre à cause de la radiation » (Strong, the Brutish Thespian). */
   radiationGains?: boolean;
   /** Mots-clés des sorts correspondants que le joueur contrôle (Lo and Li : « vos sorts de Leçon ont le lien de vie »). */
@@ -1168,11 +1183,6 @@ export interface PlayerStaticAbilityDef {
    */
   /** Un filtre : protection contre les sources qui y correspondent (Serra's Emissary : le type de carte choisi). */
   protection?: "opponents" | "everything" | ObjectFilter;
-  /**
-   * Ses créatures ne peuvent pas attaquer les planeswalkers de ce joueur qui ont ce sous-type (Jace, Multiverse Architect :
-   * « vos Jace ») ; dans un effet, `"you"` désigne le contrôleur de l'effet.
-   */
-  cantAttackPlaneswalkers?: { of: PlayerId; subtype: string };
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
   winFirstCoinFlips?: boolean;
   /**
@@ -1183,8 +1193,6 @@ export interface PlayerStaticAbilityDef {
   uncounterable?: { filter?: ObjectFilter; abilities?: boolean; everyone?: boolean };
   /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
   firstSpellFree?: boolean;
-  /** Frenzied Baloth : les blessures de combat ne peuvent pas être prévenues (tous). */
-  combatDamageUnpreventable?: boolean;
   /** Tannuk, Steadfast Second : les cartes de votre main correspondant au filtre ont la distorsion à ce coût. */
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };
   /**
@@ -1196,10 +1204,17 @@ export interface PlayerStaticAbilityDef {
   maxBlockingCreatures?: number;
   /** « Max speed — … » : la capacité ne s'applique que si la condition est remplie. */
   condition?: Condition;
-  /** Joueurs concernés : son contrôleur (par défaut), ses adversaires, ou chaque joueur (« les joueurs ne peuvent pas… »). */
-  affects?: "opponents" | "each";
-  /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
-  lookAtTopCard?: boolean;
+  /**
+   * Joueurs concernés : son contrôleur (par défaut), ses adversaires, chaque joueur (« les joueurs ne peuvent pas… »), ou
+   * le joueur que la source enchante (`enchanted`, Grievous Wound : « le joueur enchanté ne peut pas… »).
+   */
+  affects?: "opponents" | "each" | "enchanted";
+  /**
+   * Informations cachées que le joueur peut regarder à tout moment : la carte du dessus de sa bibliothèque (`libraryTop`,
+   * Vizier of the Menagerie) ou les créatures face cachée de ses adversaires (`faceDown`, Found Footage). Lu par
+   * `mayLookAt` (statics.ts).
+   */
+  lookAt?: "libraryTop" | "faceDown";
   /**
    * Taxe d'attaque : les créatures ne peuvent vous attaquer que si leur contrôleur paie {N} pour chacune (Propaganda : pas
    * les attaques contre vos planeswalkers) ; `defending: "youOrYourPlaneswalkers"` : vous ou vos planeswalkers (Archangel of
@@ -1220,24 +1235,22 @@ export interface PlayerStaticAbilityDef {
   powerUpExtraUses?: number;
   /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */
   enduringStory?: boolean;
-  /** Ral Zarek : « passe son prochain tour » (un effet par tour passé, consommé). */
-  skipTurn?: boolean;
-  /** « Passez votre étape de pioche » (Necropotence, Necrodominance). */
-  skipDrawStep?: boolean;
+  /**
+   * Ce que le joueur passe (500.11) : son prochain tour (`turn`, Ral Zarek : un effet par tour passé, consommé), son
+   * étape de pioche (`drawStep`, Necropotence, Necrodominance) ou les tours supplémentaires qu'il devrait commencer
+   * (`extraTurns`, Trouble in Pairs avec `affects: "opponents"`). Lu par `skips` (statics.ts).
+   */
+  skips?: "turn" | "drawStep" | "extraTurns";
   /** Library of Leng : une carte défaussée par un effet peut être mise au-dessus de votre bibliothèque. */
   discardToLibraryTop?: boolean;
   /** Notion Thief : un adversaire qui pioche (sauf la première carte de son étape de pioche) ne pioche pas ; vous piochez. */
   stealsOpponentDraws?: boolean;
-  /** Trouble in Pairs (`affects: "opponents"`) : ce joueur passe les tours supplémentaires qu'il devrait commencer. */
-  skipExtraTurns?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
   /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
   untapCreaturesOnOthersUntap?: boolean;
   /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
   ignoreOpponentsHexproofWard?: boolean;
-  /** Grievous Wound : le joueur enchanté ne peut pas gagner de points de vie. */
-  enchantedPlayerCantGainLife?: boolean;
   /** Warped Space : une fois par tour, un sort lancé depuis l'exil peut l'être en payant {0}. */
   freeFromExileOncePerTurn?: boolean;
   /** Leyline of Mutation : coût alternatif pour tous vos sorts. */
@@ -1249,13 +1262,10 @@ export interface PlayerStaticAbilityDef {
   altCostAll?: { mana?: ManaCost; collectEvidence?: number; filter?: ObjectFilter; webSlinging?: boolean };
   /**
    * Taille de main maximale (402.2), évaluée pour le contrôleur de la source : Necrodominance (5), Winter, Misanthropic
-   * Guide (`affects: "opponents"`) ; la plus petite s'applique.
+   * Guide (`affects: "opponents"`) ; `"none"` : « vous n'avez pas de taille de main maximale ». Effets sur les règles,
+   * appliqués dans l'ordre de leurs horodatages (613.11, `maxHandSize` de turn.ts).
    */
-  maxHandSize?: Amount;
-  /** Found Footage : vous pouvez regarder les créatures face cachée de vos adversaires à tout moment. */
-  seeFaceDown?: boolean;
-  /** Marina Vendrell's Grimoire : vous ne perdez pas la partie pour avoir 0 point de vie ou moins. */
-  noLoseForLife?: boolean;
+  maxHandSize?: Amount | "none";
   /** Phyrexian Unlife : tant que vous avez 0 point de vie ou moins, les blessures vous sont infligées comme par l'infection. */
   infectDamageAtZeroLife?: boolean;
   /** Angel's Grace : les blessures qui réduiraient vos PV en dessous de N les réduisent à N à la place. */
@@ -1264,8 +1274,11 @@ export interface PlayerStaticAbilityDef {
   winOnEmptyDraw?: boolean;
   /** Ground Seal (`affects: "each"`) : les cartes des cimetières ne peuvent pas être ciblées par vos sorts et capacités. */
   cantTargetGraveyardCards?: boolean;
-  /** Sunspine Lynx (tous) : les blessures ne peuvent pas être prévenues. */
-  damageUnpreventable?: boolean;
+  /**
+   * Les blessures ne peuvent pas être prévenues (tous les joueurs) : toutes (`true`, Sunspine Lynx) ou celles de combat
+   * (`"combat"`, Frenzied Baloth). Lu par `damageUnpreventable` (statics.ts).
+   */
+  damageUnpreventable?: true | "combat";
   /** Twists and Turns : « si une créature que vous contrôlez devait explorer, regardez 1 d'abord ». */
   scryBeforeExplore?: boolean;
   label?: string;

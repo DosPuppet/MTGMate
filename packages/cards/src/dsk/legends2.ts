@@ -31,7 +31,7 @@ export const LEGENDS2: Record<string, CardScript> = {
   "Grievous Wound": {
     enchant: { filter: {}, label: "joueur", player: true },
     abilities: [
-      playerStatic({ enchantedPlayerCantGainLife: true, label: "Le joueur enchanté ne peut pas gagner de points de vie" }),
+      playerStatic({ cantGainLife: true, affects: "enchanted", label: "Le joueur enchanté ne peut pas gagner de points de vie" }),
       triggered(when.attachedPlayerDamaged, [fx.loseLife(amount.halfLife(ref.attached), ref.attached)], {
         label: "Il perd la moitié de ses PV",
       }),

@@ -9,6 +9,7 @@ import {
   type CardScript,
   chapter,
   cond,
+  doesntUntap,
   equipAbility,
   eventReplacement,
   fx,
@@ -136,11 +137,8 @@ export const BLUE: Record<string, CardScript> = {
         [fx.tap(ref.attached), fx.removeCounters(ref.attached, amount.countersOn(ref.attached, "any"))],
         { label: "Engagez la créature enchantée et retirez-en tous les marqueurs" },
       ),
-      staticAbility(
-        "attached",
-        { loseAllAbilities: true, addKeywords: ["doesntUntap"] },
-        { label: "Perd toutes ses capacités et ne se dégage pas" },
-      ),
+      staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
+      doesntUntap("attached"),
     ],
   },
   "Fateful Discovery": {

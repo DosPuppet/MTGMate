@@ -18,7 +18,7 @@ import {
   type PlayerId,
   type TargetOption,
 } from "@mtgx/engine";
-import { profileValue } from "./evaluate";
+import { profileValue, staysTapped } from "./evaluate";
 import { chooseAttackers, chooseDefenders, naiveBlocks, withRequiredBlocks } from "./heuristic";
 
 /** Effets qui nuisent à leur cible : on vise alors l'adversaire (sinon ses propres créatures). */
@@ -59,7 +59,7 @@ function pickTarget(s: GameState, me: PlayerId, spec: TargetOption, bad: boolean
   const side = spec.legal.filter((id) => (bad ? !mineSide(id) : mineSide(id)));
   const pool = side.length ? side : spec.optional ? [] : spec.legal;
   const value = (id: string) =>
-    s.objects[id]?.zone === "battlefield" ? profileValue(chars(s, id)) : opps.includes(id) ? 2.5 : 0;
+    s.objects[id]?.zone === "battlefield" ? profileValue(chars(s, id), staysTapped(s, id)) : opps.includes(id) ? 2.5 : 0;
   return [...pool].sort((a, b) => value(b) - value(a))[0];
 }
 

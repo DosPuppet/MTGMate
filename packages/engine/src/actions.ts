@@ -28,6 +28,7 @@ import {
 import {
   type ActiveReplacement,
   consumeReplacement,
+  damageUnpreventable,
   eventReplacements,
   playerProtectedFrom,
   playerSide,
@@ -121,17 +122,9 @@ export function drawCards(s: GameState, p: PlayerId, n: number, turnDraw = false
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
-  // Screaming Nemesis : ce joueur ne peut pas gagner de points de vie, pour la partie.
+  // 119.7, 101.2 : « ne peut pas gagner de points de vie » (Screaming Nemesis, Giant Cindermaw ; Grievous Wound : le
+  // joueur enchanté) l'emporte sur tout remplacement du gain, qui ne s'applique donc pas.
   if (playerStatic(s, p, "cantGainLife")) return;
-  // Grievous Wound : « le joueur enchanté ne peut pas gagner de points de vie ».
-  if (
-    s.battlefield.some(
-      (id) =>
-        s.objects[id]?.attachedTo === p &&
-        chars(s, id).abilities.some((ab) => ab.kind === "playerStatic" && ab.enchantedPlayerCantGainLife),
-    )
-  )
-    return;
   // Remplacements (616.1), dans l'ordre le plus favorable au joueur qui gagne les points de vie :
   // Angel of Vitality (« autant plus 1 »), The Wind Crystal (« le double ») ; Giant Cindermaw, Mornsong Aria : « les
   // joueurs ne peuvent pas gagner de points de vie ».
@@ -413,19 +406,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       break;
     }
   }
-  // Frenzied Baloth : « les blessures de combat ne peuvent pas être prévenues ».
-  // Sunspine Lynx : « les blessures ne peuvent pas être prévenues ».
-  const unpreventable =
-    (combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"))) ||
-    s.playerOrder.some((p) => playerStatic(s, p, "damageUnpreventable"));
+  // Sunspine Lynx : « les blessures ne peuvent pas être prévenues » ; Frenzied Baloth : celles de combat.
+  const unpreventable = damageUnpreventable(s, combat);
   if (!unpreventable && preventsDamageTo(s, target, combat)) return;
-  if (
-    combat &&
-    !unpreventable &&
-    s.objects[target]?.zone === "battlefield" &&
-    chars(s, target).keywords.includes("combatDamageImmune")
-  )
-    return;
   // Protection du joueur (702.16) : les blessures des sources adverses (Absolute Virtue) ou de toute source (Teferi's
   // Protection) sont prévenues.
   if (!unpreventable && isPlayer(s, target) && playerProtectedFrom(s, target, source.controller, source.id)) return;

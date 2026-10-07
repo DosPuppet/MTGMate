@@ -144,10 +144,11 @@ interface Tip {
 export function KeywordBadges({ obj }: { obj: ObjectView }) {
   const [tip, setTip] = useState<Tip | null>(null);
   const shown = obj.keywords.filter((k) => !HIDDEN.has(k));
-  const rules = obj.blockRules ?? [];
   const protections = obj.protections ?? [];
   const powerRules = obj.powerRules ?? [];
   const goaded = obj.goaded ?? [];
+  // « Ne se dégage pas » (remplacement de l'étape de dégagement) : affiché avec les règles, comme une restriction.
+  const rules = obj.untapRule ? [...(obj.blockRules ?? []), obj.untapRule] : (obj.blockRules ?? []);
   const view = useGame((s) => s.view);
   if (shown.length === 0 && rules.length === 0 && protections.length === 0 && powerRules.length === 0 && goaded.length === 0)
     return null;

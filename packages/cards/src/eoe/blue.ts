@@ -5,6 +5,7 @@ import {
   type CardScript,
   cond,
   DRONE,
+  doesntUntap,
   fx,
   lander,
   modal,
@@ -224,9 +225,6 @@ export const BLUE: Record<string, CardScript> = {
   "Tractor Beam": {
     enchant: { filter: { anyOf: [{ types: ["Creature"] }, { subtype: "Spacecraft" }] }, label: "créature ou Vaisseau" },
     controlsEnchanted: true,
-    abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez-le" }),
-      staticAbility("attached", { addKeywords: ["doesntUntap"] }, { label: "Ne se dégage pas" }),
-    ],
+    abilities: [triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez-le" }), doesntUntap("attached")],
   },
 };

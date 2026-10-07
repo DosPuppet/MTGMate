@@ -5,7 +5,7 @@ import { legalActions } from "../src/legal";
 import { landsAllowed } from "../src/stack";
 import { addPlayerEffect, consumePlayerEffect, playerStatic, playerStaticTotal } from "../src/statics";
 import { attackableDefenders } from "../src/turn";
-import { act, advanceUntil, idOf, passBoth, scenario } from "./helpers";
+import { act, advanceUntil, customCard, idOf, lands, passBoth, scenario } from "./helpers";
 
 describe("effets sur les joueurs", () => {
   it("ce tour-ci : cumulés, puis expirés au tour suivant (terrains supplémentaires)", () => {
@@ -42,9 +42,9 @@ describe("effets sur les joueurs", () => {
 
   it("un booléen compte pour 1 dans un total (cumulable)", () => {
     const s = scenario({ p1: {} });
-    addPlayerEffect(s, "p2", { noMaxHandSize: true }, s.turn.number + 1);
-    addPlayerEffect(s, "p2", { noMaxHandSize: true }, s.turn.number + 1);
-    expect(playerStaticTotal(s, "p2", "noMaxHandSize")).toBe(2);
+    addPlayerEffect(s, "p2", { landsEnterUntapped: true }, s.turn.number + 1);
+    addPlayerEffect(s, "p2", { landsEnterUntapped: true }, s.turn.number + 1);
+    expect(playerStaticTotal(s, "p2", "landsEnterUntapped")).toBe(2);
   });
 
   it("deux effets « blessures doublées » se cumulent (remplacements, R1)", () => {
@@ -60,9 +60,40 @@ describe("effets sur les joueurs", () => {
 describe("interdictions et permissions du tour (effets sur les joueurs)", () => {
   it("Sandswirl Wanderglyph : ne peut pas attaquer ce joueur ce tour-ci, les autres oui", () => {
     const s = scenario({ players: 3, active: "p2", p1: {}, p2: {}, p3: {} });
-    addPlayerEffect(s, "p2", { cantAttackPlayer: "p1" }, s.turn.number);
+    addPlayerEffect(s, "p2", { cantAttack: { of: "p1" } }, s.turn.number);
     expect(attackableDefenders(s, "p2")).toEqual(["p3"]);
     expect(attackableDefenders(s, "p3")).toContain("p1");
+  });
+
+  it("« ne peut pas attaquer vos Jace » (`cantAttack` avec un sous-type) : ces planeswalkers seulement ; le joueur et ses autres planeswalkers restent attaquables", () => {
+    const walker = (name: string, subtype: string) =>
+      customCard({ name, types: ["Planeswalker"], typeLine: "Planeswalker", subtypes: [subtype], loyalty: 3 });
+    const s = scenario({
+      active: "p2",
+      p1: { battlefield: [walker("Jace d'essai", "Jace"), walker("Chandra d'essai", "Chandra")] },
+    });
+    const jace = idOf(s, "p1", "battlefield", "Jace d'essai");
+    const chandra = idOf(s, "p1", "battlefield", "Chandra d'essai");
+    expect(attackableDefenders(s, "p2")).toEqual(["p1", jace, chandra]);
+    addPlayerEffect(s, "p2", { cantAttack: { of: "p1", subtype: "Jace" } }, s.turn.number);
+    expect(attackableDefenders(s, "p2")).toEqual(["p1", chandra]);
+    // Sans sous-type : le joueur et tous ses planeswalkers (Sandswirl Wanderglyph).
+    addPlayerEffect(s, "p2", { cantAttack: { of: "p1" } }, s.turn.number);
+    expect(attackableDefenders(s, "p2")).toEqual([]);
+  });
+
+  it("passer (`skips`) : l'étape de pioche et les tours supplémentaires sont deux choses distinctes", () => {
+    let s = scenario({ p1: { library: lands("Forest", 5) }, p2: { library: lands("Forest", 5) } });
+    addPlayerEffect(s, "p1", { skips: "drawStep" }, null);
+    s.extraTurns = ["p1"];
+    const hand = s.players.p1?.hand.length ?? 0;
+    // Le tour supplémentaire de p1 a lieu ; son étape de pioche n'a pas lieu.
+    s = advanceUntil(s, (x) => x.turn.number > 3 && x.turn.step === "main1");
+    expect([s.turn.active, s.players.p1?.hand.length]).toEqual(["p1", hand]);
+    addPlayerEffect(s, "p1", { skips: "extraTurns" }, null);
+    s.extraTurns = ["p1"];
+    s = advanceUntil(s, (x) => x.turn.number > 4 && x.turn.step === "main1");
+    expect(s.turn.active).toBe("p2");
   });
 
   it("The Tomb of Aclazotz : un seul sort de créature depuis le cimetière, avec un marqueur de finalité", () => {
