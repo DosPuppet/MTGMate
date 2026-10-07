@@ -196,7 +196,7 @@ describe("Reality Fracture, lot F", () => {
       s = passBoth(cast(s, "p1", "Kindred Judgment"));
       const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
       // Les types proposés ne se limitent pas à ceux des créatures en jeu.
-      expect(req?.type === "pick" && req.options.includes("Dragon")).toBe(true);
+      expect(req?.type === "name" && req.of === "creatureType").toBe(true);
       s = act(s, "p1", { type: "choose", values: [type] });
       return s.battlefield.filter((id) => chars(s, id).types.includes("Creature")).length;
     };

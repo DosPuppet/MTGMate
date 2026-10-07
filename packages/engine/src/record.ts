@@ -448,8 +448,11 @@ export const RECORD_VERSION = 1;
  *   Ego, Sin, Dawn-Blessed Pennant, Indominus Rex, Mox Diamond
  * - 163 : Nom de carte choisi (Skyseer's Chariot, Sorcerous Spyglass, The Clone Saga) : les noms proposés et la
  *   suggestion ne s'appuient plus sur la main adverse (information cachée), mais sur les permanents
+ * - 164 : Nommer une carte, une carte de terrain ou un type de créature : catalogue complet (hors de l'état de la
+ *   partie), noms publics en tête, liste officielle des types de créature (205.3m) ; plus aucun nom tiré des decks
+ *   adverses
  */
-export const RULES_VERSION = 163;
+export const RULES_VERSION = 164;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

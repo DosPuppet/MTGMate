@@ -26,6 +26,7 @@ import {
   type DeckList,
   FORMAT_LABELS,
   isFormat,
+  nameCatalog,
   sideboardSwapError,
   validateDeck,
 } from "@mtgx/cards";
@@ -47,6 +48,7 @@ import {
   outcomeHash,
   type PlayerId,
   RULES_VERSION,
+  registerNameCatalog,
   replayChecked,
   visibleFaces,
 } from "@mtgx/engine";
@@ -904,6 +906,9 @@ export class RoomManager {
   private readonly interrupted = new Map<string, number>();
 
   constructor(private readonly config: RoomConfig = DEFAULT_CONFIG) {
+    // « Choisissez un nom de carte » : tout nom du catalogue est accepté (la question ne liste pas la decklist adverse) ;
+    // avant la reprise des parties sauvegardées, qui rejouent leurs réponses.
+    registerNameCatalog(nameCatalog());
     if (config.dataDir) this.restore(config.dataDir);
   }
 

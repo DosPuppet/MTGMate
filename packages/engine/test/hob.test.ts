@@ -3573,7 +3573,7 @@ describe("lot A, incolores et terrains", () => {
       expect(chars(s, bear).keywords).toContain("trample");
       let offered = false;
       s = throughCombat(attack(s, [bear]), (req) => {
-        if (req.type === "pick" && req.options.includes("Bear")) {
+        if (req.type === "name" && req.of === "creatureType") {
           offered = true;
           return ["Bear"];
         }

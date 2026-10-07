@@ -12,6 +12,7 @@ import {
   visibleFaces,
 } from "@mtgx/engine";
 import type { ClientMessage, ServerMessage } from "@mtgx/server/protocol";
+import { hostNameCatalog } from "./names";
 import type { FromWorker, ToWorker } from "./protocol";
 
 /** Une partie en cours : locale (Web Worker, contre l'IA) ou distante (serveur, contre un joueur). */
@@ -29,6 +30,8 @@ export class LocalSession implements Session {
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => onMessage(e.data);
     // Erreur du moteur dans le worker : visible dans la console plutôt que silencieuse.
     this.worker.onerror = (e) => console.error("Erreur du worker de partie :", e.message);
+    // Noms nommables (« choisissez un nom de carte ») : le worker n'embarque pas la base de cartes.
+    this.worker.postMessage({ type: "names", catalog: hostNameCatalog() } satisfies ToWorker);
   }
 
   send(m: ToWorker): void {
@@ -119,6 +122,7 @@ export class ReplaySession implements Session {
   readonly warning: string | null;
 
   constructor(record: GameRecord, resolve: (name: string) => CardDef) {
+    hostNameCatalog();
     const { divergence } = replayChecked(record, resolve, (state, events) => {
       this.states.push(state);
       this.events.push(events);

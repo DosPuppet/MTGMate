@@ -3791,7 +3791,7 @@ describe("lot C1, copies et légendes", () => {
   const pickName =
     (name: string): Answer =>
     (req) =>
-      req.type === "pick" && req.intent === "chooseOnEnter" ? [name] : undefined;
+      req.type === "name" && req.intent === "chooseOnEnter" ? [name] : undefined;
   const nextMain = (s: S) =>
     advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > s.turn.number);
 

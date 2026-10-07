@@ -18,6 +18,7 @@ import {
 } from "../effects";
 import { blockRulePlaceholder, copiableExceptions, copiedDefId, mergeMods, resolveBlockRules } from "../layers";
 import { manaValue } from "../mana";
+import { CREATURE_TYPES, gameNames, isCreatureType, tokenCreatureTypes } from "../names";
 import { asEntersChoices, chosenValue, ENTERS_PREFIX } from "../replacement";
 import {
   bump,
@@ -37,42 +38,105 @@ import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
 import { logTurnEvent } from "../turnlog";
-import type { AbilityDef, ChoiceRequest, Color, Effect, GameState, PlayerId, Resolution } from "../types";
+import type { AbilityDef, ChoiceRequest, Color, Effect, GameState, NameKind, PlayerId, Resolution } from "../types";
 import { BASIC_LAND_TYPES } from "../types";
 
-/** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
-/** Sous-types des jetons de créature que décrivent ces capacités (`token: { types, subtypes }` dans leurs effets). */
-function tokenCreatureTypes(v: unknown, out: string[] = []): string[] {
-  if (Array.isArray(v)) for (const x of v) tokenCreatureTypes(x, out);
-  else if (v && typeof v === "object") {
-    const o = v as { token?: { types?: string[]; subtypes?: string[] } };
-    if (o.token?.types?.includes("Creature")) out.push(...(o.token.subtypes ?? []));
-    for (const x of Object.values(v)) if (x && typeof x === "object") tokenCreatureTypes(x, out);
-  }
-  return out;
+/**
+ * Noms publics à mettre en avant pour « choisissez un nom de carte (de terrain) » : permanents adverses, puis les vôtres,
+ * puis cimetières (adverses d'abord), exil (face visible) et zone de commandement ; jamais une carte cachée (main,
+ * bibliothèque, face cachée). `graveyardsFirst` : les cimetières adverses en tête (Ancient Vendetta). Terrains : les non
+ * de base d'abord.
+ */
+export function featuredNames(
+  s: GameState,
+  controller: PlayerId,
+  of: "card" | "land",
+  opts: { graveyardsFirst?: boolean } = {},
+  valid = gameNames(s, of),
+): string[] {
+  const opps = opponentsOf(s, controller);
+  const out = new Set<string>();
+  const add = (names: { name: string; basic: boolean }[]) => {
+    for (const n of [...names.filter((x) => !x.basic), ...names.filter((x) => x.basic)]) if (valid.has(n.name)) out.add(n.name);
+  };
+  const isLand = (types: string[]) => of === "card" || types.includes("Land");
+  const permanents = (mine: boolean) =>
+    s.battlefield
+      .filter((id) => !s.objects[id]?.faceDown && (s.objects[id]?.controller === controller) === mine)
+      .map((id) => chars(s, id))
+      .filter((c) => isLand(c.types))
+      .map((c) => ({ name: c.name, basic: of === "land" && c.supertypes.includes("Basic") }));
+  const cards = (ids: readonly string[]) =>
+    ids
+      .map((id) => s.objects[id])
+      .filter((o) => o && !o.faceDown && (!o.exiledFaceDown || o.exiledFaceDown.includes(controller)))
+      .map((o) => s.defs[o?.defId ?? ""])
+      .filter((d) => d && isLand(d.types))
+      .map((d) => ({ name: d?.name ?? "", basic: of === "land" && !!d?.supertypes.includes("Basic") }));
+  const graveyards = (ps: PlayerId[]) => cards(ps.flatMap((p) => s.players[p]?.graveyard ?? []));
+  if (opts.graveyardsFirst) add(graveyards(opps));
+  add(permanents(false));
+  add(permanents(true));
+  add(graveyards([...opps, controller]));
+  add(cards(s.exile));
+  add(cards(s.playerOrder.flatMap((p) => s.players[p]?.command ?? [])));
+  return [...out].slice(0, 40);
 }
 
-const COMMON_CREATURE_TYPES = [
-  "Angel",
-  "Beast",
-  "Cat",
-  "Dragon",
-  "Elemental",
-  "Elf",
-  "Faerie",
-  "Giant",
-  "Goblin",
-  "Human",
-  "Kithkin",
-  "Knight",
-  "Merfolk",
-  "Soldier",
-  "Treefolk",
-  "Vampire",
-  "Warrior",
-  "Wizard",
-  "Zombie",
-];
+/** Types de créature des cartes d'un joueur (champ de bataille, main, bibliothèque), du plus présent au moins présent. */
+function ownCreatureTypes(s: GameState, controller: PlayerId): string[] {
+  const tally = new Map<string, number>();
+  const pl = s.players[controller];
+  for (const id of [
+    ...s.battlefield.filter((x) => s.objects[x]?.controller === controller),
+    ...(pl?.hand ?? []),
+    ...(pl?.library ?? []),
+  ]) {
+    const d = s.defs[s.objects[id]?.defId ?? ""];
+    for (const k of d?.types.includes("Creature") ? d.subtypes : []) tally.set(k, (tally.get(k) ?? 0) + 1);
+  }
+  return [...tally.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+}
+
+/**
+ * Question « nom » (`ChoiceRequest` de type `name`) : un nom de carte, de carte de terrain, ou un type de créature (la
+ * liste officielle, 205.3m), sans lister les cartes de la partie. Suggestion : un nom public (types de créature : le plus
+ * présent parmi vos cartes), sinon l'une de vos cartes.
+ */
+export function nameRequest(
+  s: GameState,
+  controller: PlayerId,
+  of: NameKind,
+  prompt: string,
+  opts: { graveyardsFirst?: boolean } = {},
+): ChoiceRequest {
+  // Noms de la partie, ou la liste officielle des types de créature (pas « Food » d'une créature-artefact), jamais le
+  // catalogue : la question ne dépend pas de l'hôte.
+  let featured: string[];
+  let fallback: string | undefined;
+  if (of === "creatureType") {
+    const own = ownCreatureTypes(s, controller);
+    // Vos jetons de créature (An Unexpected Party : des Nains), puis les créatures en jeu.
+    const tokens = (s.players[controller]?.library ?? [])
+      .concat(s.players[controller]?.hand ?? [], s.battlefield)
+      .flatMap((id) => tokenCreatureTypes(s.defs[s.objects[id]?.defId ?? ""]?.abilities));
+    const onBattlefield = s.battlefield
+      .filter((id) => !s.objects[id]?.faceDown)
+      .flatMap((id) => (chars(s, id).types.includes("Creature") ? chars(s, id).subtypes : []));
+    featured = [...new Set([...own, ...tokens, ...onBattlefield])].filter(isCreatureType).slice(0, 16);
+    fallback = CREATURE_TYPES[0];
+  } else {
+    const valid = gameNames(s, of);
+    featured = featuredNames(s, controller, of, opts, valid);
+    // Sans nom public : l'une de vos cartes (connues de vous seul ; la question n'est montrée qu'à vous).
+    fallback = (s.players[controller]?.hand ?? [])
+      .concat(s.players[controller]?.library ?? [])
+      .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "")
+      .find((n) => valid.has(n));
+  }
+  const suggested = featured[0] ?? fallback ?? "";
+  return { type: "name", intent: "chooseOnEnter", prompt, of, featured, suggested: [suggested] };
+}
 
 /** Types de carte en français (un mode d'arrivée qui est un type de carte). */
 const CARD_TYPE_FR: Record<string, string> = {
@@ -109,37 +173,19 @@ export function enterChoiceRequest(
     // Talion, the Kindly Lord : un nombre de 1 à 10.
     else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
     else if (kind === "mode") options = [];
-    else if (kind === "landName") {
-      // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
-      const opp = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
-      const oppLands = opp.map((id) => s.defs[s.objects[id]?.defId ?? ""]).filter((d) => d?.types.includes("Land"));
-      const lands = Object.values(s.defs).filter((d) => d.types.includes("Land") && !d.isToken);
-      options = [
-        ...new Set([
-          ...oppLands.filter((d) => !d?.supertypes.includes("Basic")).map((d) => d?.name ?? ""),
-          ...oppLands.map((d) => d?.name ?? ""),
-          ...lands.map((d) => d.name).sort(),
-        ]),
-      ].filter(Boolean);
-    } else if (kind === "cardName") {
-      // Seulement des informations publiques (la suggestion de l'IA est la première option) : les permanents adverses
-      // d'abord, puis les vôtres, puis tous les noms. La main regardée par Sorcerous Spyglass n'est pas montrée.
-      const all = Object.values(s.defs)
-        .filter((d) => !d.isToken)
-        .map((d) => d.name);
-      const theirs = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
-      const mine = s.battlefield.filter((id) => s.objects[id]?.controller === ctx.controller);
-      options = [...new Set([...[...theirs, ...mine].map((id) => chars(s, id).name), ...all.sort()])];
-    } else {
-      // Types des créatures connues de la partie (cartes, et jetons qu'elles créent : An Unexpected Party nomme les
-      // Nains que créent ses jetons), et toujours les plus courants (un deck sans créature en a besoin).
-      const set = new Set<string>(COMMON_CREATURE_TYPES);
-      for (const d of Object.values(s.defs)) {
-        if (d.types.includes("Creature")) for (const t of d.subtypes) set.add(t);
-        for (const t of tokenCreatureTypes(d.abilities)) set.add(t);
-      }
-      options = [...set].sort();
-    }
+    // Nom de carte (Skyseer's Chariot), de carte de terrain (Petrified Hamlet), type de créature : toute la liste, sans
+    // lister les cartes de la partie (la decklist adverse) ; des noms publics en avant.
+    else
+      return nameRequest(
+        s,
+        controller,
+        kind === "cardName" ? "card" : kind === "landName" ? "land" : "creatureType",
+        kind === "cardName"
+          ? "Choisissez un nom de carte"
+          : kind === "landName"
+            ? "Choisissez un nom de carte de terrain"
+            : "Choisissez un type de créature",
+      );
     // Suggestion : le type ou la couleur les plus présents chez le contrôleur.
     const tally = new Map<string, number>();
     const pl = s.players[ctx.controller];
@@ -453,33 +499,9 @@ export const HANDLERS: OpHandlers = {
     if (r.vars.$name) return;
     const answer = r.vars[key("name")];
     if (!answer) {
-      // Pas d'information cachée : les noms sont triés, la suggestion vient des cimetières (publics).
-      const names = [
-        ...new Set(
-          Object.values(s.defs)
-            .filter((d) => !d.isToken && !d.meldResult)
-            .map((d) => d.name),
-        ),
-      ].sort();
-      const opp = opponentsOf(s, ctx.controller)[0];
-      const seen = (opp ? (s.players[opp]?.graveyard ?? []) : []).map((x) => s.defs[s.objects[x]?.defId ?? ""]?.name ?? "");
-      const suggested = seen.find((n) => names.includes(n)) ?? names[0] ?? "";
-      return {
-        ask: {
-          player: ctx.controller,
-          key: key("name"),
-          request: {
-            type: "pick",
-            intent: "chooseOnEnter",
-            prompt: "Choisissez un nom de carte",
-            options: names,
-            labels: Object.fromEntries(names.map((n) => [n, n])),
-            min: 1,
-            max: 1,
-            suggested: [suggested],
-          },
-        },
-      };
+      // Pas d'information cachée : des noms publics en avant (les cimetières adverses d'abord), tout nom du catalogue.
+      const request = nameRequest(s, ctx.controller, "card", "Choisissez un nom de carte", { graveyardsFirst: true });
+      return { ask: { player: ctx.controller, key: key("name"), request } };
     }
     r.vars.$name = [String(answer[0])];
     return;

@@ -2,6 +2,7 @@
  * Choix génériques : validation des réponses et construction des demandes.
  */
 import { RulesError } from "./errors";
+import { isNameAllowed } from "./names";
 import type { ChoicePurpose, ChoiceRequest, ChoiceValue, GameState, PlayerId } from "./types";
 
 /**
@@ -36,9 +37,16 @@ export function absentAnswer(req: ChoiceRequest): ChoiceValue[] {
 
 const isInt = (v: ChoiceValue): v is number => typeof v === "number" && Number.isInteger(v);
 
-/** Vérifie qu'une réponse respecte la demande ; lève une RulesError sinon. */
-export function validateChoice(req: ChoiceRequest, values: ChoiceValue[]): void {
+/** Vérifie qu'une réponse respecte la demande ; lève une RulesError sinon (`s` : noms acceptés d'une question « nom »). */
+export function validateChoice(req: ChoiceRequest, values: ChoiceValue[], s: GameState): void {
   switch (req.type) {
+    case "name": {
+      const v = values[0];
+      if (values.length !== 1 || typeof v !== "string") throw new RulesError("Un nom attendu");
+      if (!isNameAllowed(s, req.of, v))
+        throw new RulesError(req.of === "creatureType" ? `Type de créature inconnu : ${v}` : `Nom de carte inconnu : ${v}`);
+      return;
+    }
     case "pick": {
       if (new Set(values).size !== values.length) throw new RulesError("Choix en double");
       if (values.some((v) => typeof v !== "string" || !req.options.includes(v))) throw new RulesError("Choix hors des options");

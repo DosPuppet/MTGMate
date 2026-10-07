@@ -27,6 +27,7 @@ import {
   settle as settleAnswering,
   steal,
   untilCastNow,
+  wantedName,
 } from "./helpers";
 
 type S = GameState;
@@ -40,7 +41,7 @@ const chooseWanted = (s: S, want: string[]) => {
   for (let i = 0; i < 10 && cur.pending?.kind === "choice"; i++) {
     const p = cur.pending;
     const r = p.request;
-    const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : [];
+    const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : wantedName(cur, r, want);
     cur = act(cur, p.player, { type: "choose", values: picked.length > 0 ? picked : r.suggested });
     cur = passAccepting(cur, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.pending?.kind === "priority"));
   }
@@ -382,7 +383,7 @@ describe("Lorwyn Eclipsed, lot A — blanc", () => {
     for (let i = 0; i < 10 && cur.pending?.kind === "choice"; i++) {
       const p = cur.pending;
       const r = p.request;
-      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : [];
+      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : wantedName(cur, r, want);
       cur = act(cur, p.player, { type: "choose", values: picked.length > 0 ? picked : r.suggested });
       cur = passAccepting(cur, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.pending?.kind === "priority"));
     }
@@ -953,7 +954,7 @@ describe("Lorwyn Eclipsed, lot A — bleu", () => {
           ? want.filter((w) => r.options.includes(w as string))
           : r.type === "yesNo"
             ? want.filter((w) => typeof w === "number").slice(0, 1)
-            : [];
+            : wantedName(cur, r, want.map(String));
       cur = act(cur, p.player, { type: "choose", values: picked.length > 0 ? picked : r.suggested });
       cur = untilChoiceOrIdle(cur);
     }
@@ -2359,7 +2360,7 @@ describe("Lorwyn Eclipsed, lot A — vert", () => {
     for (let i = 0; i < 10 && cur.pending?.kind === "choice"; i++) {
       const p = cur.pending;
       const r = p.request;
-      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)).slice(0, r.max) : [];
+      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)).slice(0, r.max) : wantedName(cur, r, want);
       cur = act(cur, p.player, { type: "choose", values: picked.length > 0 ? picked : r.suggested });
       cur = passAccepting(cur, until);
     }
@@ -2810,7 +2811,7 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
     for (let i = 0; i < 10 && cur.pending?.kind === "choice"; i++) {
       const p = cur.pending;
       const r = p.request;
-      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : [];
+      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : wantedName(cur, r, want);
       cur = act(cur, p.player, { type: "choose", values: picked.length > 0 ? picked : r.suggested });
       cur = passAccepting(cur, (x) => x.pending?.kind === "choice" || settled(x));
     }
@@ -3429,7 +3430,7 @@ describe("Lorwyn Eclipsed, lot A — incolores", () => {
     for (let i = 0; i < 10 && cur.pending?.kind === "choice"; i++) {
       const p = cur.pending;
       const r = p.request;
-      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : [];
+      const picked = r.type === "pick" ? want.filter((w) => r.options.includes(w)) : wantedName(cur, r, want);
       cur = act(cur, p.player, { type: "choose", values: picked.length > 0 ? picked : r.suggested });
       cur = passAccepting(cur, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.pending?.kind === "priority"));
     }

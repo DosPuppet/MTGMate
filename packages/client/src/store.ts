@@ -395,7 +395,7 @@ function pendingKey(v: GameView | null): string {
   // Deux choix successifs d'une même résolution : la question elle-même les distingue.
   const req =
     p.kind === "choice" && p.request
-      ? `:${p.request.prompt}:${JSON.stringify(p.request.type === "pick" ? p.request.options : [])}`
+      ? `:${p.request.prompt}:${JSON.stringify(p.request.type === "pick" ? p.request.options : p.request.type === "name" ? [p.request.of, ...p.request.featured] : [])}`
       : "";
   return `${p.kind}:${p.player}:${v.turn.number}:${v.turn.step}:${v.stack.length}${req}`;
 }

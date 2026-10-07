@@ -15,6 +15,7 @@ import {
   type GameState,
   RULES_VERSION,
   registerDef,
+  registerNameCatalog,
   replayChecked,
   visibleFaces,
 } from "@mtgx/engine";
@@ -146,6 +147,9 @@ self.onmessage = (e: MessageEvent<ToWorker>) => {
 
 async function handle(msg: ToWorker): Promise<void> {
   switch (msg.type) {
+    case "names":
+      registerNameCatalog(msg.catalog);
+      return;
     case "start": {
       defs = msg.defs;
       paused = false;

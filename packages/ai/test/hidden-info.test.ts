@@ -6,6 +6,7 @@
 import { implementedCards, toCardDef } from "@mtgx/cards";
 import {
   type CardDef,
+  type ChoiceRequest,
   type Color,
   createGame,
   fallbackDecision,
@@ -130,6 +131,79 @@ describe("informations cachées", () => {
     for (let seed = 1; seed <= 4; seed++) leaks.push(...auditGame(seed, { players: 3 + (seed % 2), commander: true }));
     expect(leaks.slice(0, 10)).toEqual([]);
   }, 240_000);
+});
+
+/** Chaînes d'une question (options, noms proposés, suggestion, libellés), et de celles des terrains à jouer. */
+function requestStrings(view: ReturnType<typeof projectView>): string[] {
+  const p = view.pending;
+  const reqs: ChoiceRequest[] = [];
+  if (p?.kind === "choice" && p.request) reqs.push(p.request);
+  if (p?.kind === "priority") for (const a of p.actions ?? []) if (a.type === "playLand" && a.choose) reqs.push(a.choose);
+  return reqs.flatMap((r) => [
+    ...r.suggested.map(String),
+    ...Object.keys(r.labels ?? {}),
+    ...Object.values(r.labels ?? {}),
+    ...(r.type === "pick" ? r.options : r.type === "name" ? r.featured : []),
+  ]);
+}
+
+describe("informations cachées : noms à choisir (nom de carte, de terrain, type de créature)", () => {
+  it("la question ne cite aucune carte que l'adversaire n'a que dans sa main ou sa bibliothèque", () => {
+    const plains = ALL.find((c) => c.name === "Plains") as CardDef;
+    const mine = ["Skyseer's Chariot", "Petrified Hamlet", "Cavern of Souls"].map(
+      (n) => ALL.find((c) => c.name === n) as CardDef,
+    );
+    const deck = [...Array(30).fill(plains), ...mine.flatMap((d) => Array(10).fill(d))] as CardDef[];
+    let asked = 0;
+    const leaks: string[] = [];
+    for (let seed = 1; seed <= 6; seed++) {
+      let { state } = createGame({
+        seed,
+        players: [
+          { id: "p1", name: "p1", deck },
+          { id: "p2", name: "p2", deck: randomDeck(seed * 13) },
+        ],
+      });
+      const agents = { p1: randomAgent(seed * 3), p2: randomAgent(seed * 5) };
+      const opponentCards = new Set(
+        Object.values(state.objects)
+          .filter((o) => o.owner === "p2")
+          .map((o) => o.defId),
+      );
+      const ownNames = new Set(deck.map((d) => d.name));
+      const publicNames = new Set<string>();
+      for (let i = 0; i < 1500 && state.pending && !state.over; i++) {
+        for (const o of Object.values(state.objects))
+          if (PUBLIC_ZONES.has(o.zone) && !o.faceDown) publicNames.add(state.defs[o.defId]?.name ?? "");
+        const view = projectView(state, "p1");
+        const strings = requestStrings(view);
+        if (view.pending?.kind === "choice" && view.pending.request?.type === "name") asked++;
+        for (const d of opponentCards) {
+          const name = state.defs[d]?.name ?? "";
+          if (!ownNames.has(name) && !publicNames.has(name) && strings.includes(name))
+            leaks.push(`graine ${seed}, tour ${state.turn.number} : p1 voit ${name}`);
+          // Types de créature : seulement ceux des cartes publiques ou des vôtres.
+          const types = state.defs[d]?.types.includes("Creature") ? (state.defs[d]?.subtypes ?? []) : [];
+          for (const t of types) {
+            const known = [...publicNames, ...ownNames].some((n) => ALL.find((c) => c.name === n)?.subtypes.includes(t));
+            if (!known && strings.includes(t) && view.pending?.kind === "choice" && view.pending.request?.type === "name")
+              leaks.push(`graine ${seed} : p1 voit le type ${t}`);
+          }
+        }
+        const p = state.pending;
+        let r: ReturnType<typeof submit>;
+        try {
+          r = submit(state, p.player, agents[p.player as "p1" | "p2"](state, p.player));
+        } catch (e) {
+          if (!(e instanceof RulesError)) throw e;
+          r = submit(state, p.player, fallbackDecision(state, p));
+        }
+        state = r.state;
+      }
+    }
+    expect(asked).toBeGreaterThan(0);
+    expect(leaks.slice(0, 10)).toEqual([]);
+  }, 120_000);
 });
 
 /** Carte à déguisement de test : lancée face cachée, elle ne doit pas être révélée à l'adversaire. */

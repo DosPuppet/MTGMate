@@ -28,6 +28,9 @@ export interface CastNowRequest {
 
 export type ChoiceValue = string | number;
 
+/** Ce qu'une question « nom » fait nommer (`ChoiceRequest` de type `name`, names.ts). */
+export type NameKind = "card" | "land" | "creatureType";
+
 export type ChoiceIntent =
   | "scryBottom"
   | "scryOrder"
@@ -86,6 +89,13 @@ export type ChoiceRequest = ChoiceBase &
         /** Contrainte entre les options choisies : même joueur ou joueurs différents (joueur de chaque option). */
         group?: { kind: "same" | "different"; holders: Record<string, string> };
       }
+    /**
+     * Un nom à choisir (nom de carte, de carte de terrain, type de créature) : toute valeur du catalogue est permise
+     * (`isNameAllowed`, names.ts), sans que la question liste les cartes de la partie (la decklist adverse) ; `featured` :
+     * des noms publics mis en avant (permanents adverses, puis les vôtres, puis cimetières, exil et zone de commandement ;
+     * types de créature : les plus présents parmi vos cartes). Réponse : un nom (anglais).
+     */
+    | { type: "name"; of: NameKind; featured: string[] }
     | { type: "number"; min: number; max: number }
     | { type: "order"; items: string[] }
     | { type: "yesNo" }

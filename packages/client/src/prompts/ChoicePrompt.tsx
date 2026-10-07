@@ -9,6 +9,7 @@ import { faceName } from "../i18n";
 import { useLocalizedView } from "../localize";
 import { useGame } from "../store";
 import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, togglePick } from "./boardChoice";
+import { NameSearch } from "./NameSearch";
 import { ZoneTabbed } from "./ZoneTabs";
 
 type ChoiceView = Extract<NonNullable<GameView["pending"]>, { kind: "choice" }>;
@@ -228,6 +229,22 @@ function ChoiceModal({ view }: { view: GameView }) {
           </div>
         </div>
       );
+    }
+    case "name": {
+      // Nom de carte, de carte de terrain, type de créature : recherche dans tout le catalogue (sans la decklist adverse).
+      const value = String(values[0] ?? "");
+      valid = !!value;
+      body = (
+        <NameSearch
+          of={req.of}
+          featured={req.featured}
+          suggested={String(req.suggested[0] ?? "")}
+          value={value}
+          onChange={(n) => setValues([n])}
+          onSubmit={(n) => send([n])}
+        />
+      );
+      break;
     }
     case "number": {
       const v = Number(values[0] ?? req.min);

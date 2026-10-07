@@ -1,7 +1,17 @@
 /** Messages échangés entre l'interface et le Web Worker qui fait tourner la partie. */
 import type { AiLevel, ScriptAction } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
-import type { AutopilotSettings, CardDef, CardFace, Decision, GameEvent, GameRecord, GameVariant, GameView } from "@mtgx/engine";
+import type {
+  AutopilotSettings,
+  CardDef,
+  CardFace,
+  Decision,
+  GameEvent,
+  GameRecord,
+  GameVariant,
+  GameView,
+  NameCatalog,
+} from "@mtgx/engine";
 
 /**
  * Bac à sable (mode dev, tests d'interface) : permanents et jetons mis en jeu au début de la partie,
@@ -80,6 +90,11 @@ export type ToWorker =
       aiLevel?: AiLevel;
       fast?: boolean;
     }
+  /**
+   * Catalogue des noms nommables (« choisissez un nom de carte »), envoyé une fois à la création du worker : le moteur du
+   * worker accepte ces noms (`registerNameCatalog`) sans embarquer la base de cartes.
+   */
+  | { type: "names"; catalog: NameCatalog }
   /** Tutoriel : l'adversaire attend (explication à l'écran). */
   | { type: "pause"; paused: boolean }
   | { type: "decision"; decision: Decision }

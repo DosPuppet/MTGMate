@@ -1,4 +1,4 @@
-import type { CardDef } from "@mtgx/engine";
+import type { CardDef, NameCatalog } from "@mtgx/engine";
 import legalityOverrides from "../data/legality-overrides.json";
 import { DECKS, type DeckList } from "./decks";
 import { toCardDef } from "./scryfall";
@@ -130,3 +130,22 @@ export function deckById(id: string): DeckList {
 }
 
 export const implementedCards = (): CardDef[] => Object.values(CARDS).filter((c) => c.implemented);
+
+let names: NameCatalog | undefined;
+
+/**
+ * Catalogue des noms nommables (« choisissez un nom de carte ») : toutes les cartes connues et chacune de leurs faces,
+ * triées ; à enregistrer dans le moteur (`registerNameCatalog`) par chaque hôte d'une partie.
+ */
+export function nameCatalog(): NameCatalog {
+  if (names) return names;
+  const cards = new Set<string>();
+  const lands = new Set<string>();
+  for (const c of Object.values(CARDS))
+    for (const d of [c, ...(c.faceDefs ?? [])]) {
+      cards.add(d.name);
+      if (d.types.includes("Land")) lands.add(d.name);
+    }
+  names = { cards: [...cards].sort(), lands: [...lands].sort() };
+  return names;
+}

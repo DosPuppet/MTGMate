@@ -345,7 +345,7 @@ Attendu : 12 à 18 entrées levées.
 
 ## Suivi
 
-**État au 07/10/2026 (règles 163) :** lots H0 à H10 faits ; H11 : journal du tour fait, reste le bilan.
+**État au 07/10/2026 (règles 164) :** lots H0 à H10 faits ; H11 : journal du tour fait, reste le bilan.
 
 | Mesure | Départ (règles 149) | Aujourd'hui | Cible après H11 |
 |---|---|---|---|
@@ -447,3 +447,4 @@ Attendu : 12 à 18 entrées levées.
   - 2 tests (`engine/test/turnlog.test.ts` : loyauté une fois par tour et nouvel objet après un changement de zone ; marqueurs par joueur et par sorte, engagements, défausse) ; tests qui lisaient les champs réécrits (`dft`, `shared`, `msh`, `spm`) ;
   - parties dorées identiques ; empreintes du fuzz identiques (graine 7 : `f6d9c346` sur tout le pool, 300 parties ; `3bacd5a6` en Commander, 200 parties ; `adfbe732` en Commander à 4 joueurs, 60 parties ; fuzz strict `--offers 4`, 200 parties : `b131cce1`) ; bench dans le bruit (avant et après en alternance, `git stash`, minimum de plusieurs passes : `legalActions` 7 831 à 7 996 ms avant, 7 749 à 7 890 ms après ; IA heuristique, 14 parties, 1 586 à 1 606 ms avant, 1 549 à 1 595 ms après ; `npm run bench` dans le bruit de la machine) ;
   - dette : turnFields 7 → 0 (le garde-fou admet désormais une section vide) ; GameObject 58 → 49.
+- **Correctif hors plan (07/10/2026, règles 164, protocole 4) :** nommer une carte, une carte de terrain ou un type de créature ne révèle plus les decks adverses (choix de l'utilisateur : le catalogue complet). Catalogue des noms hors de l'état (`engine/src/names.ts`, `registerNameCatalog`, enregistré par le serveur, le client et le worker) ; nouvelle question `{ type: "name", of, featured }` : noms publics en tête (permanents adverses, puis les vôtres, cimetières, exil face visible, zone de commandement), recherche dans tout le catalogue côté client (noms français, nom anglais envoyé) ; liste officielle des types de créature (205.3m, 324 types). Une réponse hors catalogue est refusée (`RulesError`) ; les anciennes réponses restent acceptées (rejeu des parties). Tests : `engine/test/names.test.ts`, audit dans `ai/test/hidden-info.test.ts`, `cards/test/names.test.ts`, `client/test/names.test.ts`.

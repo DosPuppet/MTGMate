@@ -1444,7 +1444,7 @@ describe("Duskmourn, lot K8 : rares (2)", () => {
       p2: { battlefield: ["Serra Angel"] },
     });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Leyline of Transformation") });
-    s = settleAnswering(s, (req) => (req.type === "pick" && req.options.includes("Dragon") ? ["Dragon"] : undefined));
+    s = settleAnswering(s, (req) => (req.type === "name" && req.of === "creatureType" ? ["Dragon"] : undefined));
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).subtypes).toEqual(expect.arrayContaining(["Bear", "Dragon"]));
     expect(chars(s, idOf(s, "p2", "battlefield", "Serra Angel")).subtypes).not.toContain("Dragon");
   });

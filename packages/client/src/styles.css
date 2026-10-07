@@ -3666,6 +3666,61 @@ button {
   border-color: var(--accent, #d4a64a);
 }
 
+/* Question « nom » (NameSearch) : noms publics proposés, puis recherche dans tout le catalogue. */
+.name-search {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: min(480px, 84vw);
+}
+.name-featured {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 24dvh;
+  overflow-y: auto;
+}
+.name-search .choice-search {
+  margin-bottom: 0;
+}
+.name-results {
+  display: flex;
+  flex-direction: column;
+  max-height: 36dvh;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.name-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  min-height: 40px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.name-result small {
+  color: var(--dim);
+  font-size: 12px;
+}
+.name-result.active,
+.name-result:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+.name-result.selected {
+  background: rgba(212, 166, 74, 0.22);
+}
+.name-chosen {
+  margin: 0;
+}
+
 /* Multijoueur : le joueur éliminé regarde la fin de la partie (PLAN-E). */
 .eliminated-banner {
   position: fixed;

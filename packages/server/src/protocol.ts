@@ -13,8 +13,10 @@ import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameReco
  * - 2 : une ligne de deck peut citer une impression, `[nombre, nom, impression]` (PLAN-G, G1).
  * - 3 : salons de 2 à 4 joueurs et Commander (PLAN-E, E13) : sièges p1 à p4, `players` et `commander` à la création,
  *   `commander` à l'arrivée, victoires par siège facultatives ; sièges IA (`ai` à la création, `players[].ai`).
+ * - 4 : question « nom » (`ChoiceRequest` de type `name` : nom de carte, de carte de terrain, type de créature), qui ne
+ *   liste plus les cartes de la partie ; l'interface cherche dans tout le catalogue.
  */
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 
 /** Versions du client (protocole et règles du moteur). */
 export interface ClientVersion {

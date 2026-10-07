@@ -120,7 +120,11 @@ describe("614.12 : « en arrivant, choisissez… » demandé au joueur (PLAN-C, 
     const option = legalActions(s, "p1").find(
       (a): a is Extract<ActionOption, { type: "playLand" }> => a.type === "playLand" && a.card === cavern,
     );
-    expect(option?.choose?.type).toBe("pick");
+    expect(option?.choose?.type).toBe("name");
+    // Toute la liste officielle des types (205.3m), pas seulement ceux des decks de la partie.
+    s = act(s, "p1", { type: "playLand", card: cavern, chosen: "Phelddagrif" });
+    expect(s.objects[idOf(s, "p1", "battlefield", "Cavern of Souls")]?.chosen).toEqual({ creatureType: "Phelddagrif" });
+    s = scenario({ p1: { hand: ["Cavern of Souls"] } });
     expect(() => act(s, "p1", { type: "playLand", card: cavern, chosen: "Pas un type" })).toThrow(RulesError);
     s = act(s, "p1", { type: "playLand", card: cavern, chosen: "Elf" });
     expect(s.objects[idOf(s, "p1", "battlefield", "Cavern of Souls")]?.chosen).toEqual({ creatureType: "Elf" });

@@ -51,7 +51,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Soulstone Sanctuary (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus ;
   - `choix auto` Moonlit Meditation, Mirrormind Crown : « vous pouvez » est demandé pour les jetons créés par un effet de création de jetons ; ceux d'amasser, d'endurer ou d'un cadeau sont toujours remplacés par des copies.
 - **Foundations (`docs/extensions/fdn.md`) :**
-  - `règle` Sorcerous Spyglass : la main de l'adversaire n'est pas montrée avant le choix du nom (les noms des permanents adverses sont proposés en tête) ;
+  - `règle` Sorcerous Spyglass : la main de l'adversaire n'est pas montrée avant le choix du nom (tout nom du catalogue peut être choisi ; les noms des permanents adverses sont proposés en tête) ;
   - `choix auto` Quilled Greatwurm (et Dawnhand Dissident) : vous répartissez les marqueurs retirés entre vos créatures, mais la sorte des marqueurs retirés d'une même créature est choisie pour vous (les −1/−1 d'abord, les +1/+1 en dernier) ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
 - **Final Fantasy (`docs/extensions/fin.md`) :**
@@ -62,6 +62,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Zenos, Shinryu : l'adversaire choisi est le premier qui perd la partie ;
   - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X.
 - **Aetherdrift (`docs/extensions/dft.md`) :**
+  - `règle` Skyseer's Chariot : « un nom de carte non-terrain » ; un nom de carte de terrain est aussi accepté (et peut être proposé) ;
   - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
   - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
 - **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`) :**

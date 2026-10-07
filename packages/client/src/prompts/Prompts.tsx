@@ -1,6 +1,6 @@
 /** Fenêtres de choix : réservées aux vraies décisions (mulligan, modes, X, kicker, défausse…). */
 
-import { type CostPick, costToText, type GameView, type ObjectView } from "@mtgx/engine";
+import { type ChoiceRequest, type CostPick, costToText, type GameView, type ObjectView } from "@mtgx/engine";
 import { useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { faceName, type Lang } from "../i18n";
@@ -8,6 +8,7 @@ import { useLocalize } from "../localize";
 import { myActions, type PlayableOption, useGame } from "../store";
 import { useTutorial } from "../tutorial/store";
 import { ChoicePrompt } from "./ChoicePrompt";
+import { NameSearch } from "./NameSearch";
 import { SideboardEditor } from "./SideboardEditor";
 import { ZoneTabbed } from "./ZoneTabs";
 
@@ -922,6 +923,7 @@ function LandChoice() {
   const loc = useLocalize();
   const [filter, setFilter] = useState("");
   const request = option?.choose;
+  if (request?.type === "name") return <LandNameChoice key={option?.card} request={request} />;
   if (request?.type !== "pick") return null;
   const suggested = String(request.suggested[0] ?? "");
   // Une carte d'un cimetière (Echoing Deeps) : son nom ; sinon le libellé du moteur, ou la valeur.
@@ -955,6 +957,34 @@ function LandChoice() {
         )}
         <button type="button" className="btn ghost" onClick={() => answer(null)}>
           Annuler
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/** Terrain joué avec un nom à choisir (Cavern of Souls : un type de créature) : recherche dans toute la liste. */
+function LandNameChoice({ request }: { request: Extract<ChoiceRequest, { type: "name" }> }) {
+  const answer = useGame((s) => s.answerLandChoice);
+  const loc = useLocalize();
+  const suggested = String(request.suggested[0] ?? "");
+  const [value, setValue] = useState(suggested);
+  return (
+    <Modal title={loc(request.prompt)}>
+      <NameSearch
+        of={request.of}
+        featured={request.featured}
+        suggested={suggested}
+        value={value}
+        onChange={setValue}
+        onSubmit={answer}
+      />
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={() => answer(null)}>
+          Annuler
+        </button>
+        <button type="button" className="btn primary" disabled={!value} onClick={() => answer(value)}>
+          Valider
         </button>
       </div>
     </Modal>

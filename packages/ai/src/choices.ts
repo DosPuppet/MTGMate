@@ -223,6 +223,11 @@ export function mulberryChoice(rand: () => number, req: ChoiceRequest): ChoiceVa
       }
       return out.length >= req.min ? out : req.suggested.map(String);
     }
+    case "name": {
+      // Un nom public mis en avant, ou la suggestion (jamais un nom tiré du catalogue : rien de caché).
+      const pool = [...req.suggested.map(String), ...req.featured];
+      return [pool[Math.floor(rand() * pool.length)] ?? ""];
+    }
     case "number":
       return [req.min + Math.floor(rand() * (req.max - req.min + 1))];
     case "order": {

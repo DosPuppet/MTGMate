@@ -30,6 +30,7 @@ import {
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId, effectivePower, hasKeyword } from "./layers";
 import { canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
+import { isNameAllowed } from "./names";
 import { asEntersChoices, ENTERS_PREFIX, withEntersChoices } from "./replacement";
 import { copyStackItem } from "./stackChoices";
 import {
@@ -415,8 +416,12 @@ export function playLand(
   if (given !== undefined) {
     const probe = asEntersChoices(s, {}, entering, "land:", "probe");
     const request = "ask" in probe ? probe.ask.request : undefined;
-    if (request?.type !== "pick") throw new RulesError("Ce terrain ne demande pas de choix");
-    if (given === "" && request.min === 0) first = [];
+    if (request?.type === "name") {
+      // Cavern of Souls : un type de créature (toute la liste officielle, `isNameAllowed`).
+      if (!isNameAllowed(s, request.of, given)) throw new RulesError("Choix invalide");
+      first = [given];
+    } else if (request?.type !== "pick") throw new RulesError("Ce terrain ne demande pas de choix");
+    else if (given === "" && request.min === 0) first = [];
     else if (request.options.includes(given)) first = [given];
     else throw new RulesError("Choix invalide");
   }

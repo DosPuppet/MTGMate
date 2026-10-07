@@ -232,7 +232,7 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
     case "choice": {
       expect(d, "choose");
       try {
-        validateChoice(p.request, d.values);
+        validateChoice(p.request, d.values, s);
       } catch (e) {
         s.pending = p; // la question reste posée
         throw e;

@@ -5,6 +5,7 @@ import { card } from "@mtgx/cards";
 import { addControlEffect, syncControl } from "../src/control";
 import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
+import { isNameAllowed } from "../src/names";
 import { cloneState, createObject, registerDef } from "../src/state";
 import { advance, emptyCombat, forcedAttacks } from "../src/turn";
 import type { CardDef, CastNowRequest, ChoiceRequest, ChoiceValue, Decision, GameState, PlayerId, Step } from "../src/types";
@@ -306,11 +307,19 @@ export const canActivate = (s: GameState, player: PlayerId, source: string) =>
 /** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
 export const picking =
   (want: string[]) =>
-  (req: ChoiceRequest, _player?: PlayerId, _s?: GameState): ChoiceValue[] | undefined => {
+  (req: ChoiceRequest, _player?: PlayerId, s?: GameState): ChoiceValue[] | undefined => {
+    if (req.type === "name" && s) {
+      const named = wantedName(s, req, want);
+      return named.length > 0 ? named : undefined;
+    }
     if (req.type !== "pick") return undefined;
     const picked = want.filter((w) => req.options.includes(w));
     return picked.length > 0 ? picked : undefined;
   };
+
+/** Question « nom » (nom de carte, type de créature) : le premier nom voulu qui est accepté ; aucun sinon. */
+export const wantedName = (s: GameState, req: ChoiceRequest, want: string[]): string[] =>
+  req.type === "name" ? want.filter((w) => isNameAllowed(s, req.of, w)).slice(0, 1) : [];
 
 /** Sélectionne dans les options d'un choix l'objet nommé `name`. */
 export const pickNamed = (s: GameState, req: ChoiceRequest, name: string) =>
