@@ -11,6 +11,7 @@ import { fx, manaAbility, ref, spell, target, triggered, when } from "../src/dsl
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
+import { objectTurnEvents } from "../src/turnlog";
 import type { ActionOption, ChoiceValue, GameState, PlayerId } from "../src/types";
 import {
   type Answer,
@@ -4317,7 +4318,7 @@ describe("lot B2 : marqueurs de bouclier ; B3 : engagements", () => {
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
     s = settle(s);
     expect(s.objects[bear]?.tapped).toBe(false);
-    expect(s.objects[bear]?.tapsThisTurn).toBe(1);
+    expect(objectTurnEvents(s, bear).filter((e) => e.e === "tap")).toHaveLength(1);
   });
 });
 

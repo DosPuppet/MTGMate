@@ -9,13 +9,80 @@ import type { CardType, Color, GameState, ObjectId, PlayerId, TurnLogEntry, Turn
 
 /** L'objet a-t-il attaqué ce tour-ci (sous cette identité : un objet revenu sur le champ de bataille est neuf) ? */
 export function attackedThisTurn(s: GameState, id: ObjectId): boolean {
-  return s.turnLog.some((e) => e.e === "attack" && e.id === id);
+  return objectDidThisTurn(s, id, "attack");
 }
 
 /** L'objet a-t-il infligé des blessures ce tour-ci ? (même identité que `sourceKey`, voir `logDamage`) */
 export function dealtDamageThisTurn(s: GameState, id: ObjectId): boolean {
   const key = s.objects[id]?.uid ?? id;
   return s.turnLog.some((e) => e.e === "damage" && e.sourceKey === key);
+}
+
+/**
+ * Index des entrées par objet (`id` : marqueurs, activations, engagements, défausses, montures, attaques), dérivé du
+ * journal et mémorisé par tableau : le journal ne fait que grandir pendant un tour (`logTurnEvent`) et il est remplacé
+ * par un nouveau tableau au début du tour suivant (de même dans une copie de l'état). Les entrées d'un objet sont celles
+ * de cet objet seulement : un objet qui change de zone est un nouvel objet (400.7), avec un nouvel identifiant.
+ */
+interface ObjectIndex {
+  /** Entrées déjà indexées. */
+  n: number;
+  byId: Map<ObjectId, TurnLogEntry[]>;
+  /** Marqueurs mis, « joueur|sorte » (une valeur par couple, dans l'ordre de la première fois) ; copie à chaque ajout. */
+  countersPut: Map<ObjectId, string[]>;
+}
+const objectIndexes = new WeakMap<TurnLogEntry[], ObjectIndex>();
+const NO_ENTRIES: readonly TurnLogEntry[] = [];
+/** Aucun marqueur mis ce tour-ci : un tableau partagé (pas d'allocation, forme d'objet constante pour V8). */
+const NO_COUNTERS_PUT: string[] = [];
+
+function objectIndex(s: GameState): ObjectIndex {
+  const log = s.turnLog;
+  let ix = objectIndexes.get(log);
+  if (!ix || ix.n > log.length) {
+    ix = { n: 0, byId: new Map(), countersPut: new Map() };
+    objectIndexes.set(log, ix);
+  }
+  for (; ix.n < log.length; ix.n++) {
+    const e = log[ix.n] as TurnLogEntry;
+    const id = "id" in e ? e.id : undefined;
+    if (!id) continue;
+    const list = ix.byId.get(id);
+    if (list) list.push(e);
+    else ix.byId.set(id, [e]);
+    if (e.e === "counters") {
+      const key = `${e.player}|${e.kind}`;
+      const kinds = ix.countersPut.get(id) ?? NO_COUNTERS_PUT;
+      if (!kinds.includes(key)) ix.countersPut.set(id, [...kinds, key]);
+    }
+  }
+  return ix;
+}
+
+/** Entrées du tour qui concernent cet objet (sous cette identité). */
+export function objectTurnEvents(s: GameState, id: ObjectId): readonly TurnLogEntry[] {
+  return objectIndex(s).byId.get(id) ?? NO_ENTRIES;
+}
+
+/** Une entrée de cette sorte pour l'objet ce tour-ci ? */
+export function objectDidThisTurn(s: GameState, id: ObjectId, event: TurnLogEntry["e"]): boolean {
+  return objectTurnEvents(s, id).some((e) => e.e === event);
+}
+
+/**
+ * Activations de l'objet ce tour-ci : une capacité de loyauté (606.3), ou la capacité « une fois par tour » d'indice
+ * `index`.
+ */
+export function activatedThisTurn(s: GameState, id: ObjectId, which: { loyalty: true } | { index: number }): boolean {
+  return objectTurnEvents(s, id).some((e) => e.e === "activate" && ("loyalty" in which ? !!e.loyalty : e.index === which.index));
+}
+
+/**
+ * Marqueurs mis sur l'objet ce tour-ci, « joueur|sorte » (filtre `countersPutByYouThisTurn`) ; le tableau renvoyé n'est
+ * jamais modifié ensuite (les dernières informations connues le gardent).
+ */
+export function countersPutThisTurn(s: GameState, id: ObjectId): string[] {
+  return objectIndex(s).countersPut.get(id) ?? NO_COUNTERS_PUT;
 }
 
 /**

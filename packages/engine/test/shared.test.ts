@@ -7,6 +7,7 @@ import { createTokens } from "../src/actions";
 import { cond, fx, triggered, when } from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
+import { objectDidThisTurn } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import { act, idOf, idsOf, passBoth, scenario } from "./helpers";
 
@@ -84,7 +85,7 @@ describe("monture (702.171)", () => {
     s = act(s, "p1", { type: "activate", source: mount, ability: saddle?.type === "activate" ? saddle.ability : -1 });
     expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
     s = passBoth(s);
-    expect(s.objects[mount]?.saddledTurn).toBe(s.turn.number);
+    expect(objectDidThisTurn(s, mount, "saddled")).toBe(true);
   });
 });
 

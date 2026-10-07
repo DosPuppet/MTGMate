@@ -10,6 +10,7 @@ import { manaValue } from "../src/mana";
 import { bump, chars, moveObject } from "../src/state";
 import { playerStatic } from "../src/statics";
 import { stateBasedActions } from "../src/turn";
+import { objectDidThisTurn } from "../src/turnlog";
 import type { CardDef, ChoiceRequest, GameState, TokenSpec } from "../src/types";
 import {
   type Answer,
@@ -1750,7 +1751,7 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     expect(chars(s, ghoda).keywords).toContain("haste");
     expect(chars(s, scouter).keywords).toContain("haste");
     expect(chars(s, scouter).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
-    expect(s.objects[ghoda]?.saddledTurn).toBe(s.turn.number);
+    expect(objectDidThisTurn(s, ghoda, "saddled")).toBe(true);
     // Les Véhicules adverses n'ont pas la célérité.
     expect(chars(s, idOf(s, "p2", "battlefield", "Hulldrifter")).keywords).not.toContain("haste");
     // La Monture montée attaque tout de suite : Trésor.
@@ -2387,7 +2388,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     let t = scenario({ p1: { battlefield: ["Alacrian Armory", "Gilded Ghoda"] } });
     const ghoda = idOf(t, "p1", "battlefield", "Gilded Ghoda");
     t = settle(toBeginCombat(t), picking([ghoda]));
-    expect(t.objects[ghoda]?.saddledTurn).toBe(t.turn.number);
+    expect(objectDidThisTurn(t, ghoda, "saddled")).toBe(true);
     // Montée, elle crée un Trésor en attaquant.
     t = act(
       advanceUntil(t, (x) => x.pending?.kind === "declareAttackers"),
@@ -2625,7 +2626,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     let t = scenario({ p1: { battlefield: ["Cloudspire Captain", "Dracosaur Auxiliary"] } });
     const draco = idOf(t, "p1", "battlefield", "Dracosaur Auxiliary");
     t = settle(activate(t, "p1", draco, "Monture", { tap: [idOf(t, "p1", "battlefield", "Cloudspire Captain")] }));
-    expect(t.objects[draco]?.saddledTurn).toBe(t.turn.number);
+    expect(objectDidThisTurn(t, draco, "saddled")).toBe(true);
   });
 
   it("Cloudspire Coordinator : regard 2 en arrivant", () => {

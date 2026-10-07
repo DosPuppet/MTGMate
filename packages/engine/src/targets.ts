@@ -6,7 +6,7 @@ import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
 import { obj } from "./state";
 import { playerProtectedFrom, playerStatic, playerStatics } from "./statics";
-import { attackedThisTurn, dealtDamageThisTurn } from "./turnlog";
+import { attackedThisTurn, countersPutThisTurn, dealtDamageThisTurn, objectDidThisTurn } from "./turnlog";
 import type {
   CardType,
   Color,
@@ -251,7 +251,7 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   if (f.other && sourceId && o.uid && o.uid === (s.objects[sourceId]?.uid ?? s.lki[sourceId]?.uid)) return false;
   // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
-  if (f.discardedThisTurn && o.discardedTurn !== s.turn.number) return false;
+  if (f.discardedThisTurn && !objectDidThisTurn(s, id, "discard")) return false;
   // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders).
   if (f.fromBattlefieldThisTurn && (o.arrivedFrom !== "battlefield" || o.controlledSince !== s.turn.number)) return false;
   // « meulée ce tour-ci » : arrivée dans le cimetière depuis la bibliothèque pendant ce tour (Raul, Tato Farmer).
@@ -297,10 +297,7 @@ export function matchesObjectFilter(
   if (f.dealtDamageThisTurn && !dealtDamageThisTurn(s, id)) return false;
   if (f.disguise !== undefined && !!s.defs[o.defId]?.disguise !== f.disguise) return false;
   // Fractal Tender : « si vous avez mis un marqueur sur cette créature ce tour-ci ».
-  if (
-    f.countersPutByYouThisTurn &&
-    !countersPutBy(o.countersPutTurn === s.turn.number ? o.countersPutKinds : undefined, controller, f.countersPutByYouThisTurn)
-  )
+  if (f.countersPutByYouThisTurn && !countersPutBy(countersPutThisTurn(s, id), controller, f.countersPutByYouThisTurn))
     return false;
   if (f.crew === "source") {
     const c = sourceId ? s.objects[sourceId]?.crewedBy : undefined;

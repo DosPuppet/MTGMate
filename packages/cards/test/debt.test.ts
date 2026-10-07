@@ -99,7 +99,9 @@ describe("garde-fou de la dette (data/debt-baseline.json)", () => {
   it.each(sections)("%s : rien de nouveau, rien de périmé", (section, find) => {
     const known = baseline[section] as Record<string, string>;
     const found = find();
-    if (section !== "engineCardLiterals") expect(found.length).toBeGreaterThan(0);
+    // Le lecteur trouve quelque chose (sauf dans les sections vidées : noms de cartes du moteur ; champs « ce tour-ci »,
+    // tous dans le journal du tour depuis PLAN-H H11).
+    if (section !== "engineCardLiterals" && section !== "turnFields") expect(found.length).toBeGreaterThan(0);
     expect(
       found.filter((k) => !(k in known)),
       `Nouvelle entrée propre à une carte (${RULE})`,

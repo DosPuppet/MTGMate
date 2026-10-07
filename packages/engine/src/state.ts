@@ -163,7 +163,14 @@ export function rulesEvent(s: GameState, ev: RulesEvent): void {
     s.leftBatch ??= [];
     s.leftBatch.push(ev.lki.id);
   }
-  if (ev.e === "discard") logTurnEvent(s, { e: "discard", player: ev.player, amount: ev.cards.length });
+  // Une seule carte par événement (`announceDiscard`) : son identifiant (chaos, « défaussée ce tour-ci »).
+  if (ev.e === "discard")
+    logTurnEvent(s, {
+      e: "discard",
+      player: ev.player,
+      amount: ev.cards.length,
+      ...(ev.cards.length === 1 ? { id: ev.cards[0] } : {}),
+    });
   detectTriggers(s, ev);
 }
 
@@ -335,19 +342,11 @@ export function tapObject(s: GameState, o: GameObject, cause?: "teamwork"): void
   if (o.tapped) return;
   o.tapped = true;
   // Captain America, Living Legend : « si c'est la première fois que cette créature devient engagée ce tour-ci ».
-  if (o.tapTurn !== s.turn.number) {
-    o.tapTurn = s.turn.number;
-    o.tapsThisTurn = 0;
-  }
-  o.tapsThisTurn = (o.tapsThisTurn ?? 0) + 1;
+  const first = !objectDidThisTurn(s, o.id, "tap");
+  const by = s.resolving?.controller ?? o.controller;
+  logTurnEvent(s, { e: "tap", player: by, id: o.id });
   bumpFor(s, "tapped"); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
-  rulesEvent(s, {
-    e: "tap",
-    objectId: o.id,
-    by: s.resolving?.controller ?? o.controller,
-    ...(cause ? { cause } : {}),
-    first: o.tapsThisTurn === 1,
-  });
+  rulesEvent(s, { e: "tap", objectId: o.id, by, ...(cause ? { cause } : {}), first });
 }
 
 /**
@@ -420,23 +419,14 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
     );
   if (after > before && o.zone === "battlefield") {
     // « la première fois que des marqueurs sont mis sur cette créature ce tour-ci » (Stalwart Successor).
-    const first = o.countersPutTurn !== s.turn.number;
-    o.countersPutTurn = s.turn.number;
+    const first = !objectDidThisTurn(s, o.id, "counters");
+    // Journal du tour (Lasting Tarfire : « si vous avez mis un marqueur sur une créature ce tour-ci » ; Fractal Tender,
+    // Kid Loki : « sur elle ») : celui qui les met est le contrôleur de ce qui se résout, sinon (coût, action) le
+    // contrôleur du permanent. Noté avant l'événement, que ses déclencheurs lisent.
     const by = s.resolving?.controller ?? o.controller;
-    o.countersPutBy = first ? [by] : [...new Set([...(o.countersPutBy ?? []), by])];
-    o.countersPutKinds = [...new Set([...(first ? [] : (o.countersPutKinds ?? [])), `${by}|${kind}`])];
-    rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first, by });
-    // Journal du tour (Lasting Tarfire : « si vous avez mis un marqueur sur une créature ce tour-ci ») : celui qui les
-    // met est le contrôleur de ce qui se résout, sinon (coût, action) le contrôleur du permanent.
     const c = chars(s, o.id);
-    logTurnEvent(s, {
-      e: "counters",
-      player: s.resolving?.controller ?? o.controller,
-      kind,
-      n: after - before,
-      types: c.types,
-      subtypes: c.subtypes,
-    });
+    logTurnEvent(s, { e: "counters", player: by, kind, n: after - before, types: c.types, subtypes: c.subtypes, id: o.id });
+    rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first, by });
   }
   return after - before;
 }
@@ -817,7 +807,7 @@ import { chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
 import { carryStaticsCache, quantityMods, recipientMatches } from "./statics";
 import { carrySourcesCache, detectTriggers } from "./triggers";
-import { logTurnEvent, zoneEntry } from "./turnlog";
+import { logTurnEvent, objectDidThisTurn, zoneEntry } from "./turnlog";
 
 export {
   bump,

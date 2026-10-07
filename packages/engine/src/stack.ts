@@ -79,7 +79,7 @@ import {
   withChosen,
 } from "./targets";
 import { checkCondition, checkCrime, createDelayed, onceKey, pushInline, simultaneously } from "./triggers";
-import { countTurnEvents, logTurnEvent } from "./turnlog";
+import { activatedThisTurn, countTurnEvents, logTurnEvent, objectDidThisTurn } from "./turnlog";
 import type {
   AbilityCostMod,
   AbilityKind,
@@ -342,7 +342,7 @@ export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): b
       (graveyardTypeAvailable(s, player, card) === "Land" ||
         playFromRules(s, player, card, "graveyard", "lands").length > 0 ||
         // Chaos d'un terrain (Oscorp Industries) : défaussé ce tour-ci, il se joue depuis le cimetière.
-        (!!d.mayhem && o.discardedTurn === s.turn.number)))
+        (!!d.mayhem && objectDidThisTurn(s, o.id, "discard"))))
   );
 }
 
@@ -1490,7 +1490,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
     // Chaos (Mayhem) : défaussée ce tour-ci, elle se lance depuis le cimetière pour son coût de chaos.
-    if (d.mayhem && o.discardedTurn === s.turn.number) return { source: "graveyard", mayhem: true };
+    if (d.mayhem && objectDidThisTurn(s, o.id, "discard")) return { source: "graveyard", mayhem: true };
     if (d.flashback) return { source: "flashback" };
     // Permissions « jouer depuis le cimetière » (famille C) : Case of the Uneaten Feast, Hades, The Tomb of Aclazotz,
     // Noctis (PV et finalité), Festival of Embers (PV), Osteomancer Adept (fourrager et finalité)…
@@ -2844,7 +2844,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (o.zone === "battlefield" && !ab.specialAction && chars(s, source).keywords.includes("noActivatedAbilities")) return false;
   if (ab.once && !onceAvailable(s, o, ab, index) && !exhaustReusable(s, o.controller, ab)) return false;
   if (o.zone === "battlefield" && abilitiesLocked(s, o.controller, source)) return false;
-  if (ab.oncePerTurn && o.activatedTurn?.[index] === s.turn.number) return false;
+  if (ab.oncePerTurn && activatedThisTurn(s, source, { index })) return false;
   const who = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;
   // Sorcerous Spyglass : les capacités (non de mana) des sources du nom choisi ne peuvent pas être activées.
@@ -2855,7 +2855,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.tap && (o.tapped || sickForActivation(s, source))) return false;
   // 606.3 : une seule capacité de loyauté par planeswalker et par tour ; on ne peut pas retirer plus que sa loyauté.
   if (ab.cost.loyalty !== undefined) {
-    if (o.loyaltyTurn === s.turn.number) return false;
+    if (activatedThisTurn(s, source, { loyalty: true })) return false;
     const lc = ab.cost.loyalty === "X" ? 0 : ab.cost.loyalty;
     if (lc < 0 && (o.counters.loyalty ?? 0) < -lc) return false;
   }
@@ -3437,7 +3437,6 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.removeCountersX && x > 0) changeCounters(s, o, ab.cost.removeCountersX, -x);
   if (ab.cost.grantor === "tap" && grantor) tapObject(s, obj(s, grantor));
   if (ab.cost.loyalty !== undefined) {
-    o.loyaltyTurn = s.turn.number;
     const cost = ab.cost.loyalty === "X" ? -x : ab.cost.loyalty;
     if (cost !== 0) changeCounters(s, o, "loyalty", cost, true);
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
@@ -3452,7 +3451,6 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     // Pit Automaton : la prochaine capacité d'exhaust de ce tour est copiée (nouvelles cibles au choix).
     if (consumePlayerEffect(s, player, "copyNextExhaust")) copyStackItem(s, item, player);
   }
-  if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n, true);
   for (const id of crew) tapObject(s, obj(s, id));
   if (crew.length) {
@@ -3595,11 +3593,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.self === "bounce") moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
+  // Journal du tour : aussi « une capacité de loyauté par tour » (606.3) et les capacités « une fois par tour », lues par
+  // `canPayNonManaCost` (`activatedThisTurn`).
   logTurnEvent(s, {
     e: "activate",
     player,
     equip: ab.equip || undefined,
     loyalty: ab.cost.loyalty !== undefined || undefined,
+    id: source,
+    index: ab.oncePerTurn ? index : undefined,
   });
   rulesEvent(s, { e: "activated", player, stackId: item.id });
   announceTargets(s, item.id, player, targets);

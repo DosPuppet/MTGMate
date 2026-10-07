@@ -36,6 +36,7 @@ import {
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
+import { logTurnEvent } from "../turnlog";
 import type { AbilityDef, ChoiceRequest, Color, Effect, GameState, PlayerId, Resolution } from "../types";
 import { BASIC_LAND_TYPES } from "../types";
 
@@ -786,7 +787,7 @@ export const HANDLERS: OpHandlers = {
     for (const id of e.what ? resolveRef(s, ctx, e.what) : [ctx.sourceId]) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield") continue;
-      o.saddledTurn = s.turn.number;
+      logTurnEvent(s, { e: "saddled", player: o.controller, id: o.id });
       bump(s);
       rulesEvent(s, { e: "saddled", objectId: o.id });
     }

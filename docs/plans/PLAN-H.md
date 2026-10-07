@@ -345,14 +345,14 @@ Attendu : 12 à 18 entrées levées.
 
 ## Suivi
 
-**État au 07/10/2026 (règles 163) :** lots H0 à H10 faits ; reste H11.
+**État au 07/10/2026 (règles 163) :** lots H0 à H10 faits ; H11 : journal du tour fait, reste le bilan.
 
 | Mesure | Départ (règles 149) | Aujourd'hui | Cible après H11 |
 |---|---|---|---|
 | singleCardKeys | 100 | 54 | ~55 |
 | playerStatic / keyword / op | 62 / 15 / 23 | 52 / 12 / 16 | ~47 / 12 / 16 |
-| turnFields | 12 | 7 | ~1 |
-| CardDef / GameObject / PlayerState | 98 / 62 / 24 | 91 / 58 / 23 | ~91 / ~50 / 23 |
+| turnFields | 12 | 0 | ~1 |
+| CardDef / GameObject / PlayerState | 98 / 62 / 24 | 91 / 49 / 23 | ~91 / ~50 / 23 |
 | ObjectFilter / CastPermissionAbilityDef | 89 / 21 | 71 / 10 | ~73 / 11 |
 | Effect (variantes / champs) | 154 / 654 | 149 / 639 | ~147 / ~620 |
 | Approximations (générales / par carte) | 24 / 267 | 27 / 217 | 22 / ~215 |
@@ -438,3 +438,12 @@ Attendu : 12 à 18 entrées levées.
   - 24 tests (`engine/test/filters.test.ts`, un par champ retiré, cas limites compris : force négative, dernières informations connues, X de la capacité ou du permanent, cible absente, borne de Loki) ; les mêmes attentes, écrites avec les anciens champs, passent sur le code d'avant ;
   - définitions des cartes comparées avant et après (toutes les cartes et jetons, une fois les anciens champs traduits) : identiques ; parties dorées identiques ; empreintes du fuzz identiques (graine 7 : `f6d9c346` sur tout le pool, 300 parties ; `3bacd5a6` en Commander, 200 parties ; `adfbe732` en Commander à 4 joueurs, 60 parties ; fuzz strict `--offers 4`, 200 parties : `b131cce1`, une décision illégale de l'IA aléatoire comme avant) ;
   - dette : ObjectFilter 89 → 71 ; singleCardKeys 62 → 54 ; `FilterCompare` suivi (3) ; Amount 34 → 35, Amount (champs) 77 → 80 (`raw`).
+- **H11 (journal du tour) (07/10/2026, sans changement de règles) :** les champs « ce tour-ci » de `GameObject` deviennent des entrées du journal du tour avec l'identifiant de l'objet (`id`), de vraies fusions (un seul enregistrement, le journal) :
+  - `loyaltyTurn` et `activatedTurn` → l'entrée `activate` existante, qui reçoit `id` et `index` (l'indice d'une capacité « une fois par tour », noté pour ces seules capacités, comme l'ancien champ) ; lus par `activatedThisTurn` dans `canPayNonManaCost` ;
+  - `countersPutTurn`, `countersPutBy` (jamais lu) et `countersPutKinds` → l'entrée `counters` existante, avec `id` ; « la première fois ce tour-ci » et le filtre `countersPutByYouThisTurn` (`countersPutThisTurn`, aussi dans la vue des couches et les dernières informations connues) ; l'entrée est désormais notée avant l'événement de règles (comme les anciens champs), et `countersPutByYouThisTurn` est une dépendance `turnLog` du cache des couches (`scanDeps`) ;
+  - `discardedTurn` → l'entrée `discard` existante, avec `id` (chaos, filtre `discardedThisTurn`) ; `tapTurn` et `tapsThisTurn` → une entrée `tap` (`first` de l'événement `tap`, Captain America) ; `saddledTurn` → une entrée `saddled` (condition `saddled`) ;
+  - lectures par un index dérivé du journal (`turnlog.ts` : `objectTurnEvents`, `objectDidThisTurn`), mémorisé par tableau : le journal ne fait que grandir pendant un tour et il est remplacé au tour suivant ; un objet qui change de zone a un nouvel identifiant (400.7), il n'hérite donc pas des entrées de l'ancien, comme avec les champs ; `attackedThisTurn` passe par le même index ;
+  - aucun champ gardé ; la vue des joueurs (`view.ts`) ne lisait aucun de ces champs : forme inchangée, `PROTOCOL_VERSION` inchangée ;
+  - 2 tests (`engine/test/turnlog.test.ts` : loyauté une fois par tour et nouvel objet après un changement de zone ; marqueurs par joueur et par sorte, engagements, défausse) ; tests qui lisaient les champs réécrits (`dft`, `shared`, `msh`, `spm`) ;
+  - parties dorées identiques ; empreintes du fuzz identiques (graine 7 : `f6d9c346` sur tout le pool, 300 parties ; `3bacd5a6` en Commander, 200 parties ; `adfbe732` en Commander à 4 joueurs, 60 parties ; fuzz strict `--offers 4`, 200 parties : `b131cce1`) ; bench dans le bruit (avant et après en alternance, `git stash`, minimum de plusieurs passes : `legalActions` 7 831 à 7 996 ms avant, 7 749 à 7 890 ms après ; IA heuristique, 14 parties, 1 586 à 1 606 ms avant, 1 549 à 1 595 ms après ; `npm run bench` dans le bruit de la machine) ;
+  - dette : turnFields 7 → 0 (le garde-fou admet désormais une section vide) ; GameObject 58 → 49.

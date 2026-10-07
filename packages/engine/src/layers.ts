@@ -20,7 +20,7 @@ import { commandZoneAbilities, counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
 import { ALL_CREATURE_TYPES, hasChosen, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
-import { countTurnEvents, onTurnLogged } from "./turnlog";
+import { countersPutThisTurn, countTurnEvents, onTurnLogged } from "./turnlog";
 import type {
   AbilityDef,
   Amount,
@@ -609,7 +609,8 @@ function scanDeps(x: unknown, out: CacheDeps): void {
     // Une clé sans valeur ne lit rien (`perTurnEvents: undefined`, toujours écrit par `staticAbility`).
     if (v === undefined) continue;
     if (k === "tapped" || k === "whileSourceTapped") out.tapped = true;
-    if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "perTurnEvents") out.turnLog = true;
+    if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "perTurnEvents" || k === "countersPutByYouThisTurn")
+      out.turnLog = true;
     if (k === "perLife") out.life = true;
     scanDeps(v, out);
   }
@@ -718,9 +719,6 @@ function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
   return out;
 }
 
-/** Vue sans marqueur mis ce tour-ci : un tableau partagé (pas d'allocation, forme d'objet constante pour V8). */
-const NO_COUNTERS_PUT: string[] = [];
-
 /** `defender` : ce qu'attaque l'objet (joueur ou planeswalker), s'il attaque. */
 function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, defender: string | undefined): LkiSnapshot {
   return {
@@ -737,7 +735,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
     basePower: c.basePower,
     keywords: c.keywords,
     isToken: o.isToken,
-    countersPutThisTurn: o.countersPutTurn === s.turn.number && o.countersPutKinds ? o.countersPutKinds : NO_COUNTERS_PUT,
+    countersPutThisTurn: countersPutThisTurn(s, id),
     attacking: defender !== undefined,
     attackedPlayer: defender !== undefined && s.players[defender] ? defender : undefined,
     name: c.name,

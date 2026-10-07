@@ -98,8 +98,6 @@ export interface GameObject {
   cast?: CastInfo;
   /** Aura ou Équipement : le permanent auquel il est attaché (301.5, 303.4). */
   attachedTo?: ObjectId;
-  /** Tour de la dernière activation d'une capacité de loyauté (606.3 : une par tour). */
-  loyaltyTurn?: number;
   /** Choix faits en arrivant (type de créature, couleur, nom de carte). */
   chosen?: {
     creatureType?: string;
@@ -123,8 +121,6 @@ export interface GameObject {
    * la garde {2} (déguisement, cape) et les coûts pour la retourner face visible sont gardés ici.
    */
   faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
-  /** Tour où la carte a été défaussée (Chaos / Mayhem : « si vous l'avez défaussée ce tour-ci »). */
-  discardedTurn?: number;
   /** Zone d'où l'objet est venu dans sa zone actuelle (Supper for Spiders : « depuis le champ de bataille »). */
   arrivedFrom?: Zone;
   /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
@@ -134,8 +130,6 @@ export interface GameObject {
    * distorsion (702.185a, `warp`), le complot (702.170d, `plot`), le présage (702.143a, `foretell`).
    */
   exiledVia?: { kind: "warp" | "plot" | "foretell"; turn: number };
-  /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
-  saddledTurn?: number;
   /** Épuisé : ne se dégage pas lors de la prochaine étape de dégagement de son contrôleur. */
   exerted?: boolean;
   /** Classe (716) : niveau actuel (1 par défaut). */
@@ -159,21 +153,12 @@ export interface GameObject {
   dealtCombatDamage?: boolean;
   /** Carte exilée suspendue (702.62) : un marqueur de temps est retiré à chaque entretien de son propriétaire. */
   suspended?: boolean;
-  /** Tour où des marqueurs ont été mis sur lui pour la dernière fois (« la première fois ce tour-ci »). */
-  countersPutTurn?: number;
   /** Suspect (701.60, Murders at Karlov Manor) : menace et « ne peut pas bloquer » tant qu'il l'est. */
   suspected?: boolean;
-  /** Joueurs qui ont mis des marqueurs sur lui pendant le tour `countersPutTurn` (Fractal Tender). */
-  countersPutBy?: PlayerId[];
-  /** … et les sortes de marqueurs mis, « joueur|sorte » (Kid Loki). */
-  countersPutKinds?: string[];
   /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
   dealtDamage?: boolean;
   /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
   linked?: ObjectId[];
-  /** Engagements de ce tour (`tapTurn` : le tour du décompte), pour « la première fois qu'elle devient engagée ce tour-ci ». */
-  tapTurn?: number;
-  tapsThisTurn?: number;
   /** Exilée face cachée (406.3) : les joueurs qui peuvent la regarder (vide : personne). */
   exiledFaceDown?: PlayerId[];
   /** Exhumé (702.84a) : s'il devait quitter le champ de bataille, il est exilé à la place. */
@@ -184,8 +169,6 @@ export interface GameObject {
   damagedBy?: ObjectId[];
   /** Joueurs à qui il a infligé des blessures de combat ce tour-ci (Steel Hellkite). */
   combatDamagedPlayers?: PlayerId[];
-  /** Tour de la dernière activation « une fois par tour », par indice de capacité. */
-  activatedTurn?: Record<number, number>;
   /**
    * Modes déjà choisis (Demonic Pact) ; `turn` : le tour auquel ils se rapportent pour les modes uniques « ce tour-ci »
    * (la liste repart de zéro à un autre tour).
@@ -507,17 +490,37 @@ export type TurnLogEntry =
   /** `id` : l'attaquant (« une créature qui a attaqué ce tour-ci »). */
   | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[]; id?: ObjectId }
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
-  /** Marqueurs mis sur un permanent ; `player` : celui qui les met (contrôleur de ce qui se résout). */
-  | { e: "counters"; player: PlayerId; kind: string; n: number; types: CardType[]; subtypes: string[] }
-  /** Capacité activée (hors mana) ; `equip` : une capacité d'équipement (Kíli the Resourceful) ; `loyalty` : de loyauté. */
-  | { e: "activate"; player: PlayerId; equip?: boolean; loyalty?: boolean; types?: CardType[]; subtypes?: string[] }
+  /**
+   * Marqueurs mis sur un permanent (`id`) ; `player` : celui qui les met (contrôleur de ce qui se résout). Lu aussi par
+   * objet (`countersPutThisTurn` : « la première fois ce tour-ci », « vous avez mis des marqueurs sur elle ce tour-ci »).
+   */
+  | { e: "counters"; player: PlayerId; kind: string; n: number; types: CardType[]; subtypes: string[]; id: ObjectId }
+  /**
+   * Capacité activée (hors action spéciale) de l'objet `id` ; `equip` : une capacité d'équipement (Kíli the Resourceful) ;
+   * `loyalty` : de loyauté (606.3 : une par tour) ; `index` : l'indice d'une capacité « une fois par tour ».
+   */
+  | {
+      e: "activate";
+      player: PlayerId;
+      equip?: boolean;
+      loyalty?: boolean;
+      types?: CardType[];
+      subtypes?: string[];
+      id?: ObjectId;
+      index?: number;
+    }
+  /** Un permanent devient engagé (« la première fois qu'elle devient engagée ce tour-ci ») ; `player` : qui l'engage. */
+  | { e: "tap"; player: PlayerId; id: ObjectId; types?: CardType[]; subtypes?: string[] }
+  /** Une Monture devient montée (702.171b : jusqu'à la fin du tour). */
+  | { e: "saddled"; player: PlayerId; id: ObjectId; types?: CardType[]; subtypes?: string[] }
   /** Vie gagnée ou perdue par `player` (un événement par gain ou perte). */
   | { e: "lifeGain" | "lifeLoss"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[] }
   /** Une carte piochée ; des cartes défaussées (`amount`) ; un regard ou une surveillance ; un crime (700.13) ; un permanent
    * retourné face visible. */
   /** `search` : recherche dans sa bibliothèque (Archive Trap : « si un adversaire a cherché dans sa bibliothèque »). */
   | { e: "draw" | "scry" | "crime" | "turnFaceUp" | "search"; player: PlayerId; types?: CardType[]; subtypes?: string[] }
-  | { e: "discard"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[] }
+  /** `id` : la carte défaussée, dans sa nouvelle zone (chaos : « si vous l'avez défaussée ce tour-ci »). */
+  | { e: "discard"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[]; id?: ObjectId }
   /** Maîtrise des éléments (Avatar). */
   | { e: "bend"; player: PlayerId; kind: "water" | "earth" | "fire" | "air"; types?: CardType[]; subtypes?: string[] }
   | {

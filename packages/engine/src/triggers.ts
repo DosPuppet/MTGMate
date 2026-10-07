@@ -41,7 +41,7 @@ import {
   validateTargets,
   withChosen,
 } from "./targets";
-import { countTurnEvents, logTurnEvent } from "./turnlog";
+import { countTurnEvents, logTurnEvent, objectDidThisTurn } from "./turnlog";
 import type {
   AbilityDef,
   Amount,
@@ -302,7 +302,7 @@ export function checkCondition(
     case "classLevel":
       return (s.objects[sourceId ?? ""]?.classLevel ?? 1) === c.level;
     case "saddled":
-      return s.objects[sourceId ?? ""]?.saddledTurn === s.turn.number;
+      return !!sourceId && !!s.objects[sourceId] && objectDidThisTurn(s, sourceId, "saddled");
     case "solved":
       return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":

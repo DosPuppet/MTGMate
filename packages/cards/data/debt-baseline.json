@@ -141,19 +141,11 @@
     "exileIfLeaves": "Exhumation (702.84a, lue dans le texte : Cityscape Leveler) : « s'il devait quitter le champ de bataille, exilez-le à la place » ; famille des retours temporaires (exhumation, Whip of Erebos…)",
     "mustBlockAttacker": "Tolsimir, Midnight's Light : « bloque cette créature si possible » (l'objet de l'événement, figé à la résolution ; PLAN-H H3 a fondu mustBlockEventObject dans mustBlockAttacker) ; famille des exigences de combat (BlockRule)"
   },
-  "turnFields": {
-    "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
-    "discardedTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
-    "saddledTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
-    "countersPutTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
-    "tapTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
-    "tapsThisTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
-    "activatedTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)"
-  },
+  "turnFields": {},
   "engineCardLiterals": {},
   "ceilings": {
     "CardDef": 91,
-    "GameObject": 58,
+    "GameObject": 49,
     "StackItem": 29,
     "PlayerState": 23,
     "GameState": 41,
@@ -259,6 +251,7 @@
     "PLAN-H H8a : ops fusionnées, keep (« gardez les permanents choisis ») remplace keepOnePerType, keepWithinTotalPower, keepSharingCreatureType et destroyAllButOnePerPlayer ; destroyAllButChosenType, damageEachPlayerPer, sacrificeElseDiscard et tapOrSacrifice exprimés par des opérations existantes (chooseOnEnter + destroy, forEachPlayer, sacrifice + discard, tapChosen + sacrificeIt) : Effect 156 → 149, Effect (champs) 642 → 632",
     "PLAN-H H8b : mots-clés doesntUntap et mayNotUntap fondus dans le remplacement untap, limité à l'étape de dégagement par EventReplacement.untapStep (true | \"may\") : EventReplacement 18 → 19",
     "PLAN-H H9 : « en arrivant » générique (CardDef.asEnters, une seule boucle asEntersChoices pour les quatre chemins d'arrivée) : chooseOnEnter, enterModes, devour et les cinq entersAsCopy* retirés de CardDef (98 → 91) ; chooseCopy reçoit les exceptions et options de la copie (optional, duration, except, counters, tapped, exile) et devour son n : Effect (champs) 632 → 639 ; chooseRiot remplacé par l'opération interne asEnters (variantes inchangées) : CardDef 98 → 91, Effect (champs) 632 → 639",
-    "PLAN-H H10 : ObjectFilter, comparaisons dynamiques (14 champs) réunies dans compare (FilterCompare, un seul résolveur resolveCompare ; montant raw : force et mana dépensé de la source sans plancher, force d'un objet désigné), attaches (5 champs) dans attached, équipage (2 champs) dans crew ; FilterCompare désormais suivi : ObjectFilter 89 → 71, FilterCompare — → 3, Amount 34 → 35, Amount (champs) 77 → 80"
+    "PLAN-H H10 : ObjectFilter, comparaisons dynamiques (14 champs) réunies dans compare (FilterCompare, un seul résolveur resolveCompare ; montant raw : force et mana dépensé de la source sans plancher, force d'un objet désigné), attaches (5 champs) dans attached, équipage (2 champs) dans crew ; FilterCompare désormais suivi : ObjectFilter 89 → 71, FilterCompare — → 3, Amount 34 → 35, Amount (champs) 77 → 80",
+    "PLAN-H H11 : champs « ce tour-ci » de GameObject (loyaltyTurn, activatedTurn, discardedTurn, saddledTurn, countersPutTurn/By/Kinds, tapTurn, tapsThisTurn) remplacés par des entrées du journal du tour avec l'identifiant de l'objet : GameObject 58 → 49"
   ]
 }

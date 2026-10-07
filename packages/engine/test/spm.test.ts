@@ -3341,7 +3341,7 @@ describe("lot A, incolores et terrains", () => {
         });
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
         const card = idOf(s, "p1", "graveyard", "Rocket-Powered Goblin Glider");
-        (s.objects[card] as { discardedTurn?: number }).discardedTurn = s.turn.number;
+        s.turnLog.push({ e: "discard", player: "p1", amount: 1, id: card });
         s = settle(act(s, "p1", { type: "cast", card }), picking([bear]));
         const glider = idOf(s, "p1", "battlefield", "Rocket-Powered Goblin Glider");
         expect(s.objects[glider]?.attachedTo).toBe(bear);
@@ -3552,7 +3552,7 @@ describe("lot B1, Web-slinging et chaos", () => {
   const activate = (s: S, player: string, source: string, extra: object = {}, label?: RegExp) =>
     act(s, player, { type: "activate", source, ability: ability(s, player, source, label)?.ability ?? -1, ...extra });
   const discarded = (s: S, id: string) => {
-    (s.objects[id] as { discardedTurn?: number }).discardedTurn = s.turn.number;
+    s.turnLog.push({ e: "discard", player: s.objects[id]?.owner ?? "p1", amount: 1, id });
   };
   const castOption = (s: S, player: string, card: string) =>
     legalActions(s, player).find((a): a is Extract<ActionOption, { type: "cast" }> => a.type === "cast" && a.card === card);
