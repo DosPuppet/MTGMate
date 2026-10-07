@@ -4,6 +4,7 @@
  * copies, équiper un commandant, sort mis au-dessous de la bibliothèque.
  */
 import { describe, expect, it } from "vitest";
+import { destroy } from "../src/actions";
 import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { moveObject, random } from "../src/state";
@@ -225,6 +226,18 @@ describe("The Fantastic Four : approximations levées (PLAN-H, H2c)", () => {
     expect(run("p2")).toBe(4);
     // p3 a moins de PV que vous : pas de bonus, même si p2 en a plus.
     expect(run("p3")).toBe(2);
+  });
+
+  it("Namor tué en réponse à son déclencheur d'attaque : vos autres créatures qui attaquent ce joueur gagnent quand même +2/+0 (508.5)", () => {
+    let s = scenario({ players: 3, p1: { battlefield: ["Namor, Atlantean King", "Bear Cub"] }, p2: { life: 25 } });
+    const namor = idOf(s, "p1", "battlefield", "Namor, Atlantean King");
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = attackPlayer(s, [namor, cub], "p2");
+    s = advanceUntil(s, (x) => x.stack.length > 0 && x.pending?.kind === "priority");
+    destroy(s, namor);
+    s = settle(s);
+    expect(idsOf(s, "p1", "battlefield", "Namor, Atlantean King")).toHaveLength(0);
+    expect(chars(s, cub).power).toBe(4);
   });
 
   it("Negative Zone Portal : pile ou face perdu, il est sacrifié et une carte exilée avec lui, tirée au hasard, revient en main", () => {

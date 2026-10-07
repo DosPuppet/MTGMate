@@ -155,7 +155,6 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
   if (e.e === "cast" && q.minManaValue !== undefined && (e.manaValue ?? 0) < q.minManaValue) return false;
   if (e.e === "activate" && q.equip && !e.equip) return false;
   if (e.e === "activate" && q.loyalty && !e.loyalty) return false;
-  if (e.e === "bend" && q.bendKind && e.kind !== q.bendKind) return false;
   if (e.e === "attack" && q.againstYou && e.defender !== me) return false;
   if (e.e === "damage") {
     if (q.combat !== undefined && e.combat !== q.combat) return false;

@@ -15,6 +15,7 @@
  */
 import { capReached, MAX_LAYER_PASSES } from "./limits";
 import { manaValue } from "./mana";
+import { hasName, printedName, shareName } from "./names";
 import { grantedSpellKeywords } from "./stack";
 import { commandZoneAbilities, counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
@@ -440,7 +441,7 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   // Imminence (702.176a) : ce n'est pas une créature tant qu'il a un marqueur de temps (ni ses types de créature).
   const impending = o.cast?.via === "impending" && o.zone === "battlefield" && (o.counters.time ?? 0) > 0;
   return {
-    name: d.name,
+    name: printedName(d),
     types: impending
       ? d.types.filter((t) => t !== "Creature")
       : station.creature && !d.types.includes("Creature")
@@ -972,7 +973,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     const extra = (o.linked ?? [])
       .filter((c) => s.objects[c]?.zone === "exile")
       .map((c) => s.defs[s.objects[c]?.defId ?? ""])
-      .filter((d) => !g.chosenName || (!!d && d.name === o.chosen?.cardName))
+      .filter((d) => !g.chosenName || (!!d && hasName(printedName(d), o.chosen?.cardName)))
       .slice(0, g.chosenName ? 1 : undefined)
       .flatMap((d) => d?.abilities ?? [])
       .filter((a) => a.kind === "activated" || a.kind === "mana" || (g.triggered && a.kind === "triggered"));
@@ -993,10 +994,14 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
   if (mods.gainActivatedFrom) {
     // Marvin, Murderous Mimic : les capacités activées imprimées des créatures correspondantes qui n'ont pas son nom.
     const f = mods.gainActivatedFrom;
-    const name = s.defs[o.defId]?.name;
+    const own = s.defs[o.defId];
+    const name = own && printedName(own);
     const extra = s.battlefield
       .filter((x) => x !== id && matchesView(snapshotBase(s, x), f, o.controller, id))
-      .filter((x) => s.defs[s.objects[x]?.defId ?? ""]?.name !== name)
+      .filter((x) => {
+        const d = s.defs[s.objects[x]?.defId ?? ""];
+        return !d || !shareName(printedName(d), name);
+      })
       .flatMap((x) => s.defs[s.objects[x]?.defId ?? ""]?.abilities ?? [])
       .filter((a) => (a.kind === "activated" && !a.specialAction && !a.fromHand && !a.fromGraveyard) || a.kind === "mana");
     mods = { ...mods, gainActivatedFrom: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
@@ -1189,7 +1194,8 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
         c.keywords = [];
         c.abilities = [];
         c.grantors = undefined;
-        c.blockRules = [];
+        // 701.38 : la provocation n'est pas une capacité ; une créature provoquée qui perd ses capacités reste provoquée.
+        c.blockRules = c.blockRules.filter((r) => r.goadedBy);
         c.protections = [];
         c.powerRules = [];
       }

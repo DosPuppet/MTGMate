@@ -186,11 +186,10 @@ export const RARES: Record<string, CardScript> = {
   // --- Noir ------------------------------------------------------------------
   "Alpharael, Stonechosen": {
     abilities: [
-      triggered(
-        when.attacksSelf,
-        [fx.loseLife(amount.halfLife(ref.controllerOf(ref.eventPlayer)), ref.controllerOf(ref.eventPlayer))],
-        { condition: cond.void, label: "Vide : le défenseur perd la moitié de ses PV" },
-      ),
+      triggered(when.attacksSelf, [fx.loseLife(amount.halfLife(ref.defendingPlayer), ref.defendingPlayer)], {
+        condition: cond.void,
+        label: "Vide : le défenseur perd la moitié de ses PV",
+      }),
     ],
   },
   "Requiem Monolith": {

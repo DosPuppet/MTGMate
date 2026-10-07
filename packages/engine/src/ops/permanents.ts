@@ -18,7 +18,7 @@ import {
 } from "../effects";
 import { blockRulePlaceholder, copiableExceptions, copiedDefId, mergeMods, resolveBlockRules } from "../layers";
 import { manaValue } from "../mana";
-import { CREATURE_TYPES, gameNames, isCreatureType, tokenCreatureTypes } from "../names";
+import { CREATURE_TYPES, gameNames, isCreatureType, nameList, printedName, tokenCreatureTypes } from "../names";
 import { asEntersChoices, chosenValue, ENTERS_PREFIX } from "../replacement";
 import {
   bump,
@@ -65,14 +65,16 @@ export function featuredNames(
       .filter((id) => !s.objects[id]?.faceDown && (s.objects[id]?.controller === controller) === mine)
       .map((id) => chars(s, id))
       .filter((c) => isLand(c.types))
-      .map((c) => ({ name: c.name, basic: of === "land" && c.supertypes.includes("Basic") }));
+      .flatMap((c) => nameList(c.name).map((name) => ({ name, basic: of === "land" && c.supertypes.includes("Basic") })));
   const cards = (ids: readonly string[]) =>
     ids
       .map((id) => s.objects[id])
       .filter((o) => o && !o.faceDown && (!o.exiledFaceDown || o.exiledFaceDown.includes(controller)))
       .map((o) => s.defs[o?.defId ?? ""])
       .filter((d) => d && isLand(d.types))
-      .map((d) => ({ name: d?.name ?? "", basic: of === "land" && !!d?.supertypes.includes("Basic") }));
+      .flatMap((d) =>
+        nameList(d && printedName(d)).map((name) => ({ name, basic: of === "land" && !!d?.supertypes.includes("Basic") })),
+      );
   const graveyards = (ps: PlayerId[]) => cards(ps.flatMap((p) => s.players[p]?.graveyard ?? []));
   if (opts.graveyardsFirst) add(graveyards(opps));
   add(permanents(false));
@@ -131,7 +133,7 @@ export function nameRequest(
     // Sans nom public : l'une de vos cartes (connues de vous seul ; la question n'est montrée qu'à vous).
     fallback = (s.players[controller]?.hand ?? [])
       .concat(s.players[controller]?.library ?? [])
-      .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "")
+      .flatMap((id) => (s.objects[id] ? nameList(chars(s, id).name) : []))
       .find((n) => valid.has(n));
   }
   const suggested = featured[0] ?? fallback ?? "";
@@ -686,8 +688,8 @@ export const HANDLERS: OpHandlers = {
       if (e.options) preset = [...e.options];
       else if (e.optionsFrom) {
         // Koh, the Face Stealer : le nom d'une des cartes désignées (s'il n'y en a aucune, rien n'est choisi).
-        const names = resolveRef(s, ctx, e.optionsFrom).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
-        preset = [...new Set(names.filter((n): n is string => !!n))];
+        const names = resolveRef(s, ctx, e.optionsFrom).flatMap((id) => (s.objects[id] ? nameList(chars(s, id).name) : []));
+        preset = [...new Set(names)];
         if (preset.length === 0) return;
       }
       return {

@@ -512,7 +512,8 @@ describe("Lorwyn Eclipsed, lot A — blanc", () => {
     expect(colors).toEqual(expect.arrayContaining(["G", "W"]));
     // Tour suivant : {W} payé, elle redevient Brigid, Clachan's Heart et crée un Kithkin.
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.number === 5 && x.turn.step === "main2");
-    expect(chars(s, brigid).name).toBe("Brigid, Clachan's Heart // Brigid, Doun's Mind");
+    // 712.8a : au recto, le nom du recto.
+    expect(chars(s, brigid).name).toBe("Brigid, Clachan's Heart");
     expect(idsOf(s, "p1", "battlefield", "Kithkin")).toHaveLength(1);
   });
 
@@ -2717,7 +2718,7 @@ describe("Lorwyn Eclipsed, lot A — vert", () => {
     const trystan = idOf(s, "p1", "battlefield", TRYSTAN);
     s = advanceUntil(s, (x) => x.turn.step === "main1");
     s = declineAll(s);
-    expect(chars(s, trystan).name).toBe(TRYSTAN);
+    expect(chars(s, trystan).name).toBe("Trystan, Callous Cultivator");
     expect(s.players.p1?.graveyard).toHaveLength(0);
   });
 

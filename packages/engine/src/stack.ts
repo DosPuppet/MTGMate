@@ -30,7 +30,7 @@ import {
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId, effectivePower, hasKeyword } from "./layers";
 import { canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
-import { isNameAllowed } from "./names";
+import { firstOfEachName, hasName, isNameAllowed } from "./names";
 import { asEntersChoices, ENTERS_PREFIX, withEntersChoices } from "./replacement";
 import { copyStackItem } from "./stackChoices";
 import {
@@ -2563,13 +2563,13 @@ export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectI
   const ordered = [...ids.filter((id) => !makesMana(id)), ...ids.filter(makesMana)];
   if (ab.cost.sacrifice?.distinct !== "name") return ordered;
   // « de noms différents » (Transmutation Font) : un permanent par nom d'abord, pour que le choix par défaut soit permis.
-  const first = ordered.filter((id, i) => ordered.findIndex((x) => chars(s, x).name === chars(s, id).name) === i);
+  const first = firstOfEachName(ordered, (id) => chars(s, id).name);
   return [...first, ...ordered.filter((id) => !first.includes(id))];
 }
 
 /** Nombre de noms différents parmi des permanents (coût « de noms différents »). */
 function distinctNames(s: GameState, ids: readonly ObjectId[]): number {
-  return new Set(ids.map((id) => chars(s, id).name)).size;
+  return firstOfEachName(ids, (id) => chars(s, id).name).length;
 }
 
 /**
@@ -2645,7 +2645,7 @@ export function crewPower(s: GameState, id: ObjectId): number {
 function spyglassed(s: GameState, source: ObjectId): boolean {
   const name = s.objects[source] && chars(s, source).name;
   return s.battlefield.some(
-    (id) => obj(s, id).chosen?.cardName === name && s.defs[copiedDefId(s, id)]?.chosenNameAbilities === "forbid",
+    (id) => hasName(name, obj(s, id).chosen?.cardName) && s.defs[copiedDefId(s, id)]?.chosenNameAbilities === "forbid",
   );
 }
 
@@ -2655,7 +2655,7 @@ function chosenNameTax(s: GameState, source: ObjectId): number {
   return s.battlefield.reduce((n, id) => {
     const rule = s.defs[copiedDefId(s, id)]?.chosenNameAbilities;
     const tax = typeof rule === "number" ? rule : 0;
-    return n + (tax && obj(s, id).chosen?.cardName === name ? tax : 0);
+    return n + (tax && hasName(name, obj(s, id).chosen?.cardName) ? tax : 0);
   }, 0);
 }
 

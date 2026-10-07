@@ -27,6 +27,7 @@ import { RulesError } from "../errors";
 import { hasKeyword } from "../layers";
 import { manaValue } from "../mana";
 import { chooseReplacementOrder } from "../modifiers";
+import { firstOfEachName, hasName, shareName } from "../names";
 import { asEntersChoices, auraHosts, type EntersContext } from "../replacement";
 import { bounceSpell, exileSpell, spellToZone } from "../stack";
 import {
@@ -649,9 +650,8 @@ export const HANDLERS: OpHandlers = {
         ),
     );
     // Eerie Ultimatum : « de noms différents » (au plus une carte par nom).
-    const cardName = (id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? id;
-    const onePerName =
-      e.distinct === "name" ? pool.filter((id, i) => pool.findIndex((x) => cardName(x) === cardName(id)) === i) : pool;
+    const nameOf = (id: string) => (s.objects[id] ? chars(s, id).name : id);
+    const onePerName = e.distinct === "name" ? firstOfEachName(pool, nameOf) : pool;
     const count = Math.min(
       allowed ? Math.min(evalAmount(s, ctx, e.count), allowed.size) : evalAmount(s, ctx, e.count),
       onePerName.length,
@@ -686,7 +686,7 @@ export const HANDLERS: OpHandlers = {
       picked = answer.map(String);
     }
     if (allowed && !distinctColors(picked.map(colorsOf))) throw new RulesError("Une carte au plus par couleur");
-    if (e.distinct === "name" && new Set(picked.map(cardName)).size !== picked.length)
+    if (e.distinct === "name" && firstOfEachName(picked, nameOf).length !== picked.length)
       throw new RulesError("Des cartes de noms différents");
     // Un tirage au hasard n'est pas rejoué : pas de question après lui.
     const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
@@ -1109,11 +1109,11 @@ export const HANDLERS: OpHandlers = {
       const o = s.objects[target];
       if (!o) return;
       const who = onBattlefield(s, target) ? o.controller : o.owner;
-      const name = onBattlefield(s, target) ? chars(s, target).name : s.defs[o.defId]?.name;
+      const name = chars(s, target).name;
       moveAndLog(s, target, "exile");
       const pl = s.players[who];
       if (!pl) return;
-      const same = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""]?.name === name;
+      const same = (id: ObjectId) => shareName(chars(s, id).name, name);
       const fromHand = pl.hand.filter(same);
       for (const id of [...pl.graveyard.filter(same), ...fromHand, ...pl.library.filter(same)]) moveObject(s, id, "exile");
       shuffle(s, pl.library);
@@ -1143,11 +1143,11 @@ export const HANDLERS: OpHandlers = {
     const picked = String(answer[0]);
     const card = s.objects[picked];
     const owner = card?.owner;
-    const name = s.defs[card?.defId ?? ""]?.name;
+    const name = card && chars(s, picked).name;
     const pl = owner ? s.players[owner] : undefined;
     if (!card || !pl || !name || !options.includes(picked)) return;
     moveObject(s, picked, "exile");
-    const same = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""]?.name === name;
+    const same = (id: ObjectId) => shareName(chars(s, id).name, name);
     const fromHand = pl.hand.filter(same);
     for (const id of [...pl.graveyard.filter(same), ...fromHand, ...pl.library.filter(same)]) moveObject(s, id, "exile");
     shuffle(s, pl.library);
@@ -1160,7 +1160,9 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
       const pl = s.players[p];
       if (!pl) continue;
-      const named = [...pl.graveyard, ...pl.hand, ...pl.library].filter((x) => s.defs[s.objects[x]?.defId ?? ""]?.name === name);
+      // « les cartes du nom choisi » : chaque nom d'une carte scindée (709.4), le nom principal d'un aventurier (715.4),
+      // celui du recto d'une carte à deux faces (712.8a).
+      const named = [...pl.graveyard, ...pl.hand, ...pl.library].filter((x) => hasName(chars(s, x).name, name));
       for (const x of named.slice(0, e.max)) moveObject(s, x, "exile");
       shuffle(s, pl.library);
     }
@@ -1319,15 +1321,7 @@ export const HANDLERS: OpHandlers = {
         }
         picked = answer.map(String);
         // « avec des noms différents » : un seul exemplaire de chaque nom.
-        if (e.distinctNames) {
-          const names = new Set<string>();
-          picked = picked.filter((id) => {
-            const n = s.defs[s.objects[id]?.defId ?? ""]?.name ?? id;
-            if (names.has(n)) return false;
-            names.add(n);
-            return true;
-          });
-        }
+        if (e.distinctNames) picked = firstOfEachName(picked, (id) => (s.objects[id] ? chars(s, id).name : id));
       }
       const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
       if (!(arrival instanceof Map)) return arrival;
@@ -1673,7 +1667,7 @@ export const HANDLERS: OpHandlers = {
         id !== ctx.sourceId &&
         s.objects[id]?.owner === ctx.controller &&
         s.objects[id]?.controller === ctx.controller &&
-        chars(s, id).name === e.with,
+        hasName(chars(s, id).name, e.with),
     );
     if (src?.zone !== "battlefield" || src.owner !== ctx.controller || !partner || !result) return;
     registerDef(s, result);

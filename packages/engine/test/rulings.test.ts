@@ -2,7 +2,7 @@
  * Tests tirés des décisions officielles (rulings Scryfall et règles complètes) pour les interactions fréquentes du méta :
  * lien de vie, copies, remplacements, nettoyage (docs/plans/PLAN-R.md, lot R7).
  */
-import { card } from "@mtgx/cards";
+import { card, nameCatalog } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { createTokens, dealDamage, destroy, gainLife, sacrifice, sourceFromObject } from "../src/actions";
 import { eventReplacement, fx, graveyardReplacement, ref, spell, target, triggered, when } from "../src/dsl";
@@ -11,6 +11,7 @@ import { RulesError } from "../src/errors";
 import { fallbackDecision } from "../src/host";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
+import { nameValidator } from "../src/names";
 import { counterItem } from "../src/stack";
 import { changeCounters, chars, createObject, moveObject, registerDef } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
@@ -1268,5 +1269,109 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     expect(s.objects[wax]?.chosen?.cardName).toBe("Waxen Shapethief");
     // Le recyclage de l'autre Waxen Shapethief (une capacité activée depuis la main) ne peut plus être activé.
     expect(cycling(s)).toBe(false);
+  });
+});
+
+describe("201.3, 709.4, 715.4, 712.8a : noms des cartes à plusieurs faces (audit du 07/10, D1)", () => {
+  /** Ancient Vendetta : p1 nomme `name` ; cartes de p2 (bibliothèque) exilées. */
+  const vendetta = (name: string, library: string[]) => {
+    let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Ancient Vendetta"] }, p2: { library } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ancient Vendetta"), targets: { t: ["p2"] } });
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    s = act(s, "p1", { type: "choose", values: [name] });
+    s = passUntil(s, (x) => x.stack.length === 0 && x.pending?.kind !== "choice");
+    return s.exile.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
+  };
+  const ROOM = "Dazzling Theater // Prop Room";
+  const ADVENTURER = "Beanstalk Wurm // Plant Beans";
+  const MODAL = "Sink into Stupor // Soporific Springs";
+  const LIB = [ROOM, ADVENTURER, MODAL, "Opt", "Opt"];
+
+  it("709.4 : une carte scindée (Salle) hors du champ de bataille a ses deux noms", () => {
+    expect(vendetta("Dazzling Theater", LIB)).toEqual([ROOM]);
+    expect(vendetta("Prop Room", LIB)).toEqual([ROOM]);
+  });
+
+  it("715.4 : hors de la pile, un aventurier n'a que son nom principal", () => {
+    expect(vendetta("Beanstalk Wurm", LIB)).toEqual([ADVENTURER]);
+    expect(vendetta("Plant Beans", LIB)).toEqual([]);
+  });
+
+  it("712.8a : hors du champ de bataille et de la pile, une carte modale à deux faces a le nom de son recto", () => {
+    expect(vendetta("Sink into Stupor", LIB)).toEqual([MODAL]);
+    expect(vendetta("Soporific Springs", LIB)).toEqual([]);
+  });
+
+  it("201.3 : « A // B » n'est pas un nom de carte (catalogue et noms de la partie) ; chaque face en est un", () => {
+    const s = scenario({ p1: { hand: [ROOM, ADVENTURER, MODAL] } });
+    const allowed = nameValidator(s, "card");
+    for (const full of [ROOM, ADVENTURER, MODAL]) expect(allowed(full)).toBe(false);
+    for (const face of ["Dazzling Theater", "Prop Room", "Beanstalk Wurm", "Plant Beans", "Soporific Springs"])
+      expect(allowed(face)).toBe(true);
+    const catalog = nameCatalog();
+    expect(catalog.cards).not.toContain(ROOM);
+    expect(catalog.cards).toContain("Prop Room");
+    expect(catalog.lands).toContain("Soporific Springs");
+  });
+
+  it("712.8a : sur le champ de bataille, le nom de la face visible ; une Salle, ceux de ses portes déverrouillées", () => {
+    const s = scenario({ p1: { battlefield: [MODAL, ADVENTURER, ROOM] } });
+    const room = idOf(s, "p1", "battlefield", ROOM);
+    (s.objects[room] as { unlocked?: number[] }).unlocked = [1];
+    bump(s);
+    expect(matchesObjectFilter(s, "p1", room, { name: "Prop Room" })).toBe(true);
+    expect(matchesObjectFilter(s, "p1", room, { name: "Dazzling Theater" })).toBe(false);
+    const modal = idOf(s, "p1", "battlefield", MODAL);
+    expect(chars(s, modal).name).toBe("Sink into Stupor");
+    expect(matchesObjectFilter(s, "p1", modal, { name: "Sink into Stupor" })).toBe(true);
+    expect(matchesObjectFilter(s, "p1", idOf(s, "p1", "battlefield", ADVENTURER), { name: "Plant Beans" })).toBe(false);
+  });
+});
+
+describe("701.38 : la provocation n'est pas une capacité (audit du 07/10, D2)", () => {
+  it("une créature provoquée qui perd ensuite toutes ses capacités reste provoquée ; ce qu'elle avait gagné est perdu", () => {
+    let s = scenario({ players: 3, p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    // Provoquée par p2 (effet de résolution, fx.goad), avec le vol pour la même durée ; puis « perd toutes ses capacités ».
+    runEffect(
+      s,
+      { ...resolution("p2"), targets: { t: [bear] } } as never,
+      fx.goad(ref.target(), "untilYourNextTurn", { addKeywords: ["flying"] }),
+    );
+    addEffect(s, [bear], { loseAllAbilities: true }, "permanent");
+    expect(chars(s, bear).keywords).not.toContain("flying");
+    expect(chars(s, bear).blockRules.map((r) => r.goadedBy)).toEqual(["p2"]);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [] })).toThrow(RulesError);
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] })).toThrow(RulesError);
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p3" }] })).not.toThrow();
+  });
+});
+
+describe("702.116a et 508.5 : myriade, joueur défenseur figé au déclenchement (audit du 07/10, D4)", () => {
+  /** Duel : Goldlust Triad attaque `at` ; `meanwhile` agit avant la résolution de la myriade. */
+  const myriad = (at: "p2" | "walker", meanwhile: (s: GameState, triad: string, walker: string) => void) => {
+    let s = scenario({ p1: { battlefield: ["Goldlust Triad"] }, p2: { battlefield: ["Ajani Resolute"] } });
+    const triad = idOf(s, "p1", "battlefield", "Goldlust Triad");
+    const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: triad, defender: at === "p2" ? "p2" : walker }] });
+    s = advanceUntil(s, (x) => x.stack.length > 0 && x.pending?.kind === "priority");
+    meanwhile(s, triad, walker);
+    let asked = 0;
+    s = passAccepting(s, (x) => {
+      if (x.pending?.kind === "choice") asked++;
+      return x.stack.length === 0 && x.triggers.length === 0;
+    });
+    const copies = s.battlefield.filter((id) => s.objects[id]?.isToken);
+    return { asked, copies };
+  };
+
+  it("la créature meurt avant la résolution : en duel, aucun adversaire autre que le joueur défenseur, aucune copie", () => {
+    expect(myriad("p2", (s, triad) => destroy(s, triad))).toEqual({ asked: 0, copies: [] });
+  });
+
+  it("le planeswalker attaqué est retiré avant la résolution : son contrôleur reste le joueur défenseur, aucune copie", () => {
+    expect(myriad("walker", (s, _t, walker) => void moveObject(s, walker, "graveyard"))).toEqual({ asked: 0, copies: [] });
   });
 });

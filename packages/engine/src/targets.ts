@@ -4,6 +4,7 @@
 import { resolveCompare } from "./effects";
 import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
+import { firstOfEachName, shareName } from "./names";
 import { obj } from "./state";
 import { playerProtectedFrom, playerStatic, playerStatics } from "./statics";
 import { attackedThisTurn, countersPutThisTurn, dealtDamageThisTurn, objectDidThisTurn } from "./turnlog";
@@ -100,7 +101,9 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.attacking !== undefined && !attackingMatches(v, f.attacking, perspective)) return false;
   if (f.maxManaValue !== undefined && (v.manaValue ?? 0) > f.maxManaValue) return false;
   if (f.manaValue !== undefined && (v.manaValue ?? 0) !== f.manaValue) return false;
-  if (f.name && v.name !== f.name) return false;
+  // « carte du nom choisi », « du même nom que » (`nameOf`) : un nom en commun ; une carte scindée a ses deux noms (709.4),
+  // un aventurier son nom principal (715.4), une carte à deux faces celui de sa face visible (712.8a).
+  if (f.name && !shareName(v.name, f.name)) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
   if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
   if (f.modified !== undefined) {
@@ -258,10 +261,12 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   if (f.milledThisTurn && (o.zone !== "graveyard" || o.arrivedFrom !== "library" || o.controlledSince !== s.turn.number))
     return false;
   if (f.sameNameAs) {
-    const name = s.defs[o.defId]?.name;
+    const name = chars(s, id).name;
     const like = f.sameNameAs;
     if (
-      !s.battlefield.some((x) => x !== id && chars(s, x).name === name && matchesObjectFilter(s, controller, x, like, sourceId))
+      !s.battlefield.some(
+        (x) => x !== id && shareName(chars(s, x).name, name) && matchesObjectFilter(s, controller, x, like, sourceId),
+      )
     )
       return false;
   }
@@ -310,7 +315,9 @@ export function matchesObjectFilter(
     const name = chars(s, id).name;
     const other = f.notSameNameAs;
     if (
-      s.battlefield.some((x) => x !== id && chars(s, x).name === name && matchesObjectFilter(s, controller, x, other, sourceId))
+      s.battlefield.some(
+        (x) => x !== id && shareName(chars(s, x).name, name) && matchesObjectFilter(s, controller, x, other, sourceId),
+      )
     )
       return false;
   }
@@ -499,7 +506,7 @@ export function validateTargets(
     if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
       throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
-    if (spec.distinct === "name" && new Set(ids.map((id) => snapshot(s, id).name)).size !== ids.length)
+    if (spec.distinct === "name" && firstOfEachName(ids, (id) => snapshot(s, id).name).length !== ids.length)
       throw new RulesError("Les cibles doivent avoir des noms différents");
     if (spec.distinct === "manaValue" && new Set(ids.map((id) => snapshot(s, id).manaValue)).size !== ids.length)
       throw new RulesError("Les cibles doivent avoir des valeurs de mana différentes");

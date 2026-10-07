@@ -6,6 +6,7 @@
 import { type DamageSource, payLife, removeFromCombat, sourceFromObject } from "./actions";
 import { copiedDefId, hasType } from "./layers";
 import { manaValue } from "./mana";
+import { nameList, shareName } from "./names";
 import { HANDLERS as COUNTERS_HANDLERS } from "./ops/counters";
 import { HANDLERS as DAMAGE_HANDLERS } from "./ops/damage";
 import { HANDLERS as FLOW_HANDLERS } from "./ops/flow";
@@ -115,7 +116,8 @@ export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): Object
     f = { ...f, attacking: resolveRef(s, ctx, f.attacking).filter((p) => isPlayer(s, p)) };
   if (f.nameOf) {
     const id = resolveRef(s, ctx, f.nameOf).find((x) => s.objects[x] || s.lki[x]);
-    const name = id ? (s.defs[s.objects[id]?.defId ?? s.lki[id]?.defId ?? ""]?.name ?? "") : "";
+    // Son nom calculé (ou dernier connu) : « A // B » pour une carte scindée, qui partage chacun de ses noms.
+    const name = id ? ((s.objects[id] ? chars(s, id).name : s.lki[id]?.name) ?? "") : "";
     // Sans objet désigné, rien ne correspond.
     f = { ...f, nameOf: undefined, name: name || "\u0000" };
   }
@@ -465,10 +467,11 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
     case "sameName": {
       // Les noms sont lus maintenant, avant ce que fait l'effet (sur le champ de bataille : le nom calculé).
-      const nameOf_ = (id: string) => (onBattlefield(s, id) ? chars(s, id).name : s.defs[s.objects[id]?.defId ?? ""]?.name);
-      const names = new Set(resolveRef(s, ctx, ref.ref).map(nameOf_));
-      if (ref.zone === "battlefield") return s.battlefield.filter((id) => names.has(chars(s, id).name));
-      return (s.players[ctx.controller]?.graveyard ?? []).filter((id) => names.has(s.defs[s.objects[id]?.defId ?? ""]?.name));
+      const nameOf_ = (id: string) => (s.objects[id] ? chars(s, id).name : s.lki[id]?.name);
+      const names = resolveRef(s, ctx, ref.ref).map(nameOf_);
+      const same = (id: ObjectId) => names.some((n) => shareName(chars(s, id).name, n));
+      if (ref.zone === "battlefield") return s.battlefield.filter(same);
+      return (s.players[ctx.controller]?.graveyard ?? []).filter(same);
     }
     case "targetsOfEventObject": {
       // Le sort lancé (l'objet de l'événement) : ses cibles, d'après son élément de pile.
@@ -504,6 +507,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return alive.filter((p) => count(p) === most);
     }
     case "defendingPlayer": {
+      // Capacité déclenchée : le joueur défenseur figé au déclenchement (508.5 ; Namor tué en réponse, myriade).
+      if (ctx.event?.defendingPlayer) return [ctx.event.defendingPlayer];
       // La source attaque ; sinon, l'attaquant de l'événement (« chaque fois qu'une de vos créatures attaque », Raid
       // Bombardment).
       const atk =
@@ -772,7 +777,8 @@ function propertyValues(s: GameState, id: ObjectId, property: AggregateProperty,
     case "basicLandType":
       return (v ? v.subtypes : (d?.subtypes ?? [])).filter((t) => (BASIC_LAND_TYPES as readonly string[]).includes(t));
     case "name":
-      return [v ? (v.name ?? "") : (d?.name ?? "")];
+      // 709.4 : chaque nom d'une carte scindée ; un objet sans nom n'en a aucun.
+      return nameList(v ? v.name : o ? chars(s, id).name : undefined);
     case "counterKind":
       return Object.entries(counters)
         .filter(([, n]) => n > 0)

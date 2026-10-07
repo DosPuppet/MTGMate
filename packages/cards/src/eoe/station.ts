@@ -168,7 +168,7 @@ export const STATION: Record<string, CardScript> = {
         label: "Renvoyez jusqu'à deux créatures",
       }),
     ],
-    stationAbilities: { 9: [triggered(when.attacksSelf, [fx.mill(4, ref.eventPlayer)], { label: "Le défenseur meule 4" })] },
+    stationAbilities: { 9: [triggered(when.attacksSelf, [fx.mill(4, ref.defendingPlayer)], { label: "Le défenseur meule 4" })] },
   },
   "Susurian Dirgecraft": {
     abilities: [

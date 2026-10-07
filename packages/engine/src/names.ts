@@ -8,7 +8,7 @@
  * catalogue, les noms des cartes de la partie restent acceptés (tests du moteur, IA, parties rejouées) ; le catalogue ne
  * change que les réponses acceptées, jamais une suggestion ni le déroulement d'une partie.
  */
-import type { GameState, NameKind } from "./types";
+import type { CardDef, GameState, NameKind } from "./types";
 
 /** Catalogue des noms (noms anglais canoniques) : toutes les cartes (faces comprises), et les cartes de terrain. */
 export interface NameCatalog {
@@ -58,6 +58,54 @@ export const isCreatureType = (t: string): boolean => CREATURE_TYPE_SET.has(t);
 
 let catalog: { cards: Set<string>; lands: Set<string> } | null = null;
 
+/**
+ * Séparateur des noms d'une carte à plusieurs faces dans `CardDef.name` (« A // B ») : « A // B » n'est pas un nom de
+ * carte (201.3) ; chaque face en est un.
+ */
+const FACE_SEPARATOR = " // ";
+
+/** Un nom qu'on peut choisir (201.3) : pas le nom complet « A // B » d'une carte à plusieurs faces. */
+export const isSingleName = (name: string): boolean => !!name && !name.includes(FACE_SEPARATOR);
+
+/**
+ * Nom d'une carte qui n'utilise aucune de ses faces (caractéristiques de base, `layers.ts`) : une carte scindée (Salle
+ * comprise) garde « A // B », qui porte ses deux noms (709.4, lus par `nameList`) ; un aventurier a seulement son nom
+ * principal (715.4), une carte à deux faces le nom de son recto (712.8a).
+ */
+export function printedName(d: CardDef): string {
+  return d.layout && d.layout !== "split" && d.faceDefs?.[0] ? d.faceDefs[0].name : d.name;
+}
+
+/** Noms d'un objet d'après son nom calculé (`chars(s, id).name`) : les deux moitiés d'une carte scindée (709.4). */
+export function nameList(name: string | undefined): string[] {
+  return name ? name.split(FACE_SEPARATOR) : [];
+}
+
+/** L'objet de ce nom calculé a-t-il le nom `wanted` (« carte du nom choisi », filtre `name`) ? */
+export function hasName(name: string | undefined, wanted: string | undefined): boolean {
+  return !!wanted && nameList(name).includes(wanted);
+}
+
+/**
+ * « de noms différents » : les éléments gardés un à un, tant qu'ils n'ont aucun nom en commun avec un élément déjà gardé
+ * (un objet sans nom, face cachée, n'en partage aucun).
+ */
+export function firstOfEachName<T>(items: readonly T[], nameOf: (x: T) => string | undefined): T[] {
+  const seen = new Set<string>();
+  return items.filter((x) => {
+    const names = nameList(nameOf(x));
+    if (names.some((n) => seen.has(n))) return false;
+    for (const n of names) seen.add(n);
+    return true;
+  });
+}
+
+/** Deux objets ont-ils un nom en commun (« du même nom », 201.2a) ? */
+export function shareName(a: string | undefined, b: string | undefined): boolean {
+  const other = nameList(b);
+  return nameList(a).some((n) => other.includes(n));
+}
+
 /** Enregistre le catalogue des noms de cartes (`null` : aucun, seuls les noms des cartes de la partie sont acceptés). */
 export function registerNameCatalog(c: NameCatalog | null): void {
   catalog = c ? { cards: new Set(c.cards), lands: new Set(c.lands) } : null;
@@ -75,8 +123,8 @@ export function tokenCreatureTypes(v: unknown, out: string[] = []): string[] {
 }
 
 /**
- * Noms de la partie (cartes, faces comprises, pas les jetons ; types de créature des cartes et des jetons qu'elles
- * créent) : ceux que proposait l'ancienne question, toujours acceptés (une partie enregistrée avant le catalogue se
+ * Noms de la partie (cartes et chacune de leurs faces, pas le nom complet « A // B » ni les jetons ; types de créature
+ * des cartes et des jetons qu'elles créent) : ceux que proposait l'ancienne question, toujours acceptés (une partie enregistrée avant le catalogue se
  * rejoue à l'identique).
  */
 export function gameNames(s: GameState, of: NameKind): Set<string> {
@@ -85,7 +133,7 @@ export function gameNames(s: GameState, of: NameKind): Set<string> {
     if (of === "creatureType") {
       if (d.types.includes("Creature")) for (const t of d.subtypes) out.add(t);
       for (const t of tokenCreatureTypes(d.abilities)) out.add(t);
-    } else if (!d.isToken && d.name && (of === "card" || d.types.includes("Land"))) out.add(d.name);
+    } else if (!d.isToken && isSingleName(d.name) && (of === "card" || d.types.includes("Land"))) out.add(d.name);
   }
   return out;
 }

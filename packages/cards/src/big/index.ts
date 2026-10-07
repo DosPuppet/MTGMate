@@ -241,12 +241,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       ),
       triggered(
         when.attacksSelf,
-        [
-          fx.damage(
-            amount.refCount(ref.permanentsOf(ref.controllerOf(ref.eventPlayer), { types: ["Artifact"] })),
-            ref.controllerOf(ref.eventPlayer),
-          ),
-        ],
+        [fx.damage(amount.refCount(ref.permanentsOf(ref.defendingPlayer, { types: ["Artifact"] })), ref.defendingPlayer)],
         { label: "Blessures égales à ses artefacts" },
       ),
     ],

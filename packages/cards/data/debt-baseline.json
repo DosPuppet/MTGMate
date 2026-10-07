@@ -159,7 +159,7 @@
     "TriggerMod": 6,
     "EventReplacement": 19,
     "CastInfo": 10,
-    "TurnLogQuery": 27,
+    "TurnLogQuery": 26,
     "MoveSpec": 17,
     "BlockRule": 13,
     "TargetSpec": 23,
@@ -252,6 +252,7 @@
     "PLAN-H H8b : mots-clés doesntUntap et mayNotUntap fondus dans le remplacement untap, limité à l'étape de dégagement par EventReplacement.untapStep (true | \"may\") : EventReplacement 18 → 19",
     "PLAN-H H9 : « en arrivant » générique (CardDef.asEnters, une seule boucle asEntersChoices pour les quatre chemins d'arrivée) : chooseOnEnter, enterModes, devour et les cinq entersAsCopy* retirés de CardDef (98 → 91) ; chooseCopy reçoit les exceptions et options de la copie (optional, duration, except, counters, tapped, exile) et devour son n : Effect (champs) 632 → 639 ; chooseRiot remplacé par l'opération interne asEnters (variantes inchangées) : CardDef 98 → 91, Effect (champs) 632 → 639",
     "PLAN-H H10 : ObjectFilter, comparaisons dynamiques (14 champs) réunies dans compare (FilterCompare, un seul résolveur resolveCompare ; montant raw : force et mana dépensé de la source sans plancher, force d'un objet désigné), attaches (5 champs) dans attached, équipage (2 champs) dans crew ; FilterCompare désormais suivi : ObjectFilter 89 → 71, FilterCompare — → 3, Amount 34 → 35, Amount (champs) 77 → 80",
-    "PLAN-H H11 : champs « ce tour-ci » de GameObject (loyaltyTurn, activatedTurn, discardedTurn, saddledTurn, countersPutTurn/By/Kinds, tapTurn, tapsThisTurn) remplacés par des entrées du journal du tour avec l'identifiant de l'objet : GameObject 58 → 49"
+    "PLAN-H H11 : champs « ce tour-ci » de GameObject (loyaltyTurn, activatedTurn, discardedTurn, saddledTurn, countersPutTurn/By/Kinds, tapTurn, tapsThisTurn) remplacés par des entrées du journal du tour avec l'identifiant de l'objet : GameObject 58 → 49",
+    "Audit 07/10 : TurnLogQuery.bendKind retiré (champ mort, produit par aucune carte ni par le moteur) : TurnLogQuery 27 → 26"
   ]
 }

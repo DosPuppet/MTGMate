@@ -451,8 +451,11 @@ export const RECORD_VERSION = 1;
  * - 164 : Nommer une carte, une carte de terrain ou un type de créature : catalogue complet (hors de l'état de la
  *   partie), noms publics en tête, liste officielle des types de créature (205.3m) ; plus aucun nom tiré des decks
  *   adverses
+ * - 165 : Audit du 07/10 : noms des cartes à plusieurs faces (709.4, 715.4, 712.8a ; « A // B » n'est pas un nom),
+ *   provocation conservée malgré la perte des capacités (701.38), joueur défenseur figé au déclenchement (Namor,
+ *   myriade, Specimen Freighter)
  */
-export const RULES_VERSION = 164;
+export const RULES_VERSION = 165;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

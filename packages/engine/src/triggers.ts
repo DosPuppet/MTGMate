@@ -1000,6 +1000,18 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
   }
 }
 
+/**
+ * 508.5 : joueur défenseur de la source attaquante, sinon de l'objet attaquant de l'événement (Raid Bombardment) — le
+ * joueur attaqué ou le contrôleur du planeswalker attaqué —, figé au déclenchement dans les données de l'événement.
+ */
+function frozenDefendingPlayer(s: GameState, source: ObjectId, eventObject: ObjectId | undefined): PlayerId | undefined {
+  const atk =
+    s.combat?.attackers.find((a) => a.id === source) ??
+    (eventObject ? s.combat?.attackers.find((a) => a.id === eventObject) : undefined);
+  if (!atk) return undefined;
+  return s.players[atk.defender] ? atk.defender : (s.objects[atk.defender]?.controller ?? s.lki[atk.defender]?.controller);
+}
+
 /** `only` : ne regarder que certaines sources (revue des arrivées en fin de lot, 603.6a). */
 export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source) => boolean): void {
   if (s.over) return;
@@ -1025,8 +1037,10 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       if (!!ab.fromGraveyard !== (zone === "graveyard")) return;
       // Zone de commandement : les emblèmes ; d'une carte, seulement « depuis la zone de commandement » (113.6, éminence).
       if (zone === "command" && !s.objects[src.id]?.isToken && !ab.fromCommand) return;
-      const data = matchTrigger(s, ev, ab.trigger, src);
-      if (!data) return;
+      const matched = matchTrigger(s, ev, ab.trigger, src);
+      if (!matched) return;
+      const defending = s.combat ? frozenDefendingPlayer(s, src.id, matched.objectId) : undefined;
+      const data = defending ? { ...matched, defendingPlayer: defending } : matched;
       // « … pour la première fois chaque tour » : le premier événement est noté avant la condition « si … » (603.4).
       if (ab.oncePerTurn === "firstEvent") {
         const key = onceKey(src.view.defId, src.id, index);

@@ -595,8 +595,6 @@ export interface TurnLogQuery {
   perPlayer?: boolean;
   /** Capacité activée : seulement les capacités de loyauté. */
   loyalty?: boolean;
-  /** Maîtrise des éléments : seulement cette sorte. */
-  bendKind?: "water" | "earth" | "fire" | "air";
   /**
    * Le nombre de valeurs différentes parmi les entrées : sources des blessures (Case of the Burning Masks), sortes de
    * maîtrise (Avatar Aang), types de carte (April O'Neil : « chaque type parmi les sorts lancés »), joueurs concernés
@@ -637,6 +635,12 @@ export interface TriggerEventData {
   newObjectId?: ObjectId;
   player?: PlayerId;
   amount?: number;
+  /**
+   * Joueur défenseur de la créature attaquante (la source, sinon l'objet de l'événement), figé au déclenchement (508.5 :
+   * celui qu'elle attaquait, même si elle a quitté le combat ou si le planeswalker attaqué a disparu) ; lu par
+   * `ref.defendingPlayer`.
+   */
+  defendingPlayer?: PlayerId;
   /**
    * « Une ou plusieurs … » (déclenchement `batched`) : les objets des autres événements du lot, dans l'ordre (le premier
    * est `objectId`) ; lus par `ref.eventObjects` (« ces créatures », « l'une d'elles »).
