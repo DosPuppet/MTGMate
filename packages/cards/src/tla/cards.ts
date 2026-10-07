@@ -10,6 +10,7 @@ import {
   type CardScript,
   CLUE,
   chapter,
+  cmp,
   cond,
   cost,
   costReducer,
@@ -121,8 +122,8 @@ export const CARDS: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.modifyAll({ types: ["Creature"], maxManaValueX: true }, { loseAllAbilities: true }),
-        fx.destroyAll({ types: ["Creature"], maxManaValueX: true }),
+        fx.modifyAll({ types: ["Creature"], compare: [cmp.manaValue("<=", amount.x)] }, { loseAllAbilities: true }),
+        fx.destroyAll({ types: ["Creature"], compare: [cmp.manaValue("<=", amount.x)] }),
       ],
     ),
   },

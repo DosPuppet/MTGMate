@@ -5,6 +5,7 @@ import {
   block,
   bothIfKicked,
   type CardScript,
+  cmp,
   cond,
   costReducer,
   eventReplacement,
@@ -109,7 +110,7 @@ export const RED: Record<string, CardScript> = {
     // Équiper {1} : lu dans le texte.
     abilities: [
       staticAbility("attached", { power: 1, addKeywords: ["reach"] }, { label: "+1/+0 et la portée" }),
-      triggered({ on: "taps", who: { attachedToSource: true } }, [fx.damage(1, ref.eachOpponent, ref.eventObject)], {
+      triggered({ on: "taps", who: { attached: "host" } }, [fx.damage(1, ref.eachOpponent, ref.eventObject)], {
         label: "La créature équipée inflige 1 blessure à chaque adversaire",
       }),
     ],
@@ -379,7 +380,12 @@ export const RED: Record<string, CardScript> = {
         effects: [
           {
             op: "playerEffect",
-            ability: { nextSpell: { filter: { types: ["Instant", "Sorcery"], maxManaValueSourcePower: true }, copy: true } },
+            ability: {
+              nextSpell: {
+                filter: { types: ["Instant", "Sorcery"], compare: [cmp.manaValue("<=", amount.sourcePower)] },
+                copy: true,
+              },
+            },
             once: true,
           },
         ],

@@ -5,6 +5,7 @@ import {
   amount,
   BASIC_LAND,
   type CardScript,
+  cmp,
   cond,
   fx,
   GOBLIN,
@@ -232,7 +233,10 @@ export const CARDS: Record<string, CardScript> = {
       [],
       [
         fx.search(
-          { anyOf: [{ types: ["Creature"] }, { types: ["Instant"] }, { types: ["Sorcery"] }], maxManaValueColorsSpent: true },
+          {
+            anyOf: [{ types: ["Creature"] }, { types: ["Instant"] }, { types: ["Sorcery"] }],
+            compare: [cmp.manaValue("<=", amount.colorsSpent)],
+          },
           { to: "exile" },
           1,
           undefined,

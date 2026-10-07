@@ -177,7 +177,7 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
       eventReplacement({
         event: "untap",
-        toFilter: { attachedToSource: true },
+        toFilter: { attached: "host" },
         modify: { prevent: true },
         label: "La créature enchantée ne peut pas être dégagée",
       }),
@@ -315,7 +315,7 @@ export const BLUE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
-        targets: [target.upTo(1, target.creature("t", { notAttachedToSource: true }))],
+        targets: [target.upTo(1, target.creature("t", { attached: "notHost" }))],
         label: "Exilez une autre créature",
       }),
       staticAbility("attached", { copyLinkedExile: true }, { label: "Copie de la créature exilée" }),

@@ -6,6 +6,7 @@ import {
   block,
   blockAbility,
   type CardScript,
+  cmp,
   cond,
   DINOSAUR_SOLDIER,
   FOOD,
@@ -206,7 +207,9 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Prehistoric Pet": {
     abilities: [
-      blockAbility(block.notBy({ powerAboveSource: true }, "Imblocable par les créatures de force supérieure")),
+      blockAbility(
+        block.notBy({ compare: [cmp.power(">", amount.sourcePower)] }, "Imblocable par les créatures de force supérieure"),
+      ),
       activated({
         mana: "{1}{W}",
         tap: true,

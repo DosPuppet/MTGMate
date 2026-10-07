@@ -1,15 +1,17 @@
 /**
  * Légalité des cibles (règle 115).
  */
+import { resolveCompare } from "./effects";
 import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
-import { castInfoOf, obj } from "./state";
+import { obj } from "./state";
 import { playerProtectedFrom, playerStatic, playerStatics } from "./statics";
 import { attackedThisTurn, dealtDamageThisTurn } from "./turnlog";
 import type {
   CardType,
   Color,
   ExiledFilter,
+  FilterCompare,
   GameState,
   LkiSnapshot,
   ObjectFilter,
@@ -105,13 +107,13 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
     const counters = Object.values(v.counters ?? {}).some((n) => n > 0);
     if ((counters || !!v.equipped || (v.enchantedBy ?? []).includes(v.controller)) !== f.modified) return false;
   }
-  if (f.attachedToSelf && (!sourceId || v.attachedTo !== sourceId)) return false;
+  if (f.attached === "toSource" && (!sourceId || v.attachedTo !== sourceId)) return false;
   if (f.enchanted !== undefined) {
     const by = v.enchantedBy ?? [];
     if (f.enchanted === "byYou" ? !by.includes(perspective) : by.length > 0 !== f.enchanted) return false;
   }
-  if (f.wasAttachedToSource && !(sourceId && v.lastAttachedTo === sourceId && !v.attachedTo)) return false;
-  if (f.crewedBySource && !(sourceId && v.crewedByThisTurn?.includes(sourceId))) return false;
+  if (f.attached === "wasToSource" && !(sourceId && v.lastAttachedTo === sourceId && !v.attachedTo)) return false;
+  if (f.crew === "bySource" && !(sourceId && v.crewedByThisTurn?.includes(sourceId))) return false;
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
   // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
   if (f.withCounter === "any" && !Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
@@ -129,10 +131,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
-  if (f.toughnessAbovePower && !(v.toughness > v.power)) return false;
-  if (f.powerAboveBase && !(v.power > (v.basePower ?? v.power))) return false;
+  if (f.compare && !compareMatches(v, f.compare)) return false;
   if (f.withActivatedAbility && !(v.abilities ?? []).some((a) => a.kind === "activated")) return false;
-  if (f.manaValueParity && ((v.manaValue ?? 0) % 2 === 0) !== (f.manaValueParity === "even")) return false;
   if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
   if (f.noneOfSubtypes && (v.subtypes.includes(ALL_CREATURE_TYPES) || f.noneOfSubtypes.some((t) => v.subtypes.includes(t))))
     return false;
@@ -146,6 +146,25 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.manaSpentBelowValue && !((v.manaSpent ?? 0) < (v.manaValue ?? 0))) return false;
   if (f.damaged !== undefined && !!v.damaged !== f.damaged) return false;
   if (f.faceDown !== undefined && !!v.faceDown !== f.faceDown) return false;
+  return true;
+}
+
+/**
+ * `ObjectFilter.compare` : chaque comparaison résolue (un nombre), relative à l'objet lui-même (`power`, `basePower`) ou de
+ * parité ; un montant encore non résolu (filtre lu directement, hors `resolveFilter` et `withX`) est ignoré.
+ */
+function compareMatches(v: LkiSnapshot, cs: FilterCompare[]): boolean {
+  for (const c of cs) {
+    const x = c.what === "power" ? v.power : c.what === "toughness" ? v.toughness : (v.manaValue ?? 0);
+    if (c.cmp === "odd" || c.cmp === "even") {
+      if ((x % 2 === 0) !== (c.cmp === "even")) return false;
+      continue;
+    }
+    const to = c.to === "power" ? v.power : c.to === "basePower" ? (v.basePower ?? v.power) : c.to;
+    if (typeof to !== "number") continue;
+    const ok = c.cmp === "<" ? x < to : c.cmp === "<=" ? x <= to : c.cmp === "=" ? x === to : c.cmp === ">=" ? x >= to : x > to;
+    if (!ok) return false;
+  }
   return true;
 }
 
@@ -202,7 +221,7 @@ export function withChosen(
       { types: ["Creature"], minToughness: n, maxToughness: n },
     ];
   }
-  if (f.parityChosen) out.manaValueParity = source?.chosen?.parity ?? "even";
+  if (f.parityChosen) out.compare = [...(f.compare ?? []), { what: "manaValue", cmp: source?.chosen?.parity ?? "even" }];
   if (f.nameChosen) out.name = source?.chosen?.cardName ?? "—";
   // Sans choix (arrivée sans résolution), rien ne correspond.
   if (f.subtypeChosen) out.subtype = source?.chosen?.creatureType ?? "—";
@@ -212,49 +231,14 @@ export function withChosen(
   return out;
 }
 
-/** Force de la source (vivante, sinon dernière information connue). */
-function sourcePower(s: GameState, sourceId?: ObjectId): number {
-  if (!sourceId) return 0;
-  if (s.objects[sourceId]?.zone === "battlefield") return chars(s, sourceId).power;
-  return s.lki[sourceId]?.power ?? 0;
-}
-
-/** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
+/**
+ * Remplace les valeurs dynamiques du filtre par leur valeur actuelle, hors d'une résolution : les choix de la source, puis
+ * les comparaisons (`resolveCompare`, du point de vue de la source seule).
+ */
 export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
   // « Du type / de la couleur choisis » : le choix de la source (en jeu, sort qui se résout, sinon dernière information).
   if (hasChosen(f)) f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
-  // Formation Breaker : « de force inférieure à celle de cette créature ».
-  if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
-  if (f.powerAboveSource) f = { ...f, powerAboveSource: undefined, minPower: sourcePower(s, sourceId) + 1 };
-  if (f.manaValueSourcePower) f = { ...f, manaValueSourcePower: undefined, manaValue: sourcePower(s, sourceId) };
-  if (f.manaValueSourceCounters) {
-    const src = sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined;
-    const m = f.manaValueSourceCounters;
-    // As Foretold : « de valeur de mana X ou moins, X étant le nombre de marqueurs de temps ».
-    const n = src?.counters?.[typeof m === "string" ? m : m.counter] ?? 0;
-    f = { ...f, manaValueSourceCounters: undefined, ...(typeof m === "string" ? { manaValue: n } : { maxManaValue: n }) };
-  }
-  if (f.maxManaValueColorsSpent) {
-    const spent = castInfoOf(s, sourceId)?.spentColors ?? {};
-    const n = (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
-    f = { ...f, maxManaValueColorsSpent: undefined, maxManaValue: n };
-  }
-  if (f.maxManaValueX) {
-    const x = (sourceId && s.objects[sourceId]?.x) || 0;
-    return { ...f, maxManaValueX: undefined, maxManaValue: x };
-  }
-  if (f.maxManaValueManaSpent) {
-    // Sort de permanent en cours de résolution (Mockingbird) : le mana dépensé est sur l'élément de pile.
-    const spent =
-      (sourceId &&
-        (s.objects[sourceId]?.cast?.manaSpent ??
-          s.lki[sourceId]?.manaSpent ??
-          s.stack.find((x) => x.id === sourceId)?.cast?.manaSpent)) ||
-      0;
-    return { ...f, maxManaValueManaSpent: undefined, maxManaValue: spent };
-  }
-  if (!f.maxManaValueSourcePower) return f;
-  return { ...f, maxManaValueSourcePower: undefined, maxManaValue: sourcePower(s, sourceId) };
+  return resolveCompare(s, f, sourceId);
 }
 
 /** Filtre appliqué à une carte dans n'importe quelle zone (cimetière, bibliothèque, main…). */
@@ -303,7 +287,7 @@ export function matchesObjectFilter(
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (f.attackedThisTurn && !attackedThisTurn(s, id)) return false;
-  if (f.attachedToSourceHost) {
+  if (f.attached === "toHost") {
     const host = sourceId ? s.objects[sourceId]?.attachedTo : undefined;
     if (!host || o.attachedTo !== host) return false;
   }
@@ -318,13 +302,13 @@ export function matchesObjectFilter(
     !countersPutBy(o.countersPutTurn === s.turn.number ? o.countersPutKinds : undefined, controller, f.countersPutByYouThisTurn)
   )
     return false;
-  if (f.crewedSource) {
+  if (f.crew === "source") {
     const c = sourceId ? s.objects[sourceId]?.crewedBy : undefined;
     if (!c || c.turn !== s.turn.number || !c.ids.includes(id)) return false;
   }
   // « autre que la créature enchantée » (Sporogenic Infection, Saw) ; « la créature équipée / le terrain enchanté ».
-  if (f.notAttachedToSource && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
-  if (f.attachedToSource && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;
+  if (f.attached === "notHost" && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
+  if (f.attached === "host" && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;
   if (f.notSameNameAs) {
     const name = chars(s, id).name;
     const other = f.notSameNameAs;

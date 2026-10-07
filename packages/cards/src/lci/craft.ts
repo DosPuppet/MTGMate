@@ -194,7 +194,7 @@ export const CRAFT: Record<string, CardScript> = {
     abilities: [
       staticAbility("attached", { power: 3 }, { label: "+3/+0" }),
       triggered(
-        when.attacks({ attachedToSource: true }),
+        when.attacks({ attached: "host" }),
         [
           fx.sacrifice(ref.you, { types: ["Artifact"], other: true }, 1, { optional: true, store: "s" }),
           ...fx.when(

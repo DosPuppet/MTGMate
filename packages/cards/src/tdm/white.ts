@@ -164,7 +164,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       staticAbility("attached", { power: 3 }, { label: "+3/+0" }),
       triggered(
-        when.attacks({ attachedToSource: true }),
+        when.attacks({ attached: "host" }),
         fx.when(cond.controls({ types: ["Creature"], attacking: true, controller: "you" }, 3), fx.draw(1)),
         { label: "Trois attaquants ou plus : piochez une carte" },
       ),

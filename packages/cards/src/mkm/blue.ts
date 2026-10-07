@@ -50,7 +50,7 @@ const fetchNamed = (name: string, key: string) => [
 const ENCHANT_CREATURE: CardScript["enchant"] = { filter: { types: ["Creature"] }, label: "créature" };
 
 /** Burden of Proof : la créature enchantée est un Détective que vous contrôlez. */
-const ENCHANTS_YOUR_DETECTIVE = cond.controls({ attachedToSource: true, subtype: "Detective" });
+const ENCHANTS_YOUR_DETECTIVE = cond.controls({ attached: "host", subtype: "Detective" });
 
 /** Bibliothèque vide (Living Conundrum). */
 const LIBRARY_EMPTY = cond.not(cond.amountAtLeast(amount.cardsIn("library"), 1));

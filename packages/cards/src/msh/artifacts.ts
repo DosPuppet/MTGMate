@@ -54,7 +54,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     // Indestructible et Équiper {2} : lus dans le texte.
     abilities: [
       staticAbility("attached", { toughness: 8, addKeywords: ["vigilance"] }, { label: "+0/+8 et la vigilance" }),
-      triggered(when.attacks({ types: ["Creature"], attachedToSource: true }), [fx.tap(ref.target())], {
+      triggered(when.attacks({ types: ["Creature"], attached: "host" }), [fx.tap(ref.target())], {
         targets: [target.of(ref.defendingPlayer, target.creature("t"), "créature du joueur défenseur")],
         label: "Engagez une créature du joueur défenseur",
       }),

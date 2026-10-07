@@ -10,6 +10,7 @@ import {
   blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
+  cmp,
   cond,
   craft,
   DINOSAUR_YOU,
@@ -117,7 +118,7 @@ export const LEGENDS: Record<string, CardScript> = {
       activated({
         mana: "{X}{X}{W}",
         sacrifice: true,
-        effects: [fx.destroyAll({ types: ["Artifact"], manaValueX: true })],
+        effects: [fx.destroyAll({ types: ["Artifact"], compare: [cmp.manaValue("=", amount.x)] })],
         label: "Détruisez chaque artefact de valeur de mana X",
       }),
     ],
@@ -594,7 +595,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Kutzil, Malamet Exemplar": {
     abilities: [
       playerStatic({ castLimit: { who: "opponents", during: "yourTurn" }, label: "Pas de sorts adverses pendant votre tour" }),
-      triggered(when.combatDamageBatch({ ...CREATURE_YOU_CONTROL, powerAboveBase: true }), [fx.draw(1)], {
+      triggered(when.combatDamageBatch({ ...CREATURE_YOU_CONTROL, compare: [cmp.power(">", "basePower")] }), [fx.draw(1)], {
         label: "Piochez une carte",
       }),
     ],

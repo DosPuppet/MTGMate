@@ -129,7 +129,6 @@ const COUNTER_KEYS = new Set([
   "addCounter",
   "removeCounter",
   "counterKind",
-  "manaValueSourceCounters",
 ]);
 const COUNTER_HOLDERS = new Set(["addCounters", "removeCounters", "removeCounterFrom", "counters", "moveCounter"]);
 const COUNTER_OPS = new Set(["addCounters", "removeCounters", "counterOnOrCreate", "countersDivided", "moveCounter"]);
@@ -145,7 +144,6 @@ function counterKinds(n: J, parentKey: string, out: Map<string, string>, where: 
   const holder = COUNTER_HOLDERS.has(parentKey) || (typeof n.op === "string" && COUNTER_OPS.has(n.op));
   for (const [k, v] of Object.entries(n)) {
     if (typeof v === "string" && (COUNTER_KEYS.has(k) || (holder && k === "kind"))) out.set(v, out.get(v) ?? where);
-    if (isObj(v) && k === "manaValueSourceCounters" && typeof v.counter === "string") out.set(v.counter, where);
     counterKinds(v, k, out, where);
   }
 }

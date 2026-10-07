@@ -34,7 +34,7 @@
   - Planètes ; mana égal aux marqueurs (`amountCounters`) ; copies légendaires ; filtre `multicolored` ;
   - engager ou dégager un permanent fait avancer la version d'état (statiques « créatures engagées », détecté par le fuzz).
 - Lot C ✅ (241/260) : 40 rares, mythiques et cartes uniques (`eoe/rares.ts`). Le moteur gagne :
-  - le mana dépensé pour lancer (`manaSpent` sur le sort et le permanent ; Amount `manaSpent`, filtres `manaSpentBelowValue` et `maxManaValueManaSpent`) ;
+  - le mana dépensé pour lancer (`manaSpent` sur le sort et le permanent ; Amount `manaSpent`, filtre `manaSpentBelowValue` et comparaison `cmp.manaValue("<=", amount.sourceManaSpent)`) ;
   - les coûts d'activation réduits (`reduction`, avec condition), « retirez un marqueur d'une créature », « engagez X artefacts » (`tapX`) ;
   - des statiques de joueur : déclencheurs d'arrivée doublés, +1 carte avec une petite main, sorts d'artefact du dessus de la bibliothèque, premier sort gratuit, sorts de créature incontrecarrables, blessures de combat imprévenables, terrains depuis le cimetière, distorsion accordée ;
   - les réductions de coût conditionnelles ou variables (affinité pour les artefacts, deuxième sort du tour) ;

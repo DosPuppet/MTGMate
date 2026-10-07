@@ -476,7 +476,7 @@ export const EDH_TURTLES: Record<string, CardScript> = {
       triggered(
         when.attachedDealsCombatDamageToPlayer,
         [
-          fx.sacrifice(ref.you, { attachedToSource: true }, 1, { optional: true, store: "s" }),
+          fx.sacrifice(ref.you, { attached: "host" }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.draw(amount.powerOf(ref.eventObject))),
         ],
         { label: "Vous pouvez la sacrifier : piochez autant de cartes que sa force" },

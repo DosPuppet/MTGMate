@@ -104,7 +104,7 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 
 - **Cartes :** Ingenious Prodigy, Elusive Otter // Grove's Bounty, Kellan, the Fae-Blooded // Birthright Boon, Faunsbane Troll, Rowan, Scion of War.
 - **Le moteur gagne :**
-  - les filtres `powerAboveSource` (furtivité : « ne peut pas être bloquée par des créatures de force supérieure ») et `attachedToSelf` (« attaché à cette créature » : statiques « pour chaque », coûts de sacrifice) ;
+  - les filtres `compare: [cmp.power(">", amount.sourcePower)]` (furtivité : « ne peut pas être bloquée par des créatures de force supérieure ») et `attached: "toSource"` (« attaché à cette créature » : statiques « pour chaque », coûts de sacrifice) ;
   - `countersDivided` accepte un montant (« répartissez X marqueurs ») ;
   - `amount.lifeLostThisTurn`.
 - **Tests :** 5 tests de règles (« lot C1 »).

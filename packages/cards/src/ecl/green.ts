@@ -10,6 +10,7 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   champion,
+  cmp,
   cond,
   ELF_BG,
   entersWith,
@@ -82,7 +83,7 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility("attached", { setColorsChosen: true }, { label: "Le terrain enchanté est de la couleur choisie" }),
       eventReplacement({
         event: "mana",
-        source: { attachedToSource: true },
+        source: { attached: "host" },
         extraMana: "chosen",
         modify: { add: 1 },
         label: "Le terrain enchanté engagé pour du mana : un mana de plus de la couleur choisie",
@@ -95,7 +96,7 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.search({ types: ["Creature"], maxManaValueX: true }, { to: "hand" }, 1, undefined, "f"),
+        fx.search({ types: ["Creature"], compare: [cmp.manaValue("<=", amount.x)] }, { to: "hand" }, 1, undefined, "f"),
         ...fx.when(cond.beholdSharingType(ref.stored("f"), 2), fx.moveTo(ref.stored("f"), { to: "battlefield" })),
       ],
     ),

@@ -23,6 +23,7 @@ import type {
   Effect,
   EventReplacement,
   EventReplacementAbilityDef,
+  FilterCompare,
   GraveyardReplacementAbilityDef,
   Keyword,
   LayerMods,
@@ -514,6 +515,35 @@ export const amount = {
   linkedTotalPower: agg("sum", "power", { of: { kind: "linked" } }),
   /** Couleurs parmi les cartes exilées pour fabriquer la source. */
   linkedColors: agg("distinct", "color", { of: { kind: "linked" } }),
+  /**
+   * Force de la source sans plancher (107.1b), pour les comparaisons des filtres : sur le champ de bataille, sinon d'après
+   * ses dernières informations connues (« de force supérieure à celle de cette créature »).
+   */
+  sourcePower: { kind: "raw", what: "power" } as Amount,
+  /** Force du premier objet désigné encore sur le champ de bataille, sans plancher (Fell the Mighty : la créature ciblée). */
+  rawPowerOf: (r: Ref): Amount => ({ kind: "raw", what: "power", of: r }),
+  /** Mana dépensé pour lancer la source, d'après ses dernières informations connues au besoin (Astelli Reclaimer). */
+  sourceManaSpent: { kind: "raw", what: "manaSpent" } as Amount,
+};
+
+/**
+ * Comparaisons des filtres (`ObjectFilter.compare`, PLAN-H H10) : `{ types: ["Creature"], compare: [cmp.manaValue("<=",
+ * amount.x)] }` (« de valeur de mana X ou moins »). Le montant est évalué par `resolveCompare` (`effects.ts`).
+ */
+export const cmp = {
+  power: (op: FilterCompare["cmp"], to: NonNullable<FilterCompare["to"]>): FilterCompare => ({ what: "power", cmp: op, to }),
+  toughness: (op: FilterCompare["cmp"], to: NonNullable<FilterCompare["to"]>): FilterCompare => ({
+    what: "toughness",
+    cmp: op,
+    to,
+  }),
+  manaValue: (op: FilterCompare["cmp"], to: NonNullable<FilterCompare["to"]>): FilterCompare => ({
+    what: "manaValue",
+    cmp: op,
+    to,
+  }),
+  /** Valeur de mana paire ou impaire (0 est pair). */
+  parity: (p: "odd" | "even"): FilterCompare => ({ what: "manaValue", cmp: p }),
 };
 
 export const fx = {
@@ -2349,9 +2379,9 @@ export const when = {
   combatDamageToOpponent: (who: "self" | ObjectFilter): TriggerSpec => ({ on: "dealsCombatDamage", who, to: TO_OPPONENT }),
   step: (step: Step, whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "step", step, whose }),
   /** « Chaque fois que la créature équipée inflige des blessures de combat à un joueur » */
-  attachedDealsCombatDamageToPlayer: { on: "dealsCombatDamage", who: { attachedToSource: true }, to: TO_PLAYER } as TriggerSpec,
+  attachedDealsCombatDamageToPlayer: { on: "dealsCombatDamage", who: { attached: "host" }, to: TO_PLAYER } as TriggerSpec,
   /** « Chaque fois que la créature équipée se dégage » */
-  attachedUntaps: { on: "untaps", who: { attachedToSource: true } } as TriggerSpec,
+  attachedUntaps: { on: "untaps", who: { attached: "host" } } as TriggerSpec,
   discard: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "discard", whose }),
   tapsSelf: { on: "taps", who: "self" } as TriggerSpec,
   /** « Chaque fois que vous lancez un sort qui cible cette créature » */
@@ -2779,8 +2809,7 @@ export function doesntUntap(
   affects: "self" | "attached" | ObjectFilter,
   opts: { may?: boolean; condition?: Condition; label?: string } = {},
 ): EventReplacementAbilityDef {
-  const toFilter: ObjectFilter =
-    affects === "self" ? { self: true } : affects === "attached" ? { attachedToSource: true } : affects;
+  const toFilter: ObjectFilter = affects === "self" ? { self: true } : affects === "attached" ? { attached: "host" } : affects;
   return {
     kind: "eventReplacement",
     event: "untap",

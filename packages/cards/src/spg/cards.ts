@@ -7,6 +7,7 @@ import {
   block,
   blockAbility,
   type CardScript,
+  cmp,
   cond,
   doesntUntap,
   entersWith,
@@ -545,14 +546,10 @@ export const CARDS: Record<string, CardScript> = {
         },
         { label: "+2/+2, protection contre le rouge et le bleu" },
       ),
-      triggered(
-        when.combatDamage({ types: ["Creature"], attachedToSource: true }, true),
-        [fx.damage(2, ref.target()), fx.draw(1)],
-        {
-          targets: [target.any()],
-          label: "2 blessures à n'importe quelle cible et piochez",
-        },
-      ),
+      triggered(when.combatDamage({ types: ["Creature"], attached: "host" }, true), [fx.damage(2, ref.target()), fx.draw(1)], {
+        targets: [target.any()],
+        label: "2 blessures à n'importe quelle cible et piochez",
+      }),
     ],
   },
   "Hallowed Haunting": {
@@ -678,7 +675,7 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         sorcerySpeed: true,
-        effects: [fx.search({ types: ["Creature"], maxManaValueX: true }, { to: "battlefield" })],
+        effects: [fx.search({ types: ["Creature"], compare: [cmp.manaValue("<=", amount.x)] }, { to: "battlefield" })],
         label: "Cherchez une créature de valeur de mana X ou moins",
       }),
     ],
@@ -705,7 +702,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   // Improvisation : lue dans le texte.
   "Whir of Invention": {
-    spell: spell([], [fx.search({ types: ["Artifact"], maxManaValueX: true }, { to: "battlefield" })]),
+    spell: spell([], [fx.search({ types: ["Artifact"], compare: [cmp.manaValue("<=", amount.x)] }, { to: "battlefield" })]),
   },
   "Bone Miser": {
     abilities: [
@@ -886,7 +883,10 @@ export const CARDS: Record<string, CardScript> = {
     // « Mélangez-la dans la bibliothèque de son propriétaire » : comme une carte qui retourne dans la bibliothèque au
     // lieu du cimetière.
     shuffleIntoLibrary: true,
-    spell: spell([], [fx.search({ types: ["Creature"], colors: ["G"], maxManaValueX: true }, { to: "battlefield" })]),
+    spell: spell(
+      [],
+      [fx.search({ types: ["Creature"], colors: ["G"], compare: [cmp.manaValue("<=", amount.x)] }, { to: "battlefield" })],
+    ),
   },
   "Sliver Overlord": {
     abilities: [

@@ -66,7 +66,7 @@ export const LEGENDS4: Record<string, CardScript> = {
           fx.pump(ref.target(), 0, 0, ["indestructible"]),
           fx.addCounters(ref.target(), amount.lkiCounters("+1/+1")),
           // « Un Équipement qui était attaché à Zack » : vous en choisissez un (quel que soit son contrôleur).
-          fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { subtype: "Equipment", wasAttachedToSource: true }), ref.you, "e", {
+          fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { subtype: "Equipment", attached: "wasToSource" }), ref.you, "e", {
             prompt: "Choisissez l'Équipement à attacher",
           }),
           fx.attach(ref.target(), ref.stored("e")),
@@ -249,7 +249,7 @@ export const LEGENDS4: Record<string, CardScript> = {
   "The Masamune": {
     abilities: [
       playerStatic({
-        triggerMod: { effect: "again", on: "dies", emblems: true, sources: { attachedToSource: true } },
+        triggerMod: { effect: "again", on: "dies", emblems: true, sources: { attached: "host" } },
         label: "Morts : déclencheurs de la créature équipée et de vos emblèmes, une fois de plus",
       }),
       staticAbility(

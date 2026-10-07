@@ -51,7 +51,7 @@ export const MULTI: Record<string, CardScript> = {
         label: "Attachez-la à une créature",
       }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
-      triggered(when.attacks({ attachedToSource: true }), [fx.tap(ref.target())], {
+      triggered(when.attacks({ attached: "host" }), [fx.tap(ref.target())], {
         targets: [target.upTo(1, target.creature())],
         label: "Engagez une créature",
       }),

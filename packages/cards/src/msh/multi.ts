@@ -11,6 +11,7 @@ import {
   block,
   type CardScript,
   chapter,
+  cmp,
   cond,
   entersWith,
   equipAbility,
@@ -501,7 +502,7 @@ export const MULTI: Record<string, CardScript> = {
         ...fx.when(
           cond.not(cond.v("v")),
           fx.search(
-            { ...ARTIFACT_CREATURE, maxManaValueX: true },
+            { ...ARTIFACT_CREATURE, compare: [cmp.manaValue("<=", amount.x)] },
             { to: "battlefield", counters: { kind: "+1/+1", n: amount.x } },
             1,
             undefined,
@@ -525,7 +526,7 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 2 },
-        { per: { subtype: "Equipment", attachedToSelf: true }, label: "+2/+0 par Équipement attaché" },
+        { per: { subtype: "Equipment", attached: "toSource" }, label: "+2/+0 par Équipement attaché" },
       ),
       activated({
         mana: "{3}{W}{B}",

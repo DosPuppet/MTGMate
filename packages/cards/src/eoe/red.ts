@@ -145,7 +145,7 @@ export const RED: Record<string, CardScript> = {
         targets: [
           {
             ...target.any(),
-            filter: { players: "any", objects: { types: ["Creature", "Planeswalker", "Battle"], notAttachedToSource: true } },
+            filter: { players: "any", objects: { types: ["Creature", "Planeswalker", "Battle"], attached: "notHost" } },
           },
         ],
         label: "Blessures égales à sa force",

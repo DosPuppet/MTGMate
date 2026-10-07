@@ -5,6 +5,7 @@ import {
   amount,
   BASIC_LAND,
   type CardScript,
+  cmp,
   cond,
   doesntUntap,
   entersWith,
@@ -159,7 +160,7 @@ export const CARDS: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       triggered(
-        { on: "dealsDamage", who: { attachedToSource: true }, to: { players: "opponent" } },
+        { on: "dealsDamage", who: { attached: "host" }, to: { players: "opponent" } },
         fx.may("piocher une carte", fx.draw(1)),
         { label: "La créature enchantée blesse un adversaire : vous pouvez piocher" },
       ),
@@ -507,7 +508,7 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       eventReplacement({
         event: "mana",
-        source: { attachedToSource: true },
+        source: { attached: "host" },
         extraMana: "chosen",
         modify: { add: 1 },
         label: "La Forêt enchantée engagée pour du mana : un mana de plus de la couleur choisie",
@@ -576,7 +577,7 @@ export const CARDS: Record<string, CardScript> = {
         kind: "castPermission",
         freeFrom: "any",
         freeOncePerTurn: true,
-        freeFilter: { manaValueSourceCounters: { counter: "time", atMost: true } },
+        freeFilter: { compare: [cmp.manaValue("<=", amount.lkiCounters("time"))] },
         label: "Une fois par tour : {0} au lieu du coût d'un sort de VM au plus égale aux marqueurs de temps",
       },
     ],

@@ -101,7 +101,7 @@ export const BLACK: Record<string, CardScript> = {
     enchant: { filter: CREATURE, label: "créature" },
     abilities: [
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
-      triggered(when.dies({ attachedToSource: true }), [fx.toBattlefield(ref.eventObject, { tapped: true })], {
+      triggered(when.dies({ attached: "host" }), [fx.toBattlefield(ref.eventObject, { tapped: true })], {
         label: "Revient engagée",
       }),
     ],

@@ -950,7 +950,7 @@ export const MULTI: Record<string, CardScript> = {
       }),
       eventReplacement({
         event: "mana",
-        source: { attachedToSource: true },
+        source: { attached: "host" },
         extraMana: "any",
         modify: { add: 1 },
         label: "Le terrain enchanté engagé pour du mana : un mana de plus",

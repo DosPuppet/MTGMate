@@ -8,6 +8,7 @@ export const {
   ref,
   fx,
   amount,
+  cmp,
   spell,
   modal,
   bothIfKicked,

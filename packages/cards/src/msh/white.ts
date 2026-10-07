@@ -343,7 +343,7 @@ export const WHITE: Record<string, CardScript> = {
     // Équiper {1} : lu dans le texte.
     abilities: [
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
-      triggered(when.attacksAlone({ attachedToSource: true }), [fx.untap(ref.attached), fx.scry(1)], {
+      triggered(when.attacksAlone({ attached: "host" }), [fx.untap(ref.attached), fx.scry(1)], {
         label: "La créature équipée attaque seule : dégagez-la, regard 1",
       }),
     ],
@@ -371,7 +371,7 @@ export const WHITE: Record<string, CardScript> = {
         },
         { label: "+2/+2, l'initiative et la vigilance ; Soldat légendaire" },
       ),
-      ...[when.attacks({ attachedToSource: true }), when.blocks({ attachedToSource: true })].map((w) =>
+      ...[when.attacks({ attached: "host" }), when.blocks({ attached: "host" })].map((w) =>
         triggered(w, [fx.attach(ref.attached, ref.target())], {
           targets: [
             target.upTo(

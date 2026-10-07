@@ -103,7 +103,7 @@ export const WHITE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 2, 2, ["vigilance"])], {
-        targets: [target.creature("t", { controller: "you", notAttachedToSource: true })],
+        targets: [target.creature("t", { controller: "you", attached: "notHost" })],
         label: "Une autre de vos créatures gagne +2/+2 et la vigilance",
       }),
       staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["vigilance"] }, { label: "+2/+2 et vigilance" }),

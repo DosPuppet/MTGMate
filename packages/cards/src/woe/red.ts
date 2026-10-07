@@ -80,7 +80,7 @@ export const RED: Record<string, CardScript> = {
         { types: ["Creature"], controller: "you", other: true },
         { power: 1 },
         {
-          per: { attachedToSelf: true, anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }] },
+          per: { attached: "toSource", anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }] },
           label: "Vos autres créatures : +1/+0 par Aura et Équipement attaché à Kellan",
         },
       ),

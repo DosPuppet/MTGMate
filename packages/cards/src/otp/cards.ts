@@ -6,6 +6,7 @@ import {
   amount,
   BASIC_LAND,
   type CardScript,
+  cmp,
   cond,
   escalate,
   eventReplacement,
@@ -343,7 +344,7 @@ export const CARDS: Record<string, CardScript> = {
       [
         fx.destroyAll({
           anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }, { types: ["Enchantment"] }],
-          manaValueX: true,
+          compare: [cmp.manaValue("=", amount.x)],
         }),
       ],
     ),
@@ -549,7 +550,10 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Fell the Mighty": {
-    spell: spell([target.creature()], [fx.destroyAll({ types: ["Creature"], powerAboveOf: ref.target() })]),
+    spell: spell(
+      [target.creature()],
+      [fx.destroyAll({ types: ["Creature"], compare: [cmp.power(">", amount.rawPowerOf(ref.target()))] })],
+    ),
   },
   "Ride Down": {
     spell: spell(

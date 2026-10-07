@@ -12,6 +12,7 @@ import {
   blockAbility,
   CLUE,
   chapter,
+  cmp,
   cond,
   entersWith,
   escalate,
@@ -108,7 +109,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
           fx.reflexive(
             [
               {
-                ...target.creature("t", { controller: "opponent", powerBelowSource: true }),
+                ...target.creature("t", { controller: "opponent", compare: [cmp.power("<", amount.sourcePower)] }),
                 label: "créature du joueur défenseur de force inférieure à celle d'Auron",
               },
             ],

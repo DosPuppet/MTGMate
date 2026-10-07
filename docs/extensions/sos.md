@@ -66,7 +66,7 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 
 - **Cartes :** 62 multicolores (sur 69 : les cinq collèges, Repartee, Infusion, Opus, Increment, préparées, convergence, les légendaires Silverquill, Prismari, Witherbloom…, Nita, Forum Conciliator, Molten Note, Fix What's Broken) et 18 incolores et terrains (les cinq Archaic incolores, Diary of Dreams, Page, Loose Leaf, Strixhaven Skycoach, terrains à surveillance et terrains « lents »).
 - **Le moteur gagne :**
-  - le filtre `maxManaValueColorsSpent` (« de valeur de mana au plus le nombre de couleurs dépensées pour le lancer », Sundering Archaic) ; `manaValueX` sert aussi à `moveAll` (Fix What's Broken : « chaque carte d'artefact et de créature de valeur de mana X ») ;
+  - la comparaison `cmp.manaValue("<=", amount.colorsSpent)` (« de valeur de mana au plus le nombre de couleurs dépensées pour le lancer », Sundering Archaic) ; `cmp.manaValue("=", amount.x)` sert aussi à `moveAll` (Fix What's Broken : « chaque carte d'artefact et de créature de valeur de mana X ») ;
   - une carte rendue lançable depuis l'exil avec « puis exilez-la » y retourne (`exileAfter`, comme depuis le cimetière : Nita) ;
   - `amount.manaSpent` lit le mana dépensé pour un éphémère ou un rituel qui se résout (Molten Note).
 - **[règles]** `RULES_VERSION` = 29.

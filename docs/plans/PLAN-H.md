@@ -345,15 +345,15 @@ Attendu : 12 à 18 entrées levées.
 
 ## Suivi
 
-**État au 07/10/2026 (règles 163) :** lots H0 à H9 faits ; restent H10 et H11.
+**État au 07/10/2026 (règles 163) :** lots H0 à H10 faits ; reste H11.
 
 | Mesure | Départ (règles 149) | Aujourd'hui | Cible après H11 |
 |---|---|---|---|
-| singleCardKeys | 100 | 62 | ~55 |
+| singleCardKeys | 100 | 54 | ~55 |
 | playerStatic / keyword / op | 62 / 15 / 23 | 52 / 12 / 16 | ~47 / 12 / 16 |
 | turnFields | 12 | 7 | ~1 |
 | CardDef / GameObject / PlayerState | 98 / 62 / 24 | 91 / 58 / 23 | ~91 / ~50 / 23 |
-| ObjectFilter / CastPermissionAbilityDef | 89 / 21 | 89 / 10 | ~73 / 11 |
+| ObjectFilter / CastPermissionAbilityDef | 89 / 21 | 71 / 10 | ~73 / 11 |
 | Effect (variantes / champs) | 154 / 654 | 149 / 639 | ~147 / ~620 |
 | Approximations (générales / par carte) | 24 / 267 | 27 / 217 | 22 / ~215 |
 
@@ -429,3 +429,12 @@ Attendu : 12 à 18 entrées levées.
   - dette : CardDef 98 → 91 ; Effect (champs) 632 → 639 (les exceptions de la copie passent de `CardDef` à `chooseCopy`, `devour.n`), variantes inchangées (`chooseRiot` → `asEnters`) ; singleCardKeys 63 → 62 (`options`) ;
   - écartés : un jeton copie créé par un effet et les arrivées hors résolution ne posent pas de question (choix suggérés, sans les autres effets) ; le regard de la main d'Arachne (aucune forme générique « regarder une main ») ; `shockLand` reste à part (déjà une question d'arrivée commune, `arrivalChoices`) ; les F/E 1/1 d'Abuelo's Awakening en arrivant (il faudrait des `LayerMods` dans `MoveSpec`).
 - **Correctif hors plan (07/10/2026, règles 163) :** « choisissez un nom de carte » mettait en tête les cartes de la main du premier adversaire, quelle que soit la carte, et l'IA nommait la première : une information cachée (Skyseer's Chariot, The Clone Saga). Les noms proposés partent maintenant des permanents adverses, puis des vôtres ; pour Sorcerous Spyglass, la main regardée devient une approximation documentée (aucune forme « regarder une main » pour l'instant, comme Arachne). Test dans `dft.test.ts`. Reste à traiter : la liste « tous les noms » vient des définitions de la partie, donc des decks de tous les joueurs (voir le compte rendu).
+- **H10 (07/10/2026, sans changement de règles) :** `ObjectFilter`, de vraies fusions (un seul évaluateur par champ) :
+  - comparaisons dynamiques : 14 champs (`powerAboveSource`, `powerBelowSource`, `powerAboveOf`, `manaValueSourcePower`, `maxManaValueSourcePower`, `manaValueSourceCounters` et sa variante `atMost`, `maxManaValueManaSpent`, `maxManaValueColorsSpent`, `maxManaValueX`, `maxToughnessX`, `manaValueX`, `toughnessAbovePower`, `powerAboveBase`, `manaValueParity`) → `compare: FilterCompare[]` (`{ what: "power" | "toughness" | "manaValue", cmp: "<" | "<=" | "=" | ">=" | ">" | "odd" | "even", to?: Amount | "power" | "basePower" }` ; `cmp` plutôt que `op`, déjà le discriminant d'`Effect`, que `debt.test.ts` compte comme une opération) ; aides `cmp.power`, `cmp.toughness`, `cmp.manaValue`, `cmp.parity` (`dsl.ts`) ;
+  - un seul résolveur, `resolveCompare` (`effects.ts`), remplace les deux (`withX` et `resolveFilter`) : pendant une résolution (`withX`), avec le contexte de ce qui se résout (le X de la capacité ou du sort, ses cibles) ; ailleurs (`resolveFilter`), du point de vue de la source seule, avec le X du permanent ; une comparaison au montant non résolu est ignorée par `matchesView`, comme les anciens champs ; les relations à l'objet lui-même (`"power"`, `"basePower"`) et la parité sont lues directement ; `parityChosen` (`withChosen`) produit une comparaison de parité ; Loki Laufeyson fige sa borne avec le même résolveur, sans descendre sous 0 (comme avant) ; seul écart possible, sans carte qui l'atteigne : `manaValueX` et `maxToughnessX` étaient ignorés hors d'une résolution, leur comparaison y lit maintenant le X du permanent (toutes leurs cartes passent par `withX` : `destroyAll`, `modifyAll`, `moveAll`) ;
+  - montant `raw` (`what: "power" | "manaSpent"`, `of?`) : les valeurs de la source sans plancher (107.1b), d'après ses dernières informations connues (`amount.sourcePower`, `amount.sourceManaSpent`), et la force d'un objet désigné sur le champ de bataille (`amount.rawPowerOf`, aucune valeur sinon : rien ne correspond) ; `powerOf` et `spent` ne convenaient pas (plancher à 0, lecture de l'instantané de la capacité, pas de dernières informations pour le mana dépensé) ; les autres montants existaient : `amount.x`, `amount.lkiCounters`, `amount.colorsSpent` ;
+  - attaches : `attachedToSource`, `notAttachedToSource`, `attachedToSelf`, `wasAttachedToSource`, `attachedToSourceHost` → `attached: "host" | "notHost" | "toSource" | "wasToSource" | "toHost"` (mêmes lieux de lecture : `matchesView` pour `toSource` et `wasToSource`, `matchesObjectFilter` pour les autres, les déclencheurs et `triggerMod` pour `host`) ; `notHost` n'est pas écrit `not: { attached: "host" }`, qui différerait hors du champ de bataille (`matchesCard`) ; équipage : `crewedBySource`, `crewedSource` → `crew: "bySource" | "source"` ;
+  - restent : les bornes fixes (`minPower`, `maxManaValue`…), les champs « choisis » (`numberChosen`, `parityChosen`…, `withChosen`), `sharesCreatureTypeWith` et `nameOf` (pas des comparaisons de nombres), `equipped`, `enchanted`, `modified`, `damagedBySource` ;
+  - 24 tests (`engine/test/filters.test.ts`, un par champ retiré, cas limites compris : force négative, dernières informations connues, X de la capacité ou du permanent, cible absente, borne de Loki) ; les mêmes attentes, écrites avec les anciens champs, passent sur le code d'avant ;
+  - définitions des cartes comparées avant et après (toutes les cartes et jetons, une fois les anciens champs traduits) : identiques ; parties dorées identiques ; empreintes du fuzz identiques (graine 7 : `f6d9c346` sur tout le pool, 300 parties ; `3bacd5a6` en Commander, 200 parties ; `adfbe732` en Commander à 4 joueurs, 60 parties ; fuzz strict `--offers 4`, 200 parties : `b131cce1`, une décision illégale de l'IA aléatoire comme avant) ;
+  - dette : ObjectFilter 89 → 71 ; singleCardKeys 62 → 54 ; `FilterCompare` suivi (3) ; Amount 34 → 35, Amount (champs) 77 → 80 (`raw`).

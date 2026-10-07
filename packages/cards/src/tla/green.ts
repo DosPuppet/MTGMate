@@ -418,7 +418,7 @@ export const GREEN: Record<string, CardScript> = {
         { perGraveyard: { types: ["Creature"] }, label: "+1/+1 par carte de créature de votre cimetière ; Avatar" },
       ),
       triggered(
-        when.dies({ attachedToSource: true }),
+        when.dies({ attached: "host" }),
         [
           fx.mill(amount.powerOf(ref.eventObject), ref.you, { name: "m" }),
           fx.toHand(ref.selfCard),

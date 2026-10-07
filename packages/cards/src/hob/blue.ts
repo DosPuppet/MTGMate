@@ -294,7 +294,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       staticAbility("attached", { addKeywords: ["prowess"] }, { label: "La créature équipée a la prouesse" }),
       playerStatic({
-        triggerMod: { effect: "again", sources: { attachedToSource: true } },
+        triggerMod: { effect: "again", sources: { attached: "host" } },
         label: "Les capacités déclenchées de la créature équipée se déclenchent une fois de plus",
       }),
       equipAbility({ mana: "{1}", filter: { subtype: "Wizard" }, label: "Équiper Sorcier {1}" }),

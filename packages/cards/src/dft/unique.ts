@@ -9,6 +9,7 @@ import {
   CREATURE_OR_ARTIFACT,
   CREATURE_OR_VEHICLE,
   CREATURE_YOU_CONTROL,
+  cmp,
   cond,
   ELEPHANT,
   entersWith,
@@ -398,7 +399,12 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.toBattlefield(ref.target())], {
         targets: [
-          target.cardInGraveyard("t", { ...CREATURE_OR_ARTIFACT, maxManaValueX: true }, "you", "carte d'artefact ou de créature"),
+          target.cardInGraveyard(
+            "t",
+            { ...CREATURE_OR_ARTIFACT, compare: [cmp.manaValue("<=", amount.x)] },
+            "you",
+            "carte d'artefact ou de créature",
+          ),
         ],
         label: "Renvoyez un artefact ou une créature de VM X ou moins",
       }),
@@ -557,7 +563,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "The Aetherspark": {
     abilities: [
       triggered(
-        when.combatDamage({ types: ["Creature"], attachedToSource: true }),
+        when.combatDamage({ types: ["Creature"], attached: "host" }),
         [fx.counters(ref.self, "loyalty", amount.eventAmount)],
         { condition: cond.yourTurn, label: "Autant de marqueurs de loyauté" },
       ),

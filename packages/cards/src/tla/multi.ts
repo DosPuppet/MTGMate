@@ -10,6 +10,7 @@ import {
   amount,
   type CardScript,
   CLUE,
+  cmp,
   cond,
   costReducer,
   entersWith,
@@ -391,7 +392,7 @@ export const MULTI: Record<string, CardScript> = {
               [
                 target.cardInGraveyard(
                   "t",
-                  { types: ["Creature"], maxManaValueSourcePower: true },
+                  { types: ["Creature"], compare: [cmp.manaValue("<=", amount.sourcePower)] },
                   "you",
                   "carte de créature de VM au plus sa force",
                 ),

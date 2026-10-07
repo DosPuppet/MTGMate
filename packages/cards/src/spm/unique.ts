@@ -5,6 +5,7 @@ import {
   amount,
   type CardScript,
   chapter,
+  cmp,
   cond,
   entersWith,
   eventReplacement,
@@ -174,7 +175,7 @@ export const UNIQUE: Record<string, CardScript> = {
     // Piétinement : lu dans le texte.
     abilities: [
       triggered(
-        when.castSpell("you", { types: ["Creature"], manaValueSourcePower: true }),
+        when.castSpell("you", { types: ["Creature"], compare: [cmp.manaValue("=", amount.sourcePower)] }),
         [fx.copySpell(ref.eventObject, 1, { nonlegendary: true }), fx.addCounters(ref.self, 1)],
         { label: "Sort de créature de VM égale à sa force : copiez-le (non légendaire), puis un marqueur +1/+1" },
       ),
@@ -337,7 +338,7 @@ export const UNIQUE: Record<string, CardScript> = {
         "attached",
         { power: 2, toughness: 2 },
         {
-          per: { anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }], attachedToSourceHost: true },
+          per: { anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }], attached: "toHost" },
           label: "+2/+2 pour chaque Aura et Équipement attachés à elle",
         },
       ),

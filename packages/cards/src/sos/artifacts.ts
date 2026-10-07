@@ -5,6 +5,7 @@ import {
   amount,
   BASIC_LAND,
   type CardScript,
+  cmp,
   cond,
   entersWith,
   fx,
@@ -62,7 +63,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         targets: [
           target.nonland(
             "t",
-            { controller: "opponent", maxManaValueColorsSpent: true },
+            { controller: "opponent", compare: [cmp.manaValue("<=", amount.colorsSpent)] },
             "permanent non-terrain adverse de VM au plus le nombre de couleurs dépensées",
           ),
         ],

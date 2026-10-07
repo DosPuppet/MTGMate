@@ -132,7 +132,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
           fx.when(cond.refMatches(ref.target(), { anySubtype: ["Mutant", "Ninja", "Turtle"] }), fx.doubleCounters(ref.target())),
         ],
         {
-          targets: [{ ...target.creature("t", { crewedSource: true }), label: "créature qui l'a pilotée ce tour-ci" }],
+          targets: [{ ...target.creature("t", { crew: "source" }), label: "créature qui l'a pilotée ce tour-ci" }],
           label: "Un marqueur +1/+1 sur une créature qui l'a pilotée (doublés si Mutant, Ninja ou Tortue)",
         },
       ),

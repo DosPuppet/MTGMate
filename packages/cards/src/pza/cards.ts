@@ -18,7 +18,7 @@ import {
 } from "../tdm/common";
 
 const RATS = { types: ["Creature" as const], subtype: "Rat", controller: "you" as const };
-const EQUIPPED = { types: ["Creature" as const], attachedToSource: true };
+const EQUIPPED = { types: ["Creature" as const], attached: "host" as const };
 const PAY_FOR_RATS = "payez autant de PV que vous voulez (un Rat par PV)";
 
 export const CARDS: Record<string, CardScript> = {

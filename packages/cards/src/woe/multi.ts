@@ -101,7 +101,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.entersSelf, createRole(MONSTER_ROLE, ref.self), { label: "Un Rôle Monstre attaché à elle" }),
       activated({
         mana: "{1}",
-        sacrificeOther: { filter: { subtype: "Aura", attachedToSelf: true }, count: 1 },
+        sacrificeOther: { filter: { subtype: "Aura", attached: "toSource" }, count: 1 },
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "opponent" })],
         effects: [fx.exileIfDies(ref.target()), fx.fight(ref.self, ref.target())],

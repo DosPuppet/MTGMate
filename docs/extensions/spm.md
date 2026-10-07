@@ -81,7 +81,7 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
   - copie à l'arrivée « sauf que son nom est [le sien] » (`entersAsCopyKeepName`) ;
   - copie non légendaire d'un sort (`fx.copySpell(…, { nonlegendary })`, `nextSpell.copyNonlegendary`) : exception copiable du jeton (707.9b) ;
   - un emblème garde le nom de carte choisi (The Clone Saga : `nameChosen` dans le filtre de son déclencheur) ;
-  - filtre `manaValueSourcePower` (« de valeur de mana égale à la force de [la source] ») ; les filtres de « chaque fois que vous lancez un sort » passent par `resolveFilter` ;
+  - comparaison `cmp.manaValue("=", amount.sourcePower)` (« de valeur de mana égale à la force de [la source] ») ; les filtres de « chaque fois que vous lancez un sort » passent par `resolveFilter` ;
   - `noLegendRule` accepte un filtre (Spider-Verse : vos Araignées) ;
   - « faites ceci une seule fois par tour » : `oncePerTurn: "ifDone"` et `fx.doneOncePerTurn` (le déclencheur revient tant que l'effet facultatif n'a pas été fait ; entrée de dette justifiée) ;
   - cibles de noms différents (`differentNames`, présentées comme la contrainte « différents » des options, que l'IA et l'interface respectent).
@@ -105,7 +105,7 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
 - **Cartes (6) :** Arachne, Psionic Weaver, With Great Power . . ., Spider-Punk, Superior Foes of Spider-Man, Black Cat, Cunning Thief, Gwenom, Remorseless.
 - **Moteur :**
   - filtre `typeChosen` (le type de carte choisi comme mode d'arrivée) et taxe pour tous les joueurs (`costReduction.everyone`) ;
-  - filtre `attachedToSourceHost` (« chaque Aura et Équipement attachés à elle ») ; remplacement de blessures `redirectToAttached` (« infligées à la créature enchantée à la place ») ;
+  - filtre `attached: "toHost"` (« chaque Aura et Équipement attachés à elle ») ; remplacement de blessures `redirectToAttached` (« infligées à la créature enchantée à la place ») ;
   - émeute (702.136, `riot`, mot-clé imprimé) : le choix se fait en résolvant le sort de créature (« Émeute : un marqueur +1/+1 ou la célérité ? »), aussi quand l'émeute est donnée par un permanent (Spider-Punk) ; sans résolution, la célérité si la créature peut encore attaquer ce tour-ci ;
   - statique `uncounterable` (`filter`, `abilities`, `everyone`) : remplace `protectSpells` et `protectCreatureSpells` (un drapeau de moins). Chimil, the Inner Sun et Hexing Squelcher protègent désormais tous vos sorts, comme le dit leur texte (approximation levée, test dans `rulings.test.ts`) ;
   - `grantPlay.replacePrevious` (« jusqu'à ce que vous exiliez une autre carte avec cette créature ») ; `lookAtTop.who` (la bibliothèque d'un adversaire) ;

@@ -11,6 +11,7 @@ import {
   type CardScript,
   CURSED_ROLE,
   chapter,
+  cmp,
   cond,
   createRole,
   doesntUntap,
@@ -62,7 +63,12 @@ const OPPONENTS_WITH_CREATURES = amount.refCount(
 export const BLUE: Record<string, CardScript> = {
   "Ingenious Prodigy": {
     abilities: [
-      blockAbility(block.notBy({ powerAboveSource: true }, "Furtivité : imblocable par les créatures de force supérieure")),
+      blockAbility(
+        block.notBy(
+          { compare: [cmp.power(">", amount.sourcePower)] },
+          "Furtivité : imblocable par les créatures de force supérieure",
+        ),
+      ),
       entersWith({ counters: amount.x }),
       triggered(
         when.yourUpkeep,
@@ -79,7 +85,11 @@ export const BLUE: Record<string, CardScript> = {
   },
   // Prouesse lue dans le texte.
   "Elusive Otter": {
-    abilities: [blockAbility(block.notBy({ powerBelowSource: true }, "Imblocable par les créatures de force inférieure"))],
+    abilities: [
+      blockAbility(
+        block.notBy({ compare: [cmp.power("<", amount.sourcePower)] }, "Imblocable par les créatures de force inférieure"),
+      ),
+    ],
   },
   "Grove's Bounty": {
     spell: spell([target.upTo(99, target.creature("t", { controller: "you" }))], [fx.countersDivided(amount.x, ref.target())]),

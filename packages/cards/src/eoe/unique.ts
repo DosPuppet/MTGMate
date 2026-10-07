@@ -7,6 +7,7 @@ import {
   activated,
   amount,
   CREATURE_YOU_CONTROL,
+  cmp,
   cond,
   entersWith,
   eventReplacement,
@@ -33,7 +34,7 @@ const massacre = (parity: "odd" | "even", label: string) =>
     label,
     [],
     [
-      fx.destroyAll({ ...CREATURES, manaValueParity: parity }),
+      fx.destroyAll({ ...CREATURES, compare: [cmp.parity(parity)] }),
       fx.gainControl(ALL_CREATURES),
       fx.untap(ALL_CREATURES),
       fx.pumpAll(CREATURES, 0, 0, ["haste"]),
@@ -94,7 +95,7 @@ export const UNIQUE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
     abilities: [
       triggered(
-        when.attacks({ types: ["Creature"], attachedToSource: true }),
+        when.attacks({ types: ["Creature"], attached: "host" }),
         [fx.toBattlefield(ref.target(), { underYourControl: true, tapped: true, attacking: true })],
         {
           targets: [
@@ -152,7 +153,7 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.destroyAll({ ...CREATURES, maxToughnessX: true }, "z"),
+        fx.destroyAll({ ...CREATURES, compare: [cmp.toughness("<=", amount.x)] }, "z"),
         fx.loseLife(amount.x),
         fx.when(
           cond.xAtLeast(6),

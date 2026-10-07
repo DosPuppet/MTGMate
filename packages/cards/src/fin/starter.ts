@@ -108,7 +108,7 @@ export const STARTER: Record<string, CardScript> = {
   },
   "Ultima Weapon": {
     abilities: [
-      triggered(when.attacks({ attachedToSource: true }), [fx.destroy(ref.target())], {
+      triggered(when.attacks({ attached: "host" }), [fx.destroy(ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
         label: "Détruisez une créature adverse",
       }),

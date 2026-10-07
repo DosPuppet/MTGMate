@@ -248,7 +248,7 @@ export function engineLiterals(): string[] {
 /**
  * Surfaces mesurées par le garde-fou de la dette (`debt.test.ts`, section `ceilings`, et `tools/debt-ceilings.ts`) :
  * interfaces du modèle (nombre de champs) et unions à discriminant (variantes, et champs de toutes les variantes).
- * PLAN-H H0 : dix structures ajoutées, qui grandissaient sans être suivies.
+ * PLAN-H H0 : dix structures ajoutées, qui grandissaient sans être suivies ; H10 : `FilterCompare`.
  */
 export const INTERFACE_SURFACES = [
   "CardDef",
@@ -257,6 +257,7 @@ export const INTERFACE_SURFACES = [
   "PlayerState",
   "GameState",
   "ObjectFilter",
+  "FilterCompare",
   "CostDef",
   "ActivatedAbilityDef",
   "CastPermissionAbilityDef",

@@ -202,7 +202,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "The Key to the Vault": {
     abilities: [
       triggered(
-        when.combatDamage({ types: ["Creature"], attachedToSource: true }, true),
+        when.combatDamage({ types: ["Creature"], attached: "host" }, true),
         [
           fx.lookAtTop(amount.eventAmount, {
             filter: { notTypes: ["Land"] },

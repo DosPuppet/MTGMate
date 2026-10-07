@@ -77,7 +77,7 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
 | Swarmyard | régénération (701.19) : `fx.regenerate`, bouclier consommé par `destroy`, retiré au nettoyage |
 | Meteor Crater, Plaza of Heroes | mana des couleurs de vos permanents (`colorsOf`) |
 | Reflecting Pool | mana des types que vos autres terrains pourraient produire (`likeLands`) |
-| Blast Zone | filtre `manaValueSourceCounters` (valeur de mana égale aux marqueurs de la source, dernière information après le sacrifice) |
+| Blast Zone | filtre `compare: [cmp.manaValue("=", amount.lkiCounters("charge"))]` (valeur de mana égale aux marqueurs de la source, dernière information après le sacrifice) |
 | Nesting Grounds | effet `moveCounter` (sorte au choix) |
 | Gemstone Caverns | `leyline` conditionnelle : si vous ne commencez pas, avec un marqueur de chance, une carte de la main exilée |
 
@@ -245,7 +245,7 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   (`fx.rollDie`, Ancient Copper Dragon) ; mue (702.37, `CardDef.morph` : face cachée comme le déguisement, sans garde ;
   Grim Haruspex) ; Surgical Extraction (homonymes d'une carte de cimetière chez son propriétaire, `fx.exileCardAndNamesakes`) ;
   Thousand-Year Elixir sur `activateAsThoughHaste`. Tests : `fca`, `soa`, `wot`, `spg`, `otp` (+9). `RULES_VERSION` 115.
-- **Combat ✅ :** filtres relatifs à un objet désigné, résolus par `withX` : `powerAboveOf` (Fell the Mighty),
+- **Combat ✅ :** filtres relatifs à un objet désigné, résolus par `withX` : `cmp.power(">", amount.rawPowerOf(ref))` (Fell the Mighty),
   `sharesCreatureTypeWith` (Shared Animosity) ; référence `combatPartners` (Ride Down : les créatures que bloquait la
   cible) ; déclencheur `destroyed` avec le joueur qui détruit (`when.destroyedByOpponent`, Karmic Justice) ; statiques de
   joueur `maxBlockingCreatures` et `maxOneAttacker` (Mirri, Weatherlight Duelist ; `maxOneAttacker: "walkers"` remplace
@@ -263,7 +263,7 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   la source des blessures ; Hunting Velociraptor) ; gagner le contrôle d'un sort (`fx.gainControl` sur la pile,
   Commandeer) ; lancer seulement au moment d'un rituel (`castLimit.sorceryTiming`, Teferi, Mage of Zhalfir) ; exceptions de
   copie réunies dans `entersAsCopyMods` (depuis PLAN-H H9 : `fx.chooseCopy(filtre, { except })` dans `asEnters`) (Phantasmal Image, Flesh Duplicate avec sa disparition écrite en capacités) ;
-  As Foretold (`manaValueSourceCounters: { counter, atMost }`). Tests : `otp`, `rex`, `spg`, `wot`, `fca` (+10).
+  As Foretold (`cmp.manaValue("<=", amount.lkiCounters("time"))`). Tests : `otp`, `rex`, `spg`, `wot`, `fca` (+10).
   `RULES_VERSION` 117.
 - **Bibliothèque et pioche ✅ :** statiques de joueur `skipDrawStep` (Necropotence, Necrodominance), `discardToLibraryTop`
   (Library of Leng : `moveDiscarded(…, byEffect)`), `stealsOpponentDraws` (Notion Thief, dans `drawCard` : la pioche de

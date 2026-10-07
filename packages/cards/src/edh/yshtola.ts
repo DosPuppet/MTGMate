@@ -36,7 +36,7 @@ const notEventPlayersTurn: Condition = cond.not(
 const SECOND_SPELL_ANY: TriggerSpec = { on: "castSpell", by: "any", nth: 2 };
 
 /** « Chaque fois que la créature enchantée inflige des blessures à un adversaire. » */
-const ENCHANTED_DAMAGES_OPPONENT = when.dealsDamage({ attachedToSource: true }, { to: { players: "opponent" } });
+const ENCHANTED_DAMAGES_OPPONENT = when.dealsDamage({ attached: "host" }, { to: { players: "opponent" } });
 /** « Chaque fois que cette créature inflige des blessures à un adversaire » (capacité accordée). */
 const SELF_DAMAGES_OPPONENT = when.dealsDamage("self", { to: { players: "opponent" } });
 
@@ -204,7 +204,7 @@ export const EDH_YSHTOLA: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       staticAbility(
-        { attachedToSource: true, colors: ["U"] },
+        { attached: "host", colors: ["U"] },
         {
           power: 1,
           toughness: 1,
@@ -213,7 +213,7 @@ export const EDH_YSHTOLA: Record<string, CardScript> = {
         { label: "Créature enchantée bleue : +1/+1 et pioche" },
       ),
       staticAbility(
-        { attachedToSource: true, colors: ["B"] },
+        { attached: "host", colors: ["B"] },
         {
           power: 1,
           toughness: 1,

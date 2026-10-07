@@ -62,13 +62,13 @@ export const BLUE: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature enchantée" }),
       eventReplacement({
         event: "untap",
-        toFilter: { attachedToSource: true },
+        toFilter: { attached: "host" },
         modify: { prevent: true },
         label: "La créature enchantée ne peut pas être dégagée",
       }),
       eventReplacement({
         event: "counters",
-        toFilter: { attachedToSource: true },
+        toFilter: { attached: "host" },
         modify: { prevent: true },
         label: "On ne peut pas mettre de marqueurs sur la créature enchantée",
       }),

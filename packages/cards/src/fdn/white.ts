@@ -301,7 +301,7 @@ export const WHITE: Record<string, CardScript> = {
         { power: 4, toughness: 4, addKeywords: ["flying", "firstStrike"], addSubtypes: ["Angel"] },
         { label: "+4/+4, vol, initiative, Ange" },
       ),
-      triggered(when.dies({ attachedToSource: true }), [fx.toHand(ref.selfCard)], { label: "revient en main" }),
+      triggered(when.dies({ attached: "host" }), [fx.toHand(ref.selfCard)], { label: "revient en main" }),
     ],
   },
   "Angelic Edict": {

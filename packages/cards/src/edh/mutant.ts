@@ -11,6 +11,7 @@ import {
   BASIC_LAND,
   CLUE,
   chapter,
+  cmp,
   cond,
   entersWith,
   escalate,
@@ -140,7 +141,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   "Jason Bright, Glowing Prophet": {
     abilities: [
       // Approximation : « une force différente de sa force de base » se lit « supérieure ».
-      triggered(when.dies({ ...ZOMBIE_OR_MUTANT_YOU, powerAboveBase: true }), [fx.draw(1)], {
+      triggered(when.dies({ ...ZOMBIE_OR_MUTANT_YOU, compare: [cmp.power(">", "basePower")] }), [fx.draw(1)], {
         label: "Un Zombie ou un Mutant modifié meurt : piochez une carte",
       }),
       activated({
@@ -488,7 +489,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
       ),
       // Approximation : jusqu'à votre prochain tour, chaque adversaire (pas seulement le joueur défenseur).
       triggered(
-        { on: "attacks", who: { attachedToSource: true } },
+        { on: "attacks", who: { attached: "host" } },
         [
           fx.emblem(
             "Nuka-Nuke",

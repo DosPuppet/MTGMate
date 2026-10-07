@@ -5,6 +5,7 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   castPermission,
+  cmp,
   cond,
   ELF_WARRIOR,
   entersWith,
@@ -40,7 +41,7 @@ export const MULTI: Record<string, CardScript> = {
         targets: [
           target.cardInGraveyard(
             "t",
-            { types: ["Creature"], maxManaValueSourcePower: true },
+            { types: ["Creature"], compare: [cmp.manaValue("<=", amount.sourcePower)] },
             "you",
             "créature de valeur de mana ≤ la force d'Alesha",
           ),
@@ -81,7 +82,7 @@ export const MULTI: Record<string, CardScript> = {
         targets: [
           target.cardInGraveyard(
             "t",
-            { types: ["Creature"], notSubtype: "Bear", maxManaValueSourcePower: true },
+            { types: ["Creature"], notSubtype: "Bear", compare: [cmp.manaValue("<=", amount.sourcePower)] },
             "you",
             "créature non-Ours de valeur de mana ≤ sa force",
           ),

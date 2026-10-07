@@ -7,6 +7,7 @@ import {
   blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
+  cmp,
   cond,
   cost,
   entersAndSacrificed,
@@ -127,7 +128,7 @@ export const GREEN: Record<string, CardScript> = {
         },
       ),
       triggered(
-        when.enters({ types: ["Creature"], controller: "you", toughnessAbovePower: true }),
+        when.enters({ types: ["Creature"], controller: "you", compare: [cmp.toughness(">", "power")] }),
         [
           // Un terrain refusé reste sur la bibliothèque ; une carte non-terrain va en main.
           fx.lookAtTop(1, { filter: { types: ["Land"] }, to: { to: "battlefield", tapped: true }, rest: "top", store: "g" }),

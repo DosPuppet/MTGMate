@@ -112,23 +112,37 @@ export interface ObjectFilter {
   other?: boolean;
   /** La source elle-même (« quand cette créature meurt, si ce n'était pas un Démon »). */
   self?: boolean;
-  /** Le permanent auquel la source est attachée (« la créature équipée »). */
-  attachedToSource?: boolean;
+  /**
+   * Attaches relatives à la source (un seul champ, PLAN-H H10) : `host`, le permanent auquel la source est attachée (« la
+   * créature équipée ») ; `notHost`, tout autre que lui (« autre que la créature enchantée ») ; `toSource`, attaché à la
+   * source (« chaque Aura et Équipement attaché à Kellan ») ; `toHost`, attaché au permanent auquel la source est attachée
+   * (With Great Power : « chaque Aura et Équipement attachés à elle ») ; `wasToSource`, était attaché à la source quand
+   * celle-ci a quitté le champ de bataille (Zack Fair). `host`, `notHost` et `toHost` se lisent sur le champ de bataille
+   * (`matchesObjectFilter`, et les déclencheurs pour `host`) ; `toSource` et `wasToSource` sur toute vue.
+   */
+  attached?: "host" | "notHost" | "toSource" | "toHost" | "wasToSource";
+  /**
+   * Équipage ou monture de ce tour-ci : `bySource`, un Véhicule que la source a piloté (Balthier and Fran) ; `source`, une
+   * créature qui a piloté ou monté la source (Giant Beaver : « une créature qui l'a montée ce tour-ci »).
+   */
+  crew?: "bySource" | "source";
+  /**
+   * Comparaisons dynamiques d'une caractéristique de l'objet (PLAN-H H10 ; les bornes fixes restent `minPower`,
+   * `maxManaValue`…). Un montant (`to`) est évalué par un seul résolveur, `resolveCompare` (`effects.ts`), du point de
+   * vue de la source : pendant une résolution (`withX`), avec le contexte de ce qui se résout (son X, ses cibles) ;
+   * ailleurs (`resolveFilter` : cibles, statiques, déclencheurs), avec la source seule, et le X est celui du permanent
+   * (le X du sort qui l'a mis en jeu). Voir `FilterCompare`.
+   */
+  compare?: FilterCompare[];
   /** A le même nom qu'un permanent correspondant (Key to the Side-Door : « une carte légendaire du même nom qu'un
    * permanent légendaire que vous contrôlez »). */
   sameNameAs?: ObjectFilter;
   /** N'a pas le même nom qu'un autre permanent correspondant (« qu'un jeton que vous contrôlez », Yenna). */
   notSameNameAs?: ObjectFilter;
-  /** Attaché à la source (« chaque Aura et Équipement attaché à Kellan », « une Aura attachée à cette créature »). */
-  attachedToSelf?: boolean;
-  /** De force supérieure à celle de la source (furtivité : « ne peut pas être bloquée par des créatures de force supérieure »). */
-  powerAboveSource?: boolean;
   /**
-   * Relations à un objet désigné, évaluées à la résolution par `withX` (références de zone, `moveAll`, recherche) : de force
-   * supérieure à la sienne (Fell the Mighty : la créature ciblée), qui partage un type de créature avec lui (Shared
-   * Animosity : l'objet de l'événement).
+   * Partage un type de créature avec l'objet désigné, évalué à la résolution par `withX` (références de zone, `moveAll`,
+   * recherche ; Shared Animosity : l'objet de l'événement).
    */
-  powerAboveOf?: Ref;
   sharesCreatureTypeWith?: Ref;
   /** Du même nom que l'objet désigné, résolu par `withX` (Dragonlord Kolaghan : « du même nom qu'une carte de son cimetière »). */
   nameOf?: Ref;
@@ -138,12 +152,6 @@ export interface ObjectFilter {
   modified?: boolean;
   /** Enchanté par au moins une Aura (`true`), par une Aura que vous contrôlez (`byYou`), ou par aucune (`false`). */
   enchanted?: boolean | "byYou";
-  /** Était attaché à la source quand celle-ci a quitté le champ de bataille (Zack Fair). */
-  wasAttachedToSource?: boolean;
-  /** Véhicule équipé par la source ce tour-ci (Balthier and Fran). */
-  crewedBySource?: boolean;
-  /** A piloté ou monté la source ce tour-ci (Giant Beaver : « une créature qui l'a montée ce tour-ci »). */
-  crewedSource?: boolean;
   /** Force minimale (« créature de force 4 ou plus »). */
   minPower?: number;
   maxManaValue?: number;
@@ -194,21 +202,10 @@ export interface ObjectFilter {
   enteredThisTurn?: boolean;
   /** Du type de carte choisi par la source (Arachne : un mode d'arrivée dont les options sont des types de carte). */
   typeChosen?: boolean;
-  /** Attaché au permanent auquel la source est attachée (With Great Power : « chaque Aura et Équipement attachés à
-   * elle »). */
-  attachedToSourceHost?: boolean;
   /** Mise dans sa zone depuis le champ de bataille ce tour-ci (Supper for Spiders). */
   fromBattlefieldThisTurn?: boolean;
   /** Carte défaussée ce tour-ci (chaos, Mayhem : « si vous l'avez défaussée ce tour-ci »). */
   discardedThisTurn?: boolean;
-  /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
-  maxManaValueSourcePower?: boolean;
-  /** Valeur de mana égale à la force de la source (Jackal, Genius Geneticist). */
-  manaValueSourcePower?: boolean;
-  /** Valeur de mana égale au nombre de marqueurs de cette sorte sur la source, ou à sa dernière information (Blast Zone). */
-  manaValueSourceCounters?: string | { counter: string; atMost: true };
-  /** Valeur de mana au plus égale au mana dépensé pour lancer la source (Astelli Reclaimer). */
-  maxManaValueManaSpent?: boolean;
   /** Légendaire (true) ou non légendaire (false). */
   legendary?: boolean;
   /** Sort préparé (copie lancée depuis l'exil, Codie). */
@@ -222,10 +219,6 @@ export interface ObjectFilter {
   /** Carte mise dans le cimetière depuis la bibliothèque ce tour-ci (meulée : Raul, Tato Farmer, The Master). */
   milledThisTurn?: boolean;
   maxToughness?: number;
-  /** Valeur de mana au plus égale au X du sort qui a mis la source en jeu (Dune Drifter). */
-  maxManaValueX?: boolean;
-  /** Valeur de mana au plus égale au nombre de couleurs dépensées pour lancer la source (convergence, Sundering Archaic). */
-  maxManaValueColorsSpent?: boolean;
   /**
    * Possédé par vous ou par un adversaire, dans toute zone (« que vous possédez » : Get Out ; « que vous possédez mais ne
    * contrôlez pas », avec `controller: "opponent"` : Coveted Falcon ; « que vous contrôlez mais ne possédez pas » :
@@ -238,22 +231,10 @@ export interface ObjectFilter {
   noneOfSubtypes?: string[];
   /** Carte sans capacité (Fang-Druid Summoner, Rise from the Wreck). */
   noAbilities?: boolean;
-  /** Valeur de mana paire ou impaire (Mutinous Massacre ; 0 est pair). */
-  manaValueParity?: "odd" | "even";
-  /** Endurance au plus égale au X du sort (Zero Point Ballad), résolue pendant la résolution. */
-  maxToughnessX?: boolean;
   /** Permanent face cachée (Duskmourn). */
   faceDown?: boolean;
-  /** N'est pas le permanent auquel la source est attachée (« autre que la créature enchantée »). */
-  notAttachedToSource?: boolean;
-  /** Endurance supérieure à sa force (Fecund Greenshell). */
-  toughnessAbovePower?: boolean;
-  /** Force supérieure à sa force de base (Kutzil, Sovereign Okinec Ahau). */
-  powerAboveBase?: boolean;
   /** A au moins une capacité activée, autre qu'une capacité de mana (The Enigma Jewel). */
   withActivatedAbility?: boolean;
-  /** Valeur de mana égale au X de la capacité ou du sort (`destroyAll` : Dauntless Dismantler ; `moveAll` : Fix What's Broken). */
-  manaValueX?: boolean;
   /** Valeur de mana de la parité choisie par la source (Gollum, Riddle Master). */
   parityChosen?: boolean;
   /** Valeur de mana, force ou endurance égale au nombre choisi par la source (Talion, the Kindly Lord). */
@@ -277,8 +258,23 @@ export interface ObjectFilter {
   adventure?: boolean;
   /** Permanent arrivé en étant lancé (« si vous l'avez lancée » : The Sibsig Ceremony). */
   cast?: boolean;
-  /** Force inférieure à celle de la source (Formation Breaker : « les créatures de force inférieure ne peuvent pas la bloquer »). */
-  powerBelowSource?: boolean;
+}
+
+/**
+ * Comparaison d'une caractéristique de l'objet filtré (`ObjectFilter.compare`, PLAN-H H10) : sa force, son endurance ou
+ * sa valeur de mana (0 pour un objet qui n'en a pas), `cmp` la valeur `to`. `to` est :
+ * - un montant, remplacé par sa valeur par `resolveCompare` (`effects.ts`, voir `ObjectFilter.compare`) ; tant qu'il
+ *   n'est pas résolu (filtre lu directement par `matchesView`), la comparaison est ignorée ;
+ * - `"power"` ou `"basePower"` : la force, ou la force de base, de l'objet lui-même (Fecund Greenshell : « dont
+ *   l'endurance est supérieure à sa force » ; Kutzil : « dont la force est supérieure à sa force de base »).
+ * `cmp` `"odd"` ou `"even"`, sans `to` : valeur paire ou impaire (Mutinous Massacre ; 0 est pair).
+ * Les valeurs de la source se lisent sans plancher (107.1b, montant `raw`) : « de force supérieure à celle de cette
+ * créature » (furtivité), « de valeur de mana inférieure ou égale à la force d'Alesha ».
+ */
+export interface FilterCompare {
+  what: "power" | "toughness" | "manaValue";
+  cmp: "<" | "<=" | "=" | ">=" | ">" | "odd" | "even";
+  to?: Amount | "power" | "basePower";
 }
 
 /**
@@ -865,4 +861,12 @@ export type Amount =
   /** `of` : compter pour ces joueurs (« les cartes meulées par le joueur ciblé ») plutôt que pour le contrôleur. */
   | { kind: "turnEvents"; query: TurnLogQuery; of?: Ref }
   /** Permanents dégagés pendant votre étape de dégagement de ce tour (The Millennium Calendar). */
-  | { kind: "untappedInUntapStep" };
+  | { kind: "untappedInUntapStep" }
+  /**
+   * Valeur brute, sans plancher (107.1b), pour les comparaisons des filtres (`ObjectFilter.compare`). Sans `of`, de la
+   * source : `power`, sa force sur le champ de bataille, sinon d'après ses dernières informations connues (0 sans source) ;
+   * `manaSpent`, le mana dépensé pour la lancer (le permanent, ses dernières informations connues, sinon son sort sur la
+   * pile ; 0 par défaut). Avec `of` (`power` seulement) : la force du premier objet désigné encore sur le champ de bataille
+   * (Fell the Mighty : la créature ciblée) ; sans un tel objet, aucune valeur (NaN : aucune comparaison n'est vraie).
+   */
+  | { kind: "raw"; what: "power" | "manaSpent"; of?: Ref };

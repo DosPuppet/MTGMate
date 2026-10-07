@@ -474,7 +474,7 @@ export function checkCondition(
 function matchWho(who: "self" | ObjectFilter, v: LkiSnapshot, src: Source): boolean {
   if (who === "self") return v.id === src.id;
   // « la créature équipée / enchantée »
-  if (who.attachedToSource && v.id !== src.view.attachedTo) return false;
+  if (who.attached === "host" && v.id !== src.view.attachedTo) return false;
   return matchesView(v, withChosen(who, src.view), src.view.controller, src.id);
 }
 
@@ -1208,7 +1208,7 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
     const holder = id ? s.objects[id] : undefined;
     // L'hôte de la source peut avoir quitté le champ de bataille (sa capacité « quand elle meurt ») : l'attache n'est
     // défaite qu'aux actions basées sur l'état.
-    if (m.sources.attachedToSource && holder?.attachedTo !== src.id) return false;
+    if (m.sources.attached === "host" && holder?.attachedTo !== src.id) return false;
     return matchesView(src.view, holder ? withChosen(m.sources, holder) : m.sources, player, id);
   }).length;
 }

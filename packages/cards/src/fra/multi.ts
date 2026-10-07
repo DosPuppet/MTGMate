@@ -104,7 +104,7 @@ export const MULTI: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       staticAbility("attached", { power: 1, addKeywords: ["deathtouch"] }, { label: "+1/+0 et contact mortel" }),
-      triggered(when.dies({ attachedToSource: true }), [fx.toBattlefield(ref.eventObject, { tapped: true })], {
+      triggered(when.dies({ attached: "host" }), [fx.toBattlefield(ref.eventObject, { tapped: true })], {
         label: "revient engagée",
       }),
     ],

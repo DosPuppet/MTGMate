@@ -175,7 +175,7 @@ export const EDH_STAPLES: Record<string, CardScript> = {
     // Équiper {1} : lu dans le texte.
     abilities: [
       staticAbility("attached", { power: 1, toughness: -1 }, { label: "+1/-1" }),
-      triggered(when.dies({ attachedToSource: true }), [fx.draw(2)], {
+      triggered(when.dies({ attached: "host" }), [fx.draw(2)], {
         label: "La créature équipée meurt : piochez deux cartes",
       }),
     ],

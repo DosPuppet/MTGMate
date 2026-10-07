@@ -441,7 +441,7 @@ export const GREEN: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       triggered(
-        when.attacks({ attachedToSource: true }),
+        when.attacks({ attached: "host" }),
         [
           fx.addCounters(ref.attached, 1),
           ...fx.when(cond.amountAtLeast(amount.countersOn(ref.attached), 3), fx.sacrificeIt(ref.self)),

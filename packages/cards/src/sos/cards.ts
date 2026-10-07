@@ -7,6 +7,7 @@ import {
   amount,
   BASIC_LAND,
   type CardScript,
+  cmp,
   cond,
   entersWith,
   fx,
@@ -301,7 +302,10 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Vicious Rivalry": {
     // « Payez X points de vie » en coût additionnel : lu dans le texte.
-    spell: spell([], [fx.destroyAll({ anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], maxManaValueX: true })]),
+    spell: spell(
+      [],
+      [fx.destroyAll({ anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], compare: [cmp.manaValue("<=", amount.x)] })],
+    ),
   },
   "Ral Zarek, Guest Lecturer": {
     abilities: [

@@ -378,7 +378,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   "Pest Control": { spell: spell([], [fx.destroyAll({ notTypes: ["Land"], permanent: true, maxManaValue: 1 })]) },
   "Lost Jitte": {
     abilities: [
-      triggered(when.combatDamage({ types: ["Creature"], attachedToSource: true }), [fx.counters(ref.self, "charge", 1)], {
+      triggered(when.combatDamage({ types: ["Creature"], attached: "host" }), [fx.counters(ref.self, "charge", 1)], {
         label: "Marqueur de charge",
       }),
       activated({
@@ -395,7 +395,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       }),
       activated({
         removeCounters: { kind: "charge", n: 1 },
-        activationCondition: cond.controls({ types: ["Creature"], attachedToSource: true }),
+        activationCondition: cond.controls({ types: ["Creature"], attached: "host" }),
         effects: [fx.addCounters(ref.attached, 1)],
         label: "Marqueur +1/+1 sur la créature équipée",
       }),
@@ -445,7 +445,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
         { label: "+2/+2, protection" },
       ),
       triggered(
-        when.combatDamage({ types: ["Creature"], attachedToSource: true }, true),
+        when.combatDamage({ types: ["Creature"], attached: "host" }, true),
         [fx.createTokens(TREASURE), fx.copyNextSpell],
         {
           label: "Trésor, prochain éphémère ou rituel copié",

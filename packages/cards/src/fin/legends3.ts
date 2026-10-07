@@ -183,7 +183,7 @@ export const LEGENDS3: Record<string, CardScript> = {
         { label: "Vos Véhicules : +1/+1, portée et vigilance" },
       ),
       triggered(
-        when.attacks({ subtype: "Vehicle", controller: "you", crewedBySource: true }),
+        when.attacks({ subtype: "Vehicle", controller: "you", crew: "bySource" }),
         fx.mayPay("{1}{R}{G}", "Payer {1}{R}{G} pour une phase de combat supplémentaire ?", fx.extraCombat),
         { condition: cond.firstCombat, label: "Combat supplémentaire" },
       ),
@@ -209,7 +209,7 @@ export const LEGENDS3: Record<string, CardScript> = {
   "Genji Glove": {
     abilities: [
       staticAbility("attached", { addKeywords: ["doubleStrike"] }, { label: "Double initiative" }),
-      triggered(when.attacks({ attachedToSource: true }), [fx.untap(ref.eventObject), fx.extraCombat], {
+      triggered(when.attacks({ attached: "host" }), [fx.untap(ref.eventObject), fx.extraCombat], {
         condition: cond.firstCombat,
         label: "Dégagez-la, phase de combat supplémentaire",
       }),

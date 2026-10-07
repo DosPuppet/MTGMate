@@ -6,6 +6,7 @@ import {
   blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
+  cmp,
   cond,
   cost,
   costReducer,
@@ -279,7 +280,7 @@ export const BLUE: Record<string, CardScript> = {
   Mockingbird: {
     asEnters: [
       fx.chooseCopy(
-        { types: ["Creature"], maxManaValueManaSpent: true },
+        { types: ["Creature"], compare: [cmp.manaValue("<=", amount.sourceManaSpent)] },
         { anyController: true, except: { addSubtypes: ["Bird"], addKeywords: ["flying"] } },
       ),
     ],

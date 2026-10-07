@@ -237,7 +237,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       staticAbility("attached", { power: 1 }, { label: "+1/+0" }),
       triggered(
-        when.attacks({ attachedToSource: true }),
+        when.attacks({ attached: "host" }),
         [
           ...fx.may(
             "Sacrifier Sunfire Torch ?",

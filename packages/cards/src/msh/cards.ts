@@ -146,7 +146,7 @@ export const CARDS: Record<string, CardScript> = {
       }),
       eventReplacement({
         event: "damage",
-        source: { attachedToSource: true, controller: "you" },
+        source: { attached: "host", controller: "you" },
         modify: { times: 2 },
         label: "Double les blessures de la créature équipée",
       }),

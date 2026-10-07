@@ -9,6 +9,7 @@ import {
   CREATURE_YOU_CONTROL,
   castPermission,
   chapter,
+  cmp,
   cond,
   costReducer,
   ELEPHANT_5,
@@ -185,7 +186,9 @@ export const LEGENDS: Record<string, CardScript> = {
   // --- Vert --------------------------------------------------------------------
   "Formation Breaker": {
     abilities: [
-      blockAbility(block.notBy({ powerBelowSource: true }, "Imblocable par les créatures de force inférieure")),
+      blockAbility(
+        block.notBy({ compare: [cmp.power("<", amount.sourcePower)] }, "Imblocable par les créatures de force inférieure"),
+      ),
       staticAbility(
         "self",
         { power: 1, toughness: 2 },

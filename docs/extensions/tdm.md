@@ -24,7 +24,7 @@ Les scripts sont dans `packages/cards/src/tdm/` : `cards` (cartes du méta, phas
   - `fx.addManaChoice(n, couleurs)` : un mana parmi certaines couleurs seulement (Devotees : « {1} : ajoutez {R}, {W} ou {B} ; une fois par tour ») ;
   - `fx.lookAtTop(…, { exact: true })` : prendre exactement N cartes, et non « jusqu'à N » (Sibsig Appraiser, Rakshasa's Bargain, Rediscover the Way) ;
   - `cond.sourceDealtDamage` et `GameObject.dealtDamage` : « tant qu'il n'a pas encore infligé de blessures », de combat ou non (Karakyk Guardian) ;
-  - la recherche lit `maxManaValueX` avec le X du sort qui se résout (Nature's Rhythm).
+  - la recherche lit `cmp.manaValue("<=", amount.x)` avec le X du sort qui se résout (Nature's Rhythm).
 - **Coûts :** les augmentations de coût passent par `costReduction` négatif (Caustic Exhale : {1} de plus sans Dragon à contempler ; Dragon's Prey : {2} de plus s'il cible un Dragon) ; l'affinité pour les créatures et « {1} de moins pour chaque créature attaquante » par un montant.
 - **Correctif [règles] :** un « si » intermédiaire sur l'objet de l'événement (`cond.eventObjectMatches` en condition de capacité déclenchée) n'était jamais vrai au déclenchement : Aclazotz, Deepest Betrayal (LCI) ne créait jamais de Chauve-souris quand un adversaire défaussait un terrain. `checkCondition` reçoit l'objet de l'événement, au déclenchement et à la résolution (603.4). `RULES_VERSION` = 20, parties dorées régénérées.
 - **Dette :** `damageDivided` sert maintenant à deux cartes (Twin Bolt) : son entrée quitte `debt-baseline.json`.
@@ -55,7 +55,7 @@ Les scripts sont dans `packages/cards/src/tdm/` : `cards` (cartes du méta, phas
   - le déclencheur `countersPut(…, firstThisTurn)` (« la première fois ce tour-ci que des marqueurs sont mis sur elle » : Stalwart Successor) ;
   - `fx.doublePT(ref)` : doubler la force et l'endurance de chaque créature désignée (Roar of Endless Song, Dragonclaw Strike) ;
   - l'harmonie accordée (`fx.grantHarmonize`, Songcrafter Mage) ;
-  - les montants `counterKindsAmong` (Hundred-Battle Veteran) et `totalToughness` (Betor), la référence `ref.union` (Call the Spirit Dragons), les filtres `cast` (« si vous l'avez lancée » : The Sibsig Ceremony) et `powerBelowSource` (Formation Breaker), `castNow` avec `maxManaValue` (Kotis), `castFromGraveyard.finality` (Hundred-Battle Veteran), `freeFilter` d'une permission de lancer (Dracogenesis), le coût `payLifeX` (Krumar Initiate) et les cibles `countX` (« X créatures ciblées » : Rot-Curse Rakshasa).
+  - les montants `counterKindsAmong` (Hundred-Battle Veteran) et `totalToughness` (Betor), la référence `ref.union` (Call the Spirit Dragons), les filtres `cast` (« si vous l'avez lancée » : The Sibsig Ceremony) et `cmp.power("<", amount.sourcePower)` (Formation Breaker), `castNow` avec `maxManaValue` (Kotis), `castFromGraveyard.finality` (Hundred-Battle Veteran), `freeFilter` d'une permission de lancer (Dracogenesis), le coût `payLifeX` (Krumar Initiate) et les cibles `countX` (« X créatures ciblées » : Rot-Curse Rakshasa).
 - **Correctifs en route :**
   - la décomposition accordée par un marqueur n'avait pas sa capacité déclenchée : le filtre rapide des sources de déclenchement ne connaissait que la prouesse ;
   - le garde-fou de la dette lisait l'union `Keyword` jusqu'au premier « ; », y compris dans un commentaire : il retire désormais les commentaires.

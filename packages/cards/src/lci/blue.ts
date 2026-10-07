@@ -191,7 +191,7 @@ export const BLUE: Record<string, CardScript> = {
   "Subterranean Schooner": {
     abilities: [
       triggered(when.attacksSelf, [fx.explore(ref.target())], {
-        targets: [{ ...target.creature("t", { crewedSource: true }), label: "créature qui l'a piloté ce tour-ci" }],
+        targets: [{ ...target.creature("t", { crew: "source" }), label: "créature qui l'a piloté ce tour-ci" }],
         label: "Son équipage explore",
       }),
     ],

@@ -7,6 +7,7 @@ import {
   activated,
   amount,
   CREATURE_YOU_CONTROL,
+  cmp,
   cond,
   cost,
   costReducer,
@@ -74,7 +75,7 @@ export const RARES: Record<string, CardScript> = {
         targets: [
           target.cardInGraveyard(
             "t",
-            { permanent: true, notTypes: ["Creature", "Land"], maxManaValueManaSpent: true },
+            { permanent: true, notTypes: ["Creature", "Land"], compare: [cmp.manaValue("<=", amount.sourceManaSpent)] },
             "you",
             "carte de permanent non-créature non-terrain",
           ),

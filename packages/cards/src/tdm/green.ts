@@ -6,6 +6,7 @@ import {
   type CardScript,
   CREATURE_WITH_COUNTER,
   CREATURE_YOU_CONTROL,
+  cmp,
   cond,
   DRAGON_CARD,
   devotee,
@@ -112,7 +113,7 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Nature's Rhythm": {
-    spell: spell([], [fx.search({ types: ["Creature"], maxManaValueX: true }, { to: "battlefield" })]),
+    spell: spell([], [fx.search({ types: ["Creature"], compare: [cmp.manaValue("<=", amount.x)] }, { to: "battlefield" })]),
   },
   "Piercing Exhale": {
     // « En coût additionnel, vous pouvez contempler un Dragon » : fait au lancement, retenu par le sort.

@@ -1008,7 +1008,7 @@ export interface TriggerMod {
   on?: "enter" | "attack" | "dies" | "draw";
   entering?: ObjectFilter;
   /**
-   * Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). `attachedToSource` : le
+   * Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). `attached: "host"` : le
    * permanent auquel la source de la statique est attachée, y compris s'il vient de quitter le champ de bataille.
    */
   sources?: ObjectFilter;

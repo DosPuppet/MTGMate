@@ -4,6 +4,7 @@ import {
   activated,
   amount,
   type CardScript,
+  cmp,
   cond,
   costReducer,
   ELF_BG,
@@ -656,7 +657,7 @@ export const MULTI: Record<string, CardScript> = {
   "Doran, Besieged by Time": {
     abilities: [
       costReducer(
-        { types: ["Creature"], toughnessAbovePower: true },
+        { types: ["Creature"], compare: [cmp.toughness(">", "power")] },
         1,
         "Vos sorts de créature d'endurance supérieure à leur force coûtent {1} de moins",
       ),

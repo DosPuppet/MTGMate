@@ -31,7 +31,7 @@ Les scripts sont dans `packages/cards/src/dsk/` : `white`, `blue`, `black`, `red
   - portes : `fx.door(ref, "unlock" | "toggle")`, qui déverrouille une porte verrouillée ou verrouille ou déverrouille une porte au choix (Ghostly Dancers, Ghostly Keybearer, Keys to the House, Marina Vendrell).
 - Lot C ✅ (250/268). Le moteur gagne :
   - des statiques de joueur : `convokeCreatureSpells` (Dazzling Theater), `untapCreaturesOnOthersUntap` (Prop Room), `unlockReduction` (Inquisitive Glimmer), `damageToOpponentsMills` (The Mindskinner), `ignoreOpponentsHexproofWard` (Nowhere to Run), `opponentGraveyardToExile` (Leyline of the Void), `noLoseForLife` (Grimoire), `doubleTriggers` (Fractured Realm), `seeFaceDown` (Found Footage, dans `projectView`) ;
-  - le filtre `faceDown` (vue incluse), le filtre `notAttachedToSource`, et `when.permanentTurnedFaceUp(filtre)` ;
+  - le filtre `faceDown` (vue incluse), le filtre `attached: "notHost"`, et `when.permanentTurnedFaceUp(filtre)` ;
   - `when.manifestDread` : l'objet de l'événement est la carte mise au cimetière ;
   - des modes conditionnels (`ModeDef.condition`, Let's Play a Game sous délire) ;
   - la défausse en coût d'activation (`discard`, choix du joueur dans le client), `MoveSpec.shuffle` (« mélangez-le dans la bibliothèque ») et `destroy` avec mémorisation (Come Back Wrong) ;

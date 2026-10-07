@@ -331,7 +331,7 @@ export const LEGENDS: Record<string, CardScript> = {
         mana: "{X}",
         tap: true,
         sorcerySpeed: true,
-        // Un filtre de cible ne lit pas le X d'une capacité activée (`maxManaValueX` lit celui du sort qui a créé la
+        // Un filtre de cible ne lit pas le X d'une capacité activée (`cmp.manaValue("<=", amount.x)` lit celui du sort qui a créé la
         // source) : la valeur de mana de la Saga est comparée à X à la résolution.
         targets: [target.cardInGraveyard("t", { subtype: "Saga" }, "you", "carte de Saga")],
         effects: [

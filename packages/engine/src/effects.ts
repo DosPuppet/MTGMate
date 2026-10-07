@@ -93,16 +93,11 @@ export interface EffectContext {
 }
 
 /**
- * Bornes du filtre qui dépendent de ce qui se résout : « … X ou moins », le X (Day of Black Sun, Doppelgang) ; « de force
- * supérieure à celle de la créature ciblée » (Fell the Mighty) ; « qui partage un type de créature avec elle » (Shared
- * Animosity : l'objet de l'événement).
+ * Valeurs du filtre qui dépendent de ce qui se résout : les comparaisons (`resolveCompare` avec ce contexte : « … X ou
+ * moins », le X de la capacité ou du sort, Day of Black Sun, Doppelgang ; « de force supérieure à celle de la créature
+ * ciblée », Fell the Mighty) ; « qui partage un type de créature avec elle » (Shared Animosity : l'objet de l'événement).
  */
 export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): ObjectFilter {
-  if (f.powerAboveOf) {
-    const id = resolveRef(s, ctx, f.powerAboveOf).find((x) => s.objects[x]?.zone === "battlefield");
-    // Sans objet désigné encore sur le champ de bataille, rien ne correspond.
-    f = { ...f, powerAboveOf: undefined, minPower: id ? chars(s, id).power + 1 : Number.POSITIVE_INFINITY };
-  }
   if (f.sharesCreatureTypeWith) {
     // Plusieurs objets désignés (deux commandants) : un type de créature de l'un d'eux suffit.
     const vs = resolveRef(s, ctx, f.sharesCreatureTypeWith)
@@ -124,17 +119,24 @@ export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): Object
     // Sans objet désigné, rien ne correspond.
     f = { ...f, nameOf: undefined, name: name || "\u0000" };
   }
-  const x = ctx.x;
-  if (!f.maxToughnessX && !f.manaValueX && !f.maxManaValueX) return f;
-  return {
-    ...f,
-    maxToughnessX: undefined,
-    manaValueX: undefined,
-    maxManaValueX: undefined,
-    ...(f.maxToughnessX ? { maxToughness: x } : {}),
-    ...(f.manaValueX ? { manaValue: x } : {}),
-    ...(f.maxManaValueX ? { maxManaValue: x } : {}),
-  };
+  return resolveCompare(s, f, ctx.sourceId, ctx);
+}
+
+/**
+ * Seul résolveur des comparaisons dynamiques des filtres (`ObjectFilter.compare`, PLAN-H H10) : chaque montant `to` est
+ * remplacé par sa valeur. Pendant une résolution (`withX`), il est évalué avec le contexte de ce qui se résout (son X, ses
+ * cibles, ses valeurs mémorisées) ; ailleurs (`resolveFilter` : cibles, statiques, déclencheurs, permissions), du point
+ * de vue de la source seule, et le X est alors celui du permanent (le X du sort qui l'a mis en jeu, 0 sans X).
+ */
+export function resolveCompare(s: GameState, f: ObjectFilter, sourceId?: ObjectId, ctx?: EffectContext): ObjectFilter {
+  if (!f.compare?.some((c) => typeof c.to === "object")) return f;
+  const c =
+    ctx ??
+    ({
+      ...staticContext(s, (sourceId && (s.objects[sourceId]?.controller ?? s.lki[sourceId]?.controller)) || "", sourceId),
+      x: (sourceId && s.objects[sourceId]?.x) || 0,
+    } satisfies EffectContext);
+  return { ...f, compare: f.compare.map((x) => (typeof x.to === "object" ? { ...x, to: evalAmount(s, c, x.to) } : x)) };
 }
 
 /** La référence `zone` : les objets d'une zone des joueurs désignés, correspondant au filtre. */
@@ -705,6 +707,19 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return Math.max(0, ctx.sourceSnapshot.power);
     case "untappedInUntapStep":
       return s.players[ctx.controller]?.turnStats.untappedInUntapStep ?? 0;
+    case "raw": {
+      if (a.of) {
+        // Sans objet désigné encore sur le champ de bataille, aucune valeur : aucune comparaison n'est vraie.
+        const id = resolveRef(s, ctx, a.of).find((x) => s.objects[x]?.zone === "battlefield");
+        return id ? chars(s, id).power : Number.NaN;
+      }
+      const id = ctx.sourceId;
+      if (a.what === "power") return id && s.objects[id]?.zone === "battlefield" ? chars(s, id).power : (s.lki[id]?.power ?? 0);
+      // Sort de permanent en cours de résolution (Mockingbird) : le mana dépensé est sur l'élément de pile.
+      return (
+        (id && (s.objects[id]?.cast?.manaSpent ?? s.lki[id]?.manaSpent ?? s.stack.find((x) => x.id === id)?.cast?.manaSpent)) || 0
+      );
+    }
   }
 }
 

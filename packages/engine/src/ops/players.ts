@@ -21,13 +21,13 @@ import {
   moveDiscarded,
   nameOf,
   nextTurnOf,
+  resolveCompare,
   resolveRef,
   store,
 } from "../effects";
 import {
   apnapOrder,
   bump,
-  chars,
   emit,
   isAlive,
   isPlayer,
@@ -45,10 +45,12 @@ import type { EventReplacement, Step } from "../types";
 
 export const HANDLERS: OpHandlers = {
   playerEffect(s, _r, e0, ctx) {
-    // Loki Laufeyson : « de valeur de mana au plus la force de Loki » est figé à la résolution.
+    // Loki Laufeyson : « de valeur de mana au plus la force de Loki » est figé à la résolution (`resolveCompare`), sans
+    // descendre sous 0.
     const f = e0.ability.nextSpell?.filter;
+    const frozen = f && e0.ability.nextSpell ? resolveCompare(s, f, ctx.sourceId, ctx) : f;
     const e =
-      f?.maxManaValueSourcePower && e0.ability.nextSpell
+      frozen && frozen !== f && e0.ability.nextSpell
         ? {
             ...e0,
             ability: {
@@ -56,14 +58,8 @@ export const HANDLERS: OpHandlers = {
               nextSpell: {
                 ...e0.ability.nextSpell,
                 filter: {
-                  ...f,
-                  maxManaValueSourcePower: undefined,
-                  maxManaValue: Math.max(
-                    0,
-                    s.objects[ctx.sourceId]?.zone === "battlefield"
-                      ? chars(s, ctx.sourceId).power
-                      : (s.lki[ctx.sourceId]?.power ?? 0),
-                  ),
+                  ...frozen,
+                  compare: frozen.compare?.map((c) => (typeof c.to === "number" ? { ...c, to: Math.max(0, c.to) } : c)),
                 },
               },
             },

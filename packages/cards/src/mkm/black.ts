@@ -204,7 +204,7 @@ export const BLACK: Record<string, CardScript> = {
     // Équiper {2} : lu dans le texte.
     abilities: [
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
-      triggered(when.dies({ attachedToSource: true }), [fx.loseLife(1, ref.eachOpponent)], {
+      triggered(when.dies({ attached: "host" }), [fx.loseLife(1, ref.eachOpponent)], {
         label: "Chaque adversaire perd 1 PV",
       }),
       activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),

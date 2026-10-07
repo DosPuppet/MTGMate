@@ -6,6 +6,7 @@ import {
   BASIC_LAND,
   type CardScript,
   castPermission,
+  cmp,
   cond,
   costReducer,
   ELEMENTAL_UR,
@@ -104,7 +105,17 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Fix What's Broken": {
     // « Payez X points de vie » en coût additionnel : lu dans le texte.
-    spell: spell([], [fx.moveAll("graveyard", ref.you, { ...ARTIFACT_OR_CREATURE, manaValueX: true }, { to: "battlefield" })]),
+    spell: spell(
+      [],
+      [
+        fx.moveAll(
+          "graveyard",
+          ref.you,
+          { ...ARTIFACT_OR_CREATURE, compare: [cmp.manaValue("=", amount.x)] },
+          { to: "battlefield" },
+        ),
+      ],
+    ),
   },
   // Vigilance lue dans le texte.
   "Imperious Inkmage": {

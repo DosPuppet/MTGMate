@@ -297,7 +297,7 @@ export const BLACK: Record<string, CardScript> = {
       }),
       activated({
         tap: true,
-        sacrificeOther: { filter: { subtype: "Equipment", attachedToSelf: true } },
+        sacrificeOther: { filter: { subtype: "Equipment", attached: "toSource" } },
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), -4, -4)],
@@ -393,7 +393,7 @@ export const BLACK: Record<string, CardScript> = {
   "Whiplash, Vengeful Engineer": {
     abilities: [
       entersWith({ tapped: true, label: "Arrive engagé" }),
-      triggered(when.attacksSelf, fx.drain(amount.count({ subtype: "Equipment", attachedToSelf: true })), {
+      triggered(when.attacksSelf, fx.drain(amount.count({ subtype: "Equipment", attached: "toSource" })), {
         condition: cond.sourceMatches({ equipped: true }),
         label: "Équipé : chaque adversaire perd X PV, vous gagnez X PV (X : Équipements attachés)",
       }),

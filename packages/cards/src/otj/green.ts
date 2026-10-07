@@ -121,7 +121,7 @@ export const GREEN: Record<string, CardScript> = {
   "Giant Beaver": {
     abilities: [
       whileSaddled([fx.addCounters(ref.target(), 1)], {
-        targets: [{ ...target.creature("t", { crewedSource: true }), label: "créature qui l'a montée ce tour-ci" }],
+        targets: [{ ...target.creature("t", { crew: "source" }), label: "créature qui l'a montée ce tour-ci" }],
         label: "Marqueur +1/+1",
       }),
     ],

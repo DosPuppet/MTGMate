@@ -52,7 +52,7 @@ export const LEGENDS2: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.search({ subtype: "Equipment" })], { label: "Cherchez un Équipement" }),
       playerStatic({
-        triggerMod: { effect: "again", sources: { anyOf: [{ self: true }, { attachedToSelf: true }] } },
+        triggerMod: { effect: "again", sources: { anyOf: [{ self: true }, { attached: "toSource" }] } },
         condition: cond.sourceMatches({ equipped: true }),
         label: "Équipée : ses déclencheurs et ceux de ses Équipements, une fois de plus",
       }),

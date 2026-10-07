@@ -427,7 +427,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Sporogenic Infection": {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
-      triggered(when.entersSelf, [fx.sacrifice(ref.target(), { types: ["Creature"], notAttachedToSource: true })], {
+      triggered(when.entersSelf, [fx.sacrifice(ref.target(), { types: ["Creature"], attached: "notHost" })], {
         targets: [target.player()],
         label: "Il sacrifie une autre créature",
       }),
@@ -915,9 +915,9 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
       triggered(
-        when.attacks({ attachedToSource: true }),
+        when.attacks({ attached: "host" }),
         [
-          fx.sacrifice(ref.you, { other: true, notAttachedToSource: true }, 1, { optional: true, store: "s" }),
+          fx.sacrifice(ref.you, { other: true, attached: "notHost" }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.draw(1)),
         ],
         { label: "Sacrifiez un autre permanent : piochez" },

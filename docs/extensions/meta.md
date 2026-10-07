@@ -78,7 +78,7 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
   - `when.sacrifice(filtre, false, true)` : sacrifié par un adversaire.
 - **Statique `activatedReduction`** (`playerStatic`) : les capacités activées de vos permanents correspondant au filtre coûtent {N} de moins (Mutagen Man : jetons d'artefact).
 - **Restriction `damageHealsFirst`** (Wolverine) : de nouvelles blessures guérissent d'abord les précédentes.
-- **« VM X ou moins »** pour les effets de masse (`modifyAll`, `destroyAll`) : filtre `maxManaValueX`, avec le X du sort.
+- **« VM X ou moins »** pour les effets de masse (`modifyAll`, `destroyAll`) : comparaison `cmp.manaValue("<=", amount.x)`, avec le X du sort.
 - **Jeton Mutagène** (`tmt/common.ts`).
 
 ### Cartes, par extension

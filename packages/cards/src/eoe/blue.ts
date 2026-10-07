@@ -33,7 +33,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       staticAbility("attached", { power: 1 }, { label: "+1/+0" }),
       triggered(
-        when.attacks({ attachedToSource: true }),
+        when.attacks({ attached: "host" }),
         [fx.modify(ref.target(), { addKeywords: ["unblockable"], setPower: 1, setToughness: 1 })],
         { targets: [target.upTo(1, target.creature("t"))], label: "Imblocable, 1/1 de base" },
       ),
@@ -78,7 +78,7 @@ export const BLUE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       staticAbility("attached", { power: -5 }, { label: "-5/-0" }),
-      triggered({ on: "taps", who: { attachedToSource: true } }, [fx.destroy(ref.attached)], { label: "Engagée : détruite" }),
+      triggered({ on: "taps", who: { attached: "host" } }, [fx.destroy(ref.attached)], { label: "Engagée : détruite" }),
       triggered(when.attachedIsDealtDamage, [fx.destroy(ref.attached)], { label: "Blessée : détruite" }),
     ],
   },
