@@ -2,6 +2,7 @@
  * Actions de jeu élémentaires, partagées par les effets, le combat et les actions basées sur l'état.
  */
 
+import { bumpFor } from "./layers";
 import { capReached, MAX_BATTLEFIELD, MAX_TOKENS_PER_EVENT } from "./limits";
 import { type AmountMod, chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, type EntersContext, preventsDamageTo } from "./replacement";
@@ -136,7 +137,7 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   if (q.prevented) return;
   amount = chooseReplacementOrder(amount, q.mods, "max");
   player.life += amount;
-  bump(s); // des caractéristiques peuvent dépendre des points de vie (Elenda)
+  bumpFor(s, "life"); // des caractéristiques peuvent dépendre des points de vie (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });
   logTurnEvent(s, { e: "lifeGain", player: p, amount });
   rulesEvent(s, { e: "lifeGain", player: p, amount, first: countTurnEvents(s, { event: "lifeGain" }, p, p) === 1 });
@@ -223,7 +224,7 @@ export function loseLife(s: GameState, p: PlayerId, amount: number, damage = fal
     if (amount <= 0) return;
   }
   player.life -= amount;
-  bump(s);
+  bumpFor(s, "life");
   emit({ type: "life", player: p, delta: -amount, life: player.life });
   logTurnEvent(s, { e: "lifeLoss", player: p, amount });
   rulesEvent(s, { e: "lifeLoss", player: p, amount });
@@ -494,7 +495,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   if (dealer && ((combat && !dealer.dealtCombatDamage) || !dealer.dealtDamage)) {
     if (combat) dealer.dealtCombatDamage = true;
     dealer.dealtDamage = true;
-    bump(s);
+    bumpFor(s, "dealt");
   }
   let excess = 0;
   if (isPlayer(s, target)) {
@@ -515,6 +516,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       poisoned.counters ??= {};
       const counters = poisoned.counters;
       counters.poison = (counters.poison ?? 0) + toxic;
+      bump(s); // corrompu : des statiques en dépendent (Skrelv's Hive)
       emit({ type: "poison", player: target, amount: toxic, total: counters.poison });
     }
     // Infection (702.90b) : des marqueurs poison au lieu d'une perte de points de vie.
@@ -524,6 +526,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       pl.counters ??= {};
       const counters = pl.counters;
       counters.poison = (counters.poison ?? 0) + amount;
+      bump(s); // corrompu : des statiques en dépendent
       emit({ type: "poison", player: target, amount, total: counters.poison });
     } else loseLife(s, target, amount, true);
   } else {

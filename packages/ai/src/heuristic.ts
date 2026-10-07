@@ -260,7 +260,7 @@ export function priorityOptions(
   const opts = { exposure: pr.exposure };
   const pass: Decision = { type: "pass" };
   const afterPass = trySubmit(s, me, pass);
-  const baseline = afterPass ? evaluate(rollout(afterPass, until), me, opts) : evaluate(s, me, opts);
+  const baseline = afterPass ? evaluate(rollout(afterPass, until, 60, true), me, opts) : evaluate(s, me, opts);
   const options: ScoredOption[] = [];
   for (const a of actions) {
     // Renfort global en rituel (Overrun…) : seulement pour une attaque potentiellement létale.
@@ -276,7 +276,7 @@ export function priorityOptions(
     for (const d of enumerateDecisions(a, 40, rank)) {
       const next = trySubmit(s, me, d);
       if (!next) continue;
-      options.push({ decision: d, score: evaluate(rollout(next, until), me, opts) });
+      options.push({ decision: d, score: evaluate(rollout(next, until, 60, true), me, opts) });
     }
   }
   return { baseline, options };
@@ -324,7 +324,7 @@ export function chooseBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; a
   const until = afterCombat(s.turn.number);
   const simulate = (blocks: { blocker: ObjectId; attacker: ObjectId }[]) => {
     const next = trySubmit(s, me, { type: "declareBlockers", blocks });
-    return next ? evaluate(rollout(next, until), me) : Number.NEGATIVE_INFINITY;
+    return next ? evaluate(rollout(next, until, 60, true), me) : Number.NEGATIVE_INFINITY;
   };
 
   const blocks: { blocker: ObjectId; attacker: ObjectId }[] = [];

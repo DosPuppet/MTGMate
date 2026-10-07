@@ -19,7 +19,7 @@ import { absentAnswer, ask, cardRef } from "./choices";
 import { syncControl } from "./control";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveDiscarded, staticContext } from "./effects";
 import { rethrowAsRules } from "./errors";
-import { bumpFor, copiedDefId, effectivePower, snapshot } from "./layers";
+import { bumpFor, copiedDefId, copiedDefMap, copyingIn, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
 import { manaValue, payMana } from "./mana";
 import { answerCastNow, answerResolutionChoice, dropNowPermissions, RulesError, resolveTop } from "./stack";
@@ -30,7 +30,6 @@ import {
   bump,
   changeCounters,
   chars,
-  commanderOf,
   counterCount,
   creaturesControlledBy,
   emit,
@@ -1821,6 +1820,8 @@ function stateBasedActionsOnce(s: GameState): boolean {
     const toGraveyard: ObjectId[] = [];
     const toDestroy: ObjectId[] = [];
     let changed = false;
+    // Définitions copiées, en un parcours (test des Sagas) ; sans copie en jeu, la face de chaque permanent.
+    const copied = copyingIn(s) ? copiedDefMap(s) : null;
 
     for (const id of s.battlefield) {
       const o = obj(s, id);
@@ -1842,7 +1843,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
       }
       // 714.4 : une Saga dont le dernier chapitre est atteint, et dont aucun chapitre n'attend, est sacrifiée.
       // Face active : une Saga au verso (Summons de FIN) ; une Saga retournée au recto n'en est plus une.
-      const saga = s.defs[copiedDefId(s, id)]?.saga;
+      const saga = s.defs[copied?.get(id) ?? o.faceDefId ?? o.defId]?.saga;
       if (
         saga &&
         counterCount(o, "lore") >= saga.chapters &&
@@ -2009,16 +2010,18 @@ function stateBasedActionsOnce(s: GameState): boolean {
 function commanderReturnOffer(s: GameState): { owner: PlayerId; id: ObjectId } | undefined {
   const cards = s.commander?.cards;
   if (!cards) return undefined;
-  for (const rec of Object.values(cards)) {
+  // Vérifié à chaque passe des actions basées sur l'état : mêmes zones dans le même ordre, sans copier les listes.
+  for (const [uid, rec] of Object.entries(cards)) {
     const owner = s.players[rec.owner];
     if (!owner || owner.lost) continue;
-    for (const id of [...owner.graveyard, ...s.exile, ...owner.hand, ...owner.library]) {
-      const o = s.objects[id];
-      if (o && commanderOf(s, o) === rec && rec.offered !== id) {
-        rec.offered = id;
-        return { owner: rec.owner, id };
+    for (const zone of [owner.graveyard, s.exile, owner.hand, owner.library])
+      for (const id of zone) {
+        const o = s.objects[id];
+        if (o && !o.isToken && o.uid === uid && rec.offered !== id) {
+          rec.offered = id;
+          return { owner: rec.owner, id };
+        }
       }
-    }
   }
   return undefined;
 }

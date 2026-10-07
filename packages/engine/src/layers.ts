@@ -313,6 +313,35 @@ export function copiedDefId(s: GameState, id: ObjectId): string {
   return best?.def ?? o.faceDefId ?? o.defId;
 }
 
+/**
+ * `copiedDefId` des permanents copiés, en un parcours (mêmes règles d'horodatage : le premier plus récent l'emporte, les
+ * effets avant les statiques d'attachement) ; un permanent absent de la table n'est pas une copie.
+ */
+export function copiedDefMap(s: GameState): Map<ObjectId, string> {
+  const best = new Map<ObjectId, { t: number; def: string }>();
+  for (const e of s.effects) {
+    if (!e.copyOf) continue;
+    for (const id of e.affected) {
+      const b = best.get(id);
+      if (!b || e.timestamp > b.t) best.set(id, { t: e.timestamp, def: e.copyOf });
+    }
+  }
+  for (const x of s.battlefield) {
+    const src = s.objects[x];
+    if (!src?.attachedTo) continue;
+    const def = staticCopyOf(s, x);
+    if (!def) continue;
+    const b = best.get(src.attachedTo);
+    if (!b || src.timestamp > b.t) best.set(src.attachedTo, { t: src.timestamp, def });
+  }
+  return new Map([...best].map(([id, b]) => [id, b.def]));
+}
+
+/** Des copies sont en jeu (effet de copie, ou statique de copie d'un permanent attaché) : sinon `copiedDefId` est la face. */
+export function copyingIn(s: GameState): boolean {
+  return s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x));
+}
+
 /** Champs de `LayerMods` qui sont des listes (cumulées quand on fusionne des modifications). */
 const LIST_MODS = [
   "addAbilities",
@@ -383,6 +412,12 @@ function viewManaValue(s: GameState, id: ObjectId, o: GameObject): number {
     if (copied !== (o.faceDefId ?? o.defId)) return manaValue(s.defs[copied]?.manaCost);
   }
   return manaValue(s.defs[o.defId]?.manaCost);
+}
+
+/** Comme `viewManaValue`, d'après la table des copies du contexte de parcours. */
+function scanManaValue(s: GameState, copied: Map<ObjectId, string> | null, o: GameObject): number {
+  const c = copied && o.zone === "battlefield" ? copied.get(o.id) : undefined;
+  return manaValue(s.defs[c !== undefined && c !== (o.faceDefId ?? o.defId) ? c : o.defId]?.manaCost);
 }
 
 /** Définition que copie le permanent auquel `source` est attaché, d'après une statique `copyLinkedExile` de `source`. */
@@ -537,7 +572,12 @@ interface CacheDeps {
   mana: boolean;
   /** Le journal du tour (`amount.turnEvents`, filtres « a attaqué / infligé des blessures ce tour-ci »). */
   turnLog: boolean;
+  /** Les points de vie des joueurs (`perLife`, `lifeTotal`, `mostLife`, `refLife`, `opponentHasMore` des points de vie). */
+  life: boolean;
+  /** « Tant qu'il n'a pas encore infligé de blessures (de combat) » (`sourceDealtDamage`, `sourceDealtCombatDamage`). */
+  dealt: boolean;
 }
+const noDeps = (): CacheDeps => ({ tapped: false, mana: false, turnLog: false, life: false, dealt: false });
 const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics>; deps: CacheDeps }>();
 const depsMemo = new WeakMap<object, CacheDeps>();
 
@@ -560,11 +600,17 @@ function scanDeps(x: unknown, out: CacheDeps): void {
     // La réserve de mana : condition « tant que vous avez N mana » ou montant « mana inutilisé » (Omnath).
     if (x === "manaPoolAtLeast" || x === "manaInPool") out.mana = true;
     if (x === "turnEvents") out.turnLog = true;
+    // Par prudence, toute valeur « life » (`opponentHasMore` des points de vie, déclencheur accordé « gagnez des PV »).
+    if (x === "life" || x === "lifeTotal" || x === "mostLife" || x === "refLife") out.life = true;
+    if (x === "sourceDealtDamage" || x === "sourceDealtCombatDamage") out.dealt = true;
     return;
   }
   for (const [k, v] of Object.entries(x)) {
+    // Une clé sans valeur ne lit rien (`perTurnEvents: undefined`, toujours écrit par `staticAbility`).
+    if (v === undefined) continue;
     if (k === "tapped" || k === "whileSourceTapped") out.tapped = true;
     if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "perTurnEvents") out.turnLog = true;
+    if (k === "perLife") out.life = true;
     scanDeps(v, out);
   }
 }
@@ -573,7 +619,7 @@ function scanDeps(x: unknown, out: CacheDeps): void {
 function depsOf(x: object, pick?: (x: object) => unknown): CacheDeps {
   const hit = depsMemo.get(x);
   if (hit) return hit;
-  const out = { tapped: false, mana: false, turnLog: false };
+  const out = noDeps();
   scanDeps(pick ? pick(x) : x, out);
   depsMemo.set(x, out);
   return out;
@@ -585,17 +631,20 @@ const cdaOf = (d: object) => {
 };
 
 function cacheDeps(s: GameState, map: Map<ObjectId, Characteristics>): CacheDeps {
-  const out = { tapped: false, mana: false, turnLog: false };
+  const out = noDeps();
   const merge = (d: CacheDeps) => {
     out.tapped ||= d.tapped;
     out.mana ||= d.mana;
     out.turnLog ||= d.turnLog;
+    out.life ||= d.life;
+    out.dealt ||= d.dealt;
   };
   for (const e of s.effects) scanDeps(e, out);
+  const copied = copyingIn(s) ? copiedDefMap(s) : null;
   for (const [id, c] of map) {
     for (const ab of c.abilities) if (ab.kind === "static") merge(depsOf(ab));
     const o = s.objects[id];
-    for (const defId of o ? [o.defId, o.faceDefId, copiedDefId(s, id)] : []) {
+    for (const defId of o ? [o.defId, o.faceDefId, copied?.get(id) ?? o.faceDefId ?? o.defId] : []) {
       const d = defId ? s.defs[defId] : undefined;
       if (d) merge(depsOf(d, cdaOf));
     }
@@ -625,8 +674,38 @@ let provisional: Map<ObjectId, Characteristics> | null = null;
 let reads = 0;
 /** Vues des permanents pendant une collecte des statiques (les caractéristiques lues ne changent pas pendant elle). */
 let viewCache: Map<ObjectId, LkiSnapshot> | null = null;
-/** Pendant une collecte : permanents équipés, et s'il existe des copies (sinon la valeur de mana est celle de la carte). */
-let scan: { equipped: Set<ObjectId>; enchanted: Map<ObjectId, PlayerId[]>; copying: boolean } | null = null;
+/**
+ * Contexte de parcours d'un état figé (collecte des statiques, couches, sources des déclencheurs) : permanents équipés et
+ * enchantés, définitions copiées (`copied`, absente sans copie : la valeur de mana est alors celle de la carte).
+ */
+let scan: { equipped: Set<ObjectId>; enchanted: Map<ObjectId, PlayerId[]>; copied: Map<ObjectId, string> | null } | null = null;
+
+function scanOf(s: GameState): NonNullable<typeof scan> {
+  return {
+    equipped: new Set(
+      s.battlefield.flatMap((x) => {
+        const e = s.objects[x];
+        return e?.attachedTo && s.defs[e.defId]?.subtypes.includes("Equipment") ? [e.attachedTo] : [];
+      }),
+    ),
+    enchanted: enchantedMap(s),
+    copied: copyingIn(s) ? copiedDefMap(s) : null,
+  };
+}
+
+/**
+ * Exécute `fn` avec le contexte de parcours de `s` calculé une fois : les vues construites pendant `fn` (`snapshot`) ne
+ * refont pas ces parcours du champ de bataille. `s` ne doit pas changer pendant `fn`.
+ */
+export function withScan<T>(s: GameState, fn: () => T): T {
+  const prev = scan;
+  scan = scanOf(s);
+  try {
+    return fn();
+  } finally {
+    scan = prev;
+  }
+}
 
 /** Contrôleurs des Auras attachées à chaque permanent (sous-types imprimés : une Aura ne perd pas ce sous-type). */
 function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
@@ -662,7 +741,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
     attacking: defender !== undefined,
     attackedPlayer: defender !== undefined && s.players[defender] ? defender : undefined,
     name: c.name,
-    manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),
+    manaValue: scan ? scanManaValue(s, scan.copied, o) : viewManaValue(s, id, o),
     suspected: o.suspected || undefined,
     // « un sort avec {X} dans son coût de mana » (Matterbending Mage).
     hasX: (!o.faceDown && (s.defs[o.faceDefId ?? o.defId]?.manaCost?.x ?? 0) > 0) || undefined,
@@ -716,9 +795,8 @@ function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
  * les réévalue sur le résultat provisoire (`provisional`) et on recommence tant que leur signature change.
  */
 export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics> {
-  const copying =
-    s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x));
-  const defOfId = (id: ObjectId) => (copying ? copiedDefId(s, id) : (obj(s, id).faceDefId ?? obj(s, id).defId));
+  const copied = copyingIn(s) ? copiedDefMap(s) : null;
+  const defOfId = (id: ObjectId) => copied?.get(id) ?? obj(s, id).faceDefId ?? obj(s, id).defId;
   const prev = provisional;
   try {
     provisional = null;
@@ -784,16 +862,7 @@ function collectStatics(s: GameState, defOfId: (id: ObjectId) => string, previou
   const prevScan = scan;
   computing = true;
   viewCache = new Map();
-  scan = {
-    equipped: new Set(
-      s.battlefield.flatMap((x) => {
-        const e = s.objects[x];
-        return e?.attachedTo && s.defs[e.defId]?.subtypes.includes("Equipment") ? [e.attachedTo] : [];
-      }),
-    ),
-    enchanted: enchantedMap(s),
-    copying: s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x)),
-  };
+  scan = scanOf(s);
   try {
     if (previous) {
       const applied = [...previous.fixed];
@@ -1031,8 +1100,12 @@ function replacedSubtypes(old: string[], set: string[]): string[] {
   return [...set];
 }
 
-/** Applique les couches 1 et 4 à 7 aux objets du champ de bataille. */
+/** Applique les couches 1 et 4 à 7 aux objets du champ de bataille (vues construites avec le contexte de parcours). */
 function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) => string): Map<ObjectId, Characteristics> {
+  return withScan(s, () => applyLayersScanned(s, applied, defOfId));
+}
+
+function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: ObjectId) => string): Map<ObjectId, Characteristics> {
   const out = new Map<ObjectId, Characteristics>();
   const attacking = new Map(s.combat?.attackers.map((a) => [a.id, a.defender]) ?? []);
   // Couche 1 : copie (valeurs copiables de la définition copiée).

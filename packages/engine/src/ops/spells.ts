@@ -395,6 +395,7 @@ export const HANDLERS: OpHandlers = {
       pl.counters ??= {};
       const counters = pl.counters;
       counters.poison = (counters.poison ?? 0) + e.poison;
+      bump(s); // corrompu : des statiques en dépendent
       emit({ type: "poison", player: p, amount: e.poison, total: counters.poison });
     }
     // « S'il le fait, … » (Divert Disaster).

@@ -132,7 +132,10 @@ export const HANDLERS: OpHandlers = {
         } else {
           const pl = s.players[v];
           const counters = pl?.counters;
-          if (counters && (counters.poison ?? 0) > 0) counters.poison = (counters.poison ?? 0) + 1;
+          if (counters && (counters.poison ?? 0) > 0) {
+            counters.poison = (counters.poison ?? 0) + 1;
+            bump(s); // corrompu : des statiques en dépendent
+          }
           if (counters && (counters.rad ?? 0) > 0) {
             counters.rad = (counters.rad ?? 0) + 1;
             bump(s); // des statiques en dépendent (Nightkin Ambusher)

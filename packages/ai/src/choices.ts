@@ -32,7 +32,7 @@ function bestBySimulation(s: GameState, me: PlayerId, candidates: ChoiceValue[][
   for (const values of candidates) {
     const next = trySubmit(s, me, { type: "choose", values });
     if (!next) continue;
-    const score = evaluate(rollout(next, stackEmpty), me);
+    const score = evaluate(rollout(next, stackEmpty, 60, true), me);
     if (score > bestScore) {
       bestScore = score;
       best = values;
@@ -43,7 +43,8 @@ function bestBySimulation(s: GameState, me: PlayerId, candidates: ChoiceValue[][
 
 /**
  * Suite d'une réponse simulée jusqu'à la pile vide : les questions suivantes (cibles des déclencheurs ordonnés, choix
- * d'une résolution) reçoivent leur réponse suggérée, au lieu d'arrêter la simulation à la première question.
+ * d'une résolution) reçoivent leur réponse suggérée, au lieu d'arrêter la simulation à la première question. `s` est une
+ * copie de travail (résultat de `trySubmit`) : elle est modifiée sur place.
  */
 function settle(s: GameState): GameState {
   let cur = s;
@@ -53,7 +54,7 @@ function settle(s: GameState): GameState {
       const next = trySubmit(cur, p.player, { type: "choose", values: p.request.suggested });
       if (!next) break;
       cur = next;
-    } else if (p?.kind === "priority" && !stackEmpty(cur)) cur = rollout(cur, stackEmpty);
+    } else if (p?.kind === "priority" && !stackEmpty(cur)) cur = rollout(cur, stackEmpty, 60, true);
     else break;
     if (cur.pending?.kind === "priority" && stackEmpty(cur)) break;
   }

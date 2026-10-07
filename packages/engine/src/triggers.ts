@@ -13,6 +13,7 @@ import { gainLife } from "./actions";
 import { ask, cardRef } from "./choices";
 import { boardAmount, concreteSpec, evalAmount, needsConcrete, resolveRef, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
+import { withScan } from "./layers";
 import {
   apnapOrder,
   castInfoOf,
@@ -105,6 +106,10 @@ function liveSources(s: GameState): Source[] {
 }
 
 function computeLiveSources(s: GameState): Source[] {
+  return withScan(s, () => computeLiveSourcesScanned(s));
+}
+
+function computeLiveSourcesScanned(s: GameState): Source[] {
   const out: Source[] = [];
   // Capacités déclenchées accordées, ou copiées (couche 1) : on ne peut pas se fier aux capacités imprimées.
   // Prouesse (702.108) et décomposition (702.147) : la capacité déclenchée est ajoutée par les couches à toute créature

@@ -261,11 +261,14 @@ export function trySubmit(s: GameState, player: PlayerId, d: Decision): GameStat
   }
 }
 
-/** Tout le monde passe jusqu'à ce que `until` soit vrai, ou qu'une décision autre que la priorité apparaisse. */
-export function rollout(s: GameState, until: (s: GameState) => boolean, max = 60): GameState {
+/**
+ * Tout le monde passe jusqu'à ce que `until` soit vrai, ou qu'une décision autre que la priorité apparaisse. `owned` :
+ * `s` est déjà une copie de travail que l'appelant ne relit pas (résultat de `trySubmit`), modifiée sur place.
+ */
+export function rollout(s: GameState, until: (s: GameState) => boolean, max = 60, owned = false): GameState {
   if (s.over || s.pending?.kind !== "priority" || until(s)) return s;
   // Une seule copie, puis on mute la copie de travail : passer est toujours légal.
-  const cur = cloneState(s);
+  const cur = owned ? s : cloneState(s);
   for (let i = 0; i < max && !cur.over && cur.pending?.kind === "priority" && !until(cur); i++) {
     applyMutable(cur, cur.pending.player, { type: "pass" });
   }
