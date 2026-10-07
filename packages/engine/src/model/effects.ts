@@ -242,7 +242,7 @@ export type Effect =
    * Remplacement sur des objets jusqu'à la fin du tour : « si cette créature devait mourir ce tour-ci, exilez-la à la
    * place » ; « prévenez toutes les blessures de combat qui devraient lui être infligées ce tour-ci ».
    */
-  | { op: "objectReplacement"; kind: "exileIfDies" | "preventCombatDamage"; what: Ref }
+  | { op: "objectReplacement"; kind: "exileIfDies" | "preventCombatDamage" | "preventDamage"; what: Ref }
   /** Double le nombre de marqueurs +1/+1. */
   /** Double les marqueurs +1/+1 (ou, `all`, chaque sorte de marqueur) sur les permanents désignés. */
   | { op: "doubleCounters"; what: Ref; all?: boolean }

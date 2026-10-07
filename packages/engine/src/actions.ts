@@ -4,7 +4,7 @@
 
 import { capReached, MAX_BATTLEFIELD, MAX_TOKENS_PER_EVENT } from "./limits";
 import { type AmountMod, chooseReplacementOrder } from "./modifiers";
-import { applyEntersReplacements, type EntersContext, preventsCombatDamage } from "./replacement";
+import { applyEntersReplacements, type EntersContext, preventsDamageTo } from "./replacement";
 import {
   bump,
   changeCounters,
@@ -405,7 +405,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   const unpreventable =
     (combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"))) ||
     s.playerOrder.some((p) => playerStatic(s, p, "damageUnpreventable"));
-  if (combat && !unpreventable && preventsCombatDamage(s, target)) return;
+  if (!unpreventable && preventsDamageTo(s, target, combat)) return;
   if (
     combat &&
     !unpreventable &&

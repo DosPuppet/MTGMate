@@ -415,8 +415,11 @@ export const RECORD_VERSION = 1;
  * - 151 : PLAN-H H2b : approximations levées par les scripts (Krenko's Buzzcrusher, Kaya, Spirits' Justice, Jetsam,
  *   Super Intelligence, Sentinel of Lost Lore, The Legend of Yangchen, Kitsune, Madame Null, Shredder's Technique…) ;
  *   le choix facultatif de chooseAmong suggère d'abord l'objet d'un autre joueur.
+ * - 152 : PLAN-H H2c : approximations levées par les scripts (Finality, Black Bolt, Nightkin Ambusher, Negative Zone
+ *   Portal, Mutational Advantage ; Namor, Ragavan, Sylvan Library, Expropriate, Plague of Vermin raccourcies) ;
+ *   prévention des blessures sur des objets fixés à la résolution (objectReplacement preventDamage).
  */
-export const RULES_VERSION = 151;
+export const RULES_VERSION = 152;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

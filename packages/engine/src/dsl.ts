@@ -760,6 +760,8 @@ export const fx = {
   damageStoringExcess: (n: Amount, to: Ref, store: string): Effect => ({ op: "damage", amount: n, to, storeExcess: store }),
   exileIfDies: (what: Ref): Effect => ({ op: "objectReplacement", kind: "exileIfDies", what }),
   preventCombatDamage: (what: Ref): Effect => ({ op: "objectReplacement", kind: "preventCombatDamage", what }),
+  /** « Prévenez toutes les blessures qui seraient infligées à [ces permanents] ce tour-ci » : objets fixés à la résolution. */
+  preventDamageThisTurn: (what: Ref): Effect => ({ op: "objectReplacement", kind: "preventDamage", what }),
   doubleCounters: (what: Ref): Effect => ({ op: "doubleCounters", what }),
   /** « Vous pouvez … » : renvoie une liste à étaler dans les effets. */
   may: (prompt: string, ...effects: Effects): Effect[] => {

@@ -3,10 +3,25 @@
  * radiation et radiation, cartes meulées (déclencheurs groupés, « meulée ce tour-ci »), prolifération des joueurs.
  */
 import { describe, expect, it } from "vitest";
+import { dealDamage, sourceFromObject } from "../src/actions";
 import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
+import { changeCounters } from "../src/state";
 import type { GameState, PlayerId } from "../src/types";
-import { act, advanceUntil, attack, idOf, idsOf, lands, nameOf, picking, scenario, settle, throughCombat } from "./helpers";
+import {
+  act,
+  advanceUntil,
+  attack,
+  attackPlayer,
+  idOf,
+  idsOf,
+  lands,
+  nameOf,
+  picking,
+  scenario,
+  settle,
+  throughCombat,
+} from "./helpers";
 
 const hand = (s: GameState, p: PlayerId) => s.players[p]?.hand.length ?? 0;
 const onField = (s: GameState, p: PlayerId, name: string) => idsOf(s, p, "battlefield", name).length;
@@ -172,5 +187,99 @@ describe("Mutant Menace (EDH)", () => {
       expect(hand(s, "p1")).toBe(h - 1 + 2);
       expect(s.players.p1?.counters?.rad).toBe(1);
     });
+  });
+});
+
+describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
+  it("Finality : vous pouvez mettre deux marqueurs +1/+1 sur une de vos créatures (choisie, pas ciblée) ; puis -4/-4 à toutes", () => {
+    const start = () =>
+      scenario({
+        p1: { battlefield: [...lands("Swamp", 3), ...lands("Forest", 3), "Serra Angel"], hand: ["Find // Finality"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+    let s = start();
+    const mine = idOf(s, "p1", "battlefield", "Serra Angel");
+    const offered: string[][] = [];
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Find // Finality"), face: 1 }), (req) => {
+      if (req.type !== "pick") return undefined;
+      offered.push(req.options.map(String));
+      return [mine];
+    });
+    // Le choix se fait à la résolution, parmi vos créatures seulement.
+    expect(offered).toEqual([[mine]]);
+    expect(plusOne(s, mine)).toBe(2);
+    expect(chars(s, mine).power).toBe(2);
+    expect(onField(s, "p2", "Serra Angel")).toBe(0);
+    // « Vous pouvez » : sans créature choisie, pas de marqueurs, et votre Ange meurt aussi.
+    let t = start();
+    t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Find // Finality"), face: 1 }), (req) =>
+      req.type === "pick" ? [] : undefined,
+    );
+    expect(onField(t, "p1", "Serra Angel")).toBe(0);
+  });
+
+  it("Nightkin Ambusher : imblocable tant que le joueur défenseur (pas un autre adversaire) a un marqueur de radiation", () => {
+    const run = (defender: PlayerId) => {
+      let s = scenario({ players: 3, p1: { battlefield: ["Nightkin Ambusher"] } });
+      const p2 = s.players.p2;
+      if (p2) p2.counters = { ...p2.counters, rad: 1 };
+      const ambusher = idOf(s, "p1", "battlefield", "Nightkin Ambusher");
+      s = attackPlayer(s, [ambusher], defender);
+      return chars(s, ambusher).keywords.includes("unblockable");
+    };
+    expect(run("p2")).toBe(true);
+    expect(run("p3")).toBe(false);
+  });
+
+  it("Mutational Advantage : blessures prévenues sur les permanents qui avaient des marqueurs à la résolution, pas sur ceux qui en reçoivent ensuite", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [
+          ...lands("Island", 1),
+          ...lands("Forest", 2),
+          { name: "Bear Cub", counters: { "+1/+1": 1 } },
+          "Llanowar Elves",
+        ],
+        hand: ["Mutational Advantage"],
+      },
+    });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = settle(castIt(s, "p1", "Mutational Advantage"), picking([cub]));
+    expect(plusOne(s, cub)).toBe(2);
+    expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
+    // Les Elfes reçoivent un marqueur après la résolution : ils ne sont pas protégés.
+    changeCounters(s, s.objects[elves] as never, "+1/+1", 1);
+    dealDamage(s, sourceFromObject(s, elves), cub, 3, false);
+    dealDamage(s, sourceFromObject(s, cub), elves, 1, false);
+    expect(s.objects[cub]?.damage).toBe(0);
+    expect(s.objects[elves]?.damage).toBe(1);
+  });
+
+  it("Mutational Advantage : la prévention est un effet, pas une capacité : Final Showdown (perte des capacités) ne la retire pas", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [
+          ...lands("Island", 1),
+          ...lands("Forest", 2),
+          ...lands("Plains", 2),
+          { name: "Bear Cub", counters: { "+1/+1": 1 } },
+        ],
+        hand: ["Mutational Advantage", "Final Showdown"],
+      },
+    });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(castIt(s, "p1", "Mutational Advantage"), picking([cub]));
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Final Showdown"));
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Les créatures perdent leurs capacités") : undefined;
+    expect(mode).toBeDefined();
+    s = settle(castIt(s, "p1", "Final Showdown", { mode: mode?.index }));
+    // Défense talismanique et indestructible sont des capacités accordées : elles sont perdues.
+    expect(chars(s, cub).keywords).not.toContain("hexproof");
+    expect(chars(s, cub).keywords).not.toContain("indestructible");
+    // Les blessures restent prévenues, de combat ou non.
+    dealDamage(s, sourceFromObject(s, cub), cub, 3, false);
+    dealDamage(s, sourceFromObject(s, cub), cub, 2, true);
+    expect(s.objects[cub]?.damage).toBe(0);
   });
 });

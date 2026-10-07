@@ -1209,3 +1209,53 @@ describe("Special Guests", () => {
     });
   });
 });
+
+describe("Special Guests : approximations levées (PLAN-H, H2c)", () => {
+  it("Sylvan Library : les cartes remises au-dessus sont choisies parmi celles piochées ce tour-ci", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Sylvan Library"], hand: ["Opt"], library: ["Shock", "Bear Cub", "Forest", "Island"] },
+    });
+    const opt = idOf(s, "p1", "hand", "Opt");
+    const offered: string[][] = [];
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw" && x.pending?.kind === "choice");
+    let n = 0;
+    s = settle(s, (req) => {
+      if (req.type === "yesNo") return [++n === 1 ? 1 : 0];
+      if (req.type === "pick") offered.push(req.options.map(String));
+      return undefined;
+    });
+    expect(offered).toHaveLength(2);
+    expect(offered.every((o) => !o.includes(opt) && o.length > 0)).toBe(true);
+    expect(s.players.p1?.hand).toContain(opt);
+    expect(s.players.p1?.life).toBe(20);
+  });
+
+  it("Expropriate : à plusieurs, chaque joueur vote dans l'ordre du tour ; l'argent prend un permanent de chaque votant", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: lands("Island", 9), hand: ["Expropriate"] },
+      p2: { battlefield: ["Bear Cub"] },
+      p3: { battlefield: ["Llanowar Elves"] },
+    });
+    const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p3", "battlefield", "Llanowar Elves");
+    const voters: string[] = [];
+    const offered: string[][] = [];
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Expropriate") }), (req, player) => {
+      if (req.type !== "pick") return undefined;
+      if (req.options.includes("0")) {
+        voters.push(player);
+        return player === "p1" ? ["0"] : ["1"];
+      }
+      offered.push(req.options.map(String));
+      return undefined;
+    });
+    expect(voters).toEqual(["p1", "p2", "p3"]);
+    // Chaque vote pour l'argent : un permanent du votant (seul, il est pris sans question).
+    expect(offered).toEqual([]);
+    expect(s.objects[cub]?.controller).toBe("p1");
+    expect(s.objects[elves]?.controller).toBe("p1");
+    expect(s.extraTurns).toEqual(["p1"]);
+  });
+});

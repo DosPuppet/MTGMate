@@ -232,7 +232,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Bard, King of Dale : « la première carte que vous piochez pendant chacune de vos étapes de pioche » se lit « une pioche pendant votre étape de pioche, si vous n'avez encore pioché aucune carte ce tour-ci » ;
   - `règle` Goblin Plate Mail : l'Équipement s'attache à votre première Armée.
 - **Rééditions, « Sans limite » (`docs/extensions/reeditions.md`) :**
-  - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » est une permission de jouer (un terrain exilé ainsi pourrait être joué) ;
+  - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » : une carte modale recto-verso dont le verso est un terrain pourrait être jouée par ce verso ;
   - `règle` Cytoplast Manipulator : le contrôle dure tant que vous contrôlez le Manipulator (et non « tant qu'il reste sur le champ de bataille ») ;
   - `choix auto` Gemstone Caverns : la carte exilée de la main est la carte non-terrain de plus petite valeur de mana (un terrain s'il n'y en a pas) ;
   - `règle` Reflecting Pool : les types que produiraient d'autres terrains du même genre (Reflecting Pool) ne comptent pas ;
@@ -259,10 +259,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
   - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;
   - `règle` Painter's Servant : seuls les permanents prennent la couleur choisie (pas les sorts ni les cartes des autres zones) ;
-  - `règle` Sylvan Library : les deux cartes remises peuvent être n'importe quelles cartes de la main (pas seulement celles piochées ce tour-ci) ;
+  - `règle` Sylvan Library : les deux cartes remises sont choisies parmi les cartes mises dans la main ce tour-ci (pas seulement celles piochées) ;
   - `règle` Indominus Rex, Alpha : la défausse et les marqueurs viennent d'une capacité d'arrivée (pas « en arrivant ») ; seule une carte est piochée par marqueur de mot-clé ;
-  - `règle` Expropriate : seul le premier adversaire vote (exact en duel) ;
-  - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ; seul le premier adversaire paie (exact en duel) ;
+  - `règle` Expropriate : pour le vote « argent » d'un adversaire, le permanent est choisi parmi ceux qu'il contrôle et que possède un de vos adversaires (et non parmi ceux qu'il possède, quel que soit leur contrôleur) ;
+  - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ;
   - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour »).
 - **Commander, pseudo-ensemble EDH (`docs/extensions/edh.md`) :**
   - `choix auto` Relic of Legends : la créature légendaire engagée est choisie par le moteur (d'abord une sans capacité de mana, comme Gene Pollinator) ; le paiement automatique ne s'en sert qu'une fois par capacité ; Phyrexian Tower et Sunken Ruins (coût de sacrifice ou de mana) s'activent à la main.
@@ -307,12 +307,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Deep Analysis : le flashback coûte {1}{U}, sans les 3 points de vie ;
   - `règle` First Family : seules les couleurs de vos permanents comptent (pas celles des sorts lancés ce tour-ci) ;
   - `règle` Galactus : il attaque à chaque combat si possible, sans viser l'adversaire qui a le plus de PV ; Silver Surfer : la créature attaque à chaque combat si possible, sans viser ce joueur ; Taunt from the Rampart : « provoquez » se lit « attaquent à chaque combat si possible » ;
-  - `règle` Namor : « un joueur qui a plus de PV que vous » se lit « un adversaire a plus de PV que vous » ; Black Bolt : le permanent détruit est choisi parmi ceux de n'importe quel adversaire ;
+  - `règle` Namor : toutes vos autres créatures attaquantes gagnent +2/+0 (pas seulement celles qui attaquent ce joueur), et l'attaque d'un planeswalker compte comme celle de son contrôleur ;
   - `règle` Willie Lumpkin : l'interdiction d'attaquer dure jusqu'au prochain tour de son contrôleur (ce qui couvre le prochain tour du joueur blessé) ;
-  - `choix auto` Tragic Arrogance : chaque joueur choisit lui-même ce qu'il garde ; Negative Zone Portal : la carte rendue est la première exilée (pas au hasard) ; Cut a Deal : chaque adversaire est compté comme ayant pioché ;
+  - `choix auto` Tragic Arrogance : chaque joueur choisit lui-même ce qu'il garde ; Cut a Deal : chaque adversaire est compté comme ayant pioché ;
   - `règle` Hancock : X compte ses marqueurs +1/+1 seulement ; Jason Bright : « une force différente de sa force de base » se lit « supérieure » ;
   - `règle` Harold and Bob : la Forêt choisie gagne sa capacité pour toujours, et la carte reste au cimetière (elle ne devient pas une Aura) ;
   - `règle` Lumbering Megasloth : seuls les marqueurs des permanents comptent (pas ceux des joueurs) ; Winding Constrictor : la clause « si vous deviez recevoir des marqueurs » n'est pas gérée ;
-  - `règle` Nightkin Ambusher : imblocable si un adversaire a un marqueur de radiation (pas seulement le joueur défenseur) ; Nuka-Nuke Launcher : l'intimidation se lit « ne peut être bloquée que par des créatures-artefacts », et les marqueurs de radiation frappent chaque adversaire jusqu'à votre prochain tour ;
+  - `règle` Nuka-Nuke Launcher : l'intimidation se lit « ne peut être bloquée que par des créatures-artefacts », et les marqueurs de radiation frappent chaque adversaire jusqu'à votre prochain tour ;
   - `règle` Young Deathclaws : la récupération coûte {4} (et non le coût de mana de la carte) et c'est une capacité de Young Deathclaws ;
-  - `règle` Mariposa Military Base : elle arrive toujours dégagée, sans marqueurs de radiation ; Finality : la créature qui reçoit les marqueurs est choisie comme une cible ; Mutational Advantage : les blessures sont prévenues sur vos permanents qui ont des marqueurs au moment des blessures.
+  - `règle` Mariposa Military Base : elle arrive toujours dégagée, sans marqueurs de radiation.

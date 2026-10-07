@@ -90,9 +90,9 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
       triggered(when.castSpell("you", NONCREATURE), [fx.pump(ref.self, 2, 2)], {
         label: "Sort non-créature : +2/+2 jusqu'à la fin du tour",
       }),
-      // Approximation : le permanent détruit est choisi parmi ceux de vos adversaires (pas seulement de ce joueur).
+      // « Ce joueur » : le contrôleur du sort ou de la capacité qui le cible (le joueur de l'événement).
       triggered(when.targetedByOpponent({ self: true }), [fx.destroy(ref.target())], {
-        targets: [target.nonland("t", { controller: "opponent" }, "permanent non-terrain de ce joueur")],
+        targets: [target.of(ref.eventPlayer, target.nonland("t"), "permanent non-terrain de ce joueur")],
         label: "Voix fatale : détruisez un permanent non-terrain de ce joueur",
       }),
     ],
@@ -218,9 +218,11 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
   "Namor, Atlantean King": {
     abilities: [
       triggered(when.castSpell("you", NONCREATURE), [fx.createTokens(MERFOLK)], { label: "Sort non-créature : un Ondin 1/1" }),
-      // Approximation : « un joueur qui a plus de PV que vous » se lit « un adversaire a plus de PV que vous ».
+      // « Attaque un joueur qui a plus de PV que vous » : le joueur défenseur, comparé au déclenchement.
+      // Approximation : toutes vos autres créatures attaquantes gagnent +2/+0 (pas seulement celles qui attaquent ce
+      // joueur), et l'attaque d'un planeswalker compte comme celle de son contrôleur.
       triggered(when.attacksSelf, [fx.pumpAll({ ...CREATURE_YOU, attacking: true, other: true }, 2, 0)], {
-        condition: cond.opponentHasMore("life"),
+        triggerCondition: cond.amountGreater({ kind: "lifeTotal", who: ref.defendingPlayer }, amount.lifeTotal),
         label: "Vos autres créatures attaquantes gagnent +2/+0",
       }),
     ],
@@ -362,10 +364,17 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
         ],
         label: "Exilez une carte du cimetière d'un adversaire (une créature : piochez)",
       }),
-      // Approximation : la carte rendue est la première exilée (et non une au hasard).
+      // « Une carte exilée avec lui, au hasard » : tirée parmi les cartes liées encore en exil.
       triggered(
         when.yourUpkeep,
-        [fx.coinFlip("w"), ...fx.when(cond.not(cond.v("w")), fx.sacrificeIt(ref.self), fx.toHand(ref.nth(ref.linked, 0)))],
+        [
+          fx.coinFlip("w"),
+          ...fx.when(
+            cond.not(cond.v("w")),
+            fx.sacrificeIt(ref.self),
+            fx.pickFromZone("graveyard", {}, { to: "hand" }, { pool: ref.linked, random: true }),
+          ),
+        ],
         {
           condition: cond.amountAtLeast(amount.refCount(ref.filtered(ref.linked, { types: ["Creature"] })), 4),
           label: "Quatre créatures exilées : pile ou face ; perdu, sacrifiez-le",

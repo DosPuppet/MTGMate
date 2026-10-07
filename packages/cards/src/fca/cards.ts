@@ -97,7 +97,12 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.combatDamageToPlayer,
-        [fx.createTokens(TREASURE), fx.exileTop(ref.eventPlayer, 1, "r"), fx.grantPlay(ref.stored("r"))],
+        [
+          fx.createTokens(TREASURE),
+          fx.exileTop(ref.eventPlayer, 1, "r"),
+          // « Vous pouvez lancer cette carte » : un terrain ne peut pas être joué ainsi.
+          ...fx.when(cond.refMatches(ref.stored("r"), { notTypes: ["Land"] }), fx.grantPlay(ref.stored("r"))),
+        ],
         { label: "Un Trésor ; exilez sa carte du dessus, lançable ce tour-ci" },
       ),
     ],

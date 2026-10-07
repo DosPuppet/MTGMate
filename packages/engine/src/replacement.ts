@@ -440,11 +440,21 @@ export function releaseLinkedExile(s: GameState, sourceId: ObjectId): void {
   }
 }
 
-/** 615 : ces blessures de combat sont-elles prévenues ? */
-export function preventsCombatDamage(s: GameState, target: string): boolean {
-  return s.replacements.some((r) => r.kind === "preventCombatDamage" && r.objects.includes(target));
+/**
+ * 615 : ces blessures sont-elles prévenues par un effet de prévention créé sur des objets fixés à la résolution (toutes
+ * les blessures, ou seulement celles de combat) ? Un effet, pas une capacité : perdre ses capacités ne le retire pas.
+ */
+export function preventsDamageTo(s: GameState, target: string, combat: boolean): boolean {
+  return s.replacements.some(
+    (r) => (r.kind === "preventDamage" || (combat && r.kind === "preventCombatDamage")) && r.objects.includes(target),
+  );
 }
 
-export function addReplacement(s: GameState, kind: "exileIfDies" | "preventCombatDamage", objects: ObjectId[], id: string): void {
+export function addReplacement(
+  s: GameState,
+  kind: "exileIfDies" | "preventCombatDamage" | "preventDamage",
+  objects: ObjectId[],
+  id: string,
+): void {
   if (objects.length) s.replacements.push({ id, kind, objects });
 }

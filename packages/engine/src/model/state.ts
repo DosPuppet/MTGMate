@@ -607,7 +607,7 @@ export interface CombatState {
 
 export type CreatedReplacement =
   | { id: string; kind: "exileIfDies"; objects: ObjectId[] }
-  | { id: string; kind: "preventCombatDamage"; objects: ObjectId[] };
+  | { id: string; kind: "preventCombatDamage" | "preventDamage"; objects: ObjectId[] };
 
 /** Données de l'événement qui a déclenché une capacité. */
 export interface TriggerEventData {

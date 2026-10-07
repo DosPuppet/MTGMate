@@ -19,6 +19,7 @@ import {
 
 const RATS = { types: ["Creature" as const], subtype: "Rat", controller: "you" as const };
 const EQUIPPED = { types: ["Creature" as const], attachedToSource: true };
+const PAY_FOR_RATS = "payez autant de PV que vous voulez (un Rat par PV)";
 
 export const CARDS: Record<string, CardScript> = {
   // Modulaire 1 : lu dans le texte.
@@ -217,14 +218,16 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  // « En commençant par vous, chaque joueur peut payer des PV » : puis chaque adversaire, dans l'ordre du tour.
+  // Approximation : chaque joueur paie une seule fois (le processus ne se répète pas).
   "Plague of Vermin": {
     spell: spell(
       [],
       [
-        fx.payLifeX("payez autant de PV que vous voulez (un Rat par PV)", "a"),
-        fx.payLifeX("payez autant de PV que vous voulez (un Rat par PV)", "b", ref.eachOpponent),
+        fx.payLifeX(PAY_FOR_RATS, "a"),
+        ...fx.forEachPlayer(ref.eachOpponent, (p, n) => [fx.payLifeX(PAY_FOR_RATS, `b${n}`, p)]),
         fx.createTokens(RAT, amount.v("a")),
-        fx.createTokens(RAT, amount.v("b"), ref.eachOpponent),
+        ...fx.forEachPlayer(ref.eachOpponent, (p, n) => [fx.createTokens(RAT, amount.v(`b${n}`), p)]),
       ],
     ),
   },

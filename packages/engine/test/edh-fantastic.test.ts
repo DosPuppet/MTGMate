@@ -6,8 +6,22 @@
 import { describe, expect, it } from "vitest";
 import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
+import { moveObject, random } from "../src/state";
 import type { GameState, PlayerId } from "../src/types";
-import { act, advanceUntil, castable, idOf, idsOf, lands, nameOf, scenario, settle, steal } from "./helpers";
+import {
+  act,
+  advanceUntil,
+  attackPlayer,
+  castable,
+  idOf,
+  idsOf,
+  lands,
+  nameOf,
+  namesIn,
+  scenario,
+  settle,
+  steal,
+} from "./helpers";
 
 const hand = (s: GameState, p: PlayerId) => s.players[p]?.hand.length ?? 0;
 const onField = (s: GameState, p: PlayerId, name: string) => idsOf(s, p, "battlefield", name).length;
@@ -134,5 +148,71 @@ describe("The Fantastic Four (EDH)", () => {
     // Pas de commandant en jeu : seule l'option à {4} est proposée.
     expect(labels.some((l) => l?.includes("commandant"))).toBe(false);
     expect(labels.some((l) => l?.includes("{4}"))).toBe(true);
+  });
+});
+
+describe("The Fantastic Four : approximations levées (PLAN-H, H2c)", () => {
+  it("Black Bolt : ciblé par un adversaire, il détruit un permanent non-terrain de CE joueur (pas d'un autre adversaire)", () => {
+    let s = scenario({
+      players: 3,
+      active: "p2",
+      p1: { battlefield: ["Black Bolt, Inhuman King"] },
+      p2: { battlefield: ["Mountain", "Bear Cub", "Serra Angel"], hand: ["Shock"] },
+      p3: { battlefield: ["Llanowar Elves"] },
+    });
+    const bolt = idOf(s, "p1", "battlefield", "Black Bolt, Inhuman King");
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: [bolt] } });
+    const offered: (string | undefined)[][] = [];
+    s = settle(s, (req, _p, cur) => {
+      if (req.type !== "pick" || req.intent !== "triggerTarget") return undefined;
+      offered.push(namesIn(cur, req.options));
+      return req.options.filter((id) => nameOf(cur, String(id)) === "Bear Cub");
+    });
+    // Les permanents non-terrain du joueur qui a ciblé Black Bolt, pas ceux de p3.
+    expect(offered.map((x) => [...x].sort())).toEqual([["Bear Cub", "Serra Angel"]]);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p3", "battlefield", "Llanowar Elves")).toHaveLength(1);
+  });
+
+  it("Namor : il attaque un joueur qui a plus de PV que vous → +2/+0 à vos autres attaquants ; un autre adversaire ne compte pas", () => {
+    const run = (defender: "p2" | "p3") => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Namor, Atlantean King", "Bear Cub"] },
+        p2: { life: 25 },
+        p3: { life: 15 },
+      });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(attackPlayer(s, [idOf(s, "p1", "battlefield", "Namor, Atlantean King"), cub], defender));
+      return chars(s, cub).power;
+    };
+    expect(run("p2")).toBe(4);
+    // p3 a moins de PV que vous : pas de bonus, même si p2 en a plus.
+    expect(run("p3")).toBe(2);
+  });
+
+  it("Negative Zone Portal : pile ou face perdu, il est sacrifié et une carte exilée avec lui, tirée au hasard, revient en main", () => {
+    const names = ["Bear Cub", "Llanowar Elves", "Serra Angel", "Shivan Dragon"];
+    const start = () => {
+      let s = scenario({ active: "p2", p1: { battlefield: ["Negative Zone Portal"] }, p2: { graveyard: names } });
+      const portal = s.objects[idOf(s, "p1", "battlefield", "Negative Zone Portal")];
+      const exiledCards = names.map((n) => moveObject(s, idOf(s, "p2", "graveyard", n), "exile") as string);
+      if (portal) portal.linked = exiledCards;
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "upkeep" && x.stack.length > 0);
+      return s;
+    };
+    // Des états du générateur où le lancer est perdu ; la carte rendue varie avec le tirage.
+    const losing = Array.from({ length: 200 }, (_, r) => r).filter((r) => random({ rng: r } as unknown as GameState) >= 0.5);
+    const returned = new Set<string | undefined>();
+    for (const r of losing.slice(0, 12)) {
+      let s = start();
+      s.rng = r;
+      s = settle(s);
+      expect(idsOf(s, "p1", "battlefield", "Negative Zone Portal")).toHaveLength(0);
+      const hand = namesIn(s, s.players.p2?.hand).filter((n) => names.includes(n ?? ""));
+      expect(hand).toHaveLength(1);
+      returned.add(hand[0]);
+    }
+    expect(returned.size).toBeGreaterThan(1);
   });
 });

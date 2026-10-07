@@ -431,3 +431,18 @@ describe("Through the Ages", () => {
     });
   });
 });
+
+describe("Through the Ages : approximations levées (PLAN-H, H2c)", () => {
+  it("Ragavan, Nimble Pilferer : un terrain exilé ne peut pas être joué (« vous pouvez lancer cette carte »)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Ragavan, Nimble Pilferer", ...lands("Forest", 2)] },
+      p2: { library: ["Forest", "Llanowar Elves"] },
+    });
+    s = settleNoBlocks(attack(s, [idOf(s, "p1", "battlefield", "Ragavan, Nimble Pilferer")]));
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    const forest = s.exile.find((id) => nameOf(s, id) === "Forest") as string;
+    expect(forest).toBeDefined();
+    expect(s.turn.landsPlayed).toBe(0);
+    expect(legalActions(s, "p1").some((a) => "card" in a && a.card === forest)).toBe(false);
+  });
+});

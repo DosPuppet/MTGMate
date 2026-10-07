@@ -326,13 +326,14 @@ export const EDH_MUTANT: Record<string, CardScript> = {
         targets: [target.player("p")],
         label: "Le joueur ciblé reçoit quatre marqueurs de radiation",
       }),
-      // Approximation : imblocable si un adversaire (pas forcément le joueur défenseur) a un marqueur de radiation.
+      // « Tant que le joueur défenseur a un marqueur de radiation » : celui qu'elle attaque, ou le contrôleur du
+      // planeswalker attaqué (506.2) ; hors du combat, il n'y a pas de joueur défenseur.
       staticAbility(
         "self",
         { addKeywords: ["unblockable"] },
         {
-          condition: cond.amountAtLeast(amount.maxOverPlayers(ref.eachOpponent, amount.rad), 1),
-          label: "Imblocable tant qu'un adversaire a un marqueur de radiation",
+          condition: cond.amountAtLeast(amount.maxOverPlayers(ref.defendingPlayer, amount.rad), 1),
+          label: "Imblocable tant que le joueur défenseur a un marqueur de radiation",
         },
       ),
     ],
@@ -626,27 +627,29 @@ export const EDH_MUTANT: Record<string, CardScript> = {
       [fx.toHand(ref.target("f"))],
     ),
   },
-  // Approximation : la créature qui reçoit les marqueurs est choisie comme une cible.
+  // « Vous pouvez mettre deux marqueurs +1/+1 sur une créature que vous contrôlez » : choisie à la résolution, sans cibler.
   Finality: {
     spell: spell(
-      [target.upTo(1, target.creature("c", { controller: "you" }))],
-      [fx.addCounters(ref.target("c"), 2), fx.pumpAll({ types: ["Creature"] }, -4, -4)],
+      [],
+      [
+        fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.you, "c", {
+          optional: true,
+          prompt: "Vous pouvez choisir une créature que vous contrôlez : elle reçoit deux marqueurs +1/+1",
+        }),
+        fx.addCounters(ref.stored("c"), 2),
+        fx.pumpAll({ types: ["Creature"] }, -4, -4),
+      ],
     ),
   },
   "Mutational Advantage": {
     spell: spell(
       [],
       [
+        // « Ces permanents » : ceux qui ont des marqueurs à la résolution, avec les blessures prévenues jusqu'à la fin du
+        // tour (même s'ils perdent leurs marqueurs ; pas ceux qui en reçoivent ensuite). La prévention est un effet sur
+        // ces objets (615), pas une capacité accordée : un effet qui fait perdre les capacités ne la retire pas.
         fx.modifyAll({ permanent: true, controller: "you", withCounter: "any" }, { addKeywords: ["hexproof", "indestructible"] }),
-        // Approximation : les blessures sont prévenues sur vos permanents qui ont des marqueurs (au moment des blessures).
-        fx.thisTurn({
-          replacement: {
-            event: "damage",
-            to: "yourSide",
-            toFilter: { permanent: true, withCounter: "any" },
-            modify: { prevent: true },
-          },
-        }),
+        fx.preventDamageThisTurn(ref.permanentsOf(ref.you, { withCounter: "any" })),
         fx.proliferate(),
       ],
     ),

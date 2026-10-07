@@ -113,6 +113,14 @@ const BIRD_ILLUSION: TokenSpec = {
   keywords: ["flying"],
 };
 const INSTANT_OR_SORCERY = { types: ["Instant" as const, "Sorcery" as const] };
+/** Expropriate : les deux options du vote (leurs effets viennent après tous les votes). */
+const VOTES = [
+  { label: "Le temps (un tour supplémentaire pour le lanceur)", effects: [] },
+  { label: "L'argent (le lanceur prend un permanent du votant)", effects: [] },
+];
+const VOTE_PROMPT = "Votez : le temps ou l'argent";
+/** Le joueur a voté pour l'option de rang `i` (1 : le temps, 2 : l'argent). */
+const votedFor = (store: string, i: number) => cond.all(cond.v(store, i), cond.not(cond.v(store, i + 1)));
 /** « N'activez que si vous avez exactement sept cartes en main » (Library of Alexandria). */
 const SEVEN_IN_HAND = cond.all(
   cond.amountAtLeast(amount.countIn("hand", {}), 7),
@@ -1289,6 +1297,8 @@ export const CARDS: Record<string, CardScript> = {
     chooseOnEnter: "color",
     abilities: [staticAbility({}, { setColorsChosen: "add" }, { label: "Les permanents sont aussi de la couleur choisie" })],
   },
+  // « Deux cartes de votre main piochées ce tour-ci ».
+  // Approximation : toute carte mise dans votre main ce tour-ci convient (pas seulement une carte piochée).
   "Sylvan Library": {
     abilities: [
       triggered(
@@ -1301,9 +1311,9 @@ export const CARDS: Record<string, CardScript> = {
             { life: 4 },
             fx.pickFromZone(
               "hand",
-              {},
+              { enteredThisTurn: true },
               { to: "libraryTop" },
-              { count: 1, min: 1, prompt: "Remettez une carte au-dessus de votre bibliothèque" },
+              { count: 1, min: 1, prompt: "Remettez une carte piochée ce tour-ci au-dessus de votre bibliothèque" },
             ),
           ),
           ...fx.unlessPays(
@@ -1311,9 +1321,9 @@ export const CARDS: Record<string, CardScript> = {
             { life: 4 },
             fx.pickFromZone(
               "hand",
-              {},
+              { enteredThisTurn: true },
               { to: "libraryTop" },
-              { count: 1, min: 1, prompt: "Remettez une carte au-dessus de votre bibliothèque" },
+              { count: 1, min: 1, prompt: "Remettez une carte piochée ce tour-ci au-dessus de votre bibliothèque" },
             ),
           ),
         ),
@@ -1342,36 +1352,30 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  // Dilemme du conseil : chacun vote, en commençant par vous et dans l'ordre du tour ; puis un tour supplémentaire par vote
+  // pour le temps, et un permanent du votant par vote pour l'argent.
+  // Approximation : pour le vote d'un adversaire, le permanent est choisi parmi ceux qu'il contrôle et que possède un de
+  // vos adversaires (et non parmi ceux qu'il possède, quel que soit leur contrôleur).
   Expropriate: {
     exileOnResolve: true,
     spell: spell(
       [],
       [
-        ...fx.yourChoice("Votez : le temps ou l'argent", "v1", [
-          { label: "Le temps (un tour supplémentaire)", effects: [fx.extraTurn] },
-          {
-            label: "L'argent (un de vos permanents)",
-            effects: [
-              fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { owner: "you" }), ref.you, "m1"),
-              fx.giveControl(ref.stored("m1"), ref.you),
-            ],
-          },
-        ]),
-        ...fx.yourChoice(
-          "Votez : le temps ou l'argent",
-          "v2",
-          [
-            { label: "Le temps (un tour supplémentaire pour son lanceur)", effects: [fx.extraTurn] },
-            {
-              label: "L'argent (il prend un de vos permanents)",
-              effects: [
-                // Le votant est le premier adversaire : un permanent possédé par un adversaire (exact en duel).
-                fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { owner: "opponent" }), ref.you, "m2"),
-                fx.giveControl(ref.stored("m2"), ref.you),
-              ],
-            },
-          ],
-          ref.eachOpponent,
+        ...fx.yourChoice(VOTE_PROMPT, "v", VOTES),
+        ...fx.forEachPlayer(ref.eachOpponent, (p, n) => fx.yourChoice(VOTE_PROMPT, `v${n}`, VOTES, p)),
+        ...fx.when(votedFor("v", 1), fx.extraTurn),
+        ...fx.forEachPlayer(ref.eachOpponent, (_p, n) => fx.when(votedFor(`v${n}`, 1), fx.extraTurn)),
+        ...fx.when(
+          votedFor("v", 2),
+          fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { owner: "you" }), ref.you, "m"),
+          fx.giveControl(ref.stored("m"), ref.you),
+        ),
+        ...fx.forEachPlayer(ref.eachOpponent, (p, n) =>
+          fx.when(
+            votedFor(`v${n}`, 2),
+            fx.chooseAmong(ref.permanentsOf(p, { owner: "opponent" }), ref.you, `m${n}`),
+            fx.giveControl(ref.stored(`m${n}`), ref.you),
+          ),
         ),
       ],
     ),

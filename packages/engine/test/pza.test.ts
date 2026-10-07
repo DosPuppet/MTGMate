@@ -207,3 +207,19 @@ describe("Source Material", () => {
     });
   });
 });
+
+describe("Source Material : approximations levées (PLAN-H, H2c)", () => {
+  it("Plague of Vermin : à plusieurs, chaque joueur paie à son tour (en commençant par vous) et crée autant de Rats", () => {
+    let s = scenario({ players: 3, p1: { battlefield: lands("Swamp", 7), hand: ["Plague of Vermin"] } });
+    const payers: string[] = [];
+    const paid: Record<string, number> = { p1: 3, p2: 2, p3: 1 };
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Plague of Vermin") }), (req, player) => {
+      if (req.type !== "number") return undefined;
+      payers.push(player);
+      return [paid[player] ?? 0];
+    });
+    expect(payers).toEqual(["p1", "p2", "p3"]);
+    expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([17, 18, 19]);
+    expect(["p1", "p2", "p3"].map((p) => idsOf(s, p, "battlefield", "Rat").length)).toEqual([3, 2, 1]);
+  });
+});
