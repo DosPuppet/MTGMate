@@ -9,6 +9,7 @@ import type { Format } from "@mtgx/engine";
 import { useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { useAllDecks } from "../decks/store";
+import { LangToggle } from "../LangToggle";
 import { loadName, useGame } from "../store";
 import { FormatChoice, loadFormat, saveFormat } from "./FormatChoice";
 import { DeckChoice, deckStatus, LEVELS } from "./Lobby";
@@ -117,6 +118,7 @@ export function Online() {
       <header className="lobby-head">
         <div className="lobby-sound">
           <SoundControl />
+          <LangToggle />
         </div>
         <h1>Partie en ligne</h1>
         <p className="hint">De 2 à 4 joueurs, au format et au nombre choisis par celui qui crée la partie</p>

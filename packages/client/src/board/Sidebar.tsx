@@ -4,6 +4,7 @@ import { BOARD_THEMES } from "../boardThemes";
 import { CustomArtToggle, ImageRelayToggle } from "../ImageRelayToggle";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL, type LogLine } from "../i18n";
 import { customImage, imageUrl, useRelayActive } from "../images";
+import { LangToggle } from "../LangToggle";
 import { PACES, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
 import { ManaCost, RulesText } from "./Card";
@@ -296,7 +297,6 @@ function BoardThemeControl() {
 
 function Settings() {
   const lang = useGame((s) => s.lang);
-  const setLang = useGame((s) => s.setLang);
   const settings = useGame((s) => s.settings);
   const setFullControl = useGame((s) => s.setFullControl);
   const setHoldPriority = useGame((s) => s.setHoldPriority);
@@ -309,14 +309,7 @@ function Settings() {
   const exportGame = useGame((s) => s.exportGame);
   return (
     <div className="settings">
-      <div className="seg">
-        <button type="button" className={lang === "fr" ? "on" : ""} onClick={() => setLang("fr")}>
-          FR
-        </button>
-        <button type="button" className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>
-          EN
-        </button>
-      </div>
+      <LangToggle />
       <SoundControl />
       <label className="toggle" title="Recevoir la priorité à chaque étape, sans automatisme">
         <input type="checkbox" checked={settings.fullControl} onChange={(e) => setFullControl(e.target.checked)} />

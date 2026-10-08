@@ -7,6 +7,7 @@ import { ManaCost } from "../board/Card";
 import { deckCover, useAllDecks } from "../decks/store";
 import { CustomArtToggle, ImageRelayToggle } from "../ImageRelayToggle";
 import { useRelayActive } from "../images";
+import { LangToggle } from "../LangToggle";
 import { useGame } from "../store";
 import { useTutorial } from "../tutorial/store";
 import { FormatChoice, loadFormat, saveFormat } from "./FormatChoice";
@@ -243,6 +244,7 @@ export function Lobby() {
           <SoundControl />
           <ImageRelayToggle />
           <CustomArtToggle />
+          <LangToggle />
         </div>
         <h1>
           Planecircle <span className="build-tag">(alpha build)</span>

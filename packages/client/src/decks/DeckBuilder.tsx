@@ -34,6 +34,7 @@ import { Card, ManaCost } from "../board/Card";
 import { Preview } from "../board/Sidebar";
 import { faceName } from "../i18n";
 import { hasCustomArt, useImages } from "../images";
+import { LangToggle } from "../LangToggle";
 import { useGame } from "../store";
 import { ExportModal, ImportModal } from "./ImportExport";
 import { type PrintingTable, usePrintings } from "./printings";
@@ -514,7 +515,6 @@ export function DeckBuilder() {
   const startGame = useGame((s) => s.startGame);
   const notify = useGame((s) => s.notify);
   const lang = useGame((s) => s.lang);
-  const setLang = useGame((s) => s.setLang);
   const decks = useAllDecks();
   const { save, remove, duplicate, create } = useDecks();
   const [tab, setTab] = useState<"main" | "side" | "commander">("main");
@@ -671,14 +671,7 @@ export function DeckBuilder() {
           >
             Tester contre l'IA
           </button>
-          <div className="seg">
-            <button type="button" className={lang === "fr" ? "on" : ""} onClick={() => setLang("fr")}>
-              FR
-            </button>
-            <button type="button" className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>
-              EN
-            </button>
-          </div>
+          <LangToggle />
         </div>
       </header>
       <div className="builder-body">

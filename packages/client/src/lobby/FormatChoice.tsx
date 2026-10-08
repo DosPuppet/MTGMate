@@ -1,16 +1,23 @@
 import { FORMAT_LABELS, FORMATS, isFormat } from "@mtgx/cards";
 import type { Format } from "@mtgx/engine";
+import { useT } from "../localize";
 
 const FORMAT_KEY = "planecircle.format";
 
-const HINTS: Record<Format, string> = {
-  standard: "Seules les cartes légales en Standard : les cartes bannies ou hors Standard sont refusées.",
-  unlimited: "Toutes les cartes du catalogue, même bannies ou hors Standard ; 60 cartes minimum, 4 exemplaires au plus.",
-  commander:
-    "De 2 à 4 joueurs, 40 points de vie : 100 cartes dont votre commandant, un exemplaire de chaque carte, toutes dans son identité de couleur.",
-};
+function hint(format: Format, t: ReturnType<typeof useT>): string {
+  switch (format) {
+    case "standard":
+      return t("Only cards legal in Standard: banned cards and cards not in Standard are refused.");
+    case "unlimited":
+      return t("All the cards of the catalog, even banned or not in Standard; 60 cards minimum, 4 copies at most.");
+    case "commander":
+      return t(
+        "From 2 to 4 players, 40 life: 100 cards including your commander, one copy of each card, all within its color identity.",
+      );
+  }
+}
 
-/** Format retenu d'une partie à l'autre (le stockage peut être indisponible : navigation privée, aperçu). */
+/** Format kept from one game to the next (storage can be unavailable: private browsing, preview). */
 export function loadFormat(): Format {
   try {
     const v = localStorage.getItem(FORMAT_KEY);
@@ -24,11 +31,11 @@ export function saveFormat(format: Format): void {
   try {
     localStorage.setItem(FORMAT_KEY, format);
   } catch {
-    // réglage non conservé
+    // setting not kept
   }
 }
 
-/** Choix du format de la partie (Standard, sans limite, Commander ; `formats` : ceux proposés). */
+/** Choice of the game format (Standard, unlimited, Commander; `formats`: the ones offered). */
 export function FormatChoice({
   value,
   onChange,
@@ -38,10 +45,11 @@ export function FormatChoice({
   onChange: (f: Format) => void;
   formats?: readonly Format[];
 }) {
+  const t = useT();
   return (
     <div className="ai-level">
       <div className="ai-count">
-        <span>Format</span>
+        <span>{t("Format")}</span>
         <div className="seg">
           {formats.map((f) => (
             <button
@@ -56,7 +64,7 @@ export function FormatChoice({
           ))}
         </div>
       </div>
-      <div className="hint ai-level-hint">{HINTS[value]}</div>
+      <div className="hint ai-level-hint">{hint(value, t)}</div>
     </div>
   );
 }

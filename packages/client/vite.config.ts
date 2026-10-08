@@ -5,8 +5,8 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 /**
- * Illustrations personnelles (tools/custom-art.ts) : /art/ servi depuis `MTGX_ART_DIR` ou data/art/ à la racine du dépôt,
- * comme le fait le serveur de parties en production (hors de Git, hors du build).
+ * Custom card art (tools/custom-art.ts): /art/ served from `MTGX_ART_DIR` or data/art/ at the repository root, as the
+ * game server does in production (outside Git, outside the build).
  */
 function customArt(): Plugin {
   const dir = process.env.MTGX_ART_DIR || fileURLToPath(new URL("../../data/art", import.meta.url));
@@ -32,19 +32,21 @@ export default defineConfig({
   plugins: [react(), customArt()],
   worker: { format: "es" },
   build: {
-    // Les données des cartes (6 Mo, 1 Mo compressées) forment un fichier à part : une mise à jour du code ne force pas à
-    // les retélécharger, et elles se chargent en parallèle de l'application.
+    // Card data (6 MB, 1 MB compressed) is a file of its own: a code update does not force a new download of it, and it
+    // loads in parallel with the application.
     chunkSizeWarningLimit: 7000,
     rolldownOptions: {
       output: {
         codeSplitting: {
           groups: [
-            // Cartes des decks Commander (pseudo-ensemble EDH, PLAN-E) : un fichier à part, pour ne pas peser sur le budget
-            // des extensions ; à charger à la demande quand elles dépasseront 1 Mo.
+            // Cards of the Commander decks (EDH pseudo-set, PLAN-E): a file of their own, outside the budget of the sets;
+            // to load on demand once they exceed 1 MB.
             { name: "commander", test: /packages[\\/]cards[\\/]data[\\/]edh\.json/ },
-            // La table des impressions (éditeur de deck) reste un fichier à part, chargé à la demande.
-            { name: "cartes", test: /packages[\\/]cards[\\/]data[\\/](?!printings|edh\.json)/ },
-            { name: "bibliotheques", test: /node_modules/ },
+            // French catalogs (PLAN-I), loaded at start-up: French is the default language.
+            { name: "locales", test: /packages[\\/]\w+[\\/]locales[\\/]/ },
+            // The printings table (deck builder) stays a file of its own, loaded on demand.
+            { name: "cards", test: /packages[\\/]cards[\\/]data[\\/](?!printings|edh\.json)/ },
+            { name: "vendor", test: /node_modules/ },
           ],
         },
       },
@@ -53,9 +55,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Jeu en ligne : le WebSocket /ws est redirigé vers le serveur de parties (npm run server).
+      // Online play: the /ws WebSocket goes to the game server (npm run server).
       "/ws": { target: "ws://localhost:8787", ws: true },
-      // Relais des images de Scryfall (fait par le serveur en production, voir server/src/index.ts).
+      // Relay of Scryfall images (done by the server in production, see server/src/index.ts).
       "/scry": {
         target: "https://cards.scryfall.io",
         changeOrigin: true,

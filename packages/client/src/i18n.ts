@@ -3,8 +3,9 @@
 import { tokenImage } from "@mtgx/cards";
 import { type CardFace, type GameEvent, type GameView, HIDDEN_CARD_ID, type Keyword, type Step } from "@mtgx/engine";
 import { customImage, imageUrl } from "./images";
+import { type Lang, localize } from "./translate";
 
-export type Lang = "fr" | "en";
+export type { Lang } from "./translate";
 
 export const STEP_LABEL: Record<Step, string> = {
   untap: "Dégagement",
@@ -98,9 +99,12 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   attacksDespiteDefender: "Attaque malgré le défenseur",
 };
 
-/** Remplace les repères de carte du moteur (`⟦defId⟧`, voir `cardRef`) par le nom de la carte dans la langue choisie. */
+/**
+ * An engine text (`msg`, `cardRef`) in the chosen language: template and values from the catalogs, cards by their name
+ * in that language.
+ */
 export function localizeText(text: string, faces: Record<string, CardFace>, lang: Lang): string {
-  return text.replace(/⟦([^⟧]+)⟧/g, (_, id: string) => (faces[id] ? faceName(faces[id], lang) : "cette carte"));
+  return localize(text, lang, (id) => (faces[id] ? faceName(faces[id], lang) : lang === "fr" ? "cette carte" : "this card"));
 }
 
 export function faceName(face: CardFace | undefined, lang: Lang): string {

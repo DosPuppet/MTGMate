@@ -18,6 +18,7 @@ import { willHaveRiot } from "./stack";
 import { changeCounters, chars, FACE_DOWN_ID, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen } from "./targets";
+import { msg } from "./text";
 import { checkCondition, pushInline } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -149,9 +150,9 @@ function riotRequest(s: GameState, controller: PlayerId): ChoiceRequest {
   return {
     type: "pick",
     intent: "other",
-    prompt: "Émeute : un marqueur +1/+1 ou la célérité ?",
+    prompt: msg("Riot: a +1/+1 counter or haste?"),
     options: ["counter", "haste"],
-    labels: { counter: "Un marqueur +1/+1", haste: "La célérité" },
+    labels: { counter: msg("A +1/+1 counter"), haste: msg("Gain haste") },
     min: 1,
     max: 1,
     suggested: [s.turn.active === controller && early ? "haste" : "counter"],

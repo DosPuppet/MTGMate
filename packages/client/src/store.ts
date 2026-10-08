@@ -46,6 +46,7 @@ import type { FromWorker, Sandbox, ScenarioSpec } from "./protocol";
 import { clearSavedGame, loadSavedGame, SaveWriter } from "./savedGame";
 import { scenarioCards } from "./scenario";
 import { LocalSession, RemoteSession, ReplaySession, type Session } from "./session";
+import { setTextLang } from "./translate";
 
 /** Définitions des cartes des decks (et du bac à sable ou du scénario), envoyées au worker de partie. */
 function defsFor(decks: DeckEntries[], sandbox?: Sandbox, scenario?: ScenarioSpec): Record<string, CardDef> {
@@ -711,12 +712,16 @@ function saveSettings(s: AutopilotSettings): void {
   }
 }
 
+/** Language of the interface and of the cards, French by default (PLAN-I); also sets the language of `t()`. */
 function loadLang(): Lang {
+  let lang: Lang = "fr";
   try {
-    return localStorage.getItem(LANG_KEY) === "en" ? "en" : "fr";
+    if (localStorage.getItem(LANG_KEY) === "en") lang = "en";
   } catch {
-    return "fr";
+    // Storage unavailable: French.
   }
+  setTextLang(lang);
+  return lang;
 }
 
 function loadPace(): Pace {
@@ -1848,6 +1853,7 @@ export const useGame = create<Store>((set, get) => {
     },
 
     setLang(lang) {
+      setTextLang(lang);
       set({ lang });
       try {
         localStorage.setItem(LANG_KEY, lang);

@@ -1,23 +1,25 @@
 /**
- * Budget de taille du bundle de l'interface (docs/plans/PLAN-C.md, lot C3) : construit le client (`vite build`) et vérifie
- * la taille de chaque chunk. Le worker de la partie ne doit pas embarquer les cartes (il reçoit ses définitions).
+ * Size budget of the interface bundle (docs/plans/PLAN-C.md, lot C3): builds the client (`vite build`) and checks the
+ * size of each chunk. The game worker must not embed the cards (it receives their definitions).
  *
- * Usage : npx tsx tools/bundle-size.ts   (lancé par `npm run verify`)
+ * Usage: npx tsx tools/bundle-size.ts   (run by `npm run verify`)
  */
 import { execSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 
 const KB = 1024;
-/** Taille maximale de chaque chunk (préfixe du nom → octets). */
+/** Maximum size of each chunk (name prefix → bytes). */
 const BUDGET: Record<string, number> = {
   "game.worker": 600 * KB,
   index: 2300 * KB,
-  cartes: 6500 * KB,
-  // Cartes des decks Commander (pseudo-ensemble EDH, PLAN-E) : 551 Ko avec neuf préconstruits (07/10/2026) ; au-delà
-  // d'environ 1 Mo, les charger à la demande (PLAN-E, principe 1).
+  cards: 6500 * KB,
+  // Cards of the Commander decks (EDH pseudo-set, PLAN-E): 551 KB with nine precons (07/10/2026); beyond about 1 MB,
+  // load them on demand (PLAN-E, principle 1).
   commander: 800 * KB,
-  bibliotheques: 450 * KB,
-  // Table des impressions (éditeur de deck), chargée à la demande ; 466 Ko avec les cartes Commander (07/10/2026).
+  // French catalogs (PLAN-I): about 5 000 texts once every set is translated.
+  locales: 700 * KB,
+  vendor: 450 * KB,
+  // Printings table (deck builder), loaded on demand; 466 KB with the Commander cards (07/10/2026).
   printings: 600 * KB,
 };
 
@@ -29,18 +31,18 @@ const sizes: string[] = [];
 for (const [prefix, max] of Object.entries(BUDGET)) {
   const file = files.find((f) => f.startsWith(`${prefix}-`));
   if (!file) {
-    errors.push(`chunk ${prefix} introuvable`);
+    errors.push(`chunk ${prefix} not found`);
     continue;
   }
   const size = statSync(new URL(file, dir)).size;
-  sizes.push(`${prefix} ${Math.round(size / KB)} Ko`);
-  if (size > max) errors.push(`${prefix} : ${Math.round(size / KB)} Ko, budget ${Math.round(max / KB)} Ko`);
+  sizes.push(`${prefix} ${Math.round(size / KB)} KB`);
+  if (size > max) errors.push(`${prefix}: ${Math.round(size / KB)} KB, budget ${Math.round(max / KB)} KB`);
 }
-// Une carte scriptée dans le worker veut dire qu'il importe @mtgx/cards (règle de CLAUDE.md, « Bundle »).
+// A scripted card in the worker means that it imports @mtgx/cards (CLAUDE.md rule, "Bundle").
 const worker = files.find((f) => f.startsWith("game.worker-"));
 if (worker && readFileSync(new URL(worker, dir), "utf8").includes("Luminous Rebuke"))
-  errors.push("le worker embarque les cartes (@mtgx/cards importé)");
-console.log(`bundle : ${sizes.join(", ")}`);
+  errors.push("the worker embeds the cards (@mtgx/cards imported)");
+console.log(`bundle: ${sizes.join(", ")}`);
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);

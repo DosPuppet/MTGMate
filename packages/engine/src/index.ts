@@ -62,6 +62,7 @@ export {
 } from "./state";
 export { untapStepRule } from "./statics";
 export { isLegalTarget, legalTargets } from "./targets";
+export { msg, type ParsedText, parseText, plainText, renderText, type TextArg, type TextReader } from "./text";
 export {
   type AttackRequirement,
   allowedDefenders,
