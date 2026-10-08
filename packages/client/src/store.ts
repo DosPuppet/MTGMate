@@ -1,6 +1,9 @@
 /**
- * État de l'interface et logique d'interaction (lancement de sorts, ciblage, attaque, blocage).
- * Le moteur reste la seule source de vérité : on n'envoie que des décisions tirées des options légales.
+ * Interface state and interaction logic (casting spells, targeting, attacking, blocking).
+ * The engine stays the only source of truth: only decisions taken from the legal options are sent.
+ *
+ * Texts: the store's own messages (toasts, notices) are `msg` texts, like the engine's and the server's, and are
+ * translated at display (`App.tsx`, `useLocalize`); texts it builds for immediate display (turn banner) use `t()`.
  */
 
 import type { AiLevel } from "@mtgx/ai";
@@ -20,6 +23,7 @@ import {
   type GameRecord,
   type GameView,
   type ManaType,
+  msg,
   type ObjectView,
   RULES_VERSION,
   type StackItemView,
@@ -40,15 +44,15 @@ import { playSound, preloadSounds } from "./audio/sfx";
 import { findObjectEl } from "./board/layout";
 import { type BoardThemeChoice, loadBoardTheme, saveBoardTheme } from "./boardThemes";
 import { fastMode } from "./fast";
-import { describeEvents, type Lang, type LogLine } from "./i18n";
+import { describeEvents, type Lang, type LogLine, literal, localizeText } from "./i18n";
 import { boardPick, togglePick } from "./prompts/boardChoice";
 import type { FromWorker, Sandbox, ScenarioSpec } from "./protocol";
 import { clearSavedGame, loadSavedGame, SaveWriter } from "./savedGame";
 import { scenarioCards } from "./scenario";
 import { LocalSession, RemoteSession, ReplaySession, type Session } from "./session";
-import { setTextLang } from "./translate";
+import { setTextLang, t, textIn } from "./translate";
 
-/** Définitions des cartes des decks (et du bac à sable ou du scénario), envoyées au worker de partie. */
+/** Definitions of the decks' cards (and of the sandbox or the scenario), sent to the game worker. */
 function defsFor(decks: DeckEntries[], sandbox?: Sandbox, scenario?: ScenarioSpec): Record<string, CardDef> {
   const names = new Set<string>(decks.flatMap((d) => d.map(([, name]) => name)));
   for (const n of scenario ? scenarioCards(scenario) : []) names.add(n);
@@ -60,13 +64,13 @@ function defsFor(decks: DeckEntries[], sandbox?: Sandbox, scenario?: ScenarioSpe
 }
 
 // ---------------------------------------------------------------------------
-// Tutoriel : garde des décisions (guidage strict) et observateur des mises à jour, installés par tutorial/store.ts
+// Tutorial: decision guard (strict guidance) and update observer, installed by tutorial/store.ts
 // ---------------------------------------------------------------------------
 
-/** Ce que le joueur demande : une décision, ou « fin du tour » (un réglage, pas une décision). */
+/** What the player asks for: a decision, or "end turn" (a setting, not a decision). */
 export type PlayerIntent = Decision | { type: "endTurn" };
 
-/** Renvoie un rappel si l'intention est refusée, null si elle est permise. */
+/** Returns a reminder (a text, translated at display) if the intent is refused, null if it is allowed. */
 type DecisionGuard = (intent: PlayerIntent, view: GameView) => string | null;
 let guard: DecisionGuard | null = null;
 let observer: ((view: GameView, events: GameEvent[]) => void) | null = null;
@@ -79,7 +83,7 @@ export function setUpdateObserver(o: ((view: GameView, events: GameEvent[]) => v
   observer = o;
 }
 
-/** Intention refusée par le tutoriel : on prévient le joueur et on abandonne le lancement en cours. */
+/** Intent refused by the tutorial: the player is told and the casting in progress is abandoned. */
 function refused(intent: PlayerIntent): boolean {
   const view = useGame.getState().view;
   const reason = view && guard ? guard(intent, view) : null;
@@ -100,22 +104,22 @@ export interface Casting {
   mode: number | null;
   x: number | null;
   kicked: boolean | null;
-  /** Coûts additionnels choisis (cartes défaussées, permanents sacrifiés). */
+  /** Chosen additional costs (discarded cards, sacrificed permanents). */
   discard: string[] | null;
   sacrifice: string[] | null;
-  /** Permanents à engager pour le coût (station, équipage). */
+  /** Permanents to tap for the cost (station, crew). */
   tap: string[] | null;
-  /** Matériaux d'une fabrication. */
+  /** Materials of a craft. */
   materials: string[] | null;
-  /** Web-slinging : la créature engagée renvoyée en main. */
+  /** Web-slinging: the tapped creature returned to hand. */
   bounce: string[] | null;
-  /** Objets payés en coût choisis par emplacement (flétrir, preuves, exil du cimetière…). */
+  /** Objects paid as a cost, chosen by slot (blight, evidence, exile from the graveyard…). */
   picks: Partial<Record<CostSlot, string[]>>;
-  /** Emplacements déjà traités sans choix (paiement automatique). */
+  /** Slots already handled without a choice (automatic payment). */
   skippedPicks?: Partial<Record<CostSlot, boolean>>;
-  /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
+  /** How to pay for the spell: normal cost, without paying (Omniscience, Etali), alternative cost. */
   payMode: "normal" | "free" | "alt" | null;
-  /** Couleur du mana hybride (« si {U}{U} a été dépensé », Deceit) ; « auto » : le paiement automatique décide. */
+  /** Color of the hybrid mana ("if {U}{U} was spent", Deceit); "auto": the automatic payment decides. */
   hybrid?: ManaType | "auto";
   targets: Record<string, string[]>;
   stage:
@@ -131,25 +135,25 @@ export interface Casting {
     | "materials"
     | "bounce"
     | "pick";
-  /** Étape « pick » : l'emplacement de coût à choisir. */
+  /** "pick" stage: the cost slot to choose. */
   pick?: CostPick;
   spec: TargetOption | null;
-  /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
+  /** Targets already chosen for `spec` when it accepts several. */
   picked?: string[];
-  /** Cible désignée par glisser-déposer, utilisée pour la première cible compatible. */
+  /** Target chosen by drag and drop, used for the first compatible target. */
   preset?: string;
 }
 
-/** Effet visuel éphémère : chiffre de dégâts/soin, silhouette d'une créature qui meurt. */
+/** Short-lived visual effect: damage/heal number, silhouette of a dying creature. */
 export interface Fx {
   id: number;
   kind: "damage" | "heal" | "death" | "speed";
-  /** Objet ou joueur visé (data-oid). */
+  /** Object or player aimed at (data-oid). */
   target: string;
   amount: number;
-  /** Décalage (s) pour échelonner les effets d'un même lot. */
+  /** Offset (s) to stagger the effects of one batch. */
   delay: number;
-  /** Position capturée avant la mise à jour de l'écran (utile si l'objet disparaît). */
+  /** Position captured before the screen update (useful if the object disappears). */
   rect: { x: number; y: number; w: number; h: number } | null;
 }
 
@@ -158,92 +162,94 @@ export interface Hover {
   obj?: ObjectView;
 }
 
-/** Partie en ligne (salon sur le serveur). */
-/** Match contre l'IA au meilleur des trois manches (le serveur tient celui d'un match en ligne). */
+/** Best-of-three match against the AI (the server keeps that of an online match). */
 export interface LocalMatch {
   bestOf: 3;
   wins: Record<string, number>;
   game: number;
   winner: string | null;
-  /** Deck et réserve de la manche en cours, et ceux du début du match (un échange garde les mêmes cartes). */
+  /** Deck and sideboard of the current game, and those of the start of the match (a swap keeps the same cards). */
   deck: { main: DeckEntries; sideboard: DeckEntries };
   original: { main: DeckEntries; sideboard: DeckEntries };
   aiDeck: DeckEntries;
   aiLevel?: AiLevel;
-  /** Format du match (absent : Standard) : l'échange de réserve doit y rester légal. */
+  /** Format of the match (absent: Standard): the sideboard swap must stay legal in it. */
   format?: Format;
 }
 
+/** Online game (room on the server). */
 export interface OnlineState {
   status: "connecting" | RoomInfo["status"];
-  /** Match (BO1 ou BO3) et deck actuel du joueur (point de départ de la réserve entre deux manches). */
+  /** Match (BO1 or BO3) and the player's current deck (starting point of the sideboard between two games). */
   match?: MatchInfo;
   deck?: RoomInfo["deck"];
   code: string | null;
   seat: Seat | null;
   players: RoomInfo["players"];
-  /** Adversaire déconnecté : échéance de son retour (Date.now()). */
+  /** Opponent disconnected: deadline for their return (Date.now()). */
   opponent: { connected: boolean; deadline: number | null };
-  /** Minuteur de la décision en cours ; `deadline` en Date.now(). */
+  /** Timer of the current decision; `deadline` in Date.now(). */
   clock: (Clock & { deadline: number }) | null;
+  /** Server error, already translated into the interface language. */
   error: string | null;
-  /** Connexion au serveur perdue : reconnexion en cours. */
+  /** Connection to the server lost: reconnecting. */
   reconnecting: boolean;
 }
 
 interface Store {
   screen: "lobby" | "decks" | "game" | "online" | "tutorial";
-  /** Partie du tutoriel : le retour au menu ramène au menu du tutoriel. */
+  /** Tutorial game: going back to the menu leads to the tutorial menu. */
   tutorialGame: boolean;
-  /** Deck ouvert dans le deckbuilder. */
+  /** Deck open in the deck builder. */
   editingDeck: string | null;
   session: Session | null;
   online: OnlineState | null;
   view: GameView | null;
   faces: Record<string, CardFace>;
   log: LogLine[];
+  /** Short message (`msg`, engine or server text: translated at display). */
   toast: { text: string; id: number } | null;
-  /** Message important à valider (partie impossible à reprendre, partie en ligne perdue). */
+  /** Important message to acknowledge (game that cannot be resumed, online game lost); texts translated at display. */
   notice: { title: string; text: string } | null;
-  /** Reprise d'une partie à l'ouverture de la page (locale ou en ligne), en attendant son premier état. */
+  /** Resume of a game when the page opens (local or online), waiting for its first state. */
   resuming: boolean;
   settings: AutopilotSettings;
   lang: Lang;
   casting: Casting | null;
-  /** `unavailable` : capacités activées du permanent qu'on ne peut pas activer en ce moment (affichées grisées). */
+  /** `unavailable`: activated abilities of the permanent that cannot be activated right now (shown greyed out). */
   abilityMenu: {
     sourceId: string;
     options: ActionOption[];
     unavailable?: { label: string; cost: string }[];
   } | null;
   attackers: string[];
-  /** Défenseur choisi pour chaque attaquant (multijoueur). */
+  /** Defender chosen for each attacker (multiplayer). */
   attackTargets: Record<string, string>;
-  /** Attaquant « en visée » (plusieurs défenseurs possibles) : on clique ensuite sa cible, joueur ou planeswalker. */
+  /** Attacker "aiming" (several possible defenders): its target, player or planeswalker, is clicked next. */
   aimingAttacker: string | null;
   blocks: Record<string, string>;
   selectedBlocker: string | null;
   selection: string[];
   hover: Hover | null;
-  /** Écran tactile : carte agrandie en surimpression (appui long). */
+  /** Touch screen: card enlarged in an overlay (long press). */
   peek: Hover | null;
-  /** Écran étroit : barre latérale (réglages, aperçu, journal) ouverte en tiroir. */
+  /** Narrow screen: sidebar (settings, preview, log) open as a drawer. */
   drawerOpen: boolean;
   graveyardOpen: string | null;
-  /** Exil consulté (cartes possédées par ce joueur). */
+  /** Exile being viewed (cards owned by this player). */
   exileOpen: string | null;
   fx: Fx[];
   turnBanner: { id: number; text: string; mine: boolean } | null;
   spotlight: { id: number; face: CardFace; who: string } | null;
   /**
-   * Élément de pile qui se résout (ou est contrecarré, ou n'a plus de cible légale), montré avant que son effet
-   * s'applique ; la partie n'avance qu'après (voir `playbackTimes`).
+   * Stack item that resolves (or is countered, or has no legal target left), shown before its effect applies; the game
+   * moves on only afterwards (see `playbackTimes`).
    */
   resolving: { id: number; item: StackItemView; outcome: "resolve" | "fizzle" | "countered" } | null;
-  /** Rythme des effets (durée pendant laquelle chaque résolution est montrée). */
+  /** Pace of the effects (how long each resolution is shown). */
   pace: Pace;
   setPace(pace: Pace): void;
-  /** Texture du plateau (`boardThemes.ts`), retenue dans `localStorage`. */
+  /** Board texture (`boardThemes.ts`), kept in `localStorage`. */
   boardTheme: BoardThemeChoice;
   setBoardTheme(choice: BoardThemeChoice): void;
 
@@ -253,14 +259,14 @@ interface Store {
     sandbox?: Sandbox,
     aiLevel?: AiLevel,
     match?: { bestOf: 3; sideboard: DeckEntries; format?: Format },
-    /** Commander (PLAN-E) : le commandant du joueur, puis celui de chaque IA. */
+    /** Commander (PLAN-E): the player's commander, then each AI's. */
     commander?: { player: DeckEntries; ai: DeckEntries[] },
   ): void;
-  /** Match contre l'IA en cours (BO3). */
+  /** Match against the AI in progress (BO3). */
   localMatch: LocalMatch | null;
-  /** Manche suivante d'un match : deck et réserve choisis (contre l'IA : relance ; en ligne : envoyés au serveur). */
+  /** Next game of a match: chosen deck and sideboard (against the AI: restart; online: sent to the server). */
   nextGame(main: DeckEntries, sideboard: DeckEntries): void;
-  /** Tutoriel : partie mise en scène. */
+  /** Tutorial: staged game. */
   startScenario(scenario: ScenarioSpec): void;
   openTutorial(): void;
   openOnline(): void;
@@ -271,18 +277,18 @@ interface Store {
       sideboard?: DeckEntries;
       bestOf?: 1 | 3;
       format?: Format;
-      /** Nombre de joueurs du salon (2 par défaut). */
+      /** Number of players of the room (2 by default). */
       players?: 2 | 3 | 4;
-      /** Commander : le commandant. */
+      /** Commander: the commander. */
       commander?: DeckEntries;
-      /** Sièges tenus par l'IA du serveur et son niveau (PLAN-E, E14). */
+      /** Seats held by the server's AI and its level (PLAN-E, E14). */
       ai?: { count: number; level: AiLevel };
     },
   ): void;
   joinRoom(code: string, name: string, deck: DeckEntries, sideboard?: DeckEntries, commander?: DeckEntries): void;
-  /** Reprend la partie en ligne de cet onglet (jeton de reconnexion), au chargement ou après une coupure. */
+  /** Resumes this tab's online game (reconnection token), on load or after a disconnection. */
   resumeOnline(): void;
-  /** Ouverture de la page : reprend la partie en ligne de cette page, sinon la partie locale sauvegardée. */
+  /** Page opening: resumes this page's online game, otherwise the saved local game. */
   resumeAtStartup(): void;
   leaveRoom(): void;
   rematch(): void;
@@ -290,47 +296,48 @@ interface Store {
   backToLobby(): void;
   openDeckBuilder(deckId?: string | null): void;
   receive(msg: FromWorker): void;
-  /** Applique une mise à jour de la partie (vue, journal, sons, effets). */
+  /** Applies a game update (view, log, sounds, effects). */
   applyUpdate(msg: Extract<FromWorker, { type: "update" }>): void;
-  /** Replay en cours : position, point de vue, lecture automatique. */
+  /** Replay in progress: position, point of view, autoplay. */
   replay: {
     index: number;
     total: number;
     viewer: string;
     players: { id: string; name: string }[];
     playing: boolean;
-    /** Replay arrêté avant la fin, ou enregistré avec une autre version des règles. */
+    /** Replay stopped before the end, or recorded with another version of the rules (`msg` text). */
     warning: string | null;
   } | null;
-  /** Télécharge l'enregistrement de la partie (contre l'IA : à tout moment ; en ligne : une fois terminée). */
+  /** Downloads the game record (against the AI: at any time; online: once it is over). */
   exportGame(): void;
-  /** Ouvre un enregistrement de partie dans le visionneur. */
+  /** Opens a game record in the viewer. */
   openReplay(record: GameRecord): void;
   replaySeek(index: number): void;
   replayViewer(player: string): void;
   replayPlay(on: boolean): void;
   decide(d: Decision): void;
+  /** Shows a short message: a `msg` text, an engine or server text, translated at display. */
   notify(text: string): void;
   showNotice(title: string, text: string): void;
   dismissNotice(): void;
-  /** Reprend la partie locale sauvegardée (page rouverte) ; `false` s'il n'y en a pas. */
+  /** Resumes the saved local game (page reopened); `false` if there is none. */
   resumeLocal(): boolean;
-  /** Passer la priorité ; avec du mana flottant qui serait perdu, un premier appui avertit seulement. */
+  /** Pass priority; with floating mana that would be lost, a first press only warns. */
   passPriority(): void;
-  /** Décision pour laquelle l'avertissement de mana flottant a déjà été donné. */
+  /** Decision for which the floating mana warning was already given. */
   floatWarned: string | null;
   clickHandCard(id: string): void;
   dropHandCard(id: string, targetId: string | null): void;
   clickPermanent(id: string): void;
   clickPlayer(id: string): void;
   beginCasting(option: PlayableOption, sourceId: string, preset?: string): void;
-  /** Lancement d'un légendaire dont vous contrôlez déjà un exemplaire : en attente de confirmation. */
+  /** Casting a legendary of which you already control a copy: waiting for confirmation. */
   legendConfirm: { option: PlayableOption; sourceId: string; preset?: string; name: string } | null;
-  /** Terrain joué avec une question « en arrivant, choisissez… » (Cavern of Souls) : la réponse attendue. */
+  /** Land played with an "as it enters, choose…" question (Cavern of Souls): the expected answer. */
   landChoice: Extract<ActionOption, { type: "playLand" }> | null;
-  /** Joue un terrain (la question « en arrivant » est posée d'abord, s'il en a une). */
+  /** Plays a land (the "as it enters" question is asked first, if it has one). */
   playLand(option: Extract<ActionOption, { type: "playLand" }>): void;
-  /** Réponse à la question du terrain (`null` : annuler). */
+  /** Answer to the land's question (`null`: cancel). */
   answerLandChoice(value: string | null): void;
   confirmLegend(): void;
   cancelLegend(): void;
@@ -340,24 +347,24 @@ interface Store {
   chooseHybrid(color: ManaType | "auto"): void;
   chooseNoTarget(): void;
   choosePayMode(mode: "normal" | "free" | "alt"): void;
-  /** Désigne une cible (ou la retire, pour un mot « cible » qui en accepte plusieurs). */
+  /** Chooses a target (or removes it, for a "target" word that accepts several). */
   pickTarget(id: string): void;
-  /** Valide les cibles déjà désignées (« jusqu'à N »). */
+  /** Confirms the targets already chosen ("up to N"). */
   confirmTargets(): void;
   chooseAdditional(kind: "discard" | "sacrifice" | "tap" | "materials" | "bounce", ids: string[]): void;
-  /** Objets choisis pour un coût (`CostPick`). */
+  /** Objects chosen for a cost (`CostPick`). */
   choosePick(slot: CostSlot, ids: string[] | undefined): void;
   cancel(): void;
   toggleAttacker(id: string): void;
-  /** Cible choisie pour l'attaquant en visée. */
+  /** Target chosen for the aiming attacker. */
   aimAttackAt(defender: string): void;
   allAttack(): void;
-  /** « Fin du tour » : passe douce (s'arrête si un adversaire agit), ou dure (`hard`). */
+  /** "End turn": soft pass (stops if an opponent acts), or hard (`hard`). */
   endTurn(hard?: boolean): void;
   toggleStop(side: "own" | "opponent", step: Step): void;
   setFullControl(on: boolean): void;
   setHoldPriority(on: boolean): void;
-  /** Réglages de l'automatisme imposés par le tutoriel (arrêts). */
+  /** Autopilot settings imposed by the tutorial (stops). */
   applySettings(partial: Partial<AutopilotSettings>): void;
   setLang(lang: Lang): void;
   setHover(h: Hover | null): void;
@@ -369,8 +376,8 @@ interface Store {
 }
 
 /**
- * Nom du légendaire en double si l'on lance ce sort : un permanent légendaire du même nom que vous contrôlez déjà
- * (sinon null). Seulement pour un vrai lancement de la carte (pas une capacité, ni face cachée).
+ * Name of the duplicated legendary if this spell is cast: a legendary permanent with the same name that you already
+ * control (otherwise null). Only for a real cast of the card (not an ability, nor face down).
  */
 function legendDuplicate(view: GameView | null, option: PlayableOption, sourceId: string): string | null {
   if (!view || option.type !== "cast" || option.faceDown) return null;
@@ -393,7 +400,7 @@ export function myActions(view: GameView | null): ActionOption[] {
 function pendingKey(v: GameView | null): string {
   const p = v?.pending;
   if (!v || !p) return "none";
-  // Deux choix successifs d'une même résolution : la question elle-même les distingue.
+  // Two successive choices of the same resolution: the question itself tells them apart.
   const req =
     p.kind === "choice" && p.request
       ? `:${p.request.prompt}:${JSON.stringify(p.request.type === "pick" ? p.request.options : p.request.type === "name" ? [p.request.of, ...p.request.featured] : [])}`
@@ -445,7 +452,7 @@ function buildDecision(c: Casting): Decision {
 let toastId = 0;
 let fxId = 0;
 
-/** Position d'un élément du plateau (avant qu'il ne disparaisse de l'écran). */
+/** Position of a board element (before it disappears from the screen). */
 function rectOf(id: string): Fx["rect"] {
   const el = findObjectEl(id);
   if (!el) return null;
@@ -453,7 +460,7 @@ function rectOf(id: string): Fx["rect"] {
   return { x: r.left, y: r.top, w: r.width, h: r.height };
 }
 
-/** Transforme les événements d'une mise à jour en effets visuels échelonnés. */
+/** Turns the events of an update into staggered visual effects. */
 function playEffects(view: GameView, events: GameEvent[], faces: Record<string, CardFace>): void {
   const store = useGame;
   const fresh: Fx[] = [];
@@ -470,30 +477,35 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
     else if (e.type === "life") push(e.delta < 0 ? "damage" : "heal", e.player, Math.abs(e.delta));
     else if (e.type === "dies") push("death", e.objectId, 0);
     else if (e.type === "speed") {
-      // 702.179 : vitesse démarrée, augmentée ou réduite ; montrée à tous les joueurs.
+      // 702.179: speed started, increased or reduced; shown to every player.
       push("speed", e.player, e.speed);
       if (e.speed >= 4) {
         const mine = e.player === view.viewer;
         banner = {
           id: ++fxId,
           mine,
-          text: `⚡ Vitesse maximale${mine ? "" : ` : ${view.players[e.player]?.name ?? "l'adversaire"}`}`,
+          text: mine
+            ? t("⚡ Max speed")
+            : t("⚡ Max speed: {player}", { player: literal(view.players[e.player]?.name ?? t("the opponent")) }),
         };
       }
     } else if (e.type === "turnStart") {
       const mine = e.player === view.viewer;
-      // Replay : pas de « À vous de jouer » (on ne joue pas), le nom du joueur actif.
+      // Replay: no "Your turn to play" (nobody plays), the active player's name.
       const replaying = !!store.getState().replay;
       banner = {
         id: ++fxId,
         mine,
-        text: mine && !replaying ? "À vous de jouer" : `Tour de ${view.players[e.player]?.name ?? "l'adversaire"}`,
+        text:
+          mine && !replaying
+            ? t("Your turn to play")
+            : t("{player}'s turn", { player: literal(view.players[e.player]?.name ?? t("the opponent")) }),
       };
     } else if ((e.type === "cast" || e.type === "activate" || e.type === "trigger") && e.player !== view.viewer) {
-      // Le sort sur la pile montre l'illustration choisie par le deck adverse (impression d'une réédition).
+      // The spell on the stack shows the art chosen by the opponent's deck (printing of a reprint).
       const onStack = e.type === "cast" ? view.stack.find((i) => i.defId === e.defId && i.controller === e.player) : undefined;
       const face = onStack ?? faces[e.defId];
-      if (face) spotlight = { id: ++fxId, face, who: view.players[e.player]?.name ?? "L'adversaire" };
+      if (face) spotlight = { id: ++fxId, face, who: view.players[e.player]?.name ?? t("The opponent") };
     }
   }
   if (!fresh.length && !banner && !spotlight) return;
@@ -504,7 +516,7 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
   }));
   const ids = new Set(fresh.map((f) => f.id));
   const longest = fresh.reduce((m, f) => Math.max(m, f.delay), 0);
-  // Le plus long des effets (vitesse) dure 2 s.
+  // The longest effect (speed) lasts 2 s.
   setTimeout(() => store.setState((s) => ({ fx: s.fx.filter((f) => !ids.has(f.id)) })), (longest + 2.4) * 1000);
   if (banner) {
     const id = banner.id;
@@ -517,7 +529,7 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
 }
 
 // ---------------------------------------------------------------------------
-// Jeu en ligne : jeton de reconnexion et pseudo (retenus : une page rouverte reprend sa partie)
+// Online play: reconnection token and nickname (kept: a reopened page resumes its game)
 // ---------------------------------------------------------------------------
 
 const TOKEN_KEY = "planecircle.online";
@@ -531,31 +543,31 @@ function loadToken(): string | null {
   }
 }
 
-/** Enregistrement de partie téléchargé en fichier JSON (« planecircle-partie-2026-09-29-1432.json »). */
+/** Game record downloaded as a JSON file ("planecircle-game-2026-09-29-1432.json", file name in the interface language). */
 function downloadRecord(record: GameRecord): void {
   const stamp = new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "");
   const blob = new Blob([JSON.stringify(record)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `planecircle-partie-${stamp}.json`;
+  a.download = t("planecircle-game-{stamp}.json", { stamp: literal(stamp) });
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-/** Lecture automatique du replay : une étape toutes les 700 ms. */
+/** Replay autoplay: one step every 700 ms. */
 let replayTimer: ReturnType<typeof setInterval> | null = null;
 
-/** Sauvegarde de la partie locale en cours (null : rien à sauvegarder : tutoriel, bac à sable, partie quittée). */
+/** Save of the local game in progress (null: nothing to save: tutorial, sandbox, game left). */
 let saver: SaveWriter | null = null;
 
-/** Arrête la sauvegarde et efface la partie sauvegardée (partie quittée ou remplacée). */
+/** Stops saving and erases the saved game (game left or replaced). */
 function stopSaving(): void {
   saver?.stop();
   saver = null;
   clearSavedGame();
 }
 
-/** Écrit tout de suite la sauvegarde de la partie locale (fermeture de la page). */
+/** Writes the save of the local game at once (page closed). */
 export function flushSave(): void {
   saver?.flush();
 }
@@ -565,7 +577,7 @@ function saveToken(token: string | null): void {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     else localStorage.removeItem(TOKEN_KEY);
   } catch {
-    // stockage indisponible : pas de reconnexion automatique
+    // storage unavailable: no automatic reconnection
   }
 }
 
@@ -581,7 +593,7 @@ function saveName(name: string): void {
   try {
     localStorage.setItem(NAME_KEY, name);
   } catch {
-    // réglage non conservé
+    // setting not kept
   }
 }
 
@@ -596,12 +608,30 @@ const EMPTY_ONLINE: OnlineState = {
   reconnecting: false,
 };
 
-/**
- * La partie en ligne est définitivement perdue (salon fermé, partie terminée et supprimée, serveur injoignable) : message
- * à valider, puis retour à l'accueil. `keepToken` : la partie existe encore, ouverte dans un autre onglet.
- */
-/** Versions de ce client, envoyées au serveur de parties (refus d'un client périmé). */
+/** Versions of this client, sent to the game server (an outdated client is refused). */
 const VERSION = { protocol: PROTOCOL_VERSION, rules: RULES_VERSION };
+
+/**
+ * The online game is lost for good (room closed, game over and deleted, server unreachable): message to acknowledge
+ * (`msg` texts), then back to the home screen. `keepToken`: the game still exists, open in another tab.
+ */
+
+/**
+ * A player name written by the server as a text (online AI seats: `msg("AI {n} ({level})")`) in the interface language;
+ * a nickname (no marker) stays as it is.
+ */
+function playerName(name: string, lang: Lang): string {
+  return name.includes("⟨") ? textIn(lang, name) : name;
+}
+
+/** The view with its players' names in the interface language (see `playerName`); the same object when none changes. */
+function withPlayerNames(view: GameView, lang: Lang): GameView {
+  if (!Object.values(view.players).some((p) => p.name.includes("⟨"))) return view;
+  const players = Object.fromEntries(
+    Object.entries(view.players).map(([id, p]) => [id, { ...p, name: playerName(p.name, lang) }]),
+  );
+  return { ...view, players };
+}
 
 function onlineLost(title: string, text: string, keepToken = false): void {
   const store = useGame;
@@ -622,14 +652,14 @@ function onlineLost(title: string, text: string, keepToken = false): void {
   store.getState().showNotice(title, text);
 }
 
-/** Délai entre deux tentatives de reconnexion, et nombre de tentatives (≈ délai de retour du serveur). */
+/** Delay between two reconnection attempts, and number of attempts (≈ the server's return delay). */
 const RETRY_MS = 2000;
 const MAX_RETRIES = 30;
 let retries = 0;
 
 /**
- * Ouvre une connexion au serveur (en fermant la session précédente). En cas de coupure pendant
- * une partie, on retente la reconnexion avec le jeton de l'onglet.
+ * Opens a connection to the server (closing the previous session). If the connection drops during
+ * a game, reconnection is retried with the tab's token.
  */
 function connectRemote(keep?: OnlineState | null): RemoteSession {
   const store = useGame;
@@ -646,8 +676,8 @@ function connectRemote(keep?: OnlineState | null): RemoteSession {
       if (retries++ < MAX_RETRIES) setTimeout(() => store.getState().resumeOnline(), RETRY_MS);
       else
         onlineLost(
-          "Connexion perdue",
-          "Le serveur ne répond plus : la partie en ligne ne peut pas être reprise. Retour à l'accueil.",
+          msg("Connection lost"),
+          msg("The server no longer answers: the online game cannot be resumed. Back to the home screen."),
         );
     },
   );
@@ -655,19 +685,20 @@ function connectRemote(keep?: OnlineState | null): RemoteSession {
   return session;
 }
 
-/** Rythme des effets, réglé par le joueur (barre latérale), retenu d'une partie à l'autre. */
+/** Pace of the effects, set by the player (sidebar), kept from one game to the next. */
 export type Pace = "slow" | "normal" | "fast" | "none";
 
+/** Paces offered in the sidebar; `label` and `hint` are `msg` texts, displayed through `textIn`. */
 export const PACES: { pace: Pace; label: string; hint: string }[] = [
-  { pace: "slow", label: "Lent", hint: "Chaque effet est montré près de 2 secondes" },
-  { pace: "normal", label: "Normal", hint: "Chaque effet est montré un peu plus d'une seconde" },
-  { pace: "fast", label: "Rapide", hint: "Chaque effet est montré une demi-seconde" },
-  { pace: "none", label: "Sans pause", hint: "Les effets s'appliquent aussitôt, sans être montrés" },
+  { pace: "slow", label: msg("ctx:pace|Slow"), hint: msg("Each effect is shown for almost 2 seconds") },
+  { pace: "normal", label: msg("ctx:pace|Normal"), hint: msg("Each effect is shown for a little more than a second") },
+  { pace: "fast", label: msg("ctx:pace|Fast"), hint: msg("Each effect is shown for half a second") },
+  { pace: "none", label: msg("ctx:pace|No pause"), hint: msg("Effects apply at once, without being shown") },
 ];
 
 /**
- * Rythme de la partie : chaque résolution est montrée (`resolving`) pendant `show` ms avant que son effet s'applique,
- * puis le résultat reste visible `after` ms avant l'étape suivante. Un instant en mode rapide des tests.
+ * Pace of the game: each resolution is shown (`resolving`) for `show` ms before its effect applies, then the result
+ * stays visible `after` ms before the next step. An instant in the tests' fast mode.
  */
 export function playbackTimes(pace: Pace): { show: number; after: number } {
   if (fastMode()) return { show: 40, after: 0 };
@@ -683,7 +714,7 @@ const PACE_KEY = "planecircle.pace";
 const SETTINGS_KEY = "planecircle.autopilot";
 const LANG_KEY = "planecircle.lang";
 
-/** Réglages de l'automatisme retenus d'une session à l'autre (arrêts, contrôle total, garder la priorité). */
+/** Autopilot settings kept from one session to the next (stops, full control, hold priority). */
 function loadSettings(): AutopilotSettings {
   const base = structuredClone(DEFAULT_AUTOPILOT);
   try {
@@ -708,7 +739,7 @@ function saveSettings(s: AutopilotSettings): void {
     const { fullControl, holdPriority, revealOpponentStack, stops } = s;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({ fullControl, holdPriority, revealOpponentStack, stops }));
   } catch {
-    // Stockage indisponible (navigation privée) : réglages de la session seulement.
+    // Storage unavailable (private browsing): settings of the session only.
   }
 }
 
@@ -735,17 +766,17 @@ function loadPace(): Pace {
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** Mises à jour reçues pas encore affichées, avec la session qui les a envoyées (ignorées si elle a changé). */
+/** Updates received but not displayed yet, with the session that sent them (ignored if it changed). */
 const playback: { msg: Extract<FromWorker, { type: "update" }>; session: Session | null }[] = [];
 let pumping = false;
 let resolvingNow = false;
 
-/** Une résolution est montrée, ou des mises à jour attendent : la vue affichée n'est pas encore la dernière. */
+/** A resolution is being shown, or updates are waiting: the displayed view is not the latest yet. */
 function playbackBusy(): boolean {
   return resolvingNow || playback.length > 0;
 }
 
-/** L'élément de pile que la mise à jour fait quitter la pile (résolu, contrecarré ou sans cible), s'il est affiché. */
+/** The stack item that the update takes off the stack (resolved, countered or without target), if it is displayed. */
 function leavingItem(
   view: GameView | null,
   events: GameEvent[],
@@ -759,7 +790,7 @@ function leavingItem(
 }
 
 export const useGame = create<Store>((set, get) => {
-  /** Affiche les mises à jour en attente une à une, en montrant chaque résolution avant d'en appliquer l'effet. */
+  /** Displays the waiting updates one by one, showing each resolution before applying its effect. */
   const pump = async () => {
     if (pumping) return;
     pumping = true;
@@ -778,7 +809,7 @@ export const useGame = create<Store>((set, get) => {
           set({ resolving: { id: ++fxId, ...leaving } });
           await sleep(times.show);
           resolvingNow = false;
-          // La partie a changé pendant l'attente (retour au menu, nouvelle partie) : on abandonne cette étape.
+          // The game changed during the wait (back to the menu, new game): this step is dropped.
           if (next.session !== get().session) continue;
         }
         playback.shift();
@@ -792,15 +823,15 @@ export const useGame = create<Store>((set, get) => {
       if (get().resolving) set({ resolving: null });
     }
   };
-  /** Choix sur le plateau en cours (façon MTGA) : un clic sélectionne ou retire l'option. Renvoie false hors de ce mode. */
+  /** Choice on the board in progress (MTGA style): a click selects or removes the option. Returns false outside this mode. */
   const pickOnBoard = (id: string): boolean => {
     const req = boardPick(get().view);
     if (!req) return false;
     if (req.options.includes(id)) set({ selection: togglePick(req, get().selection, id) });
-    else get().notify("Ce choix n'est pas possible.");
+    else get().notify(msg("This choice isn't possible."));
     return true;
   };
-  /** Avance dans les choix d'un lancement ; envoie la décision quand tout est choisi. */
+  /** Moves on through the choices of a cast; sends the decision when everything is chosen. */
   const continueCasting = (c: Casting) => {
     if (c.option.type === "cast" && c.mode === null) {
       if (c.option.modes.length > 1) return set({ casting: { ...c, stage: "mode" } });
@@ -815,7 +846,7 @@ export const useGame = create<Store>((set, get) => {
             | "free"
             | "alt"
           )[]);
-      // Sans payer est toujours le meilleur choix, sauf pour un sort à X (X vaut alors 0).
+      // Without paying is always the best choice, except for an X spell (X is then 0).
       if (modes.length === 1 || (modes.includes("free") && o.xMax === null))
         c.payMode = modes.includes("free") ? "free" : (modes[0] ?? "normal");
       else return set({ casting: { ...c, stage: "pay" } });
@@ -827,17 +858,17 @@ export const useGame = create<Store>((set, get) => {
     if (c.option.type === "cast" && c.kicked === null) {
       const o = c.option;
       const m = o.modes.find((x) => x.index === c.mode);
-      // Mode qui exige ou exclut le coût additionnel (« s'il a été payé, choisissez les deux à la place ») : pas de question.
+      // Mode that requires or excludes the additional cost ("if it was paid, choose both instead"): no question.
       if (m?.requiresKicker || m?.forbidsKicker) c.kicked = !!m.requiresKicker;
-      // Payable seulement avec le kicker (« coûte {2} de moins s'il est marchandé ») : pas de question.
+      // Payable only with the kicker ("costs {2} less if it was bargained"): no question.
       else if (o.kickerAffordable && !o.normalAvailable && !o.freeAvailable && !o.altAvailable && !o.free) c.kicked = true;
       else if (o.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
       else c.kicked = false;
     }
-    // Mana hybride dont le résultat dépend (Deceit) : la couleur à dépenser, sauf sans payer.
+    // Hybrid mana the result depends on (Deceit): the color to spend, unless without paying.
     if (c.option.type === "cast" && c.option.hybridColors?.length && c.payMode !== "free" && c.hybrid === undefined)
       return set({ casting: { ...c, stage: "hybrid" } });
-    // Marchandage (kicker sans mana) : le permanent sacrifié, s'il y a le choix.
+    // Bargain (kicker without mana): the sacrificed permanent, if there is a choice.
     if (
       c.option.type === "cast" &&
       c.kicked &&
@@ -846,16 +877,16 @@ export const useGame = create<Store>((set, get) => {
       c.sacrifice === null
     )
       return set({ casting: { ...c, stage: "sacrifice", spec: null } });
-    // Web-slinging ou faufilement : la créature à renvoyer, s'il y a le choix.
+    // Web-slinging or sneak: the creature to return, if there is a choice.
     if (c.option.type === "cast" && c.payMode === "alt" && (c.option.altBounce?.length ?? 0) > 1 && c.bounce === null)
       return set({ casting: { ...c, stage: "bounce", spec: null } });
-    // Travail d'équipe : les créatures à engager.
+    // Teamwork: the creatures to tap.
     if (c.option.type === "cast" && c.kicked && c.option.kickerTap && c.tap === null)
       return set({ casting: { ...c, stage: "tap", spec: null } });
     for (const spec0 of targetSpecs(c)) {
-      // Cadeau promis (Bloomburrow) : « à la place, un permanent non-terrain ciblé ».
+      // Gift promised (Bloomburrow): "instead, target nonland permanent".
       const spec1 = c.kicked && spec0.kickedLegal ? { ...spec0, legal: spec0.kickedLegal } : spec0;
-      // « Le joueur ciblé … les cartes de son cimetière » (Rite of Renewal) : celles du joueur déjà choisi.
+      // "Target player … cards from their graveyard" (Rite of Renewal): those of the player already chosen.
       const of = spec1.ofTarget;
       const spec = of
         ? { ...spec1, legal: spec1.legal.filter((id) => (c.targets[of.id] ?? []).includes(of.holders[id] ?? "")) }
@@ -866,7 +897,7 @@ export const useGame = create<Store>((set, get) => {
         c.preset = undefined;
         continue;
       }
-      // Cible optionnelle sans aucune option légale : rien à demander.
+      // Optional target without any legal option: nothing to ask.
       if (spec.optional && spec.legal.length === 0) {
         c.targets[spec.id] = [];
         continue;
@@ -877,7 +908,7 @@ export const useGame = create<Store>((set, get) => {
         continue;
       }
       let effective = c.kicked && spec.kickedCount ? { ...spec, count: spec.kickedCount } : spec;
-      // « X cibles » (Doppelgang) : autant de cibles que le X choisi (au plus les cibles possibles).
+      // "X targets" (Doppelgang): as many targets as the chosen X (at most the possible targets).
       if (spec.countX) {
         const x = Math.min(c.x ?? 0, spec.legal.length);
         if (x === 0) {
@@ -886,7 +917,7 @@ export const useGame = create<Store>((set, get) => {
         }
         effective = { ...effective, count: x };
       }
-      // « Équipement attaché à cette créature » : seules les options attachées à la cible déjà choisie.
+      // "Equipment attached to that creature": only the options attached to the target already chosen.
       const host = spec.attachedToTarget;
       if (host) {
         const hosts = c.targets[host] ?? [];
@@ -901,7 +932,7 @@ export const useGame = create<Store>((set, get) => {
       }
       return set({ casting: { ...c, stage: "target", spec: effective, picked: [] } });
     }
-    // Coûts additionnels : choisis en dernier, une fois les cibles connues.
+    // Additional costs: chosen last, once the targets are known.
     const extra = c.option.type === "cast" || c.option.type === "activate" ? c.option.additional : undefined;
     if (extra && "discard" in extra && extra.discard && c.discard === null)
       return set({ casting: { ...c, stage: "discard", spec: null } });
@@ -909,11 +940,11 @@ export const useGame = create<Store>((set, get) => {
     if (extra && "tap" in extra && extra.tap && c.tap === null) return set({ casting: { ...c, stage: "tap", spec: null } });
     if (extra && "materials" in extra && extra.materials && c.materials === null)
       return set({ casting: { ...c, stage: "materials", spec: null } });
-    // Objets payés en coût (flétrir, preuves, exil du cimetière…), quand le coût s'applique et que le choix compte.
+    // Objects paid as a cost (blight, evidence, exile from the graveyard…), when the cost applies and the choice matters.
     for (const p of c.option.picks ?? []) {
       if (c.picks[p.slot] !== undefined || c.skippedPicks?.[p.slot]) continue;
       if ((p.when === "kicked" && !c.kicked) || (p.when === "alternative" && c.payMode !== "alt")) continue;
-      // Convocation, improvisation, maîtrise de l'eau, cave : le paiement automatique choisit, sauf en contrôle total.
+      // Convoke, improvise, waterbending, delve: the automatic payment chooses, except in full control.
       if (p.atMost && !get().settings.fullControl) continue;
       const count = p.countIsX ? (c.x ?? 0) : p.count;
       if (p.countIsX && count === 0) continue;
@@ -928,20 +959,20 @@ export const useGame = create<Store>((set, get) => {
     get().session?.send({ type: "settings", settings });
   };
 
-  /** Lance une partie contre l'IA dans un nouveau worker. */
+  /** Starts a game against the AI in a new worker. */
   function startLocal(
     playerDeck: DeckEntries,
     aiDecks: DeckEntries[],
     sandbox?: Sandbox,
     aiLevel?: AiLevel,
     startingPlayer?: string,
-    /** Commander : nombre de commandants en tête de chaque deck (joueur, puis IA). */
+    /** Commander: number of commanders at the top of each deck (player, then AIs). */
     commanders?: number[],
   ): void {
     get().session?.close();
     preloadSounds();
-    // Sauvegarde pour la reprise à la réouverture de la page (pas pour le bac à sable, qui n'est pas enregistré). Le
-    // match est noté tel qu'au début de la manche : celle-ci comptera en se terminant, après une reprise aussi.
+    // Save for the resume when the page is reopened (not for the sandbox, which is not recorded). The match is noted as
+    // it was at the start of the game: the game counts when it ends, after a resume too.
     stopSaving();
     const match = get().localMatch;
     saver = sandbox ? null : new SaveWriter(() => ({ aiLevel, match, log: get().log }));
@@ -951,7 +982,8 @@ export const useGame = create<Store>((set, get) => {
     session.send({
       type: "start",
       seed: Math.floor(Math.random() * 2 ** 31),
-      playerName: "Vous",
+      playerName: t("You"),
+      aiNames: aiDecks.length > 1 ? aiDecks.map((_, i) => t("AI {n}", { n: i + 1 })) : [t("AI")],
       playerDeck,
       aiDecks,
       defs: defsFor([playerDeck, ...aiDecks], sandbox),
@@ -1008,7 +1040,7 @@ export const useGame = create<Store>((set, get) => {
       try {
         localStorage.setItem(PACE_KEY, pace);
       } catch {
-        // stockage indisponible : réglage non retenu
+        // storage unavailable: setting not kept
       }
     },
 
@@ -1030,7 +1062,7 @@ export const useGame = create<Store>((set, get) => {
           : null;
       set({ online: null, tutorialGame: false, replay: null, localMatch });
       if (commander) {
-        // Commander : chaque deck commence par son commandant (worker : `commanders`, cartes en tête du deck).
+        // Commander: each deck starts with its commander (worker: `commanders`, cards at the top of the deck).
         const size = (e: DeckEntries) => e.reduce((n, [k]) => n + k, 0);
         startLocal(
           [...commander.player, ...playerDeck],
@@ -1055,7 +1087,7 @@ export const useGame = create<Store>((set, get) => {
       if (!m || m.winner) return;
       const error = sideboardSwapError(m.original, { main, sideboard }, CARDS, m.format);
       if (error) return get().notify(error);
-      // Le perdant de la manche précédente commence.
+      // The loser of the previous game starts.
       const last = get().view;
       const loser = last?.winner ? (last.winner === "p1" ? "p2" : "p1") : undefined;
       set({ localMatch: { ...m, deck: { main, sideboard }, game: m.game + 1 } });
@@ -1068,7 +1100,7 @@ export const useGame = create<Store>((set, get) => {
       get().session?.close();
       preloadSounds();
       const session = new LocalSession((m) => get().receive(m));
-      // Réglages par défaut : le tutoriel fixe lui-même les arrêts dont il a besoin.
+      // Default settings: the tutorial sets the stops it needs itself.
       const settings = structuredClone(DEFAULT_AUTOPILOT);
       set({
         screen: "game",
@@ -1090,7 +1122,8 @@ export const useGame = create<Store>((set, get) => {
       session.send({
         type: "start",
         seed: 1,
-        playerName: "Vous",
+        playerName: t("You"),
+        aiNames: [t("Opponent")],
         playerDeck: [],
         aiDecks: [],
         defs: defsFor([], undefined, scenario),
@@ -1179,12 +1212,12 @@ export const useGame = create<Store>((set, get) => {
       if (session instanceof RemoteSession) session.raw({ type: "rematch" });
     },
 
-    receiveOnline(msg) {
+    receiveOnline(m) {
       const online = get().online;
       if (!online) return;
-      switch (msg.type) {
+      switch (m.type) {
         case "room": {
-          const r = msg.room;
+          const r = m.room;
           saveToken(r.token);
           if (get().resuming && r.status === "waiting") set({ resuming: false });
           const starting = r.status === "playing" && online.status !== "playing";
@@ -1194,7 +1227,7 @@ export const useGame = create<Store>((set, get) => {
               status: r.status,
               code: r.code,
               seat: r.seat,
-              players: r.players,
+              players: r.players.map((p) => ({ ...p, name: playerName(p.name, get().lang) })),
               match: r.match,
               deck: r.deck,
               error: null,
@@ -1214,48 +1247,50 @@ export const useGame = create<Store>((set, get) => {
         }
         case "update":
           set({
-            online: { ...online, clock: msg.clock ? { ...msg.clock, deadline: Date.now() + msg.clock.remainingMs } : null },
+            online: { ...online, clock: m.clock ? { ...m.clock, deadline: Date.now() + m.clock.remainingMs } : null },
             ...(get().screen !== "game" ? { screen: "game" } : {}),
           });
-          get().receive({ type: "update", view: msg.view, events: msg.events, faces: msg.faces });
+          get().receive({ type: "update", view: m.view, events: m.events, faces: m.faces });
           return;
         case "opponent":
           set({
             online: {
               ...online,
-              opponent: { connected: msg.connected, deadline: msg.remainingMs === null ? null : Date.now() + msg.remainingMs },
+              opponent: { connected: m.connected, deadline: m.remainingMs === null ? null : Date.now() + m.remainingMs },
             },
           });
           return;
         case "record":
-          downloadRecord(msg.record);
+          downloadRecord(m.record);
           return;
-        case "error":
-          if (msg.code === "rules") return get().receive({ type: "error", message: msg.message });
-          // Client d'une autre version que le serveur : la page se recharge (elle est servie réseau d'abord, sw.js), le
-          // jeton est gardé pour reprendre la partie avec la nouvelle version.
-          if (msg.code === "version") {
-            onlineLost("Nouvelle version", `${msg.message} La page va se recharger.`, true);
+        case "error": {
+          if (m.code === "rules") return get().receive({ type: "error", message: m.message });
+          // Client of another version than the server: the page reloads (it is served network first, sw.js), the token
+          // is kept to resume the game with the new version.
+          if (m.code === "version") {
+            onlineLost(msg("New version"), msg("{message} The page will reload.", { message: m.message }), true);
             setTimeout(() => location.reload(), 3000);
             return;
           }
-          // La partie de cette page n'existe plus (terminée et supprimée, serveur redémarré sans pouvoir la reprendre).
-          if (msg.code === "token") return onlineLost("Partie en ligne terminée", `${msg.message} Retour à l'accueil.`);
-          // Reprise refusée : la partie est déjà ouverte dans un autre onglet ou un autre navigateur.
-          if (msg.code === "state" && !online.code)
-            return onlineLost("Partie ouverte ailleurs", `${msg.message} Retour à l'accueil.`, true);
-          // Salon fermé par le serveur pendant une partie ou une reprise.
-          if (msg.code === "closed" && (online.code || get().resuming))
-            return onlineLost("Salon fermé", `${msg.message} Retour à l'accueil.`);
+          // This page's game no longer exists (over and deleted, server restarted without being able to resume it).
+          const back = msg("{message} Back to the home screen.", { message: m.message });
+          if (m.code === "token") return onlineLost(msg("Online game over"), back);
+          // Resume refused: the game is already open in another tab or another browser.
+          if (m.code === "state" && !online.code) return onlineLost(msg("Game open elsewhere"), back, true);
+          // Room closed by the server during a game or a resume.
+          if (m.code === "closed" && (online.code || get().resuming)) return onlineLost(msg("Room closed"), back);
           playSound("error");
-          set({ online: { ...online, error: msg.message, status: online.code ? online.status : "connecting" } });
-          if (!online.code || msg.code === "closed") {
-            // Création ou arrivée refusée, ou salon fermé par le serveur : on ferme la connexion.
-            if (msg.code === "closed") saveToken(null);
+          // The server's message (an English `msg` text), in the interface language.
+          const error = localizeText(m.message, get().faces, get().lang);
+          set({ online: { ...online, error, status: online.code ? online.status : "connecting" } });
+          if (!online.code || m.code === "closed") {
+            // Creation or arrival refused, or room closed by the server: the connection is closed.
+            if (m.code === "closed") saveToken(null);
             get().session?.close();
-            set({ session: null, online: { ...online, error: msg.message, status: "connecting" } });
+            set({ session: null, online: { ...online, error, status: "connecting" } });
           }
           return;
+        }
       }
     },
 
@@ -1275,7 +1310,7 @@ export const useGame = create<Store>((set, get) => {
       try {
         session = new ReplaySession(record, card);
       } catch (e) {
-        return get().notify(`Replay impossible : ${e instanceof Error ? e.message : String(e)}`);
+        return get().notify(msg("Replay impossible: {error}", { error: e instanceof Error ? e.message : String(e) }));
       }
       const viewer = record.players[0]?.id ?? "p1";
       set({
@@ -1286,7 +1321,7 @@ export const useGame = create<Store>((set, get) => {
         session,
         log: [],
         fx: [],
-        // Rien de la partie précédente : bandeau de tour, sort adverse montré, message.
+        // Nothing of the previous game: turn banner, opponent's spell shown, message.
         turnBanner: null,
         spotlight: null,
         toast: null,
@@ -1298,25 +1333,25 @@ export const useGame = create<Store>((set, get) => {
           index: 0,
           total: session.states.length - 1,
           viewer,
-          players: record.players.map((p) => ({ id: p.id, name: p.name })),
+          players: record.players.map((p) => ({ id: p.id, name: playerName(p.name, get().lang) })),
           playing: false,
           warning: session.warning,
         },
       });
       const { view, faces } = session.frame(0, viewer, false);
-      set({ view, faces });
+      set({ view: withPlayerNames(view, get().lang), faces });
     },
 
     replaySeek(index) {
       const { replay, session } = get();
       if (!replay || !(session instanceof ReplaySession)) return;
       const i = Math.max(0, Math.min(replay.total, index));
-      // Une étape en avant : ses événements (journal, sons, effets) ; un saut : l'état seul, journal vidé.
+      // One step forward: its events (log, sounds, effects); a jump: the state only, log emptied.
       const step = i === replay.index + 1;
       const frame = session.frame(i, replay.viewer, step);
       if (step) {
         get().receive({ type: "update", ...frame });
-      } else set({ view: frame.view, faces: frame.faces, log: [] });
+      } else set({ view: withPlayerNames(frame.view, get().lang), faces: frame.faces, log: [] });
       set({ replay: { ...replay, index: i } });
       if (i >= replay.total) get().replayPlay(false);
     },
@@ -1325,7 +1360,12 @@ export const useGame = create<Store>((set, get) => {
       const { replay, session } = get();
       if (!replay || !(session instanceof ReplaySession)) return;
       const frame = session.frame(replay.index, player, false);
-      set({ replay: { ...replay, viewer: player }, view: frame.view, faces: frame.faces, log: [] });
+      set({
+        replay: { ...replay, viewer: player },
+        view: withPlayerNames(frame.view, get().lang),
+        faces: frame.faces,
+        log: [],
+      });
     },
 
     replayPlay(on) {
@@ -1346,7 +1386,7 @@ export const useGame = create<Store>((set, get) => {
       replayTimer = null;
       if (get().replay) set({ replay: null });
       if (get().online) return get().leaveRoom();
-      // Partie quittée : plus rien à reprendre.
+      // Game left: nothing left to resume.
       stopSaving();
       get().session?.close();
       set({
@@ -1361,39 +1401,40 @@ export const useGame = create<Store>((set, get) => {
       });
     },
 
-    receive(msg) {
-      if (msg.type === "saved") {
-        saver?.apply(msg);
+    receive(m) {
+      if (m.type === "saved") {
+        saver?.apply(m);
         return;
       }
-      if (msg.type === "resumeFailed") {
+      if (m.type === "resumeFailed") {
         stopSaving();
         get().session?.close();
         set({ session: null, screen: "lobby", view: null, resuming: false, localMatch: null });
         return get().showNotice(
-          "Partie impossible à reprendre",
-          `La partie sauvegardée ne peut pas être reprise : ${msg.message}.`,
+          msg("Game cannot be resumed"),
+          msg("The saved game cannot be resumed: {reason}.", { reason: m.message }),
         );
       }
-      if (msg.type === "record") {
-        if (msg.record) downloadRecord(msg.record);
-        else get().notify("Cette partie n'est pas enregistrée (tutoriel ou bac à sable).");
+      if (m.type === "record") {
+        if (m.record) downloadRecord(m.record);
+        else get().notify(msg("This game is not recorded (tutorial or sandbox)."));
         return;
       }
-      if (msg.type === "error") {
+      if (m.type === "error") {
         playSound("error");
-        return get().notify(msg.message);
+        return get().notify(m.message);
       }
       if (get().resuming) set({ resuming: false });
-      // Rejeu : les étapes s'affichent tout de suite (le visionneur a ses propres commandes).
-      if (get().replay) return get().applyUpdate(msg);
-      playback.push({ msg, session: get().session });
+      // Replay: the steps are displayed at once (the viewer has its own controls).
+      if (get().replay) return get().applyUpdate(m);
+      playback.push({ msg: m, session: get().session });
       void pump();
     },
 
-    applyUpdate(msg) {
-      const { view, events, faces } = msg;
-      // Match contre l'IA : la manche qui se termine compte (deux victoires emportent le match, trois manches au plus).
+    applyUpdate(update) {
+      const { events, faces } = update;
+      const view = withPlayerNames(update.view, get().lang);
+      // Match against the AI: the game that ends counts (two wins take the match, three games at most).
       const m = get().localMatch;
       if (m && !m.winner && view.over && !get().view?.over) {
         const wins = { ...m.wins };
@@ -1406,7 +1447,7 @@ export const useGame = create<Store>((set, get) => {
       for (const cue of soundsFor(events, view, get().view, faces)) playSound(cue.key, cue);
       playEffects(view, events, faces);
       const changed = pendingKey(get().view) !== pendingKey(view);
-      // Passe douce : un sort ou une capacité adverse rend la main ; la passe jusqu'à la fin du tour s'arrête là.
+      // Soft pass: an opponent's spell or ability hands back control; the pass until the end of the turn stops there.
       const st = get().settings;
       const top = view.stack[view.stack.length - 1];
       if (
@@ -1418,8 +1459,8 @@ export const useGame = create<Store>((set, get) => {
         top.controller !== view.viewer
       )
         sendSettings({ ...st, passUntilTurn: null });
-      // Attaques obligées (508.1d : « attaque à chaque combat si possible », provocation) : déjà sélectionnées, vers le
-      // défenseur qui satisfait leurs exigences (impossibles à retirer côté moteur).
+      // Forced attacks (508.1d: "attacks each combat if able", goad): already selected, toward the defender that
+      // satisfies their requirements (impossible to remove on the engine side).
       const p = view.pending;
       const forcedAttacks = p?.kind === "declareAttackers" && p.player === view.viewer ? (p.forced ?? []) : [];
       const forced = forcedAttacks.map((a) => a.id);
@@ -1445,7 +1486,7 @@ export const useGame = create<Store>((set, get) => {
     },
 
     decide(d) {
-      // Pendant qu'une résolution est montrée, la vue affichée n'est pas encore celle de la partie.
+      // While a resolution is being shown, the displayed view is not the game's yet.
       if (playbackBusy()) return;
       if (refused(d)) return;
       get().session?.send({ type: "decision", decision: d });
@@ -1458,10 +1499,10 @@ export const useGame = create<Store>((set, get) => {
       const pool: Record<string, number> = v.players[v.viewer]?.manaPool ?? {};
       const floating = Object.values(pool).some((n) => n > 0);
       const key = pendingKey(v);
-      // Pile vide : l'étape va finir et la réserve se vider.
+      // Empty stack: the step is about to end and the mana pool to empty.
       if (floating && v.stack.length === 0 && get().floatWarned !== key) {
         set({ floatWarned: key });
-        return get().notify("Mana inutilisé : il sera perdu à la fin de l'étape. Appuyez de nouveau pour passer.");
+        return get().notify(msg("Unused mana: it will be lost at the end of the step. Press again to pass."));
       }
       get().decide({ type: "pass" });
     },
@@ -1478,7 +1519,7 @@ export const useGame = create<Store>((set, get) => {
     resumeLocal() {
       const saved = loadSavedGame();
       if (!saved) return false;
-      // Cartes de la partie : une carte retirée ou renommée depuis (mise à jour) rend la reprise impossible, sans bloquer.
+      // The game's cards: a card removed or renamed since (update) makes the resume impossible, without blocking.
       const decks = saved.record.players.map((p) => p.deck.map((name) => [1, name] as [number, string]));
       let defs: Record<string, CardDef>;
       try {
@@ -1486,7 +1527,9 @@ export const useGame = create<Store>((set, get) => {
       } catch (e) {
         get().receive({
           type: "resumeFailed",
-          message: `une de ses cartes est inconnue de cette version (${e instanceof Error ? e.message : String(e)})`,
+          message: msg("one of its cards is unknown to this version ({error})", {
+            error: e instanceof Error ? e.message : String(e),
+          }),
         });
         return false;
       }
@@ -1496,7 +1539,7 @@ export const useGame = create<Store>((set, get) => {
       saver.start(saved.record);
       const session = new LocalSession((m) => get().receive(m));
       const settings = { ...get().settings, passUntilTurn: null };
-      // Le journal sauvegardé reprend (identifiants négatifs : ils ne croisent pas ceux des lignes suivantes).
+      // The saved log carries on (negative ids: they do not meet those of the next lines).
       const log = (saved.log ?? []).map((l, i) => ({ ...l, id: -(i + 1) }));
       set({
         screen: "game",
@@ -1507,7 +1550,7 @@ export const useGame = create<Store>((set, get) => {
         replay: null,
         localMatch: saved.match,
         view: null,
-        log: [...log, { id: -(log.length + 1), text: "Partie reprise.", kind: "info" }],
+        log: [...log, { id: -(log.length + 1), text: t("Game resumed."), kind: "info" }],
         casting: null,
         attackers: [],
         blocks: {},
@@ -1536,22 +1579,22 @@ export const useGame = create<Store>((set, get) => {
       const acts = myActions(view);
       const lands = acts.filter((a) => a.type === "playLand" && a.card === id);
       const casts = acts.filter((a): a is CastOption => a.type === "cast" && a.card === id);
-      // Terrain choc : payer les points de vie (dégagé) ou non (engagé) ; Ville à aventure : jouer le terrain ou lancer l'Aventure.
+      // Shock land: pay the life (untapped) or not (tapped); adventure town: play the land or cast the Adventure.
       if (lands.length > 1 || (lands.length === 1 && casts.length > 0))
         return set({ abilityMenu: { sourceId: id, options: [...lands, ...casts] } });
       const land = lands[0];
       if (lands.length === 1 && land?.type === "playLand") return get().playLand(land);
       const cast = casts[0];
-      // Capacités activées depuis la main (cycle, « défaussez cette carte : … »), ou plusieurs faces (aventure).
+      // Activated abilities from the hand (cycling, "discard this card: …"), or several faces (adventure).
       const fromHand = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
       if (casts.length + fromHand.length > 1) return set({ abilityMenu: { sourceId: id, options: [...casts, ...fromHand] } });
       if (fromHand[0] && !cast) return get().beginCasting(fromHand[0], id);
       if (cast) return get().beginCasting(cast, id);
       if (p?.kind === "priority" && p.player === view.viewer) {
         const card = view.hand.find((c) => c.id === id);
-        if (card && !card.implemented) get().notify("Cette carte n'est pas encore gérée par le moteur.");
-        else if (card?.types.includes("Land")) get().notify("Vous ne pouvez pas jouer de terrain maintenant.");
-        else get().notify("Impossible de lancer ce sort maintenant (timing ou mana).");
+        if (card && !card.implemented) get().notify(msg("The engine doesn't handle this card yet."));
+        else if (card?.types.includes("Land")) get().notify(msg("You can't play a land now."));
+        else get().notify(msg("You can't cast this spell now (timing or mana)."));
       }
     },
 
@@ -1566,13 +1609,13 @@ export const useGame = create<Store>((set, get) => {
       if (!view) return;
       if (casting?.stage === "target" && casting.spec) {
         if (casting.spec.legal.includes(id)) return get().pickTarget(id);
-        return get().notify("Cible invalide.");
+        return get().notify(msg("Invalid target."));
       }
       if (pickOnBoard(id)) return;
       const p = view.pending;
       if (!p || p.player !== view.viewer) return;
       if (p.kind === "declareAttackers") {
-        // Planeswalker attaquable : cible de l'attaquant en visée.
+        // Attackable planeswalker: target of the aiming attacker.
         if (p.defenders?.includes(id)) return get().aimAttackAt(id);
         return get().toggleAttacker(id);
       }
@@ -1600,13 +1643,13 @@ export const useGame = create<Store>((set, get) => {
         return;
       }
       if (p.kind === "priority") {
-        // Terrain engagé pour son mana, encore inutilisé : un clic l'annule (façon Arena).
+        // Land tapped for its mana, still unused: a click undoes it (Arena style).
         if (view.battlefield.find((o) => o.id === id)?.undoMana) return get().decide({ type: "undoMana", source: id });
         const acts = myActions(view);
         const activations = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
         const mana = acts.filter((a) => a.type === "tapForMana" && a.source === id);
-        // Capacités activées impossibles en ce moment (mana, cible, timing) : montrées grisées plutôt que tues, pour
-        // qu'un clic sur un terrain ne l'engage pas en silence pour son mana (Rogue's Passage sans {4} disponible).
+        // Activated abilities impossible right now (mana, target, timing): shown greyed out rather than hidden, so that
+        // a click on a land does not silently tap it for its mana (Rogue's Passage without {4} available).
         const perm = view.battlefield.find((o) => o.id === id);
         const unavailable = (perm?.controller === view.viewer ? (perm.activated ?? []) : []).filter(
           (a) => !activations.some((x) => x.ability === a.index),
@@ -1614,7 +1657,9 @@ export const useGame = create<Store>((set, get) => {
         if (activations.length + mana.length > 1 || (unavailable.length > 0 && activations.length + mana.length > 0))
           return set({ abilityMenu: { sourceId: id, options: [...activations, ...mana], unavailable } });
         if (unavailable.length > 0 && activations.length + mana.length === 0)
-          return get().notify(`${unavailable[0]?.label} : impossible maintenant (mana, cible ou moment).`);
+          return get().notify(
+            msg("{ability}: not possible now (mana, target or timing).", { ability: unavailable[0]?.label ?? "" }),
+          );
         if (activations[0]) return get().beginCasting(activations[0], id);
         const m = mana[0];
         if (m?.type === "tapForMana")
@@ -1631,13 +1676,13 @@ export const useGame = create<Store>((set, get) => {
       if (pickOnBoard(id)) return;
       if (casting?.stage === "target" && casting.spec) {
         if (casting.spec.legal.includes(id)) return get().pickTarget(id);
-        get().notify("Cible invalide.");
+        get().notify(msg("Invalid target."));
       }
     },
 
     beginCasting(option, sourceId, preset) {
       set({ abilityMenu: null });
-      // Règle des légendaires (704.5j) : prévenir avant de lancer un doublon (on ne peut plus annuler ensuite).
+      // Legend rule (704.5j): warn before casting a duplicate (it cannot be undone afterwards).
       const dup = legendDuplicate(get().view, option, sourceId);
       if (dup && get().legendConfirm?.sourceId !== sourceId) {
         return set({ legendConfirm: { option, sourceId, preset, name: dup } });
@@ -1704,8 +1749,8 @@ export const useGame = create<Store>((set, get) => {
     chooseMode(index) {
       const c = get().casting;
       if (!c) return;
-      // « Si le coût additionnel a été payé, choisissez les deux à la place » : le mode « les deux » impose de le payer,
-      // chaque mode seul de ne pas le payer.
+      // "If the additional cost was paid, choose both instead": the "both" mode requires paying it, each single mode
+      // requires not paying it.
       const m = c.option.type === "cast" ? c.option.modes.find((x) => x.index === index) : undefined;
       const kicked = m?.requiresKicker ? true : m?.forbidsKicker ? false : undefined;
       continueCasting({ ...c, mode: index, ...(kicked !== undefined ? { kicked } : {}) });
@@ -1739,7 +1784,7 @@ export const useGame = create<Store>((set, get) => {
     choosePick(slot, ids) {
       const c = get().casting;
       if (!c) return;
-      // `undefined` : pas de choix (paiement automatique) ; l'emplacement est noté comme traité.
+      // `undefined`: no choice (automatic payment); the slot is noted as handled.
       const skipped = { ...(c.skippedPicks ?? {}), [slot]: true };
       if (ids === undefined) return continueCasting({ ...c, skippedPicks: skipped, pick: undefined });
       continueCasting({ ...c, picks: { ...c.picks, [slot]: ids }, skippedPicks: skipped, pick: undefined });
@@ -1781,11 +1826,11 @@ export const useGame = create<Store>((set, get) => {
       const p = get().view?.pending;
       if (p?.kind !== "declareAttackers" || !p.candidates?.includes(id)) return;
       const cur = get().attackers;
-      // Créature déjà attaquante : elle n'attaque plus.
+      // Creature already attacking: it no longer attacks.
       if (cur.includes(id)) return set({ attackers: cur.filter((a) => a !== id), aimingAttacker: null });
-      // Ce que cette créature peut attaquer (« ne peut pas vous attaquer » : pas tous les défenseurs).
+      // What this creature can attack ("can't attack you": not every defender).
       const defenders = p.allowed?.[id] ?? p.defenders ?? [];
-      // Plusieurs cibles possibles (façon MTGA) : la créature est « en visée », on clique ensuite sa cible.
+      // Several possible targets (MTGA style): the creature is "aiming", its target is clicked next.
       if (defenders.length > 1) return set({ aimingAttacker: get().aimingAttacker === id ? null : id });
       const target = defenders[0];
       set({ attackers: [...cur, id], attackTargets: target ? { ...get().attackTargets, [id]: target } : get().attackTargets });
@@ -1793,10 +1838,10 @@ export const useGame = create<Store>((set, get) => {
 
     aimAttackAt(defender) {
       const aiming = get().aimingAttacker;
-      if (!aiming) return get().notify("Cliquez d'abord la créature qui attaque, puis sa cible.");
+      if (!aiming) return get().notify(msg("First click the attacking creature, then its target."));
       const p = get().view?.pending;
       const allowed = p?.kind === "declareAttackers" ? p.allowed?.[aiming] : undefined;
-      if (allowed && !allowed.includes(defender)) return get().notify("Cette créature ne peut pas attaquer cette cible.");
+      if (allowed && !allowed.includes(defender)) return get().notify(msg("This creature can't attack this target."));
       set({
         attackers: get().attackers.includes(aiming) ? get().attackers : [...get().attackers, aiming],
         attackTargets: { ...get().attackTargets, [aiming]: defender },
@@ -1807,12 +1852,12 @@ export const useGame = create<Store>((set, get) => {
     allAttack() {
       const p = get().view?.pending;
       if (p?.kind !== "declareAttackers") return;
-      // Tous attaquent la dernière cible choisie (un planeswalker visé, un adversaire), sinon le premier adversaire ;
-      // ceux dont la cible est déjà choisie la gardent.
+      // Everyone attacks the last chosen target (an aimed planeswalker, an opponent), otherwise the first opponent;
+      // those whose target is already chosen keep it.
       const chosen = Object.values(get().attackTargets).at(-1);
       const target = chosen && p.defenders?.includes(chosen) ? chosen : p.defenders?.[0];
       const forced = new Map((p.forced ?? []).map((a) => [a.id, a.defender]));
-      // Chaque créature garde sa cible ; sinon son attaque obligée ; sinon la cible commune si elle peut l'attaquer.
+      // Each creature keeps its target; otherwise its forced attack; otherwise the common target if it can attack it.
       const targetOf = (id: string) => {
         const allowed = p.allowed?.[id] ?? p.defenders ?? [];
         const chosenFor = get().attackTargets[id] ?? forced.get(id);
@@ -1858,7 +1903,7 @@ export const useGame = create<Store>((set, get) => {
       try {
         localStorage.setItem(LANG_KEY, lang);
       } catch {
-        // Stockage indisponible : langue de la session seulement.
+        // Storage unavailable: language of the session only.
       }
     },
 

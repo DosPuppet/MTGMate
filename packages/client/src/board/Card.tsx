@@ -1,8 +1,9 @@
-import { type CardFace, counterLabel, HIDDEN_CARD_ID, type ObjectView } from "@mtgx/engine";
+import { type CardFace, counterLabel, HIDDEN_CARD_ID, msg, type ObjectView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
 import { detectBlockedScryfall, useCustomBack, useRelayActive } from "../images";
+import { useLocalize, useT } from "../localize";
 import { useGame } from "../store";
 import { useLongPress } from "../touch";
 import { KeywordBadges } from "./Keywords";
@@ -12,7 +13,7 @@ export type Glow =
   | "target"
   | "selectable"
   | "selected"
-  /** Choisi parmi les options en surbrillance (cible, choix sur le plateau) : coche verte. */
+  /** Picked among the highlighted options (target, choice on the board): green check mark. */
   | "picked"
   | "attacking"
   | "blocking"
@@ -21,8 +22,9 @@ export type Glow =
 
 const SPRING = { type: "spring", stiffness: 420, damping: 38 } as const;
 
-/** Symboles de mana : "{2}{G}{G}" → pastilles colorées. */
+/** Mana symbols: "{2}{G}{G}" → colored pips. */
 export function ManaCost({ cost, size = 16 }: { cost: string; size?: number }) {
+  const t = useT();
   const symbols = [...cost.matchAll(/\{([^}]+)\}/g)].map((m) => m[1] as string);
   return (
     <span className="mana-cost" style={{ "--sym": `${size}px` } as CSSProperties}>
@@ -30,12 +32,16 @@ export function ManaCost({ cost, size = 16 }: { cost: string; size?: number }) {
         /^[WUBRG]\/[WUBRG]$/.test(s) ? (
           <span key={i} className={`mana-sym hybrid mana-${s[0]}-${s[2]}`} title={`{${s}}`} />
         ) : /^[WUBRG]\/P$/.test(s) ? (
-          // Mana phyrexian : la couleur, ou 2 points de vie.
-          <span key={i} className={`mana-sym mana-${s[0]}`} title={`{${s}} : {${s[0]}} ou 2 points de vie`}>
+          // Phyrexian mana: the color, or 2 life.
+          <span
+            key={i}
+            className={`mana-sym mana-${s[0]}`}
+            title={t("{symbol}: {color} or 2 life", { symbol: `{${s}}`, color: `{${s[0]}}` })}
+          >
             Φ
           </span>
         ) : (
-          // Lettre dans la pastille : le noir et l'incolore ne se distinguent pas qu'à la couleur (accessibilité).
+          // Letter in the pip: black and colorless are not told apart by color alone (accessibility).
           <span key={i} className={`mana-sym mana-${/^[WUBRGC]$/.test(s) ? s : "N"}`} title={`{${s}}`}>
             {s}
           </span>
@@ -45,14 +51,15 @@ export function ManaCost({ cost, size = 16 }: { cost: string; size?: number }) {
   );
 }
 
-/** Texte de règles dont les symboles ("{T}", "{2}{R}") sont des pastilles, comme sur la carte imprimée. */
+/** Rules text whose symbols ("{T}", "{2}{R}") are pips, as on the printed card. */
 export function RulesText({ text, size = 13 }: { text: string; size?: number }) {
   return <>{text.split(/((?:\{[^}]+\})+)/).map((part, i) => (i % 2 ? <ManaCost key={i} cost={part} size={size} /> : part))}</>;
 }
 
-/** Cadre texte : sert de repli si l'image ne charge pas, et d'apparence pour les jetons. */
+/** Text frame: the fallback when the image does not load, and the look of tokens. */
 function TextFrame({ face, obj }: { face: CardFace; obj?: ObjectView }) {
   const lang = useGame((s) => s.lang);
+  const loc = useLocalize();
   const color = obj?.colors[0] ?? "C";
   return (
     <div className={`text-frame frame-${color}`}>
@@ -60,7 +67,7 @@ function TextFrame({ face, obj }: { face: CardFace; obj?: ObjectView }) {
         <span className="tf-name">{faceName(face, lang)}</span>
         <ManaCost cost={face.manaCost} size={10} />
       </div>
-      <div className="tf-type">{faceType(face, lang)}</div>
+      <div className="tf-type">{loc(faceType(face, lang))}</div>
       <div className="tf-text">{faceText(face, lang)}</div>
       {face.basePower !== undefined && (
         <div className="tf-pt">
@@ -74,7 +81,7 @@ function TextFrame({ face, obj }: { face: CardFace; obj?: ObjectView }) {
 interface CardProps {
   face: CardFace;
   obj?: ObjectView;
-  /** Largeur CSS (variable ou valeur). */
+  /** CSS width (variable or value). */
   width: string;
   layoutId?: string;
   tapped?: boolean;
@@ -104,16 +111,18 @@ export function Card({
   const lang = useGame((s) => s.lang);
   const setHover = useGame((s) => s.setHover);
   const setPeek = useGame((s) => s.setPeek);
-  // Écran tactile : l'appui long remplace le survol (aperçu en surimpression).
+  const t = useT();
+  const loc = useLocalize();
+  // Touch screen: a long press replaces hovering (overlaid preview).
   const longPress = useLongPress(hoverable ? () => setPeek({ face, obj }) : undefined);
-  useRelayActive(); // nouvelle URL quand le relais des images s'active
+  useRelayActive(); // new URL when the image relay turns on
   const src = faceImage(face, lang);
-  // Image en échec : cadre texte. Une nouvelle URL (relais activé entre-temps) retente sa chance.
+  // Failed image: text frame. A new URL (relay turned on in the meantime) gets another try.
   const [failedSrc, setFailedSrc] = useState<string | undefined>();
   const failed = failedSrc !== undefined && failedSrc === src;
   const height = `calc(${width} * 1.395)`;
 
-  // Carte exilée face cachée que le joueur ne peut pas regarder (406.3) : son dos.
+  // A card exiled face down that the player can't look at (406.3): its back.
   if (face.defId === HIDDEN_CARD_ID)
     return (
       <div className={`card-slot ${className ?? ""}`} style={{ width, height }} data-oid={oid}>
@@ -132,7 +141,7 @@ export function Card({
       style={{ width: tapped ? height : width, height }}
       data-oid={oid}
       onMouseEnter={hoverable ? () => setHover({ face, obj }) : undefined}
-      // Clavier : Tab pour atteindre une carte jouable, Entrée ou Espace pour l'utiliser (le focus montre l'aperçu).
+      // Keyboard: Tab to reach a playable card, Enter or Space to use it (focus shows the preview).
       {...(onClick ? { tabIndex: 0, role: "button", "aria-label": faceName(face, lang) } : {})}
       onFocus={onClick && hoverable ? () => setHover({ face, obj }) : undefined}
       onKeyDown={
@@ -164,7 +173,7 @@ export function Card({
             draggable={false}
             onError={() => {
               setFailedSrc(src);
-              // Scryfall bloqué par le réseau ? Le relais du serveur prend le relais (mode auto).
+              // Scryfall blocked by the network? The server's relay takes over (auto mode).
               void detectBlockedScryfall();
             }}
             loading="lazy"
@@ -173,7 +182,7 @@ export function Card({
         {obj?.castCost && obj.zone !== "battlefield" && obj.zone !== "stack" && (
           <div
             className={`cost-badge ${obj.castCost.delta < 0 ? "cheaper" : obj.castCost.delta > 0 ? "dearer" : ""}`}
-            title={`Coût à payer : ${obj.castCost.text}`}
+            title={t("Cost to pay: {cost}", { cost: obj.castCost.text })}
           >
             <ManaCost cost={obj.castCost.text} size={15} />
           </div>
@@ -187,33 +196,32 @@ export function Card({
             )}
             {obj.damage > 0 && <div className="dmg-badge">−{obj.damage}</div>}
             {obj.chosen && (
-              <div className="chosen-badge" title="Choix fait en arrivant">
+              <div className="chosen-badge" title={t("Choice made as it entered")}>
                 {obj.chosen.creatureType ??
                   obj.chosen.mode ??
                   (obj.chosen.number !== undefined ? String(obj.chosen.number) : undefined) ??
-                  COLOR_NAME[obj.chosen.color ?? ""] ??
-                  ""}
+                  loc(COLOR_NAME[obj.chosen.color ?? ""] ?? "")}
               </div>
             )}
             {obj.types.includes("Planeswalker") && (
-              <div className="loyalty-badge" title="Loyauté">
+              <div className="loyalty-badge" title={t("Loyalty")}>
                 {obj.counters.loyalty ?? 0}
               </div>
             )}
             <CounterBadges counters={obj.counters} />
             {obj.zone === "battlefield" && <KeywordBadges obj={obj} />}
             {obj.prepared && (
-              <div className="prepared-badge" title="Préparée : son sort peut être lancé (au bout de votre main)">
-                Préparée
+              <div className="prepared-badge" title={t("Prepared: its spell can be cast (at the end of your hand)")}>
+                {t("Prepared")}
               </div>
             )}
             {obj.suspected && (
-              <div className="suspected-badge" title="Suspecte : elle a la menace et ne peut pas bloquer">
-                Suspecte
+              <div className="suspected-badge" title={t("Suspected: it has menace and can't block")}>
+                {t("Suspected")}
               </div>
             )}
             {obj.sick && obj.types.includes("Creature") && (
-              <div className="sick-badge" title="Mal d'invocation">
+              <div className="sick-badge" title={t("Summoning sickness")}>
                 z
               </div>
             )}
@@ -224,28 +232,35 @@ export function Card({
   );
 }
 
-const COLOR_NAME: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
+const COLOR_NAME: Record<string, string> = {
+  W: msg("White"),
+  U: msg("Blue"),
+  B: msg("Black"),
+  R: msg("Red"),
+  G: msg("Green"),
+};
 
-/** Pastilles de marqueurs : +N pour les +1/+1, -N pour les -1/-1, nom et nombre pour les autres. */
+/** Counter badges: +N for +1/+1, -N for -1/-1, name and number for the others. */
 function CounterBadges({ counters }: { counters: Record<string, number> }) {
+  const loc = useLocalize();
   const net = (counters["+1/+1"] ?? 0) - (counters["-1/-1"] ?? 0);
   const others = Object.entries(counters).filter(([k, n]) => n > 0 && k !== "+1/+1" && k !== "-1/-1" && k !== "loyalty");
   return (
     <div className="counter-badges">
       {net !== 0 && <span className={`counter-badge ${net < 0 ? "minus" : ""}`}>{net > 0 ? `+${net}` : net}</span>}
       {others.map(([k, n]) => (
-        <span key={k} className="counter-badge other" title={counterLabel(k)}>
-          {counterLabel(k)} {n}
+        <span key={k} className="counter-badge other" title={loc(counterLabel(k))}>
+          {loc(counterLabel(k))} {n}
         </span>
       ))}
     </div>
   );
 }
 
-/** Le deck de ce joueur utilise-t-il les illustrations personnelles (dos des cartes) ? */
+/** Does this player's deck use custom art (card backs)? */
 const customBackOf = (owner: string): boolean => !!useGame.getState().view?.players[owner]?.customArt;
 
-/** Dos d'une carte ; `custom` : le joueur à qui elle appartient utilise les illustrations personnelles. */
+/** The back of a card; `custom`: the player who owns it uses custom art. */
 export function CardBack({ width, custom }: { width: string; custom?: boolean }) {
   const back = useCustomBack();
   const image = custom && back ? { backgroundImage: `url("${back}")` } : {};

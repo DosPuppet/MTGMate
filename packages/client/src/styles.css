@@ -17,11 +17,11 @@
   --me: #62c48a;
   --opp: #e0795b;
 
-  /* Tailles bornées par la hauteur et la largeur de l'écran (tablette en portrait, téléphone en paysage). */
+  /* Sizes bounded by the height and width of the screen (tablet in portrait, phone in landscape). */
   --card-w: clamp(56px, min(12.5vh, 10vw), 150px);
   --land-w: calc(var(--card-w) * 0.72);
   --hand-w: clamp(72px, min(14.5vh, 12vw), 172px);
-  /* Part visible de la hauteur des cartes de la main (le reste dépasse sous l'écran, comme sur MTGA). */
+  /* Visible share of the height of the hand's cards (the rest sticks out below the screen, as on MTGA). */
   --hand-peek: 0.82;
   --stack-w: clamp(80px, 11vh, 140px);
   --spotlight-w: clamp(150px, 26vh, 260px);
@@ -47,7 +47,7 @@ body,
   overflow: clip;
   user-select: none;
   -webkit-user-select: none;
-  /* Tactile : ni zoom au double tap, ni rebond de la page, ni menu de l'appui long. */
+  /* Touch: no zoom on double tap, no page bounce, no long-press menu. */
   touch-action: manipulation;
   overscroll-behavior: none;
   -webkit-touch-callout: none;
@@ -60,7 +60,7 @@ button {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Boutons                                                                   */
+/* Buttons                                                                   */
 /* ------------------------------------------------------------------------ */
 
 .btn {
@@ -106,14 +106,14 @@ button {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Mise en page de la partie                                                 */
+/* Game layout                                                               */
 /* ------------------------------------------------------------------------ */
 
 .game {
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
   grid-template-rows: minmax(0, 1fr);
-  /* Hauteur réellement visible sur mobile (et non 100vh, qui compte la barre d'adresse repliée). */
+  /* Height actually visible on mobile (not 100vh, which counts the collapsed address bar). */
   height: 100dvh;
   overflow: clip;
 }
@@ -121,9 +121,9 @@ button {
 .board {
   position: relative;
   display: grid;
-  /* Barres adverses · champs adverses · bande centrale · votre champ · votre main : les deux champs ont la même hauteur. */
+  /* Opponent bars · opponent battlefields · center strip · your battlefield · your hand: both battlefields have the same height. */
   grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
-  /* Colonne bornée : le contenu du champ de bataille ne doit jamais élargir le plateau (layout.ts mesure cette largeur). */
+  /* Bounded column: the battlefield's content must never widen the board (layout.ts measures this width). */
   grid-template-columns: minmax(0, 1fr);
   background:
     radial-gradient(ellipse at 50% 50%, rgba(80, 110, 150, 0.18), transparent 65%),
@@ -132,8 +132,8 @@ button {
   min-width: 0;
   min-height: 0;
 }
-/* Textures du plateau (boardThemes.ts) : dégradés et bruit SVG, sans image à télécharger. Les pastilles de la barre
-   latérale (`.swatch[data-board]`) reprennent la texture. */
+/* Board textures (boardThemes.ts): gradients and SVG noise, with no image to download. The sidebar swatches
+   (`.swatch[data-board]`) show the texture. */
 :root {
   --noise-fine: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --noise-coarse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.25' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -236,7 +236,7 @@ button {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  /* Une zone adverse ne déborde jamais sur la bande centrale ni sur ses voisines. */
+  /* An opponent zone never overflows onto the center strip or its neighbors. */
   overflow: clip;
 }
 .opp-zone + .opp-zone {
@@ -268,7 +268,7 @@ button {
   flex: none;
 }
 
-/* Joueurs */
+/* Players */
 .player-bar {
   display: flex;
   align-items: center;
@@ -291,7 +291,7 @@ button {
     box-shadow 0.2s,
     border-color 0.2s;
 }
-/* Joueur dont c'est le tour : anneau tournant, halo pulsé et étiquette « Votre tour » / « Son tour ». */
+/* Player whose turn it is: rotating ring, pulsing halo and "Your turn" / "Their turn" label. */
 .player-bar.me {
   --turn: var(--me);
   --turn-glow: rgba(98, 196, 138, 0.55);
@@ -417,7 +417,7 @@ button {
   border-radius: 20px;
   border: 1px solid var(--line);
 }
-/* Mana réservé à certains sorts (« ne dépensez ce mana que pour… ») : en retrait, souligné en pointillé. */
+/* Mana restricted to certain spells ("spend this mana only to…"): set back, with a dotted underline. */
 .mana-restricted {
   margin-left: 6px;
   padding-bottom: 2px;
@@ -432,9 +432,9 @@ button {
   margin-left: calc(var(--back-w) * -0.45);
 }
 
-/* Champ de bataille (disposition calculée dans board/layout.ts) :
-   rangée de devant = créatures ; rangée arrière = terrains, puis artefacts et enchantements ;
-   zone des planeswalkers tout à droite. */
+/* Battlefield (layout computed in board/layout.ts):
+   front row = creatures; back row = lands, then artifacts and enchantments;
+   planeswalker zone on the far right. */
 .battlefield {
   position: relative;
   display: flex;
@@ -445,8 +445,8 @@ button {
   overflow-x: hidden;
   overflow-y: auto;
 }
-/* Bénédiction de la cité (ascension) : icône dans le coin du champ de bataille, en bas pour vous, en haut pour un
-   adversaire ; l'infobulle s'ouvre vers l'intérieur de la zone. */
+/* City's blessing (ascend): icon in the corner of the battlefield, at the bottom for you, at the top for an
+   opponent; the tooltip opens toward the inside of the zone. */
 .citys-blessing {
   position: absolute;
   left: 4px;
@@ -511,7 +511,7 @@ button {
 .citys-blessing:focus .citys-blessing-tip {
   display: flex;
 }
-/* Rangées (créatures, terrains et artefacts), à gauche de la zone des planeswalkers. */
+/* Rows (creatures, lands and artifacts), left of the planeswalker zone. */
 .bf-rows {
   flex: 1;
   min-width: 0;
@@ -520,7 +520,7 @@ button {
   justify-content: center;
   gap: 6px;
 }
-/* Zone des planeswalkers (et batailles) : colonne à part, tout à droite (SEPARATOR = marge + retrait). */
+/* Planeswalker (and battle) zone: a column of its own, on the far right (SEPARATOR = margin + indent). */
 .walker-zone {
   flex: none;
   display: flex;
@@ -535,7 +535,7 @@ button {
   z-index: var(--walker-z, 1);
   transition: margin-top 0.2s ease;
 }
-/* Planeswalker survolé : au premier plan, même s'il est recouvert. */
+/* Hovered planeswalker: in front, even if it is overlapped. */
 .walker:hover {
   z-index: 50;
 }
@@ -552,7 +552,7 @@ button {
   min-height: calc(var(--land-w) * 1.395);
   justify-content: center;
 }
-/* Pas de retour à la ligne automatique : les lignes sont découpées par splitLines (layout.ts). */
+/* No automatic wrapping: the lines are split by splitLines (layout.ts). */
 .perm-line {
   display: flex;
   gap: 10px; /* GAP */
@@ -560,7 +560,7 @@ button {
   align-items: center;
   flex-wrap: nowrap;
 }
-/* Séparation entre les terrains et les artefacts ou enchantements (SEPARATOR). */
+/* Separation between the lands and the artifacts or enchantments (SEPARATOR). */
 .perm-line .slot.block-start {
   margin-left: 18px;
 }
@@ -574,7 +574,7 @@ button {
 .perm {
   transition: transform 0.25s ease;
 }
-/* Pile de jetons identiques : cartes décalées derrière (TOKEN_OFFSET) et nombre. */
+/* Pile of identical tokens: cards offset behind (TOKEN_OFFSET) and number. */
 .token-stack {
   position: relative;
   padding-left: calc(var(--slot-w, var(--card-w)) * 0.08 * var(--shadows));
@@ -609,7 +609,7 @@ button {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
   pointer-events: none;
 }
-/* Auras et Équipements : empilés derrière leur hôte, leur haut dépasse (ATTACH_PEEK dans layout.ts). */
+/* Auras and Equipment: stacked behind their host, their top sticks out (ATTACH_PEEK in layout.ts). */
 .perm.has-attach {
   position: relative;
   padding-top: calc(var(--card-w) * 1.395 * 0.2 * var(--attach-n));
@@ -633,7 +633,7 @@ button {
 .attachment .card-slot {
   position: relative;
 }
-/* Cartes exilées par un permanent (Sheltered by Ghosts…) : derrière lui, teintées ; le survol montre la carte. */
+/* Cards exiled by a permanent (Sheltered by Ghosts…): behind it, tinted; hovering shows the card. */
 .attachment.exiled-under .card-slot {
   filter: grayscale(0.5) brightness(0.75) sepia(0.3) hue-rotate(200deg);
 }
@@ -672,7 +672,7 @@ button {
   transform: translateY(16px);
 }
 
-/* Bande centrale */
+/* Center strip */
 .center-strip {
   position: relative;
   display: grid;
@@ -763,7 +763,7 @@ button {
   border-color: rgba(240, 184, 74, 0.5);
 }
 
-/* Pile */
+/* Stack */
 .stack {
   display: flex;
   align-items: center;
@@ -805,11 +805,11 @@ button {
   margin: 2px 0;
 }
 
-/* Main */
+/* Hand */
 .hand {
   flex: 1;
   display: flex;
-  /* Le pas entre les cartes est calculé (fitHand) : la main tient toujours dans sa largeur. */
+  /* The step between the cards is computed (fitHand): the hand always fits in its width. */
   justify-content: center;
   align-items: flex-start;
   height: 100%;
@@ -828,7 +828,7 @@ button {
 }
 
 /* Actions */
-/* Vitesse (702.179) : jauge de 4 crans, dorée à la vitesse maximale. */
+/* Speed (702.179): a 4-notch gauge, golden at max speed. */
 .speed-gauge {
   display: inline-flex;
   align-items: center;
@@ -907,7 +907,7 @@ button {
   text-align: center;
 }
 
-/* Aperçu des blessures du combat en préparation. */
+/* Damage preview of the combat being prepared. */
 .combat-preview {
   max-width: 220px;
   padding: 4px 8px;
@@ -954,7 +954,7 @@ button {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Cartes                                                                    */
+/* Cards                                                                     */
 /* ------------------------------------------------------------------------ */
 
 .card-slot {
@@ -1082,7 +1082,7 @@ button {
   border: 1px solid rgba(255, 210, 120, 0.6);
   color: #ffe6b0;
 }
-/* Commander (PLAN-E) : commandant et blessures de commandant reçues, sur une ligne à part qui passe à la ligne. */
+/* Commander (PLAN-E): commander and commander damage received, on a line of its own that wraps. */
 .commander-row {
   display: flex;
   flex-wrap: wrap;
@@ -1139,7 +1139,7 @@ button {
   color: #e3d8ff;
   cursor: help;
 }
-/* Emblème dont une capacité peut être activée (Karn, Living Legacy) : un bouton qui luit. */
+/* Emblem with an ability that can be activated (Karn, Living Legacy): a glowing button. */
 button.emblem-chip.activatable {
   font: inherit;
   font-size: 11px;
@@ -1161,7 +1161,7 @@ button.emblem-chip.activatable {
   border: 1px solid rgba(255, 255, 255, 0.45);
   clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
 }
-/* Coût de mana modifié (réduction, taxe, flashback…) : pastille sur le coût imprimé, verte si moins cher, rouge si plus cher. */
+/* Modified mana cost (reduction, tax, flashback…): badge over the printed cost, green if cheaper, red if more expensive. */
 .cost-badge {
   position: absolute;
   top: 2.5%;
@@ -1181,7 +1181,7 @@ button.emblem-chip.activatable {
 .cost-badge.dearer {
   border-color: #ff7a6b;
 }
-/* Cartes jouables depuis une autre zone que la main : liseré pointillé (couleur selon la zone) et étiquette. */
+/* Cards playable from a zone other than the hand: dotted border (color by zone) and tag. */
 .hand-card.from-elsewhere .card {
   outline: 2px dashed var(--zone-color);
   filter: saturate(0.85);
@@ -1265,14 +1265,14 @@ button.emblem-chip.activatable {
 .card-back {
   border-radius: 3px;
   background: radial-gradient(ellipse at 50% 50%, #a3743f 0 30%, transparent 32%), linear-gradient(135deg, #3b2616, #1e130b);
-  /* Dos personnel (illustrations personnelles, `CardBack`) : image en ligne. */
+  /* Custom back (custom art, `CardBack`): inline image. */
   background-size: cover;
   background-position: center;
   border: 1px solid #0b0704;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-/* Halos */
+/* Glows */
 .glow-playable {
   box-shadow:
     0 0 0 2px var(--playable),
@@ -1299,7 +1299,7 @@ button.emblem-chip.activatable {
     0 0 0 3px var(--picked),
     0 0 16px 4px rgba(94, 214, 132, 0.7);
 }
-/* Coche au milieu de l'illustration : la sélection se distingue d'un coup d'œil des options restantes. */
+/* Check mark in the middle of the art: the selection stands out at a glance from the remaining options. */
 .card.glow-picked::after {
   content: "✓";
   position: absolute;
@@ -1336,8 +1336,8 @@ button.emblem-chip.activatable {
 .glow-activatable {
   box-shadow: 0 0 0 2px rgba(140, 240, 160, 0.8);
 }
-/* Accessibilité : une forme en plus de la couleur (PLAN-C, C18). Attaque et blocage : pastille d'épée ou de bouclier ;
-   sélectionnable et sélectionnée : contour pointillé ou plein ; cible : pulsation ; choisie : coche. */
+/* Accessibility: a shape in addition to the color (PLAN-C, C18). Attack and block: sword or shield badge;
+   selectable and selected: dotted or solid outline; target: pulse; picked: check mark. */
 .card.glow-attacking::before,
 .card.glow-blocking::before {
   position: absolute;
@@ -1374,7 +1374,7 @@ button.emblem-chip.activatable {
 .avatar.glow-target {
   border-color: var(--target);
 }
-/* Joueur ciblable pendant son tour : le ciblage reste prioritaire. */
+/* Targetable player during their turn: targeting takes precedence. */
 .avatar.active.glow-target {
   animation: pulse 1s ease-in-out infinite;
 }
@@ -1392,7 +1392,7 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Symboles de mana */
+/* Mana symbols */
 .mana-cost {
   display: inline-flex;
   gap: 2px;
@@ -1430,7 +1430,7 @@ button.emblem-chip.activatable {
   background: #d0cac4;
 }
 
-/* Symboles hybrides : disque coupé en diagonale */
+/* Hybrid symbols: a disc split diagonally */
 .mana-W-U {
   background: linear-gradient(135deg, #f8f3d6 50%, #a9d0ef 50%);
 }
@@ -1492,7 +1492,7 @@ button.emblem-chip.activatable {
   background: linear-gradient(135deg, #99cc9a 50%, #f09a7c 50%);
 }
 
-/* Flèches */
+/* Arrows */
 .arrows {
   position: absolute;
   inset: 0;
@@ -1531,7 +1531,7 @@ button.emblem-chip.activatable {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Barre latérale                                                            */
+/* Sidebar                                                                   */
 /* ------------------------------------------------------------------------ */
 
 .sidebar {
@@ -1565,7 +1565,7 @@ button.emblem-chip.activatable {
 .seg button.on {
   background: rgba(240, 184, 74, 0.25);
 }
-/* Onglets de zones (un cimetière par joueur, l'exil) dans les fenêtres de choix de cartes. */
+/* Zone tabs (one graveyard per player, exile) in the card choice dialogs. */
 .zone-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1594,7 +1594,7 @@ button.emblem-chip.activatable {
 .preview {
   padding: 10px;
   border-bottom: 1px solid var(--line);
-  /* Texte long (planeswalkers, cartes à faces multiples) sur un écran bas : l'aperçu défile, le journal garde sa place. */
+  /* Long text (planeswalkers, multi-faced cards) on a short screen: the preview scrolls, the log keeps its place. */
   flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -1730,7 +1730,7 @@ button.emblem-chip.activatable {
   color: #ff8d80;
   font-weight: 700;
 }
-/* Nom de carte du journal : survolable (aperçu dans la barre latérale). */
+/* Card name in the log: hoverable (preview in the sidebar). */
 .log-card {
   all: unset;
   cursor: help;
@@ -1748,12 +1748,12 @@ button.emblem-chip.activatable {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Fenêtres                                                                  */
+/* Dialogs                                                                   */
 /* ------------------------------------------------------------------------ */
 
 .modal-backdrop {
   position: fixed;
-  /* Le plateau seulement : la barre latérale (aperçu des cartes, journal) reste nette et lisible. */
+  /* The board only: the sidebar (card preview, log) stays sharp and readable. */
   inset: 0 var(--sidebar-w) 0 0;
   background: rgba(3, 5, 8, 0.6);
   backdrop-filter: blur(3px);
@@ -1907,7 +1907,7 @@ button.emblem-chip.activatable {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Accueil                                                                   */
+/* Home screen                                                               */
 /* ------------------------------------------------------------------------ */
 
 .lobby {
@@ -1939,7 +1939,7 @@ button.emblem-chip.activatable {
   color: var(--dim);
 }
 
-/* Réglage du son */
+/* Sound setting */
 .sound-control {
   display: inline-flex;
   align-items: center;
@@ -1997,7 +1997,7 @@ button.emblem-chip.activatable {
   color: var(--dim);
   margin-bottom: 8px;
 }
-/* Accueil : une catégorie de decks à la fois. */
+/* Home screen: one deck category at a time. */
 .deck-categories {
   display: inline-flex;
   flex-wrap: wrap;
@@ -2051,7 +2051,7 @@ button.emblem-chip.activatable {
   background-size: cover;
   background-position: center 30%;
 }
-/* Bracket estimé d'un deck Commander, sur l'illustration. */
+/* Estimated bracket of a Commander deck, over the art. */
 .deck-bracket {
   position: absolute;
   top: 8px;
@@ -2095,7 +2095,7 @@ button.emblem-chip.activatable {
   padding: 4px 14px;
   font-size: 14px;
 }
-/* Accueil, multijoueur : une IA à la fois, avec le nom de son deck. */
+/* Home screen, multiplayer: one AI at a time, with the name of its deck. */
 .ai-decks {
   align-self: center;
   flex-wrap: wrap;
@@ -2115,7 +2115,7 @@ button.emblem-chip.activatable {
   justify-content: center;
   flex-wrap: wrap;
 }
-/* Jeu en ligne */
+/* Online play */
 .lobby.online h1 {
   font-size: 40px;
 }
@@ -2173,7 +2173,7 @@ button.emblem-chip.activatable {
     opacity: 0.2;
   }
 }
-/* Corde : fin du temps de la décision en cours (bas de la bande centrale). */
+/* Rope: end of the time for the current decision (bottom of the center strip). */
 .rope {
   position: absolute;
   left: 0;
@@ -2274,14 +2274,14 @@ button.emblem-chip.activatable {
   max-width: 700px;
 }
 
-/* Tablette en paysage, petit portable : barre latérale plus étroite. */
+/* Tablet in landscape, small laptop: narrower sidebar. */
 @media (max-width: 1400px) {
   :root {
     --sidebar-w: 290px;
   }
 }
 
-/* Écran étroit (tablette en portrait, téléphone) : la barre latérale devient un tiroir (bouton ☰). */
+/* Narrow screen (tablet in portrait, phone): the sidebar becomes a drawer (☰ button). */
 .drawer-toggle,
 .drawer-close,
 .drawer-scrim {
@@ -2349,8 +2349,8 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Petite hauteur (téléphone en paysage) : barres, bande centrale et main compactes ; la main dépasse davantage
-   sous l'écran (un tap la lève). */
+/* Small height (phone in landscape): compact bars, center strip and hand; the hand sticks out further below the
+   screen (a tap lifts it). */
 @media (max-height: 560px) {
   :root {
     --hand-w: clamp(64px, 21vh, 120px);
@@ -2421,7 +2421,7 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Écran tactile : cibles assez grandes pour le doigt. */
+/* Touch screen: targets large enough for a finger. */
 @media (hover: none), (pointer: coarse) {
   .btn.small {
     min-height: 36px;
@@ -2436,8 +2436,8 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Aperçu d'une carte au doigt (appui long), en surimpression. */
-/* Choix du mode d'un sort modal : la carte à côté de ses modes. */
+/* Preview of a card by finger (long press), overlaid. */
+/* Choice of the mode of a modal spell: the card next to its modes. */
 .mode-pick {
   --mode-card-w: clamp(120px, 20vh, 180px);
   display: flex;
@@ -2447,7 +2447,7 @@ button.emblem-chip.activatable {
 .mode-pick .choice-list {
   flex: 1;
 }
-/* Question oui / non : la carte qui la pose. */
+/* Yes / no question: the card that asks it. */
 .yes-no-source {
   --board-choice-w: clamp(110px, 17vh, 170px);
   display: flex;
@@ -2458,7 +2458,7 @@ button.emblem-chip.activatable {
 .yes-no-source .board-choice-effect {
   max-width: 280px;
 }
-/* Aperçu à la souris sur écran étroit (barre latérale en tiroir) : suit le pointeur. */
+/* Mouse preview on a narrow screen (sidebar as a drawer): follows the pointer. */
 .hover-preview {
   position: fixed;
   z-index: 150;
@@ -2507,7 +2507,7 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Téléphone en portrait : la partie se joue en paysage (comme MTG Arena sur mobile). */
+/* Phone in portrait: the game is played in landscape (as MTG Arena on mobile). */
 .rotate-hint {
   display: none;
 }
@@ -2534,7 +2534,7 @@ button.emblem-chip.activatable {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Effets visuels                                                            */
+/* Visual effects                                                            */
 /* ------------------------------------------------------------------------ */
 
 .fx-layer {
@@ -2624,7 +2624,7 @@ button.emblem-chip.activatable {
 .spotlight .card {
   outline: 3px solid rgba(224, 121, 91, 0.8);
 }
-/* Résolution d'un sort ou d'une capacité : montrée avant que son effet s'applique (PLAYBACK, store.ts). */
+/* Resolution of a spell or ability: shown before its effect applies (PLAYBACK, store.ts). */
 .resolution {
   position: absolute;
   right: 1.5%;
@@ -2973,8 +2973,8 @@ button.emblem-chip.activatable {
 .deck-line-btns .btn {
   padding: 0 8px;
 }
-/* Choix de l'illustration (impression d'une réédition) : code de l'ensemble. */
-/* Menu « Illustration » : fermé, il ne montre que le début du libellé (code de l'ensemble et numéro). */
+/* Choice of the art (printing of a reprint): set code. */
+/* "Art" menu: closed, it shows only the start of the label (set code and number). */
 .deck-line-art {
   width: 8.5em;
   flex: none;
@@ -3098,7 +3098,7 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Pastilles des capacités actives (vol, portée, garde…), façon MTGA ; détail au survol (.kw-tip). */
+/* Badges of the active abilities (flying, reach, ward…), MTGA style; details on hover (.kw-tip). */
 .kw-badges {
   position: absolute;
   left: 3%;
@@ -3155,7 +3155,7 @@ button.emblem-chip.activatable {
   color: #f3e3b0;
 }
 
-/* Sort ou capacité adverse montré au joueur sans réponse possible (board/StackReveal.tsx). */
+/* Opponent's spell or ability shown to the player with no possible response (board/StackReveal.tsx). */
 .stack-reveal {
   position: absolute;
   right: 1.5%;
@@ -3210,7 +3210,7 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Choix parmi des permanents, fait sur le plateau (prompts/ChoicePrompt.tsx) : panneau non bloquant à gauche. */
+/* Choice among permanents, made on the board (prompts/ChoicePrompt.tsx): non-blocking panel on the left. */
 .board-choice {
   --board-choice-w: clamp(110px, 17vh, 170px);
   position: absolute;
@@ -3253,7 +3253,7 @@ button.emblem-chip.activatable {
   gap: 8px;
 }
 
-/* Effet joué (mode choisi, capacité) encadré en bleu sous la carte montrée. */
+/* Effect played (chosen mode, ability) framed in blue under the card shown. */
 .effect-frame {
   max-width: var(--spotlight-w);
   padding: 6px 10px;
@@ -3294,23 +3294,23 @@ button.emblem-chip.activatable {
   -webkit-box-orient: vertical;
 }
 
-/* « Pas d'attaque », sous le grand bouton pendant la déclaration des attaquants. */
+/* "No attack", under the big button during the declaration of attackers. */
 .btn.no-attack {
   border-color: rgba(255, 255, 255, 0.25);
   opacity: 0.9;
 }
 
-/* Confirmation de la règle des légendaires (prompts/Prompts.tsx). */
+/* Confirmation of the legend rule (prompts/Prompts.tsx). */
 .legend-warning {
   max-width: 420px;
   line-height: 1.45;
 }
 
 /* ------------------------------------------------------------------------ */
-/* Tutoriel : guide (bulle et anneau) et menu des leçons                     */
+/* Tutorial: guide (bubble and ring) and lesson menu                         */
 /* ------------------------------------------------------------------------ */
 
-/* Anneau autour de l'élément désigné : ne capte pas les clics (l'élément reste jouable dessous). */
+/* Ring around the pointed-out element: does not capture clicks (the element stays playable underneath). */
 .coach-ring {
   position: fixed;
   z-index: 140;
@@ -3325,7 +3325,7 @@ button.emblem-chip.activatable {
     width 0.2s,
     height 0.2s;
 }
-/* Explication : le reste de l'écran s'assombrit. */
+/* Explanation: the rest of the screen darkens. */
 .coach-ring.dim {
   box-shadow:
     0 0 18px rgba(240, 184, 74, 0.7),
@@ -3418,7 +3418,7 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Accueil : bouton du tutoriel mis en avant pour un nouveau joueur. */
+/* Home screen: tutorial button highlighted for a new player. */
 .btn.learn {
   border-color: var(--me);
   box-shadow: 0 0 14px rgba(98, 196, 138, 0.45);
@@ -3505,7 +3505,7 @@ button.emblem-chip.activatable {
   align-self: center;
 }
 
-/* Accueil : niveau de l'IA. */
+/* Home screen: AI level. */
 .ai-level {
   display: flex;
   flex-direction: column;
@@ -3519,7 +3519,7 @@ button.emblem-chip.activatable {
   max-width: 560px;
 }
 
-/* Replay : barre de lecture en haut du plateau. */
+/* Replay: playback bar at the top of the board. */
 .replay-bar {
   position: fixed;
   top: 8px;
@@ -3569,7 +3569,7 @@ button.emblem-chip.activatable {
   font-size: 0.85em;
 }
 
-/* Match BO3 : score et réserve entre les manches. */
+/* BO3 match: score and sideboard between games. */
 .modal.gameover.wide {
   width: min(760px, calc(100vw - 32px));
 }
@@ -3624,7 +3624,7 @@ button.emblem-chip.activatable {
   }
 }
 
-/* Abandon confirmé en deux temps (barre latérale). */
+/* Concession confirmed in two steps (sidebar). */
 .concede-confirm {
   display: inline-flex;
   align-items: center;
@@ -3637,7 +3637,7 @@ button.emblem-chip.activatable {
   border-color: #a33;
 }
 
-/* Accessibilité : focus clavier visible sur les cartes jouables, et mouvements réduits sur demande du système. */
+/* Accessibility: visible keyboard focus on playable cards, and reduced motion when the system asks for it. */
 .card-slot:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 3px;
@@ -3647,18 +3647,18 @@ button.emblem-chip.activatable {
   *,
   *::before,
   *::after {
-    /* biome-ignore lint/complexity/noImportantStyles: les mouvements réduits l'emportent sur toute animation. */
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion overrides any animation. */
     animation-duration: 0.01ms !important;
-    /* biome-ignore lint/complexity/noImportantStyles: idem. */
+    /* biome-ignore lint/complexity/noImportantStyles: same. */
     animation-iteration-count: 1 !important;
-    /* biome-ignore lint/complexity/noImportantStyles: idem. */
+    /* biome-ignore lint/complexity/noImportantStyles: same. */
     transition-duration: 0.01ms !important;
-    /* biome-ignore lint/complexity/noImportantStyles: idem. */
+    /* biome-ignore lint/complexity/noImportantStyles: same. */
     scroll-behavior: auto !important;
   }
 }
 
-/* Objets payés en coût (CostPickPicker) : compteur des marqueurs retirés d'un même permanent. */
+/* Objects paid as a cost (CostPickPicker): count of the counters removed from the same permanent. */
 .pick-slot {
   position: relative;
 }
@@ -3674,7 +3674,7 @@ button.emblem-chip.activatable {
   font-size: 0.85rem;
 }
 
-/* Question « en arrivant, choisissez… » d'un terrain joué (LandChoice) : liste longue filtrable. */
+/* "As it enters, choose…" question of a played land (LandChoice): long filterable list. */
 .choice-list.scroll {
   max-height: 50dvh;
   overflow-y: auto;
@@ -3692,7 +3692,7 @@ button.emblem-chip.activatable {
   border-color: var(--accent, #d4a64a);
 }
 
-/* Question « nom » (NameSearch) : noms publics proposés, puis recherche dans tout le catalogue. */
+/* "Name" question (NameSearch): public names offered, then search in the whole catalog. */
 .name-search {
   display: flex;
   flex-direction: column;
@@ -3747,7 +3747,7 @@ button.emblem-chip.activatable {
   margin: 0;
 }
 
-/* Multijoueur : le joueur éliminé regarde la fin de la partie (PLAN-E). */
+/* Multiplayer: the eliminated player watches the end of the game (PLAN-E). */
 .eliminated-banner {
   position: fixed;
   top: 12px;
@@ -3763,7 +3763,7 @@ button.emblem-chip.activatable {
   border: 1px solid rgba(255, 120, 100, 0.6);
   color: #ffe0da;
 }
-/* Barres étroites des adversaires (multijoueur) : la puce du commandant ne déborde pas sur la main. */
+/* Narrow opponent bars (multiplayer): the commander chip does not overflow onto the hand. */
 .player-bar.opp .commander-chip,
 .player-bar.opp .commander-damage {
   max-width: 150px;
@@ -3771,7 +3771,7 @@ button.emblem-chip.activatable {
   text-overflow: ellipsis;
 }
 
-/* Marqueurs de radiation (Fallout) : même pastille que le poison, en jaune-vert. */
+/* Rad counters (Fallout): same chip as poison, in yellow-green. */
 .rad-chip {
   color: #e6f58a;
   background: rgba(150, 180, 30, 0.22);

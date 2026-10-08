@@ -1,102 +1,113 @@
-/** Libellés français et mise en forme du journal. */
+/** Interface labels (English `msg` texts, translated at display with `textIn`) and the formatting of the game log. */
 
 import { tokenImage } from "@mtgx/cards";
-import { type CardFace, type GameEvent, type GameView, HIDDEN_CARD_ID, type Keyword, type Step } from "@mtgx/engine";
+import {
+  type CardFace,
+  cardRef,
+  type GameEvent,
+  type GameView,
+  HIDDEN_CARD_ID,
+  type Keyword,
+  msg,
+  type Step,
+} from "@mtgx/engine";
 import { customImage, imageUrl } from "./images";
-import { type Lang, localize } from "./translate";
+import { type Lang, localize, textIn, tr } from "./translate";
 
 export type { Lang } from "./translate";
 
+/** Step names (`msg` texts: displayed through `textIn`). */
 export const STEP_LABEL: Record<Step, string> = {
-  untap: "Dégagement",
-  upkeep: "Entretien",
-  draw: "Pioche",
-  main1: "Phase principale 1",
-  beginCombat: "Début du combat",
-  declareAttackers: "Déclaration des attaquants",
-  declareBlockers: "Déclaration des bloqueurs",
-  firstStrikeDamage: "Blessures d'initiative",
-  combatDamage: "Blessures de combat",
-  endCombat: "Fin du combat",
-  main2: "Phase principale 2",
-  end: "Étape de fin",
-  cleanup: "Nettoyage",
+  untap: msg("Untap step"),
+  upkeep: msg("Upkeep step"),
+  draw: msg("Draw step"),
+  main1: msg("Main phase 1"),
+  beginCombat: msg("Beginning of combat step"),
+  declareAttackers: msg("Declare attackers step"),
+  declareBlockers: msg("Declare blockers step"),
+  firstStrikeDamage: msg("First-strike damage step"),
+  combatDamage: msg("Combat damage step"),
+  endCombat: msg("End of combat step"),
+  main2: msg("Main phase 2"),
+  end: msg("End step"),
+  cleanup: msg("Cleanup step"),
 };
 
-/** Étapes affichées dans la barre des phases (libellé court). */
+/** Steps shown in the phase bar (short label, a `msg` text displayed through `textIn`). */
 export const PHASE_BAR: { step: Step; short: string }[] = [
-  { step: "upkeep", short: "Entretien" },
-  { step: "draw", short: "Pioche" },
-  { step: "main1", short: "Princ. 1" },
-  { step: "beginCombat", short: "Combat" },
-  { step: "declareAttackers", short: "Attaque" },
-  { step: "declareBlockers", short: "Blocage" },
-  { step: "combatDamage", short: "Dégâts" },
-  { step: "endCombat", short: "Fin comb." },
-  { step: "main2", short: "Princ. 2" },
-  { step: "end", short: "Fin" },
+  { step: "upkeep", short: msg("ctx:phase|Upkeep") },
+  { step: "draw", short: msg("ctx:phase|Draw") },
+  { step: "main1", short: msg("ctx:phase|Main 1") },
+  { step: "beginCombat", short: msg("ctx:phase|Combat") },
+  { step: "declareAttackers", short: msg("ctx:phase|Attack") },
+  { step: "declareBlockers", short: msg("ctx:phase|Block") },
+  { step: "combatDamage", short: msg("ctx:phase|Damage") },
+  { step: "endCombat", short: msg("ctx:phase|End combat") },
+  { step: "main2", short: msg("ctx:phase|Main 2") },
+  { step: "end", short: msg("ctx:phase|End") },
 ];
 
-/** Raison d'une défaite, ajoutée au journal (« Bob perd (10 marqueurs poison). »). */
-/** Plafonds de sécurité du moteur (`engine/src/limits.ts`). */
+/** The engine's safety caps (`engine/src/limits.ts`), named in the log. */
 const CAPS: Record<"tokens" | "amount" | "permutations" | "layers", string> = {
-  tokens: "jetons",
-  amount: "montant",
-  permutations: "ordre des remplacements",
-  layers: "dépendances de couches",
+  tokens: msg("tokens"),
+  amount: msg("amount"),
+  permutations: msg("replacement order"),
+  layers: msg("layer dependencies"),
 };
 
-const LOSS_REASON: Record<"life" | "draw" | "poison" | "concede" | "commander", string> = {
-  life: "",
-  draw: " (bibliothèque vide)",
-  poison: " (10 marqueurs poison)",
-  concede: " (abandon)",
-  commander: " (21 blessures d'un même commandant)",
+/** Reason for a loss, added to the log ("Bob loses (10 poison counters)."); none for a loss of life. */
+const LOSS_REASON: Record<"life" | "draw" | "poison" | "concede" | "commander", string | null> = {
+  life: null,
+  draw: msg("empty library"),
+  poison: msg("10 poison counters"),
+  concede: msg("concession"),
+  commander: msg("21 damage from a single commander"),
 };
 
+/** Keyword names (`msg` texts: displayed through `textIn`). */
 export const KEYWORD_LABEL: Record<Keyword, string> = {
-  flying: "Vol",
-  reach: "Portée",
-  firstStrike: "Initiative",
-  doubleStrike: "Double initiative",
-  deathtouch: "Contact mortel",
-  lifelink: "Lien de vie",
-  trample: "Piétinement",
-  vigilance: "Vigilance",
-  haste: "Célérité",
-  menace: "Menace",
-  defender: "Défenseur",
-  flash: "Flash",
-  hexproof: "Défense talismanique",
-  shroud: "Défense totale",
-  infect: "Infection",
-  toxic: "Toxique",
-  indestructible: "Indestructible",
-  prowess: "Prouesse",
-  ward: "Garde",
-  changeling: "Changelin",
-  wither: "Flétrissure",
-  mustBeBlocked: "Doit être bloquée",
-  damageHealsFirst: "Chaque blessure guérit les précédentes",
-  cantBlock: "Ne peut pas bloquer",
-  startYourEngines: "Start your engines!",
-  decayed: "Décomposition",
-  ascend: "Ascension",
-  cantBeSacrificed: "Ne peut pas être sacrifié",
-  cantBeSuspected: "Ne peut pas devenir suspecte",
-  cantAttack: "Ne peut pas attaquer",
-  unblockable: "Ne peut pas être bloquée",
-  mustAttack: "Attaque à chaque combat",
-  noActivatedAbilities: "Capacités activées bloquées",
-  keepsDamage: "Blessures conservées",
-  absorbsDamage: "Encaisse les blessures",
-  convoke: "Convocation",
-  improvise: "Improvisation",
-  delve: "Cave",
-  splitSecond: "Second partagé",
-  rebound: "Rebond",
-  riot: "Émeute",
-  attacksDespiteDefender: "Attaque malgré le défenseur",
+  flying: msg("Flying"),
+  reach: msg("Reach"),
+  firstStrike: msg("First strike"),
+  doubleStrike: msg("Double strike"),
+  deathtouch: msg("Deathtouch"),
+  lifelink: msg("Lifelink"),
+  trample: msg("Trample"),
+  vigilance: msg("Vigilance"),
+  haste: msg("Haste"),
+  menace: msg("Menace"),
+  defender: msg("Defender"),
+  flash: msg("Flash"),
+  hexproof: msg("Hexproof"),
+  shroud: msg("Shroud"),
+  infect: msg("Infect"),
+  toxic: msg("Toxic"),
+  indestructible: msg("Indestructible"),
+  prowess: msg("Prowess"),
+  ward: msg("Ward"),
+  changeling: msg("Changeling"),
+  wither: msg("Wither"),
+  mustBeBlocked: msg("Must be blocked"),
+  damageHealsFirst: msg("Each damage heals the previous damage"),
+  cantBlock: msg("Can't block"),
+  startYourEngines: msg("Start your engines!"),
+  decayed: msg("Decayed"),
+  ascend: msg("Ascend"),
+  cantBeSacrificed: msg("Can't be sacrificed"),
+  cantBeSuspected: msg("Can't become suspected"),
+  cantAttack: msg("Can't attack"),
+  unblockable: msg("Can't be blocked"),
+  mustAttack: msg("Attacks each combat"),
+  noActivatedAbilities: msg("Activated abilities can't be activated"),
+  keepsDamage: msg("Damage isn't removed"),
+  absorbsDamage: msg("Absorbs damage"),
+  convoke: msg("Convoke"),
+  improvise: msg("Improvise"),
+  delve: msg("Delve"),
+  splitSecond: msg("Split second"),
+  rebound: msg("Rebound"),
+  riot: msg("Riot"),
+  attacksDespiteDefender: msg("Attacks despite defender"),
 };
 
 /**
@@ -104,13 +115,18 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
  * in that language.
  */
 export function localizeText(text: string, faces: Record<string, CardFace>, lang: Lang): string {
-  return localize(text, lang, (id) => (faces[id] ? faceName(faces[id], lang) : lang === "fr" ? "cette carte" : "this card"));
+  return localize(text, lang, (id) => (faces[id] ? faceName(faces[id], lang) : tr(lang, "this card")));
 }
+
+/** A value inserted as is in a text (a name already in the right language): never looked up in the catalogs. */
+export const literal = (value: string) => cardRef(value);
+/** Renders a `msg` text whose values are `literal`. */
+const render = (text: string, lang: Lang) => localize(text, lang, (value) => value);
 
 export function faceName(face: CardFace | undefined, lang: Lang): string {
   if (!face) return "?";
-  if (face.defId === "face-down") return lang === "fr" ? "Carte face cachée" : "Face-down card";
-  if (face.isToken) return `jeton ${face.name}`;
+  if (face.defId === "face-down") return tr(lang, "Face-down card");
+  if (face.isToken) return render(msg("{name} token", { name: literal(face.name) }), lang);
   return (lang === "fr" && face.fr?.name) || face.name;
 }
 
@@ -119,17 +135,19 @@ export function faceText(face: CardFace, lang: Lang): string {
 }
 
 export function faceType(face: CardFace, lang: Lang): string {
+  // A hidden card's type line is an engine text ("Face-down card").
+  if (face.defId === HIDDEN_CARD_ID) return textIn(lang, face.typeLine);
   return (lang === "fr" && face.fr?.typeLine) || face.typeLine;
 }
 
 /**
- * Image d'une face : l'illustration personnelle si la face la demande (impression personnelle, jeton d'un deck qui en
- * utilise) et qu'il y en a une ; sinon celle de Scryfall (relayée si Scryfall est bloqué, voir images.ts).
+ * Image of a face: the custom art if the face asks for it (custom printing, token of a deck that uses some) and there is
+ * one; otherwise Scryfall's (relayed if Scryfall is blocked, see images.ts).
  */
 export function faceImage(face: CardFace, lang: Lang): string | undefined {
   const custom = face.customArt && face.defId !== HIDDEN_CARD_ID ? customImage(face.name, face.isToken) : undefined;
   if (custom) return custom;
-  // Jeton : l'image d'un jeton Scryfall correspondant (data/tokens.json), sinon le cadre texte.
+  // Token: the image of a matching Scryfall token (data/tokens.json), otherwise the text frame.
   return imageUrl((lang === "fr" && face.fr?.image) || face.image || (face.isToken ? tokenImage(face) : undefined));
 }
 
@@ -137,32 +155,37 @@ export interface LogLine {
   id: number;
   text: string;
   kind: "turn" | "me" | "opp" | "info" | "win" | "lose";
-  /** Cartes nommées dans la ligne : leur nom y est survolable (aperçu). */
+  /** Cards named in the line: their name can be hovered there (preview). */
   cards?: CardFace[];
 }
 
 let nextLine = 1;
 
-/** Transforme les événements du moteur en lignes de journal lisibles. */
+/**
+ * Turns the engine's events into readable log lines, in `lang`. Each sentence is one `msg` template (the French catalog
+ * gives today's French sentences); the viewer's own actions have their own templates (French conjugation, "you").
+ */
 export function describeEvents(
   events: GameEvent[],
   view: GameView,
   faces: Record<string, CardFace>,
   lang: Lang,
-  /** Vue précédente : permet de nommer les cibles mortes entre-temps. */
+  /** Previous view: lets the log name targets that died in the meantime. */
   previous?: GameView | null,
 ): LogLine[] {
   const me = view.viewer;
-  const who = (p: string) => (p === me ? "Vous" : (view.players[p]?.name ?? "L'adversaire"));
-  const whom = (p: string) => (p === me ? "vous" : (view.players[p]?.name ?? "l'adversaire"));
+  /** A player at the start of a sentence, and as an object ("to you", "to Bob"). */
+  const who = (p: string) => (p === me ? tr(lang, "You") : (view.players[p]?.name ?? tr(lang, "The opponent")));
+  const whom = (p: string) => (p === me ? tr(lang, "you") : (view.players[p]?.name ?? tr(lang, "the opponent")));
   const kind = (p: string): LogLine["kind"] => (p === me ? "me" : "opp");
-  // Cartes citées par la ligne en cours (noms survolables dans le journal).
+  // Cards cited by the current line (names that can be hovered in the log).
   let cited: CardFace[] = [];
   const cite = (f: CardFace | undefined) => {
     if (f && f.defId !== "face-down" && f.defId !== HIDDEN_CARD_ID && !cited.some((c) => c.defId === f.defId)) cited.push(f);
     return f;
   };
-  const name = (defId?: string) => faceName(cite(defId ? faces[defId] : undefined), lang);
+  const name = (defId?: string) => literal(faceName(cite(defId ? faces[defId] : undefined), lang));
+  const names = (defIds: string[]) => literal(defIds.map((d) => faceName(cite(faces[d]), lang)).join(", "));
   const targetName = (id: string) => {
     if (view.players[id]) return whom(id);
     const o =
@@ -173,184 +196,369 @@ export function describeEvents(
       Object.values(view.players)
         .flatMap((p) => p.graveyard)
         .find((x) => x.id === id);
-    return o ? faceName(cite(faces[o.defId] ?? o), lang) : "une cible";
+    return o ? faceName(cite(faces[o.defId] ?? o), lang) : tr(lang, "a target");
   };
+  const targets = (ids: string[]) => literal(ids.map(targetName).join(", "));
+  const player = (p: string) => literal(who(p));
   const out: LogLine[] = [];
   const add = (text: string, k: LogLine["kind"]) => {
-    out.push({ id: nextLine++, text, kind: k, ...(cited.length ? { cards: cited } : {}) });
+    out.push({ id: nextLine++, text: render(text, lang), kind: k, ...(cited.length ? { cards: cited } : {}) });
     cited = [];
   };
-  // Blessures à un joueur : la perte de PV qui suit est la même (déjà dite par la ligne des blessures).
+  // Damage to a player: the life loss that follows is the same one (already told by the damage line).
   let hurt: { player: string; amount: number } | null = null;
   for (const e of events) {
     cited = [];
     switch (e.type) {
       case "gameStart":
-        add(`${who(e.startingPlayer)} commence${e.startingPlayer === me ? "z" : ""}.`, "info");
+        add(e.startingPlayer === me ? msg("You start.") : msg("{player} starts.", { player: player(e.startingPlayer) }), "info");
         break;
       case "mulligan":
-        add(`${who(e.player)} ${e.player === me ? "faites" : "fait"} un mulligan (${e.count}).`, kind(e.player));
+        add(
+          e.player === me
+            ? msg("You take a mulligan ({count}).", { count: e.count })
+            : msg("{player} takes a mulligan ({count}).", { player: player(e.player), count: e.count }),
+          kind(e.player),
+        );
         break;
       case "keep":
-        add(`${who(e.player)} ${e.player === me ? "gardez" : "garde"} ${e.handSize} cartes.`, kind(e.player));
+        add(
+          e.player === me
+            ? msg("You keep {n} cards.", { n: e.handSize })
+            : msg("{player} keeps {n} cards.", { player: player(e.player), n: e.handSize }),
+          kind(e.player),
+        );
         break;
       case "turnStart":
-        add(`Tour ${e.turn} — ${e.player === me ? "à vous" : `${who(e.player)}`}`, "turn");
+        add(
+          e.player === me
+            ? msg("Turn {n} — your turn", { n: e.turn })
+            : msg("Turn {n} — {player}", { n: e.turn, player: player(e.player) }),
+          "turn",
+        );
         break;
       case "draw":
-        if (view.turn.number === 0) break; // mains de départ : pas de bruit dans le journal
-        if (e.player === me && e.defId) add(`Vous piochez ${name(e.defId)}.`, "me");
-        else if (e.player !== me) add(`${who(e.player)} pioche une carte.`, "opp");
+        if (view.turn.number === 0) break; // opening hands: no noise in the log
+        if (e.player === me && e.defId) add(msg("You draw {card}.", { card: name(e.defId) }), "me");
+        else if (e.player !== me) add(msg("{player} draws a card.", { player: player(e.player) }), "opp");
         break;
       case "monarch":
-        add(`${who(e.player)} ${e.player === me ? "devenez" : "devient"} le monarque.`, kind(e.player));
+        add(
+          e.player === me ? msg("You become the monarch.") : msg("{player} becomes the monarch.", { player: player(e.player) }),
+          kind(e.player),
+        );
         break;
       case "playLand":
-        add(`${who(e.player)} ${e.player === me ? "jouez" : "joue"} ${name(e.defId)}.`, kind(e.player));
+        add(
+          e.player === me
+            ? msg("You play {card}.", { card: name(e.defId) })
+            : msg("{player} plays {card}.", { player: player(e.player), card: name(e.defId) }),
+          kind(e.player),
+        );
         break;
       case "cast":
       case "activate": {
-        const verb = e.type === "cast" ? (e.player === me ? "lancez" : "lance") : e.player === me ? "activez" : "active";
-        const t = e.targets.length ? ` → ${e.targets.map(targetName).join(", ")}` : "";
-        add(`${who(e.player)} ${verb} ${name(e.defId)}${t}.`, kind(e.player));
+        const to = e.targets.length ? targets(e.targets) : null;
+        const card = name(e.defId);
+        const p = player(e.player);
+        let text: string;
+        if (e.type === "cast") {
+          if (e.player === me)
+            text = to ? msg("You cast {card} → {targets}.", { card, targets: to }) : msg("You cast {card}.", { card });
+          else
+            text = to
+              ? msg("{player} casts {card} → {targets}.", { player: p, card, targets: to })
+              : msg("{player} casts {card}.", { player: p, card });
+        } else if (e.player === me)
+          text = to ? msg("You activate {card} → {targets}.", { card, targets: to }) : msg("You activate {card}.", { card });
+        else
+          text = to
+            ? msg("{player} activates {card} → {targets}.", { player: p, card, targets: to })
+            : msg("{player} activates {card}.", { player: p, card });
+        add(text, kind(e.player));
         break;
       }
       case "trigger": {
-        const t = e.targets.length ? ` → ${e.targets.map(targetName).join(", ")}` : "";
-        add(`Capacité déclenchée : ${name(e.defId)}${t}.`, kind(e.player));
+        const to = e.targets.length ? targets(e.targets) : null;
+        const card = name(e.defId);
+        add(
+          to ? msg("Triggered ability: {card} → {targets}.", { card, targets: to }) : msg("Triggered ability: {card}.", { card }),
+          kind(e.player),
+        );
         break;
       }
       case "fizzle":
-        add(`${name(e.defId)} ne se résout pas : cibles illégales.`, "info");
+        add(msg("{card} doesn't resolve: illegal targets.", { card: name(e.defId) }), "info");
         break;
       case "copy":
-        add(`${name(e.defId)} est copié.`, kind(e.player));
+        add(msg("{card} is copied.", { card: name(e.defId) }), kind(e.player));
         break;
       case "endTurn":
-        add("Le tour se termine.", "info");
+        add(msg("The turn ends."), "info");
         break;
       case "plotted":
-        add(`${who(e.player)} ${e.player === me ? "complotez" : "complote"} ${name(e.defId)}.`, kind(e.player));
-        break;
-      case "foretold":
-        // La carte présagée d'un adversaire est cachée (exilée face cachée).
         add(
-          `${who(e.player)} ${e.player === me ? "présagez" : "présage"} ${e.defId === HIDDEN_CARD_ID ? "une carte" : name(e.defId)}.`,
+          e.player === me
+            ? msg("You plot {card}.", { card: name(e.defId) })
+            : msg("{player} plots {card}.", { player: player(e.player), card: name(e.defId) }),
           kind(e.player),
         );
         break;
-      case "speed":
-        add(
-          `${who(e.player)} ${e.player === me ? "passez" : "passe"} à la vitesse ${e.speed}${e.speed >= 4 ? " (maximale)" : ""}.`,
-          kind(e.player),
-        );
+      case "foretold": {
+        // An opponent's foretold card is hidden (exiled face down).
+        const hidden = e.defId === HIDDEN_CARD_ID;
+        const text =
+          e.player === me
+            ? hidden
+              ? msg("You foretell a card.")
+              : msg("You foretell {card}.", { card: name(e.defId) })
+            : hidden
+              ? msg("{player} foretells a card.", { player: player(e.player) })
+              : msg("{player} foretells {card}.", { player: player(e.player), card: name(e.defId) });
+        add(text, kind(e.player));
         break;
-      case "turnControl":
-        add(
-          `${who(e.by)} ${e.by === me ? "contrôlez" : "contrôle"} ${e.combatOnly ? "la prochaine phase de combat" : "le tour"} de ${whom(e.player)}.`,
-          "info",
-        );
+      }
+      case "speed": {
+        const max = e.speed >= 4;
+        const text =
+          e.player === me
+            ? max
+              ? msg("You reach speed {speed} (max).", { speed: e.speed })
+              : msg("You reach speed {speed}.", { speed: e.speed })
+            : max
+              ? msg("{player} reaches speed {speed} (max).", { player: player(e.player), speed: e.speed })
+              : msg("{player} reaches speed {speed}.", { player: player(e.player), speed: e.speed });
+        add(text, kind(e.player));
         break;
+      }
+      case "turnControl": {
+        const by = player(e.by);
+        const of = literal(whom(e.player));
+        let text: string;
+        if (e.by === me)
+          text = e.combatOnly
+            ? msg("You control {player}'s next combat phase.", { player: of })
+            : msg("You control {player}'s turn.", { player: of });
+        else if (e.player === me)
+          text = e.combatOnly
+            ? msg("{controller} controls your next combat phase.", { controller: by })
+            : msg("{controller} controls your turn.", { controller: by });
+        else
+          text = e.combatOnly
+            ? msg("{controller} controls {player}'s next combat phase.", { controller: by, player: of })
+            : msg("{controller} controls {player}'s turn.", { controller: by, player: of });
+        add(text, "info");
+        break;
+      }
       case "attach":
-        add(`${name(e.defId)} est attaché à ${name(e.toDefId)}.`, "info");
+        add(msg("{card} is attached to {host}.", { card: name(e.defId), host: name(e.toDefId) }), "info");
         break;
       case "countered":
-        add(`${name(e.defId)} est contrecarré par ${name(e.by)}.`, "info");
+        add(msg("{card} is countered by {source}.", { card: name(e.defId), source: name(e.by) }), "info");
         break;
       case "damage":
-        add(`${name(e.sourceDefId)} inflige ${e.amount} à ${e.targetDefId ? name(e.targetDefId) : whom(e.target)}.`, "info");
+        add(
+          msg("{source} deals {n} damage to {target}.", {
+            source: name(e.sourceDefId),
+            n: e.amount,
+            target: e.targetDefId ? name(e.targetDefId) : literal(whom(e.target)),
+          }),
+          "info",
+        );
         if (!e.targetDefId) hurt = { player: e.target, amount: e.amount };
         break;
       case "life":
         if (e.delta > 0)
-          add(`${who(e.player)} ${e.player === me ? "gagnez" : "gagne"} ${e.delta} PV (${e.life}).`, kind(e.player));
+          add(
+            e.player === me
+              ? msg("You gain {n} life ({life}).", { n: e.delta, life: e.life })
+              : msg("{player} gains {n} life ({life}).", { player: player(e.player), n: e.delta, life: e.life }),
+            kind(e.player),
+          );
         else if (e.delta < 0) {
           if (hurt && hurt.player === e.player && hurt.amount === -e.delta) hurt = null;
-          else add(`${who(e.player)} ${e.player === me ? "perdez" : "perd"} ${-e.delta} PV (${e.life}).`, kind(e.player));
+          else
+            add(
+              e.player === me
+                ? msg("You lose {n} life ({life}).", { n: -e.delta, life: e.life })
+                : msg("{player} loses {n} life ({life}).", { player: player(e.player), n: -e.delta, life: e.life }),
+              kind(e.player),
+            );
         }
         break;
-      case "dies":
-        // Un remplacement peut changer la destination : exilée au lieu de mourir, mélangée dans la bibliothèque.
+      case "dies": {
+        // A replacement can change the destination: exiled instead of dying, shuffled into the library.
+        const card = name(e.defId);
         add(
-          `${name(e.defId)} ${e.to === "exile" ? "est exilé à la place" : e.to === "library" ? "est mélangé dans la bibliothèque de son propriétaire" : "va au cimetière"}.`,
+          e.to === "exile"
+            ? msg("{card} is exiled instead.", { card })
+            : e.to === "library"
+              ? msg("{card} is shuffled into its owner's library.", { card })
+              : msg("{card} goes to the graveyard.", { card }),
           "info",
         );
         break;
+      }
       case "token":
-        add(`${who(e.controller)} ${e.controller === me ? "créez" : "crée"} un ${name(e.defId)}.`, kind(e.controller));
+        add(
+          e.controller === me
+            ? msg("You create a {token}.", { token: name(e.defId) })
+            : msg("{player} creates a {token}.", { player: player(e.controller), token: name(e.defId) }),
+          kind(e.controller),
+        );
         break;
       case "transform":
-        add(`Transformation : ${name(e.defId)}.`, "info");
+        add(msg("Transform: {card}.", { card: name(e.defId) }), "info");
         break;
-      case "attack":
+      case "attack": {
+        const cards = names(e.attackers.map((a) => a.defId));
         add(
-          `${who(e.player)} ${e.player === me ? "attaquez" : "attaque"} avec ${e.attackers.map((a) => name(a.defId)).join(", ")}.`,
+          e.player === me
+            ? msg("You attack with {cards}.", { cards })
+            : msg("{player} attacks with {cards}.", { player: player(e.player), cards }),
           kind(e.player),
         );
         break;
+      }
       case "block":
-        for (const b of e.blocks) add(`${name(b.blockerDefId)} bloque ${name(b.attackerDefId)}.`, kind(e.player));
+        for (const b of e.blocks)
+          add(
+            msg("{blocker} blocks {attacker}.", { blocker: name(b.blockerDefId), attacker: name(b.attackerDefId) }),
+            kind(e.player),
+          );
         break;
       case "discard":
-        add(`${who(e.player)} ${e.player === me ? "défaussez" : "défausse"} ${e.defIds.map(name).join(", ")}.`, kind(e.player));
+        add(
+          e.player === me
+            ? msg("You discard {cards}.", { cards: names(e.defIds) })
+            : msg("{player} discards {cards}.", { player: player(e.player), cards: names(e.defIds) }),
+          kind(e.player),
+        );
         break;
       case "reveal":
         if (e.defIds.length)
-          add(`${who(e.player)} ${e.player === me ? "révélez" : "révèle"} ${e.defIds.map(name).join(", ")}.`, kind(e.player));
+          add(
+            e.player === me
+              ? msg("You reveal {cards}.", { cards: names(e.defIds) })
+              : msg("{player} reveals {cards}.", { player: player(e.player), cards: names(e.defIds) }),
+            kind(e.player),
+          );
         break;
-      case "rad":
+      case "rad": {
+        const n = Math.abs(e.amount);
+        const args = { player: player(e.player), n, total: e.total };
+        const mine = e.player === me;
+        let text: string;
+        if (e.amount > 0)
+          text = mine
+            ? n > 1
+              ? msg("You get {n} rad counters ({total}).", args)
+              : msg("You get {n} rad counter ({total}).", args)
+            : n > 1
+              ? msg("{player} gets {n} rad counters ({total}).", args)
+              : msg("{player} gets {n} rad counter ({total}).", args);
+        else
+          text = mine
+            ? n > 1
+              ? msg("Radiation: You lose {n} rad counters ({total}).", args)
+              : msg("Radiation: You lose {n} rad counter ({total}).", args)
+            : n > 1
+              ? msg("Radiation: {player} loses {n} rad counters ({total}).", args)
+              : msg("Radiation: {player} loses {n} rad counter ({total}).", args);
+        add(text, kind(e.player));
+        break;
+      }
+      case "poison": {
+        const args = { player: player(e.player), n: e.amount, total: e.total };
         add(
-          e.amount > 0
-            ? `${who(e.player)} ${e.player === me ? "recevez" : "reçoit"} ${e.amount} marqueur${e.amount > 1 ? "s" : ""} de radiation (${e.total}).`
-            : `Radiation : ${who(e.player)} ${e.player === me ? "perdez" : "perd"} ${-e.amount} marqueur${e.amount < -1 ? "s" : ""} de radiation (${e.total}).`,
+          e.player === me
+            ? e.amount > 1
+              ? msg("You get {n} poison counters ({total}).", args)
+              : msg("You get {n} poison counter ({total}).", args)
+            : e.amount > 1
+              ? msg("{player} gets {n} poison counters ({total}).", args)
+              : msg("{player} gets {n} poison counter ({total}).", args),
           kind(e.player),
         );
         break;
-      case "poison":
-        add(
-          `${who(e.player)} ${e.player === me ? "recevez" : "reçoit"} ${e.amount} marqueur${e.amount > 1 ? "s" : ""} poison (${e.total}).`,
-          kind(e.player),
-        );
-        break;
+      }
       case "dieRoll":
-        add(`${who(e.player)} ${e.player === me ? "obtenez" : "obtient"} ${e.result} au dé à ${e.sides} faces.`, kind(e.player));
+        add(
+          e.player === me
+            ? msg("You roll {result} on a {sides}-sided die.", { result: e.result, sides: e.sides })
+            : msg("{player} rolls {result} on a {sides}-sided die.", {
+                player: player(e.player),
+                result: e.result,
+                sides: e.sides,
+              }),
+          kind(e.player),
+        );
         break;
-      case "lose":
-        add(`${who(e.player)} ${e.player === me ? "perdez" : "perd"}${LOSS_REASON[e.reason]}.`, kind(e.player));
+      case "lose": {
+        const reason = LOSS_REASON[e.reason];
+        const p = player(e.player);
+        add(
+          e.player === me
+            ? reason
+              ? msg("You lose ({reason}).", { reason })
+              : msg("You lose.")
+            : reason
+              ? msg("{player} loses ({reason}).", { player: p, reason })
+              : msg("{player} loses.", { player: p }),
+          kind(e.player),
+        );
         break;
+      }
       case "moved": {
-        // 702.26 : la sortie de phase et le retour en phase ne sont pas des changements de zone.
+        // 702.26: phasing out and phasing in are not zone changes.
         if (e.to === "phasedOut" || e.from === "phasedOut") {
-          add(`${name(e.defId)} ${e.to === "phasedOut" ? "sort de phase" : "revient en phase"}.`, "info");
+          const card = name(e.defId);
+          add(e.to === "phasedOut" ? msg("{card} phases out.", { card }) : msg("{card} phases in.", { card }), "info");
           break;
         }
-        const where: Record<string, string> = {
-          hand: "retourne dans la main de son propriétaire",
-          exile: "est exilé",
-          graveyard: "va au cimetière",
-          battlefield: "arrive sur le champ de bataille",
-          library: "est mis dans la bibliothèque de son propriétaire",
-          command: "retourne dans la zone de commandement",
-        };
         if (!e.defId) {
-          // Carte cachée d'un autre joueur (recherche vers la main, remise dans la bibliothèque…).
-          add(`${who(e.owner)} met une carte ${e.to === "hand" ? "dans sa main" : "dans sa bibliothèque"}.`, "opp");
+          // Another player's hidden card (search into the hand, card put back into the library…).
+          const p = player(e.owner);
+          add(
+            e.to === "hand"
+              ? msg("{player} puts a card into their hand.", { player: p })
+              : msg("{player} puts a card into their library.", { player: p }),
+            "opp",
+          );
           break;
         }
-        add(`${name(e.defId)} ${where[e.to] ?? `va en ${e.to}`}.`, "info");
+        const card = name(e.defId);
+        const where: Record<string, string> = {
+          hand: msg("{card} returns to its owner's hand.", { card }),
+          exile: msg("{card} is exiled.", { card }),
+          graveyard: msg("{card} goes to the graveyard.", { card }),
+          battlefield: msg("{card} enters the battlefield.", { card }),
+          library: msg("{card} is put into its owner's library.", { card }),
+          command: msg("{card} returns to the command zone.", { card }),
+        };
+        add(where[e.to] ?? msg("{card} goes to {zone}.", { card, zone: literal(e.to) }), "info");
         break;
       }
       case "scry":
         add(
-          `${who(e.player)} ${e.player === me ? "regardez" : "regarde"} : ${e.top} au-dessus, ${e.bottom} au-dessous.`,
+          e.player === me
+            ? msg("You scry: {top} on top, {bottom} on the bottom.", { top: e.top, bottom: e.bottom })
+            : msg("{player} scries: {top} on top, {bottom} on the bottom.", {
+                player: player(e.player),
+                top: e.top,
+                bottom: e.bottom,
+              }),
           kind(e.player),
         );
         break;
       case "capReached":
-        add(`Plafond de sécurité atteint (${CAPS[e.cap]}) : le résultat est approché.`, "info");
+        add(msg("Safety cap reached ({cap}): the result is approximated.", { cap: CAPS[e.cap] }), "info");
         break;
       case "gameOver":
-        add(e.winner === me ? "Victoire !" : e.winner ? "Défaite." : "Match nul.", e.winner === me ? "win" : "lose");
+        add(
+          e.winner === me ? msg("Victory!") : e.winner ? msg("Defeat.") : msg("The game is a draw."),
+          e.winner === me ? "win" : "lose",
+        );
         break;
       default:
         break;

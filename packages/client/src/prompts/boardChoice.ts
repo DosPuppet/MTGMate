@@ -1,62 +1,63 @@
 /**
- * Choix « parmi des permanents » (cibles d'une capacité déclenchée, ex. « mettez un marqueur +1/+1 sur jusqu'à deux
- * créatures ciblées », ou choix pendant une résolution) : façon MTGA, il se fait directement sur le champ de bataille (options en surbrillance, clic pour
- * sélectionner) plutôt que dans une fenêtre qui mêle vos permanents et ceux de l'adversaire.
+ * Choice "among permanents" (targets of a triggered ability, e.g. "put a +1/+1 counter on up to two target
+ * creatures", or a choice during a resolution): MTGA-style, it is made directly on the battlefield (options highlighted, click to
+ * select) rather than in a window that mixes your permanents and the opponent's.
  */
 import type { CardFace, ChoiceRequest, GameView } from "@mtgx/engine";
 
 export type PickRequest = Extract<ChoiceRequest, { type: "pick" }>;
 
-/** La demande en cours, si elle est à vous et se choisit sur le plateau (permanents et joueurs seulement). */
+/** The pending request, if it is yours and is chosen on the board (permanents and players only). */
 export function boardPick(view: GameView | null | undefined): PickRequest | null {
   const p = view?.pending;
   if (!view || p?.kind !== "choice" || p.player !== view.viewer) return null;
   const req = p.request;
   if (req?.type !== "pick" || req.options.length === 0) return null;
   const onBoard = new Set(view.battlefield.map((o) => o.id));
-  // Au moins un permanent : un choix entre joueurs seuls reste dans la fenêtre (boutons nommés).
+  // At least one permanent: a choice between players only stays in the window (named buttons).
   if (!req.options.some((id) => onBoard.has(id))) return null;
   const ok = req.options.every((id) => !req.labels?.[id] && (onBoard.has(id) || !!view.players[id]));
   return ok ? req : null;
 }
 
-/** Sélection après un clic sur `id` (retire, remplace ou ajoute selon le maximum et la contrainte de groupe). */
+/** Selection after a click on `id` (removes, replaces or adds depending on the maximum and the group constraint). */
 export function togglePick(req: PickRequest, cur: string[], id: string): string[] {
   if (cur.includes(id)) return cur.filter((x) => x !== id);
   if (req.max === 1) return [id];
   const g = req.group;
-  // « d'un même joueur » : changer de joueur recommence la sélection ; « de joueurs différents » : remplace l'option du même joueur.
+  // "of the same player": changing player restarts the selection; "of different players": replaces the option of the same player.
   if (g?.kind === "same" && cur.some((x) => g.holders[x] !== g.holders[id])) return [id];
   const kept = g?.kind === "different" ? cur.filter((x) => g.holders[x] !== g.holders[id]) : cur;
   return kept.length >= req.max ? kept : [...kept, id];
 }
 
-/** La sélection respecte le minimum et le maximum de la demande. */
+/** The selection respects the request's minimum and maximum. */
 export function pickValid(req: PickRequest, cur: string[]): boolean {
   return cur.length >= req.min && cur.length <= req.max;
 }
 
 /**
- * Consigne sans le rappel de sa source (« Felidar Savior — marqueurs +1/+1 : choisissez… » → « choisissez… ») :
- * la carte et sa capacité sont déjà montrées à côté.
+ * Prompt without the reminder of its source ("Felidar Savior — +1/+1 counters: choose…" → "choose…"): the card and
+ * its ability are already shown next to it. The separator is ": " in English and " : " in French.
  */
 export function shortPrompt(prompt: string, source: { face: CardFace; effect?: string } | null): string {
   if (!source) return prompt;
-  const prefixes = [source.effect && `${source.face.name} — ${source.effect} : `, `${source.face.name} : `];
+  const heads = [source.effect && `${source.face.name} — ${source.effect}`, source.face.name];
+  const prefixes = heads.flatMap((h) => (h ? [`${h} : `, `${h}: `] : []));
   const p = prefixes.find((x) => x && prompt.startsWith(x));
   return p ? prompt.slice(p.length) : prompt;
 }
 
 /**
- * L'effet qui pose la question : l'objet au sommet de la pile pendant sa résolution (608.2), ou le déclenchement
- * dont on choisit les cibles (pas encore sur la pile).
+ * The effect asking the question: the object on top of the stack during its resolution (608.2), or the trigger whose
+ * targets are being chosen (not on the stack yet).
  */
 export function choiceSource(view: GameView): { face: CardFace; effect?: string } | null {
   const p = view.pending;
   if (p?.kind !== "choice") return null;
   if (p.source) return p.source;
-  // 903.9a et 903.9b : la carte du commandant qu'on peut remettre dans la zone de commandement (cimetière, exil, main ;
-  // dans la bibliothèque, son nom seul, dans la question).
+  // 903.9a and 903.9b: the commander card that may be returned to the command zone (graveyard, exile, hand; in the
+  // library, only its name, in the question).
   if (p.purpose?.kind === "commanderZone") {
     const card = p.purpose.card;
     const o =

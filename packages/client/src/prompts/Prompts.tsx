@@ -1,11 +1,12 @@
-/** Fenêtres de choix : réservées aux vraies décisions (mulligan, modes, X, kicker, défausse…). */
+/** Choice windows: kept for real decisions (mulligan, modes, X, kicker, discard…). */
 
-import { type ChoiceRequest, type CostPick, costToText, type GameView, type ObjectView } from "@mtgx/engine";
+import { type ChoiceRequest, type CostPick, costToText, type GameView, msg, type ObjectView, plainText } from "@mtgx/engine";
 import { useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { faceName, type Lang } from "../i18n";
-import { useLocalize } from "../localize";
+import { useLocalize, useT } from "../localize";
 import { myActions, type PlayableOption, useGame } from "../store";
+import { textIn } from "../translate";
 import { useTutorial } from "../tutorial/store";
 import { ChoicePrompt } from "./ChoicePrompt";
 import { NameSearch } from "./NameSearch";
@@ -45,27 +46,30 @@ function HandPicker({ view, selectable }: { view: GameView; selectable: boolean 
 function PendingPrompt({ view }: { view: GameView }) {
   const decide = useGame((s) => s.decide);
   const selection = useGame((s) => s.selection);
+  const t = useT();
   const p = view.pending;
   if (!p || p.player !== view.viewer) return null;
   if (p.kind === "choice") return <ChoicePrompt view={view} />;
   switch (p.kind) {
     case "mulligan":
       return (
-        <Modal title={p.mulligans === 0 ? "Votre main de départ" : `Mulligan ${p.mulligans} — nouvelle main`} wide>
+        <Modal title={p.mulligans === 0 ? t("Your opening hand") : t("Mulligan {n} — new hand", { n: p.mulligans })} wide>
           <HandPicker view={view} selectable={false} />
           <p className="hint">
             {p.mulligans > 0 &&
-              (p.bottom > 0
-                ? `Si vous gardez, vous placerez ${p.bottom} carte(s) au-dessous de votre bibliothèque. `
-                : "Premier mulligan gratuit (partie à plusieurs) : vous gardez les sept cartes. ")}
-            Vous commencez {view.turn.active === view.viewer ? "la partie" : "en second"}.
+              `${
+                p.bottom > 0
+                  ? t("If you keep, you will put {n} card(s) on the bottom of your library.", { n: p.bottom })
+                  : t("First mulligan free (multiplayer game): you keep the seven cards.")
+              } `}
+            {view.turn.active === view.viewer ? t("You start the game.") : t("You start second.")}
           </p>
           <div className="modal-actions">
             <button type="button" className="btn" onClick={() => decide({ type: "mulligan" })}>
-              Mulligan
+              {t("Mulligan")}
             </button>
             <button type="button" className="btn primary" onClick={() => decide({ type: "keep" })}>
-              Garder
+              {t("Keep")}
             </button>
           </div>
         </Modal>
@@ -74,8 +78,8 @@ function PendingPrompt({ view }: { view: GameView }) {
     case "discard": {
       const title =
         p.kind === "discard"
-          ? `Défaussez ${p.count} carte(s) (taille de main maximale : 7)`
-          : `Choisissez ${p.count} carte(s) à placer au-dessous de votre bibliothèque`;
+          ? t("Discard {n} card(s) (maximum hand size: 7)", { n: p.count })
+          : t("Choose {n} card(s) to put on the bottom of your library", { n: p.count });
       return (
         <Modal title={title} wide>
           <HandPicker view={view} selectable />
@@ -88,7 +92,7 @@ function PendingPrompt({ view }: { view: GameView }) {
                 decide(p.kind === "discard" ? { type: "discard", cards: selection } : { type: "bottom", cards: selection })
               }
             >
-              Valider ({selection.length}/{p.count})
+              {t("Confirm ({n}/{count})", { n: selection.length, count: p.count })}
             </button>
           </div>
         </Modal>
@@ -103,18 +107,19 @@ function XPicker({ max, min = 0 }: { max: number; min?: number }) {
   const chooseX = useGame((s) => s.chooseX);
   const cancel = useGame((s) => s.cancel);
   const [x, setX] = useState(max);
+  const t = useT();
   return (
-    <Modal title="Choisissez la valeur de X">
+    <Modal title={t("Choose the value of X")}>
       <div className="x-picker">
         <input type="range" min={min} max={max} value={x} onChange={(e) => setX(Number(e.target.value))} />
         <span className="x-value">X = {x}</span>
       </div>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={cancel}>
-          Annuler
+          {t("Cancel")}
         </button>
         <button type="button" className="btn primary" onClick={() => chooseX(x)}>
-          Valider
+          {t("Confirm")}
         </button>
       </div>
     </Modal>
@@ -136,23 +141,24 @@ function AdditionalCostPicker({
   kind: "discard" | "sacrifice" | "tap" | "materials" | "bounce";
   count: number;
   options: string[];
-  /** Équipage, monture : autant de créatures qu'on veut, de force totale au moins `minPower`. */
+  /** Crew, saddle: as many creatures as wanted, with total power at least `minPower`. */
   minPower?: number;
   powers?: Record<string, number>;
   suggested?: string[];
-  /** « … ou payez {3}{B} » (ou « 3 points de vie ») : on peut payer cela à la place. */
+  /** "… or pay {3}{B}" (or "3 life"): this may be paid instead. */
   orPay?: string;
-  /** « Défaussez une carte ou sacrifiez un permanent » : les options comprennent des permanents. */
+  /** "Discard a card or sacrifice a permanent": the options include permanents. */
   orSacrifice?: boolean;
-  /** Fabrication « un ou plusieurs » : au moins `min`, au plus `count`. */
+  /** Craft "one or more": at least `min`, at most `count`. */
   min?: number;
-  /** Titre de la fenêtre, à la place du titre déduit de `kind`. */
+  /** Title of the window, instead of the title derived from `kind`. */
   title?: string;
 }) {
   const view = useGame((s) => s.view);
   const choose = useGame((s) => s.chooseAdditional);
   const cancel = useGame((s) => s.cancel);
   const [picked, setPicked] = useState<string[]>([]);
+  const t = useT();
   if (!view) return null;
   const all = [...view.hand, ...view.battlefield, ...(view.players[view.viewer]?.graveyard ?? [])];
   const byPower = minPower !== undefined;
@@ -165,16 +171,18 @@ function AdditionalCostPicker({
       title={
         title ??
         (kind === "discard" && orSacrifice
-          ? "Coût additionnel : défaussez une carte ou sacrifiez un permanent"
+          ? t("Additional cost: discard a card or sacrifice a permanent")
           : kind === "discard"
-            ? `Coût additionnel : défaussez ${count} carte(s)`
+            ? t("Additional cost: discard {n} card(s)", { n: count })
             : kind === "materials"
-              ? `Fabrication : exilez ${min !== undefined && min !== count ? `de ${min} à ${count}` : count} matériau(x)`
+              ? min !== undefined && min !== count
+                ? t("Craft: exile from {min} to {max} material(s)", { min, max: count })
+                : t("Craft: exile {n} material(s)", { n: count })
               : kind === "tap" && byPower
-                ? `Engagez des créatures de force totale ${minPower} ou plus`
+                ? t("Tap creatures with total power {n} or more", { n: minPower })
                 : kind === "tap"
-                  ? `Coût : engagez ${count} créature(s)`
-                  : `Coût additionnel : sacrifiez ${count} permanent(s)`)
+                  ? t("Cost: tap {n} creature(s)", { n: count })
+                  : t("Additional cost: sacrifice {n} permanent(s)", { n: count }))
       }
       wide
     >
@@ -195,20 +203,22 @@ function AdditionalCostPicker({
       </div>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={cancel}>
-          Annuler
+          {t("Cancel")}
         </button>
         {orPay && (
           <button type="button" className="btn" onClick={() => choose(kind, [])}>
-            Payer {orPay} à la place
+            {t("Pay {cost} instead", { cost: orPay })}
           </button>
         )}
         {suggested && (
           <button type="button" className="btn" onClick={() => setPicked(suggested)}>
-            Suggestion
+            {t("Suggestion")}
           </button>
         )}
         <button type="button" className="btn primary" disabled={!ready} onClick={() => choose(kind, picked)}>
-          {byPower ? `Valider (force ${power}/${minPower})` : `Valider (${picked.length}/${count})`}
+          {byPower
+            ? t("Confirm (power {n}/{min})", { n: power, min: minPower })
+            : t("Confirm ({n}/{count})", { n: picked.length, count })}
         </button>
       </div>
     </Modal>
@@ -216,14 +226,16 @@ function AdditionalCostPicker({
 }
 
 /**
- * Objets payés en coût (`CostPick`) : flétrir, retirer des marqueurs, exiler des cartes du cimetière, réunir des preuves,
- * sacrifier X permanents… La suggestion est le choix du moteur ; un objet peut revenir pour les marqueurs (`repeat`).
+ * Objects paid as a cost (`CostPick`): blight, remove counters, exile cards from the graveyard, collect evidence,
+ * sacrifice X permanents… The suggestion is the engine's choice; an object can come back for counters (`repeat`).
  */
 function CostPickPicker({ pick }: { pick: CostPick }) {
   const view = useGame((s) => s.view);
   const choose = useGame((s) => s.choosePick);
   const cancel = useGame((s) => s.cancel);
   const [picked, setPicked] = useState<string[]>([]);
+  const t = useT();
+  const loc = useLocalize();
   if (!view) return null;
   const all = [...view.hand, ...view.battlefield, ...Object.values(view.players).flatMap((p) => p.graveyard), ...view.exile];
   const total = pick.minTotal ? picked.reduce((n, id) => n + (pick.minTotal?.values[id] ?? 0), 0) : 0;
@@ -237,22 +249,22 @@ function CostPickPicker({ pick }: { pick: CostPick }) {
   const toggle = (id: string) =>
     setPicked((cur) => {
       const max = pick.repeat?.[id] ?? 1;
-      // Marqueurs : chaque clic en retire un de plus, jusqu'à épuisement, puis on recommence.
+      // Counters: each click removes one more, until there are none left, then it starts over.
       if (pick.repeat && times(id) < max && cur.length < pick.count) return [...cur, id];
       if (cur.includes(id)) return cur.filter((x) => x !== id);
       return pick.minTotal || cur.length < pick.count ? [...cur, id] : cur;
     });
   return (
-    <Modal title={`Coût : ${pick.label}`} wide>
+    <Modal title={t("Cost: {label}", { label: loc(pick.label) })} wide>
       <div className="hand-picker">
         {pick.options.map((id) => {
-          // Options qui ne sont pas des objets (sortes de marqueurs) : un bouton par option.
+          // Options that are not objects (kinds of counters): one button per option.
           const label = pick.labels?.[id];
           if (label)
             return (
               <div key={id} className="pick-slot">
                 <button type="button" className={`btn choice${picked.includes(id) ? " primary" : ""}`} onClick={() => toggle(id)}>
-                  {label}
+                  {loc(label)}
                 </button>
                 {pick.repeat && times(id) > 0 && <span className="pick-count">×{times(id)}</span>}
               </div>
@@ -274,34 +286,34 @@ function CostPickPicker({ pick }: { pick: CostPick }) {
       </div>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={cancel}>
-          Annuler
+          {t("Cancel")}
         </button>
         <button type="button" className="btn" onClick={() => setPicked(pick.suggested)}>
-          Suggestion
+          {t("Suggestion")}
         </button>
         <button
           type="button"
           className="btn primary"
           disabled={!ready}
-          // Aucun objet choisi pour la convocation (et autres) : le paiement automatique décide.
+          // No object chosen for convoke (and others): the automatic payment decides.
           onClick={() => (pick.atMost && picked.length === 0 ? choose(pick.slot, undefined) : choose(pick.slot, picked))}
         >
           {pick.atMost
             ? picked.length
-              ? `Valider (${picked.length})`
-              : "Paiement automatique"
+              ? t("Confirm ({n})", { n: picked.length })
+              : t("Automatic payment")
             : pick.minTotal
-              ? `Valider (valeur ${total}/${pick.minTotal.n})`
+              ? t("Confirm (value {n}/{min})", { n: total, min: pick.minTotal.n })
               : pick.optional && picked.length === 0
-                ? "Ne rien choisir"
-                : `Valider (${picked.length}/${pick.count})`}
+                ? t("Choose nothing")
+                : t("Confirm ({n}/{count})", { n: picked.length, count: pick.count })}
         </button>
       </div>
     </Modal>
   );
 }
 
-/** Cibles hors du champ de bataille (cartes dans un cimetière ou en exil) : choisies dans une fenêtre. */
+/** Targets off the battlefield (cards in a graveyard or in exile): chosen in a window. */
 function TargetCardPicker() {
   const view = useGame((s) => s.view);
   const casting = useGame((s) => s.casting);
@@ -309,17 +321,27 @@ function TargetCardPicker() {
   const confirmTargets = useGame((s) => s.confirmTargets);
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
   const cancel = useGame((s) => s.cancel);
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  const loc = useLocalize();
   if (!view || !casting?.spec) return null;
   const spec = casting.spec;
-  // Cartes d'un cimetière, ou exilées (Blade of the Swarm : « carte exilée avec la distorsion »).
-  // Un onglet par cimetière (et l'exil) quand les cibles possibles sont dans plusieurs zones.
+  // Cards of a graveyard, or exiled (Blade of the Swarm: "card exiled with warp").
+  // One tab per graveyard (and exile) when the possible targets are in several zones.
   const cards = [...Object.values(view.players).flatMap((p) => p.graveyard), ...view.exile];
   const options = cards.filter((o) => spec.legal.includes(o.id));
   const max = spec.count ?? 1;
   const picked = casting.picked ?? [];
   return (
-    <Modal title={`Choisissez ${max > 1 ? `jusqu'à ${max} cibles` : "une cible"} : ${spec.label ?? "carte"}`} wide>
-      <ZoneTabbed view={view} objects={options} ids={options.map((o) => o.id)} selected={picked}>
+    <Modal
+      title={
+        max > 1
+          ? t("Choose up to {n} targets: {label}", { n: max, label: spec.label ? loc(spec.label) : t("card") })
+          : t("Choose a target: {label}", { label: spec.label ? loc(spec.label) : t("card") })
+      }
+      wide
+    >
+      <ZoneTabbed view={view} objects={options} ids={options.map((o) => o.id)} selected={picked} lang={lang}>
         {(shown) => (
           <div className="hand-picker">
             {options
@@ -339,16 +361,16 @@ function TargetCardPicker() {
       </ZoneTabbed>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={cancel}>
-          Annuler
+          {t("Cancel")}
         </button>
         {spec.optional && max === 1 && (
           <button type="button" className="btn" onClick={chooseNoTarget}>
-            Aucune cible
+            {t("No target")}
           </button>
         )}
         {max > 1 && (
           <button type="button" className="btn primary" disabled={picked.length === 0 && !spec.optional} onClick={confirmTargets}>
-            Valider ({picked.length}/{max})
+            {t("Confirm ({n}/{count})", { n: picked.length, count: max })}
           </button>
         )}
       </div>
@@ -364,26 +386,29 @@ function CastingPrompt() {
   const chooseHybrid = useGame((s) => s.chooseHybrid);
   const choosePayMode = useGame((s) => s.choosePayMode);
   const cancel = useGame((s) => s.cancel);
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  const loc = useLocalize();
   if (!casting) return null;
   const opt = casting.option;
   if (casting.stage === "mode" && opt.type === "cast") {
-    // La carte lancée, à côté de ses modes (survolable : texte complet dans l'aperçu).
+    // The cast card, next to its modes (hoverable: full text in the preview).
     const card = view && [...view.hand, ...view.playableElsewhere, ...view.battlefield].find((o) => o.id === opt.card);
     return (
-      <Modal title="Choisissez un mode">
+      <Modal title={t("Choose a mode")}>
         <div className="mode-pick">
           {card && <Card face={card} obj={card} width="var(--mode-card-w)" hoverable />}
           <div className="choice-list">
             {opt.modes.map((m) => (
               <button key={m.index} type="button" className="btn choice" onClick={() => chooseMode(m.index)}>
-                {m.label ?? `Mode ${m.index + 1}`}
+                {m.label ? loc(m.label) : t("Mode {n}", { n: m.index + 1 })}
               </button>
             ))}
           </div>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={cancel}>
-            Annuler
+            {t("Cancel")}
           </button>
         </div>
       </Modal>
@@ -396,7 +421,7 @@ function CastingPrompt() {
     const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players), ...view.stack.map((x) => x.id)]);
     if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;
   }
-  // Travail d'équipe : des créatures de force totale suffisante.
+  // Teamwork: creatures with enough total power.
   if (casting.stage === "tap" && opt.type === "cast" && casting.kicked && opt.kickerTap) {
     const spec = opt.kickerTap;
     return (
@@ -407,11 +432,11 @@ function CastingPrompt() {
         minPower={spec.minPower}
         powers={spec.powers}
         suggested={spec.suggested}
-        title={`Travail d'équipe : engagez des créatures de force totale ${spec.minPower} ou plus`}
+        title={t("Teamwork: tap creatures with total power {n} or more", { n: spec.minPower })}
       />
     );
   }
-  // Harmonie : une créature facultative à engager, qui réduit le coût de sa force.
+  // Harmonize: an optional creature to tap, which reduces the cost by its power.
   if (casting.stage === "tap" && opt.type === "cast" && opt.additional?.tap) {
     const spec = opt.additional.tap;
     return (
@@ -422,7 +447,7 @@ function CastingPrompt() {
         options={spec.options}
         powers={spec.powers}
         suggested={spec.suggested}
-        title="Harmonie : engagez une créature pour réduire le coût de sa force (facultatif)"
+        title={t("Harmonize: tap a creature to reduce the cost by its power (optional)")}
       />
     );
   }
@@ -449,9 +474,10 @@ function CastingPrompt() {
     const spec = opt.additional.sacrifice;
     return <AdditionalCostPicker kind="sacrifice" count={spec.count} options={spec.options} />;
   }
-  // Web-slinging (une créature engagée) ou faufilement (un attaquant non bloqué) : la créature à renvoyer en main.
+  // Web-slinging (a tapped creature) or sneak (an unblocked attacker): the creature to return to hand. Only these two
+  // costs return a creature (`altBounce`): the one that is not web-slinging is sneak.
   if (casting.stage === "bounce" && opt.type === "cast" && opt.altBounce) {
-    const sneak = opt.altLabel?.startsWith("Faufilement");
+    const sneak = !plainText(opt.altLabel ?? "").startsWith("Web-slinging");
     return (
       <AdditionalCostPicker
         kind="bounce"
@@ -460,13 +486,13 @@ function CastingPrompt() {
         suggested={opt.altBounce.slice(0, 1)}
         title={
           sneak
-            ? "Faufilement : choisissez l'attaquant non bloqué à renvoyer dans la main de son propriétaire"
-            : "Web-slinging : choisissez la créature engagée à renvoyer dans la main de son propriétaire"
+            ? t("Sneak: choose the unblocked attacker to return to its owner's hand")
+            : t("Web-slinging: choose the tapped creature to return to its owner's hand")
         }
       />
     );
   }
-  // Marchandage (kicker sans mana) : le permanent à sacrifier.
+  // Bargain (kicker without mana): the permanent to sacrifice.
   if (casting.stage === "sacrifice" && opt.type === "cast" && !opt.additional?.sacrifice && opt.kickerPermanents) {
     return (
       <AdditionalCostPicker
@@ -474,7 +500,11 @@ function CastingPrompt() {
         count={1}
         options={opt.kickerPermanents}
         suggested={opt.kickerPermanents.slice(0, 1)}
-        title={opt.kickerPrompt ? `${opt.kickerPrompt.with} : choisissez le permanent` : "Kicker : choisissez le permanent"}
+        title={
+          opt.kickerPrompt
+            ? t("{with}: choose the permanent", { with: loc(opt.kickerPrompt.with) })
+            : t("Kicker: choose the permanent")
+        }
       />
     );
   }
@@ -486,7 +516,7 @@ function CastingPrompt() {
       casting.stage === "sacrifice"
         ? sac?.orPayAffordable && sac.orPay
         : casting.stage === "discard" && dis?.orPayAffordable && dis.orPay;
-    // Bitter Triumph : « défaussez une carte ou payez 3 points de vie ».
+    // Bitter Triumph: "discard a card or pay 3 life".
     const orLife = casting.stage === "discard" ? opt.additional?.discard?.orLife : undefined;
     if (spec) {
       return (
@@ -494,7 +524,7 @@ function CastingPrompt() {
           kind={casting.stage}
           count={spec.count}
           options={spec.options}
-          orPay={orPay ? costToText(orPay) : orLife !== undefined ? `${orLife} points de vie` : undefined}
+          orPay={orPay ? costToText(orPay) : orLife !== undefined ? t("{n} life", { n: orLife }) : undefined}
           orSacrifice={casting.stage === "discard" && !!opt.additional?.discard?.orSacrifice}
         />
       );
@@ -502,62 +532,68 @@ function CastingPrompt() {
   }
   if (casting.stage === "pay" && opt.type === "cast") {
     return (
-      <Modal title="Comment payer ce sort ?">
+      <Modal title={t("How do you pay for this spell?")}>
         <div className="choice-list">
           {opt.normalAvailable && (
             <button type="button" className="btn choice" onClick={() => choosePayMode("normal")}>
-              Payer son coût de mana
+              {t("Pay its mana cost")}
             </button>
           )}
           {(opt.freeAvailable || opt.free) && (
             <button type="button" className="btn choice primary" onClick={() => choosePayMode("free")}>
-              Sans payer son coût de mana{opt.xMax !== null ? " (X = 0)" : ""}
+              {t("Without paying its mana cost")}
+              {opt.xMax !== null ? " (X = 0)" : ""}
             </button>
           )}
           {opt.altAvailable && (
             <button type="button" className="btn choice" onClick={() => choosePayMode("alt")}>
-              {opt.altLabel ?? "Coût alternatif"}
+              {opt.altLabel ? loc(opt.altLabel) : t("Alternative cost")}
             </button>
           )}
         </div>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={cancel}>
-            Annuler
+            {t("Cancel")}
           </button>
         </div>
       </Modal>
     );
   }
   if (casting.stage === "hybrid" && casting.option.type === "cast") {
-    const names: Record<string, string> = { W: "blanc", U: "bleu", B: "noir", R: "rouge", G: "vert" };
+    const names: Record<string, string> = {
+      W: msg("All white"),
+      U: msg("All blue"),
+      B: msg("All black"),
+      R: msg("All red"),
+      G: msg("All green"),
+    };
     return (
-      <Modal title="Payer le mana hybride en…">
-        <p className="hint">Le résultat du sort dépend du mana dépensé.</p>
+      <Modal title={t("Pay the hybrid mana with…")}>
+        <p className="hint">{t("The spell's outcome depends on the mana spent.")}</p>
         <div className="choice-list">
           {(casting.option.hybridColors ?? []).map((c) => (
             <button key={c} type="button" className="btn choice" onClick={() => chooseHybrid(c)}>
-              <ManaCost cost={`{${c}}`} /> Tout en {names[c] ?? c}
+              <ManaCost cost={`{${c}}`} /> {names[c] ? textIn(lang, names[c]) : c}
             </button>
           ))}
           <button type="button" className="btn choice ghost" onClick={() => chooseHybrid("auto")}>
-            Automatique
+            {t("Automatic")}
           </button>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={cancel}>
-            Annuler
+            {t("Cancel")}
           </button>
         </div>
       </Modal>
     );
   }
   if (casting.stage === "kicker") {
-    // Progéniture et Cadeau (Bloomburrow) : même mécanisme, autres libellés.
-    const labels = (casting.option.type === "cast" && casting.option.kickerPrompt) || {
-      title: "Payer le kicker ?",
-      without: "Sans kicker",
-      with: "Avec kicker",
-    };
+    // Offspring and Gift (Bloomburrow): same mechanism, other labels (from the engine).
+    const prompt = casting.option.type === "cast" ? casting.option.kickerPrompt : undefined;
+    const labels = prompt
+      ? { title: loc(prompt.title), without: loc(prompt.without), with: loc(prompt.with) }
+      : { title: t("Pay the kicker?"), without: t("Without kicker"), with: t("With kicker") };
     return (
       <Modal title={labels.title}>
         <div className="choice-list">
@@ -570,7 +606,7 @@ function CastingPrompt() {
         </div>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={cancel}>
-            Annuler
+            {t("Cancel")}
           </button>
         </div>
       </Modal>
@@ -579,23 +615,24 @@ function CastingPrompt() {
   return null;
 }
 
-/** Nom de la face lancée : l'aventure (ou autre face), sinon le recto de la carte (« A // B » → « A »). */
+/** Name of the cast face: the adventure (or other face), otherwise the front of the card ("A // B" → "A"). */
 function faceLabel(source: ObjectView | undefined, face: string | undefined, lang: Lang): string {
   if (!source) return "";
   if (!face) return lang === "fr" && source.fr?.name ? source.fr.name : (source.name.split(" // ")[0] ?? source.name);
-  // Fusion (702.102) : les deux moitiés, sous le nom complet de la carte.
+  // Fuse (702.102): both halves, under the full name of the card.
   if (face === source.name) return (lang === "fr" && source.fr?.name) || face;
   const f = source.otherFaces?.find((x) => x?.name === face);
-  return (lang === "fr" && f?.fr?.name) || face;
+  // Not a face of the card: a label from the engine (face down).
+  return (lang === "fr" && f?.fr?.name) || (f ? face : textIn(lang, face));
 }
 
-/** Types de terrain de base, pour le choix de Multiversal Passage. */
-const LAND_TYPE_FR: Record<string, string> = {
-  Plains: "Plaine",
-  Island: "Île",
-  Swamp: "Marais",
-  Mountain: "Montagne",
-  Forest: "Forêt",
+/** Basic land types, for the choice of Multiversal Passage. */
+const LAND_TYPES: Record<string, string> = {
+  Plains: msg("ctx:landType|Plains"),
+  Island: msg("ctx:landType|Island"),
+  Swamp: msg("ctx:landType|Swamp"),
+  Mountain: msg("ctx:landType|Mountain"),
+  Forest: msg("ctx:landType|Forest"),
 };
 
 function AbilityMenu() {
@@ -606,6 +643,8 @@ function AbilityMenu() {
   const decide = useGame((s) => s.decide);
   const cancel = useGame((s) => s.cancel);
   const lang = useGame((s) => s.lang);
+  const t = useT();
+  const loc = useLocalize();
   if (!menu || !view) return null;
   const source = [...view.battlefield, ...view.hand].find((o) => o.id === menu.sourceId);
   return (
@@ -615,33 +654,33 @@ function AbilityMenu() {
           if (o.type === "cast") {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
-                Lancer {faceLabel(source, o.faceName, lang)}
-                {o.warp ? " (distorsion)" : ""}
-                {o.faceName && o.faceName === source?.name ? " — fusion, les deux moitiés" : ""}
-                {/* Surcharge, fendre : le mode (et son coût) distingue les deux façons de lancer. */}
-                {o.modes.length === 1 && o.modes[0]?.label ? ` — ${o.modes[0].label}` : ""}
+                {t("Cast {name}", { name: faceLabel(source, o.faceName, lang) })}
+                {o.warp ? ` ${t("(warp)")}` : ""}
+                {o.faceName && o.faceName === source?.name ? ` — ${t("fuse, both halves")}` : ""}
+                {/* Overload, cleave: the mode (and its cost) tells the two ways of casting apart. */}
+                {o.modes.length === 1 && o.modes[0]?.label ? ` — ${loc(o.modes[0].label)}` : ""}
               </button>
             );
           }
           if (o.type === "activate") {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
-                {o.label ?? "Activer la capacité"}
+                {o.label ? loc(o.label) : t("Activate the ability")}
               </button>
             );
           }
           if (o.type === "playLand") {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => playLand(o)}>
-                {/* Pathways : chaque face terrain a son option. */}
+                {/* Pathways: each land face has its option. */}
                 {menu.options.some((x) => x.type === "playLand" && x.back)
-                  ? `Jouer ${faceLabel(source, o.faceName, lang)}`
+                  ? t("Play {name}", { name: faceLabel(source, o.faceName, lang) })
                   : o.payLife
-                    ? "Jouer ce terrain en payant 2 points de vie (dégagé)"
+                    ? t("Play this land paying 2 life (untapped)")
                     : menu.options.some((x) => x.type === "playLand" && x.payLife)
-                      ? "Jouer ce terrain engagé"
-                      : "Jouer ce terrain"}
-                {o.landType ? ` — ${LAND_TYPE_FR[o.landType] ?? o.landType}` : ""}
+                      ? t("Play this land tapped")
+                      : t("Play this land")}
+                {o.landType ? ` — ${textIn(lang, LAND_TYPES[o.landType] ?? o.landType)}` : ""}
               </button>
             );
           }
@@ -653,33 +692,36 @@ function AbilityMenu() {
                 className="btn choice"
                 onClick={() => decide({ type: "tapForMana", source: o.source, ability: o.ability, color: c })}
               >
-                Ajouter {`{${c}}`}
+                {t("Add {mana}", { mana: `{${c}}` })}
               </button>
             ));
           }
           return null;
         })}
         {menu.unavailable?.map((a, i) => (
-          <button key={`off-${i}`} type="button" className="btn choice" disabled title="Mana, cible ou moment : pas maintenant">
-            {a.label} — {a.cost ? `${a.cost} : ` : ""}impossible maintenant
+          <button key={`off-${i}`} type="button" className="btn choice" disabled title={t("Mana, target or timing: not now")}>
+            {a.cost
+              ? t("{label} — {cost}: not possible now", { label: loc(a.label), cost: loc(a.cost) })
+              : t("{label} — not possible now", { label: loc(a.label) })}
           </button>
         ))}
       </div>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={cancel}>
-          Annuler
+          {t("Cancel")}
         </button>
       </div>
     </Modal>
   );
 }
 
-/** Exil d'un joueur (ses cartes exilées), consultable par tous ; « exilée par … » quand un permanent la retient. */
+/** A player's exile (their exiled cards), open to everyone; "exiled by …" when a permanent holds the card. */
 function ExileViewer() {
   const open = useGame((s) => s.exileOpen);
   const view = useGame((s) => s.view);
   const close = useGame((s) => s.openExile);
   const lang = useGame((s) => s.lang);
+  const t = useT();
   if (!open || !view) return null;
   const player = view.players[open];
   if (!player) return null;
@@ -694,20 +736,24 @@ function ExileViewer() {
     <div className="modal-backdrop" onClick={() => close(null)} onKeyDown={(e) => e.key === "Escape" && close(null)}>
       <div className="modal wide" role="dialog" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <h2>
-          Exil — {open === view.viewer ? "vous" : player.name} ({cards.length})
+          {open === view.viewer
+            ? t("Exile — you ({n})", { n: cards.length })
+            : t("Exile — {player} ({n})", { player: player.name, n: cards.length })}
         </h2>
         <div className="hand-picker">
-          {cards.length === 0 && <p className="hint">Vide.</p>}
+          {cards.length === 0 && <p className="hint">{t("Empty.")}</p>}
           {[...cards].reverse().map((c) => (
             <div key={c.uid} className="exile-entry">
               <Card face={c} obj={c} width="var(--pick-w)" glow={playable.has(c.id) ? "playable" : null} />
-              {holder.has(c.id) && <span className="exile-holder">Exilée par {holder.get(c.id)}</span>}
+              {holder.has(c.id) && (
+                <span className="exile-holder">{t("Exiled by {name}", { name: holder.get(c.id) ?? "" })}</span>
+              )}
             </div>
           ))}
         </div>
         <div className="modal-actions">
           <button type="button" className="btn" onClick={() => close(null)}>
-            Fermer
+            {t("Close")}
           </button>
         </div>
       </div>
@@ -720,8 +766,9 @@ function GraveyardViewer() {
   const view = useGame((s) => s.view);
   const close = useGame((s) => s.openGraveyard);
   const beginCasting = useGame((s) => s.beginCasting);
-  // Flashback : sorts lançables depuis le cimetière.
-  // et capacités activées depuis le cimetière.
+  const t = useT();
+  // Flashback: spells castable from the graveyard,
+  // and abilities activated from the graveyard.
   const graveIds = new Set((view && open ? view.players[open]?.graveyard : [])?.map((c) => c.id));
   const castable = myActions(view).filter(
     (a): a is PlayableOption => (a.type === "cast" && !!a.fromGraveyard) || (a.type === "activate" && graveIds.has(a.source)),
@@ -741,10 +788,12 @@ function GraveyardViewer() {
     <div className="modal-backdrop" onClick={() => close(null)} onKeyDown={(e) => e.key === "Escape" && close(null)}>
       <div className="modal wide" role="dialog" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <h2>
-          Cimetière — {open === view.viewer ? "vous" : player.name} ({player.graveyard.length})
+          {open === view.viewer
+            ? t("Graveyard — you ({n})", { n: player.graveyard.length })
+            : t("Graveyard — {player} ({n})", { player: player.name, n: player.graveyard.length })}
         </h2>
         <div className="hand-picker">
-          {player.graveyard.length === 0 && <p className="hint">Vide.</p>}
+          {player.graveyard.length === 0 && <p className="hint">{t("Empty.")}</p>}
           {[...player.graveyard].reverse().map((c) => (
             <Card
               key={c.uid}
@@ -758,7 +807,7 @@ function GraveyardViewer() {
         </div>
         <div className="modal-actions">
           <button type="button" className="btn" onClick={() => close(null)}>
-            Fermer
+            {t("Close")}
           </button>
         </div>
       </div>
@@ -766,7 +815,7 @@ function GraveyardViewer() {
   );
 }
 
-/** Score d'un match BO3, du point de vue du joueur (« 1 – 0 »), et son issue. */
+/** Score of a BO3 match, from the player's point of view ("1 – 0"), and its outcome. */
 function matchSummary(view: GameView): {
   bestOf: number;
   game: number;
@@ -803,17 +852,18 @@ function matchSummary(view: GameView): {
 }
 
 /**
- * Multijoueur : le joueur est éliminé mais la partie continue sans lui (800.4a) ; il peut regarder la fin ou quitter.
+ * Multiplayer: the player is eliminated but the game goes on without them (800.4a); they can watch the end or quit.
  */
 function Eliminated({ view }: { view: GameView }) {
   const backToLobby = useGame((s) => s.backToLobby);
   const replay = useGame((s) => !!s.replay);
+  const t = useT();
   if (view.over || replay || !view.players[view.viewer]?.lost) return null;
   return (
     <div className="eliminated-banner" role="status" data-testid="eliminated">
-      <span>Vous avez été éliminé. La partie continue sans vous.</span>
+      <span>{t("You have been eliminated. The game goes on without you.")}</span>
       <button type="button" className="btn" onClick={backToLobby}>
-        Quitter
+        {t("Quit")}
       </button>
     </div>
   );
@@ -826,18 +876,19 @@ function GameOver({ view }: { view: GameView }) {
   const localMatch = useGame((s) => s.localMatch);
   const replay = useGame((s) => !!s.replay);
   const nextGame = useGame((s) => s.nextGame);
-  // Tutoriel : le guide annonce lui-même la fin de la partie et propose la suite.
-  const coached = useTutorial((t) => !!t.lessonId);
+  const t = useT();
+  // Tutorial: the guide announces the end of the game itself and offers what comes next.
+  const coached = useTutorial((x) => !!x.lessonId);
   if (!view.over || coached || replay) return null;
   const me = online?.players.find((p) => p.seat === online.seat);
   const opp = online?.players.find((p) => p.seat !== online.seat);
-  // À plusieurs : la revanche attend que tous les autres joueurs, encore connectés, l'acceptent.
+  // Multiplayer: the rematch waits until all the other players, still connected, accept it.
   const others = online?.players.filter((p) => p.seat !== online.seat) ?? [];
   const multi = others.length > 1;
   const othersConnected = others.every((p) => p.connected);
   const won = view.winner === view.viewer;
   const match = matchSummary(view);
-  // BO3 en cours : réserve puis manche suivante (en ligne, statut « sideboard » envoyé par le serveur).
+  // BO3 in progress: sideboard then next game (online, "sideboard" status sent by the server).
   const between = !!match && !match.decided && (online ? online.status === "sideboard" : true);
   const deckNow = online ? online.deck : localMatch?.deck;
   const original = online ? online.deck : localMatch?.original;
@@ -847,45 +898,63 @@ function GameOver({ view }: { view: GameView }) {
         <h2>
           {match?.decided
             ? match.wonMatch
-              ? "Match gagné !"
+              ? t("Match won!")
               : match.mine === match.theirs
-                ? "Match nul"
-                : "Match perdu"
+                ? t("Match drawn")
+                : t("Match lost")
             : won
-              ? "Victoire !"
+              ? t("Victory!")
               : view.winner
-                ? "Défaite"
-                : "Match nul"}
+                ? t("Defeat")
+                : t("Game drawn")}
         </h2>
         {!won && view.winner && view.opponents.length > 1 && (
-          <p className="match-score">{view.players[view.winner]?.name} gagne la partie.</p>
+          <p className="match-score">{t("{name} wins the game.", { name: view.players[view.winner]?.name ?? "" })}</p>
         )}
         {match && (
           <p className="match-score">
-            Manche {match.game} · Score {match.mine} – {match.theirs} (au meilleur des {match.bestOf})
+            {t("Game {game} · Score {mine} – {theirs} (best of {bestOf})", {
+              game: match.game,
+              mine: match.mine,
+              theirs: match.theirs,
+              bestOf: match.bestOf,
+            })}
           </p>
         )}
         <p className="hint">
-          Tour {view.turn.number} · Vous {view.players[view.viewer]?.life} PV
-          {view.opponents.map((o) => ` · ${view.players[o]?.name} ${view.players[o]?.life} PV`).join("")}
+          {t("Turn {n} · You {life} life", { n: view.turn.number, life: view.players[view.viewer]?.life ?? "" })}
+          {view.opponents
+            .map((o) => ` · ${t("{name} {life} life", { name: view.players[o]?.name ?? "", life: view.players[o]?.life ?? "" })}`)
+            .join("")}
         </p>
         {between && deckNow && original && (
           <SideboardEditor
             key={`${match?.game}`}
             start={deckNow}
             original={original}
-            waiting={online && me?.ready ? `En attente de ${opp?.name ?? "l'adversaire"}…` : undefined}
+            waiting={
+              online && me?.ready
+                ? opp?.name
+                  ? t("Waiting for {name}…", { name: opp.name })
+                  : t("Waiting for the opponent…")
+                : undefined
+            }
             onSubmit={nextGame}
           />
         )}
-        {online && !multi && opp?.rematch && !me?.rematch && <p className="hint">{opp.name} propose une revanche.</p>}
+        {online && !multi && opp?.rematch && !me?.rematch && (
+          <p className="hint">{t("{name} offers a rematch.", { name: opp.name })}</p>
+        )}
         {online && multi && others.some((p) => p.rematch) && !me?.rematch && (
           <p className="hint">
-            {others
-              .filter((p) => p.rematch)
-              .map((p) => p.name)
-              .join(", ")}{" "}
-            {others.filter((p) => p.rematch).length > 1 ? "proposent" : "propose"} une revanche.
+            {others.filter((p) => p.rematch).length > 1
+              ? t("{names} offer a rematch.", {
+                  names: others
+                    .filter((p) => p.rematch)
+                    .map((p) => p.name)
+                    .join(", "),
+                })
+              : t("{name} offers a rematch.", { name: others.find((p) => p.rematch)?.name ?? "" })}
           </p>
         )}
         <div className="modal-actions">
@@ -896,14 +965,20 @@ function GameOver({ view }: { view: GameView }) {
               disabled={!!me?.rematch || !othersConnected}
               onClick={rematch}
               title={
-                !othersConnected ? (multi ? "Un joueur a quitté la partie" : "Votre adversaire a quitté la partie") : undefined
+                !othersConnected ? (multi ? t("A player has left the game") : t("Your opponent has left the game")) : undefined
               }
             >
-              {me?.rematch ? `En attente ${multi ? "des autres joueurs" : `de ${opp?.name ?? "l'adversaire"}`}…` : "Revanche"}
+              {me?.rematch
+                ? multi
+                  ? t("Waiting for the other players…")
+                  : opp?.name
+                    ? t("Waiting for {name}…", { name: opp.name })
+                    : t("Waiting for the opponent…")
+                : t("Rematch")}
             </button>
           )}
           <button type="button" className={`btn ${online ? "" : "primary"}`} onClick={backToLobby}>
-            {online ? "Quitter" : "Retour au menu"}
+            {online ? t("Quit") : t("Back to menu")}
           </button>
         </div>
       </div>
@@ -912,8 +987,8 @@ function GameOver({ view }: { view: GameView }) {
 }
 
 /**
- * Terrain joué avec une question « en arrivant » (Cavern of Souls : un type de créature ; Echoing Deeps : une carte de
- * terrain d'un cimetière à copier, ou aucune).
+ * Land played with an "as it enters" question (Cavern of Souls: a creature type; Echoing Deeps: a land card of a
+ * graveyard to copy, or none).
  */
 function LandChoice() {
   const option = useGame((s) => s.landChoice);
@@ -921,12 +996,13 @@ function LandChoice() {
   const view = useGame((s) => s.view);
   const lang = useGame((s) => s.lang);
   const loc = useLocalize();
+  const t = useT();
   const [filter, setFilter] = useState("");
   const request = option?.choose;
   if (request?.type === "name") return <LandNameChoice key={option?.card} request={request} />;
   if (request?.type !== "pick") return null;
   const suggested = String(request.suggested[0] ?? "");
-  // Une carte d'un cimetière (Echoing Deeps) : son nom ; sinon le libellé du moteur, ou la valeur.
+  // A card of a graveyard (Echoing Deeps): its name; otherwise the engine's label, or the value.
   const graveyards = Object.values(view?.players ?? {}).flatMap((pl) => pl.graveyard);
   const label = (v: string) => {
     const card = graveyards.find((o) => o.id === v);
@@ -939,34 +1015,35 @@ function LandChoice() {
   return (
     <Modal title={loc(request.prompt)}>
       {request.options.length > 12 && (
-        <input className="choice-filter" placeholder="Filtrer…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <input className="choice-filter" placeholder={t("Filter…")} value={filter} onChange={(e) => setFilter(e.target.value)} />
       )}
       <div className="choice-list scroll">
         {shown.slice(0, 60).map((v) => (
           <button key={v} type="button" className={`btn choice ${v === suggested ? "suggested" : ""}`} onClick={() => answer(v)}>
             {label(v)}
-            {v === suggested ? " (suggestion)" : ""}
+            {v === suggested ? ` ${t("(suggestion)")}` : ""}
           </button>
         ))}
       </div>
       <div className="modal-actions">
         {request.min === 0 && (
           <button type="button" className="btn" onClick={() => answer("")}>
-            Aucune
+            {t("ctx:feminine|None")}
           </button>
         )}
         <button type="button" className="btn ghost" onClick={() => answer(null)}>
-          Annuler
+          {t("Cancel")}
         </button>
       </div>
     </Modal>
   );
 }
 
-/** Terrain joué avec un nom à choisir (Cavern of Souls : un type de créature) : recherche dans toute la liste. */
+/** Land played with a name to choose (Cavern of Souls: a creature type): search in the whole list. */
 function LandNameChoice({ request }: { request: Extract<ChoiceRequest, { type: "name" }> }) {
   const answer = useGame((s) => s.answerLandChoice);
   const loc = useLocalize();
+  const t = useT();
   const suggested = String(request.suggested[0] ?? "");
   const [value, setValue] = useState(suggested);
   return (
@@ -981,38 +1058,48 @@ function LandNameChoice({ request }: { request: Extract<ChoiceRequest, { type: "
       />
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={() => answer(null)}>
-          Annuler
+          {t("Cancel")}
         </button>
         <button type="button" className="btn primary" disabled={!value} onClick={() => answer(value)}>
-          Valider
+          {t("Confirm")}
         </button>
       </div>
     </Modal>
   );
 }
 
-/** Règle des légendaires : confirmation avant de lancer un légendaire dont vous contrôlez déjà un exemplaire. */
+/** Place of a JSX element in a translated sentence (split around it). */
+const SLOT = "\u0001";
+
+/** Legend rule: confirmation before casting a legendary of which you already control a copy. */
 function LegendConfirm() {
   const pending = useGame((s) => s.legendConfirm);
   const confirm = useGame((s) => s.confirmLegend);
   const cancel = useGame((s) => s.cancelLegend);
   const view = useGame((s) => s.view);
   const lang = useGame((s) => s.lang);
+  const t = useT();
   if (!pending || !view) return null;
   const existing = view.battlefield.find((o) => o.controller === view.viewer && o.name === pending.name);
   const shown = existing ? faceName(existing, lang) : pending.name;
+  // The card name goes in bold: the sentence is split around its place.
+  const [before, after] = t(
+    "You already control {card}. If you cast this spell, you will have to choose which one to keep: the other one will go to the graveyard.",
+    { card: SLOT },
+  ).split(SLOT);
   return (
-    <Modal title="Règle des légendaires">
+    <Modal title={t("Legend rule")}>
       <p className="legend-warning">
-        Vous contrôlez déjà <strong>{shown}</strong>. Si vous lancez ce sort, vous devrez choisir lequel garder : l'autre ira au
-        cimetière.
+        {before}
+        <strong>{shown}</strong>
+        {after}
       </p>
       <div className="modal-actions">
         <button type="button" className="btn" onClick={cancel}>
-          Annuler
+          {t("Cancel")}
         </button>
         <button type="button" className="btn primary" onClick={confirm}>
-          Lancer quand même
+          {t("Cast anyway")}
         </button>
       </div>
     </Modal>

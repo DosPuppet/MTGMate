@@ -1,24 +1,24 @@
 /**
- * Écrans tactiles (tablette, téléphone) : pas de survol, donc l'aperçu d'une carte passe par l'appui long,
- * et une carte de la main se lève au premier tap avant d'être jouée au second.
+ * Touch screens (tablet, phone): no hover, so a card's preview goes through the long press,
+ * and a card in hand rises on the first tap before being played on the second.
  */
 import { type PointerEvent, useRef } from "react";
 
-/** Pointeur principal tactile (pas de survol). Un ordinateur à écran tactile garde le comportement de la souris. */
+/** Touch primary pointer (no hover). A computer with a touch screen keeps the mouse behavior. */
 export const isTouch = (): boolean =>
   typeof window !== "undefined" && window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
-/** Durée de l'appui long (ms) et tolérance de mouvement (px) avant qu'il soit annulé (glisser, défilement). */
+/** Duration of the long press (ms) and movement tolerance (px) before it is cancelled (drag, scroll). */
 const LONG_PRESS_MS = 450;
 const MOVE_TOLERANCE = 10;
 
 let lastLongPress = 0;
-/** Vrai juste après un appui long : le tap qui le termine ne doit pas jouer la carte. */
+/** True just after a long press: the tap that ends it must not play the card. */
 export const justLongPressed = (): boolean => Date.now() - lastLongPress < 700;
 
 /**
- * Gestionnaires d'appui long (doigt seulement) à étaler sur l'élément : `onLong` est appelé après LONG_PRESS_MS
- * sans mouvement. Le clic qui suit est absorbé.
+ * Long-press handlers (finger only) to spread on the element: `onLong` is called after LONG_PRESS_MS
+ * without movement. The click that follows is swallowed.
  */
 export function useLongPress(onLong: (() => void) | undefined) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -1,14 +1,14 @@
 /**
- * Sauvegarde de la partie locale en cours (contre l'IA), pour la reprendre exactement où elle en était quand la page
- * est rouverte : l'enregistrement de la partie (graine, decks, décisions) suffit, le moteur étant déterministe ; le
- * worker la rejoue puis reprend la main. Le tutoriel et le bac à sable ne sont pas enregistrés, donc pas sauvegardés.
+ * Save of the local game in progress (against the AI), to resume it exactly where it was when the page is reopened:
+ * the game record (seed, decks, decisions) is enough, the engine being deterministic; the worker replays it and then
+ * takes over. The tutorial and the sandbox are not recorded, hence not saved.
  */
 import type { AiLevel } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import { type Format, type GameRecord, isGameRecord } from "@mtgx/engine";
 import type { LogLine } from "./i18n";
 
-/** Match BO3 contre l'IA en cours (même forme que `LocalMatch` du store). */
+/** BO3 match against the AI in progress (same shape as the store's `LocalMatch`). */
 export interface SavedMatch {
   bestOf: 3;
   wins: Record<string, number>;
@@ -25,9 +25,9 @@ export interface SavedLocalGame {
   version: 1;
   record: GameRecord;
   aiLevel?: AiLevel;
-  /** Match BO3 au début de la manche en cours (la manche reprise compte en se terminant), s'il y en a un. */
+  /** BO3 match at the start of the current game (the resumed game counts when it ends), if there is one. */
   match: SavedMatch | null;
-  /** Journal de la partie au moment de la sauvegarde. */
+  /** Game log at the time of the save. */
   log?: LogLine[];
   savedAt: string;
 }
@@ -55,7 +55,7 @@ export function storeSavedGame(game: SavedLocalGame): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(game));
   } catch {
-    // stockage plein ou indisponible : la partie ne pourra pas être reprise
+    // storage full or unavailable: the game cannot be resumed
   }
 }
 
@@ -63,14 +63,13 @@ export function clearSavedGame(): void {
   try {
     localStorage.removeItem(KEY);
   } catch {
-    // stockage indisponible
+    // storage unavailable
   }
 }
 
 /**
- * Enregistrement tenu à jour à partir des messages du worker (`saved`) : l'en-tête une fois, puis les décisions
- * nouvelles. Les écritures sont regroupées (au plus une toutes les `delayMs`), et `flush` écrit tout de suite (fermeture
- * de la page).
+ * Record kept up to date from the worker's messages (`saved`): the header once, then the new decisions. Writes are
+ * grouped (at most one every `delayMs`), and `flush` writes at once (page closed).
  */
 export class SaveWriter {
   private record: GameRecord | null = null;
@@ -82,7 +81,7 @@ export class SaveWriter {
     private readonly delayMs = 400,
   ) {}
 
-  /** Reprise : l'enregistrement rejoué devient le point de départ. */
+  /** Resume: the replayed record becomes the starting point. */
   start(record: GameRecord): void {
     this.record = structuredClone(record);
   }
@@ -101,7 +100,7 @@ export class SaveWriter {
     if (this.record) this.write({ version: 1, record: this.record, ...this.meta(), savedAt: new Date().toISOString() });
   }
 
-  /** Abandon de la sauvegarde (partie quittée) : plus aucune écriture. */
+  /** Save abandoned (game left): no more writes. */
   stop(): void {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;

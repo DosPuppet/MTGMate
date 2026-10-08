@@ -1,51 +1,51 @@
 /**
- * Mise en page du champ de bataille (inspirée de MTGA), sans React :
- * - rangée de devant : créatures ;
- * - rangée arrière : terrains en piles à gauche, puis artefacts et enchantements non-créatures ;
- * - zone des planeswalkers tout à droite, sur la hauteur des deux rangées (planeswalkers et batailles) ;
- * - jetons identiques regroupés en piles « ×N » à partir de TOKEN_GROUP_MIN ;
- * - une rangée passe sur 2 lignes (ou plus dans les zones étroites) quand cela permet des cartes plus grandes,
- *   puis les cartes rétrécissent.
+ * Battlefield layout (inspired by MTGA), without React:
+ * - front row: creatures;
+ * - back row: lands in piles on the left, then noncreature artifacts and enchantments;
+ * - planeswalker zone on the far right, over the height of both rows (planeswalkers and battles);
+ * - identical tokens grouped into "×N" piles from TOKEN_GROUP_MIN on;
+ * - a row wraps onto 2 lines (or more in narrow zones) when that allows larger cards,
+ *   then the cards shrink.
  */
 import type { ObjectView } from "@mtgx/engine";
 
 export const CARD_RATIO = 1.395;
-/** Taille de la rangée arrière (terrains, artefacts, enchantements) par rapport aux créatures. */
+/** Size of the back row (lands, artifacts, enchantments) relative to the creatures. */
 export const LAND_SCALE = 0.72;
-/** Recouvrement des terrains identiques empilés (voir .perm-group.pile). */
+/** Overlap of identical stacked lands (see .perm-group.pile). */
 const LAND_OVERLAP = 0.74;
-/** Décalage de chaque carte visible derrière une pile de jetons (voir .token-stack). */
+/** Offset of each card visible behind a token pile (see .token-stack). */
 export const TOKEN_OFFSET = 0.08;
-/** Cartes montrées derrière la carte du dessus d'une pile de jetons. */
+/** Cards shown behind the top card of a token pile. */
 export const TOKEN_SHADOWS = 2;
-/** Nombre de jetons identiques à partir duquel ils sont regroupés (« plus de 3 »). */
+/** Number of identical tokens from which they are grouped ("more than 3"). */
 export const TOKEN_GROUP_MIN = 4;
-/** Part de la hauteur d'une carte qui dépasse au-dessus de son hôte, par Aura ou Équipement attaché. */
+/** Share of a card's height showing above its host, per attached Aura or Equipment. */
 export const ATTACH_PEEK = 0.2;
-/** Plancher absolu : en dessous, la zone défile (overflow-y) plutôt que de rétrécir encore. */
+/** Absolute floor: below it, the zone scrolls (overflow-y) rather than shrinking further. */
 export const MIN_W = 28;
 const MAX_W = 160;
-/** Espacements en pixels (doivent correspondre à styles.css). */
+/** Spacings in pixels (must match styles.css). */
 export const GAP = 10;
 export const SEPARATOR = 28;
 const PAD_X = 28;
 const LINE_GAP = 6;
-/** Lignes au plus par rangée : 2 suffisent en duel, davantage sert dans les zones étroites du multijoueur. */
+/** Most lines per row: 2 are enough in a duel, more help in the narrow zones of multiplayer. */
 const MAX_FRONT_LINES = 4;
 const MAX_BACK_LINES = 3;
-/** Hauteur fixe : marges verticales, avancée des attaquants, écart entre rangées. */
+/** Fixed height: vertical margins, attackers moving forward, gap between rows. */
 const FIXED_H = 40;
 
 export interface Rows {
   creatures: ObjectView[];
-  /** Planeswalkers et batailles non-créatures (attaquables) : zone à part, tout à droite. */
+  /** Noncreature planeswalkers and battles (attackable): a zone of their own, on the far right. */
   walkers: ObjectView[];
   lands: ObjectView[];
-  /** Artefacts, enchantements et autres permanents non-créatures, non-terrains. */
+  /** Artifacts, enchantments and other noncreature, nonland permanents. */
   support: ObjectView[];
 }
 
-/** Répartit les permanents par rangée d'après leurs types courants (couches comprises). */
+/** Sorts the permanents into rows by their current types (layers included). */
 export function battlefieldRows(perms: ObjectView[]): Rows {
   const rows: Rows = { creatures: [], walkers: [], lands: [], support: [] };
   for (const o of perms) {
@@ -57,11 +57,11 @@ export function battlefieldRows(perms: ObjectView[]): Rows {
   return rows;
 }
 
-/** Un emplacement de la rangée : carte seule, pile de terrains ou pile de jetons. */
+/** A slot of the row: a single card, a pile of lands or a pile of tokens. */
 export interface Slot {
   kind: "single" | "pile" | "tokens";
   objs: ObjectView[];
-  /** Bloc de la rangée arrière (séparés par un espace plus large). */
+  /** Block of the back row (separated by a wider space). */
   block?: "lands" | "support";
 }
 
@@ -81,12 +81,12 @@ function grouped(objs: ObjectView[], keyOf: (o: ObjectView) => string | null): O
   return groups;
 }
 
-/** Terrains identiques regroupés en piles (même définition, même état engagé) ; ceux de `solo` restent seuls. */
+/** Identical lands grouped into piles (same definition, same tapped state); those in `solo` stay alone. */
 export function landGroups(lands: ObjectView[], solo?: ReadonlySet<string>): ObjectView[][] {
   return grouped(lands, (o) => (solo?.has(o.id) ? null : `${o.defId}|${o.tapped}`));
 }
 
-/** Ce qui distingue deux jetons à l'écran et pour les décisions (état, F/E, marqueurs, capacités). */
+/** What tells two tokens apart on screen and for decisions (state, P/T, counters, abilities). */
 export function tokenKey(o: ObjectView): string {
   const counters = Object.entries(o.counters)
     .filter(([, n]) => n)
@@ -110,10 +110,10 @@ export function tokenKey(o: ObjectView): string {
 }
 
 /**
- * Jetons identiques regroupés quand ils sont au moins TOKEN_GROUP_MIN ; les autres permanents
- * (et les jetons de `solo`, qui portent des attachements) restent seuls. L'ordre d'origine est conservé.
- * `extraKey` ajoute l'état propre à l'interface (lueur, attaquant choisi…) : deux jetons dans des états
- * différents ne sont jamais regroupés.
+ * Identical tokens grouped when there are at least TOKEN_GROUP_MIN of them; the other permanents
+ * (and the tokens in `solo`, which carry attachments) stay alone. The original order is kept.
+ * `extraKey` adds the interface's own state (glow, chosen attacker…): two tokens in different
+ * states are never grouped.
  */
 export function tokenSlots(
   objs: ObjectView[],
@@ -129,7 +129,7 @@ export function tokenSlots(
   return out;
 }
 
-/** Ordre de la rangée arrière, à droite des terrains (comme sur MTGA) : artefacts, puis enchantements, puis le reste. */
+/** Order of the back row, right of the lands (as on MTGA): artifacts, then enchantments, then the rest. */
 function supportRank(o: ObjectView): number {
   if (o.types.includes("Artifact")) return 0;
   if (o.types.includes("Enchantment")) return 1;
@@ -137,8 +137,8 @@ function supportRank(o: ObjectView): number {
 }
 
 /**
- * Emplacements de la rangée de devant (créatures), de la rangée arrière (terrains, puis artefacts et
- * enchantements) et de la zone des planeswalkers (tout à droite, planeswalkers et batailles).
+ * Slots of the front row (creatures), of the back row (lands, then artifacts and enchantments) and
+ * of the planeswalker zone (far right, planeswalkers and battles).
  */
 export function battlefieldSlots(
   rows: Rows,
@@ -158,7 +158,7 @@ export function battlefieldSlots(
   return { front, back, walkers };
 }
 
-/** Largeur d'un emplacement, en largeurs de carte (une carte engagée occupe sa hauteur). */
+/** Width of a slot, in card widths (a tapped card takes up its height). */
 export function slotUnits(s: Slot): number {
   const first = s.objs[0];
   const slot = first?.tapped ? CARD_RATIO : 1;
@@ -168,8 +168,8 @@ export function slotUnits(s: Slot): number {
 }
 
 /**
- * Largeur maximale de carte pour qu'une ligne tienne dans `avail` pixels, à côté d'une colonne réservée
- * de `reserve` largeurs de carte à l'échelle 1 (zone des planeswalkers).
+ * Largest card width for a line to fit in `avail` pixels, next to a reserved column
+ * of `reserve` card widths at scale 1 (planeswalker zone).
  */
 function lineFit(line: Slot[], avail: number, scale: number, reserve = 0): number {
   if (!line.length) return reserve ? avail / reserve : MAX_W;
@@ -180,8 +180,8 @@ function lineFit(line: Slot[], avail: number, scale: number, reserve = 0): numbe
 }
 
 /**
- * Découpe une rangée en `n` lignes consécutives (ordre conservé), en minimisant la largeur de la ligne
- * la plus chargée (partition linéaire, programmation dynamique : les rangées sont courtes).
+ * Splits a row into `n` consecutive lines (order kept), minimizing the width of the most loaded
+ * line (linear partition, dynamic programming: the rows are short).
  */
 export function splitLines(slots: Slot[], n: number): Slot[][] {
   const k = Math.min(n, slots.length);
@@ -190,7 +190,7 @@ export function splitLines(slots: Slot[], n: number): Slot[][] {
   const prefix = [0];
   for (const u of units) prefix.push((prefix[prefix.length - 1] as number) + u);
   const sum = (i: number, j: number) => (prefix[j] as number) - (prefix[i] as number);
-  // cost[l][j] : meilleure charge maximale pour les j premiers emplacements en l lignes ; cut : début de la dernière ligne.
+  // cost[l][j]: best maximum load for the first j slots in l lines; cut: start of the last line.
   const len = slots.length;
   const cost = Array.from({ length: k + 1 }, () => Array<number>(len + 1).fill(Number.POSITIVE_INFINITY));
   const cut = Array.from({ length: k + 1 }, () => Array<number>(len + 1).fill(0));
@@ -220,15 +220,15 @@ export interface BattlefieldFit {
   cardW: number;
   frontLines: number;
   backLines: number;
-  /** Pas vertical entre deux planeswalkers (px) : une carte entière, ou moins s'ils se recouvrent. */
+  /** Vertical step between two planeswalkers (px): a whole card, or less if they overlap. */
   walkerStep: number;
 }
 
-/** Part minimale visible d'un planeswalker recouvert (nom et loyauté). */
+/** Smallest visible share of an overlapped planeswalker (name and loyalty). */
 export const WALKER_MIN_PEEK = 0.22;
 const WALKER_GAP = 6;
 
-/** Pas vertical de la zone des planeswalkers pour `n` cartes de largeur `cardW` dans `height` pixels. */
+/** Vertical step of the planeswalker zone for `n` cards of width `cardW` in `height` pixels. */
 export function walkerStep(n: number, cardW: number, height: number): number {
   const h = cardW * CARD_RATIO;
   const avail = height - FIXED_H / 2;
@@ -237,23 +237,23 @@ export function walkerStep(n: number, cardW: number, height: number): number {
 }
 
 /**
- * Taille des cartes et nombre de lignes par rangée pour une zone de `width` × `height` pixels :
- * la combinaison qui donne les plus grandes cartes, à 2 px près en faveur de moins de lignes.
+ * Card size and number of lines per row for a zone of `width` × `height` pixels:
+ * the combination that gives the largest cards, within 2 px in favor of fewer lines.
  */
 export function fitBattlefield(
   width: number,
   height: number,
   front: Slot[],
   back: Slot[],
-  /** Planeswalkers et batailles : colonne à droite, d'une carte de large. */
+  /** Planeswalkers and battles: a column on the right, one card wide. */
   walkers: Slot[],
-  /** Nombre maximal d'Auras et d'Équipements attachés à une même carte. */
+  /** Largest number of Auras and Equipment attached to a single card. */
   attachDepth = 0,
 ): BattlefieldFit {
   const reserve = walkers.length ? 1 : 0;
   const avail = width - PAD_X - (walkers.length ? SEPARATOR : 0);
   let best: { raw: number; frontLines: number; backLines: number } | undefined;
-  // Moins de lignes d'abord : une ligne de plus doit faire gagner plus de 2 px.
+  // Fewer lines first: one more line must gain more than 2 px.
   const combos: [number, number][] = [];
   for (let f = 1; f <= MAX_FRONT_LINES; f++) for (let b = 1; b <= MAX_BACK_LINES; b++) combos.push([f, b]);
   combos.sort((x, y) => x[0] + x[1] - (y[0] + y[1]));
@@ -263,7 +263,7 @@ export function fitBattlefield(
     const byHeight = (height - FIXED_H - LINE_GAP * (f - 1 + b - 1)) / (CARD_RATIO * peek * (f + b * LAND_SCALE));
     const byFront = Math.min(...splitLines(front, f).map((l) => lineFit(l, avail, 1, reserve)));
     const byBack = Math.min(...splitLines(back, b).map((l) => lineFit(l, avail, LAND_SCALE, reserve)));
-    // Comparaison avant le plancher MIN_W : sous ce seuil, on garde l'option qui déborde le moins.
+    // Compared before the MIN_W floor: below that threshold, the option that overflows least is kept.
     const raw = Math.min(MAX_W, byHeight, byFront, byBack);
     if (!best || raw > best.raw + 2) best = { raw, frontLines: f, backLines: b };
   }
@@ -276,23 +276,23 @@ export function fitBattlefield(
   };
 }
 
-/** Pas naturel entre deux cartes de la main (part de la largeur d'une carte), quand la place ne manque pas. */
+/** Natural step between two cards of the hand (share of a card's width), when there is room enough. */
 export const HAND_STEP = 0.68;
-/** Pas minimal : le coin gauche de chaque carte (nom, coût) reste visible. */
+/** Smallest step: the left corner of each card (name, cost) stays visible. */
 export const HAND_MIN_STEP = 0.14;
 
 /**
- * Pas horizontal (px) entre deux cartes de la main pour que `n` cartes de largeur `cardW` tiennent dans `width` :
- * elles se recouvrent davantage au lieu de déborder de l'écran (seul le plancher HAND_MIN_STEP peut déborder).
+ * Horizontal step (px) between two cards of the hand so that `n` cards of width `cardW` fit in `width`:
+ * they overlap more instead of overflowing the screen (only the HAND_MIN_STEP floor can overflow).
  */
 export function fitHand(width: number, cardW: number, n: number): number {
   if (n <= 1) return cardW * HAND_STEP;
-  // Marge pour l'éventail : les cartes des extrémités, inclinées, débordent d'environ un tiers de carte.
+  // Margin for the fan: the tilted cards at both ends stick out by about a third of a card.
   const avail = width - cardW * 1.35;
   return Math.max(cardW * HAND_MIN_STEP, Math.min(cardW * HAND_STEP, avail / (n - 1)));
 }
 
-/** Élément du plateau qui représente un objet (carte seule, ou pile de jetons qui le contient). */
+/** Board element that stands for an object (a single card, or the token pile that contains it). */
 export function findObjectEl(id: string): Element | null {
   const esc = CSS.escape(id);
   return document.querySelector(`[data-oid="${esc}"]`) ?? document.querySelector(`[data-oids~="${esc}"]`);

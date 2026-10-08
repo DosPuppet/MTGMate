@@ -1,36 +1,39 @@
 /**
- * Pastilles des capacités actives d'un permanent (vol, portée, initiative, garde…), façon MTGA :
- * une icône par mot-clé (imprimé ou accordé), et le détail au survol.
+ * Badges for a permanent's active abilities (flying, reach, first strike, ward…), MTGA style:
+ * one icon per keyword (printed or granted), and the details on hover.
  */
 import type { Keyword, ObjectView } from "@mtgx/engine";
-import { RESTRICTIONS } from "@mtgx/engine";
+import { msg, RESTRICTIONS } from "@mtgx/engine";
 import { type ReactNode, useState } from "react";
 import { createPortal } from "react-dom";
 import { KEYWORD_LABEL } from "../i18n";
+import { useLocalize, useT } from "../localize";
 import { useGame } from "../store";
 
-/** Mots-clés sans intérêt sur le champ de bataille (ou déjà affichés ailleurs). */
+/** Keywords of no interest on the battlefield (or already shown elsewhere). */
 const HIDDEN: ReadonlySet<Keyword> = new Set<Keyword>(["flash", "convoke", "startYourEngines"]);
 
-/** Rappel de règle affiché dans l'infobulle. */
+/** Reminder text shown in the tooltip. */
 const HELP: Partial<Record<Keyword, string>> = {
-  flying: "Ne peut être bloquée que par des créatures avec le vol ou la portée.",
-  reach: "Peut bloquer les créatures avec le vol.",
-  firstStrike: "Inflige ses blessures de combat avant les créatures sans initiative.",
-  doubleStrike: "Inflige des blessures de combat avant les autres, puis à nouveau en même temps qu'elles.",
-  deathtouch: "Toute quantité de blessures qu'elle inflige à une créature suffit à la détruire.",
-  lifelink: "Les blessures qu'elle inflige font aussi gagner autant de points de vie à son contrôleur.",
-  trample: "L'excédent de blessures de combat au-delà des bloqueurs est infligé au joueur ou planeswalker attaqué.",
-  vigilance: "Attaquer ne l'engage pas.",
-  haste: "Peut attaquer et utiliser {T} dès son arrivée.",
-  menace: "Ne peut être bloquée que par deux créatures ou plus.",
-  defender: "Ne peut pas attaquer.",
-  hexproof: "Ne peut pas être la cible des sorts ni des capacités des adversaires.",
-  indestructible: "Les blessures et les effets « détruire » ne la détruisent pas.",
-  prowess: "Chaque fois que son contrôleur lance un sort non-créature, elle gagne +1/+1 jusqu'à la fin du tour.",
-  ward: "Quand elle devient la cible d'un sort ou d'une capacité d'un adversaire, ce sort ou cette capacité est contrecarré à moins que son contrôleur ne paie le coût de garde.",
-  changeling: "Elle a tous les types de créature.",
-  wither: "Ses blessures aux créatures prennent la forme de marqueurs −1/−1.",
+  flying: msg("Can't be blocked except by creatures with flying or reach."),
+  reach: msg("Can block creatures with flying."),
+  firstStrike: msg("Deals combat damage before creatures without first strike."),
+  doubleStrike: msg("Deals combat damage before the others, then again at the same time as them."),
+  deathtouch: msg("Any amount of damage it deals to a creature is enough to destroy it."),
+  lifelink: msg("Damage dealt by it also causes its controller to gain that much life."),
+  trample: msg("Combat damage in excess of what its blockers need is dealt to the attacked player or planeswalker."),
+  vigilance: msg("Attacking doesn't cause it to tap."),
+  haste: msg("Can attack and {T} as soon as it enters."),
+  menace: msg("Can't be blocked except by two or more creatures."),
+  defender: msg("Can't attack."),
+  hexproof: msg("Can't be the target of spells or abilities your opponents control."),
+  indestructible: msg('Damage and effects that say "destroy" don\'t destroy it.'),
+  prowess: msg("Whenever its controller casts a noncreature spell, it gets +1/+1 until end of turn."),
+  ward: msg(
+    "Whenever it becomes the target of a spell or ability an opponent controls, counter it unless that player pays the ward cost.",
+  ),
+  changeling: msg("It is every creature type."),
+  wither: msg("It deals damage to creatures in the form of −1/−1 counters."),
 };
 
 const stroke = {
@@ -43,7 +46,7 @@ const stroke = {
 const solid = { fill: "currentColor" } as const;
 const SHIELD = "M12 3 L20 6 V11 C20 16 16.5 19.5 12 21 C7.5 19.5 4 16 4 11 V6 Z";
 
-/** Icônes (viewBox 24×24, couleur héritée). */
+/** Icons (24×24 viewBox, inherited color). */
 const ICONS: Partial<Record<Keyword, ReactNode>> = {
   flying: <path {...solid} d="M2 19 C8 18 13 14 16 5 C17.5 9 16.5 13 13.5 16 L21 15 C18 19.5 12 21 6 20.5 Z" />,
   reach: <path {...solid} d="M12 2 L19 10 H14.5 V21 H9.5 V10 H5 Z" />,
@@ -110,7 +113,7 @@ const ICONS: Partial<Record<Keyword, ReactNode>> = {
   prowess: <path {...solid} d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z" />,
 };
 
-/** Icône des protections et défenses talismaniques « contre [filtre] » : bouclier marqué. */
+/** Icon of protections and hexproof "from [filter]": a marked shield. */
 const PROTECTION_ICON = (
   <g>
     <path {...solid} d={SHIELD} />
@@ -118,7 +121,7 @@ const PROTECTION_ICON = (
   </g>
 );
 
-/** Icône des restrictions (« ne peut pas bloquer »…) : cercle barré. */
+/** Icon of restrictions ("can't block"…): a struck-through circle. */
 const RESTRICTION_ICON = (
   <g {...stroke}>
     <circle cx="12" cy="12" r="8" />
@@ -126,7 +129,7 @@ const RESTRICTION_ICON = (
   </g>
 );
 
-/** Icône de la provocation (701.38) : flèche d'attaque. */
+/** Icon of goad (701.38): an attack arrow. */
 const GOAD_ICON = (
   <g {...stroke}>
     <path d="M5 19 L17 7" />
@@ -147,16 +150,20 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
   const protections = obj.protections ?? [];
   const powerRules = obj.powerRules ?? [];
   const goaded = obj.goaded ?? [];
-  // « Ne se dégage pas » (remplacement de l'étape de dégagement) : affiché avec les règles, comme une restriction.
+  // "Doesn't untap" (replacement of the untap step): shown with the rules, as a restriction.
   const rules = obj.untapRule ? [...(obj.blockRules ?? []), obj.untapRule] : (obj.blockRules ?? []);
   const view = useGame((s) => s.view);
+  const t = useT();
+  const loc = useLocalize();
   if (shown.length === 0 && rules.length === 0 && protections.length === 0 && powerRules.length === 0 && goaded.length === 0)
     return null;
-  // Provocation : par qui, et ce qu'elle impose (un joueur autre que lui).
-  const goader = (by: string) => (by === view?.viewer ? "vous" : (view?.players[by]?.name ?? by));
+  // Goad: by whom, and what it imposes (a player other than them).
+  const goadedBy = (by: string) =>
+    by === view?.viewer ? t("Goaded by you") : t("Goaded by {player}", { player: view?.players[by]?.name ?? by });
+  // Engine texts (rules, protections, reminders) are localized when shown.
   const hover = (title: string, help?: string) => (ev: React.MouseEvent<HTMLElement>) => {
     const r = ev.currentTarget.getBoundingClientRect();
-    setTip({ x: r.right + 6, y: r.top + r.height / 2, title, help });
+    setTip({ x: r.right + 6, y: r.top + r.height / 2, title: loc(title), help: help === undefined ? undefined : loc(help) });
   };
   return (
     <>
@@ -167,7 +174,7 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
             className="kw-badge"
             data-protection={title}
             role="img"
-            aria-label={title}
+            aria-label={loc(title)}
             onMouseEnter={hover(title)}
             onMouseLeave={() => setTip(null)}
           >
@@ -182,19 +189,19 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
             className="kw-badge"
             data-power-rule={title}
             role="img"
-            aria-label={title}
+            aria-label={loc(title)}
             onMouseEnter={hover(title)}
             onMouseLeave={() => setTip(null)}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <text x="12" y="16.5" textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor">
-                {title.charAt(0)}
+                {loc(title).charAt(0)}
               </text>
             </svg>
           </span>
         ))}
         {goaded.map((g) => {
-          const title = `Provoquée par ${goader(g.by)}`;
+          const title = goadedBy(g.by);
           return (
             <span
               key={`${g.by}-${g.label}`}
@@ -217,7 +224,7 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
             className="kw-badge restriction"
             data-rule={title}
             role="img"
-            aria-label={title}
+            aria-label={loc(title)}
             onMouseEnter={hover(title)}
             onMouseLeave={() => setTip(null)}
           >
@@ -228,7 +235,10 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
         ))}
         {shown.map((k) => {
           const restriction = RESTRICTIONS.includes(k);
-          const title = k === "ward" && obj.ward ? `${KEYWORD_LABEL[k]} — ${obj.ward}` : KEYWORD_LABEL[k];
+          const title =
+            k === "ward" && obj.ward
+              ? t("{keyword} — {cost}", { keyword: loc(KEYWORD_LABEL[k]), cost: loc(obj.ward) })
+              : loc(KEYWORD_LABEL[k]);
           return (
             <span
               key={k}
@@ -238,7 +248,8 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
               aria-label={title}
               onMouseEnter={(ev) => {
                 const r = ev.currentTarget.getBoundingClientRect();
-                setTip({ x: r.right + 6, y: r.top + r.height / 2, title, help: HELP[k] });
+                const help = HELP[k];
+                setTip({ x: r.right + 6, y: r.top + r.height / 2, title, help: help === undefined ? undefined : loc(help) });
               }}
               onMouseLeave={() => setTip(null)}
             >
@@ -247,7 +258,7 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
                   ? RESTRICTION_ICON
                   : (ICONS[k] ?? (
                       <text x="12" y="16.5" textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor">
-                        {KEYWORD_LABEL[k].charAt(0)}
+                        {title.charAt(0)}
                       </text>
                     ))}
               </svg>

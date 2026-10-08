@@ -1,8 +1,10 @@
 /**
- * Les leçons du tutoriel : chacune est un extrait de partie mis en scène (cartes de Foundations), avec un adversaire
- * scripté et une suite d'étapes. Toute modification est rejouée par `client/test/tutorial.test.ts`.
- * Textes en français, au vouvoiement ; les symboles de mana ({G}, {W}…) sont dessinés par la bulle du guide.
+ * The tutorial lessons: each one is a staged game excerpt (Foundations cards), with a scripted opponent and a
+ * sequence of steps. Every change is replayed by `client/test/tutorial.test.ts`.
+ * Texts are English `msg` literals, translated on display (French catalog, vouvoiement); mana symbols ({G}, {W}…) are
+ * drawn by the guide's bubble.
  */
+import { msg } from "@mtgx/engine";
 import {
   all,
   type Ctx,
@@ -21,17 +23,17 @@ import {
 const many = (n: number, name: string): string[] => Array.from({ length: n }, () => name);
 
 const powerOf = (c: Ctx, name: string) => c.view.battlefield.find((o) => o.name === name)?.power ?? 0;
-/** Le tour a avancé au-delà du tour n (la vue du tour adverse peut être sautée quand l'adversaire n'a rien fait de visible). */
+/** The game has moved past turn n (the view of the opponent's turn can be skipped when the opponent did nothing visible). */
 const pastTurn = (n: number) => (c: Ctx) => c.view.turn.number > n;
-/** Le joueur doit décider, pendant le tour indiqué (quelle que soit la décision). */
+/** The player must decide, during the given turn (whatever the decision). */
 const mineAtTurn = (n: number) => (c: Ctx) => c.view.turn.number === n && c.view.pending?.player === c.view.viewer;
 
 export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "ecran",
-    title: "Le but du jeu et l'écran",
-    summary: "Points de vie, champ de bataille, main, bibliothèque, cimetière et phases.",
+    title: msg("The goal of the game and the screen"),
+    summary: msg("Life, battlefield, hand, library, graveyard and phases."),
     scenario: {
       active: "you",
       turn: 3,
@@ -50,67 +52,79 @@ export const LESSONS: Lesson[] = [
     steps: [
       {
         next: true,
-        text: "Bienvenue ! Ce tutoriel vous apprend **Magic: The Gathering** pas à pas, sur de courts extraits de partie. Deux joueurs s'affrontent avec leur paquet de cartes, appelé **deck**.",
+        text: msg(
+          "Welcome! This tutorial teaches you **Magic: The Gathering** step by step, through short game excerpts. Two players face off, each with their own pile of cards, called a **deck**.",
+        ),
       },
       {
         next: true,
         target: "myLife",
-        text: "Voici vos **points de vie** : vous commencez à 20. Un joueur qui tombe à 0 perd la partie.",
+        text: msg("This is your **life total**: you start at 20. A player who drops to 0 loses the game."),
       },
       {
         next: true,
         target: "oppLife",
-        text: "Et voici ceux de votre adversaire, en haut. Votre but : les faire tomber à 0.",
+        text: msg("And this is your opponent's, at the top. Your goal: bring it down to 0."),
       },
       {
         next: true,
         target: "myField",
-        text: "Le **champ de bataille** : en bas, vos cartes en jeu (vos **permanents**) ; en haut, celles de l'adversaire. Vos **terrains** produisent du mana, vos **créatures** combattent.",
+        text: msg(
+          "The **battlefield**: at the bottom, your cards in play (your **permanents**); at the top, your opponent's. Your **lands** produce mana, your **creatures** fight.",
+        ),
       },
       {
         next: true,
         target: "hand",
-        text: "Votre **main** : les cartes que vous pouvez jouer. L'adversaire n'en voit que le nombre.",
+        text: msg("Your **hand**: the cards you can play. Your opponent only sees how many there are."),
       },
       {
         next: true,
         target: "library",
-        text: "Votre **bibliothèque** : le reste de votre deck, face cachée. Vous piochez une carte au début de chacun de vos tours.",
+        text: msg("Your **library**: the rest of your deck, face down. You draw a card at the beginning of each of your turns."),
       },
       {
         next: true,
         target: "graveyard",
-        text: "Votre **cimetière** : les créatures détruites et les sorts déjà joués y vont. Cliquez dessus pour le consulter.",
+        text: msg(
+          "Your **graveyard**: destroyed creatures and spells that have been cast go there. Click it to look through it.",
+        ),
       },
       {
         next: true,
         target: "phaseBar",
-        text: "La **barre des phases** : chaque tour suit le même ordre. Début (dégagement, entretien, pioche), première phase principale, combat, seconde phase principale, fin. La phase en cours est en surbrillance.",
+        text: msg(
+          "The **phase bar**: every turn follows the same order. Beginning (untap, upkeep, draw), first main phase, combat, second main phase, end. The current phase is highlighted.",
+        ),
       },
       {
         next: true,
         target: "mainButton",
-        text: "Le **bouton principal** fait avancer la partie : aller au combat, valider une attaque, finir votre tour… Raccourci : la barre Espace.",
+        text: msg(
+          "The **main button** moves the game forward: go to combat, confirm an attack, end your turn… Shortcut: the space bar.",
+        ),
       },
       {
         target: { card: "Savannah Lions", zone: "battlefield" },
         until: hovered("Savannah Lions"),
-        text: "Pour lire une carte, survolez-la avec la souris (sur tablette, gardez le doigt appuyé dessus). Essayez avec les **Lions des savanes**.",
-        hint: "Survolez les Lions des savanes pour continuer.",
+        text: msg(
+          "To read a card, hover over it with the mouse (on a tablet, press and hold it). Try it with the **Savannah Lions**.",
+        ),
+        hint: msg("Hover over the Savannah Lions to continue."),
       },
       {
         next: true,
         target: "preview",
-        text: "L'**aperçu** montre la carte en grand, avec son texte complet et l'explication de ses mots-clés.",
+        text: msg("The **preview** shows the card enlarged, with its full text and an explanation of its keywords."),
       },
       {
         next: true,
         target: "log",
-        text: "Le **journal** raconte tout ce qui se passe dans la partie. Utile quand l'adversaire joue vite !",
+        text: msg("The **log** records everything that happens in the game. Handy when your opponent plays fast!"),
       },
       {
         next: true,
-        text: "C'est tout pour l'écran. Dans la leçon suivante, vous jouerez vos premières cartes.",
+        text: msg("That's all for the screen. In the next lesson, you'll play your first cards."),
       },
     ],
   },
@@ -118,8 +132,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "mana",
-    title: "Terrains et mana",
-    summary: "Jouer un terrain par tour, payer le coût d'un sort.",
+    title: msg("Lands and mana"),
+    summary: msg("Play one land per turn, pay a spell's cost."),
     scenario: {
       active: "you",
       turn: 1,
@@ -137,82 +151,92 @@ export const LESSONS: Lesson[] = [
       {
         next: true,
         target: "hand",
-        text: "Pour jouer vos cartes, il vous faut du **mana**, produit par vos **terrains**. Vous pouvez jouer **un seul terrain par tour**, pendant une de vos phases principales.",
+        text: msg(
+          "To play your cards, you need **mana**, produced by your **lands**. You can play **only one land per turn**, during one of your main phases.",
+        ),
       },
       {
         target: { card: "Forest", zone: "hand" },
         allow: [{ playLand: "Forest" }],
         until: onField("Forest"),
-        text: "Jouez votre **Forêt** : cliquez-la, ou faites-la glisser vers le champ de bataille.",
-        hint: "Jouez la Forêt pour continuer.",
+        text: msg("Play your **Forest**: click it, or drag it onto the battlefield."),
+        hint: msg("Play the Forest to continue."),
       },
       {
         next: true,
         target: { card: "Llanowar Elves", zone: "hand" },
-        text: "Le **coût** d'un sort est en haut à droite de la carte. Les **Elfes de Llanowar** coûtent {G} : un mana vert, justement ce que produit une Forêt.",
+        text: msg(
+          "A spell's **cost** is in the top right corner of the card. **Llanowar Elves** cost {G}: one green mana, exactly what a Forest produces.",
+        ),
       },
       {
         target: { card: "Llanowar Elves", zone: "hand" },
         allow: [{ cast: "Llanowar Elves" }],
         until: onField("Llanowar Elves"),
-        text: "Lancez les **Elfes de Llanowar**. Le jeu **engage** (incline) la Forêt pour payer.",
-        hint: "Lancez les Elfes de Llanowar pour continuer.",
+        text: msg("Cast the **Llanowar Elves**. The game **taps** (turns sideways) the Forest to pay."),
+        hint: msg("Cast the Llanowar Elves to continue."),
       },
       {
         next: true,
         target: { card: "Forest", zone: "battlefield" },
-        text: "La Forêt est engagée : elle a servi ce tour-ci. Elle se **dégagera** au début de votre prochain tour.",
+        text: msg("The Forest is tapped: it has been used this turn. It will **untap** at the beginning of your next turn."),
       },
       {
         next: true,
         target: { card: "Savannah Lions", zone: "hand" },
-        text: "Les **Lions des savanes** coûtent {W} (blanc) : il faudrait une Plaine, mais vous avez déjà joué un terrain ce tour-ci. Ils attendront.",
+        text: msg(
+          "**Savannah Lions** cost {W} (white): you would need a Plains, but you have already played a land this turn. They will have to wait.",
+        ),
       },
       {
         target: "mainButton",
         allow: ["endTurn"],
         until: pastTurn(1),
-        text: "Terminez votre tour avec le bouton **Fin du tour**.",
-        hint: "Cliquez « Fin du tour » pour continuer.",
+        text: msg("End your turn with the **End turn** button."),
+        hint: msg('Click "End turn" to continue.'),
       },
       {
         until: myStep("main1"),
-        text: "C'est au tour de l'adversaire. Il joue une Montagne…",
+        text: msg("It's your opponent's turn. They play a Mountain…"),
       },
       {
         next: true,
         target: "hand",
-        text: "De nouveau votre tour : vos permanents se sont dégagés et vous avez **pioché** une carte (une Forêt).",
+        text: msg("Your turn again: your permanents have untapped and you **drew** a card (a Forest)."),
       },
       {
         target: { card: "Plains", zone: "hand" },
         allow: [{ playLand: "Plains" }],
         until: onField("Plains"),
-        text: "Jouez votre **Plaine**, qui produit {W}.",
-        hint: "Jouez la Plaine pour continuer.",
+        text: msg("Play your **Plains**, which produces {W}."),
+        hint: msg("Play the Plains to continue."),
       },
       {
         next: true,
         target: "myField",
-        text: "Vous disposez maintenant de trois sources de mana : la Forêt ({G}), la Plaine ({W}) et les Elfes, qui produisent aussi {G}.",
+        text: msg(
+          "You now have three sources of mana: the Forest ({G}), the Plains ({W}) and the Elves, which also produce {G}.",
+        ),
       },
       {
         target: { card: "Savannah Lions", zone: "hand" },
         allow: [{ cast: "Savannah Lions" }],
         until: onField("Savannah Lions"),
-        text: "Lancez les **Lions des savanes** ({W}).",
-        hint: "Lancez les Lions des savanes pour continuer.",
+        text: msg("Cast the **Savannah Lions** ({W})."),
+        hint: msg("Cast the Savannah Lions to continue."),
       },
       {
         target: { card: "Bear Cub", zone: "hand" },
         allow: [{ cast: "Bear Cub" }],
         until: onField("Bear Cub"),
-        text: "Puis l'**Ourson** ({1}{G}). Le {1} est un coût **générique** : n'importe quel mana convient. Le jeu engage la Forêt et les Elfes.",
-        hint: "Lancez l'Ourson pour continuer.",
+        text: msg(
+          "Then the **Bear Cub** ({1}{G}). The {1} is a **generic** cost: any mana will do. The game taps the Forest and the Elves.",
+        ),
+        hint: msg("Cast the Bear Cub to continue."),
       },
       {
         next: true,
-        text: "Bravo ! Retenez : un terrain par tour, et vos terrains se dégagent à chaque tour pour produire à nouveau du mana.",
+        text: msg("Well done! Remember: one land per turn, and your lands untap every turn to produce mana again."),
       },
     ],
   },
@@ -220,8 +244,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "creatures",
-    title: "Les créatures",
-    summary: "Force et endurance, mal d'invocation.",
+    title: msg("Creatures"),
+    summary: msg("Power and toughness, summoning sickness."),
     scenario: {
       active: "you",
       turn: 3,
@@ -244,58 +268,66 @@ export const LESSONS: Lesson[] = [
       {
         next: true,
         target: { card: "Bear Cub", zone: "hand" },
-        text: "Les **créatures** sont vos combattants. En bas à droite, l'Ourson indique 2/2 : sa **force** (les dégâts qu'il inflige) puis son **endurance** (les dégâts qu'il peut subir avant d'être détruit).",
+        text: msg(
+          "**Creatures** are your fighters. In the bottom right corner, the Bear Cub shows 2/2: its **power** (the damage it deals) then its **toughness** (the damage it can take before it is destroyed).",
+        ),
       },
       {
         target: { card: "Bear Cub", zone: "hand" },
         allow: [{ cast: "Bear Cub" }],
         until: onField("Bear Cub"),
-        text: "Lancez l'**Ourson**.",
-        hint: "Lancez l'Ourson pour continuer.",
+        text: msg("Cast the **Bear Cub**."),
+        hint: msg("Cast the Bear Cub to continue."),
       },
       {
         next: true,
         target: { card: "Bear Cub", zone: "battlefield" },
-        text: "Une créature qui vient d'arriver a le **mal d'invocation** : elle ne peut ni attaquer ni s'engager avant votre prochain tour.",
+        text: msg(
+          "A creature that has just entered has **summoning sickness**: it can neither attack nor tap until your next turn.",
+        ),
       },
       {
         target: { card: "Savannah Lions", zone: "hand" },
         allow: [{ cast: "Savannah Lions" }],
         until: onField("Savannah Lions"),
-        text: "Lancez aussi les **Lions des savanes**.",
-        hint: "Lancez les Lions des savanes pour continuer.",
+        text: msg("Cast the **Savannah Lions** too."),
+        hint: msg("Cast the Savannah Lions to continue."),
       },
       {
         next: true,
         target: { card: "Savannah Lions", zone: "battlefield" },
-        text: "Les Lions sont 2/1 : ils frappent aussi fort que l'Ourson, mais un seul point de dégât suffit à les détruire.",
+        text: msg("The Lions are 2/1: they hit as hard as the Bear Cub, but a single point of damage is enough to destroy them."),
       },
       {
         target: "mainButton",
         allow: ["endTurn"],
         until: pastTurn(3),
-        text: "Vos créatures ne peuvent pas encore attaquer : cliquez **Fin du tour**.",
-        hint: "Cliquez « Fin du tour » pour continuer.",
+        text: msg("Your creatures can't attack yet: click **End turn**."),
+        hint: msg('Click "End turn" to continue.'),
       },
       {
         until: all(onStack("Swab Goblin"), pendingMine("priority")),
-        text: "Au tour de l'adversaire…",
+        text: msg("Your opponent's turn…"),
       },
       {
         target: "stack",
         allow: ["pass"],
         until: onField("Swab Goblin", "opponent"),
-        text: "L'adversaire lance une créature, le **Mathurin gobelin** (2/2). Un sort lancé passe d'abord par la **pile** : cliquez **OK** pour le laisser se résoudre.",
-        hint: "Cliquez « OK » pour continuer.",
+        text: msg(
+          "Your opponent casts a creature, the **Swab Goblin** (2/2). A spell that is cast first goes on the **stack**: click **OK** to let it resolve.",
+        ),
+        hint: msg('Click "OK" to continue.'),
       },
       {
         until: mineAtTurn(5),
-        text: "Le Mathurin a lui aussi le mal d'invocation : il ne peut pas attaquer ce tour-ci…",
+        text: msg("The Swab Goblin has summoning sickness too: it can't attack this turn…"),
       },
       {
         next: true,
         target: "myField",
-        text: "Nouveau tour : l'Ourson et les Lions n'ont plus le mal d'invocation, ils peuvent attaquer. C'est l'objet de la leçon suivante !",
+        text: msg(
+          "A new turn: the Bear Cub and the Lions no longer have summoning sickness, so they can attack. That's the subject of the next lesson!",
+        ),
       },
     ],
   },
@@ -303,8 +335,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "attaque",
-    title: "Attaquer",
-    summary: "Le combat : choisir ses attaquants, les dégâts, les blocages adverses.",
+    title: msg("Attacking"),
+    summary: msg("Combat: choosing your attackers, damage, your opponent's blocks."),
     scenario: {
       active: "you",
       turn: 5,
@@ -325,52 +357,60 @@ export const LESSONS: Lesson[] = [
         target: { card: "Forest", zone: "hand" },
         allow: [{ playLand: "Forest" }],
         until: onField("Forest"),
-        text: "Commencez votre tour par votre terrain : jouez la **Forêt**.",
-        hint: "Jouez la Forêt pour continuer.",
+        text: msg("Start your turn with your land: play the **Forest**."),
+        hint: msg("Play the Forest to continue."),
       },
       {
         next: true,
         target: "phaseBar",
-        text: "Place au **combat**, le moyen d'infliger des dégâts à l'adversaire. Une créature qui attaque **s'engage** ; l'adversaire décide ensuite s'il **bloque** avec ses propres créatures.",
+        text: msg(
+          "Time for **combat**, the way to deal damage to your opponent. A creature that attacks **taps**; your opponent then decides whether to **block** with their own creatures.",
+        ),
       },
       {
         target: "mainButton",
         allow: ["pass"],
         until: pendingMine("declareAttackers"),
-        text: "Cliquez **Combat** pour passer à la phase de combat.",
-        hint: "Cliquez « Combat » pour continuer.",
+        text: msg("Click **Combat** to move to the combat phase."),
+        hint: msg('Click "Combat" to continue.'),
       },
       {
         target: "myField",
         allow: [{ attack: ["Bear Cub", "Savannah Lions"] }],
         until: (c) => (c.view.combat?.attackers.length ?? 0) > 0 || c.view.turn.step === "main2",
-        text: "Cliquez l'**Ourson** puis les **Lions des savanes** (ou « Attaquer avec tous »), puis validez avec **Attaquer (2)**.",
-        hint: "Attaquez avec l'Ourson et les Lions des savanes.",
+        text: msg('Click the **Bear Cub** then the **Savannah Lions** (or "Attack with all"), then confirm with **Attack (2)**.'),
+        hint: msg("Attack with the Bear Cub and the Savannah Lions."),
       },
       {
         until: myStep("main2"),
-        text: "L'adversaire choisit ses bloqueurs…",
+        text: msg("Your opponent chooses their blockers…"),
       },
       {
         next: true,
         target: "oppLife",
-        text: "Le Mathurin gobelin a bloqué les Lions. L'Ourson, lui, n'était pas bloqué : il a infligé 2 dégâts à l'adversaire, qui passe à 18.",
+        text: msg(
+          "The Swab Goblin blocked the Lions. The Bear Cub, however, wasn't blocked: it dealt 2 damage to your opponent, who goes down to 18.",
+        ),
       },
       {
         next: true,
         target: "graveyard",
-        text: "Créatures bloquées : chacune inflige des dégâts égaux à sa force à l'autre. Les Lions (2/1) et le Mathurin (2/2) ont reçu 2 dégâts : ils sont détruits et vont au cimetière de leur propriétaire.",
+        text: msg(
+          "Blocked creatures: each one deals damage equal to its power to the other. The Lions (2/1) and the Swab Goblin (2/2) were each dealt 2 damage: they are destroyed and go to their owner's graveyard.",
+        ),
       },
       {
         target: { card: "Healer's Hawk", zone: "hand" },
         allow: [{ cast: "Healer's Hawk" }],
         until: onField("Healer's Hawk"),
-        text: "Vous êtes en **seconde phase principale** : vous pouvez encore jouer des cartes. Lancez le **Faucon de guérisseur**.",
-        hint: "Lancez le Faucon de guérisseur pour continuer.",
+        text: msg("You are in your **second main phase**: you can still play cards. Cast the **Healer's Hawk**."),
+        hint: msg("Cast the Healer's Hawk to continue."),
       },
       {
         next: true,
-        text: "Bien joué ! Attention : une créature qui a attaqué reste engagée et ne pourra pas bloquer au tour adverse. Il faut parfois garder des défenseurs.",
+        text: msg(
+          "Nicely played! Careful: a creature that attacked stays tapped and won't be able to block during your opponent's turn. Sometimes you need to keep defenders back.",
+        ),
       },
     ],
   },
@@ -378,8 +418,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "blocage",
-    title: "Bloquer",
-    summary: "Se défendre : choisir ses bloqueurs, perdre des points de vie.",
+    title: msg("Blocking"),
+    summary: msg("Defending yourself: choosing your blockers, losing life."),
     scenario: {
       active: "opponent",
       turn: 4,
@@ -399,37 +439,47 @@ export const LESSONS: Lesson[] = [
       {
         next: true,
         target: "oppField",
-        text: "C'est le tour de votre adversaire, et ses créatures vont attaquer. À vous de décider comment vous défendre.",
+        text: msg(
+          "It's your opponent's turn, and their creatures are about to attack. It's up to you to decide how to defend yourself.",
+        ),
       },
       {
         until: pendingMine("declareBlockers"),
-        text: "L'adversaire déclare ses attaquants…",
+        text: msg("Your opponent declares their attackers…"),
       },
       {
         next: true,
         target: { card: "Goblin Boarders", zone: "battlefield", owner: "opponent" },
-        text: "Il attaque avec le **Mathurin gobelin** (2/2) et les **Abordeurs gobelins** (3/2). Chacune de vos créatures dégagées peut **bloquer** un attaquant : celui-ci inflige alors ses dégâts au bloqueur, pas à vous.",
+        text: msg(
+          "They attack with the **Swab Goblin** (2/2) and the **Goblin Boarders** (3/2). Each of your untapped creatures can **block** an attacker: that attacker then deals its damage to the blocker, not to you.",
+        ),
       },
       {
         target: { card: "Bear Cub", zone: "battlefield" },
         allow: [{ block: [["Bear Cub", "Goblin Boarders"]] }],
         until: (c) => lifeOf(c, "you") < 20,
-        text: "Bloquez les **Abordeurs gobelins** avec l'**Ourson** : cliquez l'Ourson, puis les Abordeurs, puis validez avec **Bloquer (1)**.",
-        hint: "Bloquez les Abordeurs gobelins avec l'Ourson.",
+        text: msg(
+          "Block the **Goblin Boarders** with the **Bear Cub**: click the Bear Cub, then the Boarders, then confirm with **Block (1)**.",
+        ),
+        hint: msg("Block the Goblin Boarders with the Bear Cub."),
       },
       {
         next: true,
         target: "myLife",
-        text: "Le Mathurin, non bloqué, vous a infligé 2 dégâts : vous passez à 18 points de vie.",
+        text: msg("The Swab Goblin, unblocked, dealt 2 damage to you: you go down to 18 life."),
       },
       {
         next: true,
         target: "graveyard",
-        text: "L'Ourson (2/2) et les Abordeurs (3/2) se sont infligé assez de dégâts pour se détruire l'un l'autre : un bon échange, puisque les Abordeurs étaient plus forts.",
+        text: msg(
+          "The Bear Cub (2/2) and the Boarders (3/2) dealt each other enough damage to destroy each other: a good trade, since the Boarders were stronger.",
+        ),
       },
       {
         next: true,
-        text: "Retenez : bloquer protège vos points de vie, mais peut coûter une créature. Comparez la force de l'attaquant à l'endurance de votre bloqueur, et inversement.",
+        text: msg(
+          "Remember: blocking protects your life total, but it can cost you a creature. Compare the attacker's power to your blocker's toughness, and the other way around.",
+        ),
       },
     ],
   },
@@ -437,8 +487,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "sorts",
-    title: "Sorts et cibles",
-    summary: "Éphémères et rituels, choisir une cible, gagner une partie.",
+    title: msg("Spells and targets"),
+    summary: msg("Instants and sorceries, choosing a target, winning a game."),
     scenario: {
       active: "you",
       turn: 5,
@@ -459,49 +509,55 @@ export const LESSONS: Lesson[] = [
       {
         next: true,
         target: "hand",
-        text: "Certains sorts ne restent pas en jeu : ils produisent leur effet puis vont au cimetière. Un **rituel** se lance seulement pendant votre phase principale ; un **éphémère**, à tout moment, même pendant le tour adverse.",
+        text: msg(
+          "Some spells don't stay in play: they produce their effect, then go to the graveyard. A **sorcery** can only be cast during your main phase; an **instant**, at any time, even during your opponent's turn.",
+        ),
       },
       {
         next: true,
         target: { card: "Burst Lightning", zone: "hand" },
-        text: "L'**Éclair explosif** est un éphémère qui inflige 2 dégâts à **n'importe quelle cible** : une créature ou un joueur.",
+        text: msg("**Burst Lightning** is an instant that deals 2 damage to **any target**: a creature or a player."),
       },
       {
         target: { card: "Swab Goblin", zone: "battlefield", owner: "opponent" },
         allow: [{ cast: "Burst Lightning", target: "Swab Goblin" }],
         until: inGraveyard("Swab Goblin", "opponent"),
-        text: "Détruisez le **Mathurin gobelin** : faites glisser l'Éclair explosif sur lui (ou cliquez l'Éclair, puis le Mathurin).",
-        hint: "Visez le Mathurin gobelin avec l'Éclair explosif.",
+        text: msg("Destroy the **Swab Goblin**: drag Burst Lightning onto it (or click Burst Lightning, then the Swab Goblin)."),
+        hint: msg("Target the Swab Goblin with Burst Lightning."),
       },
       {
         next: true,
         target: "oppLife",
-        text: "Le Mathurin a subi 2 dégâts, autant que son endurance : il est détruit. Il ne reste que 4 points de vie à l'adversaire, et plus aucun bloqueur…",
+        text: msg(
+          "The Swab Goblin was dealt 2 damage, as much as its toughness: it is destroyed. Your opponent has only 4 life left, and no more blockers…",
+        ),
       },
       {
         target: "mainButton",
         allow: ["pass"],
         until: pendingMine("declareAttackers"),
-        text: "Cliquez **Combat**.",
-        hint: "Cliquez « Combat » pour continuer.",
+        text: msg("Click **Combat**."),
+        hint: msg('Click "Combat" to continue.'),
       },
       {
         target: { card: "Bear Cub", zone: "battlefield" },
         allow: [{ attack: ["Bear Cub"] }, "pass"],
         until: myStep("main2"),
-        text: "Attaquez avec l'**Ourson**, puis validez.",
-        hint: "Attaquez avec l'Ourson.",
+        text: msg("Attack with the **Bear Cub**, then confirm."),
+        hint: msg("Attack with the Bear Cub."),
       },
       {
         target: "oppLife",
         allow: [{ cast: "Burst Lightning", target: "opponent" }],
         until: gameOver,
-        text: "Plus que 2 points de vie ! Lancez le second **Éclair explosif** sur l'adversaire : faites-le glisser sur son portrait, en haut.",
-        hint: "Visez l'adversaire avec l'Éclair explosif.",
+        text: msg(
+          "Only 2 life left! Cast the second **Burst Lightning** at your opponent: drag it onto their portrait, at the top.",
+        ),
+        hint: msg("Target your opponent with Burst Lightning."),
       },
       {
         next: true,
-        text: "**Victoire !** Vous avez gagné votre première partie. La prochaine leçon montre comment répondre aux sorts de l'adversaire.",
+        text: msg("**Victory!** You've won your first game. The next lesson shows how to respond to your opponent's spells."),
       },
     ],
   },
@@ -509,8 +565,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "pile",
-    title: "Éphémères et la pile",
-    summary: "Répondre à un sort, l'ordre de résolution, les tours de combat.",
+    title: msg("Instants and the stack"),
+    summary: msg("Responding to a spell, the order of resolution, combat tricks."),
     scenario: {
       active: "opponent",
       turn: 4,
@@ -533,60 +589,74 @@ export const LESSONS: Lesson[] = [
       {
         next: true,
         target: "hand",
-        text: "Vous avez deux **éphémères** en main. Ils se lancent à tout moment, même pendant le tour adverse, et même **en réponse** à un autre sort.",
+        text: msg(
+          "You have two **instants** in hand. They can be cast at any time, even during your opponent's turn, and even **in response** to another spell.",
+        ),
       },
       {
         until: all(onStack("Scorching Dragonfire"), pendingMine("priority")),
-        text: "Au tour de l'adversaire…",
+        text: msg("Your opponent's turn…"),
       },
       {
         next: true,
         target: "stack",
-        text: "L'adversaire lance **Feu du dragon dévastateur** sur votre Ourson : 3 dégâts, de quoi le détruire. Le sort attend sur la **pile** : il n'est pas encore résolu, et vous pouvez répondre.",
+        text: msg(
+          "Your opponent casts **Scorching Dragonfire** on your Bear Cub: 3 damage, enough to destroy it. The spell is waiting on the **stack**: it hasn't resolved yet, and you can respond.",
+        ),
       },
       {
         target: { card: "Giant Growth", zone: "hand" },
         allow: [{ cast: "Giant Growth", target: "Bear Cub" }],
         until: (c) => powerOf(c, "Bear Cub") >= 5,
-        text: "Répondez avec la **Croissance gigantesque** sur l'Ourson (+3/+3 jusqu'à la fin du tour) : faites-la glisser sur lui.",
-        hint: "Lancez la Croissance gigantesque sur l'Ourson.",
+        text: msg("Respond with **Giant Growth** on the Bear Cub (+3/+3 until end of turn): drag it onto the Bear Cub."),
+        hint: msg("Cast Giant Growth on the Bear Cub."),
       },
       {
         target: "stack",
         allow: ["pass"],
         until: all(stackEmpty, (c) => !onStack("Scorching Dragonfire")(c)),
-        text: "La pile se résout **de haut en bas** : votre Croissance gigantesque, arrivée en dernier, s'est résolue la première. L'Ourson est 5/5 ! Cliquez **Résoudre** pour laisser le Feu du dragon se résoudre.",
-        hint: "Cliquez « Résoudre » pour continuer.",
+        text: msg(
+          "The stack resolves **from top to bottom**: your Giant Growth, added last, resolved first. The Bear Cub is 5/5! Click **Resolve** to let the Dragonfire resolve.",
+        ),
+        hint: msg('Click "Resolve" to continue.'),
       },
       {
         next: true,
         target: { card: "Bear Cub", zone: "battlefield" },
-        text: "3 dégâts ne suffisent plus à détruire un Ourson 5/5 : il survit.",
+        text: msg("3 damage is no longer enough to destroy a 5/5 Bear Cub: it survives."),
       },
       {
         allow: ["pass"],
         until: pendingMine("declareBlockers"),
-        text: "L'adversaire passe à l'attaque ! Vous pourriez lancer un éphémère dès maintenant, mais attendez les blocages : cliquez **Passer** si le jeu vous le propose.",
-        hint: "Cliquez « Passer » : vous choisirez vos bloqueurs juste après.",
+        text: msg(
+          "Your opponent attacks! You could cast an instant right now, but wait for blocks: click **Pass** if the game offers it.",
+        ),
+        hint: msg('Click "Pass": you will choose your blockers right after.'),
       },
       {
         target: { card: "Savannah Lions", zone: "battlefield" },
         allow: [{ block: [["Savannah Lions", "Goblin Boarders"]] }],
         until: (c) => c.view.turn.step === "declareBlockers" && pendingMine("priority")(c),
-        text: "Les **Abordeurs gobelins** (3/2) attaquent. Votre Ourson a déjà subi 3 dégâts ce tour-ci : les blessures ne s'effacent qu'à la fin du tour, et 3 de plus le détruiraient. Bloquez plutôt avec les **Lions des savanes** : cliquez-les, puis validez avec **Bloquer (1)**.",
-        hint: "Bloquez les Abordeurs gobelins avec les Lions des savanes.",
+        text: msg(
+          "The **Goblin Boarders** (3/2) are attacking. Your Bear Cub has already been dealt 3 damage this turn: damage only wears off at end of turn, and 3 more would destroy it. Block with the **Savannah Lions** instead: click them, then confirm with **Block (1)**.",
+        ),
+        hint: msg("Block the Goblin Boarders with the Savannah Lions."),
       },
       {
         target: { card: "Divine Resilience", zone: "hand" },
         allow: [{ cast: "Divine Resilience", target: "Savannah Lions" }],
         until: inGraveyard("Goblin Boarders", "opponent"),
-        text: "Les Lions vont mourir face aux Abordeurs… sauf si vous lancez **Résistance divine** sur eux : ils deviendront **indestructibles**. C'est un **tour de combat** !",
-        hint: "Lancez la Résistance divine sur les Lions des savanes.",
+        text: msg(
+          "The Lions are going to die against the Boarders… unless you cast **Divine Resilience** on them: they will gain **indestructible**. That's a **combat trick**!",
+        ),
+        hint: msg("Cast Divine Resilience on the Savannah Lions."),
       },
       {
         next: true,
         target: "oppField",
-        text: "Les Lions, indestructibles, ont survécu et détruit les Abordeurs. Grâce à vos deux éphémères, vous n'avez perdu aucune créature.",
+        text: msg(
+          "The Lions, indestructible, survived and destroyed the Boarders. Thanks to your two instants, you didn't lose a single creature.",
+        ),
       },
     ],
   },
@@ -594,8 +664,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "capacites",
-    title: "Mots-clés et capacités",
-    summary: "Vol, vigilance, lien de vie, capacités déclenchées et activées.",
+    title: msg("Keywords and abilities"),
+    summary: msg("Flying, vigilance, lifelink, triggered and activated abilities."),
     scenario: {
       active: "you",
       turn: 5,
@@ -625,65 +695,77 @@ export const LESSONS: Lesson[] = [
       {
         next: true,
         target: "myField",
-        text: "Beaucoup de créatures ont des **capacités**. Les plus courantes sont des **mots-clés**, expliqués dans l'aperçu de la carte.",
+        text: msg("Many creatures have **abilities**. The most common ones are **keywords**, explained in the card's preview."),
       },
       {
         target: { card: "Serra Angel", zone: "battlefield" },
         until: hovered("Serra Angel"),
-        text: "Survolez l'**Ange de Serra** (ou gardez le doigt appuyé dessus).",
-        hint: "Survolez l'Ange de Serra pour continuer.",
+        text: msg("Hover over the **Serra Angel** (or press and hold it)."),
+        hint: msg("Hover over the Serra Angel to continue."),
       },
       {
         next: true,
         target: "preview",
-        text: "**Vol** : l'Ange ne peut être bloqué que par des créatures avec le vol ou la portée. **Vigilance** : attaquer ne l'engage pas, il pourra donc aussi bloquer au tour adverse.",
+        text: msg(
+          "**Flying**: the Angel can only be blocked by creatures with flying or reach. **Vigilance**: attacking doesn't cause it to tap, so it can also block during your opponent's turn.",
+        ),
       },
       {
         next: true,
         target: { card: "Treetop Snarespinner", zone: "battlefield" },
-        text: "Le **Faucon de guérisseur** a le vol et le **lien de vie** (ses dégâts vous rendent autant de points de vie). La **Fileuse de collet arboricole** a la **portée** (elle bloque les volants) et le **contact mortel** (le moindre dégât détruit une créature).",
+        text: msg(
+          "The **Healer's Hawk** has flying and **lifelink** (its damage gives you that much life). The **Treetop Snarespinner** has **reach** (it can block fliers) and **deathtouch** (any amount of damage destroys a creature).",
+        ),
       },
       {
         target: { card: "Savannah Lions", zone: "hand" },
         allow: [{ cast: "Savannah Lions" }],
         until: (c) => lifeOf(c, "you") > 20,
-        text: "Une **capacité déclenchée** commence par « quand », « chaque fois que » ou « au début de ». L'**Ange éblouissant** vous fait gagner 1 point de vie chaque fois qu'une autre créature arrive sous votre contrôle. Lancez les **Lions des savanes** pour la voir.",
-        hint: "Lancez les Lions des savanes pour continuer.",
+        text: msg(
+          'A **triggered ability** starts with "when", "whenever" or "at the beginning of". The **Dazzling Angel** makes you gain 1 life whenever another creature you control enters. Cast the **Savannah Lions** to see it.',
+        ),
+        hint: msg("Cast the Savannah Lions to continue."),
       },
       {
         next: true,
         target: "myLife",
-        text: "Vous avez gagné 1 point de vie : la capacité s'est déclenchée toute seule.",
+        text: msg("You gained 1 life: the ability triggered all by itself."),
       },
       {
         target: { card: "Treetop Snarespinner", zone: "battlefield" },
         allow: [{ activate: "Treetop Snarespinner", target: "Serra Angel" }],
         until: (c) => powerOf(c, "Serra Angel") >= 5,
-        text: "Une **capacité activée** s'écrit « coût : effet ». La Fileuse a « {2}{G} : mettez un marqueur +1/+1 sur une créature ciblée que vous contrôlez ». Cliquez la **Fileuse**, puis l'**Ange de Serra**.",
-        hint: "Activez la Fileuse en ciblant l'Ange de Serra.",
+        text: msg(
+          'An **activated ability** is written "cost: effect". The Snarespinner has "{2}{G}: Put a +1/+1 counter on target creature you control". Click the **Snarespinner**, then the **Serra Angel**.',
+        ),
+        hint: msg("Activate the Snarespinner targeting the Serra Angel."),
       },
       {
         target: "mainButton",
         allow: ["pass"],
         until: pendingMine("declareAttackers"),
-        text: "L'Ange est maintenant 5/5. Cliquez **Combat**.",
-        hint: "Cliquez « Combat » pour continuer.",
+        text: msg("The Angel is now 5/5. Click **Combat**."),
+        hint: msg('Click "Combat" to continue.'),
       },
       {
         target: "myField",
         allow: [{ attack: ["Serra Angel", "Healer's Hawk"] }, "pass"],
         until: (c) => lifeOf(c, "opponent") <= 14,
-        text: "Attaquez avec l'**Ange de Serra** et le **Faucon de guérisseur** : le Mathurin gobelin n'a ni le vol ni la portée, il ne peut pas les bloquer.",
-        hint: "Attaquez avec l'Ange de Serra et le Faucon de guérisseur.",
+        text: msg(
+          "Attack with the **Serra Angel** and the **Healer's Hawk**: the Swab Goblin has neither flying nor reach, so it can't block them.",
+        ),
+        hint: msg("Attack with the Serra Angel and the Healer's Hawk."),
       },
       {
         next: true,
         target: "myLife",
-        text: "6 dégâts pour l'adversaire, et le lien de vie du Faucon vous a rendu 1 point de vie.",
+        text: msg("6 damage to your opponent, and the Hawk's lifelink gave you 1 life."),
       },
       {
         next: true,
-        text: "Il existe bien d'autres mots-clés : piétinement, initiative, défenseur, célérité… Pensez à survoler les cartes : l'aperçu les explique tous.",
+        text: msg(
+          "There are many other keywords: trample, first strike, defender, haste… Remember to hover over cards: the preview explains them all.",
+        ),
       },
     ],
   },
@@ -691,8 +773,8 @@ export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
     id: "partie",
-    title: "Une partie complète",
-    summary: "Main de départ, arrêts, puis une vraie partie contre l'IA.",
+    title: msg("A complete game"),
+    summary: msg("Opening hand, stops, then a real game against the AI."),
     scenario: {
       active: "you",
       mulligan: true,
@@ -752,51 +834,57 @@ export const LESSONS: Lesson[] = [
     steps: [
       {
         next: true,
-        text: "Dernière leçon : une vraie partie ! Tout commence par la **main de départ** : 7 cartes. Si elle ne vous plaît pas (trop ou pas assez de terrains), vous pouvez prendre un **mulligan** : vous piochez 7 nouvelles cartes, mais vous en remettez une sous votre bibliothèque par mulligan.",
+        text: msg(
+          "Last lesson: a real game! Everything starts with the **opening hand**: 7 cards. If you don't like it (too many or too few lands), you can take a **mulligan**: you draw 7 new cards, but you put one on the bottom of your library for each mulligan.",
+        ),
       },
       {
         allow: ["keep"],
         until: (c) => !pendingMine("mulligan")(c),
-        text: "Cette main a trois terrains et des sorts peu chers : gardez-la.",
-        hint: "Pour ce tutoriel, gardez cette main.",
+        text: msg("This hand has three lands and cheap spells: keep it."),
+        hint: msg("For this tutorial, keep this hand."),
       },
       {
         next: true,
         target: "stops",
-        text: "Les **arrêts** : les petits points sous les phases indiquent où la partie s'arrête pour vous laisser agir (en haut pendant votre tour, en bas pendant celui de l'adversaire). Le jeu passe tout seul les moments où vous n'avez rien à faire.",
+        text: msg(
+          "**Stops**: the small dots under the phases show where the game stops to let you act (at the top during your turn, at the bottom during your opponent's). The game skips by itself the moments when you have nothing to do.",
+        ),
       },
       {
         next: true,
         target: "endTurn",
-        text: "**Passer le tour** (touche Entrée) passe tout jusqu'à la fin de votre tour. Dans les réglages, le **contrôle total** vous rend la main à chaque étape.",
+        text: msg(
+          "**Pass turn** (Enter key) passes everything until the end of your turn. In the settings, **full control** gives you back control at every step.",
+        ),
       },
       {
         free: true,
         until: gameOver,
-        text: "À vous de jouer ! L'adversaire n'a que 10 points de vie. Je vous donnerai quelques conseils en chemin.",
+        text: msg("Your turn to play! Your opponent has only 10 life. I'll give you a few tips along the way."),
         tips: [
           {
             when: (c) => pendingMine("declareBlockers")(c),
-            text: "Vous êtes attaqué : cliquez une de vos créatures puis l'attaquant pour bloquer, ou choisissez « Pas de blocage ».",
+            text: msg('You are being attacked: click one of your creatures then the attacker to block, or choose "No blocks".'),
           },
           {
             when: (c) => pendingMine("priority")(c) && c.view.stack.some((it) => it.controller !== c.view.viewer),
-            text: "L'adversaire joue un sort : répondez avec un éphémère, ou laissez-le se résoudre.",
+            text: msg("Your opponent is casting a spell: respond with an instant, or let it resolve."),
           },
           {
             when: (c) =>
               (myStep("main1")(c) || myStep("main2")(c)) &&
               c.view.turn.landsPlayed === 0 &&
               c.view.hand.some((o) => o.types.includes("Land")),
-            text: "Pensez à jouer un terrain : un par tour.",
+            text: msg("Remember to play a land: one per turn."),
           },
           {
             when: (c) => myStep("main1")(c) && c.view.potentialAttackers > 0,
-            text: "Vos créatures peuvent attaquer : cliquez « Combat » quand vous avez joué vos cartes.",
+            text: msg('Your creatures can attack: click "Combat" once you have played your cards.'),
           },
           {
             when: (c) => pendingMine("declareAttackers")(c),
-            text: "Cliquez les créatures qui attaquent, puis validez. Gardez des bloqueurs si l'adversaire menace.",
+            text: msg("Click the creatures that attack, then confirm. Keep blockers back if your opponent is threatening."),
           },
         ],
       },
@@ -804,8 +892,12 @@ export const LESSONS: Lesson[] = [
         next: true,
         text: (c) =>
           c.view.winner === c.view.viewer
-            ? "**Victoire !** Vous connaissez maintenant l'essentiel de Magic. Pour continuer : **Mes decks** pour construire les vôtres, **Jouer contre l'IA**, et **Contre un joueur** pour affronter un ami en ligne."
-            : "Perdu cette fois : recommencez la leçon quand vous voulez. Vous connaissez maintenant l'essentiel ; pour continuer : **Mes decks**, **Jouer contre l'IA** et **Contre un joueur**.",
+            ? msg(
+                "**Victory!** You now know the essentials of Magic. To go further: **My decks** to build your own, **Play against the AI**, and **Against a player** to face a friend online.",
+              )
+            : msg(
+                "You lost this time: restart the lesson whenever you like. You now know the essentials; to go further: **My decks**, **Play against the AI** and **Against a player**.",
+              ),
       },
     ],
   },

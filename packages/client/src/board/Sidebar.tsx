@@ -5,19 +5,25 @@ import { CustomArtToggle, ImageRelayToggle } from "../ImageRelayToggle";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL, type LogLine } from "../i18n";
 import { customImage, imageUrl, useRelayActive } from "../images";
 import { LangToggle } from "../LangToggle";
+import { useLocalize, useT } from "../localize";
 import { PACES, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
 import { ManaCost, RulesText } from "./Card";
 
-/** Capacité « Vitesse maximale — » (702.179) dans le texte de la carte. */
+/** A "Max speed —" ability (702.179) in the card's text (English or French). */
 const MAX_SPEED = /Max speed —|Vitesse maximale —/;
 
-/** Aperçu d'une carte à « Vitesse maximale » : la capacité est-elle active pour son contrôleur ? */
+/** Preview of a card with "Max speed": is the ability active for its controller? */
 function MaxSpeedNote({ speed }: { speed: number | undefined }) {
+  const t = useT();
   const on = (speed ?? 0) >= 4;
   return (
     <div className={`preview-speed ${on ? "on" : ""}`}>
-      ⚡ Vitesse maximale : {on ? "active" : `inactive (${speed === undefined ? "pas de vitesse" : `vitesse ${speed}/4`})`}
+      {on
+        ? t("⚡ Max speed: active")
+        : speed === undefined
+          ? t("⚡ Max speed: inactive (no speed)")
+          : t("⚡ Max speed: inactive (speed {speed}/4)", { speed })}
     </div>
   );
 }
@@ -25,9 +31,11 @@ function MaxSpeedNote({ speed }: { speed: number | undefined }) {
 export function Preview() {
   const hover = useGame((s) => s.hover);
   const players = useGame((s) => s.view?.players);
-  useRelayActive(); // nouvelle URL quand le relais des images s'active
+  useRelayActive(); // new URL when the image relay turns on
   const lang = useGame((s) => s.lang);
-  // Carte recto-verso : afficher le verso (touche F ou bouton).
+  const t = useT();
+  const loc = useLocalize();
+  // Double-faced card: show the back face (F key or button).
   const [flipped, setFlipped] = useState(false);
   const backImage = hover?.face.otherFaces?.find((f) => f?.image);
   useEffect(() => {
@@ -41,7 +49,7 @@ export function Preview() {
   if (!hover)
     return (
       <div className="preview empty">
-        {isTouch() ? "Appuyez longuement sur une carte pour l'agrandir." : "Survolez une carte pour l'agrandir."}
+        {isTouch() ? t("Long-press a card to enlarge it.") : t("Hover over a card to enlarge it.")}
       </div>
     );
   const { face, obj } = hover;
@@ -50,7 +58,7 @@ export function Preview() {
       ? ((face.customArt ? customImage(backImage.name) : undefined) ??
         imageUrl((lang === "fr" && backImage.fr?.image) || backImage.image))
       : undefined;
-  // Votre carte face cachée : vous seul voyez de quelle carte il s'agit.
+  // Your face-down card: only you see which card it is.
   const hidden = obj?.faceDownCard;
   const src = back ?? (hidden ? faceImage(hidden, lang) : undefined) ?? faceImage(face, lang);
   const baseKw = new Set(obj?.keywords ?? []);
@@ -61,7 +69,7 @@ export function Preview() {
       ) : (
         <div className={`preview-img token frame-${obj?.colors[0] ?? "C"}`}>
           <div className="token-name">{faceName(face, lang)}</div>
-          <div className="token-type">{faceType(face, lang)}</div>
+          <div className="token-type">{loc(faceType(face, lang))}</div>
           <div className="token-text">{faceText(face, lang)}</div>
           {obj?.power !== undefined && (
             <div className="token-pt">
@@ -75,11 +83,11 @@ export function Preview() {
           <span>{faceName(face, lang)}</span>
           <ManaCost cost={face.manaCost} size={14} />
         </div>
-        <div className="preview-type">{faceType(face, lang)}</div>
+        <div className="preview-type">{loc(faceType(face, lang))}</div>
         {obj && players && MAX_SPEED.test(`${face.text}\n${face.fr?.text ?? ""}`) && (
           <MaxSpeedNote speed={players[obj.controller]?.speed} />
         )}
-        {/* Texte Oracle toujours affiché : illustrations sans cadre, éditions étrangères, petits caractères. */}
+        {/* Oracle text always shown: frameless art, foreign printings, small print. */}
         {faceText(face, lang) && (
           <div className="preview-text">
             <RulesText text={faceText(face, lang)} />
@@ -87,13 +95,13 @@ export function Preview() {
         )}
         {backImage && (
           <button type="button" className="btn small ghost preview-flip" onClick={() => setFlipped((x) => !x)}>
-            {flipped ? "Voir le recto" : "Voir le verso"} (F)
+            {flipped ? t("Show the front (F)") : t("Show the back (F)")}
           </button>
         )}
         {face.otherFaces?.map(
           (f) =>
             f && (
-              // Autre face : verso, aventure, autre moitié d'une carte scindée.
+              // Other face: back face, adventure, other half of a split card.
               <div key={f.name} className="preview-prepare">
                 <div className="preview-title">
                   <span>{(lang === "fr" && f.fr?.name) || f.name}</span>
@@ -107,12 +115,12 @@ export function Preview() {
             ),
         )}
         {face.prepareFace && (
-          // Carte « à préparer » : le sort attaché à la créature.
+          // A "prepare" card: the spell attached to the creature.
           <div className="preview-prepare">
             <div className="preview-title">
               <span>
                 {(lang === "fr" && face.prepareFace.fr?.name) || face.prepareFace.name}{" "}
-                <span className="hint">(sort préparé)</span>
+                <span className="hint">{t("(prepared spell)")}</span>
               </span>
               <ManaCost cost={face.prepareFace.manaCost} size={14} />
             </div>
@@ -123,22 +131,21 @@ export function Preview() {
           </div>
         )}
         {(obj?.classLevel || obj?.solved) && (
-          <div className="preview-stats">{obj.solved ? "Affaire résolue" : `Classe de niveau ${obj.classLevel}`}</div>
+          <div className="preview-stats">
+            {obj.solved ? t("Case solved") : t("Class level {level}", { level: obj.classLevel ?? 0 })}
+          </div>
         )}
         {obj?.power !== undefined && (
           <div className="preview-stats">
-            Force/Endurance :{" "}
+            {t("Power/Toughness:")}{" "}
             <strong>
               {obj.power}/{obj.toughness}
             </strong>
-            {obj.damage > 0 && <span className="dmg"> · {obj.damage} blessure(s)</span>}
+            {obj.damage > 0 && <span className="dmg"> · {t("{n} damage marked", { n: obj.damage })}</span>}
             {Object.entries(obj.counters)
               .filter(([, n]) => n > 0)
               .map(([k, n]) => (
-                <span key={k}>
-                  {" "}
-                  · {n} marqueur(s) {k}
-                </span>
+                <span key={k}> · {t("{n} {kind} counter(s)", { n, kind: k })}</span>
               ))}
           </div>
         )}
@@ -146,21 +153,21 @@ export function Preview() {
           <div className="preview-kw">
             {[...baseKw].map((k) => (
               <span key={k} className="kw">
-                {KEYWORD_LABEL[k]}
+                {loc(KEYWORD_LABEL[k])}
               </span>
             ))}
           </div>
         )}
-        {obj?.sick && obj.types.includes("Creature") && <div className="preview-note">Mal d'invocation</div>}
-        {!face.implemented && <div className="preview-warn">Pas encore gérée par le moteur</div>}
+        {obj?.sick && obj.types.includes("Creature") && <div className="preview-note">{t("Summoning sickness")}</div>}
+        {!face.implemented && <div className="preview-warn">{t("Not yet supported by the engine")}</div>}
       </div>
     </div>
   );
 }
 
 /**
- * Texte d'une ligne du journal, les noms de cartes survolables (aperçu dans la barre latérale, gardé après le survol
- * comme pour les cartes du plateau ; au toucher, en surimpression).
+ * Text of a log line, with hoverable card names (preview in the sidebar, kept after hovering as for the cards of the
+ * board; on touch, overlaid).
  */
 function LogText({ line }: { line: LogLine }) {
   const lang = useGame((s) => s.lang);
@@ -199,7 +206,7 @@ function LogText({ line }: { line: LogLine }) {
 function Log() {
   const log = useGame((s) => s.log);
   const ref = useRef<HTMLDivElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: défiler à chaque nouvelle ligne
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on each new line
   useEffect(() => {
     ref.current?.scrollTo({ top: ref.current.scrollHeight });
   }, [log.length]);
@@ -214,24 +221,25 @@ function Log() {
   );
 }
 
-/** Rythme des effets : combien de temps chaque sort ou capacité qui se résout est montré avant de s'appliquer. */
-/** « Abandonner » en deux temps : un clic par erreur ne fait pas perdre la partie. */
+/** Pace of the effects: how long each resolving spell or ability is shown before it applies. */
+/** "Concede" in two steps: a click by mistake does not lose the game. */
 function ConcedeButton({ onConcede }: { onConcede: () => void }) {
+  const t = useT();
   const [asking, setAsking] = useState(false);
   if (!asking)
     return (
       <button type="button" className="btn small ghost" onClick={() => setAsking(true)}>
-        Abandonner
+        {t("Concede")}
       </button>
     );
   return (
     <span className="concede-confirm">
-      Abandonner la partie ?
+      {t("Concede the game?")}
       <button type="button" className="btn small danger" onClick={onConcede}>
-        Confirmer
+        {t("Yes, concede")}
       </button>
       <button type="button" className="btn small ghost" onClick={() => setAsking(false)}>
-        Non
+        {t("No")}
       </button>
     </span>
   );
@@ -240,19 +248,21 @@ function ConcedeButton({ onConcede }: { onConcede: () => void }) {
 function PaceControl() {
   const pace = useGame((s) => s.pace);
   const setPace = useGame((s) => s.setPace);
+  const t = useT();
+  const loc = useLocalize();
   return (
-    <div className="pace-control" title="Durée pendant laquelle chaque effet est montré avant de s'appliquer">
-      <span>Effets</span>
+    <div className="pace-control" title={t("How long each effect is shown before it applies")}>
+      <span>{t("Effects")}</span>
       <div className="seg">
         {PACES.map((p) => (
           <button
             key={p.pace}
             type="button"
             className={pace === p.pace ? "on" : ""}
-            title={p.hint}
+            title={loc(p.hint)}
             onClick={() => setPace(p.pace)}
           >
-            {p.label}
+            {loc(p.label)}
           </button>
         ))}
       </div>
@@ -260,31 +270,33 @@ function PaceControl() {
   );
 }
 
-/** Texture du plateau : une pastille par texture, et « au hasard » (une texture tirée à chaque partie). */
+/** Board texture: one swatch per texture, and "random" (a texture drawn for each game). */
 function BoardThemeControl() {
   const choice = useGame((s) => s.boardTheme);
   const setChoice = useGame((s) => s.setBoardTheme);
+  const t = useT();
+  const loc = useLocalize();
   return (
-    <div className="board-theme-control" title="Texture du plateau">
-      <span>Plateau</span>
+    <div className="board-theme-control" title={t("Board texture")}>
+      <span>{t("Board")}</span>
       <div className="swatches">
-        {BOARD_THEMES.map((t) => (
+        {BOARD_THEMES.map((theme) => (
           <button
-            key={t.id}
+            key={theme.id}
             type="button"
-            className={`swatch ${choice === t.id ? "on" : ""}`}
-            data-board={t.id}
-            title={t.label}
-            aria-label={`Plateau : ${t.label}`}
-            aria-pressed={choice === t.id}
-            onClick={() => setChoice(t.id)}
+            className={`swatch ${choice === theme.id ? "on" : ""}`}
+            data-board={theme.id}
+            title={loc(theme.label)}
+            aria-label={t("Board: {theme}", { theme: theme.label })}
+            aria-pressed={choice === theme.id}
+            onClick={() => setChoice(theme.id)}
           />
         ))}
         <button
           type="button"
           className={`swatch random ${choice === "hasard" ? "on" : ""}`}
-          title="Au hasard (une texture à chaque partie)"
-          aria-label="Plateau : au hasard à chaque partie"
+          title={t("Random (one texture per game)")}
+          aria-label={t("Board: random for each game")}
           aria-pressed={choice === "hasard"}
           onClick={() => setChoice("hasard")}
         >
@@ -296,7 +308,6 @@ function BoardThemeControl() {
 }
 
 function Settings() {
-  const lang = useGame((s) => s.lang);
   const settings = useGame((s) => s.settings);
   const setFullControl = useGame((s) => s.setFullControl);
   const setHoldPriority = useGame((s) => s.setHoldPriority);
@@ -307,44 +318,45 @@ function Settings() {
   const tutorial = useGame((s) => s.tutorialGame);
   const replay = useGame((s) => !!s.replay);
   const exportGame = useGame((s) => s.exportGame);
+  const t = useT();
   return (
     <div className="settings">
       <LangToggle />
       <SoundControl />
-      <label className="toggle" title="Recevoir la priorité à chaque étape, sans automatisme">
+      <label className="toggle" title={t("Receive priority at every step, without automation")}>
         <input type="checkbox" checked={settings.fullControl} onChange={(e) => setFullControl(e.target.checked)} />
-        Contrôle total
+        {t("Full control")}
       </label>
-      <label className="toggle" title="Recevoir la priorité après avoir lancé un sort, pour y répondre vous-même">
+      <label className="toggle" title={t("Receive priority after casting a spell, to respond to it yourself")}>
         <input type="checkbox" checked={!!settings.holdPriority} onChange={(e) => setHoldPriority(e.target.checked)} />
-        Garder la priorité
+        {t("Hold priority")}
       </label>
       <PaceControl />
       <BoardThemeControl />
       <ImageRelayToggle />
       <CustomArtToggle />
       {!over && !replay && <ConcedeButton onConcede={() => decide({ type: "concede" })} />}
-      {/* Enregistrement de la partie (replay, signalement d'un bug) ; en ligne, seulement une fois terminée. */}
+      {/* Game record (replay, bug report); online, only once the game is over. */}
       {!tutorial && !replay && (!online || over) && (
         <button
           type="button"
           className="btn small ghost"
-          title="Télécharger la partie (fichier à revoir, ou à joindre au signalement d'un bug)"
+          title={t("Download the game (a file to watch again, or to attach to a bug report)")}
           onClick={exportGame}
         >
-          Exporter la partie
+          {t("Export the game")}
         </button>
       )}
       <button
         type="button"
         className="btn small ghost"
         onClick={() => {
-          // En ligne, quitter une partie en cours vaut abandon.
-          if (online && !over && !window.confirm("Quitter la partie en ligne ? Elle sera comptée comme un abandon.")) return;
+          // Online, leaving a game in progress counts as conceding.
+          if (online && !over && !window.confirm(t("Leave the online game? It will count as a concession."))) return;
           backToLobby();
         }}
       >
-        Menu
+        {t("Menu")}
       </button>
     </div>
   );
@@ -352,27 +364,28 @@ function Settings() {
 
 export function Sidebar() {
   const setDrawerOpen = useGame((s) => s.setDrawerOpen);
+  const t = useT();
   return (
     <aside className="sidebar">
-      <button type="button" className="drawer-close" onClick={() => setDrawerOpen(false)} aria-label="Fermer le panneau">
+      <button type="button" className="drawer-close" onClick={() => setDrawerOpen(false)} aria-label={t("Close the panel")}>
         ×
       </button>
       <Settings />
       <Preview />
-      <div className="log-title">Journal</div>
+      <div className="log-title">{t("Log")}</div>
       <Log />
     </aside>
   );
 }
 
-/** Écran tactile : carte agrandie par un appui long, en surimpression ; un tap n'importe où la ferme. */
+/** Touch screen: card enlarged by a long press, overlaid; a tap anywhere closes it. */
 export function TouchPreview() {
   const peek = useGame((s) => s.peek);
   const setPeek = useGame((s) => s.setPeek);
   if (!peek) return null;
   return (
-    // Ni le clic qui termine l'appui long (il tombe sur la surimpression), ni les boutons de l'aperçu (autre face)
-    // ne la ferment.
+    // Neither the click that ends the long press (it lands on the overlay) nor the preview's buttons (other face)
+    // close it.
     <div
       className="touch-preview"
       onClick={(e) => !justLongPressed() && !(e.target as HTMLElement).closest("button") && setPeek(null)}
@@ -384,8 +397,8 @@ export function TouchPreview() {
 }
 
 /**
- * Écran étroit à la souris (sous 1 100 px, barre latérale en tiroir) : l'aperçu de la carte survolée suit le pointeur,
- * du côté où il y a la place. Il ne capte pas la souris.
+ * Narrow screen with a mouse (under 1,100 px, sidebar as a drawer): the preview of the hovered card follows the
+ * pointer, on the side where there is room. It does not capture the mouse.
  */
 export function HoverPreview() {
   const hover = useGame((s) => s.hover);
@@ -417,13 +430,14 @@ export function HoverPreview() {
   return <img className="hover-preview" src={src} alt={faceName(hover.face, lang)} style={{ left, top, width: w, height: h }} />;
 }
 
-/** Écran étroit : bouton qui ouvre la barre latérale (réglages, journal) en tiroir. */
+/** Narrow screen: button that opens the sidebar (settings, log) as a drawer. */
 export function DrawerToggle() {
+  const t = useT();
   const open = useGame((s) => s.drawerOpen);
   const setDrawerOpen = useGame((s) => s.setDrawerOpen);
   return (
     <>
-      <button type="button" className="drawer-toggle" onClick={() => setDrawerOpen(!open)} aria-label="Journal et réglages">
+      <button type="button" className="drawer-toggle" onClick={() => setDrawerOpen(!open)} aria-label={t("Log and settings")}>
         ☰
       </button>
       {open && (

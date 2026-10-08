@@ -1,6 +1,6 @@
 /**
- * Table des impressions (`@mtgx/cards/printings`) chargée à la demande : un fichier à part, téléchargé seulement par
- * l'éditeur de deck et l'import d'une decklist.
+ * Printing table (`@mtgx/cards/printings`) loaded on demand: a separate file, downloaded only by the deck builder and
+ * the import of a decklist.
  */
 import { useEffect, useState } from "react";
 
@@ -13,7 +13,7 @@ export function loadPrintings(): Promise<PrintingTable> {
   loading ??= import("@mtgx/cards/printings").then(
     (m) => (table = m),
     (e) => {
-      // Hors ligne avant le premier chargement : on réessaiera à la prochaine demande.
+      // Offline before the first load: try again at the next request.
       loading = undefined;
       throw e;
     },
@@ -21,7 +21,7 @@ export function loadPrintings(): Promise<PrintingTable> {
   return loading;
 }
 
-/** La table, une fois chargée (le composant est redessiné à son arrivée). */
+/** The table, once loaded (the component re-renders when it arrives). */
 export function usePrintings(): PrintingTable | undefined {
   const [m, setM] = useState(table);
   useEffect(() => {

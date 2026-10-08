@@ -1,15 +1,15 @@
 /**
- * Recherche du deckbuilder, syntaxe inspirée de Scryfall :
- * - mots libres : nom, type ou texte (français ou anglais) ;
- * - `t:` type, `o:` texte, `c:` couleurs (`c:wu`, `c:c` incolore, `c:m` multicolore), `r:` rareté, `s:` extension ;
- * - `mv`, `pow`, `tou` avec `:`, `=`, `<`, `>`, `<=`, `>=` (`mv<=2`, `pow>=4`) ;
- * - guillemets pour un texte à plusieurs mots (`o:"draw a card"`), `-` devant un terme pour l'exclure.
+ * Deck builder search, syntax inspired by Scryfall:
+ * - free words: name, type or text (French or English);
+ * - `t:` type, `o:` text, `c:` colors (`c:wu`, `c:c` colorless, `c:m` multicolored), `r:` rarity, `s:` set;
+ * - `mv`, `pow`, `tou` with `:`, `=`, `<`, `>`, `<=`, `>=` (`mv<=2`, `pow>=4`);
+ * - quotes for a text of several words (`o:"draw a card"`), `-` before a term to exclude it.
  */
 import { type CardDef, manaValue } from "@mtgx/engine";
 
 type Term = { negate: boolean; test: (c: CardDef) => boolean };
 
-/** Minuscules sans accents (« Épée » trouve « epee »). */
+/** Lower case without accents (a query without accents finds an accented name). */
 export function normalize(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
@@ -50,7 +50,7 @@ function compare(op: string, a: number, b: number): boolean {
   }
 }
 
-/** Découpe la requête en termes (les guillemets gardent les espaces). */
+/** Splits the query into terms (quotes keep the spaces). */
 function tokens(query: string): string[] {
   return [...query.matchAll(/-?(?:[a-z]+(?:<=|>=|:|=|<|>))?(?:"[^"]*"|\S+)/gi)].map((m) => m[0]);
 }
@@ -101,12 +101,12 @@ function term(raw: string): Term | null {
     case "toughness":
       return Number.isNaN(num) ? null : { negate, test: (c) => c.toughness !== undefined && compare(op, c.toughness, num) };
     default:
-      // Clé inconnue : le terme est cherché tel quel dans le texte.
+      // Unknown key: the term is searched as is in the text.
       return { negate, test: (c) => haystack(c).includes(normalize(t)) };
   }
 }
 
-/** Filtre de recherche : toutes les conditions doivent être remplies (celles précédées de `-` exclues). */
+/** Search filter: every condition must hold (those preceded by `-` excluded). */
 export function searchFilter(query: string): (c: CardDef) => boolean {
   const terms = tokens(query.trim())
     .map(term)

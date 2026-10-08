@@ -1,37 +1,42 @@
 import type { AiLevel } from "@mtgx/ai";
 import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
-import { type Format, isGameRecord } from "@mtgx/engine";
+import { type Format, isGameRecord, msg } from "@mtgx/engine";
 import { useEffect, useMemo, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
-import { deckCover, useAllDecks } from "../decks/store";
+import { deckCover, deckDescription, deckName, useAllDecks } from "../decks/store";
 import { CustomArtToggle, ImageRelayToggle } from "../ImageRelayToggle";
 import { useRelayActive } from "../images";
 import { LangToggle } from "../LangToggle";
+import { useT } from "../localize";
 import { useGame } from "../store";
+import { textIn } from "../translate";
 import { useTutorial } from "../tutorial/store";
 import { FormatChoice, loadFormat, saveFormat } from "./FormatChoice";
 
-/** Un deck peut lancer une partie s'il est légal dans le format et que toutes ses cartes sont jouables. */
+/**
+ * A deck can start a game if it is legal in the format and all its cards are playable. `reason` and `format` are texts
+ * to translate (`textIn`).
+ */
 export function deckStatus(d: DeckList, format: Format = "standard"): { ok: boolean; reason?: string; format: string } {
   const v = validateDeck(d, CARDS, format);
-  const label = v.welcome ? "Bienvenue" : FORMAT_LABELS[v.format];
+  const label = v.welcome ? msg("Welcome") : FORMAT_LABELS[v.format];
   if (!v.legal) return { ok: false, reason: v.errors[0], format: label };
-  if (!v.playable) return { ok: false, reason: "Contient des cartes pas encore jouables", format: label };
+  if (!v.playable) return { ok: false, reason: msg("Contains cards not playable yet"), format: label };
   return { ok: true, format: label };
 }
 
-/** Catégories de decks de l'accueil : préconstruits par famille, puis ceux du joueur. */
+/** Deck categories of the home screen: precons by family, then the player's. Labels to translate (`textIn`). */
 const CATEGORIES = [
-  { key: "welcome", label: "Débutant (bienvenue)" },
+  { key: "welcome", label: msg("Beginner (welcome)") },
   { key: "fin", label: "Final Fantasy" },
-  { key: "meta", label: "Méta Standard" },
+  { key: "meta", label: msg("Standard meta") },
   { key: "commander", label: "Commander" },
-  { key: "mine", label: "Vos decks" },
+  { key: "mine", label: msg("Your decks") },
 ] as const;
 type Category = (typeof CATEGORIES)[number]["key"];
 
-/** Catégorie d'un deck, d'après son identifiant (préconstruits) ; les decks du joueur vont dans « Vos decks ». */
+/** Category of a deck, from its id (precons); the player's decks go into "Your decks". */
 export function deckCategory(d: DeckList): Category {
   if (!d.builtin) return "mine";
   if (d.id.startsWith("fin-")) return "fin";
@@ -40,18 +45,18 @@ export function deckCategory(d: DeckList): Category {
   return "welcome";
 }
 
-/** Bracket d'un deck Commander : son libellé, son rang (pour le tri) et sa provenance. */
+/** Bracket of a Commander deck: its label, its rank (for sorting) and its origin. */
 interface Bracket {
   label: string;
   rank: number;
-  /** Déclaré par la source de la liste ; sinon estimé d'après les Game Changers (un plancher seulement). */
+  /** Declared by the source of the list; otherwise estimated from the Game Changers (a floor only). */
   declared: boolean;
 }
 
-/** Estimation de `validateDeck` (aucun Game Changer : 1–2 ; jusqu'à trois : 3 ; au-delà : 4+) et son rang. */
+/** Estimate of `validateDeck` (no Game Changer: 1–2; up to three: 3; beyond: 4+) and its rank. */
 const ESTIMATE_RANK: Record<string, number> = { "1–2": 1.5, "3": 3, "4+": 4 };
 
-/** Bracket d'un deck Commander : celui que déclare sa source, sinon l'estimation ; rien pour un autre deck. */
+/** Bracket of a Commander deck: the one its source declares, otherwise the estimate; nothing for another deck. */
 export function deckBracket(d: DeckList): Bracket | undefined {
   if (d.format !== "commander" && !d.commander?.length) return undefined;
   if (d.bracket) return { label: String(d.bracket), rank: d.bracket, declared: true };
@@ -68,27 +73,29 @@ export function DeckChoice({
   label: string;
   value: string;
   onChange: (id: string) => void;
-  /** Format de la partie : un deck illégal dans ce format ne peut pas être choisi. */
+  /** Format of the game: a deck illegal in this format cannot be chosen. */
   format?: Format;
 }) {
   const decks = useAllDecks();
-  useRelayActive(); // illustrations des decks relayées si Scryfall est bloqué
+  useRelayActive(); // deck art relayed if Scryfall is blocked
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
-  // Une catégorie à la fois ; au départ, celle du deck choisi.
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  // One category at a time; at first, the one of the chosen deck.
   const chosen = decks.find((d) => d.id === value);
   const [category, setCategory] = useState<Category>(chosen ? deckCategory(chosen) : "welcome");
   const brackets = useMemo(() => new Map(decks.map((d) => [d.id, deckBracket(d)])), [decks]);
   const rank = (d: DeckList) => {
     return brackets.get(d.id)?.rank ?? 6;
   };
-  // Commander : classés par bracket, du plus doux au plus optimisé.
+  // Commander: sorted by bracket, from the mildest to the most optimized.
   const shown = decks
     .filter((d) => deckCategory(d) === category)
     .sort((a, b) => (category === "commander" ? rank(a) - rank(b) : 0));
   return (
     <div className="deck-choice">
       <div className="deck-choice-label">{label}</div>
-      <div className="seg deck-categories" role="tablist" aria-label={`${label} : catégories`}>
+      <div className="seg deck-categories" role="tablist" aria-label={t("{label}: categories", { label })}>
         {CATEGORIES.map((c) => {
           const n = decks.filter((d) => deckCategory(d) === c.key).length;
           return (
@@ -100,14 +107,12 @@ export function DeckChoice({
               className={category === c.key ? "on" : ""}
               onClick={() => setCategory(c.key)}
             >
-              {c.label} <span className="deck-category-count">{n}</span>
+              {textIn(lang, c.label)} <span className="deck-category-count">{n}</span>
             </button>
           );
         })}
       </div>
-      {shown.length === 0 && (
-        <div className="deck-empty">Aucun deck pour l'instant. Créez-en un, ou importez une liste, depuis « Mes decks ».</div>
-      )}
+      {shown.length === 0 && <div className="deck-empty">{t('No deck yet. Create one, or import a list, from "My decks".')}</div>}
       <div className="deck-list">
         {shown.map((d) => {
           const status = deckStatus(d, format);
@@ -117,7 +122,7 @@ export function DeckChoice({
             <div
               key={d.id}
               className={`deck-tile ${value === d.id ? "on" : ""} ${status.ok ? "" : "invalid"}`}
-              title={status.reason}
+              title={status.reason && textIn(lang, status.reason)}
             >
               <button type="button" className="deck-tile-main" disabled={!status.ok} onClick={() => onChange(d.id)}>
                 <div className="deck-art" style={{ backgroundImage: cover ? `url(${cover})` : undefined }}>
@@ -126,24 +131,24 @@ export function DeckChoice({
                       className="deck-bracket"
                       title={
                         bracket.declared
-                          ? "Bracket déclaré par la source de la liste"
-                          : "Bracket estimé d'après les Game Changers du deck (un plancher seulement)"
+                          ? t("Bracket declared by the source of the list")
+                          : t("Bracket estimated from the deck's Game Changers (a floor only)")
                       }
                     >
-                      Bracket {bracket.label}
+                      {t("Bracket {label}", { label: bracket.label })}
                     </span>
                   )}
                 </div>
                 <div className="deck-body">
                   <div className="deck-name">
-                    {d.name} <ManaCost cost={d.colors.map((c) => `{${c}}`).join("")} size={14} />
+                    {deckName(d, lang)} <ManaCost cost={d.colors.map((c) => `{${c}}`).join("")} size={14} />
                   </div>
-                  <div className="deck-desc">{d.description ?? (d.builtin ? "" : "Mon deck")}</div>
+                  <div className="deck-desc">{deckDescription(d, lang) ?? (d.builtin ? "" : t("My deck"))}</div>
                   <div className="deck-count">
-                    {d.main.reduce((n, [k]) => n + k, 0)} cartes
-                    {status.ok ? ` · ${status.format}` : ""}
-                    {d.builtin ? " · préconstruit" : ""}
-                    {!status.ok && <span className="deck-invalid"> · {status.reason}</span>}
+                    {t("{n} cards", { n: d.main.reduce((n, [k]) => n + k, 0) })}
+                    {status.ok ? ` · ${textIn(lang, status.format)}` : ""}
+                    {d.builtin ? ` · ${t("precon")}` : ""}
+                    {!status.ok && <span className="deck-invalid"> · {status.reason && textIn(lang, status.reason)}</span>}
                   </div>
                 </div>
               </button>
@@ -155,7 +160,7 @@ export function DeckChoice({
                   openDeckBuilder(d.id);
                 }}
               >
-                {d.builtin ? "Voir" : "Éditer"}
+                {d.builtin ? t("View") : t("Edit")}
               </button>
             </div>
           );
@@ -167,13 +172,20 @@ export function DeckChoice({
 
 const LEVEL_KEY = "planecircle.aiLevel";
 
+/** AI levels; `label` and `hint` are texts to translate (`textIn`). */
 export const LEVELS: { level: AiLevel; label: string; hint: string }[] = [
-  { level: "beginner", label: "Débutant", hint: "Pour apprendre : l'IA fait des erreurs et ne vous tend pas de pièges." },
-  { level: "medium", label: "Moyen", hint: "L'IA joue correctement et bloque avec prudence." },
+  {
+    level: "beginner",
+    label: msg("Beginner"),
+    hint: msg("To learn: the AI makes mistakes and does not set traps for you."),
+  },
+  { level: "medium", label: msg("Medium"), hint: msg("The AI plays correctly and blocks with caution.") },
   {
     level: "expert",
-    label: "Élevé",
-    hint: "L'IA simule les combats et les tours suivants avant de jouer (en duel ; en multijoueur, elle simule les combats).",
+    label: msg("High"),
+    hint: msg(
+      "The AI simulates the combats and the next turns before playing (in a duel; in multiplayer, it simulates the combats).",
+    ),
   },
 ];
 
@@ -190,7 +202,7 @@ function saveLevel(level: AiLevel): void {
   try {
     localStorage.setItem(LEVEL_KEY, level);
   } catch {
-    // réglage non conservé
+    // setting not kept
   }
 }
 
@@ -199,26 +211,28 @@ export function Lobby() {
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
   const openOnline = useGame((s) => s.openOnline);
   const openTutorial = useGame((s) => s.openTutorial);
-  // Nouveau joueur (aucune leçon commencée) : le tutoriel est mis en avant.
-  const newcomer = useTutorial((t) => t.progress.done.length === 0 && !t.progress.current);
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  // New player (no lesson started): the tutorial is put forward.
+  const newcomer = useTutorial((x) => x.progress.done.length === 0 && !x.progress.current);
   const decks = useAllDecks();
   const [mine, setMine] = useState(decks[0]?.id ?? "");
-  // Un deck par IA (au plus trois) ; au départ, des decks différents pour varier les adversaires.
+  // One deck per AI (three at most); at first, different decks to vary the opponents.
   const [ai, setAi] = useState(() => [1, 2, 3].map((i) => decks[i]?.id ?? decks[1]?.id ?? ""));
   const [aiCount, setAiCount] = useState(1);
-  // IA dont on choisit le deck (multijoueur).
+  // AI whose deck is being chosen (multiplayer).
   const [editing, setEditing] = useState(0);
   const slot = Math.min(editing, aiCount - 1);
   const byId = (id: string) => decks.find((d) => d.id === id);
   const me = byId(mine);
   const them = ai.slice(0, aiCount).map(byId);
-  // Format de la partie (Standard, ou sans limite), retenu d'une partie à l'autre.
+  // Format of the game (Standard, or unlimited), kept from one game to the next.
   const [format, setFormat] = useState<Format>(loadFormat);
   const chooseFormat = (f: Format) => {
     setFormat(f);
     saveFormat(f);
-    // Un deck qui ne convient pas au nouveau format (Commander : un deck à commandant) est remplacé par le premier qui
-    // convient, pour le joueur et pour chaque IA.
+    // A deck that does not suit the new format (Commander: a deck with a commander) is replaced by the first one that
+    // does, for the player and for each AI.
     const fits = (id: string) => {
       const d = byId(id);
       return !!d && deckStatus(d, f).ok;
@@ -229,7 +243,7 @@ export function Lobby() {
   };
   const commander = format === "commander";
   const canStart = !!me && deckStatus(me, format).ok && them.every((d) => !!d && deckStatus(d, format).ok);
-  // Match au meilleur des trois manches (duel), retenu d'une partie à l'autre.
+  // Best-of-three match (duel), kept from one game to the next.
   const [bo3, setBo3] = useState(() => localStorageFlag("planecircle.bo3"));
   useEffect(() => saveFlag("planecircle.bo3", bo3), [bo3]);
   const [level, setLevel] = useState<AiLevel>(loadLevel);
@@ -252,9 +266,9 @@ export function Lobby() {
       </header>
       <div className="lobby-body">
         <FormatChoice value={format} onChange={chooseFormat} />
-        <DeckChoice label="Votre deck" value={mine} onChange={setMine} format={format} />
+        <DeckChoice label={t("Your deck")} value={mine} onChange={setMine} format={format} />
         <div className="ai-count">
-          <span>Adversaires IA</span>
+          <span>{t("AI opponents")}</span>
           <div className="seg">
             {[1, 2, 3].map((n) => (
               <button key={n} type="button" className={aiCount === n ? "on" : ""} onClick={() => setAiCount(n)}>
@@ -263,18 +277,18 @@ export function Lobby() {
             ))}
           </div>
           <span className="hint">
-            {aiCount > 1 ? "Multijoueur chacun pour soi" : "Duel"}
-            {commander ? " · 40 points de vie" : ""}
+            {aiCount > 1 ? t("Free-for-all multiplayer") : t("Duel")}
+            {commander ? ` · ${t("{n} life", { n: 40 })}` : ""}
           </span>
           {aiCount === 1 && !commander && (
-            <label className="toggle" title="Au meilleur des trois manches, avec votre réserve entre les manches">
+            <label className="toggle" title={t("Best of three games, with your sideboard between the games")}>
               <input type="checkbox" checked={bo3} onChange={(e) => setBo3(e.target.checked)} />
-              Match en 3 manches (BO3)
+              {t("Match of 3 games (BO3)")}
             </label>
           )}
         </div>
         {aiCount > 1 && (
-          <div className="seg ai-decks" role="tablist" aria-label="Deck de chaque IA">
+          <div className="seg ai-decks" role="tablist" aria-label={t("Each AI's deck")}>
             {them.map((d, i) => (
               <button
                 key={i}
@@ -284,21 +298,21 @@ export function Lobby() {
                 className={slot === i ? "on" : ""}
                 onClick={() => setEditing(i)}
               >
-                IA {i + 1} <span className="ai-deck-name">{d?.name ?? "—"}</span>
+                {t("AI {n}", { n: i + 1 })} <span className="ai-deck-name">{d ? deckName(d, lang) : "—"}</span>
               </button>
             ))}
           </div>
         )}
         <DeckChoice
           key={slot}
-          label={aiCount > 1 ? `Deck de l'IA ${slot + 1}` : "Deck de l'IA"}
+          label={aiCount > 1 ? t("Deck of AI {n}", { n: slot + 1 }) : t("AI's deck")}
           value={ai[slot] ?? ""}
           format={format}
           onChange={(id) => setAi((prev) => prev.map((v, i) => (i === slot ? id : v)))}
         />
         <div className="ai-level">
           <div className="ai-count">
-            <span>Niveau de l'IA</span>
+            <span>{t("AI level")}</span>
             <div className="seg">
               {LEVELS.map((l) => (
                 <button
@@ -307,12 +321,12 @@ export function Lobby() {
                   className={level === l.level ? "on" : ""}
                   onClick={() => chooseLevel(l.level)}
                 >
-                  {l.label}
+                  {textIn(lang, l.label)}
                 </button>
               ))}
             </div>
           </div>
-          <div className="hint ai-level-hint">{LEVELS.find((l) => l.level === level)?.hint}</div>
+          <div className="hint ai-level-hint">{textIn(lang, LEVELS.find((l) => l.level === level)?.hint ?? "")}</div>
         </div>
         <div className="lobby-actions">
           <button
@@ -331,40 +345,43 @@ export function Lobby() {
               )
             }
           >
-            Jouer contre l'IA
+            {t("Play against the AI")}
           </button>
           <button type="button" className="btn big" onClick={() => openDeckBuilder(null)}>
-            Mes decks
+            {t("My decks")}
           </button>
           <button type="button" className="btn big" onClick={openOnline}>
-            Contre un joueur
+            {t("Against a player")}
           </button>
           <button type="button" className={`btn big ${newcomer ? "learn" : ""}`} onClick={openTutorial}>
-            Apprendre à jouer
+            {t("Learn to play")}
           </button>
           <ReplayOpener />
         </div>
         <div className="lobby-help">
-          <strong>Raccourcis :</strong> Espace = bouton principal · Entrée = passer le tour · Échap = annuler · M = couper le son.
-          Glissez une carte vers le champ de bataille (ou sur sa cible) pour la jouer. Les petits points sous la barre des phases
-          règlent vos arrêts.
+          <strong>{t("Shortcuts:")}</strong>{" "}
+          {t(
+            "Space = main button · Enter = pass the turn · Esc = cancel · M = mute. Drag a card to the battlefield (or onto its target) to play it. The small dots under the phase bar set your stops.",
+          )}
         </div>
       </div>
       <footer className="lobby-foot">
-        Projet de fan gratuit et non commercial. Magic: The Gathering est une marque de Wizards of the Coast ; ce projet n'est ni
-        approuvé ni soutenu par Wizards. Images et données de cartes : Scryfall.
+        {t(
+          "Free and non-commercial fan project. Magic: The Gathering is a trademark of Wizards of the Coast; this project is neither approved nor endorsed by Wizards. Card images and data: Scryfall.",
+        )}
       </footer>
     </div>
   );
 }
 
-/** « Revoir une partie » : ouvre un fichier exporté (« Exporter la partie ») dans le visionneur de replays. */
+/** "Replay a game": opens an exported file ("Export the game") in the replay viewer. */
 function ReplayOpener() {
   const openReplay = useGame((s) => s.openReplay);
   const notify = useGame((s) => s.notify);
+  const t = useT();
   return (
     <label className="btn big replay-open">
-      Revoir une partie
+      {t("Replay a game")}
       <input
         type="file"
         accept="application/json,.json"
@@ -375,10 +392,10 @@ function ReplayOpener() {
           if (!file) return;
           try {
             const record = JSON.parse(await file.text()) as unknown;
-            if (!isGameRecord(record)) return notify("Ce fichier n'est pas une partie Planecircle.");
+            if (!isGameRecord(record)) return notify(t("This file is not a Planecircle game."));
             openReplay(record);
           } catch {
-            notify("Fichier illisible.");
+            notify(t("Unreadable file."));
           }
         }}
       />
@@ -386,7 +403,7 @@ function ReplayOpener() {
   );
 }
 
-/** Réglage booléen mémorisé (le stockage peut être indisponible : navigation privée, aperçu). */
+/** Remembered boolean setting (storage can be unavailable: private browsing, preview). */
 function localStorageFlag(key: string): boolean {
   try {
     return localStorage.getItem(key) === "1";
@@ -399,6 +416,6 @@ function saveFlag(key: string, on: boolean): void {
   try {
     localStorage.setItem(key, on ? "1" : "0");
   } catch {
-    // stockage indisponible : réglage non mémorisé
+    // storage unavailable: setting not remembered
   }
 }

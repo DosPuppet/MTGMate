@@ -1,7 +1,7 @@
 /**
- * Changement de nom (MTG Mate → Planecircle, 05/10/2026) : les clés « mtgmate.* » du localStorage (réglages, decks,
- * partie en cours, jeton en ligne, tutoriel…) deviennent « planecircle.* ». Importé en premier par main.tsx, avant
- * tout module qui lit ses clés au chargement. Une clé nouvelle déjà présente n'est pas écrasée.
+ * Name change (MTG Mate → Planecircle, 2026-10-05): the "mtgmate.*" keys of localStorage (settings, decks, game in
+ * progress, online token, tutorial…) become "planecircle.*". Imported first by main.tsx, before any module that reads
+ * its keys on load. A new key already present is not overwritten.
  */
 const OLD = "mtgmate.";
 const NEW = "planecircle.";
@@ -19,7 +19,7 @@ try {
     localStorage.removeItem(key);
   }
 } catch {
-  // Stockage bloqué (navigation privée, données refusées) : rien à reprendre.
+  // Storage blocked (private browsing, data refused): nothing to carry over.
 }
 
 export {};

@@ -1,4 +1,4 @@
-// En premier : les clés « mtgmate.* » renommées avant que les stores ne les lisent.
+// First: the "mtgmate.*" keys renamed before the stores read them.
 import "./storageRename";
 import { LayoutGroup, MotionConfig } from "motion/react";
 import { StrictMode } from "react";
@@ -11,28 +11,28 @@ import { flushSave, useGame } from "./store";
 import { useTutorial } from "./tutorial/store";
 import "./styles.css";
 
-// Mode dev : accès aux stores pour les scripts Playwright (bac à sable, voir protocol.ts ; tutoriel).
+// Dev mode: access to the stores for the Playwright scripts (sandbox, see protocol.ts; tutorial).
 if (import.meta.env.DEV) {
   const w = window as unknown as { __mtgx: typeof useGame; __tuto: typeof useTutorial };
   w.__mtgx = useGame;
   w.__tuto = useTutorial;
 }
 
-// Production : service worker (application en cache, démarrage hors ligne ; public/sw.js).
+// Production: service worker (application cached, offline start; public/sw.js).
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/sw.js")
     .then(() => navigator.serviceWorker.ready)
-    // Le worker de partie en cache dès la première visite (partie contre l'IA hors ligne).
+    // The game worker cached from the first visit (game against the AI offline).
     .then(() => setTimeout(prefetchGameWorker, 3000))
-    .catch((e) => console.warn("Service worker non enregistré :", e));
+    .catch((e) => console.warn("Service worker not registered:", e));
 }
 
 const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      {/* Mouvements réduits si le système le demande (accessibilité). */}
+      {/* Reduced motion if the system asks for it (accessibility). */}
       <MotionConfig reducedMotion="user">
         <LayoutGroup>
           <App />
@@ -42,7 +42,7 @@ if (root) {
   );
 }
 
-// Son : déverrouillé au premier geste (politique d'autoplay des navigateurs), clic des boutons, M = muet.
+// Sound: unlocked on the first gesture (browsers' autoplay policy), button clicks, M = mute.
 document.addEventListener("pointerdown", unlockAudio, { capture: true });
 document.addEventListener(
   "click",
@@ -59,15 +59,15 @@ document.addEventListener("keydown", (e) => {
   useAudio.getState().toggleMute();
 });
 
-// Images : Scryfall bloqué par le réseau du joueur ? Relais par le serveur (mode auto, voir images.ts).
+// Images: Scryfall blocked by the player's network? Relay through the server (auto mode, see images.ts).
 void detectBlockedScryfall();
-// Illustrations personnelles du serveur (/art/, voir tools/custom-art.ts).
+// The server's custom art (/art/, see tools/custom-art.ts).
 void loadCustomArt();
 
-// Page rouverte : reprise de la partie en ligne, sinon de la partie contre l'IA sauvegardée (sauf lien d'invitation
-// ?room=CODE, qui ouvre le jeu en ligne ; la partie sauvegardée reprendra à la prochaine ouverture).
+// Page reopened: resume the online game, otherwise the saved game against the AI (except for an invitation link
+// ?room=CODE, which opens online play; the saved game resumes at the next opening).
 const invited = new URLSearchParams(location.search).has("room");
 if (invited && !localStorage.getItem("planecircle.online")) useGame.getState().openOnline();
 else useGame.getState().resumeAtStartup();
-// Fermeture de la page : la sauvegarde de la partie locale est écrite tout de suite.
+// Page closed: the save of the local game is written at once.
 window.addEventListener("pagehide", flushSave);

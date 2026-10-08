@@ -1,4 +1,5 @@
-/** Réglage du son : haut-parleur (muet / actif, raccourci M) et volume. */
+/** Sound setting: speaker (muted / on, shortcut M) and volume. */
+import { useT } from "../localize";
 import { useAudio } from "./sfx";
 
 const SPEAKER = "M4 9v6h4l5 4V5L8 9H4z";
@@ -8,14 +9,15 @@ const CROSS = "M16.5 9.5l5 5M21.5 9.5l-5 5";
 export function SoundControl() {
   const { volume, muted, setVolume, toggleMute } = useAudio();
   const silent = muted || volume === 0;
+  const t = useT();
   return (
     <div className="sound-control">
       <button
         type="button"
         className="sound-toggle"
         onClick={toggleMute}
-        aria-label={silent ? "Activer le son" : "Couper le son"}
-        title={`${silent ? "Activer" : "Couper"} le son (M)`}
+        aria-label={silent ? t("Turn sound on") : t("Mute sound")}
+        title={silent ? t("Turn sound on (M)") : t("Mute sound (M)")}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
           <path d={SPEAKER} fill="currentColor" />
@@ -29,7 +31,7 @@ export function SoundControl() {
         step={0.05}
         value={muted ? 0 : volume}
         onChange={(e) => setVolume(Number(e.target.value))}
-        aria-label="Volume des effets sonores"
+        aria-label={t("Sound effects volume")}
       />
     </div>
   );

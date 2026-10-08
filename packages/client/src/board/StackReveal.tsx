@@ -1,27 +1,28 @@
 /**
- * Sort ou capacité adverse sur la pile, quand le joueur n'a aucune réponse possible : on le lui montre
- * (carte, lanceur, cibles) au moins quelques secondes avant de passer. OK passe tout de suite.
- * Si le joueur peut répondre, rien de tout ça : le jeu l'attend déjà (bandeau « répondre ? »).
+ * An opponent's spell or ability on the stack, when the player has no possible response: it is shown to them
+ * (card, caster, targets) for at least a few seconds before passing. OK passes at once.
+ * If the player can respond, none of this: the game already waits for them ("respond?" banner).
  */
 import type { GameView } from "@mtgx/engine";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { fastMode } from "../fast";
 import { faceName } from "../i18n";
+import { useLocalize, useT } from "../localize";
 import { myActions, useGame } from "../store";
 import { useTutorialHold } from "../tutorial/store";
 import { Card } from "./Card";
 
-/** Durée d'affichage avant de passer automatiquement (un instant en mode rapide des tests). */
+/** Display time before passing automatically (an instant in the fast test mode). */
 export const REVEAL_MS = fastMode() ? 300 : 5000;
 
-/** Le sort ou la capacité adverse à montrer, s'il y en a un et que le joueur ne peut rien y faire. */
+/** The opponent's spell or ability to show, if there is one and the player can do nothing about it. */
 function revealed(view: GameView | null, fullControl: boolean) {
   const p = view?.pending;
   if (!view || fullControl || p?.kind !== "priority" || p.player !== view.viewer) return null;
   const top = view.stack[view.stack.length - 1];
   if (!top || top.controller === view.viewer) return null;
-  // Une réponse possible : le joueur décide lui-même (pas de minuterie).
+  // A possible response: the player decides themselves (no timer).
   if (myActions(view).some((a) => a.type !== "pass" && a.type !== "tapForMana")) return null;
   return top;
 }
@@ -34,24 +35,34 @@ export function StackReveal() {
   const top = revealed(view, fullControl);
   const topId = top?.id;
   const [started, setStarted] = useState(0);
-  // Tutoriel guidé : le joueur clique OK lui-même, quand le guide le lui demande.
+  // Guided tutorial: the player clicks OK themselves, when the guide asks them to.
   const held = useTutorialHold();
+  const t = useT();
 
-  // Minuterie : on passe seul au bout de REVEAL_MS (relancée pour chaque nouvel élément de pile).
+  // Timer: passes on its own after REVEAL_MS (restarted for each new stack item).
   useEffect(() => {
     if (!topId || held) return;
     setStarted(Date.now());
-    const t = setTimeout(() => decide({ type: "pass" }), REVEAL_MS);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => decide({ type: "pass" }), REVEAL_MS);
+    return () => clearTimeout(timer);
   }, [topId, decide, held]);
 
   const nameOf = (id: string) => {
     if (!view) return id;
     const player = view.players[id];
-    if (player) return id === view.viewer ? "vous" : player.name;
+    if (player) return id === view.viewer ? t("you") : player.name;
     const o = view.battlefield.find((x) => x.id === id) ?? view.stack.find((x) => x.id === id);
-    return o ? faceName(o, lang) : "une carte";
+    return o ? faceName(o, lang) : t("a card");
   };
+
+  // The card name is set in bold inside the sentence: the template is split around a marker.
+  const CARD = "\u0001";
+  const caster = top ? (view?.players[top.controller]?.name ?? t("The opponent")) : "";
+  const label =
+    top?.kind === "ability"
+      ? t("{player} activates {card}", { player: caster, card: CARD })
+      : t("{player} casts {card}", { player: caster, card: CARD });
+  const [before = "", after = ""] = label.split(CARD);
 
   return (
     <AnimatePresence>
@@ -65,14 +76,17 @@ export function StackReveal() {
           transition={{ duration: 0.25 }}
         >
           <div className="stack-reveal-label">
-            {view.players[top.controller]?.name ?? "L'adversaire"} {top.kind === "ability" ? "active" : "lance"}{" "}
+            {before}
             <strong>{faceName(top, lang)}</strong>
+            {after}
           </div>
           <Card face={top} width="var(--spotlight-w)" hoverable />
           {top.effect && <EffectFrame text={top.effect} ability={top.kind === "ability"} />}
           {top.targets.length > 0 && (
             <div className="stack-reveal-targets">
-              {top.targets.length > 1 ? "Cibles" : "Cible"} : {top.targets.map(nameOf).join(", ")}
+              {top.targets.length > 1
+                ? t("Targets: {list}", { list: top.targets.map(nameOf).join(", ") })
+                : t("Target: {list}", { list: top.targets.map(nameOf).join(", ") })}
             </div>
           )}
           <button type="button" className="btn primary stack-reveal-ok" onClick={() => decide({ type: "pass" })}>
@@ -89,17 +103,19 @@ export function StackReveal() {
   );
 }
 
-/** L'effet joué (mode d'un sort modal, capacité d'un permanent), encadré en bleu sous la carte montrée. */
+/** The effect played (mode of a modal spell, ability of a permanent), framed in blue under the card shown. */
 export function EffectFrame({ text, ability }: { text: string; ability?: boolean }) {
+  const t = useT();
+  const loc = useLocalize();
   return (
     <div className="effect-frame">
-      <span className="effect-frame-kind">{ability ? "Capacité" : "Mode choisi"}</span>
-      {text}
+      <span className="effect-frame-kind">{ability ? t("Ability") : t("Chosen mode")}</span>
+      {loc(text)}
     </div>
   );
 }
 
-/** Un sort adverse est montré par le panneau : l'encart éphémère (spotlight) ferait doublon. */
+/** An opponent's spell is shown by the panel: the transient spotlight would duplicate it. */
 export function useRevealActive(): boolean {
   const view = useGame((s) => s.view);
   const fullControl = useGame((s) => s.settings.fullControl);

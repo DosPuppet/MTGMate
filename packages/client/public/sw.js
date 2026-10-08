@@ -1,10 +1,10 @@
 /**
- * Service worker de Planecircle (build de production seulement, enregistré par main.tsx).
- * - /assets/* (nommés par leur empreinte) et /sounds/* : depuis le cache après la première visite ; une nouvelle
- *   version d'un fichier remplace l'ancienne (même préfixe de nom) ;
- * - la page : réseau d'abord, cache si hors ligne (partie contre l'IA sans réseau ; les images de Scryfall, elles,
- *   restent au navigateur).
- * Ni le jeu en ligne (/ws), ni le relais des images (/scry/), ni /healthz ne passent par le cache.
+ * Planecircle service worker (production build only, registered by main.tsx).
+ * - /assets/* (named by their hash) and /sounds/*: from the cache after the first visit; a new version of a file
+ *   replaces the old one (same name prefix);
+ * - the page: network first, cache when offline (a game against the AI without network; the Scryfall images stay
+ *   with the browser).
+ * Neither online play (/ws), nor the image relay (/scry/), nor /healthz go through the cache.
  */
 const CACHE = "planecircle-v1";
 
@@ -18,7 +18,7 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-/** « index-CtvfSpgD.js » → « index- » : les anciennes versions d'un même fichier. */
+/** "index-CtvfSpgD.js" → "index-": the old versions of the same file. */
 const prefixOf = (path) => path.replace(/-[\w-]{6,}\.(js|css)$/, "-");
 
 async function cacheFirst(request) {

@@ -1,14 +1,15 @@
 /**
- * Question « nom » (nom de carte, de carte de terrain, type de créature) : les noms publics proposés par le moteur en
- * boutons, et une recherche dans tout le catalogue (noms français d'abord). Clavier : ↑ ↓ pour parcourir les résultats,
- * Entrée pour valider. La réponse est le nom anglais.
+ * "Name" question (card name, land card name, creature type): the public names offered by the engine as buttons, and a
+ * search in the whole catalog (French names first). Keyboard: ↑ ↓ to go through the results, Enter to confirm. The
+ * answer is the English name.
  */
 import type { NameKind } from "@mtgx/engine";
 import { useEffect, useMemo, useState } from "react";
+import { useT } from "../localize";
 import { nameLabel, searchNames } from "../names";
 import { useGame } from "../store";
 
-/** Écran tactile : pas de focus automatique (le clavier virtuel cacherait les noms proposés). */
+/** Touch screen: no automatic focus (the virtual keyboard would hide the offered names). */
 const coarsePointer = () => typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
 
 export function NameSearch({
@@ -27,16 +28,17 @@ export function NameSearch({
   onSubmit: (name: string) => void;
 }) {
   const lang = useGame((s) => s.lang);
+  const t = useT();
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
   const results = useMemo(() => searchNames(of, query, lang), [of, query, lang]);
-  // Nouvelle recherche : le premier résultat est choisi (ce qu'enverraient Entrée et « Valider »).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: seulement quand les résultats changent
+  // New search: the first result is chosen (what Enter and "Confirm" would send).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only when the results change
   useEffect(() => {
     setCursor(0);
     if (results[0]) onChange(results[0]);
   }, [results]);
-  // Le résultat parcouru au clavier reste visible dans la liste.
+  // The result reached with the keyboard stays visible in the list.
   useEffect(() => {
     document.getElementById(`name-result-${cursor}`)?.scrollIntoView({ block: "nearest" });
   }, [cursor]);
@@ -77,16 +79,16 @@ export function NameSearch({
         className="choice-search"
         type="search"
         enterKeyHint="done"
-        placeholder={of === "creatureType" ? "Rechercher un type de créature…" : "Rechercher un nom de carte…"}
-        aria-label="Rechercher un nom"
+        placeholder={of === "creatureType" ? t("Search for a creature type…") : t("Search for a card name…")}
+        aria-label={t("Search for a name")}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={onKey}
-        // biome-ignore lint/a11y/noAutofocus: la recherche est l'action principale de cette fenêtre
+        // biome-ignore lint/a11y/noAutofocus: the search is the main action of this window
         autoFocus={!coarsePointer()}
       />
       {results.length > 0 && (
-        <div className="name-results" role="listbox" aria-label="Résultats">
+        <div className="name-results" role="listbox" aria-label={t("Results")}>
           {results.map((n, i) => (
             <button
               key={n}
@@ -107,9 +109,9 @@ export function NameSearch({
           ))}
         </div>
       )}
-      {query.trim() && results.length === 0 && <p className="hint">Aucun nom ne correspond à cette recherche.</p>}
+      {query.trim() && results.length === 0 && <p className="hint">{t("No name matches this search.")}</p>}
       <p className="hint name-chosen">
-        Votre choix : <strong>{value ? label(value) : "—"}</strong>
+        {t("Your choice:")} <strong>{value ? label(value) : "—"}</strong>
       </p>
     </div>
   );

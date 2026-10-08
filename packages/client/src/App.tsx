@@ -5,36 +5,41 @@ import { DrawerToggle, HoverPreview, Sidebar, TouchPreview } from "./board/Sideb
 import { DeckBuilder } from "./decks/DeckBuilder";
 import { Lobby } from "./lobby/Lobby";
 import { Online } from "./lobby/Online";
-
+import { useLocalize, useT } from "./localize";
 import { Prompts } from "./prompts/Prompts";
 import { useGame } from "./store";
 import { isTouch } from "./touch";
 import { Coach } from "./tutorial/Coach";
 import { TutorialMenu } from "./tutorial/TutorialMenu";
 
+/** A short message; its text can come from the engine, the server or the interface (`msg`), translated here. */
 function Toast() {
   const toast = useGame((s) => s.toast);
+  const loc = useLocalize();
   if (!toast) return null;
   return (
     <div className="toast" key={toast.id}>
-      {toast.text}
+      {loc(toast.text)}
     </div>
   );
 }
 
-/** Message important à valider (partie impossible à reprendre, partie en ligne perdue), par-dessus tous les écrans. */
+/** Important message to acknowledge (game that cannot be resumed, online game lost), above every screen. */
 function Notice() {
   const notice = useGame((s) => s.notice);
   const dismiss = useGame((s) => s.dismissNotice);
+  const loc = useLocalize();
+  const t = useT();
   if (!notice) return null;
+  const title = loc(notice.title);
   return (
     <div className="modal-backdrop">
-      <div className="modal notice" role="alertdialog" aria-label={notice.title}>
-        <h2>{notice.title}</h2>
-        <p>{notice.text}</p>
+      <div className="modal notice" role="alertdialog" aria-label={title}>
+        <h2>{title}</h2>
+        <p>{loc(notice.text)}</p>
         <div className="modal-actions">
           <button type="button" className="btn primary" onClick={dismiss}>
-            OK
+            {t("OK")}
           </button>
         </div>
       </div>
@@ -55,7 +60,7 @@ function useShortcuts() {
       } else if (e.code === "Enter" || e.code === "NumpadEnter") {
         e.preventDefault();
         const v = useGame.getState().view;
-        // À votre tour : jusqu'à la fin du tour ; au tour adverse : jusqu'à votre tour.
+        // On your turn: until the end of the turn; on an opponent's turn: until your turn.
         if (v && v.pending?.player === v.viewer) endTurn(e.shiftKey);
       } else if (e.code === "Escape") {
         const s = useGame.getState();
@@ -72,10 +77,11 @@ function useShortcuts() {
 function GameScreen() {
   useShortcuts();
   const drawerOpen = useGame((s) => s.drawerOpen);
+  const t = useT();
   return (
     <div
       className={`game ${drawerOpen ? "drawer-open" : ""}`}
-      // Appui long au doigt : pas de menu contextuel du navigateur (l'aperçu de la carte le remplace).
+      // Long press with a finger: no browser context menu (the card preview replaces it).
       onContextMenu={(e) => isTouch() && e.preventDefault()}
     >
       <Board />
@@ -88,7 +94,7 @@ function GameScreen() {
       <Coach />
       <div className="rotate-hint">
         <div className="rotate-icon">⟳</div>
-        Tournez votre appareil en paysage pour jouer.
+        {t("Turn your device to landscape to play.")}
       </div>
     </div>
   );

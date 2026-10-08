@@ -1,7 +1,7 @@
 /**
- * Noms à choisir (question « nom » du moteur : nom de carte, de carte de terrain, type de créature) : le catalogue de
- * toutes les cartes connues, que l'interface parcourt (noms français d'abord) sans que la question liste les cartes de
- * la partie. La réponse envoyée est toujours le nom anglais (canonique).
+ * Names to choose (the engine's "name" question: card name, land card name, creature type): the catalog of every
+ * known card, which the interface searches (French names first) without the question listing the game's cards. The
+ * answer sent is always the English (canonical) name.
  */
 import { CARDS, nameCatalog } from "@mtgx/cards";
 import { CREATURE_TYPES, type NameCatalog, type NameKind, registerNameCatalog } from "@mtgx/engine";
@@ -11,8 +11,8 @@ import type { Lang } from "./i18n";
 let registered = false;
 
 /**
- * Le catalogue des noms, enregistré dans le moteur de ce fil (replays) ; à transmettre au worker de partie, qui
- * n'importe pas `@mtgx/cards`.
+ * The name catalog, registered in the engine of this thread (replays); to be passed to the game worker, which does
+ * not import `@mtgx/cards`.
  */
 export function hostNameCatalog(): NameCatalog {
   const c = nameCatalog();
@@ -23,7 +23,7 @@ export function hostNameCatalog(): NameCatalog {
 
 let french: Map<string, string> | undefined;
 
-/** Nom français d'une carte ou d'une face (nom anglais sinon). */
+/** French name of a card or a face (English name otherwise). */
 export function frenchName(name: string): string {
   if (!french) {
     french = new Map();
@@ -33,14 +33,14 @@ export function frenchName(name: string): string {
   return french.get(name) ?? name;
 }
 
-/** Libellé d'un nom dans la langue de l'interface (les types de créature restent en anglais). */
+/** Label of a name in the interface language (creature types stay in English). */
 export function nameLabel(name: string, of: NameKind, lang: Lang): string {
   return of === "creatureType" || lang === "en" ? name : frenchName(name);
 }
 
 interface Entry {
   name: string;
-  /** Libellé dans la langue de l'interface, puis l'autre langue, normalisés (sans accents, minuscules). */
+  /** Label in the interface language, then in the other language, normalized (no accents, lower case). */
   main: string;
   other: string;
   label: string;
@@ -65,8 +65,8 @@ function entriesOf(of: NameKind, lang: Lang): Entry[] {
 }
 
 /**
- * Noms du catalogue qui correspondent à la recherche, les plus proches d'abord : début du nom dans la langue de
- * l'interface, début d'un de ses mots, puis n'importe où ; ensuite les mêmes dans l'autre langue. Recherche vide : rien.
+ * Catalog names matching the search, the closest first: start of the name in the interface language, start of one of
+ * its words, then anywhere; then the same in the other language. Empty search: nothing.
  */
 export function searchNames(of: NameKind, query: string, lang: Lang, limit = 40): string[] {
   const q = normalize(query.trim());
@@ -84,7 +84,7 @@ export function searchNames(of: NameKind, query: string, lang: Lang, limit = 40)
     const s = score(e);
     if (s >= 0) hits.push([e, s]);
   }
-  // Tri stable : à score égal, l'ordre alphabétique du catalogue.
+  // Stable sort: at equal score, the catalog's alphabetical order.
   return hits
     .sort((a, b) => a[1] - b[1])
     .slice(0, limit)

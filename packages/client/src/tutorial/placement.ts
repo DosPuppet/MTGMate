@@ -1,7 +1,7 @@
 /**
- * Placement de la bulle du guide : parmi quelques positions candidates (autour de la cible, bords de l'écran),
- * celle qui recouvre le moins ce que le joueur doit voir ou cliquer (cartes, boutons, fenêtres), et jamais la cible.
- * Pur (testé par `client/test/placement.test.ts`).
+ * Placement of the guide's bubble: among a few candidate positions (around the target, edges of the screen), the one
+ * that covers the least of what the player must see or click (cards, buttons, windows), and never the target.
+ * Pure (tested by `client/test/placement.test.ts`).
  */
 
 export interface Rect {
@@ -13,7 +13,7 @@ export interface Rect {
 
 export interface Obstacle {
   r: Rect;
-  /** Importance : recouvrir la cible coûte bien plus que recouvrir une carte quelconque. */
+  /** Importance: covering the target costs much more than covering any card. */
   weight: number;
 }
 
@@ -37,10 +37,10 @@ export function placeBubble(
   const maxY = viewport.h - h - MARGIN;
   const near: [number, number][] = target
     ? [
-        [target.x + target.w / 2 - w / 2, target.y + target.h + gap], // dessous
-        [target.x + target.w / 2 - w / 2, target.y - gap - h], // dessus
-        [target.x + target.w + gap, target.y + target.h / 2 - h / 2], // à droite
-        [target.x - gap - w, target.y + target.h / 2 - h / 2], // à gauche
+        [target.x + target.w / 2 - w / 2, target.y + target.h + gap], // below
+        [target.x + target.w / 2 - w / 2, target.y - gap - h], // above
+        [target.x + target.w + gap, target.y + target.h / 2 - h / 2], // right
+        [target.x - gap - w, target.y + target.h / 2 - h / 2], // left
       ]
     : [[(viewport.w - w) / 2, viewport.h * 0.14]];
   const edges: [number, number][] = [
@@ -56,7 +56,7 @@ export function placeBubble(
   let best = all[0] as Rect;
   let bestScore = Number.POSITIVE_INFINITY;
   all.forEach((c, i) => {
-    // À recouvrement égal, les positions proches de la cible passent avant les bords de l'écran.
+    // With equal overlap, positions near the target come before the edges of the screen.
     const score = weighted.reduce((s, o) => s + o.weight * overlap(c, o.r), 0) + i * 400;
     if (score < bestScore) {
       bestScore = score;

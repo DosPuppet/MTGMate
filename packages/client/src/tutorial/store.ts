@@ -1,18 +1,19 @@
 /**
- * Tutoriel en cours : leçon et étape, progression conservée dans le navigateur (reprise au début de la leçon),
- * guidage strict des décisions et avancée des étapes au fil des mises à jour de la partie.
+ * Tutorial in progress: lesson and step, progress kept in the browser (resumed at the start of the lesson),
+ * strict guidance of decisions and steps advancing as the game updates.
  */
 import { create } from "zustand";
 import { setDecisionGuard, setUpdateObserver, useGame } from "../store";
+import { t, textIn, textLang } from "../translate";
 import { LESSONS, lessonById } from "./lessons";
 import { alwaysAllowed, type Ctx, matches, type Step } from "./runtime";
 
 const KEY = "planecircle.tutorial";
 
 export interface Progress {
-  /** Leçons terminées. */
+  /** Completed lessons. */
   done: string[];
-  /** Leçon à reprendre : celle en cours, ou la suivante de la dernière terminée. */
+  /** Lesson to resume: the one in progress, or the one after the last completed. */
   current: string | null;
 }
 
@@ -31,29 +32,29 @@ function saveProgress(p: Progress): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(p));
   } catch {
-    // stockage indisponible : la progression n'est pas conservée
+    // storage unavailable: progress is not kept
   }
 }
 
 interface TutorialStore {
   lessonId: string | null;
   step: number;
-  /** Leçon terminée : la bulle propose la suite. */
+  /** Lesson complete: the bubble offers what comes next. */
   finished: boolean;
-  /** « Tout dérouler » : la leçon suivante est proposée en premier. */
+  /** "Play all lessons": the next lesson is offered first. */
   chain: boolean;
   progress: Progress;
-  /** Dernier état connu de la partie (prédicats, textes dynamiques, conseils). */
+  /** Last known state of the game (predicates, dynamic texts, tips). */
   ctx: Ctx | null;
   start(id: string, chain?: boolean): void;
   restart(): void;
-  /** Bouton « Suivant » d'une explication. */
+  /** "Next" button of an explanation. */
   next(): void;
-  /** Leçon suivante (ou le menu du tutoriel après la dernière). */
+  /** Next lesson (or the tutorial menu after the last one). */
   startNext(): void;
   quit(): void;
   resetProgress(): void;
-  /** Réévalue l'étape en cours (mise à jour de la partie, survol d'une carte). */
+  /** Re-evaluates the current step (game update, card hover). */
   refresh(): void;
 }
 
@@ -74,11 +75,11 @@ export const useTutorial = create<TutorialStore>((set, get) => {
     const { done } = get().progress;
     updateProgress({ done: done.includes(l.id) ? done : [...done, l.id], current: LESSONS[i + 1]?.id ?? null });
     set({ finished: true });
-    // La partie peut continuer librement après la leçon.
+    // The game can go on freely after the lesson.
     pause(false);
   };
 
-  /** Termine les étapes dont la condition est remplie, jusqu'à une explication ou une étape en attente. */
+  /** Completes the steps whose condition is met, up to an explanation or a waiting step. */
   const evaluate = () => {
     for (let guard = 0; guard < 100; guard++) {
       const st = currentStep();
@@ -93,7 +94,7 @@ export const useTutorial = create<TutorialStore>((set, get) => {
     const st = currentStep();
     if (!st) return;
     if (st.settings) useGame.getState().applySettings(st.settings);
-    // L'adversaire attend pendant une explication.
+    // The opponent waits during an explanation.
     pause(!!st.next);
   };
 
@@ -153,7 +154,7 @@ export const useTutorial = create<TutorialStore>((set, get) => {
   };
 });
 
-/** Étape guidée en cours : le panneau d'un sort adverse attend le clic du joueur au lieu de passer tout seul. */
+/** Guided step in progress: the panel of an opponent's spell waits for the player's click instead of passing by itself. */
 export function useTutorialHold(): boolean {
   return useTutorial((t) => {
     const st = lessonById(t.lessonId)?.steps[t.step];
@@ -161,14 +162,14 @@ export function useTutorialHold(): boolean {
   });
 }
 
-// Guidage strict : seules les décisions attendues par l'étape passent.
+// Strict guidance: only the decisions the step expects go through. The reminder is returned in the interface language.
 setDecisionGuard((intent, view) => {
-  const t = useTutorial.getState();
-  const st = lessonById(t.lessonId)?.steps[t.step];
-  if (!st || t.finished || st.free || alwaysAllowed(intent)) return null;
-  if (st.next) return "Lisez le message du guide, puis cliquez sur « Suivant ».";
+  const tuto = useTutorial.getState();
+  const st = lessonById(tuto.lessonId)?.steps[tuto.step];
+  if (!st || tuto.finished || st.free || alwaysAllowed(intent)) return null;
+  if (st.next) return t('Read the guide\'s message, then click "Next".');
   if (st.allow?.some((a) => matches(a, intent, view))) return null;
-  return st.hint ?? "Suivez les indications du guide.";
+  return st.hint ? textIn(textLang(), st.hint) : t("Follow the guide's instructions.");
 });
 
 setUpdateObserver((view, events) => {
@@ -180,7 +181,7 @@ setUpdateObserver((view, events) => {
 useGame.subscribe((s, prev) => {
   const t = useTutorial.getState();
   if (!t.lessonId) return;
-  // Partie quittée (fin de partie, bouton retour) : la leçon s'arrête, la progression reste.
+  // Game left (game over, back button): the lesson stops, the progress stays.
   if (prev.screen === "game" && s.screen !== "game") {
     useTutorial.setState({ lessonId: null, finished: false, ctx: null });
     return;

@@ -1,6 +1,6 @@
 /**
- * Partie contre l'IA, entièrement dans le navigateur : le moteur, l'autopilot et l'IA
- * tournent ici, hors du thread de l'interface.
+ * Game against the AI, entirely in the browser: the engine, the autopilot and the AI
+ * run here, off the interface thread.
  */
 import { aiAgent } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
@@ -13,6 +13,7 @@ import {
   GameHost,
   type GameRecord,
   type GameState,
+  msg,
   RULES_VERSION,
   registerDef,
   registerNameCatalog,
@@ -24,10 +25,10 @@ import { AI_BUDGET, buildScenario, OPPONENT } from "../scenario";
 
 const HUMAN = "p1";
 let host: GameHost | null = null;
-/** Décisions de l'enregistrement déjà envoyées à l'interface (sauvegarde de la partie). */
+/** Decisions of the record already sent to the interface (save of the game). */
 let sent = 0;
 
-/** Envoie à l'interface les décisions enregistrées depuis le dernier envoi (`header` : au départ de la partie). */
+/** Sends the interface the decisions recorded since the last send (`header`: at the start of the game). */
 function postProgress(header?: GameRecord): void {
   const rec = host?.record;
   if (!rec || (!header && rec.decisions.length <= sent)) return;
@@ -40,7 +41,7 @@ function postProgress(header?: GameRecord): void {
   sent = rec.decisions.length;
 }
 
-/** IA adverses d'une partie (sièges p2, p3…), avec leur graine dérivée de celle de la partie. */
+/** Opposing AIs of a game (seats p2, p3…), with their seed derived from the game's. */
 function aiAgents(seed: number, opponents: number, level: Parameters<typeof aiAgent>[0] | undefined) {
   return Object.fromEntries(
     Array.from({ length: opponents }, (_, i) => [
@@ -49,12 +50,12 @@ function aiAgents(seed: number, opponents: number, level: Parameters<typeof aiAg
     ]),
   );
 }
-/** Définitions reçues avec le message « start » (par nom). */
+/** Definitions received with the "start" message (by name). */
 let defs: Record<string, CardDef> = {};
 
 function card(name: string): CardDef {
   const d = defs[name];
-  if (!d) throw new Error(`Carte inconnue : ${name}`);
+  if (!d) throw new Error(`Unknown card: ${name}`);
   return d;
 }
 
@@ -62,21 +63,25 @@ function buildDeck(entries: DeckEntries): CardDef[] {
   return entries.flatMap(([n, name]) => Array.from({ length: n }, () => card(name)));
 }
 
-/** Impression choisie de chaque carte de `buildDeck` (même ordre) ; voir `deckPrintings` de @mtgx/cards. */
+/** Chosen printing of each card of `buildDeck` (same order); see `deckPrintings` of @mtgx/cards. */
 function deckPrintings(entries: DeckEntries): (string | null)[] | undefined {
   if (!entries.some((e) => e[2])) return undefined;
   return entries.flatMap(([n, , key]) => Array.from({ length: n }, () => key ?? null));
 }
 
-const post = (msg: FromWorker) => (self as unknown as Worker).postMessage(msg);
+/** Why a saved game cannot be resumed (player-facing: shown in the resume notice). */
+const DIVERGED = msg("the game no longer replays identically");
+const DIVERGED_UPDATED = msg("the game no longer replays identically (the engine has been updated since)");
+
+const post = (m: FromWorker) => (self as unknown as Worker).postMessage(m);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** Tutoriel : l'adversaire attend pendant une explication. */
+/** Tutorial: the opponent waits during an explanation. */
 let paused = false;
 const resumers: (() => void)[] = [];
 const gate = () => (paused ? new Promise<void>((r) => resumers.push(r)) : null);
 
-/** Met en jeu les permanents du bac à sable, sans mal d'invocation. */
+/** Puts the sandbox's permanents onto the battlefield, without summoning sickness. */
 function applySandbox(s: GameState, sandbox: Sandbox): void {
   for (const [player, side] of Object.entries(sandbox)) {
     if (!s.players[player]) continue;
@@ -106,7 +111,7 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
       }
     }
   }
-  // Marqueurs posés à la main (plusieurs sortes sur un même permanent).
+  // Counters put by hand (several kinds on one permanent).
   for (const [player, side] of Object.entries(sandbox)) {
     for (const [name, kind, n] of side.counters ?? []) {
       const o = Object.values(s.objects).find(
@@ -115,7 +120,7 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
       if (o) o.counters[kind] = (o.counters[kind] ?? 0) + n;
     }
   }
-  // Attachements ensuite : l'hôte peut appartenir à un autre joueur (Aura sur une créature adverse).
+  // Attachments next: the host can belong to another player (Aura on an opponent's creature).
   for (const [player, side] of Object.entries(sandbox)) {
     for (const [name, hostName, hostPlayer] of side.attach ?? []) {
       const def = card(name);
@@ -131,17 +136,17 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
       const o = createObject(s, def.id, player, "battlefield");
       o.controlledSince = 0;
       o.attachedTo = host.id;
-      // The Aetherspark : un planeswalker-Équipement arrive avec sa loyauté.
+      // The Aetherspark: a planeswalker Equipment enters with its loyalty.
       if (def.loyalty) o.counters.loyalty = def.loyalty;
     }
   }
 }
 
 self.onmessage = (e: MessageEvent<ToWorker>) => {
-  // Une erreur du moteur ne doit pas rester silencieuse (rejet de promesse dans le worker) : l'interface l'affiche.
+  // An engine error must not stay silent (promise rejection in the worker): the interface displays it.
   handle(e.data).catch((err: unknown) => {
     console.error(err);
-    post({ type: "error", message: `Erreur du moteur : ${err instanceof Error ? err.message : String(err)}` });
+    post({ type: "error", message: msg("Engine error: {error}", { error: err instanceof Error ? err.message : String(err) }) });
   });
 };
 
@@ -154,12 +159,12 @@ async function handle(msg: ToWorker): Promise<void> {
       defs = msg.defs;
       paused = false;
       if (msg.scenario) {
-        const { state, events, opponent } = buildScenario(msg.scenario, card, msg.seed, msg.playerName);
+        const { state, events, opponent } = buildScenario(msg.scenario, card, msg.seed, msg.playerName, msg.aiNames?.[0]);
         host = new GameHost(
           state,
           {
             agents: { [OPPONENT]: opponent },
-            // Un débutant doit pouvoir suivre chaque action de l'adversaire.
+            // A beginner must be able to follow each of the opponent's actions.
             aiDelay: msg.fast && import.meta.env.DEV ? 0 : 1400,
             sleep,
             gate,
@@ -172,7 +177,7 @@ async function handle(msg: ToWorker): Promise<void> {
         await host.run();
         return;
       }
-      // Commander : les premières cartes de chaque deck sont ses commandants.
+      // Commander: the first cards of each deck are its commanders.
       const commandersOf = (seat: number) => {
         const n = msg.commanders?.[seat] ?? 0;
         return n ? Array.from({ length: n }, (_, k) => k) : undefined;
@@ -191,14 +196,14 @@ async function handle(msg: ToWorker): Promise<void> {
           },
           ...msg.aiDecks.map((deck, i) => ({
             id: `p${i + 2}`,
-            name: msg.aiDecks.length > 1 ? `IA ${i + 1}` : "IA",
+            name: msg.aiNames?.[i] ?? (msg.aiDecks.length > 1 ? `AI ${i + 1}` : "AI"),
             deck: buildDeck(deck),
             printings: deckPrintings(deck),
             commanders: commandersOf(i + 1),
           })),
         ],
       });
-      // Bac à sable : l'état de départ est modifié à la main, la partie ne peut pas être rejouée (pas d'enregistrement).
+      // Sandbox: the starting state is changed by hand, the game cannot be replayed (no record).
       const sandboxed = !!msg.sandbox && import.meta.env.DEV;
       if (sandboxed && msg.sandbox) applySandbox(state, msg.sandbox);
       sent = 0;
@@ -209,9 +214,9 @@ async function handle(msg: ToWorker): Promise<void> {
           aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
           sleep,
           record: sandboxed ? undefined : record,
-          // Sauvegarde locale : une empreinte par décision, vérifiée à la reprise (0,01 ms chacune).
+          // Local save: one fingerprint per decision, checked on resume (0.01 ms each).
           checkpointEvery: 1,
-          // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).
+          // Same faces as online: only the cards known to the player (not the opponent's decklist).
           frames: true,
           onUpdate: (_p, view, evts) => {
             post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} });
@@ -236,8 +241,7 @@ async function handle(msg: ToWorker): Promise<void> {
         return;
       }
       if (replayed.divergence) {
-        const other = (record.rules ?? 0) !== RULES_VERSION ? " (le moteur a été mis à jour depuis)" : "";
-        post({ type: "resumeFailed", message: `la partie ne se rejoue plus à l'identique${other}` });
+        post({ type: "resumeFailed", message: (record.rules ?? 0) !== RULES_VERSION ? DIVERGED_UPDATED : DIVERGED });
         return;
       }
       sent = record.decisions.length;

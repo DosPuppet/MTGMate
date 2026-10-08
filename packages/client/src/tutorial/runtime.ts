@@ -1,6 +1,6 @@
 /**
- * Tutoriel, partie pure : format des leçons, décisions permises (guidage strict), prédicats de fin d'étape
- * et solveur (la décision attendue par une étape, pour les tests). Aucune dépendance au DOM ni au store.
+ * Tutorial, pure part: lesson format, allowed decisions (strict guidance), end-of-step predicates
+ * and solver (the decision a step expects, for the tests). No dependency on the DOM or the store.
  */
 import {
   type AutopilotSettings,
@@ -14,7 +14,7 @@ import {
 import type { ScenarioSpec } from "../protocol";
 import type { PlayerIntent } from "../store";
 
-/** Élément de l'interface à entourer, ou carte (par nom) : dans la main, ou sur le champ de bataille d'un camp. */
+/** Interface element to circle, or card (by name): in the hand, or on one side's battlefield. */
 export type Target =
   | "myLife"
   | "oppLife"
@@ -34,8 +34,8 @@ export type Target =
   | { card: string; zone?: "hand" | "battlefield" | "stack"; owner?: "you" | "opponent" };
 
 /**
- * Décision permise pendant une étape. Les cibles sont des noms de cartes, "opponent" (l'adversaire) ou "you" (vous).
- * « Combat » et « Résoudre » sont des "pass" ; « Fin du tour » est "endTurn".
+ * Decision allowed during a step. Targets are card names, "opponent" (the opponent) or "you" (the player).
+ * "Combat" and "Resolve" are "pass"; "End turn" is "endTurn".
  */
 export type Allow =
   | { playLand: string }
@@ -49,37 +49,40 @@ export type Allow =
 
 export interface Ctx {
   view: GameView;
-  /** Événements de la dernière mise à jour. */
+  /** Events of the last update. */
   events: GameEvent[];
-  /** Nom de la carte affichée dans l'aperçu (survol ou appui long). */
+  /** Name of the card shown in the preview (hover or long press). */
   hovered: string | null;
 }
 
 export interface Tip {
   when: (c: Ctx) => boolean;
+  /** A `msg` literal, translated on display. */
   text: string;
 }
 
 export interface Step {
+  /** `msg` literals, translated on display. */
   text: string | ((c: Ctx) => string);
   target?: Target;
-  /** Explication : bouton « Suivant », adversaire en pause. */
+  /** Explanation: "Next" button, opponent paused. */
   next?: true;
-  /** Condition de fin de l'étape (sans `next`). */
+  /** End condition of the step (without `next`). */
   until?: (c: Ctx) => boolean;
-  /** Décisions acceptées pendant l'étape (guidage strict). */
+  /** Decisions accepted during the step (strict guidance). */
   allow?: Allow[];
-  /** Rappel affiché quand le joueur fait autre chose. */
+  /** Reminder shown when the player does something else. */
   hint?: string;
-  /** Partie libre : toutes les décisions sont permises, le guide donne des conseils (`tips`). */
+  /** Free play: every decision is allowed, the guide gives tips (`tips`). */
   free?: true;
   tips?: Tip[];
-  /** Réglages de l'automatisme (arrêts) appliqués en entrant dans l'étape. */
+  /** Autopilot settings (stops) applied when entering the step. */
   settings?: Partial<AutopilotSettings>;
 }
 
 export interface Lesson {
   id: string;
+  /** `msg` literals, translated on display. */
   title: string;
   summary: string;
   scenario: ScenarioSpec;
@@ -87,7 +90,7 @@ export interface Lesson {
 }
 
 // ---------------------------------------------------------------------------
-// Lecture de la vue
+// Reading the view
 // ---------------------------------------------------------------------------
 
 export type Who = "you" | "opponent";
@@ -96,7 +99,7 @@ const playerId = (v: GameView, who: Who): string => (who === "you" ? v.viewer : 
 
 const named = (list: ObjectView[], name: string) => list.filter((o) => o.name === name);
 
-/** Ids désignés par une référence de cible : "opponent", "you" ou un nom de permanent. */
+/** Ids designated by a target reference: "opponent", "you" or a permanent's name. */
 function refIds(v: GameView, ref: string): string[] {
   if (ref === "opponent" || ref === "you") return [playerId(v, ref)];
   return [...named(v.battlefield, ref).map((o) => o.id), ...v.stack.filter((it) => it.name === ref).map((it) => it.id)];
@@ -108,7 +111,7 @@ const nameOf = (v: GameView, id: string): string | undefined =>
 const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join("|") === [...b].sort().join("|");
 
 // ---------------------------------------------------------------------------
-// Guidage strict : la décision du joueur est-elle celle qu'attend l'étape ?
+// Strict guidance: is the player's decision the one the step expects?
 // ---------------------------------------------------------------------------
 
 export function matches(allow: Allow, intent: PlayerIntent, v: GameView): boolean {
@@ -146,13 +149,13 @@ export function matches(allow: Allow, intent: PlayerIntent, v: GameView): boolea
   return false;
 }
 
-/** Décisions toujours permises : produire du mana à la main, répondre à une question du moteur. */
+/** Decisions always allowed: producing mana by hand, answering a question from the engine. */
 export function alwaysAllowed(intent: PlayerIntent): boolean {
   return intent.type === "tapForMana" || intent.type === "undoMana" || intent.type === "choose" || intent.type === "concede";
 }
 
 // ---------------------------------------------------------------------------
-// Solveur : la décision qui réalise une étape (tests, script d'interface)
+// Solver: the decision that completes a step (tests, interface script)
 // ---------------------------------------------------------------------------
 
 export function solve(allow: Allow, v: GameView): PlayerIntent | null {
@@ -209,7 +212,7 @@ export function solve(allow: Allow, v: GameView): PlayerIntent | null {
 }
 
 // ---------------------------------------------------------------------------
-// Prédicats des étapes
+// Step predicates
 // ---------------------------------------------------------------------------
 
 export const onField =
@@ -228,10 +231,10 @@ export const stackEmpty = (c: Ctx) => c.view.stack.length === 0;
 
 export const lifeOf = (c: Ctx, who: Who) => c.view.players[playerId(c.view, who)]?.life ?? 0;
 
-/** Décision du joueur en attente, d'un type donné. */
+/** A pending decision of the player, of a given kind. */
 export const pendingMine = (kind: string) => (c: Ctx) => c.view.pending?.player === c.view.viewer && c.view.pending.kind === kind;
 
-/** Le joueur a la priorité pendant son tour, à cette étape. */
+/** The player has priority during their own turn, at this step. */
 export const myStep = (step: TurnStep) => (c: Ctx) =>
   c.view.turn.active === c.view.viewer && c.view.turn.step === step && pendingMine("priority")(c);
 

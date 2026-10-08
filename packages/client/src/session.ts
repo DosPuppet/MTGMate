@@ -6,6 +6,7 @@ import {
   type GameRecord,
   type GameState,
   type GameView,
+  msg,
   projectView,
   RULES_VERSION,
   replayChecked,
@@ -15,22 +16,22 @@ import type { ClientMessage, ServerMessage } from "@mtgx/server/protocol";
 import { hostNameCatalog } from "./names";
 import type { FromWorker, ToWorker } from "./protocol";
 
-/** Une partie en cours : locale (Web Worker, contre l'IA) ou distante (serveur, contre un joueur). */
+/** A game in progress: local (Web Worker, against the AI) or remote (server, against a player). */
 export interface Session {
   send(m: ToWorker): void;
   close(): void;
 }
 
-/** Partie locale contre l'IA : le moteur tourne dans un Web Worker. */
+/** Local game against the AI: the engine runs in a Web Worker. */
 export class LocalSession implements Session {
   private readonly worker: Worker;
 
   constructor(onMessage: (m: FromWorker) => void) {
     this.worker = new Worker(new URL("./worker/game.worker.ts", import.meta.url), { type: "module" });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => onMessage(e.data);
-    // Erreur du moteur dans le worker : visible dans la console plutôt que silencieuse.
-    this.worker.onerror = (e) => console.error("Erreur du worker de partie :", e.message);
-    // Noms nommables (« choisissez un nom de carte ») : le worker n'embarque pas la base de cartes.
+    // Engine error in the worker: visible in the console rather than silent.
+    this.worker.onerror = (e) => console.error("Game worker error:", e.message);
+    // Nameable names ("choose a card name"): the worker does not bundle the card database.
     this.worker.postMessage({ type: "names", catalog: hostNameCatalog() } satisfies ToWorker);
   }
 
@@ -44,24 +45,24 @@ export class LocalSession implements Session {
 }
 
 /**
- * Production : fait télécharger le script du worker de partie (et le met en cache via le service worker) sans attendre
- * la première partie, pour qu'une partie contre l'IA puisse démarrer hors ligne.
+ * Production: downloads the game worker script (and caches it through the service worker) without waiting for the
+ * first game, so that a game against the AI can start offline.
  */
 export function prefetchGameWorker(): void {
   const worker = new Worker(new URL("./worker/game.worker.ts", import.meta.url), { type: "module" });
   setTimeout(() => worker.terminate(), 10_000);
 }
 
-/** Adresse du serveur : même hôte que la page (/ws, redirigé vers le serveur par Vite en dev). */
+/** Server address: same host as the page (/ws, proxied to the server by Vite in dev). */
 export function serverUrl(): string {
   const proto = location.protocol === "https:" ? "wss" : "ws";
   return `${proto}://${location.host}/ws`;
 }
 
 /**
- * Partie en ligne : WebSocket vers le serveur, qui fait tourner le moteur et fait autorité.
- * Les décisions et réglages partent comme pour une partie locale ; les messages du salon
- * (`room`, `opponent`, erreurs) sont remontés tels quels.
+ * Online game: WebSocket to the server, which runs the engine and is authoritative.
+ * Decisions and settings are sent as for a local game; the room messages
+ * (`room`, `opponent`, errors) are passed up unchanged.
  */
 export class RemoteSession implements Session {
   private readonly ws: WebSocket;
@@ -70,7 +71,7 @@ export class RemoteSession implements Session {
 
   constructor(
     onMessage: (m: ServerMessage) => void,
-    /** Connexion perdue sans l'avoir demandé (réseau, serveur arrêté). */
+    /** Connection lost without asking for it (network, server stopped). */
     onLost: () => void,
   ) {
     this.ws = new WebSocket(serverUrl());
@@ -81,7 +82,7 @@ export class RemoteSession implements Session {
       try {
         onMessage(JSON.parse(String(e.data)) as ServerMessage);
       } catch {
-        // message illisible : ignoré
+        // unreadable message: ignored
       }
     };
     this.ws.onclose = () => {
@@ -89,7 +90,7 @@ export class RemoteSession implements Session {
     };
   }
 
-  /** Message brut du protocole en ligne. */
+  /** Raw message of the online protocol. */
   raw(m: ClientMessage): void {
     const data = JSON.stringify(m);
     if (this.ws.readyState === WebSocket.OPEN) this.ws.send(data);
@@ -100,7 +101,7 @@ export class RemoteSession implements Session {
     if (m.type === "decision") this.raw({ type: "decision", decision: m.decision });
     else if (m.type === "settings") this.raw({ type: "settings", settings: m.settings });
     else if (m.type === "export") this.raw({ type: "export" });
-    // "start" : la partie est lancée par le serveur quand le second joueur arrive.
+    // "start": the game is started by the server when the second player arrives.
   }
 
   close(): void {
@@ -110,15 +111,15 @@ export class RemoteSession implements Session {
 }
 
 /**
- * Replay d'une partie enregistrée : les états sont recalculés à l'avance (`replayChecked`), puis montrés un par un depuis
- * le point de vue choisi. Les décisions de l'interface sont ignorées. Une partie enregistrée par une autre version des
- * règles peut ne plus se rejouer à l'identique : le replay s'arrête alors à la première divergence (`warning`).
+ * Replay of a recorded game: the states are computed in advance (`replayChecked`), then shown one by one from the
+ * chosen point of view. The interface's decisions are ignored. A game recorded by another version of the rules may no
+ * longer replay identically: the replay then stops at the first divergence (`warning`).
  */
 export class ReplaySession implements Session {
   readonly states: GameState[] = [];
-  /** Événements produits par chaque décision (`events[i]` : ceux qui mènent à `states[i]`). */
+  /** Events produced by each decision (`events[i]`: those leading to `states[i]`). */
   private readonly events: GameEvent[][] = [];
-  /** Avertissement à afficher : replay arrêté avant la fin, ou version des règles différente. */
+  /** Warning to display (engine text, `msg`): replay stopped before the end, or a different rules version. */
   readonly warning: string | null;
 
   constructor(record: GameRecord, resolve: (name: string) => CardDef) {
@@ -128,15 +129,20 @@ export class ReplaySession implements Session {
       this.events.push(events);
     });
     const other = (record.rules ?? 0) !== RULES_VERSION;
-    const version = other ? " (partie enregistrée avec une version antérieure des règles)" : "";
+    const at = { index: divergence?.index ?? 0, total: record.decisions.length };
     this.warning = divergence
-      ? `Replay arrêté à la décision ${divergence.index} sur ${record.decisions.length}${version}.`
+      ? other
+        ? msg("Replay stopped at decision {index} of {total} (game recorded with an earlier version of the rules).", at)
+        : msg("Replay stopped at decision {index} of {total}.", at)
       : other
-        ? `Partie enregistrée avec une autre version des règles (${record.rules ?? 0}, moteur : ${RULES_VERSION}).`
+        ? msg("Game recorded with another version of the rules ({rules}, engine: {engine}).", {
+            rules: record.rules ?? 0,
+            engine: RULES_VERSION,
+          })
         : null;
   }
 
-  /** Vue du joueur `viewer` à l'étape `i` (sans décision en attente : le replay ne se joue pas). */
+  /** View of player `viewer` at step `i` (no pending decision: the replay is not played). */
   frame(
     i: number,
     viewer: string,

@@ -1,10 +1,10 @@
-import type { GameView, ObjectView, PlayerView } from "@mtgx/engine";
+import { type GameView, msg, type ObjectView, type PlayerView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { resolveBoardTheme } from "../boardThemes";
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
-import { useLocalize } from "../localize";
+import { useLocalize, useT } from "../localize";
 import { boardPick, choiceSource, pickValid, shortPrompt } from "../prompts/boardChoice";
 import { myActions, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
@@ -27,7 +27,7 @@ import {
 import { StackReveal } from "./StackReveal";
 
 // ---------------------------------------------------------------------------
-// Joueurs
+// Players
 // ---------------------------------------------------------------------------
 
 function ManaPool({ pool, restricted }: { pool: PlayerView["manaPool"]; restricted?: PlayerView["restrictedMana"] }) {
@@ -35,12 +35,13 @@ function ManaPool({ pool, restricted }: { pool: PlayerView["manaPool"]; restrict
     .flatMap(([m, n]) => Array(n).fill(`{${m}}`))
     .join("");
   const reserved = (restricted ?? []).map((m) => `{${m}}`).join("");
+  const t = useT();
   if (!cost && !reserved) return null;
   return (
-    <div className="mana-pool" title="Réserve de mana">
+    <div className="mana-pool" title={t("Mana pool")}>
       {cost && <ManaCost cost={cost} size={18} />}
       {reserved && (
-        <span className="mana-restricted" title="Mana réservé à certains sorts ou capacités">
+        <span className="mana-restricted" title={t("Mana restricted to certain spells or abilities")}>
           <ManaCost cost={reserved} size={18} />
         </span>
       )}
@@ -52,12 +53,12 @@ const ICONS = {
   library: "M4 3h11a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V3zm2 2v12h9V5H6zm13 2h1v14H8v-1h11V7z",
   hand: "M3 6l7-3 3 7-7 3-3-7zm8 2l6-2 3 8-6 2-3-8z",
   grave: "M7 21V9a5 5 0 0 1 10 0v12H7zm4-12v3H9v2h2v4h2v-4h2v-2h-2V9h-2z",
-  // Un vortex (spirale) pour l'exil.
+  // A vortex (spiral) for exile.
   exile:
     "M12 3a9 9 0 1 1-9 9h2a7 7 0 1 0 7-7 5 5 0 0 0-5 5 3 3 0 0 0 3 3 1 1 0 0 0 1-1h2a3 3 0 0 1-3 3 5 5 0 0 1-5-5 7 7 0 0 1 7-7z",
-  // Une couronne à trois pointes.
+  // A crown with three points.
   crown: "M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7zm3 14h12v2H6v-2z",
-  // Une cité : trois tours crénelées.
+  // A city: three crenellated towers.
   city: "M2 21V10h2V8h2v2h1V5h2v2h2V5h2v2h2V5h2v5h1V8h2v2h2v11h-8v-4a2 2 0 0 0-4 0v4H2z",
 };
 
@@ -69,7 +70,7 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-/** Points de vie : grossissent et changent de couleur à chaque variation. */
+/** Life total: grows and changes color on each change. */
 function LifeTotal({ life }: { life: number }) {
   const prev = useRef(life);
   const delta = life - prev.current;
@@ -99,10 +100,12 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const lang = useGame((s) => s.lang);
   const aiming = useGame((s) => s.aimingAttacker);
   const selection = useGame((s) => s.selection);
+  const t = useT();
+  const loc = useLocalize();
   const p = view.pending;
   const pick = boardPick(view);
   const picked = !!pick && selection.includes(player.id);
-  // Ciblage d'un sort, option d'un choix sur le plateau, ou cible possible de l'attaquant en visée.
+  // Targeting of a spell, option of a choice on the board, or possible target of the attacker being aimed.
   const resolvingTargets = useGame((s) => s.resolving?.item.targets);
   const isTarget =
     !!resolvingTargets?.includes(player.id) ||
@@ -121,21 +124,21 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
         data-tuto={isMe ? "life-me" : "life-opp"}
         onClick={() => clickPlayer(player.id)}
       >
-        <span className="avatar-initial">{isMe ? "V" : player.name.slice(0, 3)}</span>
+        <span className="avatar-initial">{isMe ? t("ctx:initial|Y") : player.name.slice(0, 3)}</span>
         <LifeTotal life={player.life} />
       </button>
       <div className="player-info">
         <div className="player-name">
           {player.name}
-          {active && <span className="turn-chip">{isMe ? "Votre tour" : "Son tour"}</span>}
-          {thinking && <span className="thinking">réfléchit…</span>}
+          {active && <span className="turn-chip">{isMe ? t("Your turn") : t("Their turn")}</span>}
+          {thinking && <span className="thinking">{t("thinking…")}</span>}
         </div>
         <div className="player-counts">
-          <span title="Bibliothèque" data-tuto={isMe ? "library-me" : undefined}>
+          <span title={t("Library")} data-tuto={isMe ? "library-me" : undefined}>
             <Icon d={ICONS.library} /> {player.libraryCount}
           </span>
           {!isMe && (
-            <span title="Main">
+            <span title={t("Hand")}>
               <Icon d={ICONS.hand} /> {player.handCount}
             </span>
           )}
@@ -143,7 +146,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
             type="button"
             className="gy-button"
             data-tuto={isMe ? "graveyard-me" : undefined}
-            title="Cimetière (cliquer pour voir)"
+            title={t("Graveyard (click to view)")}
             onClick={() => openGraveyard(player.id)}
           >
             <Icon d={ICONS.grave} /> {player.graveyard.length}
@@ -153,40 +156,45 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
             type="button"
             className="gy-button exile-button"
             data-tuto={isMe ? "exile-me" : undefined}
-            title="Exil (cliquer pour voir)"
+            title={t("Exile (click to view)")}
             onClick={() => openExile(player.id)}
           >
             <Icon d={ICONS.exile} /> {view.exile.filter((o) => o.owner === player.id).length}
           </button>
           {!!player.poison && (
-            <span className={`poison-chip ${player.poison >= 7 ? "danger" : ""}`} title="Marqueurs poison (10 : le joueur perd)">
+            <span
+              className={`poison-chip ${player.poison >= 7 ? "danger" : ""}`}
+              title={t("Poison counters (10: the player loses)")}
+            >
               ☠ {player.poison}
             </span>
           )}
           {!!player.rad && (
             <span
               className="poison-chip rad-chip"
-              title="Marqueurs de radiation : au début de sa première phase principale, le joueur meule autant de cartes et perd 1 point de vie (et un marqueur) par carte non-terrain meulée"
+              title={t(
+                "Rad counters: at the beginning of their first main phase, the player mills that many cards and loses 1 life (and a counter) for each nonland card milled",
+              )}
             >
               ☢ {player.rad}
             </span>
           )}
           {player.speed !== undefined && <SpeedGauge player={player.id} speed={player.speed} />}
           {player.emblems.map((e, i) =>
-            // Emblème avec une capacité activable maintenant (Karn, Living Legacy) : un bouton.
+            // Emblem with an ability that can be activated now (Karn, Living Legacy): a button.
             isMe && myActions(view).some((a) => a.type === "activate" && a.source === e.id) ? (
               <button
                 type="button"
                 key={`${e.name}-${i}`}
                 className="emblem-chip activatable"
-                title={`${e.text} (cliquer pour activer)`}
+                title={t("{text} (click to activate)", { text: loc(e.text) })}
                 onClick={() => clickPermanent(e.id)}
               >
-                ✦ {e.name}
+                ✦ {loc(e.name)}
               </button>
             ) : (
-              <span key={`${e.name}-${i}`} className="emblem-chip" title={e.text}>
-                ✦ {e.name}
+              <span key={`${e.name}-${i}`} className="emblem-chip" title={loc(e.text)}>
+                ✦ {loc(e.name)}
               </span>
             ),
           )}
@@ -198,38 +206,42 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   );
 }
 
-/** Zone d'un commandant, telle qu'affichée sur sa puce (absente : dans la zone de commandement). */
+/** Zone of a commander, as shown on its chip (missing: in the command zone). */
 const COMMANDER_ZONE: Partial<Record<string, string>> = {
-  battlefield: "en jeu",
-  stack: "sur la pile",
-  hand: "en main",
-  library: "dans la bibliothèque",
-  graveyard: "au cimetière",
-  exile: "en exil",
+  battlefield: msg("on the battlefield"),
+  stack: msg("on the stack"),
+  hand: msg("in hand"),
+  library: msg("in the library"),
+  graveyard: msg("in the graveyard"),
+  exile: msg("in exile"),
 };
 
 /**
- * Commander (PLAN-E) : les commandants du joueur (zone, taxe du prochain lancer depuis la zone de commandement) et les
- * blessures de commandant qu'il a reçues (21 d'un même commandant : il perd).
+ * Commander (PLAN-E): the player's commanders (zone, tax of the next cast from the command zone) and the commander
+ * damage they have received (21 from the same commander: they lose).
  */
 function CommanderChips({ player }: { player: PlayerView }) {
   const faces = useGame((s) => s.faces);
   const lang = useGame((s) => s.lang);
   const setHover = useGame((s) => s.setHover);
+  const t = useT();
+  const loc = useLocalize();
   const name = (defId: string) => faceName(faces[defId], lang);
-  // Nom court (avant la virgule : « Edgar Markov », « Y'shtola ») pour les blessures reçues, le nom complet en infobulle.
+  // Short name (before the comma: "Edgar Markov", "Y'shtola") for the damage received, the full name in the tooltip.
   const short = (defId: string) => name(defId).split(",")[0];
   if (!player.commanders?.length && !player.commanderDamage?.length) return null;
   return (
     <div className="commander-row">
       {player.commanders?.map((c) => {
-        const where = COMMANDER_ZONE[c.zone];
+        const zone = COMMANDER_ZONE[c.zone];
+        const where = zone === undefined ? undefined : loc(zone);
         const face = faces[c.defId];
+        const title = where ? t("Commander ({zone})", { zone: where }) : t("Commander (command zone)");
         return (
           <span
             key={c.defId}
             className={`commander-chip ${c.zone === "command" ? "waiting" : ""}`}
-            title={`Commandant${where ? ` (${where})` : " (zone de commandement)"}${c.tax ? ` · taxe +${c.tax}` : ""}`}
+            title={c.tax ? t("{commander} · tax +{tax}", { commander: title, tax: c.tax }) : title}
             onMouseEnter={face ? () => setHover({ face }) : undefined}
             data-testid="commander-chip"
           >
@@ -243,7 +255,7 @@ function CommanderChips({ player }: { player: PlayerView }) {
         <span
           key={c.defId}
           className={`commander-damage ${c.amount >= 15 ? "danger" : ""}`}
-          title={`Blessures de commandant reçues de ${name(c.defId)} (21 : le joueur perd)`}
+          title={t("Commander damage received from {card} (21: the player loses)", { card: name(c.defId) })}
           data-testid="commander-damage"
         >
           ⚔ {short(c.defId)} {c.amount}
@@ -254,14 +266,15 @@ function CommanderChips({ player }: { player: PlayerView }) {
 }
 
 /**
- * Vitesse (702.179) : jauge de 1 à 4 ; à 4, les capacités « Vitesse maximale » du joueur sont actives.
- * Remontée à chaque changement (clé), pour rejouer l'animation.
+ * Speed (702.179): a gauge from 1 to 4; at 4, the player's "Max speed" abilities are active.
+ * Remounted on each change (key), to replay the animation.
  */
 function SpeedGauge({ player, speed }: { player: string; speed: number }) {
+  const t = useT();
   const max = speed >= 4;
   const title = max
-    ? "Vitesse maximale (4/4) : les capacités « Vitesse maximale » sont actives"
-    : `Vitesse ${speed}/4 : les capacités « Vitesse maximale » ne sont pas encore actives`;
+    ? t('Max speed (4/4): "Max speed" abilities are active')
+    : t('Speed {speed}/4: "Max speed" abilities are not active yet', { speed });
   return (
     <span
       key={speed}
@@ -283,7 +296,7 @@ function SpeedGauge({ player, speed }: { player: string; speed: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Champ de bataille
+// Battlefield
 // ---------------------------------------------------------------------------
 
 function usePermanentGlow(): (o: ObjectView) => Glow {
@@ -300,18 +313,18 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   const pick = boardPick(view);
   const resolving = useGame((s) => s.resolving);
   return (o) => {
-    // Résolution montrée : ses cibles sont mises en évidence.
+    // Resolution shown: its targets are highlighted.
     if (resolving) return resolving.item.targets.includes(o.id) ? "target" : null;
     if (casting?.stage === "target") {
       if (casting.picked?.includes(o.id)) return "picked";
       return casting.spec?.legal.includes(o.id) ? "target" : null;
     }
-    // Choix sur le plateau : options en surbrillance, sélection dorée, le reste éteint.
+    // Choice on the board: options highlighted, selection in gold, the rest dimmed.
     if (pick) {
       if (selection.includes(o.id)) return "picked";
       return pick.options.includes(o.id) ? "target" : null;
     }
-    // Planeswalker attaquable : en surbrillance quand un attaquant est en visée.
+    // Attackable planeswalker: highlighted when an attacker is being aimed.
     if (mine && p?.kind === "declareAttackers" && p.defenders?.includes(o.id)) {
       return aiming && (p.allowed?.[aiming] ?? p.defenders).includes(o.id) ? "target" : null;
     }
@@ -335,8 +348,8 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
 }
 
 /**
- * Un permanent, avec ses Auras et Équipements empilés derrière lui, puis les cartes qu'il a exilées (Sheltered by Ghosts,
- * cartes liées…) : elles dépassent de la même façon, teintées, et s'agrandissent au survol.
+ * A permanent, with its Auras and Equipment stacked behind it, then the cards it exiled (Sheltered by Ghosts, linked
+ * cards…): they stick out the same way, tinted, and grow on hover.
  */
 function Permanent({
   o,
@@ -357,6 +370,7 @@ function Permanent({
 }) {
   const clickPermanent = useGame((s) => s.clickPermanent);
   const attackers = useGame((s) => s.attackers);
+  const t = useT();
   const attacking = o.attacking || attackers.includes(o.id);
   const n = attached.length + exiled.length;
   return (
@@ -383,10 +397,10 @@ function Permanent({
           key={a.uid}
           className="attachment exiled-under"
           style={{ "--attach-i": attached.length + i } as CSSProperties}
-          title="Carte exilée (survolez pour la voir)"
+          title={t("Exiled card (hover to see it)")}
         >
           <Card face={a} obj={a} width={width} />
-          <span className="exiled-tag">Exil</span>
+          <span className="exiled-tag">{t("ctx:zone|Exile")}</span>
         </div>
       ))}
       <Card
@@ -405,19 +419,20 @@ function Permanent({
 }
 
 /**
- * Pile de jetons identiques (comme sur MTGA) : la carte du dessus, quelques cartes décalées derrière
- * et le nombre. Un clic agit sur le premier jeton ; comme les jetons dans des états différents ne sont
- * pas regroupés, faire attaquer un jeton le sort de la pile.
+ * Pile of identical tokens (as on MTGA): the top card, a few cards offset behind it and the number.
+ * A click acts on the first token; since tokens in different states are not grouped, making a token
+ * attack takes it out of the pile.
  */
 function TokenStack({ slot, width, isMe, glow }: { slot: Slot; width: string; isMe: boolean; glow: (o: ObjectView) => Glow }) {
   const top = slot.objs[0] as ObjectView;
   const shadows = Math.min(TOKEN_SHADOWS, slot.objs.length - 1);
+  const t = useT();
   return (
     <div
       className="perm-group token-stack"
       data-oids={slot.objs.map((o) => o.id).join(" ")}
       style={{ "--shadows": shadows } as CSSProperties}
-      title={`${slot.objs.length} jetons ${top.name}`}
+      title={t("{n} {name} tokens", { n: slot.objs.length, name: top.name })}
     >
       {slot.objs.slice(1, 1 + shadows).map((o, i) => (
         <div key={o.uid} className="token-shadow" style={{ "--shadow-i": shadows - i } as CSSProperties}>
@@ -441,9 +456,9 @@ function PermanentLine({
   slots: Slot[];
   row: "front" | "back";
   isMe: boolean;
-  /** Auras et Équipements, par permanent hôte. */
+  /** Auras and Equipment, by host permanent. */
   attachments: Map<string, ObjectView[]>;
-  /** Cartes exilées par un permanent, par permanent. */
+  /** Cards exiled by a permanent, by permanent. */
   exiled: Map<string, ObjectView[]>;
   glow: (o: ObjectView) => Glow;
 }) {
@@ -452,7 +467,7 @@ function PermanentLine({
     <div className="perm-line">
       {slots.map((slot, i) => {
         const first = slot.objs[0] as ObjectView;
-        // Rangée arrière : espace plus large entre les terrains et les artefacts ou enchantements.
+        // Back row: wider space between the lands and the artifacts or enchantments.
         const blockStart = i > 0 && slot.block !== slots[i - 1]?.block ? "block-start" : "";
         if (slot.kind === "tokens") {
           return (
@@ -482,7 +497,7 @@ function PermanentLine({
   );
 }
 
-/** Champ de bataille d'un joueur : la taille des cartes dépend de sa seule zone (comme sur MTGA). */
+/** A player's battlefield: the card size depends on their zone alone (as on MTGA). */
 function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   const view = useGame((s) => s.view) as GameView;
   const glow = usePermanentGlow();
@@ -490,26 +505,26 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   const attackTargets = useGame((s) => s.attackTargets);
   const ref = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState<BattlefieldFit>({ cardW: 0, frontLines: 1, backLines: 1, walkerStep: 0 });
-  // Auras et Équipements s'affichent sous leur hôte (quel que soit leur contrôleur).
+  // Auras and Equipment are shown under their host (whoever controls them).
   const onField = new Set(view.battlefield.map((o) => o.id));
   const isAttached = (o: ObjectView) => !!o.attachedTo && onField.has(o.attachedTo);
   const attachments = new Map<string, ObjectView[]>();
   for (const o of view.battlefield) {
     if (isAttached(o)) attachments.set(o.attachedTo as string, [...(attachments.get(o.attachedTo as string) ?? []), o]);
   }
-  // Cartes exilées par un permanent : affichées sous lui.
+  // Cards exiled by a permanent: shown under it.
   const exileById = new Map(view.exile.map((o) => [o.id, o]));
   const exiled = new Map<string, ObjectView[]>();
   const byId = new Map(view.battlefield.map((o) => [o.id, o]));
   for (const [source, ids] of Object.entries(view.exiledWith ?? {})) {
     const objs = ids.map((id) => exileById.get(id)).filter((o): o is ObjectView => !!o);
-    // Une Aura ou un Équipement (Sheltered by Ghosts) est dessiné avec son hôte : ses cartes exilées vont sous l'hôte.
+    // An Aura or Equipment (Sheltered by Ghosts) is drawn with its host: its exiled cards go under the host.
     const src = byId.get(source);
     const holder = src && isAttached(src) ? (src.attachedTo as string) : source;
     if (objs.length) exiled.set(holder, [...(exiled.get(holder) ?? []), ...objs]);
   }
   const perms = view.battlefield.filter((o) => o.controller === player && !isAttached(o));
-  // Les jetons dont l'état d'interface diffère (lueur, attaquant bloqué, joueur attaqué) ne sont pas regroupés.
+  // Tokens whose interface state differs (glow, blocked attacker, attacked player) are not grouped.
   const blocked = new Set(Object.values(blocks));
   const uiKey = (o: ObjectView) => `${glow(o) ?? ""}|${blocked.has(o.id) ? "b" : ""}|${attackTargets[o.id] ?? ""}`;
   const { front, back, walkers } = battlefieldSlots(
@@ -522,7 +537,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
     slots.map((s) => `${s.kind}:${s.objs.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join("+")}`);
   const signature = `${layoutKey(front).join(",")}|${layoutKey(back).join(",")}|${layoutKey(walkers).join(",")}|${depth}`;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: recalcul quand les permanents changent (signature)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: recomputed when the permanents change (signature)
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -559,7 +574,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
     </div>,
   ];
   const style = cardW ? ({ "--card-w": `${cardW}px`, "--land-w": `${cardW * LAND_SCALE}px` } as CSSProperties) : undefined;
-  // Recouvrement des planeswalkers quand ils ne tiennent pas en hauteur (le haut de chaque carte reste visible).
+  // Planeswalkers overlap when they don't fit in height (the top of each card stays visible).
   const overlap = cardW ? Math.min(0, walkerStep - cardW * CARD_RATIO) : 0;
   return (
     <div ref={ref} className={`battlefield ${isMe ? "me" : "opp"}`} data-tuto={isMe ? "field-me" : "field-opp"} style={style}>
@@ -569,7 +584,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
       )}
       <div className="bf-rows">{isMe ? rows : rows.reverse()}</div>
       {walkers.length > 0 && (
-        // Zone des planeswalkers (et batailles), tout à droite comme sur MTGA.
+        // Planeswalker (and battle) zone, on the far right as on MTGA.
         <div className="walker-zone">
           {walkers.map((slot, i) => {
             const o = slot.objs[0] as ObjectView;
@@ -594,25 +609,33 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
 }
 
 /**
- * Bénédiction de la cité (702.131) : une icône dans un coin du champ de bataille de celui qui l'a ; au survol (ou au
- * toucher), ce qu'elle est et qui la détient.
+ * City's blessing (702.131): an icon in a corner of the battlefield of whoever has it; on hover (or on touch), what it
+ * is and who holds it.
  */
 function CitysBlessing({ name }: { name: string | null }) {
-  const who = name === null ? "Vous avez" : `${name} a`;
+  const t = useT();
   return (
-    // Bouton (focalisable) : l'infobulle s'affiche aussi au toucher et au clavier.
+    // Button (focusable): the tooltip also shows on touch and with the keyboard.
     <button
       type="button"
       className="citys-blessing"
-      aria-label={`Bénédiction de la cité : ${who} la bénédiction de la cité`}
+      aria-label={
+        name === null
+          ? t("City's blessing: you have the city's blessing")
+          : t("City's blessing: {player} has the city's blessing", { player: name })
+      }
       data-testid="citys-blessing"
     >
       <Icon d={ICONS.city} />
       <span className="citys-blessing-tip" role="tooltip">
-        <strong>Bénédiction de la cité</strong>
-        <span>{who} la bénédiction de la cité, pour le reste de la partie.</span>
+        <strong>{t("City's blessing")}</strong>
+        <span>
+          {name === null
+            ? t("You have the city's blessing for the rest of the game.")
+            : t("{player} has the city's blessing for the rest of the game.", { player: name })}
+        </span>
         <span className="citys-blessing-rule">
-          Elle s'obtient par l'ascension, en contrôlant dix permanents ou plus ; les capacités qui l'exigent sont actives.
+          {t("It is gained through ascend, by controlling ten or more permanents; the abilities that require it are active.")}
         </span>
       </span>
     </button>
@@ -620,26 +643,27 @@ function CitysBlessing({ name }: { name: string | null }) {
 }
 
 /**
- * Monarque (724) : une couronne dans le coin du champ de bataille de celui qui l'est (à côté de la bénédiction de la cité
- * s'il l'a aussi) ; au survol (ou au toucher), ce que c'est et qui l'est.
+ * Monarch (724): a crown in the corner of the battlefield of whoever is the monarch (next to the city's blessing if they
+ * also have it); on hover (or on touch), what it is and who is.
  */
 function Monarch({ name, slot }: { name: string | null; slot: number }) {
-  const who = name === null ? "Vous êtes" : `${name} est`;
+  const t = useT();
   return (
     <button
       type="button"
       className="citys-blessing monarch-badge"
       style={{ left: 4 + slot * 32 }}
-      aria-label={`Monarque : ${who} le monarque`}
+      aria-label={name === null ? t("Monarch: you are the monarch") : t("Monarch: {player} is the monarch", { player: name })}
       data-testid="monarch"
     >
       <Icon d={ICONS.crown} />
       <span className="citys-blessing-tip" role="tooltip">
-        <strong>Monarque</strong>
-        <span>{who} le monarque.</span>
+        <strong>{t("Monarch")}</strong>
+        <span>{name === null ? t("You are the monarch.") : t("{player} is the monarch.", { player: name })}</span>
         <span className="citys-blessing-rule">
-          Au début de son étape de fin, le monarque pioche une carte. Une créature qui lui inflige des blessures de combat fait de
-          son contrôleur le monarque.
+          {t(
+            "At the beginning of their end step, the monarch draws a card. A creature that deals combat damage to the monarch makes its controller the monarch.",
+          )}
         </span>
       </span>
     </button>
@@ -647,18 +671,25 @@ function Monarch({ name, slot }: { name: string | null; slot: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Bande centrale : phases, pile, consignes
+// Center strip: phases, stack, instructions
 // ---------------------------------------------------------------------------
 
 function PhaseBar() {
   const view = useGame((s) => s.view) as GameView;
   const settings = useGame((s) => s.settings);
   const toggleStop = useGame((s) => s.toggleStop);
+  const t = useT();
+  const loc = useLocalize();
   const myTurn = view.turn.active === view.viewer;
+  // The player's name is set in bold inside the sentence: the template is split around a marker.
+  const PLAYER = "\u0001";
+  const [turnBefore = "", turnAfter = ""] = t("Turn {n} · {player}", { n: view.turn.number, player: PLAYER }).split(PLAYER);
   return (
     <div className="phase-bar" data-tuto="phase-bar">
       <div className="phase-turn">
-        Tour {view.turn.number} · <strong>{myTurn ? "vous" : view.players[view.turn.active]?.name}</strong>
+        {turnBefore}
+        <strong>{myTurn ? t("you") : view.players[view.turn.active]?.name}</strong>
+        {turnAfter}
       </div>
       <div className="phases" data-tuto="stops">
         {PHASE_BAR.map(({ step, short }) => {
@@ -667,20 +698,20 @@ function PhaseBar() {
             <div
               key={step}
               className={`phase ${current ? (myTurn ? "current me" : "current opp") : ""}`}
-              title={STEP_LABEL[step]}
+              title={loc(STEP_LABEL[step])}
             >
-              <span className="phase-label">{short}</span>
+              <span className="phase-label">{loc(short)}</span>
               <span className="stops">
                 <button
                   type="button"
                   className={`stop me ${settings.stops.own.includes(step) ? "on" : ""}`}
-                  title={`Arrêt pendant votre tour : ${STEP_LABEL[step]}`}
+                  title={t("Stop during your turn: {step}", { step: STEP_LABEL[step] })}
                   onClick={() => toggleStop("own", step)}
                 />
                 <button
                   type="button"
                   className={`stop opp ${settings.stops.opponent.includes(step) ? "on" : ""}`}
-                  title={`Arrêt pendant le tour adverse : ${STEP_LABEL[step]}`}
+                  title={t("Stop during the opponent's turn: {step}", { step: STEP_LABEL[step] })}
                   onClick={() => toggleStop("opponent", step)}
                 />
               </span>
@@ -697,11 +728,13 @@ function StackView() {
   const casting = useGame((s) => s.casting);
   const pickTarget = useGame((s) => s.pickTarget);
   const notify = useGame((s) => s.notify);
+  const t = useT();
+  const loc = useLocalize();
   if (view.stack.length === 0) return null;
   const targeting = casting?.stage === "target" ? casting.spec : null;
   return (
     <div className="stack" data-tuto="stack">
-      <div className="stack-label">Pile</div>
+      <div className="stack-label">{t("Stack")}</div>
       <div className="stack-items">
         {view.stack.map((item, i) => (
           <motion.div
@@ -730,18 +763,18 @@ function StackView() {
               }
               onClick={
                 targeting
-                  ? () => (targeting.legal.includes(item.id) ? pickTarget(item.id) : notify("Cible invalide."))
+                  ? () => (targeting.legal.includes(item.id) ? pickTarget(item.id) : notify(t("Invalid target.")))
                   : undefined
               }
             />
-            {item.kind === "ability" && !item.effect && <div className="ability-tag">Capacité</div>}
+            {item.kind === "ability" && !item.effect && <div className="ability-tag">{t("Ability")}</div>}
             {item.effect && i === view.stack.length - 1 && (
-              <div className="stack-effect" title={item.effect}>
-                {item.effect}
+              <div className="stack-effect" title={loc(item.effect)}>
+                {loc(item.effect)}
               </div>
             )}
-            {item.copy && <div className="ability-tag">Copie</div>}
-            {item.kicked && <div className="ability-tag">Kické</div>}
+            {item.copy && <div className="ability-tag">{t("ctx:noun|Copy")}</div>}
+            {item.kicked && <div className="ability-tag">{t("Kicked")}</div>}
             {item.x > 0 && <div className="ability-tag">X = {item.x}</div>}
           </motion.div>
         ))}
@@ -753,6 +786,7 @@ function StackView() {
 function Banner() {
   const view = useGame((s) => s.view) as GameView;
   const loc = useLocalize();
+  const t = useT();
   const casting = useGame((s) => s.casting);
   const cancel = useGame((s) => s.cancel);
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
@@ -764,7 +798,7 @@ function Banner() {
   const mine = p?.player === view.viewer;
   const pick = boardPick(view);
   const nameOf = (id: string | undefined) =>
-    (id && (view.players[id]?.name ?? faceNameOf(view.battlefield.find((o) => o.id === id)))) || "L'adversaire";
+    (id && (view.players[id]?.name ?? faceNameOf(view.battlefield.find((o) => o.id === id)))) || t("The opponent");
   const faceNameOf = (o: ObjectView | undefined) => (o ? faceName(o, lang) : undefined);
 
   let text: string;
@@ -772,66 +806,92 @@ function Banner() {
   if (casting?.stage === "target" && casting.spec) {
     const max = casting.spec.count ?? 1;
     const n = casting.picked?.length ?? 0;
+    const label = casting.spec.label === undefined ? t("target") : loc(casting.spec.label);
     text =
-      max > 1
-        ? `Choisissez ${casting.spec.optional ? "jusqu'à " : ""}${max} cibles : ${casting.spec.label ?? "cible"} (${n}/${max})`
-        : `Choisissez une cible : ${casting.spec.label ?? "cible"}`;
+      max === 1
+        ? t("Choose a target: {label}", { label })
+        : casting.spec.optional
+          ? t("Choose up to {max} targets: {label} ({n}/{max})", { max, label, n })
+          : t("Choose {max} targets: {label} ({n}/{max})", { max, label, n });
     extra = (
       <>
         {max > 1 && (n > 0 || casting.spec.optional) && (
           <button type="button" className="btn small primary" onClick={confirmTargets}>
-            Valider ({n})
+            {t("Confirm ({n})", { n })}
           </button>
         )}
         {casting.spec.optional && max === 1 && (
           <button type="button" className="btn small" onClick={chooseNoTarget}>
-            Aucune cible
+            {t("No target")}
           </button>
         )}
         <button type="button" className="btn small ghost" onClick={cancel}>
-          Annuler (Échap)
+          {t("Cancel (Esc)")}
         </button>
       </>
     );
   } else if (pick) {
     const source = choiceSource(view);
     const what = shortPrompt(loc(pick.prompt), source);
-    text = `${source ? `${faceName(source.face, lang)} : ${what}` : what} (${selection.length}/${pick.max})`;
-  } else if (!p) text = view.over ? "Partie terminée" : "…";
+    const counts = { n: selection.length, max: pick.max };
+    text = source
+      ? t("{card}: {prompt} ({n}/{max})", { card: faceName(source.face, lang), prompt: what, ...counts })
+      : t("{prompt} ({n}/{max})", { prompt: what, ...counts });
+  } else if (!p) text = view.over ? t("Game over") : "…";
   else if (!mine) {
-    const what: Record<string, string> = {
-      priority: "joue",
-      declareAttackers: "déclare ses attaquants",
-      declareBlockers: "déclare ses bloqueurs",
-      mulligan: "choisit sa main",
-      choice: "fait un choix",
-      bottomCards: "choisit sa main",
-      discard: "se défausse",
-    };
-    text = `${nameOf(p.player)} ${what[p.kind] ?? "réfléchit"}…`;
+    const player = nameOf(p.player);
+    switch (p.kind) {
+      case "priority":
+        text = t("{player} is playing…", { player });
+        break;
+      case "declareAttackers":
+        text = t("{player} is declaring attackers…", { player });
+        break;
+      case "declareBlockers":
+        text = t("{player} is declaring blockers…", { player });
+        break;
+      case "mulligan":
+      case "bottomCards":
+        text = t("{player} is choosing their hand…", { player });
+        break;
+      case "choice":
+        text = t("{player} is making a choice…", { player });
+        break;
+      case "discard":
+        text = t("{player} is discarding…", { player });
+        break;
+      default:
+        text = t("{player} is thinking…", { player });
+    }
   } else if (p.kind === "declareAttackers") {
     const defenders = p.defenders ?? [];
     text =
       defenders.length <= 1
-        ? "Cliquez sur les créatures qui attaquent"
+        ? t("Click the attacking creatures")
         : aiming
-          ? `${nameOf(aiming)} attaque… cliquez sa cible (en surbrillance) — Échap pour annuler`
-          : "Cliquez une créature, puis le joueur ou le planeswalker qu'elle attaque";
+          ? t("{attacker} attacks… click its target (highlighted) — Esc to cancel", { attacker: nameOf(aiming) })
+          : t("Click a creature, then the player or planeswalker it attacks");
   } else if (p.kind === "declareBlockers") {
-    text = "Bloqueurs : cliquez une de vos créatures, puis l'attaquant à bloquer";
+    text = t("Blockers: click one of your creatures, then the attacker to block");
   } else if (p.kind === "priority" && p.castNow) {
-    // 608.2g : la carte à lancer brille au bout de la main ; le bouton principal refuse.
+    // 608.2g: the card to cast glows at the end of the hand; the main button declines.
     text = loc(p.castNow.prompt);
   } else if (p.kind === "priority" && view.stack.length > 0) {
     const top = view.stack[view.stack.length - 1];
-    // « répondre ? » seulement si une réponse est possible (sinon le panneau StackReveal le montre).
+    // "respond?" only if a response is possible (otherwise the StackReveal panel shows it).
     const canRespond = myActions(view).some((a) => a.type !== "pass" && a.type !== "tapForMana");
-    text =
-      top && top.controller !== view.viewer
-        ? `${nameOf(top.controller)} ${top.kind === "ability" ? "active" : "lance"} ${faceName(top, lang)}${canRespond ? " — répondre ?" : ""}`
-        : "Votre sort va se résoudre";
+    if (top && top.controller !== view.viewer) {
+      const args = { player: nameOf(top.controller), card: faceName(top, lang) };
+      if (top.kind === "ability")
+        text = canRespond ? t("{player} activates {card} — respond?", args) : t("{player} activates {card}", args);
+      else text = canRespond ? t("{player} casts {card} — respond?", args) : t("{player} casts {card}", args);
+    } else text = t("Your spell is about to resolve");
   } else {
-    text = `${STEP_LABEL[view.turn.step]} — ${view.turn.active === view.viewer ? "à vous" : nameOf(view.turn.active)}`;
+    const step = STEP_LABEL[view.turn.step];
+    text =
+      view.turn.active === view.viewer
+        ? t("{step} — your turn", { step })
+        : t("{step} — {player}", { step, player: nameOf(view.turn.active) });
   }
   return (
     <div className={`banner ${mine ? "mine" : ""}`}>
@@ -841,60 +901,77 @@ function Banner() {
   );
 }
 
-/** Temps restant avant `deadline` (Date.now()), rafraîchi plusieurs fois par seconde. */
+/** Time left before `deadline` (Date.now()), refreshed several times per second. */
 function useRemaining(deadline: number | null | undefined): number | null {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     if (!deadline) return;
-    const t = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(timer);
   }, [deadline]);
   return deadline ? Math.max(0, deadline - now) : null;
 }
 
-/** Corde (jeu en ligne) : la fin du temps de la décision en cours, comme sur MTGA. */
+/** Rope (online play): the end of the time for the current decision, as on MTGA. */
 function Rope() {
   const clock = useGame((s) => s.online?.clock);
   const view = useGame((s) => s.view);
   const remaining = useRemaining(clock?.deadline);
+  const t = useT();
   if (!clock || remaining === null || !view || view.over || remaining > clock.ropeMs) return null;
   const mine = clock.player === view.viewer;
-  const who = mine ? "Vous" : (view.players[clock.player]?.name ?? "L'adversaire");
+  const who = mine ? t("You") : (view.players[clock.player]?.name ?? t("The opponent"));
+  const seconds = Math.ceil(remaining / 1000);
+  const timeouts = clock.timeouts[clock.player];
   return (
     <div className={`rope ${mine ? "mine" : ""}`} role="timer" aria-live="polite">
       <div className="rope-bar" style={{ width: `${(remaining / clock.ropeMs) * 100}%` }} />
       <span className="rope-text">
-        {who} · {Math.ceil(remaining / 1000)} s
-        {clock.timeouts[clock.player] ? ` · temps écoulé ${clock.timeouts[clock.player]}/${clock.maxTimeouts}` : ""}
+        {timeouts
+          ? t("{player} · {seconds} s · time out {count}/{max}", {
+              player: who,
+              seconds,
+              count: timeouts,
+              max: clock.maxTimeouts,
+            })
+          : t("{player} · {seconds} s", { player: who, seconds })}
       </span>
     </div>
   );
 }
 
-/** Bandeau réseau (jeu en ligne) : adversaire déconnecté, ou votre connexion perdue. */
+/** Network banner (online play): opponent disconnected, or your connection lost. */
 function NetBanner() {
   const online = useGame((s) => s.online);
   const view = useGame((s) => s.view);
   const remaining = useRemaining(online?.opponent.deadline);
+  const t = useT();
   if (!online || !view || view.over) return null;
-  if (online.reconnecting) return <div className="net-banner">Connexion au serveur perdue — reconnexion…</div>;
-  // À plusieurs : les joueurs encore en partie qui se sont déconnectés (ils abandonnent s'ils ne reviennent pas à temps).
+  if (online.reconnecting) return <div className="net-banner">{t("Connection to the server lost — reconnecting…")}</div>;
+  // Multiplayer: the players still in the game who have disconnected (they concede if they don't come back in time).
   if ((online.match?.seats ?? 2) > 2) {
     const gone = online.players.filter((p) => p.seat !== online.seat && !p.connected && !view.players[p.seat]?.lost);
     if (!gone.length) return null;
     return (
       <div className="net-banner">
-        {gone.map((p) => p.name).join(", ")} {gone.length > 1 ? "se sont déconnectés" : "s'est déconnecté"} — abandon s'il
-        {gone.length > 1 ? "s ne reviennent" : " ne revient"} pas à temps
+        {gone.length > 1
+          ? t("{players} have disconnected — they concede if they don't come back in time", {
+              players: gone.map((p) => p.name).join(", "),
+            })
+          : t("{player} has disconnected — they concede if they don't come back in time", { player: gone[0]?.name ?? "" })}
       </div>
     );
   }
   if (online.opponent.connected) return null;
-  const opp = view.players[view.opponents[0] ?? ""]?.name ?? "L'adversaire";
+  const opp = view.players[view.opponents[0] ?? ""]?.name ?? t("The opponent");
   return (
     <div className="net-banner">
-      {opp} s'est déconnecté
-      {remaining !== null ? ` — victoire par abandon dans ${Math.ceil(remaining / 1000)} s s'il ne revient pas` : ""}
+      {remaining !== null
+        ? t("{player} has disconnected — win by concession in {seconds} s if they don't come back", {
+            player: opp,
+            seconds: Math.ceil(remaining / 1000),
+          })
+        : t("{player} has disconnected", { player: opp })}
     </div>
   );
 }
@@ -914,15 +991,15 @@ function CenterStrip() {
 }
 
 // ---------------------------------------------------------------------------
-// Main et actions
+// Hand and actions
 // ---------------------------------------------------------------------------
 
-/** Étiquette des cartes jouables depuis une autre zone que la main. */
+/** Tag of the cards playable from a zone other than the hand. */
 const ZONE_TAG: Record<string, string> = {
-  exile: "Exil",
-  graveyard: "Cimetière",
-  library: "Bibliothèque",
-  command: "Commandant",
+  exile: msg("ctx:zone|Exile"),
+  graveyard: msg("Graveyard"),
+  library: msg("Library"),
+  command: msg("ctx:card|Commander"),
 };
 
 function Hand() {
@@ -932,23 +1009,24 @@ function Hand() {
   const setHover = useGame((s) => s.setHover);
   const selection = useGame((s) => s.selection);
   const casting = useGame((s) => s.casting);
+  const loc = useLocalize();
   const handRef = useRef<HTMLDivElement>(null);
-  // Un glisser se termine aussi par un « tap » : on l'ignore pour ne pas envoyer deux décisions.
+  // A drag also ends with a "tap": it is ignored so as not to send two decisions.
   const dragged = useRef(false);
-  // Écran tactile : carte levée par un premier tap (pas de survol), jouée au second.
+  // Touch screen: card lifted by a first tap (no hover), played by the second.
   const [lifted, setLifted] = useState<string | null>(null);
   const acts = myActions(view);
   const playable = new Set(
     acts.flatMap((a) => (a.type === "cast" || a.type === "playLand" ? [a.card] : a.type === "activate" ? [a.source] : [])),
   );
-  // Cartes jouables depuis une autre zone (exil, cimetière, dessus de la bibliothèque) : au bout de la main, marquées.
+  // Cards playable from another zone (exile, graveyard, top of the library): at the end of the hand, tagged.
   const cards = [...view.hand, ...view.playableElsewhere];
   const elsewhere = new Map(view.playableElsewhere.map((c) => [c.id, c.zone]));
   const n = cards.length;
 
-  // Pas entre les cartes : elles se resserrent pour tenir dans la largeur de la main (voir fitHand).
+  // Step between the cards: they close up to fit in the width of the hand (see fitHand).
   const [box, setBox] = useState({ width: 0, cardW: 0 });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: nouvelle mesure quand le nombre de cartes change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: measured again when the number of cards changes
   useLayoutEffect(() => {
     const el = handRef.current;
     if (!el) return;
@@ -966,7 +1044,7 @@ function Hand() {
   const selecting =
     view.pending?.player === view.viewer && (view.pending.kind === "discard" || view.pending.kind === "bottomCards");
   const liftedId = lifted && cards.some((c) => c.id === lifted) ? lifted : null;
-  // Toucher ailleurs que dans la main repose la carte levée.
+  // Touching outside the hand puts the lifted card back down.
   useEffect(() => {
     if (!liftedId) return;
     const drop = (e: globalThis.PointerEvent) => {
@@ -1002,7 +1080,7 @@ function Hand() {
             }}
             onTap={(e) => {
               if (dragged.current || justLongPressed()) return;
-              // Au doigt : le premier tap lève la carte (et l'affiche dans l'aperçu), le second la joue.
+              // By finger: the first tap lifts the card (and shows it in the preview), the second plays it.
               if ((e as PointerEvent).pointerType !== "mouse" && isTouch() && !selecting && !up) {
                 setLifted(c.id);
                 setHover({ face: c, obj: c });
@@ -1037,7 +1115,7 @@ function Hand() {
               }
               oid={c.id}
             />
-            {elsewhere.has(c.id) && <span className="zone-tag">{ZONE_TAG[elsewhere.get(c.id) ?? ""] ?? ""}</span>}
+            {elsewhere.has(c.id) && <span className="zone-tag">{loc(ZONE_TAG[elsewhere.get(c.id) ?? ""] ?? "")}</span>}
           </motion.div>
         );
       })}
@@ -1056,7 +1134,7 @@ function OpponentHand({ count, custom }: { count: number; custom?: boolean }) {
 }
 
 export function useMainAction(): { label: string; run?: () => void; disabled?: boolean; hot?: boolean } {
-  // Seules ces données comptent : pas de redessin à chaque survol de carte (le store entier changerait).
+  // Only these data matter: no redraw on each card hover (the whole store would change).
   const s = useGame(
     useShallow((g) => ({
       view: g.view,
@@ -1072,29 +1150,30 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
       passPriority: g.passPriority,
     })),
   );
+  const t = useT();
   const v = s.view;
   if (!v) return { label: "…", disabled: true };
   const p = v.pending;
-  if (!p) return { label: v.over ? "Partie terminée" : "…", disabled: true };
-  if (p.player !== v.viewer) return { label: "Adversaire…", disabled: true };
+  if (!p) return { label: v.over ? t("Game over") : "…", disabled: true };
+  if (p.player !== v.viewer) return { label: t("Opponent…"), disabled: true };
   const pass = () => s.passPriority();
   switch (p.kind) {
     case "priority":
-      if (s.casting) return { label: "Annuler", run: s.cancel };
-      if (p.castNow) return { label: "Ne pas lancer", run: pass };
-      if (v.stack.length > 0) return { label: "Résoudre", run: pass, hot: true };
+      if (s.casting) return { label: t("Cancel"), run: s.cancel };
+      if (p.castNow) return { label: t("Don't cast"), run: pass };
+      if (v.stack.length > 0) return { label: t("Resolve"), run: pass, hot: true };
       if (v.turn.active === v.viewer) {
-        if (v.turn.step === "main1" && v.potentialAttackers > 0) return { label: "Combat", run: pass, hot: true };
+        if (v.turn.step === "main1" && v.potentialAttackers > 0) return { label: t("Combat"), run: pass, hot: true };
         if (v.turn.step === "main1" || v.turn.step === "main2")
-          return { label: "Fin du tour", run: () => s.endTurn(), hot: true };
+          return { label: t("End turn"), run: () => s.endTurn(), hot: true };
       }
-      return { label: "Passer", run: pass, hot: true };
+      return { label: t("Pass"), run: pass, hot: true };
     case "declareAttackers": {
       const n = s.attackers.length;
-      // Façon MTGA : sans sélection, le bouton sélectionne toutes les créatures ; un second appui confirme.
-      if (!n && (p.candidates?.length ?? 0) > 0) return { label: "Attaquer avec tous", hot: true, run: s.allAttack };
+      // MTGA style: with no selection, the button selects all the creatures; a second press confirms.
+      if (!n && (p.candidates?.length ?? 0) > 0) return { label: t("Attack with all"), hot: true, run: s.allAttack };
       return {
-        label: n ? `Attaquer (${n})` : "Pas d'attaque",
+        label: n ? t("Attack ({n})", { n }) : t("No attack"),
         hot: true,
         run: () =>
           s.decide({
@@ -1108,39 +1187,40 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
     }
     case "declareBlockers": {
       const entries = Object.entries(s.blocks);
-      // Menace (702.110) signalée pendant la déclaration : un seul bloqueur sur une créature qui a la menace.
+      // Menace (702.110) flagged during the declaration: a single blocker on a creature with menace.
       const per = new Map<string, number>();
       for (const [, a] of entries) per.set(a, (per.get(a) ?? 0) + 1);
       const menace = [...per].find(([a, n]) => n === 1 && v.battlefield.find((o) => o.id === a)?.keywords.includes("menace"));
-      if (menace) return { label: "Menace : deux bloqueurs ou plus", disabled: true };
+      if (menace) return { label: t("Menace: two or more blockers"), disabled: true };
       return {
-        label: entries.length ? `Bloquer (${entries.length})` : "Pas de blocage",
+        label: entries.length ? t("Block ({n})", { n: entries.length }) : t("No block"),
         hot: true,
         run: () => s.decide({ type: "declareBlockers", blocks: entries.map(([blocker, attacker]) => ({ blocker, attacker })) }),
       };
     }
     case "choice": {
       const pick = boardPick(v);
-      if (!pick) return { label: "Choisissez…", disabled: true };
+      if (!pick) return { label: t("Choose…"), disabled: true };
       const n = s.selection.length;
       return {
-        label: n === 0 && pick.min === 0 ? "Aucun" : `Valider (${n})`,
+        label: n === 0 && pick.min === 0 ? t("ctx:choice|None") : t("Confirm ({n})", { n }),
         hot: true,
         disabled: !pickValid(pick, s.selection),
         run: () => s.decide({ type: "choose", values: s.selection }),
       };
     }
     default:
-      return { label: "Choisissez…", disabled: true };
+      return { label: t("Choose…"), disabled: true };
   }
 }
 
-/** Aperçu des blessures du combat en préparation (attaquants choisis, blocages en cours ou déclarés). */
+/** Damage preview of the combat being prepared (chosen attackers, blocks being chosen or declared). */
 function CombatPreviewLine() {
   const view = useGame((s) => s.view) as GameView;
   const attackers = useGame((s) => s.attackers);
   const attackTargets = useGame((s) => s.attackTargets);
   const blocks = useGame((s) => s.blocks);
+  const t = useT();
   const p = view.pending;
   const choosingAttack = p?.kind === "declareAttackers" && p.player === view.viewer;
   const atk = choosingAttack
@@ -1157,15 +1237,16 @@ function CombatPreviewLine() {
   const parts = Object.entries(preview.lifeLoss)
     .filter(([, n]) => n !== 0)
     .map(([pl, n]) => {
-      const who = pl === view.viewer ? "vous" : (view.players[pl]?.name ?? pl);
+      const player = pl === view.viewer ? t("you") : (view.players[pl]?.name ?? pl);
       const lethal = n > 0 && (view.players[pl]?.life ?? 0) - n <= 0;
-      return `${who} ${n > 0 ? `−${n}` : `+${-n}`} PV${lethal ? " (létal)" : ""}`;
+      if (n < 0) return t("{player} +{n} life", { player, n: -n });
+      return lethal ? t("{player} −{n} life (lethal)", { player, n }) : t("{player} −{n} life", { player, n });
     });
-  if (preview.dies.length) parts.push(`meurent : ${preview.dies.map(name).join(", ")}`);
+  if (preview.dies.length) parts.push(t("dying: {list}", { list: preview.dies.map(name).join(", ") }));
   if (parts.length === 0) return null;
   return (
     <div className="combat-preview" role="status">
-      Aperçu : {parts.join(" · ")}
+      {t("Preview: {list}", { list: parts.join(" · ") })}
     </div>
   );
 }
@@ -1176,6 +1257,7 @@ function ActionPanel() {
   const decide = useGame((s) => s.decide);
   const attackers = useGame((s) => s.attackers);
   const action = useMainAction();
+  const t = useT();
   const myTurn = view.turn.active === view.viewer;
   const p = view.pending;
   const mine = p?.player === view.viewer && (p?.kind === "priority" || p?.kind === "declareAttackers");
@@ -1183,7 +1265,9 @@ function ActionPanel() {
     <div className="action-panel">
       <CombatPreviewLine />
       {view.controlling && (
-        <div className="control-banner">Vous contrôlez {view.players[view.controlling]?.name ?? "l'adversaire"}</div>
+        <div className="control-banner">
+          {t("You control {player}", { player: view.players[view.controlling]?.name ?? t("the opponent") })}
+        </div>
       )}
       <button
         type="button"
@@ -1191,7 +1275,7 @@ function ActionPanel() {
         data-tuto="main-button"
         disabled={action.disabled}
         onClick={action.run}
-        title="Espace"
+        title={t("Space")}
       >
         {action.label}
       </button>
@@ -1202,9 +1286,9 @@ function ActionPanel() {
             type="button"
             className="btn small no-attack"
             onClick={() => decide({ type: "declareAttackers", attackers: [] })}
-            title="Ne pas attaquer ce tour-ci"
+            title={t("Don't attack this turn")}
           >
-            Pas d'attaque
+            {t("No attack")}
           </button>
         )}
       {mine && !view.over && (
@@ -1215,11 +1299,15 @@ function ActionPanel() {
           onClick={(e) => endTurn(e.shiftKey)}
           title={
             myTurn
-              ? "Entrée : passer jusqu'à la fin du tour (s'arrête si un adversaire agit) ; Maj+Entrée ou Maj+clic : tout laisser passer"
-              : "Entrée : passer jusqu'à votre tour (s'arrête si l'adversaire lance un sort, et pour vos blocages) ; Maj+Entrée ou Maj+clic : tout laisser passer"
+              ? t(
+                  "Enter: pass until the end of the turn (stops if an opponent acts); Shift+Enter or Shift+click: let everything pass",
+                )
+              : t(
+                  "Enter: pass until your turn (stops if the opponent casts a spell, and for your blocks); Shift+Enter or Shift+click: let everything pass",
+                )
           }
         >
-          {myTurn ? "Passer le tour ⏎" : "Jusqu'à mon tour ⏎"}
+          {myTurn ? t("Pass the turn ⏎") : t("Until my turn ⏎")}
         </button>
       )}
     </div>
@@ -1227,7 +1315,7 @@ function ActionPanel() {
 }
 
 // ---------------------------------------------------------------------------
-// Plateau complet
+// Full board
 // ---------------------------------------------------------------------------
 
 export function Board() {
@@ -1235,14 +1323,15 @@ export function Board() {
   const choice = useGame((s) => s.boardTheme);
   const session = useGame((s) => s.session);
   const resuming = useGame((s) => s.resuming);
-  // « Au hasard » : une texture tirée à chaque partie (nouvelle session), puis gardée jusqu'à la fin de celle-ci.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: un nouveau tirage à chaque nouvelle session.
+  const t = useT();
+  // "Random": a texture drawn for each game (new session), then kept until it ends.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new draw on each new session.
   const roll = useMemo(() => Math.random(), [session]);
   const theme = resolveBoardTheme(choice, roll);
   if (!view)
     return (
       <div className="board loading" data-board={theme}>
-        {resuming ? "Reprise de la partie…" : "Mélange des bibliothèques…"}
+        {resuming ? t("Resuming the game…") : t("Shuffling the libraries…")}
       </div>
     );
   const me = view.players[view.viewer] as PlayerView;

@@ -1,6 +1,6 @@
 /**
  * Interface language (PLAN-I): English is the source language of every text; French comes from the catalogs, keyed by
- * the English text (`engine/locales/fr.json`, `cards/locales/fr/*.json`, `client/locales/fr.json`). The same decoder
+ * the English text (`engine/locales/fr.json`, `server/locales/fr.json`, `cards/locales/fr/*.json`, `client/locales/fr.json`). The same decoder
  * renders the engine's texts (`msg`, `cardRef`) and the interface's (`t`).
  *
  * Components read texts through `useT()` (`localize.ts`), which re-renders them when the language changes; `t()`
@@ -9,11 +9,12 @@
 import { FRENCH_CATALOGS } from "@mtgx/cards/locales";
 import { msg, renderText, type TextArg } from "@mtgx/engine";
 import engineFr from "@mtgx/engine/locales/fr.json";
+import serverFr from "@mtgx/server/locales/fr.json";
 import clientFr from "../locales/fr.json";
 
 export type Lang = "fr" | "en";
 
-const FRENCH: Record<string, string> = Object.assign({}, engineFr, ...Object.values(FRENCH_CATALOGS), clientFr);
+const FRENCH: Record<string, string> = Object.assign({}, engineFr, serverFr, ...Object.values(FRENCH_CATALOGS), clientFr);
 
 let current: Lang = "fr";
 

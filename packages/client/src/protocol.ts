@@ -1,4 +1,4 @@
-/** Messages échangés entre l'interface et le Web Worker qui fait tourner la partie. */
+/** Messages exchanged between the interface and the Web Worker that runs the game. */
 import type { AiLevel, ScriptAction } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import type {
@@ -14,37 +14,37 @@ import type {
 } from "@mtgx/engine";
 
 /**
- * Bac à sable (mode dev, tests d'interface) : permanents et jetons mis en jeu au début de la partie,
- * par joueur ("p1" = vous, "p2"… = IA).
+ * Sandbox (dev mode, interface tests): permanents and tokens put onto the battlefield at the start of the game,
+ * by player ("p1" = you, "p2"… = AI).
  */
 export type Sandbox = Record<
   string,
   {
     cards?: string[];
-    /** Cartes ajoutées à la main de ce joueur. */
+    /** Cards added to this player's hand. */
     hand?: string[];
-    /** Cartes ajoutées au cimetière de ce joueur (flashback, harmonie). */
+    /** Cards added to this player's graveyard (flashback, harmonize). */
     graveyard?: string[];
     tokens?: [number, string][];
-    /** Aura ou Équipement de ce joueur, attaché à une créature (nom) de `hostPlayer` (ce joueur par défaut). */
+    /** Aura or Equipment of this player, attached to a creature (name) of `hostPlayer` (this player by default). */
     attach?: [card: string, host: string, hostPlayer?: string][];
-    /** Marqueurs posés sur un permanent (nom) de ce joueur, après la mise en jeu. */
+    /** Counters put on a permanent (name) of this player, after it is put onto the battlefield. */
     counters?: [card: string, kind: string, n: number][];
   }
 >;
 
-/** Un camp d'une partie mise en scène (tutoriel), par noms de cartes. */
+/** One side of a staged game (tutorial), by card names. */
 export interface ScenarioSide {
   name?: string;
   life?: number;
-  /** Bibliothèque dans l'ordre : la première carte est le dessus. */
+  /** Library in order: the first card is the top. */
   library: string[];
   hand: string[];
   battlefield?: (string | { card: string; tapped?: boolean; sick?: boolean })[];
   graveyard?: string[];
 }
 
-/** Partie mise en scène (tutoriel) : état de départ connu et adversaire scripté (ou une IA du niveau indiqué). */
+/** Staged game (tutorial): known starting state and scripted opponent (or an AI of the given level). */
 export interface ScenarioSpec {
   you: ScenarioSide;
   opponent: ScenarioSide;
@@ -58,30 +58,32 @@ export type ToWorker =
   | {
       type: "start";
       seed: number;
+      /** Names of the human player and of the AI players (p2, p3…), in the interface language. */
       playerName: string;
+      aiNames?: string[];
       playerDeck: DeckEntries;
-      /** Premier joueur imposé (manche suivante d'un BO3 : le perdant de la précédente) ; absent : tirage au sort. */
+      /** Forced first player (next game of a BO3: the loser of the previous one); absent: random draw. */
       startingPlayer?: string;
       aiDecks: DeckEntries[];
-      /** Définitions des cartes utilisées (par nom) : le worker n'embarque pas toute la base de cartes. */
+      /** Definitions of the cards used (by name): the worker does not bundle the whole card database. */
       defs: Record<string, CardDef>;
       sandbox?: Sandbox;
-      /** Mode rapide des tests d'interface (dev) : l'IA joue sans pause. */
+      /** Fast mode of the interface tests (dev): the AI plays without pauses. */
       fast?: boolean;
-      /** Tutoriel : partie mise en scène au lieu de decks mélangés (les decks sont alors vides). */
+      /** Tutorial: staged game instead of shuffled decks (the decks are then empty). */
       scenario?: ScenarioSpec;
-      /** Niveau des IA adverses (moyen par défaut). */
+      /** Level of the opposing AIs (medium by default). */
       aiLevel?: AiLevel;
       /**
-       * Commander (PLAN-E) : partie de Commander ; `commanders` donne, pour le joueur puis chaque IA, le nombre de cartes
-       * en tête du deck qui sont ses commandants.
+       * Commander (PLAN-E): Commander game; `commanders` gives, for the player then each AI, the number of cards at the
+       * top of the deck that are its commanders.
        */
       variant?: GameVariant;
       commanders?: number[];
     }
   /**
-   * Reprise d'une partie sauvegardée (page rouverte) : l'enregistrement est rejoué, puis la partie continue contre des IA
-   * du niveau indiqué.
+   * Resume of a saved game (page reopened): the record is replayed, then the game goes on against AIs of the given
+   * level.
    */
   | {
       type: "resume";
@@ -91,26 +93,27 @@ export type ToWorker =
       fast?: boolean;
     }
   /**
-   * Catalogue des noms nommables (« choisissez un nom de carte »), envoyé une fois à la création du worker : le moteur du
-   * worker accepte ces noms (`registerNameCatalog`) sans embarquer la base de cartes.
+   * Catalog of the nameable names ("choose a card name"), sent once when the worker is created: the worker's engine
+   * accepts these names (`registerNameCatalog`) without bundling the card database.
    */
   | { type: "names"; catalog: NameCatalog }
-  /** Tutoriel : l'adversaire attend (explication à l'écran). */
+  /** Tutorial: the opponent waits (explanation on screen). */
   | { type: "pause"; paused: boolean }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> }
-  /** Enregistrement de la partie (export pour un replay ou pour signaler un bug). */
+  /** Game record (export for a replay or to report a bug). */
   | { type: "export" };
 
 export type FromWorker =
   | { type: "update"; view: GameView; events: GameEvent[]; faces: Record<string, CardFace> }
+  /** Error for the player (engine text, `msg`: translated at display). */
   | { type: "error"; message: string }
-  /** Enregistrement demandé ; null si la partie n'est pas enregistrée (tutoriel, bac à sable). */
+  /** Record requested; null if the game is not recorded (tutorial, sandbox). */
   | { type: "record"; record: GameRecord | null }
   /**
-   * Sauvegarde de la partie (reprise à la réouverture de la page) : l'en-tête de l'enregistrement au départ, puis les
-   * décisions nouvelles et les points de contrôle.
+   * Save of the game (resume when the page is reopened): the record's header at the start, then the new decisions and
+   * the checkpoints.
    */
   | { type: "saved"; header?: GameRecord; decisions: GameRecord["decisions"]; checkpoints: [number, string][] }
-  /** Reprise impossible (la partie ne se rejoue plus à l'identique, par exemple après une mise à jour du moteur). */
+  /** Resume impossible (the game no longer replays identically, for example after an engine update). */
   | { type: "resumeFailed"; message: string };

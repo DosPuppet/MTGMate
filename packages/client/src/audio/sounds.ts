@@ -1,15 +1,15 @@
 /**
- * Table des effets sonores : clé stable → fichiers (variantes tirées au hasard) dans public/sounds/.
- * Échantillons Kenney (CC0), voir public/sounds/LICENSE-kenney.txt. Changer un son = changer une ligne ici.
+ * Table of the sound effects: stable key → files (randomly drawn variants) in public/sounds/.
+ * Kenney samples (CC0), see public/sounds/LICENSE-kenney.txt. Changing a sound = changing one line here.
  */
 
 export interface SoundDef {
   files: string[];
-  /** Volume relatif (0 à 1), avant le volume général. */
+  /** Relative volume (0 to 1), before the master volume. */
   volume: number;
-  /** Autre son (clé de SOUNDS) joué en même temps, ex. scintillement d'un sort. */
+  /** Another sound (key of SOUNDS) played at the same time, e.g. a spell's shimmer. */
   layer?: string;
-  /** Pas de variation de hauteur (jingles). */
+  /** No pitch variation (jingles). */
   steady?: boolean;
 }
 
@@ -32,7 +32,7 @@ export const SOUNDS = {
   dies: { files: range("impactSoft_heavy_00", [0, 1, 2]), volume: 0.7 },
   token: { files: range("chip-lay-", [1, 2, 3]), volume: 0.7 },
   attach: { files: ["metalClick.ogg"], volume: 0.5 },
-  // Commander (PLAN-E) : un commandant rejoint la zone de commandement.
+  // Commander (PLAN-E): a commander rejoins the command zone.
   command: { files: range("phaserUp", [1, 3]), volume: 0.4 },
   poison: { files: range("drop_00", [2, 4]), volume: 0.6 },
   turn: { files: ["bong_001.ogg"], volume: 0.5 },

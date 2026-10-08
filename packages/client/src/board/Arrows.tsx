@@ -1,6 +1,6 @@
 /**
- * Flèches SVG : cibles des sorts sur la pile, blocages, visée en cours.
- * Les positions sont recalculées à chaque image (les cartes peuvent être en cours d'animation).
+ * SVG arrows: targets of the spells on the stack, blocks, aiming in progress.
+ * Positions are recomputed every frame (cards may be animating).
  */
 import { useEffect, useMemo, useRef } from "react";
 import { useGame } from "../store";
@@ -25,19 +25,19 @@ function useArrowSpecs(): ArrowSpec[] {
   return useMemo(() => {
     const out: ArrowSpec[] = [];
     if (!view) return out;
-    // Attaques déclarées : contre un planeswalker ; contre un joueur aussi à plusieurs (on voit qui est attaqué).
+    // Declared attacks: against a planeswalker; against a player too in multiplayer (shows who is attacked).
     const multiplayer = Object.values(view.players).filter((p) => !p.lost).length > 2;
     for (const a of view.combat?.attackers ?? []) {
       if (!view.players[a.defender] || multiplayer) out.push({ key: `a-${a.id}`, from: a.id, to: a.defender, kind: "target" });
     }
     if (view.pending?.kind === "declareAttackers") {
-      // Plusieurs cibles possibles : chaque attaquant montre sa cible (joueur compris) ; sinon, seulement un planeswalker.
+      // Several possible targets: each attacker shows its target (players included); otherwise, only a planeswalker.
       const several = (view.pending.defenders?.length ?? 0) > 1;
       for (const id of attackers) {
         const d = attackTargets[id];
         if (d && (several || !view.players[d])) out.push({ key: `pa-${id}`, from: id, to: d, kind: "pending-block" });
       }
-      // Attaquant en visée : la flèche suit la souris jusqu'à ce qu'on clique sa cible.
+      // Attacker being aimed: the arrow follows the mouse until its target is clicked.
       if (aiming) out.push({ key: "aim-attack", from: aiming, to: MOUSE, kind: "aim" });
     }
     for (const item of view.stack) {
@@ -95,7 +95,7 @@ export function Arrows() {
         const y1 = a.y - box.top;
         const x2 = b.x - box.left;
         const y2 = b.y - box.top;
-        // Courbe légère : point de contrôle décalé perpendiculairement.
+        // Slight curve: control point offset perpendicularly.
         const mx = (x1 + x2) / 2 - (y2 - y1) * 0.18;
         const my = (y1 + y2) / 2 + (x2 - x1) * 0.18;
         path.setAttribute("d", `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`);

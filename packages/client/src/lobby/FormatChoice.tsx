@@ -1,6 +1,8 @@
 import { FORMAT_LABELS, FORMATS, isFormat } from "@mtgx/cards";
 import type { Format } from "@mtgx/engine";
 import { useT } from "../localize";
+import { useGame } from "../store";
+import { textIn } from "../translate";
 
 const FORMAT_KEY = "planecircle.format";
 
@@ -46,6 +48,7 @@ export function FormatChoice({
   formats?: readonly Format[];
 }) {
   const t = useT();
+  const lang = useGame((st) => st.lang);
   return (
     <div className="ai-level">
       <div className="ai-count">
@@ -59,7 +62,7 @@ export function FormatChoice({
               className={value === f ? "on" : ""}
               onClick={() => onChange(f)}
             >
-              {FORMAT_LABELS[f]}
+              {textIn(lang, FORMAT_LABELS[f])}
             </button>
           ))}
         </div>

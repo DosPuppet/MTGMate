@@ -1,14 +1,14 @@
 /**
- * Aperçu des blessures de combat (façon Arena) : à partir de la vue et des blocages en cours de choix, les points de vie
- * que chaque joueur perdrait et les créatures qui mourraient. Calcul simple, pur et testé : initiative, double
- * initiative, contact mortel, piétinement et lien de vie ; ni remplacements, ni déclencheurs, ni blessures prévenues.
+ * Combat damage preview (Arena style): from the view and the blocks being chosen, the life each player would lose and
+ * the creatures that would die. A simple, pure and tested computation: first strike, double strike, deathtouch,
+ * trample and lifelink; no replacements, no triggers, no prevented damage.
  */
 import type { GameView, ObjectView } from "@mtgx/engine";
 
 export interface CombatPreview {
-  /** Points de vie perdus (ou gagnés, en négatif, par le lien de vie) par joueur. */
+  /** Life lost (or gained through lifelink, as a negative number) per player. */
   lifeLoss: Record<string, number>;
-  /** Créatures qui mourraient. */
+  /** Creatures that would die. */
   dies: string[];
 }
 
@@ -24,7 +24,7 @@ const dead = (f: Fighter, deathtouched: boolean) =>
   (f.o.toughness ?? 0) - (f.o.damage ?? 0) - f.damage <= 0 || (deathtouched && f.damage > 0);
 
 /**
- * `attackers` : attaquants et défenseur visé ; `blocks` : bloqueur → attaquant. Sans attaquant, null.
+ * `attackers`: attackers and the defender they attack; `blocks`: blocker → attacker. Without attackers, null.
  */
 export function combatPreview(
   view: GameView,
@@ -60,7 +60,7 @@ export function combatPreview(
     const strikes = has(att.o, "doubleStrike") ? 2 : 1;
     const dt = has(att.o, "deathtouch");
     const link = has(att.o, "lifelink");
-    // Blessures de l'attaquant : répartition « tuer le plus de bloqueurs », le reste au joueur s'il piétine.
+    // The attacker's damage: assigned to kill as many blockers as possible, the rest to the player if it has trample.
     const dealAttacker = () => {
       if (blockers.length === 0) {
         hurt(defenderPlayer(a.defender), power);
@@ -90,7 +90,7 @@ export function combatPreview(
         if (has(b.o, "lifelink")) hurt(b.o.controller, -p);
       }
     };
-    // Étape d'initiative, puis étape normale.
+    // First-strike damage step, then the regular one.
     if (first) dealAttacker();
     dealBlockers(true);
     const attackerAlive = !dead(att, deathtouched.has(att.o.id));

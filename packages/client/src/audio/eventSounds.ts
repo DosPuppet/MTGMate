@@ -1,22 +1,22 @@
 /**
- * Événements du moteur → effets sonores (fonction pure, testée) : quel son, et quand.
- * Les délais suivent ceux des effets visuels de playEffects (store.ts) : un pas de 0,22 s par blessure,
- * gain de PV ou mort, pour que le coup s'entende au moment où le flash s'affiche.
+ * Engine events → sound effects (pure function, tested): which sound, and when.
+ * The delays follow those of the visual effects of playEffects (store.ts): a step of 0.22 s per damage,
+ * life gain or death, so that the hit is heard when the flash shows.
  */
 import type { CardFace, GameEvent, GameView } from "@mtgx/engine";
 import type { SoundKey } from "./sounds";
 
 export interface Cue {
   key: SoundKey;
-  /** Secondes après la réception de la mise à jour. */
+  /** Seconds after the update is received. */
   delay: number;
-  /** Multiplicateur de volume (piles de sons regroupées : un peu plus fort). */
+  /** Volume multiplier (stacks of grouped sounds: a little louder). */
   gain: number;
 }
 
 const STEP = 0.22;
 const MAX_DELAY = 2.2;
-/** Au-delà, une série du même son (12 jetons qui meurent) est jouée une seule fois, plus fort. */
+/** Beyond this, a series of the same sound (12 tokens dying) is played only once, louder. */
 const MAX_REPEAT = 3;
 
 const PERMANENT_TYPES = /\b(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)\b/;
@@ -26,7 +26,7 @@ export function soundsFor(events: GameEvent[], view: GameView, prev: GameView | 
   let step = 0;
   const at = () => Math.min(step * STEP, MAX_DELAY);
   const add = (key: SoundKey) => cues.push({ key, delay: at(), gain: 1 });
-  // Les sons liés à un effet visuel avancent d'un pas, comme playEffects.
+  // The sounds tied to a visual effect move one step forward, like playEffects.
   const addStep = (key: SoundKey) => {
     add(key);
     step += 1;
@@ -59,7 +59,7 @@ export function soundsFor(events: GameEvent[], view: GameView, prev: GameView | 
         add("ability");
         break;
       case "resolve": {
-        // Seul un sort de permanent « se pose » : les autres sorts s'entendent par leurs effets.
+        // Only a permanent spell "lands": the other spells are heard through their effects.
         const item = prev?.stack.find((i) => i.id === e.stackId);
         const face = faces[e.defId];
         const permanent = face && PERMANENT_TYPES.test(face.typeLine) && !/\b(Instant|Sorcery)\b/.test(face.typeLine);
@@ -77,7 +77,7 @@ export function soundsFor(events: GameEvent[], view: GameView, prev: GameView | 
         if (e.blocks.length) add("block");
         break;
       case "damage":
-        // Blessures aux joueurs : entendues par l'événement « life » qui suit.
+        // Damage to players: heard through the "life" event that follows.
         if (e.targetDefId && e.amount > 0) addStep(e.amount >= 5 ? "hitHeavy" : "hit");
         break;
       case "life":
@@ -105,7 +105,7 @@ export function soundsFor(events: GameEvent[], view: GameView, prev: GameView | 
     }
   }
 
-  // Vos terrains qui viennent d'être engagés (paiement du mana) : aucun événement moteur, on compare les vues.
+  // Your lands that were just tapped (mana payment): no engine event, the views are compared.
   if (prev) {
     const wasUntapped = new Set(prev.battlefield.filter((o) => !o.tapped).map((o) => o.id));
     const tapped = view.battlefield.filter(
@@ -117,7 +117,7 @@ export function soundsFor(events: GameEvent[], view: GameView, prev: GameView | 
   return collapse(cues);
 }
 
-/** Une série de plus de MAX_REPEAT sons identiques devient un seul son, un peu plus fort. */
+/** A series of more than MAX_REPEAT identical sounds becomes a single sound, a little louder. */
 function collapse(cues: Cue[]): Cue[] {
   const counts = new Map<SoundKey, number>();
   for (const c of cues) counts.set(c.key, (counts.get(c.key) ?? 0) + 1);

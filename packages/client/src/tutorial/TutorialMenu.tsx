@@ -1,5 +1,7 @@
-/** Menu du tutoriel : tout dérouler, reprendre là où vous vous êtes arrêté, ou choisir une leçon. */
+/** Tutorial menu: play everything through, resume where you left off, or choose a lesson. */
+import { useT } from "../localize";
 import { useGame } from "../store";
+import { textIn } from "../translate";
 import { LESSONS, lessonById } from "./lessons";
 import { useTutorial } from "./store";
 
@@ -8,22 +10,25 @@ export function TutorialMenu() {
   const start = useTutorial((t) => t.start);
   const resetProgress = useTutorial((t) => t.resetProgress);
   const backToLobby = useGame((s) => s.backToLobby);
+  const lang = useGame((s) => s.lang);
+  const t = useT();
   const resume = lessonById(progress.current);
   const allDone = LESSONS.every((l) => progress.done.includes(l.id));
   return (
     <div className="lobby tutorial-menu">
       <header className="lobby-head">
-        <h1>Apprendre à jouer</h1>
+        <h1>{t("Learn to play")}</h1>
       </header>
       <div className="lobby-body">
         <p className="tutorial-intro">
-          Des leçons courtes, sur de vrais extraits de partie, pour découvrir Magic: The Gathering et l'interface de Planecircle.
-          Votre progression est conservée : vous pouvez vous arrêter et reprendre plus tard.
+          {t(
+            "Short lessons, on real game excerpts, to discover Magic: The Gathering and the Planecircle interface. Your progress is saved: you can stop and resume later.",
+          )}
         </p>
         <div className="lobby-actions">
           {resume && (
             <button type="button" className="btn primary big" onClick={() => start(resume.id, true)}>
-              Reprendre : {resume.title}
+              {t("Resume: {title}", { title: resume.title })}
             </button>
           )}
           <button
@@ -31,13 +36,13 @@ export function TutorialMenu() {
             className={`btn big ${resume ? "" : "primary"}`}
             onClick={() => start(LESSONS[0]?.id ?? "", true)}
           >
-            {progress.done.length > 0 || resume ? "Tout reprendre depuis le début" : "Tout dérouler"}
+            {progress.done.length > 0 || resume ? t("Start everything over from the beginning") : t("Play all lessons")}
           </button>
           <button type="button" className="btn big" onClick={backToLobby}>
-            Retour
+            {t("Back")}
           </button>
         </div>
-        {allDone && <p className="hint">Toutes les leçons sont terminées. Bravo !</p>}
+        {allDone && <p className="hint">{t("All lessons are complete. Well done!")}</p>}
         <ol className="lesson-list">
           {LESSONS.map((l, i) => {
             const done = progress.done.includes(l.id);
@@ -52,10 +57,10 @@ export function TutorialMenu() {
                   <span className="lesson-num">{done ? "✓" : i + 1}</span>
                   <span className="lesson-body">
                     <span className="lesson-title">
-                      {l.title}
-                      {current && <span className="lesson-badge">à reprendre</span>}
+                      {textIn(lang, l.title)}
+                      {current && <span className="lesson-badge">{t("to resume")}</span>}
                     </span>
-                    <span className="lesson-summary">{l.summary}</span>
+                    <span className="lesson-summary">{textIn(lang, l.summary)}</span>
                   </span>
                 </button>
               </li>
@@ -66,9 +71,9 @@ export function TutorialMenu() {
           <button
             type="button"
             className="btn small ghost"
-            onClick={() => window.confirm("Effacer votre progression dans le tutoriel ?") && resetProgress()}
+            onClick={() => window.confirm(t("Erase your tutorial progress?")) && resetProgress()}
           >
-            Remettre à zéro
+            {t("Reset")}
           </button>
         )}
       </div>

@@ -1,12 +1,12 @@
 /**
- * Affichage générique de toute question posée par le moteur (ChoiceRequest) :
- * choisir des cartes ou des joueurs, un ordre, oui/non, un nombre, une répartition.
+ * Generic display of any question asked by the engine (ChoiceRequest):
+ * choose cards or players, an order, yes/no, a number, a division.
  */
 import type { ChoiceValue, GameView, ObjectView } from "@mtgx/engine";
 import { useEffect, useState } from "react";
 import { Card } from "../board/Card";
 import { faceName } from "../i18n";
-import { useLocalizedView } from "../localize";
+import { useLocalize, useLocalizedView, useT } from "../localize";
 import { useGame } from "../store";
 import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, togglePick } from "./boardChoice";
 import { NameSearch } from "./NameSearch";
@@ -16,12 +16,13 @@ type ChoiceView = Extract<NonNullable<GameView["pending"]>, { kind: "choice" }>;
 
 function Label({ id, objects, view }: { id: string; objects: ObjectView[]; view: GameView }) {
   const lang = useGame((s) => s.lang);
-  // Libellés fournis par le moteur pour les options qui ne sont ni des cartes ni des joueurs.
+  const t = useT();
+  // Labels given by the engine for the options that are neither cards nor players.
   const labels = view.pending?.kind === "choice" ? view.pending.request?.labels : undefined;
   if (labels?.[id]) return <>{labels[id]}</>;
   const o = objects.find((x) => x.id === id);
   if (o) return <>{faceName(o, lang)}</>;
-  return <>{id === view.viewer ? "Vous" : (view.players[id]?.name ?? id)}</>;
+  return <>{id === view.viewer ? t("You") : (view.players[id]?.name ?? id)}</>;
 }
 
 function Option({
@@ -49,14 +50,17 @@ function Option({
 const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 /**
- * Choix parmi des permanents (façon MTGA) : pas de fenêtre ; les options sont en surbrillance sur le plateau et ce
- * panneau rappelle l'effet (carte qui se résout, consigne) et la sélection. Le bouton principal (Espace) valide aussi.
+ * Choice among permanents (MTGA-style): no window; the options are highlighted on the board and this panel recalls the
+ * effect (resolving card, prompt) and the selection. The main button (Space) also confirms.
  */
 function BoardChoicePanel({ view, req }: { view: GameView; req: PickRequest }) {
   const decide = useGame((s) => s.decide);
   const selection = useGame((s) => s.selection);
   const lang = useGame((s) => s.lang);
+  const t = useT();
+  const loc = useLocalize();
   const source = choiceSource(view);
+  const effect = source?.effect && loc(source.effect);
   const valid = pickValid(req, selection);
   return (
     <div className="board-choice" role="dialog" aria-label={req.prompt}>
@@ -66,15 +70,17 @@ function BoardChoicePanel({ view, req }: { view: GameView; req: PickRequest }) {
             <strong>{faceName(source.face, lang)}</strong>
           </div>
           <Card face={source.face} width="var(--board-choice-w)" hoverable />
-          {source.effect && <div className="board-choice-effect">{source.effect}</div>}
+          {effect && <div className="board-choice-effect">{effect}</div>}
         </>
       )}
       <div className="effect-frame">
-        <span className="effect-frame-kind">À vous de choisir</span>
-        {capitalize(shortPrompt(req.prompt, source))}
+        <span className="effect-frame-kind">{t("You choose")}</span>
+        {capitalize(shortPrompt(req.prompt, source && { face: { ...source.face, name: faceName(source.face, lang) }, effect }))}
       </div>
       <p className="board-choice-hint">
-        Cliquez sur {req.max > 1 ? "les cartes" : "la carte"} en surbrillance — sélection : {selection.length} / {req.max}
+        {req.max > 1
+          ? t("Click the highlighted cards — selection: {n} / {max}", { n: selection.length, max: req.max })
+          : t("Click the highlighted card — selection: {n} / {max}", { n: selection.length, max: req.max })}
       </p>
       <div className="board-choice-actions">
         <button
@@ -82,7 +88,7 @@ function BoardChoicePanel({ view, req }: { view: GameView; req: PickRequest }) {
           className="btn small ghost"
           onClick={() => useGame.setState({ selection: req.suggested.map(String) })}
         >
-          Suggestion
+          {t("Suggestion")}
         </button>
         <button
           type="button"
@@ -90,7 +96,7 @@ function BoardChoicePanel({ view, req }: { view: GameView; req: PickRequest }) {
           disabled={!valid}
           onClick={() => decide({ type: "choose", values: selection })}
         >
-          {selection.length === 0 && req.min === 0 ? "Aucun" : "Valider"}
+          {selection.length === 0 && req.min === 0 ? t("None") : t("Confirm")}
         </button>
       </div>
     </div>
@@ -98,7 +104,7 @@ function BoardChoicePanel({ view, req }: { view: GameView; req: PickRequest }) {
 }
 
 export function ChoicePrompt({ view: raw }: { view: GameView }) {
-  // Noms de cartes des invites et libellés du moteur dans la langue de l'interface.
+  // Card names of the prompts and engine labels in the interface language.
   const view = useLocalizedView(raw);
   const pick = boardPick(view);
   if (pick) return <BoardChoicePanel view={view} req={pick} />;
@@ -107,11 +113,14 @@ export function ChoicePrompt({ view: raw }: { view: GameView }) {
 
 function ChoiceModal({ view }: { view: GameView }) {
   const decide = useGame((s) => s.decide);
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  const loc = useLocalize();
   const p = view.pending as ChoiceView;
   const req = p.request;
   const [values, setValues] = useState<ChoiceValue[]>(req?.suggested ?? []);
   const [query, setQuery] = useState("");
-  // Nouvelle question : on repart de la suggestion du moteur.
+  // New question: back to the engine's suggestion.
   useEffect(() => {
     setValues(req?.suggested ?? []);
     setQuery("");
@@ -126,7 +135,7 @@ function ChoiceModal({ view }: { view: GameView }) {
     case "pick": {
       const toggle = (id: string) => setValues((cur) => togglePick(req, cur.map(String), id));
       valid = values.length >= req.min && values.length <= req.max;
-      // Longues listes (types de créature…) : recherche, et la suggestion en tête.
+      // Long lists (creature types…): search, and the suggestion first.
       const long = req.options.length > 20;
       const norm = (t: string) =>
         t
@@ -144,15 +153,15 @@ function ChoiceModal({ view }: { view: GameView }) {
           {long && (
             <input
               className="choice-search"
-              placeholder="Rechercher…"
+              placeholder={t("Search…")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              // biome-ignore lint/a11y/noAutofocus: la recherche est l'action principale de cette fenêtre
+              // biome-ignore lint/a11y/noAutofocus: the search is the main action of this window
               autoFocus
             />
           )}
-          {/* Cartes de plusieurs cimetières (ou de l'exil) : un onglet par zone. */}
-          <ZoneTabbed view={view} objects={objects} ids={shown} selected={values.map(String)}>
+          {/* Cards of several graveyards (or of exile): one tab per zone. */}
+          <ZoneTabbed view={view} objects={objects} ids={shown} selected={values.map(String)} lang={lang}>
             {(inTab) => (
               <div className={`hand-picker ${long ? "long" : ""}`}>
                 {inTab.map((id) => (
@@ -169,8 +178,13 @@ function ChoiceModal({ view }: { view: GameView }) {
             )}
           </ZoneTabbed>
           <p className="hint">
-            {req.min === req.max ? `Choisissez ${req.min}` : `Choisissez de ${req.min} à ${req.max}`} — sélection :{" "}
-            {values.length}
+            {req.min === req.max
+              ? t("Choose {n} — selection: {count}", { n: req.min, count: values.length })
+              : t("Choose from {min} to {max} — selection: {count}", {
+                  min: req.min,
+                  max: req.max,
+                  count: values.length,
+                })}
           </p>
         </>
       );
@@ -206,7 +220,7 @@ function ChoiceModal({ view }: { view: GameView }) {
       break;
     }
     case "yesNo": {
-      // La carte qui pose la question (sort ou capacité qui se résout), comme dans le panneau des choix sur le plateau.
+      // The card asking the question (resolving spell or ability), as in the panel of the choices on the board.
       const source = choiceSource(view);
       return (
         <div className="modal-backdrop">
@@ -214,16 +228,16 @@ function ChoiceModal({ view }: { view: GameView }) {
             {source && (
               <div className="yes-no-source">
                 <Card face={source.face} width="var(--board-choice-w)" hoverable />
-                {source.effect && <div className="board-choice-effect">{source.effect}</div>}
+                {source.effect && <div className="board-choice-effect">{loc(source.effect)}</div>}
               </div>
             )}
             <h2>{req.prompt}</h2>
             <div className="modal-actions">
               <button type="button" className="btn" onClick={() => send([0])}>
-                Non
+                {t("No")}
               </button>
               <button type="button" className="btn primary" onClick={() => send([1])}>
-                Oui
+                {t("Yes")}
               </button>
             </div>
           </div>
@@ -231,7 +245,7 @@ function ChoiceModal({ view }: { view: GameView }) {
       );
     }
     case "name": {
-      // Nom de carte, de carte de terrain, type de créature : recherche dans tout le catalogue (sans la decklist adverse).
+      // Card name, land card name, creature type: search in the whole catalog (without the opponent's decklist).
       const value = String(values[0] ?? "");
       valid = !!value;
       body = (
@@ -259,8 +273,8 @@ function ChoiceModal({ view }: { view: GameView }) {
     case "divide": {
       const nums = req.among.map((_, i) => Number(values[i] ?? 0));
       const sum = nums.reduce((a, b) => a + b, 0);
-      // Mêmes contrôles que le moteur : au moins `minEach` chacun ; piétinement, le joueur seulement après des blessures
-      // mortelles à chaque bloqueur.
+      // Same checks as the engine: at least `minEach` each; trample, the player only after lethal damage to each
+      // blocker.
       const tooFew = !!req.minEach && nums.some((n) => n < (req.minEach as number));
       const lethal = req.lethal;
       const trampleTooEarly =
@@ -276,7 +290,7 @@ function ChoiceModal({ view }: { view: GameView }) {
               <div key={id} className="divide-row">
                 <span className="divide-name">
                   <Label id={id} objects={objects} view={view} />
-                  {req.lethal?.needs[id] !== undefined && <em> (mortel : {req.lethal.needs[id]})</em>}
+                  {req.lethal?.needs[id] !== undefined && <em> {t("(lethal: {n})", { n: req.lethal.needs[id] })}</em>}
                 </span>
                 <button type="button" className="btn small" onClick={() => bump(i, -1)}>
                   −
@@ -289,9 +303,9 @@ function ChoiceModal({ view }: { view: GameView }) {
             ))}
           </div>
           <p className="hint">
-            Réparti : {sum} / {req.total}
-            {trampleTooEarly && " — piétinement : d'abord des blessures mortelles à chaque bloqueur"}
-            {tooFew && ` — au moins ${req.minEach} pour chacun`}
+            {t("Assigned: {sum} / {total}", { sum, total: req.total })}
+            {trampleTooEarly && ` — ${t("trample: lethal damage to each blocker first")}`}
+            {tooFew && ` — ${t("at least {n} for each", { n: req.minEach ?? 0 })}`}
           </p>
         </>
       );
@@ -306,10 +320,10 @@ function ChoiceModal({ view }: { view: GameView }) {
         {body}
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={() => setValues(req.suggested)}>
-            Suggestion
+            {t("Suggestion")}
           </button>
           <button type="button" className="btn primary" disabled={!valid} onClick={() => send(values)}>
-            Valider
+            {t("Confirm")}
           </button>
         </div>
       </div>

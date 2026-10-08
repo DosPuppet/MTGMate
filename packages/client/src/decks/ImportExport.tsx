@@ -1,9 +1,16 @@
 /**
- * Import et export de decklists (formats MTGA et MTGO, noms anglais ou français).
+ * Import and export of decklists (MTGA and MTGO formats, English or French names).
  */
 import { CARDS, CardIndex, type DeckList, parseDeckList, serializeDeckList } from "@mtgx/cards";
 import { useMemo, useState } from "react";
+import { useT } from "../localize";
+import { useGame } from "../store";
+import { textIn } from "../translate";
 import { usePrintings } from "./printings";
+import { deckName } from "./store";
+
+/** Place of a JSX element in a translated sentence (split around it). */
+const SLOT = "\u0001";
 
 const INDEX = new CardIndex(CARDS);
 
@@ -30,7 +37,7 @@ export function ImportModal({
   onCreate,
   onReplace,
 }: {
-  /** Deck modifiable actuellement ouvert (null s'il est en lecture seule). */
+  /** Editable deck currently open (null if it is read only). */
   current: DeckList | null;
   onClose: () => void;
   onCreate: (deck: DeckList) => void;
@@ -38,7 +45,9 @@ export function ImportModal({
 }) {
   const [text, setText] = useState("");
   const [name, setName] = useState("");
-  // « (STA) 42 » : impression de la table, une fois chargée.
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  // "(STA) 42": printing of the table, once loaded.
   const table = usePrintings();
   const parsed = useMemo(() => parseDeckList(text, INDEX, table?.findPrinting), [text, table]);
   const mainCount = parsed.main.reduce((a, [n]) => a + n, 0);
@@ -46,14 +55,14 @@ export function ImportModal({
   const blocking = parsed.issues.filter((i) => i.kind === "unknown" || i.kind === "syntax");
   const deck: DeckList = {
     id: "import",
-    name: name || parsed.name || "Deck importé",
+    name: name || parsed.name || t("Imported deck"),
     colors: [],
     main: parsed.main,
     sideboard: parsed.sideboard,
-    // Section « Commander » (ou marque *CMDR*) : un deck Commander (PLAN-E).
+    // "Commander" section (or *CMDR* mark): a Commander deck (PLAN-E).
     ...(parsed.commander?.length ? { commander: parsed.commander, format: "commander" as const } : {}),
   };
-  /** Remplace, à la ligne indiquée, le nom inconnu par la suggestion. */
+  /** Replaces, on the given line, the unknown name with the suggestion. */
   const applySuggestion = (line: number, suggestion: string) => {
     const lines = text.split("\n");
     const l = lines[line - 1];
@@ -62,11 +71,11 @@ export function ImportModal({
     lines[line - 1] = `${m?.[1] ?? "1 "}${suggestion}`;
     setText(lines.join("\n"));
   };
+  const counts = t("Deck: {main} cards · Sideboard: {side}", { main: SLOT, side: SLOT }).split(SLOT);
   return (
-    <Modal title="Importer une decklist" onClose={onClose}>
+    <Modal title={t("Import a decklist")} onClose={onClose}>
       <p className="hint">
-        Collez une liste exportée de MTG Arena, MTGO ou d'un site de decks (« 4 Llanowar Elves (FDN) 227 », « 4 Elfes de Llanowar
-        »…).
+        {t('Paste a list exported from MTG Arena, MTGO or a deck site ("4 Llanowar Elves (FDN) 227", "4 Elfes de Llanowar"…).')}
       </p>
       <textarea
         className="decklist-input"
@@ -78,34 +87,38 @@ export function ImportModal({
       />
       <div className="import-report">
         <span>
-          Deck : <strong>{mainCount}</strong> cartes · Réserve : <strong>{sideCount}</strong>
+          {counts[0]}
+          <strong>{mainCount}</strong>
+          {counts[1]}
+          <strong>{sideCount}</strong>
+          {counts[2]}
         </span>
         {parsed.issues.map((i) => (
           <div key={`${i.line}-${i.kind}`} className={i.kind === "unimplemented" || i.kind === "ignored" ? "v-warn" : "v-error"}>
-            Ligne {i.line} : {i.message}
+            {t("Line {line}: {message}", { line: i.line, message: textIn(lang, i.message) })}
             {i.suggestion && (
               <button type="button" className="btn small" onClick={() => applySuggestion(i.line, i.suggestion as string)}>
-                Remplacer par « {i.suggestion} »
+                {t('Replace with "{name}"', { name: i.suggestion })}
               </button>
             )}
           </div>
         ))}
       </div>
       <label className="import-name">
-        Nom du deck
-        <input value={name} placeholder={parsed.name ?? "Deck importé"} onChange={(e) => setName(e.target.value)} />
+        {t("Deck name")}
+        <input value={name} placeholder={parsed.name ?? t("Imported deck")} onChange={(e) => setName(e.target.value)} />
       </label>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={onClose}>
-          Annuler
+          {t("Cancel")}
         </button>
         {current && (
           <button type="button" className="btn" disabled={!mainCount || blocking.length > 0} onClick={() => onReplace(deck)}>
-            Remplacer « {current.name} »
+            {t('Replace "{name}"', { name: current.name })}
           </button>
         )}
         <button type="button" className="btn primary" disabled={!mainCount || blocking.length > 0} onClick={() => onCreate(deck)}>
-          Créer un nouveau deck
+          {t("Create a new deck")}
         </button>
       </div>
     </Modal>
@@ -115,12 +128,20 @@ export function ImportModal({
 export function ExportModal({ deck, onClose }: { deck: DeckList; onClose: () => void }) {
   const [format, setFormat] = useState<"mtga" | "fr" | "en">("mtga");
   const [copied, setCopied] = useState(false);
-  const text = serializeDeckList(deck, CARDS, format === "mtga" ? { format: "mtga" } : { format: "plain", lang: format });
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  // A precon is exported under its name in the interface language.
+  const name = deckName(deck, lang);
+  const text = serializeDeckList(
+    { ...deck, name },
+    CARDS,
+    format === "mtga" ? { format: "mtga" } : { format: "plain", lang: format },
+  );
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // Repli : sélectionner le texte pour une copie manuelle.
+      // Fallback: select the text for a manual copy.
       (document.querySelector(".decklist-output") as HTMLTextAreaElement | null)?.select();
       document.execCommand?.("copy");
     }
@@ -131,33 +152,33 @@ export function ExportModal({ deck, onClose }: { deck: DeckList; onClose: () => 
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${deck.name.replace(/[^\w\- ]+/g, "").trim() || "deck"}.txt`;
+    a.download = `${name.replace(/[^\w\- ]+/g, "").trim() || "deck"}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
   return (
-    <Modal title={`Exporter « ${deck.name} »`} onClose={onClose}>
+    <Modal title={t('Export "{name}"', { name })} onClose={onClose}>
       <div className="seg export-format">
         <button type="button" className={format === "mtga" ? "on" : ""} onClick={() => setFormat("mtga")}>
           MTG Arena
         </button>
         <button type="button" className={format === "en" ? "on" : ""} onClick={() => setFormat("en")}>
-          Texte (anglais)
+          {t("Text (English)")}
         </button>
         <button type="button" className={format === "fr" ? "on" : ""} onClick={() => setFormat("fr")}>
-          Texte (français)
+          {t("Text (French)")}
         </button>
       </div>
       <textarea className="decklist-output" value={text} readOnly rows={14} spellCheck={false} />
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={onClose}>
-          Fermer
+          {t("Close")}
         </button>
         <button type="button" className="btn" onClick={download}>
-          Télécharger (.txt)
+          {t("Download (.txt)")}
         </button>
         <button type="button" className="btn primary" onClick={copy}>
-          {copied ? "Copié !" : "Copier"}
+          {copied ? t("Copied!") : t("Copy")}
         </button>
       </div>
     </Modal>

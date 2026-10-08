@@ -1,17 +1,16 @@
 /**
- * Images des cartes : directement depuis Scryfall, ou relayées par le serveur Planecircle (/scry/) quand le réseau
- * du joueur bloque cards.scryfall.io (proxy d'entreprise, d'école…).
+ * Card images: straight from Scryfall, or relayed by the Planecircle server (/scry/) when the player's network blocks
+ * cards.scryfall.io (company or school proxy…).
  *
- * - `auto` (par défaut) : direct, et bascule sur le relais si une image de Scryfall ne charge pas ;
- * - `on` / `off` : choix du joueur (case « Images par le serveur Planecircle »), mémorisé.
+ * - `auto` (default): direct, and switches to the relay if a Scryfall image does not load;
+ * - `on` / `off`: the player's choice (checkbox "Images through the Planecircle server"), remembered.
  *
- * Toute URL d'image affichée passe par `imageUrl`.
+ * Every image URL displayed goes through `imageUrl`.
  *
- * Illustrations personnelles (`tools/custom-art.ts`) : images locales servies sur /art/ (hors de Git). Elles ne remplacent
- * celles de Scryfall que pour les cartes d'un deck qui choisit l'impression personnelle (`CUSTOM_PRINTING` : tout le
- * préconstruit The Vision, ou une carte au choix dans l'éditeur de deck), les jetons et le dos des cartes d'un joueur dont
- * le deck en utilise, et quand la case « Illustrations personnelles » est cochée (par défaut ; mémorisé). Sans
- * /art/manifest.json sur le serveur, la case n'apparaît pas.
+ * Custom art (`tools/custom-art.ts`): local images served on /art/ (outside Git). They replace Scryfall's only for the
+ * cards of a deck that chooses the custom printing (`CUSTOM_PRINTING`: the whole The Vision precon, or any card chosen
+ * in the deck builder), the tokens and the card back of a player whose deck uses some, and when the "Custom art"
+ * checkbox is ticked (default; remembered). Without /art/manifest.json on the server, the checkbox does not appear.
  */
 import { create } from "zustand";
 
@@ -20,13 +19,13 @@ export type ImageMode = "auto" | "on" | "off";
 const SCRYFALL = "https://cards.scryfall.io/";
 const RELAY = "/scry/";
 const KEY = "mtgx.images";
-/** Petite image connue pour la détection (Forêt de FDN, format « small »). */
+/** Small known image for the detection (FDN Forest, "small" format). */
 const PROBE = "small/front/8/d/8d8432a7-1c8a-4cfb-947c-ecf9791063eb.jpg";
 const PROBE_TIMEOUT_MS = 4000;
 const ART = "/art/";
 const ART_KEY = "planecircle.customArt";
 
-/** /art/manifest.json : nom anglais de la carte (ou de la face) → fichier préparé. */
+/** /art/manifest.json: English name of the card (or of the face) → prepared file. */
 export interface ArtManifest {
   version: 1;
   cards: Record<string, string>;
@@ -53,10 +52,10 @@ function loadCustomOn(): boolean {
 
 interface ImageStore {
   mode: ImageMode;
-  /** Mode `auto` : Scryfall ne répond pas, le relais est utilisé. */
+  /** `auto` mode: Scryfall does not answer, the relay is used. */
   blocked: boolean;
   setMode(mode: ImageMode): void;
-  /** Illustrations personnelles du serveur (null : aucune). */
+  /** The server's custom art (null: none). */
   custom: ArtManifest | null;
   customOn: boolean;
   setCustomOn(on: boolean): void;
@@ -70,7 +69,7 @@ export const useImages = create<ImageStore>((set) => ({
       if (mode === "auto") localStorage.removeItem(KEY);
       else localStorage.setItem(KEY, mode);
     } catch {
-      // Stockage indisponible (navigation privée) : le choix vaut pour cette visite.
+      // Storage unavailable (private browsing): the choice holds for this visit.
     }
     set({ mode });
   },
@@ -81,17 +80,17 @@ export const useImages = create<ImageStore>((set) => ({
       if (customOn) localStorage.removeItem(ART_KEY);
       else localStorage.setItem(ART_KEY, "off");
     } catch {
-      // Stockage indisponible : le choix vaut pour cette visite.
+      // Storage unavailable: the choice holds for this visit.
     }
     set({ customOn });
   },
 }));
 
-/** Le relais est-il utilisé en ce moment ? */
+/** Is the relay in use right now? */
 export const relayActive = (s: Pick<ImageStore, "mode" | "blocked"> = useImages.getState()): boolean =>
   s.mode === "on" || (s.mode === "auto" && s.blocked);
 
-/** URL à afficher pour une image de Scryfall (relayée si besoin). */
+/** URL to display for a Scryfall image (relayed if needed). */
 export function imageUrl(url: string): string;
 export function imageUrl(url: string | undefined): string | undefined;
 export function imageUrl(url: string | undefined): string | undefined {
@@ -99,7 +98,7 @@ export function imageUrl(url: string | undefined): string | undefined {
   return RELAY + url.slice(SCRYFALL.length);
 }
 
-/** Illustration personnelle d'une carte (par son nom anglais, ou celui de sa première face) ou d'un jeton. */
+/** Custom art of a card (by its English name, or that of its first face) or of a token. */
 export function customImage(name: string, token = false): string | undefined {
   const { custom, customOn } = useImages.getState();
   if (!custom || !customOn) return undefined;
@@ -107,18 +106,18 @@ export function customImage(name: string, token = false): string | undefined {
   return file ? ART + file : undefined;
 }
 
-/** Le serveur a-t-il une illustration personnelle pour cette carte (case cochée ou non) ? */
+/** Does the server have custom art for this card (checkbox ticked or not)? */
 export function hasCustomArt(custom: ArtManifest | null, name: string): boolean {
   return !!custom && !!(custom.cards[name] ?? custom.cards[name.split(" // ")[0] ?? ""]);
 }
 
-/** Composants : se redessiner quand le relais s'active ou se coupe, ou que les illustrations personnelles changent. */
+/** Components: re-render when the relay turns on or off, or when the custom art changes. */
 export const useRelayActive = (): boolean => {
   useImages((s) => s.customOn && s.custom);
   return useImages(relayActive);
 };
 
-/** Charge /art/manifest.json s'il existe (au démarrage), et applique le dos des cartes personnel. */
+/** Loads /art/manifest.json if it exists (at start-up), and applies the custom card back. */
 export async function loadCustomArt(): Promise<void> {
   try {
     const res = await fetch(`${ART}manifest.json`, { cache: "no-cache" });
@@ -127,11 +126,11 @@ export async function loadCustomArt(): Promise<void> {
     if (custom?.version !== 1 || typeof custom.cards !== "object") return;
     useImages.setState({ custom: { ...custom, tokens: custom.tokens ?? {} } });
   } catch {
-    // Pas d'illustrations personnelles (ou hors ligne).
+    // No custom art (or offline).
   }
 }
 
-/** Dos personnel des cartes (s'il y en a un et que la case est cochée) : pour un joueur dont le deck en utilise. */
+/** Custom card back (if there is one and the checkbox is ticked): for a player whose deck uses some. */
 export function useCustomBack(): string | undefined {
   return useImages((s) => (s.customOn && s.custom?.back ? ART + s.custom.back : undefined));
 }
@@ -154,8 +153,8 @@ function loads(src: string): Promise<boolean> {
 
 let checking: Promise<void> | null = null;
 /**
- * Mode `auto` : Scryfall est-il joignable ? Sinon, on passe par le relais, à condition qu'il réponde
- * (hors ligne, inutile de basculer). Appelé au démarrage, et quand une image directe échoue.
+ * `auto` mode: can Scryfall be reached? Otherwise, the relay is used, provided it answers
+ * (offline, no point switching). Called at start-up, and when a direct image fails.
  */
 export function detectBlockedScryfall(): Promise<void> {
   if (useImages.getState().mode !== "auto" || useImages.getState().blocked) return Promise.resolve();

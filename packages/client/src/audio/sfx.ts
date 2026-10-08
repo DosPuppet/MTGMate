@@ -1,19 +1,19 @@
 /**
- * Effets sonores (Web Audio) : tampons décodés et mis en cache, variantes tirées au hasard,
- * légère variation de hauteur, garde-fous contre la cacophonie.
- * Le son ne doit jamais casser une partie : toute erreur (fichier, décodage, contexte refusé) est ignorée.
+ * Sound effects (Web Audio): decoded and cached buffers, randomly drawn variants,
+ * slight pitch variation, safeguards against cacophony.
+ * Sound must never break a game: any error (file, decoding, refused context) is ignored.
  */
 import { create } from "zustand";
 import { SOUND_FILES, SOUNDS, type SoundKey } from "./sounds";
 
 const BASE = `${import.meta.env.BASE_URL}sounds/`;
-/** Écart minimal entre deux lectures du même son. */
+/** Minimum gap between two plays of the same sound. */
 const MIN_GAP_MS = 60;
 const MAX_VOICES = 8;
 const STORAGE_KEY = "planecircle.audio";
 
 // ---------------------------------------------------------------------------
-// Réglages (préférence propre à ce navigateur)
+// Settings (preference specific to this browser)
 // ---------------------------------------------------------------------------
 
 interface AudioSettings {
@@ -39,7 +39,7 @@ export const useAudio = create<AudioSettings & { setVolume(v: number): void; tog
       const { volume, muted } = get();
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ volume, muted }));
     } catch {
-      // stockage indisponible (navigation privée…) : réglage non conservé
+      // storage unavailable (private browsing…): setting not kept
     }
   };
   return {
@@ -56,7 +56,7 @@ export const useAudio = create<AudioSettings & { setVolume(v: number): void; tog
 });
 
 // ---------------------------------------------------------------------------
-// Lecture
+// Playback
 // ---------------------------------------------------------------------------
 
 let ctx: AudioContext | null = null;
@@ -65,7 +65,7 @@ const buffers = new Map<string, Promise<AudioBuffer | null>>();
 const lastPlayed = new Map<SoundKey, number>();
 let voices = 0;
 
-/** Journal des sons joués (mode dev) : vérifié par les tests Playwright. */
+/** Log of the sounds played (dev mode): checked by the Playwright tests. */
 const devLog: string[] | null = import.meta.env.DEV ? [] : null;
 if (devLog) (window as unknown as { __sfxLog: string[] }).__sfxLog = devLog;
 
@@ -104,15 +104,15 @@ function load(file: string): Promise<AudioBuffer | null> {
 }
 
 /**
- * Les navigateurs bloquent le son tant que l'utilisateur n'a pas interagi avec la page :
- * on reprend le contexte au premier geste (appelé par les écouteurs de main.tsx).
+ * Browsers block sound until the user has interacted with the page:
+ * the context is resumed on the first gesture (called by the listeners of main.tsx).
  */
 export function unlockAudio(): void {
   const c = context();
   if (c?.state === "suspended") c.resume().catch(() => {});
 }
 
-/** Charge tous les sons à l'avance (début de partie), pour qu'ils partent sans latence. */
+/** Loads every sound in advance (start of the game), so that they play without latency. */
 export function preloadSounds(): void {
   for (const f of SOUND_FILES) void load(f);
 }
@@ -143,7 +143,7 @@ export function playSound(key: SoundKey, opts: { delay?: number; gain?: number }
       };
       src.start(c.currentTime + Math.max(0, (now - performance.now()) / 1000));
     } catch {
-      // lecture impossible : on continue sans son
+      // playback impossible: carry on without sound
     }
   });
   if ("layer" in def && def.layer) playSound(def.layer as SoundKey, opts);

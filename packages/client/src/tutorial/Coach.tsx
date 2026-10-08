@@ -1,12 +1,14 @@
 /**
- * Le guide du tutoriel : une bulle de texte près de l'élément concerné, entouré d'un anneau lumineux.
- * L'anneau ne capte pas les clics : l'élément reste jouable dessous.
+ * The tutorial guide: a text bubble next to the element concerned, which is surrounded by a glowing ring.
+ * The ring does not catch clicks: the element stays playable underneath.
  */
 import type { GameView } from "@mtgx/engine";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { ManaCost } from "../board/Card";
 import { findObjectEl } from "../board/layout";
+import { useT } from "../localize";
 import { useGame } from "../store";
+import { textIn } from "../translate";
 import { LESSONS, lessonById } from "./lessons";
 import { placeBubble, type Rect } from "./placement";
 import { stepText, type Target } from "./runtime";
@@ -26,7 +28,7 @@ const SELECTORS: Record<Exclude<Target, object>, string[]> = {
   endTurn: ['[data-tuto="end-turn"]'],
   log: [".sidebar .log"],
   preview: [".sidebar .preview"],
-  // Le panneau d'un sort adverse (bouton OK) s'il est affiché, sinon la pile.
+  // The panel of an opponent's spell (OK button) if it is shown, otherwise the stack.
   stack: [".stack-reveal", '[data-tuto="stack"]'],
   settings: [".sidebar .settings"],
 };
@@ -54,7 +56,7 @@ function targetElement(t: Target | undefined, v: GameView | null): Element | nul
   return null;
 }
 
-/** Ce que la bulle doit éviter de recouvrir : cartes et joueurs du plateau, main, boutons, fenêtres de choix. */
+/** What the bubble should avoid covering: cards and players on the board, hand, buttons, choice windows. */
 const OBSTACLES = ".board [data-oid], .board [data-oids], .action-panel, .stack-reveal, .modal, .banner";
 
 function rectOf(el: Element | null): Rect | null {
@@ -65,8 +67,8 @@ function rectOf(el: Element | null): Rect | null {
 const keyOf = (r: Rect | null) => (r ? `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.w)},${Math.round(r.h)}` : "");
 
 /**
- * Anneau autour de la cible et position de la bulle, suivis à chaque image
- * (animations, redimensionnement, cartes qui bougent).
+ * Ring around the target and position of the bubble, tracked on every frame
+ * (animations, resizing, moving cards).
  */
 function useCoachLayout(
   target: Target | undefined,
@@ -82,7 +84,7 @@ function useCoachLayout(
     let raf = 0;
     let frame = 0;
     const tick = () => {
-      // Tous les 4 images : assez pour suivre les cartes, sans mesurer tout le plateau en permanence.
+      // Every 4 frames: enough to follow the cards, without measuring the whole board all the time.
       if (frame++ % 4 === 0) {
         const ring = rectOf(targetElement(target, view));
         const b = bubble.current;
@@ -107,7 +109,7 @@ function useCoachLayout(
   return layout;
 }
 
-/** Texte du guide : **gras** et symboles de mana ({G}, {1}…). */
+/** Guide text: **bold** and mana symbols ({G}, {1}…). */
 export function RichText({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*|\{[^}]+\}(?:\{[^}]+\})*)/g);
   return (
@@ -126,30 +128,32 @@ const GAP = 14;
 const PAD = 6;
 
 export function Coach() {
-  const t = useTutorial();
-  const lesson = lessonById(t.lessonId);
-  const step = lesson?.steps[t.step];
+  const tuto = useTutorial();
+  const t = useT();
+  const lang = useGame((s) => s.lang);
+  const lesson = lessonById(tuto.lessonId);
+  const step = lesson?.steps[tuto.step];
   const ref = useRef<HTMLDivElement>(null);
-  const { ring: rect, pos } = useCoachLayout(t.finished ? undefined : step?.target, ref);
+  const { ring: rect, pos } = useCoachLayout(tuto.finished ? undefined : step?.target, ref);
   const [hidden, setHidden] = useState(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: la bulle réapparaît à chaque nouvelle étape
-  useEffect(() => setHidden(false), [t.lessonId, t.step, t.finished]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the bubble reappears at every new step
+  useEffect(() => setHidden(false), [tuto.lessonId, tuto.step, tuto.finished]);
   if (!lesson || !step) return null;
   const index = LESSONS.indexOf(lesson);
   const nextLesson = LESSONS[index + 1];
-  const tip = step.free && t.ctx ? step.tips?.find((x) => t.ctx && x.when(t.ctx))?.text : undefined;
+  const tip = step.free && tuto.ctx ? step.tips?.find((x) => tuto.ctx && x.when(tuto.ctx))?.text : undefined;
 
   if (hidden) {
     return (
       <button type="button" className="coach-reopen" onClick={() => setHidden(false)}>
-        Guide
+        {t("Guide")}
       </button>
     );
   }
 
   return (
     <>
-      {rect && !t.finished && (
+      {rect && !tuto.finished && (
         <div
           className={`coach-ring ${step.next ? "dim" : ""}`}
           style={{ left: rect.x - PAD, top: rect.y - PAD, width: rect.w + PAD * 2, height: rect.h + PAD * 2 }}
@@ -157,7 +161,7 @@ export function Coach() {
       )}
       <div
         ref={ref}
-        className={`coach ${t.finished ? "done" : ""}`}
+        className={`coach ${tuto.finished ? "done" : ""}`}
         style={{
           width: "min(380px, calc(100vw - 24px))",
           left: pos?.left ?? 12,
@@ -167,62 +171,62 @@ export function Coach() {
         role="dialog"
       >
         <div className="coach-head">
-          <span>
-            Leçon {index + 1}/{LESSONS.length} · {lesson.title}
-          </span>
-          {!t.finished && (
+          <span>{t("Lesson {n}/{total} · {title}", { n: index + 1, total: LESSONS.length, title: lesson.title })}</span>
+          {!tuto.finished && (
             <span className="coach-count">
-              {t.step + 1}/{lesson.steps.length}
+              {tuto.step + 1}/{lesson.steps.length}
             </span>
           )}
         </div>
-        {t.finished ? (
+        {tuto.finished ? (
           <>
             <div className="coach-text">
-              <strong>Leçon terminée !</strong>{" "}
-              {nextLesson ? `Suite : « ${nextLesson.title} ».` : "Vous avez terminé tout le tutoriel. Bravo !"}
+              <strong>{t("Lesson complete!")}</strong>{" "}
+              {nextLesson
+                ? t('Up next: "{title}".', { title: nextLesson.title })
+                : t("You have finished the whole tutorial. Well done!")}
             </div>
             <div className="coach-actions">
               {nextLesson && (
-                <button type="button" className={`btn small ${t.chain ? "primary" : ""}`} onClick={t.startNext}>
-                  Leçon suivante
+                <button type="button" className={`btn small ${tuto.chain ? "primary" : ""}`} onClick={tuto.startNext}>
+                  {t("Next lesson")}
                 </button>
               )}
-              <button type="button" className={`btn small ${t.chain && nextLesson ? "" : "primary"}`} onClick={t.quit}>
-                Menu du tutoriel
+              <button type="button" className={`btn small ${tuto.chain && nextLesson ? "" : "primary"}`} onClick={tuto.quit}>
+                {t("Tutorial menu")}
               </button>
-              <button type="button" className="btn small ghost" onClick={() => setHidden(true)} title="Masquer le guide">
-                Masquer
+              <button type="button" className="btn small ghost" onClick={() => setHidden(true)} title={t("Hide the guide")}>
+                {t("Hide")}
               </button>
             </div>
           </>
         ) : (
           <>
             <div className="coach-text">
-              <RichText text={stepText(step, t.ctx)} />
+              <RichText text={textIn(lang, stepText(step, tuto.ctx))} />
             </div>
             {tip && (
               <div className="coach-tip">
-                <RichText text={tip} />
+                <RichText text={textIn(lang, tip)} />
               </div>
             )}
             <div className="coach-actions">
               {step.next && (
-                <button type="button" className="btn small primary coach-next" onClick={t.next}>
-                  {t.step + 1 === lesson.steps.length ? "Terminer" : "Suivant"}
+                <button type="button" className="btn small primary coach-next" onClick={tuto.next}>
+                  {tuto.step + 1 === lesson.steps.length ? t("Finish") : t("Next")}
                 </button>
               )}
               <span className="coach-spacer" />
               {step.free && (
-                <button type="button" className="btn small ghost" onClick={() => setHidden(true)} title="Masquer le guide">
-                  Masquer
+                <button type="button" className="btn small ghost" onClick={() => setHidden(true)} title={t("Hide the guide")}>
+                  {t("Hide")}
                 </button>
               )}
-              <button type="button" className="btn small ghost" onClick={t.restart} title="Recommencer la leçon">
-                Recommencer
+              <button type="button" className="btn small ghost" onClick={tuto.restart} title={t("Restart the lesson")}>
+                {t("Restart")}
               </button>
-              <button type="button" className="btn small ghost" onClick={t.quit}>
-                Quitter
+              <button type="button" className="btn small ghost" onClick={tuto.quit}>
+                {t("Quit")}
               </button>
             </div>
           </>
