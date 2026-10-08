@@ -497,6 +497,29 @@ function liveView(s: GameState, id: ObjectId | null): LkiSnapshot | null {
   return id && s.objects[id] ? snapshot(s, id) : null;
 }
 
+/**
+ * Arrivées qui ne déclenchent rien (famille G, `triggerMod` `none` sur `enter`) : Torpor Orb, Hushbringer, Karn, Argent
+ * Defender (`everyone` : les capacités de tous les joueurs) ; Elesh Norn, Mother of Machines (`sources` : seulement celles
+ * des permanents de ses adversaires). Toute capacité que l'arrivée fait se déclencher est concernée (« arrive »,
+ * toucheterre…), retardées comprises ; `src` : la source de la capacité (absente : capacité d'un objet hors du champ de
+ * bataille, que seul `everyone` concerne).
+ */
+function entryMuted(s: GameState, ev: RulesEvent, src: Source | undefined): boolean {
+  if (ev.e !== "zone" || ev.to !== "battlefield") return false;
+  const v = liveView(s, ev.newId);
+  if (!v) return false;
+  const permanent = !!src && s.objects[src.id]?.zone === "battlefield";
+  return s.playerOrder.some((p) =>
+    playerStatics(s, p, "triggerMod").some(({ id, ab }) => {
+      const m = ab.triggerMod;
+      if (m?.effect !== "none" || m.on !== "enter") return false;
+      if (m.entering && !matchesView(v, m.entering, p, id)) return false;
+      if (m.everyone) return true;
+      return permanent && !!src && matchesView(src.view, m.sources ?? { controller: "you" }, p, id);
+    }),
+  );
+}
+
 /** L'événement correspond-il au déclencheur ? Renvoie les données de l'événement, ou null. */
 function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source): TriggerEventData | null {
   const me = src.view.controller;
@@ -504,19 +527,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "enters": {
       if (ev.e !== "zone" || ev.to !== "battlefield") return null;
       const v = liveView(s, ev.newId);
-      // Torpor Orb (créatures), Karn, Argent Defender (artefacts et créatures) : leur arrivée ne déclenche rien.
-      if (
-        v &&
-        s.playerOrder.some((p) =>
-          playerStatics(s, p, "triggerMod").some(
-            ({ id, ab }) =>
-              ab.triggerMod?.effect === "none" &&
-              ab.triggerMod.on === "enter" &&
-              (!ab.triggerMod.entering || matchesView(v, ab.triggerMod.entering, p, id)),
-          ),
-        )
-      )
-        return null;
       if (t.fromZone) {
         const arrived = ev.newId ? s.objects[ev.newId] : undefined;
         // Lancé depuis le cimetière ou l'exil : le sort est passé par la pile.
@@ -1038,7 +1048,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       // Zone de commandement : les emblèmes ; d'une carte, seulement « depuis la zone de commandement » (113.6, éminence).
       if (zone === "command" && !s.objects[src.id]?.isToken && !ab.fromCommand) return;
       const matched = matchTrigger(s, ev, ab.trigger, src);
-      if (!matched) return;
+      if (!matched || entryMuted(s, ev, src)) return;
       const defending = s.combat ? frozenDefendingPlayer(s, src.id, matched.objectId) : undefined;
       const data = defending ? { ...matched, defendingPlayer: defending } : matched;
       // « … pour la première fois chaque tour » : le premier événement est noté avant la condition « si … » (603.4).
@@ -1119,6 +1129,7 @@ function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
     const src = delayedSource(s, d);
     const data = matchTrigger(s, ev, d.on, src);
     if (!data?.objectId || (d.watch && !d.watch.includes(data.objectId))) continue;
+    if (entryMuted(s, ev, undefined)) continue;
     const c = d.ability.condition;
     if (c && !checkCondition(s, c, d.controller, d.sourceId, data.objectId, data)) continue;
     pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability, data);

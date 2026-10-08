@@ -151,6 +151,16 @@ describe("Mutant Menace (EDH)", () => {
   });
 
   describe("créatures et sorts", () => {
+    it("Alpha Deathclaw : en arrivant, détruit un permanent ciblé, quel que soit son type (« permanent ciblé »)", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 5), "Forest", "Forest"], hand: ["Alpha Deathclaw"] },
+        p2: { battlefield: ["Plains", "Bear Cub"] },
+      });
+      const plains = idOf(s, "p2", "battlefield", "Plains");
+      s = settle(castIt(s, "p1", "Alpha Deathclaw"), picking([plains]));
+      expect(idsOf(s, "p2", "graveyard", "Plains")).toHaveLength(1);
+    });
+
     it("Glowing One : il donne quatre marqueurs de radiation au joueur qu'il blesse", () => {
       let s = scenario({ p1: { battlefield: ["Glowing One"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Glowing One")]));

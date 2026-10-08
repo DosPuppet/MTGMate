@@ -1009,7 +1009,9 @@ export interface TriggerMod {
   entering?: ObjectFilter;
   /**
    * Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). `attached: "host"` : le
-   * permanent auquel la source de la statique est attachée, y compris s'il vient de quitter le champ de bataille.
+   * permanent auquel la source de la statique est attachée, y compris s'il vient de quitter le champ de bataille. Avec
+   * `effect: "none"` : les permanents dont l'arrivée ne déclenche pas les capacités (Elesh Norn, Mother of Machines :
+   * `controller: "opponent"`).
    */
   sources?: ObjectFilter;
   /** Aussi les capacités de vos emblèmes (The Masamune : « … ou d'un emblème que vous possédez »). */

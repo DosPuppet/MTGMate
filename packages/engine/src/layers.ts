@@ -136,7 +136,7 @@ export function linkedColors(s: GameState, linked: ObjectId[] | undefined): Colo
 
 function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: ObjectFilter): boolean {
   if (!d) return false;
-  if (f.types && !f.types.some((t) => d.types.includes(t))) return false;
+  if (f.types?.length && !f.types.some((t) => d.types.includes(t))) return false;
   if (f.notTypes?.some((t) => d.types.includes(t))) return false;
   if (f.subtype && !d.subtypes.includes(f.subtype)) return false;
   if (f.notSubtype && d.subtypes.includes(f.notSubtype)) return false;

@@ -19,6 +19,7 @@ describe("decks Commander", () => {
       "fantastic-four",
       "multiverse-reforged",
       "mutant-menace",
+      "nissa",
       "rakdos",
       "turtle-power",
       "ur-dragon",

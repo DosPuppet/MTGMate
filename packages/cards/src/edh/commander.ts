@@ -6,6 +6,7 @@
 import type { CardScript, ManaType } from "@mtgx/engine";
 import {
   ANY_COLOR,
+  activated,
   amount,
   cond,
   entersWith,
@@ -61,6 +62,18 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
   "Spire Garden": twoOpponentsLand("R", "G"),
   "Undergrowth Stadium": twoOpponentsLand("B", "G"),
   "Rejuvenating Springs": twoOpponentsLand("G", "U"),
+  "Training Center": twoOpponentsLand("U", "R"),
+  "Command Beacon": {
+    abilities: [
+      manaAbility("C"),
+      activated({
+        tap: true,
+        sacrifice: true,
+        effects: [fx.moveTo(ref.zone("command", ref.you, { commander: true }), { to: "hand" })],
+        label: "Mettez votre commandant dans votre main depuis la zone de commandement",
+      }),
+    ],
+  },
   "Fierce Guardianship": {
     altCost: freeWithCommander,
     spell: spell([target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")], [fx.counter(ref.target())]),

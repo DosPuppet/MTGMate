@@ -1518,7 +1518,8 @@ export const fx = {
       filter?: ObjectFilter;
       count?: Amount;
       to?: MoveSpec;
-      rest?: "bottom" | "graveyard" | "top" | "hand";
+      /** `reorder` : le reste est remis au-dessus dans l'ordre de votre choix ; `top` : il y reste, dans le même ordre. */
+      rest?: "bottom" | "graveyard" | "top" | "reorder" | "hand";
       maxManaValue?: Amount;
       maxTotalManaValue?: number;
       store?: string;

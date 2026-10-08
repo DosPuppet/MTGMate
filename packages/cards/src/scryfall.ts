@@ -898,8 +898,11 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Ruée (702.109) et spectacle (702.137) : coûts alternatifs.
   const dash = /^Dash ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  // Émerger (702.119) : en sacrifiant une créature, coût réduit de sa valeur de mana.
-  const emerge = /^Emerge ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Émerger (702.119) : en sacrifiant une créature, coût réduit de sa valeur de mana ; « Emerge from artifact » (702.119a,
+  // Crabomination) : en sacrifiant un artefact.
+  const emergeMatch = /^Emerge (?:from (artifact) )?((?:\{[^}]+\})+)/m.exec(raw.oracleText);
+  const emerge = emergeMatch?.[2];
+  const emergeFrom: CardType = emergeMatch?.[1] ? "Artifact" : "Creature";
   const spectacle = /^Spectacle ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Exaltation (702.83), affinité pour les artefacts (702.41), modulaire (702.43), greffe (702.58), extorsion (702.101).
   const exalted = /^Exalted\b/m.test(raw.oracleText);
@@ -1197,9 +1200,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
               : emerge
                 ? {
                     mana: parseManaCost(emerge),
-                    condition: dsl.cond.controls({ types: ["Creature"] }),
-                    label: `Émerger — ${emerge}`,
-                    pay: { sacrificeReduce: { types: ["Creature"] } },
+                    condition: dsl.cond.controls({ types: [emergeFrom] }),
+                    label: emergeFrom === "Artifact" ? `Émerger d'un artefact — ${emerge}` : `Émerger — ${emerge}`,
+                    pay: { sacrificeReduce: { types: [emergeFrom] } },
                   }
                 : spectacle
                   ? { mana: parseManaCost(spectacle), condition: dsl.cond.opponentLostLife, label: `Spectacle — ${spectacle}` }

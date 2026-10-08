@@ -163,6 +163,36 @@
   ]
  },
  {
+  "name": "Agent of Treachery",
+  "number": "43",
+  "rarity": "rare",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Creature — Human Rogue",
+  "oracleText": "When this creature enters, gain control of target permanent.\nAt the beginning of your end step, if you control three or more permanents you don't own, draw three cards.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/c/cc6686e6-4535-49be-b0b3-e76464656cd2.jpg?1783933017",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/c/cc6686e6-4535-49be-b0b3-e76464656cd2.jpg?1783933017",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Agent de traîtrise",
+   "typeLine": "Créature : humain et gredin",
+   "text": "Quand l'Agent de traîtrise arrive sur le champ de bataille, acquérez le contrôle d'un permanent ciblé.\nAu début de votre étape de fin, si vous contrôlez au moins trois permanents que vous ne possédez pas, piochez trois cartes.",
+   "image": "https://cards.scryfall.io/normal/front/5/7/57f56ead-068b-4d0e-b08d-6a0950c28542.jpg?1782918057"
+  },
+  "origin": "M20",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Akroma, Angel of Fury",
   "number": "19",
   "rarity": "mythic",
@@ -688,6 +718,40 @@
    "image": "https://cards.scryfall.io/normal/front/2/3/2349292c-d9d3-4669-b92d-f88b930a5cb7.jpg?1782770334"
   },
   "origin": "FIC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Avacyn, Angel of Hope",
+  "number": "477",
+  "rarity": "mythic",
+  "manaCost": "{5}{W}{W}{W}",
+  "cmc": 8,
+  "typeLine": "Legendary Creature — Angel",
+  "oracleText": "Flying, vigilance, indestructible\nOther permanents you control have indestructible.",
+  "power": "8",
+  "toughness": "8",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Indestructible",
+   "Vigilance"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/4/74e5dcec-ef1d-4461-bb23-61d98ff082dd.jpg?1783907976",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/74e5dcec-ef1d-4461-bb23-61d98ff082dd.jpg?1783907976",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Avacyn, ange de l'espoir",
+   "typeLine": "Créature légendaire — ange",
+   "text": "Vol, vigilance, indestructible\nLes autres permanents que vous contrôlez ont l'indestructible.",
+   "image": "https://cards.scryfall.io/normal/front/6/0/60cad580-22d1-4dcb-a5a2-93c1a043b8a2.jpg?1782818387"
+  },
+  "origin": "INR",
   "colorIdentity": [
    "W"
   ]
@@ -1619,6 +1683,74 @@
   "colorIdentity": []
  },
  {
+  "name": "Boggart Trawler // Boggart Bog",
+  "number": "243",
+  "rarity": "uncommon",
+  "layout": "modal_dfc",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Creature — Goblin",
+  "oracleText": "When this creature enters, exile target player's graveyard.",
+  "power": "3",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/0/d0d484a6-5610-4f1d-95ec-eda273c255e4.jpg?1783911234",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d0d484a6-5610-4f1d-95ec-eda273c255e4.jpg?1783911234",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Boggart Trawler",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "When this creature enters, exile target player's graveyard.",
+    "power": "3",
+    "toughness": "1",
+    "colors": [
+     "B"
+    ],
+    "image": "https://cards.scryfall.io/normal/front/d/0/d0d484a6-5610-4f1d-95ec-eda273c255e4.jpg?1783911234",
+    "fr": {
+     "name": "Charieuse boggarte",
+     "typeLine": "Créature — gobelin",
+     "text": "Quand la Charieuse boggarte arrive sur le champ de bataille, exilez le cimetière d'un joueur ciblé.\nTerrain\n{T} : Ajoutez {B}.",
+     "image": "https://cards.scryfall.io/normal/front/2/4/241f4394-a0e7-47ad-bca3-0b4d2c68dbc2.jpg?1782792803"
+    }
+   },
+   {
+    "name": "Boggart Bog",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {B}.",
+    "colors": [],
+    "image": "https://cards.scryfall.io/normal/back/d/0/d0d484a6-5610-4f1d-95ec-eda273c255e4.jpg?1783911234",
+    "fr": {
+     "name": "Marécage aux boggarts",
+     "typeLine": "Terrain",
+     "text": "Au moment où le Marécage aux boggarts arrive sur le champ de bataille, vous pouvez payer 3 points de vie. Si vous ne le faites pas, il arrive sur le champ de bataille engagé.\n{T} : Ajoutez {B}.\nGobelin\n{2}{B}",
+     "image": "https://cards.scryfall.io/normal/back/2/4/241f4394-a0e7-47ad-bca3-0b4d2c68dbc2.jpg?1782792803"
+    }
+   }
+  ],
+  "fr": {
+   "name": "Charieuse boggarte",
+   "typeLine": "Créature — gobelin",
+   "text": "Quand la Charieuse boggarte arrive sur le champ de bataille, exilez le cimetière d'un joueur ciblé.\nTerrain\n{T} : Ajoutez {B}.",
+   "image": "https://cards.scryfall.io/normal/front/2/4/241f4394-a0e7-47ad-bca3-0b4d2c68dbc2.jpg?1782792803"
+  },
+  "origin": "MH3",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Bojuka Bog",
   "number": "296",
   "rarity": "common",
@@ -2427,6 +2559,33 @@
   ]
  },
  {
+  "name": "Command Beacon",
+  "number": "352",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}, Sacrifice this land: Put your commander into your hand from the command zone.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/3/435e9678-9ff3-4e5d-8061-3f806e1c2ed2.jpg?1783906993",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/3/435e9678-9ff3-4e5d-8061-3f806e1c2ed2.jpg?1783906993",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Flambeau du Commandement",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T}, sacrifiez ce terrain : Mettez votre commandant dans votre main depuis la zone de commandement.",
+   "image": "https://cards.scryfall.io/normal/front/e/7/e7c30fc4-9111-42be-8db5-4d59de0289bf.jpg?1782772953"
+  },
+  "origin": "TDC",
+  "colorIdentity": []
+ },
+ {
   "name": "Command Tower",
   "number": "22",
   "rarity": "common",
@@ -2698,6 +2857,38 @@
   ]
  },
  {
+  "name": "Crabomination",
+  "number": "85",
+  "rarity": "rare",
+  "manaCost": "{4}{B}{B}",
+  "cmc": 6,
+  "typeLine": "Creature — Crab Demon",
+  "oracleText": "Emerge from artifact {5}{B}{B} (You may cast this spell by sacrificing an artifact and paying the emerge cost reduced by that artifact's mana value.)\nWhen this creature enters, target opponent exiles the top card of their library, a card at random from their graveyard, and a card at random from their hand. You may cast a spell from among cards exiled this way without paying its mana cost.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Emerge"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/3/f328d6e0-d808-4abe-b6a2-cc557b27c329.jpg?1783911283",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/3/f328d6e0-d808-4abe-b6a2-cc557b27c329.jpg?1783911283",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Crabomination",
+   "typeLine": "Créature — crabe et démon",
+   "text": "Émergence d'artefact {5}{B}{B} (Vous pouvez lancer ce sort en sacrifiant un artefact et en payant le coût d'émergence, moins la valeur de mana de l'artefact sacrifié.)\nQuand la Crabomination arrive sur le champ de bataille, un adversaire ciblé exile la carte du dessus de sa bibliothèque, une carte au hasard depuis son cimetière, et une carte au hasard depuis sa main. Vous pouvez lancer un sort parmi les cartes exilées de cette manière sans payer son coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/c/1/c1e9aca8-5e3c-4d64-a139-66eb2b95c5b9.jpg?1782793782"
+  },
+  "origin": "MH3",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Creeping Bloodsucker",
   "number": "415",
   "rarity": "common",
@@ -2726,6 +2917,30 @@
   "colorIdentity": [
    "B"
   ]
+ },
+ {
+  "name": "Crucible of Worlds",
+  "number": "303",
+  "rarity": "mythic",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "You may play lands from your graveyard.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/f/7f4893ef-f983-418b-b7a4-5f073c844545.jpg?1783921793",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7f4893ef-f983-418b-b7a4-5f073c844545.jpg?1783921793",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Creuset des mondes",
+   "typeLine": "Artefact",
+   "text": "Vous pouvez jouer des terrains depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/d/6/d6d867ee-f20e-40c8-a6fc-6d80e64423f1.jpg?1782847114"
+  },
+  "origin": "2X2",
+  "colorIdentity": []
  },
  {
   "name": "Cruel Celebrant",
@@ -3552,16 +3767,16 @@
     }
    }
   ],
-  "origin": "TMC",
-  "colorIdentity": [
-   "R",
-   "U"
-  ],
   "fr": {
    "name": "Double saut // Coup de pied volant",
    "typeLine": "Éphémère",
    "text": "Mettez un marqueur de vol sur une créature ciblée que vous contrôlez. Jusqu'à la fin du tour, elle a une force et une endurance de base de 5/5.\nFusion (Vous pouvez lancer l'une ou les deux moitiés de cette carte depuis votre main.)"
-  }
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "R",
+   "U"
+  ]
  },
  {
   "name": "Dragon Man, Reformed Robot",
@@ -3957,6 +4172,37 @@
   ]
  },
  {
+  "name": "Eiganjo, Seat of the Empire",
+  "number": "268",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {W}.\nChannel — {2}{W}, Discard this card: It deals 4 damage to target attacking or blocking creature. This ability costs {1} less to activate for each legendary creature you control.",
+  "colors": [],
+  "keywords": [
+   "Channel"
+  ],
+  "producedMana": [
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/3/c375a022-5b57-496d-a802-e4ea8376e9e4.jpg?1783923818",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c375a022-5b57-496d-a802-e4ea8376e9e4.jpg?1783923818",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Eiganjo, siège de l'Empire",
+   "typeLine": "Terrain légendaire",
+   "text": "{T} : Ajoutez {W}.\nTransfert — {2}{W}, défaussez-vous d'Eiganjo, siège de l'Empire : Il inflige 4 blessures à une créature attaquante ou bloqueuse ciblée. Cette capacité coûte {1} de moins à activer pour chaque créature légendaire que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/2/b/2b7f18ee-ce92-477b-82dd-0f728ebc7338.jpg?1782861114"
+  },
+  "origin": "NEO",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Electric Seaweed",
   "number": "23",
   "rarity": "rare",
@@ -4023,6 +4269,38 @@
   ]
  },
  {
+  "name": "Elesh Norn, Mother of Machines",
+  "number": "10",
+  "rarity": "mythic",
+  "manaCost": "{4}{W}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Phyrexian Praetor",
+  "oracleText": "Vigilance\nIf a permanent entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.\nPermanents entering don't cause abilities of permanents your opponents control to trigger.",
+  "power": "4",
+  "toughness": "7",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Vigilance"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/4/44dcab01-1d13-4dfc-ae2f-fbaa3dd35087.jpg?1783918082",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/44dcab01-1d13-4dfc-ae2f-fbaa3dd35087.jpg?1783918082",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Elesh Norn, Mère des machines",
+   "typeLine": "Créature légendaire : phyrexian et praetor",
+   "text": "Vigilance\nSi l'arrivée sur le champ de bataille d'un permanent provoque le déclenchement d'une capacité déclenchée d'un permanent que vous contrôlez, cette capacité se déclenche une fois de plus.\nLes permanents qui arrivent sur le champ de bataille ne provoquent pas le déclenchement des capacités de permanents que vos adversaires contrôlent.",
+   "image": "https://cards.scryfall.io/normal/front/2/c/2c96c728-7623-48d9-9be9-470ea8f99654.jpg?1782830211"
+  },
+  "origin": "ONE",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Elspeth, Sun's Champion",
   "number": "24",
   "rarity": "mythic",
@@ -4046,6 +4324,72 @@
    "image": "https://cards.scryfall.io/normal/front/d/4/d44563ce-3299-443e-9608-e13ac8e439ea.jpg?1790692881"
   },
   "origin": "FRC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Emeria Angel",
+  "number": "114",
+  "rarity": "rare",
+  "manaCost": "{2}{W}{W}",
+  "cmc": 4,
+  "typeLine": "Creature — Angel",
+  "oracleText": "Flying\nLandfall — Whenever a land you control enters, you may create a 1/1 white Bird creature token with flying.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Landfall",
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/4/2406ab7c-c6be-421a-a92c-048441a01acd.jpg?1783907128",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/2406ab7c-c6be-421a-a92c-048441a01acd.jpg?1783907128",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ange d'Éméria",
+   "typeLine": "Créature — ange",
+   "text": "Vol\nToucheterre — À chaque fois qu'un terrain que vous contrôlez arrive, vous pouvez créer un jeton de créature 1/1 blanche Oiseau avec le vol.",
+   "image": "https://cards.scryfall.io/normal/front/c/0/c06c74dc-98cc-45fa-9f1f-efa968ee7893.jpg?1782773924"
+  },
+  "origin": "TDC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Emeria Shepherd",
+  "number": "27",
+  "rarity": "rare",
+  "manaCost": "{5}{W}{W}",
+  "cmc": 7,
+  "typeLine": "Creature — Angel",
+  "oracleText": "Flying\nLandfall — Whenever a land you control enters, you may return target nonland permanent card from your graveyard to your hand. If that land is a Plains, you may return that nonland permanent card to the battlefield instead.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Landfall",
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/8/08ef3822-592f-456f-823d-a4d5cc85ddf9.jpg?1789752831",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08ef3822-592f-456f-823d-a4d5cc85ddf9.jpg?1789752831",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bergère d'Éméria",
+   "typeLine": "Créature : ange",
+   "text": "Vol\nToucheterre — À chaque fois qu'un terrain arrive sur le champ de bataille sous votre contrôle, vous pouvez renvoyer une carte de permanent non-terrain ciblée depuis votre cimetière dans votre main. Si ce terrain est une plaine, vous pouvez renvoyer cette carte de permanent non-terrain sur le champ de bataille à la place.",
+   "image": "https://cards.scryfall.io/normal/front/f/d/fd3cf62b-9b12-4802-b1f4-c7498b443e90.jpg?1782902519"
+  },
+  "origin": "FDC",
   "colorIdentity": [
    "W"
   ]
@@ -5385,6 +5729,38 @@
   ]
  },
  {
+  "name": "Gandalf, Shadow's Foe",
+  "number": "99",
+  "rarity": "mythic",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Legendary Creature — Avatar Wizard",
+  "oracleText": "Vigilance\nWhen Gandalf enters, exile up to three target lands you control, then return them to the battlefield tapped under their owner's control.\nLandfall — Whenever a land you control enters, draw a card and put a +1/+1 counter on Gandalf.",
+  "power": "3",
+  "toughness": "4",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Vigilance",
+   "Landfall"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/6/c659c9e5-5ec6-4c7f-80b2-e1782e6c3334.jpg?1785323570",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c659c9e5-5ec6-4c7f-80b2-e1782e6c3334.jpg?1785323570",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Gandalf, ennemi de l'ombre",
+   "text": "Vigilance\nQuand Gandalf arrive, exilez jusqu'à trois terrains ciblés que vous contrôlez, puis renvoyez-les sur le champ de bataille, engagés, sous le contrôle de leur propriétaire.\nToucheterre - À chaque fois qu'un terrain que vous contrôlez arrive, piochez une carte et mettez un marqueur +1/+1 sur Gandalf.",
+   "image": "https://cards.scryfall.io/normal/front/f/7/f72bd90b-4b17-4867-a54c-df9d66664678.jpg?1786550661"
+  },
+  "origin": "HOC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Gatta and Luzzu",
   "number": "19",
   "rarity": "rare",
@@ -5444,6 +5820,40 @@
   "origin": "FIC",
   "colorIdentity": [
    "G"
+  ]
+ },
+ {
+  "name": "Geode Rager",
+  "number": "144",
+  "rarity": "rare",
+  "manaCost": "{4}{R}{R}",
+  "cmc": 6,
+  "typeLine": "Creature — Elemental",
+  "oracleText": "First strike\nLandfall — Whenever a land you control enters, goad each creature target player controls. (Until your next turn, those creatures attack each combat if able and attack a player other than you if able.)",
+  "power": "4",
+  "toughness": "3",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Goad",
+   "First strike",
+   "Landfall"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/6/f6ba7b25-02bd-4e01-9920-ec84e89250b3.jpg?1783918676",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/6/f6ba7b25-02bd-4e01-9920-ec84e89250b3.jpg?1783918676",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Furie de géode",
+   "typeLine": "Créature — élémental",
+   "text": "Initiative\nToucheterre — À chaque fois qu'un terrain arrive sur le champ de bataille sous votre contrôle, incitez chaque créature qu'un joueur ciblé contrôle. (Jusqu'à votre prochain tour, ces créatures attaquent à chaque combat si possible et attaquent un joueur autre que vous si possible.)",
+   "image": "https://cards.scryfall.io/normal/front/1/7/17c2b312-363b-4675-aea0-7564faf9c1cd.jpg?1782849028"
+  },
+  "origin": "SCD",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -6290,6 +6700,38 @@
   "colorIdentity": [
    "G",
    "R"
+  ]
+ },
+ {
+  "name": "Hullbreaker Horror",
+  "number": "68",
+  "rarity": "rare",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Creature — Kraken Horror",
+  "oracleText": "Flash\nThis spell can't be countered.\nWhenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand.",
+  "power": "7",
+  "toughness": "8",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/3/137acb70-a1fd-4ea9-a5d9-f4b438eb5e82.jpg?1783908162",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/137acb70-a1fd-4ea9-a5d9-f4b438eb5e82.jpg?1783908162",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Horreur brisecoque",
+   "typeLine": "Créature — kraken et horreur",
+   "text": "Flash\nCe sort ne peut pas être contrecarré.\nÀ chaque fois que vous lancez un sort, choisissez jusqu'à l'un —\n• Renvoyez un sort ciblé que vous ne contrôlez pas dans la main de son propriétaire.\n• Renvoyez un permanent non-terrain ciblé dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/b/d/bdccdb44-1b21-42b1-aa51-b287b06a82a2.jpg?1782849481"
+  },
+  "origin": "INR",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -8765,6 +9207,36 @@
   ]
  },
  {
+  "name": "Nezahal, Primal Tide",
+  "number": "401",
+  "rarity": "rare",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Legendary Creature — Elder Dinosaur",
+  "oracleText": "This spell can't be countered.\nYou have no maximum hand size.\nWhenever an opponent casts a noncreature spell, draw a card.\nDiscard three cards: Exile Nezahal. Return it to the battlefield tapped under its owner's control at the beginning of the next end step.",
+  "power": "7",
+  "toughness": "7",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/9/a959b40d-dd8c-49d8-8003-744d0c877b04.jpg?1783928719",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a959b40d-dd8c-49d8-8003-744d0c877b04.jpg?1783928719",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nezahal, Marée primordiale",
+   "typeLine": "Créature légendaire : ancêtre et dinosaure",
+   "text": "Ce sort ne peut pas être contrecarré.\nIl n'y a pas de limite au nombre de cartes dans votre main.\nÀ chaque fois qu'un adversaire lance un sort non-créature, piochez une carte.\nDéfaussez-vous de trois cartes : Exilez Nezahal, Marée primordiale. Renvoyez-le sur le champ de bataille, engagé, sous le contrôle de son propriétaire au début de la prochaine étape de fin.",
+   "image": "https://cards.scryfall.io/normal/front/b/0/b04c71a9-e7a7-4c2e-a5a0-78d80548dc78.jpg?1782896408"
+  },
+  "origin": "CMR",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Nightkin Ambusher",
   "number": "112",
   "rarity": "uncommon",
@@ -9117,6 +9589,67 @@
   "origin": "FRC",
   "colorIdentity": [
    "W"
+  ]
+ },
+ {
+  "name": "Ob Nixilis, the Fallen",
+  "number": "192",
+  "rarity": "mythic",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Demon",
+  "oracleText": "Landfall — Whenever a land you control enters, you may have target player lose 3 life. If you do, put three +1/+1 counters on Ob Nixilis.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Landfall"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/c/dc9d3ada-9d0d-489a-89b7-08f53f6601e1.jpg?1783907081",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/c/dc9d3ada-9d0d-489a-89b7-08f53f6601e1.jpg?1783907081",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ob Nixilis, le Déchu",
+   "typeLine": "Créature légendaire — démon",
+   "text": "Toucheterre — À chaque fois qu'un terrain que vous contrôlez arrive, vous pouvez faire qu'un joueur ciblé perde 3 points de vie. Si vous faites ainsi, mettez trois marqueurs +1/+1 sur Ob Nixilis.",
+   "image": "https://cards.scryfall.io/normal/front/6/b/6b070b95-3fcd-4c19-aaa4-8e1182f2d471.jpg?1782773613"
+  },
+  "origin": "TDC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Oboro, Palace in the Clouds",
+  "number": "164",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {U}.\n{1}: Return Oboro to its owner's hand.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/f/ffc2d68e-6543-43ec-b67a-afff1325a32f.jpg?1783944128",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/f/ffc2d68e-6543-43ec-b67a-afff1325a32f.jpg?1783944128",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Oboro, le palais dans les nuages",
+   "typeLine": "Terrain légendaire",
+   "text": "{T} : Ajoutez {U} à votre réserve.\n{1} : Renvoyez Oboro, le palais dans les nuages dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/e/0/e0075227-4b68-44aa-b36a-001ea36b8e57.jpg?1783021960"
+  },
+  "origin": "SOK",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -9749,6 +10282,34 @@
   "colorIdentity": []
  },
  {
+  "name": "Ponder",
+  "number": "159",
+  "rarity": "common",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Look at the top three cards of your library, then put them back in any order. You may shuffle.\nDraw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/c/dc69f960-68ba-4315-8146-6a7a82047503.jpg?1783907102",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/c/dc69f960-68ba-4315-8146-6a7a82047503.jpg?1783907102",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Contemplation",
+   "typeLine": "Rituel",
+   "text": "Regardez les trois cartes du dessus de votre bibliothèque, puis remettez-les dessus dans l'ordre de votre choix. Vous pouvez mélanger.\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/2/a/2ac6ef71-4205-4a72-aca9-c6ae4b57c22a.jpg?1782773746"
+  },
+  "origin": "TDC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Port Town",
   "number": "256",
   "rarity": "rare",
@@ -9776,6 +10337,34 @@
   "colorIdentity": [
    "U",
    "W"
+  ]
+ },
+ {
+  "name": "Portent",
+  "number": "74",
+  "rarity": "common",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Look at the top three cards of target player's library, then put them back in any order. You may have that player shuffle.\nDraw a card at the beginning of the next turn's upkeep.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/b/5b360632-9c81-4b9c-8b9f-ac0b51c974a0.jpg?1783909642",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/b/5b360632-9c81-4b9c-8b9f-ac0b51c974a0.jpg?1783909642",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Présage",
+   "typeLine": "Rituel",
+   "text": "Regardez les trois cartes du dessus de la bibliothèque d'un joueur ciblé, puis remettez-les dessus dans l'ordre de votre choix. Vous pouvez faire que ce joueur mélange.\nPiochez une carte au début de l'entretien du prochain tour.",
+   "image": "https://cards.scryfall.io/normal/front/6/0/60834562-1206-40ec-81da-b3d2af5079dc.jpg?1782786952"
+  },
+  "origin": "DSC",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -10535,6 +11124,41 @@
   ]
  },
  {
+  "name": "Raugrin Triome",
+  "number": "251",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Island Mountain Plains",
+  "oracleText": "({T}: Add {U}, {R}, or {W}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "colors": [],
+  "keywords": [
+   "Cycling"
+  ],
+  "producedMana": [
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/2/02138fbb-3962-4348-8d31-faaefba0b8b2.jpg?1783931001",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/02138fbb-3962-4348-8d31-faaefba0b8b2.jpg?1783931001",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Triome de Raugrin",
+   "typeLine": "Terrain : île et montagne et plaine",
+   "text": "({T} : Ajoutez {U}, {R} ou {W}.)\nLe Triome de Raugrin arrive sur le champ de bataille engagé.\nRecyclage {3} ({3}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/9/e/9e5f58bb-26e8-41b9-8d5f-2359272a00a3.jpg?1782906438"
+  },
+  "origin": "IKO",
+  "colorIdentity": [
+   "R",
+   "U",
+   "W"
+  ]
+ },
+ {
   "name": "Raul, Trouble Shooter",
   "number": "115",
   "rarity": "uncommon",
@@ -10807,6 +11431,67 @@
   ]
  },
  {
+  "name": "Retreat to Coralhelm",
+  "number": "126",
+  "rarity": "uncommon",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Landfall — Whenever a land you control enters, choose one —\n• You may tap or untap target creature.\n• Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Landfall",
+   "Scry"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/f/cf8246c1-1db2-409f-9440-222d6dc78297.jpg?1783909624",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/f/cf8246c1-1db2-409f-9440-222d6dc78297.jpg?1783909624",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Repli vers Casque de corail",
+   "typeLine": "Enchantement",
+   "text": "Toucheterre — À chaque fois qu'un terrain que vous contrôlez arrive, choisissez l'un —\n• Vous pouvez engager ou dégager une créature ciblée.\n• Regard 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez mettre cette carte au-dessous.)",
+   "image": "https://cards.scryfall.io/normal/front/3/4/34ec8475-6239-4c03-a5ea-d95e3abc2990.jpg?1782786688"
+  },
+  "origin": "DSC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Retreat to Hagra",
+  "number": "116",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Landfall — Whenever a land you control enters, choose one —\n• Target creature gets +1/+0 and gains deathtouch until end of turn.\n• Each opponent loses 1 life and you gain 1 life.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Landfall"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/8/c80046c2-021f-448c-9f54-2a1a100ec0aa.jpg?1783934298",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/8/c80046c2-021f-448c-9f54-2a1a100ec0aa.jpg?1783934298",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Repli vers Hagra",
+   "typeLine": "Enchantement",
+   "text": "Toucheterre — À chaque fois qu'un terrain arrive sur le champ de bataille sous votre contrôle, choisissez l'un —\n• La créature ciblée gagne +1/+0 et acquiert le contact mortel jusqu'à la fin du tour.\n• Chaque adversaire perd 1 point de vie et vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/c/b/cbbb2afb-2d37-433e-b1e3-9a6294210ee2.jpg?1782928696"
+  },
+  "origin": "C18",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Rewind",
   "number": "63",
   "rarity": "uncommon",
@@ -10927,6 +11612,39 @@
   ]
  },
  {
+  "name": "Roil Elemental",
+  "number": "62",
+  "rarity": "rare",
+  "manaCost": "{3}{U}{U}{U}",
+  "cmc": 6,
+  "typeLine": "Creature — Elemental",
+  "oracleText": "Flying\nLandfall — Whenever a land you control enters, you may gain control of target creature for as long as you control this creature.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Landfall",
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/6/66139c73-8e14-433d-bcb6-ae3e518bcdfb.jpg?1783942161",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/6/66139c73-8e14-433d-bcb6-ae3e518bcdfb.jpg?1783942161",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Élémental du Roulis",
+   "typeLine": "Créature : élémental",
+   "text": "Vol\nToucheterre — À chaque fois qu'un terrain arrive sur le champ de bataille sous votre contrôle, vous pouvez acquérir le contrôle de la créature ciblée tant que vous contrôlez l'Élémental du Roulis.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/dd47b14e-3862-4100-b45b-89121ff3e294.jpg?1783000141"
+  },
+  "origin": "ZEN",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Rootbound Crag",
   "number": "261",
   "rarity": "rare",
@@ -10954,6 +11672,39 @@
   "colorIdentity": [
    "G",
    "R"
+  ]
+ },
+ {
+  "name": "Ruin Crab",
+  "number": "75",
+  "rarity": "uncommon",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Creature — Crab",
+  "oracleText": "Landfall — Whenever a land you control enters, each opponent mills three cards. (To mill a card, a player puts the top card of their library into their graveyard.)",
+  "power": "0",
+  "toughness": "3",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Mill",
+   "Landfall"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/3/738ce273-c938-42d2-83b2-c4f5f4000b0b.jpg?1783929390",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/3/738ce273-c938-42d2-83b2-c4f5f4000b0b.jpg?1783929390",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Crabe des ruines",
+   "typeLine": "Créature : crabe",
+   "text": "Toucheterre — À chaque fois qu'un terrain arrive sur le champ de bataille sous votre contrôle, chaque adversaire meule trois cartes. (Pour meuler une carte, un joueur met la carte du dessus de sa bibliothèque dans son cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/7/f/7fa7f369-873d-4fba-9bc2-7a268b08dfd4.jpg?1782900955"
+  },
+  "origin": "ZNR",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -11106,6 +11857,34 @@
   "colorIdentity": [
    "G",
    "W"
+  ]
+ },
+ {
+  "name": "Scheming Symmetry",
+  "number": "113",
+  "rarity": "rare",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Choose two target players. Each of them searches their library for a card, then shuffles and puts that card on top.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/1/01acc50b-856d-442d-9880-1a892b40643b.jpg?1783932988",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/1/01acc50b-856d-442d-9880-1a892b40643b.jpg?1783932988",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Symétrie sournoise",
+   "typeLine": "Rituel",
+   "text": "Choisissez deux joueurs ciblés. Chacun d'eux cherche une carte dans sa bibliothèque, puis mélange sa bibliothèque et met cette carte au-dessus d'elle.",
+   "image": "https://cards.scryfall.io/normal/front/f/0/f03c5183-3a2f-4681-8572-c903a3971d9c.jpg?1782917539"
+  },
+  "origin": "M20",
+  "colorIdentity": [
+   "B"
   ]
  },
  {
@@ -11264,6 +12043,30 @@
   "colorIdentity": [
    "B"
   ]
+ },
+ {
+  "name": "Scroll Rack",
+  "number": "337",
+  "rarity": "mythic",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}: Exile any number of cards from your hand face down. Put that many cards from the top of your library into your hand. Then look at the exiled cards and put them on top of your library in any order.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/f/dfaaa58d-89bb-4cb3-96a6-b480e6f6954e.jpg?1783928747",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/dfaaa58d-89bb-4cb3-96a6-b480e6f6954e.jpg?1783928747",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Râtelier à parchemins",
+   "typeLine": "Artefact",
+   "text": "{1}, {T} : Exilez n'importe quel nombre de cartes de votre main face cachée. Mettez autant de cartes du dessus de votre bibliothèque dans votre main. Ensuite, regardez les cartes exilées et mettez-les au-dessus de votre bibliothèque dans l'ordre de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/2/4/24e48ce5-0ad0-4607-a66f-03b6f4144e1b.jpg?1782896835"
+  },
+  "origin": "CMR",
+  "colorIdentity": []
  },
  {
   "name": "Scrubland",
@@ -11450,6 +12253,30 @@
   "colorIdentity": [
    "G"
   ]
+ },
+ {
+  "name": "Sensei's Divining Top",
+  "number": "314",
+  "rarity": "rare",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "{1}: Look at the top three cards of your library, then put them back in any order.\n{T}: Draw a card, then put this artifact on top of its owner's library.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/5/e5142b7a-e580-4737-a4aa-2590f6610ceb.jpg?1783921788",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/5/e5142b7a-e580-4737-a4aa-2590f6610ceb.jpg?1783921788",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Toupie de divination du sensei",
+   "typeLine": "Artefact",
+   "text": "{1} : Regardez les trois cartes du dessus de votre bibliothèque, puis remettez-les dans l'ordre de votre choix.\n{T} : Piochez une carte, puis mettez la Toupie de divination du sensei au-dessus de la bibliothèque de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/e/1/e1294a68-9b44-429f-a80d-67c037c4a239.jpg?1782847079"
+  },
+  "origin": "2X2",
+  "colorIdentity": []
  },
  {
   "name": "Serra's Emissary",
@@ -13180,6 +14007,38 @@
   ]
  },
  {
+  "name": "Takenuma, Abandoned Mire",
+  "number": "278",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {B}.\nChannel — {3}{B}, Discard this card: Mill three cards, then return a creature or planeswalker card from your graveyard to your hand. This ability costs {1} less to activate for each legendary creature you control.",
+  "colors": [],
+  "keywords": [
+   "Mill",
+   "Channel"
+  ],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/9/499037cc-a577-41cb-8ca2-5e117945634f.jpg?1783923812",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/9/499037cc-a577-41cb-8ca2-5e117945634f.jpg?1783923812",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Takenuma, marais abandonné",
+   "typeLine": "Terrain légendaire",
+   "text": "{T} : Ajoutez {B}.\nTransfert — {3}{B}, défaussez-vous de Takenuma, marais abandonné : Meulez trois cartes, puis renvoyez une carte de créature ou de planeswalker depuis votre cimetière dans votre main. Cette capacité coûte {1} de moins à activer pour chaque créature légendaire que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/8/c/8cf51124-2c5f-4cef-bef3-7932749bc3b3.jpg?1782861031"
+  },
+  "origin": "NEO",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Talisman of Creativity",
   "number": "61",
   "rarity": "uncommon",
@@ -13397,6 +14256,38 @@
    "B",
    "G"
   ]
+ },
+ {
+  "name": "Talon Gates of Madara",
+  "number": "134",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Gate",
+  "oracleText": "When this land enters, up to one target creature phases out.\n{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{4}: Put this card from your hand onto the battlefield.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/5/c565f8fe-acf7-40dd-8100-8f692d1e232c.jpg?1783911400",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/5/c565f8fe-acf7-40dd-8100-8f692d1e232c.jpg?1783911400",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Portes-serres de Madara",
+   "typeLine": "Terrain — porte",
+   "text": "Quand les Portes-serres de Madara arrivent sur le champ de bataille, jusqu'à une créature ciblée passe hors phase.\n{T} : Ajoutez {C}.\n{1}, {T} : Ajoutez un mana de la couleur de votre choix.\n{4} : Mettez sur le champ de bataille les Portes-serres de Madara depuis votre main.",
+   "image": "https://cards.scryfall.io/normal/front/6/3/63e24e8d-b98b-43f9-939f-7d756b45c2b2.jpg?1782795032"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
  },
  {
   "name": "Tamiyo, Upriser Crowned",
@@ -14342,6 +15233,34 @@
   ]
  },
  {
+  "name": "Trade Routes",
+  "number": "108★",
+  "rarity": "rare",
+  "manaCost": "{1}{U}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "{1}: Return target land you control to its owner's hand.\n{1}, Discard a land card: Draw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/4/047b93ed-c6d4-4ecc-8a25-e7b371f599c6.jpg?1783944026",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/4/047b93ed-c6d4-4ecc-8a25-e7b371f599c6.jpg?1783944026",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Routes marchandes",
+   "typeLine": "Enchantement",
+   "text": "{1} : Renvoyez le terrain ciblé que vous contrôlez dans la main de son propriétaire.\n{1}, défaussez-vous d'une carte de terrain : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/e/5/e53ba648-6c7e-4665-a16f-0dba12ee69e3.jpg?1783021440"
+  },
+  "origin": "9ED",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Tragic Arrogance",
   "number": "144",
   "rarity": "rare",
@@ -14366,6 +15285,37 @@
   "origin": "MSC",
   "colorIdentity": [
    "W"
+  ]
+ },
+ {
+  "name": "Training Center",
+  "number": "434",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped unless you have two or more opponents.\n{T}: Add {U} or {R}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/8/78a39d22-5e3b-4ba0-b728-dbf16b61fc8f.jpg?1783915582",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/8/78a39d22-5e3b-4ba0-b728-dbf16b61fc8f.jpg?1783915582",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Centre d'entraînement",
+   "typeLine": "Terrain",
+   "text": "Le Centre d'entraînement arrive sur le champ de bataille engagé à moins que vous n'ayez au moins deux adversaires.\n{T} : Ajoutez {U} ou {R}.",
+   "image": "https://cards.scryfall.io/normal/front/1/1/1122e3a0-0c3e-44a8-ae4d-0c48a903cfa3.jpg?1782815895"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "R",
+   "U"
   ]
  },
  {
@@ -15028,6 +15978,36 @@
    "typeLine": "Éphémère",
    "text": "Mettez n'importe quel nombre de cartes de votre main au-dessous de votre bibliothèque, puis piochez autant de cartes plus une.\nTerrain\n{T} : Ajoutez {R}.",
    "image": "https://cards.scryfall.io/normal/front/5/3/5317ff21-86b3-43bc-99df-bed1322228f7.jpg?1782900111"
+  },
+  "origin": "ZNR",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Valakut Exploration",
+  "number": "175",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Enchantment",
+  "oracleText": "Landfall — Whenever a land you control enters, exile the top card of your library. You may play that card for as long as it remains exiled.\nAt the beginning of your end step, if there are cards exiled with this enchantment, put them into their owner's graveyard, then this enchantment deals that much damage to each opponent.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Landfall"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/8/18cb7bf6-9c7c-4e62-a678-7b75862e2f64.jpg?1783929344",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18cb7bf6-9c7c-4e62-a678-7b75862e2f64.jpg?1783929344",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Exploration de Valakut",
+   "typeLine": "Enchantement",
+   "text": "Toucheterre — À chaque fois qu'un terrain arrive sur le champ de bataille sous votre contrôle, exilez la carte du dessus de votre bibliothèque. Vous pouvez jouer cette carte tant qu'elle reste exilée.\nAu début de votre étape de fin, s'il y a des cartes exilées par l'Exploration de Valakut, mettez-les dans le cimetière de leur propriétaire, puis l'Exploration de Valakut inflige autant de blessures à chaque adversaire.",
+   "image": "https://cards.scryfall.io/normal/front/f/b/fbaadd7b-02a4-421f-b28e-1e68aa0ecb22.jpg?1782900100"
   },
   "origin": "ZNR",
   "colorIdentity": [
@@ -15709,6 +16689,32 @@
   ]
  },
  {
+  "name": "Walking Atlas",
+  "number": "131",
+  "rarity": "common",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact Creature — Construct",
+  "oracleText": "{T}: You may put a land card from your hand onto the battlefield.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/3/53515042-e729-4a7c-ac3b-36ef70dbbe8d.jpg?1783942038",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/3/53515042-e729-4a7c-ac3b-36ef70dbbe8d.jpg?1783942038",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Atlas ambulant",
+   "typeLine": "Créature : construction",
+   "text": "{T} : Vous pouvez mettre sur le champ de bataille une carte de terrain de votre main.",
+   "image": "https://cards.scryfall.io/normal/front/0/6/0694bd3a-ca51-408b-82b9-eb79ada39d66.jpg?1782998563"
+  },
+  "origin": "WWK",
+  "colorIdentity": []
+ },
+ {
   "name": "Walking Ballista",
   "number": "371",
   "rarity": "rare",
@@ -15792,6 +16798,29 @@
   "colorIdentity": [
    "U"
   ]
+ },
+ {
+  "name": "Wayfarer's Bauble",
+  "number": "372",
+  "rarity": "common",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "{2}, {T}, Sacrifice this artifact: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/9/69dd3fa7-5498-4b88-bc98-6de8ca5fe007.jpg?1783906229",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/9/69dd3fa7-5498-4b88-bc98-6de8ca5fe007.jpg?1783906229",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Babiole du voyageur",
+   "text": "{2}, {T}, sacrifiez cet artefact : Cherchez dans votre bibliothèque une carte de terrain de base, mettez cette carte sur le champ de bataille engagée, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/d/6/d6cc5c8b-1829-4adb-af88-a6bad7b34114.jpg?1782769105"
+  },
+  "origin": "FIC",
+  "colorIdentity": []
  },
  {
   "name": "Welcoming Vampire",
@@ -16050,6 +17079,41 @@
   "colorIdentity": [
    "B",
    "G"
+  ]
+ },
+ {
+  "name": "Xander's Lounge",
+  "number": "260",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Island Swamp Mountain",
+  "oracleText": "({T}: Add {U}, {B}, or {R}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)",
+  "colors": [],
+  "keywords": [
+   "Cycling"
+  ],
+  "producedMana": [
+   "B",
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/4/54f449ff-4025-465e-9ec5-a5cf42c4c9d3.jpg?1783923052",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/54f449ff-4025-465e-9ec5-a5cf42c4c9d3.jpg?1783923052",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Bar de Xander",
+   "typeLine": "Terrain : île et marais et montagne",
+   "text": "({T} : Ajoutez {U}, {B} ou {R}.)\nLe Bar de Xander arrive sur le champ de bataille engagé.\nRecyclage {3} ({3}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/4/d/4d87f1c6-b353-4a40-8445-e9ba850a221c.jpg?1782854903"
+  },
+  "origin": "SNC",
+  "colorIdentity": [
+   "B",
+   "R",
+   "U"
   ]
  },
  {

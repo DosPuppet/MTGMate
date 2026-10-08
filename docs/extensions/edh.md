@@ -20,6 +20,7 @@ dans `packages/ai/test/smoke/edh.test.ts`. Couverture par deck : `npm run covera
 | `counter-blitz` | Tidus, Yuna's Guardian (préconstruit officiel de Final Fantasy X) | 67 |
 | `fantastic-four` | Invisible Woman (préconstruit officiel des Quatre Fantastiques) | 47 (6 en commun avec Counter Blitz) |
 | `mutant-menace` | The Wise Mothman (préconstruit officiel de Fallout) | 57 (3 en commun avec Counter Blitz) |
+| `nissa` | Nissa, Leyline Tamer (toucheterre, quatre couleurs sans le vert) | 34 |
 
 ## E0 — import ✅
 
@@ -203,3 +204,20 @@ Ajoutés le 07/10/2026 à la demande de l'utilisateur : trois listes officielles
 - **Outils :** budgets du bundle relevés (chunk `commander` 551 Ko pour un budget de 800 Ko, table des impressions 466 Ko pour 600 Ko).
 - **Approximations :** voir `docs/approximations.md` (radiation sans la pile, levée par PLAN-H H6 ; Sin, Altered Ego, Collective Effort, Forgotten Ancient, Resourceful Defense, Yuna, Grand Summoner, Fathom Mage, Promise of Loyalty, Deep Analysis, First Family, Namor, Black Bolt, Willie Lumpkin, Tragic Arrogance, Negative Zone Portal, Cut a Deal, Hancock, Harold and Bob, Jason Bright, Lumbering Megasloth, Nightkin Ambusher, Nuka-Nuke Launcher, Young Deathclaws, Winding Constrictor, Mariposa Military Base, Finality, Mutational Advantage).
 
+## Deck Nissa, Leyline Tamer : toucheterre et grandes créatures ✅ (555 / 555)
+
+Ajouté le 08/10/2026 à la demande de l'utilisateur avec la recette « Ajouter un deck Commander ». Liste : « Nissa, Non-Green Animist (Landfall w/ Big Creatures) » de KamiNinja sur Moxfield (bracket 4 déclaré, mise à jour le 02/10/2026), dans `docs/commander/decks/nissa.txt` ; préconstruit `cmd-nissa` (blanc, bleu, noir, rouge ; 4 Game Changers : Cyclonic Rift, Farewell, Teferi's Protection, Vampiric Tutor). Le commandant et 60 autres cartes étaient déjà jouables (Multiverse Reforged, autres decks, extensions).
+
+**Import :** 34 cartes absentes du catalogue ajoutées à EDH, toutes avec leur texte français.
+
+**Cartes (34, `edh/nissa.ts`, `edh/lands.ts`, `edh/commander.ts`) :** créatures : Agent of Treachery, Avacyn, Angel of Hope, Crabomination, Elesh Norn, Mother of Machines, Emeria Angel, Emeria Shepherd, Gandalf, Shadow's Foe, Geode Rager, Hullbreaker Horror, Nezahal, Primal Tide, Ob Nixilis, the Fallen, Roil Elemental, Ruin Crab, Walking Atlas ; enchantements : Retreat to Coralhelm, Retreat to Hagra, Trade Routes, Valakut Exploration ; artefacts : Crucible of Worlds, Scroll Rack, Sensei's Divining Top, Wayfarer's Bauble ; sorts : Ponder, Portent, Scheming Symmetry ; terrains : Boggart Trawler // Boggart Bog, Command Beacon, Eiganjo, Seat of the Empire, Oboro, Palace in the Clouds, Raugrin Triome, Takenuma, Abandoned Mire, Talon Gates of Madara, Training Center, Xander's Lounge.
+
+- **Moteur :**
+  - « regardez les N cartes du dessus, puis remettez-les dans l'ordre de votre choix » : `lookAtTop` et `rest: "reorder"` (question d'ordre posée à celui qui regarde, aussi dans la bibliothèque d'un autre joueur : Portent) ; pas de question quand toutes les cartes regardées doivent être prises (`exact`, Scroll Rack ; Kellan, Daring Traveler ne demande plus rien quand la carte va forcément en main) ;
+  - arrivées muettes (`triggerMod` `none`) : toute capacité qu'une arrivée fait se déclencher (toucheterre compris, pas seulement « arrive »), et seulement celles des sources du filtre (Elesh Norn, Mother of Machines : les permanents adverses ; `everyone` pour Torpor Orb et Hushbringer) ;
+  - émerger d'un artefact (« Emerge from artifact », Crabomination), lu dans le texte ;
+  - correction : un « permanent ciblé » écrit `target.permanent("t", [], …)` (filtre aux types vides) ne correspondait à rien ; la capacité n'avait jamais de cible (Alpha Deathclaw, Galactus, The Thing, Invisible Force Field, Forge of Heroes, Resourceful Defense) ; un filtre aux `types` vides ne contraint plus le type.
+- **Tests :** `engine/test/edh-nissa.test.ts` (37), Alpha Deathclaw dans `edh-mutant.test.ts`, Elesh Norn dans `rulings.test.ts` ; fumée EDH (555 cartes) ; fuzz Commander strict à quatre joueurs propre.
+- **Approximations :** Command Beacon (avec deux commandants, les deux vont en main).
+- **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-nissa`, contre les neuf autres préconstruits à tour de rôle) : en duel, 37,7 % ± 6,7 (199 parties décidées sur 200, 19,6 tours) ; à quatre (sièges A, B, A, B, part équitable 50 %), 51,5 % ± 9,8 (99 parties décidées sur 100, 44,8 tours). Sous la cible en duel, dans la cible à quatre. À étudier dans l'IA d'abord (terrains rejoués, dessus de bibliothèque), la liste n'est pas retouchée.
+- **Dette :** aucune entrée nouvelle ; `sacrificeReduce` (émerger) n'est plus propre à une carte et quitte la référence ; plafonds inchangés.

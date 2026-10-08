@@ -257,7 +257,9 @@ export type Effect =
   | { op: "if"; cond: Condition; skip: number }
   /**
    * Regarder les N cartes du dessus : en prendre jusqu'à `count` correspondant au filtre (vers `to`),
-   * le reste va au-dessous (ordre aléatoire) ou au cimetière.
+   * le reste va au-dessous (ordre aléatoire) ou au cimetière ; `top` : il reste au-dessus, dans le même ordre ;
+   * `reorder` : il est remis au-dessus dans l'ordre choisi par celui qui regarde (« puis remettez-les dans l'ordre de votre
+   * choix » : Ponder, Portent, Sensei's Divining Top ; avec `count: 0`, rien n'est pris).
    */
   | {
       op: "lookAtTop";
@@ -269,7 +271,7 @@ export type Effect =
       filter?: ObjectFilter;
       count: Amount;
       to: MoveSpec;
-      rest: "bottom" | "graveyard" | "top" | "hand";
+      rest: "bottom" | "graveyard" | "top" | "reorder" | "hand";
       /** Valeur de mana maximale des cartes prises (évaluée à la résolution). */
       maxManaValue?: Amount;
       /** Valeur de mana totale des cartes prises au plus égale à N (Michelangelo's Technique). */

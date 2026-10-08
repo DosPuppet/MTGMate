@@ -81,7 +81,8 @@ function attackingMatches(v: LkiSnapshot, a: NonNullable<ObjectFilter["attacking
 }
 
 export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: PlayerId, sourceId?: ObjectId): boolean {
-  if (f.types && !f.types.some((t) => v.types.includes(t))) return false;
+  // `types: []` (« permanent ciblé ») : aucune contrainte de type.
+  if (f.types?.length && !f.types.some((t) => v.types.includes(t))) return false;
   if (f.notTypes?.some((t) => v.types.includes(t))) return false;
   if (f.subtype && !hasSubtype(v, f.subtype)) return false;
   if (f.commander && !v.commander) return false;

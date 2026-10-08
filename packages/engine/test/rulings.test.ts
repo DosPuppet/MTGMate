@@ -1375,3 +1375,26 @@ describe("702.116a et 508.5 : myriade, joueur défenseur figé au déclenchement
     expect(myriad("walker", (s, _t, walker) => void moveObject(s, walker, "graveyard"))).toEqual({ asked: 0, copies: [] });
   });
 });
+
+describe("603.2 et 603.2e : Elesh Norn, Mother of Machines (deck Nissa)", () => {
+  it("l'arrivée d'un terrain adverse fait se déclencher deux fois une capacité de votre permanent ; celle de l'adversaire, jamais", () => {
+    // Décision du 2023-02-04 : seul compte le contrôleur du permanent dont la capacité se déclenche, pas celui du
+    // permanent qui arrive.
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Elesh Norn, Mother of Machines", "Polluted Bonds"] },
+      p2: { battlefield: ["Polluted Bonds"], hand: ["Plains"] },
+    });
+    s = act(s, "p2", { type: "playLand", card: idOf(s, "p2", "hand", "Plains") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+    expect([s.players.p1?.life, s.players.p2?.life]).toEqual([24, 16]);
+    // Un terrain de p1 : la Polluted Bonds de p2 (un permanent adverse pour Elesh Norn) ne se déclenche pas.
+    let t = scenario({
+      p1: { battlefield: ["Elesh Norn, Mother of Machines"], hand: ["Plains"] },
+      p2: { battlefield: ["Polluted Bonds"] },
+    });
+    t = act(t, "p1", { type: "playLand", card: idOf(t, "p1", "hand", "Plains") });
+    expect(t.stack).toEqual([]);
+    expect([t.players.p1?.life, t.players.p2?.life]).toEqual([20, 20]);
+  });
+});

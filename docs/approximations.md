@@ -248,7 +248,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Teferi's Protection : une Aura déjà attachée au joueur (malédiction) ne tombe pas.
   - `règle` Forbidden Orchard : « quand vous engagez ce terrain pour du mana » se déclenche quand il devient engagé, quelle qu'en soit la raison ;
   - `règle` Chromatic Orrery : « dépenser du mana comme s'il était de n'importe quelle couleur » vaut pour les sorts, pas pour les capacités activées ;
-  - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ;
+  - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ; Command Beacon : les deux vont dans la main ;
   - `choix auto` Zurgo and Ojutai : les deux cartes qui ne vont pas en main sont mises au-dessous dans un ordre aléatoire (pas au choix).
   - `choix auto` Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl : une carte du bon type de la main est révélée d'office si possible ;
   - `choix auto` Scholar of New Horizons : la carte de Plaine va sur le champ de bataille dès que c'est permis (sans proposer de la mettre en main) ; `règle` seul un marqueur +1/+1 peut être retiré pour le coût (et non un marqueur de n'importe quelle sorte) ;

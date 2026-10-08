@@ -119,6 +119,7 @@ describe("règles de construction", () => {
       "cmd-counter-blitz",
       "cmd-fantastic-four",
       "cmd-mutant-menace",
+      "cmd-nissa",
     ];
     for (const d of DECKS) {
       if (d.format === "commander") {

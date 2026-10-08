@@ -460,8 +460,13 @@ export const RECORD_VERSION = 1;
  * - 168 : Molten Tide ajoute un {R} ; Virtue of Strength triple le mana ; Eclipsed Realms : les huit tribus de Lorwyn
  *   ; Talion ne suggère plus d'après des cartes exilées face cachée
  * - 169 : Hancock, Ghoulish Mayor ne se renforce plus lui-même (« chaque autre créature »)
+ * - 170 : Deck Nissa, Leyline Tamer (Commander) : « permanent ciblé » sans type (Alpha Deathclaw, Galactus, The Thing,
+ *   Invisible Force Field, Forge of Heroes, Resourceful Defense) ; arrivées muettes pour toute capacité qu'elles
+ *   déclenchent et limitées aux sources du filtre (Elesh Norn, Mother of Machines) ; dessus de bibliothèque remis dans
+ *   l'ordre choisi (lookAtTop reorder) ; pas de question quand toutes les cartes regardées doivent être prises ; émerger
+ *   d'un artefact
  */
-export const RULES_VERSION = 169;
+export const RULES_VERSION = 170;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

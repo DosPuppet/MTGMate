@@ -2042,7 +2042,8 @@ function stateBasedActionsOnce(s: GameState): boolean {
           type: "yesNo",
           intent: "commanderZone",
           prompt: `Remettre ${cardRef(obj(s, offer.id).defId)} dans la zone de commandement ?`,
-          suggested: [1],
+          // En main, le commandant se relance sans taxe (903.8) : le garder est proposé (Command Beacon) ; ailleurs, oui.
+          suggested: [obj(s, offer.id).zone === "hand" ? 0 : 1],
         },
         { kind: "commanderZone", card: offer.id },
       );

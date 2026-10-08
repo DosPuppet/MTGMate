@@ -1227,6 +1227,9 @@ export const HANDLERS: OpHandlers = {
       const pool = [...options];
       shuffle(s, pool);
       picked = pool.slice(0, count);
+    } else if (e.exact && !e.onePerType && e.maxTotalManaValue === undefined && count > 0 && options.length <= count) {
+      // Toutes les cartes correspondantes doivent être prises (Scroll Rack : « autant de cartes du dessus ») : pas de question.
+      picked = options;
     } else if (options.length > 0 && count > 0) {
       const answer = r.vars[key("look")];
       if (!answer) {
@@ -1258,6 +1261,29 @@ export const HANDLERS: OpHandlers = {
       }
     }
     const rest = top.filter((id) => !picked.includes(id));
+    // « Remettez-les dans l'ordre de votre choix » : celui qui regarde ordonne le reste avant tout déplacement.
+    let order = rest;
+    if (e.rest === "reorder" && rest.length > 1) {
+      const answer = r.vars[key("order")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("order"),
+            request: {
+              type: "order",
+              intent: "scryOrder",
+              prompt: "Ordre des cartes remises au-dessus (la première sera piochée en premier)",
+              items: rest,
+              suggested: rest,
+            },
+          },
+        };
+      }
+      order = answer.map(String);
+      if (order.length !== rest.length || !rest.every((id) => order.includes(id)))
+        throw new RulesError("L'ordre doit reprendre chacune des cartes regardées");
+    }
     const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
     if (!(arrival instanceof Map)) return arrival;
     store(r, e.store, picked.length);
@@ -1267,7 +1293,10 @@ export const HANDLERS: OpHandlers = {
     if (e.store) r.vars[`$ids:${e.store}`] = taken;
     if (e.rest === "graveyard") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
     else if (e.rest === "hand") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "hand" });
-    else if (e.rest === "bottom") {
+    else if (e.rest === "reorder") {
+      const lib = player.library.filter((id) => !order.includes(id));
+      player.library = [...order.filter((id) => player.library.includes(id)), ...lib];
+    } else if (e.rest === "bottom") {
       // Ordre aléatoire (« dans un ordre aléatoire »).
       const lib = player.library.filter((id) => !rest.includes(id));
       const shuffled = [...rest];

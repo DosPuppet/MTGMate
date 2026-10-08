@@ -1844,15 +1844,16 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(binned, binned.players.p1?.library)).toEqual(["Forest"]);
       const kept = run(false);
       expect(namesIn(kept, kept.players.p1?.library)).toEqual(["Shivan Dragon", "Forest"]);
-      // Une créature de VM 3 ou moins va forcément en main (pas de refus possible).
+      // Une créature de VM 3 ou moins va forcément en main (pas de refus possible, donc pas de question).
       let mins: number[] = [];
       let s = scenario({ p1: { battlefield: ["Kellan, Daring Traveler // Journey On"], library: ["Bear Cub", "Forest"] } });
       s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Kellan, Daring Traveler // Journey On")]), (req) => {
         if (req.type === "pick" && req.intent === "lookAtTop") mins = [...mins, req.min ?? 0];
         return undefined;
       });
-      expect(mins).toEqual([1]);
+      expect(mins).toEqual([]);
       expect(namesIn(s, s.players.p1?.graveyard)).toEqual([]);
+      expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
     });
 
     it("Journey On : une Carte, plus une par adversaire qui contrôle un artefact", () => {
