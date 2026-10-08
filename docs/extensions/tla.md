@@ -1,133 +1,133 @@
-# Avatar: The Last Airbender (TLA, 280 cartes)
+# Avatar: The Last Airbender (TLA, 280 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Extension demandée par l'utilisateur le 02/10/2026, avant Marvel Super Heroes. 28 cartes étaient déjà gérées depuis la phase méta (lots M1 à M6, `docs/extensions/meta.md`) : maîtrise de la terre (`fx.earthbend`), de l'air (`fx.airbend`) et du feu (lue dans le texte), Leçons, Alliés… L'extension suit les règles d'intégration de CLAUDE.md (dette, R1, R7). Découpage : un sous-lot et un commit par couleur pour le lot A, par mécanique pour le lot B, par famille de cartes uniques ensuite.
+Set requested by the user on 2026-10-02, before Marvel Super Heroes. 28 cards were already handled since the meta phase (lots M1 to M6, `docs/extensions/meta.md`): earthbend (`fx.earthbend`), airbend (`fx.airbend`) and firebending (read from the text), Lessons, Allies… The set follows the integration rules of CLAUDE.md (debt, R1, R7). Breakdown: one sub-lot and one commit per color for lot A, per mechanic for lot B, per family of unique cards afterwards.
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Socle : maîtrise de l'eau (coûts de capacités), maîtrise du feu jusqu'à la fin du combat, jetons | 0 |
-| Cartes faisables avec le moteur, par couleur | A1 à A6 |
-| Mécaniques phares restantes (maîtrise de l'eau en coût de sort, « chaque fois que vous maîtrisez »…) | B |
-| Légendaires et cartes uniques | C et suivants |
+| Foundation: waterbend (ability costs), firebending until end of combat, tokens | 0 |
+| Cards feasible with the engine, by color | A1 to A6 |
+| Remaining flagship mechanics (waterbend as a spell cost, "whenever you waterbend/earthbend/…") | B |
+| Legendaries and unique cards | C and following |
 
-Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (incolores et terrains) et `legends`. Les aides sont dans `tla/common.ts`.
+The scripts are in `packages/cards/src/tla/`: `cards` (meta cards), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (colorless cards and lands) and `legends`. The helpers are in `tla/common.ts`.
 
-## Sous-lot 0 : socle ✅ (28 / 280)
+## Sub-lot 0: foundation ✅ (28 / 280)
 
-- **Maîtrise de l'eau (waterbend) :** `activated({ mana: "{3}", waterbend: true, … })` (« Waterbend {3} : … ») ; en payant, chaque artefact ou créature dégagé que vous contrôlez peut être engagé pour payer {1} (source `WATERBEND` du solveur de mana, après les terrains, plafonnée par `ManaPurpose.waterbend`), X compris (« Waterbend {X} »).
-- **Maîtrise du feu N :** `firebending(n)` (DSL ; N peut être un montant) ; le mana reste jusqu'à la fin du combat (`fx.addManaUntilEndOfCombat`, réserve `manaKeepCombat`), et non plus jusqu'à la fin du tour (approximation levée). Lue dans le texte aussi parmi d'autres mots-clés (« Flying, firebending 2 », « Trample, firebending 4, haste »).
-- **Jetons :** Soldat 2/2 rouge avec la maîtrise du feu 1, Moine 1/1 rouge avec la prouesse, Ours 4/4 vert ; Allié, Esprit et Dragon 4/4 (maîtrise du feu 4) existaient ; Indice et Nourriture viennent des communs.
-- **Version des règles :** 38.
-- **Tests :** 5 tests dans `engine/test/tla.test.ts` (« socle ») ; test de fumée `ai/test/smoke/tla.test.ts`.
+- **Waterbend:** `activated({ mana: "{3}", waterbend: true, … })` ("Waterbend {3}: …"); when paying, each untapped artifact or creature you control can be tapped to pay {1} (`WATERBEND` source of the mana solver, after lands, capped by `ManaPurpose.waterbend`), X included ("Waterbend {X}").
+- **Firebending N:** `firebending(n)` (DSL; N can be an amount); the mana lasts until end of combat (`fx.addManaUntilEndOfCombat`, `manaKeepCombat` pool), no longer until end of turn (approximation removed). Also read from the text among other keywords ("Flying, firebending 2", "Trample, firebending 4, haste").
+- **Tokens:** 2/2 red Soldier with firebending 1, 1/1 red Monk with prowess, 4/4 green Bear; Ally, Spirit and 4/4 Dragon (firebending 4) already existed; Clue and Food come from the commons.
+- **Rules version:** 38.
+- **Tests:** 5 tests in `engine/test/tla.test.ts` ("foundation"); smoke test `ai/test/smoke/tla.test.ts`.
 
-## Sous-lot A1 : cartes blanches ✅ (63 / 280)
+## Sub-lot A1: white cards ✅ (63 / 280)
 
-- **Cartes (35) :** Aang, the Last Airbender, Aang's Iceberg, Airbender's Reversal, Airbending Lesson, Appa, Loyal Sky Bison, Avatar Enthusiasts, Compassionate Healer, Curious Farm Animals, Earth Kingdom Jailer, Earth Kingdom Protectors, Enter the Avatar State, Fancy Footwork, Gather the White Lotus, Glider Kids, Glider Staff, Hakoda, Selfless Commander, Invasion Reinforcements, Jeong Jeong's Deserters, Kyoshi Warriors, The Legend of Yangchen // Avatar Yangchen, Master Piandao, Momo, Playful Pet, Path to Redemption, Rabaroo Troop, Razor Rings, Sandbenders' Storm, South Pole Voyager, Southern Air Temple, Suki, Courageous Rescuer, Team Avatar, United Front, Vengeful Villagers, Water Tribe Captain, Water Tribe Rallier, Yip Yip!
-- **Moteur :** rien de nouveau (formes existantes : `playFrom` du dessus de la bibliothèque filtré, `countResolution`, `damageStoringExcess`, maîtrise de l'eau du socle).
-- **Reste pour plus tard :** Destined Confrontation (chaque joueur garde des créatures de force totale 4 ou moins et sacrifie les autres).
-- **Tests :** 35 tests de règles (« lot A, blanc »).
+- **Cards (35):** Aang, the Last Airbender, Aang's Iceberg, Airbender's Reversal, Airbending Lesson, Appa, Loyal Sky Bison, Avatar Enthusiasts, Compassionate Healer, Curious Farm Animals, Earth Kingdom Jailer, Earth Kingdom Protectors, Enter the Avatar State, Fancy Footwork, Gather the White Lotus, Glider Kids, Glider Staff, Hakoda, Selfless Commander, Invasion Reinforcements, Jeong Jeong's Deserters, Kyoshi Warriors, The Legend of Yangchen // Avatar Yangchen, Master Piandao, Momo, Playful Pet, Path to Redemption, Rabaroo Troop, Razor Rings, Sandbenders' Storm, South Pole Voyager, Southern Air Temple, Suki, Courageous Rescuer, Team Avatar, United Front, Vengeful Villagers, Water Tribe Captain, Water Tribe Rallier, Yip Yip!
+- **Engine:** nothing new (existing forms: filtered `playFrom` the top of the library, `countResolution`, `damageStoringExcess`, the foundation's waterbend).
+- **Left for later:** Destined Confrontation (each player keeps creatures with total power 4 or less and sacrifices the others).
+- **Tests:** 35 rules tests ("lot A, white").
 
-## Sous-lot A2 : cartes bleues ✅ (93 / 280)
+## Sub-lot A2: blue cards ✅ (93 / 280)
 
-- **Cartes (30) :** Boomerang Basics, Ember Island Production, First-Time Flyer, Flexible Waterbender, Forecasting Fortune Teller, Geyser Leaper, Giant Koi, Gran-Gran, Honest Work, Invasion Submersible, Katara, Bending Prodigy, Knowledge Seeker, The Legend of Kuruk // Avatar Kuruk, Lost Days, Master Pakku, The Mechanist, Aerial Artisan, North Pole Patrol, Octopus Form, Otter-Penguin, Rowdy Snowballers, Serpent of the Pass, Sokka's Haiku, The Spirit Oasis, Teo, Spirited Glider, Tiger-Seal, Ty Lee, Chi Blocker, Waterbender Ascension, Waterbending Scroll, Watery Grasp, Yue, the Moon Spirit.
-- **Moteur :** rien de nouveau ; la maîtrise de l'eau du socle sert à dix capacités. Le tour supplémentaire (Avatar Kuruk) sert désormais à deux cartes : son entrée de dette est retirée.
-- **Reste pour plus tard :** Benevolent River Spirit, Crashing Wave, Spirit Water Revival, Secret of Bloodbending (maîtrise de l'eau en coût de sort ; contrôle de l'adversaire pendant sa prochaine phase de combat), The Unagi of Kyoshi Island (garde « maîtrise de l'eau {4} »), Waterbending Lesson (« à moins de maîtriser l'eau {2} »).
-- **Tests :** 38 tests de règles (« lot A, bleu »).
+- **Cards (30):** Boomerang Basics, Ember Island Production, First-Time Flyer, Flexible Waterbender, Forecasting Fortune Teller, Geyser Leaper, Giant Koi, Gran-Gran, Honest Work, Invasion Submersible, Katara, Bending Prodigy, Knowledge Seeker, The Legend of Kuruk // Avatar Kuruk, Lost Days, Master Pakku, The Mechanist, Aerial Artisan, North Pole Patrol, Octopus Form, Otter-Penguin, Rowdy Snowballers, Serpent of the Pass, Sokka's Haiku, The Spirit Oasis, Teo, Spirited Glider, Tiger-Seal, Ty Lee, Chi Blocker, Waterbender Ascension, Waterbending Scroll, Watery Grasp, Yue, the Moon Spirit.
+- **Engine:** nothing new; the foundation's waterbend serves ten abilities. The extra turn (Avatar Kuruk) now serves two cards: its debt entry is removed.
+- **Left for later:** Benevolent River Spirit, Crashing Wave, Spirit Water Revival, Secret of Bloodbending (waterbend as a spell cost; control of the opponent during their next combat phase), The Unagi of Kyoshi Island (ward "waterbend {4}"), Waterbending Lesson ("unless you waterbend {2}").
+- **Tests:** 38 rules tests ("lot A, blue").
 
-## Sous-lot A3 : cartes noires ✅ (122 / 280)
+## Sub-lot A3: black cards ✅ (122 / 280)
 
-- **Cartes (29) :** Azula Always Lies, Azula, On the Hunt, Beetle-Headed Merchants, Boiling Rock Rioter, Buzzard-Wasp Colony, Canyon Crawler, Cat-Gator, Corrupt Court Official, Dai Li Indoctrination, Epic Downfall, Fatal Fissure, The Fire Nation Drill, Fire Nation Engineer, Fire Navy Trebuchet, Foggy Swamp Hunters, Hog-Monkey, Joo Dee, One of Many, June, Bounty Hunter, Mai, Scornful Striker, Merchant of Many Hats, Northern Air Temple, Ozai's Cruelty, Phoenix Fleet Airship, Pirate Peddlers, Sold Out, Swampsnare Trap, Tundra Tank, Wolfbat, Zuko's Conviction.
-- **Moteur :** rien de nouveau (emblème lié à la source pour Fatal Fissure, cartes liées lancées depuis l'exil pour Boiling Rock Rioter, réduction de coût selon l'Aura ciblée pour Swampsnare Trap).
-- **Reste pour plus tard :** Foggy Swamp Visions et Ruinous Waterbending (maîtrise de l'eau en coût de sort), Koh, the Face Stealer (capacités de la dernière carte choisie), Lo and Li, Twin Tutors (mots-clés donnés aux sorts), The Rise of Sozin // Fire Lord Sozin (valeur de mana totale X des cibles).
-- **Tests :** 34 tests de règles (« lot A, noir »).
+- **Cards (29):** Azula Always Lies, Azula, On the Hunt, Beetle-Headed Merchants, Boiling Rock Rioter, Buzzard-Wasp Colony, Canyon Crawler, Cat-Gator, Corrupt Court Official, Dai Li Indoctrination, Epic Downfall, Fatal Fissure, The Fire Nation Drill, Fire Nation Engineer, Fire Navy Trebuchet, Foggy Swamp Hunters, Hog-Monkey, Joo Dee, One of Many, June, Bounty Hunter, Mai, Scornful Striker, Merchant of Many Hats, Northern Air Temple, Ozai's Cruelty, Phoenix Fleet Airship, Pirate Peddlers, Sold Out, Swampsnare Trap, Tundra Tank, Wolfbat, Zuko's Conviction.
+- **Engine:** nothing new (emblem linked to the source for Fatal Fissure, linked cards cast from exile for Boiling Rock Rioter, cost reduction depending on the targeted Aura for Swampsnare Trap).
+- **Left for later:** Foggy Swamp Visions and Ruinous Waterbending (waterbend as a spell cost), Koh, the Face Stealer (abilities of the last chosen card), Lo and Li, Twin Tutors (keywords given to spells), The Rise of Sozin // Fire Lord Sozin (total mana value X of the targets).
+- **Tests:** 34 rules tests ("lot A, black").
 
-## Sous-lot A4 : cartes rouges ✅ (151 / 280)
+## Sub-lot A4: red cards ✅ (151 / 280)
 
-- **Cartes (29) :** Boar-q-pine, Bumi Bash, The Cave of Two Lovers, Combustion Man, Crescent Island Temple, Cunning Maneuver, Deserter's Disciple, Fire Nation Attacks, Fire Nation Cadets, Fire Nation Raider, Fire Sages, Firebending Student, How to Start a Riot, Jeong Jeong, the Deserter, Jet's Brainwashing, Mai, Jaded Edge, Mongoose Lizard, Ran and Shaw, Rough Rhino Cavalry, Solstice Revelations, Tiger-Dillo, Treetop Freedom Fighters, Twin Blades, Ty Lee, Artful Acrobat, War Balloon, Wartime Protestors, Yuyan Archers, Zhao, the Moon Slayer, Zuko, Exiled Prince.
-- **Moteur :** rien de nouveau ; la maîtrise du feu du socle sert aussi en montant (Firebending Student : « maîtrise du feu X, X étant sa force ») et donnée sous condition (Fire Nation Cadets).
-- **Reste pour plus tard :** Fated Firepower (blessures augmentées du nombre de marqueurs de feu), Firebender Ascension (copier une capacité déclenchée par une attaque), The Last Agni Kai (blessures en excès d'un combat ; garder le mana rouge), Redirect Lightning (coût additionnel « 5 PV ou {2} »), Sozin's Comet (présage).
-- **Tests :** 37 tests de règles (« lot A, rouge »).
+- **Cards (29):** Boar-q-pine, Bumi Bash, The Cave of Two Lovers, Combustion Man, Crescent Island Temple, Cunning Maneuver, Deserter's Disciple, Fire Nation Attacks, Fire Nation Cadets, Fire Nation Raider, Fire Sages, Firebending Student, How to Start a Riot, Jeong Jeong, the Deserter, Jet's Brainwashing, Mai, Jaded Edge, Mongoose Lizard, Ran and Shaw, Rough Rhino Cavalry, Solstice Revelations, Tiger-Dillo, Treetop Freedom Fighters, Twin Blades, Ty Lee, Artful Acrobat, War Balloon, Wartime Protestors, Yuyan Archers, Zhao, the Moon Slayer, Zuko, Exiled Prince.
+- **Engine:** nothing new; the foundation's firebending also serves as an amount (Firebending Student: "firebending X, where X is its power") and granted conditionally (Fire Nation Cadets).
+- **Left for later:** Fated Firepower (damage increased by the number of fire counters), Firebender Ascension (copy a triggered ability from an attack), The Last Agni Kai (excess damage from a fight; keep red mana), Redirect Lightning (additional cost "5 life or {2}"), Sozin's Comet (foretell).
+- **Tests:** 37 rules tests ("lot A, red").
 
-## Sous-lot A5 : cartes vertes ✅ (182 / 280)
+## Sub-lot A5: green cards ✅ (182 / 280)
 
-- **Cartes (31) :** Allies at Last, Badgermole, Badgermole Cub, The Boulder, Ready to Rumble, Cycle of Renewal, The Earth King, Earth Kingdom General, Earth Rumble, Earthbending Lesson, Elemental Teachings, Flopsie, Bumi's Buddy, Foggy Swamp Vinebender, Great Divide Guide, Haru, Hidden Talent, Invasion Tactics, Kyoshi Island Plaza, Leaves from the Vine, The Legend of Kyoshi // Avatar Kyoshi, Origin of Metalbending, Ostrich-Horse, Pillar Launch, Raucous Audience, Rebellious Captives, Rockalanche, Rocky Rebuke, Seismic Sense, Sparring Dummy, True Ancestry, Turtle-Duck, Unlucky Cabbage Merchant, Walltop Sentries.
-- **Correctif du moteur (608.2h) :** la force et l'endurance de la créature d'un événement qui a quitté le champ de bataille (« quand elle meurt, X étant sa force ») sont ses dernières informations connues, et non celles de la carte qu'elle est devenue. Le défaut touchait aussi des cartes déjà gérées (Rakdos Joins Up, cartes d'ECL, de MKM, de FIN et de LCI). Test tiré des règles dans `rulings.test.ts`.
-- **Badgermole Cub :** sa capacité de mana déclenchée est un remplacement de mana (R1, famille I), comme Lavaleaper (entrée de l'audit justifiée).
-- **Reste pour plus tard :** Avatar Destiny, Toph, the Blind Bandit (F/E définies par le nombre de marqueurs), Earthen Ally (+1/+0 par couleur parmi vos Alliés), Diligent Zookeeper (+1/+1 par type de créature de chacune), Bumi, King of Three Trials (« jusqu'à X modes » pour une capacité déclenchée).
-- **Version des règles :** 39.
-- **Tests :** 33 tests de règles (« lot A, vert ») et 1 test tiré des règles.
+- **Cards (31):** Allies at Last, Badgermole, Badgermole Cub, The Boulder, Ready to Rumble, Cycle of Renewal, The Earth King, Earth Kingdom General, Earth Rumble, Earthbending Lesson, Elemental Teachings, Flopsie, Bumi's Buddy, Foggy Swamp Vinebender, Great Divide Guide, Haru, Hidden Talent, Invasion Tactics, Kyoshi Island Plaza, Leaves from the Vine, The Legend of Kyoshi // Avatar Kyoshi, Origin of Metalbending, Ostrich-Horse, Pillar Launch, Raucous Audience, Rebellious Captives, Rockalanche, Rocky Rebuke, Seismic Sense, Sparring Dummy, True Ancestry, Turtle-Duck, Unlucky Cabbage Merchant, Walltop Sentries.
+- **Engine fix (608.2h):** the power and toughness of the creature of an event that left the battlefield ("when it dies, X is its power") are its last known information, not those of the card it became. The defect also affected cards already handled (Rakdos Joins Up, cards from ECL, MKM, FIN and LCI). Test drawn from the rules in `rulings.test.ts`.
+- **Badgermole Cub:** its triggered mana ability is a mana replacement (R1, family I), like Lavaleaper (justified audit entry).
+- **Left for later:** Avatar Destiny, Toph, the Blind Bandit (P/T defined by the number of counters), Earthen Ally (+1/+0 per color among your Allies), Diligent Zookeeper (+1/+1 per creature type of each), Bumi, King of Three Trials ("up to X modes" for a triggered ability).
+- **Rules version:** 39.
+- **Tests:** 33 rules tests ("lot A, green") and 1 test drawn from the rules.
 
-## Sous-lot A6 : multicolores, incolores et terrains ✅ (252 / 280)
+## Sub-lot A6: multicolor, colorless and lands ✅ (252 / 280)
 
-- **Multicolores (44) :** Air Nomad Legacy, Azula, Cunning Usurper, Beifong's Bounty Hunters, Bitter Work, Bumi, Unleashed, Cat-Owl, Cruel Administrator, Dai Li Agents, Dragonfly Swarm, Earth Kingdom Soldier, Earth King's Lieutenant, Earth Rumble Wrestlers, Earth Village Ruffians, Fire Lord Azula, Fire Lord Zuko, Foggy Swamp Spirit Keeper, Guru Pathik, Hei Bai, Spirit of Balance, Hermitic Herbalist, Iroh, Tea Master, Jet, Freedom Fighter, Katara, the Fearless, Katara, Water Tribe's Hope, The Lion-Turtle, Long Feng, Grand Secretariat, Messenger Hawk, Platypus-Bear, Pretending Poxbearers, Professor Zei, Anthropologist, Sandbender Scavengers, Sokka, Bold Boomeranger, Sokka, Lateral Strategist, Sokka, Tenacious Tactician, Suki, Kyoshi Warrior, Sun Warriors, Tolls of War, Toph, Hardheaded Teacher, Toph, the First Metalbender, Uncle Iroh, Vindictive Warden, Wandering Musicians, White Lotus Reinforcements, Zhao, Ruthless Admiral, Zuko, Conflicted.
-- **Incolores et terrains (26) :** Aang's Journey, Energybending, Zuko's Exile, Barrels of Blasting Jelly, Bender's Waterskin, Fire Nation Warship, Kyoshi Battle Fan, Meteor Sword, Trusty Boomerang, The Walls of Ba Sing Se, Agna Qel'a, Airship Engine Room, Boiling Rock Prison, Fire Nation Palace, Foggy Bottom Swamp, Jasmine Dragon Tea Shop, Kyoshi Village, Meditation Pools, Misty Palms Oasis, North Pole Gates, Omashu City, Rumble Arena, Secret Tunnel, Serpent's Pass, Sun-Blessed Peak, White Lotus Hideout.
-- **Moteur :** « X ne peut pas être 0 » (`activated({ minX: 1 })`) : la capacité n'est proposée que si X peut atteindre son minimum, une activation avec un X plus petit est refusée, l'IA et l'interface (curseur de X) le respectent. Sans lui, l'IA aléatoire activait Katara, Water Tribe's Hope pour X = 0 sans fin (parties inachevées du fuzz). Gogo, Master of Mimicry (FIN) en profite. Version des règles : 40. Fire Lord Zuko (« un permanent arrive depuis l'exil », sans les sorts lancés depuis l'exil, déjà comptés par sa première moitié) passe par un changement de zone exil → champ de bataille ; Fire Nation Warship meurt aussi quand il n'est pas une créature (700.4, `putIntoGraveyardSelf`).
-- **Reste pour plus tard :** Avatar Aang (« chaque fois que vous maîtrisez… »), Hama, the Bloodbender (maîtrise de l'eau en coût alternatif), Iroh, Grand Lotus (flashback donné aux cartes du cimetière), Ozai, the Phoenix King (mana non dépensé qui devient rouge), Planetarium of Wan Shi Tong (lancer la carte du dessus de la bibliothèque), White Lotus Tile (plus grand nombre de créatures partageant un type).
-- **Tests :** 43 tests de règles (« lot A, multicolores ») et 19 (« lot A, incolores et terrains »).
+- **Multicolor (44):** Air Nomad Legacy, Azula, Cunning Usurper, Beifong's Bounty Hunters, Bitter Work, Bumi, Unleashed, Cat-Owl, Cruel Administrator, Dai Li Agents, Dragonfly Swarm, Earth Kingdom Soldier, Earth King's Lieutenant, Earth Rumble Wrestlers, Earth Village Ruffians, Fire Lord Azula, Fire Lord Zuko, Foggy Swamp Spirit Keeper, Guru Pathik, Hei Bai, Spirit of Balance, Hermitic Herbalist, Iroh, Tea Master, Jet, Freedom Fighter, Katara, the Fearless, Katara, Water Tribe's Hope, The Lion-Turtle, Long Feng, Grand Secretariat, Messenger Hawk, Platypus-Bear, Pretending Poxbearers, Professor Zei, Anthropologist, Sandbender Scavengers, Sokka, Bold Boomeranger, Sokka, Lateral Strategist, Sokka, Tenacious Tactician, Suki, Kyoshi Warrior, Sun Warriors, Tolls of War, Toph, Hardheaded Teacher, Toph, the First Metalbender, Uncle Iroh, Vindictive Warden, Wandering Musicians, White Lotus Reinforcements, Zhao, Ruthless Admiral, Zuko, Conflicted.
+- **Colorless and lands (26):** Aang's Journey, Energybending, Zuko's Exile, Barrels of Blasting Jelly, Bender's Waterskin, Fire Nation Warship, Kyoshi Battle Fan, Meteor Sword, Trusty Boomerang, The Walls of Ba Sing Se, Agna Qel'a, Airship Engine Room, Boiling Rock Prison, Fire Nation Palace, Foggy Bottom Swamp, Jasmine Dragon Tea Shop, Kyoshi Village, Meditation Pools, Misty Palms Oasis, North Pole Gates, Omashu City, Rumble Arena, Secret Tunnel, Serpent's Pass, Sun-Blessed Peak, White Lotus Hideout.
+- **Engine:** "X can't be 0" (`activated({ minX: 1 })`): the ability is offered only if X can reach its minimum, an activation with a smaller X is refused, and the AI and the interface (X slider) respect it. Without it, the random AI activated Katara, Water Tribe's Hope for X = 0 endlessly (unfinished fuzz games). Gogo, Master of Mimicry (FIN) benefits. Rules version: 40. Fire Lord Zuko ("a permanent enters from exile", excluding spells cast from exile, already counted by his first half) goes through an exile → battlefield zone change; Fire Nation Warship also dies when it is not a creature (700.4, `putIntoGraveyardSelf`).
+- **Left for later:** Avatar Aang ("whenever you waterbend…"), Hama, the Bloodbender (waterbend as an alternative cost), Iroh, Grand Lotus (flashback given to graveyard cards), Ozai, the Phoenix King (unspent mana that becomes red), Planetarium of Wan Shi Tong (cast the top card of the library), White Lotus Tile (largest number of creatures sharing a type).
+- **Tests:** 43 rules tests ("lot A, multicolor") and 19 ("lot A, colorless and lands").
 
-## Sous-lot B1 : maîtrise de l'eau en coût de sort ✅ (261 / 280)
+## Sub-lot B1: waterbend as a spell cost ✅ (261 / 280)
 
-- **Cartes (9) :** Benevolent River Spirit, Crashing Wave, Spirit Water Revival, Secret of Bloodbending, The Unagi of Kyoshi Island, Waterbending Lesson, Foggy Swamp Visions, Ruinous Waterbending, Hama, the Bloodbender.
-- **Le moteur gagne :**
-  - la maîtrise de l'eau en coût additionnel de sort, lue dans le texte : obligatoire (« waterbend {5} », `CardDef.waterbend`), en X (« waterbend {X} », `xCost: "waterbend"`) ou facultative (« you may waterbend {N} », un kicker `kickerKind: "waterbend"`, lu par `cond.kicked`) ; la part payable en engageant artefacts et créatures est exactement celle de la maîtrise (`waterbendAmount`, `ManaPurpose.waterbend`), selon le kicker et X ;
-  - la garde « Ward—Waterbend {4} » (`ward.waterbend`), « à moins de maîtriser l'eau {2} » (`fx.unlessPays(…, { waterbend: true })`) et « vous pouvez maîtriser l'eau » (`fx.mayWaterbend`) ;
-  - les cartes liées lancées en maîtrisant l'eau {X}, X étant leur valeur de mana (`playFrom: { zone: "linked", waterbend }`, Hama ; PLAN-H H7b) ;
-  - le contrôle d'un joueur pendant sa seule prochaine phase de combat (`fx.controlNextTurn(who, true)`, `turnControl.combatOnly`), annoncé au journal ;
-  - `fx.countersDivided(total, objets, { counter, anyNumber })` : une autre sorte de marqueur (étourdissement), répartie à la résolution entre un nombre quelconque d'objets.
-- **Dette :** le contrôle d'un autre joueur (`controlNextTurn`) sert désormais à deux cartes : son entrée est retirée.
-- **Version des règles :** 41.
-- **Tests :** 9 tests de règles (« lot B1 »).
+- **Cards (9):** Benevolent River Spirit, Crashing Wave, Spirit Water Revival, Secret of Bloodbending, The Unagi of Kyoshi Island, Waterbending Lesson, Foggy Swamp Visions, Ruinous Waterbending, Hama, the Bloodbender.
+- **The engine gains:**
+  - waterbend as an additional spell cost, read from the text: mandatory ("waterbend {5}", `CardDef.waterbend`), with X ("waterbend {X}", `xCost: "waterbend"`) or optional ("you may waterbend {N}", a `kickerKind: "waterbend"` kicker, read by `cond.kicked`); the part payable by tapping artifacts and creatures is exactly that of waterbend (`waterbendAmount`, `ManaPurpose.waterbend`), depending on the kicker and X;
+  - ward "Ward—Waterbend {4}" (`ward.waterbend`), "unless you waterbend {2}" (`fx.unlessPays(…, { waterbend: true })`) and "you may waterbend" (`fx.mayWaterbend`);
+  - linked cards cast by waterbending {X}, X being their mana value (`playFrom: { zone: "linked", waterbend }`, Hama; PLAN-H H7b);
+  - control of a player during their next combat phase only (`fx.controlNextTurn(who, true)`, `turnControl.combatOnly`), announced in the log;
+  - `fx.countersDivided(total, objects, { counter, anyNumber })`: another kind of counter (stun), divided on resolution among any number of objects.
+- **Debt:** control of another player (`controlNextTurn`) now serves two cards: its entry is removed.
+- **Rules version:** 41.
+- **Tests:** 9 rules tests ("lot B1").
 
-## Sous-lot B2 : « chaque fois que vous maîtrisez » ✅ (262 / 280)
+## Sub-lot B2: "whenever you waterbend" ✅ (262 / 280)
 
-- **Carte :** Avatar Aang // Aang, Master of Elements.
-- **Le moteur gagne :**
-  - l'événement « vous maîtrisez [l'élément] » (`bent`, `RulesEvent` `bend`) : l'eau quand un coût de maîtrise de l'eau est payé (capacité, sort, garde, « à moins de », « vous pouvez »), la terre et l'air quand l'effet se fait, le feu quand la capacité de maîtrise du feu se résout ; noté au journal du tour ;
-  - le déclencheur `when.bend(sortes?)` et la requête du journal `{ event: "bend", distinctKinds: true }` (« si vous avez fait les quatre ce tour-ci ») ;
-  - la réduction de coût par symboles (`spellCost.reduceSymbols`) : chaque symbole retire un symbole de sa couleur, sinon {1} du générique (601.2f).
-- **Approximation levée :** Aang, Swift Savior (méta) paie maintenant « maîtrise de l'eau {8} » en engageant aussi ses artefacts et créatures.
-- **Version des règles :** 42.
-- **Tests :** 3 tests de règles (« lot B2 »).
+- **Card:** Avatar Aang // Aang, Master of Elements.
+- **The engine gains:**
+  - the event "you bend [the element]" (`bent`, `RulesEvent` `bend`): water when a waterbend cost is paid (ability, spell, ward, "unless", "you may"), earth and air when the effect happens, fire when the firebending ability resolves; noted in the turn log;
+  - the trigger `when.bend(kinds?)` and the log query `{ event: "bend", distinctKinds: true }` ("if you have done all four this turn");
+  - cost reduction by symbols (`spellCost.reduceSymbols`): each symbol removes a symbol of its color, otherwise {1} of the generic part (601.2f).
+- **Approximation removed:** Aang, Swift Savior (meta) now pays "waterbend {8}" by also tapping his artifacts and creatures.
+- **Rules version:** 42.
+- **Tests:** 3 rules tests ("lot B2").
 
-## Sous-lot C1 : caractéristiques et montants ✅ (268 / 280)
+## Sub-lot C1: characteristics and amounts ✅ (268 / 280)
 
-- **Cartes (6) :** Toph, the Blind Bandit, Earthen Ally, Diligent Zookeeper, Avatar Destiny, White Lotus Tile, Bumi, King of Three Trials.
-- **Le moteur gagne :**
-  - dans les F/E définies par une capacité : les marqueurs sur des permanents (`countersAmong`, Toph), les couleurs parmi les permanents d'un filtre complet (`colorsAmong`, « parmi vos Alliés »), les types et sous-types exclus (`notTypes`, `notSubtype`) ;
-  - `staticAbility(…, { perAmount })` : F/E multipliées par un montant calculé comme une F/E de CDA (Earthen Ally) ;
-  - `LayerMods.perOwnCreatureTypes` : un bonus multiplié, pour chaque objet touché, par son nombre de types de créature, avec un plafond (Diligent Zookeeper ; un changelin est aussi Humain) ;
-  - le montant `maxSharingCreatureType(filtre)` (« le plus grand nombre de créatures qui ont un type en commun », changelins compris) ;
-  - les modes d'une capacité déclenchée sous condition (« jusqu'à X modes » écrit en combinaisons, chacune avec sa condition, comme les « l'un ou les deux » déjà en place) ;
-  - `fx.scry(n, joueur)` : le regard fait par un joueur ciblé.
-- **Approximation levée :** Dragonfly Swarm compte les cartes « non-créature, non-terrain » exactement.
-- **Avatar Destiny** profite du correctif 608.2h du lot A5 (la force de la créature morte).
-- **Version des règles :** 43.
-- **Tests :** 6 tests de règles (« lot C1 »).
+- **Cards (6):** Toph, the Blind Bandit, Earthen Ally, Diligent Zookeeper, Avatar Destiny, White Lotus Tile, Bumi, King of Three Trials.
+- **The engine gains:**
+  - in P/T defined by an ability: counters on permanents (`countersAmong`, Toph), colors among the permanents of a full filter (`colorsAmong`, "among your Allies"), excluded types and subtypes (`notTypes`, `notSubtype`);
+  - `staticAbility(…, { perAmount })`: P/T multiplied by an amount computed like a CDA P/T (Earthen Ally);
+  - `LayerMods.perOwnCreatureTypes`: a bonus multiplied, for each affected object, by its number of creature types, with a cap (Diligent Zookeeper; a changeling is also Human);
+  - the amount `maxSharingCreatureType(filter)` ("the greatest number of creatures that share a creature type", changelings included);
+  - the modes of a conditional triggered ability ("up to X modes" written as combinations, each with its condition, like the "one or both" already in place);
+  - `fx.scry(n, player)`: scry done by a targeted player.
+- **Approximation removed:** Dragonfly Swarm counts "noncreature, nonland" cards exactly.
+- **Avatar Destiny** benefits from the 608.2h fix of lot A5 (the power of the dead creature).
+- **Rules version:** 43.
+- **Tests:** 6 rules tests ("lot C1").
 
-## Sous-lot C2 : lancement et mana ✅ (275 / 280)
+## Sub-lot C2: casting and mana ✅ (275 / 280)
 
-- **Cartes (7) :** Redirect Lightning, Sozin's Comet, The Last Agni Kai, Lo and Li, Twin Tutors, Iroh, Grand Lotus, Ozai, the Phoenix King, Planetarium of Wan Shi Tong.
-- **Le moteur gagne :**
-  - le présage (702.143) : « Foretell {2}{R} » lu dans le texte, action spéciale pendant votre tour (payer {2}, exiler la carte de la main), lancement à un tour ultérieur pour le coût de présage (`exiledVia` de sorte `foretell`) ; entrée de dette justifiée (une seule carte) ;
-  - « en coût additionnel, payez N PV ou payez {M} » (`kickerCost.life` avec `kickerOrPay`, lu dans le texte) ;
-  - `playFrom` avec `flashback` et `cost` : le flashback donné aux cartes du cimetière (Iroh, Grand Lotus : leur coût de mana, ou {1} pour les Leçons) ;
-  - la carte du dessus de la bibliothèque lancée par une permission (`castNow`, Planetarium of Wan Shi Tong) ;
-  - `fx.fight(a, b, storeExcess)` : les blessures en excès d'un combat ;
-  - la famille `keepUnspentMana` (500.4) : ces types ne se vident pas (The Last Agni Kai, par `fx.thisTurn`), ou tout le mana devient rouge (Ozai) ; la condition `cond.manaPoolAtLeast(n)`, la réserve de mana faisant désormais avancer la version d'état (cache des couches) ;
-  - `spellKeywords` : des mots-clés donnés aux sorts du joueur (Lo and Li : « vos sorts de Leçon ont le lien de vie »), lus au moment des blessures.
-- **Version des règles :** 44.
-- **Tests :** 8 tests de règles (« lot C2 »).
+- **Cards (7):** Redirect Lightning, Sozin's Comet, The Last Agni Kai, Lo and Li, Twin Tutors, Iroh, Grand Lotus, Ozai, the Phoenix King, Planetarium of Wan Shi Tong.
+- **The engine gains:**
+  - foretell (702.143): "Foretell {2}{R}" read from the text, special action during your turn (pay {2}, exile the card from hand), cast on a later turn for the foretell cost (`exiledVia` of kind `foretell`); justified debt entry (a single card);
+  - "as an additional cost, pay N life or pay {M}" (`kickerCost.life` with `kickerOrPay`, read from the text);
+  - `playFrom` with `flashback` and `cost`: flashback given to graveyard cards (Iroh, Grand Lotus: their mana cost, or {1} for Lessons);
+  - the top card of the library cast by a permission (`castNow`, Planetarium of Wan Shi Tong);
+  - `fx.fight(a, b, storeExcess)`: the excess damage of a fight;
+  - the `keepUnspentMana` family (500.4): these types do not empty (The Last Agni Kai, by `fx.thisTurn`), or all mana becomes red (Ozai); the condition `cond.manaPoolAtLeast(n)`, the mana pool now advancing the state version (layer cache);
+  - `spellKeywords`: keywords given to the player's spells (Lo and Li: "your Lesson spells have lifelink"), read at damage time.
+- **Rules version:** 44.
+- **Tests:** 8 rules tests ("lot C2").
 
-## Sous-lot C3 : dernières cartes uniques ✅ (280 / 280)
+## Sub-lot C3: last unique cards ✅ (280 / 280)
 
-- **Cartes (5) :** Destined Confrontation, Fated Firepower, Firebender Ascension, Koh, the Face Stealer, The Rise of Sozin // Fire Lord Sozin.
-- **Le moteur gagne :**
-  - `fx.keep(joueurs, "totalPower", filtre, { max: N })` (opération `keep` depuis PLAN-H H8a) : chaque joueur choisit des permanents de force totale N ou moins (un choix au-delà est refusé), puis tous sacrifient les autres en même temps ;
-  - `eventReplacement({ modify: { add: amount.countersOn(ref.self, kind) } })` (`addSourceCounters` avant PLAN-H H7a) : autant de blessures en plus que de marqueurs de ce type sur la source du remplacement (Fated Firepower) ;
-  - l'événement « une créature attaquante a fait se déclencher une de ses capacités » (`when.attackAbilityTriggered`) et la référence `ref.abilitiesFromEventObject` (la capacité à copier) ;
-  - le nom choisi parmi des cartes désignées (`fx.chooseForSelf("cardName", { optionsFrom })`) et `gainLinkedActivated: { triggered, chosenName }` : les capacités activées et déclenchées de la dernière carte liée choisie (Koh) ;
-  - `maxTotalManaValueAmount` : la valeur de mana totale des cibles d'une capacité réflexive, évaluée à sa mise sur la pile (Fire Lord Sozin : le X payé).
-- **Dette :** `chooseCardName` et `exileNamed` servent désormais à deux cartes (Ancient Vendetta, The Rise of Sozin) : leurs entrées sont retirées.
-- **Version des règles :** 45.
-- **Tests :** 6 tests de règles (« lot C3 »).
+- **Cards (5):** Destined Confrontation, Fated Firepower, Firebender Ascension, Koh, the Face Stealer, The Rise of Sozin // Fire Lord Sozin.
+- **The engine gains:**
+  - `fx.keep(players, "totalPower", filter, { max: N })` (operation `keep` since PLAN-H H8a): each player chooses permanents with total power N or less (a larger choice is refused), then all sacrifice the others at the same time;
+  - `eventReplacement({ modify: { add: amount.countersOn(ref.self, kind) } })` (`addSourceCounters` before PLAN-H H7a): as much extra damage as there are counters of that kind on the replacement's source (Fated Firepower);
+  - the event "an attacking creature caused one of its abilities to trigger" (`when.attackAbilityTriggered`) and the reference `ref.abilitiesFromEventObject` (the ability to copy);
+  - the name chosen among designated cards (`fx.chooseForSelf("cardName", { optionsFrom })`) and `gainLinkedActivated: { triggered, chosenName }`: the activated and triggered abilities of the last linked card chosen (Koh);
+  - `maxTotalManaValueAmount`: the total mana value of the targets of a reflexive ability, evaluated when it is put on the stack (Fire Lord Sozin: the X paid).
+- **Debt:** `chooseCardName` and `exileNamed` now serve two cards (Ancient Vendetta, The Rise of Sozin): their entries are removed.
+- **Rules version:** 45.
+- **Tests:** 6 rules tests ("lot C3").

@@ -1,195 +1,195 @@
-# Méta Standard (plan P4, phase 1)
+# Standard meta (plan P4, phase 1)
 
-Cartes des decks Standard les plus joués, toutes extensions confondues, avant la couverture complète extension par extension (`docs/plans/PLAN-P4.md`). Les decks relevés sont dans `docs/meta/2026-09-29/`. Chaque lot rend jouables quelques archétypes, deck principal **et** réserve (le BO3 en a besoin).
+Cards from the most played Standard decks, across all sets, before the complete set-by-set coverage (PLAN-P4, condensed in `docs/history.md`). The decks surveyed are in `docs/meta/2026-09-29/`. Each lot makes a few archetypes playable, main deck **and** sideboard (BO3 needs it).
 
-Vérification d'un lot : `npm run verify -- --set META`. Le fuzz ciblé joue alors les decks du méta déjà jouables les uns contre les autres (`npm run fuzz -- --pool meta`), et le test `cards/test/meta-decks.test.ts` vérifie que les decks des lots faits sont légaux et jouables.
+Checking a lot: `npm run verify -- --set META`. The targeted fuzz then plays the already playable meta decks against each other (`npm run fuzz -- --pool meta`), and the test `cards/test/meta-decks.test.ts` checks that the decks of the finished lots are legal and playable.
 
-Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/cards.ts`, un fichier par extension tant qu'elle est partielle). Ils seront répartis par couleur quand l'extension sera couverte en entier.
+Scripts go in their set's folder (`packages/cards/src/<ext>/cards.ts`, one file per set while it is partial). They will be split by color once the set is fully covered.
 
-## Lot M1 — Izzet Spellementals et Mono-Green Landfall (28,9 % du méta)
+## Lot M1 — Izzet Spellementals and Mono-Green Landfall (28.9% of the meta)
 
-22 cartes : 17 des decks principaux, 5 des réserves. Tests de règles dans `engine/test/meta.test.ts`.
+22 cards: 17 from the main decks, 5 from the sideboards. Rules tests in `engine/test/meta.test.ts`.
 
-### Moteur
+### Engine
 
-- **Harmonie** (702.180, Tarkir: Dragonstorm) :
-  - lue dans le texte (`scryfall.ts`) : le coût d'harmonie est rangé dans `CardDef.flashback`, avec `CardDef.harmonize`. La carte se lance donc depuis le cimetière comme un flashback, puis elle est exilée ;
-  - on peut engager une créature dégagée qu'on contrôle pour réduire le générique de sa force : `CastChoices.tap` (au plus une créature), proposé par `additional.tap` de l'option de lancement (`harmonizeOptions`, `stack.ts`) ;
-  - sans `tap` dans la décision (IA, automatisme), le choix par défaut s'applique : la plus petite force qui couvre tout le générique, sinon la plus grande ; `tap: []` n'engage rien ;
-  - `legalActions` compte la réduction possible pour savoir si le sort est payable.
-- **Marchandage** (702.166, Wilds of Eldraine) : lu dans les mots-clés Scryfall, c'est un kicker {0} « sacrifiez un artefact, un enchantement ou un jeton » (`kickerKind: "bargain"`, question « Marchander »).
-- **Kicker sans mana choisi par le joueur** (Marchandage, et les kickers de Final Fantasy) : l'option de lancement donne les permanents possibles (`kickerPermanents`, le choix par défaut en premier), et la décision désigne le permanent par `sacrifice`. L'interface demande lequel s'il y a plus d'une possibilité ; sans choix, le moins cher (jeton d'abord).
-- **Contempler** (701.63) : la condition `cond.behold(filtre)` remplace `beholdJace` (qui en devient un cas particulier) : un permanent correspondant que vous contrôlez, ou une carte correspondante de votre main.
-- **Maîtrise de la terre** (Avatar) : `fx.earthbend(ref, n)`. Le terrain devient une créature 0/0 avec la célérité (toujours un terrain), reçoit N marqueurs +1/+1 et la capacité « quand il meurt ou est exilé, renvoyez-le sur le champ de bataille engagé ».
-- **Effet de joueur jusqu'à la fin du tour :** `fx.thisTurn({ … })`, l'effet `playerEffect`. Par exemple `damageUnpreventable` : « les blessures ne peuvent pas être prévenues ce tour-ci ».
-- **« Une ou deux cibles » :** `target.between(1, 2, spec)` (`TargetSpec.minCount`, `TargetOption.min`).
-- **Déclencheur « devient la cible » étendu aux sorts :** `when.targetedByOpponent(filtre, true)` (« une créature ou un sort de créature que vous contrôlez », Surrak).
-- **Filtre `adventure`** (cartes hors du champ de bataille) : « carte avec une Aventure » (Hearth Elemental).
-- **Outils :**
-  - `tools/meta-decks.ts` lit les decks du méta ;
-  - `fuzz --pool meta` joue les decks du méta jouables ;
-  - `verify --set META` fait la vérification d'un lot du méta ; `--ci` et `--full` ont chacun un fuzz du méta ;
-  - le bac à sable de l'interface (mode dev) accepte des cartes au cimetière (`graveyard`).
+- **Harmonize** (702.180, Tarkir: Dragonstorm):
+  - read from the text (`scryfall.ts`): the harmonize cost is stored in `CardDef.flashback`, with `CardDef.harmonize`. The card is therefore cast from the graveyard like a flashback, then exiled;
+  - you may tap an untapped creature you control to reduce the generic part by its power: `CastChoices.tap` (at most one creature), offered by `additional.tap` of the cast option (`harmonizeOptions`, `stack.ts`);
+  - without `tap` in the decision (AI, autopilot), the default choice applies: the smallest power that covers all the generic cost, otherwise the largest; `tap: []` taps nothing;
+  - `legalActions` counts the possible reduction to know whether the spell is payable.
+- **Bargain** (702.166, Wilds of Eldraine): read from the Scryfall keywords, it is a {0} kicker "sacrifice an artifact, an enchantment or a token" (`kickerKind: "bargain"`, question "Bargain").
+- **Kicker with no mana, chosen by the player** (Bargain, and the Final Fantasy kickers): the cast option gives the possible permanents (`kickerPermanents`, the default choice first), and the decision designates the permanent by `sacrifice`. The interface asks which one if there is more than one possibility; with no choice, the cheapest (token first).
+- **Behold** (701.63): the condition `cond.behold(filter)` replaces `beholdJace` (which becomes a special case): a matching permanent you control, or a matching card in your hand.
+- **Earthbend** (Avatar): `fx.earthbend(ref, n)`. The land becomes a 0/0 creature with haste (still a land), gets N +1/+1 counters and the ability "when it dies or is exiled, return it to the battlefield tapped".
+- **Player effect until end of turn:** `fx.thisTurn({ … })`, the `playerEffect` effect. For example `damageUnpreventable`: "damage can't be prevented this turn".
+- **"One or two targets":** `target.between(1, 2, spec)` (`TargetSpec.minCount`, `TargetOption.min`).
+- **"Becomes the target" trigger extended to spells:** `when.targetedByOpponent(filter, true)` ("a creature or creature spell you control", Surrak).
+- **`adventure` filter** (cards outside the battlefield): "card with an Adventure" (Hearth Elemental).
+- **Tools:**
+  - `tools/meta-decks.ts` reads the meta decks;
+  - `fuzz --pool meta` plays the playable meta decks;
+  - `verify --set META` checks a meta lot; `--ci` and `--full` each have a meta fuzz;
+  - the interface sandbox (dev mode) accepts cards in the graveyard (`graveyard`).
 
-### Cartes, par extension
+### Cards, by set
 
-- **Secrets of Strixhaven (SOS) :**
-  - Great Hall of the Biblioplex : mana restreint aux éphémères et rituels ; devient une créature Sorcier 2/4 ;
-  - Impractical Joke ;
-  - Prismari Charm ;
+- **Secrets of Strixhaven (SOS):**
+  - Great Hall of the Biblioplex: mana restricted to instants and sorceries; becomes a 2/4 Wizard creature;
+  - Impractical Joke;
+  - Prismari Charm;
   - Traumatic Critique.
-- **Lorwyn Eclipsed (ECL) :**
-  - Steam Vents (terrain choc, lu dans le texte) ;
-  - Spell Snare ;
-  - Sunderflock : coût réduit par la plus grande valeur de mana parmi vos Élémentaux ;
-  - Sear ;
-  - Sapling Nursery : affinité pour les Forêts, jeton Sylvin 3/4 avec la portée (`ecl/common.ts`).
-- **Avatar: The Last Airbender (TLA) :**
-  - Ba Sing Se ;
+- **Lorwyn Eclipsed (ECL):**
+  - Steam Vents (shock land, read from the text);
+  - Spell Snare;
+  - Sunderflock: cost reduced by the greatest mana value among your Elementals;
+  - Sear;
+  - Sapling Nursery: affinity for Forests, 3/4 Treefolk token with reach (`ecl/common.ts`).
+- **Avatar: The Last Airbender (TLA):**
+  - Ba Sing Se;
   - Earthbender Ascension.
-- **Wilds of Eldraine (WOE) :**
-  - Sleight of Hand ;
-  - Hearth Elemental // Stoke Genius (aventure) ;
-  - Torch the Tower (Marchandage).
-- **Tarkir: Dragonstorm (TDM) :**
-  - Winternight Stories (Harmonie) ;
+- **Wilds of Eldraine (WOE):**
+  - Sleight of Hand;
+  - Hearth Elemental // Stoke Genius (adventure);
+  - Torch the Tower (Bargain).
+- **Tarkir: Dragonstorm (TDM):**
+  - Winternight Stories (Harmonize);
   - Surrak, Elusive Hunter.
-- **The Hobbit (HOB) :** Elven Passage (contempler un Elfe).
-- **Teenage Mutant Ninja Turtles (TMT) :**
-  - Escape Tunnel ;
-  - Leatherhead, Swamp Stalker : marqueur de défense talismanique.
-- **Murders at Karlov Manor (MKM) :** Thundering Falls, terrain à surveillance ; le modèle `surveilLand` sert aussi aux autres terrains de ce cycle.
-- **Marvel's Spider-Man (SPM) :**
-  - Hydro-Man, Fluid Felon : devient un terrain jusqu'à votre prochain tour ;
-  - Sandman, Shifting Scoundrel : revient du cimetière avec une carte de terrain.
+- **The Hobbit (HOB):** Elven Passage (behold an Elf).
+- **Teenage Mutant Ninja Turtles (TMT):**
+  - Escape Tunnel;
+  - Leatherhead, Swamp Stalker: hexproof counter.
+- **Murders at Karlov Manor (MKM):** Thundering Falls, surveil land; the `surveilLand` model also serves the other lands of this cycle.
+- **Marvel's Spider-Man (SPM):**
+  - Hydro-Man, Fluid Felon: becomes a land until your next turn;
+  - Sandman, Shifting Scoundrel: returns from the graveyard with a land card.
 
-## Lot M2 — Dimir Midrange et Jund Sacrifice (cumul 43,7 % du méta)
+## Lot M2 — Dimir Midrange and Jund Sacrifice (cumulative 43.7% of the meta)
 
-23 cartes : 15 des decks principaux, 8 des réserves. Tests dans `engine/test/meta.test.ts` (« lot M2 »).
+23 cards: 15 from the main decks, 8 from the sideboards. Tests in `engine/test/meta.test.ts` ("lot M2").
 
-### Moteur
+### Engine
 
-- **Flétrir en coût additionnel facultatif** (« you may blight N », Lorwyn Eclipsed) : lu dans le texte, c'est un kicker {0} qui met N marqueurs -1/-1 sur une créature que vous contrôlez (`kickerCost.blight`, `kickerKind: "blight"`). La créature se choisit comme le permanent du Marchandage (`CastChoices.sacrifice`, `kickerPermanents`). « Si le coût additionnel a été payé » : `cond.kicked`.
-- **Travail d'équipe N** (Teamwork, Marvel Super Heroes) : lu dans le texte, c'est un kicker {0} « engagez des créatures de force totale N ou plus » (`kickerCost.tapPower`). L'option de lancement donne `kickerTap` (comme l'équipage), la décision désigne les créatures par `tap` ; sans `tap`, les plus faibles suffisantes.
-- **Amasser** (701.47) : `fx.amass(joueur, sous-type, N)`, avec une Armée 0/0 noire créée au besoin, qui devient aussi du sous-type.
-- **Déclencheurs :**
-  - `when.search("opponent")` : « chaque fois qu'un adversaire cherche dans sa bibliothèque » (événement `search`, émis par l'effet de recherche) ;
-  - `when.leaves(filtre)` : « chaque fois qu'une [créature que vous contrôlez avec un marqueur +1/+1] quitte le champ de bataille » ;
-  - `when.sacrifice(filtre, false, true)` : sacrifié par un adversaire.
-- **Statique `activatedReduction`** (`playerStatic`) : les capacités activées de vos permanents correspondant au filtre coûtent {N} de moins (Mutagen Man : jetons d'artefact).
-- **Restriction `damageHealsFirst`** (Wolverine) : de nouvelles blessures guérissent d'abord les précédentes.
-- **« VM X ou moins »** pour les effets de masse (`modifyAll`, `destroyAll`) : comparaison `cmp.manaValue("<=", amount.x)`, avec le X du sort.
-- **Jeton Mutagène** (`tmt/common.ts`).
+- **Optional blight as an additional cost** ("you may blight N", Lorwyn Eclipsed): read from the text, it is a {0} kicker that puts N -1/-1 counters on a creature you control (`kickerCost.blight`, `kickerKind: "blight"`). The creature is chosen like the Bargain permanent (`CastChoices.sacrifice`, `kickerPermanents`). "If the additional cost was paid": `cond.kicked`.
+- **Teamwork N** (Marvel Super Heroes): read from the text, it is a {0} kicker "tap creatures with total power N or greater" (`kickerCost.tapPower`). The cast option gives `kickerTap` (like crew), the decision designates the creatures by `tap`; without `tap`, the weakest sufficient ones.
+- **Amass** (701.47): `fx.amass(player, subtype, N)`, with a black 0/0 Army created if needed, which also becomes of that subtype.
+- **Triggers:**
+  - `when.search("opponent")`: "whenever an opponent searches their library" (`search` event, emitted by the search effect);
+  - `when.leaves(filter)`: "whenever a [creature you control with a +1/+1 counter] leaves the battlefield";
+  - `when.sacrifice(filter, false, true)`: sacrificed by an opponent.
+- **`activatedReduction` static** (`playerStatic`): activated abilities of your permanents matching the filter cost {N} less (Mutagen Man: artifact tokens).
+- **`damageHealsFirst` restriction** (Wolverine): new damage first heals the previous damage.
+- **"MV X or less"** for mass effects (`modifyAll`, `destroyAll`): comparison `cmp.manaValue("<=", amount.x)`, with the spell's X.
+- **Mutagen token** (`tmt/common.ts`).
 
-### Cartes, par extension
+### Cards, by set
 
-- **Avatar: The Last Airbender (TLA) :** Callous Inspector, Deadly Precision, Obsessive Pursuit, Wan Shi Tong, Librarian ; en réserve, Day of Black Sun et Raven Eagle.
-- **Marvel Super Heroes (MSH), nouvelle extension entamée :** Hidden Lair, The Wondrous Wasp, We Say Thee Nay!, Wolverine, Fierce Fighter.
-- **Lorwyn Eclipsed (ECL) :** Blood Crypt et Overgrown Tomb (terrains choc), Requiting Hex (flétrir 1).
-- **The Hobbit (HOB) :** Azog, Moria's Ruin (amasser des Gobelins) ; The Sackville-Bagginses.
-- **Teenage Mutant Ninja Turtles (TMT) :** Dream Beavers, Mutagen Man, Living Ooze ; en réserve, The Ooze.
-- **Secrets of Strixhaven (SOS), réserve :** Professor Dellian Fel, Witherbloom Charm.
-- **Wilds of Eldraine (WOE), réserve :** Disdainful Stroke.
-- **Tarkir: Dragonstorm (TDM), réserve :** Strategic Betrayal.
-- **Murders at Karlov Manor (MKM), réserve :** Vengeful Tracker.
+- **Avatar: The Last Airbender (TLA):** Callous Inspector, Deadly Precision, Obsessive Pursuit, Wan Shi Tong, Librarian; in the sideboard, Day of Black Sun and Raven Eagle.
+- **Marvel Super Heroes (MSH), new set started:** Hidden Lair, The Wondrous Wasp, We Say Thee Nay!, Wolverine, Fierce Fighter.
+- **Lorwyn Eclipsed (ECL):** Blood Crypt and Overgrown Tomb (shock lands), Requiting Hex (blight 1).
+- **The Hobbit (HOB):** Azog, Moria's Ruin (amass Goblins); The Sackville-Bagginses.
+- **Teenage Mutant Ninja Turtles (TMT):** Dream Beavers, Mutagen Man, Living Ooze; in the sideboard, The Ooze.
+- **Secrets of Strixhaven (SOS), sideboard:** Professor Dellian Fel, Witherbloom Charm.
+- **Wilds of Eldraine (WOE), sideboard:** Disdainful Stroke.
+- **Tarkir: Dragonstorm (TDM), sideboard:** Strategic Betrayal.
+- **Murders at Karlov Manor (MKM), sideboard:** Vengeful Tracker.
 
-## Lot M3 — Dimir Excruciator, Azorius Control et Selesnya Landfall (cumul 53,2 % du méta)
+## Lot M3 — Dimir Excruciator, Azorius Control and Selesnya Landfall (cumulative 53.2% of the meta)
 
-15 cartes : 12 des decks principaux, 3 des réserves (Day of Black Sun et Strategic Betrayal étaient faites au lot M2). Tests dans `engine/test/meta.test.ts` (« lot M3 »).
+15 cards: 12 from the main decks, 3 from the sideboards (Day of Black Sun and Strategic Betrayal were done in lot M2). Tests in `engine/test/meta.test.ts` ("lot M3").
 
-### Moteur
+### Engine
 
-- **Évocation** (702.74) : lue dans le texte ; coût alternatif (`altCost`, « Évocation — … ») et capacité « quand elle arrive, si elle a été évoquée, sacrifiez-la » (`cond.evoked`).
-- **Mana dépensé par type** : le paiement le rend (`payMana`, argument `spent`) ; il est gardé sur le sort et le permanent (`spentColors`), et lu par `cond.spent("U", 2)` (« si {U}{U} a été dépensé pour le lancer »). Les conditions d'arrivée le voient : il passe par le contexte d'arrivée, comme l'évocation.
-- **Mobilisation N** (702.181, Tarkir: Dragonstorm) : lue dans le texte ; N Guerriers rouges 1/1 engagés et attaquants, sacrifiés au début de la prochaine étape de fin.
-- **Montée en puissance** (Power-up, Marvel Super Heroes) : `activated({ powerUp: true })`, une seule fois ; le coût est réduit du coût de mana de la source si elle est arrivée ce tour-ci (`abilityMana`).
-- **Réunir des preuves N** en coût additionnel facultatif (« you may collect evidence N ») : lu dans le texte (kicker {0}, `kickerCost.collectEvidence`) ; les cartes du cimetière sont choisies automatiquement (les plus chères d'abord).
-- **`fx.exileNamesakes`** (Deadly Cover-Up) : une carte du cimetière d'un adversaire et ses homonymes (cimetière, main, bibliothèque) ; il pioche autant que de cartes exilées de sa main.
-- **Nom de carte de terrain choisi** (Petrified Hamlet) : `fx.chooseForSelf("landName")` (capacité déclenchée d'arrivée), filtre `nameChosen` ; les capacités non de mana des sources du nom choisi sont bloquées, comme avec Sorcerous Spyglass (`chosenNameAbilities: "forbid"`, PLAN-H H9).
-- **Copie d'une carte de créature d'un cimetière en arrivant** (Superior Spider-Man, Échange d'esprit) : `entersAsCopyOfGraveyard` (nom, F/E) avec `entersAsCopyAddSubtypes` ; la carte copiée est exilée.
+- **Evoke** (702.74): read from the text; alternative cost (`altCost`, "Evoke — …") and the ability "when it enters, if it was evoked, sacrifice it" (`cond.evoked`).
+- **Mana spent by type:** payment returns it (`payMana`, argument `spent`); it is kept on the spell and the permanent (`spentColors`), and read by `cond.spent("U", 2)` ("if {U}{U} was spent to cast it"). Enters conditions see it: it goes through the enters context, like evoke.
+- **Mobilize N** (702.181, Tarkir: Dragonstorm): read from the text; N tapped and attacking red 1/1 Warriors, sacrificed at the beginning of the next end step.
+- **Power-up** (Marvel Super Heroes): `activated({ powerUp: true })`, only once; the cost is reduced by the source's mana cost if it entered this turn (`abilityMana`).
+- **Collect evidence N** as an optional additional cost ("you may collect evidence N"): read from the text ({0} kicker, `kickerCost.collectEvidence`); the graveyard cards are chosen automatically (most expensive first).
+- **`fx.exileNamesakes`** (Deadly Cover-Up): a card from an opponent's graveyard and its namesakes (graveyard, hand, library); that player draws as many cards as were exiled from their hand.
+- **Chosen land card name** (Petrified Hamlet): `fx.chooseForSelf("landName")` (enters triggered ability), `nameChosen` filter; the non-mana abilities of sources with the chosen name are blocked, as with Sorcerous Spyglass (`chosenNameAbilities: "forbid"`, PLAN-H H9).
+- **Copy of a creature card from a graveyard on entering** (Superior Spider-Man, Mind Swap): `entersAsCopyOfGraveyard` (name, P/T) with `entersAsCopyAddSubtypes`; the copied card is exiled.
 
-### Cartes, par extension
+### Cards, by set
 
-- **Secrets of Strixhaven (SOS) :** Emeritus of Ideation (préparée, sort Ancestral Recall), Erode, Petrified Hamlet.
-- **Lorwyn Eclipsed (ECL) :** Hallowed Fountain et Temple Garden (terrains choc), Deceit (évocation, mana dépensé).
-- **Murders at Karlov Manor (MKM) :** Meticulous Archive, No More Lies, Deadly Cover-Up (réunir des preuves 6).
-- **Avatar: The Last Airbender (TLA) :** Shared Roots.
-- **Marvel Super Heroes (MSH) :** M.O.D.O.K. ; en réserve, Captain Marvel, Earth's Protector (montée en puissance).
-- **Marvel's Spider-Man (SPM) :** Superior Spider-Man.
-- **Tarkir: Dragonstorm (TDM), réserve :** Voice of Victory (mobilisation 2), Qarsi Revenant (Renouveau).
+- **Secrets of Strixhaven (SOS):** Emeritus of Ideation (prepared, spell Ancestral Recall), Erode, Petrified Hamlet.
+- **Lorwyn Eclipsed (ECL):** Hallowed Fountain and Temple Garden (shock lands), Deceit (evoke, mana spent).
+- **Murders at Karlov Manor (MKM):** Meticulous Archive, No More Lies, Deadly Cover-Up (collect evidence 6).
+- **Avatar: The Last Airbender (TLA):** Shared Roots.
+- **Marvel Super Heroes (MSH):** M.O.D.O.K.; in the sideboard, Captain Marvel, Earth's Protector (power-up).
+- **Marvel's Spider-Man (SPM):** Superior Spider-Man.
+- **Tarkir: Dragonstorm (TDM), sideboard:** Voice of Victory (mobilize 2), Qarsi Revenant (Renew).
 
-## Lot M4 — 4c Control, Boros Dragons et Jeskai Artifacts (cumul 67,1 % du méta)
+## Lot M4 — 4c Control, Boros Dragons and Jeskai Artifacts (cumulative 67.1% of the meta)
 
-23 cartes : 22 des decks principaux, 1 de réserve. Tests dans `engine/test/meta.test.ts` (« lot M4 »).
+23 cards: 22 from the main decks, 1 from a sideboard. Tests in `engine/test/meta.test.ts` ("lot M4").
 
-### Moteur
+### Engine
 
-- **Type de terrain de base choisi en jouant un terrain** (Multiversal Passage) : `asEnters: [fx.chooseForSelf("landType")]` ; `legalActions` propose une option `playLand` par type (`landType`, aussi pour payer ou non les 2 PV), et la statique `addChosen: "landType"` lui donne ce type (donc son mana). Le terrain choc « Then you may pay 2 life » est lu dans le texte.
-- **Exploiter** (Harness, Marvel Super Heroes) : `fx.harness` et `cond.harnessed` pour les capacités ∞.
-- **Convergence** : `amount.colorsSpent`, les couleurs de mana dépensées pour lancer le sort.
-- **Maîtrise du feu N** (Firebending, Avatar) : lue dans le texte ; « chaque fois que cette créature attaque, ajoutez N {R} ».
-- Jetons : Moine 1/1 avec la prouesse (`tdm/common.ts`), Doombot (`msh/common.ts`), Dragon 4/4 avec la maîtrise du feu 4 (`tla/common.ts`).
+- **Basic land type chosen when playing a land** (Multiversal Passage): `asEnters: [fx.chooseForSelf("landType")]`; `legalActions` offers one `playLand` option per type (`landType`, also for paying or not the 2 life), and the static `addChosen: "landType"` gives it that type (hence its mana). The shock land "Then you may pay 2 life" is read from the text.
+- **Harness** (Marvel Super Heroes): `fx.harness` and `cond.harnessed` for the ∞ abilities.
+- **Converge:** `amount.colorsSpent`, the colors of mana spent to cast the spell.
+- **Firebending N** (Avatar): read from the text; "whenever this creature attacks, add N {R}".
+- Tokens: 1/1 Monk with prowess (`tdm/common.ts`), Doombot (`msh/common.ts`), 4/4 Dragon with firebending 4 (`tla/common.ts`).
 
-### Cartes, par extension
+### Cards, by set
 
-- **Tarkir: Dragonstorm (TDM) :** Clarion Conqueror, Dispelling Exhale, Inevitable Defeat, Jeskai Revelation, Maelstrom of the Spirit Dragon, Magmatic Hellkite, Mistrise Village, Sarkhan, Dragon Ascendant, Twinmaw Stormbrood // Charring Bite (présage), United Battlefront.
-- **Secrets of Strixhaven (SOS) :** Flashback, Sundown Pass, Tablet of Discovery, Together as One (convergence).
-- **Marvel Super Heroes (MSH) :** Castle Doom, The Mind Stone (exploiter), Thor, God of Thunder.
-- **Wilds of Eldraine (WOE) :** Candy Trail. **Lorwyn Eclipsed (ECL) :** Firdoch Core. **The Hobbit (HOB) :** Smaug the Magnificent.
-- **Avatar: The Last Airbender (TLA) :** Momo, Friendly Flier ; en réserve, The Legend of Roku // Avatar Roku (Saga qui se transforme, maîtrise du feu 4).
-- **Marvel's Spider-Man (SPM) :** Multiversal Passage.
+- **Tarkir: Dragonstorm (TDM):** Clarion Conqueror, Dispelling Exhale, Inevitable Defeat, Jeskai Revelation, Maelstrom of the Spirit Dragon, Magmatic Hellkite, Mistrise Village, Sarkhan, Dragon Ascendant, Twinmaw Stormbrood // Charring Bite (omen), United Battlefront.
+- **Secrets of Strixhaven (SOS):** Flashback, Sundown Pass, Tablet of Discovery, Together as One (converge).
+- **Marvel Super Heroes (MSH):** Castle Doom, The Mind Stone (harness), Thor, God of Thunder.
+- **Wilds of Eldraine (WOE):** Candy Trail. **Lorwyn Eclipsed (ECL):** Firdoch Core. **The Hobbit (HOB):** Smaug the Magnificent.
+- **Avatar: The Last Airbender (TLA):** Momo, Friendly Flier; in the sideboard, The Legend of Roku // Avatar Roku (Saga that transforms, firebending 4).
+- **Marvel's Spider-Man (SPM):** Multiversal Passage.
 
-## Lot M5 — Boros Dwarves, Lifegain, Mardu Discard et Boros Tokens (cumul 79,8 % du méta)
+## Lot M5 — Boros Dwarves, Lifegain, Mardu Discard and Boros Tokens (cumulative 79.8% of the meta)
 
-34 cartes : 31 des decks principaux, 3 des réserves. Tests dans `engine/test/meta.test.ts` (« lot M5 »).
+34 cards: 31 from the main decks, 3 from the sideboards. Tests in `engine/test/meta.test.ts` ("lot M5").
 
-### Moteur
+### Engine
 
-- **Storied / récit durable** (Le Hobbit) : lu dans le texte (`CardDef.storied`) ; une action basée sur l'état donne au contrôleur d'un tel permanent, s'il contrôle trois artefacts, légendaires et/ou Sagas ou plus, un effet de joueur permanent `enduringStory` (`cond.enduringStory`).
-- **Faufilement** (Sneak, Tortues Ninja) : lu dans le texte ; coût alternatif possible pendant l'étape de déclaration des bloqueurs (`cond.sneakWindow`), qui renvoie en main votre attaquant non bloqué le plus faible ; `cond.sneaked` à la résolution.
-- **Chaos** (Mayhem, Spider-Man) : lu dans le texte ; une carte défaussée ce tour-ci (`GameObject.discardedTurn`) se lance depuis le cimetière pour son coût de chaos.
-- **Paradigme** (Strixhaven) : lu dans le texte ; le sort est exilé et un emblème (lié à la carte) propose d'en lancer une copie gratuite au début de chacune de vos premières phases principales.
-- **Équiper** : « Equip worthy » (créature légendaire non-Méchant rouge et/ou blanche) et « {1} de moins par couleur de la créature ciblée » lus dans le texte ; les capacités d'équipement sont marquées (`equip`) et journalisées (`activate` dans le journal du tour) ; Kíli : la première de chaque tour coûte {0} (`firstEquipFree`).
-- **Mode réservé au coût payé** (« si le coût additionnel a été payé, choisissez les deux ») : un mode avec `condition: cond.kicked` exige le kicker dans la décision (`ModeOption.requiresKicker` ; l'interface et l'IA le paient).
-- **Capacité réflexive liée** : `fx.reflexive(cibles, effets, { c: ref.target("c") })` relit un objet de la capacité d'origine.
-- **Effets de joueur** : `fx.thisTurn(capacité, joueurs)` pour d'autres joueurs (`cantCastSpells`) ; `castCreaturesFromGraveyard`.
-- **Défense talismanique contre le monocolore** (`hexproofFromMonocolored`).
-- L'audit Oracle ↔ script compte les capacités d'une Affaire résolue.
+- **Storied / enduring story** (The Hobbit): read from the text (`CardDef.storied`); a state-based action gives the controller of such a permanent, if they control three or more artifacts, legendaries and/or Sagas, a permanent player effect `enduringStory` (`cond.enduringStory`).
+- **Sneak** (Ninja Turtles): read from the text; alternative cost possible during the declare blockers step (`cond.sneakWindow`), which returns your weakest unblocked attacker to hand; `cond.sneaked` on resolution.
+- **Mayhem** (Spider-Man): read from the text; a card discarded this turn (`GameObject.discardedTurn`) is cast from the graveyard for its mayhem cost.
+- **Paradigm** (Strixhaven): read from the text; the spell is exiled and an emblem (linked to the card) offers to cast a free copy of it at the beginning of each of your first main phases.
+- **Equip:** "Equip worthy" (red and/or white legendary non-Villain creature) and "{1} less for each color of the target creature" read from the text; equip abilities are marked (`equip`) and logged (`activate` in the turn log); Kíli: the first one each turn costs {0} (`firstEquipFree`).
+- **Mode reserved for the paid cost** ("if the additional cost was paid, choose both"): a mode with `condition: cond.kicked` requires the kicker in the decision (`ModeOption.requiresKicker`; the interface and the AI pay it).
+- **Linked reflexive ability:** `fx.reflexive(targets, effects, { c: ref.target("c") })` re-reads an object from the original ability.
+- **Player effects:** `fx.thisTurn(ability, players)` for other players (`cantCastSpells`); `castCreaturesFromGraveyard`.
+- **Hexproof from monocolored** (`hexproofFromMonocolored`).
+- The Oracle ↔ script audit counts the abilities of a solved Case.
 
-### Cartes, par extension
+### Cards, by set
 
-- **The Hobbit (HOB) :** Belladonna Took, Bofur, Reliable Guardian // Concerted Care, Dwarven Mauler, Dáin's Company, Kíli the Resourceful, The Lonely Mountain, Thorin Oakenshield, Thorin, Mountain-king ; en réserve, Bilbo's Gambit.
-- **Tarkir: Dragonstorm (TDM) :** Dalkovan Encampment, Dragonfire Blade, Frontline Rush, Stadium Headliner (mobilisation 1), Tersa Lightshatter.
-- **Teenage Mutant Ninja Turtles (TMT) :** Casey Jones, Vigilante, Cool but Rude (Classe), Skateboard, The Last Ronin's Technique (faufilement).
-- **Secrets of Strixhaven (SOS) :** Hardened Academic, Moseo, Vein's New Dean (infusion), Practiced Offense, Shattered Sanctum ; en réserve, Decorum Dissertation (paradigme).
-- **Lorwyn Eclipsed (ECL) :** Emptiness (évocation), Iron-Shield Elf, Moonshadow ; en réserve, Pyrrhic Strike (flétrir 2, les deux modes).
-- **Marvel's Spider-Man (SPM) :** Aunt May, Carnage, Crimson Chaos (chaos).
-- **Murders at Karlov Manor (MKM) :** Case of the Uneaten Feast (Affaire), Warleader's Call.
-- **Marvel Super Heroes (MSH) :** Mjölnir, Hammer of Thor (équiper digne), Political Triumph.
-- **Wilds of Eldraine (WOE) :** Song of Totentanz (Torch the Tower était au lot M1).
+- **The Hobbit (HOB):** Belladonna Took, Bofur, Reliable Guardian // Concerted Care, Dwarven Mauler, Dáin's Company, Kíli the Resourceful, The Lonely Mountain, Thorin Oakenshield, Thorin, Mountain-king; in the sideboard, Bilbo's Gambit.
+- **Tarkir: Dragonstorm (TDM):** Dalkovan Encampment, Dragonfire Blade, Frontline Rush, Stadium Headliner (mobilize 1), Tersa Lightshatter.
+- **Teenage Mutant Ninja Turtles (TMT):** Casey Jones, Vigilante, Cool but Rude (Class), Skateboard, The Last Ronin's Technique (sneak).
+- **Secrets of Strixhaven (SOS):** Hardened Academic, Moseo, Vein's New Dean (infusion), Practiced Offense, Shattered Sanctum; in the sideboard, Decorum Dissertation (paradigm).
+- **Lorwyn Eclipsed (ECL):** Emptiness (evoke), Iron-Shield Elf, Moonshadow; in the sideboard, Pyrrhic Strike (blight 2, both modes).
+- **Marvel's Spider-Man (SPM):** Aunt May, Carnage, Crimson Chaos (mayhem).
+- **Murders at Karlov Manor (MKM):** Case of the Uneaten Feast (Case), Warleader's Call.
+- **Marvel Super Heroes (MSH):** Mjölnir, Hammer of Thor (equip worthy), Political Triumph.
+- **Wilds of Eldraine (WOE):** Song of Totentanz (Torch the Tower was in lot M1).
 
-## Lot M6 — Izzet Aggro, Mono-Black Aggro, Azorius Momo, Golgari Midrange, Bant Airbending Combo, Jeskai Control (cumul 88,1 % du méta)
+## Lot M6 — Izzet Aggro, Mono-Black Aggro, Azorius Momo, Golgari Midrange, Bant Airbending Combo, Jeskai Control (cumulative 88.1% of the meta)
 
-47 cartes : 42 des decks principaux, 5 des réserves. Les vingt archétypes relevés sont jouables : la phase 1 du plan P4 est finie. Tests dans `engine/test/meta.test.ts` (« lot M6 »).
+47 cards: 42 from the main decks, 5 from the sideboards. The twenty archetypes surveyed are playable: phase 1 of plan P4 is finished. Tests in `engine/test/meta.test.ts` ("lot M6").
 
-### Moteur
+### Engine
 
-- **Maîtrise de l'air** (airbend, Avatar) : `fx.airbend(ref)` exile le permanent ou le sort (`exileSpell`, sans le contrecarrer) ; son propriétaire peut le lancer depuis l'exil pour {2} (permission `cost`, `CastTerms.costOverride`). « Chaque fois que vous lancez un sort depuis l'exil » : `castSpell` avec `fromExile`.
-- **Web-slinging** (Spider-Man) : lu dans le texte ; coût alternatif qui renvoie en main une créature engagée que vous contrôlez (la moins chère).
-- **« Payez X points de vie » en coût additionnel** (Vicious Rivalry) : lu dans le texte (`payLifeX`) ; le X du sort se paie en PV.
-- **Parité choisie** (Gollum) : `asEnters: [fx.chooseForSelf("parity")]`, filtre `parityChosen`.
-- **Tours passés** (Ral Zarek) : effet de joueur `skipTurn`, un par tour passé (`fx.playerEffectTimes`), consommé au début du tour.
-- **Effets de joueur jusqu'à votre prochain tour** : `fx.untilYourNextTurn` (Avatar's Wrath : `castOnlyFromHand`).
-- **Divers :** référence `ref.except` (« toutes les autres créatures ») ; filtre `noCounters` ; cible « capacité déclenchée » (`stackItems.triggeredOnly`) ; `lookAtTop` avec une valeur de mana totale maximale (`maxTotalManaValue`) ; déclencheur `when.dealtDamage(filtre)` ; remplacement « au lieu du cimetière » qui crée un jeton (`graveyardReplacement.createToken`) ; `fx.exileWithNamesakes(cible)` (The End) ; capacité de mana qui engage une créature (`tapAnother: "creature"`) ; restriction `cantBeBlockedByNonSpirits` ; une carte modale recto-verso peut se transformer (Jennifer Walters).
-- Jetons : Allié et Esprit (`tla/common.ts`), Loup (`hob/common.ts`).
+- **Airbend** (Avatar): `fx.airbend(ref)` exiles the permanent or spell (`exileSpell`, without countering it); its owner may cast it from exile for {2} (`cost` permission, `CastTerms.costOverride`). "Whenever you cast a spell from exile": `castSpell` with `fromExile`.
+- **Web-slinging** (Spider-Man): read from the text; alternative cost that returns a tapped creature you control to hand (the cheapest).
+- **"Pay X life" as an additional cost** (Vicious Rivalry): read from the text (`payLifeX`); the spell's X is paid in life.
+- **Chosen parity** (Gollum): `asEnters: [fx.chooseForSelf("parity")]`, `parityChosen` filter.
+- **Skipped turns** (Ral Zarek): `skipTurn` player effect, one per skipped turn (`fx.playerEffectTimes`), consumed at the beginning of the turn.
+- **Player effects until your next turn:** `fx.untilYourNextTurn` (Avatar's Wrath: `castOnlyFromHand`).
+- **Miscellaneous:** `ref.except` reference ("all other creatures"); `noCounters` filter; "triggered ability" target (`stackItems.triggeredOnly`); `lookAtTop` with a maximum total mana value (`maxTotalManaValue`); `when.dealtDamage(filter)` trigger; "instead of the graveyard" replacement that creates a token (`graveyardReplacement.createToken`); `fx.exileWithNamesakes(target)` (The End); mana ability that taps a creature (`tapAnother: "creature"`); `cantBeBlockedByNonSpirits` restriction; a modal double-faced card can transform (Jennifer Walters).
+- Tokens: Ally and Spirit (`tla/common.ts`), Wolf (`hob/common.ts`).
 
-### Cartes, par extension
+### Cards, by set
 
-- **Avatar: The Last Airbender (TLA) :** Aang, Swift Savior // Aang and La, Ocean's Fury, Aang, at the Crossroads // Aang, Destined Savior, Abandon Attachments, Abandoned Air Temple, Accumulate Wisdom, Airbender Ascension, Appa, Steadfast Guardian, Combustion Technique, Firebending Lesson, Heartless Act, Iroh's Demonstration, It'll Quench Ya!, Price of Freedom, Realm of Koh ; en réserve, Avatar's Wrath.
-- **Secrets of Strixhaven (SOS) :** Colorstorm Stallion (Opus), Daydream, Deathcap Glade, Dissection Practice, Stormcarved Coast, Vibrant Outburst ; en réserve, Ral Zarek, Guest Lecturer, Vicious Rivalry.
-- **Wilds of Eldraine (WOE) :** Bramble Familiar // Fetch Quest, Mosswood Dreadknight // Dread Whispers, Restless Cottage, Scalding Viper // Steam Clean, The End.
-- **The Hobbit (HOB) :** Chief Warg's Company, Desolation Prowler, Gollum, Riddle Master, Head of the Hunt, Nighthowl Pursuer.
-- **Marvel Super Heroes (MSH) :** Avengers Disassembled, Doctor Doom, Gleaming Bastion, Jennifer Walters // The Sensational She-Hulk.
-- **Tarkir: Dragonstorm (TDM) :** Channeled Dragonfire (harmonie), Sage of the Skies ; en réserve, Heritage Reclamation.
-- **Marvel's Spider-Man (SPM) :** Interdimensional Web Watch, Spider Manifestation ; en réserve, Spider-Sense (Web-slinging).
-- **Murders at Karlov Manor (MKM) :** Steamcore Scholar, Underground Mortuary. **Teenage Mutant Ninja Turtles (TMT) :** Michelangelo's Technique (faufilement). **Lorwyn Eclipsed (ECL) :** Springleaf Drum.
+- **Avatar: The Last Airbender (TLA):** Aang, Swift Savior // Aang and La, Ocean's Fury, Aang, at the Crossroads // Aang, Destined Savior, Abandon Attachments, Abandoned Air Temple, Accumulate Wisdom, Airbender Ascension, Appa, Steadfast Guardian, Combustion Technique, Firebending Lesson, Heartless Act, Iroh's Demonstration, It'll Quench Ya!, Price of Freedom, Realm of Koh; in the sideboard, Avatar's Wrath.
+- **Secrets of Strixhaven (SOS):** Colorstorm Stallion (Opus), Daydream, Deathcap Glade, Dissection Practice, Stormcarved Coast, Vibrant Outburst; in the sideboard, Ral Zarek, Guest Lecturer, Vicious Rivalry.
+- **Wilds of Eldraine (WOE):** Bramble Familiar // Fetch Quest, Mosswood Dreadknight // Dread Whispers, Restless Cottage, Scalding Viper // Steam Clean, The End.
+- **The Hobbit (HOB):** Chief Warg's Company, Desolation Prowler, Gollum, Riddle Master, Head of the Hunt, Nighthowl Pursuer.
+- **Marvel Super Heroes (MSH):** Avengers Disassembled, Doctor Doom, Gleaming Bastion, Jennifer Walters // The Sensational She-Hulk.
+- **Tarkir: Dragonstorm (TDM):** Channeled Dragonfire (harmonize), Sage of the Skies; in the sideboard, Heritage Reclamation.
+- **Marvel's Spider-Man (SPM):** Interdimensional Web Watch, Spider Manifestation; in the sideboard, Spider-Sense (web-slinging).
+- **Murders at Karlov Manor (MKM):** Steamcore Scholar, Underground Mortuary. **Teenage Mutant Ninja Turtles (TMT):** Michelangelo's Technique (sneak). **Lorwyn Eclipsed (ECL):** Springleaf Drum.

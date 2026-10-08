@@ -1,6 +1,6 @@
-// The Vision — artefacts incolores (« Weight of the World », jeu de proxys Nier: Automata). Liste de TappedOut
-// (bracket 3 estimé : trois Game Changers), relevée le 08/10/2026. Source : https://tappedout.net/mtg-decks/weight-of-the-world-1/
-// Réserve : les extras du jeu de proxys (cartes de rechange, hors du deck), importés pour les decks des joueurs.
+// The Vision — colorless artifacts ("Weight of the World", Nier: Automata proxy deck). TappedOut list
+// (estimated bracket 3: three Game Changers), retrieved on 2026-10-08. Source: https://tappedout.net/mtg-decks/weight-of-the-world-1/
+// Sideboard: the extras of the proxy deck (spare cards, outside the deck), imported for players' decks.
 Commander
 1 The Vision
 

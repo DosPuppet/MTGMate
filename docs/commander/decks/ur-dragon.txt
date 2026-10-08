@@ -1,5 +1,5 @@
-// The Ur-Dragon — Dragons (cinq couleurs). Liste « How to Train Ur-Dragon [Primer!] » de Shiny_Latios (Moxfield),
-// mise à jour le 27/09/2026, relevée le 06/10/2026. Source : https://moxfield.com/decks/oTndvxb8bkqLPK_kANUrkA
+// The Ur-Dragon — Dragons (five colors). List "How to Train Ur-Dragon [Primer!]" by Shiny_Latios (Moxfield),
+// updated on 2026-09-27, retrieved on 2026-10-06. Source: https://moxfield.com/decks/oTndvxb8bkqLPK_kANUrkA
 Commander
 1 The Ur-Dragon
 

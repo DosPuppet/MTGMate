@@ -1,5 +1,5 @@
-// Invisible Woman — préconstruit Commander des Quatre Fantastiques (Marvel Super Heroes Commander). Liste officielle du préconstruit « The Fantastic Four » (MTGJSON, 2026-06-26), relevée le 07/10/2026.
-// Source : https://mtgjson.com/api/v5/decks/TheFantasticFour_MSC.json
+// Invisible Woman — Marvel Super Heroes Commander precon "The Fantastic Four". Official list of the precon (MTGJSON, 2026-06-26), retrieved on 2026-10-07.
+// Source: https://mtgjson.com/api/v5/decks/TheFantasticFour_MSC.json
 Commander
 1 Invisible Woman
 

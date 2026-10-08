@@ -1,115 +1,115 @@
-# Marvel's Spider-Man (SPM, 188 cartes)
+# Marvel's Spider-Man (SPM, 188 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Extension demandée par l'utilisateur le 02/10/2026, après Marvel Super Heroes, avec Teenage Mutant Ninja Turtles et The Hobbit. 10 cartes étaient déjà gérées depuis la phase méta (lots M1 à M6, `docs/extensions/meta.md`) : Web-slinging (lu dans le texte, coût alternatif qui renvoie en main une créature engagée), chaos (Mayhem, lu dans le texte : une carte défaussée ce tour-ci se lance depuis le cimetière pour son coût de chaos), Superior Spider-Man (copie d'une carte de cimetière en arrivant)… L'extension suit les règles d'intégration de CLAUDE.md (dette, R1, R7). Découpage : un sous-lot et un commit par couleur pour le lot A, par mécanique pour le lot B, par famille de cartes uniques ensuite.
+Set requested by the user on 2026-10-02, after Marvel Super Heroes, together with Teenage Mutant Ninja Turtles and The Hobbit. 10 cards were already handled since the meta phase (lots M1 to M6, `docs/extensions/meta.md`): Web-slinging (read from the text, alternative cost that returns a tapped creature to hand), Mayhem (read from the text: a card discarded this turn is cast from the graveyard for its mayhem cost), Superior Spider-Man (copy of a graveyard card on entering)… The set follows the integration rules of CLAUDE.md (debt, R1, R7). Split: one sublot and one commit per color for lot A, per mechanic for lot B, per family of unique cards afterwards.
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Socle : jetons, « modifié » | 0 |
-| Cartes faisables avec le moteur, par couleur | A1 à A6 |
-| Mécaniques phares restantes | B |
-| Légendaires et cartes uniques | C et suivants |
+| Core: tokens, "modified" | 0 |
+| Cards doable with the engine, by color | A1 to A6 |
+| Remaining flagship mechanics | B |
+| Legendary and unique cards | C and following |
 
-Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `white`, `blue`, `black`, `red`, `green`, `multi` et `artifacts` (incolores et terrains). Les aides sont dans `spm/common.ts`.
+The scripts are in `packages/cards/src/spm/`: `cards` (meta cards), `white`, `blue`, `black`, `red`, `green`, `multi` and `artifacts` (colorless and lands). The helpers are in `spm/common.ts`.
 
-## Sous-lot 0 : socle ✅ (10 / 188)
+## Sublot 0: core ✅ (10 / 188)
 
-- **Jetons :** Citoyen humain 1/1 vert et blanc, Araignée 2/1 verte avec la portée, Robot 1/1 incolore (artefact) avec le vol, Illusion Méchant 3/3 bleue ; Trésor et Nourriture viennent des communs.
-- **Moteur :** filtre `modified` (700.9) : un permanent qui porte un marqueur, est équipé, ou est enchanté par une Aura que son contrôleur contrôle.
-- **Tests :** test de fumée `ai/test/smoke/spm.test.ts` ; filtre « modifié » dans `rulings.test.ts`.
+- **Tokens:** 1/1 green and white Human Citizen, 2/1 green Spider with reach, 1/1 colorless (artifact) Robot with flying, 3/3 blue Villain Illusion; Treasure and Food come from the commons.
+- **Engine:** filter `modified` (700.9): a permanent that has a counter, is equipped, or is enchanted by an Aura its controller controls.
+- **Tests:** smoke test `ai/test/smoke/spm.test.ts`; "modified" filter in `rulings.test.ts`.
 
-## Sous-lot A1 : cartes blanches ✅ (30 / 188)
+## Sublot A1: white cards ✅ (30 / 188)
 
-- **Cartes (20) :** Anti-Venom, Horrifying Healer, City Pigeon, Costume Closet, Daily Bugle Reporters, Flash Thompson, Spider-Fan, Friendly Neighborhood, Origin of Spider-Man, Rent Is Due, Selfless Police Captain, Silver Sable, Mercenary Leader, Spectacular Spider-Man, Spectacular Tactics, Spider-Man, Web-Slinger, Spider-UK, Starling, Aerial Ally, Sudden Strike, Thwip!, Web Up, Web-Shooters, Wild Pack Squad.
-- **Moteur :** `onPrevent.counters` d'un remplacement de blessures : autant de marqueurs sur la source du remplacement, dans le remplacement même (Anti-Venom ; test dans `rulings.test.ts`).
-- **Reste pour plus tard :** Arachne, Psionic Weaver (type de carte choisi en arrivant, taxe pour tous les joueurs), Peter Parker // Amazing Spider-Man (Web-slinging accordé aux sorts légendaires de couleur), With Great Power . . . (redirection de blessures, permanents attachés à l'hôte).
-- **Tests :** 32 tests de règles (« lot A, blanc »).
+- **Cards (20):** Anti-Venom, Horrifying Healer, City Pigeon, Costume Closet, Daily Bugle Reporters, Flash Thompson, Spider-Fan, Friendly Neighborhood, Origin of Spider-Man, Rent Is Due, Selfless Police Captain, Silver Sable, Mercenary Leader, Spectacular Spider-Man, Spectacular Tactics, Spider-Man, Web-Slinger, Spider-UK, Starling, Aerial Ally, Sudden Strike, Thwip!, Web Up, Web-Shooters, Wild Pack Squad.
+- **Engine:** `onPrevent.counters` of a damage replacement: that many counters on the replacement's source, within the replacement itself (Anti-Venom; test in `rulings.test.ts`).
+- **Left for later:** Arachne, Psionic Weaver (card type chosen on entering, tax for all players), Peter Parker // Amazing Spider-Man (Web-slinging granted to colored legendary spells), With Great Power . . . (damage redirection, permanents attached to the host).
+- **Tests:** 32 rules tests ("lot A, white").
 
-## Sous-lot A2 : cartes bleues ✅ (49 / 188)
+## Sublot A2: blue cards ✅ (49 / 188)
 
-- **Cartes (19) :** Amazing Acrobatics, Beetle, Legacy Criminal, Doc Ock, Sinister Scientist, Doc Ock's Henchmen, Flying Octobot, Hide on the Ceiling, Impostor Syndrome, Lady Octopus, Inspired Inventor, Madame Web, Clairvoyant, Mysterio, Master of Illusion, Mysterio's Phantasm, Oscorp Research Team, Robotics Mastery, School Daze, Secret Identity, Spider-Byte, Web Warden, Spider-Man No More, Unstable Experiment, Whoosh!.
-- **Moteur :** rien de nouveau (« l'un ou les deux » : un troisième mode « les deux »).
-- **Reste pour plus tard :** Chameleon, Master of Disguise (copie en arrivant, sauf le nom), The Clone Saga (copie non légendaire du prochain sort de créature, nom choisi gardé par un emblème), Norman Osborn // Green Goblin (chaos pour toutes les cartes non-terrain du cimetière).
-- **Tests :** 26 tests de règles (« lot A, bleu »).
+- **Cards (19):** Amazing Acrobatics, Beetle, Legacy Criminal, Doc Ock, Sinister Scientist, Doc Ock's Henchmen, Flying Octobot, Hide on the Ceiling, Impostor Syndrome, Lady Octopus, Inspired Inventor, Madame Web, Clairvoyant, Mysterio, Master of Illusion, Mysterio's Phantasm, Oscorp Research Team, Robotics Mastery, School Daze, Secret Identity, Spider-Byte, Web Warden, Spider-Man No More, Unstable Experiment, Whoosh!.
+- **Engine:** nothing new ("one or both": a third mode "both").
+- **Left for later:** Chameleon, Master of Disguise (copy on entering, except the name), The Clone Saga (nonlegendary copy of the next creature spell, chosen name kept by an emblem), Norman Osborn // Green Goblin (mayhem for all nonland cards in the graveyard).
+- **Tests:** 26 rules tests ("lot A, blue").
 
-## Sous-lot A3 : cartes noires ✅ (69 / 188)
+## Sublot A3: black cards ✅ (69 / 188)
 
-- **Cartes (20) :** Agent Venom, Common Crook, The Death of Gwen Stacy, Eddie Brock // Venom, Lethal Protector, Inner Demons Gangsters, Merciless Enforcers, Morlun, Devourer of Spiders, Parker Luck, Prison Break, Risky Research, Scorpion, Seething Striker, Scorpion's Sting, Spider-Man Noir, The Spot's Portal, Swarm, Being of Bees, Tombstone, Career Criminal, Venom, Evil Unleashed, Venomized Cat, Venom's Hunger, Villainous Wrath.
-- **Moteur :** rien de nouveau.
-- **Reste pour plus tard :** Alien Symbiosis (lancer depuis le cimetière en défaussant une carte), Behold the Sinister Six! (cibles de noms différents), Black Cat, Cunning Thief (regarder la bibliothèque d'un adversaire, exil face cachée), Gwenom, Remorseless (payer des PV au lieu du mana), Sandman's Quicksand (« si le coût de chaos a été payé »), The Soul Stone (coût « exilez une créature que vous contrôlez »).
-- **Tests :** 30 tests de règles (« lot A, noir »).
+- **Cards (20):** Agent Venom, Common Crook, The Death of Gwen Stacy, Eddie Brock // Venom, Lethal Protector, Inner Demons Gangsters, Merciless Enforcers, Morlun, Devourer of Spiders, Parker Luck, Prison Break, Risky Research, Scorpion, Seething Striker, Scorpion's Sting, Spider-Man Noir, The Spot's Portal, Swarm, Being of Bees, Tombstone, Career Criminal, Venom, Evil Unleashed, Venomized Cat, Venom's Hunger, Villainous Wrath.
+- **Engine:** nothing new.
+- **Left for later:** Alien Symbiosis (cast from the graveyard by discarding a card), Behold the Sinister Six! (targets with different names), Black Cat, Cunning Thief (look at an opponent's library, exile face down), Gwenom, Remorseless (pay life instead of mana), Sandman's Quicksand ("if the mayhem cost was paid"), The Soul Stone (cost "exile a creature you control").
+- **Tests:** 30 rules tests ("lot A, black").
 
-## Sous-lot A4 : cartes rouges ✅ (90 / 188)
+## Sublot A4: red cards ✅ (90 / 188)
 
-- **Cartes (21, et Shock de MKM) :** Angry Rabble, Electro, Assaulting Battery, Electro's Bolt, Gwen Stacy // Ghost-Spider, Heroes' Hangout, Hobgoblin, Mantled Marauder, J. Jonah Jameson, Masked Meower, Maximum Carnage, Molten Man, Inferno Incarnate, Raging Goblinoids, Romantic Rendezvous, Shadow of the Goblin, Shock, Shocker, Unshakable, Spider-Gwen, Free Spirit, Spider-Islanders, Spinneret and Spiderling, Stegron the Dinosaur Man, Taxi Driver, Wisecrack.
-- **Moteur :** le déclencheur « chaque fois que vous jouez un terrain » accepte `from` (zones d'origine : « depuis l'exil », Ghost-Spider ; « d'ailleurs que votre main », Shadow of the Goblin) ; l'événement `playLand` porte sa zone de départ (test dans `rulings.test.ts`).
-- **Reste pour plus tard :** Spider-Punk (émeute accordée, sorts et capacités qui ne peuvent pas être contrecarrés), Spider-Verse (règle des légendes levée pour les Araignées, « une seule fois par tour »), Superior Foes of Spider-Man (permission qui prend fin quand la source exile une autre carte).
-- **Tests :** 31 tests de règles (« lot A, rouge »).
+- **Cards (21, and Shock from MKM):** Angry Rabble, Electro, Assaulting Battery, Electro's Bolt, Gwen Stacy // Ghost-Spider, Heroes' Hangout, Hobgoblin, Mantled Marauder, J. Jonah Jameson, Masked Meower, Maximum Carnage, Molten Man, Inferno Incarnate, Raging Goblinoids, Romantic Rendezvous, Shadow of the Goblin, Shock, Shocker, Unshakable, Spider-Gwen, Free Spirit, Spider-Islanders, Spinneret and Spiderling, Stegron the Dinosaur Man, Taxi Driver, Wisecrack.
+- **Engine:** the trigger "whenever you play a land" accepts `from` (zones of origin: "from exile", Ghost-Spider; "from anywhere other than your hand", Shadow of the Goblin); the `playLand` event carries its zone of origin (test in `rulings.test.ts`).
+- **Left for later:** Spider-Punk (granted riot, spells and abilities that can't be countered), Spider-Verse (legend rule lifted for Spiders, "once per turn"), Superior Foes of Spider-Man (permission that ends when the source exiles another card).
+- **Tests:** 31 rules tests ("lot A, red").
 
-## Sous-lot A5 : cartes vertes ✅ (110 / 188)
+## Sublot A5: green cards ✅ (110 / 188)
 
-- **Cartes (20) :** Damage Control Crew, Ezekiel Sims, Spider-Totem, Grow Extra Arms, Guy in the Chair, Kapow!, Kraven's Cats, Lizard, Connors's Curse, Lurking Lizards, Miles Morales // Ultimate Spider-Man, Pictures of Spider-Man, Professional Wrestler, Radioactive Spider, Scout the City, Spider-Ham, Peter Porker, Spider-Man, Brooklyn Visionary, Strength of Will, Supportive Parents, Terrific Team-Up, Wall Crawl, Web of Life and Destiny.
-- **Moteur :** rien de nouveau. Le doublement de tous les marqueurs (Zimone, Paradox Sculptor) sert aussi à Ultimate Spider-Man : son entrée de dette est retirée.
-- **Reste pour plus tard :** Spiders-Man, Heroic Horde (« s'il a été lancé par Web-slinging »), Kraven's Last Hunt (la plus grande force parmi les cartes de créature de votre cimetière).
-- **Tests :** 26 tests de règles (« lot A, vert »).
+- **Cards (20):** Damage Control Crew, Ezekiel Sims, Spider-Totem, Grow Extra Arms, Guy in the Chair, Kapow!, Kraven's Cats, Lizard, Connors's Curse, Lurking Lizards, Miles Morales // Ultimate Spider-Man, Pictures of Spider-Man, Professional Wrestler, Radioactive Spider, Scout the City, Spider-Ham, Peter Porker, Spider-Man, Brooklyn Visionary, Strength of Will, Supportive Parents, Terrific Team-Up, Wall Crawl, Web of Life and Destiny.
+- **Engine:** nothing new. The doubling of all counters (Zimone, Paradox Sculptor) also serves Ultimate Spider-Man: its debt entry is removed.
+- **Left for later:** Spiders-Man, Heroic Horde ("if it was cast with Web-slinging"), Kraven's Last Hunt (the greatest power among creature cards in your graveyard).
+- **Tests:** 26 rules tests ("lot A, green").
 
-## Sous-lot A6 : cartes multicolores, incolores et terrains ✅ (162 / 188)
+## Sublot A6: multicolor, colorless cards and lands ✅ (162 / 188)
 
-- **Cartes multicolores (29) :** Araña, Heart of the Spider, Biorganic Carapace, Cosmic Spider-Man, Doctor Octopus, Master Planner, Gallant Citizen, Green Goblin, Revenant, Kraven, Proud Predator, Mary Jane Watson, Mob Lookout, Morbius the Living Vampire, Prowler, Clawed Thief, Pumpkin Bombardment, Rhino's Rampage, Scarlet Spider, Kaine, Shriek, Treblemaker, Silk, Web Weaver, Skyward Spider, SP//dr, Piloted by Peni, Spider-Girl, Legacy Hero, Spider-Man 2099, Spider-Man India, Spider-Woman, Stunning Savior, The Spot, Living Portal, Sun-Spider, Nimble Webber, Symbiote Spider-Man, Ultimate Green Goblin, Vulture, Scheming Scavenger, Web-Warriors, Wraith, Vicious Vigilante.
-- **Cartes incolores et terrains (23) :** Bagel and Schmear, Doc Ock's Tentacles, Eerie Gravestone, Hot Dog Cart, Living Brain, Mechanical Marvel, Mechanical Mobster, News Helicopter, Passenger Ferry, Peter Parker's Camera, Rocket-Powered Goblin Glider, Spider-Bot, Spider-Mobile, Spider-Slayer, Hatred Honed, Spider-Suit, Steel Wrecking Ball, Subway Train, Daily Bugle Building, Ominous Asylum, Savage Mansion, Sinister Hideout, Suburban Sanctuary, University Campus, Vibrant Cityscape.
-- **Moteur :** le journal du tour note les terrains joués avec leur zone de départ (`{ event: "playLand", fromZone }` ; Spider-Man 2099 : « un terrain joué ou un sort lancé depuis ailleurs que votre main » ; test dans `rulings.test.ts`).
-- **Reste pour plus tard :** Cheering Crowd (mana donné au joueur actif), Jackal, Genius Geneticist (copie non légendaire, valeur de mana égale à la force), Kraven the Hunter (« la plus grande force parmi les créatures de son contrôleur »), Mister Negative (échange des totaux de PV), Rhino, Barreling Brute (valeur de mana des sorts lancés dans le journal), Scarlet Spider, Ben Reilly (Web-slinging retenu, créature renvoyée) ; Iron Spider, Stark Upgrade (retirer deux marqueurs répartis), Oscorp Industries (chaos d'un terrain), Urban Retreat (coût « renvoyez une créature engagée »).
-- **Tests :** 61 tests de règles (« lot A, multicolores » et « lot A, incolores et terrains »).
+- **Multicolor cards (29):** Araña, Heart of the Spider, Biorganic Carapace, Cosmic Spider-Man, Doctor Octopus, Master Planner, Gallant Citizen, Green Goblin, Revenant, Kraven, Proud Predator, Mary Jane Watson, Mob Lookout, Morbius the Living Vampire, Prowler, Clawed Thief, Pumpkin Bombardment, Rhino's Rampage, Scarlet Spider, Kaine, Shriek, Treblemaker, Silk, Web Weaver, Skyward Spider, SP//dr, Piloted by Peni, Spider-Girl, Legacy Hero, Spider-Man 2099, Spider-Man India, Spider-Woman, Stunning Savior, The Spot, Living Portal, Sun-Spider, Nimble Webber, Symbiote Spider-Man, Ultimate Green Goblin, Vulture, Scheming Scavenger, Web-Warriors, Wraith, Vicious Vigilante.
+- **Colorless cards and lands (23):** Bagel and Schmear, Doc Ock's Tentacles, Eerie Gravestone, Hot Dog Cart, Living Brain, Mechanical Marvel, Mechanical Mobster, News Helicopter, Passenger Ferry, Peter Parker's Camera, Rocket-Powered Goblin Glider, Spider-Bot, Spider-Mobile, Spider-Slayer, Hatred Honed, Spider-Suit, Steel Wrecking Ball, Subway Train, Daily Bugle Building, Ominous Asylum, Savage Mansion, Sinister Hideout, Suburban Sanctuary, University Campus, Vibrant Cityscape.
+- **Engine:** the turn log notes the lands played with their zone of origin (`{ event: "playLand", fromZone }`; Spider-Man 2099: "a land played or a spell cast from anywhere other than your hand"; test in `rulings.test.ts`).
+- **Left for later:** Cheering Crowd (mana given to the active player), Jackal, Genius Geneticist (nonlegendary copy, mana value equal to power), Kraven the Hunter ("the greatest power among its controller's creatures"), Mister Negative (exchange of life totals), Rhino, Barreling Brute (mana value of the spells cast, in the log), Scarlet Spider, Ben Reilly (Web-slinging remembered, creature returned); Iron Spider, Stark Upgrade (remove two distributed counters), Oscorp Industries (mayhem of a land), Urban Retreat (cost "return a tapped creature").
+- **Tests:** 61 rules tests ("lot A, multicolor" and "lot A, colorless and lands").
 
-## Sous-lot B1 : Web-slinging et chaos ✅ (170 / 188)
+## Sublot B1: Web-slinging and Mayhem ✅ (170 / 188)
 
-- **Cartes (8) :** Spiders-Man, Heroic Horde, Scarlet Spider, Ben Reilly, Peter Parker // Amazing Spider-Man, Norman Osborn // Green Goblin, Sandman's Quicksand, Alien Symbiosis, Oscorp Industries, Urban Retreat.
-- **Moteur :**
-  - Web-slinging : la créature engagée renvoyée est choisie par le joueur (`bounce` dans la décision ; `altBounce` dans l'option, la moins chère en premier et par défaut). L'interface ouvre une fenêtre de choix quand il y en a plusieurs ;
-  - façon de lancer retenue (`castVia` : `webSlinging` ou `mayhem`, sur l'élément de pile puis sur le permanent) et créature renvoyée (`costBounced`) : `cond.castVia(…)`, `ref.costBounced` (aussi lu en arrivant : « X marqueurs, X étant la valeur de mana de la créature renvoyée ») ;
-  - `altCostAll` accepte un filtre de sort et le Web-slinging (Amazing Spider-Man : « vos sorts légendaires de couleur ont le Web-slinging {G}{W}{U} ») ;
-  - chaos donné par une permission « jouer depuis le cimetière » (`playFrom.mayhem`, filtre `discardedThisTurn` : Goblin Formula) ; chaos d'un terrain, sans coût (Oscorp Industries) ;
-  - lancer depuis le cimetière en défaussant une carte en plus (`castFromGraveyard.discard`, Alien Symbiosis) ;
-  - coût d'activation « renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (`bounceOther`, Urban Retreat).
-- **Tests :** 15 tests de règles (« lot B1 ») ; script Playwright ponctuel : fenêtre de choix de la créature renvoyée (Scarlet Spider), captures dans `test-results/spm/`.
+- **Cards (8):** Spiders-Man, Heroic Horde, Scarlet Spider, Ben Reilly, Peter Parker // Amazing Spider-Man, Norman Osborn // Green Goblin, Sandman's Quicksand, Alien Symbiosis, Oscorp Industries, Urban Retreat.
+- **Engine:**
+  - Web-slinging: the returned tapped creature is chosen by the player (`bounce` in the decision; `altBounce` in the option, the cheapest first and by default). The interface opens a choice window when there are several;
+  - remembered way of casting (`castVia`: `webSlinging` or `mayhem`, on the stack item then on the permanent) and returned creature (`costBounced`): `cond.castVia(…)`, `ref.costBounced` (also read on entering: "X counters, where X is the mana value of the returned creature");
+  - `altCostAll` accepts a spell filter and Web-slinging (Amazing Spider-Man: "your colored legendary spells have Web-slinging {G}{W}{U}");
+  - mayhem given by a "play from the graveyard" permission (`playFrom.mayhem`, filter `discardedThisTurn`: Goblin Formula); mayhem of a land, with no cost (Oscorp Industries);
+  - casting from the graveyard by discarding an extra card (`castFromGraveyard.discard`, Alien Symbiosis);
+  - activation cost "return [a permanent] you control to its owner's hand" (`bounceOther`, Urban Retreat).
+- **Tests:** 15 rules tests ("lot B1"); one-off Playwright script: the choice window for the returned creature (Scarlet Spider), screenshots in `test-results/spm/`.
 
-## Sous-lot C1 : copies et légendes ✅ (175 / 188)
+## Sublot C1: copies and legends ✅ (175 / 188)
 
-- **Cartes (5) :** Chameleon, Master of Disguise, The Clone Saga, Jackal, Genius Geneticist, Spider-Verse, Behold the Sinister Six!.
-- **Moteur :**
-  - copie à l'arrivée « sauf que son nom est [le sien] » (`entersAsCopyKeepName`) ;
-  - copie non légendaire d'un sort (`fx.copySpell(…, { nonlegendary })`, `nextSpell.copyNonlegendary`) : exception copiable du jeton (707.9b) ;
-  - un emblème garde le nom de carte choisi (The Clone Saga : `nameChosen` dans le filtre de son déclencheur) ;
-  - comparaison `cmp.manaValue("=", amount.sourcePower)` (« de valeur de mana égale à la force de [la source] ») ; les filtres de « chaque fois que vous lancez un sort » passent par `resolveFilter` ;
-  - `noLegendRule` accepte un filtre (Spider-Verse : vos Araignées) ;
-  - « faites ceci une seule fois par tour » : `oncePerTurn: "ifDone"` et `fx.doneOncePerTurn` (le déclencheur revient tant que l'effet facultatif n'a pas été fait ; entrée de dette justifiée) ;
-  - cibles de noms différents (`differentNames`, présentées comme la contrainte « différents » des options, que l'IA et l'interface respectent).
-- **Tests :** 7 tests de règles (« lot C1 »).
+- **Cards (5):** Chameleon, Master of Disguise, The Clone Saga, Jackal, Genius Geneticist, Spider-Verse, Behold the Sinister Six!.
+- **Engine:**
+  - copy on entering "except its name is [its own]" (`entersAsCopyKeepName`);
+  - nonlegendary copy of a spell (`fx.copySpell(…, { nonlegendary })`, `nextSpell.copyNonlegendary`): copiable exception of the token (707.9b);
+  - an emblem keeps the chosen card name (The Clone Saga: `nameChosen` in its trigger's filter);
+  - comparison `cmp.manaValue("=", amount.sourcePower)` ("with mana value equal to [the source]'s power"); the filters of "whenever you cast a spell" go through `resolveFilter`;
+  - `noLegendRule` accepts a filter (Spider-Verse: your Spiders);
+  - "do this only once each turn": `oncePerTurn: "ifDone"` and `fx.doneOncePerTurn` (the trigger comes back as long as the optional effect hasn't been done; justified debt entry);
+  - targets with different names (`differentNames`, presented as the "different" constraint of the options, which the AI and the interface respect).
+- **Tests:** 7 rules tests ("lot C1").
 
-## Sous-lot C2 : coûts, montants et joueurs ✅ (182 / 188)
+## Sublot C2: costs, amounts and players ✅ (182 / 188)
 
-- **Cartes (7) :** The Soul Stone, Iron Spider, Stark Upgrade, Cheering Crowd, Mister Negative, Rhino, Barreling Brute, Kraven's Last Hunt, Kraven the Hunter.
-- **Moteur :**
-  - coûts d'activation : « exilez [un permanent] que vous contrôlez » (`exileOther`) ; « retirez N marqueurs parmi [vos artefacts] » (`removeCounterFrom.n`, répartis, ceux qui en portent le plus d'abord) ;
-  - `addMana` vers un autre joueur (`who` : Cheering Crowd, le joueur dont c'est la phase principale) ;
-  - `fx.exchangeLife(a, b, store)` : échange des totaux de PV (701.12b), chacun gagne ou perd la différence ; la perte du contrôleur est retenue (entrée de dette justifiée) ;
-  - journal du tour : la valeur de mana des sorts lancés (`minManaValue` dans la requête) ;
-  - `amount.maxPower(filtre, "graveyard")` : la plus grande force parmi les cartes de votre cimetière ;
-  - permanents partis pendant la décision en cours (`GameState.leftBatch`, vidé à chaque décision) et `cond.eventObjectGreatestPower` : « la créature de plus grande force parmi celles de ce joueur » voit celles mortes en même temps par leurs dernières informations (une seule pioche après une destruction massive).
-- **Dette :** « exploiter » sert désormais à deux cartes (The Mind Stone, The Soul Stone) : son entrée est retirée.
-- **Tests :** 11 tests de règles (« lot C2 »).
+- **Cards (7):** The Soul Stone, Iron Spider, Stark Upgrade, Cheering Crowd, Mister Negative, Rhino, Barreling Brute, Kraven's Last Hunt, Kraven the Hunter.
+- **Engine:**
+  - activation costs: "exile [a permanent] you control" (`exileOther`); "remove N counters from among [your artifacts]" (`removeCounterFrom.n`, distributed, those with the most first);
+  - `addMana` to another player (`who`: Cheering Crowd, the player whose main phase it is);
+  - `fx.exchangeLife(a, b, store)`: exchange of life totals (701.12b), each gains or loses the difference; the controller's loss is remembered (justified debt entry);
+  - turn log: the mana value of the spells cast (`minManaValue` in the query);
+  - `amount.maxPower(filter, "graveyard")`: the greatest power among the cards in your graveyard;
+  - permanents that left during the current decision (`GameState.leftBatch`, emptied at each decision) and `cond.eventObjectGreatestPower`: "the creature with the greatest power among that player's creatures" sees those that died at the same time by their last known information (a single draw after a mass destruction).
+- **Debt:** "exploit" now serves two cards (The Mind Stone, The Soul Stone): its entry is removed.
+- **Tests:** 11 rules tests ("lot C2").
 
-## Sous-lot C3 : cartes uniques ✅ (188 / 188)
+## Sublot C3: unique cards ✅ (188 / 188)
 
-- **Cartes (6) :** Arachne, Psionic Weaver, With Great Power . . ., Spider-Punk, Superior Foes of Spider-Man, Black Cat, Cunning Thief, Gwenom, Remorseless.
-- **Moteur :**
-  - filtre `typeChosen` (le type de carte choisi comme mode d'arrivée) et taxe pour tous les joueurs (`costReduction.everyone`) ;
-  - filtre `attached: "toHost"` (« chaque Aura et Équipement attachés à elle ») ; remplacement de blessures `redirectToAttached` (« infligées à la créature enchantée à la place ») ;
-  - émeute (702.136, `riot`, mot-clé imprimé) : le choix se fait en résolvant le sort de créature (« Émeute : un marqueur +1/+1 ou la célérité ? »), aussi quand l'émeute est donnée par un permanent (Spider-Punk) ; sans résolution, la célérité si la créature peut encore attaquer ce tour-ci ;
-  - statique `uncounterable` (`filter`, `abilities`, `everyone`) : remplace `protectSpells` et `protectCreatureSpells` (un drapeau de moins). Chimil, the Inner Sun et Hexing Squelcher protègent désormais tous vos sorts, comme le dit leur texte (approximation levée, test dans `rulings.test.ts`) ;
-  - `grantPlay.replacePrevious` (« jusqu'à ce que vous exiliez une autre carte avec cette créature ») ; `lookAtTop.who` (la bibliothèque d'un adversaire) ;
-  - jouer depuis le dessus de la bibliothèque en payant des PV égaux à la valeur de mana (`playFrom.payLifeManaValue`, comme Valgavoth) ;
-  - `RULES_VERSION` = 54, parties dorées régénérées.
-- **Approximations :** Arachne (la main adverse n'est pas montrée), Black Cat (exil face visible).
-- **Tests :** 8 tests de règles (« lot C3 ») et un dans `rulings.test.ts`.
+- **Cards (6):** Arachne, Psionic Weaver, With Great Power . . ., Spider-Punk, Superior Foes of Spider-Man, Black Cat, Cunning Thief, Gwenom, Remorseless.
+- **Engine:**
+  - filter `typeChosen` (the card type chosen as an entering mode) and tax for all players (`costReduction.everyone`);
+  - filter `attached: "toHost"` ("each Aura and Equipment attached to it"); damage replacement `redirectToAttached` ("dealt to the enchanted creature instead");
+  - riot (702.136, `riot`, printed keyword): the choice is made when the creature spell resolves ("Riot: a +1/+1 counter or haste?"), also when riot is given by a permanent (Spider-Punk); without a resolution, haste if the creature can still attack this turn;
+  - static `uncounterable` (`filter`, `abilities`, `everyone`): replaces `protectSpells` and `protectCreatureSpells` (one less flag). Chimil, the Inner Sun and Hexing Squelcher now protect all your spells, as their text says (approximation lifted, test in `rulings.test.ts`);
+  - `grantPlay.replacePrevious` ("until you exile another card with this creature"); `lookAtTop.who` (an opponent's library);
+  - playing from the top of the library by paying life equal to the mana value (`playFrom.payLifeManaValue`, like Valgavoth);
+  - `RULES_VERSION` = 54, golden games regenerated.
+- **Approximations:** Arachne (the opposing hand is not shown), Black Cat (face-up exile).
+- **Tests:** 8 rules tests ("lot C3") and one in `rulings.test.ts`.

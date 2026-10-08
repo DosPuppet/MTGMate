@@ -1,5 +1,5 @@
-// Tidus, Yuna's Guardian — préconstruit Commander de Final Fantasy X (FINAL FANTASY Commander). Liste officielle du préconstruit « Counter Blitz » (MTGJSON, 2025-06-13), relevée le 07/10/2026.
-// Source : https://mtgjson.com/api/v5/decks/CounterBlitzFinalFantasyX_FIC.json
+// Tidus, Yuna's Guardian — Final Fantasy X Commander precon (FINAL FANTASY Commander). Official list of the "Counter Blitz" precon (MTGJSON, 2025-06-13), retrieved on 2026-10-07.
+// Source: https://mtgjson.com/api/v5/decks/CounterBlitzFinalFantasyX_FIC.json
 Commander
 1 Tidus, Yuna's Guardian
 

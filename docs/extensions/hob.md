@@ -1,81 +1,81 @@
-# The Hobbit (HOB, « Le Hobbit », 188 cartes)
+# The Hobbit (HOB, 188 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Extension demandée par l'utilisateur le 02/10/2026, après Marvel's Spider-Man et Teenage Mutant Ninja Turtles. 20 cartes étaient déjà gérées depuis la phase méta (lots M1 à M6, `docs/extensions/meta.md`) : Storied (lu dans le texte, récit durable), amasser des Gobelins, Landfall, Équipements… L'extension suit les règles d'intégration de CLAUDE.md (dette, R1, R7). Découpage : un sous-lot et un commit par couleur pour le lot A, par mécanique pour le lot B, par famille de cartes uniques ensuite.
+Set requested by the user on 2026-10-02, after Marvel's Spider-Man and Teenage Mutant Ninja Turtles. 20 cards were already handled since the meta phase (lots M1 to M6, `docs/extensions/meta.md`): Storied (read from the text, lasting story), amass Goblins, Landfall, Equipment… The set follows the integration rules of CLAUDE.md (debt, R1, R7). Split: one sublot and one commit per color for lot A, per mechanic for lot B, per family of unique cards afterwards.
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Socle : jetons | 0 |
-| Cartes faisables avec le moteur, par couleur | A1 à A6 |
-| Mécaniques phares restantes | B |
-| Légendaires et cartes uniques | C et suivants |
+| Core: tokens | 0 |
+| Cards doable with the engine, by color | A1 to A6 |
+| Remaining flagship mechanics | B |
+| Legendary and unique cards | C and following |
 
-Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `white`, `blue`, `black`, `red`, `green`, `multi` et `artifacts` (incolores et terrains). Les aides sont dans `hob/common.ts`.
+The scripts are in `packages/cards/src/hob/`: `cards` (meta cards), `white`, `blue`, `black`, `red`, `green`, `multi` and `artifacts` (colorless and lands). The helpers are in `hob/common.ts`.
 
-## Sous-lot 0 : socle ✅ (20 / 188)
+## Sublot 0: core ✅ (20 / 188)
 
-- **Jetons :** Humain Soldat 1/1 blanc, Elfe 1/1 vert, Ours 2/2 vert, Oiseau Soldat 4/4 blanc avec le vol, Dragon 6/6 rouge avec le vol, Stone Boulder (Mur 3/1 incolore avec le défenseur), Axe (Équipement « +1/+0 », équiper {2}) ; Nain et Loup existaient ; Trésor et Nourriture viennent des communs.
-- **Moteur :** rien de nouveau.
-- **Tests :** test de fumée `ai/test/smoke/hob.test.ts`.
+- **Tokens:** white 1/1 Human Soldier, green 1/1 Elf, green 2/2 Bear, white 4/4 Bird Soldier with flying, red 6/6 Dragon with flying, Stone Boulder (colorless 3/1 Wall with defender), Axe (Equipment "+1/+0", equip {2}); Dwarf and Wolf already existed; Treasure and Food come from the commons.
+- **Engine:** nothing new.
+- **Tests:** smoke test `ai/test/smoke/hob.test.ts`.
 
-## Sous-lot A1 : cartes blanches ✅ (44 / 188)
+## Sublot A1: white cards ✅ (44 / 188)
 
-- **Cartes (24) :** Celebrate the Mountain-king, Dáin, Lord of the Iron Hills, Dwarven Provisioner, Dwarven Shortsword, Eagle of the Great Shelf, The Eagles Are Coming!, Esgaroth Garrison, Fíli the Pathfinder, Gleaming Splendor, Iron Hills Blacksmith, Lake-town Lookout, Lake-town Toymaker, Magnificent End, Moment of Glory, The Mountain-king's Return, Ori, Keeper of Songs, The Queen of Dale, Roads Go Ever, Ever On, Settle the Wreckage, Stone by Sunlight, Thorin's Last Stand, An Unexpected Party, At the Door, Velvetwing Butterflies, Gaze in Wonder, Vow to Erebor.
-- **Correctif du moteur :** le choix d'un type de créature propose aussi les types des jetons que créent les cartes de la partie (An Unexpected Party nomme les Nains que créent ses jetons, sans Nain non-jeton).
-- **Test de fumée :** chaque extension a désormais son fichier ; `smoke/others.test.ts` reste pour une extension ajoutée sans le sien (il n'échoue plus quand il n'a rien à tester).
-- **Tests :** 31 tests de règles (« lot A, blanc »).
+- **Cards (24):** Celebrate the Mountain-king, Dáin, Lord of the Iron Hills, Dwarven Provisioner, Dwarven Shortsword, Eagle of the Great Shelf, The Eagles Are Coming!, Esgaroth Garrison, Fíli the Pathfinder, Gleaming Splendor, Iron Hills Blacksmith, Lake-town Lookout, Lake-town Toymaker, Magnificent End, Moment of Glory, The Mountain-king's Return, Ori, Keeper of Songs, The Queen of Dale, Roads Go Ever, Ever On, Settle the Wreckage, Stone by Sunlight, Thorin's Last Stand, An Unexpected Party, At the Door, Velvetwing Butterflies, Gaze in Wonder, Vow to Erebor.
+- **Engine fix:** choosing a creature type also offers the types of the tokens that the game's cards create (An Unexpected Party names the Dwarves its tokens create, with no nontoken Dwarf).
+- **Smoke test:** every set now has its own file; `smoke/others.test.ts` remains for a set added without its own (it no longer fails when it has nothing to test).
+- **Tests:** 31 rules tests ("lot A, white").
 
-## Sous-lot A2 : cartes bleues ✅ (69 / 188)
+## Sublot A2: blue cards ✅ (69 / 188)
 
-- **Cartes (25) :** Bilbo, Luckwearer, Burglar's Plot, Bilbo, Thief in the Night, Bilbo Baggins, Burglar, Take a Glance, Confusticate and Bebother, Elven Raft-Steerer, Elvenking's Harper, Enchanted River's Grasp, Fateful Discovery, Gandalf, Wandering Wizard, Great Gilded Boat, Lakeshore Apothecary, Lake-town Mariners, Gone Fishing, Long Lake Nuisance, The Lord of the Eagles, Mirkwood Meditator, Most Decrepit Old Bird, Speak Secrets, Old Fat Spider Can't See Me, Plunder the Trollshaws, Ravenhill Flock, Riddles in the Dark, Roll-Roll-Roll-Roll, Sound the Trumpets, Uncover the Moon-Letters, Uneasy Partings, Wizard's Staff.
-- **Moteur :** rien de nouveau.
-- **Reste pour plus tard :** Elrond, Moon-Reader (activer une capacité d'une créature), Master's Councillors (nombre de cimetières de N cartes ou plus), Thranduil's Decree (la carte exilée par le contresort, lançable ensuite).
-- **Tests :** 33 tests de règles (« lot A, bleu »).
+- **Cards (25):** Bilbo, Luckwearer, Burglar's Plot, Bilbo, Thief in the Night, Bilbo Baggins, Burglar, Take a Glance, Confusticate and Bebother, Elven Raft-Steerer, Elvenking's Harper, Enchanted River's Grasp, Fateful Discovery, Gandalf, Wandering Wizard, Great Gilded Boat, Lakeshore Apothecary, Lake-town Mariners, Gone Fishing, Long Lake Nuisance, The Lord of the Eagles, Mirkwood Meditator, Most Decrepit Old Bird, Speak Secrets, Old Fat Spider Can't See Me, Plunder the Trollshaws, Ravenhill Flock, Riddles in the Dark, Roll-Roll-Roll-Roll, Sound the Trumpets, Uncover the Moon-Letters, Uneasy Partings, Wizard's Staff.
+- **Engine:** nothing new.
+- **Left for later:** Elrond, Moon-Reader (activating an ability of a creature), Master's Councillors (number of graveyards with N or more cards), Thranduil's Decree (the card exiled by the counterspell, castable afterwards).
+- **Tests:** 33 rules tests ("lot A, blue").
 
-## Sous-lot A3 : cartes noires ✅ (87 / 188)
+## Sublot A3: black cards ✅ (87 / 188)
 
-- **Cartes (18) :** Along the Crooked Way, Bilbo's Deadly Slice, Crude Bent Blade, Down, Down to Goblin-town, Dreaded Bat-Cloud, Front Porch Sentries, Gathering of Darkness, Gnashing of Teeth, Gollum, Silent Slinker, Meager Meal, Gollum the Abandoned, Great Fierce Bee, Great Ugly-Looking Goblin, Clap! Snap!, Rage into the Valley, Ravening Warg, Reverent Howl, Rhovanion Rampager, Stir Up Trouble, Stony-Voiced Goblins.
-- **Moteur :** rien de nouveau.
-- **Reste pour plus tard :** Inside Information (permission de jouer en payant des PV égaux à la valeur de mana), The Master of Lake-town (nombre de cimetières de sept cartes ou plus), Supper for Spiders (« mises dans un cimetière depuis le champ de bataille ce tour-ci »).
-- **Tests :** 29 tests de règles (« lot A, noir »).
+- **Cards (18):** Along the Crooked Way, Bilbo's Deadly Slice, Crude Bent Blade, Down, Down to Goblin-town, Dreaded Bat-Cloud, Front Porch Sentries, Gathering of Darkness, Gnashing of Teeth, Gollum, Silent Slinker, Meager Meal, Gollum the Abandoned, Great Fierce Bee, Great Ugly-Looking Goblin, Clap! Snap!, Rage into the Valley, Ravening Warg, Reverent Howl, Rhovanion Rampager, Stir Up Trouble, Stony-Voiced Goblins.
+- **Engine:** nothing new.
+- **Left for later:** Inside Information (permission to play by paying life equal to the mana value), The Master of Lake-town (number of graveyards with seven or more cards), Supper for Spiders ("put into a graveyard from the battlefield this turn").
+- **Tests:** 29 rules tests ("lot A, black").
 
-## Sous-lot A4 : cartes rouges ✅ (112 / 188)
+## Sublot A4: red cards ✅ (112 / 188)
 
-- **Cartes (25) :** Balin, Loremaster, Bombur, Gentle Dreamer, Bothersome Noisemaker, Burn, Burn, Tree and Fern, Dáin Ironfoot, Desert Were-Worm, Desolation of Smaug, Dori, Bearer of Friends, Gandalf, Goblins' Bane, Flameshape, Gandalf, Spark Starter, Glóin the Mighty, Easy Pickings, Goblin-town Flunkies, Gundabad Opportunist, Iron Hills Stalwart, Last Light of Durin's Day, The Misty Mountains Cold, Misty Mountains Raider, Óin the Brave, Pinecone Strike, Ragged Short Spear, Smaug, the Great Calamity, Spew Flame, Smaug's Fury, Snowslope Hunter, Stone-Giant of High Pass, Tidings of War.
-- **Moteur :** rien de nouveau.
-- **Reste pour plus tard :** Getaway Barrel (une carte de créature au hasard parmi les cartes révélées).
-- **Tests :** 35 tests de règles (« lot A, rouge »).
+- **Cards (25):** Balin, Loremaster, Bombur, Gentle Dreamer, Bothersome Noisemaker, Burn, Burn, Tree and Fern, Dáin Ironfoot, Desert Were-Worm, Desolation of Smaug, Dori, Bearer of Friends, Gandalf, Goblins' Bane, Flameshape, Gandalf, Spark Starter, Glóin the Mighty, Easy Pickings, Goblin-town Flunkies, Gundabad Opportunist, Iron Hills Stalwart, Last Light of Durin's Day, The Misty Mountains Cold, Misty Mountains Raider, Óin the Brave, Pinecone Strike, Ragged Short Spear, Smaug, the Great Calamity, Spew Flame, Smaug's Fury, Snowslope Hunter, Stone-Giant of High Pass, Tidings of War.
+- **Engine:** nothing new.
+- **Left for later:** Getaway Barrel (a random creature card among the revealed cards).
+- **Tests:** 35 rules tests ("lot A, red").
 
-## Sous-lot A5 : cartes vertes ✅ (139 / 188)
+## Sublot A5: green cards ✅ (139 / 188)
 
-- **Cartes (27) :** Attercop, Bejeweled Warg, Beorn, Reluctant Host, Till and Tend, Beorn the Fierce, Beorn's Hospitality, Boughside Wanderers, Cantankerous Keepers, Dancing from Dark to Dawn, Down in the Valley, Galion, Elvenking's Butler, Gigantic Big Bear, Guardian of the Halls, Little Bear, Mirkwood Pathmaker, Nasty Little Rabbit, The Notary Hobbits, Old Fat Spider, Part in Friendship, Quarrel, Radagast of Rhosgobel, Through the Forest Gate, Troll Negotiations, Warg Tactics, Wargling, Wilderland Scrounger, Wood Elves, Woodland Weavemaster.
-- **Correctif du moteur :** une capacité de mana restreinte (« ne dépensez ce mana que pour… ») engagée à la main versait son mana dans la réserve libre ; il va désormais dans la réserve restreinte, comme pendant un paiement automatique (Woodland Weavemaster, Castle Doom… ; test dans `rulings.test.ts`). La réserve affichée montre ce mana réservé, souligné en pointillé (`PlayerView.restrictedMana`, vérifié dans le navigateur). `RULES_VERSION` = 57, parties dorées régénérées.
-- **Tests :** 36 tests de règles (« lot A, vert ») et un dans `rulings.test.ts`.
+- **Cards (27):** Attercop, Bejeweled Warg, Beorn, Reluctant Host, Till and Tend, Beorn the Fierce, Beorn's Hospitality, Boughside Wanderers, Cantankerous Keepers, Dancing from Dark to Dawn, Down in the Valley, Galion, Elvenking's Butler, Gigantic Big Bear, Guardian of the Halls, Little Bear, Mirkwood Pathmaker, Nasty Little Rabbit, The Notary Hobbits, Old Fat Spider, Part in Friendship, Quarrel, Radagast of Rhosgobel, Through the Forest Gate, Troll Negotiations, Warg Tactics, Wargling, Wilderland Scrounger, Wood Elves, Woodland Weavemaster.
+- **Engine fix:** a restricted mana ability ("spend this mana only to…") tapped by hand put its mana into the free pool; it now goes into the restricted pool, as during an automatic payment (Woodland Weavemaster, Castle Doom…; test in `rulings.test.ts`). The displayed pool shows this reserved mana, underlined with dots (`PlayerView.restrictedMana`, verified in the browser). `RULES_VERSION` = 57, golden games regenerated.
+- **Tests:** 36 rules tests ("lot A, green") and one in `rulings.test.ts`.
 
-## Sous-lot A6 : cartes multicolores, incolores et terrains ✅ (177 / 188)
+## Sublot A6: multicolor, colorless cards and lands ✅ (177 / 188)
 
-- **Cartes multicolores (19) :** Bard, King of Dale, Bard the Bowman, Bard's Company, Bifur, Melodic Rider, Bolg of the North, Bolg's Company, The Chief Warg, Duskwatch Hunter, Eagle's Rescue, Fearsome Goblin Pair, Goblin Plate Mail, The Great Goblin, Mirkwood Nurturer, Nori, Teller of Tales, Patient Instructor, Silvan Reveler, Thranduil, Sindarin Liege, Silvan Rally, Thranduil's Company, Tom, Bert, and William.
-- **Cartes incolores et terrains (21) :** Long-Bodied Grey Dog, Old Thrush, Troop of Ponies, The Arkenstone, Seek the Heart, The Black Arrow, Dwarven Mattock, Giant's Boulder, Glamdring, Foe-hammer, Gleam of Death, My Precious, Allure of Power, Orcrist, Goblin-cleaver, Sting, Bilbo's Sword, Thrór's Map, Well-Worn Spatula, Elvenking's Halls, Goblin-town, Iron Hills, Lake-town, Mirkwood, Hobbit Hole.
-- **Moteur :** rien de nouveau. Le recrutement (« piochez, défaussez ; une carte non-terrain défaussée donne un Humain Soldat 1/1 »), écrit trois fois en lot A, est réuni dans `hob/common.ts` (`recruit()`).
-- **Reste pour plus tard :** Dwalin, Weaponmaster (marqueurs d'affûtage sur les Équipements), Smaug, Wicked Worm (« si du mana d'un Trésor a été dépensé pour le lancer »), Thranduil, the Elvenking (capacités activées des cartes d'Elfe du cimetière), Key to the Side-Door (« une carte légendaire du même nom qu'un permanent légendaire que vous contrôlez »).
-- **Tests :** 57 tests de règles (« lot A, multicolores » et « lot A, incolores et terrains »).
+- **Multicolor cards (19):** Bard, King of Dale, Bard the Bowman, Bard's Company, Bifur, Melodic Rider, Bolg of the North, Bolg's Company, The Chief Warg, Duskwatch Hunter, Eagle's Rescue, Fearsome Goblin Pair, Goblin Plate Mail, The Great Goblin, Mirkwood Nurturer, Nori, Teller of Tales, Patient Instructor, Silvan Reveler, Thranduil, Sindarin Liege, Silvan Rally, Thranduil's Company, Tom, Bert, and William.
+- **Colorless cards and lands (21):** Long-Bodied Grey Dog, Old Thrush, Troop of Ponies, The Arkenstone, Seek the Heart, The Black Arrow, Dwarven Mattock, Giant's Boulder, Glamdring, Foe-hammer, Gleam of Death, My Precious, Allure of Power, Orcrist, Goblin-cleaver, Sting, Bilbo's Sword, Thrór's Map, Well-Worn Spatula, Elvenking's Halls, Goblin-town, Iron Hills, Lake-town, Mirkwood, Hobbit Hole.
+- **Engine:** nothing new. Recruiting ("draw, discard; a discarded nonland card gives a 1/1 Human Soldier"), written three times in lot A, is gathered in `hob/common.ts` (`recruit()`).
+- **Left for later:** Dwalin, Weaponmaster (hone counters on Equipment), Smaug, Wicked Worm ("if mana from a Treasure was spent to cast it"), Thranduil, the Elvenking (activated abilities of Elf cards in the graveyard), Key to the Side-Door ("a legendary card with the same name as a legendary permanent you control").
+- **Tests:** 57 rules tests ("lot A, multicolor" and "lot A, colorless and lands").
 
-## Sous-lot C1 : cartes uniques ✅ (188 / 188)
+## Sublot C1: unique cards ✅ (188 / 188)
 
-- **Cartes (11) :** Elrond, Moon-Reader, Master's Councillors, Thranduil's Decree, Inside Information, The Master of Lake-town, Supper for Spiders, Getaway Barrel, Dwalin, Weaponmaster, Smaug, Wicked Worm, Thranduil, the Elvenking, Key to the Side-Door.
-- **Moteur :**
-  - marqueurs d'affûtage (122.1) : chaque marqueur sur un Équipement donne +1/+0 à la créature équipée, en couche 7c (Dwalin ; Sting n'a plus besoin de sa propre statique, approximation levée) ;
-  - `amount.graveyardsWithAtLeast(n)` (aussi dans les F/E calculées par les couches) ;
-  - déclencheur « chaque fois que vous activez une capacité d'[une créature] » (`activateAbility.source`) ; « si du mana d'un [Trésor] a été dépensé pour le lancer » (`castSpell.usingManaFrom`, dernières informations du Trésor sacrifié) ;
-  - contresort qui exile un sort de permanent et mémorise la carte (`counter.exilePermanents`, `storeMoved`) ; permission de jouer en payant des PV égaux à la valeur de mana (`grantPlay.payLifeManaValue`) ;
-  - `lookAtTop.random` (une carte au hasard parmi celles qui correspondent) ;
-  - capacités activées des cartes correspondantes du cimetière (`gainActivatedFromGraveyard`) ;
-  - filtres `sameNameAs` (« du même nom qu'un permanent [filtre] ») et `fromBattlefieldThisTurn` (`GameObject.arrivedFrom`, posé par `moveObject`) ;
-  - `RULES_VERSION` = 58, parties dorées régénérées.
-- **Tests :** 11 tests de règles (« lot C1 »).
+- **Cards (11):** Elrond, Moon-Reader, Master's Councillors, Thranduil's Decree, Inside Information, The Master of Lake-town, Supper for Spiders, Getaway Barrel, Dwalin, Weaponmaster, Smaug, Wicked Worm, Thranduil, the Elvenking, Key to the Side-Door.
+- **Engine:**
+  - hone counters (122.1): each counter on an Equipment gives +1/+0 to the equipped creature, in layer 7c (Dwalin; Sting no longer needs its own static, approximation lifted);
+  - `amount.graveyardsWithAtLeast(n)` (also in the P/T computed by the layers);
+  - trigger "whenever you activate an ability of [a creature]" (`activateAbility.source`); "if mana from a [Treasure] was spent to cast it" (`castSpell.usingManaFrom`, last known information of the sacrificed Treasure);
+  - counterspell that exiles a permanent spell and remembers the card (`counter.exilePermanents`, `storeMoved`); permission to play by paying life equal to the mana value (`grantPlay.payLifeManaValue`);
+  - `lookAtTop.random` (a random card among those that match);
+  - activated abilities of the matching cards in the graveyard (`gainActivatedFromGraveyard`);
+  - filters `sameNameAs` ("with the same name as a [filter] permanent") and `fromBattlefieldThisTurn` (`GameObject.arrivedFrom`, set by `moveObject`);
+  - `RULES_VERSION` = 58, golden games regenerated.
+- **Tests:** 11 rules tests ("lot C1").
 
-## Fin d'extension : correctifs trouvés par la vérification complète
+## End of set: fixes found by the full verification
 
-- **Contrôle d'une Aura (613.1b) :** le contrôle donné par une Aura (ou un effet « tant que ») revient dès qu'elle quitte le champ de bataille, sans attendre les actions basées sur l'état (Banishing Betrayal renvoie l'Aura puis demande une surveillance ; trouvé par le fuzz « chaos » ; test dans `rulings.test.ts`). `RULES_VERSION` = 59.
-- **Plafonds de sécurité :** une simulation de l'IA experte accumulait des copies d'Exalted Sunborn (doubleur de jetons) jusqu'à demander 2^2058 jetons, soit une boucle sans fin. Un événement crée au plus 100 jetons, aucun au-delà de 400 objets sur le champ de bataille, et un montant remplacé est borné à un million ; une pioche s'arrête à la bibliothèque vide (trouvé par le fuzz « niveaux d'IA » ; approximation générale dans `docs/approximations.md`). `RULES_VERSION` = 60.
+- **Control of an Aura (613.1b):** the control given by an Aura (or a "for as long as" effect) returns as soon as it leaves the battlefield, without waiting for state-based actions (Banishing Betrayal returns the Aura then asks for a scry; found by the "chaos" fuzz; test in `rulings.test.ts`). `RULES_VERSION` = 59.
+- **Safety ceilings:** an expert AI simulation accumulated copies of Exalted Sunborn (token doubler) until it asked for 2^2058 tokens, an endless loop. An event creates at most 100 tokens, none beyond 400 objects on the battlefield, and a replaced amount is capped at one million; a draw stops at the empty library (found by the "AI levels" fuzz; general approximation in `docs/approximations.md`). `RULES_VERSION` = 60.

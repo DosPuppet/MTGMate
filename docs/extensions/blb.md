@@ -1,35 +1,35 @@
-# Bloomburrow (BLB, 266 cartes)
+# Bloomburrow (BLB, 266 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Demandée par l'utilisateur le 28/09/2026. Les Classes (716) et le Seuil existaient déjà dans le socle.
+Requested by the user on 2026-09-28. Classes (716) and Threshold already existed in the core.
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Cartes faisables avec le moteur, jetons (Loutre, Chauve-souris, Escargot, Écureuil, Mur), terrains (Villages, Three Tree City) | A |
-| Progéniture, Cadeau, Fourrager, Dépense, Vaillance, Saisons (modes « patte ») | B |
-| Légendaires et cartes uniques (Alania, Vren, Mockingbird, Portent of Calamity, Osteomancer Adept, Festival of Embers…) | C |
+| Cards doable with the engine, tokens (Otter, Bat, Snail, Squirrel, Wall), lands (Villages, Three Tree City) | A |
+| Offspring, Gift, Forage, Expend, Valiant, Seasons ("paw" modes) | B |
+| Legendary and unique cards (Alania, Vren, Mockingbird, Portent of Calamity, Osteomancer Adept, Festival of Embers…) | C |
 
-Les scripts sont dans `packages/cards/src/blb/` : `white`, `blue`, `black`, `red`, `green`, `multi` (légendaires compris) et `artifacts` (artefacts, terrains et cartes spéciales n° 262 et au-delà). Les aides sont dans `blb/common.ts` : `valiant`, `expend`, `kin` (familles d'animaux), `entersAndSacrificed`, `FOOD_ABILITY`, et les jetons Loutre, Chauve-souris, Escargot, Écureuil, Mur, Rat de Vren, Épée et Cragflame.
+The scripts are in `packages/cards/src/blb/`: `white`, `blue`, `black`, `red`, `green`, `multi` (legendary cards included) and `artifacts` (artifacts, lands and special cards from no. 262 on). The helpers are in `blb/common.ts`: `valiant`, `expend`, `kin` (animal families), `entersAndSacrificed`, `FOOD_ABILITY`, and the Otter, Bat, Snail, Squirrel, Wall, Vren Rat, Sword and Cragflame tokens.
 
-- Lot A ✅. Il couvre les cartes sans nouvelle mécanique, les Classes (dix Talents), le Seuil, les Villages (mana réservé aux sorts de créature) et Three Tree City.
-- Lot B ✅. Le moteur gagne :
-  - Progéniture (702.175) : « Offspring {2} » est lu dans le texte (`parseOffspring`, `cards/src/scryfall.ts`). C'est un kicker (`CardDef.kickerKind = "offspring"`) ; le déclencheur « quand elle arrive, créez un jeton 1/1 copie d'elle » est généré ;
-  - Cadeau (702.174) : « Gift a card / a Food / a tapped Fish / a Treasure » est lu dans le texte (`parseGift`). C'est un kicker à {0} (`kickerKind = "gift"`, `CardDef.gift`). L'effet `gift` est ajouté en tête de chaque mode d'un éphémère ou d'un rituel, ou dans un déclencheur d'arrivée généré pour un permanent. L'adversaire qui le reçoit est choisi juste après la mise sur la pile, comme une répartition (`stackChoices.ts`, `CastInfo.giftTo`, PLAN-H H4 ; aucune question avec un seul adversaire ; une copie garde l'adversaire de l'original, 707.10). `cond.gift` (= `cond.kicked`) lit « si le cadeau a été promis », `when.giveGift` « chaque fois que vous offrez un cadeau » ;
-  - cibles propres au cadeau : `TargetSpec.kickedFilter` (« à la place, un permanent non-terrain ciblé »), vérifié au lancement et à la résolution, et proposé à l'IA et à l'interface (`TargetOption.kickedLegal`) ; `kickedCount` sert aux cibles supplémentaires ;
-  - la question du kicker a ses propres libellés (`kickerPrompt` de l'option : « Payer la progéniture {2} ? », « Offrir une Nourriture ») ;
-  - Fourrager (701.61) : `canForage` et `forage` (`actions.ts`), en effet (`fx.mayForage`), en coût d'activation (`activated({ forage: true })`), en coût alternatif (`forageOrPay` : Feed the Cycle, « Fourrager — {1}{B} ») et en coût de lancement depuis le cimetière (Osteomancer Adept). Déclencheur `when.forage` ;
-  - Dépense N : `turnStats.manaSpentOnSpells`, événement `expend` émis au lancement quand le total franchit 4 ou 8 ; `when.expend(n)`, aide `expend(4, …)` ;
-  - Vaillance : `becomesTarget` avec `byYou` (sort ou capacité que vous contrôlez), une fois par tour ; `becomesTarget` accepte aussi un filtre (Pawpatch Recruit : `when.targetedByOpponent`) ;
-  - Saisons : `pawprint(...)` (`dsl.ts`) génère toutes les combinaisons de modes jusqu'à cinq {P}, le même mode plusieurs fois ; les cibles de chaque exemplaire sont renommées.
-- Lot C ✅ (**266/266**). Le moteur gagne :
-  - la prouesse accordée ou portée par un jeton (capacité ajoutée par les couches ; `liveSources` n'ignore plus ces créatures) ;
-  - les déclencheurs `lifeChange` (gagner ou perdre des PV), `leavesWithoutDying`, `attackWith` avec filtre (« avec un ou plusieurs Rats »), `castSpell.firstOf` (Alania) ;
-  - les conditions `any`, `opponentHasMore` (Beza), `lostLife`, `refLostLife`, `handAtMost`, `targetChosen`, `sacrificedFood`, `canForage` ; la référence `defendingPlayer` ;
-  - les montants `inExile`, `yourCreaturesDiedThisTurn`, `opponentCreaturesExiledThisTurn` (Vren), `opponentsWithHandAtMost`, `lkiPower`, `instantSorceryCast`, `cardsLeftGraveyardThisTurn` ;
-  - les statiques de joueur `noncombatDamageBonusAmount` (Artist's Talent), `damageUnpreventable` (Sunspine Lynx), `instantsSorceriesFromGraveyardLife` (Festival of Embers), `flashFor` (Valley Floodcaller), `damagePlusOneFrom` (Valley Flamecaller), `creaturesFromGraveyardForage` (Osteomancer Adept) ;
-  - les effets `untapAll`, `forEachPlayer` avec `damage` (Sunspine Lynx, PLAN-H H8a), `portent` ; `modifyAll` jusqu'à votre prochain tour ; `punisher` répété (`times`) ; `sacrifice` de plus grande force ; `copyToken` exilé à l'étape de fin ; les cibles réflexives de valeur de mana variable (`manaValueAmount`, Wishing Well) ;
-  - la copie à l'arrivée d'une créature de n'importe quel contrôleur, avec des mots-clés en plus (Mockingbird) ;
-  - le mot-clé `cantBeBlockedByPowerGE2` (Azure Beastbinder).
+- Lot A ✅. It covers the cards without a new mechanic, the Classes (ten Talents), Threshold, the Villages (mana reserved for creature spells) and Three Tree City.
+- Lot B ✅. The engine gains:
+  - Offspring (702.175): "Offspring {2}" is read from the text (`parseOffspring`, `cards/src/scryfall.ts`). It is a kicker (`CardDef.kickerKind = "offspring"`); the trigger "when it enters, create a 1/1 token copy of it" is generated;
+  - Gift (702.174): "Gift a card / a Food / a tapped Fish / a Treasure" is read from the text (`parseGift`). It is a kicker at {0} (`kickerKind = "gift"`, `CardDef.gift`). The `gift` effect is added at the head of each mode of an instant or sorcery, or in a generated enters trigger for a permanent. The opponent who receives it is chosen right after the spell is put on the stack, like a division (`stackChoices.ts`, `CastInfo.giftTo`, PLAN-H H4; no question with a single opponent; a copy keeps the original's opponent, 707.10). `cond.gift` (= `cond.kicked`) reads "if the gift was promised", `when.giveGift` "whenever you give a gift";
+  - targets specific to the gift: `TargetSpec.kickedFilter` ("instead, target nonland permanent"), checked on casting and on resolution, and offered to the AI and to the interface (`TargetOption.kickedLegal`); `kickedCount` serves additional targets;
+  - the kicker question has its own labels (`kickerPrompt` of the option: "Pay the offspring cost {2}?", "Promise a Food");
+  - Forage (701.61): `canForage` and `forage` (`actions.ts`), as an effect (`fx.mayForage`), as an activation cost (`activated({ forage: true })`), as an alternative cost (`forageOrPay`: Feed the Cycle, "Forage — {1}{B}") and as a cost to cast from the graveyard (Osteomancer Adept). Trigger `when.forage`;
+  - Expend N: `turnStats.manaSpentOnSpells`, `expend` event emitted on casting when the total crosses 4 or 8; `when.expend(n)`, helper `expend(4, …)`;
+  - Valiant: `becomesTarget` with `byYou` (spell or ability you control), once per turn; `becomesTarget` also accepts a filter (Pawpatch Recruit: `when.targetedByOpponent`);
+  - Seasons: `pawprint(...)` (`dsl.ts`) generates all the combinations of modes up to five {P}, the same mode several times; the targets of each copy are renamed.
+- Lot C ✅ (**266/266**). The engine gains:
+  - prowess granted or carried by a token (ability added by the layers; `liveSources` no longer ignores these creatures);
+  - the triggers `lifeChange` (gain or lose life), `leavesWithoutDying`, `attackWith` with a filter ("with one or more Rats"), `castSpell.firstOf` (Alania);
+  - the conditions `any`, `opponentHasMore` (Beza), `lostLife`, `refLostLife`, `handAtMost`, `targetChosen`, `sacrificedFood`, `canForage`; the reference `defendingPlayer`;
+  - the amounts `inExile`, `yourCreaturesDiedThisTurn`, `opponentCreaturesExiledThisTurn` (Vren), `opponentsWithHandAtMost`, `lkiPower`, `instantSorceryCast`, `cardsLeftGraveyardThisTurn`;
+  - the player statics `noncombatDamageBonusAmount` (Artist's Talent), `damageUnpreventable` (Sunspine Lynx), `instantsSorceriesFromGraveyardLife` (Festival of Embers), `flashFor` (Valley Floodcaller), `damagePlusOneFrom` (Valley Flamecaller), `creaturesFromGraveyardForage` (Osteomancer Adept);
+  - the effects `untapAll`, `forEachPlayer` with `damage` (Sunspine Lynx, PLAN-H H8a), `portent`; `modifyAll` until your next turn; repeated `punisher` (`times`); `sacrifice` of the greatest power; `copyToken` exiled at the end step; reflexive targets of variable mana value (`manaValueAmount`, Wishing Well);
+  - copying on entering a creature of any controller, with extra keywords (Mockingbird);
+  - the keyword `cantBeBlockedByPowerGE2` (Azure Beastbinder).
 
-Tests : `engine/test/blb.test.ts` (29 tests) et le test de fumée `ai/test/smoke/blb.test.ts`.
+Tests: `engine/test/blb.test.ts` (29 tests) and the smoke test `ai/test/smoke/blb.test.ts`.

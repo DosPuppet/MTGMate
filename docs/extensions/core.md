@@ -1,0 +1,324 @@
+# Multi-set core (phase 0, standard branch)
+
+Cross-cutting lots done before the sets: import of all of Standard, multi-faced cards, Sagas, face-down cards, common keywords, performance. Detail moved out of CLAUDE.md.
+
+Lot 0.1: the engine gains:
+- **layer 1** (`LayerMods.copyOf`, effect `becomeCopy`, `copiedDefId`): copy for a duration, statics and triggers of the copied definition, copied face in the interface;
+- the trigger "when you cast this spell" (`castSelf`, source on the stack);
+- the ward "sacrifice N permanents";
+- effects that last as long as a card stays in exile (`untilExiledUid`) and the permission to cast "as long as it remains exiled" (`grantPlay` with `duration: "forever"`);
+- card copies (`GameObject.cardCopy`: they leave exile only for the stack and become tokens on entering);
+- the legend rule suspended for the turn (`noLegendRuleThisTurn`).
+
+Lot 0.2:
+- the 18 sets are imported: 5,174 cards in all, 836 of them handled (FDN, FRA and about forty "keywords only" creatures);
+- `npm run import-cards -- all` imports all sets except FDN and FRA;
+- multi-face layouts (adventure, split card, double-faced, meld) keep all their faces (`RawCard.faces`), and stay unhandled until lots 0.3 to 0.6;
+- `npm run coverage -- --set all` gives the detail per set, and `--set standard` is limited to legal cards;
+- the smoke test is grouped by set, and the legality test checks the exact list of the 13 banned cards;
+- the game worker receives the definitions of the deck cards with the `start` message, instead of embedding the whole database (6 MB → 163 KB). Sandbox tokens come from `@mtgx/cards/tokens`, a light module;
+- the interface still embeds all the data: 6.3 MB, 1.3 MB compressed.
+
+Lot 0.3 (model of multi-faced cards):
+- `CardDef.layout` and `CardDef.faceDefs`: one complete definition per face, built by `toCardDef` with the script looked up by the face name. The card carries the front face, or the union of the two halves of a split card (709.4: mana values added, colors and types combined);
+- `registerDef` registers a card and its faces in the game (game creation, sandbox, tests);
+- a multi-faced card stays unhandled as long as its layout is not in `HANDLED_LAYOUTS` (`cards/src/scryfall.ts`) and not all its faces are handled; meld cards too;
+- decklists: the front face alone (MTGA), "A/B" (MTGO) and the French name of the front face are recognized. The export gives the front face alone, except for a split card ("A // B");
+- interface: the other faces are shown in the preview (`CardFace.otherFaces`), with a "Voir le verso" ("See the back") button (F key) for a double-faced card; the deckbuilder searches all faces.
+
+Lot 0.4 (adventures and omens):
+- `castableFaces` (stack.ts): the card and its adventure are two cast options (`ActionOption.face`, `CastChoices.face`). A card "on an adventure" offers only the creature;
+- on the stack, the cast face gives the characteristics (`GameObject.faceDefId`, read by `chars` and by the view);
+- a resolved Adventure goes to exile "on an adventure" (`onAdventure`), from where its owner can cast the creature. Countered, it goes to the graveyard;
+- a resolved omen (subtype Omen, same Scryfall layout as the adventure) is shuffled into the library;
+- interface: the card menu in hand offers "Lancer [créature]" and "Lancer [aventure]" ("Cast [creature]" and "Cast [adventure]"). Tests in `engine/test/faces.test.ts`.
+
+Lot 0.5 (double-faced and meld):
+- transform (712): `transform` effect (`fx.transform`), `MoveSpec.transformed` (enters transformed). The back face gives the characteristics via `faceDefId` (layers, triggers, abilities, view); the back face's mana value is that of the front face (712.8e); `transform` event in the journal;
+- modal double-faced cards: either face can be cast (`castableFaces`), and the permanent enters with the cast face;
+- meld (701.42):
+  - the importer keeps meld cards as simple cards, with `meld: { parts, result }`;
+  - each part embeds the definition of the melded card (`meldResultDef`);
+  - the `meld` effect exiles both cards and creates a single permanent (`GameObject.melded`), which becomes its two cards again on leaving the battlefield;
+  - the melded card does not go into a deck (legality, deckbuilder, smoke test);
+  - the count invariant counts two cards for a melded permanent;
+- importer: automatic retry on Scryfall's 429 error; the layout of non-normal simple cards (saga, class, case, meld) is kept.
+
+Lot 0.6 (split cards and Rooms):
+- split card (709): each half is cast separately (faces 0 and 1); off the stack, the card combines both halves;
+- Room (709.5):
+  - on the battlefield, the Room has the name, colors and abilities of its unlocked doors (`GameObject.unlocked`, `roomBase` in layers.ts);
+  - the cast door is unlocked on entering; a Room put onto the battlefield otherwise enters locked;
+  - unlocking a door is a special action at sorcery speed (`ActivatedAbilityDef.specialAction`: cost paid, no stack), generated by `toCardDef` for each door;
+  - "when you unlock this door" (`when.unlockThisDoor`): the door is fixed at import; condition `cond.fullyUnlocked`;
+- computed abilities (Room, back face, copy) in the loops of replacements, cost reductions, statics and the trigger filter.
+
+Lot 0.7 (Sagas, Classes, Cases):
+- Saga (714):
+  - last chapter read from the text (`CardDef.saga.chapters`);
+  - a lore counter on entering and at the beginning of the precombat main phase (turn action);
+  - chapters written with `chapter([1, 2], effects)` (`chapter` trigger);
+  - sacrificed (state-based action) when the last chapter is reached and no chapter is waiting;
+- Class (716): level abilities in the script (`classLevels`), costs "{W}: Level 2" read from the text, "Level N" abilities generated (sorcery speed, from level N−1), trigger `when.classLevel(n)`;
+- Case (719): `caseToSolve` (condition) and `caseSolved` (abilities) in the script; the trigger "at the beginning of your end step, if it isn't solved and the condition is met, it becomes solved" is generated;
+- `levelAbilities` (layers.ts) adds the abilities of the levels reached and the "Solved" abilities; the preview shows the level or "Case solved";
+- tests: `engine/test/levels.test.ts`. The `advanceUntil` helper advances the game by passing attacks, blocks and choices.
+
+Lot 0.8 (face-down cards, 708):
+- a face-down object takes the generic definition `FACE_DOWN_DEF` (nameless 2/2 creature, mana value 0); the real card, the ward and the costs to turn it face up are in `GameObject.faceDown`. Views, events, layers and triggers therefore hide the card without special handling;
+- disguise: `CardDef.disguise` read from the text; `faceDown` cast option for {3} (`FACE_DOWN_SPELL`); ward {2};
+- manifest and cloak (`fx.putFaceDown(ref, ward)`), manifest dread (`fx.manifestDread`, rules event `manifestDread`);
+- turning face up: special action for each possible cost (disguise, or mana cost of a creature card), effect `fx.turnFaceUp`, trigger `when.turnedFaceUp`;
+- the card is revealed on leaving the battlefield; a spell cast face down enters face down;
+- only the controller sees the real card (`ObjectView.faceDownCard`, shown in the preview). The `hidden-info` audit plays games with disguised cards and checks that the opponent never sees them.
+
+Lot 0.9 (mechanics common to several sets):
+- Clue tokens (`CLUE`, helper `investigate(n)`) and Map tokens (`MAP`) in `fdn/common.ts`, also available in the sandbox;
+- explore (701.44): `fx.explore(ref, times)` reveals the top card (`reveal` event, public); trigger `when.explores(who, land?)`;
+- connive (701.50): `fx.connive(ref)`;
+- Mount (702.171): "Saddle N" read from the text (same automatic choice as crew), condition `cond.saddled`, trigger `when.saddled`;
+- the other mechanics (particular protections, cascade, channel, bestow, offspring, contemplate...) are handled in the lots of their set;
+- the hidden information audit counts revealed cards (`reveal`) as public.
+
+Lot 0.10 (performance, full pool of 5,174 cards):
+- engine:
+  - `@mtgx/cards` loads in 212 ms;
+  - in the fuzz profile, state copying (25%) and the fuzz invariants (21%) dominate. The copied state stays small (about 30 KB of objects; definitions are shared), and the bench did not regress;
+- deckbuilder:
+  - progressive rendering of the collection (pages of 120 cards, the next ones as the bottom of the grid nears): all cards display in 164 ms instead of 2,084 ms;
+  - deferred filters (`useDeferredValue`): a search takes 167 ms instead of 474 ms, without blocking typing.
+
+Lot 0.11 (casting during resolution, 608.2g; audit P0):
+- a resolution can suspend on a **restricted priority**: `PendingDecision` `priority` with `castNow: { cards, prompt }`. The player casts one of the offered cards (ordinary `cast` decision: targets, modes, X, additional costs, `tapForMana` allowed) or passes to decline; the resolution then resumes (`answerCastNow`, `stack.ts`). The cast spell goes onto the stack above the object being resolved, and resolves after it;
+- effect `fx.castNow(ref, { free, many, exileAfter, anyMana, storeCast, storeRest })` (`ops/spells.ts`, shared loop `castNowLoop`): temporary `now` permission (removed as soon as the answer comes), only cards that can really be cast are offered; `storeCast` counts the spells cast ("if you don't..."); 
+- `castCopiesFree` (Uldaros, Roving Actuator, Kaervek with `paid`) casts the copies during resolution; the copies not cast cease to exist (707.12);
+- `legalActions` offers only these cards; the automation never passes in the player's place; the AI evaluates the offer (`priorityOptions`, fast policy); the interface shows the question in the banner, the card glows at the end of the hand (exile) or in the graveyard window, and the main button becomes "Ne pas lancer" ("Don't cast");
+- migrated cards: Discover (LCI), rebound (Ojer Pakpatiq), Malcolm, Etali, Chandra, Torch of Defiance, Uldaros Theorix, Roving Actuator, Kaervek, Tinybones, the Pickpocket, The Key to the Vault, Quistis Trepe, Seifer Almasy, Vaan, Buster Sword, Daring Waverider, Wishing Well, The Infamous Cruelclaw, Portent of Calamity (the cast spell is now chosen);
+- tests: `engine/test/lci.test.ts` (Discover, rebound), `fra-lotf.test.ts` (Chandra, Uldaros), `fdn-lotf.test.ts` (Etali), `blb.test.ts` (Wishing Well), `ai/test/ai.test.ts` (the AI casts the discovered card).
+
+Lot 0.12 (replacements "instead of the graveyard", 614.1a / 616.1; audit P0):
+- generic ability `graveyardReplacement` (`GraveyardReplacementAbilityDef`): object filter, "from the battlefield", targeted graveyard (`you` / `opponent`), "that you don't control", link to the source (identifier or physical identity), life gained, condition. It replaces seven `playerStatic` flags (Rest in Peace, Leyline of the Void, Hades and Forgotten Cellar, Dryad Militant, Garruk and Vren, The Darkness Crystal, Valgavoth);
+- `replaceGraveyard` (`replacement.ts`) gathers all the candidates, including "exile it instead if it would die" (Lava Coil) and the finality counter: the self-replacement goes first (616.1a, Progenitus and Darksteel Colossus shuffled even with a finality counter), then a single replacement applies, chosen for the affected player (616.1e; automatic choice: it discards those that benefit an opponent);
+- two errors fixed: Darksteel Colossus with a finality counter was exiled; with Rest in Peace and The Darkness Crystal, the Crystal gave its life;
+- tests: `engine/test/replacement.test.ts`.
+
+Lot 0.13 (automatic choices given back to the player; audit P0):
+- crew and Saddle: the activation option exposes `additional.tap` with `minPower`, the powers (`powers`) and the default choice (`suggested`); the player taps the creatures of their choice (sufficient total power, checked by `chosenCrew`, `stack.ts`), otherwise the default choice applies. In the interface, the window "Engagez des créatures de force totale N ou plus" ("Tap creatures with total power N or more") has a "Suggestion" button;
+- Craft: `additional.materials` (`craftSpec`: `min`, `max`, graveyard and battlefield options, suggestion) and the decision field `materials`, checked by `chosenCraftMaterials` (a distinct material per filter for `each`);
+- proliferate: a `pick` choice (intent `proliferate`, `autoOk`) among the permanents and players that have counters; the automation and the AI take the previous suggestion (your counters, the opponents' harmful counters), "full control" mode lets the player choose;
+- tests: `fdn-reprints.test.ts` (crew), `lci.test.ts` (Craft), `fra.test.ts` (proliferate).
+
+Lot 0.14 (mana abilities with a cost, 605.1a / 605.3b; audit P0):
+- an activated ability without a target, which is not a loyalty ability and which can add mana (`addMana`, `addManaChoice`, `addManaColorsAmong`, `addManaUntilEndOfTurn`, even nested) is a mana ability (`isManaAbility`, `stack.ts`): its costs are paid as usual, then it resolves immediately, without the stack (`resolveManaAbilityNow`);
+- a choice during that resolution (mana color) suspends it; the answer gives priority back to the player who activated it, as it was (`Resolution.returnPriority`, `game.ts`), even in response to an opposing spell;
+- cards concerned without any change to their script: Ramos, Dragon Engine, Ramos, Three Tree Mascot, the Planets of Edge of Eternities (Evendo, Uthros...), Molt Tender, Loot, the Pathfinder, Conduit Pylons, Tarnation Vista, Capital City and the 1-life city of Final Fantasy, Sunbird Effigy, Thornvault Forager, Baylen;
+- limit: automatic payment does not use them (they must be activated by hand before casting);
+- tests: `engine/test/costs.test.ts`.
+
+Lot 0.15 (Oracle ↔ script audit; audit P1, step 6):
+- `cards/src/audit.ts` splits the Oracle text into paragraphs (keywords, triggered, activated, static, chapters; reminder text, ability words and quoted abilities set aside) and checks that the script has at least as many triggered and activated abilities, and that the effect numbers in the text (damage, draw, life, +N/+N, tokens, counters, scry) appear in the script;
+- `npm run coverage -- --audit` lists the discrepancies; `cards/test/audit.test.ts` fails on a new discrepancy, or on a known discrepancy that has disappeared (`cards/data/audit-baseline.json`, eight documented equivalences or approximations);
+- two omissions found and fixed: Greenhouse Propagator (FRA) lacked its mana ability "{T}: Add {G}"; Magmatic Galleon (LCI) lacked its Treasure trigger. For the latter, the engine now computes excess damage (120.4a: beyond lethal damage, deathtouch included, or loyalty), passed on by the `damage` event (`excess`), with the trigger `when.excessDamage(filter, noncombatOnly)`;
+- limit: it is a structural heuristic. It checks neither the meaning of effects nor statics; the numbers of a script are compared loosely.
+
+Lot 0.16 (expectations deduced from the Oracle; audit P1, step 7):
+- `cards/test/oracle-expectations.test.ts`: for instants and sorceries with simple text, and for creatures whose only ability is "When this creature enters, ...", the text is read sentence by sentence (damage to a target, to a player, to each opponent or to a creature; draw; life; tokens; ±N/±N and keywords until end of turn, on a target or on your creatures; destroy, exile, return to hand; "Untap it", "Scry N"). The card is cast in a fixed position (an opposing 10/10 creature, a creature of yours), then the effect is checked;
+- an unknown sentence sets the card aside: 104 cards checked (84 at lot 0.16), all conforming; a witness (script with 2 damage, text with 3) checks that the test knows how to fail;
+- to cover more cards: add a recognized sentence in `clause`.
+
+Lot 0.17 (turn event journal; audit P1, step 8, first part):
+- `s.turnLog` (`turnlog.ts`) records public moves (not draws), spells cast, sacrifices and damage of the turn, in small JSON entries; it is emptied at the beginning of each turn;
+- generic amount `amount.turnEvents(query)` (event, player concerned, zones, types, subtype, supertype, token, cast zone, combat, source: controller, colors, types); `sum` totals damage, `perPlayer` takes the greatest total of a player;
+- nine single-use counters removed from `TurnStats` (Food sacrificed, cards leaving the graveyard, creatures exiled, creatures gone, noncombat red damage, legendary creature spells, spells from hand, damage from a legendary creature, combat damage taken), with five conditions and four amounts specific to one card, now written as queries (Bonecache Overseer, Vren, Kutzil's Flanker, Temple of Power, Serah Farron, Sidequest: Play Blitzball...);
+- bench unchanged, and identical games at equal seed;
+- tests: `engine/test/turnlog.test.ts`.
+- next: migrate the other `TurnStats` counters and the card-specific turn fields (`s.turn`) as the sets go.
+
+Lot 0.18 (continuation of steps 7 and 8 of the audit):
+- turn journal, second part: eight more counters removed from `TurnStats` (lands entered, cards milled, noncreature spells, instants and sorceries cast, creatures died, sacrifices, Descend, spells by type for Alania), with their own amounts and conditions (`landsEnteredThisTurn`, `milledThisTurn`, `noncreatureCastBy`, `descended`...), now queries. The query accepts `notTypes` and `byOwner` (owner rather than controller); the amount accepts `of` (count for designated players). An entry onto the battlefield is attributed to its new controller;
+- fix along the way: a token put into the graveyard no longer counts for Descend (it is not a card);
+- Oracle expectations: new sentences (opposing life loss and drain, opposing discard, mill, loot, +1/+1 counters, steal control until end of turn, -N/-N on an opposing creature, named tokens, surveil, "It gains haste", "exile it instead"), and the following sentences are read with a capital letter: 104 cards checked;
+- bench and decision counts unchanged.
+
+Lot 0.19 (continuation of steps 7 and 8 of the audit):
+- turn journal, "turn fields" part: `s.turn.attacked`, `creatureDied`, `creaturesDied`, `diedSubtypes`, `nonlandLeft`, `spellWarped`, `attackerSubtypes` and `attackedBy` are removed. The journal has an `attack` entry (player, defending player, types and subtypes of the attacker), spells cast know whether they were cast with warp, and the query accepts `notSubtype`, `againstYou` and `warped`. Morbid, Void, raid ("if you attacked with a Spacecraft"), Sandswirl Wanderglyph and Undead Sprinter read the journal. Each entry advances the state version (layer cache: statics depend on it);
+- turn permissions: `mayCastFromGraveyard` (Zul Ashur), `flashbackGranted` and `freeFlashbackGranted` (Sphinx of Forgotten Lore, Archmage's Newt) become ordinary `playPermissions`; granted flashback is a permission marked `flashback` (exiled after resolution);
+- what remains in `s.turn`: the state specific to the course of the turn (lands played, extra combats and end steps, "once per turn") and a few player prohibitions or permissions (Sandswirl `attackBans`, Tomb of Aclazotz, Muldrotha, Summon: Alexander);
+- Oracle expectations: death triggers (the creature is destroyed) and attack triggers (it attacks), in addition to entering: 121 cards checked;
+- tests: `fdn-lotf.test.ts` (granted {0} flashback), raid and Void tests adapted to the journal.
+
+Lot 0.20 (continuation of steps 7 and 8 of the audit):
+- player effects: `s.playerEffects` (`PlayerEffect`: player, player static, last turn, single use), read by `playerStatic` as if the player controlled the ability; `playerStaticTotal` adds numeric statics (a boolean counts as 1), `addPlayerEffect` creates one, `consumePlayerEffect` removes a single-use effect. They replace nine `PlayerState` fields specific to one card: Screaming Nemesis (`cantGainLife`), Molten Tide, Jace's Machinations, Hall of Echoes, Way of the Paradox (extra lands, cumulative with the `extraLands` statics), Theorist's Proxy and Pit Automaton (single use), Taii Wakeen, Lightning, Army of One (damage doubled until their next turn). Expired effects disappear at the beginning of each turn;
+- Oracle expectations: end step triggers, with their intervening condition (603.4) checked both ways: effect when the setup fulfills it (attack, creature died, life gained or lost, two creatures tapped, nonland permanent left, opposing life loss), no trigger otherwise; returns of a creature card from the graveyard; counters on the creature itself; "Max speed —" (condition without "if") set aside. 133 cards checked, 8 conditions of which were checked both ways;
+- tests: `engine/test/player-effects.test.ts`.
+
+Lot 0.21 (end of steps 7 and 8 of the audit, for this series):
+- last player prohibitions and permissions of `s.turn` moved to player effects: Sandswirl Wanderglyph (`cantAttackPlayer`, read by `playerEffectValues`), The Tomb of Aclazotz (`castCreatureFromGraveyard`, single use), Summon: Alexander (`creaturesDamageImmune`). `s.turn` now keeps only the course of the turn (lands played, combats and end steps, "once per turn", speed, craft in progress, Muldrotha, resolution counters);
+- Oracle expectations: upkeep triggers (the game starts from the opposing end step), "~ deals N damage to you", condition "you control six or more lands" (always met, checked one way only); a creature with an attack, end step or upkeep trigger may have other static or activated abilities. 138 cards checked;
+- tests: `engine/test/player-effects.test.ts` (Sandswirl, Tomb, Alexander).
+
+Lot 0.22 (audit P2: game recording):
+- `engine/src/record.ts`: `GameRecord` (format `mtgx-game`, version 1: seed, forced first player or not, decks by name in order, applied decisions). `createRecordedGame` creates the game and its record; `GameHost` adds each accepted decision to it (humans, AI, automation) and calls `onRecord`; `replayGame` and `replayStates` replay. Pitfall: a randomly drawn first player consumes the engine's randomness, so the record keeps the original option, not its result;
+- server: `RoomConfig.dataDir` (`MTGX_DATA_DIR`, `data/rooms` by default); one file per room (header: seats with tokens, record; then one decision per line). At startup, `RoomManager` replays the saved rooms; players come back with their token and get the usual return delay. Closing a room deletes its file, stopping the server keeps it; an unreadable file (or one that no longer replays after an engine change) is set aside as `.bad`. `export` message: the record, only once the game is over (it reveals the decks and the seed);
+- client: the worker records games against the AI (not the tutorial or the sandbox); "Exporter la partie" ("Export the game", sidebar) downloads the file; "Revoir une partie" ("Review a game", home) opens it in the viewer (`ReplaySession`, `ReplayBar`: step by step, autoplay, start, end, point of view; decisions ignored);
+- tests: `ai/test/record.test.ts` (complete game replayed identically), `server/test/persistence.test.ts` (restart mid-game, export refused then accepted, unreadable file), `npm run replay-smoke`.
+
+Lot 0.23 (audit P2: token images):
+- `npm run import-tokens` (`tools/import-tokens.ts`) imports the Scryfall tokens of the Standard sets (sets `t<code>`, double-faced faces included) into `packages/cards/data/tokens.json` (334 faces): name, type line, P/T, colors, text, image URL;
+- `tokenImage` (`cards/src/tokenImages.ts`) chooses the image of the closest token of the same name (same P/T, then same colors, then same type line; on a tie, the most recent set). A token's face (`CardFace`) carries its colors; `faceImage` (client) uses it when the face has no image. 104 of the 112 token profiles in scripts have an image; the others keep the text frame;
+- tests: `cards/test/token-images.test.ts`.
+
+Lot 0.24 (audit P2: loading):
+- split build (`client/vite.config.ts`, Rolldown groups): `cartes-*.js` (card data, 5.8 MB, 750 KB in brotli), `bibliotheques-*.js` (React, Motion, Zustand: 100 KB in brotli), `index-*.js` (application: 225 KB in brotli). A code update no longer makes the card data download again;
+- Node server: compressed text files (brotli if accepted, otherwise gzip; compressed once per file and per version, in memory), `/assets/` cached for a year (`immutable`), `index.html` and `sw.js` without cache. nginx passes the compression through as is (nothing to configure). First load: about 1.1 MB transferred instead of 7.1 MB;
+- service worker (`client/public/sw.js`, production only): `/assets/` and `/sounds/` from the cache (a new version of a file replaces the old one), the page network-first then cache; the game worker is cached from the first visit. A game against the AI starts offline (cards in text frame, for lack of images);
+- tests: `server/test/static.test.ts`; checked by hand on a production build (offline, game against the AI).
+
+Lot 0.25 (audit P2: BO3 match with sideboard):
+- shared rule: `sideboardSwapError` (`cards/src/decklist.ts`): the new deck contains the same cards as at the start of the match (deck and sideboard together) and stays legal and playable;
+- server: `Room.match` (`MatchInfo`: `bestOf`, wins, game, winner); `create` accepts `bestOf` (1 or 3) and `sideboard`, `join` also the sideboard (validated with the deck). At the end of a game (`finishGame`), the win is counted; as long as nobody has two wins, status `sideboard`: each player sends `sideboard` (deck and sideboard, checked), the next game starts when both are ready, started by the loser of the previous one. Three games at most (a drawn game counts). Leaving between games concedes the match; a rematch restarts at 0–0 with the original decks. The match and the decks are saved with the room (resume after a restart: the win of a game finished just before the stop is counted on resume);
+- client: checkbox "Match en 3 manches (BO3)" ("Best-of-3 match (BO3)") (home, duel against the AI; "Contre un joueur" page, at creation); `localMatch` (store) holds the match against the AI, `nextGame` restarts with the chosen deck and the loser as first player (`startingPlayer` option of the worker); the end-of-game panel shows the score, the sideboard editor (`SideboardEditor`, one copy at a time, live validation) and "Manche suivante" ("Next game"), then the outcome of the match;
+- tests: `server/test/bo3.test.ts` (complete match between bots, swap refused), `npm run bo3-smoke`.
+
+Lot F1 (PLAN-R, see docs/history.md: rules version, golden games):
+- `engine/src/record.ts`: `RULES_VERSION` (1: one identifier counter per prefix; to be advanced with every lot that changes engine behavior), `GameRecord.rules` (absent: 0) and `checkpoints` (every 25 decisions and at the end: `[decisions applied, outcomeHash]`, added by `recordDecision`, called by `GameHost`);
+- `outcomeHash(s)`: fingerprint (cyrb53) of a stable projection of the game (turn, step, expected decision, players and zones by `defId`, battlefield, stack), without object identifiers or internal counters: two engine versions that play the same game give the same fingerprint;
+- `replayChecked`: replay that stops at the first divergence (decision refused, different fingerprint);
+- identifiers: `s.nextId` now serves only objects (`o…`); effects, triggers, abilities... each have their own counter (`s.idCounters`), so that one more effect does not shift the objects cited by the recorded decisions;
+- server: each line of `data/rooms` carries the fingerprint of the resulting state. On resume: same rules version and different fingerprint, file set aside (`.bad`); other version, the game resumes only if each decision has its fingerprint and they agree, otherwise the file becomes `.rules<N>` and the returning player reads "Partie interrompue par une mise à jour du moteur" ("Game interrupted by an engine update");
+- client: the viewer stops at the first divergence and shows it in its bar (`ReplaySession.warning`);
+- golden games: six fixed-seed games between meta decks, two of them with four players (`ai/src/golden.ts`, files `ai/test/golden/`), replayed by `ai/test/golden.test.ts`; `npm run golden` checks them, `-- --update` regenerates them;
+- tests: `ai/test/record.test.ts` (checkpoints, divergences, stable fingerprint), `engine/test/ids.test.ts`, `server/test/persistence.test.ts` (different version, wrong fingerprint).
+
+Lot F3 (PLAN-R, see docs/history.md: server security):
+- a badly encoded URL (`GET /%`) answers 400; any exception of an HTTP request answers 500 instead of stopping the server;
+- client address (`clientIp`): behind nginx, `X-Real-IP`, otherwise the last address of `X-Forwarded-For` (the beginning is supplied by the client, which bypassed the connection cap); the nginx site passes `X-Real-IP`;
+- WebSocket (`originAllowed`): without an Origin header, same host as the request, or origin from `MTGX_ORIGINS`; Vite's relay in dev and nginx in production keep the host;
+- cap on open rooms per creator address (`maxRoomsPerIp`, 4, `MTGX_MAX_ROOMS_PER_IP`): creating and abandoning rooms in a loop no longer fills the server;
+- `/scry/` no longer passes the query string to Scryfall, and the nginx cache key ignores it;
+- security headers on served files (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`); HSTS commented out in the nginx site, to enable after certbot;
+- remaining: reconnection tokens in clear text in `data/rooms`;
+- tests: `server/test/online.test.ts` (address, Origin, room cap), `static.test.ts` (badly encoded URL, headers), `images.test.ts`; `npm run online-smoke` through Vite's relay.
+
+Lot R0.1 (PLAN-R; `RULES_VERSION` = 2):
+- shared second (702.61b): special actions remain possible (turning a card face up), in `activateAbility` as in `legalActions`;
+- protection from everything: it no longer prevents damage that can't be prevented (Sunspine Lynx);
+- 704.5b: the flag for an impossible draw is reset at each check; the poison defeat is announced as such (`reason: "poison"`, journal "10 poison counters");
+- "you win / lose the game" by an effect respects "you can't lose the game and your opponents can't win the game" (existing `cantLose` key, no new flag);
+- counters put as a cost (loyalty +N, "put a counter", wither as kicker): `changeCounters(…, asCost)`; an `effectOnly` doubler (Doubling Season: "if an effect would") does not double them; The Earth Crystal and Innkeeper's Talent, yes;
+- 506.4: an attacker or blocker that stops being a creature leaves combat (checked with the state-based actions);
+- more than 100 passes of state-based actions: an `Error` (instead of a silent stop), which the fuzz would see;
+- tests: `engine/test/audit.test.ts`.
+
+Lot R0.2 (PLAN-R; `RULES_VERSION` = 3):
+- spells cast without paying their mana cost (Discover, plot, Omniscience): cost increases apply (601.2f, 118.9d; Thalia, the Survivor), reductions do not go below zero; `legalActions` offers a free option only if that remainder is payable;
+- attack and block taxes (Archangel of Tithes): added up (`playerStaticTotal`, `attackTaxFor`) instead of being read as booleans;
+- 508.1d: a creature that "attacks if able" is required to attack only if there is a defender without a tax (`forcedAttackers`); the automation declares the forced attacks toward such a defender (`forcedAttacks`). Before, with no mana facing Archangel of Tithes, no declaration was accepted;
+- limit: the AI keeps `forcedAttackers` and chooses its defenders itself; in multiplayer, it can still target a taxed player (decision refused, then default decision);
+- tests: `engine/test/audit.test.ts` (#3, #5, N3).
+
+Lot R0.3 (PLAN-R; `RULES_VERSION` = 4):
+- 514.3a: after the cleanup actions (514.1, 514.2), state-based actions are checked; if one is performed, a question is asked (legend rule) or an ability has triggered, the players receive priority (`turn.cleanupAgain`), then a new cleanup step takes place (`endStep`), which ends the "until end of turn" effects created in the meantime;
+- `stateBasedActions` now returns whether anything was done;
+- a creature kept alive by a bonus that expires dies during the cleanup of the same turn, and its "dies" triggers resolve there;
+- tests: `engine/test/audit.test.ts` (#1).
+
+Lot R0.4 (PLAN-R; `RULES_VERSION` = 5):
+- lifelink (119.9, 120.3f): during a batch of simultaneous events (`simultaneously`: a resolution effect, the combat damage of a step, state-based actions), the gains from the same source are added up (`queueLifelink`) and applied at the end of the batch, as a single gain per source. A blocked trampler no longer triggers Ajani's Pridemate twice; two sources with lifelink make two gains; double strike, one per damage step. Outside a batch (mana ability), the gain is immediate;
+- tests: `engine/test/audit.test.ts` (#2).
+
+Lot R0.5 (PLAN-R; `RULES_VERSION` = 6):
+- 603.6a: permanents that enter at the same time (tokens created together, cards put onto the battlefield by the same effect) see each other enter. Each entry of a `simultaneously` batch is detected right away, then reviewed at the end of the batch for only the sources that entered after it (`enterBatch`, `only` option of `detectTriggers`); nothing changes for an isolated entry;
+- tests: `engine/test/audit.test.ts` (#6).
+
+Lot R0.6 (PLAN-R; interface, no rules change):
+- poison: `PlayerView.poison` (absent at 0), ☠ badge in the player's bar (more visible at 7 and above);
+- journal: revealed cards ("Bob reveals ..."), poison counters received (with the total), reason for the defeat (empty library, poison, concession);
+- "Abandonner" ("Concede") confirms in two steps (`ConcedeButton`, sidebar);
+- card names in engine prompts: the engine writes a `cardRef(defId)` marker (`⟦defId⟧`) in its prompts and labels (damage division, legend rule, turn face up, trigger order); the client replaces it with the name in the chosen language (`localizeText`, `useLocalizedView`, `useLocalize`);
+- remaining: error messages (`RulesError`) still name cards in English;
+- tests: `client/test/i18n.test.ts`; `ui-smoke`.
+
+Lot R4.0 (PLAN-R; `RULES_VERSION` = 7):
+- `playerStatics(s, p, key)`: the only access to player statics (condition checked, player effects `s.playerEffects` included); `playerStatic` and `playerStaticTotal` rest on it. The reads that filtered `controlledAbilitiesWithSource` by hand (Leyline of Mutation, Valley Floodcaller, Boom Scholar, Mutagen Man, Tannuk, Noctis, Festival of Embers, Doc Aurlock, Inquisitive Glimmer, Angel of Vitality, Artist's Talent, Ojer Axonil, Valley Flamecaller, Draconic Visitor, Worldwalker Helm, Moonlit Meditation, Quina, Bloodletter of Aclazotz, Ultima, Traveling Chocobo, The Water Crystal, The Lunar Whale) go through it: a "this turn" effect (`fx.thisTurn`) on these keys now applies, and their condition is respected;
+- doublers check their condition (`doublers`, `counterDoublers`);
+- tests: `engine/test/audit.test.ts` (N6).
+
+Lot R2.1 (PLAN-R; `RULES_VERSION` = 8):
+- what the effect that puts a permanent onto the battlefield imposes is in place before the entry event (614.1c, 614.12): `EntersContext` carries `tapped`, `attacking` (508.4), `counters`, `mods` (permanent layer modifications), `haste` (until end of turn) and `impending` (Impending); `applyEntersReplacements` applies them first;
+- `moveWithSpec`, `createTokens`, `createTokenCopy`, `copyToken` and the resolution of a permanent spell (`StackItem.arrival`) go through it: "whenever a Zombie enters" sees a creature put back into play as a Zombie, a token created tapped does not trigger "becomes tapped", an impending permanent does not enter as a creature;
+- "tapped and attacking" tokens: the defender is asked for if there are several (otherwise, or outside this operation, `attackingDefender`);
+- tests: `engine/test/audit.test.ts` (#14, #17).
+
+Lot R2.2 (PLAN-R; `RULES_VERSION` = 9):
+- `copiedDefId`: a static of an attached permanent can make its host a copy (Assimilation Aegis, which copied nothing);
+- mana value seen by filters: that of what is copied (707.2), otherwise that of the front face (712.8e);
+- `applyEntersReplacements` reads the copied definition: a planeswalker Clone enters with its loyalty (instead of dying), a Saga Clone with its lore counter;
+- `copyToken` copies what the model copies; a copy of a Clone spell chooses what it copies;
+- remaining (R2.5): non-copiable copy exceptions (707.9b);
+- tests: `engine/test/audit.test.ts`.
+
+Lot R2.3 (PLAN-R; `RULES_VERSION` = 10):
+- a permanent "that enters as a copy" also does so without being cast (reanimated, flickered); an Aura put onto the battlefield without being cast enchants a chosen object (303.4f); the candidates come from `copyCandidates` and `auraHosts`;
+- during a resolution, `moveTo` asks for these choices before moving anything; outside a resolution, automatic choice of the first candidate;
+- 303.4g: an Aura with nothing legal to enchant stays in its zone (`moveObject` returns null);
+- tests: `engine/test/audit.test.ts`.
+
+Lot R1 (PLAN-R; `RULES_VERSION` = 11):
+- replacements that modify a number (616.1): `modifiers.ts` (`AmountMod`, `chooseReplacementOrder`); damage, counters and life gained gather their replacements and apply them in the order most favorable to the affected player (the least damage; the most counters, except harmful ones; the most life);
+- draw: `drawCards(s, p, n)`, a single draw event subject to replacements (Vnwxt, Quantum Riddler), for all draws of the game; `drawBonus` removed;
+- tests: `engine/test/audit.test.ts`.
+
+Lot R3 (PLAN-R; `RULES_VERSION` = 12):
+- `stackChoices.ts`: `copyStackItem` for every copy (spell or ability: Thousand-Year Storm, Pyromancer's Goggles, Teach by Example, Return the Favor, Ertha Jo, Pit Automaton...). A spell copy is a `cardCopy` object on the stack, owned by whoever put it on the stack: a counterspell can target it, hexproof from a type or color sees it, and it ceases to exist on leaving the stack (N11);
+- `StackItem.pendingChoices`: choices of an item already on the stack, posed by `announceNext` before triggers and priority (`advance`), with the purpose `stackChoice`;
+- new targets of a copy (707.10c): one question per word "target" (intent `changeTarget`, original targets offered, as many targets as originally, without `autoOk`: the player chooses); then the targets become those of the copy (ward, valiant; not heroic or crime, a copy not being cast) (#4);
+- division (601.2d, 602.2b, 603.3d): asked as soon as it goes on the stack for a spell, an activated or triggered ability with at least two targets, kept in `StackItem.division` (copied with the item); at resolution, the share of a target that has become illegal is lost (#15); damage (Chandra, Flameshaper) and +1/+1 counters;
+- tests: `engine/test/audit.test.ts` (#4, N11, #15).
+
+Lot R2.4 (PLAN-R; `RULES_VERSION` = 13):
+- layer 2 (`control.ts`): `GameObject.baseController` (fixed on entering), control effects in `s.effects` (`ContinuousEffect.controller`, `whileControlledBy`), applied with control Auras in timestamp order by `syncControl`, which removes from combat whatever changes controller;
+- `gainControl` (end of turn), `giveControl`, `exchangeControl` and `gainControlWhileSource` go through `addControlEffect`; `s.controlChanges` and `s.auraControl` disappear: a steal that ends gives the permanent back to whoever would control it without it (#12, N10);
+- 800.4a: a player who leaves the game loses what their effects gave them (the permanent comes back, instead of being exiled);
+- fuzz invariant: `syncControl` no longer changes anything after a decision;
+- tests: `engine/test/audit.test.ts` (#12, N10, Confiscate, 800.4a).
+
+Lot R2.5 (PLAN-R; `RULES_VERSION` = 14):
+- 613.8 by fixed point (`computeBattlefield`): `collectStatics` then `applyLayers`; statics that read permanents (condition that reads some, "for each" on the battlefield, copied abilities of Marvin) and P/T defined by an ability that counts permanents are re-evaluated on the provisional result (`provisional`), until their signature no longer changes (three passes at most). Kargan Dragonrider sees a Dragon that became a Dragon through an effect;
+- performance: a condition is dependent only if it read a permanent during its evaluation; later passes re-evaluate only the dependent statics; permanent views are cached during a collection, with equipped permanents precomputed. Bench unchanged;
+- layer 5: `addColors` ("in addition to its other colors": The Jolly Balloon Man, Possessed Goat);
+- 707.9b: the exceptions of a copy effect are marked `copiable`; `copiableExceptions` returns them, and `copyToken`, "enters as a copy", `becomeCopy` and the choice of a Clone take them up;
+- tests: `engine/test/audit.test.ts` (R2.5), `layers.test.ts` (613.8).
+
+Lot R4.1 (PLAN-R, no rules change):
+- block rules parameterized by a filter (`BlockRule`, `block.*`, `blockAbility`) in place of 11 keywords specific to one card; shown as restriction badges.
+
+Lot R4.2 (PLAN-R; `RULES_VERSION` = 15):
+- protection and hexproof "from [filter]" (`ProtectionRule`, `protection.*`, `protectionAbility`, `protectedFrom`) in place of 5 keywords; `ObjectFilter.colorCount` and `not`; Sword of Wealth and Power (instants and sorceries) and Resilient Roadrunner (Coyotes) really protected.
+
+Lot R4.3 (PLAN-R, no rules change):
+- "assigns combat damage equal to its toughness" (`PowerRule`, `powerFor.*`, `effectivePower`) in place of 4 keywords and a player flag: combat damage (Ghalta, Loot, Tapestry Warden), crew (pilots, Interface Ace), station.
+
+Lot R4.4 (PLAN-R; `RULES_VERSION` = 16):
+- playing from a zone (`playFrom`, `PlayFromZone`, `playFromRules`) in place of 11 flags; cost of activated abilities (`abilityCost`, `AbilityCostMod`) in place of 5.
+
+Lot R4.5 (PLAN-R, no rules change):
+- cast restrictions (`castLimit`, `CastLimit`) and doubled or suppressed triggers (`triggerMod`, `TriggerMod`), in place of 14 flags.
+
+Lot R4.6 (PLAN-R, no rules change):
+- `counterOnOrCreate` (bolster Jace, amass); "the next spell you cast this turn" (`nextSpell`, single-use player effect, `consumeNextSpells`); `fx.thisTurn` for Jace's loyalty at instant speed and the mana of Mountains. Debt reference: 69 player flags, 13 unprinted keywords, 58 single-card operations.
+
+Lot R5 (PLAN-R; `RULES_VERSION` = 17):
+- blocks of the defenders kept (`combat.pendingBlocks`) and applied together when the last one has declared (509.1), invisible until then;
+- mulligans turn by turn around the table (103.5; `declareMulligan`, `s.mulliganTaken`).
+
+Lot R6 (PLAN-R; `RULES_VERSION` = 18):
+- mandatory action loop: drawn game (104.4b; `declareLoopDraw`, `watchLoop`, `drawByLoop` for the host);
+- 800.4a: the triggers of an eliminated player cease to exist (they blocked cleanup: "unfinished" games of the fuzz).
+
+Lot R7 (PLAN-R; `RULES_VERSION` = 19):
+- one rules test file per partial set (TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, BIG), `rulings.test.ts`;
+- fixed: last known information for `ref.eventObject` and "if the source..." (603.10), "other" in `pumpAll`, Thorin, multiple prowess (702.108b), land played by a permission from the graveyard, most productive mana ability of a source first.
+
+Lot R8 (PLAN-R, no rules change):
+- engine: `holdPriority` and `passMode` (automation), `undoMana` decision (undoing a mana commitment, `GameState.manaUndo`); the rest is in the client and the AI (see docs/history.md and `docs/ai.md`).

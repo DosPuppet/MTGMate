@@ -1,5 +1,5 @@
-// Heroes in a Half Shell — préconstruit Commander de Teenage Mutant Ninja Turtles. Liste officielle du préconstruit « Turtle Power! » (MTGJSON, 2026-03-06), relevée le 06/10/2026.
-// Source : https://magic.wizards.com/en/news/announcements/teenage-mutant-ninja-turtles-commander-decklist
+// Heroes in a Half Shell — Teenage Mutant Ninja Turtles Commander precon. Official list of the "Turtle Power!" precon (MTGJSON, 2026-03-06), retrieved on 2026-10-06.
+// Source: https://magic.wizards.com/en/news/announcements/teenage-mutant-ninja-turtles-commander-decklist
 Commander
 1 Heroes in a Half Shell
 

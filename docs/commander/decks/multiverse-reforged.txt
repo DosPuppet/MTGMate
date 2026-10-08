@@ -1,5 +1,5 @@
-// Jace, Multiverse Architect — préconstruit Commander de Reality Fracture (« Réalité fracturée »). Liste officielle du préconstruit « Multiverse Reforged » (MTGJSON, 2026-10-02), relevée le 06/10/2026.
-// Source : https://magic.wizards.com/en/news/announcements/reality-fracture-multiverse-reforged-commander-decklist
+// Jace, Multiverse Architect — Reality Fracture Commander precon. Official list of the "Multiverse Reforged" precon (MTGJSON, 2026-10-02), retrieved on 2026-10-06.
+// Source: https://magic.wizards.com/en/news/announcements/reality-fracture-multiverse-reforged-commander-decklist
 Commander
 1 Jace, Multiverse Architect
 

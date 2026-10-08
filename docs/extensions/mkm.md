@@ -1,163 +1,163 @@
-# Murders at Karlov Manor (MKM, « Meurtres au manoir Karlov », 268 cartes)
+# Murders at Karlov Manor (MKM, 268 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Extension demandée par l'utilisateur le 01/10/2026, après Wilds of Eldraine et Secrets of Strixhaven. 10 cartes étaient déjà gérées depuis la phase méta (lots M1 à M6, `docs/extensions/meta.md`) : terrains à surveillance, Vengeful Tracker, réunir des preuves (Deadly Cover-Up)… Le déguisement, la cape, les Affaires, réunir des preuves et les Indices existent déjà dans le moteur. L'extension suit les règles d'intégration de CLAUDE.md (dette, R1, R7). Découpage : un sous-lot et un commit par couleur pour le lot A, par mécanique pour le lot B, par famille de cartes uniques ensuite.
+Set requested by the user on 2026-10-01, after Wilds of Eldraine and Secrets of Strixhaven. 10 cards were already handled since the meta phase (lots M1 to M6, `docs/extensions/meta.md`): surveil lands, Vengeful Tracker, collect evidence (Deadly Cover-Up)… Disguise, cloak, Cases, collect evidence and Clues already exist in the engine. The set follows the integration rules of CLAUDE.md (debt, R1, R7). Breakdown: one sub-lot and one commit per color for lot A, per mechanic for lot B, per family of unique cards afterwards.
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Socle : suspect (701.60), jetons | 0 |
-| Cartes faisables avec le moteur, par couleur | A1 à A6 |
-| Mécaniques phares restantes | B |
-| Légendaires et cartes uniques | C et suivants |
+| Foundation: suspect (701.60), tokens | 0 |
+| Cards feasible with the engine, by color | A1 to A6 |
+| Remaining flagship mechanics | B |
+| Legendaries and unique cards | C and following |
 
-Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (incolores et terrains) et `legends`. Les aides sont dans `mkm/common.ts`.
+The scripts are in `packages/cards/src/mkm/`: `cards` (meta cards), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (colorless cards and lands) and `legends`. The helpers are in `mkm/common.ts`.
 
-## Sous-lot 0 : socle ✅ (10 / 268)
+## Sub-lot 0: foundation ✅ (10 / 268)
 
-- **Suspect (701.60) :** désignation `GameObject.suspected` ; un permanent suspect a la menace et « ne peut pas bloquer » (ajoutés avec les mots-clés des marqueurs, après les effets de couche 6) ; `fx.suspect(ref)` et `fx.suspect(ref, false)` (« il n'est plus suspect ») ; filtre `suspected` (`SUSPECTED` : « créature suspecte ») ; la désignation se perd en quittant le champ de bataille. La vue la montre (`ObjectView.suspected`, pastille « Suspecte »).
-- **Jetons :** Détective 2/2 blanc et bleu, Squelette 2/1 noir, Esprit 1/1 blanc et noir volant, Loup 5/5 vert et blanc avec le piétinement, Araignée 2/1 noire et verte (portée, menace), Diablotin 2/2 rouge (« en mourant, 2 blessures à chaque adversaire »), Merfolk 1/1 bleu ; Indice, Thopter, Chien, Humain et Gobelin viennent des communs.
-- **Tests :** 2 tests dans `engine/test/mkm.test.ts` (« socle ») ; test de fumée `ai/test/smoke/mkm.test.ts`.
+- **Suspect (701.60):** designation `GameObject.suspected`; a suspected permanent has menace and "can't block" (added with the counter keywords, after layer 6 effects); `fx.suspect(ref)` and `fx.suspect(ref, false)` ("it's no longer suspected"); `suspected` filter (`SUSPECTED`: "suspected creature"); the designation is lost on leaving the battlefield. The view shows it (`ObjectView.suspected`, "Suspected" badge).
+- **Tokens:** 2/2 white and blue Detective, 2/1 black Skeleton, 1/1 white and black flying Spirit, 5/5 green and white Wolf with trample, 2/1 black and green Spider (reach, menace), 2/2 red Imp ("when it dies, it deals 2 damage to each opponent"), 1/1 blue Merfolk; Clue, Thopter, Dog, Human and Goblin come from the commons.
+- **Tests:** 2 tests in `engine/test/mkm.test.ts` ("foundation"); smoke test `ai/test/smoke/mkm.test.ts`.
 
-## Sous-lot A1 : cartes blanches ✅ (37 / 268)
+## Sub-lot A1: white cards ✅ (37 / 268)
 
-- **Cartes :** 27 (sur 34), dont le suspect, les Affaires (Case of the Pilfered Proof), le déguisement (Perimeter Enforcer, Haazda Vigilante…), les Indices et les Détectives.
-- **[règles] Corrections du moteur (trouvées par les agents du lot A) :**
-  - une capacité déclenchée « une, deux ou trois cibles » (`target.between`) respecte son minimum : Armament Dragon (TDM) n'avait aucune cible avec moins de trois créatures (test ajouté dans `tdm.test.ts`) ;
-  - la condition d'une capacité déclenchée voit l'événement entier (`amount.eventAmount` : « si 3 blessures ou plus ») ;
-  - `cond.handAtMost` (« s'il n'a pas de carte en main ») est évaluée hors résolution (« Pour résoudre » d'une Affaire, condition d'un déclencheur) : elle était toujours fausse.
+- **Cards:** 27 (out of 34), including suspect, Cases (Case of the Pilfered Proof), disguise (Perimeter Enforcer, Haazda Vigilante…), Clues and Detectives.
+- **[rules] Engine fixes (found by the lot A agents):**
+  - a triggered ability with "one, two or three targets" (`target.between`) respects its minimum: Armament Dragon (TDM) had no target with fewer than three creatures (test added in `tdm.test.ts`);
+  - the condition of a triggered ability sees the whole event (`amount.eventAmount`: "if 3 or more damage");
+  - `cond.handAtMost` ("if it has no cards in hand") is evaluated outside resolution ("To solve" of a Case, a trigger's condition): it was always false.
   - `RULES_VERSION` = 33.
-- **Dette :** l'opération `suspect` (701.60) entre dans `debt-baseline.json` tant qu'une seule carte l'utilise ; `solveCase` (Affaires) en sort, plusieurs cartes s'en servent.
-- **Restent :** Aurelia's Vindicator (X du coût de déguisement), Case File Auditor (« chaque fois que vous résolvez une Affaire »), Case of the Gateway Express (chaque créature inflige 1 blessure), Karlov Watchdog (« ne peuvent pas être retournés face visible »), No Witnesses (« chaque joueur qui contrôle le plus de créatures »), Wojek Investigator (« adversaires qui ont plus de cartes en main »), Tenth District Hero (réunir des preuves en coût de capacité).
-- **Tests :** 35 tests de règles (« lot A — blanc »).
+- **Debt:** the `suspect` operation (701.60) enters `debt-baseline.json` as long as a single card uses it; `solveCase` (Cases) leaves it, several cards use it.
+- **Remaining:** Aurelia's Vindicator (X of the disguise cost), Case File Auditor ("whenever you solve a Case"), Case of the Gateway Express (each creature deals 1 damage), Karlov Watchdog ("can't be turned face up"), No Witnesses ("each player who controls the most creatures"), Wojek Investigator ("opponents who have more cards in hand"), Tenth District Hero (collect evidence as an ability cost).
+- **Tests:** 35 rules tests ("lot A — white").
 
-## Sous-lot A2 : cartes bleues ✅ (68 / 268)
+## Sub-lot A2: blue cards ✅ (68 / 268)
 
-- **Cartes :** 31 (sur 36), dont 4 Auras (Behind the Mask, Burden of Proof, Lost in the Maze, Out Cold…), le déguisement (Bubble Smuggler, Living Conundrum…), les Affaires (Case of the Filched Falcon, Case of the Ransacked Lab), Cold Case Cracker, Proft's Eidetic Memory.
-- **Dette :** l'opération `suspect` sert désormais à plusieurs cartes : son entrée est retirée.
-- **Restent :** Forensic Researcher (réunir des preuves en coût de capacité), Surveillance Monitor (« vous pouvez réunir des preuves », « chaque fois que vous réunissez des preuves »), Conspiracy Unraveler (coût alternatif « réunir des preuves 10 »), Cryptic Coat (cape puis attacher l'Équipement), Intrude on the Mind (piles révélées, cartes mises au cimetière comptées).
-- **Tests :** 41 tests de règles (« lot A — bleu »).
+- **Cards:** 31 (out of 36), including 4 Auras (Behind the Mask, Burden of Proof, Lost in the Maze, Out Cold…), disguise (Bubble Smuggler, Living Conundrum…), Cases (Case of the Filched Falcon, Case of the Ransacked Lab), Cold Case Cracker, Proft's Eidetic Memory.
+- **Debt:** the `suspect` operation now serves several cards: its entry is removed.
+- **Remaining:** Forensic Researcher (collect evidence as an ability cost), Surveillance Monitor ("you may collect evidence", "whenever you collect evidence"), Conspiracy Unraveler (alternative cost "collect evidence 10"), Cryptic Coat (cloak then attach the Equipment), Intrude on the Mind (revealed piles, cards put into the graveyard counted).
+- **Tests:** 41 rules tests ("lot A — blue").
 
-## Sous-lot A3 : cartes noires ✅ (101 / 268)
+## Sub-lot A3: black cards ✅ (101 / 268)
 
-- **Cartes :** 33 (sur 35), dont le suspect (Barbed Servitor, Hunted Bonebrute, Repeat Offender…), le déguisement, les Affaires (Case of the Gorgon's Kiss, Case of the Stashed Skeleton), réunir des preuves (Extract a Confession, Leering Onlooker…), Massacre Girl, Known Killer, Outrageous Robbery.
-- **Restent :** Polygraph Orb (réunir des preuves en coût de capacité), Vein Ripper (garde « sacrifiez une créature »).
-- **Tests :** 42 tests de règles (« lot A — noir »).
+- **Cards:** 33 (out of 35), including suspect (Barbed Servitor, Hunted Bonebrute, Repeat Offender…), disguise, Cases (Case of the Gorgon's Kiss, Case of the Stashed Skeleton), collect evidence (Extract a Confession, Leering Onlooker…), Massacre Girl, Known Killer, Outrageous Robbery.
+- **Remaining:** Polygraph Orb (collect evidence as an ability cost), Vein Ripper (ward "sacrifice a creature").
+- **Tests:** 42 rules tests ("lot A — black").
 
-## Sous-lot A4 : cartes rouges ✅ (129 / 268)
+## Sub-lot A4: red cards ✅ (129 / 268)
 
-- **Cartes :** 28 (sur 35), dont le suspect (Convenient Target, Person of Interest, Reckless Detective…), les Affaires (Case of the Crimson Pulse), le déguisement, Krenko, Baron of Tin Street, Innocent Bystander (condition du déclencheur sur les blessures subies, grâce au correctif du lot A1).
-- **Restent :** Case of the Burning Masks (sources distinctes qui ont infligé des blessures), Demand Answers (« défaussez une carte ou sacrifiez un artefact »), Expose the Culprit (« avec le déguisement », exiler puis envelopper d'une cape), Fugitive Codebreaker (coût de déguisement réduit), Goblin Maskmaker (réduction des sorts face cachée ce tour-ci), Incinerator of the Guilty et Lamplight Phoenix (« vous pouvez réunir des preuves »).
-- **Tests :** 34 tests de règles (« lot A — rouge »).
+- **Cards:** 28 (out of 35), including suspect (Convenient Target, Person of Interest, Reckless Detective…), Cases (Case of the Crimson Pulse), disguise, Krenko, Baron of Tin Street, Innocent Bystander (trigger condition on damage dealt, thanks to the lot A1 fix).
+- **Remaining:** Case of the Burning Masks (distinct sources that dealt damage), Demand Answers ("discard a card or sacrifice an artifact"), Expose the Culprit ("with disguise", exile then cloak), Fugitive Codebreaker (reduced disguise cost), Goblin Maskmaker (cost reduction of face-down spells this turn), Incinerator of the Guilty and Lamplight Phoenix ("you may collect evidence").
+- **Tests:** 34 rules tests ("lot A — red").
 
-## Sous-lot A5 : cartes vertes ✅ (157 / 268)
+## Sub-lot A5: green cards ✅ (157 / 268)
 
-- **Cartes :** 28 (sur 35), dont les Affaires (Case of the Locked Hothouse, Case of the Trampled Garden), le déguisement, la cape (Hide in Plain Sight), Glint Weaver et Case of the Trampled Garden (« une à trois cibles », grâce au correctif du lot A1), The Pride of Hull Clade ; jetons Plante 0/1 et Limon 0/0 locaux.
-- **Dette :** l'opération `putFaceDown` (cape) entre dans `debt-baseline.json` tant qu'une seule carte l'utilise.
-- **Restent :** Airtight Alibi (« ne peut pas devenir suspecte »), Axebane Ferox (garde « réunir des preuves 4 »), Culvert Ambusher (« bloque si possible »), Hedge Whisperer, A Killer Among Us (choix secret parmi trois types), Sample Collector (« vous pouvez réunir des preuves »), Tunnel Tipster (créature face cachée arrivée ce tour-ci).
-- **Tests :** 36 tests de règles (« lot A — vert »).
+- **Cards:** 28 (out of 35), including Cases (Case of the Locked Hothouse, Case of the Trampled Garden), disguise, cloak (Hide in Plain Sight), Glint Weaver and Case of the Trampled Garden ("one to three targets", thanks to the lot A1 fix), The Pride of Hull Clade; local 0/1 Plant and 0/0 Ooze tokens.
+- **Debt:** the `putFaceDown` operation (cloak) enters `debt-baseline.json` as long as a single card uses it.
+- **Remaining:** Airtight Alibi ("can't become suspected"), Axebane Ferox (ward "collect evidence 4"), Culvert Ambusher ("blocks if able"), Hedge Whisperer, A Killer Among Us (secret choice among three types), Sample Collector ("you may collect evidence"), Tunnel Tipster (face-down creature that entered this turn).
+- **Tests:** 36 rules tests ("lot A — green").
 
-## Sous-lot A6 : multicolores, incolores et terrains ✅ (217 / 268)
+## Sub-lot A6: multicolor, colorless and lands ✅ (217 / 268)
 
-- **Cartes :** 44 multicolores (sur 65 : Agrus Kos, Alquist Proft, Teysa, Trostani, Ezrim, Kellan, Rakdos, Doppelgang, Lightning Helix, les cartes scindées Cease // Desist, Fuss // Bother, Push // Pull…) et 16 incolores et terrains (sur 18 : Case of the Shattered Pact, Gravestone Strider, Thinking Cap — « Équiper Détective {1} » écrit à la main —, les sept terrains à surveillance, Public Thoroughfare, Scene of the Crime).
-- **[règles]** Un sort ou une capacité à « X cibles » (`countX`) est proposé même sans cible (X = 0) ; les options de cibles portent `countX`, l'IA ajuste X au nombre de cibles et l'interface demande autant de cibles que le X choisi. `RULES_VERSION` = 34.
-- **Restent :** 21 multicolores (réunir des preuves hors coût de sort : Evidence Examiner, Izoni, Kylox's Voltstrider, Urgent Necropsy ; Aurelia, Buried in the Garden, Ill-Timed Explosion, Judith, Kaya, Lazav, Vannifar, Yarus, Etrata, Kylox, Niv-Mizzet, Officious Interrogation, Tin Street Gossip, Tolsimir, Hustle // Bustle, Treacherous Greed, Flotsam // Jetsam), Cryptex et Branch of Vitu-Ghazi.
-- **Tests :** 56 tests de règles (« lot A — multicolores ») et 20 (« lot A — incolores et terrains »).
+- **Cards:** 44 multicolor (out of 65: Agrus Kos, Alquist Proft, Teysa, Trostani, Ezrim, Kellan, Rakdos, Doppelgang, Lightning Helix, the split cards Cease // Desist, Fuss // Bother, Push // Pull…) and 16 colorless and lands (out of 18: Case of the Shattered Pact, Gravestone Strider, Thinking Cap — "Equip Detective {1}" written by hand —, the seven surveil lands, Public Thoroughfare, Scene of the Crime).
+- **[rules]** A spell or ability with "X targets" (`countX`) is offered even without a target (X = 0); target options carry `countX`, the AI adjusts X to the number of targets and the interface asks for as many targets as the chosen X. `RULES_VERSION` = 34.
+- **Remaining:** 21 multicolor (collect evidence outside spell costs: Evidence Examiner, Izoni, Kylox's Voltstrider, Urgent Necropsy; Aurelia, Buried in the Garden, Ill-Timed Explosion, Judith, Kaya, Lazav, Vannifar, Yarus, Etrata, Kylox, Niv-Mizzet, Officious Interrogation, Tin Street Gossip, Tolsimir, Hustle // Bustle, Treacherous Greed, Flotsam // Jetsam), Cryptex and Branch of Vitu-Ghazi.
+- **Tests:** 56 rules tests ("lot A — multicolor") and 20 ("lot A — colorless and lands").
 
-## Sous-lot B1 : réunir des preuves (701.59) ✅ (229 / 268)
+## Sub-lot B1: collect evidence (701.59) ✅ (229 / 268)
 
-- **Cartes :** Surveillance Monitor, Forensic Researcher, Sample Collector, Incinerator of the Guilty, Lamplight Phoenix, Evidence Examiner, Izoni, Center of the Web, Polygraph Orb, Vein Ripper, Tenth District Hero, Cryptex, Axebane Ferox.
-- **Le moteur gagne :**
-  - réunir des preuves N en coût de capacité activée (`activated({ collectEvidence })`) et de capacité de mana (`manaAbility(…, { collectEvidence })`, Cryptex) ;
-  - l'effet facultatif `fx.mayCollectEvidence(N, { exclude }, …effets)` (« vous pouvez réunir des preuves N. Si vous le faites, … » ; `exclude` : Lamplight Phoenix, exilé en même temps) et `fx.mayCollectEvidenceX(store, …)` (X choisi, Incinerator of the Guilty) ;
-  - l'événement et le déclencheur « chaque fois que vous réunissez des preuves » (`when.collectEvidence`), émis aussi par le coût additionnel des sorts ;
-  - les gardes « réunissez des preuves N » et « sacrifiez une créature » (lues dans le texte ; `ward.sacrificeFilter` remplace `sacrificeNonland`) ;
-  - le choix automatique des preuves : la carte la moins chère qui suffit, sinon la plus chère (on ne gâche plus une carte chère pour un petit N).
-- **[règles] Correctif (fuzz à 3 joueurs) :** « doit être bloquée si possible » tient compte de la menace (509.1c) : l'exigence ne vaut que si le défenseur peut opposer assez de bloqueurs, et le blocage par défaut en met autant (un suspect qui doit être bloqué). Test dans `rulings.test.ts`.
-- **[règles]** `RULES_VERSION` = 35.
-- **Tests :** 8 tests de règles (« lot B1 ») et 1 décision officielle.
+- **Cards:** Surveillance Monitor, Forensic Researcher, Sample Collector, Incinerator of the Guilty, Lamplight Phoenix, Evidence Examiner, Izoni, Center of the Web, Polygraph Orb, Vein Ripper, Tenth District Hero, Cryptex, Axebane Ferox.
+- **The engine gains:**
+  - collect evidence N as the cost of an activated ability (`activated({ collectEvidence })`) and of a mana ability (`manaAbility(…, { collectEvidence })`, Cryptex);
+  - the optional effect `fx.mayCollectEvidence(N, { exclude }, …effects)` ("you may collect evidence N. If you do, …"; `exclude`: Lamplight Phoenix, exiled at the same time) and `fx.mayCollectEvidenceX(store, …)` (chosen X, Incinerator of the Guilty);
+  - the event and trigger "whenever you collect evidence" (`when.collectEvidence`), also emitted by the additional cost of spells;
+  - the wards "collect evidence N" and "sacrifice a creature" (read from the text; `ward.sacrificeFilter` replaces `sacrificeNonland`);
+  - the automatic choice of evidence: the cheapest card that suffices, otherwise the most expensive (an expensive card is no longer wasted for a small N).
+- **[rules] Fix (3-player fuzz):** "must be blocked if able" takes menace into account (509.1c): the requirement applies only if the defender can field enough blockers, and the default block puts in as many (a suspected creature that must be blocked). Test in `rulings.test.ts`.
+- **[rules]** `RULES_VERSION` = 35.
+- **Tests:** 8 rules tests ("lot B1") and 1 official ruling.
 
-## Sous-lot B2 : déguisement ✅ (235 / 268)
+## Sub-lot B2: disguise ✅ (235 / 268)
 
-- **Cartes :** Aurelia's Vindicator, Fugitive Codebreaker, Goblin Maskmaker, Karlov Watchdog, Branch of Vitu-Ghazi, Tunnel Tipster.
-- **Le moteur gagne :**
-  - un coût de déguisement avec {X} : l'action spéciale « retourner face visible » paie X et le mémorise (`amount.sourceX`, « jusqu'à X cibles ») ;
-  - `disguiseReduction` (« ce coût est réduit de {1} pour chaque… »), appliquée au seul coût de déguisement ;
-  - la famille `playerStatic({ spellCost: { filter, reduce } })` (sorts du joueur moins chers, par exemple ce tour-ci avec `fx.thisTurn`) et le filtre `faceDown` sur un sort lancé face cachée ;
-  - `castLimit.faceUp` : « les permanents de vos adversaires ne peuvent pas être retournés face visible pendant votre tour » ;
-  - une carte de terrain avec le déguisement se lance face cachée ; `fx.addManaChoice(…, keep)` (mana gardé jusqu'à la fin du tour) ;
-  - `fx.exileUntilLeaves(ref, toHand)` : exil, cartes de cimetière comprises, avec retour en main quand la source part ;
-  - le journal du tour note les arrivées face cachée (`faceDown`), comme des créatures sans type.
-- **[règles]** `RULES_VERSION` = 36.
-- **Dette :** `spellCost` entre dans `debt-baseline.json` comme famille générique (réductions de coût accordées à un joueur, filtrées).
-- **Tests :** 6 tests de règles (« lot B2 »).
+- **Cards:** Aurelia's Vindicator, Fugitive Codebreaker, Goblin Maskmaker, Karlov Watchdog, Branch of Vitu-Ghazi, Tunnel Tipster.
+- **The engine gains:**
+  - a disguise cost with {X}: the special action "turn face up" pays X and remembers it (`amount.sourceX`, "up to X targets");
+  - `disguiseReduction` ("this cost is reduced by {1} for each…"), applied to the disguise cost only;
+  - the `playerStatic({ spellCost: { filter, reduce } })` family (the player's spells cost less, for example this turn with `fx.thisTurn`) and the `faceDown` filter on a spell cast face down;
+  - `castLimit.faceUp`: "your opponents' permanents can't be turned face up during your turn";
+  - a land card with disguise is cast face down; `fx.addManaChoice(…, keep)` (mana kept until end of turn);
+  - `fx.exileUntilLeaves(ref, toHand)`: exile, graveyard cards included, returning to hand when the source leaves;
+  - the turn log notes face-down entries (`faceDown`), as creatures with no type.
+- **[rules]** `RULES_VERSION` = 36.
+- **Debt:** `spellCost` enters `debt-baseline.json` as a generic family (cost reductions granted to a player, filtered).
+- **Tests:** 6 rules tests ("lot B2").
 
-## Sous-lot B3 : cape (701.58) ✅ (241 / 268)
+## Sub-lot B3: cloak (701.58) ✅ (241 / 268)
 
-- **Cartes :** Cryptic Coat, Expose the Culprit, Yarus, Roar of the Old Gods, Etrata, Deadly Fugitive, Vannifar, Evolved Enigma, Lazav, Wearer of Faces.
-- **Le moteur gagne :**
-  - `fx.cloak(ref, store)` et `fx.putFaceDown(ref, ward, { store, ownerControl })` : les créatures face cachée sont mémorisées (« puis attachez-y cet Équipement ») et peuvent revenir sous le contrôle de leur propriétaire (Yarus) ;
-  - la destination `{ to: "battlefield", as: "cloak" }` d'un déplacement (« enveloppez d'une cape une carte de votre main ») ;
-  - `fx.turnFaceUp(ref, store)` : une carte d'éphémère ou de rituel, qui ne peut pas être retournée, est exilée et mémorisée (Etrata la lance ensuite gratuitement) ;
-  - le filtre `disguise` (« avec le déguisement ») ; `fx.chooseAmong(…, { anyNumber, anyZone })` (un nombre quelconque ; des cartes hors du champ de bataille, comme celles exilées avec Lazav).
-- **Dette :** l'opération `putFaceDown` sert à plusieurs cartes : son entrée est retirée.
-- **Tests :** 6 tests de règles (« lot B3 »).
+- **Cards:** Cryptic Coat, Expose the Culprit, Yarus, Roar of the Old Gods, Etrata, Deadly Fugitive, Vannifar, Evolved Enigma, Lazav, Wearer of Faces.
+- **The engine gains:**
+  - `fx.cloak(ref, store)` and `fx.putFaceDown(ref, ward, { store, ownerControl })`: face-down creatures are remembered ("then attach this Equipment to it") and can return under their owner's control (Yarus);
+  - the destination `{ to: "battlefield", as: "cloak" }` of a move ("cloak a card from your hand");
+  - `fx.turnFaceUp(ref, store)`: an instant or sorcery card, which can't be turned face up, is exiled and remembered (Etrata then casts it for free);
+  - the `disguise` filter ("with disguise"); `fx.chooseAmong(…, { anyNumber, anyZone })` (any number; cards outside the battlefield, like those exiled with Lazav).
+- **Debt:** the `putFaceDown` operation serves several cards: its entry is removed.
+- **Tests:** 6 rules tests ("lot B3").
 
-## Sous-lot B4 : suspect et Affaires ✅ (245 / 268)
+## Sub-lot B4: suspect and Cases ✅ (245 / 268)
 
-- **Cartes :** Airtight Alibi, Case File Auditor, Case of the Gateway Express, Case of the Burning Masks.
-- **Le moteur gagne :**
-  - le mot-clé de restriction `cantBeSuspected` (« ne peut pas devenir suspecte »), lu par `fx.suspect` (entrée justifiée dans `debt-baseline.json`) ;
-  - l'événement et le déclencheur « chaque fois que vous résolvez une Affaire » (`when.caseSolved`) ;
-  - `spellCost.anyMana` : « vous pouvez dépenser du mana comme s'il était de n'importe quelle couleur pour lancer les sorts [filtre] » ;
-  - `fx.eachDealsDamage(filtre, cible, montant)` : chaque créature inflige ce nombre de blessures (au lieu de sa force) ;
-  - le journal du tour note la source des blessures (`sourceKey`) ; `distinctSources` compte les sources différentes (« trois sources ou plus que vous contrôliez ont infligé des blessures ce tour-ci »).
-- **Interface :** pastille « Suspecte » vérifiée par un script Playwright ponctuel (capture `test-results/mkm/suspect.png`).
-- **Tests :** 4 tests de règles (« lot B4 »).
+- **Cards:** Airtight Alibi, Case File Auditor, Case of the Gateway Express, Case of the Burning Masks.
+- **The engine gains:**
+  - the restriction keyword `cantBeSuspected` ("can't become suspected"), read by `fx.suspect` (justified entry in `debt-baseline.json`);
+  - the event and trigger "whenever you solve a Case" (`when.caseSolved`);
+  - `spellCost.anyMana`: "you may spend mana as though it were mana of any color to cast [filter] spells";
+  - `fx.eachDealsDamage(filter, target, amount)`: each creature deals that much damage (instead of its power);
+  - the turn log notes the source of the damage (`sourceKey`); `distinctSources` counts the different sources ("three or more sources you controlled dealt damage this turn").
+- **Interface:** "Suspected" badge checked by a one-off Playwright script (capture `test-results/mkm/suspect.png`).
+- **Tests:** 4 rules tests ("lot B4").
 
-## Sous-lot C1 : exigences de blocage (509.1c) ✅ (248 / 268)
+## Sub-lot C1: block requirements (509.1c) ✅ (248 / 268)
 
-- **Cartes :** Culvert Ambusher, Tolsimir, Midnight's Light (jeton légendaire Voja Fenstalker), Hustle // Bustle.
-- **Le moteur gagne :** les exigences de blocage de la famille `BlockRule` : `mustBlock` (« bloque ce tour-ci si possible ») et `mustBlockAttacker` (« bloque ce Loup si possible » ; `mustBlockEventObject` dans un script, fixé à la résolution) ; la déclaration des bloqueurs les vérifie (bloquer un autre attaquant n'obéit pas à une exigence d'attaquant précis) et le blocage par défaut (`requiredBlocks`) les respecte.
-- **Tests :** 3 tests de règles (« lot C1 »).
+- **Cards:** Culvert Ambusher, Tolsimir, Midnight's Light (legendary token Voja Fenstalker), Hustle // Bustle.
+- **The engine gains:** the block requirements of the `BlockRule` family: `mustBlock` ("blocks this turn if able") and `mustBlockAttacker` ("blocks this Wolf if able"; `mustBlockEventObject` in a script, fixed on resolution); the declaration of blockers checks them (blocking another attacker doesn't satisfy a requirement about a specific attacker) and the default block (`requiredBlocks`) respects them.
+- **Tests:** 3 rules tests ("lot C1").
 
-## Sous-lot C2 : montants et coûts ✅ (258 / 268)
+## Sub-lot C2: amounts and costs ✅ (258 / 268)
 
-- **Cartes :** No Witnesses, Wojek Investigator, Ill-Timed Explosion, Officious Interrogation, Demand Answers, Treacherous Greed, Urgent Necropsy, Niv-Mizzet, Guildpact, Aurelia, the Law Above, Tin Street Gossip.
-- **Le moteur gagne :**
-  - `ref.playersWithMost(filtre)` (« chaque joueur qui contrôle le plus de créatures ») ;
-  - les montants `opponentsWithMoreInHand`, `greatestManaValueOf(ref)` et `colorPairsAmong(filtre)` ;
-  - `costPerExtraTarget` (« coûte {W}{U} de plus pour chaque cible au-delà de la première ») ;
-  - `discardOr.sacrifice` filtré (« défaussez une carte ou sacrifiez un artefact ») ;
-  - `collectEvidenceTargetsManaValue` (« réunissez des preuves X, X étant la valeur de mana totale des permanents ciblés ») ;
-  - le filtre `dealtDamageThisTurn` (« une créature qui a infligé des blessures ce tour-ci ») ;
-  - `when.attackWith(N, filtre, anyPlayer)` (« chaque fois qu'un joueur attaque avec N créatures ou plus »).
-- **Correctif :** Troyan, Gutsy Explorer (WOE) : son mana sert aussi aux sorts avec {X} dans leur coût (filtre `hasX`) ; l'approximation est levée.
-- **Tests :** 10 tests de règles (« lot C2 »).
+- **Cards:** No Witnesses, Wojek Investigator, Ill-Timed Explosion, Officious Interrogation, Demand Answers, Treacherous Greed, Urgent Necropsy, Niv-Mizzet, Guildpact, Aurelia, the Law Above, Tin Street Gossip.
+- **The engine gains:**
+  - `ref.playersWithMost(filter)` ("each player who controls the most creatures");
+  - the amounts `opponentsWithMoreInHand`, `greatestManaValueOf(ref)` and `colorPairsAmong(filter)`;
+  - `costPerExtraTarget` ("costs {W}{U} more for each target beyond the first");
+  - filtered `discardOr.sacrifice` ("discard a card or sacrifice an artifact");
+  - `collectEvidenceTargetsManaValue` ("collect evidence X, where X is the total mana value of the targeted permanents");
+  - the `dealtDamageThisTurn` filter ("a creature that dealt damage this turn");
+  - `when.attackWith(N, filter, anyPlayer)` ("whenever a player attacks with N or more creatures").
+- **Fix:** Troyan, Gutsy Explorer (WOE): its mana also serves spells with {X} in their cost (`hasX` filter); the approximation is removed.
+- **Tests:** 10 rules tests ("lot C2").
 
-## Sous-lot C3 : dernières cartes uniques ✅ (268 / 268)
+## Sub-lot C3: last unique cards ✅ (268 / 268)
 
-- **Cartes :** Conspiracy Unraveler, Intrude on the Mind, Hedge Whisperer, A Killer Among Us, Kylox's Voltstrider, Judith, Carnage Connoisseur, Kaya, Spirits' Justice, Kylox, Visionary Inventor, Flotsam // Jetsam, Buried in the Garden.
-- **Le moteur gagne :**
-  - `altCostAll` accepte un coût en preuves (« réunir des preuves 10 plutôt que payer le coût de mana de vos sorts ») ; Leyline of Mutation (DSK) passe à la forme `{ mana }` ;
-  - `linkEvidence` : les cartes exilées pour un coût « réunir des preuves » sont liées à la source (« parmi les cartes exilées avec lui ») ;
-  - `castNow` / `grantPlay` : `bottomAfter` (« s'il devait aller au cimetière, mettez-le au-dessous de la bibliothèque à la place ») ; le sort qui quitte la pile (résolu, contrecarré ou sans cible) passe par un seul chemin (`spellToRest`) ;
-  - `fx.piles` : piles révélées et cartes mises au cimetière gardées (`storeGraveyard`) ;
-  - effets « tant que [la source] reste engagée » (`fx.modifyWhileTapped`) et mot-clé de restriction `mayNotUntap` (« vous pouvez choisir de ne pas le dégager » ; entrée justifiée dans `debt-baseline.json`) ;
-  - choix restreint à une liste et choix secret (`fx.chooseForSelf(kind, { options, secret })`), caché aux autres joueurs dans leur vue ;
-  - `ref.graveyardOf(joueurs)` et le montant `totalPowerOf(ref)` (force totale, dernière information connue après sacrifice) ;
-  - déclencheur « quitte [une zone autre que le champ de bataille] » (`from`), avec la nouvelle carte comme objet de l'événement quand elle est exilée ;
-  - `extraMana: "any"` (« un mana de plus de n'importe quelle couleur que ce terrain a produite »).
-- **Correctif :** `cond.refMatches` résout le filtre (types choisis, « de ce type ») comme les autres filtres.
-- **Version des règles :** 37.
-- **Tests :** 10 tests de règles (« lot C3 »).
+- **Cards:** Conspiracy Unraveler, Intrude on the Mind, Hedge Whisperer, A Killer Among Us, Kylox's Voltstrider, Judith, Carnage Connoisseur, Kaya, Spirits' Justice, Kylox, Visionary Inventor, Flotsam // Jetsam, Buried in the Garden.
+- **The engine gains:**
+  - `altCostAll` accepts an evidence cost ("collect evidence 10 rather than pay the mana cost of your spells"); Leyline of Mutation (DSK) moves to the `{ mana }` form;
+  - `linkEvidence`: the cards exiled for a "collect evidence" cost are linked to the source ("among the cards exiled with it");
+  - `castNow` / `grantPlay`: `bottomAfter` ("if it would go to the graveyard, put it on the bottom of the library instead"); the spell leaving the stack (resolved, countered or without target) goes through a single path (`spellToRest`);
+  - `fx.piles`: revealed piles and cards put into the graveyard kept (`storeGraveyard`);
+  - effects "for as long as [the source] remains tapped" (`fx.modifyWhileTapped`) and the restriction keyword `mayNotUntap` ("you may choose not to untap it"; justified entry in `debt-baseline.json`);
+  - choice restricted to a list and secret choice (`fx.chooseForSelf(kind, { options, secret })`), hidden from the other players in their view;
+  - `ref.graveyardOf(players)` and the amount `totalPowerOf(ref)` (total power, last known information after sacrifice);
+  - trigger "leaves [a zone other than the battlefield]" (`from`), with the new card as the event's object when it is exiled;
+  - `extraMana: "any"` ("one additional mana of any color that land produced").
+- **Fix:** `cond.refMatches` resolves the filter (chosen types, "of that type") like the other filters.
+- **Rules version:** 37.
+- **Tests:** 10 rules tests ("lot C3").
 
-## Promotions légales en Standard ✅ (271 / 271, 03/10/2026, PLAN-C C19)
+## Legal promotions in Standard ✅ (271 / 271, 2026-10-03, PLAN-C C19)
 
-La comparaison hebdomadaire avec Scryfall (`tools/check-legality.ts`) a trouvé trois cartes légales en Standard absentes des données : elles n'existent qu'en impressions promotionnelles de MKM, que l'import écartait. L'import garde désormais une promotion quand c'est la seule impression de la carte dans le set.
+The weekly comparison with Scryfall (`tools/check-legality.ts`) found three Standard-legal cards missing from the data: they exist only as MKM promotional printings, which the import discarded. The import now keeps a promo when it is the card's only printing in the set.
 
-- **Melek, Reforged Researcher :** F/E égales à deux fois les éphémères et rituels du cimetière (`amount.plus`) ; le premier éphémère ou rituel du tour coûte {3} de moins (journal du tour).
-- **Tomik, Wielder of Law :** affinité pour les planeswalkers (réduction du coût générique par planeswalker) ; « un adversaire qui vous attaque, vous ou vos planeswalkers, avec deux créatures ou plus » (`when.opponentAttacksYouWith`, champ `defending: "you"` du déclencheur `attackWith`).
-- **Voja, Jaws of the Conclave :** marqueurs par Elfe sur chacune de vos créatures, une carte par Loup.
+- **Melek, Reforged Researcher:** P/T equal to twice the instants and sorceries in the graveyard (`amount.plus`); the first instant or sorcery each turn costs {3} less (turn log).
+- **Tomik, Wielder of Law:** affinity for planeswalkers (generic cost reduction per planeswalker); "an opponent who attacks you or planeswalkers you control with two or more creatures" (`when.opponentAttacksYouWith`, `defending: "you"` field of the `attackWith` trigger).
+- **Voja, Jaws of the Conclave:** counters per Elf on each of your creatures, one card per Wolf.
 
-Trois tests de règles dans `engine/test/mkm.test.ts`.
+Three rules tests in `engine/test/mkm.test.ts`.

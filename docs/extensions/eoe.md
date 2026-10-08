@@ -1,56 +1,56 @@
 # Edge of Eternities (EOE)
 
-**✅ 260 / 260** (lots A à D). Mécaniques et détail des lots (déplacé de CLAUDE.md).
+**✅ 260 / 260** (lots A to D). Mechanics and details of the lots (moved from CLAUDE.md).
 
-| Mécanique | Cartes | Lot |
+| Mechanic | Cards | Lot |
 |---|---:|---|
-| distorsion (warp) | 32 | A |
-| station (Vaisseaux, Planètes) | 27 | B |
-| vide (void) | 14 | A |
-| jetons Lander, Robot, Drone, Munitions | ~40 | A |
-| « votre deuxième sort de chaque tour » | 6 | A |
-| « deux créatures engagées ou plus » | 6 | A |
-| terrains choc | 5 | A |
+| warp | 32 | A |
+| Station (Spacecraft, Planets) | 27 | B |
+| void | 14 | A |
+| Lander, Robot, Drone, Munitions tokens | ~40 | A |
+| "your second spell each turn" | 6 | A |
+| "two or more tapped creatures" | 6 | A |
+| shock lands | 5 | A |
 
-- Lot A ✅ (170/260). Il couvre :
-  - distorsion (702.185) :
-    - option de lancement « (distorsion) » depuis la main (`CardDef.warp`, lue dans le texte, points de vie compris) ;
-    - le permanent est exilé à la prochaine étape de fin, puis relançable depuis l'exil un tour suivant (`exiledVia` de sorte `warp`) ;
-    - Timeline Culler : depuis le cimetière ; filtre `warped` ;
-  - vide : condition `cond.void` (un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci) ;
-  - déclencheurs et outils génériques :
-    - `when.castNthSpell(2)` ;
-    - « chaque fois que vous sacrifiez » (`when.sacrifice`, fonction `sacrifice` du moteur) ;
-    - blessures de combat groupées (`when.combatDamageBatch`) ;
-    - « la créature enchantée subit des blessures » ;
-    - « mis au cimetière depuis le champ de bataille » (`when.putIntoGraveyardSelf`) ;
-    - « meurt » pour des artefacts quand le filtre les nomme ;
-  - jetons engagés ou attaquants (`fx.createTappedTokens`) ; « s'il paie » (`unlessPays` avec `paidStore`) ; filtres `blocking` et `damaged` ;
-  - restrictions de blocage `canBlockOnlyFlyers` (Drone) et `cantBeBlockedByMoreThanOne` ;
-  - terrains choc : deux options « jouer ce terrain » (payer 2 PV, dégagé ; ou engagé).
-- Lot B ✅ (201/260) : station (702.184).
-  - Les paliers « N+ | … » et le seuil de créature sont lus dans le texte (`CardDef.station`). Les mots-clés d'un palier sont automatiques ; ses autres capacités viennent du script (`stationAbilities`), sans quoi la carte reste non gérée ;
-  - la capacité « Station » est générée : le joueur choisit la créature à engager (`ActionOption.additional.tap`, `CastChoices.tap`), puis l'effet `station` met autant de marqueurs de charge que sa force (Tapestry Warden : l'endurance) ;
-  - Planètes ; mana égal aux marqueurs (`amountCounters`) ; copies légendaires ; filtre `multicolored` ;
-  - engager ou dégager un permanent fait avancer la version d'état (statiques « créatures engagées », détecté par le fuzz).
-- Lot C ✅ (241/260) : 40 rares, mythiques et cartes uniques (`eoe/rares.ts`). Le moteur gagne :
-  - le mana dépensé pour lancer (`manaSpent` sur le sort et le permanent ; Amount `manaSpent`, filtre `manaSpentBelowValue` et comparaison `cmp.manaValue("<=", amount.sourceManaSpent)`) ;
-  - les coûts d'activation réduits (`reduction`, avec condition), « retirez un marqueur d'une créature », « engagez X artefacts » (`tapX`) ;
-  - des statiques de joueur : déclencheurs d'arrivée doublés, +1 carte avec une petite main, sorts d'artefact du dessus de la bibliothèque, premier sort gratuit, sorts de créature incontrecarrables, blessures de combat imprévenables, terrains depuis le cimetière, distorsion accordée ;
-  - les réductions de coût conditionnelles ou variables (affinité pour les artefacts, deuxième sort du tour) ;
-  - le mana restreint aux capacités d'artefacts ou aux sorts lancés hors de la main, et la capacité de mana qui engage un autre permanent (Gene Pollinator) ;
-  - les cartes exilées jouables sous condition, par leur propriétaire, avec un surcoût, terrains engagés (`grantPlay`) ; « exilez jusqu'à une carte non-terrain » ;
-  - une cible « carte exilée » (`TargetFilter.exiled`), la garde accordée (`wardAbility`, la garde de la carte n'est lue que si Scryfall la donne en mot-clé) ;
-  - des capacités retardées à l'étape de fin de votre prochain tour et à la fin du combat (`fx.delayedAt`) ;
-  - « [ce joueur] peut… ; s'il ne le fait pas » (`fx.mayForStore`), « votre total de points de vie devient N », « meurt ou est exilée » (avec force minimale), la condition « vous avez attaqué avec un Vaisseau » (`cond.attackedWith`).
-- Lot D ✅ (**260/260**) : les 19 dernières cartes (`eoe/unique.ts`). Le moteur gagne :
-  - **le contrôle du tour d'un adversaire** (722, The Dominion Bracelet) : `GameState.turnControl`, `decider(s)` donne le joueur qui décide ; `submit` accepte sa décision au nom du joueur contrôlé ; l'hôte et le serveur (horloge) la lui demandent ; sa vue présente la décision comme la sienne, avec la main du joueur contrôlé (`GameView.controlling`, bandeau « Vous contrôlez … ») ;
-  - dévorer (`CardDef.devour`, lu dans le texte : sacrifices choisis pendant la résolution) ;
-  - le doublement de marqueurs filtré (`countersFilter`), les jetons remplacés par des copies du permanent enchanté ;
-  - les cibles de valeur de mana totale limitée (`maxTotalManaValue`), les filtres de parité et « endurance ≤ X » ;
-  - « chaque adversaire choisit une créature et l'exile » (`sacrifice` avec `exile`), les cartes exilées par la source (`ref.exiledWith`) ;
-  - `pickFromZone` parmi des objets mémorisés ou liés (`pool`), avec valeur de mana maximale variable ;
-  - « défaussez deux cartes à moins de défausser une carte d'artefact », la meule de la moitié de la bibliothèque ;
-  - un permanent mis en jeu attaquant ; la condition « un joueur ne contrôle aucune créature » ;
-  - les remplacements d'arrivée s'appliquent aussi aux jetons créés, et savent lire le mana dépensé et les terrains arrivés ce tour-ci.
-- Test de fumée : l'adversaire du scénario a un Goblin Firebomb en main (cible des contresorts d'artefact).
+- Lot A ✅ (170/260). It covers:
+  - warp (702.185):
+    - casting option "(warp)" from the hand (`CardDef.warp`, read from the text, life included);
+    - the permanent is exiled at the next end step, then castable again from exile on a later turn (`exiledVia` of kind `warp`);
+    - Timeline Culler: from the graveyard; `warped` filter;
+  - void: condition `cond.void` (a nonland permanent left the battlefield or a spell was cast with warp this turn);
+  - generic triggers and tools:
+    - `when.castNthSpell(2)`;
+    - "whenever you sacrifice" (`when.sacrifice`, engine function `sacrifice`);
+    - grouped combat damage (`when.combatDamageBatch`);
+    - "enchanted creature is dealt damage";
+    - "put into a graveyard from the battlefield" (`when.putIntoGraveyardSelf`);
+    - "dies" for artifacts when the filter names them;
+  - tapped or attacking tokens (`fx.createTappedTokens`); "if they pay" (`unlessPays` with `paidStore`); `blocking` and `damaged` filters;
+  - blocking restrictions `canBlockOnlyFlyers` (Drone) and `cantBeBlockedByMoreThanOne`;
+  - shock lands: two options "play this land" (pay 2 life, untapped; or tapped).
+- Lot B ✅ (201/260): Station (702.184).
+  - The tiers "N+ | …" and the creature threshold are read from the text (`CardDef.station`). A tier's keywords are automatic; its other abilities come from the script (`stationAbilities`), without which the card stays unhandled;
+  - the "Station" ability is generated: the player chooses the creature to tap (`ActionOption.additional.tap`, `CastChoices.tap`), then the `station` effect puts as many charge counters as its power (Tapestry Warden: its toughness);
+  - Planets; mana equal to the counters (`amountCounters`); legendary copies; `multicolored` filter;
+  - tapping or untapping a permanent advances the state version ("tapped creatures" statics, detected by the fuzz).
+- Lot C ✅ (241/260): 40 rares, mythics and unique cards (`eoe/rares.ts`). The engine gains:
+  - the mana spent to cast (`manaSpent` on the spell and the permanent; Amount `manaSpent`, filter `manaSpentBelowValue` and comparison `cmp.manaValue("<=", amount.sourceManaSpent)`);
+  - reduced activation costs (`reduction`, with a condition), "remove a counter from a creature", "tap X artifacts" (`tapX`);
+  - player statics: doubled enters triggers, +1 card with a small hand, artifact spells from the top of the library, first spell free, uncounterable creature spells, unpreventable combat damage, lands from the graveyard, granted warp;
+  - conditional or variable cost reductions (affinity for artifacts, second spell of the turn);
+  - mana restricted to artifact abilities or to spells cast from anywhere other than hand, and the mana ability that taps another permanent (Gene Pollinator);
+  - exiled cards playable under a condition, by their owner, with an added cost, lands tapped (`grantPlay`); "exile up to one nonland card";
+  - an "exiled card" target (`TargetFilter.exiled`), granted ward (`wardAbility`, the card's ward is read only if Scryfall gives it as a keyword);
+  - delayed abilities at the end step of your next turn and at end of combat (`fx.delayedAt`);
+  - "[that player] may…; if they don't" (`fx.mayForStore`), "your life total becomes N", "dies or is exiled" (with minimum power), the condition "you attacked with a Spacecraft" (`cond.attackedWith`).
+- Lot D ✅ (**260/260**): the last 19 cards (`eoe/unique.ts`). The engine gains:
+  - **control of an opponent's turn** (722, The Dominion Bracelet): `GameState.turnControl`, `decider(s)` gives the player who decides; `submit` accepts their decision on behalf of the controlled player; the host and the server (clock) ask them for it; their view presents the decision as their own, with the controlled player's hand (`GameView.controlling`, banner "You control …");
+  - devour (`CardDef.devour`, read from the text: sacrifices chosen during resolution);
+  - filtered counter doubling (`countersFilter`), tokens replaced by copies of the enchanted permanent;
+  - targets with limited total mana value (`maxTotalManaValue`), parity filters and "toughness ≤ X";
+  - "each opponent chooses a creature and exiles it" (`sacrifice` with `exile`), the cards exiled by the source (`ref.exiledWith`);
+  - `pickFromZone` among remembered or linked objects (`pool`), with variable maximum mana value;
+  - "discard two cards unless you discard an artifact card", milling half the library;
+  - a permanent put onto the battlefield attacking; the condition "a player controls no creatures";
+  - enters replacements also apply to created tokens, and can read the mana spent and the lands that entered this turn.
+- Smoke test: the scenario's opponent has a Goblin Firebomb in hand (target of artifact counterspells).

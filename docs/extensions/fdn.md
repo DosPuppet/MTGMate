@@ -1,19 +1,19 @@
 # Foundations (FDN)
 
-**✅ 517 / 517** (set principal, lots A à F : 276 / 276 ; réimpressions : 241 / 241). Lots du set principal et des réimpressions (déplacé de CLAUDE.md).
+**✅ 517 / 517** (main set, lots A to F: 276 / 276; reprints: 241 / 241). Lots of the main set and of the reprints (moved from CLAUDE.md).
 
-- A. Longue traîne (primitives du DSL, terrains bicolores)
-- B. Bibliothèque et cimetière (cibles au cimetière, recherche, retour)
-- C. Pile : contresorts, garde, sorts de la pile ciblables
-- D. Auras et Équipements
-- E. Planeswalkers et emblèmes
-- F. Mécaniques uniques :
-  - permissions de lancement (Omniscience, Etali, Muldrotha, Tinybones, impulsion, flashback accordé, lancer depuis le cimetière) ;
-  - coûts alternatifs et « sacrifiez ou payez » ;
-  - doublements (jetons, marqueurs, blessures) ;
-  - protection contre tout et défense talismanique contre les éphémères ;
-  - statiques de joueur ;
-  - choix en arrivant et mana restreint ;
-  - copie de sorts, changement de contrôle, fin du tour, F/E variables, déclencheurs depuis le cimetière.
+- A. Long tail (DSL primitives, dual lands)
+- B. Library and graveyard (graveyard targets, search, return)
+- C. Stack: counterspells, ward, spells on the stack as targets
+- D. Auras and Equipment
+- E. Planeswalkers and emblems
+- F. Unique mechanics:
+  - casting permissions (Omniscience, Etali, Muldrotha, Tinybones, impulse draw, granted flashback, casting from the graveyard);
+  - alternative costs and "sacrifice or pay";
+  - doubling effects (tokens, counters, damage);
+  - protection from everything and hexproof from instants;
+  - player statics;
+  - choices on entering and restricted mana;
+  - spell copying, control change, ending the turn, variable P/T, triggers from the graveyard.
 
-Réimpressions : défenses talismaniques contre une couleur, changelin, restrictions de blocage (« doit être bloquée », « ne peut pas être bloquée par… »), Équipage, coûts d'activation (exil, retour en main, marqueurs, une fois par tour), marqueurs de poison, combats supplémentaires, mana conservé jusqu'à la fin du tour, sorts copiés par le mana dépensé, changement de cible, victoire et défaite par effet, Auras « vous contrôlez la créature enchantée ».
+Reprints: hexproof from a color, changeling, blocking restrictions ("must be blocked", "can't be blocked by…"), Crew, activation costs (exile, return to hand, counters, once per turn), poison counters, additional combat phases, mana kept until end of turn, spells copied by the mana spent, retargeting, winning and losing by effect, Auras "you control enchanted creature".

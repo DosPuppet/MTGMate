@@ -1,57 +1,57 @@
 # Planecircle
 
-Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur) et en ligne contre d'autres joueurs (de 2 à 4, BO3 en duel ; Standard, Sans limite ou Commander). Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
+A platform for playing Magic: The Gathering against one or more AIs (head-to-head or multiplayer) and online against other players (2 to 4, best-of-three in duels; Standard, Unlimited or Commander). It is built on a **home-grown rules engine in TypeScript** and a 2D interface designed to be as fluid as MTG Arena:
 
-- passage automatique de la priorité, avec un arrêt sur « Fin du tour » à la fin de chacun de vos tours (même sans rien à jouer) ;
-- paiement automatique du mana ;
-- arrêts configurables ;
-- cible choisie automatiquement quand elle est unique ;
-- glisser-déposer ;
-- cartes jouables hors de la main (flashback, terrain depuis le cimetière, exil, dessus de la bibliothèque) présentées au bout de la main, avec une étiquette indiquant leur zone ;
-- coût de mana modifié (réduction, taxe, flashback) affiché sur la carte dans la main ;
-- IA à trois niveaux au choix (débutant, moyen, élevé), du jeu heuristique à la recherche ISMCTS en duel (voir docs/ia.md) ;
-- exil consultable : bouton à côté du cimetière, et cartes exilées par un permanent affichées sous lui (survol pour les voir) ;
-- jouable sur tablette et sur téléphone en paysage (voir « Tablette et téléphone ») ;
-- images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau ») ;
-- cartes en français : nom, texte et illustration de l'impression française (celle d'une autre édition quand l'originale n'existe pas en français ; texte complété à la main quand Scryfall ne l'a pas).
+- automatic priority passing, with a stop on "End turn" at the end of each of your turns (even with nothing to play);
+- automatic mana payment;
+- configurable stops;
+- target chosen automatically when there is only one;
+- drag and drop;
+- cards playable from outside the hand (flashback, land from the graveyard, exile, top of the library) shown at the end of the hand, with a label giving their zone;
+- modified mana cost (reduction, tax, flashback) shown on the card in hand;
+- AI at three selectable levels (beginner, medium, high), from heuristic play to ISMCTS search in duels (see docs/ai.md);
+- browsable exile: a button next to the graveyard, and cards exiled by a permanent shown under it (hover to see them);
+- playable on tablets and on phones in landscape (see "Tablet and phone");
+- card images relayed by the server when the player's network blocks Scryfall (see "Images blocked by the network");
+- cards in French or English: name, text and illustration of the matching printing (the French printing of another set when the original does not exist in French; text completed by hand when Scryfall does not have it).
 
-**Toutes les cartes légales en Standard sont jouables** (dernière extension ajoutée : The Hobbit, 188 / 188). Dernier ajout : le **Commander**, de 2 à 4 joueurs, contre l'IA et en ligne, avec douze decks préconstruits (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, Nissa, Leyline Tamer, The Vision, Dark Leo & Shredder, et les préconstruits officiels de Réalité fracturée, des Tortues Ninja, de Final Fantasy X, des Quatre Fantastiques et de Fallout) ; les decks suivants arrivent un par un, chacun avec ses cartes.
+**Every card legal in Standard is playable** (last set added: The Hobbit, 188 / 188). Latest addition: **Commander**, for 2 to 4 players, against the AI and online, with twelve preconstructed decks (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, Nissa, Leyline Tamer, The Vision, Dark Leo & Shredder, and the official precons of Reality Fracture, Teenage Mutant Ninja Turtles, Final Fantasy X, The Fantastic Four and Fallout); further decks arrive one at a time, each with its cards.
 
-## Périmètre : le Standard
+## Scope: Standard
 
-Le périmètre visé avant toute extension est le **format Standard** : construit, 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base et cartes « n'importe quel nombre »), réserve de 15 cartes.
+The target scope before any set is the **Standard format**: constructed, 60 cards minimum, 4 copies maximum (except basic lands and "any number" cards), 15-card sideboard.
 
-Les cartes ont été couvertes **extension par extension, à 100 % avant de passer à la suivante** (sauf pendant la phase « méta » du plan P4, voir plus bas) : toutes les cartes légales en Standard sont jouables. Toutes les extensions Standard sont importées (textes, légalités, faces) ; une carte qui ne serait pas gérée par le moteur apparaîtrait grisée dans le deckbuilder, avec la mention « bientôt ».
+Cards were covered **set by set, at 100% before moving on to the next** (except during the "meta" phase of plan P4, see below): every card legal in Standard is playable. All Standard sets are imported (texts, legalities, faces); a card the engine does not handle would appear greyed out in the deckbuilder, marked "coming soon".
 
-**Extensions légales en Standard au 25/09/2026** (source : Scryfall, à revérifier à chaque rotation) :
+**Sets legal in Standard as of 2026-09-25** (source: Scryfall, to be rechecked at each rotation):
 
-| Extension | Cartes gérées |
+| Set | Cards handled |
 |---|---|
 | **Foundations (FDN)** | ✅ 517 / 517 |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ 279 / 279 |
+| **Reality Fracture (FRA)** | ✅ 279 / 279 |
 | **Edge of Eternities (EOE)** | ✅ 260 / 260 |
 | **Aetherdrift (DFT)** | ✅ 260 / 260 |
-| **Outlaws of Thunder Junction (OTJ) et The Big Score (BIG)** | ✅ 269 / 269 et 30 / 30 |
+| **Outlaws of Thunder Junction (OTJ) and The Big Score (BIG)** | ✅ 269 / 269 and 30 / 30 |
 | **Final Fantasy (FIN)** | ✅ 307 / 307 |
-| **Duskmourn: House of Horror (DSK, « Mornebrune : la Maison de l'horreur »)** | ✅ 268 / 268 |
+| **Duskmourn: House of Horror (DSK)** | ✅ 268 / 268 |
 | **Bloomburrow (BLB)** | ✅ 266 / 266 |
-| **The Lost Caverns of Ixalan (LCI, « Les cavernes oubliées d'Ixalan »)** | ✅ 279 / 279 |
-| **Tarkir: Dragonstorm (TDM, « Tarkir : Tempête draconique »)** | ✅ 259 / 259 |
-| **Lorwyn Eclipsed (ECL, « Lorwyn éclipsé »)** | ✅ 266 / 266 |
-| **Wilds of Eldraine (WOE, « Les friches d'Eldraine »)** | ✅ 269 / 269 |
-| **Secrets of Strixhaven (SOS, « Les secrets de Strixhaven »)** | ✅ 262 / 262 |
-| **Murders at Karlov Manor (MKM, « Meurtres au manoir Karlov »)** | ✅ 271 / 271 |
+| **The Lost Caverns of Ixalan (LCI)** | ✅ 279 / 279 |
+| **Tarkir: Dragonstorm (TDM)** | ✅ 259 / 259 |
+| **Lorwyn Eclipsed (ECL)** | ✅ 266 / 266 |
+| **Wilds of Eldraine (WOE)** | ✅ 269 / 269 |
+| **Secrets of Strixhaven (SOS)** | ✅ 262 / 262 |
+| **Murders at Karlov Manor (MKM)** | ✅ 271 / 271 |
 | **Avatar: The Last Airbender (TLA)** | ✅ 280 / 280 |
 | **Marvel Super Heroes (MSH)** | ✅ 271 / 271 |
 | **Marvel's Spider-Man (SPM)** | ✅ 188 / 188 |
 | **Teenage Mutant Ninja Turtles (TMT)** | ✅ 188 / 188 |
 | **The Hobbit (HOB)** | ✅ 188 / 188 |
 
-Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %, vérifié chaque semaine contre Scryfall : `tools/check-legality.ts`). Les lignes ci-dessus font 5 177 cartes : elles comptent aussi les 13 cartes bannies, gérées mais refusées par la validation des decks, sauf dans le format « Sans limite » (au choix à l'accueil, contre l'IA, et à la création d'une partie en ligne), qui accepte toute carte du catalogue, quelle que soit sa légalité.
+In total, **5,164 playable cards** out of 5,164 cards legal in Standard (100%, checked every week against Scryfall: `tools/check-legality.ts`). The lines above add up to 5,177 cards: they also count the 13 banned cards, which are handled but refused by deck validation, except in the "Unlimited" format (chosen on the home screen, against the AI, and when creating an online game), which accepts any card in the catalog regardless of its legality.
 
-**Rééditions, pour le format « Sans limite »** (plan G, `docs/plans/PLAN-G.md`) : les Special Guests et les feuilles bonus sorties avec les extensions ci-dessus, hors Standard, avec l'illustration de la réédition. Les cartes à mécanique propre au Commander (partenaire, éminence…) attendent un deck Commander qui les demande (plan E).
+**Reprints, for the Unlimited format** (plan G, history in `docs/history.md`): the Special Guests and the bonus sheets released with the sets above, outside Standard, with the illustration of the reprint. Cards with Commander-only mechanics (partner, eminence…) wait for a Commander deck that asks for them (plan E).
 
-| Ensemble | Cartes gérées |
+| Set | Cards handled |
 |---|---|
 | Special Guests (SPG) | 132 / 132 |
 | Stellar Sights (EOS) | 43 / 43 |
@@ -62,9 +62,9 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 | Source Material (PZA) | 15 / 15 |
 | Jurassic World Collection (REX) | 20 / 20 |
 
-**Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
+**Meta decks (plan P4, phase 1 finished):** before finishing the last sets one by one, the cards of the most played Standard decks were written (MTGGoldfish survey of 2026-09-29, `docs/meta/`). The **twenty archetypes surveyed** (88.1% of the meta) are playable, sideboard included; the top five are offered as preconstructed decks (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). A few reprints from older sets are also legal because they appear in those sets.
 
-**Cartes bannies en Standard** (13) :
+**Banned in Standard** (13):
 
 - Abuelo's Awakening
 - Badgermole Cub
@@ -80,189 +80,189 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 - Up the Beanstalk
 - Vivi Ornitier
 
-**Commander (plan E, `docs/plans/PLAN-E.md`) :** règles du format (zone de commandement, taxe, retour dans la zone de commandement demandé au propriétaire, blessures de commandant, 40 points de vie, identité de couleur, singleton, liste de bannissement et Game Changers de Scryfall, premier mulligan gratuit), de 2 à 4 joueurs, contre l'IA et en ligne (avec des sièges IA tenus par le serveur), éditeur de deck Commander (100 cartes, identité, tranche estimée d'après les Game Changers). Douze préconstruits jouables : Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4 (06/10/2026), The Ur-Dragon (Dragons, cinq couleurs, liste « How to Train Ur-Dragon » de Moxfield), Rakdos, Lord of Riots (gros sorts presque gratuits, noir et rouge, liste Moxfield), Nissa, Leyline Tamer (toucheterre et grandes créatures, quatre couleurs sans le vert, liste Moxfield), The Vision (artefacts incolores, terrains d'Urza et Eldrazi, liste TappedOut « Weight of the World »), Dark Leo & Shredder (Ninjas et ninjutsu, blanc et noir, liste Moxfield « I Am Ninja, Sneaking in the Shadows »), et cinq préconstruits officiels : Multiverse Reforged (Jace, Multiverse Architect, Réalité fracturée), Turtle Power! (Heroes in a Half Shell, Tortues Ninja), Counter Blitz (Tidus, Yuna's Guardian, Final Fantasy X), The Fantastic Four (Invisible Woman, Marvel Super Heroes) et Mutant Menace (The Wise Mothman, Fallout, avec les marqueurs de radiation). Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, 653 / 653 cartes gérées, `docs/extensions/edh.md`). Ajouter un deck : liste dans `docs/commander/decks/`, `npm run import-cards -- edh`, scripts et tests, préconstruit (recette dans CLAUDE.md).
+**Commander (plan E, history in `docs/history.md`):** format rules (command zone, tax, return to the command zone offered to the owner, commander damage, 40 life, color identity, singleton, Scryfall's ban list and Game Changers, free first mulligan), for 2 to 4 players, against the AI and online (with AI seats run by the server), Commander deck editor (100 cards, identity, bracket estimated from the Game Changers). Twelve playable precons: Edgar Markov (vampires, Mardu) and Y'shtola, Night's Blessed (drain and control, Esper), from the EDHREC average lists at bracket 4 (2026-10-06), The Ur-Dragon (Dragons, five colors, Moxfield list "How to Train Ur-Dragon"), Rakdos, Lord of Riots (big, nearly free spells, black and red, Moxfield list), Nissa, Leyline Tamer (landfall and big creatures, four colors without green, Moxfield list), The Vision (colorless artifacts, Urza lands and Eldrazi, TappedOut list "Weight of the World"), Dark Leo & Shredder (Ninjas and ninjutsu, white and black, Moxfield list "I Am Ninja, Sneaking in the Shadows"), and five official precons: Multiverse Reforged (Jace, Multiverse Architect, Reality Fracture), Turtle Power! (Heroes in a Half Shell, Teenage Mutant Ninja Turtles), Counter Blitz (Tidus, Yuna's Guardian, Final Fantasy X), The Fantastic Four (Invisible Woman, Marvel Super Heroes) and Mutant Menace (The Wise Mothman, Fallout, with rad counters). Cards arrive deck by deck: those missing from the catalog form the "Commander" pseudo-set (EDH, 653 / 653 cards handled, `docs/extensions/edh.md`). To add a deck: list in `docs/commander/decks/`, `npm run import-cards -- edh`, scripts and tests, precon (recipe in CLAUDE.md).
 
-| Préconstruit | Couleurs | Source | Game Changers (tranche estimée) |
+| Precon | Colors | Source | Game Changers (estimated bracket) |
 |---|---|---|---|
-| Edgar Markov — Vampires | blanc, noir, rouge | EDHREC, liste moyenne « optimized » | 5 (4+) |
-| Y'shtola, Night's Blessed — drain et contrôle | blanc, bleu, noir | EDHREC, liste moyenne « optimized » | 13 (4+) |
-| The Ur-Dragon — Dragons | cinq couleurs | Moxfield, « How to Train Ur-Dragon [Primer!] » | 7 (4+) |
-| Rakdos, Lord of Riots — gros sorts gratuits | noir, rouge | Moxfield, « Rakdos, Lord of Big Free Stuff » | 2 (3) |
-| Multiverse Reforged — Jace, architecte du multivers | blanc, bleu, noir, rouge | préconstruit officiel de Réalité fracturée | 0 (1–2) |
-| Turtle Power! — Héros à carapace | cinq couleurs | préconstruit officiel des Tortues Ninja | 0 (1–2) |
-| Counter Blitz — Tidus, gardien de Yuna | vert, blanc, bleu | préconstruit officiel de Final Fantasy X | 1 (3) |
-| The Fantastic Four — Femme Invisible | blanc, bleu, rouge, vert | préconstruit officiel de Marvel Super Heroes | 0 (1–2) |
-| Mutant Menace — Homme-phalène sage | bleu, noir, vert | préconstruit officiel de Fallout | 0 (1–2) |
-| Nissa, Leyline Tamer — toucheterre et grandes créatures | blanc, bleu, noir, rouge | Moxfield, « Nissa, Non-Green Animist (Landfall w/ Big Creatures) » | 4 (4+) |
-| The Vision — artefacts incolores | incolore | TappedOut, « Weight of the World » | 3 (3) |
-| Dark Leo & Shredder — Ninjas | blanc, noir | Moxfield, « I Am Ninja, Sneaking in the Shadows » | 4 (4+) |
+| Edgar Markov: Vampires | white, black, red | EDHREC, "optimized" average list | 5 (4+) |
+| Y'shtola, Night's Blessed: drain and control | white, blue, black | EDHREC, "optimized" average list | 13 (4+) |
+| The Ur-Dragon: Dragons | five colors | Moxfield, "How to Train Ur-Dragon [Primer!]" | 7 (4+) |
+| Rakdos, Lord of Riots: big free spells | black, red | Moxfield, "Rakdos, Lord of Big Free Stuff" | 2 (3) |
+| Multiverse Reforged: Jace, Multiverse Architect | white, blue, black, red | official Reality Fracture precon | 0 (1–2) |
+| Turtle Power!: Heroes in a Half Shell | five colors | official Teenage Mutant Ninja Turtles precon | 0 (1–2) |
+| Counter Blitz: Tidus, Yuna's Guardian | green, white, blue | official Final Fantasy X precon | 1 (3) |
+| The Fantastic Four: Invisible Woman | white, blue, red, green | official Marvel Super Heroes precon | 0 (1–2) |
+| Mutant Menace: The Wise Mothman | blue, black, green | official Fallout precon | 0 (1–2) |
+| Nissa, Leyline Tamer: landfall and big creatures | white, blue, black, red | Moxfield, "Nissa, Non-Green Animist (Landfall w/ Big Creatures)" | 4 (4+) |
+| The Vision: colorless artifacts | colorless | TappedOut, "Weight of the World" | 3 (3) |
+| Dark Leo & Shredder: Ninjas | white, black | Moxfield, "I Am Ninja, Sneaking in the Shadows" | 4 (4+) |
 
-**Hors périmètre pour l'instant :** Limité (scellé, draft), formats éternels, cartes numériques d'Alchemy.
+**Out of scope for now:** Limited (sealed, draft), eternal formats, Alchemy digital cards.
 
-## Démarrer
+## Getting started
 
 ```bash
 npm install
 npm run dev          # http://localhost:5173
 ```
 
-### Jouer en ligne (de 2 à 4 joueurs)
+### Playing online (2 to 4 players)
 
-- **En développement :** `npm run server` (serveur de parties, port 8787) et `npm run dev`. Ouvrez deux onglets, puis « Contre un joueur » : l'un crée la partie, l'autre la rejoint avec le code ou le lien.
-- **Salons :** format Standard, Sans limite ou Commander ; de 2 à 4 sièges, chacun tenu par un joueur ou par une IA du serveur (la partie commence quand tous les sièges humains sont pris). À plusieurs, un joueur qui part abandonne et la partie continue sans lui.
-- **En réseau local :** `npm run build` puis `npm run server`. Le serveur sert aussi l'interface : votre adversaire ouvre l'adresse « réseau » affichée (`http://<ip>:8787`).
-- **Sur un serveur (Internet, HTTPS) :** Node + pm2 derrière nginx, avec un sous-domaine. La notice pas à pas est dans [docs/deploiement.md](docs/deploiement.md) ; les fichiers sont dans `deploy/` (configuration pm2, site nginx, script de mise à jour).
-- **Match en 3 manches (BO3, en duel seulement) :** à cocher en créant le salon (et, contre l'IA, sur l'accueil). Entre deux manches, chacun ajuste son deck avec sa réserve (mêmes cartes au total, deck légal), puis le perdant de la manche précédente commence la suivante. Le match s'arrête à deux victoires.
-- **Règles du salon :**
-  - 60 s par décision, avec une corde affichée pendant les 20 dernières ;
-  - à l'expiration, une décision par défaut est jouée ; 3 expirations valent une défaite ;
-  - après une déconnexion, 60 s pour revenir (en rechargeant la page), sinon défaite ;
-  - revanche possible dans le même salon.
-- **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`, `MTGX_DATA_DIR` (sauvegarde des parties, reprises après un redémarrage ; `data/rooms` par défaut), `MTGX_MAX_ROOMS_PER_IP` (4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même), `MTGX_MAX_HEAP_MB` ; sièges IA : `MTGX_AI_WORKERS` (2), `MTGX_MAX_AI_ROOMS` (12), `MTGX_MAX_RSS_MB` (640). `/healthz` indique l'état du serveur (détail dans [docs/deploiement.md](docs/deploiement.md)).
+- **In development:** `npm run server` (game server, port 8787) and `npm run dev`. Open two tabs, then "Against a player": one creates the game, the other joins with the code or the link.
+- **Rooms:** Standard, Unlimited or Commander format; 2 to 4 seats, each held by a player or by a server AI (the game starts when all human seats are taken). With several players, a player who leaves concedes and the game goes on without them.
+- **On a local network:** `npm run build` then `npm run server`. The server also serves the interface: your opponent opens the displayed "network" address (`http://<ip>:8787`).
+- **On a server (Internet, HTTPS):** Node + pm2 behind nginx, with a subdomain. The step-by-step guide is in [docs/deployment.md](docs/deployment.md); the files are in `deploy/` (pm2 configuration, nginx site, update script).
+- **Best-of-three match (BO3, duels only):** tick it when creating the room (and, against the AI, on the home screen). Between two games, each player adjusts their deck with their sideboard (same cards in total, legal deck), then the loser of the previous game starts the next one. The match stops at two wins.
+- **Room rules:**
+  - 60 s per decision, with a rope shown during the last 20;
+  - on expiry, a default decision is played; 3 expirations count as a loss;
+  - after a disconnection, 60 s to come back (by reloading the page), otherwise a loss;
+  - rematch possible in the same room.
+- **Environment variables:** `PORT`, `HOST` (`127.0.0.1` behind nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`, `MTGX_DATA_DIR` (game saves, resumed after a restart; `data/rooms` by default), `MTGX_MAX_ROOMS_PER_IP` (4), `MTGX_ORIGINS` (origins allowed for the WebSocket besides the site itself), `MTGX_MAX_HEAP_MB`; AI seats: `MTGX_AI_WORKERS` (2), `MTGX_MAX_AI_ROOMS` (12), `MTGX_MAX_RSS_MB` (640). `/healthz` reports the server state (details in [docs/deployment.md](docs/deployment.md)).
 
-### Replays et export d'une partie
+### Replays and game export
 
-- **Exporter la partie** (barre latérale) télécharge un fichier JSON : la graine, les decks et toutes les décisions. Le moteur étant déterministe, ce fichier suffit à rejouer exactement la partie ; joignez-le au signalement d'un bug. Contre l'IA, l'export est possible à tout moment ; en ligne, seulement une fois la partie terminée (le fichier révèle les decks).
-- **Revoir une partie** (accueil) ouvre ce fichier dans le visionneur : étape par étape, lecture automatique, saut au début ou à la fin, et choix du point de vue (chaque joueur ne voit que ce qu'il voyait).
-- **En ligne,** les parties sont sauvegardées de la même façon par le serveur (`data/rooms`) : un redémarrage ne les coupe plus.
-- **Version des règles :** l'enregistrement note la version des règles du moteur et une empreinte de la partie toutes les 25 décisions. Une partie enregistrée par une version antérieure du moteur qui ne se rejoue plus à l'identique s'arrête à la première divergence, signalée dans la barre du visionneur.
+- **Export the game** (sidebar) downloads a JSON file: the seed, the decks and all the decisions. Since the engine is deterministic, this file is enough to replay the game exactly; attach it to a bug report. Against the AI, export is possible at any time; online, only once the game is over (the file reveals the decks).
+- **Review a game** (home screen) opens this file in the viewer: step by step, automatic playback, jump to the start or the end, and choice of point of view (each player sees only what they saw).
+- **Online,** games are saved the same way by the server (`data/rooms`): a restart no longer cuts them off.
+- **Rules version:** the record notes the engine's rules version and a fingerprint of the game every 25 decisions. A game recorded by an earlier engine version that no longer replays identically stops at the first divergence, shown in the viewer's bar.
 
-### Tablette et téléphone
+### Tablet and phone
 
-L'interface s'adapte à l'écran : tablette en paysage ou en portrait, téléphone en paysage. En portrait, un téléphone affiche « Tournez votre appareil ».
+The interface adapts to the screen: tablet in landscape or portrait, phone in landscape. In portrait, a phone shows "Rotate your device".
 
-- **La main** se resserre pour toujours tenir dans la largeur de l'écran. Sur téléphone, elle dépasse sous l'écran, comme sur MTG Arena.
-- **Au doigt :**
-  - un premier tap lève une carte de la main et l'agrandit, un second la joue ; on peut aussi la glisser vers le champ de bataille ;
-  - un appui long sur n'importe quelle carte l'affiche en grand, et un tap la referme.
-- **Écran étroit** (moins de 1100 px, par exemple une tablette en portrait) : les réglages et le journal passent dans un tiroir ouvert par le bouton ☰.
-- **Essai sur un vrai appareil :** `npm run dev -- --host`, puis ouvrez l'adresse « Network » affichée depuis la tablette (même réseau Wi-Fi).
+- **The hand** tightens to always fit the width of the screen. On a phone, it extends below the screen, as in MTG Arena.
+- **By finger:**
+  - a first tap raises a card in hand and enlarges it, a second plays it; you can also drag it to the battlefield;
+  - a long press on any card shows it large, and a tap closes it.
+- **Narrow screen** (under 1100 px, for example a tablet in portrait): the settings and the log move into a drawer opened by the ☰ button.
+- **Trying on a real device:** `npm run dev -- --host`, then open the displayed "Network" address from the tablet (same Wi-Fi network).
 
-### Images bloquées par le réseau
+### Images blocked by the network
 
-Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains réseaux (entreprise, école) le bloquent, et les cartes s'affichent alors en cadre texte. Le serveur Planecircle peut relayer les images par `/scry/…` :
+Card images come from Scryfall (`cards.scryfall.io`). Some networks (company, school) block it, and cards are then displayed as a text frame. The Planecircle server can relay the images through `/scry/…`:
 
-- **Automatique :** au démarrage, si Scryfall ne répond pas et que le serveur répond, le relais s'active tout seul.
-- **À la main :** la case **« Images par le serveur Planecircle »**, sur l'accueil (en haut à droite) ou dans les réglages de la partie. Cochez-la si les cartes ne s'affichent pas. Le choix est mémorisé.
-- **Serveur :** seules les images de cartes sont relayées (liste blanche) ; ce n'est pas un proxy ouvert. Derrière nginx, les images sont mises en cache (voir [docs/deploiement.md](docs/deploiement.md)). En dev, Vite relaie `/scry` directement.
-- Si Scryfall est accessible, les images viennent de Scryfall en direct, et le serveur n'est pas sollicité.
+- **Automatic:** at startup, if Scryfall does not answer and the server does, the relay turns on by itself.
+- **By hand:** the **"Images through the Planecircle server"** checkbox, on the home screen (top right) or in the game settings. Tick it if cards do not show. The choice is remembered.
+- **Server:** only card images are relayed (allow list); it is not an open proxy. Behind nginx, the images are cached (see [docs/deployment.md](docs/deployment.md)). In dev, Vite relays `/scry` directly.
+- If Scryfall is reachable, images come straight from Scryfall, and the server is not used.
 
-## Commandes
+## Commands
 
-| Commande | Rôle |
+| Command | Purpose |
 |---|---|
-| `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (environ 2 min) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé. `--set COMMANDER` : les préconstruits Commander ; `--set EDH` : le pseudo-ensemble Commander |
-| `npm run verify -- --full` | Vérification complète (environ 7 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
-| `npm run verify -- --ci` | Vérification de l'intégration continue (GitHub Actions, à chaque push) : types, Biome, couverture, tests et fuzz courts sur tout le pool, sans interface ni bench |
-| `npm test` | Tests de règles, d'IA, et test de fumée de chaque carte gérée (Vitest, un fichier par extension) |
-| `npm run golden [-- --update]` | Parties dorées (`tools/golden.ts`) : vérifie qu'elles se rejouent à l'identique ; `--update` régénère seulement celles qui divergent après un changement de `RULES_VERSION` |
-| `npm run fuzz -- --games 300 [--pool decks\|all\|meta\|<EXT>\|commander] [--format commander] [--players 4] [--offers 4] [--ai random\|heuristic\|mixed\|beginner\|medium\|expert\|levels\|chaos] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--format commander` : parties de Commander (decks aléatoires, ou `--pool commander` : les préconstruits). `--offers N` : fuzz strict (toute option proposée doit être acceptée). `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
-| `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA moyenne < 50 ms, IA élevée < 150 ms ; à mesurer sur secteur) |
-| `npm run arena -- --a expert --b medium [--games 600] [--jobs 10] [--budget 100] [--pool decks\|all\|mix\|meta\|commander] [--players 4]` | Tournoi d'IA (places et decks alternés) : taux de victoire avec intervalle à 95 %, temps de décision ; `expert:0` = élevé sans ISMCTS. Équilibre des decks : `--a medium --b medium --format commander --pool commander --by-deck --deck cmd-<id>`. `--jobs` : par défaut, tous les cœurs moins deux (mêmes résultats quel que soit `--jobs`) ; avancement toutes les 10 s ; les cinq décisions les plus lentes et la commande qui rejoue leur partie ; `MTGX_SLOW_MS=N` signale les décisions de plus de N ms |
-| `npm run ai-smoke` | Niveau de l'IA : sélecteur de l'accueil, latence de l'IA élevée en temps réel, processeur normal et ralenti ×4 (serveur de dev lancé) |
-| `npm run tutorial-smoke [-- --only 2,3] [-- --debug]` | Tutoriel suivi dans le navigateur comme un joueur, refus hors guide, reprise (serveur de dev lancé) |
-| `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"] [-- --deck <id\|all>] [-- --audit]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte ; `--deck` : cartes d'un deck Commander à scripter ; `--audit` : écarts entre le texte Oracle et le script des cartes gérées |
-| `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
-| `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
-| `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur Planecircle » (serveur de dev lancé) |
-| `npm run bo3-smoke` | Match BO3 contre l'IA : réserve entre les manches, perdant qui commence, issue du match (serveur de dev lancé) |
-| `npm run replay-smoke` | Replays : partie contre l'IA exportée, puis rouverte dans le visionneur (avance, retour, fin, point de vue) (serveur de dev lancé) |
-| `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |
-| `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
-| `npm run import-tokens` | Images des jetons : jetons Scryfall des extensions Standard (`t<code>`) dans `packages/cards/data/tokens.json` |
-| `npm run import-cards -- <set>\|all\|edh` | Import Scryfall d'une extension, de toutes les extensions Standard hors FDN et FRA (`all`), ou par nom des cartes des decks Commander absentes du catalogue (`edh`, impressions françaises en priorité) |
-| `npm run import-printings` | Table des impressions (illustrations au choix dans l'éditeur de deck) ; compare aussi l'identité de couleur à Scryfall |
-| `npx tsx tools/check-legality.ts [--commander] [--write]` | Légalités Standard (ou bannissements et Game Changers du Commander) comparées à Scryfall ; tâche hebdomadaire de la CI |
-| `npx tsx tools/commander-smoke.ts` | Commander dans le navigateur : accueil, éditeur, partie à quatre (serveur de dev lancé) |
-| `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
-| `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
-| `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
+| `npm run verify -- --set <EXT>` | Parallel check of a batch (about 2 min): types, Biome, coverage, all tests, targeted fuzz on the set at 2, 3 and 4 players; interface tests if the client changed. `--set COMMANDER`: the Commander precons; `--set EDH`: the Commander pseudo-set |
+| `npm run verify -- --full` | Full check (about 7 min): fuzz on the whole pool, bench and interface tests. Duration of each step shown, logs in `test-results/verify/` |
+| `npm run verify -- --ci` | Continuous-integration check (GitHub Actions, on every push): types, Biome, coverage, tests and short fuzz on the whole pool, without interface or bench |
+| `npm test` | Rules and AI tests, and a smoke test of every handled card (Vitest, one file per set) |
+| `npm run golden [-- --update]` | Golden games (`tools/golden.ts`): checks that they replay identically; `--update` regenerates only those that diverge after a `RULES_VERSION` change |
+| `npm run fuzz -- --games 300 [--pool decks\|all\|meta\|<EXT>\|commander] [--format commander] [--players 4] [--offers 4] [--ai random\|heuristic\|mixed\|beginner\|medium\|expert\|levels\|chaos] [--seed N] [--jobs 10]` | AI-versus-AI games, invariants checked at every decision. `--pool FIN`: decks drawn mostly from that set. `--format commander`: Commander games (random decks, or `--pool commander`: the precons). `--offers N`: strict fuzz (every offered option must be accepted). `--jobs`: games spread over several processes, same results for the same seed |
+| `npm run bench` | Engine decisions per second and AI decision time (targets: ≥ 5,000 dec/s, medium AI < 50 ms, high AI < 150 ms; measure on mains power) |
+| `npm run arena -- --a expert --b medium [--games 600] [--jobs 10] [--budget 100] [--pool decks\|all\|mix\|meta\|commander] [--players 4]` | AI tournament (seats and decks alternated): win rate with a 95% interval, decision time; `expert:0` = high without ISMCTS. Deck balance: `--a medium --b medium --format commander --pool commander --by-deck --deck cmd-<id>`. `--jobs`: all cores minus two by default (same results whatever `--jobs`); progress every 10 s; the five slowest decisions and the command that replays their game; `MTGX_SLOW_MS=N` flags decisions longer than N ms |
+| `npm run ai-smoke` | AI level: home-screen selector, latency of the high AI in real time, normal and 4x slowed processor (dev server running) |
+| `npm run tutorial-smoke [-- --only 2,3] [-- --debug]` | Tutorial followed in the browser like a player, refusal outside the guide, resume (dev server running) |
+| `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<name>"] [-- --deck <id\|all>] [-- --audit]` | Cards handled per set, Oracle texts of the remaining cards, text and script of a card; `--deck`: cards of a Commander deck to script; `--audit`: gaps between the Oracle text and the script of handled cards |
+| `npm run server` | Online game server (WebSocket `/ws`, also serves `packages/client/dist`) |
+| `npm run online-smoke [-- --base <url>]` | Online duel between two browsers: room, invitation link, rope, resume after reload, rematch (dev server by default, or `--base` toward a production server or nginx) |
+| `npm run proxy-smoke` | Image relay: Scryfall blocked (automatic switch to `/scry/`), "Images through the Planecircle server" checkbox (dev server running) |
+| `npm run bo3-smoke` | BO3 match against the AI: sideboard between games, loser starts, match outcome (dev server running) |
+| `npm run replay-smoke` | Replays: game against the AI exported, then reopened in the viewer (forward, back, end, point of view) (dev server running) |
+| `npm run mobile-smoke` | Emulated tablet and phone: hand, main button and fields on screen, long press, tap to raise a card, drawer, portrait (dev server running) |
+| `npm run battlefield-smoke` | Loaded boards (tokens, 2nd row, 4 players) put into play by the dev-mode sandbox: rows, token stacks, no cropped card (dev server running) |
+| `npm run import-tokens` | Token images: Scryfall tokens of the Standard sets (`t<code>`) into `packages/cards/data/tokens.json` |
+| `npm run import-cards -- <set>\|all\|edh` | Scryfall import of a set, of all Standard sets except FDN and FRA (`all`), or by name of the Commander deck cards missing from the catalog (`edh`, French printings first) |
+| `npm run import-printings` | Printings table (illustrations of your choice in the deck editor); also compares the color identity against Scryfall |
+| `npx tsx tools/check-legality.ts [--commander] [--write]` | Standard legalities (or Commander bans and Game Changers) compared against Scryfall; weekly CI task |
+| `npx tsx tools/commander-smoke.ts` | Commander in the browser: home screen, editor, four-player game (dev server running) |
+| `npm run deck-smoke` | Deckbuilder end to end: import, editing, export, persistence, game (dev server running) |
+| `npm run ui-smoke -- <folder> [actions]` | Plays a game in Chromium through the interface and takes screenshots (dev server running) |
+| `npm run typecheck` / `npm run lint` | Strict TypeScript / Biome |
 
 ## Architecture
 
 ```
 packages/
-  engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
-            src/model/ (types), src/ops/ (traitements des effets par domaine) ; guide : docs/moteur.md
-  cards/    données Scryfall (data/<set>.json : 20 extensions Standard, 8 ensembles de rééditions, pseudo-ensemble Commander
-            edh.json), scripts des cartes (src/<ext>/*.ts), lecture du texte Scryfall (src/scryfall.ts), decklists, decks
-            préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN, 5 decks du méta, 12 decks Commander)
-  ai/       IA à trois niveaux (heuristique paramétrée, combat par simulation, ISMCTS), IA aléatoire (fuzz),
-            adversaire scripté (tutoriel) ; guide : docs/ia.md
-  server/   jeu en ligne : salons de 2 à 4 sièges, GameHost côté serveur (fait autorité), sièges IA dans des workers,
-            minuteur, reconnexion, sauvegarde et reprise ; protocole partagé ; relais des images de Scryfall (/scry/)
-  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ;
-            effets sonores (audio/) ; gestes tactiles (touch.ts) ; relais des images (images.ts)
-tools/      import Scryfall, vérification, fuzz, bench, couverture, tests d'interface
-docs/       guide du moteur, approximations connues, détail des extensions, déploiement
+  engine/   pure, deterministic engine: JSON state, decisions, rules, autopilot, filtered view, GameHost
+            src/model/ (types), src/ops/ (effect processing by domain); guide: docs/engine.md
+  cards/    Scryfall data (data/<set>.json: 20 Standard sets, 8 reprint sets, Commander pseudo-set
+            edh.json), card scripts (src/<ext>/*.ts), Scryfall text reading (src/scryfall.ts), decklists, preconstructed
+            decks (decks/*.json: 5 FDN welcome decks, FIN Starter Kit, 5 meta decks, 12 Commander decks)
+  ai/       three-level AI (parameterized heuristic, combat by simulation, ISMCTS), random AI (fuzz),
+            scripted opponent (tutorial); guide: docs/ai.md
+  server/   online play: rooms of 2 to 4 seats, server-side GameHost (authoritative), AI seats in workers,
+            timer, reconnection, saving and resuming; shared protocol; Scryfall image relay (/scry/)
+  client/   React + Vite + Zustand + Motion; the game runs in a Web Worker; deckbuilder; MTGA-style board layout (board/layout.ts);
+            sound effects (audio/); touch gestures (touch.ts); image relay (images.ts)
+tools/      Scryfall import, checks, fuzz, bench, coverage, interface tests
+docs/       engine guide, known approximations, set details, deployment
 ```
 
-- **`submit(state, joueur, décision) → { state, events }`** : le moteur avance tout seul jusqu'à la prochaine décision. Il donne ensuite la liste exhaustive des options légales (`legalActions`), dont se servent l'interface, l'IA et l'autopilot.
-- **Autopilot** (`engine/src/autopilot.ts`) : il répond aux décisions triviales. Le moteur, lui, reste strict. Le mode « contrôle total » désactive l'autopilot, sauf « Fin du tour », qui reste une demande explicite. Pendant votre tour, il s'arrête toujours à la seconde phase principale : c'est vous qui terminez le tour. Les vraies décisions (retour du commandant dans la zone de commandement…) ne sont jamais prises à votre place.
-- **Effets de cartes** : ce sont des données sérialisables (`engine/src/dsl.ts`), jamais du code stocké dans l'état.
-- **Règle 400.7** : un objet qui change de zone reçoit un nouvel identifiant (`id`). L'identifiant `uid`, lui, suit la carte physique pour les animations.
-- **N joueurs** : priorité en tour de table, ordre APNAP, un défenseur par attaquant (joueur ou planeswalker), élimination d'un joueur (800.4a), mulligan gratuit à trois joueurs ou plus.
-- **Commander** (903) : commandants désignés par leur identité physique, zone de commandement (taxe, éminence), retour demandé au propriétaire, blessures de commandant, identité de couleur.
-- **Boucles** (104.4b) : une boucle d'actions obligatoires est nulle, y compris une boucle qui accumule des jetons ou des déclenchements.
-- **Choix génériques** (`choices.ts`) : toute question passe par une `ChoiceRequest` (choisir, ordonner, oui/non, nombre, répartir) avec une réponse suggérée. Une résolution peut être suspendue sur un choix puis reprise ; les valeurs intermédiaires (« si vous le faites ») sont mémorisées dans la résolution.
-- **Capacités déclenchées** (`triggers.ts`) :
-  - détectées au moment de l'événement, avec regard en arrière pour les morts simultanées ;
-  - mises sur la pile en APNAP ;
-  - les conditions « si… » sont revérifiées à la résolution ;
-  - sont aussi gérées : les capacités modales, « une fois par tour », les capacités retardées et réflexives, et les emblèmes.
-- **Couches** (`layers.ts`) :
-  - caractéristiques calculées couche par couche (4 à 7) : types, couleurs, capacités accordées ou perdues, F/E ;
-  - capacités statiques, y compris sur « la créature équipée ou enchantée » ;
-  - résultat mis en cache par version d'état ; le fuzz vérifie le cache.
-- **Pile** : sorts et capacités ciblables, contresorts, garde (ward), « ne peut pas être contrecarré ».
-- **Attachements** : Auras (ciblées au lancement), Équipements (« Équiper » lu dans le texte), actions basées sur l'état 704.5m–n.
-- **Planeswalkers** : loyauté, capacités de loyauté (une par tour), attaque des planeswalkers, emblèmes.
-- **Remplacements et prévention** (`replacement.ts`) et **coûts** (`mana.ts`, `stack.ts`) :
-  - remplacements : exil à la place de mourir, arrivée engagée ou avec marqueurs (y compris imposée par un autre permanent), prévention ;
-  - remplacements d'événements chiffrés en données (`eventReplacement`, 616.1) : blessures, perte et gain de PV, pioche, meule, marqueurs, jetons, mana et dégagement (« autant plus N », « le double », prévention, boucliers « la prochaine fois que »), dans l'ordre le plus favorable au joueur affecté ;
-  - coûts : hybride, coûts additionnels, flashback, réductions, sacrifice ou marqueurs comme coût, activation depuis le cimetière.
-- **Cartes à plusieurs faces** : aventures et présages, recto-verso (transformation, faces modales, Sagas au verso), cartes scindées et Salles, assemblage ; Sagas, Classes et Affaires ; cartes face cachée (déguisement, cape, manifestation), invisibles pour l'adversaire.
-- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK), Progéniture, Cadeau, Fourrager, Dépense, Vaillance et Saisons (BLB), endurance, rafale, renouveau et présages (TDM), flétrir, Vivid, changelin, contempler, flétrissure et conspiration (ECL), éminence, myriade, annihilateur, exhumation, victime et nombres choisis secrètement (Commander), Rôles, Célébration, Aventures et Marchandage (WOE), Repartee, Infusion, Opus, Increment, cascade et miracle (SOS), suspect, déguisement, cape et réunir des preuves (MKM), maîtrise de l'eau, de la terre, du feu et de l'air et présage (TLA), montée en puissance, travail d'équipe, improvisation et marqueurs de bouclier (MSH), Web-slinging, chaos, émeute et créatures modifiées (SPM), faufilement, Mutagène, Alliance et Disparition (TMT), Storied, recrutement et marqueurs d'affûtage (HOB). Le détail par extension est dans `docs/extensions/`.
-- **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
+- **`submit(state, player, decision) → { state, events }`**: the engine advances on its own up to the next decision. It then gives the exhaustive list of legal options (`legalActions`), used by the interface, the AI and the autopilot.
+- **Autopilot** (`engine/src/autopilot.ts`): it answers trivial decisions. The engine itself stays strict. "Full control" mode disables the autopilot, except "End turn", which remains an explicit request. During your turn, it always stops at the second main phase: you end the turn yourself. Real decisions (commander returning to the command zone…) are never taken for you.
+- **Card effects**: they are serializable data (`engine/src/dsl.ts`), never code stored in the state.
+- **Rule 400.7**: an object that changes zone gets a new identifier (`id`). The `uid` identifier follows the physical card for animations.
+- **N players**: priority in turn order, APNAP order, one defender per attacker (player or planeswalker), player elimination (800.4a), free mulligan with three or more players.
+- **Commander** (903): commanders designated by their physical identity, command zone (tax, eminence), return offered to the owner, commander damage, color identity.
+- **Loops** (104.4b): a loop of mandatory actions is a draw, including a loop that accumulates tokens or triggers.
+- **Generic choices** (`choices.ts`): every question goes through a `ChoiceRequest` (choose, order, yes/no, number, distribute) with a suggested answer. A resolution can be suspended on a choice and then resumed; intermediate values ("if you do") are remembered in the resolution.
+- **Triggered abilities** (`triggers.ts`):
+  - detected at the moment of the event, with look-back for simultaneous deaths;
+  - put on the stack in APNAP order;
+  - "if…" conditions are rechecked on resolution;
+  - also handled: modal abilities, "once per turn", delayed and reflexive abilities, and emblems.
+- **Layers** (`layers.ts`):
+  - characteristics computed layer by layer (4 to 7): types, colors, granted or lost abilities, P/T;
+  - static abilities, including on "the equipped or enchanted creature";
+  - result cached by state version; the fuzz checks the cache.
+- **Stack**: targetable spells and abilities, counterspells, ward, "can't be countered".
+- **Attachments**: Auras (targeted on casting), Equipment ("Equip" read from the text), state-based actions 704.5m–n.
+- **Planeswalkers**: loyalty, loyalty abilities (one per turn), planeswalker attacks, emblems.
+- **Replacements and prevention** (`replacement.ts`) and **costs** (`mana.ts`, `stack.ts`):
+  - replacements: exile instead of dying, entering tapped or with counters (including imposed by another permanent), prevention;
+  - numeric event replacements as data (`eventReplacement`, 616.1): damage, life loss and gain, draw, mill, counters, tokens, mana and untap ("plus N more", "twice that many", prevention, "the next time" shields), in the order most favorable to the affected player;
+  - costs: hybrid, additional costs, flashback, reductions, sacrifice or counters as a cost, activation from the graveyard.
+- **Multi-faced cards**: adventures and omens, double-faced cards (transform, modal faces, Sagas on the back), split cards and Rooms, meld; Sagas, Classes and Cases; face-down cards (disguise, cloak, manifest), hidden from the opponent.
+- **Set mechanics**: among others, prepare (FRA), warp and station (EOE), speed, exhaust and Vehicles (DFT), plot, spree and crimes (OTJ), job select and tiered (FIN), Rooms, manifest dread, Eerie, Survival, Delirium and Impending (DSK), Offspring, Gift, Forage, Expend, Valiant and Seasons (BLB), endure, flurry, renew and omens (TDM), blight, Vivid, changeling, behold, wither and conspire (ECL), eminence, myriad, annihilator, delve, casualty and secretly chosen numbers (Commander), Roles, Celebration, Adventures and Bargain (WOE), Repartee, Infusion, Opus, Increment, cascade and miracle (SOS), suspect, disguise, cloak and collect evidence (MKM), waterbending, earthbending, firebending and airbending, and omens (TLA), power-up, teamwork, improvise and shield counters (MSH), Web-slinging, chaos, riot and modified creatures (SPM), sneak attack, Mutagen, Alliance and Vanishing (TMT), Storied, recruit and sharpening counters (HOB). The details per set are in `docs/extensions/`.
+- **Performance**: `submit` copies the state then mutates it (no Immer); AI simulations use `applyMutable` on a working copy.
 
-## Ajouter une carte
+## Adding a card
 
-Les caractéristiques d'une carte (coût, types, F/E, mots-clés, loyauté, garde, « Équiper », cycle, chapitres de Saga…) viennent de Scryfall. Une créature « vanilla » ou « french vanilla » fonctionne donc sans script. Sinon, on décrit son comportement dans `packages/cards/src/<ext>/*.ts` :
+A card's characteristics (cost, types, P/T, keywords, loyalty, ward, "Equip", cycling, Saga chapters…) come from Scryfall. A "vanilla" or "french vanilla" creature therefore works without a script. Otherwise, its behavior is described in `packages/cards/src/<ext>/*.ts`:
 
 ```ts
 "Burst Lightning": { kicker: "{4}", spell: spell([target.any()], [fx.damage(amount.kicked(4, 2), ref.target())]) },
 ```
 
-Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/smoke/`, un fichier par extension). Les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/<ext>.test.ts`). Pour une mécanique qui manque au moteur, `docs/moteur.md` indique où toucher.
+Every handled card is played automatically by the smoke test (`packages/ai/test/smoke/`, one file per set). New mechanics also get a rules test (`packages/engine/test/<ext>.test.ts`). For a mechanic the engine lacks, `docs/engine.md` says where to touch.
 
-**Ajouter une extension :**
-1. `npm run coverage -- --set <EXT> --text` donne les textes des cartes restantes.
-2. Écrire les scripts par lots (A : cartes simples ; B : mécaniques phares ; C et suivants : cartes uniques), avec `npm run verify -- --set <EXT>` puis un commit par lot. Chaque lot ajoute ses tests de règles (`engine/test/<ext>.test.ts`) et suit les règles de CLAUDE.md (pas de nouveau drapeau propre à une carte, remplacements en `eventReplacement`).
-3. Terminer par `npm run verify -- --full`.
+**Adding a set:**
+1. `npm run coverage -- --set <EXT> --text` gives the texts of the remaining cards.
+2. Write the scripts in batches (A: simple cards; B: flagship mechanics; C and following: unique cards), with `npm run verify -- --set <EXT>` then one commit per batch. Each batch adds its rules tests (`engine/test/<ext>.test.ts`) and follows the rules of CLAUDE.md (no new single-card flag, replacements through `eventReplacement`).
+3. Finish with `npm run verify -- --full`.
 
-## État
+## Status
 
-| Étape | Contenu | État |
+| Stage | Content | Status |
 |---|---|---|
-| 1. Fondations | monorepo, TS strict, Biome, Vitest, import Scryfall FDN | ✅ |
-| 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
-| 3. Client contre l'IA | plateau façon MTGA (créatures devant ; terrains, puis artefacts, puis enchantements derrière ; zone des planeswalkers à part, tout à droite ; attachements et cartes exilées sur leur hôte ; exil consultable ; piles de jetons « ×N » ; lignes multiples et taille des cartes adaptées à la place), main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
-| 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
-| 4b. Deckbuilder | collection filtrable, deck et réserve, validation 60/4/15 (Standard, Sans limite) et Commander (100 cartes, commandant, identité, Game Changers), import et export de decklists (MTGA, MTGO, Moxfield, noms FR), illustrations au choix, persistance | ✅ |
-| 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |
-| 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
-| 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
-| 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
-| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅, Murders at Karlov Manor ✅, Avatar: The Last Airbender ✅, Marvel Super Heroes ✅, Marvel's Spider-Man ✅, Teenage Mutant Ninja Turtles ✅, The Hobbit ✅ : tout le Standard est couvert | ✅ |
-| 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
-| 6. JcJ en ligne | de 2 à 4 joueurs (Standard, Sans limite, Commander), sièges IA : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, reprise après redémarrage, revanche, BO3 en duel | ✅ ; déploiement pm2 + nginx documenté |
-| 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; tutoriel ✅ ; musique | en cours |
-| 8. Commander | règles du format, de 2 à 4 joueurs, contre l'IA et en ligne ; decks ajoutés un par un (12 préconstruits, 653 cartes propres au Commander) | ✅ en cours d'enrichissement |
+| 1. Foundations | monorepo, strict TS, Biome, Vitest, FDN Scryfall import | ✅ |
+| 2. Engine core | turns and phases, priority and stack, mana, combat and keywords, state-based actions, London mulligan, X, kicker, modal spells, activated abilities, tokens | ✅ |
+| 3. Client against the AI | MTGA-style board (creatures in front; lands, then artifacts, then enchantments behind; planeswalker zone apart, far right; attachments and exiled cards on their host; browsable exile; "×N" token stacks; multiple rows and card size adapted to the space), fanned hand, drag and drop, arrows, phase bar and stops, autopilot, log | ✅ |
+| 4a. Engine foundations | N players, generic choices, triggers, layers, replacements, costs, performance | ✅ |
+| 4b. Deckbuilder | filterable collection, deck and sideboard, 60/4/15 validation (Standard, Unlimited) and Commander (100 cards, commander, identity, Game Changers), decklist import and export (MTGA, MTGO, Moxfield, French names), illustrations of your choice, persistence | ✅ |
+| 4c. FDN, main set (no. 1 to 281) | batches A (long tail) to F (unique mechanics: casting permissions, doublings, protection, choices on entering, restricted mana, spell copying…) | ✅ **276 / 276** |
+| 4d. FDN, reprints (no. 282 and up) | cards of the starter decks and the Starter Collection | ✅ **241 / 241** (517 / 517 for all of FDN) |
+| 4e. Standard legality | imported Scryfall legalities, list of banned cards, format validation in the deckbuilder | ✅ |
+| 4f. Multi-faced cards | adventures, double-faced, split cards and Rooms, Sagas, Classes, Cases, face-down, meld | ✅ |
+| 4g. Other Standard sets | one set at a time: Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅, Murders at Karlov Manor ✅, Avatar: The Last Airbender ✅, Marvel Super Heroes ✅, Marvel's Spider-Man ✅, Teenage Mutant Ninja Turtles ✅, The Hobbit ✅: all of Standard is covered | ✅ |
+| 5. AI | three selectable levels (beginner, medium, high); evaluation on lasting characteristics; attacks and blocks by simulation; ISMCTS in duels (determinization of hidden information), time budget; AI tournament (`npm run arena`); guide: docs/ai.md | ✅ |
+| 6. Online PvP | 2 to 4 players (Standard, Unlimited, Commander), AI seats: Node `ws` server (`GameHost`, filtered views and faces), room code, rope, reconnection, resume after restart, rematch, BO3 in duels | ✅; pm2 + nginx deployment documented |
+| 7. Finishing touches | sound effects ✅; tablet and phone ✅; Scryfall image relay ✅; replays (seed + decisions) ✅; token images ✅; tutorial ✅; music | in progress |
+| 8. Commander | format rules, 2 to 4 players, against the AI and online; decks added one by one (12 precons, 653 Commander-only cards) | ✅ being extended |
 
-Le suivi (état, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md), l'historique dans [docs/historique.md](docs/historique.md), les plans dans [docs/plans/](docs/plans/) (le dernier : [PLAN-E.md](docs/plans/PLAN-E.md), le Commander). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
+The tracking (status, conventions, pitfalls) is in [CLAUDE.md](CLAUDE.md), the history in [docs/history.md](docs/history.md), the open items in [docs/backlog.md](docs/backlog.md), and the current plan in [docs/plans/PLAN-I.md](docs/plans/PLAN-I.md) (bilingual application and English code and documents). Known approximations are in [docs/approximations.md](docs/approximations.md), and the details of each set in [docs/extensions/](docs/extensions/).
 
-## Cadre légal
+## Legal notice
 
-Le code du projet est sous licence [MIT](LICENSE). Elle ne couvre pas ce qui appartient à Wizards of the Coast (noms, textes et illustrations des cartes, symboles de mana, marques) ni les données et images de Scryfall.
+The project's code is under the [MIT](LICENSE) license. It does not cover what belongs to Wizards of the Coast (card names, texts and illustrations, mana symbols, trademarks) nor Scryfall's data and images.
 
-Projet de fan gratuit et non commercial ([Fan Content Policy](https://company.wizards.com/fancontentpolicy) de Wizards of the Coast). Les images restent hébergées par Scryfall et ne sont pas copiées dans le dépôt. Le relais du serveur les transmet telles quelles, sans les stocker ailleurs que dans le cache de nginx. Les effets sonores sont des packs de [Kenney](https://www.kenney.nl) sous licence CC0 (`packages/client/public/sounds/LICENSE-kenney.txt`).
+Free, non-commercial fan project ([Fan Content Policy](https://company.wizards.com/fancontentpolicy) of Wizards of the Coast). Images stay hosted by Scryfall and are not copied into the repository. The server relay passes them on as they are, without storing them anywhere but in nginx's cache. The sound effects are packs by [Kenney](https://www.kenney.nl) under the CC0 license (`packages/client/public/sounds/LICENSE-kenney.txt`).

@@ -1,6 +1,6 @@
-// Dark Leo & Shredder — Ninjas et Foot Clan, blanc et noir. Liste « I Am Ninja, Sneaking in the Shadows » de Fullmoon
-// (Moxfield, bracket 4 : quatre Game Changers), mise à jour le 19/09/2026,
-// relevée le 08/10/2026. Source : https://moxfield.com/decks/TpG7A_Co0EyLNWVaEW1RpQ
+// Dark Leo & Shredder — Ninjas and Foot Clan, white and black. List "I Am Ninja, Sneaking in the Shadows" by Fullmoon
+// (Moxfield, bracket 4: four Game Changers), updated on 2026-09-19,
+// retrieved on 2026-10-08. Source: https://moxfield.com/decks/TpG7A_Co0EyLNWVaEW1RpQ
 Commander
 1 Dark Leo & Shredder
 

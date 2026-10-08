@@ -1,30 +1,30 @@
 # Outlaws of Thunder Junction + The Big Score (OTJ, BIG)
 
-**✅ 269 / 269 et 30 / 30** (lots A à C). Mécaniques et détail des lots (déplacé de CLAUDE.md).
+**✅ 269 / 269 and 30 / 30** (lots A to C). Mechanics and details of the lots (moved from CLAUDE.md).
 
-| Mécanique | Cartes | Lot |
+| Mechanic | Cards | Lot |
 |---|---:|---|
 | plot | 32 | A |
 | spree | 21 | A |
-| crimes (« chaque fois que vous commettez un crime ») | 26 | A |
-| hors-la-loi (Assassin, Mercenaire, Pirate, Voleur, Sorcier) | 13 | A |
-| monture | 17 | A (moteur de DFT) |
+| crimes ("whenever you commit a crime") | 26 | A |
+| outlaws (Assassin, Mercenary, Pirate, Rogue, Warlock) | 13 | A |
+| Mounts | 17 | A (DFT engine) |
 | hideaway (BIG) | 1 | C |
 
-- Lot A ✅ (OTJ 221/269). Il couvre :
-  - plot (702.170) : « Plot {coût} » est lu dans le texte ; action spéciale depuis la main au moment d'un rituel (`plotCard`, `GameObject.exiledVia` de sorte `plot`) ; la carte complotée se lance gratuitement depuis l'exil à un tour ultérieur, au moment d'un rituel (`CastTerms.sorceryTiming`) ; `fx.plot` (Aven Interrupter, Kellan Joins Up) et « quand cette carte devient complotée » (déclenché depuis l'exil) ;
-  - spree (702.172) : aide `spree(...)`, qui génère toutes les combinaisons de modes (`ModeDef.extraCost` additionnés, payés même si le sort est gratuit ; un mode trop cher n'est pas proposé) ;
-  - crimes (700.13) : cibler un adversaire, un objet qu'il contrôle ou une carte de son cimetière (`checkCrime` à la mise sur la pile des sorts, capacités et déclencheurs) ; `when.crime`, `cond.crime` ;
-  - marqueurs de capacité (122.1b : vol, lien de vie, contact mortel…), « si vous n'avez pas lancé de sort depuis votre main ce tour-ci », flash sous condition (`flashIf`), jetons X/X (`fx.createXXToken`), `perHand`, « jusqu'à la fin de votre prochain tour » pour les cartes exilées jouables ;
-  - `checkCondition` évalue désormais n'importe quel montant (sommes, force d'un objet…), et plus seulement les décomptes ;
-  - la pioche fait avancer la version d'état (Duelist of the Mind).
-- Lot B ✅ (**OTJ 269/269**) : 48 légendaires, rares et cartes uniques (`otj/unique.ts`). Le moteur gagne :
-  - les taxes d'attaque et de blocage (Archangel of Tithes : `attackTax`, `blockTax`), les surcoûts ou réductions selon la zone de lancement (`fromZones` : cimetière, exil), « un seul sort par tour » (High Noon), la taxe en PV des sorts qui ciblent (Terror of the Peaks) ;
-  - les créatures qui ont monté ou équipé un permanent ce tour-ci (`GameObject.crewedBy`, `ref.crewedBy`) ; l'équipage « une fois par tour » lu dans le texte ;
-  - la copie d'un sort de permanent (elle devient un jeton, 707.10) et la copie de capacités activées ou déclenchées ; le déclencheur « quand vous activez une capacité qui cible » (Ertha Jo) ;
-  - les emblèmes jusqu'à la fin du tour, le flashback {0}, les permissions de jouer une carte du cimetière d'un adversaire avec du mana de n'importe quel type, le plot à la résolution (Lilah) ;
-  - pile ou face (`fx.coinFlip`, événement public), étapes d'entretien supplémentaires (approximation : seuls les déclencheurs d'entretien), « chacun peut mélanger main et cimetière et piocher sept cartes », `exileOnResolve` ;
-  - les déclencheurs de légendaires doublés, les Auras qui volent les permanents moins chers (Eriette), le mana supplémentaire des jetons d'artefact (Roxanne), le bonus de blessures non de combat du tour (Taii Wakeen) ;
-  - les références à la carte du dessus d'une bibliothèque, aux cartes exilées d'un joueur, à tous les cimetières ; la copie liée à une carte exilée (Assimilation Aegis) ; les jetons légendaires et à F/E variables (Beau) ;
-  - le helper de test initialise le nombre de tours joués (`turnsTaken`, pour Jace Reawakened).
-- Lot C ✅ (**BIG 30/30**, `big/index.ts`) : hideaway (Collector's Cage, carte liée), Grand Abolisher (`lockOpponentsOnYourTurn`), Rest in Peace (`graveyardToExile`), Torpor Orb, Worldwalker Helm (jeton Carte en plus), Territory Forge (capacités activées de la carte liée, `gainLinkedActivated`), tirage au hasard parmi des cartes liées (Omenpath Journey), jetons copies 3/3 (Nexus of Becoming), montants « forces différentes » et « types de carte parmi ».
+- Lot A ✅ (OTJ 221/269). It covers:
+  - plot (702.170): "Plot {cost}" is read from the text; special action from the hand at sorcery timing (`plotCard`, `GameObject.exiledVia` of kind `plot`); the plotted card is cast for free from exile on a later turn, at sorcery timing (`CastTerms.sorceryTiming`); `fx.plot` (Aven Interrupter, Kellan Joins Up) and "when this card becomes plotted" (triggered from exile);
+  - spree (702.172): helper `spree(...)`, which generates all the combinations of modes (`ModeDef.extraCost` added up, paid even if the spell is free; a mode that is too expensive is not offered);
+  - crimes (700.13): targeting an opponent, an object they control or a card in their graveyard (`checkCrime` when spells, abilities and triggers are put on the stack); `when.crime`, `cond.crime`;
+  - ability counters (122.1b: flying, lifelink, deathtouch…), "if you haven't cast a spell from your hand this turn", conditional flash (`flashIf`), X/X tokens (`fx.createXXToken`), `perHand`, "until the end of your next turn" for exiled playable cards;
+  - `checkCondition` now evaluates any amount (sums, an object's power…), and not only counts;
+  - drawing advances the state version (Duelist of the Mind).
+- Lot B ✅ (**OTJ 269/269**): 48 legendary cards, rares and unique cards (`otj/unique.ts`). The engine gains:
+  - attack and block taxes (Archangel of Tithes: `attackTax`, `blockTax`), added costs or reductions depending on the casting zone (`fromZones`: graveyard, exile), "only one spell per turn" (High Noon), the life tax on spells that target (Terror of the Peaks);
+  - creatures that saddled or crewed a permanent this turn (`GameObject.crewedBy`, `ref.crewedBy`); "once per turn" Crew read from the text;
+  - copying a permanent spell (it becomes a token, 707.10) and copying activated or triggered abilities; the trigger "when you activate an ability that targets" (Ertha Jo);
+  - emblems until end of turn, flashback {0}, permissions to play a card from an opponent's graveyard with mana of any type, plot on resolution (Lilah);
+  - coin flip (`fx.coinFlip`, public event), extra upkeep steps (approximation: only upkeep triggers), "each player may shuffle their hand and graveyard into their library, then draw seven cards", `exileOnResolve`;
+  - doubled legendary triggers, Auras that steal cheaper permanents (Eriette), extra mana from artifact tokens (Roxanne), the turn's noncombat damage bonus (Taii Wakeen);
+  - references to the top card of a library, to a player's exiled cards, to all graveyards; the copy linked to an exiled card (Assimilation Aegis); legendary tokens and tokens with variable P/T (Beau);
+  - the test helper initializes the number of turns taken (`turnsTaken`, for Jace Reawakened).
+- Lot C ✅ (**BIG 30/30**, `big/index.ts`): hideaway (Collector's Cage, linked card), Grand Abolisher (`lockOpponentsOnYourTurn`), Rest in Peace (`graveyardToExile`), Torpor Orb, Worldwalker Helm (extra Map token), Territory Forge (activated abilities of the linked card, `gainLinkedActivated`), random pick among linked cards (Omenpath Journey), 3/3 copy tokens (Nexus of Becoming), amounts "different powers" and "card types among".

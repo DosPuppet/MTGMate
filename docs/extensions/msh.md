@@ -1,139 +1,139 @@
-# Marvel Super Heroes (MSH, 271 cartes)
+# Marvel Super Heroes (MSH, 271 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Extension demandée par l'utilisateur le 02/10/2026, après Avatar: The Last Airbender. 20 cartes étaient déjà gérées depuis la phase méta (lots M1 à M6, `docs/extensions/meta.md`) : montée en puissance (`activated({ powerUp: true })`), travail d'équipe (lu dans le texte, un kicker « engagez des créatures de force totale N »), exploiter (`fx.harness`, `cond.harnessed`), équiper digne, Doombot… L'extension suit les règles d'intégration de CLAUDE.md (dette, R1, R7). Découpage : un sous-lot et un commit par couleur pour le lot A, par mécanique pour le lot B, par famille de cartes uniques ensuite.
+Set requested by the user on 2026-10-02, after Avatar: The Last Airbender. 20 cards were already handled since the meta phase (lots M1 to M6, `docs/extensions/meta.md`): power-up (`activated({ powerUp: true })`), teamwork (read from the text, a kicker "tap creatures with total power N"), harness (`fx.harness`, `cond.harnessed`), equip worthy, Doombot… The set follows the integration rules of CLAUDE.md (debt, R1, R7). Breakdown: one sub-lot and one commit per color for lot A, per mechanic for lot B, per family of unique cards afterwards.
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Socle : jetons | 0 |
-| Cartes faisables avec le moteur, par couleur | A1 à A6 |
-| Mécaniques phares restantes | B |
-| Légendaires et cartes uniques | C et suivants |
+| Foundation: tokens | 0 |
+| Cards feasible with the engine, by color | A1 to A6 |
+| Remaining flagship mechanics | B |
+| Legendaries and unique cards | C and following |
 
-Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (incolores et terrains) et `legends`. Les aides sont dans `msh/common.ts`.
+The scripts are in `packages/cards/src/msh/`: `cards` (meta cards), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (colorless cards and lands) and `legends`. The helpers are in `msh/common.ts`.
 
-## Sous-lot 0 : socle ✅ (20 / 271)
+## Sub-lot 0: foundation ✅ (20 / 271)
 
-- **Jetons :** Méchant 2/1 noir avec la menace, Héros 3/2 blanc avec la vigilance, Robot Méchant 2/2 incolore (artefact), Mur 0/4 incolore avec le défenseur, Insecte 1/1 vert, Ondin 1/1 bleu ; Doombot existait ; Soldat, Indice, Trésor et Nourriture viennent des communs.
-- **Moteur :** rien de nouveau.
-- **Tests :** test de fumée `ai/test/smoke/msh.test.ts`.
+- **Tokens:** 2/1 black Villain with menace, 3/2 white Hero with vigilance, 2/2 colorless Villain Robot (artifact), 0/4 colorless Wall with defender, 1/1 green Insect, 1/1 blue Merfolk; Doombot existed; Soldier, Clue, Treasure and Food come from the commons.
+- **Engine:** nothing new.
+- **Tests:** smoke test `ai/test/smoke/msh.test.ts`.
 
-## Sous-lot A1 : cartes blanches ✅ (52 / 271)
+## Sub-lot A1: white cards ✅ (52 / 271)
 
-- **Cartes (32) :** Agent 13, Sharon Carter, Agent Phil Coulson, Agents of S.H.I.E.L.D., Avengers Assemble!, Borough Backup, Brave Brawler, Captain America, Wings of Freedom, Captain Mar-Vell, Space-Born, Colleen Wing, Street Samurai, Crowd of True Believers, Helicarrier Strike, Hero in Training, Invisible Woman, Sue Storm, Luke Cage, Power Man, Mockingbird, Ace Agent, Monica Rambeau // Photon, Living Light, Murdock's Crusade, Nick Fury, Agent of S.H.I.E.L.D., Night Nurse, Healer of Heroes, Okoye, Dora Milaje Leader, Origin of the Avengers, Panther Pounce, Patriot, Shield Wielder, Quake, Agent of S.H.I.E.L.D., Raft Security Officer, Red Guardian, Super-Soldier, The Sentry, Golden Guardian (jeton The Void), S.H.I.E.L.D. Spy Kit, Super Villain Lockup, Super-Soldier Serum, Wakandan Drone Flock, White Widow, Free Agent.
-- **Moteur :** rien de nouveau (« les deux si le travail d'équipe a été payé » : un mode sous `cond.kicked` ; flash sous condition par `playerStatic({ flashFor })`).
-- **Reste pour plus tard :** Agent Maria Hill (engagée pour payer un travail d'équipe), Captain America, Super-Soldier (marqueur de bouclier).
-- **Tests :** 35 tests de règles (« lot A, blanc »).
+- **Cards (32):** Agent 13, Sharon Carter, Agent Phil Coulson, Agents of S.H.I.E.L.D., Avengers Assemble!, Borough Backup, Brave Brawler, Captain America, Wings of Freedom, Captain Mar-Vell, Space-Born, Colleen Wing, Street Samurai, Crowd of True Believers, Helicarrier Strike, Hero in Training, Invisible Woman, Sue Storm, Luke Cage, Power Man, Mockingbird, Ace Agent, Monica Rambeau // Photon, Living Light, Murdock's Crusade, Nick Fury, Agent of S.H.I.E.L.D., Night Nurse, Healer of Heroes, Okoye, Dora Milaje Leader, Origin of the Avengers, Panther Pounce, Patriot, Shield Wielder, Quake, Agent of S.H.I.E.L.D., Raft Security Officer, Red Guardian, Super-Soldier, The Sentry, Golden Guardian (The Void token), S.H.I.E.L.D. Spy Kit, Super Villain Lockup, Super-Soldier Serum, Wakandan Drone Flock, White Widow, Free Agent.
+- **Engine:** nothing new ("both if teamwork was paid": a mode under `cond.kicked`; conditional flash through `playerStatic({ flashFor })`).
+- **Left for later:** Agent Maria Hill (tapped to pay a teamwork), Captain America, Super-Soldier (shield counter).
+- **Tests:** 35 rules tests ("lot A, white").
 
-## Sous-lot A2 : cartes bleues ✅ (86 / 271)
+## Sub-lot A2: blue cards ✅ (86 / 271)
 
-- **Cartes (34) :** Aerial Doombot, A.I.M. Scientists, Atlantean Cavalry, Atlantis Attacks, Attuma, Atlantean Warlord, Bold Biochemist, Bruce Banner // The Incredible Hulk, Depower, Echo, Perceptive Prodigy, Falcon, Winged Wonder, Falcon's Wing Harness, Frozen in Ice, Futurist Forge, Giant-Sized Flying Ant, Hydraulic Helper, I Am Iron Man, Iron Lad, Diverging Destiny, Justice, Vance Astrovik, Kang the Conqueror, Mister Fantastic, Reed Richards, Ms. Marvel, Kamala Khan, Multiversal Incursion, Pym Particles, Rewrite History, Secret Invasion, S.H.I.E.L.D. Deployment Drone, S.H.I.E.L.D. Flying Car, Shuri, Wakandan Inventor, Stature, Size Shifter, Super Intelligence, Super Suit, Thirst for Knowledge, Tony Stark // The Invincible Iron Man, Wiccan, Rising Magician.
-- **Moteur :** rien de nouveau. La connivence sert désormais à plusieurs cartes : son entrée de dette est retirée.
-- **Reste pour plus tard :** Ironheart, Clever Champion (improvisation), Kid Loki (« les créatures sur lesquelles vous avez mis des marqueurs ce tour-ci » dans une capacité statique), Leader, Super-Genius (remplacement de la connivence), Loki, God of Mischief (une capacité qui cible), Namor the Sub-Mariner (symboles bleus du coût d'un sort), Trickster's Stratagem (deuxième depuis le dessus).
-- **Tests :** 40 tests de règles (« lot A, bleu »).
+- **Cards (34):** Aerial Doombot, A.I.M. Scientists, Atlantean Cavalry, Atlantis Attacks, Attuma, Atlantean Warlord, Bold Biochemist, Bruce Banner // The Incredible Hulk, Depower, Echo, Perceptive Prodigy, Falcon, Winged Wonder, Falcon's Wing Harness, Frozen in Ice, Futurist Forge, Giant-Sized Flying Ant, Hydraulic Helper, I Am Iron Man, Iron Lad, Diverging Destiny, Justice, Vance Astrovik, Kang the Conqueror, Mister Fantastic, Reed Richards, Ms. Marvel, Kamala Khan, Multiversal Incursion, Pym Particles, Rewrite History, Secret Invasion, S.H.I.E.L.D. Deployment Drone, S.H.I.E.L.D. Flying Car, Shuri, Wakandan Inventor, Stature, Size Shifter, Super Intelligence, Super Suit, Thirst for Knowledge, Tony Stark // The Invincible Iron Man, Wiccan, Rising Magician.
+- **Engine:** nothing new. Connive now serves several cards: its debt entry is removed.
+- **Left for later:** Ironheart, Clever Champion (improvise), Kid Loki ("creatures you put counters on this turn" in a static ability), Leader, Super-Genius (connive replacement), Loki, God of Mischief (an ability that targets), Namor the Sub-Mariner (blue symbols in a spell's cost), Trickster's Stratagem (second from the top).
+- **Tests:** 40 rules tests ("lot A, blue").
 
-## Sous-lot A3 : cartes noires ✅ (120 / 271)
+## Sub-lot A3: black cards ✅ (120 / 271)
 
-- **Cartes (34) :** Agents of HYDRA, Arnim Zola, Bio-Fanatic, Baron Strucker, HYDRA Overlord, Construct a Cosmic Cube, Crossbones, Malicious Mercenary, Cruel Alliance, Dark Deed, Decoy Ploy, Doom Reigns Supreme, Elektra, Daughter of the Hand, Grim Reaper, Lethal Legionnaire, Hour of Defeat, HYDRA Infiltration, HYDRA Troopers, Kingpin's Enforcers, Madame Masque, The Masters of Evil, Moonstone, Harsh Mistress, Ninja of the Hand, Project Deathlok Soldier, Red Room Recruit, Robot Domination, Ronin, Shadow Stalker, Roxxon Brutes, Stolen Stark Tech, Super-Skrull, Swordsman, Sharp Scoundrel, Thunderbolts Conspiracy, Too Evil to Stay Dead, Unliving Legionnaire, Visions of Villainy, Whiplash, Vengeful Engineer, Widow's Bite, Yellowjacket, Heartless Marauder.
-- **Correctif du moteur :** le déclencheur « [cartes] mises dans une zone » (`when.zoneChange`) respecte `nontoken` et `token` : un jeton n'est pas une carte. Moonshadow (ECL, « cartes de permanent ») est corrigé ; test tiré des règles dans `rulings.test.ts`.
-- **Reste pour plus tard :** Baron Helmut Zemo (vantardise et coût en symboles noirs), Black Widow, Super Spy (exil jusqu'à une carte dans la bibliothèque d'un autre joueur), Klaw, Sonic Subjugator (défausse après une révélation partielle).
-- **Version des règles :** 46.
-- **Tests :** 41 tests de règles (« lot A, noir ») et 1 test tiré des règles.
+- **Cards (34):** Agents of HYDRA, Arnim Zola, Bio-Fanatic, Baron Strucker, HYDRA Overlord, Construct a Cosmic Cube, Crossbones, Malicious Mercenary, Cruel Alliance, Dark Deed, Decoy Ploy, Doom Reigns Supreme, Elektra, Daughter of the Hand, Grim Reaper, Lethal Legionnaire, Hour of Defeat, HYDRA Infiltration, HYDRA Troopers, Kingpin's Enforcers, Madame Masque, The Masters of Evil, Moonstone, Harsh Mistress, Ninja of the Hand, Project Deathlok Soldier, Red Room Recruit, Robot Domination, Ronin, Shadow Stalker, Roxxon Brutes, Stolen Stark Tech, Super-Skrull, Swordsman, Sharp Scoundrel, Thunderbolts Conspiracy, Too Evil to Stay Dead, Unliving Legionnaire, Visions of Villainy, Whiplash, Vengeful Engineer, Widow's Bite, Yellowjacket, Heartless Marauder.
+- **Engine fix:** the trigger "[cards] put into a zone" (`when.zoneChange`) respects `nontoken` and `token`: a token is not a card. Moonshadow (ECL, "permanent cards") is fixed; test drawn from the rules in `rulings.test.ts`.
+- **Left for later:** Baron Helmut Zemo (boast and cost in black symbols), Black Widow, Super Spy (exile until a card in another player's library), Klaw, Sonic Subjugator (discard after a partial reveal).
+- **Rules version:** 46.
+- **Tests:** 41 rules tests ("lot A, black") and 1 test drawn from the rules.
 
-## Sous-lot A4 : cartes rouges ✅ (147 / 271)
+## Sub-lot A4: red cards ✅ (147 / 271)
 
-- **Cartes (27) :** Crimson Operative, Death to Our Enemies, Fin Fang Foom, Hawkeye, Master Marksman, Hawkeye's Bow, Hex Magic, Hire a Crew, HULK SMASH!, Human Torch, Johnny Storm, HYDRA Assault Robot, Iron Fist, Living Weapon, Jessica Jones, Private Eye, K'un-Lun Warrior, Machinesmith Automaton, Misty Knight, Hero for Hire, Photon Blast Barrage, Quicksilver, Brash Blur, Red Hulk, Repulsor Blast, The Scarlet Witch, Speed, Young Avenger, Stark Industries Executive, Super Speed, Team Tactics, Truck Toss, Vision of Love, Volcanic Villain.
-- **Moteur :** rien de nouveau (Plans à marqueurs comme Political Triumph, copies de sorts avec nouvelles cibles, « ne peut être bloquée que par des créatures avec la célérité »).
-- **Reste pour plus tard :** Evil's Thrall (contrôle jusqu'à la fin de votre prochain tour), Hawkeye, Young Avenger (blessures augmentées de la force de la source), Loki Laufeyson (« le prochain sort de valeur de mana au plus sa force »), Wonder Man, Hollywood Hero (réactiver une montée en puissance).
-- **Tests :** 34 tests de règles (« lot A, rouge »).
+- **Cards (27):** Crimson Operative, Death to Our Enemies, Fin Fang Foom, Hawkeye, Master Marksman, Hawkeye's Bow, Hex Magic, Hire a Crew, HULK SMASH!, Human Torch, Johnny Storm, HYDRA Assault Robot, Iron Fist, Living Weapon, Jessica Jones, Private Eye, K'un-Lun Warrior, Machinesmith Automaton, Misty Knight, Hero for Hire, Photon Blast Barrage, Quicksilver, Brash Blur, Red Hulk, Repulsor Blast, The Scarlet Witch, Speed, Young Avenger, Stark Industries Executive, Super Speed, Team Tactics, Truck Toss, Vision of Love, Volcanic Villain.
+- **Engine:** nothing new (enchantments with plan counters like Political Triumph, spell copies with new targets, "can be blocked only by creatures with haste").
+- **Left for later:** Evil's Thrall (control until the end of your next turn), Hawkeye, Young Avenger (damage increased by the source's power), Loki Laufeyson ("the next spell with mana value at most its power"), Wonder Man, Hollywood Hero (reactivate a power-up).
+- **Tests:** 34 rules tests ("lot A, red").
 
-## Sous-lot A5 : cartes vertes ✅ (180 / 271)
+## Sub-lot A5: green cards ✅ (180 / 271)
 
-- **Cartes (33) :** Ant-Man's Army, Call Damage Control, Claim the Kingdom, Doc Samson, Super Psychiatrist, Earth's Mightiest Heroes, Epic Fight, Go Nuts!, Guerrilla Gorilla, Hellcat, Undying Vigilante, Hercules, Prince of Power, Heroic Feast, Hulkling, Burgeoning Bruiser, Ka-Zar of the Savage Land, Knight of Wundagore, Mister Hyde, Monster Within, Mole Man, Moloid Master, Pet Avengers, Punishing Punch, Rapid Rescue, Reptil, Dinomorpher, Restorative Technique, Rick Jones, Destined Sidekick, Serpent Specialist, She-Hulk, Jade Defender, Super Strength, The Thing, Ben Grimm, Tigra, Feline Fury, Training Regimen, The Unbeatable Squirrel Girl, Undercover Skrull, Wakandan Royal Guard, White Tiger, Ava Ayala, World War Hulk.
-- **Moteur :** rien de nouveau (remplacement de marqueurs de Doc Samson sur le cadre `eventReplacement`, terrains joués depuis la bibliothèque et le cimetière, F/E de base et types remplacés de Reptil).
-- **Reste pour plus tard :** Shang-Chi, Master of Kung Fu (activer comme si elles avaient la célérité), Powerful Broker (prolifération limitée à une cible).
-- **Tests :** 40 tests de règles (« lot A, vert »).
+- **Cards (33):** Ant-Man's Army, Call Damage Control, Claim the Kingdom, Doc Samson, Super Psychiatrist, Earth's Mightiest Heroes, Epic Fight, Go Nuts!, Guerrilla Gorilla, Hellcat, Undying Vigilante, Hercules, Prince of Power, Heroic Feast, Hulkling, Burgeoning Bruiser, Ka-Zar of the Savage Land, Knight of Wundagore, Mister Hyde, Monster Within, Mole Man, Moloid Master, Pet Avengers, Punishing Punch, Rapid Rescue, Reptil, Dinomorpher, Restorative Technique, Rick Jones, Destined Sidekick, Serpent Specialist, She-Hulk, Jade Defender, Super Strength, The Thing, Ben Grimm, Tigra, Feline Fury, Training Regimen, The Unbeatable Squirrel Girl, Undercover Skrull, Wakandan Royal Guard, White Tiger, Ava Ayala, World War Hulk.
+- **Engine:** nothing new (Doc Samson's counter replacement on the `eventReplacement` frame, lands played from the library and the graveyard, Reptil's base P/T and replaced types).
+- **Left for later:** Shang-Chi, Master of Kung Fu (activate as though they had haste), Powerful Broker (proliferate limited to one target).
+- **Tests:** 40 rules tests ("lot A, green").
 
-## Sous-lot A6 : multicolores, incolores et terrains ✅ (240 / 271)
+## Sub-lot A6: multicolor, colorless and lands ✅ (240 / 271)
 
-- **Multicolores (30) :** Abomination, Terrifying Titan, Alien Invasion, Ant-Man, Colony Commander, Armor Wars, Avengers: Under Siege, Beast, Erudite Aerialist, Black Panther, Vanguard, Black Widow, Double Agent, Bullseye, Death Dealer, Cloak and Dagger, Entwined, The Coming of Galactus, Daredevil, Man Without Fear, Ghost, Spectral Saboteur, Iron Man, Master of Machines, Kang, Temporal Tyrant, Killmonger, Scourge of Wakanda, King T'Challa // Black Panther, Hope Enduring, The Kingpin of Crime, Madame Hydra, The Mighty Thor, Jane Foster, Moon Girl and Devil Dinosaur, Speedball, New Warrior, Spider-Man, To the Rescue, Spider-Woman, Secret Agent, The Super Hero Civil War, Thanos, the Mad Titan, U.S.Agent, John Walker, Vision Quest, War Machine, Legacy of Iron, Winter Soldier, Icy Assassin.
-- **Incolores et terrains (30) :** A.I.M. Synthoids, Captain America's Shield, Cosmic Cube, Dependable Quinjet, H.E.R.B.I.E. Scout Unit, Iron Man Armor, S.H.I.E.L.D. Helicarrier, The Ten Rings, Ultron, Artificial Malevolence, Ultron Drone, Vibranium Energy Daggers, The Vision, Viv Vision, Teen Synthezoid, A.I.M. Labs, Asgardian Citadel, Avengers Hangar, Avengers Tower, Baxter Building, Birnin Zana Plaza, Dark Fortress, Fisk Tower, Gathering Place, Hell's Kitchen, Los Diablos Missile Base, Pym Technologies, Stark Industries, Subterranean Cavern, Surveillance Room, Training Compound, Villainous Hideout.
-- **Correctifs du moteur (tests tirés des règles dans `rulings.test.ts`) :**
-  - les dernières informations d'un permanent sont prises avant son retrait du combat (506.4) : « quand une créature attaquante meurt » se déclenche enfin ;
-  - un Équipement qui devient une créature se détache (301.5c, 704.5n) : Iron Man Armor animée ;
-  - une carte de la bibliothèque lancée par une permission (« lancez-la maintenant ») suit le timing de la permission ;
-  - les F/E définies par une capacité lisent « légendaire » dans leurs filtres.
-- **Dette :** le contrôle « tant que [la source] » (`gainControlWhileSource`) sert désormais à plusieurs cartes : son entrée est retirée.
-- **Reste pour plus tard :** Ares, God of War, Absorbing Man, Taskmaster, The Astonishing Ant-Man, Captain America, Living Legend, Hulk, Gamma Goliath, The Ruinous Wrecking Crew, Scientist Supreme of A.I.M., The Serpent Society, Storm, Windrider, Titania, Rugged Rumbler, Worlds Within Worlds, Arc Reactor, Super-Adaptoid.
-- **Version des règles :** 47.
-- **Tests :** 34 tests de règles (« lot A, multicolores »), 24 (« lot A, incolores et terrains ») et 3 tests tirés des règles.
+- **Multicolor (30):** Abomination, Terrifying Titan, Alien Invasion, Ant-Man, Colony Commander, Armor Wars, Avengers: Under Siege, Beast, Erudite Aerialist, Black Panther, Vanguard, Black Widow, Double Agent, Bullseye, Death Dealer, Cloak and Dagger, Entwined, The Coming of Galactus, Daredevil, Man Without Fear, Ghost, Spectral Saboteur, Iron Man, Master of Machines, Kang, Temporal Tyrant, Killmonger, Scourge of Wakanda, King T'Challa // Black Panther, Hope Enduring, The Kingpin of Crime, Madame Hydra, The Mighty Thor, Jane Foster, Moon Girl and Devil Dinosaur, Speedball, New Warrior, Spider-Man, To the Rescue, Spider-Woman, Secret Agent, The Super Hero Civil War, Thanos, the Mad Titan, U.S.Agent, John Walker, Vision Quest, War Machine, Legacy of Iron, Winter Soldier, Icy Assassin.
+- **Colorless and lands (30):** A.I.M. Synthoids, Captain America's Shield, Cosmic Cube, Dependable Quinjet, H.E.R.B.I.E. Scout Unit, Iron Man Armor, S.H.I.E.L.D. Helicarrier, The Ten Rings, Ultron, Artificial Malevolence, Ultron Drone, Vibranium Energy Daggers, The Vision, Viv Vision, Teen Synthezoid, A.I.M. Labs, Asgardian Citadel, Avengers Hangar, Avengers Tower, Baxter Building, Birnin Zana Plaza, Dark Fortress, Fisk Tower, Gathering Place, Hell's Kitchen, Los Diablos Missile Base, Pym Technologies, Stark Industries, Subterranean Cavern, Surveillance Room, Training Compound, Villainous Hideout.
+- **Engine fixes (tests drawn from the rules in `rulings.test.ts`):**
+  - the last known information of a permanent is taken before its removal from combat (506.4): "when an attacking creature dies" finally triggers;
+  - an Equipment that becomes a creature becomes unattached (301.5c, 704.5n): animated Iron Man Armor;
+  - a card from the library cast by a permission ("cast it now") follows the permission's timing;
+  - P/T defined by an ability read "legendary" in their filters.
+- **Debt:** control "for as long as [the source]" (`gainControlWhileSource`) now serves several cards: its entry is removed.
+- **Left for later:** Ares, God of War, Absorbing Man, Taskmaster, The Astonishing Ant-Man, Captain America, Living Legend, Hulk, Gamma Goliath, The Ruinous Wrecking Crew, Scientist Supreme of A.I.M., The Serpent Society, Storm, Windrider, Titania, Rugged Rumbler, Worlds Within Worlds, Arc Reactor, Super-Adaptoid.
+- **Rules version:** 47.
+- **Tests:** 34 rules tests ("lot A, multicolor"), 24 ("lot A, colorless and lands") and 3 tests drawn from the rules.
 
-## Sous-lot B1 : improvisation ✅ (242 / 271)
+## Sub-lot B1: improvise ✅ (242 / 271)
 
-- **Cartes (2) :** Arc Reactor, Ironheart, Clever Champion.
-- **Le moteur gagne :** l'improvisation (702.126), lue dans le texte (mot-clé `improvise`) : en payant le sort, chaque artefact dégagé peut payer {1} du générique (source du solveur de mana, comme la maîtrise de l'eau, sans plafond) ; elle peut aussi être donnée aux sorts du joueur (`playerStatic({ spellKeywords: { filter, keywords: ["improvise"] } })`, Ironheart : « vos sorts non-créature »).
-- **Version des règles :** 48.
-- **Tests :** 2 tests de règles (« lot B1 »).
+- **Cards (2):** Arc Reactor, Ironheart, Clever Champion.
+- **The engine gains:** improvise (702.126), read from the text (`improvise` keyword): when paying the spell, each untapped artifact can pay {1} of the generic cost (mana solver source, like waterbend, with no cap); it can also be given to the player's spells (`playerStatic({ spellKeywords: { filter, keywords: ["improvise"] } })`, Ironheart: "your noncreature spells").
+- **Rules version:** 48.
+- **Tests:** 2 rules tests ("lot B1").
 
-## Sous-lot B2 : marqueurs de bouclier et engagements ✅ (245 / 271)
+## Sub-lot B2: shield counters and tapping ✅ (245 / 271)
 
-- **Cartes (3) :** Captain America, Super-Soldier, Agent Maria Hill, Captain America, Living Legend.
-- **Le moteur gagne :**
-  - les marqueurs de bouclier (122.1c), règle du marqueur appliquée par le moteur : un permanent qui devrait subir des blessures ou être détruit perd un marqueur de bouclier à la place (un remplacement, pas une prévention) ;
-  - l'événement d'engagement porte sa cause (`cause: "teamwork"` : engagé pour payer un travail d'équipe) et dit s'il s'agit du premier engagement du tour (`tapsThisTurn`) ; le déclencheur `{ on: "taps", cause, firstThisTurn }`.
-- **Version des règles :** 49.
-- **Tests :** 4 tests de règles (« lot B2 »).
+- **Cards (3):** Captain America, Super-Soldier, Agent Maria Hill, Captain America, Living Legend.
+- **The engine gains:**
+  - shield counters (122.1c), the counter rule applied by the engine: a permanent that would be dealt damage or be destroyed loses a shield counter instead (a replacement, not a prevention);
+  - the tap event carries its cause (`cause: "teamwork"`: tapped to pay a teamwork) and says whether it is the first tapping of the turn (`tapsThisTurn`); the trigger `{ on: "taps", cause, firstThisTurn }`.
+- **Rules version:** 49.
+- **Tests:** 4 rules tests ("lot B2").
 
-## Sous-lot B3 : montée en puissance ✅ (247 / 271)
+## Sub-lot B3: power-up ✅ (247 / 271)
 
-- **Cartes (2) :** Hulk, Gamma Goliath, Wonder Man, Hollywood Hero.
-- **Le moteur gagne :**
-  - `abilityCost: { ability: "powerUp" }` : les modificateurs de coût des capacités visent les montées en puissance (Hulk : « celles de vos autres créatures coûtent {3} de moins ») ;
-  - les capacités à usage unique comptent leurs activations ; `powerUpExtraUses` permet d'activer chaque montée en puissance N fois de plus (Wonder Man ; entrée de dette justifiée).
-- **Approximation conservée :** Kang the Conqueror (« pendant ce tour, les montées en puissance ne peuvent pas être activées » : un tour supplémentaire ne porte pas encore d'effet).
-- **Version des règles :** 50.
-- **Tests :** 2 tests de règles (« lot B3 »).
+- **Cards (2):** Hulk, Gamma Goliath, Wonder Man, Hollywood Hero.
+- **The engine gains:**
+  - `abilityCost: { ability: "powerUp" }`: ability cost modifiers target power-ups (Hulk: "those of your other creatures cost {3} less");
+  - once-only abilities count their activations; `powerUpExtraUses` allows activating each power-up N more times (Wonder Man; justified debt entry).
+- **Approximation kept:** Kang the Conqueror ("this turn, power-up abilities can't be activated": an extra turn does not carry the effect yet).
+- **Rules version:** 50.
+- **Tests:** 2 rules tests ("lot B3").
 
-## Sous-lot C1 : caractéristiques, filtres et coûts ✅ (255 / 271)
+## Sub-lot C1: characteristics, filters and costs ✅ (255 / 271)
 
-- **Cartes (8) :** Super-Adaptoid, Ares, God of War, Namor the Sub-Mariner, Kid Loki, The Astonishing Ant-Man, Hawkeye, Young Avenger, Shang-Chi, Master of Kung Fu, Powerful Broker.
-- **Le moteur gagne :**
-  - le filtre `countersPutByYouThisTurn` (« sur lesquelles vous avez mis des marqueurs ce tour-ci ») lu aussi par les capacités statiques et les déclencheurs, et limité à une sorte (`countersPutByYouThisTurn: "+1/+1"`, Kid Loki) ;
-  - `playerStatic({ activateAsThoughHaste: filtre })` : activer les capacités {T} de ces créatures malgré le mal d'invocation, sans pouvoir attaquer (Shang-Chi ; entrée de dette justifiée) ;
-  - `modify.add: amount.powerOf(ref.self)` (`addSourcePower` avant PLAN-H H7a) : des blessures augmentées de la force de la source du remplacement (Hawkeye, avec `combat: false`) ;
-  - le coût `removeCountersX` (« retirez un nombre quelconque de marqueurs de cette créature », X = le nombre retiré) ;
-  - le montant `manaSymbolsOf(ref, couleur)` (symboles de mana d'une couleur dans un coût, hybrides compris : Namor) ;
-  - `fx.proliferate(n, cible)` : la prolifération sur les seuls objets ou joueurs désignés (Powerful Broker).
-- Ares et Super-Adaptoid profitent des correctifs du lot A6 (dernières informations d'une créature attaquante, « légendaire » dans les F/E définies par une capacité).
-- **Version des règles :** 51.
-- **Tests :** 8 tests de règles (« lot C1 »).
+- **Cards (8):** Super-Adaptoid, Ares, God of War, Namor the Sub-Mariner, Kid Loki, The Astonishing Ant-Man, Hawkeye, Young Avenger, Shang-Chi, Master of Kung Fu, Powerful Broker.
+- **The engine gains:**
+  - the filter `countersPutByYouThisTurn` ("that you put counters on this turn") also read by static abilities and triggers, and limited to one kind (`countersPutByYouThisTurn: "+1/+1"`, Kid Loki);
+  - `playerStatic({ activateAsThoughHaste: filter })`: activate the {T} abilities of those creatures despite summoning sickness, without being able to attack (Shang-Chi; justified debt entry);
+  - `modify.add: amount.powerOf(ref.self)` (`addSourcePower` before PLAN-H H7a): damage increased by the power of the replacement's source (Hawkeye, with `combat: false`);
+  - the cost `removeCountersX` ("remove any number of counters from this creature", X = the number removed);
+  - the amount `manaSymbolsOf(ref, color)` (mana symbols of a color in a cost, hybrids included: Namor);
+  - `fx.proliferate(n, target)`: proliferate on only the designated objects or players (Powerful Broker).
+- Ares and Super-Adaptoid benefit from the lot A6 fixes (last known information of an attacking creature, "legendary" in P/T defined by an ability).
+- **Rules version:** 51.
+- **Tests:** 8 rules tests ("lot C1").
 
-## Sous-lot C2 : copies, contrôle et cibles ✅ (263 / 271)
+## Sub-lot C2: copies, control and targets ✅ (263 / 271)
 
-- **Cartes (8) :** Absorbing Man, Taskmaster, Mercenary Mimic, Evil's Thrall, Loki, God of Mischief, Loki Laufeyson, Scientist Supreme of A.I.M., Storm, Windrider, Leader, Super-Genius.
-- **Le moteur gagne :**
-  - `fx.becomeCopy(…, "untilYourNextTurn", { except })` : une copie jusqu'à votre prochain tour, avec des exceptions de copie (707.9b : nom, types, surtypes, F/E, mots-clés) ; une carte de créature d'un cimetière peut être copiée (Taskmaster) ;
-  - la durée `endOfYourNextTurn` (« jusqu'à la fin de votre prochain tour ») et `fx.gainControl(…, { untilEndOfYourNextTurn })` ;
-  - la condition `cond.amountGreater(a, b)` (« un Méchant de valeur de mana supérieure ») ;
-  - `becomesTarget` avec `players` et `abilitiesOnly` (« un joueur ou un permanent devient la cible d'une de vos capacités ») ;
-  - le filtre de `nextSpell` figé à la résolution (Loki Laufeyson : « valeur de mana au plus sa force ») ;
-  - la cible `stackItems` avec `controller` et `source` (« une capacité que vous contrôlez d'une source artefact ») ;
-  - la référence `ref.targetsOfEventObject` (« ces créatures » : les cibles du sort lancé) ;
-  - l'événement remplaçable `connive` (Leader : piocher d'abord une carte).
-- **Version des règles :** 52.
-- **Tests :** 8 tests de règles (« lot C2 »).
+- **Cards (8):** Absorbing Man, Taskmaster, Mercenary Mimic, Evil's Thrall, Loki, God of Mischief, Loki Laufeyson, Scientist Supreme of A.I.M., Storm, Windrider, Leader, Super-Genius.
+- **The engine gains:**
+  - `fx.becomeCopy(…, "untilYourNextTurn", { except })`: a copy until your next turn, with copy exceptions (707.9b: name, types, supertypes, P/T, keywords); a creature card in a graveyard can be copied (Taskmaster);
+  - the duration `endOfYourNextTurn` ("until the end of your next turn") and `fx.gainControl(…, { untilEndOfYourNextTurn })`;
+  - the condition `cond.amountGreater(a, b)` ("a Villain with greater mana value");
+  - `becomesTarget` with `players` and `abilitiesOnly` ("a player or permanent becomes the target of an ability you control");
+  - the `nextSpell` filter fixed on resolution (Loki Laufeyson: "mana value at most its power");
+  - the `stackItems` target with `controller` and `source` ("an ability you control from an artifact source");
+  - the reference `ref.targetsOfEventObject` ("those creatures": the targets of the cast spell);
+  - the replaceable event `connive` (Leader: draw a card first).
+- **Rules version:** 52.
+- **Tests:** 8 rules tests ("lot C2").
 
-## Sous-lot C3 : coûts, main et bibliothèque ✅ (271 / 271)
+## Sub-lot C3: costs, hand and library ✅ (271 / 271)
 
-- **Cartes (8) :** Trickster's Stratagem, Baron Helmut Zemo, Black Widow, Super Spy, Klaw, Sonic Subjugator, The Ruinous Wrecking Crew, The Serpent Society, Titania, Rugged Rumbler, Worlds Within Worlds.
-- **Le moteur gagne :**
-  - `fx.topOrBottom(…, fromTop)` : « en deuxième position depuis le dessus ou au-dessous » ;
-  - « défaussez une carte ou payez {M} », en coût additionnel (`additionalCost.discardOr.mana`, choix proposé par l'interface et l'IA) et en garde (`ward.orMana`, lue dans le texte) ;
-  - la garde « recevez N marqueurs poison » (`ward.poison`, lue dans le texte) ;
-  - `fx.discard(…, { chooser: "controller", reveal })` : le joueur révèle d'abord N cartes de son choix, vous choisissez parmi elles ;
-  - `fx.pickFromZone(…, { who })` : chaque joueur choisit dans sa propre zone, pour lui-même ;
-  - `exileUntil` dans la bibliothèque d'un autre joueur (`who`) ;
-  - le coût `exileGraveyardSymbols` (« exilez des cartes [couleur] de votre cimetière totalisant N symboles »), la référence `ref.costExiled` et `castCopiesFree(…, { maxCount })` (vantardise de Baron Helmut Zemo).
-- **Version des règles :** 53.
-- **Tests :** 8 tests de règles (« lot C3 »).
+- **Cards (8):** Trickster's Stratagem, Baron Helmut Zemo, Black Widow, Super Spy, Klaw, Sonic Subjugator, The Ruinous Wrecking Crew, The Serpent Society, Titania, Rugged Rumbler, Worlds Within Worlds.
+- **The engine gains:**
+  - `fx.topOrBottom(…, fromTop)`: "second from the top or on the bottom";
+  - "discard a card or pay {M}", as an additional cost (`additionalCost.discardOr.mana`, choice offered by the interface and the AI) and as a ward (`ward.orMana`, read from the text);
+  - the ward "get N poison counters" (`ward.poison`, read from the text);
+  - `fx.discard(…, { chooser: "controller", reveal })`: the player first reveals N cards of their choice, you choose among them;
+  - `fx.pickFromZone(…, { who })`: each player chooses in their own zone, for themselves;
+  - `exileUntil` in another player's library (`who`);
+  - the cost `exileGraveyardSymbols` ("exile [color] cards from your graveyard with total N symbols"), the reference `ref.costExiled` and `castCopiesFree(…, { maxCount })` (Baron Helmut Zemo's boast).
+- **Rules version:** 53.
+- **Tests:** 8 rules tests ("lot C3").

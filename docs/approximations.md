@@ -1,284 +1,284 @@
-# Approximations connues
+# Known approximations
 
-À lever si une carte l'exige. Chercher le nom de la carte ou de la mécanique.
+To be lifted if a card requires it. Search for the name of the card or the mechanic.
 
-## Générales
+## General
 
-Chaque entrée porte sa nature :
+Each entry carries its nature:
 
-- `règle` : le résultat peut différer des règles officielles ;
-- `timing` : le bon résultat, mais un choix fait à un autre moment que dans les règles ;
-- `choix auto` : le moteur choisit à la place du joueur, comme souvent sur Arena.
+- `rule`: the result may differ from the official rules;
+- `timing`: the right result, but a choice made at a different moment than in the rules;
+- `auto choice`: the engine chooses in the player's place, as is often the case on Arena.
 
-- `timing` **Blocages en multijoueur :** déclarés l'un après l'autre en ordre APNAP, sans voir ceux des autres (cachés jusqu'au dernier défenseur), puis appliqués ensemble (509.1) ; les taxes de blocage sont payées à la déclaration.
-- `choix auto` **Remplacements « au lieu du cimetière » multiples (616.1) :** l'auto-remplacement passe d'abord (Progenitus), puis un seul « exilez-le à la place » s'applique, choisi pour le joueur affecté : il écarte ceux qui profitent à un adversaire (PV, carte liée), puis prend le plus ancien (`replaceGraveyard`).
-- `choix auto` **Remplacements qui modifient un nombre (616.1) :** blessures, marqueurs, PV gagnés, cartes piochées ou meulées, jetons créés, mana produit. L'ordre est choisi pour le joueur affecté, au mieux de ses intérêts (le moins de blessures, de marqueurs nuisibles et de cartes meulées, même quand il se meule lui-même ; le plus de PV, d'autres marqueurs, de cartes, de jetons et de mana, sauf au-delà de sa bibliothèque ; `chooseReplacementOrder`, `modifiers.ts`). Il ne peut pas choisir un ordre moins favorable. Au-delà de cinq remplacements du même événement, l'ordre du code.
-- `règle` **Dépendances de couches (613.8) :** les conditions des statiques, les « pour chaque » et les F/E définies par une capacité qui lisent des permanents sont réévalués sur le résultat des couches jusqu'à stabilité (trois passes au plus), plutôt que par l'ordre de dépendance de 613.8 : même résultat sauf en cas de dépendance circulaire. Restent :
-  - « une source qui perd toutes ses capacités n'applique plus ses statiques » : à un niveau seulement ;
-  - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
-- `timing` **Répartition (601.2d), adversaire du cadeau promis (702.174a) et nouvelles cibles d'une copie (707.10c) :** demandés juste après la mise sur la pile (coûts payés), avant que quiconque reçoive la priorité, et non pendant l'annonce ; une copie faite pendant une résolution choisit ses cibles à la fin de celle-ci. Une copie faite avant que l'original ait annoncé sa répartition annonce la sienne (`stackChoices.ts`) ; l'adversaire du cadeau, lui, est toujours celui de l'original (707.10), reporté sur la copie une fois choisi.
-- `choix auto` **Aura qui arrive sans être lancée, hors résolution** (retour d'un exil lié, actions basées sur l'état) : le premier hôte possible est choisi pour le joueur. Pendant une résolution (`moveTo`), le choix est demandé (303.4f).
-- `règle` **Eriette, the Beguiler :** modélisée par une statique, et non par le déclencheur « chaque fois qu'une Aura devient attachée » : le contrôle dure tant que l'Aura reste attachée, que la condition de valeur de mana tient et qu'Eriette est sur le champ de bataille (sa perte rend les permanents volés ; une nouvelle Eriette vole rétroactivement).
-- `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
-- `choix auto` **Effets « en arrivant » hors d'une résolution** (retour d'un exil lié, jeton copie créé par un effet, ninjutsu, faufilement, actions basées sur l'état ; 614.1c, 614.12) : seuls les choix sont faits (type, couleur, nom, mode, modèle d'une copie), avec la réponse suggérée ; les autres effets « en arrivant » ne le sont pas (Sin ne retire aucun marqueur, Mox Diamond arrive sans défausse, dévorer ne sacrifie rien), et l'émeute prend le choix par défaut. Un sort de permanent qui se résout, un terrain joué (la première question vient avec la décision, les suivantes prennent la suggestion) et un permanent mis sur le champ de bataille par un effet (`moveTo`, `arrivalChoices`) posent les questions au joueur (`asEntersChoices`, PLAN-H H9).
-- `choix auto` **Mana « en n'importe quelle combinaison » engagé à la main** (Vivi Ornitier, Flamebraider, Interdimensional Web Watch, Hermitic Herbalist) : tout le mana est d'une même couleur, choisie ; le paiement automatique d'un coût, lui, le répartit au mieux.
-- `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
-- `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder, Phyrexian Altar, Phyrexian Tower, Sunken Ruins… ; le paiement automatique ne sacrifie jamais de créature).
-- `choix auto` **Amasser (701.47a) :** les marqueurs vont sur votre première Armée (pas de choix quand vous en contrôlez plusieurs).
-- `timing` **Commandant vers une main ou une bibliothèque (903.9b) :** c'est un remplacement, mais la question (« Remettre … dans la zone de commandement ? ») est posée juste après son arrivée en main ou dans la bibliothèque, à la vérification suivante, comme depuis un cimetière ou l'exil (903.9a) ; un déclencheur « quand une carte est mise dans votre main » le verrait donc passer. Jamais répondue par l'automatisme.
-- `règle` **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
-- `règle` **Terrains choc mis en jeu au hasard par un effet** (une carte prise au hasard) : ils arrivent engagés, sans proposer de payer 2 points de vie ; mis en jeu par les autres effets (recherche, retour du cimetière, cartes regardées ou révélées), la question est posée au joueur qui les contrôlera.
-- `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** un déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape de blessures de combat, une passe d'actions basées sur l'état) ; les événements hors d'un lot (coûts payés en lançant un sort ou en activant une capacité) comptent comme un seul lot.
-- `règle` **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
-- `timing` **Coûts payés avant le mana :** un permanent exilé, renvoyé ou sacrifié pour un coût additionnel ou alternatif quitte le champ de bataille avant le paiement du mana : ses capacités de mana et ses remplacements de mana (Lavaleaper) ne servent plus à payer ce sort (601.2g-h permettrait d'engager du mana avant). Pour une capacité activée, les capacités de mana des permanents sacrifiés pour le coût servent d'abord.
-- `règle` **Recherche (701.23) :** une carte cherchée « et révélée » n'est pas révélée aux adversaires (Strixhaven Skycoach, Brave the Wilds, Celestial Reunion, Archdruid's Charm, Flourishing Bloom-Kin, Enlightened Tutor ; Herald's Horn ne révèle pas non plus la carte mise en main).
-- `choix auto` **Mana phyrexian :** le mana disponible paie d'abord ; des PV ne sont payés que pour les symboles qu'il ne couvre pas.
-- `choix auto` **« Le reste au-dessous de votre bibliothèque dans l'ordre de votre choix » :** dans un ordre aléatoire (Rediscover the Way, Commune with Nature, Avengers Tower) ; « remises au-dessus dans l'ordre de votre choix » : l'ordre n'est pas choisi (Rowan's Grim Search).
-- `règle` **Suspension (702.62) :** la célérité est donnée au prochain sort de créature lancé ce tour-ci, même si ce n'est pas la carte suspendue (aussi Taigam, Master Opportunist).
-- `choix auto` **Contrôler le tour d'un autre joueur** (Mindslaver, The Dominion Bracelet) : une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
-- `règle` **Jetons créés attaquants (508.4) :** un seul choix de défenseur pour tous les jetons qu'un même effet crée pour un même joueur (mobilisation…), alors que chaque jeton pourrait attaquer un défenseur différent ; les copies en plus d'un doubleur gardent le défenseur choisi pour leur joueur (myriade).
-- `règle` **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`engine/src/limits.ts`). Chaque coupure est notée au journal de la partie (« Plafond de sécurité atteint »).
+- `timing` **Blocks in multiplayer:** declared one after the other in APNAP order, without seeing those of the others (hidden until the last defender), then applied together (509.1); block taxes are paid at declaration.
+- `auto choice` **Multiple "instead of the graveyard" replacements (616.1):** the self-replacement goes first (Progenitus), then a single "exile it instead" applies, chosen for the affected player: it discards those that benefit an opponent (life, linked card), then takes the oldest (`replaceGraveyard`).
+- `auto choice` **Replacements that modify a number (616.1):** damage, counters, life gained, cards drawn or milled, tokens created, mana produced. The order is chosen for the affected player, to the best of their interests (the least damage, harmful counters and milled cards, even when they mill themselves; the most life, other counters, cards, tokens and mana, except beyond their library; `chooseReplacementOrder`, `modifiers.ts`). They cannot choose a less favorable order. Beyond five replacements of the same event, the order of the code.
+- `rule` **Layer dependencies (613.8):** the conditions of static abilities, "for each" and P/T defined by an ability that read permanents are re-evaluated on the result of the layers until stable (three passes at most), rather than by the dependency order of 613.8: same result except in case of circular dependency. What remains:
+  - "a source that loses all abilities no longer applies its static abilities": at one level only;
+  - a static ability granted by a resolution effect applies (Roar of the Fifth People), but not a static ability granted by another static ability (a test in `layers.test.ts` checks that no card needs it).
+- `timing` **Division (601.2d), opponent of the promised gift (702.174a) and new targets of a copy (707.10c):** asked right after the spell is put on the stack (costs paid), before anyone receives priority, and not during announcement; a copy made during a resolution chooses its targets at the end of it. A copy made before the original announced its division announces its own (`stackChoices.ts`); the gift's opponent, for its part, is always the original's (707.10), carried over to the copy once chosen.
+- `auto choice` **Aura that enters without being cast, outside a resolution** (return from a linked exile, state-based actions): the first possible host is chosen for the player. During a resolution (`moveTo`), the choice is asked (303.4f).
+- `rule` **Eriette, the Beguiler:** modeled by a static ability, and not by the trigger "whenever an Aura becomes attached": control lasts as long as the Aura stays attached, the mana value condition holds and Eriette is on the battlefield (losing her returns the stolen permanents; a new Eriette steals retroactively).
+- `rule` **Convoke:** a creature that has a mana ability is not used for convoke (it pays through its mana ability).
+- `auto choice` **"Enters" effects outside a resolution** (return from a linked exile, token copy created by an effect, ninjutsu, sneak, state-based actions; 614.1c, 614.12): only the choices are made (type, color, name, mode, model of a copy), with the suggested answer; the other "enters" effects are not (Sin removes no counters, Mox Diamond enters without a discard, devour sacrifices nothing), and riot takes the default choice. A permanent spell that resolves, a land played (the first question comes with the decision, the following ones take the suggestion) and a permanent put onto the battlefield by an effect (`moveTo`, `arrivalChoices`) ask the player the questions (`asEntersChoices`, PLAN-H H9).
+- `auto choice` **Mana "in any combination" committed by hand** (Vivi Ornitier, Flamebraider, Interdimensional Web Watch, Hermitic Herbalist): all the mana is of one chosen color; the automatic payment of a cost, for its part, distributes it as well as possible.
+- `auto choice` **Untap up to N lands:** the lands are chosen automatically.
+- `auto choice` **Mana abilities with a cost (605.1a):** they resolve without the stack, but only when activated by hand: the automatic payment does not use them (Ramos, Capital City, Loot, the Pathfinder, Phyrexian Altar, Phyrexian Tower, Sunken Ruins...; the automatic payment never sacrifices a creature).
+- `auto choice` **Amass (701.47a):** the counters go on your first Army (no choice when you control several).
+- `timing` **Commander to a hand or a library (903.9b):** it is a replacement, but the question ("Put ... into the command zone?") is asked right after its arrival in hand or in the library, at the next check, as from a graveyard or exile (903.9a); a trigger "when a card is put into your hand" would therefore see it go by. Never answered by the autopilot.
+- `rule` **"At the beginning of the end step, sacrifice this token":** modeled by a delayed ability rather than an ability of the token.
+- `rule` **Shock lands put onto the battlefield at random by an effect** (a card taken at random): they enter tapped, without offering to pay 2 life; put onto the battlefield by the other effects (search, return from the graveyard, cards looked at or revealed), the question is asked of the player who will control them.
+- `rule` **"One or more ..." triggers (Ketramose, Dredger's Insight):** one trigger per batch of simultaneous events (an effect of a resolution, a combat damage step, a state-based actions pass); events outside a batch (costs paid while casting a spell or activating an ability) count as a single batch.
+- `rule` **Ability counters:** they apply after the other layer 6 effects.
+- `timing` **Costs paid before the mana:** a permanent exiled, returned or sacrificed for an additional or alternative cost leaves the battlefield before the mana is paid: its mana abilities and its mana replacements (Lavaleaper) no longer help pay for that spell (601.2g-h would allow committing mana earlier). For an activated ability, the mana abilities of the permanents sacrificed for the cost are used first.
+- `rule` **Search (701.23):** a card searched for "and revealed" is not revealed to the opponents (Strixhaven Skycoach, Brave the Wilds, Celestial Reunion, Archdruid's Charm, Flourishing Bloom-Kin, Enlightened Tutor; Herald's Horn does not reveal the card put into hand either).
+- `auto choice` **Phyrexian mana:** the available mana pays first; life is only paid for the symbols it does not cover.
+- `auto choice` **"The rest on the bottom of your library in any order":** in a random order (Rediscover the Way, Commune with Nature, Avengers Tower); "put back on top in any order": the order is not chosen (Rowan's Grim Search).
+- `rule` **Suspend (702.62):** haste is given to the next creature spell cast this turn, even if it is not the suspended card (also Taigam, Master Opportunist).
+- `auto choice` **Controlling another player's turn** (Mindslaver, The Dominion Bracelet): an AI that controls another player's turn contents itself with the default decisions (pass, do not attack).
+- `rule` **Tokens created attacking (508.4):** a single choice of defender for all the tokens that one effect creates for one player (mobilize...), whereas each token could attack a different defender; the copies beyond a doubler keep the defender chosen for their player (myriad).
+- `rule` **Safety caps:** a single event creates at most 100 tokens, and none when the battlefield already holds 400 objects; a replaced amount (damage, counters, life, cards) is capped at one million. Token doublers that multiply (copies of Exalted Sunborn) otherwise gave an infinite number and a blocked game (`engine/src/limits.ts`). Each cut is noted in the game log ("Safety cap reached").
 
-### Hors règles du jeu
+### Outside the game rules
 
-- **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
-- **Phasing (Robe of Stars) :** les permanents hors phase ne sont pas affichés.
-- **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
+- **Standard legality:** snapshot of the Scryfall legalities at the time of import (`legalities.standard` in `data/<set>.json`). After a rotation or a ban announcement, reimport the sets (`npm run import-cards -- <set>`).
+- **Phasing (Robe of Stars):** phased-out permanents are not displayed.
+- **Token images:** that of the closest Scryfall token (same name, then same P/T and colors; `data/tokens.json`, `npm run import-tokens`); a token of unknown name keeps the text frame.
 
-## Carte par carte
+## Card by card
 
-Dans l'ordre où elles ont été ajoutées, extension par extension.
+In the order they were added, set by set.
 
-- **Plusieurs extensions :**
-  - `règle` Soulstone Sanctuary (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus ;
-  - `choix auto` Moonlit Meditation, Mirrormind Crown : « vous pouvez » est demandé pour les jetons créés par un effet de création de jetons ; ceux d'amasser, d'endurer ou d'un cadeau sont toujours remplacés par des copies.
-- **Foundations (`docs/extensions/fdn.md`) :**
-  - `règle` Sorcerous Spyglass : la main de l'adversaire n'est pas montrée avant le choix du nom (tout nom du catalogue peut être choisi ; les noms des permanents adverses sont proposés en tête) ;
-  - `choix auto` Quilled Greatwurm (et Dawnhand Dissident) : vous répartissez les marqueurs retirés entre vos créatures, mais la sorte des marqueurs retirés d'une même créature est choisie pour vous (les −1/−1 d'abord, les +1/+1 en dernier) ;
-  - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre .
-- **Final Fantasy (`docs/extensions/fin.md`) :**
-  - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
-  - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
-  - `règle` Memories Returning : vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous) ;
-  - `règle` Sin, Spira's Punishment : six copies au plus par déclenchement ;
-  - `règle` Zenos, Shinryu : l'adversaire choisi est le premier qui perd la partie ;
-  - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X.
-- **Aetherdrift (`docs/extensions/dft.md`) :**
-  - `règle` Skyseer's Chariot : « un nom de carte non-terrain » ; un nom de carte de terrain est aussi accepté (et peut être proposé) ;
-  - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
-  - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
-- **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`) :**
-  - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
-  - `règle` Riku of Many Paths : un seul mode, quel que soit le nombre de modes du sort ;
-  - `règle` Great Train Heist : les Trésors viennent des blessures infligées à n'importe quel adversaire.
-- **The Big Score (`docs/extensions/otj-big.md`) :**
-  - `règle` Memory Vessel : on peut encore jouer les cartes de sa main ;
-  - `règle` Grand Abolisher : les capacités de mana ne sont pas bloquées.
-- **Edge of Eternities (`docs/extensions/eoe.md`) :**
-  - `choix auto` Gene Pollinator : le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
-- **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
-  - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
-  - `timing` Sidisi, Regent of the Mire : la carte de VM X + 1 est ciblée par une capacité réflexive, une fois le coût payé ;
-  - `règle` Teval (cave) : une carte exilée paie {1} générique, mais aussi un {C} ; hors contrôle total, le paiement automatique utilise d'abord le mana, puis exile les cartes dans l'ordre du cimetière (en contrôle total, le joueur les choisit) ;
-  - `règle` New Way Forward : un sort choisi comme source est reconnu par sa seule carte (une autre copie de la même carte, quel que soit son contrôleur, serait aussi concernée) ; les blessures sont toutes prévenues, après les modifications (doublements) qui s'y appliquent ;
-  - `règle` Neriv, Heart of the Storm : une créature qui n'est plus sur le champ de bataille n'est pas « arrivée ce tour-ci ».
-- **Duskmourn (`docs/extensions/dsk.md`) :**
-  - `règle` Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
-  - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
-  - `règle` conditions non vérifiées : la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
-  - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
-  - `règle` Leyline of Transformation : seulement les créatures sur le champ de bataille (pas les sorts ni les cartes) ;
-  - `choix auto` Say Its Name : Altanak est cherché dans le cimetière, puis la main, puis la bibliothèque ;
-  - `règle` Marvin, Murderous Mimic : seulement les capacités activées imprimées des autres créatures (pas celles accordées) ;
-  - `choix auto` Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R}.
-- **Bloomburrow (`docs/extensions/blb.md`) :**
-  - `règle` Cadeau d'un permanent : s'il a quitté le champ de bataille avant que son déclencheur « cadeau promis » se résolve, le cadeau va à l'adversaire suivant dans l'ordre du tour, et non à l'adversaire choisi (exact en duel) ;
-  - `choix auto` Fourrager : choix automatique, trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois, sinon une Nourriture (un jeton de préférence) ;
-  - `timing` The Infamous Cruelclaw : la carte est défaussée avant de lancer le sort (et non comme coût de remplacement pendant le lancement) ;
-  - `choix auto` Portent of Calamity : les cartes exilées sont choisies automatiquement (une par type) ;
-  - `règle` Heirloom Epic : les créatures ne peuvent pas aider à payer ;
-  - `règle` Rottenmouth Viper : on sacrifie au plus autant de permanents que le coût générique à payer (un sacrifice de plus ne réduirait rien, mais compterait pour « chaque fois que vous sacrifiez ») ;
-  - `règle` Eluge : la réduction de coût est générique ({1} et non {U}) ;
-  - `règle` Alania : un sort d'Alania lancé plus tôt dans le tour compte comme sort de Loutre (le sort de Loutre suivant n'est plus « le premier ») ; Ral (emblème) : la réplique est comptée à la résolution (un sort lancé en réponse au déclenchement compte).
-- **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
-  - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
-  - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : la carte arrive créature Esprit volante, mais ses F/E de base ne deviennent 1/1 que juste après son arrivée ;
-  - `règle` The Myriad Pools : le permanent devient une copie du sort sur la pile ;
-  - `timing` Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
-  - `règle` Locus of Enlightenment : les capacités gagnées ne sont pas limitées à une activation par tour ;
-  - `timing` Ojer Kaslem : la carte de créature est mise sur le champ de bataille juste avant la carte de terrain (et non en même temps) ;
-  - `règle` Deep-Cavern Bat : seules les cartes non-terrain de la main adverse sont montrées, dans la fenêtre de choix ; sans carte non-terrain, la main n'est pas montrée.
-- **Reality Fracture (`docs/extensions/fra.md`) :**
-  - `choix auto` Theorist's Sanctum : on contemple un Jace en arrivant dès que c'est possible, sans révéler la carte ;
-  - `règle` Extrapolate the Impossible : ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu ») ;
-  - `règle` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 : emblèmes temporaires ; Garruk se déclenche quand vous attaquez (pas quand un autre joueur attaque un de vos adversaires, en multijoueur) et renforce toutes vos créatures attaquantes, même celles qui attaquent un planeswalker ou une bataille ;
-  - `règle` Emrakul, the Exigent Doom : la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée) ; lancée, elle dure jusqu'à ce que le sort soit lancé (601.2i) et peut servir à le payer.
-- **Méta Standard (plan P4, `docs/extensions/meta.md`) :**
-  - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
-  - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
-  - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
-  - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ; seul le générique est retiré : les symboles colorés ({R} de Cori-Steel Cutter, {U} de The Key to the Vault) et un coût autre (PV de Dark Knight's Greatsword, sacrifice de Shredder's Armor ou de Dissection Tools, défausse de Bloodthorn Flail) restent dus ;
-  - `règle` Interdimensional Web Watch : les deux mana servent à tout sort lancé ailleurs que depuis la main (et non seulement depuis l'exil).
-- **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
-  - `règle` Rhys, the Evermore : retire tous les marqueurs −1/−1 de la cible, et seulement ceux-là (ni le nombre ni les autres sortes de marqueurs ne se choisissent) ;
-  - `règle` Kindle the Inner Flame : contempler trois Élémentaux (flashback) est une condition de lancement : rien n'est choisi ni révélé ;
-  - `règle` Isilu, Carrier of Twilight, Rhys, the Evermore : la persistance accordée est une capacité déclenchée nommée « Persistance » (sans badge de mot-clé) ;
-  - `règle` Nameless Inversion : « perd tous ses types de créature » retire tous les sous-types et le changelin jusqu'à la fin du tour ;
-  - `règle` Foraging Wickermaw : cinq capacités (une par couleur), activables seulement tant qu'elle est incolore ;
-  - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
-  - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
-  - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
-  - `règle` Dream Harvest : une carte modale à verso terrain exilée peut aussi être jouée comme terrain (seuls ses sorts devraient se lancer) ;
-  - `timing` Raiding Schemes : la conspiration passe par une capacité déclenchée ; les deux créatures sont engagées à sa résolution, et non en lançant le sort ;
-  - `timing` Celestial Reunion : le coût additionnel facultatif est vérifié à la résolution, pour un type de la carte trouvée (le joueur le paie toujours quand il le peut) ; la carte passe par la main avant le champ de bataille ;
-  - `règle` Lasting Tarfire : « vous avez mis un marqueur » : le joueur qui met les marqueurs est le contrôleur de ce qui se résout, sinon (coût) le contrôleur du permanent ;
-  - `timing` Lavaleaper, Shimmerwilds Growth : le mana en plus (capacité de mana déclenchée, 605.1b) est ajouté avec le mana du terrain, comme un remplacement ; le solveur de paiement compte celui du même type, pas celui d'une autre couleur (Shimmerwilds Growth).
-- **Wilds of Eldraine (`docs/extensions/woe.md`) :**
-  - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
-  - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
-  - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
-  - `timing` Feral Encounter : « au début de la prochaine phase de combat de ce tour » passe par un emblème du tour ;
-  - `règle` Will, Scion of Peace, Rowan, Scion of War : la réduction « ce tour-ci » est accordée à la créature et cesse si elle quitte le champ de bataille ; X est relu à chaque sort ;
-  - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
-  - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
-  - `timing` Likeness Looter : la valeur de mana X de la carte ciblée est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage ;
-  - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur .
-- **Secrets of Strixhaven (`docs/extensions/sos.md`) :**
-  - `règle` Zimone's Experiment : les cartes révélées repassent sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main (comme Break Out) ;
-  - `règle` Silverquill, the Disputant : la victime accordée est une capacité déclenchée au lancement (sacrifice d'une créature, puis copie), et non un coût : on peut y répondre ;
-  - `timing` Prismari, the Inspiration : la tempête accordée compte les sorts lancés avant celui-ci à la résolution de la capacité (un sort lancé en réponse est compté) ;
-  - `règle` Dina's Guidance : la carte cherchée va en main, puis vous pouvez la mettre au cimetière ;
-  - `choix auto` Abstract Paintmage : {U}{R} est ajouté en deux choix d'une couleur (deux questions sans alternative) ;
-  - `règle` Transcendent Archaic : « si vous piochez une ou plusieurs cartes de cette façon » est « si X vaut 1 ou plus » ;
-  - `règle` cascade (Quandrix, the Proof) : la carte non lancée va au-dessous après les autres cartes exilées (et non dans un ordre aléatoire avec elles) ;
-  - `règle` Lorehold, the Historian : le miracle accordé est une capacité déclenchée à la première pioche du tour (la carte n'est pas révélée), qui propose de la lancer pour {2}.
-- **Murders at Karlov Manor (`docs/extensions/mkm.md`) :**
-  - `règle` suspect (701.60) : la menace et « ne peut pas bloquer » s'ajoutent après les effets de couche 6 ; un effet « perd toutes ses capacités » ne les retire pas ;
-  - `timing` Bubble Smuggler : « en étant retournée face visible, quatre marqueurs +1/+1 » est une capacité déclenchée (on peut y répondre) ;
-  - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
-  - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe) ;
-  - `timing` Archdruid's Charm, Flourishing Bloom-Kin : les cartes cherchées passent par la main avant que le terrain arrive engagé ; le mélange a lieu avant ;
-  - `timing` Crowd-Control Warden : retournée face visible, les marqueurs viennent d'une capacité déclenchée (à l'arrivée, c'est un remplacement) ;
-  - `règle` Break Out : la créature révélée repasse sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main ;
-  - `choix auto` Worldsoul's Rage : les terrains sont pris dans la main, puis dans le cimetière ;
-  - `règle` Rakdos, Patron of Chaos : un adversaire qui accepte sacrifie ce qu'il peut, et vous piochez quand même ;
-  - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée) ;
-  - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ;
-  - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution.
-- **Avatar: The Last Airbender (`docs/extensions/tla.md`) :**
-  - `choix auto` Maîtrise de l'eau, convocation, improvisation, cave : hors contrôle total, les objets qui paient sont choisis par le paiement automatique, après les terrains (comme sur Arena) ; en contrôle total, le joueur les choisit ;
-  - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact) ;
-  - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
-  - `timing` Elemental Teachings : les cartes trouvées passent par votre main (révélées), puis l'adversaire en choisit deux ;
-  - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition ;
-  - `règle` Azula, Cunning Usurper : les cartes exilées se lancent pendant votre tour avec du mana de n'importe quel type, mais sans le flash ;
-  - `règle` Bumi, Unleashed : « seules les créatures-terrains peuvent attaquer pendant ce combat » interdit d'attaquer, jusqu'à la fin du tour, aux créatures non-terrains présentes à la résolution ;
-  - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui de l'adversaire choisi ;
-  - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
-  - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges ;
-  - `règle` Secret of Bloodbending : sans maîtrise de l'eau, le contrôle vaut pour une phase de combat du prochain tour de l'adversaire ; si ce tour n'en a pas, il n'est pas reporté sur un tour suivant ;
-  - `règle` Firebender Ascension : « cette capacité » est la plus récente capacité de la créature sur la pile ; si elle s'est déjà résolue, rien n'est copié ;
-  - `règle` Koh, the Face Stealer : le choix retient un nom : si la carte choisie quitte l'exil, Koh garde ses capacités tant qu'une autre carte de même nom est exilée avec lui.
-- **Marvel Super Heroes (`docs/extensions/msh.md`) :**
-  - `règle` Raft Security Officer : « coûte {1} de moins si elle cible une créature de force 3 ou moins » est deux capacités ({1} avec une telle cible, {2} sinon) ; si la force de la cible dépasse 3 avant la résolution, la version à {1} perd sa cible ;
-  - `règle` Nick Fury, Agent of S.H.I.E.L.D. : une carte recto-verso mise sur le champ de bataille ne peut pas être transformée ;
-  - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
-  - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
-  - `règle` Cloak and Dagger, Entwined : la main n'est montrée qu'à travers ses cartes non-terrain proposées ; à la résolution, la créature ciblée n'est revérifiée que comme créature d'un adversaire (passée sous le contrôle d'un autre adversaire, elle reste une cible légale) ;
-  - `règle` The Kingpin of Crime : « blessent selon leur endurance » ne touche que les créatures présentes à la résolution ;
-  - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ;
-  - `règle` Cosmic Cube : la carte choisie parmi les six passe par l'exil le temps d'être lancée (visible de tous), puis va au-dessous si vous renoncez ;
-  - `règle` Kang the Conqueror : « pendant ce tour, les montées en puissance ne peuvent pas être activées » n'est pas appliqué au tour supplémentaire ;
-  - `choix auto` Baron Helmut Zemo : les cartes noires exilées pour la vantardise sont choisies par le moteur (les plus riches en {B} d'abord, le moins de cartes possible) ;
-  - `timing` Worlds Within Worlds : chaque joueur choisit et met ses créatures à tour de rôle (ordre APNAP), et non simultanément ;
-  - `règle` The Ruinous Wrecking Crew : « jusqu'à X modes » est écrit en combinaisons de modes, chacune sous la condition X ≥ son nombre de modes.
-- **Marvel's Spider-Man (`docs/extensions/spm.md`) :**
-  - `règle` Parker Luck : la carte du dessus n'est pas révélée explicitement ; chaque joueur perd ses PV puis la met en main (même résultat) ;
-  - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ;
-  - `règle` Maximum Carnage : au chapitre I, les exigences d'attaque (« attaque à chaque combat si possible, et un joueur autre que vous si possible ») ne visent que les créatures présentes à la résolution, pas celles qui arrivent ensuite ;
-  - `règle` Spinneret and Spiderling : le seuil de 4 blessures se lit par blessure infligée ; des blessures de combat réparties entre plusieurs bloqueurs (2 + 2) ne le déclenchent pas ;
-  - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse ;
-  - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type.
-- **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
-  - `règle` Turtles Forever : la recherche ne porte que sur la bibliothèque (rien hors de la partie), et « exactement quatre » n'est pas imposé (l'adversaire choisit parmi les cartes trouvées) ;
-  - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci ;
-  - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet ;
-  - `choix auto` Ninja Teen : un sort de créature lancé du cimetière par le faufilement donné renvoie l'attaquant non bloqué le plus faible.
-- **The Hobbit (`docs/extensions/hob.md`) :**
-  - `règle` Burglar's Plot : « deux permanents non-terrain ciblés qui partagent un type de carte » est un sort modal, un mode par type ;
-  - `règle` Bilbo, Thief in the Night : la réduction vaut pour les sorts lancés depuis un cimetière ou l'exil, pas depuis le dessus de la bibliothèque ; un artefact lancé ainsi puis contrecarré serait exilé ;
-  - `règle` Old Fat Spider Can't See Me : au chapitre II, la prévention est une capacité donnée à la créature, tant que la Saga reste ;
-  - `règle` Galion, Elvenking's Butler : « ses F/E de base deviennent celles de Galion » donne des F/E de base X/X (la force de Galion), puis corrige l'endurance d'un bonus ; un effet ultérieur qui fixe les F/E de base garderait ce bonus ;
-  - `règle` Bard, King of Dale : « la première carte que vous piochez pendant chacune de vos étapes de pioche » se lit « une pioche pendant votre étape de pioche, si vous n'avez encore pioché aucune carte ce tour-ci » ;
-  - `choix auto` Goblin Plate Mail : l'Équipement s'attache à l'Armée qui reçoit les marqueurs d'amasser (voir l'entrée générale).
-- **Rééditions, « Sans limite » (`docs/extensions/reeditions.md`) :**
-  - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » : une carte modale recto-verso dont le verso est un terrain pourrait être jouée par ce verso ;
-  - `règle` Cytoplast Manipulator : le contrôle dure tant que vous contrôlez le Manipulator (et non « tant qu'il reste sur le champ de bataille ») ;
-  - `choix auto` Gemstone Caverns : la carte exilée de la main est la carte non-terrain de plus petite valeur de mana (un terrain s'il n'y en a pas) ;
-  - `règle` Reflecting Pool : les types que produiraient les terrains du même genre (Reflecting Pool, Exotic Orchard) ou Command Tower ne comptent pas ;
-  - `règle` Drown in the Loch : « valeur de mana inférieure ou égale au nombre de cartes du cimetière de son contrôleur » est vérifiée à la résolution, pas au ciblage ;
-  - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
-  - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous ;
-  - `règle` All Will Be One : seuls les marqueurs mis sur des permanents déclenchent la capacité ;
-  - `choix auto` Force of Will, Force of Vigor, Daze : la carte exilée de la main est la moins chère qui convient ; l'Île renvoyée, une engagée d'abord ;
-  - `règle` Grim Giganotosaurus : « monstrueuse » est noté par un marqueur (visible) ;
-  - `règle` Henry Wu : la pioche et le Trésor font partie de la capacité d'exploitation qu'il donne (ils n'ont lieu que s'il est sur le champ de bataille quand elle se résout) ;
-  - `règle` Laboratory Maniac : la victoire qui remplace la pioche est constatée avec les actions basées sur l'état qui suivent (comme la défaite qu'elle remplace) ;
-  - `règle` Nyxbloom Ancient : le mana « en plus » d'un autre type (Utopia Sprawl, Shimmerwilds Growth) n'est pas triplé ;
-  - `règle` Mirri, Weatherlight Duelist : « ce combat » dure le tour (un combat supplémentaire reste limité) ;
-  - `règle` Shared Animosity : un attaquant changelin est compté comme partageant un type avec toute autre créature attaquante, même sans type de créature ;
-  - `règle` Outlaws' Merriment : le jeton « choisi au hasard » est tiré par un dé à trois faces (affiché au journal) ;
-  - `choix auto` Cresting Mosasaurus (émerger) : la créature sacrifiée est celle de plus grande valeur de mana ;
-  - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà (seulement en copiant un autre Flesh Duplicate : aucune carte gérée n'a la disparition imprimée) ;
-  - `règle` Hunting Velociraptor : la maraude demande des blessures de combat d'un Dinosaure (pas de n'importe quel type commun au sort) ;
-  - `règle` Ad Nauseam : le processus se répète au plus trente fois ;
-  - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
-  - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
-  - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;
-  - `règle` Painter's Servant : seuls les permanents prennent la couleur choisie (pas les sorts ni les cartes des autres zones) ;
-  - `règle` Sylvan Library : les deux cartes remises sont choisies parmi les cartes mises dans la main ce tour-ci (pas seulement celles piochées) ;
-  - `règle` Expropriate : pour le vote « argent » d'un adversaire, le permanent est choisi parmi ceux qu'il contrôle et que possède un de vos adversaires (et non parmi ceux qu'il possède, quel que soit leur contrôleur) ;
-  - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ;
-  - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour »).
-- **Commander, pseudo-ensemble EDH (`docs/extensions/edh.md`) :**
-  - `choix auto` Relic of Legends : la créature légendaire engagée est choisie par le moteur (d'abord une sans capacité de mana) ; le paiement automatique ne s'en sert qu'une fois par capacité ;
-  - `règle` New Blood : le changement de texte (612, « remplacez toutes les occurrences d'un type de créature par Vampire ») n'est pas fait ; la créature volée devient un Vampire en plus de ses autres types ;
-  - `règle` Orcish Bowmasters : « la première carte piochée lors de son étape de pioche » est la pioche de l'étape (504.1) ; si elle est remplacée ou passée, une pioche ultérieure de la même étape déclenche quand même.
-  - `choix auto` Rewind, Unwind, Frantic Search : « dégagez jusqu'à N terrains » ne dégage que vos terrains, choisis automatiquement ;
-  - `règle` Teferi's Protection : une Aura déjà attachée au joueur (malédiction) ne tombe pas.
-  - `règle` Forbidden Orchard : « quand vous engagez ce terrain pour du mana » se déclenche quand il devient engagé, quelle qu'en soit la raison ;
-  - `règle` Chromatic Orrery : « dépenser du mana comme s'il était de n'importe quelle couleur » vaut pour les sorts, pas pour les capacités activées ;
-  - `choix auto` Hellkite Courser : avec deux commandants dans la zone de commandement, les deux arrivent ; Command Beacon : les deux vont dans la main ;
-  - `choix auto` Zurgo and Ojutai : les deux cartes qui ne vont pas en main sont mises au-dessous dans un ordre aléatoire (pas au choix).
-  - `choix auto` Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl : une carte du bon type de la main est révélée d'office si possible ;
-  - `choix auto` Scholar of New Horizons : la carte de Plaine va sur le champ de bataille dès que c'est permis (sans proposer de la mettre en main) ; `règle` seul un marqueur +1/+1 peut être retiré pour le coût (et non un marqueur de n'importe quelle sorte) ;
-  - `règle` O'aka, Traveling Merchant : seul un marqueur +1/+1 peut être retiré pour le coût ;
-  - `règle` Pandemonium : la cible des blessures est choisie par le contrôleur de Pandemonium, pas par celui de la créature qui arrive (exact quand c'est la même personne) ;
-  - `règle` Emrakul, the World Anew : « protection contre les sorts » se lit contre les éphémères et les rituels (pas contre un sort d'Aura ou de permanent) ;
-  - `choix auto` Cryptolith Fragment : sa capacité de mana s'active à la main (le paiement automatique ne s'en sert pas) ;
-  - `règle` Wheel of Misfortune : les nombres sont choisis l'un après l'autre (dans l'ordre APNAP, sans voir ceux des autres), de 0 à 20 ;
-  - `règle` Gray Merchant of Asphodel, Creeping Bloodsucker : les PV gagnés sont calculés (dévotion par adversaire, nombre d'adversaires), pas lus sur les pertes et blessures réelles (différent seulement si elles sont remplacées) ;
-  - `règle` Keen Duelist : les cartes du dessus ne sont pas révélées explicitement.
-  - `règle` Incubateur (701.53) : la transformation est une modification permanente (créature-artefact Phyrexian 0/0), pas un passage au verso ; le jeton garde son nom ;
-  - `règle` The Ur-Sphinx : joueur par joueur, il meule puis vous pouvez lancer une de ses cartes (et non toutes les meules d'abord) ;
-  - `règle` Vigor : « quand elle est mise dans un cimetière depuis n'importe où, mélangez-la dans la bibliothèque » est un remplacement : elle est mélangée sans passer par le cimetière (comme les Eldrazi) ;
-  - `règle` Coin of Mastery : le mana produit en trop par des sources (Sol Ring pour un seul {1}) est d'abord retiré du mana des artefacts.
-  - `règle` Collective Effort : l'escalade se paie {1} par mode en plus (et non en engageant une créature) ;
-  - `choix auto` Forgotten Ancient : tous ses marqueurs +1/+1 vont sur une seule autre créature ; Resourceful Defense : tous les marqueurs +1/+1 sont déplacés ;
-  - `règle` Yuna, Grand Summoner : les deux marqueurs vont au sort de créature payé avec son mana (et non au prochain sort de créature du tour) ;
-  - `règle` Fathom Mage : une seule question pour un groupe de marqueurs, autant de cartes que de marqueurs ;
-  - `timing` Promise of Loyalty : chaque joueur, à son tour, garde une créature et sacrifie les autres (et non simultanément) ;
-  - `règle` Deep Analysis : le flashback coûte {1}{U}, sans les 3 points de vie ;
-  - `règle` First Family : seules les couleurs de vos permanents comptent (pas celles des sorts lancés ce tour-ci) ;
-  - `règle` Willie Lumpkin : l'interdiction d'attaquer dure jusqu'au prochain tour de son contrôleur (ce qui couvre le prochain tour du joueur blessé) ;
-  - `règle` Cut a Deal : vous piochez une carte par adversaire, même si sa pioche n'a pas eu lieu (bibliothèque vide, pioche remplacée) ;
-  - `règle` Hancock : X compte ses marqueurs +1/+1 seulement ; Jason Bright : « une force différente de sa force de base » se lit « supérieure » ;
-  - `règle` Harold and Bob : la Forêt choisie gagne sa capacité pour toujours, et la carte reste au cimetière (elle ne devient pas une Aura) ;
-  - `règle` Lumbering Megasloth : seuls les marqueurs des permanents comptent (pas ceux des joueurs) ; Winding Constrictor : la clause « si vous deviez recevoir des marqueurs » n'est pas gérée ;
-  - `règle` Nuka-Nuke Launcher : l'intimidation se lit « ne peut être bloquée que par des créatures-artefacts », et les marqueurs de radiation frappent chaque adversaire jusqu'à votre prochain tour ;
-  - `règle` Young Deathclaws : la récupération coûte {4} (et non le coût de mana de la carte) et c'est une capacité de Young Deathclaws ;
-  - `règle` Mariposa Military Base : elle arrive toujours dégagée, sans marqueurs de radiation.
-  - `choix auto` Scorched Ruins : les deux terrains dégagés sacrifiés en arrivant sont choisis par le moteur (les premiers du champ de bataille), sans question au joueur ;
-  - `timing` The Mycosynth Gardens : la valeur de mana X de l'artefact ciblé est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage, comme Likeness Looter.
-  - `règle` Helm of the Host : « ce jeton acquiert la célérité » est écrit comme une exception de la copie (707.9b) : une copie de ce jeton a aussi la célérité ;
-  - `règle` Cover of Darkness, Shizo, Death's Storehouse : la peur (702.36) est une règle de blocage (« ne peut être bloquée que par des créatures-artefacts et/ou noires »), pas un mot-clé : aucune carte ne peut lire qu'une créature « a la peur ».
+- **Several sets:**
+  - `rule` Soulstone Sanctuary ("all creature types"): any subtype except the known land, artifact and enchantment ones;
+  - `auto choice` Moonlit Meditation, Mirrormind Crown: "you may" is asked for the tokens created by a token-creating effect; those from amass, endure or a gift are always replaced by copies.
+- **Foundations (`docs/extensions/fdn.md`):**
+  - `rule` Sorcerous Spyglass: the opponent's hand is not shown before the name is chosen (any name in the catalog can be chosen; the names of the opposing permanents are offered first);
+  - `auto choice` Quilled Greatwurm (and Dawnhand Dissident): you divide the removed counters among your creatures, but the kind of counters removed from a single creature is chosen for you (−1/−1 first, +1/+1 last);
+  - `auto choice` Muldrotha: a card with several permanent types automatically uses the first type still free.
+- **Final Fantasy (`docs/extensions/fin.md`):**
+  - `rule` Sorceress's Schemes: only an instant or sorcery card from the graveyard (not a card exiled with flashback);
+  - `rule` Quina, Qu Gourmet: no Frog for the copy tokens;
+  - `rule` Memories Returning: you choose the three cards kept (the opponent does not choose those on the bottom);
+  - `rule` Sin, Spira's Punishment: six copies at most per trigger;
+  - `rule` Zenos, Shinryu: the chosen opponent is the first to lose the game;
+  - `rule` Rydia, Summoner of Mist: any Saga card in your graveyard can be targeted; it only returns if its mana value is X.
+- **Aetherdrift (`docs/extensions/dft.md`):**
+  - `rule` Skyseer's Chariot: "a nonland card name"; a land card name is also accepted (and can be offered);
+  - `rule` Lifecraft Engine: all your Vehicles, even noncreature ones, have the chosen type (the set affected in layer 4 does not follow the 613.8a dependency on crew, which is more recent);
+  - `rule` Cursecloth Wrappings: the granted embalm is paid right away (as a sorcery) and the token keeps the colors of the card.
+- **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`):**
+  - `rule` Fblthp, Lost on the Range: plotting the top card goes through an ability (on the stack) that pays its mana cost;
+  - `rule` Riku of Many Paths: a single mode, whatever the number of modes of the spell;
+  - `rule` Great Train Heist: the Treasures come from damage dealt to any opponent.
+- **The Big Score (`docs/extensions/otj-big.md`):**
+  - `rule` Memory Vessel: you can still play the cards in your hand;
+  - `rule` Grand Abolisher: mana abilities are not blocked.
+- **Edge of Eternities (`docs/extensions/eoe.md`):**
+  - `auto choice` Gene Pollinator: the extra tapped permanent is chosen automatically (a permanent without a mana ability first).
+- **Tarkir: Dragonstorm (`docs/extensions/tdm.md`):**
+  - `rule` Sonic Shrieker: a targeted player discards a card even if its damage was prevented;
+  - `timing` Sidisi, Regent of the Mire: the card with mana value X + 1 is targeted by a reflexive ability, once the cost is paid;
+  - `rule` Teval (Cavern): an exiled card pays generic {1}, but also a {C}; outside full control, the automatic payment uses mana first, then exiles the cards in graveyard order (in full control, the player chooses them);
+  - `rule` New Way Forward: a spell chosen as a source is recognized by its card alone (another copy of the same card, whoever controls it, would also be affected); the damage is all prevented, after the modifications (doublings) that apply to it;
+  - `rule` Neriv, Heart of the Storm: a creature that is no longer on the battlefield did not "enter this turn".
+- **Duskmourn (`docs/extensions/dsk.md`):**
+  - `rule` Acrobatic Cheerleader ("triggers only once"): as long as it has no flying counter;
+  - `rule` Fear of Burning Alive: the redirected damage is dealt by Fear of Burning Alive, and not by the source that damaged the opponent (a spell has no object to designate once resolved);
+  - `rule` conditions not checked: the Room with a different name (Central Elevator: a Room has two names), different powers (Rip, Spawn Hunter);
+  - `rule` Unable to Scream: the face-down creature can still be turned face up;
+  - `rule` Leyline of Transformation: only creatures on the battlefield (not spells or cards);
+  - `auto choice` Say Its Name: Altanak is searched for in the graveyard, then the hand, then the library;
+  - `rule` Marvin, Murderous Mimic: only the printed activated abilities of other creatures (not granted ones);
+  - `auto choice` Haunted Screen: the automatic payment can pay the life of the {G}/{U}/{R} ability.
+- **Bloomburrow (`docs/extensions/blb.md`):**
+  - `rule` Gift of a permanent: if it left the battlefield before its "gift promised" trigger resolves, the gift goes to the next opponent in turn order, and not to the chosen opponent (exact in a duel);
+  - `auto choice` Forage: automatic choice, three cards from the graveyard (lands first) if there are at least three, otherwise a Food (a token preferably);
+  - `timing` The Infamous Cruelclaw: the card is discarded before casting the spell (and not as a replacement cost during casting);
+  - `auto choice` Portent of Calamity: the exiled cards are chosen automatically (one per type);
+  - `rule` Heirloom Epic: creatures cannot help pay;
+  - `rule` Rottenmouth Viper: at most as many permanents are sacrificed as the generic cost to pay (one more sacrifice would reduce nothing, but would count for "whenever you sacrifice");
+  - `rule` Eluge: the cost reduction is generic ({1} and not {U});
+  - `rule` Alania: an Alania spell cast earlier in the turn counts as an Otter spell (the next Otter spell is no longer "the first"); Ral (emblem): the copy is counted at resolution (a spell cast in response to the trigger counts).
+- **The Lost Caverns of Ixalan (`docs/extensions/lci.md`):**
+  - `rule` Cavern mana (Bat Colony) and "using mana produced by [source]" (Tecutlan, The Myriad Pools): only the mana committed by the automatic payment;
+  - `timing` Squirming Emergence: the mana value is only checked at resolution; Abuelo's Awakening: the card enters as a flying Spirit creature, but its base P/T only becomes 1/1 right after it enters;
+  - `rule` The Myriad Pools: the permanent becomes a copy of the spell on the stack;
+  - `timing` Thousand Moons Infantry: untaps at the beginning of each opponent's upkeep (and not during their untap step); The Millennium Calendar: its time counters are put on at the beginning of your upkeep;
+  - `rule` Locus of Enlightenment: the gained abilities are not limited to one activation per turn;
+  - `timing` Ojer Kaslem: the creature card is put onto the battlefield just before the land card (and not at the same time);
+  - `rule` Deep-Cavern Bat: only the nonland cards in the opposing hand are shown, in the choice window; with no nonland card, the hand is not shown.
+- **Reality Fracture (`docs/extensions/fra.md`):**
+  - `auto choice` Theorist's Sanctum: you behold a Jace on entering as soon as possible, without revealing the card;
+  - `rule` Extrapolate the Impossible: does nothing, as on Arena in BO1 (no "outside the game" cards);
+  - `rule` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3: temporary emblems; Garruk triggers when you attack (not when another player attacks one of your opponents, in multiplayer) and strengthens all your attacking creatures, even those attacking a planeswalker or a battle;
+  - `rule` Emrakul, the Exigent Doom: the ability granted to the land ends as soon as the card leaves exile, in any way (and not only when it is cast); once cast, it lasts until the spell is cast (601.2i) and can be used to pay for it.
+- **Standard meta (plan P4, `docs/extensions/meta.md`):**
+  - `rule` Torch the Tower: the target is exiled if it dies this turn, even if its damage was prevented;
+  - `rule` Teamwork: the power of the tapped creatures is counted as for crew (a pilot counts 2 more);
+  - `auto choice` Collect evidence "X, X being the total mana value of the targeted permanents" (Urgent Necropsy): the exiled cards are chosen by the engine (the cheapest that suffices, otherwise the most expensive); elsewhere, the player chooses them;
+  - `auto choice` Kíli the Resourceful: the first equip ability of the turn costs {0} automatically; only the generic part is removed: colored symbols ({R} of Cori-Steel Cutter, {U} of The Key to the Vault) and any other cost (life of Dark Knight's Greatsword, sacrifice of Shredder's Armor or Dissection Tools, discard of Bloodthorn Flail) stay due;
+  - `rule` Interdimensional Web Watch: the two mana are usable for any spell cast from anywhere but the hand (and not only from exile).
+- **Lorwyn Eclipsed (`docs/extensions/ecl.md`):**
+  - `rule` Rhys, the Evermore: removes all −1/−1 counters from the target, and only those (neither the number nor the other kinds of counters can be chosen);
+  - `rule` Kindle the Inner Flame: beholding three Elementals (flashback) is a casting condition: nothing is chosen or revealed;
+  - `rule` Isilu, Carrier of Twilight, Rhys, the Evermore: the granted persist is a triggered ability named "Persist" (without a keyword badge);
+  - `rule` Nameless Inversion: "loses all creature types" removes all subtypes and changeling until end of turn;
+  - `rule` Foraging Wickermaw: five abilities (one per color), activatable only while it is colorless;
+  - `auto choice` End-Blaze Epiphany: the playable card is chosen when playing it, and not at exile;
+  - `rule` Aurora Awakener: all the revealed permanent cards go onto the battlefield (and not "any number");
+  - `rule` Squawkroaster: Vivid counts the printed colors of your permanents (a permanent whose color is changed by an effect counts for its printed color);
+  - `rule` Dream Harvest: a modal card with a land back face that is exiled can also be played as a land (only its spells should be castable);
+  - `timing` Raiding Schemes: conspire goes through a triggered ability; the two creatures are tapped at its resolution, and not when casting the spell;
+  - `timing` Celestial Reunion: the optional additional cost is checked at resolution, for a type of the card found (the player always pays it when they can); the card goes through the hand before the battlefield;
+  - `rule` Lasting Tarfire: "you put a counter": the player who puts the counters is the controller of what resolves, otherwise (cost) the controller of the permanent;
+  - `timing` Lavaleaper, Shimmerwilds Growth: the extra mana (triggered mana ability, 605.1b) is added with the land's mana, as a replacement; the payment solver counts that of the same type, not that of another color (Shimmerwilds Growth).
+- **Wilds of Eldraine (`docs/extensions/woe.md`):**
+  - `timing` Expel the Interlopers: the number from 0 to 10 is chosen at casting (one mode per number), and not at resolution;
+  - `rule` Virtue of Loyalty: all your creatures are untapped, not only those that received a counter;
+  - `rule` Brave the Wilds: the target "land you control" is offered even without Bargain, with no effect then;
+  - `timing` Feral Encounter: "at the beginning of the next combat phase this turn" goes through a turn emblem;
+  - `rule` Will, Scion of Peace, Rowan, Scion of War: the "this turn" reduction is granted to the creature and ends if it leaves the battlefield; X is read again at each spell;
+  - `rule` The Irencrag: "loses all other abilities": its mana ability and its trigger are inactive once it is an Equipment, but remain listed;
+  - `rule` Three Bowls of Porridge: "a mode that hasn't been chosen": three abilities, each activatable only once;
+  - `timing` Likeness Looter: the mana value X of the targeted card is checked at resolution (nothing happens if it differs), and not at targeting;
+  - `auto choice` Yenna, Redtooth Regent: the copy of an Aura attaches to a host chosen by the engine.
+- **Secrets of Strixhaven (`docs/extensions/sos.md`):**
+  - `rule` Zimone's Experiment: the revealed cards go back on top of the library before going onto the battlefield or into hand (like Break Out);
+  - `rule` Silverquill, the Disputant: the granted victim is a triggered ability at casting (sacrifice a creature, then copy), and not a cost: it can be responded to;
+  - `timing` Prismari, the Inspiration: the granted storm counts the spells cast before this one at the ability's resolution (a spell cast in response is counted);
+  - `rule` Dina's Guidance: the searched card goes to hand, then you may put it into the graveyard;
+  - `auto choice` Abstract Paintmage: {U}{R} is added as two choices of one color (two questions without alternative);
+  - `rule` Transcendent Archaic: "if you draw one or more cards this way" is "if X is 1 or more";
+  - `rule` cascade (Quandrix, the Proof): the card not cast goes to the bottom after the other exiled cards (and not in a random order with them);
+  - `rule` Lorehold, the Historian: the granted miracle is a triggered ability on the first draw of the turn (the card is not revealed), which offers to cast it for {2}.
+- **Murders at Karlov Manor (`docs/extensions/mkm.md`):**
+  - `rule` suspect (701.60): menace and "can't block" are added after layer 6 effects; a "loses all abilities" effect does not remove them;
+  - `timing` Bubble Smuggler: "when turned face up, four +1/+1 counters" is a triggered ability (it can be responded to);
+  - `rule` Living Conundrum: "if your library is empty" is judged once for a multi-card draw;
+  - `auto choice` Agency Outfitter: each name is searched for in the graveyard, then the hand, then the library (fixed order);
+  - `timing` Archdruid's Charm, Flourishing Bloom-Kin: the searched cards go through the hand before the land enters tapped; the shuffle takes place before;
+  - `timing` Crowd-Control Warden: turned face up, the counters come from a triggered ability (on entering, it is a replacement);
+  - `rule` Break Out: the revealed creature goes back on top of the library before going onto the battlefield or into hand;
+  - `auto choice` Worldsoul's Rage: the lands are taken from the hand, then from the graveyard;
+  - `rule` Rakdos, Patron of Chaos: an opponent who accepts sacrifices what they can, and you draw anyway;
+  - `rule` Expose the Culprit: the exiled cards are not shuffled into a face-down pile before being cloaked (you know each of your face-down cards);
+  - `timing` Tin Street Gossip: {R}{G} comes from an activated ability that uses the stack (like Troyan, Gutsy Explorer);
+  - `rule` A Killer Among Us: the chosen type is not revealed separately; the ability checks the type at resolution.
+- **Avatar: The Last Airbender (`docs/extensions/tla.md`):**
+  - `auto choice` Waterbend, convoke, improvise, Cave: outside full control, the objects that pay are chosen by the automatic payment, after the lands (as on Arena); in full control, the player chooses them;
+  - `rule` Honest Work: the enchanted creature takes the single subtype Citizen (an artifact creature would also lose its artifact subtypes);
+  - `rule` Sold Out: "was dealt damage this turn" is read from the damage still marked;
+  - `timing` Elemental Teachings: the cards found go through your hand (revealed), then the opponent chooses two;
+  - `rule` Raucous Audience: two mana abilities, each under its condition;
+  - `rule` Azula, Cunning Usurper: the exiled cards are cast during your turn with mana of any type, but without flash;
+  - `rule` Bumi, Unleashed: "only land creatures can attack this combat" forbids the nonland creatures present at resolution from attacking, until end of turn;
+  - `rule` Zuko, Conflicted (fourth chapter): Zuko returns under your control, then passes under the control of the chosen opponent;
+  - `timing` Bender's Waterskin: it untaps at the beginning of each other player's upkeep (triggered ability), and not during their untap step;
+  - `rule` Aang's Journey (kicked): two searches, hence two shuffles;
+  - `rule` Secret of Bloodbending: without waterbend, the control applies to one combat phase of the opponent's next turn; if that turn has none, it is not carried over to a later turn;
+  - `rule` Firebender Ascension: "that ability" is the creature's most recent ability on the stack; if it has already resolved, nothing is copied;
+  - `rule` Koh, the Face Stealer: the choice retains a name: if the chosen card leaves exile, Koh keeps its abilities as long as another card of the same name is exiled with it.
+- **Marvel Super Heroes (`docs/extensions/msh.md`):**
+  - `rule` Raft Security Officer: "costs {1} less if it targets a creature with power 3 or less" is two abilities ({1} with such a target, {2} otherwise); if the target's power exceeds 3 before resolution, the {1} version loses its target;
+  - `rule` Nick Fury, Agent of S.H.I.E.L.D.: a double-faced card put onto the battlefield cannot be transformed;
+  - `timing` Hawkeye, Master Marksman: "pay {1} up to three times, then choose that many modes" is three successive offers (pay {1} for each mode), each with its reflexive ability;
+  - `rule` Bullseye, Death Dealer: "sacrifice an artifact or discard a nonland card" is two abilities;
+  - `rule` Cloak and Dagger, Entwined: the hand is only shown through its offered nonland cards; at resolution, the targeted creature is only rechecked as a creature of an opponent (passed under the control of another opponent, it remains a legal target);
+  - `rule` The Kingpin of Crime: "deal damage equal to their toughness" only affects the creatures present at resolution;
+  - `timing` Vision Quest: the graveyard is offered before the library;
+  - `rule` Cosmic Cube: the card chosen among the six goes through exile while it is being cast (visible to all), then goes to the bottom if you decline;
+  - `rule` Kang the Conqueror: "this turn, level up abilities can't be activated" is not applied to the extra turn;
+  - `auto choice` Baron Helmut Zemo: the black cards exiled for boast are chosen by the engine (those richest in {B} first, the fewest cards possible);
+  - `timing` Worlds Within Worlds: each player chooses and puts their creatures in turn (APNAP order), and not simultaneously;
+  - `rule` The Ruinous Wrecking Crew: "up to X modes" is written as combinations of modes, each under the condition X ≥ its number of modes.
+- **Marvel's Spider-Man (`docs/extensions/spm.md`):**
+  - `rule` Parker Luck: the top card is not explicitly revealed; each player loses their life then puts it into hand (same result);
+  - `rule` The Death of Gwen Stacy: at chapter II, each player chooses then acts in turn (no APNAP choices followed by simultaneous actions);
+  - `rule` Maximum Carnage: at chapter I, the attack requirements ("attacks each combat if able, and a player other than you if able") only affect the creatures present at resolution, not those that arrive afterwards;
+  - `rule` Spinneret and Spiderling: the threshold of 4 damage is read per damage dealt; combat damage divided among several blockers (2 + 2) does not trigger it;
+  - `rule` Spider-Slayer, Hatred Honed: "whenever it deals damage to a Spider" is read as "whenever a Spider damaged by it this turn is dealt damage"; an indestructible Spider already damaged by it would make the ability trigger if another source damages it;
+  - `rule` Arachne, Psionic Weaver: the opponent's hand is not shown before the type is chosen.
+- **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`):**
+  - `rule` Turtles Forever: the search only covers the library (nothing outside the game), and "exactly four" is not enforced (the opponent chooses among the cards found);
+  - `rule` Renet, Temporal Apprentice: "entered this turn" also counts a permanent whose control changed this turn;
+  - `rule` North Wind Avatar: the engine has no "outside the game" zone (no sideboard during a game): the enters ability has no effect;
+  - `auto choice` Ninja Teen: a creature spell cast from the graveyard through the granted sneak returns the weakest unblocked attacker.
+- **The Hobbit (`docs/extensions/hob.md`):**
+  - `rule` Burglar's Plot: "two target nonland permanents that share a card type" is a modal spell, one mode per type;
+  - `rule` Bilbo, Thief in the Night: the reduction applies to spells cast from a graveyard or exile, not from the top of the library; an artifact cast this way then countered would be exiled;
+  - `rule` Old Fat Spider Can't See Me: at chapter II, the prevention is an ability given to the creature, as long as the Saga stays;
+  - `rule` Galion, Elvenking's Butler: "its base P/T become Galion's" gives base P/T X/X (Galion's power), then corrects the toughness with a bonus; a later effect that sets base P/T would keep that bonus;
+  - `rule` Bard, King of Dale: "the first card you draw during each of your draw steps" is read as "a draw during your draw step, if you have not yet drawn any card this turn";
+  - `auto choice` Goblin Plate Mail: the Equipment attaches to the Army that receives the amass counters (see the general entry).
+- **Reprints, "Unlimited" (`docs/extensions/reprints.md`):**
+  - `rule` Ragavan, Nimble Pilferer: "you may cast this card": a modal double-faced card whose back face is a land could be played by that back face;
+  - `rule` Cytoplast Manipulator: control lasts as long as you control the Manipulator (and not "as long as it remains on the battlefield");
+  - `auto choice` Gemstone Caverns: the card exiled from hand is the nonland card of lowest mana value (a land if there is none);
+  - `rule` Reflecting Pool: the types that lands of the same kind (Reflecting Pool, Exotic Orchard) or Command Tower would produce do not count;
+  - `rule` Drown in the Loch: "mana value less than or equal to the number of cards in its controller's graveyard" is checked at resolution, not at targeting;
+  - `rule` Green Sun's Zenith: it is shuffled into the library whenever it would go to the graveyard, not only when resolving;
+  - `rule` Hindering Light: only spells that target a permanent you control are recognized, not those that target only you;
+  - `rule` All Will Be One: only counters put on permanents trigger the ability;
+  - `auto choice` Force of Will, Force of Vigor, Daze: the card exiled from hand is the cheapest that fits; the returned Island, a tapped one first;
+  - `rule` Grim Giganotosaurus: "monstrous" is noted by a counter (visible);
+  - `rule` Henry Wu: the draw and the Treasure are part of the exploit ability it gives (they only happen if he is on the battlefield when it resolves);
+  - `rule` Laboratory Maniac: the win that replaces the draw is noted with the state-based actions that follow (like the loss it replaces);
+  - `rule` Nyxbloom Ancient: the "additional" mana of another type (Utopia Sprawl, Shimmerwilds Growth) is not tripled;
+  - `rule` Mirri, Weatherlight Duelist: "this combat" lasts the turn (an extra combat stays limited);
+  - `rule` Shared Animosity: a changeling attacker is counted as sharing a type with every other attacking creature, even without a creature type;
+  - `rule` Outlaws' Merriment: the token "chosen at random" is drawn by a three-sided die (shown in the log);
+  - `auto choice` Cresting Mosasaurus (emerge): the sacrificed creature is the one of highest mana value;
+  - `rule` Flesh Duplicate: fading is given even if the copied creature already has it (only when copying another Flesh Duplicate: no handled card has printed fading);
+  - `rule` Hunting Velociraptor: the marauding requires combat damage from a Dinosaur (not from any type common to the spell);
+  - `rule` Ad Nauseam: the process repeats at most thirty times;
+  - `auto choice` Library of Leng: the card discarded by an effect always goes on top of the library (except a card with madness);
+  - `rule` Notion Thief: the thief's draw is not replaced in turn (two opposing Notion Thieves); the replacements of the thief's draw do not apply;
+  - `rule` Gix, Yawgmoth Praetor: "pay 1 life" is a life loss (possible at 0 life or less); `auto choice` the cards discarded for X, without a player choice in the interface;
+  - `rule` Painter's Servant: only permanents take the chosen color (not spells or cards in other zones);
+  - `rule` Sylvan Library: the two cards put back are chosen among the cards put into hand this turn (not only those drawn);
+  - `rule` Expropriate: for an opponent's "money" vote, the permanent is chosen among those they control and that one of your opponents owns (and not among those they own, whoever controls them);
+  - `rule` Plague of Vermin: each player pays only once (the process does not repeat);
+  - `rule` Codie, Vociferous Codex: the found card is cast right away (and not "until end of turn").
+- **Commander, EDH pseudo-set (`docs/extensions/edh.md`):**
+  - `auto choice` Relic of Legends: the tapped legendary creature is chosen by the engine (one without a mana ability first); the automatic payment only uses it once per ability;
+  - `rule` New Blood: the text change (612, "replace all instances of a creature type with Vampire") is not done; the stolen creature becomes a Vampire in addition to its other types;
+  - `rule` Orcish Bowmasters: "the first card drawn during its draw step" is the step's draw (504.1); if it is replaced or skipped, a later draw in the same step triggers anyway.
+  - `auto choice` Rewind, Unwind, Frantic Search: "untap up to N lands" only untaps your lands, chosen automatically;
+  - `rule` Teferi's Protection: an Aura already attached to the player (curse) does not fall off.
+  - `rule` Forbidden Orchard: "when you tap this land for mana" triggers when it becomes tapped, for whatever reason;
+  - `rule` Chromatic Orrery: "spend mana as though it were mana of any color" applies to spells, not to activated abilities;
+  - `auto choice` Hellkite Courser: with two commanders in the command zone, both enter; Command Beacon: both go to hand;
+  - `auto choice` Zurgo and Ojutai: the two cards that do not go to hand are put on the bottom in a random order (not by choice).
+  - `auto choice` Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl: a card of the right type in hand is revealed automatically if possible;
+  - `auto choice` Scholar of New Horizons: the Plains card goes onto the battlefield as soon as permitted (without offering to put it into hand); `rule` only a +1/+1 counter can be removed for the cost (and not a counter of any kind);
+  - `rule` O'aka, Traveling Merchant: only a +1/+1 counter can be removed for the cost;
+  - `rule` Pandemonium: the target of the damage is chosen by Pandemonium's controller, not by the controller of the creature that enters (exact when it is the same person);
+  - `rule` Emrakul, the World Anew: "protection from spells" is read as from instants and sorceries (not from an Aura or permanent spell);
+  - `auto choice` Cryptolith Fragment: its mana ability is activated by hand (the automatic payment does not use it);
+  - `rule` Wheel of Misfortune: the numbers are chosen one after the other (in APNAP order, without seeing those of the others), from 0 to 20;
+  - `rule` Gray Merchant of Asphodel, Creeping Bloodsucker: the life gained is computed (devotion per opponent, number of opponents), not read from the actual life losses and damage (different only if they are replaced);
+  - `rule` Keen Duelist: the top cards are not explicitly revealed.
+  - `rule` Incubate (701.53): the transformation is a permanent modification (Phyrexian artifact creature 0/0), not a switch to the back face; the token keeps its name;
+  - `rule` The Ur-Sphinx: player by player, it mills then you may cast one of its cards (and not all the mills first);
+  - `rule` Vigor: "when it is put into a graveyard from anywhere, shuffle it into the library" is a replacement: it is shuffled without going through the graveyard (like the Eldrazi);
+  - `rule` Coin of Mastery: the excess mana produced by sources (Sol Ring for a single {1}) is first removed from the artifacts' mana.
+  - `rule` Collective Effort: escalate is paid {1} per extra mode (and not by tapping a creature);
+  - `auto choice` Forgotten Ancient: all its +1/+1 counters go on a single other creature; Resourceful Defense: all the +1/+1 counters are moved;
+  - `rule` Yuna, Grand Summoner: the two counters go to the creature spell paid with its mana (and not to the next creature spell of the turn);
+  - `rule` Fathom Mage: a single question for a group of counters, as many cards as counters;
+  - `timing` Promise of Loyalty: each player, in turn, keeps a creature and sacrifices the others (and not simultaneously);
+  - `rule` Deep Analysis: flashback costs {1}{U}, without the 3 life;
+  - `rule` First Family: only the colors of your permanents count (not those of the spells cast this turn);
+  - `rule` Willie Lumpkin: the prohibition on attacking lasts until its controller's next turn (which covers the next turn of the damaged player);
+  - `rule` Cut a Deal: you draw a card per opponent, even if their draw did not happen (empty library, replaced draw);
+  - `rule` Hancock: X counts its +1/+1 counters only; Jason Bright: "a power different from its base power" is read as "greater";
+  - `rule` Harold and Bob: the chosen Forest gains its ability forever, and the card stays in the graveyard (it does not become an Aura);
+  - `rule` Lumbering Megasloth: only the counters on permanents count (not those on players); Winding Constrictor: the clause "if you would get counters" is not handled;
+  - `rule` Nuka-Nuke Launcher: intimidate is read as "can't be blocked except by artifact creatures", and the rad counters hit each opponent until your next turn;
+  - `rule` Young Deathclaws: recover costs {4} (and not the card's mana cost) and it is an ability of Young Deathclaws;
+  - `rule` Mariposa Military Base: it always enters untapped, without rad counters.
+  - `auto choice` Scorched Ruins: the two untapped lands sacrificed on entering are chosen by the engine (the first ones on the battlefield), without asking the player;
+  - `timing` The Mycosynth Gardens: the mana value X of the targeted artifact is checked at resolution (nothing happens if it differs), and not at targeting, like Likeness Looter.
+  - `rule` Helm of the Host: "that token gains haste" is written as an exception of the copy (707.9b): a copy of that token also has haste;
+  - `rule` Cover of Darkness, Shizo, Death's Storehouse: fear (702.36) is a blocking rule ("can't be blocked except by artifact and/or black creatures"), not a keyword: no card can read that a creature "has fear".

@@ -1,5 +1,5 @@
-// The Wise Mothman — préconstruit Commander de Fallout. Liste officielle du préconstruit « Mutant Menace » (MTGJSON, 2024-03-08), relevée le 07/10/2026.
-// Source : https://mtgjson.com/api/v5/decks/MutantMenace_PIP.json
+// The Wise Mothman — Fallout Commander precon. Official list of the "Mutant Menace" precon (MTGJSON, 2024-03-08), retrieved on 2026-10-07.
+// Source: https://mtgjson.com/api/v5/decks/MutantMenace_PIP.json
 Commander
 1 The Wise Mothman
 

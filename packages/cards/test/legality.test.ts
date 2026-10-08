@@ -8,11 +8,11 @@ import { CARDS } from "../src/index";
 
 const README = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "README.md");
 
-describe("légalités Standard", () => {
-  it("la liste des cartes bannies du README est celle des données", () => {
+describe("Standard legalities", () => {
+  it("the README list of banned cards matches the data", () => {
     const text = readFileSync(README, "utf8");
-    const m = /\*\*Cartes bannies en Standard\*\* \((\d+)\) :\n\n((?:- .+\n)+)/.exec(text);
-    expect(m, "section « Cartes bannies en Standard » du README").not.toBeNull();
+    const m = /\*\*Banned in Standard\*\* \((\d+)\):\n\n((?:- .+\n)+)/.exec(text);
+    expect(m, "\"Banned in Standard\" section of the README").not.toBeNull();
     const listed = (m?.[2] ?? "")
       .trim()
       .split("\n")
@@ -25,7 +25,7 @@ describe("légalités Standard", () => {
     expect(Number(m?.[1])).toBe(banned.length);
   });
 
-  it("chaque dérogation vise une carte connue et dit d'où elle vient", () => {
+  it("each override targets a known card and says where it comes from", () => {
     for (const [name, o] of Object.entries(overrides as Record<string, { legalities?: object; source?: string }>)) {
       expect(CARDS[name], name).toBeDefined();
       expect(o.legalities, name).toBeDefined();

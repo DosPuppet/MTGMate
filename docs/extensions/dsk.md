@@ -1,58 +1,58 @@
-# Duskmourn: House of Horror (DSK, « Mornebrune : la Maison de l'horreur », 268 cartes)
+# Duskmourn: House of Horror (DSK, 268 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Demandée par l'utilisateur le 27/09/2026. Les Salles (709.5) et la manifestation effroyable (701.62) existaient déjà dans le socle (lots 0.6 et 0.8).
+Requested by the user on 2026-09-27. Rooms (709.5) and manifest dread (701.62) already existed in the core (lots 0.6 and 0.8).
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Sinistre (Eerie), Survie, Délire, jetons Lueur, terrains | A |
-| Imminence (Overlords), Enduring, coûts additionnels, Équipements qui manifestent, portes | B |
-| Légendaires et cartes uniques | C |
-| Les 18 dernières cartes (Aura de joueur, Valgavoth, Kaito, Leylines…) | D |
+| Eerie, Survival, Delirium, Glimmer tokens, lands | A |
+| Impending (Overlords), Enduring, additional costs, Equipment that manifests, doors | B |
+| Legendary and unique cards | C |
+| The last 18 cards (player Aura, Valgavoth, Kaito, Leylines…) | D |
 
-Les scripts sont dans `packages/cards/src/dsk/` : `white`, `blue`, `black`, `red`, `green` et `multi` (lot A), `special` (lot B), `legends` (lot C), `legends2` (lot D). Les aides sont dans `dsk/common.ts` : `survival`, `eerie`, `fastLand`, et les jetons Lueur, Esprit, Jouet, Horreur, Démon, Diablotin, Araignée et Everywhere.
+The scripts are in `packages/cards/src/dsk/`: `white`, `blue`, `black`, `red`, `green` and `multi` (lot A), `special` (lot B), `legends` (lot C), `legends2` (lot D). The helpers are in `dsk/common.ts`: `survival`, `eerie`, `fastLand`, and the Glimmer, Spirit, Toy, Horror, Demon, Imp, Spider and Everywhere tokens.
 
-- Lot A ✅ (164/268). Il couvre :
-  - Sinistre : déclencheur `when.eerie` (un enchantement que vous contrôlez arrive, ou vous déverrouillez entièrement une Salle) ; aide `eerie(...)` ;
-  - Survie : aide `survival(...)`, soit `when.secondMain` (étape `main2`) avec la condition « la source est engagée » ;
-  - Délire : `cond.delirium` et le montant `amount.cardTypesInGraveyard` (votre cimetière seul ; `cardTypesInGraveyards` compte tous les cimetières) ;
-  - `fx.manifestDreadBy({ who, times, store })` : « son contrôleur manifeste l'effroi », « X fois », puis « attachez-y cet Équipement » ou « mettez-y un marqueur » ;
-  - le montant `unlockedDoors` (Rampaging Soulrager, Misty Salon) ;
-  - les terrains « engagé sauf si un joueur a 13 PV ou moins » (`fastLand`) et les Verges ;
-  - **correctif** : « arrive engagé » (remplacement d'arrivée) fait avancer la version d'état ; le fuzz l'avait trouvé avec The Wandering Rescuer.
-- Lot B ✅ (188/268). Il couvre :
-  - Imminence (702.176) :
-    - « Impending N—[coût] » est lu dans le texte : coût alternatif (`altCost`, libellé « Imminence 4 — {2}{W}{W} » affiché par le client) et `CardDef.impending` ;
-    - le permanent arrive avec N marqueurs de temps (`GameObject.impending`) et n'est pas une créature tant qu'il en a (types et sous-types de créature retirés dans `base`) ;
-    - un marqueur est retiré au début de votre étape de fin (déclencheur généré) ;
-  - Enduring : « revient ; c'est un enchantement » (`MoveSpec.setTypes`, `setSubtypes`) ;
-  - coûts additionnels choisis automatiquement (`autoAdditional` dans stack.ts) : exiler une créature (liée au permanent, Fear of Abduction), exiler six cartes du cimetière, renvoyer un permanent, engager deux créatures ou terrains. Ces permanents ne servent pas à payer le mana ;
-  - portes : `fx.door(ref, "unlock" | "toggle")`, qui déverrouille une porte verrouillée ou verrouille ou déverrouille une porte au choix (Ghostly Dancers, Ghostly Keybearer, Keys to the House, Marina Vendrell).
-- Lot C ✅ (250/268). Le moteur gagne :
-  - des statiques de joueur : `convokeCreatureSpells` (Dazzling Theater), `untapCreaturesOnOthersUntap` (Prop Room ; devenu `untapOnOthersUntap` avec un filtre, deck The Vision), `unlockReduction` (Inquisitive Glimmer), `damageToOpponentsMills` (The Mindskinner), `ignoreOpponentsHexproofWard` (Nowhere to Run), `opponentGraveyardToExile` (Leyline of the Void), `noLoseForLife` (Grimoire), `doubleTriggers` (Fractured Realm), `seeFaceDown` (Found Footage, dans `projectView`) ;
-  - le filtre `faceDown` (vue incluse), le filtre `attached: "notHost"`, et `when.permanentTurnedFaceUp(filtre)` ;
-  - `when.manifestDread` : l'objet de l'événement est la carte mise au cimetière ;
-  - des modes conditionnels (`ModeDef.condition`, Let's Play a Game sous délire) ;
-  - la défausse en coût d'activation (`discard`, choix du joueur dans le client), `MoveSpec.shuffle` (« mélangez-le dans la bibliothèque ») et `destroy` avec mémorisation (Come Back Wrong) ;
-  - `fx.tapChosen`, `fx.lkiCountersTo`, `fx.cantGainLife`, `fx.millWhileShared` (The Tale of Tamiyo), `fx.revealFaceDown`, `fx.eachOfDealsDamage` ;
-  - `ref.costDiscarded` (Grab the Prize) ;
-  - les restrictions `cantAttackOrBlockAlone` (Toby) et `cantBeBlockedByGlimmers` (Cynical Loner) ;
-  - les conditions `prime` (Zimone), `faceDownOrUp` et `sacrificedThisTurn`, ainsi que `punisher` avec des blessures (Osseous Sticktwister) ;
-  - `per` qui multiplie aussi les F/E de base (Porcelain Gallery).
-- Lot D ✅ (**268/268**). Le moteur gagne :
-  - l'Aura de joueur (`enchant.player`, Grievous Wound), avec le déclencheur `when.attachedPlayerDamaged` ;
-  - `when.becomesBlocked` (Norin) ;
-  - les cibles en nombre variable d'une capacité réflexive (`TargetSpec.countAmount` : Miasma Demon, The Rollercrusher Ride) ;
-  - le doublement des blessures non de combat sous condition (`doubler({ noncombatDamage, condition })`) ;
-  - Valgavoth : l'exil lié des cartes adverses (`exileOpponentsCardsLinked`, dans `moveObject`) et le droit de les jouer pendant votre tour contre des PV (`playFrom: { zone: "linked", payLifeManaValue }`, PLAN-H H7b) ; la garde « sacrifiez trois permanents non-terrains » ;
-  - le ninjutsu (`returnUnblockedAttacker`, Kaito) ;
-  - un coût alternatif pour tous vos sorts (`altCostAll`, Leyline of Mutation, via `altCostFor`) ;
-  - Warped Space (`freeFromExileOncePerTurn`) et Winter (`opponentMaxHandSize`) ;
-  - les capacités de mana qui coûtent des PV ou posent un marqueur (Haunted Screen, Twitching Doll) ;
-  - Marvin (`gainActivatedFrom`) ;
-  - `fx.chooseAmong` (« ce joueur choisit l'une d'elles », Trial of Agony) ;
-  - un emblème mémorisé, auquel on lie la cible, pour « quand elle meurt ce tour-ci » (Turn Inside Out) ; remplacé par la capacité retardée liée à un objet (`fx.whenThisTurn`, PLAN-A A4b) ;
-  - `ref.filtered` (Ghost Vacuum), et les conditions `step`, `creatureDiedMatching` et `castFromGraveyard` (Undead Sprinter).
+- Lot A ✅ (164/268). It covers:
+  - Eerie: trigger `when.eerie` (an enchantment you control enters, or you fully unlock a Room); helper `eerie(...)`;
+  - Survival: helper `survival(...)`, that is `when.secondMain` (step `main2`) with the condition "the source is tapped";
+  - Delirium: `cond.delirium` and the amount `amount.cardTypesInGraveyard` (your graveyard only; `cardTypesInGraveyards` counts all graveyards);
+  - `fx.manifestDreadBy({ who, times, store })`: "its controller manifests dread", "X times", then "attach this Equipment to it" or "put a counter on it";
+  - the amount `unlockedDoors` (Rampaging Soulrager, Misty Salon);
+  - the lands "enters tapped unless a player has 13 life or less" (`fastLand`) and the Verges;
+  - **fix**: "enters tapped" (enters replacement) advances the state version; the fuzz found it with The Wandering Rescuer.
+- Lot B ✅ (188/268). It covers:
+  - Impending (702.176):
+    - "Impending N—[cost]" is read from the text: alternative cost (`altCost`, label "Impending 4 — {2}{W}{W}" shown by the client) and `CardDef.impending`;
+    - the permanent enters with N time counters (`GameObject.impending`) and is not a creature while it has any (creature types and subtypes removed in `base`);
+    - one counter is removed at the beginning of your end step (generated trigger);
+  - Enduring: "returns; it's an enchantment" (`MoveSpec.setTypes`, `setSubtypes`);
+  - additional costs chosen automatically (`autoAdditional` in stack.ts): exile a creature (linked to the permanent, Fear of Abduction), exile six cards from the graveyard, return a permanent, tap two creatures or lands. These permanents are not used to pay mana;
+  - doors: `fx.door(ref, "unlock" | "toggle")`, which unlocks a locked door or locks or unlocks a door of your choice (Ghostly Dancers, Ghostly Keybearer, Keys to the House, Marina Vendrell).
+- Lot C ✅ (250/268). The engine gains:
+  - player statics: `convokeCreatureSpells` (Dazzling Theater), `untapCreaturesOnOthersUntap` (Prop Room; became `untapOnOthersUntap` with a filter, The Vision deck), `unlockReduction` (Inquisitive Glimmer), `damageToOpponentsMills` (The Mindskinner), `ignoreOpponentsHexproofWard` (Nowhere to Run), `opponentGraveyardToExile` (Leyline of the Void), `noLoseForLife` (Grimoire), `doubleTriggers` (Fractured Realm), `seeFaceDown` (Found Footage, in `projectView`);
+  - the `faceDown` filter (view included), the `attached: "notHost"` filter, and `when.permanentTurnedFaceUp(filter)`;
+  - `when.manifestDread`: the event object is the card put into the graveyard;
+  - conditional modes (`ModeDef.condition`, Let's Play a Game under delirium);
+  - discarding as an activation cost (`discard`, player's choice in the client), `MoveSpec.shuffle` ("shuffle it into the library") and `destroy` with memorization (Come Back Wrong);
+  - `fx.tapChosen`, `fx.lkiCountersTo`, `fx.cantGainLife`, `fx.millWhileShared` (The Tale of Tamiyo), `fx.revealFaceDown`, `fx.eachOfDealsDamage`;
+  - `ref.costDiscarded` (Grab the Prize);
+  - the restrictions `cantAttackOrBlockAlone` (Toby) and `cantBeBlockedByGlimmers` (Cynical Loner);
+  - the conditions `prime` (Zimone), `faceDownOrUp` and `sacrificedThisTurn`, as well as `punisher` with damage (Osseous Sticktwister);
+  - `per` which also multiplies base P/T (Porcelain Gallery).
+- Lot D ✅ (**268/268**). The engine gains:
+  - the player Aura (`enchant.player`, Grievous Wound), with the trigger `when.attachedPlayerDamaged`;
+  - `when.becomesBlocked` (Norin);
+  - variable numbers of targets for a reflexive ability (`TargetSpec.countAmount`: Miasma Demon, The Rollercrusher Ride);
+  - doubling noncombat damage under a condition (`doubler({ noncombatDamage, condition })`);
+  - Valgavoth: the linked exile of opposing cards (`exileOpponentsCardsLinked`, in `moveObject`) and the right to play them during your turn by paying life (`playFrom: { zone: "linked", payLifeManaValue }`, PLAN-H H7b); the ward "sacrifice three nonland permanents";
+  - ninjutsu (`returnUnblockedAttacker`, Kaito);
+  - an alternative cost for all your spells (`altCostAll`, Leyline of Mutation, via `altCostFor`);
+  - Warped Space (`freeFromExileOncePerTurn`) and Winter (`opponentMaxHandSize`);
+  - mana abilities that cost life or put a counter (Haunted Screen, Twitching Doll);
+  - Marvin (`gainActivatedFrom`);
+  - `fx.chooseAmong` ("that player chooses one of them", Trial of Agony);
+  - a remembered emblem, to which the target is linked, for "when it dies this turn" (Turn Inside Out); replaced by the delayed ability linked to an object (`fx.whenThisTurn`, PLAN-A A4b);
+  - `ref.filtered` (Ghost Vacuum), and the conditions `step`, `creatureDiedMatching` and `castFromGraveyard` (Undead Sprinter).
 
-Tests : `engine/test/dsk.test.ts` (18 tests) et le test de fumée `ai/test/smoke/dsk.test.ts`.
+Tests: `engine/test/dsk.test.ts` (18 tests) and the smoke test `ai/test/smoke/dsk.test.ts`.

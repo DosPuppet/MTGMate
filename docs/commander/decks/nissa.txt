@@ -1,5 +1,5 @@
-// Nissa, Leyline Tamer — terrains et grosses créatures, quatre couleurs sans le vert. Liste « Nissa, Non-Green Animist (Landfall w/ Big Creatures) »
-// de KamiNinja (Moxfield, bracket 4), mise à jour le 02/10/2026, relevée le 08/10/2026. Source : https://moxfield.com/decks/IvRni7Qbxk2nT9Ppkrc36Q
+// Nissa, Leyline Tamer — lands and big creatures, four colors without green. List "Nissa, Non-Green Animist (Landfall w/ Big Creatures)"
+// by KamiNinja (Moxfield, bracket 4), updated on 2026-10-02, retrieved on 2026-10-08. Source: https://moxfield.com/decks/IvRni7Qbxk2nT9Ppkrc36Q
 Commander
 1 Nissa, Leyline Tamer
 

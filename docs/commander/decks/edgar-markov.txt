@@ -1,5 +1,5 @@
-// Edgar Markov — vampires (Mardu). Liste moyenne EDHREC « optimized » (bracket 4, 4 131 decks), relevée le 06/10/2026.
-// Source : https://edhrec.com/average-decks/edgar-markov/optimized
+// Edgar Markov — Vampires (Mardu). EDHREC average list "optimized" (bracket 4, 4,131 decks), retrieved on 2026-10-06.
+// Source: https://edhrec.com/average-decks/edgar-markov/optimized
 Commander
 1 Edgar Markov
 
