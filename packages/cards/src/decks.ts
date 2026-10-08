@@ -30,8 +30,10 @@ import type { DeckEntries } from "./decklist";
 /** Un deck : cartes par nom anglais (clé canonique), avec leur nombre d'exemplaires. */
 export interface DeckList {
   id: string;
+  /** Name and description in English; French in `fr` (PLAN-I), shown when the interface is in French. */
   name: string;
   description?: string;
+  fr?: { name?: string; description?: string };
   colors: string[];
   cover?: string;
   /** Commander (PLAN-E) : le commandant (une ligne), à part du deck. */

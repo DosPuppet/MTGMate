@@ -4,8 +4,8 @@
  * Message ids come from:
  * - the source of the engine, the cards, the client and the server: the string literal given to `msg(…)`, `t(…)` or
  *   `tr(lang, …)` (comments are skipped); a call whose text is not a literal is refused, so that the scan sees every id;
- * - the card scripts, walked at run time: `label`, `prompt` and the values of `labels`, with the values of their `msg`
- *   arguments; a set is checked once its catalog `locales/fr/<set>.json` exists (lot I3).
+ * - the cards, walked at run time (final definitions and tokens): `label`, `prompt` and the values of `labels`, with
+ *   the values of their `msg` arguments; a set is checked once its scripts are in English (`translated`).
  *
  * Catalogs are JSON objects with sorted keys (`npx tsx tools/locales.ts` rewrites them); one key has one translation
  * across all catalogs, since the client merges them.
@@ -13,6 +13,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { parseText } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
+import frenchBaseline from "../data/french-baseline.json";
+import { CARDS, TOKEN_SPECS } from "../src/index";
 import { FRENCH_CATALOGS } from "../src/locales";
 import { SETS } from "../src/sets";
 
@@ -96,26 +98,44 @@ function textIds(text: string, into: Set<string>): void {
   for (const v of Object.values(args)) if (isWords(v)) textIds(v, into);
 }
 
-/** Message ids of the card scripts, by set code (lower case). */
+/**
+ * Message ids of the cards, by owner: the set whose script defines the card (`src/<set>/`, lower case), "core" for the
+ * tokens and the labels that `scryfall.ts` deduces. Final definitions are walked, so deduced labels are included.
+ */
 function cardIds(): Map<string, Set<string>> {
-  const out = new Map<string, Set<string>>();
+  const out = new Map<string, Set<string>>([["core", new Set()]]);
+  const owner = new Map<string, string>();
   for (const set of SETS) {
-    const ids = new Set<string>();
-    const walk = (v: unknown): void => {
-      if (Array.isArray(v)) for (const x of v) walk(x);
-      else if (v && typeof v === "object") {
-        for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
-          if ((k === "label" || k === "prompt") && typeof x === "string") textIds(x, ids);
-          else if (k === "labels" && x && typeof x === "object" && !Array.isArray(x)) {
-            for (const l of Object.values(x)) if (typeof l === "string") textIds(l, ids);
-          } else walk(x);
-        }
-      }
-    };
-    walk(Object.values(set.scripts));
-    out.set(set.code.toLowerCase(), ids);
+    out.set(set.code.toLowerCase(), new Set());
+    for (const raw of set.data) if (!owner.has(raw.name)) owner.set(raw.name, set.code.toLowerCase());
   }
+  const walk = (v: unknown, ids: Set<string>): void => {
+    if (Array.isArray(v)) for (const x of v) walk(x, ids);
+    else if (v && typeof v === "object") {
+      for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+        if ((k === "label" || k === "prompt") && typeof x === "string") textIds(x, ids);
+        else if (k === "labels" && x && typeof x === "object" && !Array.isArray(x)) {
+          for (const l of Object.values(x)) if (typeof l === "string") textIds(l, ids);
+        } else if (k !== "fr") walk(x, ids);
+      }
+    }
+  };
+  for (const c of Object.values(CARDS)) {
+    const set = owner.get(c.name) ?? "core";
+    // Text deduced from Scryfall (`scryfall.ts`) is "core"; the rest belongs to the script of the set.
+    walk(c, out.get(set) as Set<string>);
+  }
+  walk(Object.values(TOKEN_SPECS), out.get("core") as Set<string>);
   return out;
+}
+
+/**
+ * Whether the texts of an owner are checked: once its source is in English (no file of `src/<set>/`, or of the root of
+ * `src/` for "core", left in the French baseline).
+ */
+function translated(owner: string): boolean {
+  const prefix = owner === "core" ? "packages/cards/src/" : `packages/cards/src/${owner}/`;
+  return !frenchBaseline.files.some((f) => f.startsWith(prefix) && (owner !== "core" || !f.slice(prefix.length).includes("/")));
 }
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
@@ -132,12 +152,12 @@ describe("French catalogs (PLAN-I)", () => {
     }
   const scan = scanSources();
   const cards = cardIds();
-  const checkedCards = [...cards].filter(([set]) => set in FRENCH_CATALOGS);
+  const checkedCards = [...cards].filter(([set]) => translated(set));
 
   it("every file of cards/locales/fr is listed in FRENCH_CATALOGS, and each set catalog names a set", () => {
     const files = readdirSync(new URL("cards/locales/fr/", PACKAGES)).map((f) => f.replace(/\.json$/, ""));
     expect(files.sort()).toEqual(Object.keys(FRENCH_CATALOGS).sort());
-    for (const name of files) if (name !== "core") expect(cards.has(name), name).toBe(true);
+    for (const name of files) expect(cards.has(name), name).toBe(true);
   });
 
   it("catalogs have sorted keys, non-empty translations with the same placeholders", () => {

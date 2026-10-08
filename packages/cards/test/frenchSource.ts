@@ -4,7 +4,7 @@
  *
  * A line is French when it has two French function words, or one with an accented French word or a verb in "-ez"; a
  * lone accented word counts too, unless it belongs to an English card name (Séance Board, Éowyn…). Data that is French
- * on purpose (catalogs, Scryfall data, `french-overrides.json`) is out of scope.
+ * on purpose (catalogs, Scryfall data, `french-overrides.json`, `fr` and `nameFr` fields) is out of scope.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -19,6 +19,7 @@ const STOPWORDS = new Set(
   ).split(" "),
 );
 const ACCENTED = /[éèêàùçœÉÈÊÀ]/;
+const FRENCH_DATA = /\b(fr|nameFr)\s*:\s*[{"'`]/;
 
 /** Files in scope: tracked sources, styles, scripts, documents, and the data files written by hand. */
 const SCOPE = /\.(ts|tsx|js|mjs|cjs|css|html|md|ya?ml|sh|txt)$/;
@@ -72,10 +73,17 @@ export function frenchLines(file: string): { line: number; text: string }[] {
   } catch {
     return []; // deleted in the working tree
   }
+  // French data on purpose: the `fr` fields of a JSON file (deck names), `fr:` and `nameFr:` properties in code.
+  if (file.endsWith(".json"))
+    text = JSON.stringify(
+      JSON.parse(text, (k, v) => (k === "fr" ? undefined : v)),
+      null,
+      2,
+    );
   return text
     .split("\n")
     .map((t, i) => ({ line: i + 1, text: t }))
-    .filter((l) => isFrenchLine(l.text));
+    .filter((l) => !FRENCH_DATA.test(l.text) && isFrenchLine(l.text));
 }
 
 /** Files that still contain French, with their number of French lines. */
