@@ -49,3 +49,11 @@ export function tr(lang: Lang, template: string, args?: Record<string, TextArg>)
 export function t(template: string, args?: Record<string, TextArg>): string {
   return tr(current, template, args);
 }
+
+/**
+ * A text held in a variable (a `msg` literal of a table defined once, a text from the engine or the server) in a
+ * language; card references keep their id (use `localizeText` or `useLocalize()` when cards must be named).
+ */
+export function textIn(lang: Lang, text: string): string {
+  return localize(text, lang, (defId) => defId);
+}
