@@ -12,7 +12,6 @@
   ".github/workflows/legality.yml",
   "deploy/ecosystem.config.cjs",
   "deploy/update.sh",
-  "docs/extensions/tmt.md",
   "packages/ai/src/chaos.ts",
   "packages/ai/src/choices.ts",
   "packages/ai/src/combat.ts",

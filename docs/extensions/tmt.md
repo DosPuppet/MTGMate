@@ -1,86 +1,86 @@
-# Teenage Mutant Ninja Turtles (TMT, « Les Tortues Ninja », 188 cartes)
+# Teenage Mutant Ninja Turtles (TMT, 188 cards)
 
-Mécaniques et détail des lots.
+Mechanics and details of the lots.
 
-Extension demandée par l'utilisateur le 02/10/2026, après Marvel's Spider-Man et avant The Hobbit. 12 cartes étaient déjà gérées depuis la phase méta (lots M1 à M6, `docs/extensions/meta.md`) : faufilement (lu dans le texte, coût alternatif en renvoyant un attaquant non bloqué), jetons Mutagène, Classes… L'extension suit les règles d'intégration de CLAUDE.md (dette, R1, R7). Découpage : un sous-lot et un commit par couleur pour le lot A, par mécanique pour le lot B, par famille de cartes uniques ensuite.
+Set requested by the user on 2026-10-02, after Marvel's Spider-Man and before The Hobbit. 12 cards were already handled since the meta phase (lots M1 to M6, `docs/extensions/meta.md`): Sneak (read from the text, alternative cost by returning an unblocked attacker), Mutagen tokens, Classes... The set follows the integration rules of CLAUDE.md (debt, R1, R7). Split: one sublot and one commit per color for lot A, per mechanic for lot B, per family of unique cards afterwards.
 
-| Mécanique | Lot |
+| Mechanic | Lot |
 |---|---|
-| Socle : jetons | 0 |
-| Cartes faisables avec le moteur, par couleur | A1 à A6 |
-| Mécaniques phares restantes | B |
-| Légendaires et cartes uniques | C et suivants |
+| Groundwork: tokens | 0 |
+| Cards doable with the engine, by color | A1 to A6 |
+| Remaining flagship mechanics | B |
+| Legendary and unique cards | C and following |
 
-Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `white`, `blue`, `black`, `red`, `green`, `multi` et `artifacts` (incolores et terrains). Les aides sont dans `tmt/common.ts`.
+Scripts are in `packages/cards/src/tmt/`: `cards` (meta cards), `white`, `blue`, `black`, `red`, `green`, `multi` and `artifacts` (colorless cards and lands). Helpers are in `tmt/common.ts`.
 
-## Sous-lot 0 : socle ✅ (12 / 188)
+## Sublot 0: groundwork ✅ (12 / 188)
 
-- **Jetons :** Mutant 2/2 rouge, Ninja 1/1 noir, Robot 1/1 incolore (artefact), Insecte Guerrier 1/1 noir, Dinosaure Soldat 2/2 blanc ; Mutagène et Esprit Tortue Ninja existaient ; Rat, Nourriture et Trésor viennent des communs.
-- **Moteur :** « si son coût de faufilement a été payé » se lit aussi sur le permanent (`cond.castVia("sneak")`, comme le Web-slinging et le chaos).
-- **Tests :** test de fumée `ai/test/smoke/tmt.test.ts`.
+- **Tokens:** Mutant 2/2 red, Ninja 1/1 black, Robot 1/1 colorless (artifact), Insect Warrior 1/1 black, Dinosaur Soldier 2/2 white; Mutagen and Ninja Turtle Spirit already existed; Rat, Food and Treasure come from the common ones.
+- **Engine:** "if its Sneak cost was paid" is also read on the permanent (`cond.castVia("sneak")`, like Web-slinging and chaos).
+- **Tests:** smoke test `ai/test/smoke/tmt.test.ts`.
 
-## Sous-lot A1 : cartes blanches ✅ (38 / 188)
+## Sublot A1: white cards ✅ (38 / 188)
 
-- **Cartes (26) :** Action News Crew, Agent Bishop, Man in Black, April O'Neil, Kunoichi Trainee, Dimensional Exile, East Wind Avatar, Featherbrained Filcher, Grounded for Life, Hamato Guardian Stance, High-Flying Ace, Jennika, Bad Apple Big Sister, Koya, Death from Above, Leader's Talent, Leonardo, Big Brother, Leonardo, Cutting Edge, Leonardo, Leader in Blue, Leonardo, Sewer Samurai, Leonardo's Technique, Lita, Little Orphan Amphibian, Mighty Mutanimals, Prehistoric Pet, Quintessential Katana, Sally Pride, Lioness Leader, Triceraton Commander, Turncoat Kunoichi, Turtles Forever, Uneasy Alliance.
-- **Moteur :** rien de nouveau.
-- **Écart trouvé :** le faufilement n'était pas jouable pour une créature ou un rituel (aucune fenêtre de lancement, pas d'arrivée engagée et attaquante) ; corrigé au sous-lot B1, où les deux tests désactivés (Leonardo, Leader in Blue ; Turncoat Kunoichi) sont réactivés.
-- **Tests :** 37 tests de règles (« lot A, blanc ») ; The Ooze : un Mutagène par marqueur +1/+1 d'une créature qui part (la note qui le disait intestable était périmée).
+- **Cards (26):** Action News Crew, Agent Bishop, Man in Black, April O'Neil, Kunoichi Trainee, Dimensional Exile, East Wind Avatar, Featherbrained Filcher, Grounded for Life, Hamato Guardian Stance, High-Flying Ace, Jennika, Bad Apple Big Sister, Koya, Death from Above, Leader's Talent, Leonardo, Big Brother, Leonardo, Cutting Edge, Leonardo, Leader in Blue, Leonardo, Sewer Samurai, Leonardo's Technique, Lita, Little Orphan Amphibian, Mighty Mutanimals, Prehistoric Pet, Quintessential Katana, Sally Pride, Lioness Leader, Triceraton Commander, Turncoat Kunoichi, Turtles Forever, Uneasy Alliance.
+- **Engine:** nothing new.
+- **Gap found:** Sneak was not playable for a creature or a sorcery (no casting window, no tapped-and-attacking arrival); fixed in sublot B1, where the two disabled tests (Leonardo, Leader in Blue; Turncoat Kunoichi) are re-enabled.
+- **Tests:** 37 rules tests ("lot A, white"); The Ooze: one Mutagen per +1/+1 counter on a creature that leaves (the note saying it was untestable was outdated).
 
-## Sous-lot A2 : cartes bleues ✅ (62 / 188)
+## Sublot A2: blue cards ✅ (62 / 188)
 
-- **Cartes (24) :** April, Reporter of the Weird, Bespoke Bō, Buzz Bots, Crustacean Commando, Does Machines, Donatello, Gadget Master, Donatello, Mutant Mechanic, Donatello, Turtle Techie, Donatello, Way with Machines, Donatello's Technique, Kitsune, Dragon's Daughter, Kitsune's Technique, Krang, Master Mind, Metalhead, Mind Transfer Protocol, Ooze Spill, Ray Fillet, Man Ray, Renet, Temporal Apprentice, Retro-Mutation, Return to the Sewers, Sewer-veillance Cam, Stockman, Mad Fly-entist, Turtles in Time, Utrom Scientists.
-- **Correctif du moteur :** un déclencheur dont les cibles doivent être « contrôlées par des joueurs différents » n'a pas de cible légale quand les créatures possibles sont toutes à un même joueur (603.3d) ; il demandait un choix impossible (Kitsune, Dragon's Daughter, trouvé par le fuzz ; test dans `rulings.test.ts`).
-- **Dette :** « mélangez main et cimetière, puis piochez » sert aussi à Turtles in Time : son entrée est retirée.
-- **Reste pour plus tard :** April O'Neil, Hacktivist (types distincts parmi les sorts lancés ce tour-ci), Fugitive Droid (cibler un sort qui cible vos permanents), Mondo Gecko (défense talismanique contre une couleur choisie).
-- **Tests :** 32 tests de règles (« lot A, bleu ») et un dans `rulings.test.ts`.
+- **Cards (24):** April, Reporter of the Weird, Bespoke Bō, Buzz Bots, Crustacean Commando, Does Machines, Donatello, Gadget Master, Donatello, Mutant Mechanic, Donatello, Turtle Techie, Donatello, Way with Machines, Donatello's Technique, Kitsune, Dragon's Daughter, Kitsune's Technique, Krang, Master Mind, Metalhead, Mind Transfer Protocol, Ooze Spill, Ray Fillet, Man Ray, Renet, Temporal Apprentice, Retro-Mutation, Return to the Sewers, Sewer-veillance Cam, Stockman, Mad Fly-entist, Turtles in Time, Utrom Scientists.
+- **Engine fix:** a trigger whose targets must be "controlled by different players" has no legal target when all the possible creatures belong to the same player (603.3d); it asked for an impossible choice (Kitsune, Dragon's Daughter, found by the fuzz; test in `rulings.test.ts`).
+- **Debt:** "shuffle hand and graveyard into library, then draw" is also used by Turtles in Time: its entry is removed.
+- **Left for later:** April O'Neil, Hacktivist (distinct types among the spells cast this turn), Fugitive Droid (target a spell that targets your permanents), Mondo Gecko (hexproof from a chosen color).
+- **Tests:** 32 rules tests ("lot A, blue") and one in `rulings.test.ts`.
 
-## Sous-lot A3 : cartes noires ✅ (86 / 188)
+## Sublot A3: black cards ✅ (86 / 188)
 
-- **Cartes (24) :** Anchovy & Banana Pizza, Armaggon, Future Shark, Bebop, Warthog Warrior, The Cloning of Shredder, Death in the Family, Foot Mystic, Insectoid Exterminator, Lord Dregg, Insect Invader, Madame Null, Power Broker, Oroku Saki, Shredder Rising, Pain 101, Paramecia Coloniex, Savanti Romero, Time's Exile, Shark Shredder, Killer Clone, Shredder, Unrelenting, Shredder's Armor, Shredder's Revenge, Shredder's Technique, South Wind Avatar, Splinter, Hamato Yoshi, Splinter's Technique, Stomped by the Foot, Super Shredder, Tunnel Rats.
-- **Moteur :** rien de nouveau.
-- **Reste pour plus tard :** Ninja Teen (au niveau 3, faufilement donné aux cartes de créature du cimetière), Rat King, Verminister (« la carte ciblée et toutes les autres cartes du même nom »).
-- **Tests :** 29 tests de règles (« lot A, noir »).
+- **Cards (24):** Anchovy & Banana Pizza, Armaggon, Future Shark, Bebop, Warthog Warrior, The Cloning of Shredder, Death in the Family, Foot Mystic, Insectoid Exterminator, Lord Dregg, Insect Invader, Madame Null, Power Broker, Oroku Saki, Shredder Rising, Pain 101, Paramecia Coloniex, Savanti Romero, Time's Exile, Shark Shredder, Killer Clone, Shredder, Unrelenting, Shredder's Armor, Shredder's Revenge, Shredder's Technique, South Wind Avatar, Splinter, Hamato Yoshi, Splinter's Technique, Stomped by the Foot, Super Shredder, Tunnel Rats.
+- **Engine:** nothing new.
+- **Left for later:** Ninja Teen (at level 3, Sneak given to creature cards in the graveyard), Rat King, Verminister ("the targeted card and all other cards with the same name").
+- **Tests:** 29 rules tests ("lot A, black").
 
-## Sous-lot A4 : cartes rouges ✅ (111 / 188)
+## Sublot A4: red cards ✅ (111 / 188)
 
-- **Cartes (25) :** Bot Bashing Time, Broadcast Takeover, Casey Jones, Jury-Rig Justiciar, General Traag, Heart of Stone, Hard-Won Jitte, Improvised Arsenal, Jennika's Technique, Manhole Missile, Mouser Attack!, Mouser Foundry, Mutant Town Musicians, Null Group Biological Assets, Old Hob, Alleycat Blues, Purple Dragon Punks, Raphael, Most Attitude, Raphael, Ninja Destroyer, Raphael, the Nightwatcher, Raphael, Tough Turtle, Raphael's Technique, Ravenous Robots, Rock Soldiers, Slash, Reptile Rampager, Spicy Oatmeal Pizza, Wingnut, Bat on the Belfry, Zog, Triceraton Castaway.
-- **Moteur :** rien de nouveau. « Défaussez votre main et piochez sept cartes » sert aussi à Raphael's Technique : l'entrée de dette de `mayWheel` est retirée ; l'audit Oracle ↔ script la note comme une équivalence (sept cartes par construction).
-- **Tests :** 34 tests de règles (« lot A, rouge »).
+- **Cards (25):** Bot Bashing Time, Broadcast Takeover, Casey Jones, Jury-Rig Justiciar, General Traag, Heart of Stone, Hard-Won Jitte, Improvised Arsenal, Jennika's Technique, Manhole Missile, Mouser Attack!, Mouser Foundry, Mutant Town Musicians, Null Group Biological Assets, Old Hob, Alleycat Blues, Purple Dragon Punks, Raphael, Most Attitude, Raphael, Ninja Destroyer, Raphael, the Nightwatcher, Raphael, Tough Turtle, Raphael's Technique, Ravenous Robots, Rock Soldiers, Slash, Reptile Rampager, Spicy Oatmeal Pizza, Wingnut, Bat on the Belfry, Zog, Triceraton Castaway.
+- **Engine:** nothing new. "Discard your hand, then draw seven cards" is also used by Raphael's Technique: the `mayWheel` debt entry is removed; the Oracle <-> script audit notes it as an equivalence (seven cards by construction).
+- **Tests:** 34 rules tests ("lot A, red").
 
-## Sous-lot A5 : cartes vertes ✅ (135 / 188)
+## Sublot A5: green cards ✅ (135 / 188)
 
-- **Cartes (24) :** Courier of Comestibles, Cowabunga!, Frog Butler, Groundchuck & Dirtbag, Guac & Marshmallow Pizza, Michelangelo, Game Master, Michelangelo, Improviser, Michelangelo, Mutant BFF, Michelangelo, Weirdness to 11, Mona Lisa, Science Geek, Mutant Chain Reaction, New Generation's Technique, Novel Nunchaku, Party Dude, Primordial Pachyderm, Ragamuffin Raptor, Rocksteady, Crash Courser, Saved by the Shell, Tenderize, Transdimensional Bovine, Turtle Power!, Venus, Torn Between Worlds, West Wind Avatar, Zoo Escapees.
-- **Moteur :** rien de nouveau (Groundchuck & Dirtbag : la capacité de mana déclenchée est un remplacement de mana, comme Badgermole Cub ; écart voulu dans `audit-baseline.json`).
-- **Tests :** 33 tests de règles (« lot A, vert »).
+- **Cards (24):** Courier of Comestibles, Cowabunga!, Frog Butler, Groundchuck & Dirtbag, Guac & Marshmallow Pizza, Michelangelo, Game Master, Michelangelo, Improviser, Michelangelo, Mutant BFF, Michelangelo, Weirdness to 11, Mona Lisa, Science Geek, Mutant Chain Reaction, New Generation's Technique, Novel Nunchaku, Party Dude, Primordial Pachyderm, Ragamuffin Raptor, Rocksteady, Crash Courser, Saved by the Shell, Tenderize, Transdimensional Bovine, Turtle Power!, Venus, Torn Between Worlds, West Wind Avatar, Zoo Escapees.
+- **Engine:** nothing new (Groundchuck & Dirtbag: the triggered mana ability is a mana replacement, like Badgermole Cub; intentional gap in `audit-baseline.json`).
+- **Tests:** 33 rules tests ("lot A, green").
 
-## Sous-lot A6 : cartes multicolores, incolores et terrains ✅ (180 / 188)
+## Sublot A6: multicolor and colorless cards, and lands ✅ (180 / 188)
 
-- **Cartes multicolores (29) :** Baxter Stockman, Bebop & Rocksteady, Brilliance Unleashed, Dark Leo & Shredder, Don & Leo, Problem Solvers, EPF Point Squad, Foot Elite, Foot Ninjas, Genghis Frog, Go Ninja Go, Ice Cream Kitty, Karai, Future of the Foot, Karai's Technique, Krang & Shredder, The Last Ronin, Lessons from Life, Mechanized Ninja Cavalry, Mikey & Leo, Chaos & Order, Mouser Mark III, The Neutrinos, Nobody, Pizza Face, Gastromancer, Putrid Pals, Raph & Leo, Sibling Rivals, Raph & Mikey, Troublemakers, Slithering Cryptid, Splinter, Radical Rat, Tainted Treats, Tokka & Rahzar, Terrible Twos.
-- **Cartes incolores et terrains (16) :** Chrome Dome, Everything Pizza, Henchbots, Krang, Utrom Warlord, Omni-Cheese Pizza, Technodrome, Turtle Blimp, Turtle Van, Weather Maker, Dimension X, Foot Headquarters, Illegitimate Business, Mutant Town, Northampton Farm, TCRI Building, Turtle Lair.
-- **Moteur :** rien de nouveau.
-- **Reste pour plus tard :** Don & Raph, Hard Science (affinité pour les artefacts donnée au prochain sort non-créature), Mikey & Don, Party Planners (un marqueur de plus pour une créature lancée depuis le dessus de la bibliothèque), North Wind Avatar (une carte hors de la partie).
-- **Tests :** 63 tests de règles (« lot A, multicolores » et « lot A, incolores et terrains ») ; la branche faufilée de Karai est simulée en attendant le sous-lot B1.
+- **Multicolor cards (29):** Baxter Stockman, Bebop & Rocksteady, Brilliance Unleashed, Dark Leo & Shredder, Don & Leo, Problem Solvers, EPF Point Squad, Foot Elite, Foot Ninjas, Genghis Frog, Go Ninja Go, Ice Cream Kitty, Karai, Future of the Foot, Karai's Technique, Krang & Shredder, The Last Ronin, Lessons from Life, Mechanized Ninja Cavalry, Mikey & Leo, Chaos & Order, Mouser Mark III, The Neutrinos, Nobody, Pizza Face, Gastromancer, Putrid Pals, Raph & Leo, Sibling Rivals, Raph & Mikey, Troublemakers, Slithering Cryptid, Splinter, Radical Rat, Tainted Treats, Tokka & Rahzar, Terrible Twos.
+- **Colorless cards and lands (16):** Chrome Dome, Everything Pizza, Henchbots, Krang, Utrom Warlord, Omni-Cheese Pizza, Technodrome, Turtle Blimp, Turtle Van, Weather Maker, Dimension X, Foot Headquarters, Illegitimate Business, Mutant Town, Northampton Farm, TCRI Building, Turtle Lair.
+- **Engine:** nothing new.
+- **Left for later:** Don & Raph, Hard Science (affinity for artifacts given to the next noncreature spell), Mikey & Don, Party Planners (one more counter for a creature cast from the top of the library), North Wind Avatar (a card outside the game).
+- **Tests:** 63 rules tests ("lot A, multicolor" and "lot A, colorless and lands"); Karai's sneaked branch is simulated until sublot B1.
 
-## Sous-lot B1 : faufilement ✅ (180 / 188)
+## Sublot B1: Sneak ✅ (180 / 188)
 
-- **Moteur :**
-  - le faufilement (702.190a) se lance à l'étape de déclaration des bloqueurs, quand vous avez la priorité, aussi pour une créature ou un rituel (`sneakTiming`) ; hors de son moment habituel, l'option n'offre que le coût de faufilement ;
-  - l'attaquant non bloqué renvoyé est au choix (`bounce` dans la décision, `altBounce` dans l'option, le plus faible par défaut ; la fenêtre de l'interface sert aussi au Web-slinging) ;
-  - un permanent faufilé arrive engagé et attaquant ce qu'attaquait la créature renvoyée ;
-  - `RULES_VERSION` = 55, parties dorées régénérées.
-- **Tests :** 2 tests de règles (« lot B1 ») ; les deux tests désactivés du lot A (Leonardo, Leader in Blue ; Turncoat Kunoichi) sont réactivés et Karai est faufilée pour de bon.
+- **Engine:**
+  - Sneak (702.190a) is cast at the declare blockers step, when you have priority, for a creature or a sorcery too (`sneakTiming`); outside its usual timing, the option offers only the Sneak cost;
+  - the unblocked attacker to return is a choice (`bounce` in the decision, `altBounce` in the option, the weakest by default; the interface window also serves Web-slinging);
+  - a sneaked permanent arrives tapped and attacking what the returned creature was attacking;
+  - `RULES_VERSION` = 55, golden games regenerated.
+- **Tests:** 2 rules tests ("lot B1"); the two disabled tests of lot A (Leonardo, Leader in Blue; Turncoat Kunoichi) are re-enabled and Karai is really sneaked.
 
-## Sous-lot C1 : cartes uniques ✅ (188 / 188)
+## Sublot C1: unique cards ✅ (188 / 188)
 
-- **Cartes (8) :** April O'Neil, Hacktivist, Fugitive Droid, Mondo Gecko, Ninja Teen, Rat King, Verminister, Don & Raph, Hard Science, Mikey & Don, Party Planners, North Wind Avatar.
-- **Moteur :**
-  - journal du tour : `distinctTypes` (types de carte différents parmi les sorts lancés) ;
-  - cible « sort qui cible [un permanent correspondant] » (`spellsTargeting`) ;
-  - un effet « devient de la couleur choisie et gagne la défense talismanique contre elle » fige la couleur choisie (chaque activation garde la sienne) ; la protection lit aussi un filtre « choisi » (`resolveFilter`) ;
-  - faufilement donné depuis le cimetière (`playFrom.sneak`, Ninja Teen) ;
-  - réduction du prochain sort (`nextSpell.reduce`, affinité pour les artefacts) ; marqueurs d'un sort de créature lancé du dessus de la bibliothèque (`playFrom.counters`) ;
-  - sacrifice en coût qui peut inclure la source (`sacrificeOther.includeSelf`) ; `ref.sameNameInGraveyard` (la carte et ses homonymes) ;
-  - approximations levées : « chaque adversaire exile jusqu'à… » vaut pour chaque joueur désigné (Krang & Shredder) ; « la moitié, arrondie au supérieur » en une seule meule (`fx.millHalf(…, true)`, Kitsune's Technique) ;
-  - `RULES_VERSION` = 56, parties dorées régénérées.
-- **Approximations :** North Wind Avatar (pas de zone « hors de la partie ») ; Ninja Teen (l'attaquant renvoyé par le faufilement donné est le plus faible).
-- **Tests :** 8 tests de règles (« lot C1 »).
+- **Cards (8):** April O'Neil, Hacktivist, Fugitive Droid, Mondo Gecko, Ninja Teen, Rat King, Verminister, Don & Raph, Hard Science, Mikey & Don, Party Planners, North Wind Avatar.
+- **Engine:**
+  - turn log: `distinctTypes` (different card types among the spells cast);
+  - target "spell that targets [a matching permanent]" (`spellsTargeting`);
+  - an effect "becomes the chosen color and gains hexproof from it" freezes the chosen color (each activation keeps its own); protection also reads a "chosen" filter (`resolveFilter`);
+  - Sneak given from the graveyard (`playFrom.sneak`, Ninja Teen);
+  - next-spell cost reduction (`nextSpell.reduce`, affinity for artifacts); counters on a creature spell cast from the top of the library (`playFrom.counters`);
+  - sacrifice as a cost that can include the source (`sacrificeOther.includeSelf`); `ref.sameNameInGraveyard` (the card and its namesakes);
+  - approximations lifted: "each opponent exiles until..." applies to each designated player (Krang & Shredder); "half, rounded up" in a single mill (`fx.millHalf(…, true)`, Kitsune's Technique);
+  - `RULES_VERSION` = 56, golden games regenerated.
+- **Approximations:** North Wind Avatar (no "outside the game" zone); Ninja Teen (the attacker returned by the granted Sneak is the weakest).
+- **Tests:** 8 rules tests ("lot C1").
