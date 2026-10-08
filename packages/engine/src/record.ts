@@ -465,8 +465,10 @@ export const RECORD_VERSION = 1;
  *   déclenchent et limitées aux sources du filtre (Elesh Norn, Mother of Machines) ; dessus de bibliothèque remis dans
  *   l'ordre choisi (lookAtTop reorder) ; pas de question quand toutes les cartes regardées doivent être prises ; émerger
  *   d'un artefact
+ * - 171 : Mana : une source qui engage un autre permanent (Springleaf Drum) ne compte pas sur un permanent déjà engagé
+ *   ou sacrifié pour un autre coût du même paiement (Guardian of the Great Door)
  */
-export const RULES_VERSION = 170;
+export const RULES_VERSION = 171;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

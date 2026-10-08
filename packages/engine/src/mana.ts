@@ -224,12 +224,19 @@ function fitsTapAnother(s: GameState, id: ObjectId, x: ObjectId, kind: ManaAbili
  * Gene Pollinator : le permanent engagé en plus, choisi automatiquement. D'abord un permanent sans capacité de mana
  * (pour ne pas priver le solveur d'une source), sinon n'importe lequel ; `strict` : seulement le premier cas.
  */
-function otherToTap(s: GameState, id: ObjectId, ab: ManaAbilityDef, strict = false): ObjectId | undefined {
+function otherToTap(
+  s: GameState,
+  id: ObjectId,
+  ab: ManaAbilityDef,
+  strict = false,
+  exclude?: ReadonlySet<ObjectId>,
+): ObjectId | undefined {
   const me = obj(s, id).controller;
   // « Engagez une créature (un artefact, une créature légendaire) dégagée que vous contrôlez » : Springleaf Drum, Urza,
   // Lord High Artificer, Relic of Legends.
   const mine = s.battlefield.filter(
-    (x) => x !== id && !obj(s, x).tapped && obj(s, x).controller === me && fitsTapAnother(s, id, x, ab.tapAnother),
+    (x) =>
+      x !== id && !exclude?.has(x) && !obj(s, x).tapped && obj(s, x).controller === me && fitsTapAnother(s, id, x, ab.tapAnother),
   );
   return mine.find((x) => manaAbilitiesOf(s, x).length === 0) ?? (strict ? undefined : mine[0]);
 }
@@ -414,7 +421,8 @@ export function manaSources(
       if (!canActivateMana(s, id, ab)) return;
       // Mana restreint : seulement utilisable par le solveur pour un paiement autorisé.
       if (!restrictionAllows(s, id, ab, player, purpose)) return;
-      if (ab.tapAnother && !otherToTap(s, id, ab, true)) return;
+      // Un permanent exclu (engagé ou sacrifié pour un autre coût du même paiement) ne sert pas de « permanent à engager ».
+      if (ab.tapAnother && !otherToTap(s, id, ab, true, exclude)) return;
       if (ab.cost.self === "sacrifice" && purpose?.sacrificedForCost?.has(id)) return;
       if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose, exclude))) return;
       // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).

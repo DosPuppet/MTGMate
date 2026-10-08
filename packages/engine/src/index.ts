@@ -68,6 +68,7 @@ export {
   attackableDefenders,
   attackCandidates,
   attackRequirements,
+  attackTaxFor,
   blockCandidates,
   canAttack,
   canBlock,

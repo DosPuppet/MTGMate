@@ -263,11 +263,18 @@ export function priorityOptions(
   const baseline = afterPass ? evaluate(rollout(afterPass, until, 60, true), me, opts) : evaluate(s, me, opts);
   const options: ScoredOption[] = [];
   for (const a of actions) {
-    // Renfort global en rituel (Overrun…) : seulement pour une attaque potentiellement létale.
+    // Renfort global de la force en rituel (Overrun…) : seulement pour une attaque potentiellement létale. Un renfort
+    // sans bonus de force (Flawless Maneuver : indestructible) est évalué comme les autres sorts.
     if (a.type === "cast") {
       const d = s.defs[s.objects[a.card]?.defId ?? ""];
-      if (d?.spell?.modes[0]?.effects.some((e) => e.op === "pump" && e.what.kind === "zone")) {
-        if (step === "main1" && overrunIsLethal(s, me)) return { baseline, options, forced: { type: "cast", card: a.card } };
+      const overrun = d?.spell?.modes[0]?.effects.some(
+        (e) => e.op === "pump" && e.what.kind === "zone" && (typeof e.power !== "number" || e.power > 0),
+      );
+      if (overrun) {
+        // Une façon de le lancer réellement payable (coût normal, sans payer, coût alternatif…).
+        const forced =
+          step === "main1" && overrunIsLethal(s, me) ? enumerateDecisions(a).find((v) => trySubmit(s, me, v)) : undefined;
+        if (forced) return { baseline, options, forced };
         continue;
       }
     }

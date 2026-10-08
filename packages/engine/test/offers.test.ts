@@ -28,6 +28,24 @@ const activations = (s: GameState, player: string, source: string) =>
   );
 
 describe("options proposées, décisions acceptées", () => {
+  it("Guardian of the Great Door et Springleaf Drum : les créatures engagées pour le coût ne servent plus au Drum (fuzz strict)", () => {
+    // {W}{W} et quatre permanents à engager : la seule solution engage les deux Îles et deux créatures, et paie avec la
+    // Plaine et le Drum (qui engage la troisième créature).
+    let s = scenario({
+      p1: {
+        battlefield: ["Springleaf Drum", "Plains", ...lands("Island", 2), bear("Ours A"), bear("Ours B"), bear("Ours C")],
+        hand: ["Guardian of the Great Door"],
+      },
+    });
+    const guardian = idOf(s, "p1", "hand", "Guardian of the Great Door");
+    const option = castOption(s, "p1", guardian);
+    expect(option).toBeDefined();
+    const tap = option?.picks?.find((p) => p.slot === "costTap");
+    expect(tap?.suggested.filter((id) => chars(s, id).types.includes("Creature"))).toHaveLength(2);
+    s = settle(act(s, "p1", { type: "cast", card: guardian, picks: { costTap: tap?.suggested ?? [] } } as never));
+    expect(idsOf(s, "p1", "battlefield", "Guardian of the Great Door")).toHaveLength(1);
+  });
+
   it("« défaussez une carte ou payez {2} » : le paiement tient compte de la taxe de commandant (Titania depuis la zone de commandement)", () => {
     const affordable = (n: number) => {
       const s = scenario({

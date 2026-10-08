@@ -5,6 +5,7 @@ import {
   type Agent,
   allowedDefenders,
   attackCandidates,
+  attackTaxFor,
   blockCandidates,
   type Decision,
   forcedAttackers,
@@ -12,6 +13,7 @@ import {
   legalActions,
   type PlayerId,
   repairAttacks,
+  solvePayment,
 } from "@mtgx/engine";
 import { mulberryChoice } from "./choices";
 import { buildCastDecision } from "./options";
@@ -57,6 +59,15 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
             const defender = pick(rand, allowedDefenders(s, id));
             return defender ? [{ id, defender }] : [];
           });
+        // Taxes d'attaque (Propaganda, Ghostly Prison) : on retire des attaques taxées tant que le total n'est pas payable.
+        const taxOf = (list: typeof attackers) => list.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
+        const payable = (list: typeof attackers) =>
+          taxOf(list) === 0 || solvePayment(s, me, { generic: taxOf(list), colored: {}, x: 0 }) !== null;
+        while (!payable(attackers)) {
+          const i = attackers.findLastIndex((a) => attackTaxFor(s, a.defender) > 0);
+          if (i < 0) break;
+          attackers.splice(i, 1);
+        }
         return { type: "declareAttackers", attackers: repairAttacks(s, me, attackers) };
       }
       case "declareBlockers": {
