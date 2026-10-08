@@ -167,6 +167,7 @@ export interface LocalMatch {
   bestOf: 3;
   wins: Record<string, number>;
   game: number;
+  /** "p1", "p2", "draw" (a drawn match; "nul" in matches saved before PLAN-I), or null while the match goes on. */
   winner: string | null;
   /** Deck and sideboard of the current game, and those of the start of the match (a swap keeps the same cards). */
   deck: { main: DeckEntries; sideboard: DeckEntries };
@@ -1441,7 +1442,7 @@ export const useGame = create<Store>((set, get) => {
         if (view.winner) wins[view.winner] = (wins[view.winner] ?? 0) + 1;
         const decided = (wins.p1 ?? 0) >= 2 || (wins.p2 ?? 0) >= 2 || m.game >= m.bestOf;
         const winner = decided ? ((wins.p1 ?? 0) > (wins.p2 ?? 0) ? "p1" : (wins.p2 ?? 0) > (wins.p1 ?? 0) ? "p2" : null) : null;
-        set({ localMatch: { ...m, wins, winner: decided ? (winner ?? "nul") : null } });
+        set({ localMatch: { ...m, wins, winner: decided ? (winner ?? "draw") : null } });
       }
       const lines = describeEvents(events, view, faces, get().lang, get().view);
       for (const cue of soundsFor(events, view, get().view, faces)) playSound(cue.key, cue);

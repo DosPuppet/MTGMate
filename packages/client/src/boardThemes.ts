@@ -1,32 +1,43 @@
 /**
  * Board textures (playmats), chosen by the player and kept in `localStorage`. The rendering is entirely in CSS
  * (`styles.css`, `.board[data-board=…]`): gradients and SVG noise, no image to download. The ids are stored values and
- * CSS selectors (French words, kept); the labels are translated at display (`textIn`).
+ * CSS selectors (French before PLAN-I: `LEGACY_IDS`); the labels are translated at display (`textIn`).
  */
 import { msg } from "@mtgx/engine";
 
-export type BoardTheme = "nuit" | "feutre" | "bois" | "ardoise" | "cuir" | "arcane" | "ocean";
+export type BoardTheme = "night" | "felt" | "wood" | "slate" | "leather" | "arcane" | "ocean";
 /** The player's choice: a texture, or a random texture for each game. */
-export type BoardThemeChoice = BoardTheme | "hasard";
+export type BoardThemeChoice = BoardTheme | "random";
 
 export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
-  { id: "nuit", label: msg("Night") },
-  { id: "feutre", label: msg("Felt") },
-  { id: "bois", label: msg("Wood") },
-  { id: "ardoise", label: msg("Slate") },
-  { id: "cuir", label: msg("Leather") },
+  { id: "night", label: msg("Night") },
+  { id: "felt", label: msg("Felt") },
+  { id: "wood", label: msg("Wood") },
+  { id: "slate", label: msg("Slate") },
+  { id: "leather", label: msg("Leather") },
   { id: "arcane", label: msg("Arcane") },
   { id: "ocean", label: msg("Ocean") },
 ];
 
 const KEY = "planecircle.board";
 
+/** Ids before PLAN-I (French), in settings saved by earlier versions. */
+const LEGACY_IDS: Record<string, BoardThemeChoice> = {
+  nuit: "night",
+  feutre: "felt",
+  bois: "wood",
+  ardoise: "slate",
+  cuir: "leather",
+  hasard: "random",
+};
+
 export function loadBoardTheme(): BoardThemeChoice {
   try {
-    const v = localStorage.getItem(KEY);
-    return v === "hasard" || BOARD_THEMES.some((t) => t.id === v) ? (v as BoardThemeChoice) : "nuit";
+    const stored = localStorage.getItem(KEY);
+    const v = (stored && LEGACY_IDS[stored]) || stored;
+    return v === "random" || BOARD_THEMES.some((t) => t.id === v) ? (v as BoardThemeChoice) : "night";
   } catch {
-    return "nuit";
+    return "night";
   }
 }
 
@@ -40,7 +51,7 @@ export function saveBoardTheme(choice: BoardThemeChoice): void {
 
 /** The texture displayed: the chosen one, or, for "random", a texture drawn from `roll` (a number in [0, 1)). */
 export function resolveBoardTheme(choice: BoardThemeChoice, roll: number): BoardTheme {
-  if (choice !== "hasard") return choice;
+  if (choice !== "random") return choice;
   const i = Math.min(BOARD_THEMES.length - 1, Math.floor(roll * BOARD_THEMES.length));
   return (BOARD_THEMES[i] as { id: BoardTheme }).id;
 }

@@ -63,7 +63,7 @@ The engine and the server do not know the reader's language (an online game can 
 - **`cards/test/locales.test.ts` (catalog completeness):** collects every message id (card definitions walked at run time for `label`, `prompt`, `title`, mode and option names; source scanned for `msg("…")` and `t("…")` literals) and fails on a missing French entry or a stale one. Same model as `debt.test.ts`.
 - **`cards/test/english-source.test.ts` (no French in the code):** flags French in string literals and comments of the source (accented letters, frequent French words) outside the catalogs and the data that is French on purpose (Scryfall `fr` fields, `french-overrides.json`, `nameFr`). It starts with a baseline of files still in French, which must only shrink (like `ceilings`), and ends empty in I7.
 - **French interface unchanged:** the interface tests (`ui-smoke`, `tutorial-smoke`, `online-smoke`…) click and read French texts; they run in French and must pass without edits to their French strings. That is the regression check of the whole plan.
-- **English interface:** `ui-smoke` and `tutorial-smoke` also run with `--lang en` (I7).
+- **English interface:** `tools/lang-smoke.ts` (I7) plays a game in each language and checks every text shown (see I7).
 
 ## Principles
 
@@ -176,7 +176,7 @@ Keyword actions and mechanics take the English name printed on the cards (Scryfa
 
 ## Tracking
 
-### I0 — Infrastructure (done 08/10/2026)
+### I0 — Infrastructure (done 2026-10-08)
 
 - `engine/src/text.ts`: `msg` (values as `⟨name|value⟩` markers, nested markers allowed), `parseText`, `renderText`, `plainText`; 7 tests (`engine/test/text.test.ts`).
 - Client: `translate.ts` (merged French catalogs, `localize`, `t`, `tr`, `setTextLang`, `<html lang>`), `useT()` in `localize.ts`, `localizeText` on the shared decoder; `LangToggle` on the home screen and in the online lobby, replacing the sidebar and deck builder toggles (same `planecircle.lang` setting).
@@ -190,7 +190,7 @@ Keyword actions and mechanics take the English name printed on the cards (Scryfa
 
 Done by parallel agents on disjoint files (engine in 8 groups, client in 4, cards core, server and AI, tools; then card scripts in 14 groups of sets), each writing the French originals into catalog fragments merged with `npx tsx tools/locales.ts --merge`.
 
-- **Catalogs:** engine 552 entries, client 907, server 33, cards core 89 and one catalog per set (about 8,000 entries in all); no conflicting id at merge. Ids that the same English could not keep apart use a more precise English or a `ctx:` prefix (`ctx:zone|Exile`, `ctx:card|Commander`, `ctx:gains|Haste`…).
+- **Catalogs:** engine 552 entries, client 907, server 33, cards core 89 and one catalog per set (8,806 entries in all at the end of the plan); no conflicting id at merge. Ids that the same English could not keep apart use a more precise English or a `ctx:` prefix (`ctx:zone|Exile`, `ctx:card|Commander`, `ctx:gains|Haste`…).
 - **Engine:** every prompt, label and `RulesError` goes through `msg`; code that compared displayed text now reads data (`ab.equip` for Equip, locked doors for Rooms, `FACE_DOWN_WARD`, `PROWESS_LABEL`); `altCostMode` takes `"Overload" | "Cleave"`; `RULES_VERSION` unchanged.
 - **Client:** interface through `useT()`; engine and server texts through `useLocalize()`/`textIn`; game log as English templates (French output checked word for word against the old log on about 200 events); tutorial lessons as `msg` data; deck names from `DeckList.fr`; local AI and player names localized ("You", "AI n"), online AI seats named by the server with `msg("AI {n} ({level})")` and localized by the client (`withPlayerNames`).
 - **Cards:** labels deduced by `scryfall.ts` (Equip, Crew, cycling, alternative costs…) and every set script in English; precon decks with English names and `fr`; validation messages as `msg`; welcome decks renamed `welcome-{white,blue,black,red,green}` (saved games store card lists, not deck ids: no alias needed); golden games renamed (`4c-vs-izzet`, `four-players-a`…).
@@ -199,3 +199,30 @@ Done by parallel agents on disjoint files (engine in 8 groups, client in 4, card
 - **Values of templates** are translated recursively: a name that equals a catalog id would be translated. Measured: 15 English card or token names are catalog ids (basic lands, Cancel, Food, Treasure…); every such card has a French name, which is what French mode shows, and the tokens show their French type. Kept as is.
 - **Checks:** whole test suite green (155 files, 13,996 tests); `tsc` and Biome clean; fuzz fingerprint identical to the one before PLAN-I (`--games 300 --pool all --seed 7`: `f07b0933`, 273,685 decisions); golden games identical.
 - **French display changes (improvements):** a few prompts now show the French card name where they showed the English one (Agency Outfitter, partner prompts, Room doors); Uldaros Theorix target labels show the French card type.
+
+### I5 — Tests in English (done 2026-10-08)
+
+Eleven agents, balanced by French lines (about 900 each): test titles, comments, helper messages and French test data (made-up card names, labels, player names) in English across 156 files; French kept only where a test checks the French interface (`i18n.test.ts` log expectations, `zoneTabs`, French search input), marked `// i18n-ignore`. Same test counts before and after each group. Also: tutorial lesson ids in English (`screen`, `attack`, `block`, `spells`, `stack`, `abilities`, `game`; saved progress migrated), references to renamed documents in code and tests, a BLB lookup still looking for a French label (the test was passing through the default mode) fixed. The detector gained every French accent and words that are French on their own (`vous`, `avec`, `chaque`…), which found a few last lines.
+
+### I6 — Documentation (done 2026-10-08)
+
+Nine agents (Sonnet): README, CLAUDE.md, every living document translated and renamed; archives condensed into `docs/history.md` (89 KB) and `docs/backlog.md` (18 KB), then removed. Review: mechanic names checked against the Scryfall keywords of the card data (Power-up, not "level up"; split second, not "shared second"; hexproof from a color for Mondo Gecko). Three documents keep French interface strings with an English gloss (`allowed`).
+
+### I7 — Closing (done 2026-10-08)
+
+- `tools/lang-smoke.ts`, in `verify`'s interface tests: home, deck builder, online lobby, tutorial menu and a game against the AI, in French then English; fails on a raw marker, French in English, or an English id shown untranslated in French. First run: both games played to the end, no problem found.
+- Last French identifiers: board themes (`night`, `felt`, `wood`, `slate`, `leather`, `random`; saved choices migrated), drawn local match (`"draw"`, old `"nul"` still read as a draw).
+- `CLAUDE.md`: "Language" convention final; `lang-smoke` in the checks.
+- `npm run verify -- --full`: first run, `mobile-smoke` and `proxy-smoke` timed out because `lang-smoke` (two browser games, about 5 min) ran in one of the two parallel queues; it now runs alone after them, with a 150-action game. Second run: everything green except the bundle budget of the catalogs (712 KB > 700 KB, raised to 900 KB) and three browser tests that failed on a network change of the machine (`ERR_NETWORK_CHANGED`) and passed when rerun alone (`deck-smoke`, `tutorial-smoke`, `ai-smoke`). Whole test suite green (155 files, 13,996 tests), `tsc` and Biome clean.
+- `packages/cards/data/french-baseline.json`: `files` empty; `allowed`: 13 files (3 documents and PLAN-I quoting French interface strings, the detector itself, 7 Playwright smoke tools that click French labels, the engine text test with French catalog data).
+
+## Summary (2026-10-08)
+
+- **Result:** the code, the tests and the documents are in English; the interface is bilingual (French by default) with one setting for the interface and the cards; the French interface is unchanged (checked by the French Playwright tests, the French log compared word for word, and `lang-smoke`), apart from a few improvements listed in the I1–I4 tracking.
+- **Volume:** 8,806 French catalog entries (engine 552, client 907, server 33, cards 7,314 with core); 730 files changed; 1.07 MB of documents translated or condensed.
+- **Rules:** no rules change; `RULES_VERSION` unchanged; golden games identical; fuzz fingerprint identical to the one before the plan (`f07b0933`, 273,685 decisions at seed 7).
+- **Guards left in place:** `locales.test.ts` (every message id has its French, no stale or conflicting entry, literal-only calls), `english-source.test.ts` (no French outside `allowed`), `lang-smoke` (display in both languages).
+- **Known limits:**
+  - Card rules text comes from Scryfall: basic lands and tokens have no French text there, so their text stays English in the French interface (as before).
+  - Values of templates are translated recursively: an English name equal to a catalog id would be translated (measured: 15 card or token names, all harmless, see I1–I4).
+  - Some English ids differ only slightly where the French had two wordings for one idea ("Draw, then discard one card" / "Draw, then discard a card"): the English stays correct, the French unchanged; they can be unified later together with their French.

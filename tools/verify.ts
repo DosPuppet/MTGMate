@@ -239,10 +239,11 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
         { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok: no page error$/ },
         { name: "replay-smoke", cmd: "npx tsx tools/replay-smoke.ts", show: /^ok: replay .*$/ },
         { name: "bo3-smoke", cmd: "npx tsx tools/bo3-smoke.ts", show: /^ok: BO3 .*$/ },
-        { name: "lang-smoke", cmd: "npx tsx tools/lang-smoke.ts", show: /^ok: both languages.*$/ },
       ]),
     ]);
     ok = results.every(Boolean) && ok;
+    // Display in both languages (PLAN-I): two games in the browser, alone (in a queue, it slowed the others into timeouts).
+    ok = (await group([{ name: "lang-smoke", cmd: "npx tsx tools/lang-smoke.ts 150", show: /^ok: both languages.*$/ }])) && ok;
     // Latency of the high AI in real time: alone (a parallel load would skew the measurement), full verification.
     if (full)
       ok =

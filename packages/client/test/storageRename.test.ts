@@ -23,7 +23,7 @@ describe("carrying over MTG Mate keys", () => {
 
   it("each mtgmate.* key moves to planecircle.*, without overwriting a new key; other keys stay", async () => {
     const store = stubStorage({
-      "mtgmate.board": "bois",
+      "mtgmate.board": "wood",
       "mtgmate.decks": '{"state":{}}',
       "mtgmate.lang": "en",
       "planecircle.lang": "fr",
@@ -31,7 +31,7 @@ describe("carrying over MTG Mate keys", () => {
     });
     await import("../src/storageRename");
     expect(Object.fromEntries(store)).toEqual({
-      "planecircle.board": "bois",
+      "planecircle.board": "wood",
       "planecircle.decks": '{"state":{}}',
       "planecircle.lang": "fr",
       "mtgx.images": "on",

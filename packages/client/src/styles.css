@@ -139,27 +139,27 @@ button {
   --noise-coarse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.25' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --wood-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.18' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.02 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
-[data-board="nuit"] {
+[data-board="night"] {
   background:
     radial-gradient(ellipse at 50% 50%, rgba(80, 110, 150, 0.18), transparent 65%),
     linear-gradient(180deg, var(--felt-2), var(--felt-1) 50%, var(--felt-2));
 }
-[data-board="feutre"] {
+[data-board="felt"] {
   background:
     var(--noise-fine), radial-gradient(ellipse at 50% 50%, rgba(120, 190, 130, 0.22), transparent 70%),
     linear-gradient(180deg, #0c2216, #1d4a30 50%, #0c2216);
 }
-[data-board="bois"] {
+[data-board="wood"] {
   background:
     var(--noise-fine), var(--wood-grain), radial-gradient(ellipse at 50% 45%, rgba(255, 190, 120, 0.12), transparent 70%),
     linear-gradient(180deg, #1e110a, #3d2416 50%, #1e110a);
 }
-[data-board="ardoise"] {
+[data-board="slate"] {
   background:
     var(--noise-coarse), radial-gradient(ellipse at 50% 50%, rgba(170, 185, 200, 0.12), transparent 70%),
     linear-gradient(180deg, #15191e, #2c333b 50%, #15191e);
 }
-[data-board="cuir"] {
+[data-board="leather"] {
   background:
     var(--noise-fine), radial-gradient(ellipse at 50% 50%, rgba(220, 120, 90, 0.16), transparent 68%),
     linear-gradient(180deg, #1f0b0c, #4a1c1c 50%, #1f0b0c);

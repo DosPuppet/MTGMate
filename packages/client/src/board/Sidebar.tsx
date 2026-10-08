@@ -294,11 +294,11 @@ function BoardThemeControl() {
         ))}
         <button
           type="button"
-          className={`swatch random ${choice === "hasard" ? "on" : ""}`}
+          className={`swatch random ${choice === "random" ? "on" : ""}`}
           title={t("Random (one texture per game)")}
           aria-label={t("Board: random for each game")}
-          aria-pressed={choice === "hasard"}
-          onClick={() => setChoice("hasard")}
+          aria-pressed={choice === "random"}
+          onClick={() => setChoice("random")}
         >
           ?
         </button>

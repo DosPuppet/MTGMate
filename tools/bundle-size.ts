@@ -16,8 +16,8 @@ const BUDGET: Record<string, number> = {
   // Cards of the Commander decks (EDH pseudo-set, PLAN-E): 551 KB with nine precons (07/10/2026); beyond about 1 MB,
   // load them on demand (PLAN-E, principle 1).
   commander: 800 * KB,
-  // French catalogs (PLAN-I): about 5 000 texts once every set is translated.
-  locales: 700 * KB,
+  // French catalogs (PLAN-I): 712 KB with 8,806 texts (2026-10-08), loaded at start-up (French is the default).
+  locales: 900 * KB,
   vendor: 450 * KB,
   // Printings table (deck builder), loaded on demand; 466 KB with the Commander cards (07/10/2026).
   printings: 600 * KB,
