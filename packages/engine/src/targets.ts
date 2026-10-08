@@ -1,5 +1,5 @@
 /**
- * Légalité des cibles (règle 115).
+ * Target legality (rule 115).
  */
 import { resolveCompare } from "./effects";
 import { RulesError } from "./errors";
@@ -7,6 +7,7 @@ import { chars, hasKeyword, snapshot } from "./layers";
 import { firstOfEachName, shareName } from "./names";
 import { commanderIdentity, obj } from "./state";
 import { playerProtectedFrom, playerStatic, playerStatics } from "./statics";
+import { msg } from "./text";
 import { attackedThisTurn, countersPutThisTurn, dealtDamageThisTurn, objectDidThisTurn } from "./turnlog";
 import type {
   CardType,
@@ -23,8 +24,8 @@ import type {
 import { COLORS, isAnyManaAbility, LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 /**
- * Vue d'une source (sort, source d'une capacité ou de blessures) : l'objet, ses dernières informations connues, sinon
- * la carte imprimée.
+ * View of a source (spell, source of an ability or of damage): the object, its last known information, otherwise the
+ * printed card.
  */
 export function sourceView(s: GameState, id?: ObjectId, defId?: string, controller?: PlayerId): LkiSnapshot | undefined {
   if (id && s.objects[id]) return snapshot(s, id);
@@ -49,18 +50,18 @@ export function sourceView(s: GameState, id?: ObjectId, defId?: string, controll
 }
 
 /**
- * Protection et défense talismanique « contre [filtre] » (702.16, 702.11d ; R4.2) : l'objet `id` est-il protégé de
- * cette source ? Une défense talismanique ne compte que pour le ciblage par un adversaire (`targetedByOpponent`).
- * Sans vue de la source, seule la protection contre tout (filtre vide) s'applique.
+ * Protection and hexproof "from [filter]" (702.16, 702.11d; R4.2): is the object `id` protected from this source?
+ * Hexproof counts only for targeting by an opponent (`targetedByOpponent`).
+ * Without a view of the source, only protection from everything (empty filter) applies.
  */
 export function protectedFrom(s: GameState, id: ObjectId, source: LkiSnapshot | undefined, targetedByOpponent = false): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   for (const r of chars(s, id).protections) {
     if (r.hexproofOnly && !targetedByOpponent) continue;
-    // « défense talismanique contre la couleur choisie » (Mondo Gecko) : le choix du permanent protégé.
+    // "hexproof from the chosen color" (Mondo Gecko): the choice of the protected permanent.
     let from = resolveFilter(s, r.from, id);
-    // Commander's Plate : chaque couleur hors de l'identité des commandants de son contrôleur (903.4).
+    // Commander's Plate: each color outside the color identity of its controller's commanders (903.4).
     if (r.outsideIdentity) {
       const identity = commanderIdentity(s, o.controller);
       const colors = COLORS.filter((c) => !identity.includes(c));
@@ -72,23 +73,23 @@ export function protectedFrom(s: GameState, id: ObjectId, source: LkiSnapshot | 
   return false;
 }
 
-/** Le filtre s'applique-t-il à ces caractéristiques (objet vivant ou dernières informations connues) ? */
-/** Marqueurs (d'une sorte donnée, ou de toute sorte) mis par ce joueur, d'après les entrées « joueur|sorte ». */
+/** Does the filter apply to these characteristics (live object or last known information)? */
+/** Counters (of a given kind, or of any kind) put by this player, from the "player|kind" entries. */
 export function countersPutBy(entries: string[] | undefined, player: PlayerId, kind: boolean | string): boolean {
   return !!entries?.some((x) => (kind === true ? x.startsWith(`${player}|`) : x === `${player}|${kind}`));
 }
 
-/** `ObjectFilter.attacking` : attaquante, qui vous attaque, qui attaque un adversaire ou l'un des joueurs désignés. */
+/** `ObjectFilter.attacking`: attacking, attacking you, attacking an opponent or one of the designated players. */
 function attackingMatches(v: LkiSnapshot, a: NonNullable<ObjectFilter["attacking"]>, perspective: PlayerId): boolean {
   if (typeof a === "boolean") return !!v.attacking === a;
   if (a === "you") return v.attackedPlayer === perspective;
   if (a === "opponent") return !!v.attackedPlayer && v.attackedPlayer !== perspective;
-  // Une référence non résolue (hors `withX`) : toute créature attaquante.
+  // An unresolved reference (outside `withX`): any attacking creature.
   return Array.isArray(a) ? !!v.attackedPlayer && a.includes(v.attackedPlayer) : !!v.attacking;
 }
 
 export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: PlayerId, sourceId?: ObjectId): boolean {
-  // `types: []` (« permanent ciblé ») : aucune contrainte de type.
+  // `types: []` ("target permanent"): no type constraint.
   if (f.types?.length && !f.types.some((t) => v.types.includes(t))) return false;
   if (f.notTypes?.some((t) => v.types.includes(t))) return false;
   if (f.subtype && !hasSubtype(v, f.subtype)) return false;
@@ -99,9 +100,9 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.keyword && !v.keywords.includes(f.keyword)) return false;
   if (f.other && v.id === sourceId) return false;
   if (f.self && v.id !== sourceId) return false;
-  // Kid Loki : « chaque créature sur laquelle vous avez mis des marqueurs +1/+1 ce tour-ci ».
+  // Kid Loki: "each creature you put +1/+1 counters on this turn".
   if (f.countersPutByYouThisTurn && !countersPutBy(v.countersPutThisTurn, perspective, f.countersPutByYouThisTurn)) return false;
-  // Un sort (vue de `spellView`) ; pour un objet, `matchesObjectFilter` lit sa définition.
+  // A spell (view from `spellView`); for an object, `matchesObjectFilter` reads its definition.
   if (f.adventure !== undefined && !v.id && !!v.adventure !== f.adventure) return false;
   if (f.hasX !== undefined && !!v.hasX !== f.hasX) return false;
   if (f.suspected !== undefined && !!v.suspected !== f.suspected) return false;
@@ -109,8 +110,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.attacking !== undefined && !attackingMatches(v, f.attacking, perspective)) return false;
   if (f.maxManaValue !== undefined && (v.manaValue ?? 0) > f.maxManaValue) return false;
   if (f.manaValue !== undefined && (v.manaValue ?? 0) !== f.manaValue) return false;
-  // « carte du nom choisi », « du même nom que » (`nameOf`) : un nom en commun ; une carte scindée a ses deux noms (709.4),
-  // un aventurier son nom principal (715.4), une carte à deux faces celui de sa face visible (712.8a).
+  // "card with the chosen name", "with the same name as" (`nameOf`): a name in common; a split card has both its names
+  // (709.4), an adventurer its main name (715.4), a double-faced card that of its face-up face (712.8a).
   if (f.name && !shareName(v.name, f.name)) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
   if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
@@ -126,7 +127,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.attached === "wasToSource" && !(sourceId && v.lastAttachedTo === sourceId && !v.attachedTo)) return false;
   if (f.crew === "bySource" && !(sourceId && v.crewedByThisTurn?.includes(sourceId))) return false;
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
-  // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
+  // "with a counter": `any` accepts any kind of counter.
   if (f.withCounter === "any" && !Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
   if (f.withCounter && f.withCounter !== "any" && !((v.counters?.[f.withCounter] ?? 0) > 0)) return false;
   if (f.cast !== undefined && !!v.cast !== f.cast) return false;
@@ -143,7 +144,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
   if (f.compare && !compareMatches(v, f.compare)) return false;
-  // « avec une capacité de mana » (Moonsilver Key) : une capacité de mana, activée ou non (605.1a).
+  // "with a mana ability" (Moonsilver Key): a mana ability, activated or not (605.1a).
   if (f.withActivatedAbility === "mana" && !(v.abilities ?? []).some(isAnyManaAbility)) return false;
   if (f.withActivatedAbility === true && !(v.abilities ?? []).some((a) => a.kind === "activated")) return false;
   if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
@@ -164,8 +165,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
 }
 
 /**
- * `ObjectFilter.compare` : chaque comparaison résolue (un nombre), relative à l'objet lui-même (`power`, `basePower`) ou de
- * parité ; un montant encore non résolu (filtre lu directement, hors `resolveFilter` et `withX`) est ignoré.
+ * `ObjectFilter.compare`: each resolved comparison (a number), relative to the object itself (`power`, `basePower`) or
+ * of parity; an amount not yet resolved (filter read directly, outside `resolveFilter` and `withX`) is ignored.
  */
 function compareMatches(v: LkiSnapshot, cs: FilterCompare[]): boolean {
   for (const c of cs) {
@@ -182,25 +183,25 @@ function compareMatches(v: LkiSnapshot, cs: FilterCompare[]): boolean {
   return true;
 }
 
-/** Marqueur de sous-type : « a tous les types de créature » (Soulstone Sanctuary). */
+/** Subtype marker: "has all creature types" (Soulstone Sanctuary). */
 export const ALL_CREATURE_TYPES = "*";
 
-/** Sous-types qui ne sont pas des types de créature (terrains, artefacts, enchantements). */
+/** Subtypes that are not creature types (lands, artifacts, enchantments). */
 export const NON_CREATURE_SUBTYPES = new Set([...LAND_TYPES, "Equipment", "Aura", "Treasure", "Food", "Clue", "Saga", "Vehicle"]);
 
 function hasSubtype(v: LkiSnapshot, t: string): boolean {
   if (v.subtypes.includes(t)) return true;
-  // Changelin : tous les types de créature, dans toutes les zones (702.73a).
+  // Changeling: all creature types, in all zones (702.73a).
   if (v.keywords.includes("changeling") && !NON_CREATURE_SUBTYPES.has(t)) return true;
   return v.subtypes.includes(ALL_CREATURE_TYPES) && v.types.includes("Creature") && !NON_CREATURE_SUBTYPES.has(t);
 }
 
-/** Le filtre lit-il un choix fait par sa source (« du type / de la couleur / du nom choisis ») ? */
+/** Does the filter read a choice made by its source ("of the chosen type / color / name")? */
 export function hasChosen(f: ObjectFilter): boolean {
   return !!(f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen || f.numberChosen || f.typeChosen);
 }
 
-/** Remplace « du type / de la couleur choisis » par le choix fait par la source en arrivant. */
+/** Replaces "of the chosen type / color" with the choice made by the source as it entered. */
 export function withChosen(
   f: ObjectFilter,
   source:
@@ -227,7 +228,7 @@ export function withChosen(
     numberChosen: undefined,
   };
   if (f.numberChosen) {
-    // Sans choix, rien ne correspond (aucune valeur n'est négative).
+    // Without a choice, nothing matches (no value is negative).
     const n = source?.chosen?.number ?? -1;
     out.anyOf = [
       { manaValue: n },
@@ -237,38 +238,38 @@ export function withChosen(
   }
   if (f.parityChosen) out.compare = [...(f.compare ?? []), { what: "manaValue", cmp: source?.chosen?.parity ?? "even" }];
   if (f.nameChosen) out.name = source?.chosen?.cardName ?? "—";
-  // Sans choix (arrivée sans résolution), rien ne correspond.
+  // Without a choice (entered without resolving), nothing matches.
   if (f.subtypeChosen) out.subtype = source?.chosen?.creatureType ?? "—";
   if (f.colorChosen) out.colors = source?.chosen?.color ? [source.chosen.color] : [];
-  // Sans choix, aucun type ne correspond.
+  // Without a choice, no type matches.
   if (f.typeChosen) out.types = [(source?.chosen?.mode ?? "—") as CardType];
   return out;
 }
 
 /**
- * Remplace les valeurs dynamiques du filtre par leur valeur actuelle, hors d'une résolution : les choix de la source, puis
- * les comparaisons (`resolveCompare`, du point de vue de la source seule).
+ * Replaces the dynamic values of the filter with their current value, outside a resolution: the choices of the source,
+ * then the comparisons (`resolveCompare`, from the point of view of the source alone).
  */
 export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
-  // « Du type / de la couleur choisis » : le choix de la source (en jeu, sort qui se résout, sinon dernière information).
+  // "Of the chosen type / color": the choice of the source (in play, resolving spell, otherwise last information).
   if (hasChosen(f)) f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
   return resolveCompare(s, f, sourceId);
 }
 
-/** Filtre appliqué à une carte dans n'importe quelle zone (cimetière, bibliothèque, main…). */
+/** Filter applied to a card in any zone (graveyard, library, hand…). */
 export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f: ObjectFilter, sourceId?: ObjectId): boolean {
   const o = s.objects[id];
   if (!o) return false;
   f = resolveFilter(s, f, sourceId);
-  // « une autre carte » : la source morte est devenue une nouvelle carte du cimetière, reconnue par son identité
-  // physique (Morcant's Loyalist : « renvoyez une autre carte d'Elfe ciblée »).
+  // "another card": the dead source has become a new card in the graveyard, recognized by its physical identity
+  // (Morcant's Loyalist: "return another target Elf card").
   if (f.other && sourceId && o.uid && o.uid === (s.objects[sourceId]?.uid ?? s.lki[sourceId]?.uid)) return false;
-  // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
+  // "put into a graveyard this turn": the object was created in its zone during this turn.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   if (f.discardedThisTurn && !objectDidThisTurn(s, id, "discard")) return false;
-  // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders).
+  // "put into a graveyard from the battlefield this turn" (Supper for Spiders).
   if (f.fromBattlefieldThisTurn && (o.arrivedFrom !== "battlefield" || o.controlledSince !== s.turn.number)) return false;
-  // « meulée ce tour-ci » : arrivée dans le cimetière depuis la bibliothèque pendant ce tour (Raul, Tato Farmer).
+  // "milled this turn": put into the graveyard from the library during this turn (Raul, Tato Farmer).
   if (f.milledThisTurn && (o.zone !== "graveyard" || o.arrivedFrom !== "library" || o.controlledSince !== s.turn.number))
     return false;
   if (f.sameNameAs) {
@@ -281,10 +282,10 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
     )
       return false;
   }
-  // « carte de créature sans capacité » : pas de texte de règles.
+  // "creature card with no abilities": no rules text.
   if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
   if (f.adventure !== undefined && (s.defs[o.defId]?.layout === "adventure") !== f.adventure) return false;
-  // Sous-filtres : évalués comme le filtre lui-même (champs propres à l'objet, valeurs choisies), pas seulement sur la vue.
+  // Sub-filters: evaluated like the filter itself (fields specific to the object, chosen values), not only on the view.
   if (f.anyOf && !f.anyOf.some((g) => matchesCard(s, controller, id, g, sourceId))) return false;
   if (f.not && matchesCard(s, controller, id, f.not, sourceId)) return false;
   return (
@@ -307,19 +308,19 @@ export function matchesObjectFilter(
     const host = sourceId ? s.objects[sourceId]?.attachedTo : undefined;
     if (!host || o.attachedTo !== host) return false;
   }
-  // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
+  // "entered under your control this turn" (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
-  // Treacherous Greed : « une créature qui a infligé des blessures ce tour-ci ».
+  // Treacherous Greed: "a creature that dealt damage this turn".
   if (f.dealtDamageThisTurn && !dealtDamageThisTurn(s, id)) return false;
   if (f.disguise !== undefined && !!s.defs[o.defId]?.disguise !== f.disguise) return false;
-  // Fractal Tender : « si vous avez mis un marqueur sur cette créature ce tour-ci ».
+  // Fractal Tender: "if you put a counter on this creature this turn".
   if (f.countersPutByYouThisTurn && !countersPutBy(countersPutThisTurn(s, id), controller, f.countersPutByYouThisTurn))
     return false;
   if (f.crew === "source") {
     const c = sourceId ? s.objects[sourceId]?.crewedBy : undefined;
     if (!c || c.turn !== s.turn.number || !c.ids.includes(id)) return false;
   }
-  // « autre que la créature enchantée » (Sporogenic Infection, Saw) ; « la créature équipée / le terrain enchanté ».
+  // "other than the enchanted creature" (Sporogenic Infection, Saw); "the equipped creature / the enchanted land".
   if (f.attached === "notHost" && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
   if (f.attached === "host" && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;
   if (f.notSameNameAs) {
@@ -332,7 +333,7 @@ export function matchesObjectFilter(
     )
       return false;
   }
-  // Sous-filtres : évalués comme le filtre lui-même (champs propres à l'objet, valeurs choisies), pas seulement sur la vue.
+  // Sub-filters: evaluated like the filter itself (fields specific to the object, chosen values), not only on the view.
   if (f.anyOf && !f.anyOf.some((g) => matchesObjectFilter(s, controller, id, g, sourceId))) return false;
   if (f.not && matchesObjectFilter(s, controller, id, f.not, sourceId)) return false;
   return matchesView(
@@ -343,13 +344,13 @@ export function matchesObjectFilter(
   );
 }
 
-/** La source correspond-elle au filtre de la défense talismanique « contre [filtre] » d'un joueur ? */
+/** Does the source match the filter of a player's hexproof "from [filter]"? */
 function hexproofFromSource(s: GameState, f: ObjectFilter, player: PlayerId, sourceId?: ObjectId): boolean {
   const v = sourceId ? sourceView(s, sourceId) : undefined;
   return !!v && matchesView(v, f, player);
 }
 
-/** Carte exilée face visible correspondant au filtre (cible « carte exilée », carte distordue contemplée). */
+/** Card exiled face up matching the filter ("exiled card" target, warped card considered). */
 export function matchesExiled(s: GameState, controller: PlayerId, id: ObjectId, ex: ExiledFilter, sourceId?: ObjectId): boolean {
   const o = s.objects[id];
   if (o?.zone !== "exile" || o.faceDown || o.cardCopy || o.preparedFor) return false;
@@ -365,8 +366,8 @@ export function matchesExiled(s: GameState, controller: PlayerId, id: ObjectId, 
 }
 
 /**
- * Joueur qui tient une cible : un joueur lui-même ; le contrôleur d'un permanent, d'un sort ou d'une capacité ; le
- * propriétaire d'une carte ailleurs (cimetière, exil).
+ * Player who holds a target: a player themselves; the controller of a permanent, a spell or an ability; the owner of
+ * a card elsewhere (graveyard, exile).
  */
 export function holderOf(s: GameState, id: string): PlayerId {
   if (s.players[id]) return id;
@@ -376,12 +377,12 @@ export function holderOf(s: GameState, id: string): PlayerId {
 }
 
 export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSpec, id: string, sourceId?: ObjectId): boolean {
-  // « … que ce joueur contrôle », « du cimetière de ce joueur » (`concreteSpec`).
+  // "… that player controls", "from that player's graveyard" (`concreteSpec`).
   if (spec.ofPlayers && !spec.ofPlayers.includes(holderOf(s, id))) return false;
   const player = s.players[id];
   if (player) {
     if (player.lost || !spec.filter.players) return false;
-    // « Vous avez la défense talismanique » (Crystal Barricade).
+    // "You have hexproof" (Crystal Barricade).
     if (
       id !== controller &&
       playerStatics(s, id, "hexproof").some(
@@ -389,15 +390,15 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
       )
     )
       return false;
-    // Protection du joueur (702.16) : contre ses adversaires, ou contre tout (même ses propres sorts).
+    // Player protection (702.16): from their opponents, or from everything (even their own spells).
     if (playerProtectedFrom(s, id, controller, sourceId)) return false;
     if (spec.filter.players === "you") return id === controller;
     if (spec.filter.players === "opponent") return id !== controller;
     return true;
   }
-  // Sort ou capacité sur la pile (« sort ou capacité ciblé avec une seule cible »).
+  // Spell or ability on the stack ("target spell or ability with a single target").
   const stackItem = s.stack.find((x) => x.id === id);
-  // « capacité activée ou déclenchée ciblée » : les sorts relèvent du filtre `spells` (Louisoix's Sacrifice).
+  // "target activated or triggered ability": spells fall under the `spells` filter (Louisoix's Sacrifice).
   const onlyTriggered = spec.filter.stackItems?.triggeredOnly;
   if (
     stackItem &&
@@ -422,7 +423,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   }
   const o = s.objects[id];
   if (o && o.zone === "stack") {
-    // Sort sur la pile (l'identifiant de l'objet est celui de l'élément de pile).
+    // Spell on the stack (the object's id is that of the stack item).
     const f = spec.filter.spells;
     const item = s.stack.find((x) => x.id === id && x.kind === "spell");
     if (!f || !item || !matchesView(snapshot(s, id), f, controller, sourceId)) return false;
@@ -435,24 +436,24 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   }
   if (o && o.zone === "graveyard") {
     const cards = spec.filter.cards;
-    // Ground Seal : « les cartes des cimetières ne peuvent pas être la cible de sorts ou de capacités ».
+    // Ground Seal: "cards in graveyards can't be the targets of spells or abilities".
     if (!cards || playerStatic(s, controller, "cantTargetGraveyardCards")) return false;
     if (cards.whose === "you" && o.owner !== controller) return false;
     if (cards.whose === "opponent" && o.owner === controller) return false;
     return matchesCard(s, controller, id, { ...cards.filter, controller: undefined }, sourceId);
   }
   if (!spec.filter.objects || !matchesObjectFilter(s, controller, id, spec.filter.objects, sourceId)) return false;
-  // Défense talismanique : ne peut pas être la cible de sorts ou capacités adverses.
-  // Nowhere to Run : les créatures adverses sont ciblables comme si elles n'avaient pas la défense talismanique.
+  // Hexproof: can't be the target of spells or abilities its opponents control.
+  // Nowhere to Run: opposing creatures can be targeted as though they didn't have hexproof.
   if (
     obj(s, id).controller !== controller &&
     hasKeyword(s, id, "hexproof") &&
     !(chars(s, id).types.includes("Creature") && playerStatic(s, controller, "ignoreOpponentsHexproofWard"))
   )
     return false;
-  // Défense totale (702.18) : ne peut être la cible d'aucun sort ni capacité, même de son contrôleur.
+  // Shroud (702.18): can't be the target of any spell or ability, even its controller's.
   if (hasKeyword(s, id, "shroud")) return false;
-  // Protection contre [filtre] (702.16b), défense talismanique contre [filtre] si la source est adverse.
+  // Protection from [filter] (702.16b), hexproof from [filter] if the source is an opponent's.
   if (protectedFrom(s, id, sourceId ? sourceView(s, sourceId) : undefined, obj(s, id).controller !== controller)) return false;
   return true;
 }
@@ -471,7 +472,7 @@ export function legalTargets(s: GameState, controller: PlayerId, spec: TargetSpe
   return out;
 }
 
-/** Vérifie un choix de cibles complet pour une liste de spécifications. */
+/** Checks a complete choice of targets for a list of specs. */
 export function validateTargets(
   s: GameState,
   controller: PlayerId,
@@ -482,62 +483,64 @@ export function validateTargets(
   const result: Record<string, string[]> = {};
   for (const spec of specs) {
     const ids = chosen[spec.id] ?? [];
-    // « X créatures ciblées » : exactement X cibles (« jusqu'à X » : au plus X, vérifié plus bas).
+    // "X target creatures": exactly X targets ("up to X": at most X, checked below).
     if (spec.countX === true && ids.length !== Math.max(0, opts.x ?? 0))
-      throw new RulesError(`${opts.x ?? 0} cible(s) requise(s)`);
+      throw new RulesError(msg("{n} target(s) required", { n: opts.x ?? 0 }));
     const max = spec.countX ? Math.max(0, opts.x ?? 0) : (opts.kicked && spec.kickedCount) || spec.count || 1;
     const hostSpec = spec.attachedToTarget;
     if (hostSpec && ids.some((id) => !(chosen[hostSpec] ?? []).includes(s.objects[id]?.attachedTo ?? ""))) {
-      throw new RulesError("La cible doit être attachée à l'autre cible");
+      throw new RulesError(msg("The target must be attached to the other target"));
     }
     for (const other of spec.otherThan ?? []) {
-      if (ids.some((id) => (chosen[other] ?? []).includes(id))) throw new RulesError("Ces cibles doivent être différentes");
+      if (ids.some((id) => (chosen[other] ?? []).includes(id))) throw new RulesError(msg("These targets must be different"));
     }
-    if (ids.length > max) throw new RulesError(max === 1 ? "Une seule cible par mot « cible »" : `${max} cibles au maximum`);
-    if (new Set(ids).size !== ids.length) throw new RulesError("Même cible choisie deux fois");
-    // « X cibles » avec X = 0 : aucune cible (601.2c).
-    // « entre zéro et N cibles » (`minCount: 0`) : aucune cible permise, comme « jusqu'à N ».
+    if (ids.length > max)
+      throw new RulesError(max === 1 ? msg('Only one target per word "target"') : msg("{n} targets at most", { n: max }));
+    if (new Set(ids).size !== ids.length) throw new RulesError(msg("Same target chosen twice"));
+    // "X targets" with X = 0: no target (601.2c).
+    // "between zero and N targets" (`minCount: 0`): no target allowed, as for "up to N".
     if (ids.length === 0 && !spec.optional && spec.minCount !== 0 && !(spec.countX && max === 0))
-      throw new RulesError(`Cible manquante : ${spec.label ?? spec.id}`);
+      throw new RulesError(msg("Missing target: {target}", { target: spec.label ?? spec.id }));
     const min = spec.minCount ?? max;
     if (!spec.optional && !spec.kickedCount && ids.length < min)
-      throw new RulesError(min === max ? `${max} cibles requises` : `Au moins ${min} cible(s)`);
-    // Cadeau promis ou kicker : un autre filtre (« à la place, un permanent non-terrain ciblé »).
+      throw new RulesError(min === max ? msg("{n} targets required", { n: max }) : msg("At least {n} target(s)", { n: min }));
+    // Gift promised or kicker: another filter ("instead, target nonland permanent").
     const legalSpec = opts.kicked && spec.kickedFilter ? { ...spec, filter: spec.kickedFilter } : spec;
     for (const id of ids)
-      if (!isLegalTarget(s, controller, legalSpec, id, opts.sourceId)) throw new RulesError(`Cible illégale : ${id}`);
+      if (!isLegalTarget(s, controller, legalSpec, id, opts.sourceId)) throw new RulesError(msg("Illegal target: {id}", { id }));
     const holders = ids.map((id) => s.objects[id]?.[s.objects[id]?.zone === "battlefield" ? "controller" : "owner"] ?? id);
-    // « Le joueur ciblé … les cartes ciblées de son cimetière » : les cibles sont tenues par une cible d'un autre mot.
+    // "Target player … target cards from their graveyard": the targets are held by a target of another word.
     const of = spec.of;
     if (of?.kind === "target") {
       const allowed = (chosen[of.id] ?? []).map((x) => holderOf(s, x));
       if (ids.some((id) => !allowed.includes(holderOf(s, id))))
-        throw new RulesError("Les cibles doivent appartenir au joueur choisi pour l'autre cible");
+        throw new RulesError(msg("The targets must belong to the player chosen for the other target"));
     }
-    if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
+    if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError(msg("The targets must belong to the same player"));
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
-      throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
+      throw new RulesError(msg("The targets must be controlled by different players"));
     if (spec.distinct === "name" && firstOfEachName(ids, (id) => snapshot(s, id).name).length !== ids.length)
-      throw new RulesError("Les cibles doivent avoir des noms différents");
+      throw new RulesError(msg("The targets must have different names"));
     if (spec.distinct === "manaValue" && new Set(ids.map((id) => snapshot(s, id).manaValue)).size !== ids.length)
-      throw new RulesError("Les cibles doivent avoir des valeurs de mana différentes");
+      throw new RulesError(msg("The targets must have different mana values"));
     if (spec.shareCreatureType && ids.length > 1 && !shareCreatureType(s, ids))
-      throw new RulesError("Les cibles doivent partager un type de créature");
+      throw new RulesError(msg("The targets must share a creature type"));
     if (spec.maxTotalManaValue !== undefined) {
       const total = ids.reduce((n, id) => n + (snapshot(s, id).manaValue ?? 0), 0);
-      if (total > spec.maxTotalManaValue) throw new RulesError(`Valeur de mana totale supérieure à ${spec.maxTotalManaValue}`);
+      if (total > spec.maxTotalManaValue)
+        throw new RulesError(msg("Total mana value greater than {n}", { n: spec.maxTotalManaValue }));
     }
     result[spec.id] = ids;
   }
   return result;
 }
 
-/** Les objets partagent-ils un type de créature ? Un changelin (ou « tous les types ») les a tous. */
+/** Do the objects share a creature type? A changeling (or "all types") has them all. */
 export function shareCreatureType(s: GameState, ids: ObjectId[]): boolean {
   const views = ids.map((id) => snapshot(s, id));
   const all = (v: LkiSnapshot) => v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES);
   const [first, ...rest] = views.filter((v) => !all(v));
-  // Que des changelins : ils partagent tous les types. Sinon, un type du premier que les autres ont aussi.
+  // Only changelings: they share all types. Otherwise, a type of the first one that the others have too.
   if (!first) return true;
   return first.subtypes.some((t) => !NON_CREATURE_SUBTYPES.has(t) && rest.every((v) => v.subtypes.includes(t)));
 }

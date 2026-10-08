@@ -1,9 +1,10 @@
 /**
- * Forme d'une décision reçue (client en ligne, IA, script) : vérifiée avant de toucher au moteur, pour qu'une
- * décision mal formée soit refusée par une RulesError plutôt que de provoquer une TypeError au fond du moteur.
- * La légalité (cartes en main, cibles, coûts…) reste vérifiée par les règles elles-mêmes.
+ * Shape of a received decision (online client, AI, script): checked before touching the engine, so that a malformed
+ * decision is refused by a RulesError rather than causing a TypeError deep in the engine.
+ * Legality (cards in hand, targets, costs…) is still checked by the rules themselves.
  */
 import { RulesError } from "./errors";
+import { msg } from "./text";
 import type { Decision, GameState } from "./types";
 
 type Rec = Record<string, unknown>;
@@ -11,28 +12,28 @@ type Rec = Record<string, unknown>;
 const isStr = (v: unknown): v is string => typeof v === "string";
 const isIndex = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
 const isStrArray = (v: unknown): v is string[] => Array.isArray(v) && v.every(isStr);
-/** Liste d'objets distincts (cartes défaussées, sacrifiées…) : un doublon n'a pas de sens. */
+/** List of distinct objects (discarded, sacrificed cards…): a duplicate makes no sense. */
 const isIdSet = (v: unknown): v is string[] => isStrArray(v) && new Set(v).size === v.length;
 
 function bad(field: string): never {
-  throw new RulesError(`Décision mal formée : ${field}`);
+  throw new RulesError(msg("Malformed decision: {field}", { field }));
 }
 
-/** Champ facultatif : absent (undefined), ou conforme. */
+/** Optional field: absent (undefined), or well-formed. */
 function opt(d: Rec, field: string, ok: (v: unknown) => boolean): void {
   if (d[field] !== undefined && !ok(d[field])) bad(field);
 }
 
-/** Objet cité comme carte ou source de l'action : il doit exister. */
+/** Object cited as the card or source of the action: it must exist. */
 function objectRef(s: GameState, d: Rec, field: string): void {
   const id = d[field];
   if (!isStr(id)) bad(field);
-  if (!s.objects[id]) throw new RulesError("Objet inconnu");
+  if (!s.objects[id]) throw new RulesError(msg("Unknown object"));
 }
 
-/** Objets cités dans une liste : ils doivent tous exister. */
+/** Objects cited in a list: they must all exist. */
 function objectRefs(s: GameState, ids: unknown[]): void {
-  if (ids.some((id) => !s.objects[id as string])) throw new RulesError("Objet inconnu");
+  if (ids.some((id) => !s.objects[id as string])) throw new RulesError(msg("Unknown object"));
 }
 
 function castChoices(s: GameState, d: Rec): void {
@@ -43,9 +44,9 @@ function castChoices(s: GameState, d: Rec): void {
     objectRefs(s, (d[f] as string[] | undefined) ?? []);
   }
   opt(d, "targets", (v) => !!v && typeof v === "object" && !Array.isArray(v) && Object.values(v).every(isStrArray));
-  // Objets payés en coût, par emplacement : des listes d'identifiants d'objets existants (répétés pour les marqueurs).
+  // Objects paid as a cost, by slot: lists of ids of existing objects (repeated for counters).
   opt(d, "picks", (v) => !!v && typeof v === "object" && !Array.isArray(v) && Object.values(v).every(isStrArray));
-  // Sortes de marqueurs (`counterKind`) : ce ne sont pas des objets ; vérifiées par le paiement du coût.
+  // Counter kinds (`counterKind`): these are not objects; checked by the payment of the cost.
   for (const [slot, ids] of Object.entries((d.picks as Record<string, string[]> | undefined) ?? {}))
     if (slot !== "counterKind") objectRefs(s, ids);
 }
@@ -55,7 +56,7 @@ function pairs(v: unknown, a: string, b: string): boolean {
 }
 
 export function checkDecisionShape(s: GameState, raw: Decision): void {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) bad("décision");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) bad("decision");
   const d = raw as unknown as Rec;
   switch (raw.type) {
     case "keep":

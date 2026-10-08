@@ -1,5 +1,5 @@
 /**
- * Actions de jeu élémentaires, partagées par les effets, le combat et les actions basées sur l'état.
+ * Elementary game actions, shared by effects, combat and state-based actions.
  */
 
 import { bumpFor } from "./layers";
@@ -41,6 +41,7 @@ import {
   replacementAtLeast,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, sourceView, withChosen } from "./targets";
+import { msg } from "./text";
 import { pushInline, queueLifelink, rulesTrigger } from "./triggers";
 import { countTurnEvents, logTurnEvent, zoneEntry } from "./turnlog";
 import type {
@@ -60,21 +61,21 @@ import type {
 } from "./types";
 
 export interface DamageSource {
-  /** Objet source, s'il est identifiable (pour les déclencheurs « inflige des blessures »). */
+  /** Source object, if identifiable (for "deals damage" triggers). */
   id?: ObjectId;
-  /** Sort qui se résout et inflige les blessures (Imodane : « un sort qui ne cible qu'une créature »). */
+  /** Resolving spell that deals the damage (Imodane: "a spell that targets only a single creature"). */
   stackId?: string;
   defId: string;
   controller: PlayerId;
   keywords: Keyword[];
 }
 
-/** `turnDraw` : la pioche de l'étape de pioche (504.1), que Notion Thief ne remplace pas. */
+/** `turnDraw`: the draw of the draw step (504.1), which Notion Thief does not replace. */
 export function drawCard(s: GameState, p: PlayerId, turnDraw = false): void {
   const player = s.players[p];
   if (!player) return;
-  // Notion Thief : « si un adversaire devait piocher une carte, sauf la première de son étape de pioche, il passe cette
-  // pioche et vous piochez une carte à la place » (la pioche du voleur n'est pas remplacée à son tour).
+  // Notion Thief: "if an opponent would draw a card except the first one they draw in each of their draw steps,
+  // instead that player skips that draw and you draw a card" (the thief's draw is not replaced in turn).
   if (!turnDraw) {
     const thief = opponentsOf(s, p).find((q) => !s.players[q]?.lost && playerStatic(s, q, "stealsOpponentDraws"));
     if (thief) {
@@ -84,37 +85,37 @@ export function drawCard(s: GameState, p: PlayerId, turnDraw = false): void {
   }
   const top = player.library[0];
   if (!top) {
-    // Laboratory Maniac : « vous gagnez la partie à la place » (remplacement, appliqué par les actions basées sur l'état).
+    // Laboratory Maniac: "you win the game instead" (replacement, applied by the state-based actions).
     if (player.drewFromEmptyLibrary !== "win") player.drewFromEmptyLibrary = playerStatic(s, p, "winOnEmptyDraw") ? "win" : true;
     emit({ type: "draw", player: p });
     return;
   }
   const id = moveObject(s, top, "hand");
   emit({ type: "draw", player: p, objectId: id ?? undefined, defId: s.objects[id ?? ""]?.defId });
-  // Journal du tour (Duelist of the Mind : force égale aux cartes piochées ce tour-ci).
+  // Turn log (Duelist of the Mind: power equal to the cards drawn this turn).
   logTurnEvent(s, { e: "draw", player: p });
   const nth = countTurnEvents(s, { event: "draw" }, p, p);
-  // La pioche de l'étape de pioche du joueur (pas celle de Notion Thief, qui pioche à la place d'un autre).
+  // The draw of the player's draw step (not Notion Thief's, which draws instead of another player).
   const stepDraw = turnDraw && s.turn.step === "draw" && s.turn.active === p;
   rulesEvent(s, { e: "draw", player: p, nth, objectId: id ?? undefined, ...(stepDraw ? { turnDraw: true } : {}) });
 }
 
 /**
- * Pioche N cartes : un seul événement de pioche pour les remplacements (616.1), dans l'ordre le plus favorable au joueur
- * (le plus de cartes, sauf s'il n'en a pas autant dans sa bibliothèque) : Vnwxt, Verbose Host (« piochez-en deux à la
- * place », pour chaque carte), Quantum Riddler (« autant plus une » avec une carte en main ou moins).
+ * Draws N cards: a single draw event for the replacements (616.1), in the order most favorable to the player (the
+ * most cards, unless they don't have that many in their library): Vnwxt, Verbose Host ("draw two cards instead", for
+ * each card), Quantum Riddler ("that many plus one" with one or fewer cards in hand).
  */
-/** `turnDraw` : la pioche de l'étape de pioche (la première carte seulement). */
+/** `turnDraw`: the draw of the draw step (the first card only). */
 export function drawCards(s: GameState, p: PlayerId, n: number, turnDraw = false): void {
   const player = s.players[p];
   if (!player || n <= 0) return;
-  // Remplacements de la pioche (R1, famille I) ; Mornsong Aria : « les joueurs ne peuvent pas piocher ».
+  // Draw replacements (R1, family I); Mornsong Aria: "players can't draw cards".
   const q = quantityMods(s, "draw", (a) => recipientMatches(s, a, p));
   if (q.prevented) return;
   const mods = q.mods;
   const most = chooseReplacementOrder(n, mods, "max");
   const total = most <= player.library.length ? most : chooseReplacementOrder(n, mods, "min");
-  // Une pioche dans une bibliothèque vide suffit (704.5b) : pas la peine de continuer au-delà.
+  // One draw from an empty library is enough (704.5b): no need to go further.
   const draws = Math.min(total, player.library.length + 1);
   for (let i = 0; i < draws; i++) drawCard(s, p, turnDraw && i === 0);
 }
@@ -122,24 +123,24 @@ export function drawCards(s: GameState, p: PlayerId, n: number, turnDraw = false
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
-  // 119.7, 101.2 : « ne peut pas gagner de points de vie » (Screaming Nemesis, Giant Cindermaw ; Grievous Wound : le
-  // joueur enchanté) l'emporte sur tout remplacement du gain, qui ne s'applique donc pas.
+  // 119.7, 101.2: "can't gain life" (Screaming Nemesis, Giant Cindermaw; Grievous Wound: the enchanted player)
+  // overrides any replacement of the gain, which therefore does not apply.
   if (playerStatic(s, p, "cantGainLife")) return;
-  // Remplacements (616.1), dans l'ordre le plus favorable au joueur qui gagne les points de vie :
-  // Angel of Vitality (« autant plus 1 »), The Wind Crystal (« le double ») ; Giant Cindermaw, Mornsong Aria : « les
-  // joueurs ne peuvent pas gagner de points de vie ».
+  // Replacements (616.1), in the order most favorable to the player gaining the life:
+  // Angel of Vitality ("that much plus 1"), The Wind Crystal ("twice that much"); Giant Cindermaw, Mornsong Aria:
+  // "players can't gain life".
   const q = quantityMods(s, "lifeGain", (a) => recipientMatches(s, a, p));
   if (q.prevented) return;
   amount = chooseReplacementOrder(amount, q.mods, "max");
   player.life += amount;
-  bumpFor(s, "life"); // des caractéristiques peuvent dépendre des points de vie (Elenda)
+  bumpFor(s, "life"); // characteristics may depend on life totals (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });
   logTurnEvent(s, { e: "lifeGain", player: p, amount });
   rulesEvent(s, { e: "lifeGain", player: p, amount, first: countTurnEvents(s, { event: "lifeGain" }, p, p) === 1 });
 }
 
-/** Fourrager (701.61) : peut-on exiler trois cartes de son cimetière ou sacrifier une Nourriture ? */
-/** `exclude` : une carte du cimetière qui n'y sera plus (le sort lancé depuis le cimetière). */
+/** Forage (701.61): can the player exile three cards from their graveyard or sacrifice a Food? */
+/** `exclude`: a graveyard card that will no longer be there (the spell cast from the graveyard). */
 export function canForage(s: GameState, p: PlayerId, exclude?: ObjectId): boolean {
   const gy = (s.players[p]?.graveyard ?? []).filter((id) => id !== exclude);
   return gy.length >= 3 || foodToSacrifice(s, p) !== undefined;
@@ -147,7 +148,7 @@ export function canForage(s: GameState, p: PlayerId, exclude?: ObjectId): boolea
 
 function foodToSacrifice(s: GameState, p: PlayerId): ObjectId | undefined {
   const foods = s.battlefield.filter((id) => s.objects[id]?.controller === p && chars(s, id).subtypes.includes("Food"));
-  // Un jeton de préférence, puis ce qui n'est pas une créature (Ygra rend les créatures Nourritures).
+  // A token preferably, then what is not a creature (Ygra makes creatures Foods).
   return foods.sort((a, b) => rank(a) - rank(b))[0];
   function rank(id: ObjectId): number {
     return (s.objects[id]?.isToken ? 0 : 2) + (isCreature(s, id) ? 4 : 0);
@@ -155,8 +156,8 @@ function foodToSacrifice(s: GameState, p: PlayerId): ObjectId | undefined {
 }
 
 /**
- * Fourrager (701.61), choix automatique : trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois,
- * sinon une Nourriture sacrifiée. Renvoie false si c'est impossible.
+ * Forage (701.61), automatic choice: three cards from the graveyard (lands first) if there are at least three,
+ * otherwise a Food sacrificed. Returns false if impossible.
  */
 export function forage(s: GameState, p: PlayerId): boolean {
   const player = s.players[p];
@@ -179,9 +180,9 @@ export function forage(s: GameState, p: PlayerId): boolean {
 }
 
 /**
- * Payer des points de vie (119.4) : les vérifications « assez de PV » restent celles de l'appelant. Ashiok, Wicked
- * Manipulator : si la bibliothèque a au moins autant de cartes, autant de cartes du dessus sont exilées à la place
- * (remplacement obligatoire, jamais partagé entre PV et cartes).
+ * Paying life (119.4): the "enough life" checks remain the caller's. Ashiok, Wicked Manipulator: if the library has
+ * at least that many cards, that many cards from the top are exiled instead (mandatory replacement, never split
+ * between life and cards).
  */
 export function payLife(s: GameState, p: PlayerId, amount: number): void {
   const library = s.players[p]?.library ?? [];
@@ -198,16 +199,15 @@ export function payLife(s: GameState, p: PlayerId, amount: number): void {
   loseLife(s, p, amount);
 }
 
-/** `damage` : la perte vient de blessures (Angel's Grace : « les blessures qui réduiraient vos PV en dessous de 1 »). */
+/** `damage`: the loss comes from damage (Angel's Grace: "damage that would reduce your life total to less than 1"). */
 export function loseLife(s: GameState, p: PlayerId, amount: number, damage = false): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
-  // Remplacements de la perte de PV (Bloodletter of Aclazotz : pendant votre tour, un adversaire perd le double).
+  // Life loss replacements (Bloodletter of Aclazotz: during your turn, an opponent loses twice that much).
   const mods: AmountMod[] = [];
   for (const a of eventReplacements(s, "lifeLoss")) {
     if (!recipientMatches(s, a, p)) continue;
-    // « Votre total de points de vie ne peut pas changer » (Teferi's Protection) : aucune perte (les blessures, elles,
-    // sont bien infligées).
+    // "Your life total can't change" (Teferi's Protection): no loss (the damage itself is still dealt).
     if (a.r.modify.prevent) return;
     const add = replacementAdd(s, a);
     if (add) mods.push({ add });
@@ -224,24 +224,24 @@ export function loseLife(s: GameState, p: PlayerId, amount: number, damage = fal
   emit({ type: "life", player: p, delta: -amount, life: player.life });
   logTurnEvent(s, { e: "lifeLoss", player: p, amount });
   rulesEvent(s, { e: "lifeLoss", player: p, amount });
-  // 702.179 : « chaque fois qu'un ou plusieurs adversaires perdent des PV pendant votre tour, si votre vitesse est
-  // inférieure à 4, augmentez-la de 1 ; cette capacité ne se déclenche qu'une fois par tour » (capacité sur la pile).
+  // 702.179: "whenever one or more opponents lose life during your turn, if your speed is less than 4, increase your
+  // speed by 1; this ability triggers only once each turn" (ability on the stack).
   const active = s.turn.active;
   if (p !== active && s.players[active]?.speed !== undefined && !s.turn.onceFired.includes(SPEED_KEY)) {
     if (rulesTrigger(s, active, "speed")) s.turn.onceFired.push(SPEED_KEY);
   }
 }
 
-/** Déclenchement de la vitesse ce tour-ci (702.179 : une fois par tour), dans `s.turn.onceFired`. */
+/** Speed trigger this turn (702.179: once per turn), in `s.turn.onceFired`. */
 const SPEED_KEY = "rules:speed";
 
-/** Augmente de 1 la vitesse d'un joueur (702.179 : au plus 4). */
+/** Increases a player's speed by 1 (702.179: at most 4). */
 export function increaseSpeed(s: GameState, p: PlayerId): void {
   const speed = s.players[p]?.speed ?? 0;
   if (speed < 4) setSpeed(s, p, speed + 1);
 }
 
-/** Fixe la vitesse d'un joueur (702.179). */
+/** Sets a player's speed (702.179). */
 export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
   const player = s.players[p];
   if (!player || player.speed === speed) return;
@@ -251,10 +251,10 @@ export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
 }
 
 /**
- * Destinataire d'un remplacement (blessures ou perte de PV), vu de son contrôleur : lui, lui ou ses permanents, un
- * adversaire, un adversaire ou ses permanents, et le filtre du permanent blessé.
+ * Recipient of a replacement (damage or life loss), seen from its controller: them, them or their permanents, an
+ * opponent, an opponent or their permanents, and the filter of the damaged permanent.
  */
-/** Le remplacement s'applique-t-il à ces blessures (combat, source, destinataire) ? */
+/** Does the replacement apply to this damage (combat, source, recipient)? */
 function damageReplacementApplies(
   s: GameState,
   a: ActiveReplacement,
@@ -264,7 +264,7 @@ function damageReplacementApplies(
 ): boolean {
   const r = a.r;
   if (r.combat !== undefined && r.combat !== combat) return false;
-  // Bouclier : la source choisie (un sort sans objet est reconnu par sa carte et son contrôleur).
+  // Shield: the chosen source (a spell with no object is recognized by its card and its controller).
   if (r.sourceIs && source.id !== r.sourceIs && !(!source.id && source.defId === r.sourceDefIs)) return false;
   if (r.source) {
     const id = source.id;
@@ -272,7 +272,7 @@ function damageReplacementApplies(
       id && s.objects[id]?.zone === "battlefield"
         ? matchesObjectFilter(s, a.controller, id, r.source, a.sourceId)
         : (() => {
-            // « Arrivée ce tour-ci » ne se lit que sur le champ de bataille.
+            // "Entered this turn" can only be read on the battlefield.
             if (r.source?.enteredThisTurn) return false;
             const v = sourceView(s, id, source.defId, source.controller);
             const chooser = a.sourceId ? (s.objects[a.sourceId] ?? s.lki[a.sourceId]) : undefined;
@@ -284,9 +284,8 @@ function damageReplacementApplies(
 }
 
 /**
- * Prévention par un remplacement (615) : un bouclier « la prochaine fois que » est retiré ; The Mindskinner fait meuler
- * les adversaires, New Way Forward a une capacité réflexive (« quand des blessures sont prévenues ainsi »), Anti-Venom
- * reçoit autant de marqueurs +1/+1.
+ * Prevention by a replacement (615): a "the next time" shield is removed; The Mindskinner makes opponents mill, New
+ * Way Forward has a reflexive ability ("when damage is prevented this way"), Anti-Venom gets that many +1/+1 counters.
  */
 function preventByReplacement(
   s: GameState,
@@ -318,14 +317,14 @@ function preventByReplacement(
         a.controller,
         origin.id,
         origin.defId,
-        { targets: [], effects: after.reflexive, label: "Blessures prévenues" },
+        { targets: [], effects: after.reflexive, label: msg("Damage prevented") },
         { objectId: source.id, player: source.controller, amount },
       );
   }
 }
 
-/** La source des blessures est-elle rouge (Ojer Axonil) ? */
-/** Caractéristiques de la source des blessures (sur le champ de bataille, sinon dernières informations ou carte). */
+/** Is the damage source red (Ojer Axonil)? */
+/** Characteristics of the damage source (on the battlefield, otherwise last known information or card). */
 function sourceChars(
   s: GameState,
   source: DamageSource,
@@ -344,7 +343,7 @@ function sourceChars(
   };
 }
 
-/** Journal du tour : blessures (Temple of Power, Sidequest: Play Blitzball…). */
+/** Turn log: damage (Temple of Power, Sidequest: Play Blitzball…). */
 function logDamage(
   s: GameState,
   source: DamageSource,
@@ -385,7 +384,7 @@ function _redSource(s: GameState, source: DamageSource): boolean {
 
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
-  // Ancient Adamantoise : les blessures à son contrôleur et à ses autres permanents lui sont infligées à la place.
+  // Ancient Adamantoise: damage to its controller and to their other permanents is dealt to it instead.
   const owner = isPlayer(s, target)
     ? target
     : s.objects[target]?.zone === "battlefield"
@@ -397,7 +396,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       )
     : undefined;
   if (absorber) target = absorber;
-  // With Great Power… : « les blessures qui vous seraient infligées sont infligées à la créature enchantée à la place ».
+  // With Great Power…: "damage that would be dealt to you is dealt to enchanted creature instead".
   for (const a of eventReplacements(s, "damage")) {
     if (!a.r.redirectToAttached || !a.sourceId || !damageReplacementApplies(s, a, source, target, combat)) continue;
     const host = s.objects[a.sourceId]?.attachedTo;
@@ -406,17 +405,17 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       break;
     }
   }
-  // Sunspine Lynx : « les blessures ne peuvent pas être prévenues » ; Frenzied Baloth : celles de combat.
+  // Sunspine Lynx: "damage can't be prevented"; Frenzied Baloth: combat damage.
   const unpreventable = damageUnpreventable(s, combat);
   if (!unpreventable && preventsDamageTo(s, target, combat)) return;
-  // Protection du joueur (702.16) : les blessures des sources adverses (Absolute Virtue) ou de toute source (Teferi's
-  // Protection) sont prévenues.
+  // Player protection (702.16): damage from opposing sources (Absolute Virtue) or from any source (Teferi's
+  // Protection) is prevented.
   if (!unpreventable && isPlayer(s, target) && playerProtectedFrom(s, target, source.controller, source.id)) return;
   const targetObj = s.objects[target];
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
-  // Remplacements et préventions des blessures (R1, 616.1) : le joueur blessé choisit l'ordre, le moins de blessures
-  // pour lui. Une prévention d'un autre joueur passe donc avant les modifications (The Mindskinner meule le moins), la
-  // sienne après (New Way Forward renvoie le plus).
+  // Damage replacements and preventions (R1, 616.1): the damaged player chooses the order, the least damage for them.
+  // Another player's prevention therefore comes before the modifications (The Mindskinner mills the least), their own
+  // after (New Way Forward sends back the most).
   const reps = eventReplacements(s, "damage").filter(
     (a) => !a.r.redirectToAttached && damageReplacementApplies(s, a, source, target, combat),
   );
@@ -425,14 +424,14 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     preventByReplacement(s, foreignPrevention, source, amount, target);
     return;
   }
-  // 702.16e : protection — les blessures d'une source qui correspond à sa qualité sont prévenues.
+  // 702.16e: protection — damage from a source matching its quality is prevented.
   if (
     targetObj?.zone === "battlefield" &&
     !unpreventable &&
     protectedFrom(s, target, sourceView(s, source.id, source.defId, source.controller))
   )
     return;
-  // Préventions statiques : blessures reçues (Crystal Barricade, Fog Bank) ou infligées par la source (Fog Bank).
+  // Static preventions: damage received (Crystal Barricade, Fog Bank) or dealt by the source (Fog Bank).
   for (const p of unpreventable ? [] : preventions(s)) {
     if (p.ab.noncombatOnly && combat) continue;
     if (p.ab.combatOnly && !combat) continue;
@@ -442,15 +441,15 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     }
     if (targetObj?.zone === "battlefield" && matchesObjectFilter(s, p.controller, target, p.ab.filter, p.sourceId)) return;
   }
-  // Remplacements qui modifient la quantité (614, 616.1) : chacun s'applique une fois, dans l'ordre que choisit le joueur
-  // blessé (ou le contrôleur du permanent blessé), ici le moins de blessures pour lui (`chooseReplacementOrder`).
+  // Replacements that modify the amount (614, 616.1): each applies once, in the order chosen by the damaged player (or
+  // the controller of the damaged permanent), here the least damage for them (`chooseReplacementOrder`).
   const mods: AmountMod[] = [];
   for (const a of reps) {
-    // Hawkeye, Young Avenger : « autant en plus que sa force » ; Fated Firepower : « que de marqueurs de feu ».
+    // Hawkeye, Young Avenger: "that much plus its power"; Fated Firepower: "plus the number of fire counters".
     const add = replacementAdd(s, a);
     if (add) mods.push({ add });
     if (a.r.modify.times) mods.push({ times: a.r.modify.times });
-    // Ojer Axonil : « au moins autant de blessures que la force de [cette créature] ».
+    // Ojer Axonil: "at least as much damage as [this creature]'s power".
     const atLeast = replacementAtLeast(s, a);
     if (atLeast !== undefined) mods.push({ atLeast });
   }
@@ -462,14 +461,14 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     return;
   }
   if (amount <= 0) return;
-  // 122.1c : un permanent avec un marqueur de bouclier qui devrait subir des blessures perd ce marqueur à la place
-  // (un remplacement, pas une prévention : « ne peut pas être prévenu » ne l'empêche pas).
+  // 122.1c: a permanent with a shield counter that would be dealt damage loses that counter instead (a replacement,
+  // not a prevention: "can't be prevented" does not stop it).
   if (targetObj?.zone === "battlefield" && (targetObj.counters.shield ?? 0) > 0) {
     changeCounters(s, targetObj, "shield", -1);
     return;
   }
-  // Ruric Thar, Magecrusher : « tant qu'il n'a pas encore infligé de blessures de combat » ; Karakyk Guardian : « tant
-  // qu'il n'a pas encore infligé de blessures » (de combat ou non).
+  // Ruric Thar, Magecrusher: "as long as it hasn't dealt combat damage yet"; Karakyk Guardian: "as long as it hasn't
+  // dealt damage yet" (combat or not).
   const dealer = source.id ? s.objects[source.id] : undefined;
   if (dealer && ((combat && !dealer.dealtCombatDamage) || !dealer.dealtDamage)) {
     if (combat) dealer.dealtCombatDamage = true;
@@ -478,69 +477,68 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   }
   let excess = 0;
   if (isPlayer(s, target)) {
-    // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).
+    // Tracking of the players dealt combat damage by this source this turn (Steel Hellkite).
     const src = source.id ? s.objects[source.id] : undefined;
     if (combat && src && !src.combatDamagedPlayers?.includes(target)) {
       src.combatDamagedPlayers = [...(src.combatDamagedPlayers ?? []), target];
     }
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     logDamage(s, source, target, target, true, amount, combat);
-    // 903.10a : blessures de combat d'un commandant, cumulées sur la partie (704.6c : 21, le joueur perd).
+    // 903.10a: combat damage from a commander, accumulated over the game (704.6c: 21, the player loses).
     const commander = combat ? commanderOf(s, src) : undefined;
     if (commander) commander.damage[target] = (commander.damage[target] ?? 0) + amount;
-    // Toxique N (702.164) : des blessures de combat à un joueur lui donnent aussi N marqueurs poison.
+    // Toxic N (702.164): combat damage to a player also gives them N poison counters.
     const toxic = combat && src && source.keywords.includes("toxic") ? (s.defs[src.defId]?.toxic ?? 1) : 0;
     const poisoned = s.players[target];
     if (toxic && poisoned) {
       poisoned.counters ??= {};
       const counters = poisoned.counters;
       counters.poison = (counters.poison ?? 0) + toxic;
-      bump(s); // corrompu : des statiques en dépendent (Skrelv's Hive)
+      bump(s); // corrupted: statics depend on it (Skrelv's Hive)
       emit({ type: "poison", player: target, amount: toxic, total: counters.poison });
     }
-    // Infection (702.90b) : des marqueurs poison au lieu d'une perte de points de vie.
-    // Phyrexian Unlife : à 0 PV ou moins, comme si la source avait l'infection.
+    // Infect (702.90b): poison counters instead of life loss.
+    // Phyrexian Unlife: at 0 or less life, as if the source had infect.
     const pl = s.players[target];
     if (pl && (source.keywords.includes("infect") || (pl.life <= 0 && playerStatic(s, target, "infectDamageAtZeroLife")))) {
       pl.counters ??= {};
       const counters = pl.counters;
       counters.poison = (counters.poison ?? 0) + amount;
-      bump(s); // corrompu : des statiques en dépendent
+      bump(s); // corrupted: statics depend on it
       emit({ type: "poison", player: target, amount, total: counters.poison });
     } else loseLife(s, target, amount, true);
   } else {
     const o = s.objects[target];
-    // 506.4 : un planeswalker attaqué qui a quitté le champ de bataille ne reçoit pas de blessures.
+    // 506.4: an attacked planeswalker that has left the battlefield is not dealt damage.
     if (o?.zone !== "battlefield") return;
     const creature = isCreature(s, target);
     const walker = hasType(s, target, "Planeswalker");
     if (!creature && !walker) return;
-    // Wolverine : les blessures précédentes sont guéries avant que les nouvelles soient marquées.
+    // Wolverine: the previous damage is healed before the new damage is marked.
     if (creature && chars(s, target).keywords.includes("damageHealsFirst")) {
       o.damage = 0;
       o.deathtouched = false;
     }
-    // 120.4a : blessures en excès, au-delà des blessures mortelles (contact mortel : 1 suffit) ou de la loyauté.
+    // 120.4a: excess damage, beyond lethal damage (deathtouch: 1 is enough) or loyalty.
     const deathtouch = source.keywords.includes("deathtouch");
     const lethal = creature
       ? Math.max(0, deathtouch ? (o.damage > 0 || o.deathtouched ? 0 : 1) : chars(s, target).toughness - o.damage)
       : (o.counters.loyalty ?? 0);
     excess = Math.max(0, amount - lethal);
-    // 120.3c : les blessures infligées à un planeswalker lui retirent autant de marqueurs de loyauté.
+    // 120.3c: damage dealt to a planeswalker removes that many loyalty counters from it.
     if (walker) changeCounters(s, o, "loyalty", -Math.min(amount, o.counters.loyalty ?? 0));
     if (creature) {
-      // Flétrissure (702.80), infection (702.90b) : des marqueurs −1/−1 au lieu de blessures marquées (ce sont toujours
-      // des blessures).
+      // Wither (702.80), infect (702.90b): −1/−1 counters instead of marked damage (it is still damage).
       if (source.keywords.includes("wither") || source.keywords.includes("infect")) changeCounters(s, o, "-1/-1", amount);
       else o.damage += amount;
       if (source.keywords.includes("deathtouch")) o.deathtouched = true;
-      // Suivi « blessée par cette créature ce tour-ci » (Predator Ooze).
+      // Tracking of "dealt damage by this creature this turn" (Predator Ooze).
       if (source.id && !o.damagedBy?.includes(source.id)) o.damagedBy = [...(o.damagedBy ?? []), source.id];
     }
     emit({ type: "damage", sourceDefId: source.defId, target, targetDefId: o.defId, amount, combat });
     logDamage(s, source, target, o.controller, false, amount, combat);
   }
-  // Lien de vie : un gain par source et par lot de blessures simultanées (voir `queueLifelink`).
+  // Lifelink: one gain per source and per batch of simultaneous damage (see `queueLifelink`).
   if (source.keywords.includes("lifelink") && amount > 0) {
     const key = source.id ?? `${source.defId}|${source.controller}`;
     if (!queueLifelink(key, source.controller, amount)) gainLife(s, source.controller, amount);
@@ -562,19 +560,19 @@ export function sourceFromObject(s: GameState, id: ObjectId): DamageSource {
   return { id, defId: o.defId, controller: o.controller, keywords: chars(s, id).keywords };
 }
 
-/** Détruit un permanent (sauf indestructible). Renvoie true s'il a quitté le champ de bataille. */
-/** `by` : le contrôleur du sort ou de la capacité qui détruit (« un sort ou une capacité qu'un adversaire contrôle détruit », Karmic Justice). */
+/** Destroys a permanent (unless indestructible). Returns true if it left the battlefield. */
+/** `by`: the controller of the destroying spell or ability ("a spell or ability an opponent controls destroys", Karmic Justice). */
 export function destroy(s: GameState, id: ObjectId, noRegenerate = false, by?: PlayerId): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (hasKeyword(s, id, "indestructible")) return false;
-  // 122.1c : un permanent avec un marqueur de bouclier qui devrait être détruit perd ce marqueur à la place.
+  // 122.1c: a permanent with a shield counter that would be destroyed loses that counter instead.
   if ((o.counters.shield ?? 0) > 0) {
     changeCounters(s, o, "shield", -1);
     return false;
   }
-  // Régénération (701.19c) : la destruction est remplacée ; le permanent est engagé, retiré du combat et ses blessures
-  // sont retirées.
+  // Regeneration (701.19c): the destruction is replaced; the permanent is tapped, removed from combat and its damage
+  // is removed.
   if (o.regenShields && !noRegenerate) {
     o.regenShields -= 1;
     if (!o.regenShields) delete o.regenShields;
@@ -591,11 +589,11 @@ export function destroy(s: GameState, id: ObjectId, noRegenerate = false, by?: P
   return true;
 }
 
-/** Met un permanent au cimetière de son propriétaire (mort, sacrifice, endurance 0…). */
+/** Puts a permanent into its owner's graveyard (death, sacrifice, toughness 0…). */
 export function putIntoGraveyard(s: GameState, id: ObjectId): ObjectId | null {
   const o = obj(s, id);
-  // Émis avant le déplacement (ordre des événements), complété ensuite par la destination réelle :
-  // un remplacement peut exiler la créature (Feu du dragon dévastateur) ou la mélanger dans la bibliothèque.
+  // Emitted before the move (order of events), then completed with the actual destination:
+  // a replacement can exile the creature (Scorching Dragonfire) or shuffle it into the library.
   const event: Extract<GameEvent, { type: "dies" }> = { type: "dies", objectId: id, defId: o.defId, to: "graveyard" };
   emit(event);
   const landed: { to?: Zone } = {};
@@ -605,11 +603,11 @@ export function putIntoGraveyard(s: GameState, id: ObjectId): ObjectId | null {
   return moved;
 }
 
-/** Sacrifier (701.21) : le contrôleur met le permanent au cimetière ; « chaque fois que vous sacrifiez… » se déclenche. */
+/** Sacrifice (701.21): the controller puts the permanent into the graveyard; "whenever you sacrifice…" triggers. */
 export function sacrifice(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return;
-  // Zurgo, Thunder's Decree : « ce jeton ne peut pas être sacrifié ».
+  // Zurgo, Thunder's Decree: "this token can't be sacrificed".
   if (hasKeyword(s, id, "cantBeSacrificed")) return;
   rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
   const c = chars(s, id);
@@ -622,15 +620,15 @@ export function sacrifice(s: GameState, id: ObjectId): void {
     token: o.isToken || undefined,
   });
   const moved = putIntoGraveyard(s, id);
-  // « Chaque fois qu'un adversaire sacrifie… mettez cette carte sur le champ de bataille » (It That Betrays) : les
-  // déclenchements créés avant le déplacement suivent la carte dans sa nouvelle zone.
+  // "Whenever an opponent sacrifices… put that card onto the battlefield" (It That Betrays): the triggers created
+  // before the move follow the card into its new zone.
   if (moved) for (const t of s.triggers) if (t.event.objectId === id && !t.event.newObjectId) t.event.newObjectId = moved;
 }
 
 /**
- * Phasing (702.26) : le permanent et ce qui lui est attaché (indirectement, 702.26g) sortent de phase ; ils sont traités
- * comme s'ils n'existaient pas, sans changer de zone (ni départ ni arrivée), jusqu'à l'étape de dégagement de leur
- * contrôleur (`phaseIn`).
+ * Phasing (702.26): the permanent and what is attached to it (indirectly, 702.26g) phase out; they are treated as
+ * though they did not exist, without changing zones (neither leaving nor entering), until their controller's untap
+ * step (`phaseIn`).
  */
 export function phaseOut(s: GameState, id: ObjectId): void {
   const all = [id];
@@ -649,7 +647,7 @@ export function phaseOut(s: GameState, id: ObjectId): void {
   bump(s);
 }
 
-/** 502.1 : au début de l'étape de dégagement, les permanents hors phase de ce joueur reviennent en phase. */
+/** 502.1: at the start of the untap step, that player's phased-out permanents phase in. */
 export function phaseIn(s: GameState, player: PlayerId): void {
   let changed = false;
   for (const p of s.playerOrder) {
@@ -680,7 +678,7 @@ export function tokenDefId(t: TokenSpec): string {
   return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}${t.toxic ? `-toxic${t.toxic}` : ""}`;
 }
 
-/** Monarque (724) : le joueur désigné le devient (un seul monarque à la fois). */
+/** Monarch (724): the designated player becomes it (only one monarch at a time). */
 export function setMonarch(s: GameState, player: PlayerId): void {
   if (s.monarch === player || !s.players[player] || s.players[player]?.lost) return;
   s.monarch = player;
@@ -688,10 +686,10 @@ export function setMonarch(s: GameState, player: PlayerId): void {
   bump(s);
 }
 
-/** `enters` : modifications d'arrivée imposées par l'effet (engagés, attaquants, marqueurs), avant l'événement d'arrivée. */
+/** `enters`: entering modifications imposed by the effect (tapped, attacking, counters), before the entering event. */
 /**
- * Plafonds des jetons (`limits.ts`) : des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnent vite un
- * nombre astronomique, voire infini en JavaScript (voir docs/approximations.md).
+ * Token caps (`limits.ts`): token doublers that multiply (copies of Exalted Sunborn) quickly give an astronomical
+ * number, even infinite in JavaScript (see docs/approximations.md).
  */
 function tokenRoom(s: GameState, n: number): number {
   const room = Math.max(0, Math.min(n, MAX_TOKENS_PER_EVENT, MAX_BATTLEFIELD - s.battlefield.length));
@@ -699,7 +697,7 @@ function tokenRoom(s: GameState, n: number): number {
   return room;
 }
 
-/** Remplacements des jetons (R1, famille H), vus de celui qui les crée et du jeton créé. */
+/** Token replacements (R1, family H), seen from the player creating them and from the token created. */
 function tokenReplacements(s: GameState, controller: PlayerId, v: LkiSnapshot) {
   return eventReplacements(s, "tokens").filter(
     (a) =>
@@ -709,15 +707,15 @@ function tokenReplacements(s: GameState, controller: PlayerId, v: LkiSnapshot) {
   );
 }
 
-/** Draconic Visitor : d'autres jetons à la place (les jetons d'artefact deviennent des Dragons 5/5 volants). */
+/** Draconic Visitor: other tokens instead (artifact tokens become 5/5 flying Dragons). */
 function swappedToken(s: GameState, controller: PlayerId, t: TokenSpec): TokenSpec {
   return tokenReplacements(s, controller, tokenView(t, controller)).find((a) => !!a.r.instead?.token)?.r.instead?.token ?? t;
 }
 
 /**
- * Moonlit Meditation, Mirrormind Crown : le remplacement qui crée, à la place, des copies du permanent auquel sa source
- * est attachée (la première fois de chaque tour). `may` : « vous pouvez » — la question est posée avant la création par
- * l'effet qui crée les jetons (`copyDeclined` de `createTokens`).
+ * Moonlit Meditation, Mirrormind Crown: the replacement that creates, instead, copies of the permanent its source is
+ * attached to (the first time each turn). `may`: "you may" — the question is asked before the creation by the effect
+ * that creates the tokens (`copyDeclined` of `createTokens`).
  */
 export function tokenCopyReplacement(
   s: GameState,
@@ -746,13 +744,13 @@ export function createTokens(
   count: number,
   extras = true,
   enters: EntersContext = {},
-  /** Le contrôleur de Moonlit Meditation a refusé les copies (« vous pouvez »). */
+  /** The controller of Moonlit Meditation declined the copies ("you may"). */
   copyDeclined = false,
 ): ObjectId[] {
   const tokenReps = (v: LkiSnapshot) => tokenReplacements(s, controller, v);
   t = swappedToken(s, controller, t);
-  // Moonlit Meditation, Mirrormind Crown : la première fois de chaque tour, des copies du permanent auquel la source est
-  // attachée, à la place. Refusées, la première fois est tout de même passée.
+  // Moonlit Meditation, Mirrormind Crown: the first time each turn, copies of the permanent the source is attached to,
+  // instead. If declined, the first time has still passed.
   const copies = count > 0 ? tokenCopyReplacement(s, controller, t) : undefined;
   if (copies) {
     if (copies.firstEachTurn) s.turn.onceFired.push(`tokens:${copies.sourceId}`);
@@ -790,27 +788,27 @@ export function createTokens(
     };
     s.defs[defId] = def;
   }
-  // Doubling Season : « crée deux fois plus de ces jetons » ; Ojer Taq : trois fois plus de jetons de créature.
+  // Doubling Season: "creates twice that many of those tokens"; Ojer Taq: three times that many creature tokens.
   const reps = tokenReps(tokenView(t, controller));
   const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(s, reps), "max"));
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
-    // Remplacements d'arrivée des autres permanents (« chaque créature que vous contrôlez arrive avec… ») ; un jeton
-    // décrit engagé (`TokenSpec.tapped`) arrive engagé.
+    // Entering replacements of other permanents ("each creature you control enters with…"); a token described as
+    // tapped (`TokenSpec.tapped`) enters tapped.
     applyEntersReplacements(s, o, t.tapped ? { ...enters, tapped: true } : enters);
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
     logTokenArrival(s, o);
     created.push(o.id);
   }
-  // Quina (« ces jetons plus une Grenouille »), Worldwalker Helm (« plus une Carte ») : les jetons ajoutés ne déclenchent
-  // pas de nouveau remplacement.
+  // Quina ("those tokens plus a Frog"), Worldwalker Helm ("plus a Map"): the added tokens do not trigger a new
+  // replacement.
   if (extras && count > 0) for (const a of reps) if (a.r.plus) created.push(...createTokens(s, controller, a.r.plus, 1, false));
   return created;
 }
 
-/** Jeton copie d'une carte : mêmes valeurs copiables (sa définition), mais c'est un jeton (707.2). */
+/** Token copy of a card: same copiable values (its definition), but it is a token (707.2). */
 export function createTokenCopy(s: GameState, controller: PlayerId, defId: string, enters: EntersContext = {}): ObjectId {
   const o = createObject(s, defId, controller, "battlefield", { isToken: true });
   o.timestamp = nextTimestamp(s);
@@ -821,13 +819,13 @@ export function createTokenCopy(s: GameState, controller: PlayerId, defId: strin
   return o.id;
 }
 
-/** Journal du tour : un jeton créé arrive sur le champ de bataille (« une créature est arrivée sous votre contrôle »). */
+/** Turn log: a created token enters the battlefield ("a creature entered under your control"). */
 function logTokenArrival(s: GameState, o: GameObject): void {
   const c = chars(s, o.id);
   logTurnEvent(s, zoneEntry(null, "battlefield", o.owner, o.controller, { types: c.types, subtypes: c.subtypes, token: true }));
 }
 
-/** Le jeton tel qu'il serait créé (filtres des remplacements de jetons). */
+/** The token as it would be created (filters of token replacements). */
 function tokenView(t: TokenSpec, controller: PlayerId): LkiSnapshot {
   return {
     id: "",
@@ -846,7 +844,7 @@ function tokenView(t: TokenSpec, controller: PlayerId): LkiSnapshot {
   };
 }
 
-/** Modifications du nombre de jetons : « le double » (Doubling Season), « le triple » (Ojer Taq), « autant plus N ». */
+/** Modifications of the number of tokens: "twice that many" (Doubling Season), "three times that many" (Ojer Taq), "that many plus N". */
 function tokenModifiers(s: GameState, reps: ActiveReplacement[]): AmountMod[] {
   const mods: AmountMod[] = [];
   for (const a of reps) {
@@ -858,8 +856,8 @@ function tokenModifiers(s: GameState, reps: ActiveReplacement[]): AmountMod[] {
 }
 
 /**
- * Nombre de jetons copies créés pour `count` (Doubling Season, Ojer Taq…) : les multiplicateurs des remplacements de
- * jetons qui s'appliquent à ce modèle.
+ * Number of token copies created for `count` (Doubling Season, Ojer Taq…): the multipliers of the token
+ * replacements that apply to this model.
  */
 export function tokenCopyCount(s: GameState, controller: PlayerId, model: LkiSnapshot, count: number): number {
   const reps = eventReplacements(s, "tokens").filter(

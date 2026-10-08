@@ -1,4 +1,4 @@
-/** Effets du moteur : pile et permissions de lancer (contresorts, copies, lancer depuis une autre zone). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+/** Engine effects: stack and casting permissions (counterspells, copies, casting from another zone). Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
 import { payLife, sacrifice } from "../actions";
 import type { OpHandlers, OpResult } from "../effects";
@@ -47,18 +47,19 @@ import {
 } from "../state";
 import { payableLife } from "../statics";
 import { legalTargets, matchesCard, matchesObjectFilter } from "../targets";
+import { msg } from "../text";
 import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution, StackItem } from "../types";
 
 export const HANDLERS: OpHandlers = {
   discover(s, r, e, ctx, key) {
-    // Le joueur qui découvre est fixé au premier passage : à la reprise, la carte qui le désignait a pu changer de zone
-    // (Zoyowa's Justice : « le contrôleur de la créature » renvoyée en bibliothèque).
+    // The discovering player is fixed on the first pass: on resumption, the card that designated them may have changed
+    // zones (Zoyowa's Justice: "the creature's controller", the creature having been put into the library).
     const p =
       (r.vars[key("who")]?.[0] as string | undefined) ??
       (e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller);
     if (!p) return;
     r.vars[key("who")] = [p];
-    // La résolution peut reprendre après la question : l'exil n'a lieu qu'une fois.
+    // The resolution can resume after the question: the exiling happens only once.
     if (!r.vars[key("done")]) {
       const n = evalAmount(s, ctx, e.n);
       const lib = s.players[p]?.library ?? [];
@@ -91,7 +92,7 @@ export const HANDLERS: OpHandlers = {
       store(r, e.store, 1);
     };
     const answer = r.vars[key("cast")];
-    // Carte lancée : le sort sur la pile (Hit the Mother Lode lit sa valeur de mana).
+    // Card cast: the spell on the stack (Hit the Mother Lode reads its mana value).
     if (answer?.length) {
       dropNowPermissions(s);
       storeHit(String(answer[0]));
@@ -101,8 +102,8 @@ export const HANDLERS: OpHandlers = {
       dropNowPermissions(s);
       return;
     }
-    // 701.57a : « vous pouvez la lancer sans payer son coût de mana ; sinon, mettez-la dans votre main », pendant
-    // la résolution (608.2g).
+    // 701.57a: "you may cast it without paying its mana cost; if you don't, put that card into your hand", during the
+    // resolution (608.2g).
     if (!answer) {
       grantPlay(s, p, [hit], "thisTurn", { free: true, anyTime: true, source: ctx.sourceId, now: true });
       if (castTerms(s, p, hit)) {
@@ -112,14 +113,14 @@ export const HANDLERS: OpHandlers = {
             key: key("cast"),
             cards: [hit],
             prompt: e.cascade
-              ? `Cascade : lancer ${nameOf(s, hit)} gratuitement ? (sinon, au-dessous de votre bibliothèque)`
-              : `Découverte : lancer ${nameOf(s, hit)} gratuitement ? (sinon, en main)`,
+              ? msg("Cascade: cast {card} for free? (otherwise, on the bottom of your library)", { card: nameOf(s, hit) })
+              : msg("Discover: cast {card} for free? (otherwise, into your hand)", { card: nameOf(s, hit) }),
           },
         };
       }
     }
     dropNowPermissions(s);
-    // Cascade : la carte non lancée va au-dessous de la bibliothèque (après les autres, ordre aléatoire approché).
+    // Cascade: the card not cast goes to the bottom of the library (after the others, random order approximated).
     if (e.cascade) {
       moveObject(s, hit, "library", { position: "bottom" });
       return;
@@ -133,7 +134,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   castNow(s, r, e, ctx, key) {
-    // Kotis : « des sorts de valeur de mana X ou moins parmi elles ».
+    // Kotis: "spells with mana value X or less from among them".
     const max = e.maxManaValue === undefined ? undefined : evalAmount(s, ctx, e.maxManaValue);
     const cards = resolveRef(s, ctx, e.what).filter(
       (id) => max === undefined || manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost) <= max,
@@ -181,7 +182,7 @@ export const HANDLERS: OpHandlers = {
       const uid = item ? s.objects[item.sourceId]?.uid : undefined;
       if (!counterItem(s, id, ctx.sourceDefId, e.exile || perm)) continue;
       n++;
-      // La carte contrecarrée, là où elle est allée (exil, cimetière) : Thranduil's Decree, Desertion.
+      // The countered card, wherever it went (exile, graveyard): Thranduil's Decree, Desertion.
       const card =
         (perm || e.storeMoved) && uid
           ? Object.values(s.objects).find((o) => o.uid === uid && (o.zone === "exile" || o.zone === "graveyard"))?.id
@@ -195,26 +196,26 @@ export const HANDLERS: OpHandlers = {
   unlessPay(s, r, e, ctx, key) {
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
     if (!p) return;
-    // « à moins que son contrôleur ne paie {X} » (Syncopate) : X est celui du sort.
+    // "unless its controller pays {X}" (Syncopate): X is the spell's.
     const extra = e.genericAmount ? evalAmount(s, ctx, e.genericAmount) : 0;
     const base = e.mana ?? (e.genericAmount ? { generic: 0, colored: {}, x: 0 } : undefined);
-    // Entretien cumulatif (702.24a) : le coût payé une fois par marqueur d'âge.
+    // Cumulative upkeep (702.24a): the cost paid once per age counter.
     const times = e.times ? Math.max(0, evalAmount(s, ctx, e.times)) : 1;
     const mana = base ? timesCost({ ...base, x: 0, generic: base.generic + (base.x ?? 0) * ctx.x + extra }, times) : undefined;
-    // Raubahn : « Garde — payez des PV égaux à sa force ».
+    // Raubahn: "Ward—Pay life equal to its power".
     const lifeOnce = e.lifeAmount ? evalAmount(s, ctx, e.lifeAmount) : e.life;
     const life = lifeOnce === undefined ? undefined : lifeOnce * times;
-    // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
+    // Ward with a compound cost (Ovika: {3} and 3 life): both parts must be payable.
     const hand = s.players[p]?.hand ?? [];
     const sacrificeable = () =>
       s.battlefield.filter(
         (id) => s.objects[id]?.controller === p && (!e.sacrificeFilter || matchesObjectFilter(s, p, id, e.sacrificeFilter)),
       );
-    // Garde « réunissez des preuves N » : les cartes du cimetière du joueur qui la paie.
-    // Garde « maîtrise de l'eau {4} », Waterbending Lesson : artefacts et créatures dégagés paient {1} chacun.
+    // Ward "collect evidence N": the cards in the graveyard of the player who pays it.
+    // Ward "waterbend {4}", Waterbending Lesson: untapped artifacts and creatures pay {1} each.
     const purpose = e.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : undefined;
     const evidence = e.collectEvidence ? evidenceCards(s, p, "", e.collectEvidence) : undefined;
-    // « à moins qu'il ne paie {B} ou {3} » (Lim-Dûl's Hex) : deux coûts en mana au choix (sans défausse).
+    // "unless that player pays {B} or {3}" (Lim-Dûl's Hex): a choice of two mana costs (no discard).
     const orManaOnly = !e.discard && !!e.orMana && !!mana;
     const canMana = !mana || canPay(s, p, mana, undefined, purpose);
     const canOr = orManaOnly && canPay(s, p, e.orMana as ManaCost);
@@ -227,20 +228,26 @@ export const HANDLERS: OpHandlers = {
     if (!canDo) return;
     const answer = r.vars[key("unless")];
     if (!answer) {
-      const what = [
-        mana
-          ? `${e.waterbend ? "maîtriser l'eau " : ""}${costToText(mana)}${orManaOnly ? ` ou ${costToText(e.orMana as ManaCost)}` : ""}`
-          : "",
-        life ? `${life} points de vie` : "",
-        e.discard ? (e.orMana ? `défausser une carte ou payer ${costToText(e.orMana)}` : "défausser une carte") : "",
-        e.poison ? `recevoir ${e.poison} marqueurs poison` : "",
+      const manaText = mana
+        ? orManaOnly
+          ? msg("{cost} or {other}", { cost: costToText(mana), other: costToText(e.orMana as ManaCost) })
+          : costToText(mana)
+        : "";
+      const parts = [
+        mana && e.waterbend ? msg("waterbend {cost}", { cost: manaText }) : manaText,
+        life ? msg("{n} life", { n: life }) : "",
+        e.discard ? (e.orMana ? msg("discard a card or pay {cost}", { cost: costToText(e.orMana) }) : msg("discard a card")) : "",
+        e.poison ? msg("get {n} poison counters", { n: e.poison }) : "",
         e.sacrifice
-          ? `sacrifier ${e.sacrifice} ${e.sacrificeFilter?.types?.includes("Creature") ? "créature(s)" : e.sacrificeFilter?.notTypes?.includes("Land") ? "permanents non-terrains" : "permanents"}`
+          ? e.sacrificeFilter?.types?.includes("Creature")
+            ? msg("sacrifice {n} creature(s)", { n: e.sacrifice })
+            : e.sacrificeFilter?.notTypes?.includes("Land")
+              ? msg("sacrifice {n} nonland permanents", { n: e.sacrifice })
+              : msg("sacrifice {n} permanents", { n: e.sacrifice })
           : "",
-        e.collectEvidence ? `réunir des preuves ${e.collectEvidence}` : "",
-      ]
-        .filter(Boolean)
-        .join(" et ");
+        e.collectEvidence ? msg("collect evidence {n}", { n: e.collectEvidence }) : "",
+      ].filter(Boolean);
+      const what = parts.length ? parts.reduce((a, b) => msg("{a} and {b}", { a, b })) : "";
       return {
         ask: {
           player: p,
@@ -248,14 +255,14 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "yesNo",
             intent: "unlessPay",
-            prompt: `${nameOf(s, ctx.sourceId)} : payer ${what} pour l'éviter ?`,
+            prompt: msg("{card}: pay {cost} to avoid it?", { card: nameOf(s, ctx.sourceId), cost: what }),
             suggested: [1],
           },
         },
       };
     }
     if (answer[0] !== 1) return;
-    // Titania : « défaussez une carte ou payez {2} » : le joueur choisit, si les deux sont possibles.
+    // Titania: "discard a card or pay {2}": the player chooses, if both are possible.
     let viaMana = false;
     if (e.discard && e.orMana) {
       const canMana = canPay(s, p, e.orMana);
@@ -270,9 +277,9 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "unlessPay",
-                prompt: "Comment payer ?",
+                prompt: msg("How to pay?"),
                 options: ["discard", "mana"],
-                labels: { discard: "Défausser une carte", mana: `Payer ${costToText(e.orMana)}` },
+                labels: { discard: msg("ctx:choice|Discard a card"), mana: msg("Pay {cost}", { cost: costToText(e.orMana) }) },
                 min: 1,
                 max: 1,
                 suggested: ["mana"],
@@ -287,9 +294,9 @@ export const HANDLERS: OpHandlers = {
       if (!canPay(s, p, e.orMana)) return;
       payMana(s, p, e.orMana);
     }
-    // Garde « défaussez une carte » (Gideon the Oathless) : le joueur choisit la carte.
+    // Ward "discard a card" (Gideon the Oathless): the player chooses the card.
     if (e.discard && !viaMana) {
-      // Garde « défaussez une carte au hasard » (Alpharael, Stonechosen).
+      // Ward "discard a card at random" (Alpharael, Stonechosen).
       if (e.discardRandom && !r.vars[key("unlessCard")]) {
         const pool = [...hand];
         shuffle(s, pool);
@@ -308,7 +315,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "discard",
-              prompt: "Choisissez la carte à défausser",
+              prompt: msg("Choose the card to discard"),
               options: [...hand],
               min: 1,
               max: 1,
@@ -323,7 +330,7 @@ export const HANDLERS: OpHandlers = {
       announceDiscard(s, p, moveDiscarded(s, p, id, true));
       announceDiscardBatch(s, p, 1);
     }
-    // Garde « sacrifiez trois permanents » (Emrakul, the Exigent Doom).
+    // Ward "sacrifice three permanents" (Emrakul, the Exigent Doom).
     if (e.sacrifice) {
       const perms = sacrificeable();
       const chosen = r.vars[key("unlessSac")];
@@ -339,7 +346,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "sacrifice",
-              prompt: `Sacrifiez ${e.sacrifice} permanents`,
+              prompt: msg("Sacrifice {n} permanents", { n: e.sacrifice }),
               options: perms,
               min: e.sacrifice,
               max: e.sacrifice,
@@ -353,7 +360,7 @@ export const HANDLERS: OpHandlers = {
       for (const id of ids) sacrifice(s, id);
     }
     if (evidence) collectEvidence(s, p, evidence);
-    // Deux coûts au choix : le joueur choisit s'il peut payer les deux.
+    // Two costs to choose from: the player chooses if they can pay both.
     let payWith = mana;
     if (orManaOnly && e.orMana) {
       if (!canMana) payWith = e.orMana;
@@ -367,12 +374,12 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "unlessPay",
-                prompt: "Comment payer ?",
+                prompt: msg("How to pay?"),
                 options: ["mana", "orMana"],
-                labels: { mana: `Payer ${costToText(mana as ManaCost)}`, orMana: `Payer ${costToText(e.orMana)}` } as Record<
-                  string,
-                  string
-                >,
+                labels: {
+                  mana: msg("Pay {cost}", { cost: costToText(mana as ManaCost) }),
+                  orMana: msg("Pay {cost}", { cost: costToText(e.orMana) }),
+                } as Record<string, string>,
                 min: 1,
                 max: 1,
                 suggested: ["mana"],
@@ -389,16 +396,16 @@ export const HANDLERS: OpHandlers = {
       if (e.waterbend) bent(s, p, "water");
     }
     if (life) payLife(s, p, life);
-    // The Serpent Society : « Garde — Recevez cinq marqueurs poison ».
+    // The Serpent Society: "Ward—Get five poison counters".
     const pl = s.players[p];
     if (e.poison && pl) {
       pl.counters ??= {};
       const counters = pl.counters;
       counters.poison = (counters.poison ?? 0) + e.poison;
-      bump(s); // corrompu : des statiques en dépendent
+      bump(s); // corrupted: statics depend on it
       emit({ type: "poison", player: p, amount: e.poison, total: counters.poison });
     }
-    // « S'il le fait, … » (Divert Disaster).
+    // "If they do, …" (Divert Disaster).
     store(r, e.paidStore, 1);
     return { skip: e.skip };
   },
@@ -424,7 +431,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "impulse",
-            prompt: "Choisissez la carte exilée que vous pourrez jouer ce tour-ci",
+            prompt: msg("Choose the exiled card you may play this turn"),
             options: exiled,
             min: 1,
             max: 1,
@@ -460,7 +467,12 @@ export const HANDLERS: OpHandlers = {
         ask: {
           player: ctx.controller,
           key: key("paycost"),
-          request: { type: "yesNo", intent: "may", prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`, suggested: [1] },
+          request: {
+            type: "yesNo",
+            intent: "may",
+            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            suggested: [1],
+          },
         },
       };
     }
@@ -478,7 +490,7 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const item = s.stack.find((x) => x.id === id);
       if (!item) continue;
-      // Sort, capacité activée ou déclenchée (Return the Favor, Ertha Jo) : nouvelles cibles au choix avant la priorité.
+      // Spell, activated or triggered ability (Return the Favor, Ertha Jo): new targets may be chosen before priority.
       for (let i = 0; i < n; i++) {
         const id = copyStackItem(s, item, ctx.controller);
         const copy = id ? s.stack.find((x) => x.id === id) : undefined;
@@ -496,8 +508,8 @@ export const HANDLERS: OpHandlers = {
   },
   payX(s, r, e, ctx, key) {
     if (r.vars[`$${e.store}`]) return;
-    // « Payez autant de points de vie que vous voulez » (Necrodominance) : au plus ses PV (119.4). Plague of Vermin : un
-    // autre joueur paie.
+    // "Pay any amount of life" (Necrodominance): at most their life total (119.4). Plague of Vermin: another player
+    // pays.
     const payer = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x) && !s.players[x]?.lost) : ctx.controller;
     if (!payer) {
       store(r, e.store, 0);
@@ -514,7 +526,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "number",
             intent: "payX",
-            prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`,
+            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
             min: 0,
             max,
             suggested: [e.life ? Math.min(max, Math.max(0, life - 10)) : max],
@@ -542,8 +554,8 @@ export const HANDLERS: OpHandlers = {
       const [specId, current] = entries[0] ?? [];
       if (!specId || !current) continue;
       if (entries.length > 1 || current.length > 1) {
-        // Plusieurs cibles (« vous pouvez choisir de nouvelles cibles », Commandeer, Speedball) : pour chaque mot « cible »,
-        // autant de cibles qu'à l'origine, celles d'origine proposées (comme pour une copie, 707.10c).
+        // Several targets ("you may choose new targets", Commandeer, Speedball): for each word "target", as many targets
+        // as originally, the original ones suggested (as for a copy, 707.10c).
         for (const [sid] of entries) {
           const k = key(`ct-${id}-${sid}`);
           const request = retargetRequest(s, item, sid, nameOf(s, item.sourceId));
@@ -567,7 +579,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "changeTarget",
-              prompt: "Choisissez la nouvelle cible",
+              prompt: msg("Choose the new target"),
               options,
               min: 0,
               max: 1,
@@ -611,7 +623,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   spellFate(s, r, e, ctx) {
-    // Sans `what` : le sort qui se résout.
+    // Without `what`: the resolving spell.
     const items = e.what
       ? resolveRef(s, ctx, e.what)
           .map((id) => s.stack.find((x) => x.id === id && x.kind === "spell"))
@@ -635,7 +647,7 @@ export const HANDLERS: OpHandlers = {
     if (e.for === "owner") {
       for (const id of ids) {
         const owner = s.objects[id]?.owner ?? ctx.controller;
-        // « jusqu'à votre prochain tour » : le tour qui précède le prochain tour du contrôleur de l'effet.
+        // "until your next turn": the turn before the next turn of the effect's controller.
         const until =
           e.duration === "forever"
             ? "forever"
@@ -673,7 +685,7 @@ export const HANDLERS: OpHandlers = {
       group: e.oneOf ? newId(s, "g") : undefined,
       adventureOnly: e.adventureOnly,
     };
-    // Ian Malcolm : chaque joueur autre que le propriétaire de la carte.
+    // Ian Malcolm: each player other than the card's owner.
     if (e.for === "nonOwners") {
       for (const id of ids)
         for (const p of alivePlayers(s).filter((q) => q !== s.objects[id]?.owner)) grantPlay(s, p, [id], until, opts);
@@ -681,11 +693,11 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   castCopiesFree(s, r, e, ctx, key) {
-    // Uldaros Theorix : les cartes exilées sont copiées ; le joueur choisit lesquelles lancer (valeur de mana
-    // totale limitée), puis les lance pendant la résolution.
+    // Uldaros Theorix: the exiled cards are copied; the player chooses which ones to cast (limited total mana value),
+    // then casts them during the resolution.
     const cards = [...new Set(e.what.flatMap((w) => resolveRef(s, ctx, w)))].filter((id) => !!s.objects[id]);
     const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
-    // Sans limite effective (toutes les cartes tiennent), pas de question : toutes sont copiées.
+    // Without an effective limit (all the cards fit), no question: all are copied.
     const maxCount = e.maxCount ?? Number.POSITIVE_INFINITY;
     if (!r.vars[key("copies")] && cards.reduce((n, id) => n + mv(id), 0) <= e.maxTotalManaValue && cards.length <= maxCount)
       r.vars[key("copies")] = cards;
@@ -705,7 +717,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: `Copies à lancer gratuitement (valeur de mana totale ${e.maxTotalManaValue} ou moins)`,
+            prompt: msg("Copies to cast for free (total mana value {n} or less)", { n: e.maxTotalManaValue }),
             options: cards,
             min: 0,
             max: Math.min(cards.length, maxCount),
@@ -714,7 +726,7 @@ export const HANDLERS: OpHandlers = {
         },
       };
     }
-    // Les copies ne sont créées qu'une fois (la résolution reprend après chaque sort lancé).
+    // The copies are created only once (the resolution resumes after each spell cast).
     if (!r.vars[key("made")]) {
       let total = 0;
       const made: string[] = [];
@@ -728,7 +740,7 @@ export const HANDLERS: OpHandlers = {
       }
       r.vars[key("made")] = made;
     }
-    // 608.2g : les copies se lancent pendant la résolution ; celles qui ne sont pas lancées cessent d'exister (707.12).
+    // 608.2g: the copies are cast during the resolution; those not cast cease to exist (707.12).
     const copies = (r.vars[key("made")] ?? []).map(String);
     const step = castNowLoop(s, r, key, ctx.controller, ctx.sourceId, copies, { free: !e.paid, many: true });
     if (step.ask) return step.ask;
@@ -739,9 +751,9 @@ export const HANDLERS: OpHandlers = {
 };
 
 /**
- * 608.2g : « vous pouvez lancer [ces cartes] » pendant une résolution. Pose une priorité restreinte à ces cartes
- * (clés `cast0`, `cast1`… : la carte lancée, ou vide pour un refus) jusqu'à un refus, ou après un sort si `many` est
- * faux. Renvoie la question à poser, ou, une fois fini, les sorts lancés et les cartes restées dans leur zone.
+ * 608.2g: "you may cast [these cards]" during a resolution. Sets a priority restricted to these cards (keys `cast0`,
+ * `cast1`…: the card cast, or empty for a refusal) until a refusal, or after one spell if `many` is false. Returns the
+ * question to ask, or, once done, the spells cast and the cards left in their zone.
  */
 function castNowLoop(
   s: GameState,
@@ -763,7 +775,7 @@ function castNowLoop(
     }
     cast.push(String(answer[0]));
   }
-  // Une carte lancée a changé d'identifiant (400.7) : il ne reste que les cartes encore dans leur zone.
+  // A card cast has changed identifier (400.7): only the cards still in their zone remain.
   const rest = cards.filter((id) => !!s.objects[id] && s.objects[id]?.zone !== "stack");
   dropNowPermissions(s);
   if (!declined && (opts.many || cast.length === 0)) {
@@ -777,7 +789,7 @@ function castNowLoop(
       now: true,
       ...(opts.cost ? { cost: opts.cost } : {}),
     });
-    // Seules les cartes qu'on peut vraiment lancer (cibles, coûts additionnels) sont proposées.
+    // Only the cards that can really be cast (targets, additional costs) are offered.
     const castable = open.filter((id) => castTerms(s, player, id));
     if (castable.length) {
       const names = castable.map((id) => nameOf(s, id)).join(", ");
@@ -787,8 +799,15 @@ function castNowLoop(
             player,
             key: key(`cast${i}`),
             cards: castable,
-            // Court : le bandeau de la partie l'affiche sur une ligne.
-            prompt: `${nameOf(s, source)} : lancer ${castable.length > 1 ? "un sort" : names}${opts.free ? " gratuitement" : ""} ?`,
+            // Short: the game banner shows it on one line.
+            prompt:
+              castable.length > 1
+                ? opts.free
+                  ? msg("{card}: cast a spell for free?", { card: nameOf(s, source) })
+                  : msg("{card}: cast a spell?", { card: nameOf(s, source) })
+                : opts.free
+                  ? msg("{card}: cast {spell} for free?", { card: nameOf(s, source), spell: names })
+                  : msg("{card}: cast {spell}?", { card: nameOf(s, source), spell: names }),
           },
         },
         cast,

@@ -1,31 +1,31 @@
 /**
- * Autopilot « façon Arena » : répond à la place du joueur aux décisions triviales.
- * Le moteur reste strict ; c'est cette couche qui rend le jeu fluide.
+ * "Arena-style" autopilot: answers trivial decisions on behalf of the player.
+ * The engine stays strict; this layer is what makes the game flow.
  */
 import { meaningfulActions } from "./legal";
 import { forcedAttacks } from "./turn";
 import type { Decision, GameState, PlayerId, Step, TargetOption } from "./types";
 
 export interface AutopilotSettings {
-  /** Désactive toute automatisation : le joueur reçoit chaque priorité et chaque choix (dont l'ordre de ses déclencheurs). */
+  /** Disables all automation: the player receives every priority and every choice (including the order of their triggers). */
   fullControl: boolean;
-  /** Étapes où l'on s'arrête (si l'on a quelque chose à faire), pendant son tour et celui de l'adversaire. */
+  /** Steps where we stop (if there is something to do), during one's own turn and the opponent's. */
   stops: { own: Step[]; opponent: Step[] };
-  /** « Fin du tour » : passer toutes les priorités jusqu'à la fin du tour indiqué. */
+  /** "End turn": pass every priority until the end of the given turn. */
   passUntilTurn: number | null;
   /**
-   * Sort ou capacité adverse sur la pile : rendre la main au joueur même s'il n'a aucune réponse,
-   * pour que l'interface le lui montre (elle passe seule après quelques secondes).
+   * Opponent's spell or ability on the stack: give control back to the player even if they have no response,
+   * so that the interface shows it to them (it passes on its own after a few seconds).
    */
   revealOpponentStack?: boolean;
   /**
-   * Garder la priorité sur ses propres sorts et capacités (pour y répondre soi-même, façon Arena) ; l'ordre de ses
-   * déclencheurs est alors demandé au joueur quand il compte.
+   * Hold priority on one's own spells and abilities (to respond to them oneself, Arena-style); the order of one's
+   * triggers is then asked of the player when it matters.
    */
   holdPriority?: boolean;
   /**
-   * « Fin du tour » : passe douce (par défaut), qui rend la main dès qu'un adversaire met quelque chose sur la pile ; passe
-   * dure, qui laisse tout passer jusqu'à la fin du tour.
+   * "End turn": soft pass (by default), which gives control back as soon as an opponent puts something on the stack;
+   * hard pass, which lets everything go until the end of the turn.
    */
   passMode?: "soft" | "hard";
 }
@@ -47,33 +47,33 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
 
   if (p.kind === "declareAttackers") {
     if (!passingTurn) return null;
-    // Même en passant le tour, les créatures obligées d'attaquer attaquent.
+    // Even when passing the turn, the creatures that must attack do attack.
     return { type: "declareAttackers", attackers: forcedAttacks(s, player) };
   }
   if (p.kind === "choice") {
     if (!p.request.autoOk || settings.fullControl) return null;
-    // Ordre de ses déclencheurs : choisi par l'automatisme, sauf si l'on garde la priorité et que l'ordre compte
-    // (des capacités différentes ; la même capacité plusieurs fois, l'ordre est indifférent).
+    // Order of one's triggers: chosen by the autopilot, unless priority is held and the order matters
+    // (different abilities; the same ability several times, the order does not matter).
     if (p.request.intent === "triggerOrder" && settings.holdPriority && triggerOrderMatters(s, p.request.suggested)) return null;
     return { type: "choose", values: p.request.suggested };
   }
   if (p.kind !== "priority") return null;
-  // « Lancez-la » pendant une résolution : une vraie décision, jamais passée à la place du joueur.
+  // "Cast it" during a resolution: a real decision, never passed on behalf of the player.
   if (p.castNow) return null;
   const top = s.stack[s.stack.length - 1];
-  // « Fin du tour » est une demande explicite : elle vaut aussi en contrôle total. En passe douce, un sort ou une
-  // capacité adverse rend la main au joueur (le client annule alors la passe).
+  // "End turn" is an explicit request: it also holds in full control. In a soft pass, an opponent's spell or ability
+  // gives control back to the player (the client then cancels the pass).
   if (passingTurn) return settings.passMode !== "hard" && top && top.controller !== player ? null : { type: "pass" };
   if (settings.fullControl) return null;
-  // Sort ou capacité adverse : le joueur doit le voir, même sans réponse possible (l'interface passe seule).
+  // Opponent's spell or ability: the player must see it, even with no possible response (the interface passes on its own).
   if (top && top.controller !== player && settings.revealOpponentStack) return null;
-  // Son tour, pile vide, seconde phase principale : on s'arrête toujours, même sans rien à faire. Le joueur termine
-  // lui-même son tour (« Fin du tour ») ; sinon le tour passe au joueur suivant sans qu'il ait rien vu, comme sauté.
+  // Own turn, empty stack, second main phase: we always stop, even with nothing to do. The player ends their turn
+  // themselves ("End turn"); otherwise the turn goes to the next player without them seeing anything, as if skipped.
   if (!top && s.turn.active === player && s.turn.step === "main2") return null;
-  // Rien à faire : on passe.
+  // Nothing to do: pass.
   if (meaningfulActions(s, player).length === 0) return { type: "pass" };
   if (top) {
-    // Son propre sort : on le laisse se résoudre, sauf si l'on garde la priorité. Sort adverse : fenêtre de réponse.
+    // One's own spell: let it resolve, unless priority is held. Opponent's spell: response window.
     return top.controller === player && !settings.holdPriority ? { type: "pass" } : null;
   }
   const stops = s.turn.active === player ? settings.stops.own : settings.stops.opponent;
@@ -85,7 +85,7 @@ function triggerOrderMatters(s: GameState, ids: readonly unknown[]): boolean {
   return mine.some((t) => t.sourceDefId !== mine[0]?.sourceDefId || t.abilityIndex !== mine[0]?.abilityIndex);
 }
 
-/** Choix automatique des cibles quand il n'y a qu'une seule possibilité (et que la cible n'est pas optionnelle). */
+/** Automatic choice of targets when there is only one possibility (and the target is not optional). */
 export function autoTarget(t: TargetOption): string | null {
   return !t.optional && !t.count && t.legal.length === 1 ? (t.legal[0] as string) : null;
 }

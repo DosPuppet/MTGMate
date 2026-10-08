@@ -1,6 +1,6 @@
 /**
- * Primitives de manipulation de l'état : identifiants, hasard déterministe,
- * événements, zones et caractéristiques calculées (couches).
+ * State manipulation primitives: ids, deterministic randomness,
+ * events, zones and computed characteristics (layers).
  */
 import { colorIdentity } from "./identity";
 import type {
@@ -23,16 +23,16 @@ import type {
 } from "./types";
 import { COLORS } from "./types";
 
-/** Types de permanent (Descente : « une carte de permanent a été mise dans votre cimetière »). */
+/** Permanent types (Descend: "a permanent card was put into your graveyard"). */
 
-// Événements d'affichage : `events.ts` (sans dépendance), réexportés ici.
+// Display events: `events.ts` (no dependencies), re-exported here.
 export { collectEvents, emit } from "./events";
 
 import { emit } from "./events";
 
 // ---------------------------------------------------------------------------
-// Événements de règles : écoutés par le module des déclencheurs (triggers.ts).
-// Distincts des GameEvent, qui ne servent qu'à l'affichage.
+// Rules events: listened to by the triggers module (triggers.ts).
+// Distinct from GameEvent, which only serves the display.
 // ---------------------------------------------------------------------------
 
 export type RulesEvent =
@@ -42,19 +42,19 @@ export type RulesEvent =
       newId: ObjectId | null;
       from: Zone | null;
       to: Zone;
-      /** Caractéristiques au moment du départ du champ de bataille. */
+      /** Characteristics at the time of leaving the battlefield. */
       lki: LkiSnapshot | null;
     }
   /**
-   * `instantSorceryBefore` : éphémères et rituels déjà lancés ce tour-ci par ce joueur (pour un éphémère ou un rituel) ;
-   * `spellsBefore` : sorts déjà lancés ce tour-ci par tous les joueurs (déluge, 702.40a).
+   * `instantSorceryBefore`: instants and sorceries already cast this turn by this player (for an instant or a sorcery);
+   * `spellsBefore`: spells already cast this turn by all players (storm, 702.40a).
    */
   | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number; spellsBefore: number }
-  /** Une copie de sort mise sur la pile par ce joueur (707.10). */
+  /** A spell copy put on the stack by this player (707.10). */
   | { e: "copySpell"; player: PlayerId; stackId: ObjectId }
-  /** Un permanent détruit par un sort ou une capacité que ce joueur contrôle (701.8). */
+  /** A permanent destroyed by a spell or ability this player controls (701.8). */
   | { e: "destroyed"; lki: LkiSnapshot; by: PlayerId }
-  /** Cartes défaussées (nouveaux identifiants, dans le cimetière). */
+  /** Discarded cards (new ids, in the graveyard). */
   | { e: "discard"; player: PlayerId; cards: ObjectId[] }
   | { e: "discardBatch"; player: PlayerId; count: number }
   | { e: "cycled"; player: PlayerId; card: ObjectId; x: number }
@@ -62,11 +62,11 @@ export type RulesEvent =
   | { e: "crime"; player: PlayerId }
   | { e: "plotted"; card: ObjectId }
   | { e: "attack"; attacker: ObjectId; defender: PlayerId }
-  /** `excess` : blessures en excès (120.4a) infligées à une créature ou à un planeswalker. */
+  /** `excess`: excess damage (120.4a) dealt to a creature or a planeswalker. */
   | {
       e: "damage";
       sourceId: ObjectId | null;
-      /** Sort qui inflige les blessures (élément de pile qui se résout). */
+      /** Spell that deals the damage (resolving stack item). */
       stackId?: string;
       sourceController?: PlayerId;
       target: string;
@@ -75,95 +75,95 @@ export type RulesEvent =
       excess?: number;
     }
   | { e: "step"; step: Step; active: PlayerId }
-  /** `first` : première fois que ce joueur gagne des points de vie ce tour-ci. */
+  /** `first`: first time this player gains life this turn. */
   | { e: "lifeGain"; player: PlayerId; amount: number; first: boolean }
   | { e: "lifeLoss"; player: PlayerId; amount: number }
-  /** `nth` : rang de cette carte parmi celles piochées par ce joueur ce tour-ci. */
-  /** `turnDraw` : la pioche de l'étape de pioche (504.1). */
+  /** `nth`: rank of this card among those drawn by this player this turn. */
+  /** `turnDraw`: the draw of the draw step (504.1). */
   | { e: "draw"; player: PlayerId; nth: number; objectId?: ObjectId; turnDraw?: boolean }
   | { e: "attackWith"; player: PlayerId; count: number }
   | { e: "counters"; objectId: ObjectId; kind: string; amount: number; first: boolean; by: PlayerId }
-  /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */
+  /** A spell or ability was just put on the stack with these targets (stack item id). */
   | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] }
   | { e: "untap"; objectId: ObjectId }
-  /** Un permanent recto-verso s'est transformé (701.28) : il a désormais les capacités de la face visible. */
+  /** A double-faced permanent transformed (701.28): it now has the abilities of the visible face. */
   | { e: "transformed"; objectId: ObjectId }
-  /** `by` : le joueur qui l'engage (contrôleur de ce qui se résout ; sinon, coût ou mana, son contrôleur). */
-  /** `cause` : engagé pour payer un travail d'équipe ; `first` : la première fois de ce tour. */
+  /** `by`: the player who taps it (controller of what is resolving; otherwise, cost or mana, its controller). */
+  /** `cause`: tapped to pay for teamwork; `first`: the first time this turn. */
   | { e: "tap"; objectId: ObjectId; by: PlayerId; cause?: "teamwork"; first?: boolean }
-  /** Un joueur vient de regarder (scry) ou de surveiller. */
+  /** A player just scried or surveilled. */
   | { e: "scry"; player: PlayerId }
-  /** Un joueur a cherché dans sa bibliothèque (Wan Shi Tong). */
+  /** A player searched their library (Wan Shi Tong). */
   | { e: "search"; player: PlayerId }
-  /** Capacité de loyauté activée (`cost` : variation de loyauté, négative si des marqueurs sont retirés). */
+  /** Loyalty ability activated (`cost`: loyalty change, negative if counters are removed). */
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
-  /** Une créature bloque. */
+  /** A creature blocks. */
   | { e: "block"; blocker: ObjectId; attacker: ObjectId }
-  /** Des créatures ont infligé des blessures de combat à ce joueur (une étape de blessures). */
+  /** Creatures dealt combat damage to this player (one damage step). */
   | { e: "combatDamageBatch"; player: PlayerId; sources: ObjectId[] }
-  /** Des cartes ont été meulées (701.13), en une fois : par joueur, le nombre de cartes non-terrain (Fallout). */
+  /** Cards were milled (701.13), at once: per player, the number of nonland cards (Fallout). */
   | { e: "milled"; byPlayer: { player: PlayerId; nonland: number; cards: number }[] }
-  /** Un permanent est sacrifié (par son contrôleur). */
+  /** A permanent is sacrificed (by its controller). */
   | { e: "sacrifice"; objectId: ObjectId; player: PlayerId }
-  /** Un joueur perd la partie. */
+  /** A player loses the game. */
   | { e: "playerLost"; player: PlayerId }
-  /** Un permanent change de contrôleur (Zidane, Tantalus Thief). */
+  /** A permanent changes controller (Zidane, Tantalus Thief). */
   | { e: "controlChange"; objectId: ObjectId; from: PlayerId; to: PlayerId }
-  /** Une créature explore (701.44), en révélant une carte de terrain ou non. */
+  /** A creature explores (701.44), revealing a land card or not. */
   | { e: "explore"; objectId: ObjectId; land: boolean }
-  /** Un joueur découvre N (701.57). */
+  /** A player discovers N (701.57). */
   | { e: "discover"; player: PlayerId; n: number }
-  /** Un joueur active une capacité (qui n'est pas une capacité de mana). */
+  /** A player activates an ability (that isn't a mana ability). */
   | { e: "activated"; player: PlayerId; stackId: string }
-  /** Une Monture devient montée. */
+  /** A Mount becomes saddled. */
   | { e: "saddled"; objectId: ObjectId }
-  /** Des créatures ont monté une Monture ou équipé un Véhicule (coût payé). */
+  /** Creatures saddled a Mount or crewed a Vehicle (cost paid). */
   | { e: "crewed"; vehicle: ObjectId; crew: ObjectId[] }
-  /** Un joueur manifeste avec effroi (déclencheurs « chaque fois que vous manifestez avec effroi »). */
+  /** A player manifests dread ("whenever you manifest dread" triggers). */
   | { e: "manifestDread"; player: PlayerId; graveyard?: ObjectId[] }
-  /** Un permanent face cachée est retourné face visible. */
+  /** A face-down permanent is turned face up. */
   | { e: "turnedFaceUp"; objectId: ObjectId }
-  /** Une Classe atteint un niveau. */
+  /** A Class reaches a level. */
   | { e: "classLevel"; objectId: ObjectId; level: number }
-  /** Un joueur joue un terrain. */
+  /** A player plays a land. */
   | { e: "playLand"; player: PlayerId; objectId: ObjectId; from: Zone }
-  /** Dépense N (Bloomburrow) : ce joueur vient de dépenser son N-ième mana total pour lancer des sorts ce tour-ci. */
+  /** Expend N (Bloomburrow): this player just spent their Nth total mana to cast spells this turn. */
   | { e: "expend"; player: PlayerId; n: number }
-  /** Un joueur fourrage (701.61). */
+  /** A player forages (701.61). */
   | { e: "forage"; player: PlayerId }
-  /** Réunir des preuves (701.59). */
+  /** Collect evidence (701.59). */
   | { e: "collectEvidence"; player: PlayerId }
-  /** Une Affaire est résolue (Case File Auditor). */
+  /** A Case is solved (Case File Auditor). */
   | { e: "caseSolved"; player: PlayerId; objectId: ObjectId }
-  /** Un joueur offre un cadeau (702.174). */
+  /** A player gives a gift (702.174). */
   | { e: "gift"; player: PlayerId }
-  /** Une porte de Salle est déverrouillée. */
+  /** A Room door is unlocked. */
   | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId }
   | { e: "blocked"; attacker: ObjectId; player: PlayerId }
-  /** Maîtrise des éléments (Avatar) : ce joueur maîtrise l'eau, la terre, le feu ou l'air. */
+  /** Bending (Avatar): this player waterbends, earthbends, firebends or airbends. */
   | { e: "bend"; player: PlayerId; kind: BendKind }
-  /** Une créature attaquante a fait se déclencher une de ses capacités en attaquant (Firebender Ascension). */
+  /** An attacking creature caused one of its abilities to trigger by attacking (Firebender Ascension). */
   | { e: "attackTriggered"; player: PlayerId; objectId: ObjectId };
 
-/** Maîtrise des éléments (Avatar) : l'eau (payer un coût), la terre, le feu (la capacité se résout) ou l'air. */
+/** Bending (Avatar): water (paying a cost), earth, fire (the ability resolves) or air. */
 export type BendKind = "water" | "earth" | "fire" | "air";
 
 /**
- * « Vous maîtrisez [l'élément] » : déclencheurs (« chaque fois que vous maîtrisez… ») et journal du tour (« si vous
- * avez fait les quatre ce tour-ci »).
+ * "You [element]bend": triggers ("whenever you …bend") and turn log ("if you've done all four this
+ * turn").
  */
 export function bent(s: GameState, player: PlayerId, kind: BendKind): void {
   logTurnEvent(s, { e: "bend", player, kind });
   rulesEvent(s, { e: "bend", player, kind });
 }
 
-/** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
+/** Signals a rules event: the matching triggered abilities are put on hold. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
   if (ev.e === "zone" && ev.from === "battlefield" && ev.lki) {
     s.leftBatch ??= [];
     s.leftBatch.push(ev.lki.id);
   }
-  // Une seule carte par événement (`announceDiscard`) : son identifiant (chaos, « défaussée ce tour-ci »).
+  // A single card per event (`announceDiscard`): its id (chaos, "discarded this turn").
   if (ev.e === "discard")
     logTurnEvent(s, {
       e: "discard",
@@ -175,7 +175,7 @@ export function rulesEvent(s: GameState, ev: RulesEvent): void {
 }
 
 // ---------------------------------------------------------------------------
-// Copie de l'état : le moteur mute une copie, les états déjà renvoyés ne changent jamais.
+// State copy: the engine mutates a copy, states already returned never change.
 // ---------------------------------------------------------------------------
 
 function deepClone<T>(v: T): T {
@@ -191,8 +191,8 @@ function deepClone<T>(v: T): T {
 }
 
 /**
- * Copie profonde de l'état, sauf les définitions de cartes (immuables, partagées).
- * Beaucoup plus rapide qu'Immer pour notre usage (simulations de l'IA) : voir tools/bench.ts.
+ * Deep copy of the state, except the card definitions (immutable, shared).
+ * Much faster than Immer for our use (AI simulations): see tools/bench.ts.
  */
 export function cloneState(s: GameState): GameState {
   const { defs, ...rest } = s;
@@ -205,8 +205,8 @@ export function cloneState(s: GameState): GameState {
 }
 
 /**
- * Comment la source a été lancée : le sort sur la pile (ou qui se résout), sinon le permanent qu'il est devenu. `permanentFirst` :
- * le permanent d'abord (mana dépensé connu à l'arrivée).
+ * How the source was cast: the spell on the stack (or resolving), otherwise the permanent it became. `permanentFirst`:
+ * the permanent first (mana spent known as it enters).
  */
 export function castInfoOf(s: GameState, sourceId: ObjectId | undefined, permanentFirst = false): CastInfo | undefined {
   if (!sourceId) return undefined;
@@ -217,11 +217,11 @@ export function castInfoOf(s: GameState, sourceId: ObjectId | undefined, permane
 }
 
 // ---------------------------------------------------------------------------
-// Identifiants, horodatages, hasard (mulberry32, état stocké dans la partie)
+// Ids, timestamps, randomness (mulberry32, state stored in the game)
 // ---------------------------------------------------------------------------
 
 export function newId(s: GameState, prefix = "o"): string {
-  // Un compteur par préfixe : créer un effet ou un déclencheur de plus ne décale pas les identifiants des objets.
+  // One counter per prefix: creating one more effect or trigger doesn't shift the object ids.
   const n = s.idCounters[prefix] ?? 1;
   s.idCounters[prefix] = n + 1;
   return `${prefix}${n}`;
@@ -260,10 +260,10 @@ export function emptyPool(): Record<ManaType, number> {
 }
 
 // ---------------------------------------------------------------------------
-// Accès
+// Access
 // ---------------------------------------------------------------------------
 
-/** Change le contrôleur d'un permanent (horodatage de contrôle, événement de règles). */
+/** Changes the controller of a permanent (control timestamp, rules event). */
 export function setController(s: GameState, o: GameObject, to: PlayerId): void {
   const from = o.controller;
   o.controller = to;
@@ -273,13 +273,13 @@ export function setController(s: GameState, o: GameObject, to: PlayerId): void {
 
 export function obj(s: GameState, id: ObjectId): GameObject {
   const o = s.objects[id];
-  if (!o) throw new Error(`Objet inconnu : ${id}`);
+  if (!o) throw new Error(`Unknown object: ${id}`);
   return o;
 }
 
 export function defOf(s: GameState, id: ObjectId): CardDef {
   const d = s.defs[obj(s, id).defId];
-  if (!d) throw new Error(`Définition inconnue pour ${id}`);
+  if (!d) throw new Error(`Unknown definition for ${id}`);
   return d;
 }
 
@@ -288,7 +288,7 @@ export function isPlayer(s: GameState, id: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Joueurs (N joueurs : duel, multijoueur, Commander)
+// Players (N players: duel, multiplayer, Commander)
 // ---------------------------------------------------------------------------
 
 export function isAlive(s: GameState, p: PlayerId): boolean {
@@ -299,19 +299,19 @@ export function alivePlayers(s: GameState): PlayerId[] {
   return s.playerOrder.filter((p) => isAlive(s, p));
 }
 
-/** Adversaires encore en jeu, dans l'ordre du tour à partir du joueur suivant. */
+/** Opponents still in the game, in turn order starting from the next player. */
 export function opponentsOf(s: GameState, p: PlayerId): PlayerId[] {
   const i = s.playerOrder.indexOf(p);
   const rotated = [...s.playerOrder.slice(i + 1), ...s.playerOrder.slice(0, Math.max(0, i))];
   return rotated.filter((q) => q !== p && isAlive(s, q));
 }
 
-/** Prochain joueur en jeu dans l'ordre du tour (le joueur lui-même s'il est seul). */
+/** Next player in the game in turn order (the player themselves if alone). */
 export function nextPlayer(s: GameState, p: PlayerId): PlayerId {
   return opponentsOf(s, p)[0] ?? p;
 }
 
-/** Ordre APNAP (101.4) : joueur actif d'abord, puis les autres dans l'ordre du tour. */
+/** APNAP order (101.4): active player first, then the others in turn order. */
 export function apnapOrder(s: GameState): PlayerId[] {
   const active = s.turn.active;
   return [...(isAlive(s, active) ? [active] : []), ...opponentsOf(s, active)];
@@ -322,7 +322,7 @@ export function onBattlefield(s: GameState, id: ObjectId): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Marqueurs
+// Counters
 // ---------------------------------------------------------------------------
 
 export const P1P1 = "+1/+1";
@@ -332,38 +332,38 @@ export function counterCount(o: { counters: Record<string, number> }, kind: stri
   return o.counters[kind] ?? 0;
 }
 
-/** Modification nette de F/E due aux marqueurs +1/+1 et -1/-1. */
+/** Net P/T change due to +1/+1 and -1/-1 counters. */
 export function counterPT(o: { counters: Record<string, number> }): number {
   return counterCount(o, P1P1) - counterCount(o, M1M1);
 }
 
-/** Engage un permanent (« chaque fois qu'il devient engagé »). */
+/** Taps a permanent ("whenever it becomes tapped"). */
 export function tapObject(s: GameState, o: GameObject, cause?: "teamwork"): void {
   if (o.tapped) return;
   o.tapped = true;
-  // Captain America, Living Legend : « si c'est la première fois que cette créature devient engagée ce tour-ci ».
+  // Captain America, Living Legend: "if it's the first time this creature became tapped this turn".
   const first = !objectDidThisTurn(s, o.id, "tap");
   const by = s.resolving?.controller ?? o.controller;
   logTurnEvent(s, { e: "tap", player: by, id: o.id });
-  bumpFor(s, "tapped"); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
+  bumpFor(s, "tapped"); // static abilities can depend on it ("tapped legendary creatures you control")
   rulesEvent(s, { e: "tap", objectId: o.id, by, ...(cause ? { cause } : {}), first });
 }
 
 /**
- * Dégage un permanent. 122.1d : s'il a un marqueur d'étourdissement, on lui en retire un à la place. Renvoie true s'il a
- * été dégagé.
+ * Untaps a permanent. 122.1d: if it has a stun counter, one is removed from it instead. Returns true if it was
+ * untapped.
  */
 export function untapObject(s: GameState, o: GameObject): boolean {
   if (!o.tapped) return false;
-  // Blossombind : « la créature enchantée ne peut pas être dégagée ». Ceux de l'étape de dégagement seulement
-  // (`untapStep`) sont lus par cette étape (`untapStepRule`), pas ici.
+  // Blossombind: "enchanted creature can't become untapped". Those of the untap step only (`untapStep`) are read by
+  // that step (`untapStepRule`), not here.
   if (quantityMods(s, "untap", (a) => !a.r.untapStep && recipientMatches(s, a, o.id)).prevented) return false;
   if ((o.counters.stun ?? 0) > 0) {
     changeCounters(s, o, "stun", -1);
     return false;
   }
   o.tapped = false;
-  // Hedge Whisperer : « tant que cette créature reste engagée » ; Braided Net : « tant qu'il reste engagé ».
+  // Hedge Whisperer: "for as long as this creature remains tapped"; Braided Net: "for as long as it remains tapped".
   const whileTapped = (e: ContinuousEffect) => e.whileAffectedTapped && e.affected.includes(o.id);
   if (s.effects.some((e) => e.whileSourceTapped === o.id || whileTapped(e))) {
     s.effects = s.effects
@@ -377,26 +377,26 @@ export function untapObject(s: GameState, o: GameObject): boolean {
   return true;
 }
 
-/** Marqueurs dont le contrôleur du permanent veut le moins possible (ordre des remplacements, 616.1). */
+/** Counters the permanent's controller wants as few of as possible (order of replacements, 616.1). */
 const HARMFUL_COUNTERS = new Set(["-1/-1", "stun", "time", "doom", "bounty", "finality"]);
 
 /**
- * Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. `asCost` : marqueurs mis pour payer
- * un coût (loyauté +N, « mettez un marqueur : ») ; les remplacements « si un effet devait » ne s'y appliquent pas.
+ * Adds (or removes, if n < 0) counters; returns the number actually changed. `asCost`: counters put to pay a cost
+ * (loyalty +N, "put a counter:"); "if an effect would" replacements don't apply to them.
  */
 export function changeCounters(s: GameState, o: GameObject, kind: string, n: number, asCost = false): number {
-  // Remplacements (616.1), dans l'ordre que choisit le contrôleur du permanent : Doubling Season, The Earth Crystal
-  // (« le double », y compris en arrivant), Yoshimaru, Caradora (« autant plus un » marqueur +1/+1). Il veut le plus de
-  // marqueurs, sauf pour les marqueurs nuisibles.
+  // Replacements (616.1), in the order chosen by the permanent's controller: Doubling Season, The Earth Crystal
+  // ("twice that", including as it enters), Yoshimaru, Caradora ("that many plus one" +1/+1 counters). They want the
+  // most counters, except for harmful counters.
   if (n > 0 && o.zone === "battlefield") {
-    // Remplacements des marqueurs (R1, famille H) ; Blossombind : « on ne peut pas mettre de marqueurs dessus ».
+    // Counter replacements (R1, family H); Blossombind: "counters can't be put on it".
     const q = quantityMods(
       s,
       "counters",
       (a) =>
         (!a.r.counter || a.r.counter === kind) &&
         !(asCost && a.r.effectOnly) &&
-        // « si vous deviez mettre » : celui qui les met (contrôleur de ce qui se résout, sinon du permanent).
+        // "if you would put": the one who puts them (controller of what is resolving, otherwise of the permanent).
         (!a.r.byYou || (s.resolving?.controller ?? o.controller) === a.controller) &&
         recipientMatches(s, a, o.id),
     );
@@ -408,7 +408,7 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
   if (after === 0) delete o.counters[kind];
   else o.counters[kind] = after;
   if (after !== before) bump(s);
-  // « Tant que ce terrain a un marqueur de fléau » (Ultima) : l'effet cesse pour lui quand il n'en a plus.
+  // "As long as this land has a doom counter" (Ultima): the effect ends for it when it has none left.
   if (after === 0 && before > 0 && s.effects.some((e) => e.whileAffectedHasCounter === kind && e.affected.includes(o.id)))
     s.effects = s.effects.flatMap((e) =>
       e.whileAffectedHasCounter === kind && e.affected.includes(o.id)
@@ -418,11 +418,11 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
         : [e],
     );
   if (after > before && o.zone === "battlefield") {
-    // « la première fois que des marqueurs sont mis sur cette créature ce tour-ci » (Stalwart Successor).
+    // "the first time counters are put on this creature this turn" (Stalwart Successor).
     const first = !objectDidThisTurn(s, o.id, "counters");
-    // Journal du tour (Lasting Tarfire : « si vous avez mis un marqueur sur une créature ce tour-ci » ; Fractal Tender,
-    // Kid Loki : « sur elle ») : celui qui les met est le contrôleur de ce qui se résout, sinon (coût, action) le
-    // contrôleur du permanent. Noté avant l'événement, que ses déclencheurs lisent.
+    // Turn log (Lasting Tarfire: "if you put a counter on a creature this turn"; Fractal Tender, Kid Loki: "on it"):
+    // the one who puts them is the controller of what is resolving, otherwise (cost, action) the controller of the
+    // permanent. Noted before the event, which its triggers read.
     const by = s.resolving?.controller ?? o.controller;
     const c = chars(s, o.id);
     logTurnEvent(s, { e: "counters", player: by, kind, n: after - before, types: c.types, subtypes: c.subtypes, id: o.id });
@@ -442,7 +442,7 @@ function zoneArray(s: GameState, o: GameObject): ObjectId[] | null {
     case "exile":
       return s.exile;
     case "stack":
-      return null; // géré par s.stack
+      return null; // handled by s.stack
     default:
       return s.players[o.owner]?.[o.zone] ?? null;
   }
@@ -479,7 +479,7 @@ export function createObject(
   return o;
 }
 
-/** Commander (903.3, PLAN-E) : l'entrée du commandant dont `o` est la carte (pas un jeton ni une copie), sinon undefined. */
+/** Commander (903.3, PLAN-E): the entry of the commander whose card `o` is (not a token or a copy), otherwise undefined. */
 export function commanderOf(s: GameState, o: GameObject | undefined): CommanderState["cards"][string] | undefined {
   return o && !o.isToken && s.commander ? s.commander.cards[o.uid] : undefined;
 }
@@ -487,9 +487,8 @@ export function commanderOf(s: GameState, o: GameObject | undefined): CommanderS
 const NO_ABILITIES: readonly AbilityDef[] = [];
 
 /**
- * Capacités qui fonctionnent dans la zone de commandement (113.6) : toutes celles d'un emblème ; d'une carte (un
- * commandant qui attend d'être lancé), seulement celles qui disent fonctionner depuis la zone de commandement
- * (`fromCommand` : éminence).
+ * Abilities that function in the command zone (113.6): all those of an emblem; of a card (a commander waiting to be
+ * cast), only those that say they function from the command zone (`fromCommand`: eminence).
  */
 export function commandZoneAbilities(s: GameState, id: ObjectId): readonly AbilityDef[] {
   const o = s.objects[id];
@@ -502,7 +501,7 @@ export function commandZoneAbilities(s: GameState, id: ObjectId): readonly Abili
 const fromCommand = (ab: AbilityDef) =>
   (ab.kind === "triggered" || ab.kind === "static" || ab.kind === "playerStatic") && !!ab.fromCommand;
 
-/** Commander (903.4) : identité de couleur des commandants d'un joueur (vide sans commandant, 903.4f). */
+/** Commander (903.4): color identity of a player's commanders (empty without a commander, 903.4f). */
 export function commanderIdentity(s: GameState, player: PlayerId): Color[] {
   if (!s.commander) return [];
   const out = new Set<Color>();
@@ -514,8 +513,8 @@ export function commanderIdentity(s: GameState, player: PlayerId): Color[] {
 }
 
 /**
- * Déplace un objet vers une autre zone. L'objet devient un nouvel objet (400.7) :
- * on renvoie son nouvel identifiant, ou null s'il cesse d'exister (jeton quittant le champ de bataille).
+ * Moves an object to another zone. The object becomes a new object (400.7):
+ * returns its new id, or null if it ceases to exist (token leaving the battlefield).
  */
 export function moveObject(
   s: GameState,
@@ -525,25 +524,25 @@ export function moveObject(
     controller?: PlayerId;
     position?: "top" | "bottom";
     enters?: EntersContext;
-    /** Arrive face cachée (manifester, cape) : la vraie carte reste cachée, sans remplacements ni déclencheurs d'arrivée. */
+    /** Enters face down (manifest, cloak): the real card stays hidden, without entering replacements or triggers. */
     faceDown?: { ward: boolean; upCosts: ManaCost[] };
-    /** Reçoit la destination réelle, après les remplacements (exilée au lieu de mourir…). */
+    /** Receives the actual destination, after replacements (exiled instead of dying…). */
     landed?: { to?: Zone };
-    /** Arrive transformé (712.14) ou engagé : fixé avant les remplacements et les déclencheurs d'arrivée. */
+    /** Enters transformed (712.14) or tapped: set before the entering replacements and triggers. */
     transformed?: boolean;
-    /** Carte modale recto-verso jouée par son verso (712.12, verso terrain) : elle arrive verso visible. */
+    /** Modal double-faced card played by its back face (712.12, land back face): it enters back face up. */
     modalBack?: boolean;
     tapped?: boolean;
   } = {},
 ): ObjectId | null {
   const o = obj(s, id);
-  // Copie d'un sort préparé ou d'une carte (Uldaros) : elle ne quitte l'exil que pour la pile ; ailleurs,
-  // elle cesse d'exister (une copie de sort de permanent qui se résout devient un jeton).
+  // Copy of a prepared spell or of a card (Uldaros): it leaves exile only for the stack; elsewhere, it ceases to exist
+  // (a copy of a resolving permanent spell becomes a token).
   if ((o.preparedFor || o.cardCopy) && to !== "stack" && !(o.cardCopy && o.zone === "stack" && to === "battlefield")) {
     removeObject(s, id);
     return null;
   }
-  // 303.4g : une Aura qui devrait arriver sans être lancée et sans rien de légal à enchanter reste dans sa zone.
+  // 303.4g: an Aura that would enter without being cast and with nothing legal to enchant stays in its zone.
   const auraDef = s.defs[o.defId]?.enchant;
   if (
     to === "battlefield" &&
@@ -555,11 +554,11 @@ export function moveObject(
     auraHosts(s, opts.controller ?? o.controller, id).length === 0
   )
     return null;
-  // Un permanent préparé qui quitte le champ de bataille : la copie de son sort cesse d'exister.
+  // A prepared permanent leaving the battlefield: the copy of its spell ceases to exist.
   if (o.preparedCopy && o.zone === "battlefield") setPrepared(s, o, false);
-  // Exhumation (702.84a) : un permanent exhumé qui devrait quitter le champ de bataille est exilé à la place.
+  // Unearth (702.84a): an unearthed permanent that would leave the battlefield is exiled instead.
   if (o.exileIfLeaves && o.zone === "battlefield" && to !== "battlefield" && to !== "exile") to = "exile";
-  // 614.1a / 616.1 : remplacements « au lieu du cimetière » (Progenitus, finalité, Rest in Peace, Valgavoth…).
+  // 614.1a / 616.1: "instead of the graveyard" replacements (Progenitus, finality, Rest in Peace, Valgavoth…).
   let shuffleIn = false;
   let linkTo: ObjectId | undefined;
   if (to === "graveyard") {
@@ -574,19 +573,19 @@ export function moveObject(
     const i = from.indexOf(id);
     if (i >= 0) from.splice(i, 1);
   }
-  // Dernières informations connues (608.2h), prises avant le retrait du combat : « quand une créature attaquante meurt ».
+  // Last known information (608.2h), taken before removal from combat: "when an attacking creature dies".
   const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
   if (lki) {
     s.lki[id] = lki;
   }
-  // 506.4 : un permanent qui quitte le champ de bataille est retiré du combat, quel que soit l'effet qui le déplace.
+  // 506.4: a permanent leaving the battlefield is removed from combat, whatever effect moves it.
   if (o.zone === "battlefield" && s.combat) {
     s.combat.attackers = s.combat.attackers.filter((a) => a.id !== id);
     s.combat.blockers = s.combat.blockers.filter((b) => b.id !== id);
     for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => b !== id);
   }
-  // Journal du tour : « créatures exilées ce tour-ci » (Vren), « cartes qui ont quitté votre cimetière » (Bonecache)…
-  // Seulement les déplacements publics : une pioche (bibliothèque → main) n'y figure pas (information cachée).
+  // Turn log: "creatures exiled this turn" (Vren), "cards that left your graveyard" (Bonecache)…
+  // Only public moves: a draw (library → hand) isn't in it (hidden information).
   const hidden = (z: Zone) => z === "library" || z === "hand";
   if (o.zone !== to && !(hidden(o.zone) && hidden(to))) {
     const d = s.defs[o.defId];
@@ -597,7 +596,7 @@ export function moveObject(
         to,
         o.owner,
         lki?.controller ?? (to === "battlefield" ? (opts.controller ?? o.controller) : o.controller),
-        // Face cachée (708) : une créature 2/2 sans type de créature ; la vraie carte n'est pas notée.
+        // Face down (708): a 2/2 creature without a creature type; the real card isn't noted.
         (opts.faceDown || o.faceDown) && to === "battlefield"
           ? { types: ["Creature"], subtypes: [], token: o.isToken, faceDown: true }
           : {
@@ -610,7 +609,7 @@ export function moveObject(
   }
   const from0 = o.zone;
   delete s.objects[id];
-  // Permanent assemblé : il redevient ses deux cartes dans la zone de destination (701.42c).
+  // Melded permanent: it becomes its two cards again in the destination zone (701.42c).
   if (o.melded) {
     const parts = o.melded.map((p) =>
       createObject(s, p.defId, o.owner, to, { uid: p.uid, controller: to === "battlefield" ? o.controller : o.owner }),
@@ -621,31 +620,31 @@ export function moveObject(
     if (from0 === "battlefield") releaseLinkedExile(s, id);
     return parts[0]?.id ?? null;
   }
-  // Effets de contrôle en vigueur avant le départ (un effet « tant que » retiré ci-dessous en est peut-être un).
+  // Control effects in force before leaving (a "for as long as" effect removed below may be one).
   const controlEffects = from0 === "battlefield" && s.effects.some((e) => e.controller);
-  // Possession Engine : les effets qui durent « tant que vous contrôlez [la source] » cessent.
+  // Possession Engine: effects that last "for as long as you control [the source]" end.
   if (from0 === "battlefield" && s.effects.some((e) => e.whileSource === id || e.whileSourceTapped === id)) {
     s.effects = s.effects.filter((e) => e.whileSource !== id && e.whileSourceTapped !== id);
     bump(s);
   }
-  // 613.1b, 611.2 : un changement de contrôle lié à ce permanent (Aura qui donne le contrôle, effet « tant que ») prend
-  // fin dès qu'il part, sans attendre les actions basées sur l'état (une résolution peut encore demander un choix).
+  // 613.1b, 611.2: a change of control tied to this permanent (Aura that grants control, "for as long as" effect) ends
+  // as soon as it leaves, without waiting for state-based actions (a resolution can still ask for a choice).
   if (from0 === "battlefield" && (o.attachedTo || controlEffects)) syncControl(s);
-  // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent. Lancée, la carte passe sur la
-  // pile avant le paiement (601.2a) : l'effet dure jusqu'à ce que le sort soit lancé (601.2i, `castSpell`).
+  // Emrakul: effects "until this card is cast from exile" end. When cast, the card moves to the stack before payment
+  // (601.2a): the effect lasts until the spell is cast (601.2i, `castSpell`).
   if (from0 === "exile" && to !== "stack" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
     s.effects = s.effects.filter((e) => e.untilExiledUid !== o.uid);
     bump(s);
   }
   if (o.isToken && to !== "battlefield") {
     bump(s);
-    // Un jeton qui quitte le champ de bataille cesse d'exister, mais il « meurt » bien (déclencheurs).
+    // A token leaving the battlefield ceases to exist, but it does "die" (triggers).
     rulesEvent(s, { e: "zone", oldId: id, newId: null, from: from0, to, lki });
     if (from0 === "battlefield") releaseLinkedExile(s, id);
     return null;
   }
 
-  // Face cachée : la carte est révélée en quittant le champ de bataille ; un sort lancé face cachée arrive face cachée.
+  // Face down: the card is revealed when leaving the battlefield; a spell cast face down enters face down.
   const staysFaceDown = !!o.faceDown && o.zone === "stack" && to === "battlefield";
   const cardId = o.faceDown && !staysFaceDown ? o.faceDown.card : o.defId;
   const hide = to === "battlefield" && !!opts.faceDown;
@@ -673,8 +672,8 @@ export function moveObject(
     if (back) moved.faceDefId = back.id;
   }
   if (to === "battlefield" && opts.tapped) moved.tapped = true;
-  // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders) ; « meulée ce tour-ci » : de la
-  // bibliothèque au cimetière (Raul, Tato Farmer).
+  // "put into a graveyard from the battlefield this turn" (Supper for Spiders); "milled this turn": from the library to
+  // the graveyard (Raul, Tato Farmer).
   if (from0 === "battlefield" || (from0 === "library" && to === "graveyard")) moved.arrivedFrom = from0;
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
   const linker = linkTo ? s.objects[linkTo] : undefined;
@@ -687,17 +686,18 @@ export function moveObject(
   return moved.id;
 }
 
-/** Carte cachée au spectateur (exilée face cachée, 406.3) : la vue ne montre que son dos. */
+/** Card hidden from the viewer (exiled face down, 406.3): the view only shows its back. */
 export const HIDDEN_CARD_ID = "hidden-card";
 
-/** Identifiant de la définition générique d'un objet face cachée (708.2). */
+/** Id of the generic definition of a face-down object (708.2). */
 export const FACE_DOWN_ID = "face-down";
 
-/** Définition générique d'un objet face cachée : créature 2/2 sans nom, sans coût ni capacités (708.2). */
+/** Generic definition of a face-down object: 2/2 creature without a name, cost or abilities (708.2). */
 export const FACE_DOWN_DEF: CardDef = {
   id: FACE_DOWN_ID,
   name: "",
-  typeLine: "Créature face cachée",
+  typeLine: "Face-down Creature",
+  fr: { typeLine: "Créature face cachée" },
   manaCost: null,
   manaCostText: "",
   colors: [],
@@ -712,7 +712,7 @@ export const FACE_DOWN_DEF: CardDef = {
   implemented: true,
 };
 
-/** Retourne face visible un permanent face cachée (702.168d, 701.58c) ; ses capacités « retournée » se déclenchent. */
+/** Turns a face-down permanent face up (702.168d, 701.58c); its "turned face up" abilities trigger. */
 export function turnFaceUp(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (o?.zone !== "battlefield" || !o.faceDown) return;
@@ -724,7 +724,7 @@ export function turnFaceUp(s: GameState, id: ObjectId): void {
   rulesEvent(s, { e: "turnedFaceUp", objectId: id });
 }
 
-/** Salle : déverrouille une porte (709.5e) ; « quand vous déverrouillez cette porte » se déclenche. */
+/** Room: unlocks a door (709.5e); "when you unlock this door" triggers. */
 export function unlockDoor(s: GameState, id: ObjectId, door: number): void {
   const o = s.objects[id];
   if (o?.zone !== "battlefield" || o.unlocked?.includes(door)) return;
@@ -733,7 +733,7 @@ export function unlockDoor(s: GameState, id: ObjectId, door: number): void {
   rulesEvent(s, { e: "unlock", objectId: id, door, player: o.controller });
 }
 
-/** Salle : carte scindée dont les moitiés sont des enchantements (portes). */
+/** Room: split card whose halves are enchantments (doors). */
 const COMBAT_STEPS = new Set([
   "beginCombat",
   "declareAttackers",
@@ -743,7 +743,7 @@ const COMBAT_STEPS = new Set([
   "endCombat",
 ]);
 
-/** 722 : le joueur qui prend la décision en attente (le contrôleur du tour, s'il y en a un). */
+/** 722: the player who makes the pending decision (the controller of the turn, if there is one). */
 export function decider(s: GameState): PlayerId | undefined {
   const p = s.pending;
   if (!p) return undefined;
@@ -758,14 +758,14 @@ export function isRoom(d: CardDef | undefined): boolean {
   return d?.layout === "split" && !!d.faceDefs?.every((f) => f.subtypes.includes("Room"));
 }
 
-/** Enregistre une définition de carte dans la partie, avec les définitions de ses faces. */
+/** Registers a card definition in the game, with the definitions of its faces. */
 export function registerDef(s: GameState, d: CardDef): void {
   s.defs[d.id] ??= d;
   for (const f of d.faceDefs ?? []) s.defs[f.id] ??= f;
   if (d.meldResultDef) registerDef(s, d.meldResultDef);
 }
 
-/** Retire un objet du jeu sans passer par une zone (copie de sort qui cesse d'exister, carte assemblée). */
+/** Removes an object from the game without going through a zone (spell copy ceasing to exist, melded card). */
 export function removeFromGame(s: GameState, id: ObjectId): void {
   removeObject(s, id);
 }
@@ -780,8 +780,8 @@ function removeObject(s: GameState, id: ObjectId): void {
 }
 
 /**
- * Reality Fracture : un permanent qui a un sort préparé devient préparé (une copie de ce sort est créée en
- * exil, que son contrôleur peut lancer) ou dé-préparé (la copie cesse d'exister). Sans sort préparé, rien.
+ * Reality Fracture: a permanent that has a prepared spell becomes prepared (a copy of that spell is created in exile,
+ * which its controller can cast) or unprepared (the copy ceases to exist). Without a prepared spell, nothing.
  */
 export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
   if (!on) {
@@ -798,7 +798,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 }
 
 // ---------------------------------------------------------------------------
-// Caractéristiques calculées : voir layers.ts (réexportées ici pour commodité).
+// Computed characteristics: see layers.ts (re-exported here for convenience).
 // ---------------------------------------------------------------------------
 
 import { syncControl } from "./control";
@@ -823,8 +823,8 @@ export {
 } from "./layers";
 
 /**
- * Kicker payé un nombre quelconque de fois, compté comme le X du sort : réplique (702.56), escouade (702.157),
- * multikicker (702.33c).
+ * Kicker paid any number of times, counted as the X of the spell: replicate (702.56), squad (702.157), multikicker
+ * (702.33c).
  */
 export const kickerPaidTimes = (d: CardDef): boolean =>
   d.kickerKind === "replicate" || d.kickerKind === "squad" || d.kickerKind === "multikicker";

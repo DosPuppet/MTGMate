@@ -1,4 +1,4 @@
-/** Effets du moteur : blessures, combats et préventions. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+/** Engine effects: damage, fights and prevention. Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
 import { dealDamage, destroy, sourceFromObject } from "../actions";
 import type { OpHandlers } from "../effects";
@@ -7,6 +7,7 @@ import { addReplacement } from "../replacement";
 import { chars, isCreature, isPlayer, newId, onBattlefield } from "../state";
 import { addPlayerEffect } from "../statics";
 import { matchesObjectFilter } from "../targets";
+import { msg } from "../text";
 import type { EventReplacement } from "../types";
 
 export const HANDLERS: OpHandlers = {
@@ -16,7 +17,7 @@ export const HANDLERS: OpHandlers = {
     const amount = evalAmount(s, ctx, e.amount);
     for (const t of resolveRef(s, ctx, e.to)) {
       if (e.storeExcess && onBattlefield(s, t) && isCreature(s, t)) {
-        // 120.4a : blessures au-delà des blessures mortelles.
+        // 120.4a: damage beyond lethal damage.
         const lethal = src.keywords.includes("deathtouch")
           ? Math.min(1, chars(s, t).toughness - (s.objects[t]?.damage ?? 0))
           : chars(s, t).toughness - (s.objects[t]?.damage ?? 0);
@@ -29,14 +30,14 @@ export const HANDLERS: OpHandlers = {
   fight(s, r, e, ctx) {
     const a = resolveRef(s, ctx, e.a)[0];
     const b = resolveRef(s, ctx, e.b)[0];
-    // 701.12b : si l'une des créatures n'est plus là, aucune blessure n'est infligée.
+    // 701.12b: if either creature is no longer there, no damage is dealt.
     if (!a || !b || !onBattlefield(s, a) || !onBattlefield(s, b) || !isCreature(s, a) || !isCreature(s, b)) return;
     const pa = chars(s, a).power;
     const pb = chars(s, b).power;
     const sa = sourceFromObject(s, a);
     const sb = sourceFromObject(s, b);
     if (e.storeExcess) {
-      // 120.4a : blessures au-delà des blessures mortelles infligées à la seconde créature.
+      // 120.4a: damage beyond lethal damage dealt to the second creature.
       const lethal = sa.keywords.includes("deathtouch")
         ? Math.min(1, chars(s, b).toughness - (s.objects[b]?.damage ?? 0))
         : chars(s, b).toughness - (s.objects[b]?.damage ?? 0);
@@ -58,7 +59,7 @@ export const HANDLERS: OpHandlers = {
   damageDivided(s, r, e, ctx, key) {
     const src = damageSource(s, ctx);
     if (!src) return;
-    // Répartition annoncée à la mise sur la pile (601.2d) : la part d'une cible devenue illégale est perdue (608.2b).
+    // Division announced as the spell is put on the stack (601.2d): the share of a target that became illegal is lost (608.2b).
     const division = e.to.kind === "target" ? r.item.division?.[e.to.id] : undefined;
     if (division && e.to.kind === "target") {
       const legal = new Set(resolveRef(s, ctx, e.to));
@@ -84,7 +85,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "divide",
               intent: "divideDamage",
-              prompt: `Répartissez ${total} blessures entre les cibles`,
+              prompt: msg("Divide {n} damage among the targets", { n: total }),
               among,
               total,
               minEach: total >= among.length ? 1 : 0,
@@ -101,7 +102,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   damageAll(s, _r, e, ctx) {
-    // Nibelheim Aflame : « [la créature ciblée] inflige N blessures à chaque autre créature ».
+    // Nibelheim Aflame: "[target creature] deals N damage to each other creature".
     const from = e.source ? resolveRef(s, ctx, e.source)[0] : undefined;
     const src = from ? (onBattlefield(s, from) ? sourceFromObject(s, from) : undefined) : damageSource(s, ctx);
     if (!src) return;
@@ -109,7 +110,7 @@ export const HANDLERS: OpHandlers = {
     if (e.filter) {
       const f = e.filter;
       for (const id of s.battlefield.filter(
-        // Les créatures, et les planeswalkers et batailles quand le filtre les nomme (« chaque créature et planeswalker »).
+        // Creatures, and planeswalkers and battles when the filter names them ("each creature and planeswalker").
         (x) =>
           x !== from &&
           (isCreature(s, x) || !!f.types?.some((t) => t === "Planeswalker" || t === "Battle")) &&
@@ -124,7 +125,7 @@ export const HANDLERS: OpHandlers = {
   shield(s, r, e, ctx, key) {
     let sourceIs: string | undefined;
     if (e.chooseSource) {
-      // « Une source de votre choix » : un permanent ou un sort sur la pile (les sources adverses d'abord).
+      // "A source of your choice": a permanent or a spell on the stack (opponents' sources first).
       const options = [
         ...s.battlefield,
         ...s.stack.filter((x) => x.kind === "spell" && x.id !== ctx.sourceId && !!s.objects[x.id]).map((x) => x.id),
@@ -140,7 +141,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "other",
-              prompt: `${nameOf(s, ctx.sourceId)} : choisissez la source dont les prochaines blessures seront prévenues`,
+              prompt: msg("{card}: choose the source whose next damage will be prevented", { card: nameOf(s, ctx.sourceId) }),
               options,
               min: 1,
               max: 1,

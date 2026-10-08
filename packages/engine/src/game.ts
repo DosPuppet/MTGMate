@@ -1,6 +1,6 @@
 /**
- * API publique du moteur : création de partie et soumission de décisions.
- * Chaque appel renvoie un nouvel état (copie de travail, l'état reçu n'est jamais modifié) et les événements produits.
+ * Public API of the engine: game creation and submission of decisions.
+ * Each call returns a new state (working copy, the received state is never modified) and the events produced.
  */
 
 import { drawCard } from "./actions";
@@ -25,6 +25,7 @@ import {
   registerDef,
   shuffle,
 } from "./state";
+import { msg } from "./text";
 import { answerTriggerMode, answerTriggerOrder, answerTriggerTarget } from "./triggers";
 import {
   advance,
@@ -50,26 +51,26 @@ export interface PlayerSetup {
   id: PlayerId;
   name: string;
   deck: CardDef[];
-  /** Impression choisie pour chaque carte du deck (même ordre ; absente : l'illustration de la carte). */
+  /** Printing chosen for each card of the deck (same order; absent: the card's own art). */
   printings?: (string | null | undefined)[];
-  /** Commander (903.6, PLAN-E) : indices des commandants dans `deck` ; ils commencent dans la zone de commandement. */
+  /** Commander (903.6, PLAN-E): indices of the commanders in `deck`; they start in the command zone. */
   commanders?: number[];
 }
 
 export interface GameOptions {
   seed: number;
-  /** Deux joueurs ou plus, dans l'ordre du tour. */
+  /** Two players or more, in turn order. */
   players: PlayerSetup[];
   startingPlayer?: PlayerId;
   startingLife?: number;
-  /** Variante de partie : le Commander (903 : zone de commandement, taxe, blessures de commandant, 40 PV par défaut). */
+  /** Game variant: Commander (903: command zone, tax, commander damage, 40 life by default). */
   variant?: GameVariant;
 }
 
-/** Variantes de règles d'une partie (PLAN-E). */
+/** Rules variants of a game (PLAN-E). */
 export type GameVariant = "commander";
 
-/** Points de vie de départ par défaut : 20, ou 40 en Commander (903.7). */
+/** Default starting life: 20, or 40 in Commander (903.7). */
 export function defaultStartingLife(variant?: GameVariant): number {
   return variant === "commander" ? 40 : 20;
 }
@@ -79,14 +80,14 @@ export interface StepResult {
   events: GameEvent[];
 }
 
-/** État vide d'une partie : les joueurs, sans aucune carte (partagé par `createGame` et `createScenario`). */
+/** Empty state of a game: the players, without any card (shared by `createGame` and `createScenario`). */
 export function blankState(opts: {
   seed: number;
   players: { id: PlayerId; name: string; life?: number }[];
   startingLife?: number;
   variant?: GameVariant;
 }): GameState {
-  if (opts.players.length < 2) throw new Error("Il faut au moins deux joueurs");
+  if (opts.players.length < 2) throw new Error("At least two players are needed");
   const first = opts.players[0] as { id: PlayerId };
   const s: GameState = {
     version: 0,
@@ -156,12 +157,12 @@ export function createGame(opts: GameOptions): StepResult {
     for (const p of opts.players) {
       p.deck.forEach((card, i) => {
         registerDef(s, card);
-        // 903.6 : le commandant commence la partie dans la zone de commandement.
+        // 903.6: the commander starts the game in the command zone.
         const commander = !!s.commander && !!p.commanders?.includes(i);
         const o = createObject(s, card.id, p.id, commander ? "command" : "library");
         if (commander && s.commander) s.commander.cards[o.uid] = { owner: p.id, defId: card.id, casts: 0, damage: {} };
-        // Illustration d'une autre impression (réédition, ou impression de la table, vérifiée par l'appelant) : notée
-        // par identité physique, suivie d'une zone à l'autre.
+        // Art of another printing (reprint, or printing from the table, checked by the caller): recorded by physical
+        // identity, followed from one zone to another.
         const key = p.printings?.[i];
         if (key && (key === CUSTOM_PRINTING || card.printings?.some((x) => x.key === key) || keyedPrinting(key)))
           s.printings = { ...s.printings, [o.uid]: key };
@@ -181,12 +182,12 @@ export function createGame(opts: GameOptions): StepResult {
 }
 
 function expect<T extends Decision["type"]>(d: Decision, ...types: T[]): asserts d is Extract<Decision, { type: T }> {
-  if (!types.includes(d.type as T)) throw new RulesError(`Décision inattendue : ${d.type}`);
+  if (!types.includes(d.type as T)) throw new RulesError(msg("Unexpected decision: {type}", { type: d.type }));
 }
 
 function apply(s: GameState, submitter: PlayerId, d: Decision): void {
   checkDecisionShape(s, d);
-  // Toute autre décision que produire ou annuler du mana rend les engagements de mana définitifs.
+  // Any decision other than producing or undoing mana makes the mana taps final.
   if (d.type !== "tapForMana" && d.type !== "undoMana") s.manaUndo = undefined;
   s.leftBatch = undefined;
   if (d.type === "concede") {
@@ -199,13 +200,13 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
     return;
   }
   const p = s.pending;
-  if (s.over || !p) throw new RulesError("Aucune décision attendue");
-  // 722 : le joueur qui contrôle ce tour décide à la place du joueur contrôlé (la décision reste celle du joueur contrôlé).
-  if (p.player !== submitter && decider(s) !== submitter) throw new RulesError("Ce n'est pas à vous de décider");
+  if (s.over || !p) throw new RulesError(msg("No decision pending"));
+  // 722: the player who controls this turn decides instead of the controlled player (the decision remains the controlled player's).
+  if (p.player !== submitter && decider(s) !== submitter) throw new RulesError(msg("It is not your decision to make"));
   const player = p.player;
 
-  // La décision en attente est consommée avant d'appliquer la réponse : le gestionnaire
-  // peut lui-même poser la décision suivante (défenseur suivant, cartes à remettre…).
+  // The pending decision is consumed before applying the answer: the handler
+  // can itself set the next decision (next defender, cards to put back…).
   s.pending = null;
   switch (p.kind) {
     case "mulligan":
@@ -234,13 +235,13 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
       try {
         validateChoice(p.request, d.values, s);
       } catch (e) {
-        s.pending = p; // la question reste posée
+        s.pending = p; // the question remains asked
         throw e;
       }
       emit({ type: "choice", player, intent: p.request.intent });
       switch (p.purpose.kind) {
         case "effect": {
-          // Capacité de mana (605.3b) : la priorité revient au joueur qui l'a activée.
+          // Mana ability (605.3b): priority goes back to the player who activated it.
           const back = s.resolving?.returnPriority;
           if (answerResolutionChoice(s, d.values)) {
             if (back) {
@@ -251,11 +252,11 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
           return;
         }
         case "combatDamage":
-          if (p.request.type !== "divide") throw new RulesError("Répartition attendue");
+          if (p.request.type !== "divide") throw new RulesError(msg("Division expected"));
           answerCombatAssignment(s, p.purpose.attacker, divisionOf(p.request, d.values));
           return;
         case "legend":
-          if (p.request.type !== "pick") throw new RulesError("Choix attendu");
+          if (p.request.type !== "pick") throw new RulesError(msg("Choice expected"));
           answerLegendChoice(s, String(d.values[0]), p.request.options);
           return;
         case "triggerOrder":
@@ -284,7 +285,7 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
     }
     case "priority":
       if (p.castNow) {
-        // 608.2g : lancer une des cartes proposées (ou passer pour refuser), puis la résolution reprend.
+        // 608.2g: cast one of the offered cards (or pass to decline), then the resolution resumes.
         expect(d, "pass", "cast", "tapForMana", "undoMana");
         if (d.type === "tapForMana" || d.type === "undoMana") {
           if (d.type === "tapForMana") activateManaAbility(s, player, d.source, d.ability, d.color);
@@ -294,9 +295,9 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
         }
         let spell: string | null = null;
         if (d.type === "cast") {
-          if (!p.castNow.cards.includes(d.card)) throw new RulesError("Cette carte ne peut pas être lancée maintenant");
+          if (!p.castNow.cards.includes(d.card)) throw new RulesError(msg("This card cannot be cast now"));
           castSpell(s, player, d.card, d);
-          // Le sort lancé (nouvel objet sur la pile, 400.7) : les effets suivants peuvent s'y référer.
+          // The cast spell (new object on the stack, 400.7): the following effects can refer to it.
           spell = s.stack[s.stack.length - 1]?.sourceId ?? d.card;
         }
         if (answerCastNow(s, spell)) afterResolution(s);
@@ -329,8 +330,8 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
 }
 
 /**
- * Applique la décision d'un joueur puis fait avancer la partie jusqu'à la prochaine décision.
- * Lève une RulesError si la décision est illégale (l'état d'origine reste inchangé).
+ * Applies a player's decision then advances the game until the next decision.
+ * Throws a RulesError if the decision is illegal (the original state stays unchanged).
  */
 export function submit(state: GameState, player: PlayerId, decision: Decision): StepResult {
   const [next, events] = collectEvents(() => {
@@ -345,12 +346,12 @@ export function submit(state: GameState, player: PlayerId, decision: Decision): 
 }
 
 /**
- * 104.4b : détection d'une boucle d'actions obligatoires. Tant que les joueurs ne font que passer (ou répondre aux
- * choix de la boucle : ordre des déclenchements, cibles) alors que la pile n'est pas vide (déclenchements qui se
- * relancent), on compte ; au-delà de `LOOP_SUSPECT`, on relève l'empreinte canonique de l'état (`outcomeHash`) : la même
- * trois fois, ou plus de `LOOP_LIMIT` passes, et la partie est nulle. Une boucle qui accumule (des jetons à chaque tour,
- * des déclenchements sur la pile : Ganax et Draconic Visitor) est reconnue à son empreinte où jetons et objets de la pile
- * ne comptent qu'une fois : la même trois fois, sans que la pile ni le champ de bataille ne diminuent.
+ * 104.4b: detection of a loop of mandatory actions. As long as the players only pass (or answer the choices of the
+ * loop: order of triggers, targets) while the stack is not empty (triggers that set themselves off again), we count;
+ * beyond `LOOP_SUSPECT`, we take the canonical fingerprint of the state (`outcomeHash`): the same one three times, or
+ * more than `LOOP_LIMIT` passes, and the game is a draw. A loop that accumulates (tokens each turn, triggers on the
+ * stack: Ganax and Draconic Visitor) is recognized by its fingerprint in which tokens and stack objects count only
+ * once: the same one three times, without the stack or the battlefield shrinking.
  */
 function watchLoop(s: GameState, d: Decision, stacked: boolean): void {
   if (s.over) return;
@@ -377,7 +378,7 @@ function watchLoop(s: GameState, d: Decision, stacked: boolean): void {
   loop.growth ??= [];
   const same = loop.growth.filter((x) => x.h === g.h);
   const last = same.at(-1);
-  // La pile et le champ de bataille n'ont pas diminué depuis la dernière fois (une chaîne finie fait baisser la pile).
+  // The stack and the battlefield have not shrunk since last time (a finite chain makes the stack go down).
   if (last && (g.stack < last.stack || g.field < last.field)) loop.growth = loop.growth.filter((x) => x.h !== g.h);
   else if (same.length >= 2) {
     declareLoopDraw(s);
@@ -387,8 +388,8 @@ function watchLoop(s: GameState, d: Decision, stacked: boolean): void {
 }
 
 /**
- * Variante sans copie, réservée aux simulations (IA) sur une copie de travail obtenue par `cloneState`.
- * Attention : si la décision est illégale, l'état peut rester à moitié modifié.
+ * Copy-free variant, reserved for simulations (AI) on a working copy obtained by `cloneState`.
+ * Warning: if the decision is illegal, the state may remain half modified.
  */
 export function applyMutable(s: GameState, player: PlayerId, decision: Decision): void {
   collectEvents(() => {
@@ -399,7 +400,7 @@ export function applyMutable(s: GameState, player: PlayerId, decision: Decision)
   });
 }
 
-/** 104.4b : l'hôte constate une boucle de décisions automatiques ; la partie est nulle. */
+/** 104.4b: the host notices a loop of automatic decisions; the game is a draw. */
 export function drawByLoop(state: GameState): StepResult {
   const [next, events] = collectEvents(() => {
     const s = cloneState(state);

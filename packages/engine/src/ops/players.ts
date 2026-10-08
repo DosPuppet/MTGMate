@@ -1,4 +1,4 @@
-/** Effets du moteur : joueurs (points de vie, pioche, tours et étapes supplémentaires, victoire). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+/** Engine effects: players (life, drawing, extra turns and steps, winning). Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
 import {
   createTokens,
@@ -40,13 +40,14 @@ import {
 } from "../state";
 import { addPlayerEffect, cantLose, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
+import { msg } from "../text";
 import { eliminate, endTheTurn } from "../turn";
 import type { EventReplacement, Step } from "../types";
 
 export const HANDLERS: OpHandlers = {
   playerEffect(s, _r, e0, ctx) {
-    // Loki Laufeyson : « de valeur de mana au plus la force de Loki » est figé à la résolution (`resolveCompare`), sans
-    // descendre sous 0.
+    // Loki Laufeyson: "with mana value less than or equal to Loki's power" is frozen on resolution (`resolveCompare`),
+    // without going below 0.
     const f = e0.ability.nextSpell?.filter;
     const frozen = f && e0.ability.nextSpell ? resolveCompare(s, f, ctx.sourceId, ctx) : f;
     const e =
@@ -65,8 +66,8 @@ export const HANDLERS: OpHandlers = {
             },
           }
         : e0;
-    // « Ne peut pas vous attaquer » (Sandswirl Wanderglyph), « vos Jace » (Jace, Multiverse Architect) : « vous » est
-    // le contrôleur de l'effet, qui n'est pas concerné lui-même.
+    // "Can't attack you" (Sandswirl Wanderglyph), "your Jaces" (Jace, Multiverse Architect): "you" is the controller of
+    // the effect, who is not affected themselves.
     const ability =
       e.ability.cantAttack?.of === "you"
         ? { ...e.ability, cantAttack: { ...e.ability.cantAttack, of: ctx.controller } }
@@ -93,9 +94,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   gift(s, r, e, ctx) {
-    // 702.174 : l'adversaire choisi en lançant le sort reçoit le cadeau (`CastInfo.giftTo`, sur le sort ou sur le permanent
-    // qu'il est devenu) ; avec un seul adversaire, rien n'a été demandé : c'est lui. Parti de la partie : rien.
-    // Approximation : un permanent qui a déjà quitté le champ de bataille n'a plus son choix (l'adversaire suivant).
+    // 702.174: the opponent chosen while casting the spell gets the gift (`CastInfo.giftTo`, on the spell or on the
+    // permanent it became); with a single opponent, nothing was asked: it is that one. Left the game: nothing.
+    // Approximation: a permanent that has already left the battlefield no longer has its choice (the next opponent).
     const cast = r.item.kind === "spell" ? r.item.cast : s.objects[ctx.sourceId]?.cast;
     const to = cast?.giftTo ?? opponentsOf(s, ctx.controller)[0];
     if (!to || !isAlive(s, to)) return;
@@ -112,7 +113,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   mayWheel(s, r, _e, ctx, key) {
-    // « Chaque joueur peut défausser sa main et piocher sept cartes » : choix dans l'ordre APNAP, puis tout se fait ensemble.
+    // "Each player may discard their hand and draw seven cards": choices in APNAP order, then everything happens together.
     const order = apnapOrder(s);
     for (const p of order) {
       if (r.vars[key(`wheel-${p}`)]) continue;
@@ -124,7 +125,10 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "yesNo",
             intent: "may",
-            prompt: `${nameOf(s, ctx.sourceId)} : défausser votre main (${hand} carte(s)) et piocher sept cartes ?`,
+            prompt: msg("{card}: discard your hand ({n} card(s)) and draw seven cards?", {
+              card: nameOf(s, ctx.sourceId),
+              n: hand,
+            }),
             suggested: [hand < 4 ? 1 : 0],
           },
         },
@@ -142,7 +146,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   punisher(s, r, e, ctx, key) {
-    // Rottenmouth Viper : « pour chaque marqueur de fléau » (la vie à perdre est redemandée à chaque fois).
+    // Rottenmouth Viper: "for each blight counter" (the life to lose is asked again each time).
     const times = e.times === undefined ? 1 : Math.max(0, evalAmount(s, ctx, e.times));
     for (let i = 0; i < times; i++)
       for (const p of resolveRef(s, ctx, e.who)) {
@@ -160,12 +164,15 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "punisher",
-                prompt: `${nameOf(s, ctx.sourceId)} : choisissez`,
+                prompt: msg("{card}: choose", { card: nameOf(s, ctx.sourceId) }),
                 options,
                 labels: {
-                  life: e.damage !== undefined ? `Subir ${evalAmount(s, ctx, e.damage)} blessures` : `Perdre ${e.loseLife} PV`,
-                  discard: "Défausser une carte",
-                  sacrifice: "Sacrifier un permanent",
+                  life:
+                    e.damage !== undefined
+                      ? msg("Take {n} damage", { n: evalAmount(s, ctx, e.damage) })
+                      : msg("Lose {n} life", { n: e.loseLife }),
+                  discard: msg("ctx:choice|Discard a card"),
+                  sacrifice: msg("ctx:choice|Sacrifice a permanent"),
                 },
                 min: 1,
                 max: 1,
@@ -193,7 +200,7 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: choice === "discard" ? "discard" : "sacrifice",
-                prompt: choice === "discard" ? "Défaussez une carte" : "Sacrifiez un permanent",
+                prompt: choice === "discard" ? msg("Discard a card") : msg("Sacrifice a permanent"),
                 options: [...pool],
                 min: 1,
                 max: 1,
@@ -258,14 +265,14 @@ export const HANDLERS: OpHandlers = {
     const milled = millCards(s, [[p, pl.library.slice(0, n)]]);
     const nonland = milled.filter((id) => !s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land")).length;
     if (nonland <= 0) return;
-    // Strong, the Brutish Thespian : des PV gagnés au lieu d'en perdre.
+    // Strong, the Brutish Thespian: life gained instead of lost.
     if (playerStatic(s, p, "radiationGains")) gainLife(s, p, nonland);
     else loseLife(s, p, nonland);
     pl.counters ??= {};
     const counters = pl.counters;
     counters.rad = Math.max(0, (counters.rad ?? 0) - nonland);
     emit({ type: "rad", player: p, amount: -nonland, total: counters.rad });
-    bump(s); // des statiques en dépendent (Nightkin Ambusher)
+    bump(s); // statics depend on it (Nightkin Ambusher)
     return;
   },
   becomeMonarch(s, _r, e, ctx) {
@@ -287,7 +294,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "number",
               intent: "other",
-              prompt: `${nameOf(s, ctx.sourceId)} : choisissez secrètement un nombre`,
+              prompt: msg("{card}: secretly choose a number", { card: nameOf(s, ctx.sourceId) }),
               min: 0,
               max: e.max,
               suggested: [0],
@@ -325,7 +332,10 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "yesNo",
                 intent: "may",
-                prompt: `${nameOf(s, ctx.sourceId)} : mélanger main et cimetière dans la bibliothèque et piocher ${e.n} cartes ?`,
+                prompt: msg("{card}: shuffle your hand and graveyard into your library and draw {n} cards?", {
+                  card: nameOf(s, ctx.sourceId),
+                  n: e.n,
+                }),
                 suggested: [(s.players[p]?.hand.length ?? 0) < 4 ? 1 : 0],
               },
             },
@@ -352,7 +362,7 @@ export const HANDLERS: OpHandlers = {
       return;
     }
     const stats = s.players[ctx.controller]?.turnStats;
-    // Edgar, King of Figaro : la première fois chaque tour, la pièce tombe sur pile et le lancer est gagné.
+    // Edgar, King of Figaro: the first time each turn, the coin comes up heads and the flip is won.
     const rigged = !stats?.coinFlips && playerStatic(s, ctx.controller, "winFirstCoinFlips");
     if (stats) stats.coinFlips = (stats.coinFlips ?? 0) + 1;
     const won = rigged || random(s) < 0.5;
@@ -361,7 +371,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   noncombatBonusThisTurn(s, _r, e, ctx) {
-    // Taii Wakeen : « ce tour-ci, les blessures non de combat de vos sources sont augmentées de X » (X figé maintenant).
+    // Taii Wakeen: "this turn, noncombat damage from your sources is increased by X" (X frozen now).
     const add = evalAmount(s, ctx, e.amount);
     const replacement: EventReplacement = { event: "damage", source: { controller: "you" }, combat: false, modify: { add } };
     addPlayerEffect(s, ctx.controller, { replacement }, s.turn.number);
@@ -382,12 +392,12 @@ export const HANDLERS: OpHandlers = {
       }
       counters.poison = (counters.poison ?? 0) + n;
       emit({ type: "poison", player: p, amount: n, total: counters.poison });
-      bump(s); // corrompu : des statiques en dépendent
+      bump(s); // corrupted: statics depend on it
     }
     return;
   },
   winGame(s, _r, _e, ctx) {
-    // Herald of Eternal Dawn (`cantLose`) : « vous ne pouvez pas perdre et vos adversaires ne peuvent pas gagner ».
+    // Herald of Eternal Dawn (`cantLose`): "you can't lose the game and your opponents can't win the game".
     const opponents = opponentsOf(s, ctx.controller);
     if (opponents.some((p) => cantLose(s, p))) return;
     eliminate(s, opponents);
@@ -405,7 +415,7 @@ export const HANDLERS: OpHandlers = {
     const n = e.amount !== undefined ? evalAmount(s, ctx, e.amount) : 1;
     const t = s.turn;
     const inMain = t.step === "main1" || t.step === "main2";
-    // 500.8 : la phase ajoutée le plus récemment a lieu d'abord (en tête de file) ; de même pour les étapes (500.10).
+    // 500.8: the most recently added phase happens first (at the head of the queue); likewise for steps (500.10).
     const addPhases = (...steps: Step[]) => {
       t.addedPhases = [...steps, ...(t.addedPhases ?? [])];
     };
@@ -415,16 +425,16 @@ export const HANDLERS: OpHandlers = {
     for (let i = 0; i < n; i++) {
       switch (e.kind) {
         case "upkeep":
-          // Obeka : une phase de début de plus après cette phase, sans dégagement ni pioche ; Paradox Haze : après cette étape.
+          // Obeka: an additional beginning phase after this phase, with no untap or draw; Paradox Haze: after this step.
           if (e.after === "step") addStep("upkeep");
           else addPhases("upkeep");
           break;
         case "combat":
-          // « Après cette phase principale » (Full Throttle) : rien hors d'une phase principale.
+          // "After this main phase" (Full Throttle): nothing outside a main phase.
           if (e.after !== "main" || inMain) addPhases("beginCombat");
           break;
         case "combatAfterMain":
-          // Relentless Assault : seulement s'il se résout pendant une phase principale.
+          // Relentless Assault: only if it resolves during a main phase.
           if (inMain) addPhases("beginCombat", "main2");
           break;
         case "endStep":
@@ -439,7 +449,7 @@ export const HANDLERS: OpHandlers = {
   },
   setLife(s, r, e, ctx) {
     const before = s.players[ctx.controller]?.life ?? 0;
-    // 701.12b, 118.5 : chaque joueur gagne ou perd la différence (déclencheurs et remplacements compris).
+    // 701.12b, 118.5: each player gains or loses the difference (triggers and replacements included).
     const change = (p: string, life: number) => {
       const pl = s.players[p];
       if (!pl) return;
@@ -447,7 +457,7 @@ export const HANDLERS: OpHandlers = {
       else if (life > pl.life) gainLife(s, p, life - pl.life);
     };
     if (e.exchange) {
-      // Échange (Mister Negative) : les deux totaux sont lus avant le changement.
+      // Exchange (Mister Negative): both totals are read before the change.
       const a = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
       const b = resolveRef(s, ctx, e.exchange).find((x) => isPlayer(s, x));
       if (!a || !b || a === b) return;

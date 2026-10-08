@@ -1,26 +1,25 @@
 /**
- * Impression d'une carte prise dans la table des impressions du paquet des cartes (`@mtgx/cards/printings`), hors des
- * données de la carte (`CardDef.printings`) : sa clé porte l'identifiant Scryfall de l'impression, d'où se déduisent
- * ses images. Le moteur garde la clé telle quelle ; c'est l'appelant (serveur, éditeur de deck) qui vérifie qu'elle
- * appartient à la carte.
+ * Printing of a card taken from the printings table of the cards package (`@mtgx/cards/printings`), outside the card
+ * data (`CardDef.printings`): its key carries the Scryfall id of the printing, from which its images are derived. The
+ * engine keeps the key as is; it is the caller (server, deck builder) that checks that it belongs to the card.
  */
 import type { CardPrinting } from "./model/cards";
 
 /**
- * Impression « personnelle » : l'illustration personnelle de la carte (images locales servies sur /art/ par le serveur,
- * `tools/custom-art.ts`), s'il y en a une ; sinon, celle de la carte. Le moteur ne connaît pas l'image : la vue marque la
- * face (`CardFace.customArt`) et l'interface la cherche par le nom de la carte.
+ * "Custom" printing: the card's custom art (local images served on /art/ by the server, `tools/custom-art.ts`), if there
+ * is one; otherwise, the card's own. The engine does not know the image: the view marks the face (`CardFace.customArt`)
+ * and the interface looks it up by the card name.
  */
 export const CUSTOM_PRINTING = "custom";
 
-/** « STA-42@<identifiant Scryfall sans tirets> ». */
+/** "STA-42@<Scryfall id without dashes>". */
 const KEY = /^([A-Z0-9]{2,6})-([^@\s]{1,10})@([0-9a-f]{32})$/;
 
 export function printingKey(set: string, number: string, id: string): string {
   return `${set}-${number}@${id}`;
 }
 
-/** Ensemble, numéro et images d'une clé de la table, ou `undefined` si la clé n'en est pas une. */
+/** Set, number and images of a table key, or `undefined` if the key is not one. */
 export function keyedPrinting(key: string): (CardPrinting & { image: string; artCrop: string }) | undefined {
   const m = KEY.exec(key);
   if (!m) return undefined;

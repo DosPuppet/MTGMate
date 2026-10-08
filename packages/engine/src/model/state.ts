@@ -1,4 +1,4 @@
-/** Types du moteur — État de partie : objets, joueurs, pile, combat, déclencheurs en attente. Réexportés par `types.ts`. */
+/** Engine types — game state: objects, players, stack, combat, pending triggers. Re-exported by `types.ts`. */
 import type {
   AbilityDef,
   CardDef,
@@ -23,8 +23,8 @@ import type {
 export type PlayerId = string;
 export type ObjectId = string;
 
-/** "command" : zone de commandement (Commander, emblèmes). */
-/** `phasedOut` : un permanent hors phase (702.26), traité comme s'il n'existait pas jusqu'à son retour en phase. */
+/** "command": command zone (Commander, emblems). */
+/** `phasedOut`: a phased-out permanent (702.26), treated as though it didn't exist until it phases in. */
 export type Zone = "library" | "hand" | "battlefield" | "graveyard" | "stack" | "exile" | "command" | "phasedOut";
 
 export type Step =
@@ -59,12 +59,12 @@ export const STEPS: readonly Step[] = [
 ];
 
 export interface GameObject {
-  /** Change à chaque changement de zone (règle 400.7). */
+  /** Changes on each zone change (rule 400.7). */
   id: ObjectId;
-  /** Identité physique de la carte, stable entre les zones. Sert uniquement à l'affichage. */
-  /** Cartes liées par leur identité physique (The Darkness Crystal : « exilée avec »). */
+  /** Physical identity of the card, stable across zones. Used only for display. */
+  /** Cards linked by their physical identity (The Darkness Crystal: "exiled with"). */
   linkedUids?: string[];
-  /** Hôte auquel il était attaché avant d'être détaché par une action basée sur l'état (Zack Fair). */
+  /** Host it was attached to before being unattached by a state-based action (Zack Fair). */
   lastAttachedTo?: ObjectId;
   uid: string;
   defId: string;
@@ -73,32 +73,32 @@ export interface GameObject {
   zone: Zone;
   tapped: boolean;
   damage: number;
-  /** A reçu des blessures d'une source avec le contact mortel depuis la dernière vérification. */
+  /** Was dealt damage by a source with deathtouch since the last check. */
   deathtouched: boolean;
-  /** Boucliers de régénération (701.19) : chacun remplace la prochaine destruction ; ils disparaissent au nettoyage. */
+  /** Regeneration shields (701.19): each replaces the next destruction; they disappear at cleanup. */
   regenShields?: number;
-  /** Marqueurs par nom : "+1/+1", "-1/-1", "stun", "loyalty"… */
+  /** Counters by name: "+1/+1", "-1/-1", "stun", "loyalty"… */
   counters: Record<string, number>;
-  /** Numéro du tour pendant lequel le contrôleur actuel en a pris le contrôle. */
+  /** Number of the turn during which the current controller gained control of it. */
   controlledSince: number;
   /**
-   * Couche 2 : contrôleur en l'absence d'effet de contrôle (qui a mis le permanent sur le champ de bataille, 110.2).
-   * Fixé à l'arrivée ; `controller` est la valeur calculée par `syncControl` (control.ts).
+   * Layer 2: controller in the absence of any control effect (who put the permanent onto the battlefield, 110.2).
+   * Set as it enters; `controller` is the value computed by `syncControl` (control.ts).
    */
   baseController?: PlayerId;
   timestamp: number;
   isToken: boolean;
-  /** Capacités « une seule fois » déjà activées (indices). */
+  /** "Only once" abilities already activated (indexes). */
   used?: number[];
-  /** Permanent arrivé depuis un sort kické (ou la copie d'un sort kické, 707.10). */
+  /** Permanent that entered from a kicked spell (or the copy of a kicked spell, 707.10). */
   kicked?: boolean;
-  /** X payé pour le mettre sur le champ de bataille (sort lancé, Dune Drifter) ou pour le retourner face visible. */
+  /** X paid to put it onto the battlefield (spell cast, Dune Drifter) or to turn it face up. */
   x?: number;
-  /** Comment le sort qui l'a mis sur le champ de bataille a été lancé (absent : arrivé sans être lancé). */
+  /** How the spell that put it onto the battlefield was cast (absent: entered without being cast). */
   cast?: CastInfo;
-  /** Aura ou Équipement : le permanent auquel il est attaché (301.5, 303.4). */
+  /** Aura or Equipment: the permanent it is attached to (301.5, 303.4). */
   attachedTo?: ObjectId;
-  /** Choix faits en arrivant (type de créature, couleur, nom de carte). */
+  /** Choices made as it entered (creature type, color, card name). */
   chosen?: {
     creatureType?: string;
     color?: Color;
@@ -107,83 +107,83 @@ export interface GameObject {
     parity?: "odd" | "even";
     mode?: string;
     number?: number;
-    /** Choix secret (A Killer Among Us) : caché aux adversaires jusqu'à ce qu'il soit révélé. */
+    /** Secret choice (A Killer Among Us): hidden from opponents until it is revealed. */
     secret?: boolean;
   };
-  /** Préparé (Reality Fracture) : identifiant de la copie de son sort, en exil. */
+  /** Prepared (Reality Fracture): id of the copy of its spell, in exile. */
   preparedCopy?: ObjectId;
-  /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
+  /** Copy of a prepared spell (in exile then on the stack): the permanent that prepared it. Ceases to exist outside these zones. */
   preparedFor?: ObjectId;
-  /** Face active d'une carte à plusieurs faces (aventure lancée, verso…) : ses caractéristiques remplacent celles de la carte. */
+  /** Active face of a multi-faced card (Adventure cast, back face…): its characteristics replace those of the card. */
   faceDefId?: string;
   /**
-   * Face cachée (708) : l'objet a la définition générique « face cachée » (créature 2/2 sans nom) ; la vraie carte,
-   * la garde {2} (déguisement, cape) et les coûts pour la retourner face visible sont gardés ici.
+   * Face down (708): the object has the generic "face-down" definition (nameless 2/2 creature); the real card, the
+   * ward {2} (disguise, cloak) and the costs to turn it face up are kept here.
    */
   faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
-  /** Zone d'où l'objet est venu dans sa zone actuelle (Supper for Spiders : « depuis le champ de bataille »). */
+  /** Zone the object came from into its current zone (Supper for Spiders: "from the battlefield"). */
   arrivedFrom?: Zone;
-  /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
+  /** Harnessed (Harness, Marvel Super Heroes): its ∞ abilities are active. */
   harnessed?: boolean;
   /**
-   * Carte exilée par une mécanique qui la rend lançable depuis l'exil à un tour ultérieur, et tour de l'exil : la
-   * distorsion (702.185a, `warp`), le complot (702.170d, `plot`), le présage (702.143a, `foretell`).
+   * Card exiled by a mechanic that makes it castable from exile on a later turn, and turn of the exile: warp
+   * (702.185a, `warp`), plot (702.170d, `plot`), foretell (702.143a, `foretell`).
    */
   exiledVia?: { kind: "warp" | "plot" | "foretell"; turn: number };
-  /** Épuisé : ne se dégage pas lors de la prochaine étape de dégagement de son contrôleur. */
+  /** Exerted: doesn't untap during its controller's next untap step. */
   exerted?: boolean;
-  /** Classe (716) : niveau actuel (1 par défaut). */
+  /** Class (716): current level (1 by default). */
   classLevel?: number;
-  /** Affaire (719) : résolue. */
+  /** Case (719): solved. */
   solved?: boolean;
-  /** Salle (709.5) : portes déverrouillées (indices des faces). */
+  /** Room (709.5): unlocked doors (face indexes). */
   unlocked?: number[];
-  /** Permanent assemblé (701.42) : les deux cartes qui le forment ; il redevient ces cartes en quittant le champ de bataille. */
+  /** Melded permanent (701.42): the two cards that form it; it becomes these cards again as it leaves the battlefield. */
   melded?: { defId: string; uid: string }[];
-  /** Carte « en aventure » (715.4) : exilée après la résolution de son aventure ; son propriétaire peut lancer la créature. */
+  /** Card "on an adventure" (715.4): exiled after its Adventure resolved; its owner may cast the creature. */
   onAdventure?: boolean;
-  /** Copie d'une carte (Uldaros) : quitte l'exil seulement pour la pile ; devient un jeton sur le champ de bataille. */
+  /** Copy of a card (Uldaros): leaves exile only for the stack; becomes a token on the battlefield. */
   cardCopy?: boolean;
   /**
-   * Emblème temporaire : il disparaît à la fin du tour `endOfTurn` (son numéro : ce tour-ci, ou la fin de votre prochain
-   * tour), ou au début du prochain tour du joueur `turnOf` (« jusqu'à votre prochain tour »).
+   * Temporary emblem: it disappears at the end of turn `endOfTurn` (its number: this turn, or the end of your next
+   * turn), or at the beginning of the next turn of player `turnOf` ("until your next turn").
    */
   expires?: { endOfTurn: number } | { turnOf: PlayerId };
-  /** A déjà infligé des blessures de combat (Ruric Thar). */
+  /** Has already dealt combat damage (Ruric Thar). */
   dealtCombatDamage?: boolean;
-  /** Carte exilée suspendue (702.62) : un marqueur de temps est retiré à chaque entretien de son propriétaire. */
+  /** Suspended exiled card (702.62): a time counter is removed at each of its owner's upkeeps. */
   suspended?: boolean;
-  /** Suspect (701.60, Murders at Karlov Manor) : menace et « ne peut pas bloquer » tant qu'il l'est. */
+  /** Suspected (701.60, Murders at Karlov Manor): menace and "can't block" as long as it is. */
   suspected?: boolean;
-  /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
+  /** Has already dealt damage, combat or not (Karakyk Guardian). */
   dealtDamage?: boolean;
-  /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
+  /** Linked cards (exiled by this card, Hoarding Dragon). */
   linked?: ObjectId[];
-  /** Exilée face cachée (406.3) : les joueurs qui peuvent la regarder (vide : personne). */
+  /** Exiled face down (406.3): the players who may look at it (empty: nobody). */
   exiledFaceDown?: PlayerId[];
-  /** Exhumé (702.84a) : s'il devait quitter le champ de bataille, il est exilé à la place. */
+  /** Unearthed (702.84a): if it would leave the battlefield, it is exiled instead. */
   exileIfLeaves?: boolean;
-  /** Créatures qui ont monté ou équipé ce permanent (coût payé ce tour-ci). */
+  /** Creatures that saddled or crewed this permanent (cost paid this turn). */
   crewedBy?: { turn: number; ids: ObjectId[] };
-  /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */
+  /** Sources that dealt damage to it this turn (Predator Ooze). */
   damagedBy?: ObjectId[];
-  /** Joueurs à qui il a infligé des blessures de combat ce tour-ci (Steel Hellkite). */
+  /** Players it dealt combat damage to this turn (Steel Hellkite). */
   combatDamagedPlayers?: PlayerId[];
   /**
-   * Modes déjà choisis (Demonic Pact) ; `turn` : le tour auquel ils se rapportent pour les modes uniques « ce tour-ci »
-   * (la liste repart de zéro à un autre tour).
+   * Modes already chosen (Demonic Pact); `turn`: the turn they refer to for the unique "this turn" modes (the list
+   * starts over on another turn).
    */
   usedModes?: { modes: number[]; turn?: number };
 }
 
-/** Un mana marqué de la réserve (`PlayerState.restrictedMana`). */
+/** A tagged mana in the pool (`PlayerState.restrictedMana`). */
 export interface TaggedMana {
   type: ManaType;
   restriction?: ManaRestriction;
   source?: ObjectId;
   chosen?: GameObject["chosen"];
   rider?: ManaAbilityDef["rider"];
-  /** « Jusqu'à la fin du tour, vous ne perdez pas ce mana entre les étapes et phases » (Klauth, Unrivaled Ancient). */
+  /** "Until end of turn, you don't lose this mana as steps and phases end" (Klauth, Unrivaled Ancient). */
   keep?: boolean;
 }
 
@@ -191,53 +191,52 @@ export interface PlayerState {
   id: PlayerId;
   name: string;
   life: number;
-  /** Blessures non de combat subies au tour précédent (Command the Stage). */
+  /** Noncombat damage dealt to them last turn (Command the Stage). */
   noncombatDamageLastTurn?: number;
   library: ObjectId[];
   hand: ObjectId[];
   graveyard: ObjectId[];
   command: ObjectId[];
-  /** Permanents de ce joueur (propriétaire) hors phase (702.26). */
+  /** Phased-out permanents of this player (owner) (702.26). */
   phasedOut: ObjectId[];
   manaPool: Record<ManaType, number>;
   /**
-   * Mana marqué de la réserve, une entrée par mana : restreint (Ashling, Rimebound : « seulement pour des sorts de VM 4 ou
-   * plus ») ou porteur d'un effet (Cavern of Souls : « ne peut pas être contrecarré »). `source` et `chosen` : la source
-   * qui l'a produit et son choix (« du type choisi »), figés à la production.
+   * Tagged mana of the pool, one entry per mana: restricted (Ashling, Rimebound: "only for spells with MV 4 or
+   * greater") or carrying an effect (Cavern of Souls: "can't be countered"). `source` and `chosen`: the source that
+   * produced it and its choice ("of the chosen type"), frozen on production.
    */
   restrictedMana?: TaggedMana[];
-  /** Pioche dans une bibliothèque vide depuis la dernière vérification (704.5b) ; `"win"` : remplacée par une victoire (Laboratory Maniac). */
+  /** Drew from an empty library since the last check (704.5b); `"win"`: replaced by a win (Laboratory Maniac). */
   drewFromEmptyLibrary: boolean | "win";
   lost: boolean;
   mulligans: number;
-  /** Numéro du dernier tour commencé par ce joueur (0 s'il n'a pas encore joué). */
+  /** Number of the last turn started by this player (0 if they haven't played yet). */
   lastTurnStarted: number;
-  /** Total de vie de départ (conditions « au-dessus de votre total de départ »). */
+  /** Starting life total (conditions "above your starting life total"). */
   startingLife: number;
   turnStats: TurnStats;
   /**
-   * Marqueurs sur le joueur (122.1). `poison` : marqueurs poison (104.3d : 10 ou plus, le joueur perd) ; `rad` : marqueurs
-   * de radiation (Fallout : au début de sa première phase principale, le joueur meule autant de cartes ; pour chaque
-   * carte non-terrain meulée, il perd 1 PV et un marqueur, `radiation`, turn.ts).
+   * Counters on the player (122.1). `poison`: poison counters (104.3d: 10 or more, the player loses); `rad`: rad
+   * counters (Fallout: at the beginning of their precombat main phase, the player mills that many cards; for each
+   * nonland card milled, they lose 1 life and a counter, `radiation`, turn.ts).
    */
   counters?: { poison?: number; rad?: number };
-  /** Nombre de tours commencés par ce joueur (Jace Reawakened). */
+  /** Number of turns started by this player (Jace Reawakened). */
   turnsTaken?: number;
-  /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */
+  /** Speed (702.179): absent as long as no "Start your engines!" has started it; 4 = max speed. */
   speed?: number;
-  /** Bénédiction de la cité (702.131) : acquise par l'ascension, pour le reste de la partie. */
+  /** The city's blessing (702.131): gained through ascend, for the rest of the game. */
   citysBlessing?: boolean;
-  /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
+  /** Mana that doesn't empty until end of turn (Savage Ventmaw). */
   manaKeep?: Partial<Record<ManaType, number>>;
-  /** Mana qui ne se vide pas avant la fin du combat (maîtrise du feu). */
+  /** Mana that doesn't empty until end of combat (firebending). */
   manaKeepCombat?: Partial<Record<ManaType, number>>;
 }
 
 /**
- * Effet sur un joueur, créé par une résolution (« ce tour-ci, vous pouvez jouer un terrain de plus », « vous ne pouvez
- * plus gagner de points de vie ») : une statique de joueur ordinaire, lue par `playerStatic` (statics.ts) comme si le
- * joueur la contrôlait. `until` : dernier tour où elle s'applique (null : toute la partie) ; `once` : retirée à son
- * premier usage (`consumePlayerEffect`).
+ * Effect on a player, created by a resolution ("this turn, you may play an additional land", "you can't gain life"):
+ * an ordinary player static, read by `playerStatic` (statics.ts) as if the player controlled it. `until`: last turn
+ * it applies (null: the whole game); `once`: removed on its first use (`consumePlayerEffect`).
  */
 export interface PlayerEffect {
   id: string;
@@ -245,30 +244,30 @@ export interface PlayerEffect {
   ability: PlayerStaticAbilityDef;
   until: number | null;
   once?: boolean;
-  /** Horodatage de l'effet (613.11 : effets sur les règles du jeu, comme la taille de main maximale). */
+  /** Timestamp of the effect (613.11: effects on the rules of the game, such as maximum hand size). */
   timestamp: number;
 }
 
 export interface StackItem {
-  /** Pour un sort : id de l'objet carte sur la pile. Pour une capacité : id propre. */
+  /** For a spell: id of the card object on the stack. For an ability: its own id. */
   id: string;
-  /** Esper Origins : après la résolution, exilé puis mis sur le champ de bataille transformé avec un marqueur de finalité. */
+  /** Esper Origins: after the resolution, exiled then put onto the battlefield transformed with a finality counter. */
   toBattlefieldTransformed?: boolean;
-  /** Modifications à l'arrivée du permanent (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
-  /** `atEnd` : le jeton (copie d'un sort de créature) est sacrifié au début de la prochaine étape de fin. */
-  /** `nonlegendary` : la copie n'est pas légendaire (exception de copie, 707.9b ; Jackal, The Clone Saga). */
+  /** Modifications when the permanent enters (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
+  /** `atEnd`: the token (copy of a creature spell) is sacrificed at the beginning of the next end step. */
+  /** `nonlegendary`: the copy isn't legendary (copy exception, 707.9b; Jackal, The Clone Saga). */
   arrival?: {
     counters?: { kind: string; n: number }[];
     haste?: boolean;
     subtypes?: string[];
     atEnd?: "sacrifice";
     nonlegendary?: boolean;
-    /** Loyauté de départ à la place de celle imprimée (copie d'Ob Nixilis, the Adversary). */
+    /** Starting loyalty instead of the printed one (copy from Ob Nixilis, the Adversary). */
     loyalty?: number;
   };
   kind: "spell" | "ability";
   controller: PlayerId;
-  /** Sort : l'objet sur la pile. Capacité : le permanent source (peut avoir disparu). */
+  /** Spell: the object on the stack. Ability: the source permanent (may have disappeared). */
   sourceId: ObjectId;
   sourceDefId: string;
   abilityIndex: number;
@@ -276,74 +275,74 @@ export interface StackItem {
   targets: Record<string, string[]>;
   x: number;
   kicked: boolean;
-  /** Sort lancé (absent pour une capacité ou une copie) : comment il l'a été. */
+  /** Spell cast (absent for an ability or a copy): how it was cast. */
   cast?: CastInfo;
-  /** Informations de dernière connaissance de la source (capacités). */
+  /** Last known information of the source (abilities). */
   sourceSnapshot: { keywords: Keyword[]; power: number; controller: PlayerId };
-  /** Capacité déclenchée : ce qui l'a déclenchée. */
+  /** Triggered ability: what triggered it. */
   event?: TriggerEventData;
-  /** Lancé avec le flashback : exilé au lieu d'aller au cimetière. */
+  /** Cast with flashback: exiled instead of going to the graveyard. */
   flashback?: boolean;
-  /** Au-dessous de la bibliothèque de son propriétaire au lieu du cimetière (Kylox's Voltstrider). */
+  /** To the bottom of its owner's library instead of the graveyard (Kylox's Voltstrider). */
   bottomInstead?: boolean;
-  /** Aventure lancée : exilée « en aventure » après sa résolution. */
+  /** Adventure cast: exiled "on an adventure" after its resolution. */
   adventure?: boolean;
-  /** Objets payés pour le coût. */
+  /** Objects paid for the cost. */
   paid?: CostPaid;
-  /** Sources dont le mana a servi à le lancer (« en utilisant du mana produit par [cette source] »). */
+  /** Sources whose mana was used to cast it ("using mana produced by [this source]"). */
   manaSources?: ObjectId[];
-  /** Rebond (702.88, accordé par Ojer Pakpatiq). */
+  /** Rebound (702.88, granted by Ojer Pakpatiq). */
   rebound?: boolean;
-  /** Exilé en se résolvant au lieu d'aller au cimetière, avec ce marqueur s'il est nommé (Goliath Daydreamer : « rêve »). */
+  /** Exiled as it resolves instead of going to the graveyard, with this counter if it is named (Goliath Daydreamer: "dream"). */
   exileWithCounter?: string;
-  /** Lilah : exilé et comploté au lieu d'aller au cimetière. */
+  /** Lilah: exiled and plotted instead of going to the graveyard. */
   plotOnResolve?: boolean;
-  /** Capacité retardée ou réflexive : ses effets et cibles propres. */
+  /** Delayed or reflexive ability: its own effects and targets. */
   inline?: InlineAbility;
   /**
-   * Copie d'un sort ou d'une capacité (707.10). Une copie de sort est un objet sur la pile (`cardCopy`), sans carte :
-   * elle cesse d'exister en quittant la pile, sauf une copie de sort de permanent, qui devient un jeton.
+   * Copy of a spell or ability (707.10). A spell copy is an object on the stack (`cardCopy`), without a card: it
+   * ceases to exist as it leaves the stack, except a copy of a permanent spell, which becomes a token.
    */
   copy?: boolean;
   /**
-   * Choix qui restent à annoncer avant la prochaine priorité (`announceNext`, stack.ts) : nouvelles cibles d'une copie
-   * (707.10c), une étape par mot « cible » puis `announce` (« devient la cible ») ; répartition (601.2d, 603.3d).
+   * Choices still to be announced before the next priority (`announceNext`, stack.ts): new targets of a copy
+   * (707.10c), one step per word "target" then `announce` ("becomes the target"); division (601.2d, 603.3d).
    */
   pendingChoices?: PendingStackChoice[];
-  /** Répartition annoncée (601.2d) : par mot « cible », la part de chaque cible, dans l'ordre des cibles. */
+  /** Announced division (601.2d): per word "target", the share of each target, in the order of the targets. */
   division?: Record<string, number[]>;
-  /** « Ce sort ne peut pas être contrecarré » (accordé au lancement). */
+  /** "This spell can't be countered" (granted on cast). */
   uncounterable?: boolean;
-  /** Effets de mana dépensé (Carnelian Orb, Pyromancer's Goggles). */
+  /** Effects of mana spent (Carnelian Orb, Pyromancer's Goggles). */
   riders?: ("haste" | "copy" | "uncounterable")[];
 }
 
-/** Choix d'un élément de pile qui reste à faire (voir `StackItem.pendingChoices`). */
+/** Choice of a stack item still to be made (see `StackItem.pendingChoices`). */
 export type PendingStackChoice =
   | { step: "target"; spec: string }
   | { step: "announce" }
   | { step: "divide" }
-  /** L'adversaire qui recevra le cadeau promis (702.174a). */
+  /** The opponent who will get the promised gift (702.174a). */
   | { step: "gift" };
 
-/** Capacité créée pendant la partie (retardée, réflexive) : pas d'index dans la définition de sa source. */
+/** Ability created during the game (delayed, reflexive): no index in its source's definition. */
 export interface InlineAbility {
   targets: TargetSpec[];
   effects: Effect[];
-  /** Références figées à la création (ex. « cette créature » exilée). */
+  /** References frozen on creation (e.g. "this creature" exiled). */
   bound?: Record<string, string[]>;
-  /** Valeurs figées à la création (ex. nombre de marqueurs de la créature morte). */
+  /** Values frozen on creation (e.g. number of counters of the dead creature). */
   vars?: Record<string, ChoiceValue[]>;
-  /** Capacité déclenchée accordée « si… » : la condition, revérifiée à la résolution (603.4). */
+  /** Triggered ability granted "if…": the condition, checked again on resolution (603.4). */
   condition?: Condition;
-  /** Capacité modale (« quand vous le faites, choisissez un — », Hylda ; capacité modale accordée) : le mode est choisi à la
-   * mise sur la pile, puis ses cibles ; `targets` et `effects` sont alors ignorés. */
+  /** Modal ability ("when you do, choose one —", Hylda; granted modal ability): the mode is chosen when it is put on
+   * the stack, then its targets; `targets` and `effects` are then ignored. */
   modes?: ModeDef[];
 
   label?: string;
 }
 
-/** Moment d'une capacité retardée : prochaine étape de fin, étape de fin de votre prochain tour, fin du combat. */
+/** Timing of a delayed ability: next end step, end step of your next turn, end of combat. */
 export type DelayedTiming =
   | "nextEndStep"
   | "yourNextEndStep"
@@ -351,16 +350,16 @@ export type DelayedTiming =
   | "endOfCombat"
   | "nextUpkeep"
   | "yourNextUpkeep"
-  /** « au début de votre prochaine phase principale » (Mana Sculpt). */
+  /** "at the beginning of your next main phase" (Mana Sculpt). */
   | "yourNextMain"
   /**
-   * « Quand [cet objet] … ce tour-ci » (603.7c) : la capacité retardée se déclenche sur un événement (`DelayedTrigger.on`),
-   * chaque fois qu'il se produit jusqu'à la fin du tour.
+   * "When [this object] … this turn" (603.7c): the delayed ability triggers on an event (`DelayedTrigger.on`), each
+   * time it happens until end of turn.
    */
   | "thisTurn"
   /**
-   * « Quand [cet objet] … » sans durée (603.7c) : la capacité retardée se déclenche une seule fois, la prochaine fois que
-   * l'événement se produit, puis cesse (Ugin, the Ineffable : « quand ce jeton quitte le champ de bataille »).
+   * "When [this object] …" without a duration (603.7c): the delayed ability triggers only once, the next time the
+   * event happens, then ends (Ugin, the Ineffable: "when this token leaves the battlefield").
    */
   | "next";
 
@@ -370,106 +369,105 @@ export interface DelayedTrigger {
   sourceId: ObjectId;
   sourceDefId: string;
   at: DelayedTiming;
-  /** Créé pendant une étape de fin ou le nettoyage : ne se déclenche qu'à l'étape de fin du tour suivant. */
-  /** `thisTurn` : le tour de sa création (elle prend fin avec lui). */
+  /** Created during an end step or the cleanup: triggers only at the end step of the following turn. */
+  /** `thisTurn`: the turn of its creation (it ends with it). */
   notBeforeTurn: number;
   ability: InlineAbility;
-  /** Capacité retardée sur un événement (« quand cette créature meurt ce tour-ci », Grim Javelineer) : le déclencheur. */
+  /** Delayed ability on an event ("when this creature dies this turn", Grim Javelineer): the trigger. */
   on?: TriggerSpec;
-  /** Objets surveillés (603.7c) : l'objet de l'événement doit en être un. */
+  /** Watched objects (603.7c): the event object must be one of them. */
   watch?: ObjectId[];
 }
 
 /**
- * Compteurs du tour en cours, par joueur, propres à une règle (ordre des sorts, première pièce…). Ce qui s'est passé
- * pendant le tour et que les cartes interrogent (vie gagnée ou perdue, pioches, défausses, crimes…) est dans le journal
- * du tour (`s.turnLog`, `turnlog.ts`).
+ * Counters of the current turn, per player, specific to one rule (order of the spells, first coin…). What happened
+ * during the turn and that the cards query (life gained or lost, draws, discards, crimes…) is in the turn log
+ * (`s.turnLog`, `turnlog.ts`).
  */
 export interface TurnStats {
   spellsCast: number;
-  /** Lancers de pièce de ce joueur ce tour-ci (Edgar). */
+  /** Coin flips of this player this turn (Edgar). */
   coinFlips?: number;
-  /** Capacités d'exhaust activées ce tour-ci (Elvish Refueler). */
+  /** Exhaust abilities activated this turn (Elvish Refueler). */
   exhaustActivated?: number;
-  /** Permanents dégagés pendant l'étape de dégagement de ce joueur (The Millennium Calendar). */
+  /** Permanents untapped during this player's untap step (The Millennium Calendar). */
   untappedInUntapStep?: number;
-  /** Warped Space : un sort lancé depuis l'exil sans payer son coût de mana ce tour-ci. */
+  /** Warped Space: a spell cast from exile without paying its mana cost this turn. */
   freeFromExile?: number;
-  /** Mana total dépensé pour lancer des sorts ce tour-ci (Dépense, Bloomburrow). */
+  /** Total mana spent to cast spells this turn (Expend, Bloomburrow). */
   manaSpentOnSpells?: number;
 }
 
 /**
- * Coût alternatif payé pour lancer un sort (601.2b, un seul par lancement), que des règles ou des capacités lisent :
- * Web-slinging, chaos (Mayhem), faufilement (Sneak), évocation (702.74), distorsion (Warp), imminence (702.176), ruée
- * (702.109).
+ * Alternative cost paid to cast a spell (601.2b, only one per cast), read by rules or abilities: Web-slinging, Mayhem,
+ * Sneak, evoke (702.74), Warp, impending (702.176), dash (702.109).
  */
 export type CastVia = "webSlinging" | "mayhem" | "sneak" | "evoke" | "warp" | "impending" | "dash";
 
-/** Objets payés pour le coût d'un sort ou d'une capacité (dernières informations connues disponibles). */
+/** Objects paid for the cost of a spell or ability (last known information available). */
 export interface CostPaid {
   sacrificed?: ObjectId[];
-  /** Cartes défaussées (Grab the Prize). */
+  /** Discarded cards (Grab the Prize). */
   discarded?: ObjectId[];
-  /** Cartes exilées (matériaux d'une fabrication, Fear of Abduction : liées au permanent). */
+  /** Exiled cards (craft materials, Fear of Abduction: linked to the permanent). */
   exiled?: ObjectId[];
-  /** Permanents engagés (station). */
+  /** Tapped permanents (station). */
   tapped?: ObjectId[];
   /**
-   * Permanent choisi ou carte révélée pour contempler (Monstrous Emergence : « la créature choisie ou la carte révélée »),
-   * ou carte exilée choisie (Close Encounter).
+   * Permanent chosen or card revealed to behold (Monstrous Emergence: "the chosen creature or the revealed card"), or
+   * exiled card chosen (Close Encounter).
    */
   beheld?: ObjectId[];
-  /** Ninjutsu (702.49c) : ce qu'attaquait l'attaquant non bloqué renvoyé (joueur ou planeswalker). */
+  /** Ninjutsu (702.49c): what the returned unblocked attacker was attacking (player or planeswalker). */
   defender?: string;
 }
 
 /**
- * Comment un sort a été lancé : noté sur la pile (`StackItem.cast`), puis sur le permanent qu'il devient
- * (`GameObject.cast`), que lisent les conditions « s'il a été lancé… » et les règles (distorsion, imminence, évocation).
+ * How a spell was cast: noted on the stack (`StackItem.cast`), then on the permanent it becomes (`GameObject.cast`),
+ * read by the conditions "if it was cast…" and the rules (warp, impending, evoke).
  */
 export interface CastInfo {
-  /** Zone d'où il a été lancé. */
+  /** Zone it was cast from. */
   from: Zone;
   via?: CastVia;
-  /** Mana dépensé pour le lancer, en tout et par type. */
+  /** Mana spent to cast it, in total and per type. */
   manaSpent?: number;
   spentColors?: Partial<Record<ManaType, number>>;
   /**
-   * Part du mana dépensé selon sa source : `cave`, produit par des Cavernes (Bat Colony) ; `artifact`, par des sources
-   * d'artefact (Coin of Mastery). Non copiable (`copyStackItem`).
+   * Share of the mana spent by source: `cave`, produced by Caves (Bat Colony); `artifact`, by artifact sources (Coin
+   * of Mastery). Not copiable (`copyStackItem`).
    */
   spentFrom?: { cave?: number; artifact?: number };
-  /** Créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
+  /** Creature returned to hand for Web-slinging (Scarlet Spider, Ben Reilly). */
   costBounced?: ObjectId[];
-  /** Faufilement : ce qu'attaquait la créature renvoyée (le permanent arrive engagé et attaquant). */
+  /** Sneak: what the returned creature was attacking (the permanent enters tapped and attacking). */
   sneakDefender?: string;
-  /** Contempler en coût additionnel (`cond.beheld`). */
+  /** Behold as an additional cost (`cond.beheld`). */
   beheld?: boolean;
-  /** `CardDef.whenCast` remplie au lancement (« si vous contrôliez une Fée en lançant ce sort »). */
+  /** `CardDef.whenCast` met on cast ("if you controlled a Faerie as you cast this spell"). */
   metWhenCast?: boolean;
   /**
-   * Cadeau promis (702.174a) : l'adversaire choisi en lançant le sort, annoncé comme une répartition (`announceNext`) ;
-   * absent avec un seul adversaire (c'est lui), sauf sur une copie, qui garde l'adversaire de l'original (707.10).
+   * Promised gift (702.174a): the opponent chosen as the spell is cast, announced like a division (`announceNext`);
+   * absent with a single opponent (it's them), except on a copy, which keeps the original's opponent (707.10).
    */
   giftTo?: PlayerId;
 }
 
-/** Événement du tour (`turnlog.ts`) : déplacement, sort lancé, sacrifice, blessures. */
+/** Turn event (`turnlog.ts`): move, spell cast, sacrifice, damage. */
 export type TurnLogEntry =
   | {
       e: "zone";
-      /** `null` : jeton créé (il n'arrive d'aucune zone). */
+      /** `null`: token created (it comes from no zone). */
       from: Zone | null;
       to: Zone;
       owner: PlayerId;
-      /** Contrôleur au moment du départ (dernières informations connues pour le champ de bataille). */
+      /** Controller at the time it left (last known information for the battlefield). */
       controller: PlayerId;
       types: CardType[];
       subtypes: string[];
       supertypes?: string[];
       token?: boolean;
-      /** Arrivé face cachée (Tunnel Tipster : « une créature face cachée est arrivée sous votre contrôle »). */
+      /** Entered face down (Tunnel Tipster: "a face-down creature entered the battlefield under your control"). */
       faceDown?: boolean;
     }
   | {
@@ -480,29 +478,29 @@ export type TurnLogEntry =
       supertypes: string[];
       fromZone: Zone;
       token?: boolean;
-      /** Valeur de mana du sort (Rhino, Barreling Brute : « un sort de valeur de mana 4 ou plus »). */
+      /** Mana value of the spell (Rhino, Barreling Brute: "a spell with mana value 4 or greater"). */
       manaValue?: number;
-      /** Lancé pour son coût de distorsion (Vide, Edge of Eternities). */
+      /** Cast for its warp cost (Vide, Edge of Eternities). */
       warped?: boolean;
-      /** Mots-clés du sort lancé (Momo, Friendly Flier : « sort de créature avec le vol »). */
+      /** Keywords of the spell cast (Momo, Friendly Flier: "creature spell with flying"). */
       keywords?: Keyword[];
-      /** Couleurs du sort lancé (Veil of Summer : « un sort bleu ou noir »). */
+      /** Colors of the spell cast (Veil of Summer: "a blue or black spell"). */
       colors?: Color[];
     }
-  /** Terrain joué (305.1), avec sa zone de départ (« joué un terrain depuis ailleurs que votre main », Spider-Man 2099). */
+  /** Land played (305.1), with its starting zone ("played a land from anywhere other than your hand", Spider-Man 2099). */
   | { e: "playLand"; player: PlayerId; fromZone: Zone; types: CardType[]; subtypes: string[] }
-  /** Attaque d'une créature : `player` attaque `defender` (le joueur attaqué, ou le contrôleur du planeswalker). */
-  /** `id` : l'attaquant (« une créature qui a attaqué ce tour-ci »). */
+  /** Attack of a creature: `player` attacks `defender` (the attacked player, or the planeswalker's controller). */
+  /** `id`: the attacker ("a creature that attacked this turn"). */
   | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[]; id?: ObjectId }
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
   /**
-   * Marqueurs mis sur un permanent (`id`) ; `player` : celui qui les met (contrôleur de ce qui se résout). Lu aussi par
-   * objet (`countersPutThisTurn` : « la première fois ce tour-ci », « vous avez mis des marqueurs sur elle ce tour-ci »).
+   * Counters put on a permanent (`id`); `player`: the one who puts them (controller of what is resolving). Also read
+   * per object (`countersPutThisTurn`: "the first time this turn", "you put counters on it this turn").
    */
   | { e: "counters"; player: PlayerId; kind: string; n: number; types: CardType[]; subtypes: string[]; id: ObjectId }
   /**
-   * Capacité activée (hors action spéciale) de l'objet `id` ; `equip` : une capacité d'équipement (Kíli the Resourceful) ;
-   * `loyalty` : de loyauté (606.3 : une par tour) ; `index` : l'indice d'une capacité « une fois par tour ».
+   * Activated ability (not a special action) of object `id`; `equip`: an equip ability (Kíli the Resourceful);
+   * `loyalty`: a loyalty ability (606.3: one per turn); `index`: the index of a "once each turn" ability.
    */
   | {
       e: "activate";
@@ -514,23 +512,23 @@ export type TurnLogEntry =
       id?: ObjectId;
       index?: number;
     }
-  /** Un permanent devient engagé (« la première fois qu'elle devient engagée ce tour-ci ») ; `player` : qui l'engage. */
+  /** A permanent becomes tapped ("the first time it becomes tapped this turn"); `player`: who taps it. */
   | { e: "tap"; player: PlayerId; id: ObjectId; types?: CardType[]; subtypes?: string[] }
-  /** Une Monture devient montée (702.171b : jusqu'à la fin du tour). */
+  /** A Mount becomes saddled (702.171b: until end of turn). */
   | { e: "saddled"; player: PlayerId; id: ObjectId; types?: CardType[]; subtypes?: string[] }
-  /** Vie gagnée ou perdue par `player` (un événement par gain ou perte). */
+  /** Life gained or lost by `player` (one event per gain or loss). */
   | { e: "lifeGain" | "lifeLoss"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[] }
-  /** Une carte piochée ; des cartes défaussées (`amount`) ; un regard ou une surveillance ; un crime (700.13) ; un permanent
-   * retourné face visible. */
-  /** `search` : recherche dans sa bibliothèque (Archive Trap : « si un adversaire a cherché dans sa bibliothèque »). */
+  /** A card drawn; cards discarded (`amount`); a scry or a surveil; a crime (700.13); a permanent turned face
+   * up. */
+  /** `search`: search of one's library (Archive Trap: "if an opponent searched their library"). */
   | { e: "draw" | "scry" | "crime" | "turnFaceUp" | "search"; player: PlayerId; types?: CardType[]; subtypes?: string[] }
-  /** `id` : la carte défaussée, dans sa nouvelle zone (chaos : « si vous l'avez défaussée ce tour-ci »). */
+  /** `id`: the discarded card, in its new zone (Mayhem: "if you discarded it this turn"). */
   | { e: "discard"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[]; id?: ObjectId }
-  /** Maîtrise des éléments (Avatar). */
+  /** Element bending (Avatar). */
   | { e: "bend"; player: PlayerId; kind: "water" | "earth" | "fire" | "air"; types?: CardType[]; subtypes?: string[] }
   | {
       e: "damage";
-      /** Joueur blessé, ou contrôleur du permanent blessé. */
+      /** Damaged player, or controller of the damaged permanent. */
       player: PlayerId;
       toPlayer: boolean;
       amount: number;
@@ -538,10 +536,10 @@ export type TurnLogEntry =
       sourceController: PlayerId;
       sourceColors: Color[];
       sourceTypes: CardType[];
-      /** Sous-types de la source (rôder, 702.76 : « une créature d'un de ses types de créature »). */
+      /** Subtypes of the source (prowl, 702.76: "a creature of one of its creature types"). */
       sourceSubtypes?: string[];
       sourceSupertypes: string[];
-      /** Identité de la source (« trois sources ou plus ont infligé des blessures », Case of the Burning Masks). */
+      /** Identity of the source ("three or more sources dealt damage", Case of the Burning Masks). */
       sourceKey?: string;
       types?: CardType[];
       subtypes?: string[];
@@ -550,40 +548,39 @@ export type TurnLogEntry =
     };
 
 /**
- * Requête sur le journal du tour (`amount.turnEvents`). `who` : le joueur concerné (propriétaire de la carte déplacée,
- * ou son contrôleur si elle quittait le champ de bataille ; lanceur ; joueur blessé ; sacrificateur), vu du contrôleur
- * de la capacité ; absent : tous. `sum` : somme des blessures plutôt que nombre d'entrées ; `perPlayer` : le plus grand
- * total d'un joueur.
+ * Query on the turn log (`amount.turnEvents`). `who`: the player concerned (owner of the moved card, or its controller
+ * if it was leaving the battlefield; caster; damaged player; sacrificer), seen from the ability's controller; absent:
+ * all. `sum`: sum of the damage rather than number of entries; `perPlayer`: a single player's greatest total.
  */
 export interface TurnLogQuery {
   event: TurnLogEntry["e"];
   who?: "you" | "opponent";
-  /** Déplacement : le joueur concerné est le propriétaire (« mise dans votre cimetière », Descente). */
+  /** Move: the player concerned is the owner ("put into your graveyard", Descend). */
   byOwner?: boolean;
   /**
-   * Caractéristiques de l'objet de l'entrée (un seul comparateur, `turnlog.ts`, aussi pour `source`) : au moins un de ces
-   * types, ce sous-type, ce supertype, au moins une de ces couleurs (seuls les sorts lancés en ont : « un sort bleu ou
-   * noir »).
+   * Characteristics of the entry's object (a single comparator, `turnlog.ts`, also for `source`): at least one of these
+   * types, this subtype, this supertype, at least one of these colors (only spells cast have them: "a blue or black
+   * spell").
    */
   types?: CardType[];
   subtype?: string;
   supertype?: string;
   colors?: Color[];
-  /** Aucun de ces types (« sort non-créature »). */
+  /** None of these types ("noncreature spell"). */
   notTypes?: CardType[];
   notSubtype?: string;
-  /** Un sort lancé qui a ce mot-clé (« sort de créature avec le vol »). */
+  /** A spell cast that has this keyword ("creature spell with flying"). */
   keyword?: Keyword;
   token?: boolean;
-  /** Déplacement : arrivé face cachée (ou non). */
+  /** Move: entered face down (or not). */
   faceDown?: boolean;
-  /** Attaque : contre le joueur qui interroge (« chaque adversaire qui vous a attaqué ce tour-ci »). */
+  /** Attack: against the querying player ("each opponent who attacked you this turn"). */
   againstYou?: boolean;
-  /** Sort lancé pour son coût de distorsion. */
+  /** Spell cast for its warp cost. */
   warped?: boolean;
-  /** Sort de valeur de mana au moins égale. */
+  /** Spell with mana value at least this. */
   minManaValue?: number;
-  /** Capacité activée : seulement les capacités d'équipement. */
+  /** Activated ability: only equip abilities. */
   equip?: boolean;
   from?: Zone;
   to?: Zone;
@@ -591,40 +588,39 @@ export interface TurnLogQuery {
   combat?: boolean;
   toPlayer?: boolean;
   /**
-   * Blessures : leur source, comparée comme l'objet de l'entrée (types, sous-type, supertype, couleurs) ; `controller` :
-   * une source que contrôlait le joueur qui interroge.
+   * Damage: its source, compared like the entry's object (types, subtype, supertype, colors); `controller`: a source
+   * the querying player controlled.
    */
   source?: Pick<TurnLogQuery, "types" | "subtype" | "supertype" | "colors"> & { controller?: "you" };
-  /** La somme des quantités (blessures, vie, cartes défaussées) plutôt que le nombre d'entrées. */
+  /** The sum of the quantities (damage, life, discarded cards) rather than the number of entries. */
   sum?: boolean;
   perPlayer?: boolean;
-  /** Capacité activée : seulement les capacités de loyauté. */
+  /** Activated ability: only loyalty abilities. */
   loyalty?: boolean;
   /**
-   * Le nombre de valeurs différentes parmi les entrées : sources des blessures (Case of the Burning Masks), sortes de
-   * maîtrise (Avatar Aang), types de carte (April O'Neil : « chaque type parmi les sorts lancés »), joueurs concernés
-   * (Kaito : « adversaires qui ont perdu des points de vie »), objets (attaques : « chaque créature qui a attaqué ce
-   * tour-ci », une créature qui attaque lors de deux combats compte une fois), joueurs attaqués (Fast Forward : « chaque
-   * adversaire que vous avez attaqué ce tour-ci »).
+   * The number of different values among the entries: sources of the damage (Case of the Burning Masks), kinds of
+   * bending (Avatar Aang), card types (April O'Neil: "each type among spells cast"), players concerned (Kaito:
+   * "opponents who lost life"), objects (attacks: "each creature that attacked this turn", a creature that attacks in
+   * two combats counts once), attacked players (Fast Forward: "each opponent you attacked this turn").
    */
   distinct?: "source" | "kind" | "type" | "player" | "object" | "defender";
 }
 
 export interface CombatState {
-  /** `defender` : joueur attaqué, ou planeswalker attaqué (identifiant d'objet, 506.2). */
+  /** `defender`: attacked player, or attacked planeswalker (object id, 506.2). */
   attackers: { id: ObjectId; defender: string; blockers: ObjectId[]; blocked: boolean }[];
   blockers: { id: ObjectId; attacker: ObjectId }[];
-  /** Créatures ayant infligé des blessures lors de l'étape de blessures d'initiative. */
+  /** Creatures that dealt damage during the first-strike damage step. */
   firstStrikers: ObjectId[];
-  /** Joueurs défenseurs qui doivent encore déclarer leurs bloqueurs (ordre APNAP). */
+  /** Defending players who still have to declare their blockers (APNAP order). */
   blockQueue: PlayerId[];
-  /** Blocages déjà déclarés, appliqués ensemble quand tous les défenseurs ont déclaré (509.1, cachés d'ici là). */
+  /** Blocks already declared, applied together once all defenders have declared (509.1, hidden until then). */
   pendingBlocks?: { player: PlayerId; blocks: { blocker: ObjectId; attacker: ObjectId }[] }[];
-  /** Étape de blessures en cours de préparation (répartition des blessures par les attaquants). */
+  /** Damage step being prepared (damage assignment by the attackers). */
   damageStep: "first" | "regular" | null;
-  /** Attaquants dont le contrôleur doit encore répartir les blessures. */
+  /** Attackers whose controller still has to assign their damage. */
   assignQueue: ObjectId[];
-  /** Répartitions choisies : attaquant → (cible → blessures). */
+  /** Chosen assignments: attacker → (target → damage). */
   assignments: Record<ObjectId, Record<string, number>>;
 }
 
@@ -632,28 +628,28 @@ export type CreatedReplacement =
   | { id: string; kind: "exileIfDies"; objects: ObjectId[] }
   | { id: string; kind: "preventCombatDamage" | "preventDamage"; objects: ObjectId[] };
 
-/** Données de l'événement qui a déclenché une capacité. */
+/** Data of the event that triggered an ability. */
 export interface TriggerEventData {
-  /** Objet concerné (ancien identifiant s'il a changé de zone). */
+  /** Object concerned (old id if it changed zones). */
   objectId?: ObjectId;
-  /** Nouvel identifiant de cet objet après son changement de zone. */
+  /** New id of that object after its zone change. */
   newObjectId?: ObjectId;
   player?: PlayerId;
   amount?: number;
   /**
-   * Joueur défenseur de la créature attaquante (la source, sinon l'objet de l'événement), figé au déclenchement (508.5 :
-   * celui qu'elle attaquait, même si elle a quitté le combat ou si le planeswalker attaqué a disparu) ; lu par
+   * Defending player of the attacking creature (the source, otherwise the event object), frozen on trigger (508.5: the
+   * one it was attacking, even if it left combat or the attacked planeswalker disappeared); read by
    * `ref.defendingPlayer`.
    */
   defendingPlayer?: PlayerId;
   /**
-   * « Une ou plusieurs … » (déclenchement `batched`) : les objets des autres événements du lot, dans l'ordre (le premier
-   * est `objectId`) ; lus par `ref.eventObjects` (« ces créatures », « l'une d'elles »).
+   * "One or more …" (`batched` trigger): the objects of the other events of the batch, in order (the first is
+   * `objectId`); read by `ref.eventObjects` ("those creatures", "one of them").
    */
   others?: { objectId?: ObjectId; newObjectId?: ObjectId }[];
 }
 
-/** Capacité déclenchée en attente d'être mise sur la pile (603.3). */
+/** Triggered ability waiting to be put on the stack (603.3). */
 export interface PendingTrigger {
   id: string;
   sourceId: ObjectId;
@@ -662,21 +658,21 @@ export interface PendingTrigger {
   controller: PlayerId;
   sourceSnapshot: { keywords: Keyword[]; power: number; controller: PlayerId };
   event: TriggerEventData;
-  /** Cibles choisies au fil des questions (603.3d). */
+  /** Targets chosen as the questions go (603.3d). */
   targets: Record<string, string[]>;
-  /** Ordre de résolution déjà choisi par son contrôleur. */
+  /** Resolution order already chosen by its controller. */
   ordered?: boolean;
-  /** Capacité modale : mode choisi. */
+  /** Modal ability: chosen mode. */
   mode?: number;
-  /** Capacité retardée ou réflexive. */
+  /** Delayed or reflexive ability. */
   inline?: InlineAbility;
-  /** Lot d'événements simultanés qui l'a déclenchée (« une ou plusieurs … » : un seul déclenchement par lot). */
+  /** Batch of simultaneous events that triggered it ("one or more …": a single trigger per batch). */
   batch?: number;
 }
 
-/** Caractéristiques d'un objet au moment où il a quitté le champ de bataille (dernières informations connues). */
+/** Characteristics of an object at the time it left the battlefield (last known information). */
 export interface LkiSnapshot {
-  /** Marqueurs mis sur lui ce tour-ci, « joueur|sorte » (filtre `countersPutByYouThisTurn`). */
+  /** Counters put on it this turn, "player|kind" (filter `countersPutByYouThisTurn`). */
   countersPutThisTurn?: string[];
   id: ObjectId;
   defId: string;
@@ -687,147 +683,147 @@ export interface LkiSnapshot {
   supertypes: string[];
   colors: Color[];
   power: number;
-  /** Force de base (couche 7b). */
+  /** Base power (layer 7b). */
   basePower?: number;
   toughness: number;
   keywords: Keyword[];
   isToken: boolean;
   attacking?: boolean;
-  /** Le joueur qu'elle attaque (absent si elle attaque un planeswalker ou n'attaque pas). */
+  /** The player it is attacking (absent if it attacks a planeswalker or isn't attacking). */
   attackedPlayer?: PlayerId;
   blocking?: boolean;
-  /** Attaquante bloquée (`true`), non bloquée une fois les bloqueurs déclarés (`false`), sinon absent (filtre `blocked`). */
+  /** Blocked attacker (`true`), unblocked once blockers are declared (`false`), otherwise absent (filter `blocked`). */
   blocked?: boolean;
   attachedTo?: ObjectId;
-  /** Identité physique (suit la carte d'une zone à l'autre). */
+  /** Physical identity (follows the card from one zone to another). */
   uid?: string;
-  /** Commandant (903.3, filtre `commander`). */
+  /** Commander (903.3, filter `commander`). */
   commander?: boolean;
   linked?: ObjectId[];
   damagedBy?: ObjectId[];
   name?: string;
   manaValue?: number;
-  /** {X} dans son coût de mana (Matterbending Mage, Paradox Surveyor). */
+  /** {X} in its mana cost (Matterbending Mage, Paradox Surveyor). */
   hasX?: boolean;
-  /** Suspect (701.60). */
+  /** Suspected (701.60). */
   suspected?: boolean;
-  /** Sort qui a une Aventure (créature ou Aventure d'une carte à Aventure ; Beluna Grandsquall). */
+  /** Spell that has an Adventure (creature or Adventure of an Adventurer card; Beluna Grandsquall). */
   adventure?: boolean;
   tapped?: boolean;
-  /** Capacités effectives (imprimées ou accordées) au moment de l'instantané. */
+  /** Effective abilities (printed or granted) at the time of the snapshot. */
   abilities?: AbilityDef[];
   counters?: Record<string, number>;
-  /** Choix fait en arrivant (`GameObject.chosen`). */
+  /** Choice made as it entered (`GameObject.chosen`). */
   chosen?: GameObject["chosen"];
-  /** Blessures marquées (ce tour-ci). */
+  /** Marked damage (this turn). */
   damage?: number;
-  /** Copie d'un sort préparé. */
+  /** Copy of a prepared spell. */
   preparedSpell?: boolean;
   prepared?: boolean;
-  /** Un Équipement lui est attaché. */
+  /** An Equipment is attached to it. */
   equipped?: boolean;
-  /** Contrôleurs des Auras qui lui sont attachées. */
+  /** Controllers of the Auras attached to it. */
   enchantedBy?: PlayerId[];
   lastAttachedTo?: ObjectId;
-  /** Créatures qui l'ont monté ou équipé ce tour-ci. */
+  /** Creatures that saddled or crewed it this turn. */
   crewedByThisTurn?: ObjectId[];
-  /** Lancé pour son coût de distorsion. */
+  /** Cast for its warp cost. */
   warped?: boolean;
-  /** Face cachée. */
+  /** Face down. */
   faceDown?: boolean;
-  /** A subi des blessures ce tour-ci. */
+  /** Was dealt damage this turn. */
   damaged?: boolean;
-  /** Mana dépensé pour le lancer (sort sur la pile). */
+  /** Mana spent to cast it (spell on the stack). */
   manaSpent?: number;
-  /** Arrivé en étant lancé (filtre `cast`). */
+  /** Entered by being cast (filter `cast`). */
   cast?: boolean;
 }
 
-/** Résolution en cours d'un sort ou d'une capacité, éventuellement suspendue sur un choix. */
+/** Ongoing resolution of a spell or ability, possibly suspended on a choice. */
 export interface Resolution {
   item: StackItem;
-  /** Capacité de mana (605.3b) : résolue sans la pile ; la priorité revient ensuite à ce joueur, telle quelle. */
+  /** Mana ability (605.3b): resolved without the stack; priority then returns to that player, as it was. */
   returnPriority?: { holder: PlayerId; passes: number };
   effects: Effect[];
-  /** Indice de l'effet en cours. */
+  /** Index of the current effect. */
   pc: number;
   controller: PlayerId;
   targets: Record<string, string[]>;
-  /** Réponses aux choix déjà faits, par clé. */
+  /** Answers to the choices already made, by key. */
   vars: Record<string, ChoiceValue[]>;
-  /** Clé du choix attendu. */
+  /** Key of the expected choice. */
   awaiting: string | null;
 }
 
-/** Effet continu issu de la résolution d'un sort ou d'une capacité. */
+/** Continuous effect from the resolution of a spell or ability. */
 export interface ContinuousEffect extends LayerMods {
   id: string;
   timestamp: number;
-  /** Ensemble d'objets verrouillé à la résolution (règle 611.2c). */
+  /** Set of objects locked in on resolution (rule 611.2c). */
   affected: ObjectId[];
   /**
-   * « jusqu'à la fin du tour », tant que les objets restent sur le champ de bataille, « jusqu'à votre prochain tour », ou
-   * « jusqu'à la fin de votre prochain tour » (Evil's Thrall : retiré au nettoyage du prochain tour de `until`).
+   * "until end of turn", for as long as the objects remain on the battlefield, "until your next turn", or "until the
+   * end of your next turn" (Evil's Thrall: removed at the cleanup of the next turn of `until`).
    */
   duration: "endOfTurn" | "permanent" | "untilYourNextTurn" | "endOfYourNextTurn";
-  /** Pour « jusqu'à votre prochain tour » et « jusqu'à la fin de votre prochain tour » : le joueur concerné. */
+  /** For "until your next turn" and "until the end of your next turn": the player concerned. */
   until?: PlayerId;
-  /** « jusqu'à la fin de votre prochain tour » : tour de création (l'effet dure au-delà du tour en cours). */
+  /** "until the end of your next turn": turn of creation (the effect lasts beyond the current turn). */
   sinceTurn?: number;
-  /** L'effet cesse quand la carte de cette identité physique quitte l'exil. */
+  /** The effect ends when the card with this physical identity leaves exile. */
   untilExiledUid?: string;
-  /** L'effet cesse quand cette source quitte le champ de bataille (Possession Engine). */
+  /** The effect ends when this source leaves the battlefield (Possession Engine). */
   whileSource?: ObjectId;
-  /** L'effet cesse quand cette source se dégage ou quitte le champ de bataille (Hedge Whisperer). */
+  /** The effect ends when this source untaps or leaves the battlefield (Hedge Whisperer). */
   whileSourceTapped?: ObjectId;
-  /** L'effet cesse, pour chaque objet touché, quand il se dégage (« tant qu'il reste engagé », Braided Net). */
+  /** The effect ends, for each affected object, when it untaps ("for as long as it remains tapped", Braided Net). */
   whileAffectedTapped?: boolean;
-  /** L'effet cesse, pour chaque objet touché, quand il n'a plus de marqueur de cette sorte (Ultima : « tant que ce terrain a
-   * un marqueur de fléau »). */
+  /** The effect ends, for each affected object, when it no longer has a counter of this kind (Ultima: "for as long as
+   * this land has a doom counter on it"). */
   whileAffectedHasCounter?: string;
   /**
-   * 707.9b : exceptions d'un effet de copie (« sauf que c'est un Zombie ») ; elles font partie des valeurs copiables,
-   * qu'une copie de cet objet reprend (`copiableExceptions`).
+   * 707.9b: exceptions of a copy effect ("except it's a Zombie"); they are part of the copiable values, which a copy
+   * of this object takes over (`copiableExceptions`).
    */
   copiable?: boolean;
-  /** Couche 2 : le joueur qui contrôle les objets touchés (appliqué par `syncControl`, dans l'ordre des horodatages). */
+  /** Layer 2: the player who controls the affected objects (applied by `syncControl`, in timestamp order). */
   controller?: PlayerId;
-  /** « Tant que vous contrôlez [la source] » : l'effet cesse dès que ce joueur ne contrôle plus `whileSource` (611.2b). */
+  /** "For as long as you control [the source]": the effect ends as soon as that player no longer controls `whileSource` (611.2b). */
   whileControlledBy?: PlayerId;
 }
 
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";
 
 /**
- * Partie de Commander (903, PLAN-E). Les commandants sont désignés par identité physique (`uid`, stable d'une zone à
- * l'autre, 903.3 : la désignation suit la carte ; un jeton ou une copie n'en est pas un).
+ * Commander game (903, PLAN-E). Commanders are designated by physical identity (`uid`, stable from one zone to
+ * another, 903.3: the designation follows the card; a token or a copy isn't one).
  */
 export interface CommanderState {
   cards: Record<
     string,
     {
       owner: PlayerId;
-      /** Définition de la carte (vue, empreinte), même quand l'objet a disparu (propriétaire éliminé). */
+      /** Definition of the card (view, fingerprint), even when the object is gone (owner eliminated). */
       defId: string;
-      /** 903.8 : nombre de fois où il a été lancé depuis la zone de commandement. */
+      /** 903.8: number of times it was cast from the command zone. */
       casts: number;
-      /** 903.10a : blessures de combat infligées à chaque joueur au cours de la partie. */
+      /** 903.10a: combat damage dealt to each player over the course of the game. */
       damage: Record<PlayerId, number>;
-      /** 903.9a : objet (cimetière ou exil) pour lequel le retour dans la zone de commandement a déjà été proposé. */
+      /** 903.9a: object (graveyard or exile) for which the return to the command zone has already been offered. */
       offered?: ObjectId;
     }
   >;
 }
 
 export interface GameState {
-  /** Compteur des lots d'événements simultanés (déclencheurs « une ou plusieurs … »). */
+  /** Counter of the batches of simultaneous events ("one or more …" triggers). */
   eventBatch?: number;
-  /** Incrémenté à chaque changement pouvant affecter les caractéristiques (invalide le cache des couches). */
+  /** Incremented on each change that can affect characteristics (invalidates the layer cache). */
   version: number;
   rng: number;
   /**
-   * Prochain numéro par préfixe (objets `o…`, effets `e…`, déclencheurs `t…`, capacités `a…`…) : un effet de plus ne
-   * décale pas les identifiants des objets, que citent les décisions enregistrées.
+   * Next number per prefix (objects `o…`, effects `e…`, triggers `t…`, abilities `a…`…): one more effect doesn't shift
+   * the object ids, which the recorded decisions cite.
    */
   idCounters: Record<string, number>;
   timestamp: number;
@@ -842,34 +838,34 @@ export interface GameState {
     number: number;
     active: PlayerId;
     step: Step;
-    /** Pendant l'exil des matériaux d'une fabrication (Market Gnome). */
+    /** While the craft materials are being exiled (Market Gnome). */
     crafting?: boolean;
     landsPlayed: number;
-    /** Capacités « une fois par tour » déjà déclenchées (source:index ; `rules:speed` : la vitesse, 702.179). */
+    /** "Once each turn" abilities already triggered (source:index; `rules:speed`: speed, 702.179). */
     onceFired: string[];
-    /** 514.3a : une priorité a été donnée pendant le nettoyage ; il y aura une nouvelle étape de nettoyage. */
+    /** 514.3a: priority was given during the cleanup; there will be another cleanup step. */
     cleanupAgain?: boolean;
-    /** Muldrotha : types de permanents déjà joués depuis le cimetière ce tour-ci. */
+    /** Muldrotha: permanent types already played from the graveyard this turn. */
     graveyardTypesUsed?: string[];
     /**
-     * 500.8 : phases ajoutées « après cette phase », par leur première étape (`beginCombat` : un combat, Aurelia ;
-     * `main2` : une phase principale, All-Out Assault ; `upkeep` : une phase de début réduite à son entretien, Obeka).
-     * Elles commencent à la fin de la phase en cours ; la plus récemment créée a lieu d'abord (en tête de file).
+     * 500.8: phases added "after this phase", by their first step (`beginCombat`: a combat, Aurelia; `main2`: a main
+     * phase, All-Out Assault; `upkeep`: a beginning phase reduced to its upkeep, Obeka). They begin at the end of the
+     * current phase; the most recently created one happens first (at the head of the queue).
      */
     addedPhases?: Step[];
-    /** 500.10 : étapes ajoutées « après cette étape » (Paradox Haze, Y'shtola Rhul), en tête de file. */
+    /** 500.10: steps added "after this step" (Paradox Haze, Y'shtola Rhul), at the head of the queue. */
     addedSteps?: Step[];
-    /** L'étape où reprend le tour une fois les phases ajoutées jouées (celle qui suivait la phase d'origine). */
+    /** The step where the turn resumes once the added phases are played (the one that followed the original phase). */
     resumeAt?: Step;
-    /** Phase de début ajoutée (Obeka) : elle finit avec son étape d'entretien (ni dégagement ni pioche). */
+    /** Added beginning phase (Obeka): it ends with its upkeep step (neither untap nor draw). */
     upkeepOnly?: boolean;
-    /** Rang de la phase principale en cours ou passée (505.1 : la première, la deuxième… ; Survie, Carpet of Flowers). */
+    /** Rank of the current or past main phase (505.1: the first, the second…; Survival, Carpet of Flowers). */
     mainPhase?: number;
-    /** Phases de combat commencées ce tour-ci (Genji Glove : « si c'est la première phase de combat du tour »). */
+    /** Combat phases begun this turn (Genji Glove: "if it's the first combat phase of the turn"). */
     combats?: number;
-    /** Étapes de fin déjà commencées ce tour-ci (Y'shtola Rhul : « si c'est la première étape de fin du tour »). */
+    /** End steps already begun this turn (Y'shtola Rhul: "if it's the first end step of the turn"). */
     endSteps?: number;
-    /** Nombre de résolutions par capacité ce tour-ci (Venom Connoisseur). */
+    /** Number of resolutions per ability this turn (Venom Connoisseur). */
     resolutionCounts?: Record<string, number>;
     startingPlayer: PlayerId;
   };
@@ -879,45 +875,45 @@ export interface GameState {
   effects: ContinuousEffect[];
   pending: PendingDecision | null;
   mulliganQueue: PlayerId[];
-  /** 103.5 : joueurs qui ont décidé de prendre un mulligan à ce tour de table ; ils le prennent ensemble à la fin. */
+  /** 103.5: players who decided to take a mulligan in this round; they take it together at the end. */
   mulliganTaken?: PlayerId[];
   /**
-   * Engagements de mana qu'on peut encore annuler (façon Arena) : source engagée seulement pour {T}, sans déclenchement,
-   * mana encore dans la réserve. Vidé par toute décision autre que produire ou annuler du mana (`undoMana`, mana.ts).
+   * Mana taps that can still be undone (Arena style): source tapped only for {T}, without a trigger, mana still in the
+   * pool. Emptied by any decision other than producing or undoing mana (`undoMana`, mana.ts).
    */
   manaUndo?: { player: PlayerId; source: ObjectId; color: ManaType; amount: number }[];
   /**
-   * Permanents partis du champ de bataille pendant la décision en cours (leurs dernières informations dans `lki`) : ceux
-   * qui partent en même temps se voient les uns les autres (Kraven the Hunter : « la plus grande force parmi les
-   * créatures de ce joueur »). Vidé au début de chaque décision.
+   * Permanents gone from the battlefield during the current decision (their last information in `lki`): those that
+   * leave at the same time see each other (Kraven the Hunter: "the greatest power among creatures that player
+   * controls"). Emptied at the start of each decision.
    */
   leftBatch?: ObjectId[];
   /**
-   * 104.4b : passes enchaînées pile non vide, sans autre décision, et empreintes relevées au-delà de 20 (game.ts) ; une
-   * même empreinte trois fois, ou plus de 2 000 passes, et la partie est nulle.
+   * 104.4b: passes chained with a non-empty stack, without any other decision, and fingerprints recorded beyond 20
+   * (game.ts); the same fingerprint three times, or more than 2,000 passes, and the game is a draw.
    */
   /**
-   * 104.4b : boucle suspectée (passes pile non vide d'affilée) ; `seen` : empreintes relevées ; `growth` : empreintes où
-   * jetons et objets de la pile ne comptent qu'une fois, avec la taille de la pile et du champ de bataille.
+   * 104.4b: suspected loop (consecutive passes with a non-empty stack); `seen`: recorded fingerprints; `growth`:
+   * fingerprints where tokens and stack objects count only once, with the size of the stack and the battlefield.
    */
   loop?: { passes: number; seen: string[]; growth?: { h: string; stack: number; field: number }[] };
   resolving: Resolution | null;
-  /** Effets de remplacement et de prévention créés par des résolutions (jusqu'à la fin du tour). */
+  /** Replacement and prevention effects created by resolutions (until end of turn). */
   replacements: CreatedReplacement[];
-  /** Capacités déclenchées en attente d'être mises sur la pile. */
+  /** Triggered abilities waiting to be put on the stack. */
   triggers: PendingTrigger[];
-  /** Capacités déclenchées retardées en attente de leur moment. */
+  /** Delayed triggered abilities waiting for their moment. */
   delayed: DelayedTrigger[];
-  /** Cartes qu'un joueur peut jouer depuis l'exil jusqu'à la fin du tour `until` (impulsion, Etali…). */
+  /** Cards a player may play from exile until the end of turn `until` (impulse, Etali…). */
   /**
-   * Cartes exilées jouables. `condition` : seulement tant qu'elle est remplie (Possibility Technician) ; `extraCost` :
-   * {N} de plus ; `tapped` : un terrain joué ainsi arrive engagé (Lightstall Inquisitor).
+   * Playable exiled cards. `condition`: only as long as it is met (Possibility Technician); `extraCost`: {N} more;
+   * `tapped`: a land played this way enters tapped (Lightstall Inquisitor).
    */
   playPermissions?: {
     card: ObjectId;
     player: PlayerId;
     until: number;
-    /** « Jusqu'à votre prochaine étape de fin » : la permission cesse au début de l'étape de fin du tour `until`. */
+    /** "Until your next end step": the permission ends at the beginning of the end step of turn `until`. */
     beforeEndStep?: boolean;
     free?: boolean;
     anyTime?: boolean;
@@ -927,58 +923,58 @@ export interface GameState {
     tapped?: boolean;
     anyMana?: boolean;
     /**
-     * « S'il devait être mis dans un cimetière, exilez-le à la place » (`exile`, Quistis Trepe) ou « mettez-le au-dessous
-     * de la bibliothèque de son propriétaire » (`bottom`, Kylox's Voltstrider).
+     * "If it would be put into a graveyard, exile it instead" (`exile`, Quistis Trepe) or "put it on the bottom of its
+     * owner's library" (`bottom`, Kylox's Voltstrider).
      */
     after?: "exile" | "bottom";
-    /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Inside Information). */
+    /** "Pay life equal to its mana value rather than pay its mana cost" (Inside Information). */
     payLifeManaValue?: boolean;
-    /** Une seule carte du groupe peut être lancée (Buster Sword : « un sort de votre main »). */
+    /** Only one card of the group can be cast (Buster Sword: "a spell from your hand"). */
     group?: string;
-    /** Découverte : si la carte n'a pas été lancée quand la permission expire, elle va dans la main. */
+    /** Discover: if the card hasn't been cast when the permission expires, it goes to the hand. */
     orHand?: boolean;
-    /** Permission d'un « lancez-la » pendant une résolution (608.2g) : retirée dès la réponse du joueur. */
+    /** Permission of a "cast it" during a resolution (608.2g): removed as soon as the player answers. */
     now?: boolean;
-    /** Flashback accordé (702.34) : lancé depuis le cimetière, exilé ensuite (Sphinx of Forgotten Lore, Archmage's Newt). */
+    /** Granted flashback (702.34): cast from the graveyard, exiled afterwards (Sphinx of Forgotten Lore, Archmage's Newt). */
     flashback?: boolean;
-    /** Harmonie accordée (702.180, Songcrafter Mage) : avec `flashback`, une créature engagée réduit le coût. */
+    /** Granted harmonize (702.180, Songcrafter Mage): with `flashback`, a tapped creature reduces the cost. */
     harmonize?: boolean;
-    /** Maîtrise de l'air : lançable pour ce coût plutôt que pour son coût de mana. */
+    /** Airbend: castable for this cost rather than its mana cost. */
     cost?: ManaCost;
-    /** Seulement l'Aventure de la carte (Mosswood Dreadknight). */
+    /** Only the card's Adventure (Mosswood Dreadknight). */
     adventureOnly?: boolean;
   }[];
   /**
-   * 722 : « vous contrôlez [ce joueur] pendant son prochain tour » (The Dominion Bracelet). `turn` est fixé au début
-   * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.
+   * 722: "you control [that player] during their next turn" (The Dominion Bracelet). `turn` is set at the beginning
+   * of that turn; during that turn, the decisions of `player` are made by `by`.
    */
-  /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur (Secret of Bloodbending). */
+  /** `combatOnly`: only during that player's next combat phase (Secret of Bloodbending). */
   turnControl?: { player: PlayerId; by: PlayerId; turn?: number; combatOnly?: boolean; thenExtraTurn?: boolean };
-  /** Monarque (724) : le joueur qui pioche une carte au début de son étape de fin ; absent tant que personne ne l'est. */
+  /** Monarch (724): the player who draws a card at the beginning of their end step; absent as long as nobody is. */
   monarch?: PlayerId;
-  /** Tours supplémentaires à venir (500.7 : le plus récent d'abord). */
+  /** Extra turns to come (500.7: the most recent first). */
   extraTurns?: PlayerId[];
-  /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */
+  /** "End the turn" (Time Stop): the turn goes directly to the cleanup step. */
   endTurnRequested?: boolean;
-  /** Joueurs à qui l'on a proposé leurs cartes « leyline » en début de partie. */
+  /** Players who were offered their "leyline" cards at the start of the game. */
   leylineAsked?: PlayerId[];
-  /** Cartes exilées « jusqu'à ce que [la source] quitte le champ de bataille ». */
-  /** `toHand` : les cartes reviennent dans la main de leur propriétaire (Deep-Cavern Bat). */
+  /** Cards exiled "until [the source] leaves the battlefield". */
+  /** `toHand`: the cards return to their owner's hand (Deep-Cavern Bat). */
   linkedExile: { sourceId: ObjectId; cards: ObjectId[]; toHand?: boolean }[];
-  /** Dernières informations connues, par ancien identifiant (purgées à la fin de chaque étape). */
+  /** Last known information, by old id (purged at the end of each step). */
   lki: Record<ObjectId, LkiSnapshot>;
-  /** Journal des événements du tour en cours (`turnlog.ts`), vidé au début de chaque tour. */
+  /** Log of the events of the current turn (`turnlog.ts`), emptied at the beginning of each turn. */
   turnLog: TurnLogEntry[];
-  /** Effets sur les joueurs créés par des résolutions (`PlayerEffect`). */
+  /** Effects on players created by resolutions (`PlayerEffect`). */
   playerEffects: PlayerEffect[];
-  /** Impression choisie par le deck pour une carte, par identité physique (`uid` → `CardPrinting.key`, PLAN-G). */
+  /** Printing chosen by the deck for a card, by physical identity (`uid` → `CardPrinting.key`, PLAN-G). */
   printings?: Record<string, string>;
-  /** Commander (903, PLAN-E) : absent hors d'une partie de Commander. */
+  /** Commander (903, PLAN-E): absent outside a Commander game. */
   commander?: CommanderState;
   winner: PlayerId | null;
   over: boolean;
 }
 
 // ---------------------------------------------------------------------------
-// Décisions
+// Decisions
 // ---------------------------------------------------------------------------

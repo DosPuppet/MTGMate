@@ -1,13 +1,14 @@
 /**
- * Choix génériques : validation des réponses et construction des demandes.
+ * Generic choices: validation of the answers and building of the requests.
  */
 import { RulesError } from "./errors";
 import { isNameAllowed } from "./names";
+import { msg } from "./text";
 import type { ChoicePurpose, ChoiceRequest, ChoiceValue, GameState, PlayerId } from "./types";
 
 /**
- * Repère d'une carte dans un texte destiné au joueur (invite, libellé) : l'interface le remplace par le nom de la carte
- * dans sa langue (`localizeText` du client).
+ * Marker of a card in a player-facing text (prompt, label): the interface replaces it with the name of the card in its
+ * language (`localizeText` of the client).
  */
 export function cardRef(defId: string): string {
   return `⟦${defId}⟧`;
@@ -18,9 +19,9 @@ export function ask(s: GameState, player: PlayerId, request: ChoiceRequest, purp
 }
 
 /**
- * Réponse à la place d'un joueur qui a quitté la partie (800.4a) : il ne prend plus aucune décision, donc ne fait rien
- * de ce qui est facultatif (« peut » refusé, aucun objet choisi si c'est permis, le minimum d'un nombre) ; sinon, la
- * réponse proposée par le moteur.
+ * Answer on behalf of a player who left the game (800.4a): they make no more decisions, so they do nothing optional
+ * ("may" declined, no object chosen if allowed, the minimum of a number); otherwise, the answer suggested by the
+ * engine.
  */
 export function absentAnswer(req: ChoiceRequest): ChoiceValue[] {
   switch (req.type) {
@@ -37,22 +38,29 @@ export function absentAnswer(req: ChoiceRequest): ChoiceValue[] {
 
 const isInt = (v: ChoiceValue): v is number => typeof v === "number" && Number.isInteger(v);
 
-/** Vérifie qu'une réponse respecte la demande ; lève une RulesError sinon (`s` : noms acceptés d'une question « nom »). */
+/** Checks that an answer meets the request; throws a RulesError otherwise (`s`: names accepted by a "name" question). */
 export function validateChoice(req: ChoiceRequest, values: ChoiceValue[], s: GameState): void {
   switch (req.type) {
     case "name": {
       const v = values[0];
-      if (values.length !== 1 || typeof v !== "string") throw new RulesError("Un nom attendu");
+      if (values.length !== 1 || typeof v !== "string") throw new RulesError(msg("A name was expected"));
       if (!isNameAllowed(s, req.of, v))
-        throw new RulesError(req.of === "creatureType" ? `Type de créature inconnu : ${v}` : `Nom de carte inconnu : ${v}`);
+        throw new RulesError(
+          req.of === "creatureType"
+            ? msg("Unknown creature type: {name}", { name: v })
+            : msg("Unknown card name: {name}", { name: v }),
+        );
       return;
     }
     case "pick": {
-      if (new Set(values).size !== values.length) throw new RulesError("Choix en double");
-      if (values.some((v) => typeof v !== "string" || !req.options.includes(v))) throw new RulesError("Choix hors des options");
+      if (new Set(values).size !== values.length) throw new RulesError(msg("Duplicate choice"));
+      if (values.some((v) => typeof v !== "string" || !req.options.includes(v)))
+        throw new RulesError(msg("Choice not among the options"));
       if (values.length < req.min || values.length > req.max) {
         throw new RulesError(
-          req.min === req.max ? `Choisissez exactement ${req.min}` : `Choisissez entre ${req.min} et ${req.max}`,
+          req.min === req.max
+            ? msg("Choose exactly {n}", { n: req.min })
+            : msg("Choose between {min} and {max}", { min: req.min, max: req.max }),
         );
       }
       return;
@@ -60,26 +68,27 @@ export function validateChoice(req: ChoiceRequest, values: ChoiceValue[], s: Gam
     case "number": {
       const v = values[0];
       if (values.length !== 1 || v === undefined || !isInt(v) || v < req.min || v > req.max) {
-        throw new RulesError(`Nombre attendu entre ${req.min} et ${req.max}`);
+        throw new RulesError(msg("Expected a number between {min} and {max}", { min: req.min, max: req.max }));
       }
       return;
     }
     case "order": {
       const sorted = [...values].map(String).sort();
       const expected = [...req.items].sort();
-      if (sorted.length !== expected.length || sorted.some((v, i) => v !== expected[i])) throw new RulesError("Ordre invalide");
+      if (sorted.length !== expected.length || sorted.some((v, i) => v !== expected[i]))
+        throw new RulesError(msg("Invalid order"));
       return;
     }
     case "yesNo":
-      if (values.length !== 1 || (values[0] !== 0 && values[0] !== 1)) throw new RulesError("Réponse oui/non attendue");
+      if (values.length !== 1 || (values[0] !== 0 && values[0] !== 1)) throw new RulesError(msg("Expected a yes/no answer"));
       return;
     case "divide": {
       if (values.length !== req.among.length || values.some((v) => !isInt(v) || v < 0))
-        throw new RulesError("Répartition invalide");
+        throw new RulesError(msg("Invalid division"));
       const sum = (values as number[]).reduce((a, b) => a + b, 0);
-      if (sum !== req.total) throw new RulesError(`Répartissez exactement ${req.total}`);
+      if (sum !== req.total) throw new RulesError(msg("Divide exactly {n}", { n: req.total }));
       if (req.minEach && values.some((v) => (v as number) < (req.minEach as number))) {
-        throw new RulesError(`Au moins ${req.minEach} pour chacun`);
+        throw new RulesError(msg("At least {n} for each", { n: req.minEach }));
       }
       if (req.lethal) {
         const lethal = req.lethal;
@@ -87,7 +96,7 @@ export function validateChoice(req: ChoiceRequest, values: ChoiceValue[], s: Gam
         if (toPlayer && toPlayer > 0) {
           for (const [id, need] of Object.entries(lethal.needs)) {
             if ((values[req.among.indexOf(id)] as number) < need) {
-              throw new RulesError("Piétinement : chaque bloqueur doit recevoir des blessures mortelles avant le joueur");
+              throw new RulesError(msg("Trample: each blocker must be assigned lethal damage before the player"));
             }
           }
         }
@@ -97,7 +106,7 @@ export function validateChoice(req: ChoiceRequest, values: ChoiceValue[], s: Gam
   }
 }
 
-/** Réponse sous forme de table cible → quantité, pour une répartition. */
+/** Answer as a target → quantity table, for a division. */
 export function divisionOf(req: Extract<ChoiceRequest, { type: "divide" }>, values: ChoiceValue[]): Record<string, number> {
   const out: Record<string, number> = {};
   req.among.forEach((id, i) => {

@@ -1,9 +1,9 @@
 /**
- * Enregistrement d'une partie : graine, joueurs et decks (dans l'ordre), puis toutes les décisions appliquées.
- * Le moteur étant déterministe, rejouer ces décisions redonne exactement la même partie : reprise d'une partie en
- * ligne après un redémarrage du serveur, replays, export d'une partie pour signaler un bug.
+ * Record of a game: seed, players and decks (in order), then all the applied decisions.
+ * Since the engine is deterministic, replaying these decisions gives back exactly the same game: resuming an online
+ * game after a server restart, replays, exporting a game to report a bug.
  *
- * Les decks sont enregistrés par noms de cartes : `resolve` redonne les définitions au rejeu.
+ * Decks are recorded by card names: `resolve` gives back the definitions on replay.
  */
 export { outcomeHash } from "./fingerprint";
 
@@ -15,477 +15,464 @@ export const RECORD_FORMAT = "mtgx-game";
 export const RECORD_VERSION = 1;
 
 /**
- * Version des règles du moteur. Elle avance à chaque lot qui change le comportement d'une partie (docs/plans/PLAN-R.md, lots
- * « [règles] ») : un enregistrement d'une autre version peut ne plus se rejouer à l'identique. Absente d'un
- * enregistrement : 0.
+ * Version of the engine rules. It moves at each lot that changes the behavior of a game (docs/plans/PLAN-R.md,
+ * "[rules]" lots): a record from another version may no longer replay identically. Absent from a record: 0.
  *
- * - 1 : un compteur d'identifiants par préfixe (lot F1).
- * - 2 : corrections R0.1 (second partagé, protection, 704.5b, gagner ou perdre la partie, marqueurs payés comme coût,
- *   506.4).
- * - 3 : corrections R0.2 (taxes des sorts gratuits, taxes d'attaque et de blocage cumulées, obligation d'attaquer sans
- *   payer de taxe).
- * - 4 : nettoyage avec actions basées sur l'état, déclencheurs et priorité (514.3a, R0.3).
- * - 5 : lien de vie, un gain par source et par lot de blessures simultanées (R0.4).
- * - 6 : des permanents qui arrivent en même temps se voient arriver (603.6a, R0.5).
- * - 7 : accès unique aux statiques de joueur, conditions et effets sur les joueurs respectés partout (R4.0).
- * - 8 : marqueurs, types, état engagé, attaque, célérité et Imminence posés avant l'événement d'arrivée ; défenseur des
- *   jetons attaquants au choix (R2.1).
- * - 9 : copies de permanents (valeur de mana, loyauté et remplacements de la définition copiée, copie d'une copie,
- *   copie par une statique, copie d'un sort de Clone ; R2.2).
- * - 10 : un Clone ou une Aura qui arrive sans être lancé choisit ce qu'il copie ou enchante ; une Aura sans rien à
- *   enchanter reste dans sa zone (707.5, 303.4f, 303.4g ; R2.3).
- * - 11 : ordre des remplacements qui modifient un nombre (blessures, marqueurs, PV, pioche) choisi pour le joueur affecté ;
- *   toutes les pioches de la partie passent par les remplacements (616.1 ; R1).
- * - 12 : une copie de sort est un objet sur la pile ; nouvelles cibles au choix pour toute copie, qui deviennent ses
- *   cibles (garde) ; répartition des blessures et des marqueurs annoncée à la mise sur la pile, part d'une cible devenue
- *   illégale perdue (707.10c, 601.2d, 608.2b ; R3).
- * - 13 : le contrôle est une couche (613.1b) : contrôleur de base et effets de contrôle horodatés ; un joueur qui quitte
- *   la partie rend ce qu'il avait volé (800.4a ; R2.4).
- * - 14 : dépendances de couches par point fixe (conditions, « pour chaque », F/E définies qui lisent des permanents) ;
- *   exceptions de copie copiables ; couleurs ajoutées (613.8, 707.9b, 105.3 ; R2.5).
- * - 15 : protection et défense talismanique « contre [filtre] » : Sword of Wealth and Power protège des éphémères et
- *   des rituels, Resilient Roadrunner des Coyotes (702.16 ; R4.2).
- * - 16 : permissions de jouer depuis le cimetière ou le dessus de la bibliothèque unifiées (une permission sans coût passe
- *   avant Muldrotha ; Forgotten Cellar : seulement des sorts) ; modificateurs de coût des capacités unifiés (R4.4).
- * - 17 : mulligans tour de table par tour de table (103.5) ; blocages des défenseurs appliqués ensemble (509.1 ; R5).
- * - 18 : boucle d'actions obligatoires, partie nulle (104.4b) ; les déclenchements d'un joueur qui quitte la partie
- *   cessent d'exister (800.4a ; R6).
- * - 19 : justesse des cartes (R7) : « l'objet de l'événement » et « si la source… » lisent les dernières informations
- *   connues d'un objet parti (603.10) ; `pumpAll` respecte « autre » ; prouesses multiples ; terrain joué depuis le
- *   cimetière par une permission ; le solveur de mana préfère la capacité qui produit le plus (Tablet of Discovery).
- * - 20 : Tarkir: Dragonstorm, lot A : un « si » intermédiaire sur l'objet de l'événement est vérifié au déclenchement et
- *   à la résolution (603.4 ; Aclazotz) ; « a déjà infligé des blessures » (Karakyk Guardian) ; « valeur de mana X ou
- *   moins » dans une recherche (Nature's Rhythm).
- * - 21 : remplacements des blessures et de la perte de PV en données (`EventReplacement`, R1, familles E et F) ; une
- *   prévention d'un autre joueur que le blessé passe avant les modifications, la sienne après (616.1) ; boucliers « la
- *   prochaine fois que » (615.7, New Way Forward) ; des blessures prévenues ne comptent pas comme infligées.
- * - 22 : un permanent qui quitte le champ de bataille est toujours retiré du combat (506.4), quel que soit l'effet ou le
- *   coût qui le déplace (Lorwyn Eclipsed : « contemplez et exilez » un attaquant).
- * - 23 : Lorwyn Eclipsed, lot B : « du type choisi » lu partout (filtres d'effet, déclencheurs, réductions de coût,
- *   remplacements ; choix d'un sort ou d'un emblème) ; « quand il se transforme en… » ; flétrissure (702.80) ; « dégagez »
- *   retire un marqueur d'étourdissement (122.1d) ; les jetons créés sont au journal du tour ; « une autre carte » reconnaît
- *   la source morte ; une réduction de coût voit la carte lancée (contempler) ; « retirez un marqueur » de toute sorte ;
- *   le cache des couches est invalidé après le départ des permanents d'un joueur éliminé (800.4a).
- * - 24 : Lorwyn Eclipsed, lot C : un sort lancé est vu avec sa valeur de mana et son nom (filtres de mana restreint et de
- *   réductions de coût) ; mana restreint dans la réserve ; marqueurs mis au journal du tour ; un sort sur la pile peut
- *   gagner un mot-clé ; « lancer les cartes exilées liées » avec ses variantes (gratuit, une fois par tour, ce tour-ci…).
- * - 25 : Lorwyn Eclipsed, lot D : remplacements des familles H et I (jetons, marqueurs, PV gagnés, pioche, meule, mana) en
- *   données (`EventReplacement`), doubleurs et drapeaux convertis ; « ces jetons plus un jeton » appliqué une fois par
- *   événement ; un permanent peut ne pas pouvoir être dégagé ; « le terrain enchanté est de la couleur choisie ».
- * - 26 : Wilds of Eldraine, socle : jetons-Auras (Rôles), un seul Rôle par joueur sur un même permanent (704.5y).
- * - 27 : Secrets of Strixhaven, socle : une condition « si » d'une capacité déclenchée lit les montants de l'objet de
- *   l'événement (mana dépensé pour le sort lancé : Increment) ; Wilds of Eldraine, lots C4 et C5 : paiement de PV
- *   centralisé (Ashiok), « une fois par tour » depuis le dessus de la bibliothèque, coûts de capacités réduits.
- * - 28 : Secrets of Strixhaven, lot A : les montants « arrive avec » savent additionner, opposer, prendre un maximum et
- *   compter les couleurs dépensées (Sheriff of Safe Passage arrivait sans marqueur) ; les conditions « arrive avec »
- *   voient X ; « répartissez X marqueurs » sans minimum par cible quand X est plus petit que le nombre de cibles.
- * - 29 : Secrets of Strixhaven, lot A6 : le mana dépensé d'un éphémère ou d'un rituel qui se résout est lu (`manaSpent`) ;
- *   une carte lancée depuis l'exil avec « puis exilez-la » y retourne ; filtres de valeur de mana « X » et « couleurs
- *   dépensées ».
- * - 30 : Secrets of Strixhaven, lot C1 : « jouable jusqu'à votre prochain tour » pour le propriétaire (Memory Vessel ne
- *   valait que ce tour-ci) et « jusqu'à la fin de son prochain tour » ; qui a mis des marqueurs sur un objet ce tour-ci ;
- *   moitiés de PV et de main par joueur ; capacités retardées « au début de votre prochaine phase principale ».
- * - 31 : Secrets of Strixhaven, lot C2 : une copie de sort n'hérite plus des modifications d'arrivée de l'original ; le
- *   jeton copie d'un sort de permanent reçoit les siennes (célérité, sacrifice en fin de tour) ; sort gratuit de la main
- *   une fois par tour ; « ce sort ne peut pas être copié ».
- * - 32 : Secrets of Strixhaven, lot C3 : cascade (702.85) ; l'événement de pioche désigne la carte piochée (miracle) ;
- *   « lancer maintenant » pour un coût donné depuis la main.
- * - 33 : Murders at Karlov Manor, lot A : une capacité déclenchée « une à N cibles » respecte le minimum (Armament
- *   Dragon n'avait aucune cible sous N créatures) ; la condition d'un déclencheur voit l'événement (montant) ; « s'il
- *   n'a pas de carte en main » hors résolution ; désignation suspect (701.60).
- * - 34 : Murders at Karlov Manor, lot A6 : un sort ou une capacité à « X cibles » est proposé même sans cible (X = 0) ;
- *   l'IA ajuste X au nombre de cibles.
- * - 35 : Murders at Karlov Manor, lot B1 : réunir des preuves en coût de capacité (et de mana), en effet facultatif (N ou
- *   X), en garde, et « chaque fois que vous réunissez des preuves » ; choix automatique des preuves sans gâcher une carte
- *   chère ; garde « sacrifiez [type] » filtrée.
- * - 36 : Murders at Karlov Manor, lot B2 : X dans un coût de déguisement, coût de déguisement réduit, réduction des sorts
- *   face cachée, interdiction de retourner face visible, terrain lancé face cachée ; une arrivée face cachée est notée
- *   au journal du tour comme une créature sans type (la carte reste cachée).
- * - 37 : Murders at Karlov Manor, lot C3 : un sort qui quitte la pile passe par un seul chemin (exil ou dessous de la
- *   bibliothèque à la place du cimetière) ; `cond.refMatches` résout son filtre ; un déclencheur « quitte » d'une créature
- *   exilée suit la nouvelle carte ; effets « tant que la source reste engagée ».
- * - 38 : Avatar: The Last Airbender, socle : le mana de la maîtrise du feu reste jusqu'à la fin du combat (et non du tour) ;
- *   maîtrise de l'eau (artefacts et créatures engagés pour {1}) dans les coûts des capacités activées.
- * - 39 : Avatar: The Last Airbender, lot A5 : la force et l'endurance de la créature d'un événement qui a quitté le champ de
- *   bataille (« quand elle meurt, X étant sa force ») sont ses dernières informations connues (608.2h).
- * - 40 : Avatar: The Last Airbender, lot A6 : « X ne peut pas être 0 » (`minX`) refuse une activation avec un X trop petit
- *   (Katara, Water Tribe's Hope ; Gogo, Master of Mimicry).
- * - 41 : Avatar: The Last Airbender, lot B1 : maîtrise de l'eau en coût de sort (additionnel, X, facultatif), en garde,
- *   « à moins de payer » et en coût de remplacement des cartes liées ; contrôle d'un joueur limité à sa prochaine phase de
- *   combat ; marqueurs répartis d'une autre sorte, entre un nombre quelconque d'objets.
- * - 42 : Avatar: The Last Airbender, lot B2 : événement « vous maîtrisez [l'élément] » (eau payée, terre, feu résolu, air),
- *   noté au journal du tour ; réduction de coût par symboles colorés (Aang, Master of Elements).
- * - 43 : Avatar: The Last Airbender, lot C1 : F/E définies par des marqueurs sur des permanents, couleurs parmi un filtre
- *   et types exclus lus pendant les couches ; bonus par type de créature de chaque objet touché ; modes d'une capacité
- *   déclenchée sous condition ; regard fait par un joueur ciblé.
- * - 44 : Avatar: The Last Airbender, lot C2 : présage (702.143) ; « payez N PV ou {M} » ; flashback donné aux cartes du
- *   cimetière ; carte du dessus de la bibliothèque lancée par une permission ; blessures en excès d'un combat ; mana non
- *   dépensé gardé ou converti ; mots-clés des sorts ; la réserve de mana fait avancer la version d'état.
- * - 45 : Avatar: The Last Airbender, lot C3 : « gardez des créatures de force totale N ou moins » ; blessures augmentées
- *   des marqueurs de la source du remplacement ; capacité déclenchée par l'attaque d'une créature (événement) ; capacités
- *   de la carte liée choisie ; valeur de mana totale des cibles d'une capacité réflexive fixée à sa mise sur la pile.
- * - 46 : Marvel Super Heroes, lot A3 : le déclencheur « [cartes] mises dans une zone » respecte `nontoken` et `token`
- *   (un jeton n'est pas une carte : Moonshadow, Robot Domination).
- * - 47 : Marvel Super Heroes, lot A6 : dernières informations d'un permanent prises avant son retrait du combat (« quand
- *   une créature attaquante meurt ») ; un Équipement devenu créature se détache (301.5c) ; une carte de la bibliothèque
- *   lancée par une permission suit son timing ; les F/E définies par une capacité lisent « légendaire ».
- * - 48 : Marvel Super Heroes, lot B1 : improvisation (702.126), imprimée ou donnée aux sorts du joueur.
- * - 49 : Marvel Super Heroes, lot B2 : marqueurs de bouclier (122.1c : blessures et destruction remplacées par le retrait
- *   d'un marqueur) ; l'engagement d'un permanent est noté (cause « travail d'équipe », premier engagement du tour).
- * - 50 : Marvel Super Heroes, lot B3 : réductions du coût des montées en puissance ; usages comptés des capacités à
- *   usage unique (Wonder Man : une activation de plus).
- * - 51 : Marvel Super Heroes, lot C1 : « marqueurs mis par vous ce tour-ci » lu par les statiques (et par sorte) ;
- *   activer malgré le mal d'invocation ; blessures augmentées de la force de la source ; coût « retirez X marqueurs » ;
- *   symboles d'une couleur dans un coût ; prolifération sur une cible.
- * - 52 : Marvel Super Heroes, lot C2 : copie « jusqu'à votre prochain tour » avec exceptions (707.9b) ; contrôle jusqu'à
- *   la fin de votre prochain tour ; « devient la cible » pour les joueurs et les seules capacités ; filtre de `nextSpell`
- *   figé à la résolution ; capacités ciblées par contrôleur et source ; cibles du sort de l'événement ; connivence
- *   remplacée ; comparaison de deux montants.
- * - 53 : Marvel Super Heroes, lot C3 : deuxième depuis le dessus ; « défaussez une carte ou payez {M} » (coût et garde) ;
- *   garde « recevez N marqueurs poison » ; défausse après une révélation partielle ; choix dans sa propre main pour
- *   chaque joueur ; exil jusqu'à une carte dans la bibliothèque d'un autre joueur ; coût en symboles de mana du
- *   cimetière ; nombre maximal de copies lancées.
- * - 54 : Marvel's Spider-Man, lots B1 à C3 : créature renvoyée par le Web-slinging au choix, chaos donné et chaos d'un
- *   terrain, « ne peut pas être contrecarré » généralisé (Chimil et Hexing Squelcher protègent désormais tous vos sorts),
- *   émeute, redirection de blessures, permanents partis pendant une même décision (`leftBatch`).
- * - 55 : Teenage Mutant Ninja Turtles, lot B1 : faufilement lançable à l'étape des bloqueurs pour les créatures et les
- *   rituels, attaquant renvoyé au choix, permanent faufilé arrivant engagé et attaquant ; cibles « de joueurs différents »
- *   sans assez de joueurs : pas de cible légale.
- * - 56 : Teenage Mutant Ninja Turtles, lot C1 : « chaque adversaire exile jusqu'à… » pour chaque joueur désigné ; moitié de
- *   la bibliothèque arrondie au supérieur ; couleur choisie figée dans un effet « devient de la couleur choisie » ;
- *   faufilement donné depuis le cimetière ; sorts ciblant vos permanents ; réduction du prochain sort ; marqueurs d'un
- *   sort lancé du dessus de la bibliothèque ; sacrifice qui inclut la source ; cartes homonymes du cimetière.
- * - 57 : The Hobbit, lot A : un mana restreint produit à la main va dans la réserve restreinte ; le choix d'un type de
- *   créature propose aussi les types des jetons que créent les cartes de la partie.
- * - 58 : The Hobbit, lot C1 : marqueurs d'affûtage (+1/+0 à la créature équipée), cimetières de N cartes, déclencheur
- *   « activer une capacité d'une créature », mana d'un Trésor dépensé, contresort qui exile un permanent, permission
- *   payée en PV, carte révélée au hasard, capacités activées des cartes du cimetière, homonyme d'un permanent, carte
- *   venue du champ de bataille ce tour-ci.
- * - 59 : le contrôle donné par une Aura (ou un effet « tant que ») revient dès qu'elle quitte le champ de bataille, sans
- *   attendre les actions basées sur l'état (trouvé par le fuzz « chaos »).
- * - 60 : plafonds : 100 jetons au plus par événement, aucun au-delà de 400 objets sur le champ de bataille, montants
- *   remplacés bornés à un million (doubleurs de jetons qui se multiplient, trouvé par le fuzz « niveaux d'IA »).
- * - 61 : options proposées et décisions acceptées alignées (PLAN-C, lot C2, fuzz strict `--offers`) : « X cibles » avec
- *   X = 0, une cible peut payer le kicker (flétrir, Marchandage), un permanent sacrifié pour le coût d'une capacité peut
- *   d'abord produire son mana, payer 0 PV avec un total négatif, les preuves d'un mana ne prennent pas la carte qui
- *   s'exile pour sa capacité (plantage du moteur), sacrifices et « engagez X » par défaut d'abord sans capacité de mana
- *   (et réservés au paiement), Emrakul : la capacité du terrain dure jusqu'à ce que le sort soit lancé (601.2i), une
- *   capacité de mana sans couleur possible ne produit rien (106.7).
- * - 62 : les sources « engagez un autre permanent » (Springleaf Drum) se partagent les permanents à engager ; l'harmonie
- *   engage par défaut une créature sans capacité de mana (PLAN-C, lot C3, fuzz strict).
- * - 63 : 509.1c par maximisation : une déclaration de blocage n'est refusée que si une autre en respecte plus
- *   d'exigences (« bloque ce Loup si possible » et « doit être bloquée si possible » ne se bloquent plus l'une l'autre) ;
- *   509.1d : une taxe de blocage lève les exigences ; la déclaration d'attaque par défaut fait attaquer les créatures
- *   qui le doivent (sur le serveur, une corde expirée avec Juggernaut faisait abandonner la partie). PLAN-C, lot C4.
- * - 64 : mana marqué : une source restreinte ou porteuse d'un effet (Cavern of Souls) engagée à la main met son mana dans
- *   la réserve marquée avec sa source, son choix et son effet ; ces sources sont proposées à l'engagement manuel
- *   (PLAN-C, lot C5).
- * - 65 : objets payés en coût choisis par le joueur (`CastChoices.picks` : flétrir, marqueurs, exil du cimetière, preuves,
- *   sacrifier X, exiler un permanent, ninjutsu, convocation, improvisation, maîtrise de l'eau, cave ; sans choix, la
- *   suggestion du moteur, inchangée) ; le flétrir en kicker prend par défaut une créature qui survit, comme
- *   `blightTarget` (PLAN-C, lots C7 et C8).
- * - 66 : « en arrivant, choisissez… » demandé au joueur pour un terrain joué (`playLand.chosen`, Cavern of Souls) et
- *   pour un permanent mis en jeu par un effet (`moveTo`) (PLAN-C, lot C9).
- * - 67 : mots-clés accordés aux sorts (`spellKeywords`, `spellHasKeyword`) à la place de quatre drapeaux (flash, convocation,
- *   cave, second partagé) ; un sort sur la pile a les mots-clés que lui accordent les statiques de son contrôleur (Heartflame
- *   Duelist : lien de vie, copies comprises) (PLAN-C, lot C11).
- * - 68 : déclencheurs « une ou plusieurs … » : un par lot d'événements simultanés (`GameState.eventBatch`) ; Ordeal of
- *   Nylea se déclenche quelle que soit la façon dont elle est sacrifiée ; défausses en coût (Hallway Heckler, Solitary
- *   Cell, Murmuring Volume, Thunderhead Gunner, Avishkar Raceway) ; Pyrewood Gearhulk, The Earth Crystal, Chandra (+1),
- *   Boommobile (PLAN-C, lot C12).
- * - 69 : Thorin, Mountain-king ne blesse que si un Équipement devient attaché (701.3b) ; Dalkovan Encampment : capacité
- *   retardée indépendante du terrain (603.7) ; le jeton Esprit de Realm of Koh peut bloquer un Esprit (PLAN-C, lot C13).
- * - 70 : Cloud, Midgar Mercenary et The Masamune passent par `triggerMod` ; The Masamune double aussi les déclencheurs de
- *   vos emblèmes quand il n'est attaché à rien (Oracle) ; « a attaqué / a infligé des blessures ce tour-ci » lus dans le
- *   journal du tour (PLAN-C, lot C14).
- * - 71 : une source sacrifiée pour son coût de mana (Trésor) produit d'après sa dernière information connue : les
- *   remplacements de mana s'appliquent (Roxanne, Starfall Savant), comme le solveur les comptait (« Paiement incohérent »).
- * - 72 : coût additionnel « sacrifiez un nombre quelconque de permanents », chacun réduisant le coût de {1} (Rottenmouth
- *   Viper) ; permission de lancer depuis le cimetière limitée à l'Aventure (Mosswood Dreadknight) ; sort lancé avec un
- *   mot-clé dans le journal du tour (Momo, Friendly Flier) ; couleur du mana hybride choisie au lancer (Deceit) (lot K1).
- * - 73 : mana « en n'importe quelle combinaison de couleurs » réparti par le solveur ou par le joueur (Vivi Ornitier,
- *   Muerra…) ; « chaque fois que vous mettez des marqueurs » ne compte que ceux que vous mettez, sur toute créature si le
- *   texte le dit ; « engagez N créatures dégagées » peut engager la source (302.6) (lot K2).
- * - 74 : terrain choc mis sur le champ de bataille par un effet : son futur contrôleur peut payer les points de vie pour
- *   qu'il arrive dégagé ; « défaussez votre main » est un coût (Reverberating Summons, Connecting the Dots, Tarrian's
- *   Journal) ; une capacité déclenchée accordée « si… » revérifie sa condition à la résolution (603.4) ; moments corrigés
- *   par script (Earthbender Ascension, Fire Lord Azula, Azog, Puca's Eye, Ill-Timed Explosion, Granite Witness, Ezrim,
+ * - 1: one id counter per prefix (lot F1).
+ * - 2: R0.1 fixes (split second, protection, 704.5b, winning or losing the game, counters paid as a cost, 506.4).
+ * - 3: R0.2 fixes (taxes of free spells, attack and block taxes added up, requirement to attack without paying a tax).
+ * - 4: cleanup with state-based actions, triggers and priority (514.3a, R0.3).
+ * - 5: lifelink, one gain per source and per batch of simultaneous damage (R0.4).
+ * - 6: permanents that enter at the same time see each other enter (603.6a, R0.5).
+ * - 7: single access to player statics, conditions and player effects respected everywhere (R4.0).
+ * - 8: counters, types, tapped state, attack, haste and Impending set before the enters event; defender of attacking
+ *   tokens chosen (R2.1).
+ * - 9: copies of permanents (mana value, loyalty and replacements of the copied definition, copy of a copy, copy by a
+ *   static ability, copy of a Clone spell; R2.2).
+ * - 10: a Clone or an Aura that enters without being cast chooses what it copies or enchants; an Aura with nothing to
+ *   enchant stays in its zone (707.5, 303.4f, 303.4g; R2.3).
+ * - 11: order of the replacements that modify a number (damage, counters, life, draw) chosen for the affected player;
+ *   every draw of the game goes through the replacements (616.1; R1).
+ * - 12: a spell copy is an object on the stack; new targets may be chosen for any copy, and they become its targets
+ *   (ward); division of damage and counters announced when put on the stack, the share of a target that became illegal
+ *   is lost (707.10c, 601.2d, 608.2b; R3).
+ * - 13: control is a layer (613.1b): base controller and timestamped control effects; a player who leaves the game
+ *   gives back what they had stolen (800.4a; R2.4).
+ * - 14: layer dependencies by fixed point (conditions, "for each", characteristic-defining P/T that read permanents);
+ *   copiable copy exceptions; added colors (613.8, 707.9b, 105.3; R2.5).
+ * - 15: protection and hexproof "from [filter]": Sword of Wealth and Power protects from instants and sorceries,
+ *   Resilient Roadrunner from Coyotes (702.16; R4.2).
+ * - 16: permissions to play from the graveyard or the top of the library unified (a permission without a cost comes
+ *   before Muldrotha; Forgotten Cellar: only spells); cost modifiers of abilities unified (R4.4).
+ * - 17: mulligans round by round (103.5); defenders' blocks applied together (509.1; R5).
+ * - 18: loop of mandatory actions, the game is a draw (104.4b); the triggers of a player who leaves the game cease to
+ *   exist (800.4a; R6).
+ * - 19: card accuracy (R7): "the event object" and "if the source…" read the last known information of a departed
+ *   object (603.10); `pumpAll` respects "other"; multiple prowess; land played from the graveyard through a permission;
+ *   the mana solver prefers the ability that produces the most (Tablet of Discovery).
+ * - 20: Tarkir: Dragonstorm, lot A: an intervening "if" on the event object is checked on triggering and on resolution
+ *   (603.4; Aclazotz); "has already dealt damage" (Karakyk Guardian); "mana value X or less" in a search (Nature's
+ *   Rhythm).
+ * - 21: replacements of damage and of life loss as data (`EventReplacement`, R1, families E and F); a prevention by a
+ *   player other than the damaged one comes before the modifications, theirs after (616.1); "the next time" shields
+ *   (615.7, New Way Forward); prevented damage does not count as dealt.
+ * - 22: a permanent that leaves the battlefield is always removed from combat (506.4), whatever the effect or cost that
+ *   moves it (Lorwyn Eclipsed: "behold and exile" an attacker).
+ * - 23: Lorwyn Eclipsed, lot B: "of the chosen type" read everywhere (effect filters, triggers, cost reductions,
+ *   replacements; choice of a spell or an emblem); "when it transforms into…"; wither (702.80); "untap" removes a stun
+ *   counter (122.1d); created tokens are in the turn log; "another card" recognizes the dead source; a cost reduction
+ *   sees the cast card (behold); "remove a counter" of any kind; the layer cache is invalidated after the departure of
+ *   the permanents of an eliminated player (800.4a).
+ * - 24: Lorwyn Eclipsed, lot C: a cast spell is seen with its mana value and its name (filters of restricted mana and
+ *   of cost reductions); restricted mana in the pool; counters put in the turn log; a spell on the stack can gain a
+ *   keyword; "cast the linked exiled cards" with its variants (free, once each turn, this turn…).
+ * - 25: Lorwyn Eclipsed, lot D: replacements of families H and I (tokens, counters, life gained, draw, mill, mana) as
+ *   data (`EventReplacement`), doublers and flags converted; "those tokens plus a token" applied once per event; a
+ *   permanent may be unable to untap; "enchanted land is the chosen color".
+ * - 26: Wilds of Eldraine, core: Aura tokens (Roles), only one Role per player on the same permanent (704.5y).
+ * - 27: Secrets of Strixhaven, core: an "if" condition of a triggered ability reads the amounts of the event object
+ *   (mana spent on the cast spell: Increment); Wilds of Eldraine, lots C4 and C5: centralized life payment (Ashiok),
+ *   "once each turn" from the top of the library, reduced ability costs.
+ * - 28: Secrets of Strixhaven, lot A: "enters with" amounts can add, negate, take a maximum and count the colors spent
+ *   (Sheriff of Safe Passage entered without counters); "enters with" conditions see X; "distribute X counters" without
+ *   a minimum per target when X is smaller than the number of targets.
+ * - 29: Secrets of Strixhaven, lot A6: the mana spent on a resolving instant or sorcery is read (`manaSpent`); a card
+ *   cast from exile with "then exile it" goes back there; mana value filters "X" and "colors spent".
+ * - 30: Secrets of Strixhaven, lot C1: "playable until your next turn" for the owner (Memory Vessel only lasted this
+ *   turn) and "until the end of their next turn"; who put counters on an object this turn; halves of life and hand per
+ *   player; delayed abilities "at the beginning of your next main phase".
+ * - 31: Secrets of Strixhaven, lot C2: a spell copy no longer inherits the enters modifications of the original; the
+ *   token copy of a permanent spell gets its own (haste, sacrifice at end of turn); free spell from the hand once each
+ *   turn; "this spell can't be copied".
+ * - 32: Secrets of Strixhaven, lot C3: cascade (702.85); the draw event designates the drawn card (miracle); "cast now"
+ *   for a given cost from the hand.
+ * - 33: Murders at Karlov Manor, lot A: a triggered ability with "one to N targets" respects the minimum (Armament
+ *   Dragon had no target below N creatures); the condition of a trigger sees the event (amount); "if they have no cards
+ *   in hand" outside resolution; suspect designation (701.60).
+ * - 34: Murders at Karlov Manor, lot A6: a spell or an ability with "X targets" is offered even without a target (X =
+ *   0); the AI adjusts X to the number of targets.
+ * - 35: Murders at Karlov Manor, lot B1: collect evidence as an ability cost (and a mana cost), as an optional effect
+ *   (N or X), as ward, and "whenever you collect evidence"; automatic choice of the evidence without wasting an
+ *   expensive card; ward "sacrifice [type]" filtered.
+ * - 36: Murders at Karlov Manor, lot B2: X in a disguise cost, reduced disguise cost, reduction of face-down spells,
+ *   ban on turning face up, land cast face down; a face-down arrival is recorded in the turn log as a creature without
+ *   types (the card stays hidden).
+ * - 37: Murders at Karlov Manor, lot C3: a spell that leaves the stack goes through a single path (exile or bottom of
+ *   the library instead of the graveyard); `cond.refMatches` resolves its filter; a "leaves" trigger of an exiled
+ *   creature follows the new card; "for as long as the source remains tapped" effects.
+ * - 38: Avatar: The Last Airbender, core: firebending mana stays until end of combat (and not of turn); waterbend
+ *   (artifacts and creatures tapped for {1}) in the costs of activated abilities.
+ * - 39: Avatar: The Last Airbender, lot A5: the power and toughness of the creature of an event that left the
+ *   battlefield ("when it dies, X being its power") are its last known information (608.2h).
+ * - 40: Avatar: The Last Airbender, lot A6: "X can't be 0" (`minX`) refuses an activation with too small an X (Katara,
+ *   Water Tribe's Hope; Gogo, Master of Mimicry).
+ * - 41: Avatar: The Last Airbender, lot B1: waterbend as a spell cost (additional, X, optional), as ward, "unless they
+ *   pay" and as a replacement cost of linked cards; control of a player limited to their next combat phase; distributed
+ *   counters of another kind, among any number of objects.
+ * - 42: Avatar: The Last Airbender, lot B2: event "you bend [the element]" (water paid, earth, fire resolved, air),
+ *   recorded in the turn log; cost reduction by colored symbols (Aang, Master of Elements).
+ * - 43: Avatar: The Last Airbender, lot C1: P/T defined by counters on permanents, colors among a filter and excluded
+ *   types read during the layers; bonus per creature type of each affected object; modes of a triggered ability under a
+ *   condition; scry done by a targeted player.
+ * - 44: Avatar: The Last Airbender, lot C2: omen (702.143); "pay N life or {M}"; flashback given to graveyard cards;
+ *   top card of the library cast through a permission; excess damage of a combat; unspent mana kept or converted; spell
+ *   keywords; the mana pool moves the state version.
+ * - 45: Avatar: The Last Airbender, lot C3: "keep creatures with total power N or less"; damage increased by the
+ *   counters of the replacement's source; ability triggered by a creature's attack (event); abilities of the chosen
+ *   linked card; total mana value of the targets of a reflexive ability fixed when it is put on the stack.
+ * - 46: Marvel Super Heroes, lot A3: the trigger "[cards] put into a zone" respects `nontoken` and `token` (a token is
+ *   not a card: Moonshadow, Robot Domination).
+ * - 47: Marvel Super Heroes, lot A6: last known information of a permanent taken before its removal from combat ("when
+ *   an attacking creature dies"); an Equipment that became a creature becomes unattached (301.5c); a library card cast
+ *   through a permission follows its timing; P/T defined by an ability read "legendary".
+ * - 48: Marvel Super Heroes, lot B1: improvise (702.126), printed or given to the player's spells.
+ * - 49: Marvel Super Heroes, lot B2: shield counters (122.1c: damage and destruction replaced by the removal of a
+ *   counter); the tapping of a permanent is recorded (cause "teamwork", first tap of the turn).
+ * - 50: Marvel Super Heroes, lot B3: reductions of the cost of power-ups; counted uses of single-use abilities (Wonder
+ *   Man: one more activation).
+ * - 51: Marvel Super Heroes, lot C1: "counters put by you this turn" read by static abilities (and by kind); activate
+ *   despite summoning sickness; damage increased by the source's power; cost "remove X counters"; symbols of one color
+ *   in a cost; proliferate on a target.
+ * - 52: Marvel Super Heroes, lot C2: copy "until your next turn" with exceptions (707.9b); control until the end of
+ *   your next turn; "becomes the target" for players and for abilities only; filter of `nextSpell` frozen on
+ *   resolution; abilities targeted by controller and source; targets of the event's spell; connive replaced; comparison
+ *   of two amounts.
+ * - 53: Marvel Super Heroes, lot C3: second from the top; "discard a card or pay {M}" (cost and ward); ward "get N
+ *   poison counters"; discard after a partial reveal; choice in their own hand for each player; exile until a card in
+ *   another player's library; cost in mana symbols from the graveyard; maximum number of copies cast.
+ * - 54: Marvel's Spider-Man, lots B1 to C3: creature returned by web-slinging chosen, chaos given and chaos of a land,
+ *   "can't be countered" generalized (Chimil and Hexing Squelcher now protect all your spells), riot, damage
+ *   redirection, permanents gone during the same decision (`leftBatch`).
+ * - 55: Teenage Mutant Ninja Turtles, lot B1: sneak castable in the declare blockers step for creatures and sorceries,
+ *   returned attacker chosen, sneaked permanent entering tapped and attacking; targets "of different players" without
+ *   enough players: no legal target.
+ * - 56: Teenage Mutant Ninja Turtles, lot C1: "each opponent exiles up to…" for each designated player; half of the
+ *   library rounded up; chosen color frozen in a "becomes the chosen color" effect; sneak given from the graveyard;
+ *   spells targeting your permanents; reduction of the next spell; counters of a spell cast from the top of the
+ *   library; sacrifice that includes the source; graveyard cards with the same name.
+ * - 57: The Hobbit, lot A: a restricted mana produced by hand goes into the restricted pool; the choice of a creature
+ *   type also offers the types of the tokens that the cards of the game create.
+ * - 58: The Hobbit, lot C1: hone counters (+1/+0 to the equipped creature), graveyards of N cards, trigger "activate an
+ *   ability of a creature", mana of a Treasure spent, counterspell that exiles a permanent, permission paid in life,
+ *   card revealed at random, activated abilities of graveyard cards, card with the same name as a permanent, card that
+ *   came from the battlefield this turn.
+ * - 59: the control given by an Aura (or a "for as long as" effect) comes back as soon as it leaves the battlefield,
+ *   without waiting for state-based actions (found by the "chaos" fuzz).
+ * - 60: ceilings: 100 tokens at most per event, none beyond 400 objects on the battlefield, replaced amounts capped at
+ *   one million (token doublers multiplying, found by the "AI levels" fuzz).
+ * - 61: offered options and accepted decisions aligned (PLAN-C, lot C2, strict fuzz `--offers`): "X targets" with X =
+ *   0, a target can pay the kicker (blight, Bargain), a permanent sacrificed for the cost of an ability can first
+ *   produce its mana, paying 0 life with a negative total, the evidence of a mana does not take the card that exiles
+ *   itself for its ability (engine crash), sacrifices and "tap X" by default first without a mana ability (and reserved
+ *   for the payment), Emrakul: the land's ability lasts until the spell is cast (601.2i), a mana ability with no
+ *   possible color produces nothing (106.7).
+ * - 62: "tap another permanent" sources (Springleaf Drum) share the permanents to tap; harmonize taps by default a
+ *   creature without a mana ability (PLAN-C, lot C3, strict fuzz).
+ * - 63: 509.1c by maximization: a block declaration is refused only if another one obeys more requirements ("blocks
+ *   this Wolf if able" and "must be blocked if able" no longer block each other); 509.1d: a block tax lifts the
+ *   requirements; the default attack declaration makes the creatures that must attack do so (on the server, an expired
+ *   rope with Juggernaut made the player concede the game). PLAN-C, lot C4.
+ * - 64: marked mana: a restricted source or one carrying an effect (Cavern of Souls) tapped by hand puts its mana in
+ *   the marked pool with its source, its choice and its effect; these sources are offered for manual tapping (PLAN-C,
+ *   lot C5).
+ * - 65: objects paid as a cost chosen by the player (`CastChoices.picks`: blight, counters, exile from the graveyard,
+ *   evidence, sacrifice X, exile a permanent, ninjutsu, convoke, improvise, waterbend, delve; without a choice, the
+ *   engine's suggestion, unchanged); blight as a kicker takes by default a creature that survives, like `blightTarget`
+ *   (PLAN-C, lots C7 and C8).
+ * - 66: "as it enters, choose…" asked of the player for a played land (`playLand.chosen`, Cavern of Souls) and for a
+ *   permanent put onto the battlefield by an effect (`moveTo`) (PLAN-C, lot C9).
+ * - 67: keywords granted to spells (`spellKeywords`, `spellHasKeyword`) instead of four flags (flash, convoke, delve,
+ *   split second); a spell on the stack has the keywords granted to it by its controller's static abilities (Heartflame
+ *   Duelist: lifelink, copies included) (PLAN-C, lot C11).
+ * - 68: "one or more …" triggers: one per batch of simultaneous events (`GameState.eventBatch`); Ordeal of Nylea
+ *   triggers whichever way it is sacrificed; discards as a cost (Hallway Heckler, Solitary Cell, Murmuring Volume,
+ *   Thunderhead Gunner, Avishkar Raceway); Pyrewood Gearhulk, The Earth Crystal, Chandra (+1), Boommobile (PLAN-C, lot
+ *   C12).
+ * - 69: Thorin, Mountain-king deals damage only if an Equipment becomes attached (701.3b); Dalkovan Encampment: delayed
+ *   ability independent of the land (603.7); the Spirit token of Realm of Koh can block a Spirit (PLAN-C, lot C13).
+ * - 70: Cloud, Midgar Mercenary and The Masamune go through `triggerMod`; The Masamune also doubles the triggers of
+ *   your emblems when it is attached to nothing (Oracle); "attacked / dealt damage this turn" read from the turn log
+ *   (PLAN-C, lot C14).
+ * - 71: a source sacrificed for its mana cost (Treasure) produces according to its last known information: mana
+ *   replacements apply (Roxanne, Starfall Savant), as the solver counted them ("Inconsistent payment").
+ * - 72: additional cost "sacrifice any number of permanents", each reducing the cost by {1} (Rottenmouth Viper);
+ *   permission to cast from the graveyard limited to the Adventure (Mosswood Dreadknight); spell cast with a keyword in
+ *   the turn log (Momo, Friendly Flier); color of hybrid mana chosen on casting (Deceit) (lot K1).
+ * - 73: mana "in any combination of colors" divided by the solver or by the player (Vivi Ornitier, Muerra…); "whenever
+ *   you put counters" counts only those you put, on any creature if the text says so; "tap N untapped creatures" can
+ *   tap the source (302.6) (lot K2).
+ * - 74: shock land put onto the battlefield by an effect: its future controller can pay the life for it to enter
+ *   untapped; "discard your hand" is a cost (Reverberating Summons, Connecting the Dots, Tarrian's Journal); a
+ *   triggered ability granted "if…" checks its condition again on resolution (603.4); timings fixed by script
+ *   (Earthbender Ascension, Fire Lord Azula, Azog, Puca's Eye, Ill-Timed Explosion, Granite Witness, Ezrim,
  *   Sewer-veillance Cam, Rattleback Apothecary) (lot K3).
- * - 75 : Liliana the Faultless : « défaussez une carte » est un coût (lot K4).
- * - 76 : choix rendus au joueur : sorte des marqueurs retirés par un effet ; objets des coûts additionnels d'un sort
- *   (exiler, renvoyer, engager, exiler du cimetière, contempler et exiler) ; choix non ciblés à la résolution (Seasons,
- *   Wick, Mistbreath Elder, Zell Dincht, Arid Archway, Renforcez Jace) ; « vous pouvez », « jusqu'à » (Esper Terra,
- *   Beatrix, Hama, Avatar Destiny, Severance Priest, Rambling Possum) ; cibles « autre que cette créature » (Pawpatch
- *   Recruit) et « qui l'a montée » (Giant Beaver) (lot K6).
- * - 77 : durées : « jusqu'à votre prochaine étape de fin » pour les cartes jouables (Shadow Urchin, Seek the Beast, Haste
- *   Magic, Opera Love Song), « tant que vous contrôlez [la source] » (Ty Lee, Spider-Woman), « tant qu'il reste engagé »
- *   (Braided Net), emblème « jusqu'à la fin de votre prochain tour » (Season of the Bold) (lot K7).
- * - 78 : un jeton décrit engagé (`TokenSpec.tapped`) arrive engagé (Tenured Tethermage) ; Dread Summons et Revenge of the
- *   Rats créent des jetons engagés ; Biogenic Upgrade demande une à trois cibles (lot K8, FDN).
- * - 79 : « une ou deux cibles » : au moins une (Get Out, Coordinated Clobbering, Omnivorous Flytrap, Untimely
- *   Malfunction) (lot K8, DSK).
- * - 80 : Aetherdrift (lot K8) : un Véhicule devenu créature par l'exhaust le reste ; Boom Scholar donne aussi le
- *   piétinement aux Véhicules ; Cloudspire Skycycle (une ou deux cibles), Cloudspire Coordinator (journal du tour),
- *   Demonic Junker (seulement si la créature est détruite), Gastal Thrillroller (défausse en coût), Gonti (mana de
- *   n'importe quel type), Full Throttle (toutes les créatures qui ont attaqué), Lifecraft Engine (Véhicules pilotés).
- * - 81 : une condition sur une cible ou l'objet de l'événement encore sur le champ de bataille lit le filtre complet
- *   (« arrivée ce tour-ci », Malamet Battle Glyph) ; le joueur qui découvre est fixé au premier passage (Zoyowa's
- *   Justice) ; The Lost Caverns of Ixalan (lot K8) : The Ancient One, Dire Blunderbuss, Sunfire Torch (objets liés aux
- *   capacités réflexives), Cosmium Confluence (Caverne choisie, non ciblée), The Myriad Pools (mana du terrain), Jade
- *   Seedstones (une à trois cibles), Hurl into History (contrecarre, puis découvre).
- * - 82 : un choix dans une zone garde la valeur de mana maximale de son filtre ; Wreck Remover exile bien la carte du
- *   cimetière ; Final Fantasy (lot K8) : Ambrosia Whiteheart (renvoi non ciblé), Delivery Moogle, Eden (« un autre »),
- *   Ignis Scientia, Qutrub Forayer et Magic Pot (exil depuis le cimetière), Rydia (X vérifié à la résolution).
- * - 83 : Outlaws of Thunder Junction (lot K8) : Final Showdown, Pillage the Bog, Marchesa, Oko, Rakdos, Geralf, Calamity,
+ * - 75: Liliana the Faultless: "discard a card" is a cost (lot K4).
+ * - 76: choices given back to the player: kind of the counters removed by an effect; objects of a spell's additional
+ *   costs (exile, return, tap, exile from the graveyard, behold and exile); untargeted choices on resolution (Seasons,
+ *   Wick, Mistbreath Elder, Zell Dincht, Arid Archway, Empower Jace); "you may", "up to" (Esper Terra, Beatrix, Hama,
+ *   Avatar Destiny, Severance Priest, Rambling Possum); targets "other than this creature" (Pawpatch Recruit) and "that
+ *   saddled it" (Giant Beaver) (lot K6).
+ * - 77: durations: "until your next end step" for playable cards (Shadow Urchin, Seek the Beast, Haste Magic, Opera
+ *   Love Song), "for as long as you control [the source]" (Ty Lee, Spider-Woman), "for as long as it remains tapped"
+ *   (Braided Net), emblem "until the end of your next turn" (Season of the Bold) (lot K7).
+ * - 78: a token described as tapped (`TokenSpec.tapped`) enters tapped (Tenured Tethermage); Dread Summons and Revenge
+ *   of the Rats create tapped tokens; Biogenic Upgrade asks for one to three targets (lot K8, FDN).
+ * - 79: "one or two targets": at least one (Get Out, Coordinated Clobbering, Omnivorous Flytrap, Untimely Malfunction)
+ *   (lot K8, DSK).
+ * - 80: Aetherdrift (lot K8): a Vehicle that became a creature by exhaust stays one; Boom Scholar also gives trample to
+ *   Vehicles; Cloudspire Skycycle (one or two targets), Cloudspire Coordinator (turn log), Demonic Junker (only if the
+ *   creature is destroyed), Gastal Thrillroller (discard as a cost), Gonti (mana of any type), Full Throttle (all the
+ *   creatures that attacked), Lifecraft Engine (crewed Vehicles).
+ * - 81: a condition on a target or on the event object still on the battlefield reads the full filter ("entered this
+ *   turn", Malamet Battle Glyph); the discovering player is fixed on the first pass (Zoyowa's Justice); The Lost
+ *   Caverns of Ixalan (lot K8): The Ancient One, Dire Blunderbuss, Sunfire Torch (objects linked to reflexive
+ *   abilities), Cosmium Confluence (chosen Cave, untargeted), The Myriad Pools (mana of the land), Jade Seedstones (one
+ *   to three targets), Hurl into History (counters, then discovers).
+ * - 82: a choice in a zone keeps the maximum mana value of its filter; Wreck Remover does exile the graveyard card;
+ *   Final Fantasy (lot K8): Ambrosia Whiteheart (untargeted return), Delivery Moogle, Eden ("another"), Ignis Scientia,
+ *   Qutrub Forayer and Magic Pot (exile from the graveyard), Rydia (X checked on resolution).
+ * - 83: Outlaws of Thunder Junction (lot K8): Final Showdown, Pillage the Bog, Marchesa, Oko, Rakdos, Geralf, Calamity,
  *   Lazav, Lilah, Bucolic Ranch, Demonic Ruckus, Reach for the Sky.
- * - 84 : « N blessures à chaque créature et chaque planeswalker » blesse aussi les planeswalkers (Calamitous Cave-In,
- *   Splatter Technique, Dragonback Assault, Fulminous Forte) ; Reality Fracture (lot K8) : Ajani's Anguish et Fblthp (le
- *   X de la carte lancée), Hunter's Axe (piétinement ou contact mortel, au choix), Tinybones, Pocket Nuisance (une fois
- *   par défausse groupée).
- * - 85 : une capacité déclenchée de palier (station) se déclenche même sans capacité déclenchée imprimée (Dawnsire,
- *   Entropic Battlecruiser, Sledge-Class Seedship, Synthesizer Labship) ; Edge of Eternities (lot K8) : Archenemy's
- *   Charm (une ou deux cibles), Pain for All (« une autre cible »), Broodguard Elite (tous ses marqueurs).
- * - 86 : « arrive avec » un nombre de marqueurs lu dans l'état de la partie (Gev, Scaled Scorch) ; remplacement de
- *   marqueurs « si vous deviez mettre » (`byYou`, Innkeeper's Talent) ; Bloomburrow (lot K8) : Dragonhawk (jusqu'à votre
- *   prochaine étape de fin), Kitnap (pas de marqueurs d'étourdissement si le cadeau est promis), Gev (vos créatures).
- * - 87 : « au choix » choisi à la résolution (608.2d, `fx.yourChoice`) et non comme un mode : Practiced Offense, Wingnut,
- *   Manifold Mouse ; Iceberg Titan engage ou dégage à la résolution (PLAN-D, lot D1).
- * - 88 : « quand vous le faites » après un remplacement ou une arrivée : capacité réflexive mise sur la pile (Head of the
- *   Hunt : le Loup ; Superior Spider-Man : l'exil de la carte copiée) (PLAN-D, lot D3).
- * - 89 : contempler en coût additionnel (`additionalCost.behold`) : choisi au lancement, la carte de la main révélée,
- *   retenu par le sort (`cond.beheld`), « ou payez {N} » ; contempler pendant une résolution (`fx.mayBehold`) : les
- *   Exhales, Countersculpt, les cinq « contemplez ou payez {2} » d'ECL, Sarkhan, Elven Passage (PLAN-D, lot D2).
- * - 90 : une valeur de mana de cible calculée (`maxManaValueAmount`) est évaluée au ciblage d'une capacité déclenchée,
- *   puis à la résolution (Moseo, Vein's New Dean) (PLAN-D, lot D4).
- * - 91 : condition retenue au lancement (`whenCast`, Faerie Fencing, Steer Clear) ; condition du déclencheur vérifiée au
- *   déclenchement seulement (`triggerCondition`, Social Snub) (PLAN-D, lot D5).
- * - 92 : « jusqu'à X cibles » d'une capacité déclenchée choisies au déclenchement (Prismabasher, Heroic Feast, Rollercrusher
- *   Ride…) ; modes d'une capacité réflexive (Hylda) et d'une capacité modale accordée ; Ghostly Dancers choisit à la
- *   résolution (PLAN-D, lot D6).
- * - 93 : sorte de marqueur retirée en coût choisie par le joueur (`counterKind`) ; copies facultatives de Moonlit
- *   Meditation et Mirrormind Crown ; Équipement ou hôte choisi à la résolution (Light of Judgment, Unexpected Request,
- *   One Last Job : `chooseAmong.optional`, `moveTo.attachTo`) ; coût « engagez quatre permanents » qui garde le mana
- *   nécessaire (Guardian of the Great Door) (PLAN-D, lot D7).
- * - 94 : petits écarts (PLAN-D, lot D8) : mots-clés lus seulement s'ils sont imprimés (Dion, Peter Parker, Goddric,
- *   Reluctant Role Model) ; terrains de butin jouables (Tinybones) ; carte du cimetière lancée pendant une résolution sans
- *   le flash (Tinybones, the Pickpocket) ; X figé à la défausse (Ill-Timed Explosion) ; « tant que ce terrain a un
- *   marqueur de fléau » (Ultima) ; permission liée à l'objet (Lightning) ; Glowcap Lantern attachée ; Faller's Faithful,
+ * - 84: "N damage to each creature and each planeswalker" also damages planeswalkers (Calamitous Cave-In, Splatter
+ *   Technique, Dragonback Assault, Fulminous Forte); Reality Fracture (lot K8): Ajani's Anguish and Fblthp (the X of
+ *   the cast card), Hunter's Axe (trample or deathtouch, as chosen), Tinybones, Pocket Nuisance (once per grouped
+ *   discard).
+ * - 85: a level triggered ability (station) triggers even without a printed triggered ability (Dawnsire, Entropic
+ *   Battlecruiser, Sledge-Class Seedship, Synthesizer Labship); Edge of Eternities (lot K8): Archenemy's Charm (one or
+ *   two targets), Pain for All ("another target"), Broodguard Elite (all its counters).
+ * - 86: "enters with" a number of counters read from the game state (Gev, Scaled Scorch); counter replacement "if you
+ *   would put" (`byYou`, Innkeeper's Talent); Bloomburrow (lot K8): Dragonhawk (until your next end step), Kitnap (no
+ *   stun counters if the gift is promised), Gev (your creatures).
+ * - 87: "of your choice" chosen on resolution (608.2d, `fx.yourChoice`) and not as a mode: Practiced Offense, Wingnut,
+ *   Manifold Mouse; Iceberg Titan taps or untaps on resolution (PLAN-D, lot D1).
+ * - 88: "when you do" after a replacement or an arrival: reflexive ability put on the stack (Head of the Hunt: the
+ *   Wolf; Superior Spider-Man: the exile of the copied card) (PLAN-D, lot D3).
+ * - 89: behold as an additional cost (`additionalCost.behold`): chosen on casting, the card from the hand revealed,
+ *   remembered by the spell (`cond.beheld`), "or pay {N}"; behold during a resolution (`fx.mayBehold`): the Exhales,
+ *   Countersculpt, the five "behold or pay {2}" of ECL, Sarkhan, Elven Passage (PLAN-D, lot D2).
+ * - 90: a computed target mana value (`maxManaValueAmount`) is evaluated when a triggered ability targets, then on
+ *   resolution (Moseo, Vein's New Dean) (PLAN-D, lot D4).
+ * - 91: condition remembered on casting (`whenCast`, Faerie Fencing, Steer Clear); trigger condition checked on
+ *   triggering only (`triggerCondition`, Social Snub) (PLAN-D, lot D5).
+ * - 92: "up to X targets" of a triggered ability chosen on triggering (Prismabasher, Heroic Feast, Rollercrusher
+ *   Ride…); modes of a reflexive ability (Hylda) and of a granted modal ability; Ghostly Dancers chooses on resolution
+ *   (PLAN-D, lot D6).
+ * - 93: kind of counter removed as a cost chosen by the player (`counterKind`); optional copies of Moonlit Meditation
+ *   and Mirrormind Crown; Equipment or host chosen on resolution (Light of Judgment, Unexpected Request, One Last Job:
+ *   `chooseAmong.optional`, `moveTo.attachTo`); cost "tap four permanents" that keeps the needed mana (Guardian of the
+ *   Great Door) (PLAN-D, lot D7).
+ * - 94: small discrepancies (PLAN-D, lot D8): keywords read only if they are printed (Dion, Peter Parker, Goddric,
+ *   Reluctant Role Model); loot lands playable (Tinybones); graveyard card cast during a resolution without flash
+ *   (Tinybones, the Pickpocket); X frozen on discard (Ill-Timed Explosion); "for as long as that land has a blight
+ *   counter" (Ultima); permission linked to the object (Lightning); Glowcap Lantern attached; Faller's Faithful,
  *   Sunstar Expansionist, Singularity Rupture.
- * - 95 : « réunir des preuves » par un effet : le joueur choisit les cartes exilées (Izoni, Evidence Examiner, Sample
- *   Collector… ; PLAN-D, lot D9).
- * - 96 : une source de mana qui réunit des preuves (Cryptex) ne prend pas un objet réservé par le reste du coût
- *   (matériau de fabrication) ; trouvé par le fuzz de départ du PLAN-S.
- * - 97 : le journal du tour devient la seule source de « ce tour-ci » (PLAN-S, lot S2) : vie gagnée et perdue, pioches,
- *   défausses, regards, crimes, activations de loyauté, retournements ; « un adversaire » y est un adversaire encore en
- *   partie (800.4a) ; « arrivé face cachée » compte toute arrivée face cachée (Oblivious Bookworm).
- * - 98 : familles de montants (PLAN-S, lot S3) : `aggregate` (valeur de mana calculée sur le champ de bataille : une copie
- *   a celle de ce qu'elle copie, 707.2 ; force totale à l'arrivée sans l'objet qui arrive), `spent`, `manaSymbols`,
- *   référence `playersWhere`.
- * - 99 : comment un sort a été lancé (PLAN-S, lot S4) : `CastInfo` sur l'élément de pile puis sur le permanent ;
- *   évocation, distorsion et imminence sont des coûts alternatifs (`via`) ; « si ce sort a été lancé depuis un cimetière »
- *   lit la zone de lancement (et non plus la marque du flashback).
- * - 100 : les effets « toutes les … » agissent sur une référence de zone (PLAN-S, lot S6c) : le X du sort dans un filtre
- *   est lu par la référence (`withX`) ; `destroy` mémorise aussi le nombre de permanents détruits.
- * - 101 : familles d'effets (PLAN-S, lots S6d et S6e) : `extra`, `spellFate`, `gainControl` (durées, joueur `to`),
- *   `grantPlay{flashback}`, exil de distorsion par `moveTo` (`moveWithSpec`), référence `sameName` (Maelstrom Pulse),
- *   durée des emblèmes.
- * - 102 : filtres (PLAN-S, lot S8b) : les sous-filtres `anyOf` et `not` sont évalués comme le filtre lui-même (champs
- *   propres à l'objet, valeurs choisies) au lieu d'être lus seulement sur la vue (un champ inconnu y était ignoré).
- * - 103 : rééditions (PLAN-G, lot G2a) : mode lancé pour son propre coût (surcharge, fendre), escalade, ruée et
- *   spectacle ; le nombre de cartes d'une recherche faite par d'autres joueurs se lit du point de vue de chacun.
- * - 104 : rééditions (PLAN-G, lot G2b) : défense totale ; exaltation, affinité pour les artefacts, modulaire, greffe et
- *   extorsion lues dans le texte (l'extorsion de The Kingpin of Crime n'est plus écrite à la main) ; une source qui
- *   produit 0 mana (Vivi Ornitier de force 0) ne paie plus rien ; une capacité au seul coût {X} est proposée à partir de 1.
- * - 105 : déluge lu dans le texte (G2c) : les sorts lancés avant lui, par tous les joueurs, comptés au lancement (et non
- *   à la résolution ni seulement les vôtres : Stormscale Scion) ; surcharge et fendre proposées dans une option de
- *   lancement à part (sans gratuité) ; un sort qu'un joueur éliminé contrôle sans le posséder est exilé (800.4a).
- * - 106 : terrains de Stellar Sights (G3a) : contrepartie d'une capacité de mana (`drawback` : blessures à vous, PV aux
- *   adversaires).
- * - 107 : terrains de Stellar Sights (G3b) : infection (702.90), régénération (701.19, boucliers retirés au nettoyage),
- *   déplacer un marqueur, mana des couleurs de vos permanents ou des types de vos terrains, leyline conditionnelle.
- * - 108 : Special Guests (G4a) : traversée de terrain, « n'attaque pas deux fois le même joueur », statiques de joueur
- *   qui touchent d'autres joueurs (`affects`), déclencheur « vous copiez un sort », suspension depuis la main (action
- *   spéciale), carte contrecarrée mémorisée où qu'elle aille (`storeMoved`).
- * - 109 : Special Guests (G4b) : destruction sans régénération possible (`noRegenerate`, Damnation).
- * - 110 : Special Guests (G4c) : limite de sorts par types (`castLimit.spellTypes`), « un joueur joue un terrain »
+ * - 95: "collect evidence" by an effect: the player chooses the exiled cards (Izoni, Evidence Examiner, Sample
+ *   Collector…; PLAN-D, lot D9).
+ * - 96: a mana source that collects evidence (Cryptex) does not take an object reserved by the rest of the cost (craft
+ *   material); found by the starting fuzz of PLAN-S.
+ * - 97: the turn log becomes the only source of "this turn" (PLAN-S, lot S2): life gained and lost, draws, discards,
+ *   scries, crimes, loyalty activations, transformations; "an opponent" there is an opponent still in the game
+ *   (800.4a); "entered face down" counts any face-down arrival (Oblivious Bookworm).
+ * - 98: amount families (PLAN-S, lot S3): `aggregate` (mana value computed on the battlefield: a copy has that of what
+ *   it copies, 707.2; total power on entering without the entering object), `spent`, `manaSymbols`, reference
+ *   `playersWhere`.
+ * - 99: how a spell was cast (PLAN-S, lot S4): `CastInfo` on the stack item then on the permanent; evoke, warp and
+ *   impending are alternative costs (`via`); "if this spell was cast from a graveyard" reads the casting zone (and no
+ *   longer the flashback mark).
+ * - 100: "all …" effects act on a zone reference (PLAN-S, lot S6c): the spell's X in a filter is read by the reference
+ *   (`withX`); `destroy` also remembers the number of destroyed permanents.
+ * - 101: effect families (PLAN-S, lots S6d and S6e): `extra`, `spellFate`, `gainControl` (durations, player `to`),
+ *   `grantPlay{flashback}`, warp exile through `moveTo` (`moveWithSpec`), reference `sameName` (Maelstrom Pulse),
+ *   duration of emblems.
+ * - 102: filters (PLAN-S, lot S8b): the sub-filters `anyOf` and `not` are evaluated like the filter itself (fields
+ *   specific to the object, chosen values) instead of being read only on the view (an unknown field was ignored there).
+ * - 103: reprints (PLAN-G, lot G2a): mode cast for its own cost (overload, cleave), escalate, dash and spectacle; the
+ *   number of cards of a search made by other players is read from each one's point of view.
+ * - 104: reprints (PLAN-G, lot G2b): shroud; exalted, affinity for artifacts, modular, graft and extort read from the
+ *   text (the extort of The Kingpin of Crime is no longer written by hand); a source that produces 0 mana (Vivi
+ *   Ornitier with power 0) no longer pays anything; an ability whose only cost is {X} is offered from 1.
+ * - 105: storm read from the text (G2c): the spells cast before it, by all players, counted on casting (and not on
+ *   resolution nor only yours: Stormscale Scion); overload and cleave offered in a separate cast option (never free); a
+ *   spell that an eliminated player controls without owning it is exiled (800.4a).
+ * - 106: Stellar Sights lands (G3a): drawback of a mana ability (`drawback`: damage to you, life to opponents).
+ * - 107: Stellar Sights lands (G3b): infect (702.90), regeneration (701.19, shields removed at cleanup), move a
+ *   counter, mana of the colors of your permanents or of the types of your lands, conditional leyline.
+ * - 108: Special Guests (G4a): landwalk, "doesn't attack the same player twice", player statics that affect other
+ *   players (`affects`), trigger "you copy a spell", suspend from the hand (special action), countered card remembered
+ *   wherever it goes (`storeMoved`).
+ * - 109: Special Guests (G4b): destruction without possible regeneration (`noRegenerate`, Damnation).
+ * - 110: Special Guests (G4c): limit of spells by types (`castLimit.spellTypes`), "a player plays a land"
  *   (`playLand.whose`).
- * - 111 : Breaking News (G6) : la recherche dans sa bibliothèque est notée au journal du tour (Archive Trap).
- * - 112 : Through the Ages (G7) : une capacité de mana peut engager un artefact (`tapAnother: "artifact"`, Urza).
- * - 113 : mana phyrexian (107.4f, G4e) : chaque {C/P} se paie avec du mana, sinon 2 PV ; K'rrik (`phyrexianMana`).
- * - 114 : coûts alternatifs qui font payer des PV, exiler des cartes de la main ou renvoyer un permanent (`altCost.pay`).
- * - 115 : règles de joueur (victoire sur pioche impossible, plancher de PV, blessures comme l'infection à 0 PV, cartes des
- *   cimetières non ciblables), remplacement « trois fois autant » du mana, dé à N faces, mue (702.37).
- * - 116 : combat : un joueur bloque avec au plus N créatures, au plus une créature attaque un joueur ; destruction notée avec
- *   le joueur qui détruit (déclencheur `destroyed`) ; défense talismanique d'un joueur contre un filtre ; retrace (702.81).
- * - 117 : folie (702.35), émerger (702.119), réplique (702.56), évasion donnée, rôder accordé, gagner le contrôle d'un sort,
- *   lancer seulement au moment d'un rituel, exceptions de copie en `entersAsCopyMods`.
- * - 118 : étape de pioche passée, pioche volée (Notion Thief), tours supplémentaires passés, défausse au-dessus de la
- *   bibliothèque, taille de main maximale générique (et condition d'une statique lue pour son contrôleur), PV payés au
- *   choix, meule répétée par couleur, une carte par type (Atraxa).
- * - 119 : jetons copies créés par d'autres joueurs, cascade filtrée, F/E égales aux cartes liées.
- * - 120 : défausser X cartes en coût, permission de jouer pour les autres joueurs, Aura attachée à un joueur au hasard,
- *   couleur choisie ajoutée.
- * - 121 : phasing (702.26), vote et paiement par un autre joueur, déclencheur du prochain sort lancé, Saga transformée en
- *   terrain avec l'évasion donnée.
- * - 122 : passe sur les approximations (A0) : « le joueur défenseur » d'un déclencheur d'attaque dont la source n'attaque
- *   pas est celui de l'attaquant (Raid Bombardment) ; retirer tous les marqueurs ne demande plus leur sorte.
- * - 123 : approximations levées par script (A1) : Kellan, the Kid lance le sort, Dyadrine fait choisir les créatures,
- *   capacités « quand elle se transforme » sur la face arrière (Ultimecia, Black Chocobo), Tellah en un déclenchement…
- * - 124 : approximations levées par script (A2) ; « faites ceci une seule fois par tour » revérifié à la résolution (deux
- *   déclenchements sur la pile) ; « une autre carte » exclut aussi la carte de la créature morte (nouvel identifiant).
- * - 125 : un permanent exilé ou renvoyé en coût additionnel n'ajoute plus son remplacement de mana au paiement proposé
- *   (Champion of the Path, Lavaleaper) ; une créature qui doit attaquer mais ne peut attaquer aucun défenseur n'y est
- *   plus obligée (The Void, Storm, Windrider).
- * - 126 : familles génériques (A3c) : attaquants distincts au journal du tour, mana restreint à une sorte de capacité
- *   (équiper, déverrouiller, retourner…), objet contemplé lisible après le coût, « vous / un adversaire subit des
- *   blessures » de toute source.
- * - 127 : familles génériques (A3b) : taille de main maximale dans l'ordre d'horodatage, « choisissez les deux » si le
- *   coût additionnel est payé (un seul mode refusé), un nouveau type de terrain ne remplace que les types de terrain
- *   (205.1a, 305.7), montures et équipages cumulés sur le tour, marqueurs d'arrivée en montant.
- * - 128 : familles génériques (A3a) : filtre de propriétaire et référence `ownerOf`, dernier contrôleur connu d'un objet
- *   parti du champ de bataille ce tour-ci (`controllerOf`), noms différents au choix et au sacrifice en coût,
- *   destinataire des blessures des déclencheurs (`to`).
- * - 129 : familles moyennes (A4b) : objets d'un lot « un ou plusieurs » (`ref.eventObjects`), capacité retardée liée à
- *   un objet pour le reste du tour (`fx.whenThisTurn`, 603.7c), « la première fois chaque tour » noté avant la
- *   condition « si » (`oncePerTurn: "firstEvent"`).
- * - 130 : familles moyennes (A4a) : cible détenue par un joueur désigné (`TargetSpec.of` : joueur de l'événement,
- *   joueur défenseur, joueur d'une autre cible), nouvelles cibles d'un sort à plusieurs cibles, capacité accordée qui
- *   connaît le permanent qui l'accorde (`ref.grantor`, `CostDef.grantor`).
- * - 131 : familles moyennes (A4c) : sort gratuit depuis toute zone (`castPermission.freeFrom`), phases et étapes
- *   ajoutées à leur place (files `turn.addedPhases`/`addedSteps`, rang de la phase principale), marqueurs retirés parmi
- *   plusieurs créatures choisis par le joueur ; le renvoi d'une créature par web-slinging est compté avant le mana.
- * - 132 : impressions de la table (`STA-42@<id>`, `printing.ts`) gardées par `createGame` et montrées par la vue.
- * - 133 : Commander (PLAN-E, E2) : variante `commander` (40 PV, zone de commandement, lancer depuis elle avec la taxe,
- *   retour dans la zone de commandement 903.9a et 903.9b, 21 blessures de commandant) ; seuls les emblèmes ont des
- *   capacités actives dans la zone de commandement.
- * - 134 : mulligan gratuit dans une partie à trois joueurs ou plus (103.5c) : le premier mulligan ne compte pas.
- * - 135 : mécaniques qui citent le commandant (PLAN-E, E6) : mana de l'identité du commandant, filtre `commander`,
- *   capacités qui fonctionnent depuis la zone de commandement (éminence), mana des terrains d'un adversaire.
- * - 136 : base de mana des decks Commander (PLAN-E, E8) : `tapAnother` d'une capacité de mana accepte un filtre
- *   (Relic of Legends), lu par le solveur de paiement.
- * - 137 : vampires d'Edgar Markov (PLAN-E, E10) : ascension et bénédiction de la cité (702.131, action basée sur
- *   l'état) ; la condition d'un `entersWith` qui touche d'autres permanents est vérifiée (Vampire Socialite).
- * - 138 : deck de Y'shtola (PLAN-E, E12) : entretien cumulatif (702.24), rebond imprimé, déclencheur de pioche « sauf la
- *   première de son étape de pioche » (`turnDraw`), changement de zone « d'un adversaire ».
- * - 139 : sorts communs des decks Commander (PLAN-E, E9) : protection d'un joueur (« des adversaires » ou « contre tout »,
- *   702.16j), « votre total de PV ne peut pas changer » (perte de PV prévenue, 119.8 : PV payables 0), verso terrain
- *   d'une carte modale joué comme terrain (712.12), « choisissez un ou plus » (`oneOrMore`).
- * - 140 : deux sources « comme les terrains » (Exotic Orchard chez deux joueurs) ne se consultent plus l'une l'autre
- *   (récursion infinie trouvée par le fuzz Commander à trois).
- * - 141 : 903.9b demandé au propriétaire : un commandant mis dans sa main ou dans sa bibliothèque (pioche comprise) peut
- *   aller dans la zone de commandement, à la vérification suivante, comme depuis un cimetière ou l'exil.
- * - 142 : Path of Ancestry : regard 1 quand son mana sert à lancer un sort de créature qui partage un type de créature
- *   avec votre commandant (effet déclenché porté par le mana, `rider.effects` ; référence `commanders`) ; « partage un
- *   type de créature avec » plusieurs objets : un type de l'un d'eux suffit.
- * - 143 : deck Commander The Ur-Dragon : une condition lue à la résolution voit l'objet et l'événement déclencheurs
- *   (Selvala) ; myriade ; mana marqué gardé jusqu'à la fin du tour (Klauth) ou porteur d'un effet produit par un effet
- *   (Arena of Glory) ; éminence d'une statique de joueur ; zone de commandement dans les références et les déplacements
- *   (Hellkite Courser) ; « du même nom que » un objet désigné ; plus grand montant parmi des joueurs ; le paiement
- *   n'utilise pas plus de sources qui coûtent des PV que le joueur ne peut en payer (fuzz strict) ; 104.4b : une boucle
- *   qui accumule (jetons, déclenchements sur la pile) est nulle, et les choix faits pendant la boucle ne la coupent pas.
- * - 144 : mulligan gratuit dans toute partie de Commander, duel compris (règle du format) ; ailleurs, à trois joueurs ou
- *   plus (103.5c).
- * - 145 : deck Commander Rakdos, Lord of Riots : « pour chaque joueur » (référence `nth`), nombres choisis secrètement,
- *   deux coûts au choix pour « à moins qu'il ne paie », annihilateur et exhumation lus dans le texte, manifester depuis la
- *   main, copie de sort avec loyauté de départ, tour contrôlé suivi d'un tour supplémentaire, cibles de valeurs de mana
- *   différentes, recherche bornée par un montant ; une carte sacrifiée est suivie dans sa nouvelle zone par les
- *   déclenchements de son sacrifice.
- * - 146 : « défaussez une carte ou payez {2} » (Titania) : le paiement proposé tient compte de la taxe de commandant et des
- *   surcoûts (fuzz strict).
- * - 147 : carte modale dont le recto et le verso sont des terrains (Pathways) : le joueur choisit la face jouée
- *   (`playLand` et `back`).
- * - 148 : préconstruit Commander « Multiverse Reforged » : monarque (724 : pioche à l'étape de fin, transfert par
- *   des blessures de combat, départ du monarque), toxique (702.164), piles séparées par l'adversaire, révélation dans la
- *   bibliothèque d'un autre joueur, restriction « ne peut pas attaquer vos Jace », protection d'un joueur contre un
- *   filtre, effets « jusqu'au prochain tour de ce joueur », PV variables payés, mana inutilisé et marqueurs poison comme
- *   montants ; le déclencheur des blessures de combat groupées transmet les créatures concernées. Préconstruit
- *   « Turtle Power! » : escouade (702.157), fusion (702.102), évolution vérifiée au déclenchement (comparaison de
- *   montants), X d'un permanent connu dès son arrivée, mana d'artefact dépensé, jetons qui attaquent un joueur désigné,
- *   copies sacrifiées à la fin du combat, déclenchements de pioche doublés (Krang), prévention changée en marqueurs sur
- *   le permanent protégé (Vigor), couleur exclue d'un choix en arrivant (Thriving).
- * - 149 : préconstruits Commander « Counter Blitz », « The Fantastic Four » et « Mutant Menace » : marqueurs de
- *   radiation (radiation au début de la première phase principale, prolifération des joueurs), meule groupée (déclencheur
- *   `milled`, « meulée ce tour-ci »), multikicker, équiper un commandant, contrôle rendu aux propriétaires, garder un
- *   permanent de chaque type hors terrains, sort mis au-dessous de la bibliothèque, sacrifice remplacé par un renvoi en
- *   main, F/E définies par le maximum de deux montants. Correction : « la première fois que cette capacité se résout ce
- *   tour-ci » est remis à zéro à chaque tour (Nissa, Leyline Tamer et Belladonna Took ne marchaient qu'une fois par partie).
- * - 150 : PLAN-H H2a : approximations levées par les scripts (The Endstone, Hapatra, Kitesail Larcenist, Choco,
- *   Radiant Lotus, Hollow Marauder, Garruk, Veiled Butcher, Betor, Whiskervale Forerunner, Thousand Moons Smithy,
- *   Sandswirl Wanderglyph, Ojer Kaslem…).
- * - 151 : PLAN-H H2b : approximations levées par les scripts (Krenko's Buzzcrusher, Kaya, Spirits' Justice, Jetsam,
- *   Super Intelligence, Sentinel of Lost Lore, The Legend of Yangchen, Kitsune, Madame Null, Shredder's Technique…) ;
- *   le choix facultatif de chooseAmong suggère d'abord l'objet d'un autre joueur.
- * - 152 : PLAN-H H2c : approximations levées par les scripts (Finality, Black Bolt, Nightkin Ambusher, Negative Zone
- *   Portal, Mutational Advantage ; Namor, Ragavan, Sylvan Library, Expropriate, Plague of Vermin raccourcies) ;
- *   prévention des blessures sur des objets fixés à la résolution (objectReplacement preventDamage).
- * - 153 : PLAN-H H4 : choisir un joueur sans le cibler (chooseAmong sur des joueurs, au hasard ; fx.chooseOpponent) :
- *   piles séparées par l'adversaire choisi, adversaire du cadeau choisi au lancement (et gardé par les copies),
- *   Discerning Financier, Sandstone Oracle, Zuko, Conflicted, Indoraptor.
- * - 154 : PLAN-H H6 : actions de règle sur la pile (rulesTrigger, sources synthétiques rules:*) : pioche du monarque
- *   (724.2) et passage du monarque après des blessures de combat, radiation (si revérifié à la résolution), vitesse
- *   (702.179, une fois par tour).
- * - 155 : PLAN-H H3 : provocation (701.38, fx.goad, BlockRule.goadedBy) et exigences d'attaque (508.1d,
- *   mustAttackPlayer) : le plus grand nombre d'exigences satisfaites, jamais de taxe imposée ; l'IA et la déclaration
- *   par défaut les respectent (restrictions d'attaque de chaque créature comprises) ; Dack Fayden, Fast Forward, Taunt
- *   from the Rampart, Galactus, Silver Surfer, Maximum Carnage.
- * - 156 : 800.4a : une question posée pendant une résolution à un joueur qui a quitté la partie n'est pas posée ;
- *   abandon en pleine résolution (la capacité d'un joueur parti cesse d'exister)
- * - 157 : Mutant Menace : Mirelurk Queen, Nightkin Ambusher et The Master, Transcendent donnent leurs marqueurs de
- *   radiation au joueur ciblé (la cible était lue sous un autre nom)
- * - 158 : PLAN-H H5 : joueur attaqué en multijoueur (508.4 : le contrôleur choisit ce qu'attaque un permanent mis en
- *   jeu attaquant), ninjutsu (702.49c : le défenseur de la créature renvoyée), conditions sur le joueur attaqué (vous
- *   seulement ou vos planeswalkers aussi), taxe d'attaque contre vous seulement
- * - 159 : Serra's Emissary protège vos créatures du type choisi ; capacités d'équipement écrites à la main reconnues
- *   comme telles (Kíli, Freya…) ; Épuisement de Liliana the Repentant
- * - 160 : PLAN-H H8a : une seule opération « garder » (choix en ordre APNAP, puis sacrifice ou destruction simultanés
- *   ; Tragic Arrogance : le lanceur choisit), Kindred Judgment, Sunspine Lynx, Momentum Breaker et Command Bridge sur
- *   des formes communes
- * - 161 : PLAN-H H8b : statiques de joueur fusionnées (cantGainLife du joueur enchanté, blessures impossibles à
- *   prévenir, cantLose, skips, maxHandSize, lookAt, cantAttack), « ne se dégage pas » en remplacement de l'étape de
- *   dégagement (Prop Room, perte des capacités), Hedge Whisperer : vrai choix (502.3)
- * - 162 : PLAN-H H9 : « en arrivant » générique (asEnters : une boucle pour les quatre chemins d'arrivée ; une copie
- *   fait les choix de son modèle, 707.9 ; rien pour une face cachée, 708.2) ; Echoing Deeps, Cursed Mirror, Altered
- *   Ego, Sin, Dawn-Blessed Pennant, Indominus Rex, Mox Diamond
- * - 163 : Nom de carte choisi (Skyseer's Chariot, Sorcerous Spyglass, The Clone Saga) : les noms proposés et la
- *   suggestion ne s'appuient plus sur la main adverse (information cachée), mais sur les permanents
- * - 164 : Nommer une carte, une carte de terrain ou un type de créature : catalogue complet (hors de l'état de la
- *   partie), noms publics en tête, liste officielle des types de créature (205.3m) ; plus aucun nom tiré des decks
- *   adverses
- * - 165 : Audit du 07/10 : noms des cartes à plusieurs faces (709.4, 715.4, 712.8a ; « A // B » n'est pas un nom),
- *   provocation conservée malgré la perte des capacités (701.38), joueur défenseur figé au déclenchement (Namor,
- *   myriade, Specimen Freighter)
- * - 166 : Raid Bombardment blesse le joueur ou le planeswalker que la créature attaque
- * - 167 : Valeur de mana d'un objet qui a cessé d'exister : ses dernières informations connues ; un jeton déplacé hors
- *   du champ de bataille reste désigné (Zoyowa's Justice sur un jeton fait découvrir X)
- * - 168 : Molten Tide ajoute un {R} ; Virtue of Strength triple le mana ; Eclipsed Realms : les huit tribus de Lorwyn
- *   ; Talion ne suggère plus d'après des cartes exilées face cachée
- * - 169 : Hancock, Ghoulish Mayor ne se renforce plus lui-même (« chaque autre créature »)
- * - 170 : Deck Nissa, Leyline Tamer (Commander) : « permanent ciblé » sans type (Alpha Deathclaw, Galactus, The Thing,
- *   Invisible Force Field, Forge of Heroes, Resourceful Defense) ; arrivées muettes pour toute capacité qu'elles
- *   déclenchent et limitées aux sources du filtre (Elesh Norn, Mother of Machines) ; dessus de bibliothèque remis dans
- *   l'ordre choisi (lookAtTop reorder) ; pas de question quand toutes les cartes regardées doivent être prises ; émerger
- *   d'un artefact
- * - 171 : Mana : une source qui engage un autre permanent (Springleaf Drum) ne compte pas sur un permanent déjà engagé
- *   ou sacrifié pour un autre coût du même paiement (Guardian of the Great Door)
- * - 172 : Deck The Vision (Commander) : capacités activées des emblèmes (114.4, Karn, Living Legacy) ; capacité retardée
- *   « la prochaine fois que » sans durée (603.7c, `at: "next"`) ; un sort sur la pile ne fait se déclencher que ses
- *   capacités « quand vous lancez ce sort » (Ugin, Eye of the Storms) ; « valeur de mana X ou moins » vérifiée au lancer
- *   avec le X annoncé (Kozilek's Command, Here Comes a New Hero!, Agadeem's Awakening) ; un terrain que ses effets « en
- *   arrivant » mettent ailleurs compte comme joué (Scorched Ruins) ; protection hors de l'identité du commandant ; PV
- *   d'un coût calculés (War Room) ; dégagement pendant l'étape des autres joueurs selon un filtre (Unwinding Clock)
- * - 173 : Deck The Vision d'après la liste « Weight of the World » (Ancient Tomb, Candelabra of Tawnos, Mana Vault,
- *   Mishra's Workshop, Null Brooch, Sensei's Divining Top) ; cartes de réserve du jeu de proxys (Eldrazi Conscription,
- *   Foundry Inspector, Palladium Myr, Portal to Phyrexia, Super State) ; les créatures qui attaquent s'engagent avant la
- *   taxe d'attaque (508.1f, 508.1h), et celle sacrifiée pour la payer quitte le combat (Rejeton Eldrazi : le moteur
- *   plantait)
- * - 174 : Deck Dark Leo & Shredder (Commander) : ninjutsu des cartes EDH ; filtre « attaquante bloquée / non bloquée »
- *   (509.1h, Throatseeker) ; « ne peut pas avoir ni acquérir [mot-clé] », appliqué en fin de couche 6 (Archetype of
- *   Courage) ; « ne peut pas être bloquée par les créatures que ce joueur contrôle » (The Black Gate) ; peur ; myriade
- *   accordée (Legion Loyalty) ; un terrain légendaire qui se nomme « vous pouvez payer N PV » (The Black Gate)
+ * - 111: Breaking News (G6): the search of one's library is recorded in the turn log (Archive Trap).
+ * - 112: Through the Ages (G7): a mana ability can tap an artifact (`tapAnother: "artifact"`, Urza).
+ * - 113: Phyrexian mana (107.4f, G4e): each {C/P} is paid with mana, otherwise 2 life; K'rrik (`phyrexianMana`).
+ * - 114: alternative costs that make you pay life, exile cards from the hand or return a permanent (`altCost.pay`).
+ * - 115: player rules (win on impossible draw, life floor, damage like infect at 0 life, graveyard cards that can't be
+ *   targeted), "three times as much" mana replacement, N-sided die, morph (702.37).
+ * - 116: combat: a player blocks with at most N creatures, at most one creature attacks a player; destruction recorded
+ *   with the destroying player (`destroyed` trigger); hexproof of a player from a filter; retrace (702.81).
+ * - 117: madness (702.35), emerge (702.119), replicate (702.56), given escape, granted prowl, gain control of a spell,
+ *   cast only as a sorcery, copy exceptions in `entersAsCopyMods`.
+ * - 118: skipped draw step, stolen draw (Notion Thief), skipped extra turns, discard to the top of the library, generic
+ *   maximum hand size (and condition of a static ability read for its controller), life paid as chosen, mill repeated
+ *   by color, one card per type (Atraxa).
+ * - 119: token copies created by other players, filtered cascade, P/T equal to the linked cards.
+ * - 120: discard X cards as a cost, permission to play for other players, Aura attached to a random player, chosen
+ *   color added.
+ * - 121: phasing (702.26), vote and payment by another player, trigger of the next cast spell, Saga transformed into a
+ *   land with given escape.
+ * - 122: pass on the approximations (A0): "the defending player" of an attack trigger whose source doesn't attack is
+ *   the attacker's (Raid Bombardment); removing all counters no longer asks for their kind.
+ * - 123: approximations lifted by script (A1): Kellan, the Kid casts the spell, Dyadrine makes the creatures be chosen,
+ *   "when it transforms" abilities on the back face (Ultimecia, Black Chocobo), Tellah in one trigger…
+ * - 124: approximations lifted by script (A2); "do this only once each turn" checked again on resolution (two triggers
+ *   on the stack); "another card" also excludes the card of the dead creature (new id).
+ * - 125: a permanent exiled or returned as an additional cost no longer adds its mana replacement to the offered
+ *   payment (Champion of the Path, Lavaleaper); a creature that must attack but can attack no defender is no longer
+ *   required to (The Void, Storm, Windrider).
+ * - 126: generic families (A3c): distinct attackers in the turn log, mana restricted to a kind of ability (equip,
+ *   unlock, turn face up…), beheld object readable after the cost, "you / an opponent is dealt damage" from any source.
+ * - 127: generic families (A3b): maximum hand size in timestamp order, "choose both" if the additional cost is paid (a
+ *   single mode refused), a new land type replaces only the land types (205.1a, 305.7), saddles and crews added up over
+ *   the turn, enters counters as an amount.
+ * - 128: generic families (A3a): owner filter and `ownerOf` reference, last known controller of an object gone from the
+ *   battlefield this turn (`controllerOf`), different names when choosing and sacrificing as a cost, recipient of the
+ *   damage of triggers (`to`).
+ * - 129: medium families (A4b): objects of a "one or more" batch (`ref.eventObjects`), delayed ability linked to an
+ *   object for the rest of the turn (`fx.whenThisTurn`, 603.7c), "the first time each turn" recorded before the "if"
+ *   condition (`oncePerTurn: "firstEvent"`).
+ * - 130: medium families (A4a): target owned by a designated player (`TargetSpec.of`: player of the event, defending
+ *   player, player of another target), new targets of a spell with several targets, granted ability that knows the
+ *   permanent that grants it (`ref.grantor`, `CostDef.grantor`).
+ * - 131: medium families (A4c): free spell from any zone (`castPermission.freeFrom`), phases and steps added in their
+ *   place (queues `turn.addedPhases`/`addedSteps`, rank of the main phase), counters removed among several creatures
+ *   chosen by the player; the return of a creature by web-slinging is counted before the mana.
+ * - 132: printings from the table (`STA-42@<id>`, `printing.ts`) kept by `createGame` and shown by the view.
+ * - 133: Commander (PLAN-E, E2): `commander` variant (40 life, command zone, casting from it with the tax, return to
+ *   the command zone 903.9a and 903.9b, 21 commander damage); only emblems have active abilities in the command zone.
+ * - 134: free mulligan in a game with three players or more (103.5c): the first mulligan doesn't count.
+ * - 135: mechanics that cite the commander (PLAN-E, E6): mana of the commander's identity, `commander` filter,
+ *   abilities that work from the command zone (eminence), mana of an opponent's lands.
+ * - 136: mana base of the Commander decks (PLAN-E, E8): `tapAnother` of a mana ability accepts a filter (Relic of
+ *   Legends), read by the payment solver.
+ * - 137: Edgar Markov's vampires (PLAN-E, E10): ascend and the city's blessing (702.131, state-based action); the
+ *   condition of an `entersWith` that affects other permanents is checked (Vampire Socialite).
+ * - 138: Y'shtola deck (PLAN-E, E12): cumulative upkeep (702.24), printed rebound, draw trigger "except the first one
+ *   in their draw step" (`turnDraw`), zone change "of an opponent".
+ * - 139: common spells of the Commander decks (PLAN-E, E9): protection of a player ("from opponents" or "from
+ *   everything", 702.16j), "your life total can't change" (life loss prevented, 119.8: life payable 0), land back face
+ *   of a modal card played as a land (712.12), "choose one or more" (`oneOrMore`).
+ * - 140: two "like lands" sources (Exotic Orchard for two players) no longer consult each other (infinite recursion
+ *   found by the three-player Commander fuzz).
+ * - 141: 903.9b asked of the owner: a commander put into its owner's hand or library (draw included) can go to the
+ *   command zone, at the next check, as from a graveyard or exile.
+ * - 142: Path of Ancestry: scry 1 when its mana is spent to cast a creature spell that shares a creature type with your
+ *   commander (triggered effect carried by the mana, `rider.effects`; reference `commanders`); "shares a creature type
+ *   with" several objects: a type of one of them is enough.
+ * - 143: The Ur-Dragon Commander deck: a condition read on resolution sees the triggering object and event (Selvala);
+ *   myriad; marked mana kept until end of turn (Klauth) or carrying an effect produced by an effect (Arena of Glory);
+ *   eminence of a player static; command zone in references and moves (Hellkite Courser); "with the same name as" a
+ *   designated object; greatest amount among players; the payment doesn't use more sources that cost life than the
+ *   player can pay (strict fuzz); 104.4b: a loop that accumulates (tokens, triggers on the stack) is a draw, and the
+ *   choices made during the loop don't break it.
+ * - 144: free mulligan in any Commander game, duel included (rule of the format); elsewhere, with three players or more
+ *   (103.5c).
+ * - 145: Rakdos, Lord of Riots Commander deck: "for each player" (`nth` reference), secretly chosen numbers, two costs
+ *   to choose from for "unless they pay", annihilator and unearth read from the text, manifest from the hand, spell
+ *   copy with starting loyalty, controlled turn followed by an extra turn, targets with different mana values, search
+ *   bounded by an amount; a sacrificed card is followed into its new zone by the triggers of its sacrifice.
+ * - 146: "discard a card or pay {2}" (Titania): the offered payment takes into account the commander tax and the extra
+ *   costs (strict fuzz).
+ * - 147: modal card whose front and back are lands (Pathways): the player chooses the played face (`playLand` and
+ *   `back`).
+ * - 148: "Multiverse Reforged" Commander precon: monarch (724: draw at the end step, transfer through combat damage,
+ *   departure of the monarch), toxic (702.164), piles separated by the opponent, reveal in another player's library,
+ *   restriction "can't attack your Jaces", protection of a player from a filter, "until that player's next turn"
+ *   effects, variable life paid, unused mana and poison counters as amounts; the trigger of grouped combat damage
+ *   passes on the creatures concerned. "Turtle Power!" precon: squad (702.157), fuse (702.102), evolve checked on
+ *   triggering (comparison of amounts), X of a permanent known as soon as it enters, artifact mana spent, tokens that
+ *   attack a designated player, copies sacrificed at end of combat, doubled draw triggers (Krang), prevention changed
+ *   into counters on the protected permanent (Vigor), color excluded from a choice on entering (Thriving).
+ * - 149: "Counter Blitz", "The Fantastic Four" and "Mutant Menace" Commander precons: rad counters (radiation at the
+ *   beginning of the precombat main phase, proliferate of players), grouped mill (`milled` trigger, "milled this
+ *   turn"), multikicker, equip a commander, control given back to the owners, keep a permanent of each nonland type,
+ *   spell put on the bottom of the library, sacrifice replaced by a return to hand, P/T defined by the maximum of two
+ *   amounts. Fix: "the first time this ability resolves this turn" is reset each turn (Nissa, Leyline Tamer and
+ *   Belladonna Took only worked once per game).
+ * - 150: PLAN-H H2a: approximations lifted by the scripts (The Endstone, Hapatra, Kitesail Larcenist, Choco, Radiant
+ *   Lotus, Hollow Marauder, Garruk, Veiled Butcher, Betor, Whiskervale Forerunner, Thousand Moons Smithy, Sandswirl
+ *   Wanderglyph, Ojer Kaslem…).
+ * - 151: PLAN-H H2b: approximations lifted by the scripts (Krenko's Buzzcrusher, Kaya, Spirits' Justice, Jetsam, Super
+ *   Intelligence, Sentinel of Lost Lore, The Legend of Yangchen, Kitsune, Madame Null, Shredder's Technique…); the
+ *   optional choice of chooseAmong suggests another player's object first.
+ * - 152: PLAN-H H2c: approximations lifted by the scripts (Finality, Black Bolt, Nightkin Ambusher, Negative Zone
+ *   Portal, Mutational Advantage; Namor, Ragavan, Sylvan Library, Expropriate, Plague of Vermin shortened); prevention
+ *   of damage to objects fixed on resolution (objectReplacement preventDamage).
+ * - 153: PLAN-H H4: choose a player without targeting them (chooseAmong on players, at random; fx.chooseOpponent):
+ *   piles separated by the chosen opponent, opponent of the gift chosen on casting (and kept by the copies), Discerning
+ *   Financier, Sandstone Oracle, Zuko, Conflicted, Indoraptor.
+ * - 154: PLAN-H H6: rules actions on the stack (rulesTrigger, synthetic sources rules:*): the monarch's draw (724.2)
+ *   and the monarch changing after combat damage, radiation (if checked again on resolution), speed (702.179, once each
+ *   turn).
+ * - 155: PLAN-H H3: goad (701.38, fx.goad, BlockRule.goadedBy) and attack requirements (508.1d, mustAttackPlayer): the
+ *   largest number of requirements satisfied, never a tax imposed; the AI and the default declaration respect them
+ *   (attack restrictions of each creature included); Dack Fayden, Fast Forward, Taunt from the Rampart, Galactus,
+ *   Silver Surfer, Maximum Carnage.
+ * - 156: 800.4a: a question asked during a resolution of a player who has left the game is not asked; concession in the
+ *   middle of a resolution (the ability of a departed player ceases to exist)
+ * - 157: Mutant Menace: Mirelurk Queen, Nightkin Ambusher and The Master, Transcendent give their rad counters to the
+ *   targeted player (the target was read under another name)
+ * - 158: PLAN-H H5: attacked player in multiplayer (508.4: the controller chooses what a permanent put onto the
+ *   battlefield attacking attacks), ninjutsu (702.49c: the defender of the returned creature), conditions on the
+ *   attacked player (you only or your planeswalkers too), attack tax against you only
+ * - 159: Serra's Emissary protects your creatures of the chosen type; equip abilities written by hand recognized as
+ *   such (Kíli, Freya…); Exhaust of Liliana the Repentant
+ * - 160: PLAN-H H8a: a single "keep" operation (choice in APNAP order, then simultaneous sacrifice or destruction;
+ *   Tragic Arrogance: the caster chooses), Kindred Judgment, Sunspine Lynx, Momentum Breaker and Command Bridge on
+ *   common forms
+ * - 161: PLAN-H H8b: player statics merged (cantGainLife of the enchanted player, damage that can't be prevented,
+ *   cantLose, skips, maxHandSize, lookAt, cantAttack), "doesn't untap" as a replacement of the untap step (Prop Room,
+ *   loss of abilities), Hedge Whisperer: real choice (502.3)
+ * - 162: PLAN-H H9: generic "as it enters" (asEnters: one loop for the four paths of entering; a copy makes the choices
+ *   of its model, 707.9; nothing for a face-down one, 708.2); Echoing Deeps, Cursed Mirror, Altered Ego, Sin,
+ *   Dawn-Blessed Pennant, Indominus Rex, Mox Diamond
+ * - 163: Chosen card name (Skyseer's Chariot, Sorcerous Spyglass, The Clone Saga): the offered names and the suggestion
+ *   no longer rely on the opponent's hand (hidden information), but on the permanents
+ * - 164: Naming a card, a land card or a creature type: full catalog (outside the game state), public names first,
+ *   official list of creature types (205.3m); no name taken from the opponents' decks anymore
+ * - 165: Audit of 2026-10-07: names of cards with several faces (709.4, 715.4, 712.8a; "A // B" is not a name), goad
+ *   kept despite the loss of abilities (701.38), defending player frozen on triggering (Namor, myriad, Specimen
+ *   Freighter)
+ * - 166: Raid Bombardment damages the player or planeswalker that the creature attacks
+ * - 167: Mana value of an object that has ceased to exist: its last known information; a token moved off the
+ *   battlefield stays designated (Zoyowa's Justice on a token makes you discover X)
+ * - 168: Molten Tide adds an {R}; Virtue of Strength triples the mana; Eclipsed Realms: the eight tribes of Lorwyn;
+ *   Talion no longer suggests based on cards exiled face down
+ * - 169: Hancock, Ghoulish Mayor no longer pumps itself ("each other creature")
+ * - 170: Nissa, Leyline Tamer deck (Commander): "target permanent" without a type (Alpha Deathclaw, Galactus, The
+ *   Thing, Invisible Force Field, Forge of Heroes, Resourceful Defense); silenced arrivals for any ability they trigger
+ *   and limited to the sources of the filter (Elesh Norn, Mother of Machines); top of the library put back in the
+ *   chosen order (lookAtTop reorder); no question when all the cards looked at must be taken; emerge from an artifact
+ * - 171: Mana: a source that taps another permanent (Springleaf Drum) doesn't count on a permanent already tapped or
+ *   sacrificed for another cost of the same payment (Guardian of the Great Door)
+ * - 172: The Vision deck (Commander): activated abilities of emblems (114.4, Karn, Living Legacy); delayed ability "the
+ *   next time" without a duration (603.7c, `at: "next"`); a spell on the stack triggers only its "when you cast this
+ *   spell" abilities (Ugin, Eye of the Storms); "mana value X or less" checked on casting with the announced X
+ *   (Kozilek's Command, Here Comes a New Hero!, Agadeem's Awakening); a land that its "as it enters" effects put
+ *   elsewhere counts as played (Scorched Ruins); protection outside the commander's identity; life of a cost computed
+ *   (War Room); untapping during other players' untap step according to a filter (Unwinding Clock)
+ * - 173: The Vision deck after the "Weight of the World" list (Ancient Tomb, Candelabra of Tawnos, Mana Vault, Mishra's
+ *   Workshop, Null Brooch, Sensei's Divining Top); reserve cards of the proxy set (Eldrazi Conscription, Foundry
+ *   Inspector, Palladium Myr, Portal to Phyrexia, Super State); attacking creatures become tapped before the attack tax
+ *   (508.1f, 508.1h), and the one sacrificed to pay it leaves combat (Eldrazi Spawn: the engine crashed)
+ * - 174: Dark Leo & Shredder deck (Commander): ninjutsu of the EDH cards; filter "blocked / unblocked attacking"
+ *   (509.1h, Throatseeker); "can't have or gain [keyword]", applied at the end of layer 6 (Archetype of Courage);
+ *   "can't be blocked by creatures that player controls" (The Black Gate); fear; granted myriad (Legion Loyalty); a
+ *   legendary land that refers to itself by name in "you may pay N life" (The Black Gate)
  */
 export const RULES_VERSION = 174;
 
-/** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
+/** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;
 
 export interface GameRecord {
@@ -493,29 +480,29 @@ export interface GameRecord {
   version: typeof RECORD_VERSION;
   seed: number;
   /**
-   * Premier joueur imposé à la création (absent : tiré au sort par le moteur, ce qui consomme son hasard ; le rejeu doit
-   * refaire ce tirage, pas le remplacer par son résultat).
+   * Starting player imposed at creation (absent: drawn at random by the engine, which consumes its randomness; the
+   * replay must redo this draw, not replace it with its result).
    */
   startingPlayer?: PlayerId;
   startingLife?: number;
-  /** Variante de règles (PLAN-E : `commander`). */
+  /** Rules variant (PLAN-E: `commander`). */
   variant?: GameVariant;
   /**
-   * `printings` : impression choisie pour chaque carte du deck (même ordre ; absente si aucune) ; `commanders` : indices
-   * des commandants dans le deck (Commander).
+   * `printings`: printing chosen for each card of the deck (same order; absent if none); `commanders`: indices of the
+   * commanders in the deck (Commander).
    */
   players: { id: PlayerId; name: string; deck: string[]; printings?: (string | null)[]; commanders?: number[] }[];
-  /** Décisions appliquées, dans l'ordre : [joueur qui a décidé, décision]. */
+  /** Applied decisions, in order: [player who decided, decision]. */
   decisions: [PlayerId, Decision][];
-  /** Date de début (ISO), pour l'affichage. */
+  /** Start date (ISO), for display. */
   createdAt?: string;
-  /** Version des règles du moteur qui a joué la partie (absente : 0). */
+  /** Version of the engine rules that played the game (absent: 0). */
   rules?: number;
-  /** Points de contrôle : [nombre de décisions appliquées, `outcomeHash` de l'état obtenu]. */
+  /** Checkpoints: [number of applied decisions, `outcomeHash` of the resulting state]. */
   checkpoints?: [number, string][];
 }
 
-/** Crée la partie et l'enregistrement qui permettra de la rejouer. */
+/** Creates the game and the record that will allow replaying it. */
 export function createRecordedGame(opts: GameOptions): StepResult & { record: GameRecord } {
   const result = createGame(opts);
   const record: GameRecord = {
@@ -541,8 +528,8 @@ export function createRecordedGame(opts: GameOptions): StepResult & { record: Ga
 }
 
 /**
- * Ajoute une décision acceptée à l'enregistrement, avec un point de contrôle toutes les `every` décisions
- * (`CHECKPOINT_EVERY` par défaut ; 1 pour la sauvegarde d'une partie locale, vérifiée décision par décision à la reprise).
+ * Adds an accepted decision to the record, with a checkpoint every `every` decisions (`CHECKPOINT_EVERY` by default;
+ * 1 for the save of a local game, checked decision by decision on resume).
  */
 export function recordDecision(
   record: GameRecord,
@@ -557,7 +544,7 @@ export function recordDecision(
   record.checkpoints = [...(record.checkpoints ?? []), [n, outcomeHash(after)]];
 }
 
-/** Vérifie la forme d'un enregistrement reçu (fichier importé, disque du serveur). */
+/** Checks the shape of a received record (imported file, server disk). */
 export function isGameRecord(x: unknown): x is GameRecord {
   const r = x as Partial<GameRecord> | null;
   return (
@@ -603,7 +590,7 @@ function initial(record: GameRecord, resolve: (name: string) => CardDef): StepRe
   });
 }
 
-/** Rejoue la partie jusqu'à la décision `upTo` (exclue ; toutes par défaut) : état et événements produits. */
+/** Replays the game up to decision `upTo` (excluded; all by default): state and events produced. */
 export function replayGame(
   record: GameRecord,
   resolve: (name: string) => CardDef,
@@ -618,7 +605,7 @@ export function replayGame(
   return { state, events: all };
 }
 
-/** Tous les états de la partie : le départ, puis un par décision (replays pas à pas). */
+/** All the states of the game: the start, then one per decision (step-by-step replays). */
 export function replayStates(record: GameRecord, resolve: (name: string) => CardDef): GameState[] {
   let { state } = initial(record, resolve);
   const out = [state];
@@ -629,19 +616,19 @@ export function replayStates(record: GameRecord, resolve: (name: string) => Card
   return out;
 }
 
-/** Rejeu vérifié : où et pourquoi la partie cesse d'être celle qui a été enregistrée. */
+/** Checked replay: where and why the game stops being the one that was recorded. */
 export interface ReplayDivergence {
-  /** Nombre de décisions appliquées sans écart. */
+  /** Number of decisions applied without discrepancy. */
   index: number;
   reason: "error" | "checkpoint";
   message: string;
 }
 
 /**
- * Rejoue l'enregistrement en vérifiant ses points de contrôle, et s'arrête à la première divergence : décision refusée
- * (ou erreur du moteur), ou empreinte différente. `onStep` reçoit chaque état validé (le départ compris) et les événements
- * qui y mènent. Seuls les états antérieurs au point de contrôle qui échoue sont montrés comme sûrs : l'écart peut dater
- * d'avant lui, mais pas d'avant le point de contrôle précédent.
+ * Replays the record checking its checkpoints, and stops at the first divergence: refused decision (or engine error),
+ * or different fingerprint. `onStep` receives each validated state (the start included) and the events that lead to
+ * it. Only the states before the failing checkpoint are shown as safe: the discrepancy may date from before it, but
+ * not from before the previous checkpoint.
  */
 export function replayChecked(
   record: GameRecord,
@@ -674,7 +661,7 @@ export function replayChecked(
       return {
         state: verified.state,
         applied: verified.applied,
-        divergence: { index: verified.applied, reason: "checkpoint", message: `écart constaté à la décision ${i + 1}` },
+        divergence: { index: verified.applied, reason: "checkpoint", message: `discrepancy found at decision ${i + 1}` },
       };
     }
     flush();

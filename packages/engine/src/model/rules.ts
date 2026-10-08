@@ -1,71 +1,71 @@
-/** Types du moteur — Filtres, cibles, déclencheurs, conditions, références et montants. Réexportés par `types.ts`. */
+/** Engine types — filters, targets, triggers, conditions, references and amounts. Re-exported by `types.ts`. */
 import type { CardType, CastVia, Color, Keyword, ManaType, PlayerId, Step, TurnLogQuery, Zone } from "../types";
 
 export interface TargetSpec {
   id: string;
   filter: TargetFilter;
-  /** Valeur de mana totale des cibles au plus égale à N (Scout for Survivors). */
+  /** Total mana value of the targets at most N (Scout for Survivors). */
   maxTotalManaValue?: number;
-  /** … ou à ce montant, évalué quand la capacité réflexive est mise sur la pile (Fire Lord Sozin : X payé). */
+  /** … or at most this amount, evaluated when the reflexive ability is put on the stack (Fire Lord Sozin: X paid). */
   maxTotalManaValueAmount?: Amount;
-  /** « jusqu'à une cible » */
+  /** "up to one target" */
   optional?: boolean;
   label?: string;
-  /** Nombre de cibles pour ce mot « cible » (« jusqu'à deux créatures ciblées ») ; 1 par défaut. */
+  /** Number of targets for this word "target" ("up to two target creatures"); 1 by default. */
   count?: number;
-  /** Nombre minimal de cibles quand `count` > 1 (« une ou deux cibles » : 1) ; `count` par défaut. */
+  /** Minimum number of targets when `count` > 1 ("one or two targets": 1); `count` by default. */
   minCount?: number;
-  /** Toutes les cibles de ce mot « cible » appartiennent au même joueur (« d'un même cimetière »). */
+  /** All targets of this word "target" belong to the same player ("from a single graveyard"). */
   samePlayer?: boolean;
-  /** Nombre de cibles si le sort est kické (« si ce sort a été kické, à la place n'importe quel nombre de cibles »). */
+  /** Number of targets if the spell was kicked ("if this spell was kicked, any number of targets instead"). */
   kickedCount?: number;
-  /** Ces cibles doivent être différentes de celles d'autres mots « cible » (« deux autres cibles »). */
+  /** These targets must differ from those of other words "target" ("two other targets"). */
   otherThan?: string[];
-  /** Capacité déclenchée : la cible n'est pas l'objet de l'événement (« une créature autre que cette créature »). */
+  /** Triggered ability: the target is not the event object ("a creature other than this creature"). */
   notEventObject?: boolean;
-  /** Chaque cible doit être attachée à une cible d'un autre mot « cible » (« Équipement attaché à cette créature »). */
+  /** Each target must be attached to a target of another word "target" ("Equipment attached to that creature"). */
   attachedToTarget?: string;
-  /** Cibles contrôlées par des joueurs différents (« contrôlées par des joueurs différents »). */
+  /** Targets controlled by different players ("controlled by different players"). */
   differentPlayers?: boolean;
-  /** Les cibles partagent un type de créature (Unbury : « deux cartes de créature ciblées qui partagent un type »). */
+  /** The targets share a creature type (Unbury: "two target creature cards that share a creature type"). */
   shareCreatureType?: boolean;
   /**
-   * Cibles deux à deux différentes par cette caractéristique : `name`, noms différents (Behold the Sinister Six! :
-   * « cartes de créature ciblées de noms différents ») ; `manaValue`, valeurs de mana différentes (Agadeem's Awakening).
+   * Targets pairwise different in this characteristic: `name`, different names (Behold the Sinister Six!:
+   * "target creature cards with different names"); `manaValue`, different mana values (Agadeem's Awakening).
    */
   distinct?: "name" | "manaValue";
-  /** Nombre de cibles variable (« jusqu'à X créatures ciblées ») : remplace `count` au moment de choisir les cibles. */
+  /** Variable number of targets ("up to X target creatures"): replaces `count` when the targets are chosen. */
   countAmount?: Amount;
-  /** Filtre si le sort est kické ou si le cadeau est promis (« à la place, un permanent non-terrain ciblé »). */
+  /** Filter if the spell was kicked or the gift was promised ("target nonland permanent instead"). */
   kickedFilter?: TargetFilter;
-  /** Valeur de mana exacte évaluée quand la capacité réflexive est mise sur la pile (Wishing Well). */
+  /** Exact mana value evaluated when the reflexive ability is put on the stack (Wishing Well). */
   manaValueAmount?: Amount;
   /**
-   * Valeur de mana maximale évaluée au ciblage, puis de nouveau à la résolution (608.2b) : « une carte de créature de
-   * valeur de mana X ou moins, X étant les points de vie gagnés ce tour-ci » (Moseo).
+   * Maximum mana value evaluated on targeting, then again on resolution (608.2b): "a creature card with mana value X or
+   * less, where X is the amount of life you gained this turn" (Moseo).
    */
   maxManaValueAmount?: Amount;
   /**
-   * Exactement X cibles, X étant choisi pour le sort ou la capacité (Rot-Curse Rakshasa : « X créatures ciblées ») ;
-   * `"upTo"` : jusqu'à X cibles (Divergent Equation).
+   * Exactly X targets, X being chosen for the spell or ability (Rot-Curse Rakshasa: "X target creatures");
+   * `"upTo"`: up to X targets (Divergent Equation).
    */
   countX?: boolean | "upTo";
   /**
-   * « … que ce joueur contrôle », « du cimetière de ce joueur » : chaque cible est tenue (contrôlée sur le champ de bataille
-   * ou sur la pile, possédée ailleurs) par un joueur désigné : le joueur de l'événement (le joueur blessé : Fear of Burning
-   * Alive ; celui qui détruit : Karmic Justice), le joueur défenseur (Fear of Falling, Chorale of the Void), ou le joueur
-   * choisi pour un autre mot « cible » du même sort ou de la même capacité (`ref.target("p")` : Rite of Renewal). Évaluée
-   * au ciblage (`concreteSpec`, qui la remplace par `ofPlayers`), puis de nouveau à la résolution (608.2b).
+   * "… that player controls", "from that player's graveyard": each target is held (controlled on the battlefield or on
+   * the stack, owned elsewhere) by a designated player: the event player (the damaged player: Fear of Burning Alive; the
+   * one who destroys: Karmic Justice), the defending player (Fear of Falling, Chorale of the Void), or the player chosen
+   * for another word "target" of the same spell or ability (`ref.target("p")`: Rite of Renewal). Evaluated on targeting
+   * (`concreteSpec`, which replaces it with `ofPlayers`), then again on resolution (608.2b).
    */
   of?: Ref;
-  /** `of` évaluée : les joueurs qui peuvent tenir les cibles. */
+  /** `of` evaluated: the players who may hold the targets. */
   ofPlayers?: PlayerId[];
 }
 
 /**
- * Cartes exilées face visible : `withWarp` : qui ont la distorsion (Blade of the Swarm) ; `warped` : exilées par la
- * distorsion (Close Encounter : « une carte distordue ») ; `own` : que vous possédez (`true`) ou non (`false`, Sentinel of
- * Lost Lore) ; `linked` : exilées « avec » la source (Mimeoplasm).
+ * Face-up exiled cards: `withWarp`: that have warp (Blade of the Swarm); `warped`: exiled by warp (Close Encounter:
+ * "a warped card"); `own`: that you own (`true`) or not (`false`, Sentinel of Lost Lore); `linked`: exiled "with" the
+ * source (Mimeoplasm).
  */
 export interface ExiledFilter {
   filter?: ObjectFilter;
@@ -78,17 +78,17 @@ export interface ExiledFilter {
 export interface TargetFilter {
   players?: "any" | "you" | "opponent";
   objects?: ObjectFilter;
-  /** Cartes dans un cimetière (« carte de créature ciblée de votre cimetière »). */
+  /** Cards in a graveyard ("target creature card from your graveyard"). */
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
-  /** Cartes exilées face visible (Blade of the Swarm : « carte exilée ciblée avec la distorsion »). */
+  /** Face-up exiled cards (Blade of the Swarm: "target exiled card with warp"). */
   exiled?: ExiledFilter;
-  /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
+  /** Spells on the stack ("counter target creature spell"). */
   spells?: ObjectFilter;
-  /** … qui ciblent un permanent correspondant (Fugitive Droid : « un sort qui cible un artefact ou une créature que vous
-   * contrôlez »). */
+  /** … that target a matching permanent (Fugitive Droid: "a spell that targets an artifact or creature you
+   * control"). */
   spellsTargeting?: ObjectFilter;
-  /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
-  /** `controller` : que vous contrôlez ; `source` : dont la source correspond (Scientist Supreme : « d'une source artefact »). */
+  /** Spells or abilities on the stack with a single target (Bolt Bend). */
+  /** `controller`: that you control; `source`: whose source matches (Scientist Supreme: "from an artifact source"). */
   stackItems?: {
     singleTarget?: boolean;
     abilitiesOnly?: boolean;
@@ -99,185 +99,184 @@ export interface TargetFilter {
 }
 
 export interface ObjectFilter {
-  /** L'objet doit avoir au moins un de ces types. */
+  /** The object must have at least one of these types. */
   types?: CardType[];
-  /** Un commandant (903.3, PLAN-E : « si vous contrôlez un commandant », Fierce Guardianship). */
+  /** A commander (903.3, PLAN-E: "if you control a commander", Fierce Guardianship). */
   commander?: boolean;
-  /** L'objet ne doit avoir aucun de ces types (« non-créature »…). */
+  /** The object must have none of these types ("noncreature"…). */
   notTypes?: CardType[];
   subtype?: string;
   controller?: "you" | "opponent";
   keyword?: Keyword;
-  /** « un autre » : exclut la source de la capacité. */
+  /** "another": excludes the source of the ability. */
   other?: boolean;
-  /** La source elle-même (« quand cette créature meurt, si ce n'était pas un Démon »). */
+  /** The source itself ("when this creature dies, if it wasn't a Demon"). */
   self?: boolean;
   /**
-   * Attaches relatives à la source (un seul champ, PLAN-H H10) : `host`, le permanent auquel la source est attachée (« la
-   * créature équipée ») ; `notHost`, tout autre que lui (« autre que la créature enchantée ») ; `toSource`, attaché à la
-   * source (« chaque Aura et Équipement attaché à Kellan ») ; `toHost`, attaché au permanent auquel la source est attachée
-   * (With Great Power : « chaque Aura et Équipement attachés à elle ») ; `wasToSource`, était attaché à la source quand
-   * celle-ci a quitté le champ de bataille (Zack Fair). `host`, `notHost` et `toHost` se lisent sur le champ de bataille
-   * (`matchesObjectFilter`, et les déclencheurs pour `host`) ; `toSource` et `wasToSource` sur toute vue.
+   * Attachments relative to the source (a single field, PLAN-H H10): `host`, the permanent the source is attached to
+   * ("equipped creature"); `notHost`, any other than it ("other than enchanted creature"); `toSource`, attached to the
+   * source ("each Aura and Equipment attached to Kellan"); `toHost`, attached to the permanent the source is attached to
+   * (With Great Power: "each Aura and Equipment attached to it"); `wasToSource`, was attached to the source when it left
+   * the battlefield (Zack Fair). `host`, `notHost` and `toHost` are read on the battlefield (`matchesObjectFilter`, and
+   * the triggers for `host`); `toSource` and `wasToSource` on any view.
    */
   attached?: "host" | "notHost" | "toSource" | "toHost" | "wasToSource";
   /**
-   * Équipage ou monture de ce tour-ci : `bySource`, un Véhicule que la source a piloté (Balthier and Fran) ; `source`, une
-   * créature qui a piloté ou monté la source (Giant Beaver : « une créature qui l'a montée ce tour-ci »).
+   * Crew or saddle this turn: `bySource`, a Vehicle the source crewed (Balthier and Fran); `source`, a creature that
+   * crewed or saddled the source (Giant Beaver: "a creature that saddled it this turn").
    */
   crew?: "bySource" | "source";
   /**
-   * Comparaisons dynamiques d'une caractéristique de l'objet (PLAN-H H10 ; les bornes fixes restent `minPower`,
-   * `maxManaValue`…). Un montant (`to`) est évalué par un seul résolveur, `resolveCompare` (`effects.ts`), du point de
-   * vue de la source : pendant une résolution (`withX`), avec le contexte de ce qui se résout (son X, ses cibles) ;
-   * ailleurs (`resolveFilter` : cibles, statiques, déclencheurs), avec la source seule, et le X est celui du permanent
-   * (le X du sort qui l'a mis en jeu). Voir `FilterCompare`.
+   * Dynamic comparisons of a characteristic of the object (PLAN-H H10; fixed bounds stay `minPower`, `maxManaValue`…).
+   * An amount (`to`) is evaluated by a single resolver, `resolveCompare` (`effects.ts`), from the source's point of
+   * view: during a resolution (`withX`), with the context of what is resolving (its X, its targets); elsewhere
+   * (`resolveFilter`: targets, statics, triggers), with the source alone, and X is the permanent's (the X of the spell
+   * that put it onto the battlefield). See `FilterCompare`.
    */
   compare?: FilterCompare[];
-  /** A le même nom qu'un permanent correspondant (Key to the Side-Door : « une carte légendaire du même nom qu'un
-   * permanent légendaire que vous contrôlez »). */
+  /** Has the same name as a matching permanent (Key to the Side-Door: "a legendary card with the same name as a
+   * legendary permanent you control"). */
   sameNameAs?: ObjectFilter;
-  /** N'a pas le même nom qu'un autre permanent correspondant (« qu'un jeton que vous contrôlez », Yenna). */
+  /** Doesn't have the same name as another matching permanent ("as a token you control", Yenna). */
   notSameNameAs?: ObjectFilter;
   /**
-   * Partage un type de créature avec l'objet désigné, évalué à la résolution par `withX` (références de zone, `moveAll`,
-   * recherche ; Shared Animosity : l'objet de l'événement).
+   * Shares a creature type with the designated object, evaluated on resolution by `withX` (zone references, `moveAll`,
+   * search; Shared Animosity: the event object).
    */
   sharesCreatureTypeWith?: Ref;
-  /** Du même nom que l'objet désigné, résolu par `withX` (Dragonlord Kolaghan : « du même nom qu'une carte de son cimetière »). */
+  /** Same name as the designated object, resolved by `withX` (Dragonlord Kolaghan: "with the same name as a card in their graveyard"). */
   nameOf?: Ref;
-  /** Créature équipée (au moins un Équipement attaché). */
+  /** Equipped creature (at least one Equipment attached). */
   equipped?: boolean;
-  /** Modifié (700.9) : porte un marqueur, est équipé, ou enchanté par une Aura que son contrôleur contrôle. */
+  /** Modified (700.9): has a counter on it, is equipped, or is enchanted by an Aura its controller controls. */
   modified?: boolean;
-  /** Enchanté par au moins une Aura (`true`), par une Aura que vous contrôlez (`byYou`), ou par aucune (`false`). */
+  /** Enchanted by at least one Aura (`true`), by an Aura you control (`byYou`), or by none (`false`). */
   enchanted?: boolean | "byYou";
-  /** Force minimale (« créature de force 4 ou plus »). */
+  /** Minimum power ("creature with power 4 or greater"). */
   minPower?: number;
   maxManaValue?: number;
   manaValue?: number;
   name?: string;
   tapped?: boolean;
   colors?: Color[];
-  /** Porte au moins un marqueur de ce type. */
+  /** Has at least one counter of this kind. */
   withCounter?: string;
   /**
-   * Créature attaquante ; `"you"` : qui vous attaque (vous, pas vos planeswalkers) ; `"opponent"` : qui attaque l'un de vos
-   * adversaires (un joueur) ; une référence : qui attaque l'un des joueurs désignés (résolue par `withX` en liste de
-   * joueurs).
+   * Attacking creature; `"you"`: attacking you (you, not your planeswalkers); `"opponent"`: attacking one of your
+   * opponents (a player); a reference: attacking one of the designated players (resolved by `withX` into a list of
+   * players).
    */
   attacking?: boolean | "you" | "opponent" | Ref | PlayerId[];
-  /** Bloqueuse. */
+  /** Blocking. */
   blocking?: boolean;
   /**
-   * Attaquante bloquée (`true`) ou non bloquée (`false` : une fois les bloqueurs déclarés, 509.1h ; Throatseeker :
-   * « les Ninjas attaquants non bloqués que vous contrôlez »). Avant la déclaration des bloqueurs, aucune ne correspond.
+   * Blocked (`true`) or unblocked (`false`: once blockers are declared, 509.1h; Throatseeker: "unblocked attacking
+   * Ninjas you control") attacker. Before blockers are declared, none matches.
    */
   blocked?: boolean;
-  /** Multicolore (au moins deux couleurs). */
-  /** Nombre exact de couleurs (« monocolore » : 1). */
+  /** Multicolored (at least two colors). */
+  /** Exact number of colors ("monocolored": 1). */
   colorCount?: number;
-  /** Ne correspond pas à ce filtre. */
+  /** Doesn't match this filter. */
   not?: ObjectFilter;
   multicolored?: boolean;
-  /** Sort dont le mana dépensé est inférieur à sa valeur de mana (Unravel). */
+  /** Spell whose mana spent is less than its mana value (Unravel). */
   manaSpentBelowValue?: boolean;
-  /** A subi des blessures ce tour-ci. */
+  /** Was dealt damage this turn. */
   damaged?: boolean;
-  /** Au moins un de ces sous-types (« Chat ou Chien »…). */
+  /** At least one of these subtypes ("Cat or Dog"…). */
   anySubtype?: string[];
   notSubtype?: string;
   minManaValue?: number;
   maxPower?: number;
-  /** Terrain de base (`false` : « non de base »). */
+  /** Basic land (`false`: "nonbasic"). */
   basic?: boolean;
-  /** Carte permanente (hors pile) : artefact, créature, enchantement, terrain, planeswalker, bataille. */
+  /** Permanent card (off the stack): artifact, creature, enchantment, land, planeswalker, battle. */
   permanent?: boolean;
-  /** Au moins un de ces filtres (« artefact, enchantement ou créature avec le vol »). */
+  /** At least one of these filters ("artifact, enchantment, or creature with flying"). */
   anyOf?: ObjectFilter[];
-  /** Jeton (`false` : « non-jeton »). */
+  /** Token (`false`: "nontoken"). */
   token?: boolean;
   minToughness?: number;
-  /** A reçu des blessures de la source ce tour-ci (Predator Ooze). */
+  /** Was dealt damage by the source this turn (Predator Ooze). */
   damagedBySource?: boolean;
-  /** Du type de créature / de la couleur choisis par la source en arrivant. */
+  /** Of the creature type / color chosen by the source as it entered. */
   subtypeChosen?: boolean;
   colorChosen?: boolean;
-  /** Mise dans sa zone actuelle ce tour-ci (« carte mise dans un cimetière ce tour-ci »). */
+  /** Put into its current zone this turn ("card put into a graveyard this turn"). */
   enteredThisTurn?: boolean;
-  /** Du type de carte choisi par la source (Arachne : un mode d'arrivée dont les options sont des types de carte). */
+  /** Of the card type chosen by the source (Arachne: an entry mode whose options are card types). */
   typeChosen?: boolean;
-  /** Mise dans sa zone depuis le champ de bataille ce tour-ci (Supper for Spiders). */
+  /** Put into its zone from the battlefield this turn (Supper for Spiders). */
   fromBattlefieldThisTurn?: boolean;
-  /** Carte défaussée ce tour-ci (chaos, Mayhem : « si vous l'avez défaussée ce tour-ci »). */
+  /** Card discarded this turn (Mayhem: "if you discarded it this turn"). */
   discardedThisTurn?: boolean;
-  /** Légendaire (true) ou non légendaire (false). */
+  /** Legendary (true) or nonlegendary (false). */
   legendary?: boolean;
-  /** Sort préparé (copie lancée depuis l'exil, Codie). */
+  /** Prepared spell (copy cast from exile, Codie). */
   preparedSpell?: boolean;
-  /** Lancé pour son coût de distorsion. */
+  /** Cast for its warp cost. */
   warped?: boolean;
-  /** Permanent préparé. */
+  /** Prepared permanent. */
   prepared?: boolean;
-  /** A attaqué ce tour-ci. */
+  /** Attacked this turn. */
   attackedThisTurn?: boolean;
-  /** Carte mise dans le cimetière depuis la bibliothèque ce tour-ci (meulée : Raul, Tato Farmer, The Master). */
+  /** Card put into the graveyard from the library this turn (milled: Raul, Tato Farmer, The Master). */
   milledThisTurn?: boolean;
   maxToughness?: number;
   /**
-   * Possédé par vous ou par un adversaire, dans toute zone (« que vous possédez » : Get Out ; « que vous possédez mais ne
-   * contrôlez pas », avec `controller: "opponent"` : Coveted Falcon ; « que vous contrôlez mais ne possédez pas » :
-   * Laughing Jasper Flint).
+   * Owned by you or by an opponent, in any zone ("that you own": Get Out; "you own but don't control", with
+   * `controller: "opponent"`: Coveted Falcon; "you control but don't own": Laughing Jasper Flint).
    */
   owner?: "you" | "opponent";
-  /** Aucun mana n'a été dépensé pour le lancer (ou il n'a pas été lancé) : Satoru. */
+  /** No mana was spent to cast it (or it wasn't cast): Satoru. */
   noManaSpent?: boolean;
-  /** Aucun de ces sous-types (« non-hors-la-loi » : Shoot the Sheriff). */
+  /** None of these subtypes ("non-Outlaw": Shoot the Sheriff). */
   noneOfSubtypes?: string[];
-  /** Carte sans capacité (Fang-Druid Summoner, Rise from the Wreck). */
+  /** Card with no abilities (Fang-Druid Summoner, Rise from the Wreck). */
   noAbilities?: boolean;
-  /** Permanent face cachée (Duskmourn). */
+  /** Face-down permanent (Duskmourn). */
   faceDown?: boolean;
   /**
-   * A au moins une capacité activée (The Enigma Jewel) ; `"mana"` : au moins une capacité de mana (605.1a, Moonsilver
-   * Key : « une carte d'artefact avec une capacité de mana »).
+   * Has at least one activated ability (The Enigma Jewel); `"mana"`: at least one mana ability (605.1a, Moonsilver
+   * Key: "an artifact card with a mana ability").
    */
   withActivatedAbility?: boolean | "mana";
-  /** Valeur de mana de la parité choisie par la source (Gollum, Riddle Master). */
+  /** Mana value of the parity chosen by the source (Gollum, Riddle Master). */
   parityChosen?: boolean;
-  /** Valeur de mana, force ou endurance égale au nombre choisi par la source (Talion, the Kindly Lord). */
+  /** Mana value, power or toughness equal to the number chosen by the source (Talion, the Kindly Lord). */
   numberChosen?: boolean;
-  /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
+  /** Of the name chosen by the source as it entered (Petrified Hamlet: "lands with the chosen name"). */
   nameChosen?: boolean;
-  /** A infligé des blessures ce tour-ci (Treacherous Greed). */
+  /** Dealt damage this turn (Treacherous Greed). */
   dealtDamageThisTurn?: boolean;
-  /** Suspect ou non (701.60 : « créature suspecte ciblée »). */
+  /** Suspected or not (701.60: "target suspected creature"). */
   suspected?: boolean;
   /**
-   * Vous avez mis un marqueur sur lui ce tour-ci (Fractal Tender) ; une sorte : un marqueur de cette sorte (Kid Loki :
-   * « un ou plusieurs marqueurs +1/+1 »). Lu aussi par les capacités statiques.
+   * You put a counter on it this turn (Fractal Tender); a kind: a counter of that kind (Kid Loki: "one or more +1/+1
+   * counters"). Also read by static abilities.
    */
   countersPutByYouThisTurn?: boolean | string;
-  /** A le déguisement (Expose the Culprit : « créatures face visible que vous contrôlez avec le déguisement »). */
+  /** Has disguise (Expose the Culprit: "face-up creatures you control with disguise"). */
   disguise?: boolean;
-  /** {X} dans son coût de mana (« un sort avec {X} dans son coût de mana » : Matterbending Mage, Paradox Surveyor). */
+  /** {X} in its mana cost ("a spell with {X} in its mana cost": Matterbending Mage, Paradox Surveyor). */
   hasX?: boolean;
-  /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */
+  /** Card with an Adventure (off the battlefield: graveyard, hand; Hearth Elemental). */
   adventure?: boolean;
-  /** Permanent arrivé en étant lancé (« si vous l'avez lancée » : The Sibsig Ceremony). */
+  /** Permanent that entered by being cast ("if you cast it": The Sibsig Ceremony). */
   cast?: boolean;
 }
 
 /**
- * Comparaison d'une caractéristique de l'objet filtré (`ObjectFilter.compare`, PLAN-H H10) : sa force, son endurance ou
- * sa valeur de mana (0 pour un objet qui n'en a pas), `cmp` la valeur `to`. `to` est :
- * - un montant, remplacé par sa valeur par `resolveCompare` (`effects.ts`, voir `ObjectFilter.compare`) ; tant qu'il
- *   n'est pas résolu (filtre lu directement par `matchesView`), la comparaison est ignorée ;
- * - `"power"` ou `"basePower"` : la force, ou la force de base, de l'objet lui-même (Fecund Greenshell : « dont
- *   l'endurance est supérieure à sa force » ; Kutzil : « dont la force est supérieure à sa force de base »).
- * `cmp` `"odd"` ou `"even"`, sans `to` : valeur paire ou impaire (Mutinous Massacre ; 0 est pair).
- * Les valeurs de la source se lisent sans plancher (107.1b, montant `raw`) : « de force supérieure à celle de cette
- * créature » (furtivité), « de valeur de mana inférieure ou égale à la force d'Alesha ».
+ * Comparison of a characteristic of the filtered object (`ObjectFilter.compare`, PLAN-H H10): its power, its toughness
+ * or its mana value (0 for an object without one), `cmp` the value `to`. `to` is:
+ * - an amount, replaced with its value by `resolveCompare` (`effects.ts`, see `ObjectFilter.compare`); as long as it
+ *   is not resolved (filter read directly by `matchesView`), the comparison is ignored;
+ * - `"power"` or `"basePower"`: the power, or the base power, of the object itself (Fecund Greenshell: "with toughness
+ *   greater than its power"; Kutzil: "with power greater than its base power").
+ * `cmp` `"odd"` or `"even"`, without `to`: even or odd value (Mutinous Massacre; 0 is even).
+ * The source's values are read without a floor (107.1b, `raw` amount): "with greater power than this creature"
+ * (stealth), "with mana value less than or equal to Alesha's power".
  */
 export interface FilterCompare {
   what: "power" | "toughness" | "manaValue";
@@ -286,22 +285,22 @@ export interface FilterCompare {
 }
 
 /**
- * Événement déclencheur (603). « self » : la source elle-même ; sinon un objet correspondant au filtre,
- * vu du contrôleur de la source.
+ * Trigger event (603). "self": the source itself; otherwise an object matching the filter, seen from the source's
+ * controller.
  */
 export type TriggerSpec =
   /**
-   * `fromZone` : seulement un objet arrivé depuis cette zone, ou lancé depuis elle (Twilight Diviner : un cimetière ;
-   * Extraordinary Journey : l'exil).
+   * `fromZone`: only an object that entered from that zone, or was cast from it (Twilight Diviner: a graveyard;
+   * Extraordinary Journey: exile).
    */
   | { on: "enters"; who: "self" | ObjectFilter; fromZone?: "graveyard" | "exile" }
   | { on: "dies"; who: "self" | ObjectFilter }
-  /** Un permanent correspondant est détruit par un sort ou une capacité (d'un adversaire : `byOpponent`) ; joueur de l'événement : celui qui détruit. */
+  /** A matching permanent is destroyed by a spell or ability (an opponent's: `byOpponent`); event player: the one who destroys. */
   | { on: "destroyed"; who: ObjectFilter; byOpponent?: boolean }
-  /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
-  /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
-  /** `who` filtre : « chaque fois qu'une créature que vous contrôlez avec un marqueur +1/+1 quitte le champ de bataille ». */
-  /** `withoutDying` : « quitte le champ de bataille sans mourir » (Dour Port-Mage, Three Tree Scribe). */
+  /** `to`: only to that zone ("when this artifact is put into a graveyard from the battlefield"). */
+  /** `whileCrafting`: exiled as a crafting material (Market Gnome). */
+  /** `who` filter: "whenever a creature you control with a +1/+1 counter on it leaves the battlefield". */
+  /** `withoutDying`: "leaves the battlefield without dying" (Dour Port-Mage, Three Tree Scribe). */
   | {
       on: "leaves";
       who: "self" | "linked" | ObjectFilter;
@@ -310,84 +309,83 @@ export type TriggerSpec =
       withoutDying?: boolean;
     }
   /**
-   * « Chaque fois que vous gagnez des points de vie [pour la première fois ce tour] », « chaque fois qu'un adversaire perd
-   * des points de vie », « chaque fois que vous gagnez ou perdez des points de vie » (`change` absent) ; `whose` relatif au
-   * contrôleur, vous par défaut.
+   * "Whenever you gain life [for the first time each turn]", "whenever an opponent loses life", "whenever you gain or
+   * lose life" (`change` absent); `whose` relative to the controller, you by default.
    */
   | { on: "life"; change?: "gain" | "loss"; whose?: "you" | "opponent" | "any"; first?: boolean }
   /**
-   * « Quand ce permanent se transforme en [cette face] » : porté par la face visée, il ne se déclenche que lorsque le
-   * permanent devient cette face (les capacités sont lues après la transformation).
+   * "When this permanent transforms into [this face]": carried by the face in question, it triggers only when the
+   * permanent becomes that face (the abilities are read after the transformation).
    */
   | { on: "transformsSelf" }
-  /** « Chaque fois qu'un adversaire cherche dans sa bibliothèque » (Wan Shi Tong). */
+  /** "Whenever an opponent searches their library" (Wan Shi Tong). */
   | { on: "search"; whose: "you" | "opponent" | "any" }
-  /** « Quand un adversaire perd la partie » (Shinryu). */
+  /** "When an opponent loses the game" (Shinryu). */
   | { on: "playerLoses"; whose: "opponent" | "any" }
-  /** « Chaque fois qu'un adversaire acquiert le contrôle d'un permanent qui était à vous » (Zidane). */
+  /** "Whenever an opponent gains control of a permanent you controlled" (Zidane). */
   | { on: "controlChange" }
   /**
-   * `alone` : « chaque fois qu'une créature que vous contrôlez attaque seule » (Squall, Seifer). `defending: "you"` : elle
-   * attaque le contrôleur (pas ses planeswalkers) ; `"youOrYourPlaneswalkers"` : le contrôleur ou un planeswalker qu'il
-   * contrôle ; `"player"` : elle attaque un joueur (pas un planeswalker).
+   * `alone`: "whenever a creature you control attacks alone" (Squall, Seifer). `defending: "you"`: it attacks the
+   * controller (not their planeswalkers); `"youOrYourPlaneswalkers"`: the controller or a planeswalker they control;
+   * `"player"`: it attacks a player (not a planeswalker).
    */
   | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you" | "youOrYourPlaneswalkers" | "player"; alone?: boolean }
   /**
-   * `to` : ce qui reçoit les blessures, joueurs (`players`, relatif au contrôleur de la capacité) ou objets (`objects`) :
-   * « à un joueur » (`{ players: "any" }`), « à l'un de vos adversaires », « à un joueur ou un planeswalker » (Flitterwing
-   * Nuisance), « à une créature » (Mephidross Vampire).
+   * `to`: what is dealt the damage, players (`players`, relative to the ability's controller) or objects (`objects`):
+   * "to a player" (`{ players: "any" }`), "to one of your opponents", "to a player or planeswalker" (Flitterwing
+   * Nuisance), "to a creature" (Mephidross Vampire).
    */
   | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; to?: TargetFilter }
-  /** `targeting` : le sort cible un objet correspondant, ou un adversaire (`opponent`). */
+  /** `targeting`: the spell targets a matching object, or an opponent (`opponent`). */
   | {
       on: "castSpell";
       by: "you" | "opponent" | "any";
       filter?: ObjectFilter;
-      /** `orFilter` : le sort correspond au filtre OU cible ce qui est indiqué (Danitha, Sword of Hope). */
+      /** `orFilter`: the spell matches the filter OR targets what is indicated (Danitha, Sword of Hope). */
       targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean };
-      /** « votre deuxième sort de chaque tour » : le N-ième sort lancé par ce joueur ce tour-ci. */
+      /** "your second spell each turn": the Nth spell cast by that player this turn. */
       nth?: number;
-      /** « un sort avec une seule cible » (Spinerock Tyrant). */
+      /** "a spell with a single target" (Spinerock Tyrant). */
       singleTarget?: boolean;
-      /** « …, si ce n'est pas son tour » (Adrenaline Jockey, March of the World Ooze). */
+      /** "…, if it's not their turn" (Adrenaline Jockey, March of the World Ooze). */
       notTheirTurn?: boolean;
-      /** Sort modal (Riku of Many Paths). */
+      /** Modal spell (Riku of Many Paths). */
       modal?: boolean;
-      /** Lancé depuis ailleurs que la main (Kellan, the Kid). */
+      /** Cast from anywhere other than the hand (Kellan, the Kid). */
       notFromHand?: boolean;
-      /** « …, si au moins N mana a été dépensé pour le lancer » (Final Fantasy). */
+      /** "…, if at least N mana was spent to cast it" (Final Fantasy). */
       minManaSpent?: number;
-      /** « un sort qu'il ne possède pas » (Gonti, Night Minister). */
+      /** "a spell they don't own" (Gonti, Night Minister). */
       notOwned?: boolean;
       /**
-       * Alania : le premier sort de l'un de ces types (« Instant », « Sorcery ») ou sous-types (« Otter ») lancé ce tour-ci,
-       * autre que la source.
+       * Alania: the first spell of one of these types ("Instant", "Sorcery") or subtypes ("Otter") cast this turn,
+       * other than the source.
        */
       firstOf?: string[];
-      /** « en utilisant du mana produit par [cette source] » (Tecutlan, Barracks of the Thousand). */
+      /** "using mana produced by [this source]" (Tecutlan, Barracks of the Thousand). */
       usingManaFromSelf?: boolean;
-      /** « si du mana d'un [Trésor] a été dépensé pour le lancer » (Smaug, Wicked Worm) : une source correspondante, vue
-       * par ses dernières informations si elle est partie. */
+      /** "if mana from a [Treasure] was spent to cast it" (Smaug, Wicked Worm): a matching source, seen through its
+       * last known information if it is gone. */
       usingManaFrom?: ObjectFilter;
-      /** Lancé depuis l'exil (Quintorius Kand). */
+      /** Cast from exile (Quintorius Kand). */
       fromExile?: boolean;
-      /** Lancé depuis la main (Ojer Pakpatiq). */
+      /** Cast from the hand (Ojer Pakpatiq). */
       fromHand?: boolean;
     }
   /**
-   * « Au début de [l'étape] » ; `main` : chaque phase principale (Carpet of Flowers) ; `nth` : seulement la N-ième
-   * phase principale du tour (Survie : la deuxième, 505.1a).
+   * "At the beginning of [the step]"; `main`: each main phase (Carpet of Flowers); `nth`: only the Nth main phase of
+   * the turn (Survival: the second, 505.1a).
    */
   | { on: "step"; step: Step | "main"; whose: "you" | "opponent" | "any"; nth?: number }
   | { on: "landfall" }
-  /** « Chaque fois que vous piochez [votre deuxième carte ce tour] » ; `whose` relatif au contrôleur. */
-  /** `exceptTurnDraw` : « sauf la première qu'il pioche lors de chacune de ses étapes de pioche » (Orcish Bowmasters). */
+  /** "Whenever you draw [your second card each turn]"; `whose` relative to the controller. */
+  /** `exceptTurnDraw`: "except the first one they draw in each of their draw steps" (Orcish Bowmasters). */
   | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number; exceptTurnDraw?: boolean }
-  /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
-  /** `anyPlayer` : « chaque fois qu'un joueur attaque avec N créatures ou plus » (Aurelia, the Law Above). */
+  /** "Whenever you attack [with N or more creatures]" */
+  /** `anyPlayer`: "whenever a player attacks with N or more creatures" (Aurelia, the Law Above). */
   /**
-   * `defending` : un adversaire attaque, et seuls comptent ses attaquants qui vous attaquent (`"you"`, Lulu), vous et/ou vos
-   * planeswalkers (`"youOrYourPlaneswalkers"`, Tomik, Wielder of Law) ; le joueur de l'événement est alors l'attaquant.
+   * `defending`: an opponent attacks, and only their attackers attacking you (`"you"`, Lulu), you and/or your
+   * planeswalkers (`"youOrYourPlaneswalkers"`, Tomik, Wielder of Law) count; the event player is then the attacker.
    */
   | {
       on: "attackWith";
@@ -396,356 +394,356 @@ export type TriggerSpec =
       anyPlayer?: boolean;
       defending?: "you" | "youOrYourPlaneswalkers";
     }
-  /** « Chaque fois que des marqueurs sont placés sur … » */
-  /** `firstThisTurn` : « si c'est la première fois ce tour-ci que des marqueurs sont mis sur elle » (Stalwart Successor). */
-  /** `by: "you"` : « chaque fois que vous mettez des marqueurs » (celui qui les met : contrôleur de ce qui se résout, sinon
-   * du permanent). */
+  /** "Whenever counters are put on …" */
+  /** `firstThisTurn`: "if it's the first time counters have been put on it this turn" (Stalwart Successor). */
+  /** `by: "you"`: "whenever you put counters" (the one who puts them: controller of what is resolving, otherwise of
+   * the permanent). */
   | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string; firstThisTurn?: boolean; by?: "you" }
-  /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
-  /** `anySourceYouControl` : toute source (sort compris) contrôlée par le contrôleur de la capacité (Niv-Mizzet). */
+  /** Damage dealt by a source (noncombat only if requested), possibly to an opponent. */
+  /** `anySourceYouControl`: any source (spells included) controlled by the ability's controller (Niv-Mizzet). */
   | {
       on: "dealsDamage";
       who: "self" | ObjectFilter;
       noncombatOnly?: boolean;
-      /** Ce qui reçoit les blessures (comme pour `dealsCombatDamage`). */
+      /** What is dealt the damage (as for `dealsCombatDamage`). */
       to?: TargetFilter;
       anySourceYouControl?: boolean;
-      /** Taii Wakeen : des blessures égales à l'endurance de la créature blessée. */
+      /** Taii Wakeen: damage equal to the damaged creature's toughness. */
       exactToughness?: boolean;
       /**
-       * Imodane : la source est un sort (filtré par `who`) qui ne cible qu'une seule créature, et les blessures sont
-       * infligées à cette créature.
+       * Imodane: the source is a spell (filtered by `who`) that targets only a single creature, and the damage is dealt
+       * to that creature.
        */
       spellToSoleTarget?: boolean;
     }
-  /** « Chaque fois qu'un adversaire défausse une carte » */
+  /** "Whenever an opponent discards a card" */
   | { on: "discard"; whose: "you" | "opponent" | "any" }
-  /** « Chaque fois que [cette créature] devient la cible d'un sort ou d'une capacité [qu'un adversaire contrôle] » */
-  /** `spells` : les sorts correspondants aussi (« une créature ou un sort de créature que vous contrôlez », Surrak). */
+  /** "Whenever [this creature] becomes the target of a spell or ability [an opponent controls]" */
+  /** `spells`: matching spells too ("a creature or creature spell you control", Surrak). */
   | {
       on: "becomesTarget";
       who: "self" | ObjectFilter;
       /**
-       * Qui cible : `opponent`, un sort ou une capacité qu'un adversaire contrôle (garde) ; `you`, un sort ou une
-       * capacité que le contrôleur de la source contrôle (Vaillance, Bloomburrow) ; `yourSpell`, un sort que vous
-       * lancez, pas une copie (« chaque fois que vous lancez un sort qui cible cette créature », avec `who: "self"`).
+       * Who targets: `opponent`, a spell or ability an opponent controls (ward); `you`, a spell or ability the source's
+       * controller controls (Valiant, Bloomburrow); `yourSpell`, a spell you cast, not a copy ("whenever you cast a
+       * spell that targets this creature", with `who: "self"`).
        */
       by?: "opponent" | "you" | "yourSpell";
       spells?: boolean;
-      /** Un joueur ciblé compte aussi (Loki, God of Mischief : « un joueur ou un permanent »). */
+      /** A targeted player counts too (Loki, God of Mischief: "a player or permanent"). */
       players?: boolean;
-      /** Seulement par une capacité (pas un sort). */
+      /** Only by an ability (not a spell). */
       abilitiesOnly?: boolean;
     }
-  /** « Chaque fois que [la créature équipée] se dégage » */
+  /** "Whenever [equipped creature] becomes untapped" */
   | { on: "untaps"; who: "self" | ObjectFilter }
-  /** « Chaque fois que [cette créature] devient engagée » */
-  /** `byYou` : « chaque fois que vous engagez [une créature] » (Solitary Sanctuary : une créature adverse). */
+  /** "Whenever [this creature] becomes tapped" */
+  /** `byYou`: "whenever you tap [a creature]" (Solitary Sanctuary: an opponent's creature). */
   /**
-   * `cause: "teamwork"` : engagé pour payer un travail d'équipe (Agent Maria Hill) ; `firstThisTurn` : la première fois
-   * qu'il devient engagé ce tour-ci (Captain America, Living Legend).
+   * `cause: "teamwork"`: tapped to pay for teamwork (Agent Maria Hill); `firstThisTurn`: the first time it becomes
+   * tapped this turn (Captain America, Living Legend).
    */
   | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean; cause?: "teamwork"; firstThisTurn?: boolean }
-  /** « Chaque fois que vous regardez (scry) ou surveillez » (Reality Fracture). */
+  /** "Whenever you scry or surveil" (Reality Fracture). */
   | { on: "scryOrSurveil" }
-  /** « Quand vous défaussez cette carte » (se déclenche depuis le cimetière). */
+  /** "When you discard this card" (triggers from the graveyard). */
   | { on: "discardSelf" }
-  /** « Quand vous lancez ce sort » (la source est le sort sur la pile). */
+  /** "When you cast this spell" (the source is the spell on the stack). */
   | { on: "castSelf" }
-  /** Chapitre de Saga (714.2) : un marqueur de savoir fait atteindre ou dépasser l'un de ces chapitres. */
+  /** Saga chapter (714.2): a lore counter makes the count reach or exceed one of these chapters. */
   | { on: "chapter"; chapters: number[] }
-  /** « Quand cette Classe atteint le niveau N » (716). */
+  /** "When this Class becomes level N" (716). */
   | { on: "classLevel"; level: number }
-  /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » (701.44). */
+  /** "Whenever a [creature] explores [a land / nonland card]" (701.44). */
   | { on: "explores"; who: "self" | ObjectFilter; land?: boolean }
-  /** « Chaque fois que vous sacrifiez [un permanent] » */
+  /** "Whenever you sacrifice [a permanent]" */
   | { on: "sacrifice"; anyPlayer?: boolean; byOpponent?: boolean; who: ObjectFilter }
-  /** « Chaque fois que cette Monture devient montée » (702.171). */
+  /** "Whenever this Mount becomes saddled" (702.171). */
   | { on: "saddled" }
-  /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » ; l'objet de l'événement est la Monture ou le Véhicule. */
+  /** "Whenever this creature saddles a Mount or crews a Vehicle [during your main phase]"; the event object is the Mount or the Vehicle. */
   | { on: "crews"; mainPhase?: boolean }
-  /** « Quand cette créature est retournée face visible » ; `who` : « chaque fois qu'un permanent [filtre] est retourné face visible ». */
+  /** "When this creature is turned face up"; `who`: "whenever a [filter] permanent is turned face up". */
   | { on: "turnedFaceUp"; who?: ObjectFilter }
-  /** « Chaque fois qu'une [créature] devient bloquée » (Norin). */
+  /** "Whenever a [creature] becomes blocked" (Norin). */
   | { on: "becomesBlocked"; who: ObjectFilter }
-  /** « Chaque fois que vous manifestez l'effroi » : l'objet de l'événement est la carte mise au cimetière. */
+  /** "Whenever you manifest dread": the event object is the card put into the graveyard. */
   | { on: "manifestDread" }
-  /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
+  /** "When you unlock this door" (Room: `door` is set at import from the face). */
   | { on: "unlockDoor"; door?: number }
-  /** Sinistre (Duskmourn) : « chaque fois qu'un enchantement que vous contrôlez arrive et chaque fois que vous déverrouillez entièrement une Salle ». */
+  /** Eerie (Duskmourn): "whenever an enchantment you control enters and whenever you fully unlock a Room". */
   | { on: "eerie" }
-  /** « Chaque fois que cette créature (ou la créature enchantée/équipée) subit des blessures » */
-  /** Filtre : « chaque fois qu'une créature que vous contrôlez subit des blessures » (The Sensational She-Hulk). */
-  /** `attached` : la créature enchantée ou équipée, ou le joueur enchanté (Aura de joueur, Grievous Wound). */
+  /** "Whenever this creature (or enchanted/equipped creature) is dealt damage" */
+  /** Filter: "whenever a creature you control is dealt damage" (The Sensational She-Hulk). */
+  /** `attached`: the enchanted or equipped creature, or the enchanted player (player Aura, Grievous Wound). */
   /**
-   * « Chaque fois que [cette créature / un objet / le joueur enchanté / vous / un adversaire] subit des blessures » ; un
-   * joueur : `"you"`, `"opponent"` (de toute source) ; `combat` : seulement les blessures de combat (`true`) ou les autres
-   * (`false`). L'objet de l'événement est la source pour un joueur blessé.
+   * "Whenever [this creature / an object / enchanted player / you / an opponent] is dealt damage"; a player: `"you"`,
+   * `"opponent"` (from any source); `combat`: only combat damage (`true`) or the other damage (`false`). The event
+   * object is the source for a damaged player.
    */
   | { on: "isDealtDamage"; who: "self" | "attached" | "you" | "opponent" | ObjectFilter; combat?: boolean }
-  /** « Chaque fois que vous copiez un sort [correspondant] » (Kalamax, the Stormsire) ; `ref.eventObject` : la copie. */
+  /** "Whenever you copy a [matching] spell" (Kalamax, the Stormsire); `ref.eventObject`: the copy. */
   | { on: "copySpell"; filter?: ObjectFilter }
-  /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès [non de combat] » (120.4a). */
+  /** "Whenever one or more [creatures] are dealt excess [noncombat] damage" (120.4a). */
   | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
-  /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
-  /** `toYou` : seulement les blessures qui vous sont infligées (Tamiyo, Upriser Crowned). */
+  /** "Whenever one or more [creatures] deal combat damage to a player": once per step and per player. */
+  /** `toYou`: only the damage dealt to you (Tamiyo, Upriser Crowned). */
   | { on: "combatDamageBatch"; who: ObjectFilter; toYou?: boolean }
   /**
-   * « Chaque fois qu'une ou plusieurs cartes [non-terrain] sont meulées » (une fois par meule) ; `whose` : par ce joueur
-   * (« chaque fois qu'un adversaire meule une carte non-terrain ») ; `amount.eventAmount` : le nombre de ces cartes.
+   * "Whenever one or more [nonland] cards are milled" (once per mill); `whose`: by that player ("whenever an opponent
+   * mills a nonland card"); `amount.eventAmount`: the number of those cards.
    */
   | { on: "milled"; whose?: "you" | "opponent" | "any"; nonland?: boolean }
-  /** « Chaque fois qu'une [créature] bloque » */
-  /** `eventObject: "attacker"` : l'objet de l'événement est l'attaquant bloqué (Skewer Slinger : « cette créature »). */
+  /** "Whenever a [creature] blocks" */
+  /** `eventObject: "attacker"`: the event object is the blocked attacker (Skewer Slinger: "that creature"). */
   | { on: "blocks"; who: "self" | ObjectFilter; attacker?: ObjectFilter; eventObject?: "attacker" }
-  /** « Chaque fois que [créature] meurt ou est exilée » (depuis le champ de bataille). */
+  /** "Whenever [creature] dies or is exiled" (from the battlefield). */
   | { on: "diesOrExiled"; who: "self" | ObjectFilter; minPower?: number }
-  /** « Chaque fois que vous jouez un terrain » ; `from` : seulement depuis ces zones (« depuis l'exil », Ghost-Spider). */
-  /** `whose` : qui joue le terrain (vous par défaut ; Burgeoning : un adversaire). */
+  /** "Whenever you play a land"; `from`: only from these zones ("from exile", Ghost-Spider). */
+  /** `whose`: who plays the land (you by default; Burgeoning: an opponent). */
   | { on: "playLand"; from?: Zone[]; whose?: "you" | "opponent" | "any" }
-  /** « Chaque fois que [vous] défaussez une ou plusieurs cartes » (montant : leur nombre). */
+  /** "Whenever [you] discard one or more cards" (amount: their number). */
   | { on: "discardBatch"; whose: "you" | "opponent" | "any" }
-  /** « Quand vous cyclez cette carte » (depuis le cimetière ; montant : le X du coût de cycle). */
+  /** "When you cycle this card" (from the graveyard; amount: the X of the cycling cost). */
   | { on: "cycleSelf" }
-  /** « Chaque fois que vous activez une capacité d'exhaust » */
+  /** "Whenever you activate an exhaust ability" */
   | { on: "exhaustActivated" }
-  /** « Chaque fois que vous commettez un crime » (700.13) */
+  /** "Whenever you commit a crime" (700.13) */
   | { on: "crime" }
-  /** « Quand cette carte devient complotée » */
+  /** "When this card becomes plotted" */
   | { on: "plottedSelf" }
-  /** « Chaque fois que vous activez une capacité qui cible une créature ou un joueur » (Ertha Jo). */
+  /** "Whenever you activate an ability that targets a creature or player" (Ertha Jo). */
   | { on: "activateTargeting" }
   /**
-   * Une carte change de zone (Ketramose : « mises en exil depuis les cimetières et/ou le champ de bataille » ;
-   * Dredger's Insight : « quittent votre cimetière »). `whose` : le propriétaire de la carte.
+   * A card changes zones (Ketramose: "put into exile from graveyards and/or the battlefield"; Dredger's Insight:
+   * "leave your graveyard"). `whose`: the card's owner.
    */
   | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any" }
-  /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
+  /** "Whenever you activate a loyalty ability [by removing at least N counters]"; `byOpponent`: an opponent activates it. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean }
-  /** Dépense N (Bloomburrow) : « chaque fois que vous dépensez votre N-ième mana total pour lancer des sorts pendant un tour ». */
+  /** Expend N (Bloomburrow): "whenever you expend your Nth total mana to cast spells during a turn". */
   | { on: "expend"; n: number }
-  /** « Chaque fois que vous fourragez » (Corpseberry Cultivator). */
+  /** "Whenever you forage" (Corpseberry Cultivator). */
   | { on: "forage" }
-  /** « Chaque fois que vous réunissez des preuves » (Surveillance Monitor). */
+  /** "Whenever you collect evidence" (Surveillance Monitor). */
   | { on: "collectEvidence" }
-  /** « Chaque fois qu'une créature que vous contrôlez fait, en attaquant, se déclencher une de ses capacités. » */
+  /** "Whenever a creature you control attacking causes one of its abilities to trigger." */
   | { on: "attackAbilityTriggered" }
-  /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar). */
+  /** "Whenever you waterbend, earthbend, firebend, or airbend" (Avatar). */
   | { on: "bend" }
-  /** « Chaque fois que vous résolvez une Affaire » (Case File Auditor). */
+  /** "Whenever you solve a Case" (Case File Auditor). */
   | { on: "caseSolved" }
-  /** « Chaque fois que vous offrez un cadeau » (Jolly Gerbils). */
+  /** "Whenever you give a gift" (Jolly Gerbils). */
   | { on: "gift" }
-  /** « Chaque fois que vous découvrez » (`amount.eventAmount` : la valeur N). */
+  /** "Whenever you discover" (`amount.eventAmount`: the value N). */
   | { on: "discover" }
-  /** « Chaque fois que vous activez une capacité qui n'est pas une capacité de mana » (l'objet : la capacité sur la pile) ;
-   * `source` : seulement celle d'un permanent correspondant (Elrond, Moon-Reader : « d'une créature »). */
+  /** "Whenever you activate an ability that isn't a mana ability" (the object: the ability on the stack);
+   * `source`: only that of a matching permanent (Elrond, Moon-Reader: "of a creature"). */
   | { on: "activateAbility"; source?: ObjectFilter };
 
-/** Conditions (« if intermédiaire » 603.4, « tant que »…). */
+/** Conditions ("intervening if" 603.4, "as long as"…). */
 export type Condition =
   | { kind: "controls"; filter: ObjectFilter; atLeast?: number }
-  /** Le sort qui met l'objet en jeu a été kické. */
+  /** The spell that puts the object onto the battlefield was kicked. */
   | { kind: "kicked" }
   | { kind: "yourTurn" }
   | { kind: "opponentsTurn" }
-  /** La source a au moins N marqueurs de ce type. */
+  /** The source has at least N counters of this kind. */
   | { kind: "counterAtLeast"; counter: string; n: number }
   | { kind: "not"; cond: Condition }
   /**
-   * La source a été lancée (le sort qui se résout, ou le permanent qu'il est devenu) : depuis cette zone, ou pour ce coût
-   * alternatif (Web-slinging, chaos, faufilement, évocation…).
+   * The source was cast (the spell resolving, or the permanent it became): from that zone, or for that alternative
+   * cost (Web-slinging, Mayhem, sneak, evoke…).
    */
   | { kind: "cast"; from?: Zone; via?: CastVia }
-  /** Valeur mémorisée pendant la résolution (« si vous le faites », « si une carte de créature a été exilée »). */
+  /** Value stored during the resolution ("if you do", "if a creature card was exiled"). */
   | { kind: "var"; name: string; atLeast?: number }
   | { kind: "all"; of: Condition[] }
-  /** Le joueur désigné a exactement N points de vie (évalué pendant la résolution). */
+  /** The designated player has exactly N life (evaluated during the resolution). */
   | { kind: "refLife"; ref: Ref; equals: number }
-  /** Au moins N permanents correspondant au filtre sur tout le champ de bataille (Blasphemous Edict). */
+  /** At least N permanents matching the filter on the whole battlefield (Blasphemous Edict). */
   | { kind: "battlefieldCount"; filter: ObjectFilter; atLeast: number }
-  /** La source correspond au filtre (« si Kellan est un Éclaireur »). */
+  /** The source matches the filter ("if Kellan is a Scout"). */
   | { kind: "sourceMatches"; filter: ObjectFilter }
-  /** Réduction de coût : une cible de ce mot « cible » correspond au filtre (Luminous Rebuke). */
+  /** Cost reduction: a target of this word "target" matches the filter (Luminous Rebuke). */
   | { kind: "targetMatches"; spec: string; filter: ObjectFilter }
-  /** Pendant la résolution : l'objet désigné correspond au filtre (« si c'est un Chat »). */
+  /** During the resolution: the designated object matches the filter ("if it's a Cat"). */
   | { kind: "refMatches"; ref: Ref; filter: ObjectFilter }
   /**
-   * Celestial Reunion : vous pouvez contempler `count` créatures (vos créatures, cartes de créature de votre main) d'un
-   * type que l'objet désigné a aussi (pendant la résolution).
+   * Celestial Reunion: you can behold `count` creatures (your creatures, creature cards in your hand) of a type the
+   * designated object also has (during the resolution).
    */
   | { kind: "beholdSharingType"; ref: Ref; count: number }
-  /** L'objet de l'événement (dernières informations connues) correspond au filtre (« s'il attaquait »). */
+  /** The event object (last known information) matches the filter ("if it was attacking"). */
   | { kind: "eventObjectMatches"; filter: ObjectFilter }
-  /** Un montant évalué du point de vue du contrôleur atteint N (« force totale 8 ou plus »). */
+  /** An amount evaluated from the controller's point of view reaches N ("total power 8 or greater"). */
   | { kind: "amountAtLeast"; amount: Amount; n: number }
-  /** Un montant strictement plus grand qu'un autre, évalués à la résolution (Evil's Thrall). */
+  /** One amount strictly greater than another, evaluated on resolution (Evil's Thrall). */
   | { kind: "amountGreater"; a: Amount; b: Amount }
-  /** X du sort qui se résout. */
+  /** X of the spell resolving. */
   | { kind: "xAtLeast"; n: number }
-  /** « tant que vous avez N mana non dépensé ou plus » (Ozai, the Phoenix King). */
+  /** "as long as you have N or more unspent mana" (Ozai, the Phoenix King). */
   | { kind: "manaPoolAtLeast"; n: number }
-  /** C'est la première étape de fin de ce tour (Y'shtola Rhul). */
+  /** It is the first end step of this turn (Y'shtola Rhul). */
   | { kind: "firstEndStep" }
-  /** C'est la première phase de combat du tour (Genji Glove). */
+  /** It is the first combat phase of the turn (Genji Glove). */
   | { kind: "firstCombat" }
-  /** Vous contrôlez une créature de force la plus grande ou à égalité (Summon: Fenrir). */
+  /** You control a creature with the greatest power or tied for it (Summon: Fenrir). */
   | { kind: "controlsGreatestPower" }
-  /** La source est préparée. */
+  /** The source is prepared. */
   | { kind: "prepared" }
-  /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
-  /** « Si {U}{U} a été dépensé pour le lancer » : au moins N mana de ce type dépensé pour lancer la source. */
+  /** "Behold a Jace": you control a Jace or you have a Jace card in hand. */
+  /** "If {U}{U} was spent to cast it": at least N mana of this type spent to cast the source. */
   | { kind: "spentColor"; color: ManaType; n: number }
-  /** Faufilement : étape de déclaration des bloqueurs, avec un attaquant non bloqué que vous contrôlez. */
+  /** Sneak: declare blockers step, with an unblocked attacker you control. */
   | { kind: "sneakWindow" }
-  /** Vous avez un récit durable (Storied). */
+  /** You have an enduring story (Storied). */
   | { kind: "enduringStory" }
-  /** Vous avez la bénédiction de la cité (ascension, 702.131). */
+  /** You have the city's blessing (ascend, 702.131). */
   | { kind: "citysBlessing" }
-  /** Vous êtes le monarque (724). */
+  /** You are the monarch (724). */
   | { kind: "monarch" }
-  /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
+  /** The source is harnessed (Harness): its ∞ abilities are active. */
   | { kind: "harnessed" }
-  /** L'objet de l'événement (parti du champ de bataille) avait la plus grande force parmi les créatures de son contrôleur,
-   * en comptant celles parties en même temps (Kraven the Hunter). `strictAmongAll` : sa force est supérieure à celle de
-   * chaque autre créature, quel que soit son contrôleur (Selvala, Heart of the Wilds). */
+  /** The event object (gone from the battlefield) had the greatest power among its controller's creatures, counting
+   * those that left at the same time (Kraven the Hunter). `strictAmongAll`: its power is greater than that of each
+   * other creature, whoever controls it (Selvala, Heart of the Wilds). */
   | { kind: "eventObjectGreatestPower"; strictAmongAll?: boolean }
-  /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
+  /** Behold (701.63): you control a matching permanent, or you reveal a matching card from your hand. */
   | { kind: "behold"; filter: ObjectFilter }
-  /** Le sort a été lancé en contemplant (coût additionnel `behold`). */
+  /** The spell was cast by beholding (additional cost `behold`). */
   | { kind: "beheld" }
-  /** La condition `whenCast` de la carte était remplie quand le sort a été lancé. */
+  /** The card's `whenCast` condition was met when the spell was cast. */
   | { kind: "metWhenCast" }
-  /** Une seule créature attaque, et elle attaque un joueur (« attaque seule un joueur »). */
+  /** A single creature attacks, and it attacks a player ("attacks a player alone"). */
   | { kind: "attackingAlone" }
-  /** Un adversaire a subi des blessures non de combat au tour précédent (Command the Stage). */
+  /** An opponent was dealt noncombat damage last turn (Command the Stage). */
   | { kind: "opponentDealtNoncombatDamageLastTurn" }
-  /** La source a déjà infligé des blessures de combat (Ruric Thar, Magecrusher). */
+  /** The source has already dealt combat damage (Ruric Thar, Magecrusher). */
   | { kind: "sourceDealtCombatDamage" }
-  /** Sièges : la source a choisi ce mode en arrivant. */
+  /** Sieges: the source chose this mode as it entered. */
   | { kind: "chosenMode"; mode: string }
-  /** La source a déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
+  /** The source has already dealt damage, combat or not (Karakyk Guardian). */
   | { kind: "sourceDealtDamage" }
-  /** Salle (709.5) : la porte N de la source est verrouillée ; toutes ses portes sont déverrouillées. */
+  /** Room (709.5): the source's door N is locked; all its doors are unlocked. */
   | { kind: "doorLocked"; door: number }
-  /** Classe : la source est exactement à ce niveau. Affaire : la source est résolue. */
+  /** Class: the source is at exactly this level. Case: the source is solved. */
   | { kind: "classLevel"; level: number }
-  /** Monture : la source a été montée ce tour-ci. */
+  /** Mount: the source was saddled this turn. */
   | { kind: "saddled" }
   | { kind: "solved" }
-  /** Vitesse maximale (4) ; `not` pour « un joueur qui n'a pas la vitesse maximale ». */
+  /** Max speed (4); `not` for "a player who doesn't have max speed". */
   | { kind: "maxSpeed" }
-  /** Au moins N cartes en exil (Ketramose). */
+  /** At least N cards in exile (Ketramose). */
   | { kind: "exileAtLeast"; n: number }
-  /** Nombre total de marqueurs sur la source pair (Sab-Sunen). */
+  /** Total number of counters on the source is even (Sab-Sunen). */
   | { kind: "evenCounters" }
-  /** C'est au moins votre N-ième tour (Jace Reawakened : « pas pendant vos trois premiers tours »). */
+  /** It is at least your Nth turn (Jace Reawakened: "not during your first three turns"). */
   | { kind: "turnsTakenAtLeast"; n: number }
-  /** C'est cette étape (Smoky Lounge : « votre première phase principale »). */
+  /** It is this step (Smoky Lounge: "your first main phase"). */
   | { kind: "step"; step: Step }
-  /** Le montant est un nombre premier (Zimone, All-Questioning). */
+  /** The amount is a prime number (Zimone, All-Questioning). */
   | { kind: "prime"; amount: Amount }
-  /** Au moins une des conditions. */
+  /** At least one of the conditions. */
   | { kind: "any"; of: Condition[] }
-  /** Un adversaire a plus de terrains, de points de vie, de créatures ou de cartes en main que vous (Beza). */
+  /** An opponent has more lands, life, creatures or cards in hand than you (Beza). */
   | { kind: "opponentHasMore"; what: "lands" | "life" | "creatures" | "hand" }
-  /** Le joueur désigné a au plus N cartes en main (évalué pendant la résolution). */
+  /** The designated player has at most N cards in hand (evaluated during the resolution). */
   | { kind: "handAtMost"; ref: Ref; n: number }
-  /** Le joueur désigné (vous par défaut) a le plus de points de vie, ou est à égalité (Preacher of the Schism). */
+  /** The designated player (you by default) has the most life, or is tied for it (Preacher of the Schism). */
   | { kind: "mostLife"; ref?: Ref };
-/** Propriété lue par un agrégat (`Amount` `aggregate`). */
+/** Property read by an aggregate (`Amount` `aggregate`). */
 export type AggregateProperty =
   | "power"
   | "toughness"
   | "manaValue"
   | "color"
-  /** Paire de couleurs d'un objet qui a exactement deux couleurs (Niv-Mizzet, Guildpact). */
+  /** Color pair of an object that has exactly two colors (Niv-Mizzet, Guildpact). */
   | "colorPair"
   | "cardType"
   | "permanentType"
   | "subtype"
   | "basicLandType"
   | "name"
-  /** Sortes de marqueurs présents (Hundred-Battle Veteran). */
+  /** Kinds of counters present (Hundred-Battle Veteran). */
   | "counterKind"
-  /** Nombre de marqueurs de la sorte `counter`. */
+  /** Number of counters of the kind `counter`. */
   | "counters"
-  /** Couleurs de l'identité de couleur de la carte (903.4 : War Room, « les couleurs de l'identité de vos commandants »). */
+  /** Colors of the card's color identity (903.4: War Room, "the colors in your commanders' color identity"). */
   | "colorIdentity";
 
-/** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
+/** Reference to a player or an object, resolved when the effect happens. */
 export type Ref =
   | { kind: "target"; id: string }
   | { kind: "self" }
   | { kind: "you" }
   | { kind: "eachOpponent" }
   | { kind: "eachPlayer" }
-  /** L'objet de l'événement déclencheur (la créature qui arrive, meurt, attaque, le sort lancé…). */
+  /** The object of the trigger event (the creature that enters, dies, attacks, the spell cast…). */
   | { kind: "eventObject" }
   /**
-   * « Une ou plusieurs … » : les objets de tous les événements du lot (« ces créatures », « l'une d'elles »), comme
-   * `eventObject` pour chacun ; dans un agrégat, un objet parti du champ de bataille est lu dans ses dernières informations.
+   * "One or more …": the objects of all the events of the batch ("those creatures", "one of them"), like
+   * `eventObject` for each; in an aggregate, an object gone from the battlefield is read from its last known information.
    */
   | { kind: "eventObjects" }
-  /** Le permanent auquel la source est attachée (« la créature équipée / enchantée »). */
+  /** The permanent the source is attached to ("equipped / enchanted creature"). */
   | { kind: "attached" }
-  /** Les permanents attachés à l'objet désigné (« un Équipement attaché à cette créature », Light of Judgment). */
+  /** The permanents attached to the designated object ("an Equipment attached to that creature", Light of Judgment). */
   | { kind: "attachmentsOf"; ref: Ref }
-  /** « Cette carte », où qu'elle soit maintenant (suit l'identité physique : Angelic Destiny). */
+  /** "This card", wherever it is now (follows the physical identity: Angelic Destiny). */
   | { kind: "selfCard" }
-  /** Cartes liées à la source (Hoarding Dragon). */
+  /** Cards linked to the source (Hoarding Dragon). */
   | { kind: "linked" }
-  /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
+  /** Cards exiled "until" the source leaves the battlefield (Pinnacle Starcage). */
   | { kind: "exiledWith" }
-  /** Les cibles du sort ou de la capacité de l'événement (Storm, Windrider : « ces créatures »). */
+  /** The targets of the event's spell or ability (Storm, Windrider: "those creatures"). */
   | { kind: "targetsOfEventObject" }
-  /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */
+  /** The most recent ability on the stack whose source is the event object (Firebender Ascension). */
   | { kind: "abilitiesFromEventObject" }
-  /** Carte du dessus de la bibliothèque de chaque joueur désigné. */
+  /** Top card of the library of each designated player. */
   | { kind: "libraryTop"; who: Ref }
-  /** Créatures qui ont monté ou équipé la source ce tour-ci (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
+  /** Creatures that saddled or crewed the source this turn (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
   | { kind: "crewedBy" }
-  /** Les objets désignés qui correspondent au filtre, dans n'importe quelle zone (Ghost Vacuum : les cartes de créature). */
+  /** The designated objects that match the filter, in any zone (Ghost Vacuum: the creature cards). */
   | { kind: "filtered"; ref: Ref; filter: ObjectFilter }
-  /** Les objets de `ref` moins ceux de `exclude` (« toutes les autres créatures »). */
+  /** The objects of `ref` minus those of `exclude` ("all other creatures"). */
   | { kind: "except"; ref: Ref; exclude: Ref }
-  /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
+  /** The event player (damaged player, caster of the spell…). */
   | { kind: "eventPlayer" }
   /**
-   * Le permanent qui accorde la capacité activée qui se résout (« la créature équipée a "… Renvoyez Trusty Boomerang dans
-   * la main de son propriétaire" »), retenu à l'activation ; rien s'il a changé de zone depuis.
+   * The permanent that grants the activated ability that is resolving ("equipped creature has '… Return Trusty
+   * Boomerang to its owner's hand'"), remembered on activation; nothing if it has changed zones since.
    */
   | { kind: "grantor" }
   /**
-   * Le contrôleur de l'objet désigné ; parti du champ de bataille ce tour-ci, son dernier contrôleur connu (608.2h : Winds
-   * of Abandon, Indomitable Creativity) ; sinon, hors du champ de bataille et de la pile, son propriétaire.
+   * The controller of the designated object; gone from the battlefield this turn, its last known controller (608.2h:
+   * Winds of Abandon, Indomitable Creativity); otherwise, off the battlefield and the stack, its owner.
    */
   | { kind: "controllerOf"; ref: Ref }
-  /** Le propriétaire de l'objet désigné (« son propriétaire … » : Zoyowa's Justice). */
+  /** The owner of the designated object ("its owner …": Zoyowa's Justice). */
   | { kind: "ownerOf"; ref: Ref }
-  /** Objets déplacés plus tôt pendant la résolution (`store` d'un déplacement), sous leur nouvel identifiant. */
+  /** Objects moved earlier during the resolution (`store` of a move), under their new id. */
   | { kind: "stored"; name: string }
-  /** « Chaque joueur qui contrôle le plus de [créatures] » (No Witnesses). */
+  /** "Each player who controls the most [creatures]" (No Witnesses). */
   | { kind: "playersWithMost"; filter: ObjectFilter }
-  /** Le joueur défenseur de la source attaquante (celui qui contrôle le planeswalker attaqué). */
+  /** The defending player of the attacking source (the one who controls the attacked planeswalker). */
   | { kind: "defendingPlayer" }
   /**
-   * Les joueurs désignés pour qui la condition est vraie, évaluée de leur point de vue (« chaque adversaire qui a au plus
-   * une carte en main », « les joueurs qui n'ont pas la vitesse maximale »).
+   * The designated players for whom the condition is true, evaluated from their point of view ("each opponent who has
+   * at most one card in hand", "the players who don't have max speed").
    */
   | { kind: "playersWhere"; of: Ref; where: Condition }
   /**
-   * Ce qui a été payé en objets pour le coût du sort ou de la capacité qui se résout (dernières informations connues) :
-   * permanents sacrifiés, cartes défaussées (encore présentes), cartes exilées, créature renvoyée pour le Web-slinging.
+   * What was paid in objects for the cost of the spell or ability resolving (last known information): sacrificed
+   * permanents, discarded cards (still present), exiled cards, creature returned for Web-slinging.
    */
-  /** `defender` : ce qu'attaquait l'attaquant non bloqué renvoyé pour le ninjutsu (702.49c). */
+  /** `defender`: what the unblocked attacker returned for ninjutsu was attacking (702.49c). */
   | { kind: "cost"; paid: "sacrificed" | "discarded" | "exiled" | "bounced" | "beheld" | "defender" }
-  /** Les joueurs désignés et les planeswalkers qu'ils contrôlent (« ce joueur ou un planeswalker qu'il contrôle »). */
+  /** The designated players and the planeswalkers they control ("that player or a planeswalker they control"). */
   | { kind: "withPlaneswalkers"; of: Ref }
   /**
-   * Les objets d'une zone des joueurs désignés, correspondant au filtre : permanents qu'ils contrôlent, cartes de leur
-   * cimetière, de leur main (valeur de mana au plus `maxManaValue`), cartes qu'ils possèdent exilées face visible, sorts et
-   * capacités qu'ils contrôlent sur la pile (sauf ce qui se résout).
+   * The objects of a zone of the designated players, matching the filter: permanents they control, cards in their
+   * graveyard, in their hand (mana value at most `maxManaValue`), face-up exiled cards they own, spells and abilities
+   * they control on the stack (except what is resolving).
    */
   | {
       kind: "zone";
@@ -755,29 +753,29 @@ export type Ref =
       maxManaValue?: Amount;
     }
   /**
-   * Les objets du même nom que les objets désignés (eux compris) : sur le champ de bataille (Maelstrom Pulse), ou dans
-   * votre cimetière (Rat King, Verminister).
+   * The objects with the same name as the designated objects (themselves included): on the battlefield (Maelstrom
+   * Pulse), or in your graveyard (Rat King, Verminister).
    */
   | { kind: "sameName"; ref: Ref; zone: "battlefield" | "graveyard" }
-  /** Réunion de références, sans doublon (Call the Spirit Dragons : les Dragons choisis pour chaque couleur). */
+  /** Union of references, without duplicates (Call the Spirit Dragons: the Dragons chosen for each color). */
   | { kind: "union"; of: Ref[] }
-  /** Les créatures qui bloquent les objets désignés ou sont bloquées par eux pendant ce combat (Ride Down). */
+  /** The creatures blocking the designated objects or blocked by them during this combat (Ride Down). */
   | { kind: "combatPartners"; ref: Ref }
-  /** Commander (903.3) : les commandants des joueurs désignés, où qu'ils soient (« votre commandant », Path of Ancestry). */
+  /** Commander (903.3): the commanders of the designated players, wherever they are ("your commander", Path of Ancestry). */
   | { kind: "commanders"; who: Ref }
-  /** Les joueurs qui ont choisi le plus grand nombre, le plus petit, ou pas le plus petit (`fx.chooseNumbers`). */
+  /** The players who chose the highest number, the lowest, or not the lowest (`fx.chooseNumbers`). */
   | { kind: "numberChoosers"; store: string; which: "highest" | "lowest" | "notLowest" }
-  /** Le n-ième (à partir de 0) des objets ou joueurs désignés, rien s'il n'y en a pas autant (`fx.forEachPlayer`). */
+  /** The nth (from 0) of the designated objects or players, nothing if there aren't that many (`fx.forEachPlayer`). */
   | { kind: "nth"; of: Ref; n: number };
 
 export type Amount =
   | number
   /**
-   * Agrégat sur des objets : ceux du filtre sur le champ de bataille (vus du contrôleur), ceux d'une autre zone (`zone`,
-   * des joueurs `whose`, vous par défaut), ou les objets désignés (`of`). Sur le champ de bataille, les caractéristiques
-   * calculées ; ailleurs, imprimées (dernières informations connues pour un objet parti). `fn` : somme (chaque valeur
-   * bornée à 0), plus grande valeur (0 sans objet), nombre de valeurs différentes, ou `mostShared` : le plus grand nombre
-   * d'objets qui ont un type de créature en commun (changelins compris).
+   * Aggregate over objects: those of the filter on the battlefield (seen from the controller), those of another zone
+   * (`zone`, of the players `whose`, you by default), or the designated objects (`of`). On the battlefield, the computed
+   * characteristics; elsewhere, the printed ones (last known information for an object that is gone). `fn`: sum (each
+   * value floored at 0), greatest value (0 without objects), number of different values, or `mostShared`: the greatest
+   * number of objects that share a creature type (changelings included).
    */
   | {
       kind: "aggregate";
@@ -787,96 +785,96 @@ export type Amount =
       zone?: "graveyard" | "hand" | "exile";
       whose?: "you" | "opponents" | "all";
       of?: Ref;
-      /** Sorte de marqueur (`property: "counters"`). */
+      /** Kind of counter (`property: "counters"`). */
       counter?: string;
     }
   /**
-   * Ce qui a été dépensé pour lancer la source (le sort qui se résout, ou le permanent qu'il est devenu), ou les objets
-   * désignés (`of` : le sort de l'événement…) : X, mana, nombre de couleurs de mana, mana des Cavernes.
+   * What was spent to cast the source (the spell resolving, or the permanent it became), or the designated objects
+   * (`of`: the event's spell…): X, mana, number of colors of mana, mana from Caves.
    */
   | { kind: "spent"; what: "x" | "mana" | "colors" | "cave" | "artifact"; of?: Ref }
   /**
-   * Symboles de mana de cette couleur, hybrides compris, dans les coûts de mana des objets désignés (Namor : le sort de
-   * l'événement) ; sans `of`, de vos permanents (dévotion, 700.5).
+   * Mana symbols of this color, hybrids included, in the mana costs of the designated objects (Namor: the event's
+   * spell); without `of`, of your permanents (devotion, 700.5).
    */
   | { kind: "manaSymbols"; color: ManaType; of?: Ref }
   | { kind: "x" }
   | { kind: "kicked"; yes: number; no: number }
   | { kind: "powerOf"; ref: Ref }
-  /** Quantité de l'événement (blessures infligées, vie gagnée…). */
+  /** Quantity of the event (damage dealt, life gained…). */
   | { kind: "eventAmount" }
-  /** Nombre d'objets correspondant au filtre, vus du contrôleur (sur le champ de bataille par défaut). */
+  /** Number of objects matching the filter, seen from the controller (on the battlefield by default). */
   | {
       kind: "count";
       filter: ObjectFilter;
       zone?: "battlefield" | "graveyard" | "hand" | "exile";
       whose?: "you" | "opponents" | "all";
     }
-  /** Marqueurs d'un type sur un objet. */
+  /** Counters of a kind on an object. */
   | { kind: "countersOn"; ref: Ref; counter: string }
   | { kind: "sum"; of: Amount[] }
   /**
-   * Opposé (« -X/-0 ») et division entière (« pour chaque tranche de sept cartes ») ; `up` : arrondie à l'unité
-   * supérieure (« la moitié de ses points de vie, arrondie à l'unité supérieure », `amount.halfLife`).
+   * Negation ("-X/-0") and integer division ("for every seven cards"); `up`: rounded up ("half their life, rounded
+   * up", `amount.halfLife`).
    */
   | { kind: "neg"; of: Amount }
   | { kind: "div"; of: Amount; by: number; up?: boolean }
-  /** Puissance : `base` à la puissance `of` (Mathemagics : « 2^X cartes »), bornée à 2^20. */
+  /** Power: `base` to the power `of` (Mathemagics: "2^X cards"), capped at 2^20. */
   | { kind: "pow"; base: number; of: Amount }
-  /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
+  /** Value stored during the resolution (life lost this way, excess damage…). */
   | { kind: "var"; name: string }
   /**
-   * Vos points de vie (0 au plus bas) ; `starting` : vos points de vie de départ (Game Over : « la moitié de ses PV de
-   * départ ») ; `who` : ceux du premier joueur désigné plutôt que les vôtres (0 s'il n'y en a aucun).
+   * Your life total (0 at the lowest); `starting`: your starting life total (Game Over: "half their starting life
+   * total"); `who`: that of the first designated player rather than yours (0 if there is none).
    */
   | { kind: "lifeTotal"; starting?: boolean; who?: Ref }
-  /** Blessures marquées sur la source (dernières informations connues : Tangled Colony, « les blessures subies ce tour-ci »). */
+  /** Damage marked on the source (last known information: Tangled Colony, "the damage dealt to it this turn"). */
   | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }
   | { kind: "toughnessOf"; ref: Ref }
-  /** Nombre de cartes dans une zone du contrôleur. */
+  /** Number of cards in a zone of the controller. */
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
-  /** Votre vitesse (0 si vous n'en avez pas). */
+  /** Your speed (0 if you have none). */
   | { kind: "speed" }
-  /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
+  /** Number of designated objects (Luxurious Locomotive: the creatures that crewed it). */
   | { kind: "refCount"; ref: Ref }
-  /** Portes déverrouillées parmi les Salles que contrôle le contrôleur (Duskmourn). */
+  /** Unlocked doors among the Rooms the controller controls (Duskmourn). */
   | { kind: "unlockedDoors" }
-  /** Le plus grand des montants. */
+  /** The greatest of the amounts. */
   | { kind: "max"; of: Amount[] }
   /**
-   * La plus grande valeur du montant, évalué du point de vue de chacun des joueurs désignés (« le plus grand nombre
-   * d'artefacts que contrôle un adversaire », Cavern-Hoard Dragon) ; 0 sans joueur.
+   * The greatest value of the amount, evaluated from the point of view of each of the designated players ("the greatest
+   * number of artifacts an opponent controls", Cavern-Hoard Dragon); 0 without players.
    */
-  /** Le plus grand montant parmi les joueurs (vu de chacun) ; `sum` : leur total (Vault 12 : « marqueurs de radiation parmi les joueurs »). */
+  /** The greatest amount among the players (seen from each); `sum`: their total (Vault 12: "rad counters among players"). */
   | { kind: "maxOverPlayers"; players: Ref; amount: Amount; sum?: boolean }
-  /** Mana inutilisé de votre réserve, mana marqué compris (Omnath, Locus of the Void). */
+  /** Unused mana in your mana pool, marked mana included (Omnath, Locus of the Void). */
   | { kind: "manaInPool" }
-  /** Vos marqueurs poison (corrompu : `amount.maxOverPlayers(ref.eachOpponent, amount.poison)`). */
-  /** Marqueurs poison de votre contrôleur ; `counter: "rad"` : ses marqueurs de radiation (Mariposa Military Base). */
+  /** Your poison counters (corrupted: `amount.maxOverPlayers(ref.eachOpponent, amount.poison)`). */
+  /** Poison counters of your controller; `counter: "rad"`: their rad counters (Mariposa Military Base). */
   | { kind: "poison"; counter?: "rad" }
-  /** Le plus grand nombre choisi (`fx.chooseNumbers`, Wheel of Misfortune). */
+  /** The highest number chosen (`fx.chooseNumbers`, Wheel of Misfortune). */
   | { kind: "numberChosen"; store: string }
-  /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */
+  /** Number of graveyards that contain at least N cards (Master's Councillors, The Master of Lake-town). */
   | { kind: "graveyardsWithAtLeast"; n: number }
-  /** Noms différents parmi les portes déverrouillées de ses Salles (Promising Stairs). */
+  /** Different names among the unlocked doors of their Rooms (Promising Stairs). */
   | { kind: "unlockedDoorNames" }
-  /** Objets désignés encore en exil (Dragonhawk : « celles de ces cartes encore exilées »). */
+  /** Designated objects still in exile (Dragonhawk: "those of these cards still exiled"). */
   | { kind: "inExile"; ref: Ref }
-  /** Adversaires qui ont plus de cartes en main que vous (Wojek Investigator). */
+  /** Opponents who have more cards in hand than you (Wojek Investigator). */
   | { kind: "opponentsWithMoreInHand" }
-  /** Force de la source quand la capacité s'est déclenchée (« quand cette créature meurt, … égales à sa force »). */
+  /** Power of the source when the ability triggered ("when this creature dies, … equal to its power"). */
   | { kind: "lkiPower" }
-  /** Journal du tour (`turnlog.ts`) : entrées correspondantes, vues du contrôleur de la capacité. */
-  /** `of` : compter pour ces joueurs (« les cartes meulées par le joueur ciblé ») plutôt que pour le contrôleur. */
+  /** Turn log (`turnlog.ts`): matching entries, seen from the ability's controller. */
+  /** `of`: count for these players ("the cards milled by target player") rather than for the controller. */
   | { kind: "turnEvents"; query: TurnLogQuery; of?: Ref }
-  /** Permanents dégagés pendant votre étape de dégagement de ce tour (The Millennium Calendar). */
+  /** Permanents untapped during your untap step this turn (The Millennium Calendar). */
   | { kind: "untappedInUntapStep" }
   /**
-   * Valeur brute, sans plancher (107.1b), pour les comparaisons des filtres (`ObjectFilter.compare`). Sans `of`, de la
-   * source : `power`, sa force sur le champ de bataille, sinon d'après ses dernières informations connues (0 sans source) ;
-   * `manaSpent`, le mana dépensé pour la lancer (le permanent, ses dernières informations connues, sinon son sort sur la
-   * pile ; 0 par défaut). Avec `of` (`power` seulement) : la force du premier objet désigné encore sur le champ de bataille
-   * (Fell the Mighty : la créature ciblée) ; sans un tel objet, aucune valeur (NaN : aucune comparaison n'est vraie).
+   * Raw value, without a floor (107.1b), for the comparisons of filters (`ObjectFilter.compare`). Without `of`, of the
+   * source: `power`, its power on the battlefield, otherwise from its last known information (0 without a source);
+   * `manaSpent`, the mana spent to cast it (the permanent, its last known information, otherwise its spell on the
+   * stack; 0 by default). With `of` (`power` only): the power of the first designated object still on the battlefield
+   * (Fell the Mighty: the target creature); without such an object, no value (NaN: no comparison is true).
    */
   | { kind: "raw"; what: "power" | "manaSpent"; of?: Ref };

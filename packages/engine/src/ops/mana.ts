@@ -3,6 +3,7 @@ import { evalAmount, resolveRef } from "../effects";
 import { bump, linkedColors } from "../layers";
 import { chars } from "../state";
 import { matchesObjectFilter } from "../targets";
+import { msg } from "../text";
 import type { ManaType } from "../types";
 
 export const HANDLERS: OpHandlers = {
@@ -11,7 +12,7 @@ export const HANDLERS: OpHandlers = {
     const pool = who ? s.players[who]?.manaPool : undefined;
     const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
     const pl = who ? s.players[who] : undefined;
-    // Mana porteur d'un effet (Arena of Glory) : réserve marquée avec sa source, pour que l'effet s'applique à la dépense.
+    // Mana carrying an effect (Arena of Glory): pool entries marked with their source, so the effect applies when spent.
     if (e.rider && pl) {
       const units = e.mana.flatMap((type) =>
         Array.from({ length: times }, () => ({ type, rider: e.rider, source: ctx.sourceId })),
@@ -25,7 +26,7 @@ export const HANDLERS: OpHandlers = {
     const answer = r.vars[key("color")];
     const options = e.colors ?? ["W", "U", "B", "R", "G"];
     const n = evalAmount(s, ctx, e.n);
-    // « En n'importe quelle combinaison » : le joueur répartit les N mana entre les couleurs.
+    // "In any combination": the player divides the N mana among the colors.
     const split = !!e.combination && n > 1 && options.length > 1;
     const suggestedColor = options.includes("G") ? "G" : (options[0] as string);
     if (!answer && split) {
@@ -36,10 +37,10 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "divide",
             intent: "manaColor",
-            prompt: `Répartissez les ${n} mana entre les couleurs`,
+            prompt: msg("Divide the {n} mana among the colors", { n }),
             among: options,
             total: n,
-            labels: { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" },
+            labels: { W: msg("White"), U: msg("Blue"), B: msg("Black"), R: msg("Red"), G: msg("Green") },
             suggested: options.map((o) => (o === suggestedColor ? n : 0)),
           },
         },
@@ -53,9 +54,9 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "manaColor",
-            prompt: "Choisissez la couleur du mana",
+            prompt: msg("Choose the color of the mana"),
             options,
-            labels: { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" },
+            labels: { W: msg("White"), U: msg("Blue"), B: msg("Black"), R: msg("Red"), G: msg("Green") },
             min: 1,
             max: 1,
             suggested: [options.includes("G") ? "G" : (options[0] as string)],
@@ -64,7 +65,7 @@ export const HANDLERS: OpHandlers = {
       };
     }
     const pl = s.players[ctx.controller];
-    // Type de chaque mana : la répartition, sinon la couleur choisie pour tous.
+    // Type of each mana: the division, otherwise the chosen color for all of it.
     const units: ManaType[] = split
       ? options.flatMap((o, i) => Array.from({ length: Math.max(0, Number(answer[i] ?? 0)) }, () => o))
       : Array.from({ length: Math.max(0, n) }, () => String(answer[0]) as ManaType);
@@ -75,7 +76,7 @@ export const HANDLERS: OpHandlers = {
     } else if (pl) {
       for (const type of units) {
         pl.manaPool[type] += 1;
-        // « Jusqu'à la fin du tour, vous ne perdez pas ce mana entre les étapes et phases » (Branch of Vitu-Ghazi).
+        // "Until end of turn, you don't lose this mana as steps and phases end" (Branch of Vitu-Ghazi).
         if (e.keep) {
           pl.manaKeep ??= {};
           pl.manaKeep[type] = (pl.manaKeep[type] ?? 0) + 1;
@@ -88,7 +89,7 @@ export const HANDLERS: OpHandlers = {
   addManaColorsAmong(s, _r, e, ctx) {
     const pool = s.players[ctx.controller]?.manaPool;
     if (!pool) return;
-    // Sunbird Effigy : les couleurs parmi les cartes liées à la source (exilées pour la fabriquer).
+    // Sunbird Effigy: the colors among the cards linked to the source (exiled to craft it).
     const colors = new Set(
       e.linked
         ? linkedColors(s, s.objects[ctx.sourceId]?.linked)

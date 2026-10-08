@@ -1,12 +1,12 @@
 /**
- * Remplacements qui modifient un nombre (616.1) : blessures, marqueurs, points de vie gagnés, cartes piochées. Quand
- * plusieurs s'appliquent au même événement, chacun s'applique une fois (614.5) et l'ordre est choisi par le joueur
- * affecté (ou le contrôleur de l'objet affecté). Rien ne peut suspendre le moteur au milieu d'un événement : le choix est
- * fait pour ce joueur, au mieux de ses intérêts (`prefer`), et documenté comme choix automatique.
+ * Replacements that modify a number (616.1): damage, counters, life gained, cards drawn. When several apply to the
+ * same event, each applies once (614.5) and the order is chosen by the affected player (or the controller of the
+ * affected object). Nothing can suspend the engine in the middle of an event: the choice is made for that player, in
+ * their best interest (`prefer`), and documented as an automatic choice.
  */
 import { capReached, MAX_AMOUNT, MAX_PERMUTED } from "./limits";
 
-/** Un remplacement : « autant plus N », « le double », « au moins N » (Ojer Axonil). */
+/** A replacement: "that much plus N", "twice that", "at least N" (Ojer Axonil). */
 export interface AmountMod {
   add?: number;
   times?: number;
@@ -14,7 +14,7 @@ export interface AmountMod {
 }
 
 function applyOne(v: number, m: AmountMod): number {
-  // Un événement sans quantité (0 blessure, 0 marqueur) n'a rien à remplacer.
+  // An event with no quantity (0 damage, 0 counters) has nothing to replace.
   if (v <= 0) return v;
   if (m.add !== undefined) return v + m.add;
   if (m.times !== undefined) return v * m.times;
@@ -37,12 +37,12 @@ function* permutations<T>(items: T[]): Generator<T[]> {
   }
 }
 
-/** Tous les résultats possibles selon l'ordre d'application (un seul si l'ordre n'y change rien). */
+/** Every possible result depending on the order of application (only one if the order makes no difference). */
 export function replacementOutcomes(base: number, mods: AmountMod[]): number[] {
   const kinds = new Set(mods.map((m) => (m.add !== undefined ? "add" : m.times !== undefined ? "times" : "atLeast")));
-  // Des remplacements tous du même genre commutent (sommes, produits) : l'ordre ne change rien.
+  // Replacements all of the same kind commute (sums, products): the order makes no difference.
   if (mods.length <= 1 || (kinds.size === 1 && !kinds.has("atLeast"))) return [applyInOrder(base, mods)];
-  // Au-delà, l'ordre du code (celui des sources) : trop de permutations, et aucune carte n'en demande autant.
+  // Beyond that, the code order (that of the sources): too many permutations, and no card needs that many.
   if (mods.length > MAX_PERMUTED) {
     capReached("permutations");
     return [applyInOrder(base, mods)];
@@ -53,13 +53,13 @@ export function replacementOutcomes(base: number, mods: AmountMod[]): number[] {
 }
 
 /**
- * Le résultat retenu pour le joueur affecté : le plus petit (« min » : blessures qu'il subit, marqueurs nuisibles) ou le
- * plus grand (« max » : points de vie qu'il gagne, marqueurs sur ses permanents, cartes qu'il pioche).
+ * The result kept for the affected player: the smallest ("min": damage they are dealt, harmful counters) or the
+ * largest ("max": life they gain, counters on their permanents, cards they draw).
  */
 export function chooseReplacementOrder(base: number, mods: AmountMod[], prefer: "min" | "max"): number {
   const outcomes = replacementOutcomes(base, mods);
-  // Des doubleurs qui se multiplient donnent vite un nombre infini en JavaScript (inutilisable dans l'état, sérialisé en
-  // JSON) : le résultat est plafonné (voir docs/approximations.md).
+  // Doublers that multiply quickly give an infinite number in JavaScript (unusable in the state, serialized as JSON):
+  // the result is capped (see docs/approximations.md).
   const best = prefer === "min" ? Math.min(...outcomes) : Math.max(...outcomes);
   if (best > MAX_AMOUNT) capReached("amount");
   return Math.min(MAX_AMOUNT, best);

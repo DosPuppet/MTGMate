@@ -1,7 +1,7 @@
 /**
- * GameHost : fait tourner une partie en consultant, pour chaque décision en attente,
- * l'IA du joueur, puis l'autopilot, puis l'humain. Le même hôte tourne dans un Web Worker
- * (partie contre l'IA) ou dans un serveur Node (partie en ligne).
+ * GameHost: runs a game by consulting, for each pending decision,
+ * the player's AI, then the autopilot, then the human. The same host runs in a Web Worker
+ * (game against the AI) or in a Node server (online game).
  */
 
 import { type AutopilotSettings, autopilotDecision, DEFAULT_AUTOPILOT } from "./autopilot";
@@ -10,50 +10,51 @@ import { MAX_AUTOMATIC_DECISIONS } from "./limits";
 import { type GameRecord, recordDecision } from "./record";
 import { RulesError } from "./stack";
 import { decider } from "./state";
+import { msg } from "./text";
 import { forcedAttacks, requiredBlocks } from "./turn";
 import type { Decision, GameEvent, GameState, PendingDecision, PlayerId } from "./types";
 import { filterEvents, type GameView, projectView } from "./view";
 
-/** Une IA : reçoit l'état complet et renvoie une décision (elle ne doit lire que l'information publique). */
+/** An AI: receives the full state and returns a decision (it must read only public information). */
 export type Agent = (state: GameState, player: PlayerId) => Decision;
 /**
- * Une IA qui réfléchit ailleurs (serveur : dans un worker, PLAN-E E14) : sa décision arrive plus tard ; l'hôte l'attend
- * avant de continuer.
+ * An AI that thinks elsewhere (server: in a worker, PLAN-E E14): its decision arrives later; the host waits for it
+ * before continuing.
  */
 export type AsyncAgent = (state: GameState, player: PlayerId) => Decision | Promise<Decision>;
 
 export interface HostOptions {
   agents?: Partial<Record<PlayerId, Agent | AsyncAgent>>;
-  /** Appelé pour chaque joueur humain quand sa vue change. */
+  /** Called for each human player when their view changes. */
   onUpdate?: (player: PlayerId, view: GameView, events: GameEvent[]) => void;
-  /** Pause entre deux actions visibles de l'IA (ms), pour que l'humain puisse suivre. */
+  /** Pause between two visible actions of the AI (ms), so that the human can follow. */
   aiDelay?: number;
   sleep?: (ms: number) => Promise<void>;
   /**
-   * Consulté avant chaque décision d'une IA : une promesse la fait attendre (le tutoriel met l'adversaire
-   * en pause pendant une explication), null la laisse jouer.
+   * Consulted before each decision of an AI: a promise makes it wait (the tutorial pauses the opponent
+   * during an explanation), null lets it play.
    */
   gate?: () => Promise<void> | null;
-  /** Enregistrement de la partie (`createRecordedGame`) : chaque décision appliquée y est ajoutée. */
+  /** Record of the game (`createRecordedGame`): each applied decision is added to it. */
   record?: GameRecord;
-  /** Écart entre deux points de contrôle de l'enregistrement (`CHECKPOINT_EVERY` par défaut). */
+  /** Gap between two checkpoints of the record (`CHECKPOINT_EVERY` by default). */
   checkpointEvery?: number;
-  /** Appelé après chaque décision enregistrée (serveur : écriture sur disque). */
+  /** Called after each recorded decision (server: writing to disk). */
   onRecord?: (player: PlayerId, d: Decision, after: GameState) => void;
   /**
-   * Une mise à jour par étape de la pile (élément ajouté, puis résolu, contrecarré ou sans cible légale), au lieu d'une
-   * seule à la fin d'une suite de décisions automatiques : l'interface montre chaque effet l'un après l'autre.
+   * One update per stack step (item added, then resolved, countered or without a legal target), instead of a single one
+   * at the end of a series of automatic decisions: the interface shows each effect one after the other.
    */
   frames?: boolean;
 }
 
 /**
- * Événements qui terminent une étape visible de la partie : un élément arrive sur la pile (l'interface le montre avant
- * qu'il se résolve) ou la quitte (résolu, contrecarré, sans cible légale).
+ * Events that end a visible step of the game: an item arrives on the stack (the interface shows it before it resolves)
+ * or leaves it (resolved, countered, without a legal target).
  */
 const FRAME_EVENTS = new Set<GameEvent["type"]>(["cast", "activate", "trigger", "copy", "resolve", "fizzle", "countered"]);
 
-/** Décision de repli si une IA renvoie une décision illégale. */
+/** Fallback decision if an AI returns an illegal decision. */
 export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
   const hand = s.players[p.player]?.hand ?? [];
   switch (p.kind) {
@@ -64,7 +65,7 @@ export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
     case "discard":
       return { type: "discard", cards: hand.slice(0, p.count) };
     case "declareAttackers":
-      // Les créatures qui doivent attaquer si possible attaquent (un défenseur sans taxe d'attaque).
+      // The creatures that must attack if able do attack (a defender without an attack tax).
       return { type: "declareAttackers", attackers: forcedAttacks(s, p.player) };
     case "declareBlockers":
       return { type: "declareBlockers", blocks: requiredBlocks(s, p.player) };
@@ -81,7 +82,7 @@ export class GameHost {
   private readonly opts: HostOptions;
   private pendingEvents: GameEvent[] = [];
   private running = false;
-  /** Moment où la dernière action visible de l'IA a été montrée (Date.now()). */
+  /** Time when the last visible action of the AI was shown (Date.now()). */
   private shownAt = 0;
 
   constructor(state: GameState, opts: HostOptions = {}, initialEvents: GameEvent[] = []) {
@@ -107,21 +108,21 @@ export class GameHost {
     const { state, events } = submit(this.state, player, d);
     this.state = state;
     this.pendingEvents.push(...events);
-    // Mode « étapes » : une résolution est envoyée tout de suite, avant les décisions automatiques suivantes.
+    // "Frames" mode: a resolution is sent right away, before the following automatic decisions.
     if (this.opts.frames && events.some((e) => FRAME_EVENTS.has(e.type))) this.flush(true);
-    // Seules les décisions acceptées sont enregistrées : le rejeu redonne exactement cet état.
+    // Only accepted decisions are recorded: the replay gives back exactly this state.
     if (this.opts.record) recordDecision(this.opts.record, player, d, state, this.opts.checkpointEvery);
     this.opts.onRecord?.(player, d, state);
   }
 
-  /** Enregistrement de la partie (null si elle n'est pas enregistrée : tutoriel, bac à sable). */
+  /** Record of the game (null if it is not recorded: tutorial, sandbox). */
   get record(): GameRecord | null {
     return this.opts.record ?? null;
   }
 
   /**
-   * Envoie la vue et les événements accumulés à chaque humain. `interim` : étape intermédiaire (une résolution au milieu
-   * de décisions automatiques) ; sa décision en attente est retirée, l'automatisme l'ayant peut-être déjà prise.
+   * Sends the view and the accumulated events to each human. `interim`: intermediate step (a resolution in the middle
+   * of automatic decisions); its pending decision is removed, since the autopilot may already have taken it.
    */
   private flush(interim = false): void {
     const events = this.pendingEvents;
@@ -133,7 +134,7 @@ export class GameHost {
     }
   }
 
-  /** La décision en attente est celle d'un humain que l'automatisme va prendre lui-même. */
+  /** The pending decision is a human's that the autopilot will take itself. */
   private autopilotNext(): boolean {
     const p = this.state.pending;
     if (!p || this.state.over) return false;
@@ -142,10 +143,11 @@ export class GameHost {
     return !!autopilotDecision(this.state, p.player, this.settings[who] ?? DEFAULT_AUTOPILOT);
   }
 
-  /** Décision d'un humain. Renvoie un message d'erreur si elle est illégale. */
+  /** Decision of a human. Returns an error message if it is illegal. */
   async submitHuman(player: PlayerId, d: Decision): Promise<string | null> {
-    // 722 : pendant un tour contrôlé, seul le contrôleur décide pour le joueur contrôlé.
-    if (d.type !== "concede" && this.state.pending && decider(this.state) !== player) return "Ce n'est pas à vous de décider";
+    // 722: during a controlled turn, only the controller decides for the controlled player.
+    if (d.type !== "concede" && this.state.pending && decider(this.state) !== player)
+      return msg("It is not your decision to make");
     try {
       this.apply(player, d);
     } catch (e) {
@@ -157,23 +159,23 @@ export class GameHost {
   }
 
   /**
-   * Laisse à l'humain le temps de voir la dernière action visible de l'IA : on attend le reste de la pause `aiDelay`.
-   * La réflexion de l'IA sur l'action suivante se fait pendant cette pause (elle n'allonge pas l'attente).
+   * Gives the human time to see the last visible action of the AI: we wait for the rest of the `aiDelay` pause.
+   * The AI's thinking about the next action happens during this pause (it does not lengthen the wait).
    */
   private settle(): Promise<void> | null {
     const { aiDelay, sleep } = this.opts;
     if (!aiDelay || !sleep) return null;
     const rest = this.shownAt + aiDelay - Date.now();
-    // Rien à attendre : pas d'`await` (il rendrait la main à la boucle d'événements sans raison).
+    // Nothing to wait for: no `await` (it would yield to the event loop for no reason).
     return rest > 0 ? sleep(rest) : null;
   }
 
-  /** Enchaîne les décisions automatiques (IA, autopilot) jusqu'à ce qu'un humain doive choisir. */
+  /** Chains the automatic decisions (AI, autopilot) until a human must choose. */
   async run(): Promise<void> {
     if (this.running) return;
     this.running = true;
     try {
-      // Compté par tour : une partie entre IA (humain éliminé) peut légitimement durer, une boucle reste dans le tour.
+      // Counted per turn: a game between AIs (human eliminated) can legitimately last, a loop stays within the turn.
       let turn = this.state.turn.number;
       for (let guard = 1; ; guard++) {
         const p = this.state.pending;
@@ -182,11 +184,11 @@ export class GameHost {
           guard = 1;
         }
         if (guard > MAX_AUTOMATIC_DECISIONS && !this.state.over) {
-          // Boucle de décisions automatiques dans un même tour : partie nulle (104.4b), signalée dans la console.
+          // Loop of automatic decisions within one turn: draw (104.4b), reported in the console.
           const t = this.state.turn;
           console.warn(
-            `GameHost : plus de ${MAX_AUTOMATIC_DECISIONS} décisions automatiques d'affilée (tour ${t.number}, étape ${t.step}, ` +
-              `décision ${p?.kind ?? "aucune"} de ${p?.player ?? "?"}) : partie nulle`,
+            `GameHost: more than ${MAX_AUTOMATIC_DECISIONS} automatic decisions in a row (turn ${t.number}, step ${t.step}, ` +
+              `decision ${p?.kind ?? "none"} of ${p?.player ?? "?"}): draw`,
           );
           const { state, events } = drawByLoop(this.state);
           this.state = state;
@@ -199,45 +201,45 @@ export class GameHost {
             ? autopilotDecision(this.state, p.player, this.settings[decider(this.state) ?? p.player] ?? DEFAULT_AUTOPILOT)
             : null;
         if (!p || this.state.over || (!agent && !auto)) {
-          // Au tour de l'humain (ou fin de partie) : la dernière action visible de l'IA reste affichée le temps de sa
-          // pause. Une décision de l'humain a pu arriver pendant l'attente : on repart alors de l'état courant.
+          // The human's turn to decide (or end of game): the last visible action of the AI stays displayed for its
+          // pause. A decision of the human may have arrived during the wait: we then start again from the current state.
           const pause = this.settle();
           if (!pause) break;
           await pause;
           continue;
         }
-        // 722 : le joueur qui décide (le contrôleur du tour, le cas échéant).
+        // 722: the player who decides (the controller of the turn, if any).
         const actor = decider(this.state) ?? p.player;
         if (agent) {
           const wait = this.opts.gate?.();
           if (wait) {
-            // L'humain voit la partie telle qu'elle est pendant l'attente.
+            // The human sees the game as it is during the wait.
             await this.settle();
             this.flush();
             await wait;
-            // La partie a pu changer pendant l'attente (décision de l'humain) : on repart de l'état courant.
+            // The game may have changed during the wait (decision of the human): start again from the current state.
             if (this.state.pending !== p) continue;
           }
           let d: Decision;
           try {
-            // Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
+            // An AI that controls another player's turn settles for the default decisions (pass, do not attack).
             const out = actor === p.player ? agent(this.state, p.player) : fallbackDecision(this.state, p);
             if (out instanceof Promise) {
               d = await out;
-              // La partie a pu changer pendant la réflexion (abandon d'un joueur) : on repart de l'état courant.
+              // The game may have changed during the thinking (a player conceding): start again from the current state.
               if (this.state.pending !== p) continue;
             } else d = out;
             this.apply(actor, d);
           } catch (e) {
-            console.warn("Décision IA illégale, repli :", e);
+            console.warn("Illegal AI decision, fallback:", e);
             d = fallbackDecision(this.state, p);
             this.apply(actor, d);
           }
-          // Action visible : montrée une fois la pause de la précédente écoulée ; la suivante se prépare pendant la sienne.
+          // Visible action: shown once the pause of the previous one has elapsed; the next one is prepared during its own.
           if (d.type !== "pass" && d.type !== "keep" && d.type !== "tapForMana" && this.opts.aiDelay && this.opts.sleep) {
             const pause = this.settle();
             if (pause) await pause;
-            // Si l'automatisme va décider ensuite pour un humain, cette décision n'est pas montrée (elle serait périmée).
+            // If the autopilot is going to decide next for a human, this decision is not shown (it would be stale).
             this.flush(this.autopilotNext());
             this.shownAt = Date.now();
           }

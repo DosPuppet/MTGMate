@@ -1,13 +1,12 @@
 /**
- * Effets de remplacement et de prévention (614–615).
+ * Replacement and prevention effects (614–615).
  *
- * - Portés par une carte : « arrive engagé », « arrive avec N marqueurs » (appliqués pendant le
- *   changement de zone, avant que les capacités déclenchées ne voient l'objet arriver).
- * - Créés par une résolution, jusqu'à la fin du tour : « si elle devait mourir, exilez-la à la place »,
- *   prévention des blessures de combat.
- * - « Au lieu du cimetière » (614.1a) : `replaceGraveyard`, qui applique l'ordre de 616.1 (auto-remplacement
- *   d'abord, puis un seul remplacement choisi pour le joueur affecté).
- * Limite : pour les autres événements (blessures, pioche, PV), plusieurs remplacements s'appliquent dans l'ordre du code.
+ * - Carried by a card: "enters tapped", "enters with N counters" (applied during the zone change, before triggered
+ *   abilities see the object enter).
+ * - Created by a resolution, until end of turn: "if it would die, exile it instead", prevention of combat damage.
+ * - "Instead of the graveyard" (614.1a): `replaceGraveyard`, which applies the order of 616.1 (self-replacement first,
+ *   then a single replacement chosen for the affected player).
+ * Limit: for the other events (damage, draw, life), several replacements apply in code order.
  */
 
 import { gainLife } from "./actions";
@@ -40,55 +39,55 @@ import type {
   Zone,
 } from "./types";
 
-/** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
+/** Context of entering the battlefield (value of X, kicker of the entering spell). */
 export interface EntersContext {
   x?: number;
-  /** Loyauté de départ à la place de celle imprimée (copie d'Ob Nixilis, the Adversary). */
+  /** Starting loyalty instead of the printed one (copy of Ob Nixilis, the Adversary). */
   loyalty?: number;
   kicked?: boolean;
-  /** Arrive depuis la résolution d'un sort : comment il a été lancé (X, kicker, mana dépensé…), noté sur le permanent. */
+  /** Enters from the resolution of a spell: how it was cast (X, kicker, mana spent…), noted on the permanent. */
   cast?: CastInfo;
-  /** Aura : l'objet auquel elle arrive attachée. */
+  /** Aura: the object it enters attached to. */
   attachTo?: string;
-  /** Choix « en arrivant, choisissez… » (614.12), faits par `asEntersChoices`. */
+  /** "As it enters, choose…" choices (614.12), made by `asEntersChoices`. */
   chosen?: GameObject["chosen"];
-  /** Terrain choc : les points de vie ont été payés (sinon il arrive engagé). */
+  /** Shock land: the life was paid (otherwise it enters tapped). */
   shockPaid?: boolean;
-  /** « Arrive comme une copie » (707.9) : définition copiée en arrivant (couche 1). */
+  /** "Enters as a copy" (707.9): definition copied as it enters (layer 1). */
   copyOf?: string;
-  /** 707.9b : exceptions copiables du modèle (`copiableExceptions`) et de la copie (`chooseCopy.except`). */
+  /** 707.9b: copiable exceptions of the model (`copiableExceptions`) and of the copy (`chooseCopy.except`). */
   copyMods?: LayerMods;
-  /** Copie « jusqu'à la fin du tour » (Cursed Mirror) ; sinon tant qu'il reste sur le champ de bataille. */
+  /** Copy "until end of turn" (Cursed Mirror); otherwise for as long as it remains on the battlefield. */
   copyDuration?: "endOfTurn";
-  /** Cartes liées au permanent (702.82 : exilées en arrivant par Mimeoplasm). */
+  /** Cards linked to the permanent (702.82: exiled as it enters by Mimeoplasm). */
   linked?: ObjectId[];
-  /** « Quand vous le faites, exilez cette carte » : la carte copiée d'un cimetière (Superior Spider-Man, 603.12). */
+  /** "When you do, exile that card": the card copied from a graveyard (Superior Spider-Man, 603.12). */
   exileCopied?: ObjectId;
-  /** Émeute (702.136) : le choix fait en résolvant le sort (sinon le choix par défaut, `defaultRiot`). */
+  /** Riot (702.136): the choice made while resolving the spell (otherwise the default choice, `defaultRiot`). */
   riot?: "counter" | "haste";
   /**
-   * Modifications d'arrivée imposées par l'effet qui le met sur le champ de bataille (614.1c, 614.12) : elles sont en
-   * place avant l'événement d'arrivée, que les déclencheurs voient donc (« chaque fois qu'un Zombie arrive »).
+   * Entering modifications imposed by the effect that puts it onto the battlefield (614.1c, 614.12): they are in place
+   * before the entering event, which triggers therefore see ("whenever a Zombie enters").
    */
   tapped?: boolean;
-  /** 508.4 : arrive attaquant ce joueur ou ce planeswalker (sans avoir été déclaré attaquant). */
+  /** 508.4: enters attacking this player or this planeswalker (without having been declared as an attacker). */
   attacking?: string;
   counters?: { kind: string; n: number }[];
   mods?: LayerMods;
-  /** Les `mods` sont les exceptions d'une copie (jeton copie « sauf que… ») : copiables (707.9b). */
+  /** The `mods` are the exceptions of a copy (copy token "except…"): copiable (707.9b). */
   modsCopiable?: boolean;
-  /** Célérité jusqu'à la fin du tour (Summon: Fenrir). */
+  /** Haste until end of turn (Summon: Fenrir). */
   haste?: boolean;
-  /** Imminence (702.176a) : N marqueurs de temps ; ce n'est pas une créature tant qu'il en a. */
+  /** Impending (702.176a): N time counters; it isn't a creature as long as it has any. */
   impending?: number;
   /**
-   * Les effets « en arrivant » ont été faits avant le déplacement (même sans rien choisir) ; sinon, ils le sont en
-   * arrivant, avec les réponses suggérées (`asEntersChoices`, mode `default`).
+   * The "as it enters" effects were done before the move (even without choosing anything); otherwise they are done as
+   * it enters, with the suggested answers (`asEntersChoices`, mode `default`).
    */
   asEnters?: boolean;
 }
 
-/** 303.4f : ce qu'une Aura qui arrive sans être lancée peut enchanter (permanents ; pas les Auras de joueur). */
+/** 303.4f: what an Aura entering without being cast can enchant (permanents; not player Auras). */
 export function auraHosts(s: GameState, controller: PlayerId, cardId: ObjectId): ObjectId[] {
   const enchant = s.defs[s.objects[cardId]?.defId ?? ""]?.enchant;
   if (!enchant || enchant.player) return [];
@@ -100,51 +99,51 @@ export function auraHosts(s: GameState, controller: PlayerId, cardId: ObjectId):
   );
 }
 
-/** Émeute sans choix fait en résolvant le sort : la célérité si la créature peut encore attaquer ce tour-ci, sinon le
- * marqueur. */
+/** Riot without a choice made while resolving the spell: haste if the creature can still attack this turn, otherwise
+ * the counter. */
 export function defaultRiot(s: GameState, o: GameObject): "counter" | "haste" {
   const early = ["untap", "upkeep", "draw", "main1", "beginCombat"].includes(s.turn.step);
   return s.turn.active === o.controller && early && !chars(s, o.id).keywords.includes("haste") ? "haste" : "counter";
 }
 
-/** Ce que les effets « en arrivant » apportent à l'arrivée (614.1c, 614.12), lu par `applyEntersReplacements`. */
+/** What the "as it enters" effects bring to the entering (614.1c, 614.12), read by `applyEntersReplacements`. */
 export type EntersChoices = Pick<
   EntersContext,
   "asEnters" | "chosen" | "riot" | "copyOf" | "copyMods" | "copyDuration" | "counters" | "tapped" | "linked" | "exileCopied"
 >;
 
 /**
- * Comment la boucle « en arrivant » répond à ses questions :
- * - `ask` : elles sont posées (la résolution est suspendue, puis l'effet reprend avec la réponse) ;
- * - `auto` : la réponse suggérée (après un tirage au hasard, qui ne serait pas rejoué) ;
- * - `default` : la réponse suggérée, et seulement les choix (arrivée hors d'une résolution : retour d'un exil lié,
- *   jeton copie, ninjutsu ; le permanent est déjà en train d'arriver, les autres effets ne sont pas faits) ;
- * - `probe` : la première question seulement, sans rien faire (terrain proposé par `legalActions`) ;
- * - `{ first }` : la réponse donnée avec la décision de jouer un terrain, puis les réponses suggérées.
+ * How the "as it enters" loop answers its questions:
+ * - `ask`: they are asked (the resolution is suspended, then the effect resumes with the answer);
+ * - `auto`: the suggested answer (after a random draw, which would not be replayed);
+ * - `default`: the suggested answer, and only the choices (entering outside a resolution: return from a linked exile,
+ *   copy token, ninjutsu; the permanent is already entering, the other effects are not done);
+ * - `probe`: the first question only, without doing anything (land offered by `legalActions`);
+ * - `{ first }`: the answer given with the decision to play a land, then the suggested answers.
  */
 export type EntersMode = "ask" | "auto" | "default" | "probe" | { first: ChoiceValue[] };
 
-/** L'objet qui arrive : son identifiant (sur la pile, dans sa zone ou déjà sur le champ de bataille), sa face, son contrôleur. */
+/** The entering object: its id (on the stack, in its zone or already on the battlefield), its face, its controller. */
 export interface Entering {
   id: ObjectId;
   defId: string;
   controller: PlayerId;
-  /** X et kicker du sort qui se résout (X vaut 0 pour une carte qui n'est pas lancée, 107.3). */
+  /** X and kicker of the resolving spell (X is 0 for a card that isn't cast, 107.3). */
   x?: number;
   kicked?: boolean;
 }
 
 type EntersAsk = Extract<OpResult, { ask: unknown }>;
 
-/** Préfixe des choix « en arrivant » d'un sort de permanent qui se résout (opération `asEnters`, `finishResolution`). */
+/** Prefix of the "as it enters" choices of a resolving permanent spell (`asEnters` operation, `finishResolution`). */
 export const ENTERS_PREFIX = "enter:";
 
-/** Effets « en arrivant » qui ne font que choisir : seuls faits hors d'une résolution, et sondés pour un terrain. */
+/** "As it enters" effects that only choose: the only ones done outside a resolution, and probed for a land. */
 const CHOICE_OPS: ReadonlySet<Effect["op"]> = new Set(["chooseOnEnter", "chooseCopy"]);
-/** Résultats de ces choix, retirés avant chaque effet (un second choix du même genre est bien posé). */
+/** Results of these choices, removed before each effect (a second choice of the same kind is properly asked). */
 const RESULT_KEYS = ["$chosen", "$copyOf", "$copyCard", "$devoured", "$ids:devoured"];
 
-/** Émeute (702.136a) : un marqueur +1/+1 ou la célérité ; suggestion : la célérité s'il peut encore attaquer ce tour-ci. */
+/** Riot (702.136a): a +1/+1 counter or haste; suggestion: haste if it can still attack this turn. */
 function riotRequest(s: GameState, controller: PlayerId): ChoiceRequest {
   const early = ["untap", "upkeep", "draw", "main1", "beginCombat"].includes(s.turn.step);
   return {
@@ -159,7 +158,7 @@ function riotRequest(s: GameState, controller: PlayerId): ChoiceRequest {
   };
 }
 
-/** Le choix « en arrivant » noté sur le permanent, d'après sa sorte et la réponse. */
+/** The "as it enters" choice noted on the permanent, according to its kind and the answer. */
 export function chosenValue(kind: string, value: string): GameObject["chosen"] {
   if (kind === "cardName" || kind === "landName") return { cardName: value };
   if (kind === "parity") return { parity: value === "odd" ? "odd" : "even" };
@@ -169,7 +168,7 @@ export function chosenValue(kind: string, value: string): GameObject["chosen"] {
   return kind === "color" ? { color: value as Color } : { creatureType: value };
 }
 
-/** Ce qu'un effet « en arrivant » terminé apporte à l'arrivée, d'après les valeurs qu'il a mémorisées (`diff`). */
+/** What a finished "as it enters" effect brings to the entering, according to the values it stored (`diff`). */
 function collectEntering(
   s: GameState,
   out: EntersChoices,
@@ -184,7 +183,7 @@ function collectEntering(
     const [defId, model] = (diff.$copyOf ?? []).map(String);
     if (!defId) return;
     out.copyOf = defId;
-    // 707.9b : les exceptions du modèle, puis celles de la copie, sont copiables.
+    // 707.9b: the exceptions of the model, then those of the copy, are copiable.
     out.copyMods = mergeMods(copiableExceptions(s, model), e.except);
     if (e.duration) out.copyDuration = e.duration;
     if (e.counters) {
@@ -203,18 +202,18 @@ function collectEntering(
 }
 
 /**
- * 614.1c, 614.12 (PLAN-H H9) : la seule boucle des effets « en arrivant » d'un permanent, quel que soit le chemin
- * d'arrivée : sort de permanent qui se résout (opération `asEnters`, `specsAndEffects`), copie d'un sort de permanent
- * (707.10 : le jeton), terrain joué (`playLand`, la réponse vient avec la décision), effet qui le met sur le champ de
- * bataille (`arrivalChoices`, `ops/zones.ts`), toute autre arrivée (`applyEntersReplacements`, mode `default`).
+ * 614.1c, 614.12 (PLAN-H H9): the single loop of the "as it enters" effects of a permanent, whatever the path of
+ * entering: resolving permanent spell (`asEnters` operation, `specsAndEffects`), copy of a permanent spell (707.10: the
+ * token), land played (`playLand`, the answer comes with the decision), effect that puts it onto the battlefield
+ * (`arrivalChoices`, `ops/zones.ts`), any other entering (`applyEntersReplacements`, mode `default`).
  *
- * Dans l'ordre : l'émeute (702.136, imprimée ou donnée), puis les effets de `CardDef.asEnters` ; s'il arrive comme une
- * copie, l'émeute et les effets « en arrivant » du modèle (707.9 : la copie fait les choix du permanent copié ; pas une
- * seconde copie). Des marqueurs mis sur `ref.self` sont ceux avec lesquels il arrive. Un permanent face cachée n'a aucun
- * effet « en arrivant » (708.2).
+ * In order: riot (702.136, printed or granted), then the effects of `CardDef.asEnters`; if it enters as a copy, the
+ * riot and the "as it enters" effects of the model (707.9: the copy makes the choices of the copied permanent; not a
+ * second copy). Counters put on `ref.self` are those it enters with. A face-down permanent has no "as it enters"
+ * effect (708.2).
  *
- * Chaque effet terminé est noté dans `vars` (sous `prefix`) avec ce qu'il a mémorisé : la boucle rejouée (réponse à une
- * question, fin de la résolution) ne le refait pas. Renvoie la question à poser, sinon ce qu'apporte l'arrivée.
+ * Each finished effect is noted in `vars` (under `prefix`) with what it stored: the replayed loop (answer to a
+ * question, end of the resolution) doesn't redo it. Returns the question to ask, otherwise what the entering brings.
  */
 export function asEntersChoices(
   s: GameState,
@@ -226,7 +225,7 @@ export function asEntersChoices(
   const out: EntersChoices = { asEnters: true };
   const own = s.defs[entering.defId];
   if (!own || entering.defId === FACE_DOWN_ID) return out;
-  // Rien à faire : la plupart des arrivées (seules l'émeute et `asEnters` posent des questions).
+  // Nothing to do: most enterings (only riot and `asEnters` ask questions).
   if (!own.asEnters?.length && (mode === "default" || mode === "probe" || !willHaveRiot(s, entering.controller, own))) return out;
   const scratch: Record<string, ChoiceValue[]> = {};
   const item: StackItem = {
@@ -252,7 +251,7 @@ export function asEntersChoices(
     awaiting: null,
   };
   let given = 0;
-  // La réponse à une question selon le mode ; `null` : la poser.
+  // The answer to a question according to the mode; `null`: ask it.
   const answer = (request: ChoiceRequest): ChoiceValue[] | null => {
     if (mode === "ask" || mode === "probe") return null;
     if (typeof mode === "object" && given++ === 0) return mode.first;
@@ -271,7 +270,7 @@ export function asEntersChoices(
       kicked: !!entering.kicked,
       vars: scratch,
     };
-    // 702.136 : émeute, imprimée ou donnée (Spider-Punk) ; hors d'une résolution, le choix par défaut (`defaultRiot`).
+    // 702.136: riot, printed or granted (Spider-Punk); outside a resolution, the default choice (`defaultRiot`).
     if (out.riot === undefined && mode !== "default" && mode !== "probe" && willHaveRiot(s, entering.controller, d)) {
       const key = `${prefix}riot`;
       let v = vars[key];
@@ -284,7 +283,7 @@ export function asEntersChoices(
       }
       out.riot = String(v[0]) === "haste" ? "haste" : "counter";
     }
-    // Le modèle d'une copie : ses effets, sauf une autre copie.
+    // The model of a copy: its effects, except another copy.
     const effects = (d.asEnters ?? []).filter((e) => phase === 0 || e.op !== "chooseCopy");
     let skip = 0;
     for (let i = 0; i < effects.length; i++) {
@@ -293,9 +292,9 @@ export function asEntersChoices(
         skip -= 1;
         continue;
       }
-      // Hors d'une résolution (`default`) et pour sonder un terrain (`probe`) : les choix seulement.
+      // Outside a resolution (`default`) and to probe a land (`probe`): the choices only.
       if ((mode === "default" || mode === "probe") && !CHOICE_OPS.has(e.op)) continue;
-      // « Il arrive avec N marqueurs » : des marqueurs mis sur lui-même (614.1c).
+      // "It enters with N counters": counters put on itself (614.1c).
       if (e.op === "addCounters" && e.what.kind === "self") {
         const n = Math.max(0, evalAmount(s, ctx, e.amount));
         if (n > 0) out.counters = [...(out.counters ?? []), { kind: e.kind ?? P1P1, n }];
@@ -334,8 +333,8 @@ export function asEntersChoices(
 }
 
 /**
- * Réunit le contexte d'arrivée et ce qu'apportent les effets « en arrivant » : ce que le contexte fixe déjà l'emporte
- * (une copie imposée), les marqueurs s'ajoutent, « engagé » vient de l'un ou de l'autre.
+ * Merges the entering context and what the "as it enters" effects bring: what the context already sets wins (an
+ * imposed copy), the counters add up, "tapped" comes from either.
  */
 export function withEntersChoices(ctx: EntersContext, choices: EntersChoices): EntersContext {
   const counters = [...(ctx.counters ?? []), ...(choices.counters ?? [])];
@@ -347,30 +346,30 @@ export function withEntersChoices(ctx: EntersContext, choices: EntersChoices): E
 }
 
 /**
- * Montant évalué à l'arrivée, du point de vue de `o` (la source du remplacement).
- * `entering` : l'objet qui arrive, exclu des comptes (« pour chaque Ange que vous contrôlez déjà »).
+ * Amount evaluated as it enters, from the point of view of `o` (the source of the replacement).
+ * `entering`: the entering object, excluded from counts ("for each other Angel you already control").
  */
 function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContext, entering?: GameObject): number {
   if (typeof a === "number") return a;
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
   if (a.kind === "spent" && !a.of && a.what === "mana") return ctx.cast?.manaSpent ?? 0;
-  // Coin of Mastery : « pour chaque mana d'une source d'artefact dépensé pour la lancer » (la créature qui arrive).
+  // Coin of Mastery: "for each mana from an artifact source spent to cast it" (the entering creature).
   if (a.kind === "spent" && !a.of && a.what === "artifact") return ctx.cast?.spentFrom?.artifact ?? 0;
-  // Scarlet Spider, Ben Reilly : « X étant la valeur de mana de la créature renvoyée » (Web-slinging).
+  // Scarlet Spider, Ben Reilly: "where X is the mana value of the returned creature" (Web-slinging).
   if (a.kind === "manaValueOf" && a.ref.kind === "cost" && a.ref.paid === "bounced")
     return manaValue(s.defs[s.objects[ctx.cast?.costBounced?.[0] ?? ""]?.defId ?? ""]?.manaCost);
-  // Convergence : « un marqueur pour chaque couleur de mana dépensée pour le lancer ».
+  // Converge: "a counter for each color of mana spent to cast it".
   if (a.kind === "spent" && !a.of && a.what === "colors")
     return (["W", "U", "B", "R", "G"] as const).filter((c) => (ctx.cast?.spentColors?.[c] ?? 0) > 0).length;
-  // Arithmétique (Slumbering Trudge : « 3 moins X »).
+  // Arithmetic (Slumbering Trudge: "3 minus X").
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + amountAtEntry(s, x, o, ctx, entering), 0);
   if (a.kind === "neg") return -amountAtEntry(s, a.of, o, ctx, entering);
   if (a.kind === "max") return Math.max(...a.of.map((x) => amountAtEntry(s, x, o, ctx, entering)));
-  // Bioengineered Future : terrains arrivés ce tour-ci sous le contrôle de la source.
+  // Bioengineered Future: lands that entered this turn under the control of the source.
   if (a.kind === "turnEvents") return countTurnEvents(s, a.query, o.controller);
-  // Force sur le champ de bataille (« la plus grande force parmi les autres créatures que vous contrôlez », Prime Speaker
-  // Zegana ; force totale), sans l'objet qui arrive.
+  // Power on the battlefield ("the greatest power among other creatures you control", Prime Speaker Zegana; total
+  // power), without the entering object.
   if (a.kind === "aggregate" && a.property === "power" && (a.fn === "max" || a.fn === "sum") && !a.zone && !a.of) {
     const f = withChosen(a.filter ?? {}, o);
     const powers = s.battlefield
@@ -383,12 +382,12 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
     const n = boardAmount(s, { ...a, filter: f }, o.controller, o.id);
     return entering && matchesObjectFilter(s, o.controller, entering.id, f, o.id) ? n - 1 : n;
   }
-  // Les autres montants ne dépendent que de l'état de la partie (Gev, Scaled Scorch : « un marqueur pour chaque
-  // adversaire qui a perdu des points de vie ce tour-ci »), vus de la source.
+  // The other amounts depend only on the game state (Gev, Scaled Scorch: "a counter for each opponent who lost life
+  // this turn"), seen from the source.
   return evalAmount(s, staticContext(s, o.controller, o.id), a);
 }
 
-/** Condition d'une capacité « arrive avec » : le kicker et X du sort lancé sont connus à l'arrivée. */
+/** Condition of an "enters with" ability: the kicker and X of the cast spell are known as it enters. */
 function conditionAtEntry(s: GameState, c: Condition, o: GameObject, ctx: EntersContext): boolean {
   if (c.kind === "kicked") return !!ctx.kicked;
   if (c.kind === "xAtLeast") return (ctx.x ?? 0) >= c.n;
@@ -398,9 +397,9 @@ function conditionAtEntry(s: GameState, c: Condition, o: GameObject, ctx: Enters
   return checkCondition(s, c, o.controller, o.id);
 }
 
-/** Un remplacement « exilez-le à la place » qui s'applique à un objet sur le point d'aller au cimetière. */
+/** An "exile it instead" replacement that applies to an object about to go to the graveyard. */
 interface GraveyardCandidate {
-  /** Contrôleur du remplacement (source, créateur de l'effet) ; absent pour une règle (marqueur de finalité). */
+  /** Controller of the replacement (source, creator of the effect); absent for a rule (finality counter). */
   controller?: PlayerId;
   sourceId?: ObjectId;
   link?: "object" | "uid";
@@ -409,25 +408,25 @@ interface GraveyardCandidate {
   timestamp: number;
 }
 
-/** Destination après les remplacements « au lieu du cimetière » (614.1a, 616.1). */
+/** Destination after the "instead of the graveyard" replacements (614.1a, 616.1). */
 export interface GraveyardOutcome {
   to: Zone;
-  /** Progenitus : mélanger la bibliothèque après le déplacement. */
+  /** Progenitus: shuffle the library after the move. */
   shuffle?: boolean;
-  /** Source à laquelle lier le nouvel objet (Valgavoth). */
+  /** Source to link the new object to (Valgavoth). */
   linkTo?: ObjectId;
 }
 
 function graveyardCandidates(s: GameState, o: GameObject): GraveyardCandidate[] {
   const out: GraveyardCandidate[] = [];
   const fromBattlefield = o.zone === "battlefield";
-  // Effets créés par une résolution : « si elle devait mourir ce tour-ci, exilez-la à la place » (Lava Coil).
+  // Effects created by a resolution: "if it would die this turn, exile it instead" (Lava Coil).
   if (fromBattlefield) {
     for (const r of s.replacements) if (r.kind === "exileIfDies" && r.objects.includes(o.id)) out.push({ timestamp: 0 });
-    // 122.1h : marqueur de finalité.
+    // 122.1h: finality counter.
     if ((o.counters.finality ?? 0) > 0) out.push({ timestamp: 0 });
   }
-  // Capacités des permanents et emblèmes de chaque joueur.
+  // Abilities of the permanents and emblems of each player.
   const graveyardOwner = o.owner;
   for (const p of s.playerOrder) {
     for (const { id, ab } of controlledAbilitiesWithSource(s, p)) {
@@ -455,11 +454,11 @@ function graveyardCandidates(s: GameState, o: GameObject): GraveyardCandidate[] 
 }
 
 /**
- * 614.1a / 616.1 : l'objet `o` devrait aller au cimetière. On applique d'abord son propre remplacement (616.1a :
- * Progenitus est mélangé dans la bibliothèque) ; sinon, parmi les « exilez-le à la place », le joueur affecté (le
- * contrôleur de l'objet, ou son propriétaire hors du champ de bataille) en choisit un (616.1e). Approximation (choix
- * auto) : il écarte d'abord ceux qui profitent à un adversaire (PV gagnés, carte liée), puis prend le plus ancien. Une
- * fois l'objet exilé, les autres ne s'appliquent plus (616.1f).
+ * 614.1a / 616.1: the object `o` would go to the graveyard. Its own replacement applies first (616.1a: Progenitus is
+ * shuffled into the library); otherwise, among the "exile it instead", the affected player (the controller of the
+ * object, or its owner outside the battlefield) chooses one (616.1e). Approximation (automatic choice): they first
+ * discard those that benefit an opponent (life gained, linked card), then take the oldest. Once the object is exiled,
+ * the others no longer apply (616.1f).
  */
 export function replaceGraveyard(s: GameState, o: GameObject): GraveyardOutcome {
   if (!o.isToken && s.defs[o.defId]?.shuffleIntoLibrary) return { to: "library", shuffle: true };
@@ -475,38 +474,38 @@ export function replaceGraveyard(s: GameState, o: GameObject): GraveyardOutcome 
     if (src) src.linkedUids = [...(src.linkedUids ?? []), o.uid];
   }
   if (chosen.gainLife && chosen.controller) gainLife(s, chosen.controller, chosen.gainLife);
-  // Head of the Hunt : « quand vous le faites, créez un Loup 2/2 » : une capacité réflexive (603.12), à laquelle on peut
-  // répondre.
+  // Head of the Hunt: "when you do, create a 2/2 Wolf": a reflexive ability (603.12), which can be responded
+  // to.
   if (chosen.createToken && chosen.controller && chosen.sourceId)
     pushInline(s, chosen.controller, chosen.sourceId, s.objects[chosen.sourceId]?.defId ?? "", {
       targets: [],
       effects: [{ op: "createTokens", token: chosen.createToken, count: 1 }],
-      label: `Un jeton ${chosen.createToken.name}`,
+      label: msg("A {name} token", { name: chosen.createToken.name }),
     });
   return { to: "exile", linkTo: chosen.link === "object" ? chosen.sourceId : undefined };
 }
 
-/** 614.1c–d : effets qui modifient la façon dont un permanent arrive sur le champ de bataille. */
+/** 614.1c–d: effects that modify how a permanent enters the battlefield. */
 export function applyEntersReplacements(s: GameState, o: GameObject, ctx: EntersContext): void {
   if (ctx.kicked) o.kicked = true;
-  // Comment il a été lancé, connu dès l'arrivée (« si aucun mana n'a été dépensé pour la lancer », kicker, X).
+  // How it was cast, known as it enters ("if no mana was spent to cast it", kicker, X).
   if (ctx.cast) o.cast = { ...ctx.cast };
   const own = s.defs[o.defId];
-  // 303.4f : une Aura qui arrive sans être lancée enchante un objet choisi par celui qui la contrôle (automatiquement ici :
-  // le premier possible ; les opérations de déplacement le demandent pendant une résolution).
+  // 303.4f: an Aura entering without being cast enchants an object chosen by its controller (automatically here: the
+  // first possible one; the move operations ask for it during a resolution).
   const attachTo = ctx.attachTo ?? (own?.enchant && !own.enchant.player ? auraHosts(s, o.controller, o.id)[0] : undefined);
   if (attachTo) o.attachedTo = attachTo;
-  // 614.1c, 614.12 : les effets « en arrivant » qui n'ont pas été faits avant le déplacement (arrivée hors d'une
-  // résolution : retour d'un exil lié, jeton copie, ninjutsu) : les choix seulement, avec la réponse suggérée. Un permanent
-  // face cachée n'en a pas (708.2).
+  // 614.1c, 614.12: the "as it enters" effects that were not done before the move (entering outside a resolution:
+  // return from a linked exile, copy token, ninjutsu): the choices only, with the suggested answer. A face-down
+  // permanent has none (708.2).
   if (!ctx.asEnters && !ctx.copyOf) {
     const res = asEntersChoices(s, {}, { id: o.id, defId: copiedDefId(s, o.id), controller: o.controller }, "", "default");
     if (!("ask" in res)) ctx = withEntersChoices(ctx, res);
   }
-  // 707.9 : « arrive comme copie de … » (Waxen Shapethief), avant les autres remplacements (qui lisent la copie : émeute,
-  // loyauté). Les exceptions du modèle, puis les siennes (Visage Bandit : « … en plus de ses autres types » ; Superior
-  // Spider-Man : nom et F/E), sont copiables (707.9b) : une copie de ce permanent les reprend. Cursed Mirror : jusqu'à la
-  // fin du tour.
+  // 707.9: "enters as a copy of …" (Waxen Shapethief), before the other replacements (which read the copy: riot,
+  // loyalty). The exceptions of the model, then its own (Visage Bandit: "… in addition to its other types"; Superior
+  // Spider-Man: name and P/T), are copiable (707.9b): a copy of this permanent takes them over. Cursed Mirror: until end
+  // of turn.
   if (ctx.copyOf) {
     s.effects.push({
       id: newId(s, "e"),
@@ -517,21 +516,21 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       ...ctx.copyMods,
       copiable: true,
     });
-    s.version += 1; // cache des couches
-    // Superior Spider-Man : « quand vous le faites, exilez cette carte » : une capacité réflexive (603.12).
+    s.version += 1; // layer cache
+    // Superior Spider-Man: "when you do, exile that card": a reflexive ability (603.12).
     const card = ctx.exileCopied;
     if (card && s.objects[card]?.zone === "graveyard")
       pushInline(s, o.controller, o.id, o.defId, {
         targets: [],
         effects: [{ op: "moveTo", what: { kind: "target", id: "c" }, spec: { to: "exile" } }],
         bound: { c: [card] },
-        label: "Exilez la carte copiée",
+        label: msg("Exile the copied card"),
       });
   }
-  // 702.82 : les cartes exilées en arrivant (Mimeoplasm) sont liées au permanent.
+  // 702.82: the cards exiled as it enters (Mimeoplasm) are linked to the permanent.
   if (ctx.linked?.length) o.linked = [...(o.linked ?? []), ...ctx.linked];
-  // Modifications imposées par l'effet qui le met sur le champ de bataille, avant les autres remplacements (qui peuvent
-  // dépendre des types ajoutés) et avant l'événement d'arrivée.
+  // Modifications imposed by the effect that puts it onto the battlefield, before the other replacements (which can
+  // depend on the added types) and before the entering event.
   if (ctx.tapped) o.tapped = true;
   if (ctx.mods && Object.values(ctx.mods).some((v) => v !== undefined)) {
     s.effects.push({
@@ -554,7 +553,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     });
     s.version += 1;
   }
-  // 702.136 : émeute, imprimée ou donnée (Spider-Punk : « vos autres Araignées ont l'émeute »).
+  // 702.136: riot, printed or granted (Spider-Punk: "other Spiders you control have riot").
   if (chars(s, o.id).keywords.includes("riot")) {
     if ((ctx.riot ?? defaultRiot(s, o)) === "haste") {
       s.effects.push({
@@ -568,37 +567,37 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     } else changeCounters(s, o, P1P1, 1);
   }
   if (ctx.attacking && s.combat) s.combat.attackers.push({ id: o.id, defender: ctx.attacking, blockers: [], blocked: false });
-  // La suite lit la définition effective : celle que copie le permanent (707.9 : un Clone de planeswalker arrive avec la
-  // loyauté de ce planeswalker), sinon sa face active (714.3a : une Saga au verso).
+  // What follows reads the effective definition: the one the permanent copies (707.9: a Clone of a planeswalker enters
+  // with the loyalty of that planeswalker), otherwise its active face (714.3a: a Saga on the back face).
   const eff = s.defs[copiedDefId(s, o.id)];
-  // 614.12 : « en arrivant, choisissez… » (faits par `asEntersChoices`).
+  // 614.12: "as it enters, choose…" (made by `asEntersChoices`).
   if (ctx.chosen) o.chosen = ctx.chosen;
-  // Terrain choc : engagé, sauf si les points de vie ont été payés en le jouant (mis en jeu par un effet : engagé).
+  // Shock land: tapped, unless the life was paid while playing it (put onto the battlefield by an effect: tapped).
   if (eff?.shockLand && !ctx.shockPaid) o.tapped = true;
-  // 714.3a : une Saga arrive avec un marqueur de savoir.
+  // 714.3a: a Saga enters with a lore counter.
   if (eff?.saga) changeCounters(s, o, "lore", 1);
-  // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
+  // 306.5b: a planeswalker enters with its printed loyalty.
   const loyalty = ctx.loyalty ?? eff?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);
-  // X du sort qui l'a fait arriver, connu dès l'arrivée (escouade : « s'il a été payé », vérifié au déclenchement).
+  // X of the spell that made it enter, known as it enters (squad: "if it was paid", checked on triggering).
   if (ctx.x) o.x = ctx.x;
-  // Marqueurs imposés par l'effet (« avec un marqueur +1/+1 », Imminence) : mis en arrivant (122.6).
+  // Counters imposed by the effect ("with a +1/+1 counter", Impending): put as it enters (122.6).
   for (const c of ctx.counters ?? []) changeCounters(s, o, c.kind, c.n);
   if (ctx.impending) changeCounters(s, o, "time", ctx.impending);
-  // Remplacements portés par d'autres permanents (« les créatures de vos adversaires arrivent engagées »).
+  // Replacements carried by other permanents ("creatures your opponents control enter tapped").
   for (const id of s.battlefield) {
     const src = s.objects[id];
     if (!src || id === o.id) continue;
-    // Capacités calculées : porte déverrouillée d'une Salle, verso, copie.
+    // Computed abilities: unlocked door of a Room, back face, copy.
     for (const ab of chars(s, id).abilities) {
       if (ab.kind !== "replacement" || !ab.affects) continue;
       if (!matchesObjectFilter(s, src.controller, o.id, ab.affects, id)) continue;
-      // « Tant qu'un adversaire a perdu des PV ce tour-ci, … » (Vampire Socialite) : vue du contrôleur de la source.
+      // "As long as an opponent lost life this turn, …" (Vampire Socialite): seen from the source's controller.
       if (ab.condition && !checkCondition(s, ab.condition, src.controller, id)) continue;
       if (ab.entersTapped) o.tapped = true;
       if (ab.entersWithCounters !== undefined) {
         const n = amountAtEntry(s, ab.entersWithCounters, src, ctx, o);
-        // Blue, Loyal Raptor : autant de marqueurs de chaque sorte présente sur la source.
+        // Blue, Loyal Raptor: that many counters of each kind present on the source.
         if (ab.counterKind === "*") for (const [k, c] of Object.entries(src.counters)) c > 0 && changeCounters(s, o, k, n);
         else changeCounters(s, o, ab.counterKind ?? P1P1, n);
       }
@@ -612,13 +611,13 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     if (ab.entersWithCounters !== undefined)
       changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx));
   }
-  // The Wandering Minstrel : « les terrains que vous contrôlez arrivent dégagés ».
+  // The Wandering Minstrel: "lands you control enter untapped".
   if (o.tapped && eff?.types.includes("Land") && playerStatic(s, o.controller, "landsEnterUntapped")) o.tapped = false;
-  // « Arrive engagé » : des statiques en dépendent (« vos autres créatures engagées ont la défense talismanique »).
+  // "Enters tapped": statics depend on it ("other tapped creatures you control have hexproof").
   s.version += 1;
 }
 
-/** 610.3 : la source d'un exil « jusqu'à ce que » quitte le champ de bataille : les cartes reviennent. */
+/** 610.3: the source of an "until" exile leaves the battlefield: the cards return. */
 export function releaseLinkedExile(s: GameState, sourceId: ObjectId): void {
   const links = s.linkedExile.filter((l) => l.sourceId === sourceId);
   if (links.length === 0) return;
@@ -632,8 +631,8 @@ export function releaseLinkedExile(s: GameState, sourceId: ObjectId): void {
 }
 
 /**
- * 615 : ces blessures sont-elles prévenues par un effet de prévention créé sur des objets fixés à la résolution (toutes
- * les blessures, ou seulement celles de combat) ? Un effet, pas une capacité : perdre ses capacités ne le retire pas.
+ * 615: is this damage prevented by a prevention effect created on objects fixed at resolution (all damage, or only
+ * combat damage)? An effect, not an ability: losing its abilities doesn't remove it.
  */
 export function preventsDamageTo(s: GameState, target: string, combat: boolean): boolean {
   return s.replacements.some(

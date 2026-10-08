@@ -1,10 +1,10 @@
-/** Décision illégale : l'état d'origine reste inchangé. */
+/** Illegal decision: the original state is left unchanged. */
 export class RulesError extends Error {}
 
 /**
- * Relance une erreur attrapée autour d'une étape pouvant être illégale (paiement, cibles) : une RulesError devient
- * une RulesError au message donné ; toute autre erreur est un bug du moteur et remonte telle quelle (jamais
- * déguisée en décision illégale, sinon l'IA et le fuzz la masquent).
+ * Rethrows an error caught around a step that may be illegal (payment, targets): a RulesError becomes a RulesError
+ * with the given message; any other error is an engine bug and propagates unchanged (never disguised as an illegal
+ * decision, otherwise the AI and the fuzz would hide it).
  */
 export function rethrowAsRules(e: unknown, message?: string): never {
   if (e instanceof RulesError) throw message === undefined ? e : new RulesError(message);

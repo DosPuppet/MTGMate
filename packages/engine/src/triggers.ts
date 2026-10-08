@@ -1,12 +1,12 @@
 /**
- * Capacités déclenchées (603).
+ * Triggered abilities (603).
  *
- * - Détection : au moment de l'événement (via les événements de règles émis par state.ts / actions.ts).
- *   Les capacités « quitte le champ de bataille » regardent en arrière (603.10a) : pendant un lot
- *   d'événements simultanés (actions basées sur l'état, un effet), les sources sont celles présentes au début du lot.
- * - Mise sur la pile : juste avant qu'un joueur reçoive la priorité (603.3b), dans l'ordre APNAP ;
- *   chaque joueur ordonne ses déclenchements, choisit leur mode et leurs cibles (603.3c–d) via les choix génériques.
- * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
+ * - Detection: at the time of the event (via the rules events emitted by state.ts / actions.ts).
+ *   "Leaves the battlefield" abilities look back in time (603.10a): during a batch of simultaneous events
+ *   (state-based actions, an effect), the sources are those present at the start of the batch.
+ * - Putting on the stack: just before a player receives priority (603.3b), in APNAP order;
+ *   each player orders their triggers, chooses their mode and targets (603.3c–d) via the generic choices.
+ * - Delayed (603.7) and reflexive (603.12) abilities: created by effects, with their own effects and targets.
  */
 
 import { gainLife } from "./actions";
@@ -41,6 +41,7 @@ import {
   validateTargets,
   withChosen,
 } from "./targets";
+import { msg } from "./text";
 import { countTurnEvents, logTurnEvent, objectDidThisTurn } from "./turnlog";
 import type {
   AbilityDef,
@@ -73,12 +74,12 @@ interface Source {
 const hasTriggers = (abilities: readonly AbilityDef[] | undefined) => !!abilities?.some((a) => a.kind === "triggered");
 
 /**
- * Sources en vigueur, mises en cache tant que l'état n'a pas changé (PLAN-C, lot C15) : version du cache des couches,
- * moment du tour, et composition des zones lues (par prudence, au cas où un déplacement ne ferait pas avancer la version).
+ * Sources in force, cached as long as the state hasn't changed (PLAN-C, lot C15): version of the layer cache, moment
+ * of the turn, and composition of the zones read (to be safe, in case a move doesn't advance the version).
  */
 const sourcesCache = new WeakMap<GameState, { key: string; out: Source[] }>();
 
-/** Copie de l'état : la copie reprend les sources de l'original, validées par leur clé (voir `carryLayerCache`). */
+/** State copy: the copy takes over the sources of the original, validated by their key (see `carryLayerCache`). */
 export function carrySourcesCache(from: GameState, to: GameState): void {
   const hit = sourcesCache.get(from);
   if (hit) sourcesCache.set(to, hit);
@@ -90,7 +91,7 @@ function sourcesKey(s: GameState): string {
     const pl = s.players[p];
     zones += `|${pl?.graveyard.length ?? 0}:${pl?.graveyard[pl.graveyard.length - 1] ?? ""}:${pl?.command.length ?? 0}`;
   }
-  // Les vues des sources portent l'état engagé, qui ne fait pas toujours avancer la version (`bumpFor`).
+  // The views of the sources carry the tapped state, which doesn't always advance the version (`bumpFor`).
   let tapped = "";
   for (const id of s.battlefield) tapped += s.objects[id]?.tapped ? "1" : "0";
   return `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}|${zones}|${tapped}`;
@@ -111,9 +112,9 @@ function computeLiveSources(s: GameState): Source[] {
 
 function computeLiveSourcesScanned(s: GameState): Source[] {
   const out: Source[] = [];
-  // Capacités déclenchées accordées, ou copiées (couche 1) : on ne peut pas se fier aux capacités imprimées.
-  // Prouesse (702.108) et décomposition (702.147) : la capacité déclenchée est ajoutée par les couches à toute créature
-  // qui a le mot-clé (imprimé, accordé ou, pour la décomposition, par un marqueur).
+  // Granted or copied (layer 1) triggered abilities: the printed abilities can't be relied on.
+  // Prowess (702.108) and decayed (702.147): the triggered ability is added by the layers to any creature that has the
+  // keyword (printed, granted or, for decayed, by a counter).
   const grants = (m: { addAbilities?: AbilityDef[]; addKeywords?: string[] }) =>
     !!m.addAbilities?.some((a) => a.kind === "triggered") ||
     !!m.addKeywords?.includes("prowess") ||
@@ -122,11 +123,11 @@ function computeLiveSourcesScanned(s: GameState): Source[] {
     s.effects.some((e) => e.copyOf || grants(e)) ||
     s.battlefield.some((id) => (s.defs[obj(s, id).defId]?.abilities ?? []).some((ab) => ab.kind === "static" && grants(ab.mods)));
   for (const id of s.battlefield) {
-    // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
+    // Quick filter on the printed abilities, unless an effect grants triggered abilities.
     const o = obj(s, id);
     const d = s.defs[o.faceDefId ?? o.defId];
-    // Salle : les capacités déclenchées sont portées par ses portes ; Classe, Affaire, paliers de station : par leurs
-    // niveaux.
+    // Room: the triggered abilities are carried by its doors; Class, Case, station thresholds: by their
+    // levels.
     const levels = !!d?.classLevels || !!d?.caseSolved || !!d?.station;
     if (
       !granted &&
@@ -141,25 +142,25 @@ function computeLiveSourcesScanned(s: GameState): Source[] {
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
   }
-  // Cartes dont une capacité se déclenche depuis le cimetière (Flamewake Phoenix).
+  // Cards with an ability that triggers from the graveyard (Flamewake Phoenix).
   for (const p of s.playerOrder) {
     for (const id of s.players[p]?.graveyard ?? []) {
       const abs = s.defs[obj(s, id).defId]?.abilities;
       if (abs?.some((a) => a.kind === "triggered" && a.fromGraveyard)) out.push({ id, view: snapshot(s, id) });
     }
   }
-  // « Quand vous lancez ce sort » : le sort sur la pile (Emrakul, the Exigent Doom).
+  // "When you cast this spell": the spell on the stack (Emrakul, the Exigent Doom).
   for (const item of s.stack) {
     if (item.kind !== "spell" || !s.objects[item.id]) continue;
     const abs = s.defs[item.sourceDefId]?.abilities;
     if (abs?.some((a) => a.kind === "triggered" && a.trigger.on === "castSelf"))
       out.push({ id: item.id, view: snapshot(s, item.id) });
   }
-  // Zone de commandement : emblèmes (un commandant qui attend d'être lancé n'y a pas de capacité active, 113.6).
+  // Command zone: emblems (a commander waiting to be cast has no active ability there, 113.6).
   for (const p of s.playerOrder) {
     for (const id of s.players[p]?.command ?? []) {
-      // Le filtre par capacité (`fromCommand`) se fait dans `detectTriggers` : les indices des capacités restent ceux de la
-      // définition.
+      // The filter by ability (`fromCommand`) is done in `detectTriggers`: the ability indices stay those of the
+      // definition.
       if (hasTriggers(commandZoneAbilities(s, id))) out.push({ id, view: snapshot(s, id) });
     }
   }
@@ -167,26 +168,26 @@ function computeLiveSourcesScanned(s: GameState): Source[] {
 }
 
 // ---------------------------------------------------------------------------
-// Lots d'événements simultanés (regard en arrière)
+// Batches of simultaneous events (looking back in time)
 // ---------------------------------------------------------------------------
 
 let batchBefore: Source[] | null = null;
-/** Numéro du lot d'événements simultanés en cours (`GameState.eventBatch`), null hors d'un lot. */
+/** Number of the current batch of simultaneous events (`GameState.eventBatch`), null outside a batch. */
 let currentBatch: number | null = null;
 /**
- * Lien de vie pendant un lot d'événements simultanés : un seul gain de points de vie par source (120.3f, 119.9). Une
- * créature qui blesse plusieurs objets ou joueurs en même temps (piétinement, plusieurs bloqueurs) déclenche une seule
- * fois « chaque fois que vous gagnez des points de vie ».
+ * Lifelink during a batch of simultaneous events: a single life gain per source (120.3f, 119.9). A creature that
+ * damages several objects or players at the same time (trample, several blockers) triggers "whenever you gain life"
+ * only once.
  */
 let lifelinkBatch: Map<string, { controller: PlayerId; amount: number }> | null = null;
 /**
- * 603.6a : des permanents qui arrivent en même temps se voient arriver les uns les autres. Chaque arrivée d'un lot est
- * détectée tout de suite (sources présentes à cet instant), puis revue à la fin du lot pour les sources arrivées après
- * elle dans le même lot.
+ * 603.6a: permanents entering at the same time see each other enter. Each entering of a batch is detected right away
+ * (sources present at that instant), then reviewed at the end of the batch for the sources that entered after it in
+ * the same batch.
  */
 let enterBatch: { ev: RulesEvent; seen: Set<ObjectId> }[] | null = null;
 
-/** Met de côté un gain de lien de vie jusqu'à la fin du lot en cours ; false s'il n'y a pas de lot (gain immédiat). */
+/** Sets aside a lifelink gain until the end of the current batch; false if there is no batch (immediate gain). */
 export function queueLifelink(key: string, controller: PlayerId, amount: number): boolean {
   if (!lifelinkBatch) return false;
   const pending = lifelinkBatch.get(key);
@@ -195,7 +196,7 @@ export function queueLifelink(key: string, controller: PlayerId, amount: number)
   return true;
 }
 
-/** Montant évalué hors résolution (sommes, force d'un objet, vitesse…), comme pendant une résolution sans cible. */
+/** Amount evaluated outside a resolution (sums, power of an object, speed…), as during a resolution without a target. */
 function checkAmount(
   s: GameState,
   a: Amount,
@@ -204,11 +205,11 @@ function checkAmount(
   eventObject?: ObjectId,
   event?: TriggerEventData,
 ): number {
-  // L'objet de l'événement (Increment : « si le mana dépensé pour lancer ce sort »).
+  // The object of the event (Increment: "if the mana spent to cast that spell").
   return evalAmount(s, staticContext(s, controller, sourceId, { event, eventObject }), a);
 }
 
-/** Exécute `fn` comme un ensemble d'événements simultanés (actions basées sur l'état, un effet…). */
+/** Runs `fn` as a set of simultaneous events (state-based actions, an effect…). */
 export function simultaneously<T>(s: GameState, fn: () => T): T {
   if (batchBefore) return fn();
   batchBefore = liveSources(s);
@@ -218,11 +219,11 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
   enterBatch = [];
   try {
     const result = fn();
-    // Arrivées du lot : les permanents arrivés ensemble se voient arriver (603.6a).
+    // Enterings of the batch: permanents that entered together see each other enter (603.6a).
     const enters = enterBatch;
     enterBatch = null;
     for (const { ev, seen } of enters) detectTriggers(s, ev, (src) => !seen.has(src.id));
-    // Les gains du lien de vie ont lieu avec les blessures du lot : un par source, dans l'ordre des blessures.
+    // Lifelink gains happen with the damage of the batch: one per source, in the order of the damage.
     const gains = lifelinkBatch;
     lifelinkBatch = null;
     for (const { controller, amount } of gains.values()) gainLife(s, controller, amount);
@@ -239,18 +240,18 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 // Conditions
 // ---------------------------------------------------------------------------
 
-/** Le joueur a le plus de points de vie, ou est à égalité (parmi les joueurs encore en jeu). */
+/** The player has the most life, or is tied (among the players still in the game). */
 export function mostLife(s: GameState, p: PlayerId): boolean {
   const life = (x: PlayerId) => s.players[x]?.life ?? 0;
   return s.playerOrder.every((x) => s.players[x]?.lost || life(p) >= life(x));
 }
 
-/** Clé « une fois par tour » d'une capacité déclenchée (`TriggeredAbilityDef.oncePerTurn`). */
+/** "Once each turn" key of a triggered ability (`TriggeredAbilityDef.oncePerTurn`). */
 export const onceKey = (defId: string, sourceId: string, index: number): string => `${defId}:${sourceId}:${index}`;
 
 /**
- * Condition hors résolution. `eventObject` : l'objet de l'événement déclencheur, pour un « si » intermédiaire qui le
- * concerne (603.4 : « chaque fois qu'un adversaire défausse une carte, si c'est une carte de terrain »).
+ * Condition outside a resolution. `eventObject`: the object of the trigger event, for an intervening "if" that concerns
+ * it (603.4: "whenever an opponent discards a card, if it's a land card").
  */
 export function checkCondition(
   s: GameState,
@@ -258,7 +259,7 @@ export function checkCondition(
   controller: PlayerId,
   sourceId?: ObjectId,
   eventObject?: ObjectId,
-  /** L'événement déclencheur entier (« si 3 blessures ou plus » : Innocent Bystander). */
+  /** The whole trigger event ("if 3 or more damage": Innocent Bystander). */
   event?: TriggerEventData,
 ): boolean {
   switch (c.kind) {
@@ -322,7 +323,7 @@ export function checkCondition(
     }
     case "beheld":
     case "metWhenCast": {
-      // Le sort qui se résout (ou sur la pile) : ce qui a été retenu au lancement.
+      // The resolving spell (or on the stack): what was recorded when it was cast.
       const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
       return c.kind === "beheld" ? !!item?.cast?.beheld : !!item?.cast?.metWhenCast;
     }
@@ -373,14 +374,14 @@ export function checkCondition(
       return n >= (c.atLeast ?? 1);
     }
     case "kicked":
-      // Permanent arrivé depuis un sort kické (sinon : évalué à l'arrivée ou à la résolution).
+      // Permanent that entered from a kicked spell (otherwise: evaluated as it enters or at resolution).
       return !!(sourceId && s.objects[sourceId]?.kicked);
     case "yourTurn":
       return s.turn.active === controller;
     case "opponentsTurn":
       return s.turn.active !== controller;
     case "counterAtLeast": {
-      // La source, ou ses dernières informations connues (« si elle avait un marqueur… » en mourant).
+      // The source, or its last known information ("if it had a counter…" when dying).
       const counters = sourceId ? (s.objects[sourceId]?.counters ?? s.lki[sourceId]?.counters) : undefined;
       return !!counters && (counters[c.counter] ?? 0) >= c.n;
     }
@@ -393,27 +394,27 @@ export function checkCondition(
     case "sourceMatches": {
       if (!sourceId) return false;
       if (onBattlefield(s, sourceId)) return matchesObjectFilter(s, controller, sourceId, c.filter, sourceId);
-      // Source partie (« quand elle meurt, si ce n'est pas un jeton ») : ses dernières informations connues (603.10).
+      // Departed source ("when it dies, if it wasn't a token"): its last known information (603.10).
       const lki = s.objects[sourceId] ? undefined : s.lki[sourceId];
       return !!lki && matchesView(lki, c.filter, controller, sourceId);
     }
-    // Lue pendant la résolution seulement (`evalCondition`).
+    // Read during the resolution only (`evalCondition`).
     case "beholdSharingType":
       return false;
     case "targetMatches":
     case "refMatches":
     case "eventObjectMatches": {
-      // Au déclenchement : l'objet de l'événement (ses dernières informations connues s'il est parti).
+      // On triggering: the object of the event (its last known information if it left).
       if (!eventObject) return false;
-      // Encore sur le champ de bataille : le filtre complet (« arrivée ce tour-ci », marqueurs mis ce tour-ci…).
+      // Still on the battlefield: the full filter ("entered this turn", counters put this turn…).
       if (s.objects[eventObject]?.zone === "battlefield" && !s.lki[eventObject])
         return matchesObjectFilter(s, controller, eventObject, c.filter, sourceId);
       const v = s.lki[eventObject] ?? (s.objects[eventObject] ? snapshot(s, eventObject) : undefined);
       return !!v && matchesView(v, c.filter, controller, sourceId);
     }
     case "xAtLeast":
-      return false; // évalué au lancement (stack.ts) ou pendant la résolution (effects.ts)
-    // Évolution (702.100) : « si cette créature a une force ou une endurance plus grande ».
+      return false; // evaluated on casting (stack.ts) or during the resolution (effects.ts)
+    // Evolve (702.100): "if that creature has greater power or toughness".
     case "amountGreater":
       return (
         checkAmount(s, c.a, controller, sourceId, eventObject, event) >
@@ -428,7 +429,7 @@ export function checkCondition(
       const a = c.amount;
       if (typeof a === "number") return a >= c.n;
       if (a.kind === "count" && a.zone && a.zone !== "battlefield") {
-        // Cartes d'une zone (« deux éphémères ou rituels ou plus dans votre cimetière »).
+        // Cards of a zone ("two or more instant and/or sorcery cards in your graveyard").
         const zone = a.zone;
         const players = a.whose === "all" ? s.playerOrder : a.whose === "opponents" ? opponentsOf(s, controller) : [controller];
         const n = players
@@ -452,35 +453,35 @@ export function checkCondition(
       return opponentsOf(s, controller).some((p) => measure(p) > mine);
     }
     case "mostLife": {
-      // Avec une référence (le joueur défenseur…) : évaluée pendant la résolution (effects.ts).
+      // With a reference (the defending player…): evaluated during the resolution (effects.ts).
       if (c.ref) return false;
       return mostLife(s, controller);
     }
     case "handAtMost": {
-      // « s'il n'a pas de carte en main » hors résolution (« Pour résoudre » d'une Affaire, condition d'un déclencheur).
+      // "if they have no cards in hand" outside a resolution ("To solve" of a Case, condition of a trigger).
       const ctx = staticContext(s, controller, sourceId, { sourceDefId: "" });
       return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
     }
     case "var":
     case "refLife":
-      return false; // évalué pendant la résolution (effects.ts)
+      return false; // evaluated during the resolution (effects.ts)
   }
 }
 
 // ---------------------------------------------------------------------------
-// Détection
+// Detection
 // ---------------------------------------------------------------------------
 
 function matchWho(who: "self" | ObjectFilter, v: LkiSnapshot, src: Source): boolean {
   if (who === "self") return v.id === src.id;
-  // « la créature équipée / enchantée »
+  // "the equipped / enchanted creature"
   if (who.attached === "host" && v.id !== src.view.attachedTo) return false;
   return matchesView(v, withChosen(who, src.view), src.view.controller, src.id);
 }
 
 /**
- * Ce qui a reçu les blessures correspond-il à `to` (joueur relatif au contrôleur de la capacité, ou objet : vivant, sinon
- * ses dernières informations) ? Sans `to`, tout correspond.
+ * Does what was dealt the damage match `to` (player relative to the ability's controller, or object: alive, otherwise
+ * its last information)? Without `to`, everything matches.
  */
 function damagedMatches(s: GameState, target: string, to: TargetFilter | undefined, me: PlayerId, srcId: ObjectId): boolean {
   if (!to) return true;
@@ -498,11 +499,11 @@ function liveView(s: GameState, id: ObjectId | null): LkiSnapshot | null {
 }
 
 /**
- * Arrivées qui ne déclenchent rien (famille G, `triggerMod` `none` sur `enter`) : Torpor Orb, Hushbringer, Karn, Argent
- * Defender (`everyone` : les capacités de tous les joueurs) ; Elesh Norn, Mother of Machines (`sources` : seulement celles
- * des permanents de ses adversaires). Toute capacité que l'arrivée fait se déclencher est concernée (« arrive »,
- * toucheterre…), retardées comprises ; `src` : la source de la capacité (absente : capacité d'un objet hors du champ de
- * bataille, que seul `everyone` concerne).
+ * Enterings that trigger nothing (family G, `triggerMod` `none` on `enter`): Torpor Orb, Hushbringer, Karn, Argent
+ * Defender (`everyone`: the abilities of all players); Elesh Norn, Mother of Machines (`sources`: only those of her
+ * opponents' permanents). Any ability that the entering makes trigger is concerned ("enters", landfall…), delayed ones
+ * included; `src`: the source of the ability (absent: ability of an object outside the battlefield, which only
+ * `everyone` concerns).
  */
 function entryMuted(s: GameState, ev: RulesEvent, src: Source | undefined): boolean {
   if (ev.e !== "zone" || ev.to !== "battlefield") return false;
@@ -520,7 +521,7 @@ function entryMuted(s: GameState, ev: RulesEvent, src: Source | undefined): bool
   );
 }
 
-/** L'événement correspond-il au déclencheur ? Renvoie les données de l'événement, ou null. */
+/** Does the event match the trigger? Returns the data of the event, or null. */
 function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source): TriggerEventData | null {
   const me = src.view.controller;
   switch (t.on) {
@@ -529,7 +530,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.newId);
       if (t.fromZone) {
         const arrived = ev.newId ? s.objects[ev.newId] : undefined;
-        // Lancé depuis le cimetière ou l'exil : le sort est passé par la pile.
+        // Cast from the graveyard or exile: the spell went through the stack.
         const castFrom = t.fromZone === "graveyard" || t.fromZone === "exile" ? arrived?.cast?.from : undefined;
         if (ev.from !== t.fromZone && castFrom !== t.fromZone) return null;
       }
@@ -537,7 +538,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "dies": {
       if (ev.e !== "zone" || ev.from !== "battlefield" || ev.to !== "graveyard" || !ev.lki) return null;
-      // « Meurt » : une créature, sauf si le filtre nomme d'autres types (« une créature ou un artefact meurt », Edge of Eternities).
+      // "Dies": a creature, unless the filter names other types ("a creature or artifact dies", Edge of Eternities).
       const typed = t.who !== "self" && (!!t.who.types || !!t.who.anyOf);
       if (!typed && !ev.lki.types.includes("Creature")) return null;
       return matchWho(t.who, ev.lki, src)
@@ -560,16 +561,16 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
       if (t.to && ev.to !== t.to) return null;
       if (t.whileCrafting && !s.turn.crafting) return null;
-      // « Sans mourir » : pas une créature mise au cimetière.
+      // "Without dying": not a creature put into the graveyard.
       if (t.withoutDying && ev.to === "graveyard" && ev.lki.types.includes("Creature")) return null;
-      // Zenos yae Galvus : « quand la créature choisie quitte le champ de bataille » (liée à la source).
+      // Zenos yae Galvus: "when the chosen creature leaves the battlefield" (linked to the source).
       if (t.who === "linked") return s.objects[src.id]?.linked?.includes(ev.lki.id) ? { objectId: ev.lki.id } : null;
       if (typeof t.who === "object")
         return matchWho(t.who, ev.lki, src)
           ? {
               objectId: ev.lki.id,
               player: ev.lki.controller,
-              // Vers l'exil (Kaya) ou une autre zone (sans mourir) : la carte devient l'objet de l'événement.
+              // To exile (Kaya) or another zone (without dying): the card becomes the object of the event.
               ...((t.to === "exile" || t.withoutDying) && ev.newId ? { newObjectId: ev.newId } : {}),
             }
           : null;
@@ -579,12 +580,12 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "attack") return null;
       const v = liveView(s, ev.attacker);
       if (!v || !matchWho(t.who, v, src)) return null;
-      // « … vous attaque » (Sabotage Strategist) : vous, pas vos planeswalkers.
+      // "… attacks you" (Sabotage Strategist): you, not your planeswalkers.
       if (t.defending === "you" && ev.defender !== me) return null;
-      // « … vous attaque ou attaque un planeswalker que vous contrôlez » (Jace, Reality Sculptor).
+      // "… attacks you or a planeswalker you control" (Jace, Reality Sculptor).
       if (t.defending === "youOrYourPlaneswalkers" && ev.defender !== me && s.objects[ev.defender]?.controller !== me)
         return null;
-      // « … attaque un joueur » (Shredder, Namor) : pas un planeswalker.
+      // "… attacks a player" (Shredder, Namor): not a planeswalker.
       if (t.defending === "player" && !s.players[ev.defender]) return null;
       if (t.alone && (s.combat?.attackers.length ?? 0) !== 1) return null;
       return { objectId: ev.attacker, player: ev.defender };
@@ -592,7 +593,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "attackWith": {
       if (t.defending) {
         if (ev.e !== "attackWith" || !opponentsOf(s, me).includes(ev.player)) return null;
-        // Attaquants de cet adversaire qui vous attaquent (Lulu), ou vous et/ou vos planeswalkers (Tomik).
+        // Attackers of this opponent who attack you (Lulu), or you and/or your planeswalkers (Tomik).
         const walkers = t.defending === "youOrYourPlaneswalkers";
         const count = (s.combat?.attackers ?? []).filter(
           (a) =>
@@ -602,7 +603,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         return count >= (t.min ?? 1) ? { player: ev.player, amount: count } : null;
       }
       if (ev.e !== "attackWith" || (!t.anyPlayer && ev.player !== me)) return null;
-      // « Chaque fois que vous attaquez avec un ou plusieurs [Rats] » : seulement les attaquants correspondants.
+      // "Whenever you attack with one or more [Rats]": only the matching attackers.
       const f = t.filter;
       const count = f
         ? (s.combat?.attackers ?? []).filter((a) => {
@@ -643,7 +644,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.on === "dealsCombatDamage" && !ev.combat) return null;
       if (t.on === "dealsDamage" && t.noncombatOnly && ev.combat) return null;
       const toPlayer = !!s.players[ev.target];
-      // « … à un joueur », « … à l'un de vos adversaires » (Gonti, Night Minister), « … à une créature » (Mephidross Vampire).
+      // "… to a player", "… to one of your opponents" (Gonti, Night Minister), "… to a creature" (Mephidross Vampire).
       if (!damagedMatches(s, ev.target, t.to, me, src.id)) return null;
       const v = liveView(s, ev.sourceId) ?? s.lki[ev.sourceId] ?? null;
       if (!v || !matchWho(t.who, v, src)) return null;
@@ -652,11 +653,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "castSpell": {
       if (ev.e !== "cast" || !whose(t.by, ev.player, me)) return null;
       const v = liveView(s, ev.stackId);
-      // « un sort de la couleur choisie » (Diamond Mare) : le choix de la source.
+      // "a spell of the chosen color" (Diamond Mare): the choice of the source.
       const f = t.filter ? resolveFilter(s, t.filter, src.id) : undefined;
       const filterOk = !f || (!!v && matchesView(v, f, me, src.id));
       if (!filterOk && !t.targeting?.orFilter) return null;
-      // « un sort qui cible une créature que vous contrôlez / un adversaire » (Danitha).
+      // "a spell that targets a creature you control / an opponent" (Danitha).
       if (t.targeting) {
         const item = s.stack.find((x) => x.id === ev.stackId);
         const targets = item ? Object.values(item.targets).flat() : [];
@@ -664,14 +665,14 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         const ok = targets.some((id) =>
           s.players[id] ? !!tg.opponent && id !== me : !!tg.objects && matchesObjectFilter(s, me, id, tg.objects, src.id),
         );
-        // Danitha, Sword of Hope : « un sort d'Équipement ou un sort qui cible… ».
+        // Danitha, Sword of Hope: "an Equipment spell or a spell that targets…".
         if (!ok && !(t.targeting.orFilter && f && filterOk)) return null;
       }
       if (t.singleTarget) {
         const item = s.stack.find((x) => x.id === ev.stackId);
         if (!item || Object.values(item.targets).flat().length !== 1) return null;
       }
-      // « votre deuxième sort de chaque tour ».
+      // "your second spell each turn".
       if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;
       if (t.notTheirTurn && s.turn.active === ev.player) return null;
       if (t.modal) {
@@ -695,9 +696,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.cast?.manaSpent ?? 0) < t.minManaSpent)
         return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
-      // Alania : le premier éphémère, le premier rituel ou le premier sort de Loutre (autre qu'elle) de ce tour.
+      // Alania: the first instant, the first sorcery or the first Otter spell (other than her) this turn.
       if (t.firstOf) {
-        // Journal du tour : un seul sort de ce type (ou de ce sous-type de créature), celui-ci.
+        // Turn log: a single spell of this type (or of this creature subtype), this one.
         const castOf = (k: string) =>
           countTurnEvents(
             s,
@@ -715,7 +716,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
           t.firstOf.some((k) => (v.types.includes(k as CardType) || v.subtypes.includes(k)) && castOf(k) === 1);
         if (!first) return null;
       }
-      // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
+      // `amount`: instants and sorceries already cast this turn (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
     case "discard":
@@ -741,7 +742,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "isDealtDamage": {
       if (ev.e === "damage" && t.combat !== undefined && ev.combat !== t.combat) return null;
-      // « Chaque fois que vous subissez / qu'un adversaire subit des blessures » : de toute source (Massacre Girl).
+      // "Whenever you are dealt / an opponent is dealt damage": from any source (Massacre Girl).
       if (t.who === "you" || t.who === "opponent") {
         if (ev.e !== "damage" || ev.amount <= 0 || !s.players[ev.target]) return null;
         if (t.who === "you" ? ev.target !== me : ev.target === me || !!s.players[ev.target]?.lost) return null;
@@ -752,7 +753,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         const v = liveView(s, ev.target);
         return v && matchWho(t.who, v, src) ? { objectId: ev.target, amount: ev.amount, player: me } : null;
       }
-      // La créature enchantée ou équipée (Cryoshatter, Pain for All), le joueur enchanté (Grievous Wound), ou la source.
+      // The enchanted or equipped creature (Cryoshatter, Pain for All), the enchanted player (Grievous Wound), or the source.
       const who = t.who === "attached" ? src.view.attachedTo : src.id;
       if (who && isPlayer(s, who)) return ev.e === "damage" && ev.target === who ? { player: who, amount: ev.amount } : null;
       return ev.e === "damage" && who && ev.target === who && ev.amount > 0
@@ -769,13 +770,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "block") return null;
       const v = liveView(s, ev.blocker);
       if (!v || !matchWho(t.who, v, src)) return null;
-      // « … bloque une créature avec le vol » (Skystinger).
+      // "… blocks a creature with flying" (Skystinger).
       const a = liveView(s, ev.attacker);
       if (t.attacker && (!a || !matchesView(a, t.attacker, me, src.id))) return null;
       return { objectId: t.eventObject === "attacker" ? ev.attacker : ev.blocker, player: v.controller };
     }
     case "chapter": {
-      // 714.2b : chaque chapitre atteint ou dépassé par les marqueurs de savoir posés.
+      // 714.2b: each chapter reached or passed by the lore counters put.
       if (ev.e !== "counters" || ev.kind !== "lore" || ev.objectId !== src.id) return null;
       const after = s.objects[src.id]?.counters.lore ?? 0;
       const before = after - ev.amount;
@@ -802,7 +803,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
     }
-    // Fallout : « chaque fois qu'une ou plusieurs cartes non-terrain sont meulées » (une fois par meule, tous joueurs).
+    // Fallout: "whenever one or more nonland cards are milled" (once per mill, all players).
     case "milled": {
       if (ev.e !== "milled") return null;
       const rows = ev.byPlayer.filter((x) =>
@@ -813,7 +814,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "combatDamageBatch": {
       if (ev.e !== "combatDamageBatch" || (t.toYou && ev.player !== me)) return null;
-      // Les créatures du lot qui correspondent (« ces créatures », « un de ces Dragons »).
+      // The creatures of the batch that match ("those creatures", "one of those Dragons").
       const matching = ev.sources.filter((id) => {
         const v = liveView(s, id) ?? s.lki[id];
         return !!v && matchesView(v, t.who, me, src.id);
@@ -882,26 +883,26 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return { objectId: ev.stackId, player: me };
     }
     case "castSelf":
-      // `amount.eventAmount` : les sorts lancés avant lui ce tour-ci (déluge).
+      // `amount.eventAmount`: the spells cast before it this turn (storm).
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me, amount: ev.spellsBefore } : null;
     case "zoneChange": {
       if (ev.e !== "zone" || !ev.from || !t.from.includes(ev.from) || (t.to && !t.to.includes(ev.to))) return null;
       const card = (ev.newId && s.objects[ev.newId]) || undefined;
       const owner = card?.owner ?? ev.lki?.owner;
       if (t.whose === "you" && owner !== me) return null;
-      // « … dans le cimetière d'un adversaire » (Bloodchief Ascension) : un adversaire encore en partie.
+      // "… into an opponent's graveyard" (Bloodchief Ascension): an opponent still in the game.
       if (t.whose === "opponent" && (!owner || owner === me || !!s.players[owner]?.lost)) return null;
       if (t.filter) {
         const d = s.defs[card?.defId ?? ev.lki?.defId ?? ""];
-        // Depuis le champ de bataille : ses types et son contrôleur au moment de partir (Kaya, Spirits' Justice : « des
-        // créatures que vous contrôlez et/ou des cartes de créature de votre cimetière ») ; ailleurs : la carte et son
-        // propriétaire.
+        // From the battlefield: its types and its controller at the time of leaving (Kaya, Spirits' Justice: "creatures
+        // you control and/or creature cards in your graveyard"); elsewhere: the card and its
+        // owner.
         const types = ev.from === "battlefield" && ev.lki ? ev.lki.types : d?.types;
         if (!d || !types || (t.filter.types && !t.filter.types.some((x) => types.includes(x)))) return null;
         const controller = ev.from === "battlefield" && ev.lki ? ev.lki.controller : owner;
         if (t.filter.controller && (controller === me) !== (t.filter.controller === "you")) return null;
         if (t.filter.permanent && !d.types.some((x) => PERMANENT_TYPES.includes(x))) return null;
-        // « une ou plusieurs cartes de créature » (Robot Domination, Moonshadow) : un jeton n'est pas une carte.
+        // "one or more creature cards" (Robot Domination, Moonshadow): a token isn't a card.
         const token = card?.isToken ?? ev.lki?.isToken ?? false;
         if (t.filter.token === false && token) return null;
         if (t.filter.token && !token) return null;
@@ -942,7 +943,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "scryOrSurveil":
       return ev.e === "scry" && ev.player === me ? { player: me } : null;
     case "draw":
-      // La carte piochée est l'objet de l'événement (miracle : Lorehold, the Historian).
+      // The drawn card is the object of the event (miracle: Lorehold, the Historian).
       return ev.e === "draw" &&
         whose(t.whose, ev.player, me) &&
         (t.nth === undefined || ev.nth === t.nth) &&
@@ -963,7 +964,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "becomesTarget": {
       if (ev.e !== "targeted") return null;
-      // « Chaque fois qu'une créature que vous contrôlez devient la cible… » (Pawpatch Recruit) : l'objet ciblé.
+      // "Whenever a creature you control becomes the target…" (Pawpatch Recruit): the targeted object.
       const who = t.who;
       const hit =
         who === "self"
@@ -979,10 +980,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (!hit) return null;
       if (t.abilitiesOnly && s.stack.find((x) => x.id === ev.stackId)?.kind === "spell") return null;
       if (t.by === "opponent" && ev.controller === me) return null;
-      // Vaillance : un sort ou une capacité que vous contrôlez.
+      // Valiant: a spell or ability you control.
       if (t.by === "you" && ev.controller !== me) return null;
       if (who !== "self") return { objectId: hit, player: ev.controller };
-      // « Chaque fois que vous lancez un sort qui cible cette créature » : une copie n'est pas lancée.
+      // "Whenever you cast a spell that targets this creature": a copy isn't cast.
       const byItem = s.stack.find((x) => x.id === ev.stackId);
       if (t.by === "yourSpell" && (ev.controller !== me || byItem?.kind !== "spell" || byItem.copy)) return null;
       return { objectId: ev.stackId, player: ev.controller };
@@ -1011,8 +1012,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
 }
 
 /**
- * 508.5 : joueur défenseur de la source attaquante, sinon de l'objet attaquant de l'événement (Raid Bombardment) — le
- * joueur attaqué ou le contrôleur du planeswalker attaqué —, figé au déclenchement dans les données de l'événement.
+ * 508.5: defending player of the attacking source, otherwise of the attacking object of the event (Raid Bombardment) —
+ * the attacked player or the controller of the attacked planeswalker —, fixed on triggering in the event data.
  */
 function frozenDefendingPlayer(s: GameState, source: ObjectId, eventObject: ObjectId | undefined): PlayerId | undefined {
   const atk =
@@ -1022,14 +1023,14 @@ function frozenDefendingPlayer(s: GameState, source: ObjectId, eventObject: Obje
   return s.players[atk.defender] ? atk.defender : (s.objects[atk.defender]?.controller ?? s.lki[atk.defender]?.controller);
 }
 
-/** `only` : ne regarder que certaines sources (revue des arrivées en fin de lot, 603.6a). */
+/** `only`: look only at some sources (review of the enterings at the end of a batch, 603.6a). */
 export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source) => boolean): void {
   if (s.over) return;
   const leaving = ev.e === "zone" && ev.from === "battlefield";
   let sources: Source[];
   if (leaving) {
     sources = batchBefore ?? liveSources(s);
-    // L'objet qui part peut se déclencher lui-même (« quand cette créature meurt »).
+    // The leaving object can trigger itself ("when this creature dies").
     if (ev.lki && hasTriggers(ev.lki.abilities) && !sources.some((x) => x.id === ev.lki?.id)) {
       sources = [...sources, { id: ev.lki.id, view: ev.lki }];
     }
@@ -1042,25 +1043,25 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
   for (const src of sources) {
     (src.view.abilities ?? []).forEach((ab, index) => {
       if (ab.kind !== "triggered") return;
-      // Une capacité « depuis le cimetière » ne se déclenche que là, les autres jamais depuis le cimetière.
+      // A "from the graveyard" ability triggers only there, the others never from the graveyard.
       const zone = s.objects[src.id]?.zone;
       if (!!ab.fromGraveyard !== (zone === "graveyard")) return;
-      // Zone de commandement : les emblèmes ; d'une carte, seulement « depuis la zone de commandement » (113.6, éminence).
+      // Command zone: emblems; of a card, only "from the command zone" (113.6, eminence).
       if (zone === "command" && !s.objects[src.id]?.isToken && !ab.fromCommand) return;
-      // Un sort sur la pile : seulement « quand vous lancez ce sort » (113.6 ; Ugin, Eye of the Storms ne se déclenche pas
-      // lui-même par « chaque fois que vous lancez un sort incolore »).
+      // A spell on the stack: only "when you cast this spell" (113.6; Ugin, Eye of the Storms doesn't trigger itself
+      // with "whenever you cast a colorless spell").
       if (zone === "stack" && ab.trigger.on !== "castSelf") return;
       const matched = matchTrigger(s, ev, ab.trigger, src);
       if (!matched || entryMuted(s, ev, src)) return;
       const defending = s.combat ? frozenDefendingPlayer(s, src.id, matched.objectId) : undefined;
       const data = defending ? { ...matched, defendingPlayer: defending } : matched;
-      // « … pour la première fois chaque tour » : le premier événement est noté avant la condition « si … » (603.4).
+      // "… for the first time each turn": the first event is noted before the "if …" condition (603.4).
       if (ab.oncePerTurn === "firstEvent") {
         const key = onceKey(src.view.defId, src.id, index);
         if (s.turn.onceFired.includes(key)) return;
         s.turn.onceFired.push(key);
       }
-      // Nowhere to Run : la garde des créatures des adversaires de son contrôleur ne se déclenche pas.
+      // Nowhere to Run: the ward of the creatures of its controller's opponents doesn't trigger.
       if (
         ab.ward &&
         ev.e === "targeted" &&
@@ -1072,12 +1073,12 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id, data.objectId, data)) return;
       if (ab.triggerCondition && !checkCondition(s, ab.triggerCondition, src.view.controller, src.id, data.objectId, data))
         return;
-      // « une ou plusieurs … » : un seul déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape
-      // de blessures de combat, une passe d'actions basées sur l'état) ; hors d'un lot (coûts payés en lançant), les
-      // événements partagent le numéro courant.
+      // "one or more …": a single trigger per batch of simultaneous events (an effect of a resolution, a combat damage
+      // step, a pass of state-based actions); outside a batch (costs paid while casting), the events share the current
+      // number.
       const batch = currentBatch ?? s.eventBatch ?? 0;
       if (ab.batched) {
-        // Les objets des autres événements du lot rejoignent le déclenchement en attente (`ref.eventObjects`).
+        // The objects of the other events of the batch join the pending trigger (`ref.eventObjects`).
         const same = s.triggers.filter((t) => t.sourceId === src.id && t.abilityIndex === index && t.batch === batch);
         if (same.length > 0) {
           if (data.objectId)
@@ -1095,7 +1096,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       if (ab.oncePerTurn && ab.oncePerTurn !== "firstEvent") {
         const key = onceKey(src.view.defId, src.id, index);
         if (s.turn.onceFired.includes(key)) return;
-        // « Faites ceci une seule fois par tour » : noté quand l'effet est fait (`doneOncePerTurn`).
+        // "Do this only once each turn": noted when the effect is done (`doneOncePerTurn`).
         if (ab.oncePerTurn !== "ifDone") s.turn.onceFired.push(key);
       }
       const again = 1 + triggerDoublers(s, src, ev);
@@ -1109,12 +1110,12 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
           sourceSnapshot: { keywords: src.view.keywords, power: src.view.power, controller: src.view.controller },
           event: data,
           targets: {},
-          // Capacité accordée (pas dans la définition) : on la transporte avec le déclenchement.
+          // Granted ability (not in the definition): it is carried with the trigger.
           inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
           ...(ab.batched ? { batch } : {}),
         });
       }
-      // Firebender Ascension : une créature attaquante fait, en attaquant, se déclencher une de ses capacités.
+      // Firebender Ascension: an attacking creature causes, by attacking, one of its abilities to trigger.
       if (ev.e === "attack" && ev.attacker === src.id && src.view.types.includes("Creature"))
         detectTriggers(s, { e: "attackTriggered", player: src.view.controller, objectId: src.id });
     });
@@ -1123,8 +1124,8 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
 }
 
 /**
- * Capacités retardées sur un événement (603.7c : « quand cette créature meurt ce tour-ci », « quand vous perdez le
- * contrôle de cet Équipement ce tour-ci ») : l'événement doit concerner un objet surveillé.
+ * Delayed abilities on an event (603.7c: "when this creature dies this turn", "when you lose control of this Equipment
+ * this turn"): the event must concern a watched object.
  */
 function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
   for (const d of [...s.delayed]) {
@@ -1135,13 +1136,13 @@ function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
     if (entryMuted(s, ev, undefined)) continue;
     const c = d.ability.condition;
     if (c && !checkCondition(s, c, d.controller, d.sourceId, data.objectId, data)) continue;
-    // 603.7c : sans durée, elle ne se déclenche qu'une fois.
+    // 603.7c: without a duration, it triggers only once.
     if (d.at === "next") s.delayed = s.delayed.filter((x) => x !== d);
     pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability, data);
   }
 }
 
-/** La source d'une capacité retardée, vue de son contrôleur (ses dernières informations, sinon un objet vide). */
+/** The source of a delayed ability, seen from its controller (its last information, otherwise an empty object). */
 function delayedSource(s: GameState, d: DelayedTrigger): Source {
   const v = liveView(s, d.sourceId) ?? s.lki[d.sourceId];
   const base: LkiSnapshot = v ?? {
@@ -1172,10 +1173,10 @@ function inlineOf(ab: TriggeredAbilityDef): InlineAbility {
 }
 
 // ---------------------------------------------------------------------------
-// Capacités retardées et réflexives
+// Delayed and reflexive abilities
 // ---------------------------------------------------------------------------
 
-/** Crée une capacité retardée « au début de la prochaine étape de fin ». */
+/** Creates a delayed ability "at the beginning of the next end step". */
 export function createDelayed(
   s: GameState,
   controller: PlayerId,
@@ -1185,20 +1186,20 @@ export function createDelayed(
   at: DelayedTiming = "nextEndStep",
   event?: { on: TriggerSpec; watch?: ObjectId[] },
 ): void {
-  // « … ce tour-ci » : sur un événement, jusqu'à la fin de ce tour.
+  // "… this turn": on an event, until the end of this turn.
   if (event) {
     s.delayed.push({ id: newId(s, "d"), controller, sourceId, sourceDefId, at, notBeforeTurn: s.turn.number, ability, ...event });
     return;
   }
   const lateInTurn = s.turn.step === "end" || s.turn.step === "cleanup";
-  // « à votre prochaine étape de fin » : celle de ce tour si c'est le vôtre et qu'elle n'est pas passée.
+  // "at your next end step": that of this turn if it is yours and it hasn't passed.
   s.delayed.push({
     id: newId(s, "d"),
     controller,
     sourceId,
     sourceDefId,
     at,
-    // « à l'étape de fin de votre prochain tour » : pas ce tour-ci.
+    // "at the beginning of the end step of your next turn": not this turn.
     notBeforeTurn:
       at === "yourNextEndStep" || at === "nextUpkeep" || at === "yourNextUpkeep" || lateInTurn
         ? s.turn.number + 1
@@ -1208,24 +1209,23 @@ export function createDelayed(
 }
 
 /**
- * Déclenchements supplémentaires (famille G) : Fractured Realm (vos permanents), Starfield Vocalist (une arrivée),
- * Traveling Chocobo (l'arrivée d'un terrain ou d'un Oiseau à vous), Annie Joins Up (vos créatures légendaires),
- * Roaming Throne (les autres créatures du type choisi), Windcrag Siege (une créature qui attaque), Cloud, Midgar
- * Mercenary (elle-même et ses Équipements, tant qu'elle est équipée), The Masamune (morts : la créature équipée et vos
- * emblèmes), Krang (pioches).
+ * Additional triggers (family G): Fractured Realm (your permanents), Starfield Vocalist (an entering), Traveling
+ * Chocobo (the entering of a land or a Bird of yours), Annie Joins Up (your legendary creatures), Roaming Throne (the
+ * other creatures of the chosen type), Windcrag Siege (an attacking creature), Cloud, Midgar Mercenary (itself and its
+ * Equipment, as long as it's equipped), The Masamune (deaths: the equipped creature and your emblems), Krang (draws).
  */
 function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
   const player = src.view.controller;
   const entered = ev.e === "zone" && ev.to === "battlefield" ? (ev.newId ?? undefined) : undefined;
-  // Par défaut, les capacités de vos permanents (ou d'un permanent qui vient de quitter le champ de bataille).
+  // By default, the abilities of your permanents (or of a permanent that just left the battlefield).
   const permanent = (s.objects[src.id]?.zone ?? "battlefield") === "battlefield";
   return playerStatics(s, player, "triggerMod").filter(({ id, ab }) => {
     const m = ab.triggerMod;
     if (m?.effect !== "again") return false;
     if (m.on === "enter" && !entered) return false;
-    // Windcrag Siege : « si une créature qui attaque fait se déclencher une capacité d'un permanent que vous contrôlez ».
+    // Windcrag Siege: "if a creature attacking causes a triggered ability of a permanent you control to trigger".
     if (m.on === "attack" && ev.e !== "attack" && ev.e !== "attackWith") return false;
-    // Krang : « si la pioche d'une carte par un joueur fait se déclencher une capacité d'un permanent que vous contrôlez ».
+    // Krang: "if a player drawing a card causes a triggered ability of a permanent you control to trigger".
     if (m.on === "draw" && ev.e !== "draw") return false;
     if (m.entering && !(entered && s.objects[entered] && matchesObjectFilter(s, player, entered, m.entering, id))) return false;
     if (
@@ -1236,26 +1236,26 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
     if (m.emblems && s.objects[src.id]?.zone === "command" && s.objects[src.id]?.isToken) return true;
     if (!m.sources) return permanent;
     const holder = id ? s.objects[id] : undefined;
-    // L'hôte de la source peut avoir quitté le champ de bataille (sa capacité « quand elle meurt ») : l'attache n'est
-    // défaite qu'aux actions basées sur l'état.
+    // The host of the source may have left the battlefield (its "when it dies" ability): the attachment is undone only
+    // by state-based actions.
     if (m.sources.attached === "host" && holder?.attachedTo !== src.id) return false;
     return matchesView(src.view, holder ? withChosen(m.sources, holder) : m.sources, player, id);
   }).length;
 }
 
-/** Au début de l'étape de fin (ou à la fin du combat) : les capacités retardées dont c'est le moment se déclenchent. */
+/** At the beginning of the end step (or at end of combat): the delayed abilities whose time it is trigger. */
 export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" | "upkeep" | "main" = "end"): void {
   const due = s.delayed.filter((d) => {
     if (d.on || d.notBeforeTurn > s.turn.number) return false;
-    // Mana Sculpt : « au début de votre prochaine phase principale » (celle d'après combat comprise).
+    // Mana Sculpt: "at the beginning of your next main phase" (the postcombat one included).
     if (moment === "main") return d.at === "yourNextMain" && s.turn.active === d.controller;
     if (d.at === "yourNextMain") return false;
     if (moment === "endCombat") return d.at === "endOfCombat";
-    // Firion : « au début du prochain entretien ».
-    // Rebond : « au début de votre prochain entretien ».
+    // Firion: "at the beginning of the next upkeep".
+    // Rebound: "at the beginning of your next upkeep".
     if (moment === "upkeep") return d.at === "nextUpkeep" || (d.at === "yourNextUpkeep" && s.turn.active === d.controller);
     if (d.at === "endOfCombat" || d.at === "nextUpkeep" || d.at === "yourNextUpkeep") return false;
-    // « … de votre prochain tour » : seulement pendant un tour de son contrôleur.
+    // "… of your next turn": only during a turn of its controller.
     return (d.at !== "yourNextEndStep" && d.at !== "yourEndStep") || s.turn.active === d.controller;
   });
   if (due.length === 0) return;
@@ -1263,7 +1263,7 @@ export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat"
   for (const d of due) pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability);
 }
 
-/** Met en attente une capacité retardée ou réflexive (elle ira sur la pile à la prochaine priorité). */
+/** Puts a delayed or reflexive ability on hold (it will go on the stack at the next priority). */
 export function pushInline(
   s: GameState,
   controller: PlayerId,
@@ -1286,9 +1286,9 @@ export function pushInline(
 }
 
 /**
- * Capacités déclenchées inhérentes aux règles, sans objet source : la pioche et le transfert du monarque (724.2), la
- * radiation (Fallout) et la vitesse (702.179). Elles passent par la pile comme les autres (on peut y répondre, les contrecarrer) ; leur
- * condition « si… » est revérifiée à la résolution (603.4).
+ * Triggered abilities inherent to the rules, without a source object: the monarch's draw and transfer (724.2),
+ * radiation (Fallout) and speed (702.179). They go through the stack like the others (they can be responded to,
+ * countered); their "if…" condition is checked again at resolution (603.4).
  */
 const RULES_TRIGGERS = {
   monarch: {
@@ -1299,7 +1299,7 @@ const RULES_TRIGGERS = {
     ability: {
       targets: [],
       effects: [{ op: "draw", who: { kind: "you" }, amount: 1 }],
-      label: "Monarque : piochez une carte",
+      label: msg("Monarch: draw a card"),
     },
   },
   monarchSteal: {
@@ -1309,9 +1309,9 @@ const RULES_TRIGGERS = {
     frText: "Chaque fois qu'une créature inflige des blessures de combat au monarque, son contrôleur devient le monarque.",
     ability: {
       targets: [],
-      // La créature de l'événement : son contrôleur à la résolution (ses dernières informations si elle est partie).
+      // The creature of the event: its controller at resolution (its last information if it left).
       effects: [{ op: "becomeMonarch", who: { kind: "controllerOf", ref: { kind: "eventObject" } } }],
-      label: "Monarque : le contrôleur de la créature devient le monarque",
+      label: msg("Monarch: the creature's controller becomes the monarch"),
     },
   },
   radiation: {
@@ -1327,7 +1327,7 @@ const RULES_TRIGGERS = {
       targets: [],
       effects: [{ op: "radiation" }],
       condition: { kind: "amountAtLeast", amount: { kind: "poison", counter: "rad" }, n: 1 },
-      label: "Radiation : meulez une carte par marqueur",
+      label: msg("Radiation: mill a card per counter"),
     },
   },
   speed: {
@@ -1343,7 +1343,7 @@ const RULES_TRIGGERS = {
       targets: [],
       effects: [{ op: "increaseSpeed" }],
       condition: { kind: "not", cond: { kind: "maxSpeed" } },
-      label: "Vitesse : augmentez votre vitesse de 1",
+      label: msg("Speed: increase your speed by 1"),
     },
   },
 } satisfies Record<string, { name: string; fr: string; text: string; frText: string; ability: InlineAbility }>;
@@ -1351,16 +1351,16 @@ const RULES_TRIGGERS = {
 export type RulesTriggerName = keyof typeof RULES_TRIGGERS;
 
 /**
- * Met en attente une capacité déclenchée inhérente aux règles (`RULES_TRIGGERS`), contrôlée par `player`. Sa source est
- * une définition synthétique (`rules:<nom>`, enregistrée dans `s.defs` comme celle d'un emblème), sans objet : la pile
- * l'affiche sous son nom (« Monarque », « Radiation », « Vitesse »). Renvoie false si sa condition « si… » n'est pas
- * remplie (elle ne se déclenche pas). `event` : l'événement déclencheur (la créature qui blesse le monarque).
+ * Puts on hold a triggered ability inherent to the rules (`RULES_TRIGGERS`), controlled by `player`. Its source is a
+ * synthetic definition (`rules:<name>`, registered in `s.defs` like that of an emblem), without an object: the stack
+ * shows it under its name ("Monarch", "Radiation", "Speed"). Returns false if its "if…" condition isn't met (it
+ * doesn't trigger). `event`: the trigger event (the creature that damages the monarch).
  */
 export function rulesTrigger(s: GameState, player: PlayerId, name: RulesTriggerName, event: TriggerEventData = {}): boolean {
   const r = RULES_TRIGGERS[name];
   const ability: InlineAbility = structuredClone(r.ability);
   const defId = `rules:${name}`;
-  // 603.4 : une capacité « si… » ne se déclenche que si la condition est remplie.
+  // 603.4: an "if…" ability triggers only if the condition is met.
   if (ability.condition && !checkCondition(s, ability.condition, player, defId)) return false;
   s.defs[defId] ??= {
     id: defId,
@@ -1384,7 +1384,7 @@ export function rulesTrigger(s: GameState, player: PlayerId, name: RulesTriggerN
 }
 
 // ---------------------------------------------------------------------------
-// Mise sur la pile
+// Putting on the stack
 // ---------------------------------------------------------------------------
 
 export function triggeredAbility(s: GameState, t: { sourceDefId: string; abilityIndex: number }): TriggeredAbilityDef | null {
@@ -1392,7 +1392,7 @@ export function triggeredAbility(s: GameState, t: { sourceDefId: string; ability
   return ab?.kind === "triggered" ? ab : null;
 }
 
-/** Cibles d'un déclenchement : celles de la capacité retardée/réflexive, du mode choisi, ou de la capacité. */
+/** Targets of a trigger: those of the delayed/reflexive ability, of the chosen mode, or of the ability. */
 export function triggerTargetSpecs(
   s: GameState,
   t: {
@@ -1408,14 +1408,14 @@ export function triggerTargetSpecs(
   const ab = t.inline ? undefined : triggeredAbility(s, t);
   const modes = t.inline ? t.inline.modes : ab?.modes;
   const specs = modes ? (modes[t.mode ?? 0]?.targets ?? []) : t.inline ? t.inline.targets : (ab?.targets ?? []);
-  // Valeurs évaluées au ciblage (Moseo : « valeur de mana X ou moins, X étant les PV gagnés ce tour-ci » ; Prismabasher :
-  // « jusqu'à X créatures ciblées » ; Fear of Falling : « que le joueur défenseur contrôle »).
+  // Values evaluated at targeting (Moseo: "mana value X or less, where X is the life gained this turn"; Prismabasher:
+  // "up to X target creatures"; Fear of Falling: "that defending player controls").
   if (!t.controller || !specs.some(needsConcrete)) return specs;
   const ctx = staticContext(s, t.controller, t.sourceId ?? "", { sourceDefId: t.sourceDefId, event: t.event });
   return specs.map((x) => concreteSpec(s, ctx, x));
 }
 
-/** Carte et capacité d'un déclenchement en attente (interface : rappel de l'effet pendant le choix de ses cibles). */
+/** Card and ability of a pending trigger (interface: reminder of the effect while choosing its targets). */
 export function pendingTriggerSource(s: GameState, triggerId: string): { defId: string; label?: string } | null {
   const t = s.triggers.find((x) => x.id === triggerId);
   if (!t) return null;
@@ -1425,20 +1425,20 @@ export function pendingTriggerSource(s: GameState, triggerId: string): { defId: 
 
 function triggerLabel(s: GameState, t: PendingTrigger): string {
   const label = t.inline?.label ?? triggeredAbility(s, t)?.label;
-  return `${cardRef(t.sourceDefId)}${label ? ` — ${label}` : ""}`;
+  return label ? msg("{card} — {label}", { card: cardRef(t.sourceDefId), label }) : cardRef(t.sourceDefId);
 }
 
 /**
- * Met les capacités déclenchées en attente sur la pile, en posant les questions nécessaires.
- * Renvoie true si quelque chose a changé (capacité mise sur la pile ou question posée).
+ * Puts the pending triggered abilities on the stack, asking the necessary questions.
+ * Returns true if something changed (ability put on the stack or question asked).
  */
 export function processTriggers(s: GameState): boolean {
   if (s.triggers.length === 0) return false;
-  // 800.4a : un déclenchement d'un joueur qui a quitté la partie (créé après coup, d'une dernière information) n'existe pas.
+  // 800.4a: a trigger of a player who left the game (created afterwards, from last information) doesn't exist.
   if (s.triggers.some((t) => s.players[t.controller]?.lost))
     s.triggers = s.triggers.filter((t) => !s.players[t.controller]?.lost);
   let changed = false;
-  // 603.3b : APNAP — le joueur actif met les siennes en premier (elles se résoudront en dernier).
+  // 603.3b: APNAP — the active player puts theirs first (they will resolve last).
   for (const p of apnapOrder(s)) {
     const mine = s.triggers.filter((t) => t.controller === p);
     if (mine.length === 0) continue;
@@ -1449,26 +1449,26 @@ export function processTriggers(s: GameState): boolean {
         {
           type: "order",
           intent: "triggerOrder",
-          prompt: "Ordre de résolution de vos capacités déclenchées (la première se résout en premier)",
+          prompt: msg("Order of resolution of your triggered abilities (the first one resolves first)"),
           items: mine.map((t) => t.id),
           labels: Object.fromEntries(mine.map((t) => [t.id, triggerLabel(s, t)])),
           suggested: mine.map((t) => t.id),
-          // L'automatisme choisit l'ordre suggéré, sauf en contrôle total ou quand le joueur garde la priorité et que
-          // l'ordre compte (`autopilot.ts`) ; l'ordre est alors proposé au joueur, prérempli.
+          // The autopilot chooses the suggested order, except in full control or when the player holds priority and the
+          // order matters (`autopilot.ts`); the order is then offered to the player, prefilled.
           autoOk: true,
         },
         { kind: "triggerOrder", player: p },
       );
       return true;
     }
-    // Dans l'ordre de résolution voulu, la dernière va sur la pile en premier.
+    // In the desired order of resolution, the last one goes on the stack first.
     for (const t of [...mine].reverse()) {
-      if (!chooseTriggerMode(s, t)) return true; // question posée
+      if (!chooseTriggerMode(s, t)) return true; // question asked
       if (!chooseTriggerTargets(s, t)) return true;
       s.triggers = s.triggers.filter((x) => x.id !== t.id);
       const specs = triggerTargetSpecs(s, t);
       if (!t.inline && !triggeredAbility(s, t)) continue;
-      // 603.3d : une capacité sans cible légale pour une cible requise est retirée.
+      // 603.3d: an ability without a legal target for a required target is removed.
       if (specs.some((spec) => !spec.optional && (t.targets[spec.id]?.length ?? 0) === 0)) continue;
       const item: StackItem = {
         id: newId(s, "a"),
@@ -1503,21 +1503,21 @@ export function processTriggers(s: GameState): boolean {
   return changed;
 }
 
-/** Capacité modale : le contrôleur choisit le mode (603.3c). Renvoie false si une question a été posée. */
+/** Modal ability: the controller chooses the mode (603.3c). Returns false if a question was asked. */
 function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
   if (t.mode !== undefined) return true;
-  // Capacité réflexive ou accordée : ses modes voyagent avec elle.
+  // Reflexive or granted ability: its modes travel with it.
   const ab = t.inline ? undefined : triggeredAbility(s, t);
   const modes = t.inline ? t.inline.modes : ab?.modes;
   if (!modes) return true;
-  // Seuls les modes dont les cibles requises existent sont proposés (et, pour Demonic Pact, pas encore choisis).
+  // Only the modes whose required targets exist are offered (and, for Demonic Pact, not chosen yet).
   const o = s.objects[t.sourceId];
   const used =
     !ab?.uniqueModes || (ab.uniqueModes === "turn" && o?.usedModes?.turn !== s.turn.number) ? [] : (o?.usedModes?.modes ?? []);
   const possible = modes
     .map((m, i) => ({ m, i }))
     .filter(({ i }) => !used.includes(i))
-    // Bumi, King of Three Trials : un mode sous condition (« jusqu'à X modes ») n'est proposé que si elle est remplie.
+    // Bumi, King of Three Trials: a conditional mode ("up to X modes") is offered only if it is met.
     .filter(({ m }) => !m.condition || checkCondition(s, m.condition, t.controller, t.sourceId))
     .filter(({ m }) => m.targets.every((spec) => spec.optional || legalTargets(s, t.controller, spec).length > 0));
   if (possible.length <= 1) {
@@ -1531,9 +1531,9 @@ function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
     {
       type: "pick",
       intent: "triggerMode",
-      prompt: `${triggerLabel(s, t)} : choisissez un mode`,
+      prompt: msg("{source}: choose a mode", { source: triggerLabel(s, t) }),
       options: possible.map(({ i }) => String(i)),
-      labels: Object.fromEntries(possible.map(({ m, i }) => [String(i), m.label ?? `Mode ${i + 1}`])),
+      labels: Object.fromEntries(possible.map(({ m, i }) => [String(i), m.label ?? msg("Mode {n}", { n: i + 1 })])),
       min: 1,
       max: 1,
       suggested: [String(possible[0]?.i ?? 0)],
@@ -1543,28 +1543,28 @@ function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
   return false;
 }
 
-/** Choisit les cibles d'un déclenchement ; renvoie false si une question a été posée. */
+/** Chooses the targets of a trigger; returns false if a question was asked. */
 function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
   for (const spec of triggerTargetSpecs(s, t)) {
     if (t.targets[spec.id] !== undefined) continue;
     const taken = new Set((spec.otherThan ?? []).flatMap((o) => t.targets[o] ?? []));
-    // « une autre carte » : la créature de l'événement, sous son ancien comme son nouvel identifiant (morte : sa carte).
+    // "another card": the creature of the event, under its old as well as its new id (dead: its card).
     if (spec.notEventObject && t.event?.objectId) taken.add(t.event.objectId);
     if (spec.notEventObject && t.event?.newObjectId) taken.add(t.event.newObjectId);
-    // « Le joueur ciblé … les cartes de son cimetière » : seulement celles du joueur choisi pour l'autre mot « cible ».
+    // "Target player … the cards in their graveyard": only those of the player chosen for the other "target" word.
     const of = spec.of?.kind === "target" ? (t.targets[spec.of.id] ?? []).map((x) => holderOf(s, x)) : undefined;
     const legal = legalTargets(s, t.controller, spec, t.sourceId).filter(
       (id) => !taken.has(id) && (!of || of.includes(holderOf(s, id))),
     );
     const count = spec.count ?? 1;
-    // « jusqu'à X cibles » avec X = 0 : aucune cible.
+    // "up to X targets" with X = 0: no target.
     if (count === 0) {
       t.targets[spec.id] = [];
       continue;
     }
-    // « une à trois cibles » (`target.between`) : au moins `minCount` (Armament Dragon, Glint Weaver).
+    // "one to three targets" (`target.between`): at least `minCount` (Armament Dragon, Glint Weaver).
     const min = spec.optional ? 0 : (spec.minCount ?? count);
-    // « contrôlées par des joueurs différents » : il faut autant de joueurs différents que de cibles requises.
+    // "controlled by different players": as many different players as required targets are needed.
     const holdersOf = (id: string) => {
       const o = s.objects[id];
       return o ? (o.zone === "battlefield" ? o.controller : o.owner) : id;
@@ -1589,7 +1589,7 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
       group = { kind: spec.samePlayer ? "same" : "different", holders };
     }
     const suggested: string[] = [];
-    // Phoenix, Warden of Fire : « d'une valeur de mana totale de 6 ou moins ».
+    // Phoenix, Warden of Fire: "with total mana value 6 or less".
     const mv = (id: string) => (s.objects[id] ? (snapshot(s, id).manaValue ?? 0) : 0);
     let total = 0;
     for (const id of [first, ...legal.filter((x) => x !== first)]) {
@@ -1606,7 +1606,14 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
       {
         type: "pick",
         intent: "triggerTarget",
-        prompt: `${triggerLabel(s, t)} : choisissez ${count > 1 ? `jusqu'à ${count} cibles — ` : ""}${spec.label ?? "une cible"}`,
+        prompt:
+          count > 1
+            ? msg("{source}: choose up to {n} targets — {target}", {
+                source: triggerLabel(s, t),
+                n: count,
+                target: spec.label ?? msg("a target"),
+              })
+            : msg("{source}: choose {target}", { source: triggerLabel(s, t), target: spec.label ?? msg("a target") }),
         options: legal,
         min: Math.min(min, legal.length),
         max: count,
@@ -1620,7 +1627,7 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
   return true;
 }
 
-/** Cible proposée par défaut : la meilleure créature adverse, sinon un adversaire, sinon la première option. */
+/** Target suggested by default: the best opposing creature, otherwise an opponent, otherwise the first option. */
 function suggestTarget(s: GameState, controller: PlayerId, legal: string[]): string {
   const opps = new Set(opponentsOf(s, controller));
   const theirs = legal
@@ -1639,14 +1646,14 @@ export function answerTriggerOrder(s: GameState, player: PlayerId, order: string
 
 export function answerTriggerTarget(s: GameState, triggerId: string, specId: string, values: string[]): void {
   const t = s.triggers.find((x) => x.id === triggerId);
-  if (!t) throw new RulesError("Capacité déclenchée introuvable");
+  if (!t) throw new RulesError(msg("Triggered ability not found"));
   const spec = triggerTargetSpecs(s, t).find((x) => x.id === specId);
-  if (!spec) throw new RulesError("Cible inconnue");
+  if (!spec) throw new RulesError(msg("Unknown target"));
   if (
     spec.notEventObject &&
     ((t.event?.objectId && values.includes(t.event.objectId)) || (t.event?.newObjectId && values.includes(t.event.newObjectId)))
   )
-    throw new RulesError("Une autre cible que la créature de l'événement");
+    throw new RulesError(msg("A target other than the creature of the event"));
   try {
     t.targets[specId] =
       validateTargets(
@@ -1663,25 +1670,25 @@ export function answerTriggerTarget(s: GameState, triggerId: string, specId: str
 
 export function answerTriggerMode(s: GameState, triggerId: string, mode: number): void {
   const t = s.triggers.find((x) => x.id === triggerId);
-  if (!t) throw new RulesError("Capacité déclenchée introuvable");
+  if (!t) throw new RulesError(msg("Triggered ability not found"));
   t.mode = mode;
   markModeUsed(s, t);
 }
 
-/** « Choisissez un mode qui n'a pas déjà été choisi » : on retient le mode sur la source. */
+/** "Choose a mode that hasn't been chosen": the mode is remembered on the source. */
 function markModeUsed(s: GameState, t: PendingTrigger): void {
   if (t.inline || t.mode === undefined || t.mode < 0 || !triggeredAbility(s, t)?.uniqueModes) return;
   const o = s.objects[t.sourceId];
   if (!o) return;
-  // « … ce tour-ci » : la liste repart de zéro à chaque tour.
+  // "… this turn": the list starts over every turn.
   const turn = triggeredAbility(s, t)?.uniqueModes === "turn" ? s.turn.number : o.usedModes?.turn;
   const modes = turn === o.usedModes?.turn ? (o.usedModes?.modes ?? []) : [];
   o.usedModes = { modes: [...modes, t.mode], ...(turn !== undefined ? { turn } : {}) };
 }
 
 /**
- * 700.13 : commettre un crime — cibler un adversaire, un objet qu'il contrôle (permanent, sort, capacité)
- * ou une carte de son cimetière.
+ * 700.13: committing a crime — targeting an opponent, an object they control (permanent, spell, ability) or a card in
+ * their graveyard.
  */
 export function checkCrime(s: GameState, player: PlayerId, targets: string[]): void {
   const opponent = (p: PlayerId | undefined) => !!p && p !== player && !!s.players[p];
@@ -1694,7 +1701,7 @@ export function checkCrime(s: GameState, player: PlayerId, targets: string[]): v
     return opponent(item?.controller);
   });
   if (!crime) return;
-  // Journal du tour : conditions « si vous avez commis un crime ce tour-ci ».
+  // Turn log: "if you've committed a crime this turn" conditions.
   logTurnEvent(s, { e: "crime", player });
   rulesEvent(s, { e: "crime", player });
 }

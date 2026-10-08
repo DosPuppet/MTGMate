@@ -1,5 +1,5 @@
 /**
- * Structure du tour (500–514), priorité (117), combat (506–511) et actions basées sur l'état (704).
+ * Turn structure (500–514), priority (117), combat (506–511) and state-based actions (704).
  */
 
 import {
@@ -64,6 +64,7 @@ import {
   untapStepRule,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
+import { msg } from "./text";
 import { processTriggers, pushInline, releaseDelayedTriggers, rulesTrigger, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
@@ -83,12 +84,12 @@ import { STEPS } from "./types";
 export const MAX_HAND_SIZE = 7;
 
 // ---------------------------------------------------------------------------
-// Boucle principale : avance jusqu'à la prochaine décision
+// Main loop: advance until the next decision
 // ---------------------------------------------------------------------------
 
 /**
- * 104.4b : une boucle faite seulement d'actions obligatoires, que rien ne peut arrêter : la partie est nulle. Appelée par
- * les gardes du moteur (déroulement, actions basées sur l'état), de l'hôte, et par la détection des boucles (game.ts).
+ * 104.4b: a loop made only of mandatory actions, which nothing can stop: the game is a draw. Called by the
+ * guards of the engine (flow, state-based actions), of the host, and by the loop detection (game.ts).
  */
 export function declareLoopDraw(s: GameState): void {
   if (s.over) return;
@@ -114,12 +115,12 @@ export function advance(s: GameState): void {
         beginStep(s);
         break;
       case "priority":
-        // 117.5 : actions basées sur l'état, puis capacités déclenchées, jusqu'à stabilité ;
-        // l'une ou l'autre peut poser une question (règle des légendes, cibles…).
+        // 117.5: state-based actions, then triggered abilities, until stable;
+        // either can ask a question (legend rule, targets…).
         stateBasedActions(s);
-        // Un joueur actif éliminé par ces actions met fin au tour (`eliminate` change le flux).
+        // An active player eliminated by these actions ends the turn (`eliminate` changes the flow).
         if (s.over || s.pending || s.flow !== "priority") break;
-        // Nouvelles cibles d'une copie, répartition : avant les déclencheurs (la garde en dépend) et la priorité.
+        // New targets of a copy, division: before the triggers (ward depends on it) and priority.
         if (announceNext(s)) break;
         if (processTriggers(s) || s.flow !== "priority") break;
         s.pending = { kind: "priority", player: s.priority.holder };
@@ -129,7 +130,7 @@ export function advance(s: GameState): void {
         break;
       case "tba":
       case "resolving":
-        throw new Error(`Décision attendue (${s.flow}) mais aucune n'est posée`);
+        throw new Error(`Decision expected (${s.flow}) but none is set`);
       case "over":
         return;
     }
@@ -137,8 +138,8 @@ export function advance(s: GameState): void {
 }
 
 /**
- * Premier joueur à recevoir la priorité : le joueur actif, ou, s'il a quitté la partie pendant son tour (800.4a :
- * le tour continue sans joueur actif), le joueur suivant.
+ * First player to receive priority: the active player, or, if they left the game during their turn (800.4a:
+ * the turn continues without an active player), the next player.
  */
 function firstPriority(s: GameState): PlayerId {
   const active = s.turn.active;
@@ -151,53 +152,53 @@ function givePriority(s: GameState): void {
 }
 
 /**
- * Étape de dégagement (502.3) : les permanents du joueur actif se dégagent, sauf ceux qu'il a choisi de garder engagés
- * (`keep`), ceux qui ne se dégagent pas lors de son étape de dégagement (remplacement `untap` avec `untapStep`) et ceux
- * qui sont épuisés (701.43). Prop Room, Unwinding Clock : les créatures (les artefacts) d'un autre joueur se dégagent
- * aussi (ce n'est pas l'étape de dégagement de leur contrôleur).
+ * Untap step (502.3): the active player's permanents untap, except those they chose to keep tapped (`keep`),
+ * those that don't untap during their untap step (`untap` replacement with `untapStep`) and those that are
+ * exerted (701.43). Prop Room, Unwinding Clock: the creatures (the artifacts) of another player untap too (it is
+ * not their controller's untap step).
  */
 function untapStep(s: GameState, keep: ObjectId[]): void {
   const active = s.turn.active;
   for (const id of s.battlefield) {
     const o = obj(s, id);
-    // Prop Room, Unwinding Clock : les créatures (les artefacts) de ce joueur se dégagent aussi pendant l'étape de
-    // dégagement des autres joueurs.
+    // Prop Room, Unwinding Clock: this player's creatures (artifacts) also untap during the other players' untap
+    // steps.
     const propRoom =
       o.controller !== active &&
       playerStatics(s, o.controller, "untapOnOthersUntap").some(
         ({ id: src, ab }) => !!ab.untapOnOthersUntap && matchesObjectFilter(s, o.controller, id, ab.untapOnOthersUntap, src),
       );
     if (o.controller !== active && !propRoom) continue;
-    // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement (de son contrôleur).
+    // 701.43: an exerted permanent doesn't untap during the next untap step (of its controller).
     if (o.exerted && !propRoom) {
       o.exerted = undefined;
       continue;
     }
     if (!o.tapped || keep.includes(id)) continue;
     if (!propRoom && untapStepRule(s, id) === true) continue;
-    // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement (`untapObject`).
+    // 122.1d: a stun counter is removed instead of untapping (`untapObject`).
     if (untapObject(s, o)) {
       const stats = s.players[o.controller]?.turnStats;
       if (stats && o.controller === active) stats.untappedInUntapStep = (stats.untappedInUntapStep ?? 0) + 1;
     }
   }
-  s.flow = "stepEnd"; // pas de priorité pendant l'étape de dégagement
+  s.flow = "stepEnd"; // no priority during the untap step
 }
 
-/** Réponse à la question de l'étape de dégagement : les permanents gardés engagés. */
+/** Answer to the untap step question: the permanents kept tapped. */
 export function answerUntapStep(s: GameState, keep: string[]): void {
   untapStep(s, keep);
 }
 
-/** Début d'étape : déclenche les capacités « au début de… ». */
+/** Beginning of a step: triggers the "at the beginning of…" abilities. */
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
-  // Monarque (724.2) : « au début de l'étape de fin du monarque, ce joueur pioche une carte » (capacité sur la pile).
+  // Monarch (724.2): "at the beginning of the monarch's end step, that player draws a card" (ability on the stack).
   if (s.turn.step === "end" && s.monarch === s.turn.active && !s.players[s.monarch]?.lost) rulesTrigger(s, s.monarch, "monarch");
   if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
   if (s.turn.step === "main1" || s.turn.step === "main2") releaseDelayedTriggers(s, "main");
-  // Radiation (Fallout) : au début de sa phase principale précombat, si le joueur actif a des marqueurs de radiation
-  // (condition revérifiée à la résolution).
+  // Radiation (Fallout): at the beginning of their precombat main phase, if the active player has rad counters
+  // (condition checked again on resolution).
   if (s.turn.step === "main1" && s.turn.mainPhase === 1 && !s.players[s.turn.active]?.lost)
     rulesTrigger(s, s.turn.active, "radiation");
   if (s.turn.step === "upkeep") {
@@ -208,8 +209,8 @@ function stepEvent(s: GameState): void {
 }
 
 /**
- * Suspension (702.62a) : au début de l'entretien de son propriétaire, chaque carte suspendue en exil perd un marqueur
- * de temps ; quand le dernier est retiré, il peut la lancer sans payer son coût de mana (une créature a la célérité).
+ * Suspend (702.62a): at the beginning of its owner's upkeep, each suspended card in exile loses a time counter;
+ * when the last is removed, they may cast it without paying its mana cost (a creature has haste).
  */
 const SUSPEND_TICK: Effect[] = [
   { op: "removeCounters", what: { kind: "self" }, n: 1, kind: "time" },
@@ -225,7 +226,7 @@ function suspendUpkeep(s: GameState): void {
     pushInline(s, o.owner, id, o.defId, {
       targets: [],
       effects: SUSPEND_TICK,
-      label: "Suspension : retirez un marqueur de temps",
+      label: msg("Suspend: remove a time counter"),
     });
   }
 }
@@ -235,7 +236,7 @@ function suspendUpkeep(s: GameState): void {
 // ---------------------------------------------------------------------------
 
 function nextMulligan(s: GameState): void {
-  // 103.5 : fin d'un tour de table ; ceux qui ont décidé de prendre un mulligan le prennent ensemble, puis redécident.
+  // 103.5: end of a round; those who decided to take a mulligan take it together, then decide again.
   if (s.mulliganQueue.length === 0 && s.mulliganTaken?.length) {
     const taken = s.mulliganTaken;
     s.mulliganTaken = [];
@@ -258,15 +259,15 @@ function nextMulligan(s: GameState): void {
 }
 
 /**
- * Cartes à mettre au-dessous de la bibliothèque en gardant après `mulligans` mulligans (103.5) ; 103.5c : dans une
- * partie à plusieurs (trois joueurs ou plus), le premier mulligan ne compte pas ; en Commander aussi, duel compris
- * (règle du format, choix de l'utilisateur).
+ * Cards to put on the bottom of the library when keeping after `mulligans` mulligans (103.5); 103.5c: in a
+ * multiplayer game (three players or more), the first mulligan is free; in Commander too, duel included
+ * (rule of the format, choice of the user).
  */
 function mulliganBottom(s: GameState, mulligans: number): number {
   return Math.max(0, mulligans - (s.playerOrder.length > 2 || s.commander ? 1 : 0));
 }
 
-/** Cartes « leyline » de la main de départ (103.6), proposées dans l'ordre de jeu. Renvoie true si une question est posée. */
+/** "Leyline" cards of the opening hand (103.6), offered in play order. Returns true if a question is asked. */
 function askLeylines(s: GameState): boolean {
   s.leylineAsked ??= [];
   const asked = s.leylineAsked;
@@ -283,7 +284,7 @@ function askLeylines(s: GameState): boolean {
       {
         type: "pick",
         intent: "leyline",
-        prompt: "Cartes de votre main de départ que vous pouvez mettre sur le champ de bataille",
+        prompt: msg("Cards of your opening hand you may put onto the battlefield"),
         options: cards,
         min: 0,
         max: cards.length,
@@ -296,7 +297,7 @@ function askLeylines(s: GameState): boolean {
   return false;
 }
 
-/** La carte de la main de départ peut-elle commencer sur le champ de bataille (Gemstone Caverns : si vous ne commencez pas) ? */
+/** Can the card of the opening hand begin on the battlefield (Gemstone Caverns: if you are not starting)? */
 function leylineFor(s: GameState, player: PlayerId, id: ObjectId): CardDef["leyline"] {
   const l = s.defs[obj(s, id).defId]?.leyline;
   return l && (l === true || !l.notStartingPlayer || s.turn.startingPlayer !== player) ? l : undefined;
@@ -310,8 +311,8 @@ export function answerLeylines(s: GameState, player: PlayerId, cards: ObjectId[]
     const placed = moveObject(s, id, "battlefield");
     if (l === true) continue;
     if (l.counter && placed && s.objects[placed]) changeCounters(s, obj(s, placed), l.counter, 1);
-    // « Si vous le faites, exilez une carte de votre main » : choix automatique, la carte non-terrain de plus petite
-    // valeur de mana (un terrain s'il n'y en a pas).
+    // "If you do, exile a card from your hand": automatic choice, the nonland card with the lowest mana value (a
+    // land if there is none).
     if (l.exileFromHand) {
       const hand = s.players[player]?.hand ?? [];
       const mv = (h: ObjectId) => {
@@ -325,7 +326,7 @@ export function answerLeylines(s: GameState, player: PlayerId, cards: ObjectId[]
   s.flow = "mulligan";
 }
 
-/** 103.5 : le joueur décide de prendre un mulligan ; il le prendra avec les autres à la fin de ce tour de table. */
+/** 103.5: the player decides to take a mulligan; they will take it with the others at the end of this round. */
 export function declareMulligan(s: GameState, p: PlayerId): void {
   s.mulliganQueue = s.mulliganQueue.filter((q) => q !== p);
   s.mulliganTaken = [...(s.mulliganTaken ?? []), p];
@@ -357,7 +358,7 @@ export function bottomCards(s: GameState, p: PlayerId, cards: ObjectId[], count:
   const player = s.players[p];
   if (!player) return;
   if (new Set(cards).size !== count || cards.some((c) => !player.hand.includes(c))) {
-    throw new RulesError(`Choisissez ${count} carte(s) de votre main`);
+    throw new RulesError(msg("Choose {count} card(s) from your hand", { count }));
   }
   for (const c of cards) moveObject(s, c, "library", { position: "bottom" });
   s.mulliganQueue.shift();
@@ -365,21 +366,21 @@ export function bottomCards(s: GameState, p: PlayerId, cards: ObjectId[], count:
 }
 
 // ---------------------------------------------------------------------------
-// Étapes
+// Steps
 // ---------------------------------------------------------------------------
 
 function beginStep(s: GameState): void {
   const active = s.turn.active;
-  // 505.1a : rang de la phase principale, avant ses déclencheurs (seule la première précède le combat).
+  // 505.1a: rank of the main phase, before its triggers (only the first one precedes combat).
   if (s.turn.step === "main1") s.turn.mainPhase = 1;
   else if (s.turn.step === "main2") s.turn.mainPhase = (s.turn.mainPhase ?? 1) + 1;
   if (s.turn.step !== "untap" && s.turn.step !== "cleanup") stepEvent(s);
   switch (s.turn.step) {
     case "untap": {
-      // 502.1 : le retour en phase précède le dégagement.
+      // 502.1: phasing in precedes untapping.
       phaseIn(s, active);
-      // 502.3 : le joueur actif choisit d'abord les permanents qu'il peut ne pas dégager (Hedge Whisperer : « vous pouvez
-      // choisir de ne pas dégager cette créature lors de votre étape de dégagement »), puis tout se dégage en même temps.
+      // 502.3: the active player first chooses the permanents they may leave tapped (Hedge Whisperer: "you may
+      // choose not to untap this creature during your untap step"), then everything untaps at the same time.
       const optional = s.battlefield.filter((id) => {
         const o = obj(s, id);
         return o.controller === active && o.tapped && !o.exerted && untapStepRule(s, id) === "may";
@@ -394,11 +395,11 @@ function beginStep(s: GameState): void {
         {
           type: "pick",
           intent: "other",
-          prompt: "Permanents que vous ne dégagez pas lors de cette étape de dégagement",
+          prompt: msg("Permanents you don't untap during this untap step"),
           options: optional,
           min: 0,
           max: optional.length,
-          // Réponse proposée : les garder engagés tant qu'un effet dure « tant qu'ils restent engagés ».
+          // Suggested answer: keep them tapped while an effect lasts "for as long as they remain tapped".
           suggested: optional.filter((id) => s.effects.some((e) => e.whileSourceTapped === id)),
         },
         { kind: "untap", player: active },
@@ -407,15 +408,15 @@ function beginStep(s: GameState): void {
       return;
     }
     case "draw":
-      // 103.8a : en duel, le joueur qui commence ne pioche pas lors de son premier tour
-      // (103.8c : en multijoueur, personne ne saute sa pioche).
+      // 103.8a: in a duel, the starting player skips the draw of their first turn
+      // (103.8c: in multiplayer, nobody skips their draw).
       if (s.turn.number > 1 || s.playerOrder.length > 2) {
         drawCards(s, active, 1, true);
       }
       givePriority(s);
       return;
     case "main1":
-      // 714.3b : au début de la première phase principale, un marqueur de savoir sur chaque Saga du joueur actif.
+      // 714.3b: at the beginning of the precombat main phase, a lore counter on each Saga of the active player.
       for (const id of s.battlefield) {
         const o = obj(s, id);
         if (o.controller === active && s.defs[copiedDefId(s, id)]?.saga) changeCounters(s, o, "lore", 1);
@@ -434,14 +435,14 @@ function beginStep(s: GameState): void {
       } else givePriority(s);
       return;
     case "declareBlockers": {
-      // Chaque joueur attaqué déclare ses bloqueurs, dans l'ordre APNAP, sans voir ceux des autres : ils sont appliqués
-      // ensemble à la fin (509.1).
+      // Each attacked player declares their blockers, in APNAP order, without seeing the others': they are applied
+      // together at the end (509.1).
       const c = s.combat ?? emptyCombat();
       s.combat = c;
       c.blockQueue = apnapOrder(s).filter(
         (p) => p !== active && c.attackers.some((a) => defendingPlayer(s, a.defender) === p) && hasAnyLegalBlock(s, p),
       );
-      // Les bloqueurs sont en cours de déclaration : aucun attaquant n'est encore « non bloqué » (filtre `blocked`).
+      // Blockers are being declared: no attacker is "unblocked" yet (filter `blocked`).
       bumpFor(s, "blocks");
       nextBlockingPlayer(s);
       return;
@@ -453,7 +454,7 @@ function beginStep(s: GameState): void {
       startCombatDamage(s, false);
       return;
     case "cleanup": {
-      // 402.2 : taille de main maximale (`null` : « vous n'avez pas de taille de main maximale »).
+      // 402.2: maximum hand size (`null`: "you have no maximum hand size").
       const max = maxHandSize(s, active);
       const excess = max === null ? 0 : (s.players[active]?.hand.length ?? 0) - max;
       if (excess > 0) {
@@ -473,7 +474,7 @@ export function discardToHandSize(s: GameState, p: PlayerId, cards: ObjectId[], 
   const player = s.players[p];
   if (!player) return;
   if (new Set(cards).size !== count || cards.some((c) => !player.hand.includes(c))) {
-    throw new RulesError(`Défaussez exactement ${count} carte(s)`);
+    throw new RulesError(msg("Discard exactly {count} card(s)", { count }));
   }
   const defIds = cards.map((c) => obj(s, c).defId);
   for (const c of cards) announceDiscard(s, p, moveDiscarded(s, p, c));
@@ -483,10 +484,10 @@ export function discardToHandSize(s: GameState, p: PlayerId, cards: ObjectId[], 
 }
 
 function finishCleanup(s: GameState): void {
-  // 514.2 : les blessures sont retirées et les effets « jusqu'à la fin du tour » prennent fin.
+  // 514.2: damage is removed and "until end of turn" effects end.
   for (const id of s.battlefield) {
     const o = obj(s, id);
-    // Ancient Adamantoise : ses blessures restent.
+    // Ancient Adamantoise: its damage stays.
     if (!hasKeyword(s, id, "keepsDamage")) o.damage = 0;
     o.deathtouched = false;
     delete o.regenShields;
@@ -499,9 +500,9 @@ function finishCleanup(s: GameState): void {
       !(e.duration === "endOfYourNextTurn" && e.until === s.turn.active && s.turn.number > (e.sinceTurn ?? 0)),
   );
   s.replacements = [];
-  // Emblèmes « jusqu'à la fin du tour » (Jace Reawakened −6, Prairie Dog).
+  // "Until end of turn" emblems (Jace Reawakened −6, Prairie Dog).
   expireEmblems(s);
-  // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment) : couche 2 recalculée.
+  // End of the "until end of turn" control changes (Involuntary Employment): layer 2 recomputed.
   syncControl(s);
   for (const p of s.playerOrder) {
     const pl = s.players[p];
@@ -516,8 +517,8 @@ function finishCleanup(s: GameState): void {
     }
   }
   bump(s);
-  // 514.3a : si des actions basées sur l'état sont accomplies ou que des capacités se déclenchent pendant le nettoyage,
-  // les joueurs reçoivent la priorité, puis une nouvelle étape de nettoyage a lieu.
+  // 514.3a: if state-based actions are performed or abilities trigger during cleanup, the players receive
+  // priority, then a new cleanup step takes place.
   const acted = stateBasedActions(s);
   if (s.over) return;
   if (acted || s.pending || s.triggers.length > 0) {
@@ -539,10 +540,10 @@ function nextStep(s: GameState): Step | null {
   return STEPS[STEPS.indexOf(step) + 1] ?? null;
 }
 
-/** Dernière étape de sa phase : les phases ajoutées « après cette phase » viennent ensuite (500.8). */
+/** Last step of its phase: the phases added "after this phase" come next (500.8). */
 function endsPhase(s: GameState, next: Step | null): boolean {
   switch (s.turn.step) {
-    // Une phase de début sans pioche (Necropotence) ou réduite à son entretien (Obeka) finit avec l'entretien.
+    // A beginning phase without a draw (Necropotence) or reduced to its upkeep (Obeka) ends with the upkeep.
     case "upkeep":
       return !!s.turn.upkeepOnly || next !== "draw";
     case "draw":
@@ -556,8 +557,8 @@ function endsPhase(s: GameState, next: Step | null): boolean {
 }
 
 /**
- * L'étape suivante compte tenu des étapes et des phases ajoutées : d'abord une étape ajoutée après celle-ci (500.10) ;
- * à la fin d'une phase, la première phase ajoutée (500.8), le tour reprenant ensuite là où il allait.
+ * The next step given the added steps and phases: first a step added after this one (500.10); at the end of a
+ * phase, the first added phase (500.8), the turn then resuming where it was going.
  */
 function addedNext(s: GameState, next: Step | null): Step | null {
   const t = s.turn;
@@ -578,7 +579,7 @@ function addedNext(s: GameState, next: Step | null): Step | null {
   return resume ?? next;
 }
 
-/** Les étapes et phases ajoutées prennent fin avec le tour (ou quand le tour est terminé, 723). */
+/** The added steps and phases end with the turn (or when the turn is ended, 723). */
 function clearAdded(s: GameState): void {
   delete s.turn.addedPhases;
   delete s.turn.addedSteps;
@@ -587,12 +588,12 @@ function clearAdded(s: GameState): void {
 }
 
 function endStep(s: GameState): void {
-  // 500.4 : les réserves de mana se vident à la fin de chaque étape et phase.
+  // 500.4: mana pools empty at the end of each step and phase.
   for (const p of s.playerOrder) {
     const player = s.players[p];
     if (!player) continue;
-    // Savage Ventmaw : le mana gardé jusqu'à la fin du tour (et pas encore dépensé) reste dans la réserve ; celui de la
-    // maîtrise du feu, jusqu'à la fin du combat. Le mana dépensé est compté d'abord sur celui qui se vide le plus tôt.
+    // Savage Ventmaw: the mana kept until end of turn (and not yet spent) stays in the pool; the firebending mana,
+    // until end of combat. Spent mana is counted first against the mana that empties the soonest.
     const keep = player.manaKeep;
     const keepCombat = s.turn.step === "endCombat" ? undefined : player.manaKeepCombat;
     if (s.turn.step === "endCombat") player.manaKeepCombat = undefined;
@@ -604,7 +605,7 @@ function endStep(s: GameState): void {
       if (keep && keep[m] !== undefined) keep[m] = k;
       if (keepCombat && keepCombat[m] !== undefined) keepCombat[m] = kc;
     }
-    // The Last Agni Kai : ces types ne se vident pas ; Ozai, the Phoenix King : le mana non dépensé devient rouge.
+    // The Last Agni Kai: these types don't empty; Ozai, the Phoenix King: unspent mana becomes red.
     const unspent = playerStatics(s, p, "keepUnspentMana").map(({ ab }) => ab.keepUnspentMana);
     for (const k of unspent) for (const m of k?.types ?? []) pool[m] = player.manaPool[m];
     const becomes = unspent.find((k) => k?.becomes)?.becomes;
@@ -613,22 +614,22 @@ function endStep(s: GameState): void {
       for (const m of Object.keys(pool) as ManaType[]) pool[m] = 0;
       pool[becomes] = total;
     }
-    // La réserve ne change le cache des couches que si elle a changé (une réserve vide le reste à chaque étape).
+    // The pool changes the layer cache only if it changed (an empty pool stays empty at each step).
     const changed =
       !!player.restrictedMana?.length || (Object.keys(pool) as ManaType[]).some((m) => pool[m] !== player.manaPool[m]);
     player.manaPool = pool;
-    // Le mana marqué « gardé jusqu'à la fin du tour » reste (Klauth) ; il se vide au nettoyage.
+    // The mana marked "kept until end of turn" stays (Klauth); it empties at cleanup.
     const kept = player.restrictedMana?.filter((m) => m.keep);
     player.restrictedMana = kept?.length ? kept : undefined;
     if (changed) bumpFor(s, "mana");
   }
   if (s.turn.step === "endCombat") {
-    // La prochaine phase de combat contrôlée (Secret of Bloodbending) est terminée.
+    // The next controlled combat phase (Secret of Bloodbending) is over.
     if (s.turnControl?.combatOnly && s.turnControl.turn === s.turn.number) s.turnControl = undefined;
     s.combat = null;
     bump(s);
   }
-  // 514.3a : après une priorité pendant le nettoyage, une nouvelle étape de nettoyage (et non le tour suivant).
+  // 514.3a: after a priority during cleanup, a new cleanup step (and not the next turn).
   if (s.turn.step === "cleanup" && s.turn.cleanupAgain) {
     s.turn.cleanupAgain = false;
     s.lki = {};
@@ -636,12 +637,12 @@ function endStep(s: GameState): void {
     return;
   }
 
-  // Dernières informations connues : plus nécessaires une fois la pile vide et l'étape finie.
+  // Last known information: no longer needed once the stack is empty and the step is over.
   s.lki = {};
   let next = nextStep(s);
-  // 500.11 : une étape passée n'a pas lieu (Necropotence : « passez votre étape de pioche »).
+  // 500.11: a skipped step doesn't happen (Necropotence: "skip your draw step").
   if (next === "draw" && skips(s, s.turn.active, "drawStep")) next = "main1";
-  // 500.8, 500.10 : étapes ajoutées après celle-ci, puis phases ajoutées après la phase qui finit.
+  // 500.8, 500.10: steps added after this one, then phases added after the phase that ends.
   next = addedNext(s, next);
   if (next) {
     s.turn.step = next;
@@ -649,14 +650,14 @@ function endStep(s: GameState): void {
     emit({ type: "step", step: next });
   } else {
     s.turn.number += 1;
-    // Capacités retardées « … ce tour-ci » : elles prennent fin avec le tour.
+    // Delayed abilities "… this turn": they end with the turn.
     if (s.delayed.some((d) => d.at === "thisTurn")) s.delayed = s.delayed.filter((d) => d.at !== "thisTurn");
-    // 500.7 : un tour supplémentaire (le dernier créé d'abord), sinon le joueur suivant.
+    // 500.7: an extra turn (the last one created first), otherwise the next player.
     let extra = s.extraTurns?.pop();
-    // Trouble in Pairs : un adversaire qui devrait commencer un tour supplémentaire le passe.
+    // Trouble in Pairs: an opponent who would begin an extra turn skips it.
     while (extra && skips(s, extra, "extraTurns")) extra = s.extraTurns?.pop();
     s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
-    // Ral Zarek : un joueur qui doit passer son tour le passe (un effet consommé par tour passé).
+    // Ral Zarek: a player who must skip their turn skips it (one effect consumed per skipped turn).
     for (let guard = 0; guard < s.playerOrder.length && consumePlayerEffect(s, s.turn.active, "skips", "turn"); guard++)
       s.turn.active = nextPlayer(s, s.turn.active);
     s.turn.endSteps = 0;
@@ -672,13 +673,13 @@ function endStep(s: GameState): void {
 }
 
 // ---------------------------------------------------------------------------
-// Priorité
+// Priority
 // ---------------------------------------------------------------------------
 
-/** 117.3b : après la résolution, le joueur actif reçoit la priorité. */
+/** 117.3b: after resolution, the active player receives priority. */
 export function afterResolution(s: GameState): void {
   if (s.endTurnRequested) {
-    // 723.1 : le tour passe directement à l'étape de nettoyage.
+    // 723.1: the turn goes directly to the cleanup step.
     s.endTurnRequested = false;
     clearAdded(s);
     s.turn.step = "cleanup";
@@ -691,8 +692,8 @@ export function afterResolution(s: GameState): void {
 }
 
 /**
- * 723 : « Terminez le tour ». Tout ce qui est sur la pile est exilé (le sort qui se résout compris),
- * les capacités en attente disparaissent, le combat s'arrête, puis on passe au nettoyage.
+ * 723: "End the turn". Everything on the stack is exiled (the resolving spell included),
+ * pending abilities disappear, combat stops, then the turn moves to cleanup.
  */
 export function endTheTurn(s: GameState, r: { item: StackItem }): void {
   for (const item of s.stack) {
@@ -700,7 +701,7 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
     if (item.kind === "spell" && s.objects[item.sourceId]) moveObject(s, item.sourceId, "exile");
   }
   s.stack = s.stack.filter((x) => x.id === r.item.id);
-  r.item.flashback = true; // le sort qui se résout est exilé à la fin de sa résolution
+  r.item.flashback = true; // the resolving spell is exiled at the end of its resolution
   s.triggers = [];
   s.combat = null;
   for (const p of s.playerOrder) {
@@ -716,8 +717,8 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
 }
 
 /**
- * Emblèmes temporaires (`GameObject.expires`) : au nettoyage (sans joueur), ceux dont le tour de fin est atteint ; au
- * début du tour de `startOf`, ceux qui durent jusqu'à son prochain tour.
+ * Temporary emblems (`GameObject.expires`): at cleanup (without a player), those whose end turn is reached; at
+ * the beginning of `startOf`'s turn, those that last until their next turn.
  */
 function expireEmblems(s: GameState, startOf?: PlayerId): void {
   for (const p of s.playerOrder) {
@@ -731,11 +732,11 @@ function expireEmblems(s: GameState, startOf?: PlayerId): void {
 }
 
 export function startTurnOf(s: GameState, p: PlayerId): void {
-  // 722 : le tour contrôlé commence (ou le contrôle précédent se termine).
+  // 722: the controlled turn begins (or the previous control ends).
   if (s.turnControl?.turn !== undefined && s.turnControl.turn !== s.turn.number) s.turnControl = undefined;
   if (s.turnControl && s.turnControl.turn === undefined && s.turnControl.player === p) {
     s.turnControl.turn = s.turn.number;
-    // Emrakul, the Promised End : « après ce tour, ce joueur prend un tour supplémentaire ».
+    // Emrakul, the Promised End: "after that turn, that player takes an extra turn".
     if (s.turnControl.thenExtraTurn) s.extraTurns = [...(s.extraTurns ?? []), p];
     emit({ type: "turnControl", player: p, by: s.turnControl.by, combatOnly: s.turnControl.combatOnly });
   }
@@ -744,7 +745,7 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
     player.lastTurnStarted = s.turn.number;
     player.turnsTaken = (player.turnsTaken ?? 0) + 1;
   }
-  // Les statistiques « ce tour-ci » repartent de zéro pour tout le monde (on garde les blessures non de combat du tour passé).
+  // The "this turn" statistics reset for everyone (the noncombat damage of the past turn is kept).
   for (const q of s.playerOrder) {
     const pl = s.players[q];
     if (!pl) continue;
@@ -752,20 +753,20 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
     pl.turnStats = emptyTurnStats();
   }
   s.turnLog = [];
-  // Effets sur les joueurs « ce tour-ci » (ou jusqu'à un tour passé) : expirés.
+  // Player effects "this turn" (or until a past turn): expired.
   s.playerEffects = s.playerEffects.filter((e) => e.until === null || e.until >= s.turn.number);
   s.turn.onceFired = [];
-  // « la première fois que cette capacité se résout ce tour-ci » (Nissa, Leyline Tamer ; Belladonna Took) : compteurs remis
-  // à zéro à chaque tour.
+  // "the first time this ability resolves this turn" (Nissa, Leyline Tamer; Belladonna Took): counters reset
+  // each turn.
   s.turn.resolutionCounts = undefined;
-  // « Jusqu'à votre prochain tour » : effets et emblèmes temporaires de ce joueur.
+  // "Until your next turn": effects and temporary emblems of this player.
   const before = s.effects.length;
   s.effects = s.effects.filter((e) => !(e.duration === "untilYourNextTurn" && e.until === p));
   if (s.effects.length !== before) bump(s);
   expireEmblems(s, p);
   s.turn.graveyardTypesUsed = [];
-  // Permissions de jouer depuis l'exil : celles qui ont expiré disparaissent. Découverte (701.57a) : une carte
-  // qui n'a pas été lancée va dans la main de son propriétaire.
+  // Permissions to play from exile: the expired ones disappear. Discover (701.57a): a card that
+  // wasn't cast goes to its owner's hand.
   for (const perm of s.playPermissions ?? []) {
     if (perm.until < s.turn.number && perm.orHand && s.objects[perm.card]?.zone === "exile") moveObject(s, perm.card, "hand");
   }
@@ -776,7 +777,7 @@ export function emptyCombat(): NonNullable<GameState["combat"]> {
   return { attackers: [], blockers: [], firstStrikers: [], blockQueue: [], damageStep: null, assignQueue: [], assignments: {} };
 }
 
-/** 117.3d : la priorité passe au joueur suivant ; si tous passent à la suite, la pile se résout ou l'étape se termine. */
+/** 117.3d: priority passes to the next player; if all pass in succession, the stack resolves or the step ends. */
 export function passPriority(s: GameState, player: PlayerId): void {
   s.priority.passes += 1;
   if (s.priority.passes >= alivePlayers(s).length) {
@@ -800,8 +801,8 @@ function combatants(s: GameState): ObjectId[] {
 }
 
 /**
- * Blessures de combat qu'une créature assigne : sa force, ou son endurance si elle est plus grande (Ghalta),
- * ou la valeur absolue d'une force négative (Loot, the Anomaly).
+ * Combat damage a creature assigns: its power, or its toughness if it is greater (Ghalta),
+ * or the absolute value of a negative power (Loot, the Anomaly).
  */
 export function combatPower(s: GameState, id: ObjectId): number {
   return effectivePower(chars(s, id), "combatDamage");
@@ -816,31 +817,31 @@ export function canAttack(s: GameState, id: ObjectId): boolean {
 }
 
 /**
- * Exigence d'attaque d'une créature (508.1d) : attaquer (« attaque à chaque combat si possible », provocation), attaquer
- * un joueur autre que `not` (provocation, 701.38a), ou l'un des joueurs `players` (Silver Surfer, Galactus). Une attaque
- * contre un planeswalker ne satisfait que la première.
+ * Attack requirement of a creature (508.1d): attack ("attacks each combat if able", goad), attack a player other
+ * than `not` (goad, 701.38a), or one of the players `players` (Silver Surfer, Galactus). An attack against a
+ * planeswalker satisfies only the first.
  */
 export type AttackRequirement =
   | { kind: "attack" }
   | { kind: "otherPlayer"; not: PlayerId }
   | { kind: "player"; players: PlayerId[] };
 
-/** Les exigences d'attaque d'une créature. */
+/** The attack requirements of a creature. */
 export function attackRequirements(s: GameState, id: ObjectId): AttackRequirement[] {
   const out: AttackRequirement[] = [];
   if (hasKeyword(s, id, "mustAttack")) out.push({ kind: "attack" });
   const goaders = new Set<string>();
   for (const r of chars(s, id).blockRules) {
-    // 701.38c : chaque joueur qui la provoque ajoute ses exigences ; le même joueur, une seule fois. Les règles de `fx.goad`
-    // ont toutes le même libellé : une règle de même forme qui n'est pas une provocation (Maximum Carnage) a le sien et
-    // garde ses exigences à côté d'une provocation du même joueur.
+    // 701.38c: each player who goads it adds their requirements; the same player, only once. The rules of `fx.goad`
+    // all have the same label: a rule of the same shape that isn't a goad (Maximum Carnage) has its own and keeps
+    // its requirements next to a goad by the same player.
     const key = `${r.goadedBy}|${r.label}`;
     if (r.goadedBy && r.goadedBy !== "you" && !goaders.has(key)) {
       goaders.add(key);
       out.push({ kind: "attack" }, { kind: "otherPlayer", not: r.goadedBy });
     }
     if (r.mustAttackPlayer === "mostLifeOpponent") {
-      // Galactus : un adversaire qui a le plus de points de vie parmi les adversaires de son contrôleur.
+      // Galactus: an opponent with the most life among its controller's opponents.
       const opps = opponentsOf(s, obj(s, id).controller);
       const top = Math.max(...opps.map((p) => s.players[p]?.life ?? 0));
       out.push({ kind: "player", players: opps.filter((p) => (s.players[p]?.life ?? 0) === top) });
@@ -850,7 +851,7 @@ export function attackRequirements(s: GameState, id: ObjectId): AttackRequiremen
   return out;
 }
 
-/** Nombre d'exigences satisfaites par une attaque contre ce défenseur (`null` : elle n'attaque pas). */
+/** Number of requirements satisfied by an attack against this defender (`null`: it doesn't attack). */
 function obeyedAttack(s: GameState, reqs: AttackRequirement[], defender: string | null): number {
   if (!defender) return 0;
   const player = s.players[defender] ? defender : null;
@@ -859,15 +860,15 @@ function obeyedAttack(s: GameState, reqs: AttackRequirement[], defender: string 
   ).length;
 }
 
-/** Ce que cette créature peut attaquer : les défenseurs de son contrôleur, moins ses restrictions (taxe comprise). */
+/** What this creature can attack: its controller's defenders, minus its restrictions (tax included). */
 export function allowedDefenders(s: GameState, id: ObjectId): string[] {
   if (!canAttack(s, id)) return [];
   return attackableDefenders(s, obj(s, id).controller).filter((d) => !attackRestriction(s, id, d));
 }
 
 /**
- * Les défenseurs qui satisfont le plus d'exigences de cette créature sans payer de taxe (provocation : un joueur autre
- * que celui qui l'a provoquée) ; tous ceux qu'elle peut attaquer si elle n'a pas d'exigence ou n'en peut satisfaire aucune.
+ * The defenders that satisfy the most requirements of this creature without paying a tax (goad: a player other
+ * than the one who goaded it); all those it can attack if it has no requirement or can satisfy none.
  */
 export function preferredDefenders(s: GameState, id: ObjectId): string[] {
   const allowed = allowedDefenders(s, id);
@@ -880,7 +881,10 @@ export function preferredDefenders(s: GameState, id: ObjectId): string[] {
 
 type Attack = { id: ObjectId; defender: string };
 
-/** Tomik, Orzhov Lawmage : une seule créature attaque chacun de ses planeswalkers ; Mirri : une seule attaque son contrôleur. */
+/**
+ * Tomik, Orzhov Lawmage: a single creature attacks each of its planeswalkers;
+ * Mirri: a single one attacks its controller.
+ */
 function oneAttackerOnly(s: GameState, defender: string): boolean {
   const walker = s.objects[defender];
   return walker
@@ -888,27 +892,27 @@ function oneAttackerOnly(s: GameState, defender: string): boolean {
     : playerStatics(s, defender, "maxOneAttacker").some(({ ab }) => ab.maxOneAttacker === "you");
 }
 
-/** La déclaration respecte-t-elle « une seule créature attaque » (Mirri, Tomik) ? */
+/** Does the declaration respect "only one creature can attack" (Mirri, Tomik)? */
 function oneAttackerLegal(s: GameState, attacks: Attack[]): boolean {
   for (const d of new Set(attacks.map((a) => a.defender)))
     if (oneAttackerOnly(s, d) && attacks.filter((a) => a.defender === d).length > 1) return false;
   return true;
 }
 
-/** La créature seule de cette déclaration ne peut pas attaquer seule (Toby, Beastie Befriender). */
+/** The lone creature of this declaration can't attack alone (Toby, Beastie Befriender). */
 function loneNotAlone(s: GameState, attacks: Attack[]): boolean {
   const lone = attacks.length === 1 ? attacks[0]?.id : undefined;
   return !!lone && chars(s, lone).blockRules.some((r) => r.notAlone);
 }
 
-/** La déclaration respecte-t-elle « une seule créature attaque » et « pas seule » ? */
+/** Does the declaration respect "only one creature can attack" and "can't attack alone"? */
 function attackShapeLegal(s: GameState, attacks: Attack[]): boolean {
   return oneAttackerLegal(s, attacks) && !loneNotAlone(s, attacks);
 }
 
 /**
- * « Pas seule » : une autre créature qui peut accompagner cette attaque seule sans coût, sinon null. Elle rend légale une
- * déclaration qui respecte les exigences de la première (508.1d).
+ * "Not alone": another creature that can join this lone attack at no cost, otherwise null. It makes legal a
+ * declaration that respects the requirements of the first (508.1d).
  */
 function attackCompanion(s: GameState, player: PlayerId, attacks: Attack[]): Attack | null {
   for (const id of attackCandidates(s, player)) {
@@ -921,14 +925,14 @@ function attackCompanion(s: GameState, player: PlayerId, attacks: Attack[]): Att
   return null;
 }
 
-/** Nœuds au plus de la recherche du maximum (comme pour les blocages). */
+/** Maximum number of nodes of the search for the maximum (as for blocks). */
 const ATTACK_SEARCH_NODES = 50_000;
 
 /**
- * 508.1d : le plus grand nombre d'exigences d'attaque qu'une déclaration légale peut respecter sans payer de coût, et une
- * telle déclaration (pour les seules créatures qui ont des exigences, plus une compagne si l'une d'elles ne peut pas
- * attaquer seule). `prefer` : les attaques voulues, essayées d'abord. `paid` : les attaques dont la déclaration paie la
- * taxe ; chacune s'ajoute aux choix de sa créature, sans dispenser les autres de leurs exigences sans coût.
+ * 508.1d: the largest number of attack requirements a legal declaration can obey without paying a cost, and such
+ * a declaration (for the creatures with requirements only, plus a companion if one of them can't attack
+ * alone). `prefer`: the wanted attacks, tried first. `paid`: the attacks whose declaration pays the tax; each one
+ * is added to its creature's choices, without exempting the others from their requirements at no cost.
  */
 function bestRequiredAttacks(
   s: GameState,
@@ -940,8 +944,8 @@ function bestRequiredAttacks(
     .map((id) => ({ id, reqs: attackRequirements(s, id) }))
     .filter((x) => x.reqs.length > 0);
   if (relevant.length === 0) return { max: 0, best: [] };
-  // Pour chaque créature : les défenseurs sans taxe qui satisfont au moins une exigence, du meilleur au moins bon (à
-  // égalité, l'attaque voulue, puis les joueurs avant les planeswalkers), puis « n'attaque pas ».
+  // For each creature: the defenders without a tax that satisfy at least one requirement, from best to worst (on a
+  // tie, the wanted attack, then players before planeswalkers), then "doesn't attack".
   const domains = relevant.map(({ id, reqs }) => {
     const wanted = prefer.find((a) => a.id === id)?.defender;
     const opts = allowedDefenders(s, id)
@@ -979,14 +983,14 @@ function bestRequiredAttacks(
   return { max: Math.max(0, max), best };
 }
 
-/** Nombre d'exigences d'attaque respectées par une déclaration (une attaque payée compte aussi). */
+/** Number of attack requirements obeyed by a declaration (a paid attack counts too). */
 function obeyedAttacks(s: GameState, attacks: Attack[]): number {
   return attacks.reduce((n, a) => n + obeyedAttack(s, attackRequirements(s, a.id), a.defender), 0);
 }
 
 /**
- * 508.1d : pourquoi cette déclaration respecte moins d'exigences d'attaque qu'une autre déclaration légale (sans coût),
- * sinon null.
+ * 508.1d: why this declaration obeys fewer attack requirements than another legal declaration (at no cost),
+ * otherwise null.
  */
 export function unmetAttackRequirement(s: GameState, player: PlayerId, attacks: Attack[]): string | null {
   const paid = attacks.filter((a) => attackTaxFor(s, a.defender) > 0);
@@ -997,34 +1001,34 @@ export function unmetAttackRequirement(s: GameState, player: PlayerId, attacks: 
     const mine = attacks.find((a) => a.id === b.id);
     if (obeyedAttack(s, reqs, mine?.defender ?? null) >= obeyedAttack(s, reqs, b.defender)) continue;
     const name = chars(s, b.id).name;
-    if (!mine) return `${name} doit attaquer si elle le peut`;
-    if (reqs.some((r) => r.kind === "player")) return `${name} doit attaquer le joueur imposé si possible`;
-    return `${name} est provoquée : elle doit attaquer un joueur autre que celui qui l'a provoquée si possible`;
+    if (!mine) return msg("{name} must attack if able", { name });
+    if (reqs.some((r) => r.kind === "player")) return msg("{name} must attack the required player if able", { name });
+    return msg("{name} is goaded: it must attack a player other than the one who goaded it if able", { name });
   }
-  return "Cette déclaration ne respecte pas autant d'exigences d'attaque que possible";
+  return msg("This declaration doesn't obey as many attack requirements as possible");
 }
 
 /**
- * Créatures obligées d'attaquer (508.1d) : celles de la meilleure déclaration des exigences. Une obligation n'impose
- * jamais de payer un coût : si chaque défenseur possible exige une taxe d'attaque (Archangel of Tithes), elles ne sont pas
- * obligées d'attaquer.
+ * Creatures that must attack (508.1d): those of the best declaration of the requirements. A requirement never
+ * forces paying a cost: if each possible defender demands an attack tax (Archangel of Tithes), they don't have
+ * to attack.
  */
 export function forcedAttackers(s: GameState, player: PlayerId): ObjectId[] {
   return forcedAttacks(s, player).map((a) => a.id);
 }
 
 /**
- * Les attaques obligées, chacune vers le défenseur qui satisfait le plus d'exigences (provocation : un joueur autre que
- * celui qui l'a provoquée ; à défaut, un joueur avant un planeswalker) : déclaration par défaut et automatisme.
+ * The forced attacks, each toward the defender that satisfies the most requirements (goad: a player other than
+ * the one who goaded it; failing that, a player before a planeswalker): default declaration and autopilot.
  */
 export function forcedAttacks(s: GameState, player: PlayerId): Attack[] {
   return bestRequiredAttacks(s, player).best;
 }
 
 /**
- * Attaques voulues (par l'IA) complétées pour respecter le plus d'exigences possible : les créatures qui en ont reprennent
- * la meilleure attaque proche de celle voulue ; les autres gardent la leur, ou attaquent un autre défenseur sans taxe si
- * « une seule créature attaque » (Mirri, Tomik) l'interdit désormais, ou restent chez elles.
+ * Wanted attacks (by the AI) completed to obey as many requirements as possible: the creatures that have some take
+ * the best attack close to the wanted one; the others keep theirs, or attack another defender without a tax if
+ * "only one creature can attack" (Mirri, Tomik) now forbids it, or stay home.
  */
 export function repairAttacks(s: GameState, player: PlayerId, attacks: Attack[]): Attack[] {
   if (!unmetAttackRequirement(s, player, attacks)) return attacks;
@@ -1041,25 +1045,25 @@ export function repairAttacks(s: GameState, player: PlayerId, attacks: Attack[])
 }
 
 /**
- * Pourquoi cette créature ne peut pas attaquer ce défenseur (joueur ou planeswalker), sinon null : « ne peut pas vous
- * attaquer, ni vos planeswalkers » (Eriette of the Charmed Apple), « ne peut pas attaquer un joueur qu'elle a déjà attaqué
- * ce tour-ci » (Port Razer).
+ * Why this creature can't attack this defender (player or planeswalker), otherwise null: "can't attack you or
+ * planeswalkers you control" (Eriette of the Charmed Apple), "can't attack a player it has already attacked
+ * this turn" (Port Razer).
  */
 function attackRestriction(s: GameState, id: ObjectId, defender: string): string | null {
   const dp = defendingPlayer(s, defender);
   const rules = chars(s, id).blockRules;
-  if (rules.some((r) => r.cantAttackPlayer === dp)) return `${chars(s, id).name} ne peut pas attaquer ce joueur`;
+  if (rules.some((r) => r.cantAttackPlayer === dp)) return msg("{name} can't attack this player", { name: chars(s, id).name });
   if (
     rules.some((r) => r.notDefendersAttackedThisTurn) &&
     s.turnLog.some((e) => e.e === "attack" && e.id === id && e.defender === dp)
   )
-    return `${chars(s, id).name} a déjà attaqué ce joueur ce tour-ci`;
+    return msg("{name} has already attacked this player this turn", { name: chars(s, id).name });
   return null;
 }
 
 /**
- * Taxe d'attaque pour attaquer ce défenseur : {N} par créature. Propaganda ne taxe que les attaques contre son contrôleur,
- * Archangel of Tithes (`defending: "youOrYourPlaneswalkers"`) aussi celles contre ses planeswalkers.
+ * Attack tax to attack this defender: {N} per creature. Propaganda taxes only the attacks against its controller,
+ * Archangel of Tithes (`defending: "youOrYourPlaneswalkers"`) also those against its planeswalkers.
  */
 export function attackTaxFor(s: GameState, defender: string): number {
   const walker = !s.players[defender];
@@ -1076,20 +1080,23 @@ export function attackCandidates(s: GameState, player: PlayerId): ObjectId[] {
   return creaturesControlledBy(s, player).filter((id) => canAttack(s, id));
 }
 
-/** Joueur défenseur d'une attaque : le joueur attaqué, ou le contrôleur du planeswalker attaqué (dernier connu s'il est parti). */
+/**
+ * Defending player of an attack: the attacked player, or the controller of the attacked planeswalker (last known if
+ * it is gone).
+ */
 export function defendingPlayer(s: GameState, defender: string): PlayerId {
   if (s.players[defender]) return defender;
   return s.objects[defender]?.controller ?? s.lki[defender]?.controller ?? defender;
 }
 
 /**
- * Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). `declared` : faux pour un permanent mis
- * sur le champ de bataille attaquant (508.4), que les restrictions d'attaque des joueurs ne concernent pas.
+ * What a player can attack: their opponents and their planeswalkers (506.2). `declared`: false for a permanent put
+ * onto the battlefield attacking (508.4), which the players' attack restrictions don't concern.
  */
 export function attackableDefenders(s: GameState, player: PlayerId, declared = true): string[] {
-  // « Ne peut pas attaquer [ce joueur ni ses planeswalkers] » (`cantAttack`) : Sandswirl Wanderglyph (« il ne peut pas
-  // vous attaquer, ni les planeswalkers que vous contrôlez, ce tour-ci ») ; avec un sous-type, seulement ces
-  // planeswalkers (Jace, Multiverse Architect : « ses créatures ne peuvent pas attaquer vos Jace ce tour-ci »).
+  // "Can't attack [this player or their planeswalkers]" (`cantAttack`): Sandswirl Wanderglyph ("it can't attack
+  // you or planeswalkers you control this turn"); with a subtype, only those planeswalkers (Jace, Multiverse
+  // Architect: "its creatures can't attack your Jaces this turn").
   const bans = declared ? playerEffectValues(s, player, "cantAttack") : [];
   const banned = (d: string) => {
     const walker = s.objects[d];
@@ -1097,7 +1104,7 @@ export function attackableDefenders(s: GameState, player: PlayerId, declared = t
     return bans.some((b) => b.of === of && (!b.subtype || (!!walker && chars(s, d).subtypes.includes(b.subtype))));
   };
   const opps = opponentsOf(s, player);
-  // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
+  // The Aetherspark: "as long as it's attached to a creature, it can't be attacked".
   const walkers = s.battlefield.filter(
     (id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker") && !obj(s, id).attachedTo,
   );
@@ -1105,10 +1112,10 @@ export function attackableDefenders(s: GameState, player: PlayerId, declared = t
 }
 
 /**
- * 402.2 : taille de main maximale (7, `null` : aucune). Les effets qui la fixent (« votre taille de main maximale est de
- * cinq », « vous n'avez pas de taille de main maximale », éventuellement pour les adversaires) sont des effets sur les
- * règles du jeu, appliqués dans l'ordre de leurs horodatages (613.11) : le plus récent l'emporte. L'horodatage d'une
- * statique est celui de sa source (permanent, emblème) ; celui d'un effet sur le joueur, celui de sa création.
+ * 402.2: maximum hand size (7, `null`: none). The effects that set it ("your maximum hand size is five", "you have
+ * no maximum hand size", possibly for opponents) are effects on the rules of the game, applied in the order of
+ * their timestamps (613.11): the most recent wins. The timestamp of a static ability is that of its source
+ * (permanent, emblem); that of a player effect, that of its creation.
  */
 function maxHandSize(s: GameState, player: PlayerId): number | null {
   const set: { ts: number; value: () => number | null }[] = [];
@@ -1135,38 +1142,42 @@ export function declareAttackers(s: GameState, player: PlayerId, declared: { id:
   const seen = new Set<ObjectId>();
   const defenders = attackableDefenders(s, player);
   for (const a of attackers) {
-    if (seen.has(a.id)) throw new RulesError("Créature déclarée deux fois");
+    if (seen.has(a.id)) throw new RulesError(msg("Creature declared twice"));
     seen.add(a.id);
-    if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError("Cette créature ne peut pas attaquer");
-    if (!defenders.includes(a.defender)) throw new RulesError("Joueur ou planeswalker défenseur invalide");
+    if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError(msg("This creature can't attack"));
+    if (!defenders.includes(a.defender)) throw new RulesError(msg("Invalid defending player or planeswalker"));
     const restriction = attackRestriction(s, a.id, a.defender);
     if (restriction) throw new RulesError(restriction);
   }
-  // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur ; Mirri, Weatherlight
-  // Duelist : au plus une créature attaque son contrôleur.
+  // Tomik, Orzhov Lawmage: at most one creature attacks each planeswalker of its controller; Mirri, Weatherlight
+  // Duelist: at most one creature attacks its controller.
   for (const w of new Set(attackers.map((a) => a.defender))) {
     if (oneAttackerOnly(s, w) && attackers.filter((a) => a.defender === w).length > 1) {
-      throw new RulesError(`Une seule créature peut attaquer ${s.objects[w] ? chars(s, w).name : "ce joueur"}`);
+      throw new RulesError(
+        s.objects[w]
+          ? msg("Only one creature can attack {name}", { name: chars(s, w).name })
+          : msg("Only one creature can attack this player"),
+      );
     }
   }
-  // 508.1d : la déclaration respecte autant d'exigences d'attaque que possible (« attaque à chaque combat si possible »,
-  // provocation, « attaque ce joueur ») ; une obligation n'impose pas de payer une taxe d'attaque.
+  // 508.1d: the declaration obeys as many attack requirements as possible ("attacks each combat if able",
+  // goad, "attacks that player"); a requirement never forces paying an attack tax.
   const unmet = unmetAttackRequirement(s, player, attackers);
   if (unmet) throw new RulesError(unmet);
-  // Toby, Beastie Befriender : « ce jeton ne peut pas attaquer seul ».
+  // Toby, Beastie Befriender: "this token can't attack alone".
   const alone = attackers.length === 1 ? attackers[0]?.id : undefined;
   if (alone && chars(s, alone).blockRules.some((r) => r.notAlone))
-    throw new RulesError(`${chars(s, alone).name} ne peut pas attaquer seule`);
-  // 508.1f : les créatures qui attaquent s'engagent, puis (508.1h) la taxe d'attaque se paie (Archangel of Tithes : {1}
-  // pour chaque créature qui attaque un joueur protégé ou ses planeswalkers) ; une créature sacrifiée pour la payer
-  // (Rejeton Eldrazi) quitte le combat.
+    throw new RulesError(msg("{name} can't attack alone", { name: chars(s, alone).name }));
+  // 508.1f: the attacking creatures become tapped, then (508.1h) the attack tax is paid (Archangel of Tithes: {1}
+  // for each creature attacking a protected player or their planeswalkers); a creature sacrificed to pay it
+  // (Eldrazi Spawn) leaves combat.
   for (const a of attackers) if (!hasKeyword(s, a.id, "vigilance")) tapObject(s, obj(s, a.id));
   const tax = attackers.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
   if (tax > 0) {
     try {
       payMana(s, player, { generic: tax, colored: {}, x: 0 });
     } catch (e) {
-      rethrowAsRules(e, `Il faut payer {${tax}} pour attaquer`);
+      rethrowAsRules(e, msg("You must pay {cost} to attack", { cost: `{${tax}}` }));
     }
     attackers = attackers.filter((a) => s.objects[a.id]?.zone === "battlefield" && s.objects[a.id]?.controller === player);
   }
@@ -1174,7 +1185,7 @@ export function declareAttackers(s: GameState, player: PlayerId, declared: { id:
   for (const a of attackers) s.combat.attackers.push({ id: a.id, defender: a.defender, blockers: [], blocked: false });
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
-  // Journal du tour : attaques (« si vous avez attaqué avec un Vaisseau », Sandswirl Wanderglyph).
+  // Turn log: attacks ("if you attacked with a Spacecraft", Sandswirl Wanderglyph).
   for (const a of attackers) {
     const c = chars(s, a.id);
     const defender = defendingPlayer(s, a.defender) ?? a.defender;
@@ -1194,15 +1205,15 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
   if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, blocker, "decayed") || hasKeyword(s, attacker, "unblockable"))
     return false;
-  // 702.16f : une créature avec la protection contre [filtre] ne peut pas être bloquée par ce qui y correspond.
+  // 702.16f: a creature with protection from [filter] can't be blocked by what matches it.
   if (protectedFrom(s, attacker, snapshot(s, blocker))) return false;
-  // « Ne peut pas être bloquée par les créatures que ce joueur contrôle » (The Black Gate).
+  // "Can't be blocked by creatures that player controls" (The Black Gate).
   if (chars(s, attacker).blockRules.some((r) => r.cantBeBlockedByPlayer === b.controller)) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
-  // Règles de blocage (R4.1) : « ne peut bloquer que [filtre] » (Drone), « ne peut pas être bloquée par [filtre] ».
+  // Block rules (R4.1): "can block only [filter]" (Drone), "can't be blocked by [filter]".
   const own = chars(s, blocker).blockRules;
   if (own.some((r) => r.canBlockOnly && !matchesView(snapshot(s, attacker), r.canBlockOnly, b.controller, blocker))) return false;
-  // Traversée de terrain (702.14) : imblocable si le défenseur contrôle un permanent correspondant.
+  // Landwalk (702.14): unblockable if the defender controls a matching permanent.
   const walks = chars(s, attacker).blockRules.filter((r) => r.unblockableIfDefenderControls);
   if (
     walks.some((r) =>
@@ -1224,18 +1235,18 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   return true;
 }
 
-/** Nombre minimal de bloqueurs d'un attaquant : 1, 2 avec la menace, plus selon ses règles de blocage. */
+/** Minimum number of blockers of an attacker: 1, 2 with menace, more according to its block rules. */
 function minBlockers(s: GameState, id: ObjectId): number {
   const rules = chars(s, id).blockRules.map((r) => r.minBlockers ?? 0);
   return Math.max(hasKeyword(s, id, "menace") ? 2 : 1, ...rules);
 }
 
-/** Nombre maximal de bloqueurs d'un attaquant (« ne peut pas être bloquée par plus d'une créature »). */
+/** Maximum number of blockers of an attacker ("can't be blocked by more than one creature"). */
 function maxBlockers(s: GameState, id: ObjectId): number {
   return Math.min(Number.POSITIVE_INFINITY, ...chars(s, id).blockRules.map((r) => r.maxBlockers ?? Number.POSITIVE_INFINITY));
 }
 
-/** Pour chaque bloqueur potentiel, les attaquants qu'il peut bloquer. */
+/** For each potential blocker, the attackers it can block. */
 export function blockCandidates(s: GameState, player: PlayerId): { blocker: ObjectId; attackers: ObjectId[] }[] {
   const attackers = s.combat?.attackers.map((a) => a.id) ?? [];
   return creaturesControlledBy(s, player)
@@ -1254,14 +1265,14 @@ function hasAnyLegalBlock(s: GameState, player: PlayerId): boolean {
 type Block = { blocker: ObjectId; attacker: ObjectId };
 
 /**
- * 509.1c : une exigence de blocage d'un défenseur — un attaquant « qui doit être bloqué si possible », ou une créature
- * qui « bloque si possible » (`attackers` : seulement ces attaquants, « bloque ce Loup si possible »).
+ * 509.1c: a block requirement of a defender — an attacker that "must be blocked if able", or a creature that
+ * "blocks if able" (`attackers`: only those attackers, "blocks this Wolf if able").
  */
 export type BlockRequirement =
   | { kind: "attacker"; attacker: ObjectId }
   | { kind: "blocker"; blocker: ObjectId; attackers?: ObjectId[] };
 
-/** Les exigences de blocage de `player` ; aucune si bloquer coûte quelque chose (509.1d, Archangel of Tithes). */
+/** The block requirements of `player`; none if blocking costs something (509.1d, Archangel of Tithes). */
 export function blockRequirements(s: GameState, player: PlayerId): BlockRequirement[] {
   const tax = s.playerOrder.filter((p) => p !== player).reduce((n, p) => n + playerStaticTotal(s, p, "blockTax"), 0);
   if (tax > 0) return [];
@@ -1281,7 +1292,7 @@ export function blockRequirements(s: GameState, player: PlayerId): BlockRequirem
   return out;
 }
 
-/** Exigences respectées par une déclaration. */
+/** Requirements obeyed by a declaration. */
 function obeyedRequirements(reqs: BlockRequirement[], blocks: Block[]): BlockRequirement[] {
   return reqs.filter((r) => {
     if (r.kind === "attacker") return blocks.some((b) => b.attacker === r.attacker);
@@ -1290,7 +1301,7 @@ function obeyedRequirements(reqs: BlockRequirement[], blocks: Block[]): BlockReq
   });
 }
 
-/** Nombre de créatures avec lesquelles ce joueur peut bloquer (Mirri, Weatherlight Duelist : une seule). */
+/** Number of creatures this player can block with (Mirri, Weatherlight Duelist: only one). */
 function maxBlockingCreatures(s: GameState, player: PlayerId): number {
   return Math.min(
     Number.POSITIVE_INFINITY,
@@ -1299,8 +1310,8 @@ function maxBlockingCreatures(s: GameState, player: PlayerId): number {
 }
 
 /**
- * La déclaration respecte-t-elle le nombre de bloqueurs de chaque attaquant (menace, « pas plus d'une »), le nombre de
- * créatures qui bloquent et « pas seule » ?
+ * Does the declaration respect the number of blockers of each attacker (menace, "no more than one"), the number of
+ * blocking creatures and "not alone"?
  */
 function blockShapeLegal(s: GameState, player: PlayerId, blocks: Block[]): boolean {
   if (new Set(blocks.map((b) => b.blocker)).size > maxBlockingCreatures(s, player)) return false;
@@ -1311,12 +1322,12 @@ function blockShapeLegal(s: GameState, player: PlayerId, blocks: Block[]): boole
   return !lone || !chars(s, lone).blockRules.some((r) => r.notAlone);
 }
 
-/** Nœuds au plus de la recherche du maximum : au-delà, le meilleur trouvé (qui ne peut que sous-estimer le maximum). */
+/** Maximum nodes of the search for the maximum: beyond, the best found (which can only underestimate the maximum). */
 const BLOCK_SEARCH_NODES = 50_000;
 
 /**
- * 509.1c : le plus grand nombre d'exigences qu'une déclaration légale peut respecter, et une telle déclaration (pour les
- * seules créatures concernées). `prefer` : les blocages voulus, essayés d'abord (l'IA qui répare ses blocages).
+ * 509.1c: the largest number of requirements a legal declaration can obey, and such a declaration (for the
+ * concerned creatures only). `prefer`: the wanted blocks, tried first (the AI repairing its blocks).
  */
 function bestRequiredBlocks(
   s: GameState,
@@ -1336,7 +1347,7 @@ function bestRequiredBlocks(
     );
     const wanted = prefer.find((b) => b.blocker === id)?.attacker;
     const options: (ObjectId | null)[] = [null, ...useful];
-    // Le blocage voulu d'abord (s'il est utile) ; sinon « ne bloque pas » d'abord.
+    // The wanted block first (if useful); otherwise "doesn't block" first.
     if (wanted && useful.includes(wanted)) options.sort((x, y) => (x === wanted ? -1 : y === wanted ? 1 : 0));
     return options;
   });
@@ -1366,8 +1377,8 @@ function bestRequiredBlocks(
 }
 
 /**
- * 509.1c : la première exigence non respectée par cette déclaration alors qu'une autre déclaration légale en respecte
- * plus ; null si la déclaration respecte le maximum possible.
+ * 509.1c: the first requirement not obeyed by this declaration while another legal declaration obeys more;
+ * null if the declaration obeys the maximum possible.
  */
 export function unmetBlockRequirement(s: GameState, player: PlayerId, blocks: Block[]): BlockRequirement | null {
   const reqs = blockRequirements(s, player);
@@ -1377,14 +1388,14 @@ export function unmetBlockRequirement(s: GameState, player: PlayerId, blocks: Bl
   return reqs.find((r) => !obeyed.includes(r)) ?? null;
 }
 
-/** Blocages par défaut : ceux qui respectent le plus d'exigences (509.1c) ; vide sans exigence. */
+/** Default blocks: those that obey the most requirements (509.1c); empty without requirements. */
 export function requiredBlocks(s: GameState, player: PlayerId): Block[] {
   return bestRequiredBlocks(s, player, blockRequirements(s, player)).best;
 }
 
 /**
- * Blocages voulus (par l'IA) complétés pour respecter le plus d'exigences possible : les créatures concernées reprennent
- * le meilleur blocage proche de celui voulu, les autres gardent le leur.
+ * Wanted blocks (by the AI) completed to obey as many requirements as possible: the concerned creatures take the
+ * best block close to the wanted one, the others keep theirs.
  */
 export function repairBlocks(s: GameState, player: PlayerId, blocks: Block[]): Block[] {
   if (!unmetBlockRequirement(s, player, blocks)) return blocks;
@@ -1400,36 +1411,37 @@ export function repairBlocks(s: GameState, player: PlayerId, blocks: Block[]): B
 
 export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocker: ObjectId; attacker: ObjectId }[]): void {
   const c = s.combat;
-  if (!c) throw new RulesError("Pas de combat en cours");
+  if (!c) throw new RulesError(msg("No combat in progress"));
   const seen = new Set<ObjectId>();
   for (const b of blocks) {
-    if (seen.has(b.blocker)) throw new RulesError("Une créature ne peut bloquer qu'un attaquant");
+    if (seen.has(b.blocker)) throw new RulesError(msg("A creature can block only one attacker"));
     seen.add(b.blocker);
     if (obj(s, b.blocker).controller !== player || !canBlock(s, b.blocker, b.attacker)) {
-      throw new RulesError("Blocage illégal");
+      throw new RulesError(msg("Illegal block"));
     }
   }
   const lone = blocks.length === 1 ? blocks[0]?.blocker : undefined;
   if (lone && chars(s, lone).blockRules.some((r) => r.notAlone))
-    throw new RulesError(`${chars(s, lone).name} ne peut pas bloquer seule`);
-  // 509.1c : la déclaration respecte autant d'exigences de blocage que possible (sans payer de coût, 509.1d).
+    throw new RulesError(msg("{name} can't block alone", { name: chars(s, lone).name }));
+  // 509.1c: the declaration obeys as many block requirements as possible (without paying a cost, 509.1d).
   const unmet = unmetBlockRequirement(s, player, blocks);
-  if (unmet?.kind === "attacker") throw new RulesError(`${chars(s, unmet.attacker).name} doit être bloquée si possible`);
-  if (unmet?.kind === "blocker") throw new RulesError(`${chars(s, unmet.blocker).name} doit bloquer si possible`);
-  // Archangel of Tithes (attaquant) : {1} par créature qui bloque.
+  if (unmet?.kind === "attacker")
+    throw new RulesError(msg("{name} must be blocked if able", { name: chars(s, unmet.attacker).name }));
+  if (unmet?.kind === "blocker") throw new RulesError(msg("{name} must block if able", { name: chars(s, unmet.blocker).name }));
+  // Archangel of Tithes (attacker): {1} per blocking creature.
   const perBlocker = s.playerOrder.filter((p) => p !== player).reduce((n, p) => n + playerStaticTotal(s, p, "blockTax"), 0);
   if (blocks.length && perBlocker > 0) {
     const tax = blocks.length * perBlocker;
     try {
       payMana(s, player, { generic: tax, colored: {}, x: 0 });
     } catch (e) {
-      rethrowAsRules(e, `Il faut payer {${tax}} pour bloquer`);
+      rethrowAsRules(e, msg("You must pay {cost} to block", { cost: `{${tax}}` }));
     }
   }
   const cap = maxBlockingCreatures(s, player);
   if (new Set(blocks.map((b) => b.blocker)).size > cap)
     throw new RulesError(
-      cap === 1 ? "Vous ne pouvez bloquer qu'avec une seule créature" : `Vous ne pouvez bloquer qu'avec ${cap} créatures`,
+      cap === 1 ? msg("You can block with only one creature") : msg("You can block with only {n} creatures", { n: cap }),
     );
   for (const a of c.attackers) {
     const n = blocks.filter((b) => b.attacker === a.id).length;
@@ -1437,30 +1449,30 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
     if (n > 0 && n < min)
       throw new RulesError(
         min === 2 && hasKeyword(s, a.id, "menace")
-          ? "Une créature avec la menace doit être bloquée par au moins deux créatures"
-          : `Cette créature ne peut être bloquée que par ${min} créatures ou plus`,
+          ? msg("A creature with menace must be blocked by two or more creatures")
+          : msg("This creature can't be blocked except by {n} or more creatures", { n: min }),
       );
     const max = maxBlockers(s, a.id);
     if (n > max)
       throw new RulesError(
         max === 1
-          ? "Cette créature ne peut pas être bloquée par plus d'une créature"
-          : `Cette créature ne peut pas être bloquée par plus de ${max} créatures`,
+          ? msg("This creature can't be blocked by more than one creature")
+          : msg("This creature can't be blocked by more than {n} creatures", { n: max }),
       );
   }
-  // 509.1 : les blocages des défenseurs sont simultanés ; ceux-ci sont gardés (et cachés) jusqu'au dernier défenseur.
+  // 509.1: the defenders' blocks are simultaneous; these are kept (and hidden) until the last defender.
   c.pendingBlocks = [...(c.pendingBlocks ?? []), { player, blocks }];
   nextBlockingPlayer(s);
 }
 
-/** Applique ensemble les blocages de tous les défenseurs (509.1), dans l'ordre de leurs déclarations. */
+/** Applies the blocks of all defenders together (509.1), in the order of their declarations. */
 function commitBlocks(s: GameState): void {
   const c = s.combat;
   if (!c) return;
   const pending = c.pendingBlocks ?? [];
   c.pendingBlocks = undefined;
   for (const { player, blocks } of pending) applyBlocks(s, c, player, blocks);
-  // Les attaquants deviennent bloqués ou non bloqués (filtres `blocked` et `blocking` des statiques : Throatseeker).
+  // Attackers become blocked or unblocked (filters `blocked` and `blocking` of static abilities: Throatseeker).
   bumpFor(s, "blocks");
 }
 
@@ -1473,7 +1485,7 @@ function applyBlocks(
   blocks = blocks.filter((b) => onBattlefield(s, b.blocker) && c.attackers.some((a) => a.id === b.attacker));
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const b of blocks) rulesEvent(s, { e: "block", blocker: b.blocker, attacker: b.attacker });
-  // 509.1h : chaque attaquant qui a au moins un bloqueur devient bloqué (Norin).
+  // 509.1h: each attacker that has at least one blocker becomes blocked (Norin).
   for (const a of new Set(blocks.map((b) => b.attacker))) {
     const o = s.objects[a];
     if (o) rulesEvent(s, { e: "blocked", attacker: a, player: o.controller });
@@ -1503,7 +1515,7 @@ function nextBlockingPlayer(s: GameState): void {
   }
 }
 
-/** Blessures mortelles restantes pour une créature (702.2c : 1 suffit avec le contact mortel). */
+/** Lethal damage remaining for a creature (702.2c: 1 is enough with deathtouch). */
 function lethalFor(s: GameState, id: ObjectId, deathtouch: boolean): number {
   const remaining = Math.max(0, chars(s, id).toughness - obj(s, id).damage);
   return deathtouch ? Math.min(1, remaining) : remaining;
@@ -1515,7 +1527,7 @@ function dealsDamageNow(s: GameState, id: ObjectId, firstStrikeStep: boolean): b
   return !s.combat?.firstStrikers.includes(id) || kw.includes("doubleStrike");
 }
 
-/** Répartition par défaut : tuer le plus de bloqueurs possible, le reste au joueur si piétinement. */
+/** Default division: kill as many blockers as possible, the rest to the player with trample. */
 function defaultAssignment(s: GameState, attacker: ObjectId): Record<string, number> {
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   const out: Record<string, number> = {};
@@ -1539,8 +1551,8 @@ function defaultAssignment(s: GameState, attacker: ObjectId): Record<string, num
 }
 
 /**
- * 510.1 : chaque attaquant bloqué répartit ses blessures. Un vrai choix n'existe que s'il y a plusieurs
- * bloqueurs, ou un bloqueur et le piétinement : on pose alors la question au contrôleur de l'attaquant.
+ * 510.1: each blocked attacker divides its damage. A real choice exists only if there are several
+ * blockers, or one blocker and trample: the question is then asked of the attacker's controller.
  */
 function startCombatDamage(s: GameState, firstStrikeStep: boolean): void {
   const c = s.combat;
@@ -1591,15 +1603,15 @@ function nextCombatAssignment(s: GameState): void {
     {
       type: "divide",
       intent: "combatDamage",
-      prompt: `Répartissez les ${combatPower(s, attacker)} blessures de ${cardRef(obj(s, attacker).defId)}`,
+      prompt: msg("Assign {card}'s {n} damage", { n: combatPower(s, attacker), card: cardRef(obj(s, attacker).defId) }),
       among,
       total: combatPower(s, attacker),
       lethal: trample
         ? { player: a.defender, needs: Object.fromEntries(blockers.map((b) => [b, lethalFor(s, b, deathtouch)])) }
         : undefined,
       suggested: among.map((id) => suggestedMap[id] ?? 0),
-      // Plusieurs bloqueurs : le joueur répartit (suggestion préremplie) ; un bloqueur et le piétinement : l'automatisme
-      // donne les blessures mortelles au bloqueur et le reste au joueur (PLAN-C, C18).
+      // Several blockers: the player divides (prefilled suggestion); one blocker and trample: the autopilot
+      // assigns lethal damage to the blocker and the rest to the player (PLAN-C, C18).
       autoOk: blockers.length <= 1,
     },
     { kind: "combatDamage", attacker },
@@ -1608,7 +1620,7 @@ function nextCombatAssignment(s: GameState): void {
 }
 
 export function answerCombatAssignment(s: GameState, attacker: ObjectId, division: Record<string, number>): void {
-  if (!s.combat) throw new RulesError("Pas de combat en cours");
+  if (!s.combat) throw new RulesError(msg("No combat in progress"));
   s.combat.assignments[attacker] = division;
   nextCombatAssignment(s);
 }
@@ -1632,7 +1644,7 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
     }
     const blockers = a.blockers.filter((b) => onBattlefield(s, b));
     if (blockers.length === 0) {
-      // 702.19e : un attaquant bloqué avec le piétinement dont les bloqueurs ont disparu blesse le joueur.
+      // 702.19e: a blocked attacker with trample whose blockers are gone deals damage to the player.
       if (trample) assignments.push({ src, target: a.defender, amount: power });
       continue;
     }
@@ -1649,25 +1661,25 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
   }
 
   if (firstStrikeStep) c.firstStrikers = dealt;
-  // 510.2 : toutes les blessures de combat sont infligées simultanément.
+  // 510.2: all combat damage is dealt simultaneously.
   simultaneously(s, () => {
     for (const x of assignments) dealDamage(s, x.src, x.target, x.amount, true);
-    // « Chaque fois qu'une ou plusieurs créatures … infligent des blessures de combat à un joueur » : une fois par joueur.
+    // "Whenever one or more creatures … deal combat damage to a player": once per player.
     const byPlayer = new Map<PlayerId, ObjectId[]>();
     for (const x of assignments) {
       if (!s.players[x.target] || x.amount <= 0 || !x.src.id) continue;
       byPlayer.set(x.target, [...(byPlayer.get(x.target) ?? []), x.src.id]);
     }
     for (const [player, sources] of byPlayer) rulesEvent(s, { e: "combatDamageBatch", player, sources });
-    // Monarque (724.2) : chaque créature qui inflige des blessures de combat au monarque déclenche une capacité contrôlée par
-    // lui, qui fait du contrôleur de la créature le monarque à sa résolution.
+    // Monarch (724.2): each creature that deals combat damage to the monarch triggers an ability controlled by
+    // them, which makes the creature's controller the monarch on resolution.
     const monarch = s.monarch;
     if (monarch) for (const id of new Set(byPlayer.get(monarch))) rulesTrigger(s, monarch, "monarchSteal", { objectId: id });
   });
 }
 
 // ---------------------------------------------------------------------------
-// Actions basées sur l'état (704)
+// State-based actions (704)
 // ---------------------------------------------------------------------------
 
 export function checkGameOver(s: GameState): void {
@@ -1675,18 +1687,18 @@ export function checkGameOver(s: GameState): void {
   for (const p of s.playerOrder) {
     const player = s.players[p];
     if (!player || player.lost) continue;
-    // Laboratory Maniac : la pioche impossible a été remplacée par une victoire (adversaires éliminés, sauf `cantLose`).
+    // Laboratory Maniac: the impossible draw was replaced by a win (opponents eliminated, except `cantLose`).
     if (player.drewFromEmptyLibrary === "win") {
       player.drewFromEmptyLibrary = false;
       const opponents = opponentsOf(s, p);
       if (!opponents.some((q) => cantLose(s, q))) losers.push(...opponents.filter((q) => !losers.includes(q)));
       continue;
     }
-    // Herald of Eternal Dawn : « vous ne pouvez pas perdre la partie ». 704.5c : 10 marqueurs poison ou plus.
-    // Marina Vendrell's Grimoire : « vous ne perdez pas la partie pour avoir 0 point de vie ou moins ».
+    // Herald of Eternal Dawn: "you can't lose the game". 704.5c: 10 or more poison counters.
+    // Marina Vendrell's Grimoire: "you don't lose the game for having 0 or less life".
     const lifeLoss = player.life <= 0 && !cantLose(s, p, "life");
     const poisoned = (player.counters?.poison ?? 0) >= 10;
-    // 704.6c : 21 blessures de combat ou plus d'un même commandant au cours de la partie.
+    // 704.6c: 21 or more combat damage from the same commander over the course of the game.
     const commanderDamage = !!s.commander && Object.values(s.commander.cards).some((c) => (c.damage[p] ?? 0) >= 21);
     if ((lifeLoss || player.drewFromEmptyLibrary || poisoned || commanderDamage) && !cantLose(s, p)) {
       losers.push(p);
@@ -1696,29 +1708,29 @@ export function checkGameOver(s: GameState): void {
         reason: lifeLoss ? "life" : poisoned ? "poison" : commanderDamage ? "commander" : "draw",
       });
     }
-    // 704.5b : seule compte une pioche impossible depuis la dernière vérification ; un joueur qui ne pouvait pas perdre
-    // ne perd pas plus tard pour une pioche ancienne.
+    // 704.5b: only an impossible draw since the last check counts; a player who couldn't lose doesn't lose
+    // later because of an old draw.
     player.drewFromEmptyLibrary = false;
   }
   eliminate(s, [...new Set(losers)]);
 }
 
 /**
- * Élimine des joueurs. Si au plus un joueur reste, la partie se termine ; sinon (800.4a)
- * leurs objets quittent la partie et le jeu continue sans eux.
+ * Eliminates players. If at most one player remains, the game ends; otherwise (800.4a)
+ * their objects leave the game and the game continues without them.
  */
 export function eliminate(s: GameState, losers: PlayerId[]): void {
   if (losers.length === 0) return;
-  bump(s); // des caractéristiques peuvent dépendre des joueurs encore en jeu
+  bump(s); // characteristics may depend on the players still in the game
   const holderLeaving = losers.includes(s.priority.holder);
   const activeLeaving = losers.includes(s.turn.active);
   for (const p of losers) {
     const player = s.players[p];
     if (player) player.lost = true;
   }
-  // Tous les perdants sont marqués avant que les déclencheurs ne relisent les caractéristiques.
+  // All losers are marked before the triggers read the characteristics again.
   bump(s);
-  // 724.4 : le monarque quitte la partie : le joueur actif le devient (le suivant si c'est lui qui part).
+  // 724.4: the monarch leaves the game: the active player becomes the monarch (the next one if they are leaving).
   if (s.monarch && losers.includes(s.monarch)) {
     const next = [s.turn.active, ...s.playerOrder].find((p) => !s.players[p]?.lost);
     s.monarch = undefined;
@@ -1741,8 +1753,8 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
   const pendingLeaving = !!pending && losers.includes(pending.player);
   if (pendingLeaving) s.pending = null;
   if (s.flow === "mulligan") return;
-  // Abandon en pleine résolution (800.4a) : le joueur à qui la question était posée, ou le contrôleur de ce qui se
-  // résout, quitte la partie ; la résolution reprend sans lui, ou s'arrête si l'objet a quitté la pile avec lui.
+  // Concession in the middle of a resolution (800.4a): the player who was asked the question, or the controller of what
+  // resolves, leaves the game; the resolution resumes without them, or stops if the object left the stack with them.
   const resolvingGone = !!s.resolving && !s.stack.some((x) => x.id === s.resolving?.item.id);
   const resume = s.flow === "resolving" && !!s.resolving?.awaiting && (pendingLeaving || resolvingGone);
   if (resume) {
@@ -1750,23 +1762,24 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
     resumeWithoutLeaver(s, pending);
   }
   if (activeLeaving) {
-    // Simplification : le tour d'un joueur qui quitte la partie s'arrête immédiatement.
+    // Simplification: the turn of a player who leaves the game stops immediately.
     s.combat = null;
     bump(s);
     s.turn.step = "cleanup";
     s.flow = "stepEnd";
   } else if (pendingLeaving && s.flow === "tba") {
-    nextBlockingPlayer(s); // seul cas où un joueur non actif doit une action de tour
+    nextBlockingPlayer(s); // only case where a nonactive player owes a turn-based action
   } else if (holderLeaving && !resume) {
-    // Après une résolution reprise, la priorité a déjà été rendue (au joueur actif, 117.3b).
+    // After a resumed resolution, priority has already been given back (to the active player, 117.3b).
     s.priority = { holder: nextPlayer(s, s.priority.holder), passes: 0 };
   }
 }
 
 /**
- * 800.4a : le joueur à qui une résolution posait une question, ou le contrôleur de ce qui se résout, quitte la partie
- * (abandon). Le sort ou la capacité d'un joueur qui part a quitté la pile avec lui : la résolution s'arrête. Sinon, elle reprend avec la réponse d'un absent
- * (`absentAnswer`, refus d'un « lancez-la maintenant »), comme `continueResolution` pour les questions suivantes.
+ * 800.4a: the player whom a resolution was asking a question, or the controller of what resolves, leaves the game
+ * (concession). The spell or ability of a leaving player has left the stack with them: the resolution stops.
+ * Otherwise, it resumes with the answer of an absent player
+ * (`absentAnswer`, refusal of a "cast it now"), like `continueResolution` for the following questions.
  */
 function resumeWithoutLeaver(s: GameState, pending: PendingDecision | null): void {
   const r = s.resolving;
@@ -1777,7 +1790,7 @@ function resumeWithoutLeaver(s: GameState, pending: PendingDecision | null): voi
     afterResolution(s);
     return;
   }
-  // Capacité de mana (605.3b) : la priorité revient au joueur qui l'a activée.
+  // Mana ability (605.3b): priority goes back to the player who activated it.
   const back = r.returnPriority;
   const done = pending.kind === "choice" ? answerResolutionChoice(s, absentAnswer(pending.request)) : answerCastNow(s, null);
   if (!done) return;
@@ -1791,14 +1804,14 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   const player = s.players[p];
   if (!player) return;
   bump(s);
-  // 800.4a : les effets qui lui donnent le contrôle d'objets prennent fin (couche 2 : `syncControl` ignore les effets et
-  // les Auras d'un joueur qui a quitté la partie), puis ce qu'il contrôle encore est exilé.
+  // 800.4a: the effects that give them control of objects end (layer 2: `syncControl` ignores the effects and
+  // the Auras of a player who has left the game), then what they still control is exiled.
   syncControl(s);
-  // Ses permanents hors phase reviennent en phase avant de quitter la partie (ils ne reviendraient jamais sinon).
+  // Their phased-out permanents phase in before leaving the game (they would never come back otherwise).
   phaseIn(s, p);
   for (const o of Object.values(s.objects)) {
     if (o.owner !== p && o.controller === p && o.zone === "battlefield") moveObject(s, o.id, "exile");
-    // Contrôlé par un autre effet : à la fin de celui-ci, il revient à son propriétaire.
+    // Controlled by another effect: when it ends, it goes back to its owner.
     else if (o.owner !== p && o.baseController === p) o.baseController = o.owner;
   }
   s.effects = s.effects.filter((e) => e.controller !== p);
@@ -1815,17 +1828,17 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   player.phasedOut = [];
   s.battlefield = s.battlefield.filter((id) => !gone.has(id));
   s.exile = s.exile.filter((id) => !gone.has(id));
-  // 800.4a : un sort qu'il contrôle sans le posséder (carte adverse lancée depuis l'exil) est exilé ; une copie cesse
-  // d'exister (`moveObject`).
+  // 800.4a: a spell they control without owning it (opponent's card cast from exile) is exiled; a copy ceases
+  // to exist (`moveObject`).
   for (const item of s.stack)
     if (item.kind === "spell" && item.controller === p && !gone.has(item.sourceId) && s.objects[item.sourceId])
       moveObject(s, item.sourceId, "exile");
   s.stack = s.stack.filter((item) => item.controller !== p && (item.kind === "ability" || !gone.has(item.sourceId)));
-  // 800.4a : ses capacités déclenchées en attente et retardées cessent d'exister.
+  // 800.4a: their pending triggered abilities and delayed abilities cease to exist.
   s.triggers = s.triggers.filter((t) => t.controller !== p);
   s.delayed = s.delayed.filter((d) => d.controller !== p);
   if (s.combat) {
-    // Des créatures cessent d'attaquer : des statiques « créatures attaquantes » en dépendent.
+    // Creatures stop attacking: "attacking creatures" static abilities depend on it.
     bump(s);
     s.combat.attackers = s.combat.attackers.filter((a) => !gone.has(a.id) && defendingPlayer(s, a.defender) !== p);
     s.combat.blockers = s.combat.blockers.filter((b) => !gone.has(b.id));
@@ -1834,11 +1847,11 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
     for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => !gone.has(b));
   }
   s.effects = s.effects.filter((e) => e.affected.some((id) => !gone.has(id)));
-  // Ses permanents ont disparu : leurs capacités statiques ne s'appliquent plus (Ygra, Eater of All).
+  // Their permanents are gone: their static abilities no longer apply (Ygra, Eater of All).
   bump(s);
 }
 
-/** Actions basées sur l'état (704.3). Renvoie true si l'une d'elles a été accomplie (ou une question posée). */
+/** State-based actions (704.3). Returns true if one of them was performed (or a question asked). */
 export function stateBasedActions(s: GameState): boolean {
   let acted = false;
   simultaneously(s, () => {
@@ -1855,13 +1868,13 @@ function stateBasedActionsOnce(s: GameState): boolean {
     checkGameOver(s);
     if (s.over) return true;
     if (alive() !== before) acted = true;
-    // 702.179a : « Start your engines! » — un joueur sans vitesse qui contrôle un tel permanent a la vitesse 1.
+    // 702.179a: "Start your engines!" — a player without speed who controls such a permanent has speed 1.
     for (const id of s.battlefield) {
       const c = s.players[obj(s, id).controller];
       if (c && c.speed === undefined && hasKeyword(s, id, "startYourEngines")) setSpeed(s, c.id, 1);
     }
-    // Storied (Le Hobbit) : avec trois artefacts, légendaires et/ou Sagas ou plus, le contrôleur d'un permanent qui a
-    // cette capacité acquiert un récit durable, pour le reste de la partie.
+    // Storied (The Hobbit): with three or more artifacts, legendaries and/or Sagas, the controller of a permanent
+    // with this ability gains an enduring story, for the rest of the game.
     for (const id of s.battlefield) {
       const p = obj(s, id).controller;
       if (!s.defs[obj(s, id).defId]?.storied || playerStatic(s, p, "enduringStory")) continue;
@@ -1872,8 +1885,8 @@ function stateBasedActionsOnce(s: GameState): boolean {
       }).length;
       if (n >= 3) addPlayerEffect(s, p, { enduringStory: true }, null);
     }
-    // Ascension (702.131b) : le contrôleur d'un permanent qui l'a et qui contrôle dix permanents ou plus reçoit la
-    // bénédiction de la cité pour le reste de la partie (une capacité statique, vérifiée aux mêmes moments que ces actions).
+    // Ascend (702.131b): the controller of a permanent that has it and controls ten or more permanents gets the
+    // city's blessing for the rest of the game (a static ability, checked at the same moments as these actions).
     for (const id of s.battlefield) {
       const pl = s.players[obj(s, id).controller];
       if (!pl || pl.citysBlessing || !hasKeyword(s, id, "ascend")) continue;
@@ -1885,19 +1898,19 @@ function stateBasedActionsOnce(s: GameState): boolean {
     const toGraveyard: ObjectId[] = [];
     const toDestroy: ObjectId[] = [];
     let changed = false;
-    // Définitions copiées, en un parcours (test des Sagas) ; sans copie en jeu, la face de chaque permanent.
+    // Copied definitions, in one pass (Saga check); with no copy in play, the face of each permanent.
     const copied = copyingIn(s) ? copiedDefMap(s) : null;
 
     for (const id of s.battlefield) {
       const o = obj(s, id);
-      // 704.5q : les marqueurs +1/+1 et -1/-1 s'annulent.
+      // 704.5q: +1/+1 and -1/-1 counters cancel out.
       const both = Math.min(counterCount(o, P1P1), counterCount(o, M1M1));
       if (both > 0) {
         changeCounters(s, o, P1P1, -both);
         changeCounters(s, o, M1M1, -both);
         changed = true;
       }
-      // 704.5i : un planeswalker sans marqueur de loyauté va au cimetière.
+      // 704.5i: a planeswalker with no loyalty counters goes to the graveyard.
       if (
         hasType(s, id, "Planeswalker") &&
         counterCount(o, "loyalty") <= 0 &&
@@ -1906,8 +1919,8 @@ function stateBasedActionsOnce(s: GameState): boolean {
         toGraveyard.push(id);
         continue;
       }
-      // 714.4 : une Saga dont le dernier chapitre est atteint, et dont aucun chapitre n'attend, est sacrifiée.
-      // Face active : une Saga au verso (Summons de FIN) ; une Saga retournée au recto n'en est plus une.
+      // 714.4: a Saga whose last chapter is reached, and with no chapter waiting, is sacrificed.
+      // Active face: a Saga on the back (Summons of FIN); a Saga transformed back to the front is no longer one.
       const saga = s.defs[copied?.get(id) ?? o.faceDefId ?? o.defId]?.saga;
       if (
         saga &&
@@ -1925,17 +1938,17 @@ function stateBasedActionsOnce(s: GameState): boolean {
       else if (o.damage >= c.toughness || (o.deathtouched && o.damage > 0)) toDestroy.push(id); // 704.5g–h
     }
 
-    // Couche 2 : Confiscate (le contrôleur de l'Aura contrôle le permanent enchanté, et le rend quand l'Aura part), fin
-    // des effets « tant que vous contrôlez ».
+    // Layer 2: Confiscate (the Aura's controller controls the enchanted permanent, and gives it back when the Aura
+    // leaves), end of "for as long as you control" effects.
     if (syncControl(s)) changed = true;
 
-    // 704.5m–n : Auras attachées illégalement (cimetière), Équipements attachés illégalement (détachés).
+    // 704.5m–n: illegally attached Auras (graveyard), illegally attached Equipment (unattached).
     for (const id of s.battlefield) {
       const o = obj(s, id);
       const d = s.defs[o.defId];
       if (d?.enchant) {
         const host = o.attachedTo;
-        // Aura de joueur (Grievous Wound) : attachée à un joueur encore en partie.
+        // Player Aura (Grievous Wound): attached to a player still in the game.
         const legal = d.enchant.player
           ? !!host && isPlayer(s, host) && !s.players[host]?.lost
           : !!host &&
@@ -1950,7 +1963,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
           onBattlefield(s, o.attachedTo) &&
           isCreature(s, o.attachedTo) &&
           hasType(s, id, "Artifact") &&
-          // 301.5c : un Équipement qui est aussi une créature ne peut pas équiper une créature (Iron Man Armor animée).
+          // 301.5c: an Equipment that is also a creature can't equip a creature (animated Iron Man Armor).
           !isCreature(s, id) &&
           !protectedFrom(s, o.attachedTo, sourceView(s, id))
         )
@@ -1962,7 +1975,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
       }
     }
 
-    // 704.5y : plusieurs Rôles d'un même joueur attachés au même permanent : seul le plus récent reste.
+    // 704.5y: several Roles of the same player attached to the same permanent: only the most recent stays.
     const roles = new Map<string, ObjectId[]>();
     for (const id of s.battlefield) {
       const o = obj(s, id);
@@ -1976,11 +1989,11 @@ function stateBasedActionsOnce(s: GameState): boolean {
       for (const id of ids) if (id !== newest) toGraveyard.push(id);
     }
 
-    // 704.5j : règle des légendes (v1 : on garde automatiquement le plus récent).
+    // 704.5j: legend rule (v1: the most recent is kept automatically).
     const legends = new Map<string, ObjectId[]>();
     for (const id of s.battlefield) {
       const o = obj(s, id);
-      // Caractéristiques calculées : une copie (Hall of Echoes) porte le nom et le supertype copiés.
+      // Computed characteristics: a copy (Hall of Echoes) has the copied name and supertype.
       const c = chars(s, id);
       if (!c.supertypes.includes("Legendary")) continue;
       if (
@@ -2009,7 +2022,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
       if (onBattlefield(s, id) && destroy(s, id)) changed = true;
     }
     for (const id of s.battlefield) obj(s, id).deathtouched = false;
-    // 506.4 : un permanent qui cesse d'être une créature (Véhicule, terrain animé) est retiré du combat.
+    // 506.4: a permanent that stops being a creature (Vehicle, animated land) is removed from combat.
     if (s.combat) {
       for (const id of combatants(s)) {
         if (!isCreature(s, id)) {
@@ -2024,7 +2037,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
     }
     if (legendChoice) {
       acted = true;
-      // 704.5j : le joueur choisit la légende qu'il garde ; les autres vont au cimetière.
+      // 704.5j: the player chooses the legend they keep; the others go to the graveyard.
       const newest = [...legendChoice.ids].sort((x, y) => obj(s, y).timestamp - obj(s, x).timestamp)[0] as ObjectId;
       ask(
         s,
@@ -2032,7 +2045,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
         {
           type: "pick",
           intent: "legend",
-          prompt: `Règle des légendes : choisissez le ${cardRef(obj(s, newest).defId)} à garder`,
+          prompt: msg("Legend rule: choose the {card} to keep", { card: cardRef(obj(s, newest).defId) }),
           options: legendChoice.ids,
           min: 1,
           max: 1,
@@ -2042,9 +2055,9 @@ function stateBasedActionsOnce(s: GameState): boolean {
       );
       return acted;
     }
-    // 903.9a et 903.9b : un commandant arrivé dans un cimetière, en exil, dans la main ou dans la bibliothèque de son
-    // propriétaire depuis la dernière vérification : son propriétaire peut le remettre dans la zone de commandement (une
-    // question par objet, jamais répondue par l'automatisme ; un refus vaut jusqu'à son prochain changement de zone).
+    // 903.9a and 903.9b: a commander put into a graveyard, exile, the hand or the library of its owner since the
+    // last check: its owner may return it to the command zone (one question per object, never answered by the
+    // autopilot; a refusal holds until its next zone change).
     const offer = commanderReturnOffer(s);
     if (offer) {
       acted = true;
@@ -2054,8 +2067,9 @@ function stateBasedActionsOnce(s: GameState): boolean {
         {
           type: "yesNo",
           intent: "commanderZone",
-          prompt: `Remettre ${cardRef(obj(s, offer.id).defId)} dans la zone de commandement ?`,
-          // En main, le commandant se relance sans taxe (903.8) : le garder est proposé (Command Beacon) ; ailleurs, oui.
+          prompt: msg("Put {card} back into the command zone?", { card: cardRef(obj(s, offer.id).defId) }),
+          // In hand, the commander is recast without tax (903.8): keeping it is suggested (Command Beacon);
+          // elsewhere, yes.
           suggested: [obj(s, offer.id).zone === "hand" ? 0 : 1],
         },
         { kind: "commanderZone", card: offer.id },
@@ -2063,20 +2077,20 @@ function stateBasedActionsOnce(s: GameState): boolean {
     }
     return acted;
   }
-  // Toujours des actions à faire après `MAX_SBA_PASSES` passes : une boucle d'actions obligatoires (104.4b).
+  // Still actions to do after `MAX_SBA_PASSES` passes: a loop of mandatory actions (104.4b).
   declareLoopDraw(s);
   return true;
 }
 
 /**
- * 903.9a et 903.9b : le premier commandant au cimetière, en exil, dans la main ou dans la bibliothèque de son
- * propriétaire dont le retour n'a pas encore été proposé. 903.9b est un remplacement : la question est posée juste après
- * l'arrivée en main ou dans la bibliothèque, à la vérification suivante (approximation de timing).
+ * 903.9a and 903.9b: the first commander in the graveyard, exile, the hand or the library of its owner whose return
+ * has not been offered yet. 903.9b is a replacement: the question is asked right after it is put into the hand or the
+ * library, at the next check (timing approximation).
  */
 function commanderReturnOffer(s: GameState): { owner: PlayerId; id: ObjectId } | undefined {
   const cards = s.commander?.cards;
   if (!cards) return undefined;
-  // Vérifié à chaque passe des actions basées sur l'état : mêmes zones dans le même ordre, sans copier les listes.
+  // Checked at each pass of state-based actions: same zones in the same order, without copying the lists.
   for (const [uid, rec] of Object.entries(cards)) {
     const owner = s.players[rec.owner];
     if (!owner || owner.lost) continue;
@@ -2092,12 +2106,12 @@ function commanderReturnOffer(s: GameState): { owner: PlayerId; id: ObjectId } |
   return undefined;
 }
 
-/** Zones d'où un commandant peut retourner dans la zone de commandement (903.9a, 903.9b). */
+/** Zones from which a commander can return to the command zone (903.9a, 903.9b). */
 const COMMANDER_RETURN_ZONES: readonly string[] = ["graveyard", "exile", "hand", "library"];
 
 /**
- * 903.9a et 903.9b : réponse du propriétaire ; oui, le commandant (toujours dans la zone où il est arrivé) va dans la
- * zone de commandement.
+ * 903.9a and 903.9b: answer of the owner; yes, the commander (still in the zone it was put into) goes to the
+ * command zone.
  */
 export function answerCommanderZone(s: GameState, card: ObjectId, yes: boolean): void {
   const o = s.objects[card];

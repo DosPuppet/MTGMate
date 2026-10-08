@@ -1,4 +1,4 @@
-/** Effets du moteur : modifications de permanents, contrôle, copies et jetons. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+/** Engine effects: permanent modifications, control, copies and tokens. Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
 import { createTokenCopy, createTokens, phaseOut, tokenCopyCount, tokenCopyReplacement } from "../actions";
 import { cardRef } from "../choices";
@@ -35,6 +35,7 @@ import {
   snapshot,
 } from "../state";
 import { matchesCard, matchesObjectFilter } from "../targets";
+import { msg } from "../text";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
 import { logTurnEvent } from "../turnlog";
@@ -42,10 +43,9 @@ import type { AbilityDef, ChoiceRequest, Color, Effect, GameState, NameKind, Pla
 import { BASIC_LAND_TYPES } from "../types";
 
 /**
- * Noms publics à mettre en avant pour « choisissez un nom de carte (de terrain) » : permanents adverses, puis les vôtres,
- * puis cimetières (adverses d'abord), exil (face visible) et zone de commandement ; jamais une carte cachée (main,
- * bibliothèque, face cachée). `graveyardsFirst` : les cimetières adverses en tête (Ancient Vendetta). Terrains : les non
- * de base d'abord.
+ * Public names to feature for "choose a (land) card name": opposing permanents, then yours, then graveyards
+ * (opponents' first), exile (face up) and command zone; never a hidden card (hand, library, face down).
+ * `graveyardsFirst`: opposing graveyards first (Ancient Vendetta). Lands: nonbasic ones first.
  */
 export function featuredNames(
   s: GameState,
@@ -85,7 +85,7 @@ export function featuredNames(
   return [...out].slice(0, 40);
 }
 
-/** Types de créature des cartes d'un joueur (champ de bataille, main, bibliothèque), du plus présent au moins présent. */
+/** Creature types of a player's cards (battlefield, hand, library), from most to least common. */
 function ownCreatureTypes(s: GameState, controller: PlayerId): string[] {
   const tally = new Map<string, number>();
   const pl = s.players[controller];
@@ -101,9 +101,9 @@ function ownCreatureTypes(s: GameState, controller: PlayerId): string[] {
 }
 
 /**
- * Question « nom » (`ChoiceRequest` de type `name`) : un nom de carte, de carte de terrain, ou un type de créature (la
- * liste officielle, 205.3m), sans lister les cartes de la partie. Suggestion : un nom public (types de créature : le plus
- * présent parmi vos cartes), sinon l'une de vos cartes.
+ * "Name" question (`ChoiceRequest` of type `name`): a card name, a land card name, or a creature type (the official
+ * list, 205.3m), without listing the cards of the game. Suggestion: a public name (creature types: the most common
+ * among your cards), otherwise one of your cards.
  */
 export function nameRequest(
   s: GameState,
@@ -112,13 +112,13 @@ export function nameRequest(
   prompt: string,
   opts: { graveyardsFirst?: boolean } = {},
 ): ChoiceRequest {
-  // Noms de la partie, ou la liste officielle des types de créature (pas « Food » d'une créature-artefact), jamais le
-  // catalogue : la question ne dépend pas de l'hôte.
+  // Names of the game, or the official list of creature types (not "Food" of an artifact creature), never the
+  // catalog: the question does not depend on the host.
   let featured: string[];
   let fallback: string | undefined;
   if (of === "creatureType") {
     const own = ownCreatureTypes(s, controller);
-    // Vos jetons de créature (An Unexpected Party : des Nains), puis les créatures en jeu.
+    // Your creature tokens (An Unexpected Party: Dwarves), then the creatures in play.
     const tokens = (s.players[controller]?.library ?? [])
       .concat(s.players[controller]?.hand ?? [], s.battlefield)
       .flatMap((id) => tokenCreatureTypes(s.defs[s.objects[id]?.defId ?? ""]?.abilities));
@@ -130,7 +130,7 @@ export function nameRequest(
   } else {
     const valid = gameNames(s, of);
     featured = featuredNames(s, controller, of, opts, valid);
-    // Sans nom public : l'une de vos cartes (connues de vous seul ; la question n'est montrée qu'à vous).
+    // Without a public name: one of your cards (known to you alone; the question is shown only to you).
     fallback = (s.players[controller]?.hand ?? [])
       .concat(s.players[controller]?.library ?? [])
       .flatMap((id) => (s.objects[id] ? nameList(chars(s, id).name) : []))
@@ -140,23 +140,23 @@ export function nameRequest(
   return { type: "name", intent: "chooseOnEnter", prompt, of, featured, suggested: [suggested] };
 }
 
-/** Types de carte en français (un mode d'arrivée qui est un type de carte). */
-const CARD_TYPE_FR: Record<string, string> = {
-  Artifact: "Artefact",
-  Battle: "Bataille",
-  Creature: "Créature",
-  Enchantment: "Enchantement",
-  Instant: "Éphémère",
-  Kindred: "Tribal",
-  Land: "Terrain",
-  Planeswalker: "Planeswalker",
-  Sorcery: "Rituel",
+/** Card type labels (an entering mode that is a card type). */
+const CARD_TYPE_LABEL: Record<string, string> = {
+  Artifact: msg("Artifact"),
+  Battle: msg("Battle"),
+  Creature: msg("Creature"),
+  Enchantment: msg("Enchantment"),
+  Instant: msg("Instant"),
+  Kindred: msg("Kindred"),
+  Land: msg("Land"),
+  Planeswalker: msg("Planeswalker"),
+  Sorcery: msg("Sorcery"),
 };
 
 /**
- * 614.12 : la question « en arrivant, choisissez… » d'un permanent (type de créature, couleur, nom, nombre, mode…), avec
- * sa suggestion : pendant la résolution d'un sort de permanent, en jouant un terrain, ou quand un effet le met en jeu.
- * `preset` : les options imposées par l'effet.
+ * 614.12: the "as this enters, choose…" question of a permanent (creature type, color, name, number, mode…), with its
+ * suggestion: during the resolution of a permanent spell, when playing a land, or when an effect puts it into play.
+ * `preset`: the options imposed by the effect.
  */
 export function enterChoiceRequest(
   s: GameState,
@@ -172,23 +172,23 @@ export function enterChoiceRequest(
     else if (kind === "landType") options = [...BASIC_LAND_TYPES];
     else if (kind === "color") options = ["W", "U", "B", "R", "G"];
     else if (kind === "parity") options = ["odd", "even"];
-    // Talion, the Kindly Lord : un nombre de 1 à 10.
+    // Talion, the Kindly Lord: a number from 1 to 10.
     else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
     else if (kind === "mode") options = [];
-    // Nom de carte (Skyseer's Chariot), de carte de terrain (Petrified Hamlet), type de créature : toute la liste, sans
-    // lister les cartes de la partie (la decklist adverse) ; des noms publics en avant.
+    // Card name (Skyseer's Chariot), land card name (Petrified Hamlet), creature type: the whole list, without listing
+    // the cards of the game (the opposing decklist); public names featured.
     else
       return nameRequest(
         s,
         controller,
         kind === "cardName" ? "card" : kind === "landName" ? "land" : "creatureType",
         kind === "cardName"
-          ? "Choisissez un nom de carte"
+          ? msg("Choose a card name")
           : kind === "landName"
-            ? "Choisissez un nom de carte de terrain"
-            : "Choisissez un type de créature",
+            ? msg("Choose a land card name")
+            : msg("Choose a creature type"),
       );
-    // Suggestion : le type ou la couleur les plus présents chez le contrôleur.
+    // Suggestion: the most common type or color among the controller's cards.
     const tally = new Map<string, number>();
     const pl = s.players[ctx.controller];
     for (const id of [
@@ -200,7 +200,7 @@ export function enterChoiceRequest(
       const keys = kind === "color" ? (d?.colors ?? []) : d?.types.includes("Creature") ? d.subtypes : [];
       for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
     }
-    // Type de terrain de base : le plus présent parmi les terrains du joueur (comme `defaultChoice`).
+    // Basic land type: the most common among the player's lands (like `defaultChoice`).
     const landCount = (t: string) =>
       s.battlefield.filter((id) => s.objects[id]?.controller === ctx.controller && chars(s, id).subtypes.includes(t)).length;
     const best =
@@ -211,39 +211,53 @@ export function enterChoiceRequest(
           : kind === "cardName" || kind === "landName" || kind === "parity" || kind === "mode"
             ? options[0]
             : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
-    const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
-    // Un mode qui est un type de carte (Arachne, Serra's Emissary) : son nom français.
-    const typeModes = kind === "mode" && options.length > 0 && options.every((o) => CARD_TYPE_FR[o]);
+    const COLOR: Record<string, string> = {
+      W: msg("White"),
+      U: msg("Blue"),
+      B: msg("Black"),
+      R: msg("Red"),
+      G: msg("Green"),
+    };
+    // A mode that is a card type (Arachne, Serra's Emissary): its translated name.
+    const typeModes = kind === "mode" && options.length > 0 && options.every((o) => CARD_TYPE_LABEL[o]);
     return {
       type: "pick",
       intent: "chooseOnEnter",
       prompt:
         kind === "color"
-          ? "Choisissez une couleur"
+          ? msg("Choose a color")
           : kind === "cardName"
-            ? "Choisissez un nom de carte (ceux des permanents adverses sont en tête)"
+            ? msg("Choose a card name (those of opposing permanents come first)")
             : kind === "landName"
-              ? "Choisissez un nom de carte de terrain (ceux de vos adversaires sont en tête)"
+              ? msg("Choose a land card name (those of your opponents come first)")
               : kind === "parity"
-                ? "Choisissez : valeur de mana impaire ou paire"
+                ? msg("Choose: odd or even mana value")
                 : kind === "mode"
                   ? typeModes
-                    ? "Choisissez un type de carte"
-                    : `Choisissez : ${options.join(" ou ")}`
+                    ? msg("Choose a card type")
+                    : msg("Choose: {options}", {
+                        options: options.length ? options.reduce((a, b) => msg("{a} or {b}", { a, b })) : "",
+                      })
                   : kind === "number"
-                    ? "Choisissez un nombre entre 1 et 10"
+                    ? msg("Choose a number between 1 and 10")
                     : kind === "landType"
-                      ? "Choisissez un type de terrain de base"
-                      : "Choisissez un type de créature",
+                      ? msg("Choose a basic land type")
+                      : msg("Choose a creature type"),
       options,
       labels:
         kind === "color"
           ? COLOR
           : kind === "parity"
-            ? { odd: "Impaire", even: "Paire" }
+            ? { odd: msg("Odd"), even: msg("Even") }
             : kind === "landType"
-              ? { Plains: "Plaine", Island: "Île", Swamp: "Marais", Mountain: "Montagne", Forest: "Forêt" }
-              : Object.fromEntries(options.map((o) => [o, (typeModes && CARD_TYPE_FR[o]) || o])),
+              ? {
+                  Plains: msg("Plains"),
+                  Island: msg("Island"),
+                  Swamp: msg("Swamp"),
+                  Mountain: msg("Mountain"),
+                  Forest: msg("Forest"),
+                }
+              : Object.fromEntries(options.map((o) => [o, (typeModes && CARD_TYPE_LABEL[o]) || o])),
       min: 1,
       max: 1,
       suggested: [best as string],
@@ -252,14 +266,14 @@ export function enterChoiceRequest(
 }
 
 /**
- * 508.4 : ce qu'attaque un permanent mis sur le champ de bataille attaquant (sans avoir été déclaré : ni restriction ni
- * taxe d'attaque). Son contrôleur choisit parmi les défenseurs désignés (« ce joueur », « ce joueur ou un planeswalker qu'il
- * contrôle »), sinon parmi ses adversaires et leurs planeswalkers ; un défenseur désigné qui ne peut plus être attaqué
- * (joueur parti, planeswalker disparu) est écarté, et sans défenseur il n'attaque pas (508.4a). Aucune question pour une
- * seule option ; la suggestion est ce qu'attaque la source, sinon ce qu'attaque une créature de ce joueur. `optional` :
- * « vous pouvez » (myriade) : ne rien choisir est permis, et la question est posée même pour une seule option. `ask` : faux
- * après un tirage au hasard (qui ne serait pas rejoué) : la suggestion, sans question. Renvoie la question, sinon le
- * défenseur choisi (`undefined` : il n'attaque pas, ou rien n'a été choisi).
+ * 508.4: what a permanent put onto the battlefield attacking attacks (without having been declared: no restriction
+ * and no attack tax). Its controller chooses among the designated defenders ("that player", "that player or a
+ * planeswalker they control"), otherwise among their opponents and their planeswalkers; a designated defender that can
+ * no longer be attacked (player gone, planeswalker gone) is discarded, and without a defender it does not attack
+ * (508.4a). No question for a single option; the suggestion is what the source attacks, otherwise what a creature of
+ * that player attacks. `optional`: "you may" (myriad): choosing nothing is allowed, and the question is asked even for
+ * a single option. `ask`: false after a random draw (which would not be replayed): the suggestion, without a question.
+ * Returns the question, otherwise the chosen defender (`undefined`: it does not attack, or nothing was chosen).
  */
 export function chooseAttacked(
   s: GameState,
@@ -315,8 +329,8 @@ export const HANDLERS: OpHandlers = {
   pump(s, _r, e, ctx) {
     const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
     if (e.double) {
-      // Les valeurs sont lues avant d'appliquer les bonus (tous doublés en même temps) ; une force négative double
-      // aussi (701.10e : -X/-0).
+      // The values are read before applying the bonuses (all doubled at the same time); a negative power doubles too
+      // (701.10e: -X/-0).
       const pt = ids.map((id) => [id, chars(s, id).power, chars(s, id).toughness] as const);
       for (const [id, p, t] of pt) addPump(s, [id], p, t, e.keywords);
       return;
@@ -325,11 +339,11 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   suspect(s, _r, e, ctx) {
-    // 701.60 : seulement un permanent sur le champ de bataille.
+    // 701.60: only a permanent on the battlefield.
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield" || !!o.suspected === e.value) continue;
-      // Airtight Alibi : « ne peut pas devenir suspecte ».
+      // Airtight Alibi: "can't become suspected".
       if (e.value && hasKeyword(s, id, "cantBeSuspected")) continue;
       o.suspected = e.value || undefined;
       bump(s);
@@ -337,8 +351,8 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   modify(s, r, e, ctx) {
-    // Un sort sur la pile qui gagne un mot-clé (Spinerock Tyrant : « ces sorts gagnent la flétrissure ») : ses blessures
-    // sont infligées avec les mots-clés de son instantané de source.
+    // A spell on the stack that gains a keyword (Spinerock Tyrant: "those spells gain wither"): its damage is dealt with
+    // the keywords of its source snapshot.
     for (const id of resolveRef(s, ctx, e.what)) {
       const item = s.stack.find((x) => x.id === id && x.kind === "spell");
       if (item && e.mods.addKeywords?.length) {
@@ -352,10 +366,10 @@ export const HANDLERS: OpHandlers = {
       (id) => onBattlefield(s, id) && (!counter || (s.objects[id]?.counters[counter] ?? 0) > 0),
     );
     if (ids.length === 0) return;
-    // 611.2b : un effet « tant que [la source] reste… » ne fait rien si elle est déjà partie.
+    // 611.2b: a "for as long as [the source] remains…" effect does nothing if it is already gone.
     if (w === "source" && !onBattlefield(s, ctx.sourceId)) return;
-    // « Devient de la couleur choisie et gagne la défense talismanique contre elle » (Mondo Gecko) : la couleur choisie
-    // par cet effet est figée dans l'effet (une autre activation en choisit une autre).
+    // "Becomes the chosen color and gains hexproof from that color" (Mondo Gecko): the color chosen by this effect is
+    // frozen in the effect (another activation chooses another one).
     const chosen = r.vars.$chosen?.[0] === "color" ? (String(r.vars.$chosen[1]) as Color) : undefined;
     let mods = e.mods;
     if (chosen && (mods.setColorsChosen || mods.addProtections?.some((p) => p.from.colorChosen)))
@@ -382,8 +396,8 @@ export const HANDLERS: OpHandlers = {
       ...(w === "tapped" ? { whileAffectedTapped: true } : {}),
       ...(counter ? { whileAffectedHasCounter: counter } : {}),
       ...mods,
-      // Joueurs et objets figés à la résolution : « provoquez » (le contrôleur de l'effet), « ne peut pas vous attaquer »
-      // (Promise of Loyalty), « attaque ce joueur » (Silver Surfer), « bloque ce Loup si possible » (Tolsimir).
+      // Players and objects frozen on resolution: "goad" (the controller of the effect), "can't attack you" (Promise
+      // of Loyalty), "attacks that player" (Silver Surfer), "blocks that Wolf if able" (Tolsimir).
       ...(e.mods.addBlockRules?.some(blockRulePlaceholder)
         ? {
             addBlockRules: resolveBlockRules(e.mods.addBlockRules, ctx.controller, ctx.event, (x) =>
@@ -403,7 +417,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   attach(s, r, e, ctx) {
-    // Plusieurs Équipements vers une même créature (Beatrix, Loyal General).
+    // Several Equipment onto the same creature (Beatrix, Loyal General).
     const all = resolveRef(s, ctx, e.to);
     const to = e.random ? all[Math.floor(random(s) * all.length)] : all[0];
     let n = 0;
@@ -416,7 +430,7 @@ export const HANDLERS: OpHandlers = {
     s.defs[defId] ??= {
       id: defId,
       name: e.name,
-      typeLine: "Emblème",
+      typeLine: msg("Emblem"),
       manaCost: null,
       manaCostText: "",
       colors: [],
@@ -433,12 +447,12 @@ export const HANDLERS: OpHandlers = {
     if (e.duration === "untilYourNextTurn") emblem.expires = { turnOf: ctx.controller };
     if (e.duration === "endOfTurn") emblem.expires = { endOfTurn: s.turn.number };
     if (e.duration === "endOfYourNextTurn") emblem.expires = { endOfTurn: nextTurnOf(s, ctx.controller) };
-    // Oko, Shadowmoor Scion : « choisissez un type de créature ; vous obtenez un emblème avec "les créatures du type
-    // choisi…" » : l'emblème garde le choix fait par l'effet.
+    // Oko, Shadowmoor Scion: "choose a creature type; you get an emblem with 'creatures of the chosen type…'": the
+    // emblem keeps the choice made by the effect.
     const chosen = r.vars.$chosen;
     if (chosen?.[0] === "creatureType") emblem.chosen = { creatureType: String(chosen[1]) };
     else if (chosen?.[0] === "color") emblem.chosen = { color: String(chosen[1]) as Color };
-    // The Clone Saga : « choisissez un nom de carte ; chaque fois qu'une créature du nom choisi… ce tour-ci ».
+    // The Clone Saga: "choose a card name; whenever a creature with the chosen name… this turn".
     else if (chosen?.[0] === "cardName") emblem.chosen = { cardName: String(chosen[1]) };
     if (e.store) r.vars[`$ids:${e.store}`] = [emblem.id];
     bump(s);
@@ -450,14 +464,14 @@ export const HANDLERS: OpHandlers = {
     const pt = e.pt !== undefined ? evalAmount(s, ctx, e.pt) : undefined;
     const token = pt === undefined ? e.token : { ...e.token, power: pt, toughness: pt };
     const creators = e.attachTo || !e.for ? [ctx.controller] : resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x));
-    // 508.4 : des jetons « engagés et attaquants » attaquent sans avoir été déclarés ; leur contrôleur choisit ce qu'ils
-    // attaquent parmi ses adversaires, une fois pour tous ses jetons de l'effet (Najeela : le contrôleur du Guerrier).
+    // 508.4: "tapped and attacking" tokens attack without having been declared; their controller chooses what they
+    // attack among their opponents, once for all their tokens of the effect (Najeela: the Warrior's controller).
     const attacking = new Map<string, string | undefined>();
     if (e.attacking) {
-      // « … engagé et attaquant ce joueur » : rien à créer sans joueur désigné (`fx.forEachPlayer`).
+      // "… tapped and attacking that player": nothing to create without a designated player (`fx.forEachPlayer`).
       const designated = typeof e.attacking === "object" ? resolveRef(s, ctx, e.attacking) : undefined;
       if (designated?.length === 0) return;
-      const prompt = n > 1 ? "Que doivent attaquer les jetons ?" : "Que doit attaquer le jeton ?";
+      const prompt = n > 1 ? msg("What should the tokens attack?") : msg("What should the token attack?");
       for (const p of creators) {
         const k = key(p === ctx.controller ? "defender" : `defender:${p}`);
         const c = chooseAttacked(s, r, ctx, k, p, designated, prompt);
@@ -466,7 +480,7 @@ export const HANDLERS: OpHandlers = {
       }
     }
     const enters = (p: string) => ({ tapped: !!(e.tapped || e.attacking), attacking: attacking.get(p) });
-    // Moonlit Meditation, Mirrormind Crown : « vous pouvez à la place créer des copies » — demandé avant toute création.
+    // Moonlit Meditation, Mirrormind Crown: "you may instead create copies" — asked before any creation.
     const declined = new Set<string>();
     for (const p of creators) {
       const rep = n > 0 ? tokenCopyReplacement(s, p, token) : undefined;
@@ -480,7 +494,16 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "yesNo",
               intent: "may",
-              prompt: `${nameOf(s, rep.sourceId)} : créer à la place ${n > 1 ? "des copies" : "une copie"} de ${nameOf(s, rep.host)} ?`,
+              prompt:
+                n > 1
+                  ? msg("{card}: create copies of {host} instead?", {
+                      card: nameOf(s, rep.sourceId),
+                      host: nameOf(s, rep.host),
+                    })
+                  : msg("{card}: create a copy of {host} instead?", {
+                      card: nameOf(s, rep.sourceId),
+                      host: nameOf(s, rep.host),
+                    }),
               suggested: [1],
             },
           },
@@ -505,8 +528,8 @@ export const HANDLERS: OpHandlers = {
     if (r.vars.$name) return;
     const answer = r.vars[key("name")];
     if (!answer) {
-      // Pas d'information cachée : des noms publics en avant (les cimetières adverses d'abord), tout nom du catalogue.
-      const request = nameRequest(s, ctx.controller, "card", "Choisissez un nom de carte", { graveyardsFirst: true });
+      // No hidden information: public names featured (opposing graveyards first), any name of the catalog.
+      const request = nameRequest(s, ctx.controller, "card", msg("Choose a card name"), { graveyardsFirst: true });
       return { ask: { player: ctx.controller, key: key("name"), request } };
     }
     r.vars.$name = [String(answer[0])];
@@ -514,8 +537,8 @@ export const HANDLERS: OpHandlers = {
   },
   copyToken(s, r, e, ctx, key) {
     const made: string[] = [];
-    // Myriade, Shredder : une copie par joueur désigné (un adversaire autre que le joueur défenseur), qui attaque ce joueur
-    // ou l'un de ses planeswalkers désignés ; chaque défenseur est choisi avant toute copie (508.4).
+    // Myriad, Shredder: one copy per designated player (an opponent other than the defending player), which attacks that
+    // player or one of their designated planeswalkers; each defender is chosen before any copy (508.4).
     let attackEach: (string | undefined)[] | undefined;
     if (e.attackEach) {
       attackEach = [];
@@ -523,40 +546,40 @@ export const HANDLERS: OpHandlers = {
       for (const p of designated.filter((x) => isPlayer(s, x) && x !== ctx.controller)) {
         const among = designated.filter((x) => x === p || (!isPlayer(s, x) && s.objects[x]?.controller === p));
         const prompt = e.optional
-          ? "Vous pouvez créer une copie qui attaque l'un d'eux (aucun choix : pas de copie)"
-          : "Que doit attaquer la copie ?";
+          ? msg("You may create a copy that attacks one of them (no choice: no copy)")
+          : msg("What should the copy attack?");
         const c = chooseAttacked(s, r, ctx, key(`defender:${p}`), ctx.controller, among, prompt, { optional: e.optional });
         if ("ask" in c) return c;
         if (e.optional && !c.defender) continue;
         attackEach.push(c.defender);
       }
     }
-    // Fractured Identity : « chaque joueur autre que son contrôleur crée un jeton qui est une copie ».
+    // Fractured Identity: "each player other than its controller creates a token that's a copy".
     const creators = e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller];
-    // « Engagée et attaquante » : un seul choix pour toutes les copies d'un même contrôleur, fait par celui-ci.
+    // "Tapped and attacking": a single choice for all the copies of one controller, made by that player.
     const attacking = new Map<string, string | undefined>();
     if (e.attacking && !attackEach) {
       for (const p of creators) {
         const k = key(p === ctx.controller ? "defender" : `defender:${p}`);
-        const c = chooseAttacked(s, r, ctx, k, p, undefined, "Que doit attaquer la copie ?");
+        const c = chooseAttacked(s, r, ctx, k, p, undefined, msg("What should the copy attack?"));
         if ("ask" in c) return c;
         attacking.set(p, c.defender);
       }
     }
-    // Doubling Season s'applique aussi aux jetons copies.
+    // Doubling Season also applies to token copies.
     const base = attackEach ? attackEach.length : e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
     for (const who of creators)
       for (const id of resolveRef(s, ctx, e.of)) {
         const model = s.objects[id] ?? undefined;
-        // La copie d'une copie copie ce que copie le modèle (707.3), et la face active d'une carte transformée.
+        // The copy of a copy copies what the model copies (707.3), and the active face of a transformed card.
         const defId = model?.zone === "battlefield" ? copiedDefId(s, id) : (model?.defId ?? s.lki[id]?.defId);
         if (!defId) continue;
         const view = model?.zone === "battlefield" ? snapshot(s, id) : s.lki[id];
         const types = [...new Set([...(view?.types ?? s.defs[defId]?.types ?? []), ...(e.addTypes ?? [])])];
         const n = view ? tokenCopyCount(s, who, { ...view, types, isToken: true }, base) : base;
         for (let i = 0; i < n; i++) {
-          // Engagé, types, capacités et F/E en place avant l'événement d'arrivée (pas de « devient engagé »).
-          // 707.9b : les exceptions du modèle, puis celles de cet effet (« sauf que c'est un 1/1 »), sont copiables.
+          // Tapped, types, abilities and P/T in place before the entering event (no "becomes tapped").
+          // 707.9b: the exceptions of the model, then those of this effect ("except it's a 1/1"), are copiable.
           const token = createTokenCopy(s, who, defId, {
             tapped: !!e.tapped,
             mods: mergeMods(model?.zone === "battlefield" ? copiableExceptions(s, id) : undefined, {
@@ -567,7 +590,7 @@ export const HANDLERS: OpHandlers = {
               removeSupertypes: e.nonlegendary ? ["Legendary"] : undefined,
               addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
               addColors: e.addColors?.length ? e.addColors : undefined,
-              // Ardyn, the Usurper : « sauf que c'est un Démon noir ».
+              // Ardyn, the Usurper: "except it's a black Demon".
               setColors: e.setColors,
               setSubtypes: e.setSubtypes,
               ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
@@ -575,10 +598,10 @@ export const HANDLERS: OpHandlers = {
             modsCopiable: true,
           });
           made.push(token);
-          // Firion : des capacités d'Équiper moins chères (ajoutées ; la moins chère sera utilisée).
+          // Firion: cheaper equip abilities (added; the cheapest will be used).
           if (e.equipDiscount) {
             const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>
-              ab.kind === "activated" && ab.label?.startsWith("Équiper") && ab.cost.mana
+              ab.kind === "activated" && ab.equip && ab.cost.mana
                 ? [
                     {
                       ...ab,
@@ -586,7 +609,7 @@ export const HANDLERS: OpHandlers = {
                         ...ab.cost,
                         mana: { ...ab.cost.mana, generic: Math.max(0, ab.cost.mana.generic - (e.equipDiscount ?? 0)) },
                       },
-                      label: `${ab.label} (réduit)`,
+                      label: msg("{label} (reduced)", { label: ab.label ?? "" }),
                     },
                   ]
                 : [],
@@ -594,8 +617,8 @@ export const HANDLERS: OpHandlers = {
             if (equips.length) addEffect(s, [token], { addAbilities: equips }, "permanent");
           }
           if ((e.attacking || attackEach) && s.combat) {
-            // Calamity : « engagé et attaquant » ; myriade : le défenseur choisi pour le joueur de sa copie (les copies en
-            // plus d'un doubleur se répartissent entre eux et gardent ce choix).
+            // Calamity: "tapped and attacking"; myriad: the defender chosen for the player of its copy (the extra copies from a
+            // doubler are spread among them and keep that choice).
             const tok = s.objects[token];
             if (tok) tok.tapped = true;
             const defender = attackEach ? attackEach[Math.floor((i * attackEach.length) / n)] : attacking.get(who);
@@ -603,10 +626,10 @@ export const HANDLERS: OpHandlers = {
             bump(s);
           }
           if (e.atEnd) {
-            // Sacrifiée ou exilée au début de la prochaine étape de fin, à la fin du combat ou au prochain entretien.
+            // Sacrificed or exiled at the beginning of the next end step, at end of combat or at the next upkeep.
             const { fate, at } = typeof e.atEnd === "string" ? { fate: e.atEnd, at: undefined } : e.atEnd;
             const it = { kind: "target", id: "copy" } as const;
-            // Firion (prochain entretien) : la capacité retardée a pour source le jeton lui-même, sans libellé.
+            // Firion (next upkeep): the delayed ability has the token itself as its source, without a label.
             const upkeep = at === "nextUpkeep";
             createDelayed(
               s,
@@ -617,7 +640,7 @@ export const HANDLERS: OpHandlers = {
                 targets: [],
                 effects: [fate === "exile" ? { op: "exile", what: it } : { op: "sacrificeIt", what: it }],
                 bound: { copy: [token] },
-                ...(upkeep ? {} : { label: fate === "exile" ? "exiler la copie" : "sacrifier la copie" }),
+                ...(upkeep ? {} : { label: fate === "exile" ? msg("exile the copy") : msg("sacrifice the copy") }),
               },
               at,
             );
@@ -629,8 +652,8 @@ export const HANDLERS: OpHandlers = {
   },
   chooseCopy(s, r, e, ctx, key) {
     if (r.vars.$copyOf) return;
-    // Superior Spider-Man, Echoing Deeps : une carte d'un cimetière (pas elle-même, si elle en revient) ; sinon un
-    // permanent (le sien, ou de n'importe qui).
+    // Superior Spider-Man, Echoing Deeps: a card in a graveyard (not itself, if it is coming back from there); otherwise
+    // a permanent (its controller's, or anyone's).
     const options = e.fromGraveyards
       ? s.playerOrder.flatMap((p) =>
           (s.players[p]?.graveyard ?? []).filter(
@@ -646,8 +669,7 @@ export const HANDLERS: OpHandlers = {
     const answer = options.length ? r.vars[key("copy")] : [];
     if (!answer) {
       const name = cardRef(s.objects[ctx.sourceId]?.defId ?? ctx.sourceDefId);
-      const what = e.fromGraveyards ? "d'une carte d'un cimetière" : "d'un permanent";
-      const until = e.duration === "endOfTurn" ? " jusqu'à la fin du tour" : "";
+      const untilEnd = e.duration === "endOfTurn";
       return {
         ask: {
           player: ctx.controller,
@@ -656,8 +678,16 @@ export const HANDLERS: OpHandlers = {
             type: "pick",
             intent: "pickCards",
             prompt: e.optional
-              ? `${name} : vous pouvez le faire arriver comme copie ${what}${until}`
-              : `${name} : choisissez ce qu'il copie en arrivant${until}`,
+              ? e.fromGraveyards
+                ? untilEnd
+                  ? msg("{card}: you may have it enter as a copy of a card in a graveyard until end of turn", { card: name })
+                  : msg("{card}: you may have it enter as a copy of a card in a graveyard", { card: name })
+                : untilEnd
+                  ? msg("{card}: you may have it enter as a copy of a permanent until end of turn", { card: name })
+                  : msg("{card}: you may have it enter as a copy of a permanent", { card: name })
+              : untilEnd
+                ? msg("{card}: choose what it copies as it enters until end of turn", { card: name })
+                : msg("{card}: choose what it copies as it enters", { card: name }),
             options,
             min: e.optional ? 0 : 1,
             max: 1,
@@ -667,9 +697,9 @@ export const HANDLERS: OpHandlers = {
       };
     }
     const picked = answer.map(String).find((id) => options.includes(id)) ?? (e.optional ? undefined : options[0]);
-    // Le modèle (sur le champ de bataille) suit la définition : ses exceptions de copie sont reprises (707.9b).
+    // The model (on the battlefield) follows the definition: its copy exceptions are carried over (707.9b).
     r.vars.$copyOf = picked ? (e.fromGraveyards ? [s.objects[picked]?.defId ?? ""] : [copiedDefId(s, picked), picked]) : [];
-    // « Quand vous le faites, exilez cette carte » (Superior Spider-Man).
+    // "When you do, exile that card" (Superior Spider-Man).
     if (picked && e.exile) r.vars.$copyCard = [picked];
     return;
   },
@@ -678,7 +708,7 @@ export const HANDLERS: OpHandlers = {
     const self = s.objects[ctx.sourceId];
     const d = s.defs[s.objects[card ?? ""]?.defId ?? ""];
     if (!card || !d || self?.zone !== "battlefield") return;
-    // « … sauf qu'elle est 0/0 et a cette capacité » : ses capacités activées imprimées sont conservées.
+    // "… except it's 0/0 and has this ability": its printed activated abilities are kept.
     const own = (s.defs[self.defId]?.abilities ?? []).filter((a) => a.kind === "activated");
     addEffect(s, [self.id], { copyOf: d.id, setPower: 0, setToughness: 0, addAbilities: own }, "permanent");
     return;
@@ -691,7 +721,7 @@ export const HANDLERS: OpHandlers = {
       let preset: string[] | undefined;
       if (e.options) preset = [...e.options];
       else if (e.optionsFrom) {
-        // Koh, the Face Stealer : le nom d'une des cartes désignées (s'il n'y en a aucune, rien n'est choisi).
+        // Koh, the Face Stealer: the name of one of the designated cards (if there are none, nothing is chosen).
         const names = resolveRef(s, ctx, e.optionsFrom).flatMap((id) => (s.objects[id] ? nameList(chars(s, id).name) : []));
         preset = [...new Set(names)];
         if (preset.length === 0) return;
@@ -705,8 +735,8 @@ export const HANDLERS: OpHandlers = {
       };
     }
     r.vars.$chosen = [kind, String(answer[0])];
-    // Capacité déclenchée d'un permanent déjà en jeu (Petrified Hamlet : « quand ce terrain arrive, choisissez… ») ou
-    // sort qui se résout (Harmonized Crescendo : « choisissez un type de créature ; piochez pour chaque… »).
+    // Triggered ability of a permanent already in play (Petrified Hamlet: "when this land enters, choose…") or a
+    // resolving spell (Harmonized Crescendo: "choose a creature type; draw a card for each…").
     const src = s.objects[ctx.sourceId];
     if (src?.zone === "battlefield" || src?.zone === "stack") {
       src.chosen = { ...src.chosen, ...(e.secret ? { secret: true } : {}), ...chosenValue(kind, String(answer[0])) };
@@ -719,7 +749,7 @@ export const HANDLERS: OpHandlers = {
     const b = resolveRef(s, ctx, e.b)[0];
     const oa = a ? s.objects[a] : undefined;
     const ob = b ? s.objects[b] : undefined;
-    // 701.10 : l'échange n'a lieu que si les deux permanents sont encore là.
+    // 701.10: the exchange happens only if both permanents are still there.
     if (oa?.zone !== "battlefield" || ob?.zone !== "battlefield" || oa.controller === ob.controller) return;
     const [ca, cb] = [oa.controller, ob.controller];
     addControlEffect(s, [oa.id], cb, "permanent");
@@ -736,13 +766,13 @@ export const HANDLERS: OpHandlers = {
     const toOwner = e.to === "owner";
     const to0 = e.to === "owner" ? undefined : e.to ? resolveRef(s, ctx, e.to).find((x) => isPlayer(s, x)) : ctx.controller;
     if (!to0 && !toOwner) return;
-    // 611.2b : « tant que vous contrôlez [la source] » ne fait rien si elle est déjà partie.
+    // 611.2b: "for as long as you control [the source]" does nothing if it is already gone.
     if (e.duration === "whileYouControlSource" && !onBattlefield(s, ctx.sourceId)) return;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       const to = toOwner ? (o?.owner ?? "") : (to0 ?? "");
       if (!to) continue;
-      // Commandeer : « gagnez le contrôle du sort ciblé » (un permanent qui en résulte arrive sous votre contrôle).
+      // Commandeer: "gain control of target spell" (a permanent it becomes enters under your control).
       const item = s.stack.find((x) => x.id === id && x.kind === "spell");
       if (item && o && item.controller !== to) {
         item.controller = to;
@@ -751,8 +781,8 @@ export const HANDLERS: OpHandlers = {
         continue;
       }
       if (o?.zone !== "battlefield" || o.controller === to) continue;
-      // Vol « jusqu'à la fin du tour » (Involuntary Employment) : l'effet prend fin au nettoyage (couche 2) ; Evil's
-      // Thrall : au nettoyage de votre prochain tour.
+      // Theft "until end of turn" (Involuntary Employment): the effect ends at cleanup (layer 2); Evil's Thrall: at the
+      // cleanup of your next turn.
       if (e.duration === "endOfYourNextTurn")
         addControlEffect(s, [id], to, "endOfYourNextTurn", { until: ctx.controller, sinceTurn: s.turn.number });
       else if (e.duration === "whileYouControlSource") {
@@ -776,7 +806,7 @@ export const HANDLERS: OpHandlers = {
   link(s, _r, e, ctx) {
     const o = s.objects[(e.to ? resolveRef(s, ctx, e.to)[0] : ctx.sourceId) ?? ""];
     if (o) o.linked = [...(o.linked ?? []), ...resolveRef(s, ctx, e.what)];
-    // Territory Forge : les capacités de la source dépendent des cartes liées.
+    // Territory Forge: the source's abilities depend on the linked cards.
     bump(s);
     return;
   },
@@ -822,8 +852,8 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   asEnters(s, r, _e, ctx) {
-    // 614.1c, 614.12 : les effets « en arrivant » du sort de permanent qui se résout, notés dans la résolution ; la fin de
-    // la résolution les relit (`finishResolution`).
+    // 614.1c, 614.12: the "as this enters" effects of the resolving permanent spell, noted in the resolution; the end of
+    // the resolution reads them again (`finishResolution`).
     const res = asEntersChoices(
       s,
       r.vars,
@@ -841,14 +871,14 @@ export const HANDLERS: OpHandlers = {
 };
 
 /**
- * Talion, the Kindly Lord : la valeur de mana la plus fréquente parmi les cartes adverses vues (champ de bataille,
- * cimetières, exil), terrains exceptés ; 2 sans information.
+ * Talion, the Kindly Lord: the most frequent mana value among the opposing cards seen (battlefield, graveyards,
+ * exile), lands excepted; 2 without information.
  */
 function suggestedNumber(s: GameState, controller: string): string {
   const tally = new Map<number, number>();
   for (const o of Object.values(s.objects)) {
     if (o.owner === controller || !["battlefield", "graveyard", "exile"].includes(o.zone)) continue;
-    // Une carte face cachée (exil face cachée, permanent face cachée) est une information cachée.
+    // A face-down card (exiled face down, face-down permanent) is hidden information.
     if (o.faceDown || o.exiledFaceDown) continue;
     const d = s.defs[o.defId];
     if (!d || d.types.includes("Land") || d.isToken) continue;

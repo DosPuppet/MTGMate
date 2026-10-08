@@ -1,7 +1,7 @@
 /**
- * Partie « mise en scène » (tutoriel) : mains, bibliothèques dans l'ordre, permanents et points de vie connus d'avance.
- * Pas de mélange ni de main de départ tirée au hasard ; la partie commence au début du tour indiqué
- * (dégagement, entretien, pioche si ce n'est pas le premier tour du duel), ou par le mulligan si demandé.
+ * "Staged" game (tutorial): hands, libraries in order, permanents and life totals known in advance.
+ * No shuffle nor random opening hand; the game starts at the beginning of the given turn
+ * (untap, upkeep, draw if it is not the first turn of the duel), or with the mulligan if asked.
  */
 import { blankState, type StepResult } from "./game";
 import { bump } from "./layers";
@@ -12,7 +12,7 @@ import type { CardDef, PlayerId } from "./types";
 export interface ScenarioPermanent {
   def: CardDef;
   tapped?: boolean;
-  /** Arrivé ce tour-ci : mal d'invocation. */
+  /** Entered this turn: summoning sickness. */
   sick?: boolean;
 }
 
@@ -20,7 +20,7 @@ export interface ScenarioPlayer {
   id: PlayerId;
   name: string;
   life?: number;
-  /** Bibliothèque dans l'ordre : la première carte est le dessus. */
+  /** Library in order: the first card is the top. */
   library: CardDef[];
   hand: CardDef[];
   battlefield?: ScenarioPermanent[];
@@ -30,11 +30,11 @@ export interface ScenarioPlayer {
 export interface ScenarioOptions {
   seed: number;
   players: ScenarioPlayer[];
-  /** Joueur dont c'est le tour. */
+  /** Player whose turn it is. */
   active: PlayerId;
-  /** Numéro du tour (1 par défaut). */
+  /** Turn number (1 by default). */
   turn?: number;
-  /** Commencer par la décision de mulligan (tour 1). */
+  /** Start with the mulligan decision (turn 1). */
   mulligan?: boolean;
 }
 
@@ -43,7 +43,7 @@ export function createScenario(opts: ScenarioOptions): StepResult {
     const s = blankState(opts);
     const turn = opts.mulligan ? 1 : Math.max(1, opts.turn ?? 1);
     const others = opponentsOf(s, opts.active);
-    // En duel, le joueur qui a commencé joue les tours impairs (et ne pioche pas au premier).
+    // In a duel, the player who started plays the odd turns (and does not draw on the first).
     s.turn.startingPlayer = turn % 2 === 1 || s.playerOrder.length > 2 ? opts.active : (others[0] ?? opts.active);
     s.turn.active = opts.active;
     for (const p of opts.players) {
@@ -63,7 +63,7 @@ export function createScenario(opts: ScenarioOptions): StepResult {
       }
       const player = s.players[p.id];
       if (player && !opts.mulligan) {
-        // Tours déjà joués : les permanents présents n'ont pas le mal d'invocation.
+        // Turns already played: the permanents present do not have summoning sickness.
         player.lastTurnStarted = p.id === opts.active ? Math.max(0, turn - 2) : Math.max(1, turn - 1);
         player.turnsTaken = p.id === opts.active ? Math.floor((turn - 1) / 2) : Math.ceil((turn - 1) / 2);
       }

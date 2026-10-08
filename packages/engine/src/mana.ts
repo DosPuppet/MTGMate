@@ -1,5 +1,5 @@
 /**
- * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
+ * Mana: reading costs, available sources and the automatic payment solver.
  */
 import { dealDamage, gainLife, payLife, sacrifice, sourceFromObject } from "./actions";
 import { RulesError } from "./errors";
@@ -23,6 +23,7 @@ import {
 } from "./state";
 import { type ActiveReplacement, eventReplacements, lifeCost, payableLife, playerSide, replacementAdd } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
+import { msg } from "./text";
 import { checkCondition } from "./triggers";
 import type {
   AbilityKind,
@@ -43,7 +44,7 @@ import { MANA_TYPES } from "./types";
 
 const SYMBOLS = new Set<string>(["W", "U", "B", "R", "G", "C"]);
 
-/** "{2}{G}{G/W}" → { generic: 2, colored: { G: 1 }, hybrid: [["G","W"]], x: 0 }. Lève une erreur sur les symboles non gérés. */
+/** "{2}{G}{G/W}" → { generic: 2, colored: { G: 1 }, hybrid: [["G","W"]], x: 0 }. Throws on unsupported symbols. */
 export function parseManaCost(text: string): ManaCost {
   const cost: ManaCost = { generic: 0, colored: {}, x: 0 };
   for (const m of text.matchAll(/\{([^}]+)\}/g)) {
@@ -59,7 +60,7 @@ export function parseManaCost(text: string): ManaCost {
       cost.twoHybrid = [...(cost.twoHybrid ?? []), sym[2] as ManaType];
     } else if (/^[WUBRG]\/[WUBRG]$/.test(sym)) {
       cost.hybrid = [...(cost.hybrid ?? []), sym.split("/") as [ManaType, ManaType]];
-    } else throw new Error(`Symbole de mana non géré : {${sym}}`);
+    } else throw new Error(`Unsupported mana symbol: {${sym}}`);
   }
   return cost;
 }
@@ -86,7 +87,7 @@ export function costToText(cost: ManaCost | null): string {
   return t;
 }
 
-/** Coût total à payer : X remplacé par sa valeur, coûts additionnels ajoutés, réduction de générique. */
+/** Total cost to pay: X replaced by its value, additional costs added, generic reduction applied. */
 export function totalCost(base: ManaCost | null | undefined, x: number, extra?: ManaCost, reduction = 0): ManaCost {
   const cost: ManaCost = {
     generic: (base?.generic ?? 0) + x * (base?.x ?? 0),
@@ -106,7 +107,7 @@ export function totalCost(base: ManaCost | null | undefined, x: number, extra?: 
     }
     cost.hybrid = [...(cost.hybrid ?? []), ...(extra.hybrid ?? [])];
   }
-  // 601.2f : les réductions ne diminuent que le générique.
+  // 601.2f: reductions only reduce the generic part.
   cost.generic = Math.max(0, cost.generic - reduction);
   return cost;
 }
@@ -121,33 +122,33 @@ export interface ManaSource {
   colors: ManaType[];
   amount: number;
   isCreature: boolean;
-  /** La source se sacrifie (Trésor) : utilisée en dernier recours. */
+  /** The source sacrifices itself (Treasure): used as a last resort. */
   sacrifice: boolean;
-  /** Créature engagée pour la convocation. */
+  /** Creature tapped for convoke. */
   convoke?: boolean;
-  /** Carte de votre cimetière exilée pour la cave (702.66). */
+  /** Card from your graveyard exiled for delve (702.66). */
   delve?: boolean;
-  /** Artefact ou créature engagé pour la maîtrise de l'eau : ne paie que du générique. */
+  /** Artifact or creature tapped for waterbending: pays only generic mana. */
   waterbend?: boolean;
-  /** Artefact engagé pour l'improvisation (702.126) : ne paie que du générique. */
+  /** Artifact tapped for improvise (702.126): pays only generic mana. */
   improvise?: boolean;
-  /** Permanent sacrifié en coût additionnel, qui réduit le coût de {1} (Rottenmouth Viper) : ne paie que du générique. */
+  /** Permanent sacrificed as an additional cost, which reduces the cost by {1} (Rottenmouth Viper): pays only generic mana. */
   sacrificeToPay?: boolean;
-  /** « … en n'importe quelle combinaison » : chaque mana produit prend l'un des types de `colors`. */
+  /** "… in any combination": each mana produced takes one of the types of `colors`. */
   combination?: boolean;
   /**
-   * Sources exclusives : deux capacités qui engagent ou sacrifient le même permanent (Forêt qui a aussi « {T} : un mana
-   * de n'importe quelle couleur ») ont la même clé, et une seule peut servir.
+   * Exclusive sources: two abilities that tap or sacrifice the same permanent (a Forest that also has "{T}: Add one mana
+   * of any color") have the same key, and only one can be used.
    */
   key: string;
 }
 
-/** Sources « comme les terrains » en cours de calcul (garde contre la récursion entre deux telles sources). */
+/** "Like lands" sources being computed (guard against recursion between two such sources). */
 const likeLandsComputing = new Set<ObjectId>();
 
-/** Capacités de mana d'un objet, y compris celles intrinsèques aux types de terrain de base (305.6). */
+/** Mana abilities of an object, including those intrinsic to basic land types (305.6). */
 export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
-  // Sur le champ de bataille, types et capacités viennent des couches (Imprisoned in the Moon…).
+  // On the battlefield, types and abilities come from the layers (Imprisoned in the Moon…).
   const o = obj(s, id);
   const c = o.zone === "battlefield" ? chars(s, id) : { subtypes: defOf(s, id).subtypes, abilities: defOf(s, id).abilities };
   const list: ManaAbilityDef[] = [];
@@ -158,13 +159,13 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
   }
   for (const a of c.abilities) {
     if (a.kind !== "mana") continue;
-    // « Ajoutez un mana de la couleur choisie » (Heraldic Banner).
-    // Pit of Offerings : les couleurs des cartes exilées avec la source.
+    // "Add one mana of the chosen color" (Heraldic Banner).
+    // Pit of Offerings: the colors of the cards exiled with the source.
     if (a.produceLinkedColors) list.push({ ...a, produce: linkedColors(s, o.linked) });
-    // Meteor Crater : les couleurs des permanents correspondants que vous contrôlez.
+    // Meteor Crater: the colors of the matching permanents you control.
     else if (a.produceColorsOf) {
       const colors = new Set<ManaType>();
-      // The Grey Havens : les couleurs des cartes correspondantes de votre cimetière.
+      // The Grey Havens: the colors of the matching cards in your graveyard.
       if (a.produceColorsZone === "graveyard") {
         for (const cid of s.players[o.controller]?.graveyard ?? [])
           if (matchesCard(s, o.controller, cid, { ...a.produceColorsOf, controller: undefined }, id))
@@ -175,12 +176,12 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
             for (const c of chars(s, pid).colors) colors.add(c);
       list.push({ ...a, produce: MANA_TYPES.filter((m) => colors.has(m)) });
     }
-    // Reflecting Pool : les types que vos autres terrains pourraient produire (sans les sources du même genre, 106.7) ;
-    // Exotic Orchard, Fellwar Stone : les couleurs que pourraient produire les terrains d'un adversaire (filtre).
+    // Reflecting Pool: the types your other lands could produce (without sources of the same kind, 106.7);
+    // Exotic Orchard, Fellwar Stone: the colors an opponent's lands could produce (filter).
     else if (a.produceLikeLands) {
       const types = new Set<ManaType>();
       const anyController = a.produceLikeLands.controller !== undefined;
-      // Deux sources de ce genre (deux Exotic Orchard chez deux joueurs) ne se consultent pas l'une l'autre (106.7).
+      // Two sources of this kind (two Exotic Orchards of two players) do not consult each other (106.7).
       likeLandsComputing.add(id);
       try {
         for (const pid of s.battlefield) {
@@ -195,7 +196,7 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
       }
       list.push({ ...a, produce: MANA_TYPES.filter((m) => types.has(m) && a.produce.includes(m)) });
     }
-    // Command Tower, Arcane Signet : l'identité de couleur de votre commandant (903.4 ; rien sans commandant).
+    // Command Tower, Arcane Signet: your commander's color identity (903.4; nothing without a commander).
     else if (a.produceIdentity) {
       const identity = commanderIdentity(s, o.controller);
       list.push({ ...a, produce: MANA_TYPES.filter((m) => identity.includes(m as Color)) });
@@ -204,7 +205,7 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
   return list;
 }
 
-/** Une capacité de mana sans coût de mana peut-elle être activée maintenant ? */
+/** Can a mana ability without a mana cost be activated now? */
 function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolean {
   const o = obj(s, id);
   if (ab.cost.mana) return false;
@@ -218,7 +219,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   return true;
 }
 
-/** `x` peut-il être engagé pour le coût « engagez un [permanent] dégagé que vous contrôlez » d'une capacité de `id` ? */
+/** Can `x` be tapped for the cost "tap an untapped [permanent] you control" of an ability of `id`? */
 function fitsTapAnother(s: GameState, id: ObjectId, x: ObjectId, kind: ManaAbilityDef["tapAnother"]): boolean {
   if (kind === "creature") return isCreature(s, x);
   if (kind === "artifact") return chars(s, x).types.includes("Artifact");
@@ -227,8 +228,8 @@ function fitsTapAnother(s: GameState, id: ObjectId, x: ObjectId, kind: ManaAbili
 }
 
 /**
- * Gene Pollinator : le permanent engagé en plus, choisi automatiquement. D'abord un permanent sans capacité de mana
- * (pour ne pas priver le solveur d'une source), sinon n'importe lequel ; `strict` : seulement le premier cas.
+ * Gene Pollinator: the additional permanent to tap, chosen automatically. First a permanent without a mana ability
+ * (so as not to deprive the solver of a source), otherwise any of them; `strict`: only the first case.
  */
 function otherToTap(
   s: GameState,
@@ -238,8 +239,8 @@ function otherToTap(
   exclude?: ReadonlySet<ObjectId>,
 ): ObjectId | undefined {
   const me = obj(s, id).controller;
-  // « Engagez une créature (un artefact, une créature légendaire) dégagée que vous contrôlez » : Springleaf Drum, Urza,
-  // Lord High Artificer, Relic of Legends.
+  // "Tap an untapped creature (artifact, legendary creature) you control": Springleaf Drum, Urza, Lord High Artificer,
+  // Relic of Legends.
   const mine = s.battlefield.filter(
     (x) =>
       x !== id && !exclude?.has(x) && !obj(s, x).tapped && obj(s, x).controller === me && fitsTapAnother(s, id, x, ab.tapAnother),
@@ -248,8 +249,8 @@ function otherToTap(
 }
 
 /**
- * « Chaque fois que [ce permanent] est engagé pour du mana, ajoutez un mana de plus » (R1, famille I) : les remplacements
- * de mana qui s'appliquent à cette source engagée, vus du joueur qui l'engage (Lavaleaper, Shimmerwilds Growth…).
+ * "Whenever [this permanent] is tapped for mana, add an additional mana" (R1, family I): the mana replacements that
+ * apply to this tapped source, seen from the player who taps it (Lavaleaper, Shimmerwilds Growth…).
  */
 function manaReplacements(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?: ReadonlySet<ObjectId>): ActiveReplacement[] {
   const o = s.objects[id];
@@ -263,8 +264,8 @@ function manaReplacements(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?:
 }
 
 /**
- * Remplacements du mana du même type, quel que soit le type produit (connus du solveur) : « un mana de plus » (Molten
- * Tide, Lavaleaper, Roxanne), « trois fois autant » (Nyxbloom Ancient), dans l'ordre le plus favorable (616.1).
+ * Replacements adding mana of the same type, whatever the type produced (known to the solver): "an additional mana"
+ * (Molten Tide, Lavaleaper, Roxanne), "three times as much" (Nyxbloom Ancient), in the most favorable order (616.1).
  */
 const sameTypeMods = (s: GameState, reps: ActiveReplacement[]): AmountMod[] =>
   reps
@@ -274,9 +275,9 @@ const sameTypeMods = (s: GameState, reps: ActiveReplacement[]): AmountMod[] =>
       return [...(add ? [{ add }] : []), ...(a.r.modify.times ? [{ times: a.r.modify.times }] : [])];
     });
 
-/** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »), remplacements compris. */
+/** Amount produced ("{G} for each Elf you control"), replacements included. */
 function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?: ReadonlySet<ObjectId>): number {
-  // Source déjà sacrifiée pour payer le coût (Trésor) : quantité imprimée.
+  // Source already sacrificed to pay the cost (Treasure): printed amount.
   const o = s.objects[id];
   if (!o) return ab.amount;
   const mods = sameTypeMods(s, manaReplacements(s, id, ab, gone));
@@ -286,16 +287,16 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?: Reado
 
 function baseManaAmount(s: GameState, id: ObjectId, controller: PlayerId, ab: ManaAbilityDef): number {
   const o = obj(s, id);
-  // The Eternity Elevator : autant de mana que de marqueurs de charge.
+  // The Eternity Elevator: as much mana as charge counters.
   if (ab.amountCounters) return o.counters[ab.amountCounters] ?? 0;
-  // The Core : « X mana, où X est le nombre de cartes de permanent de votre cimetière ».
+  // The Core: "X mana, where X is the number of permanent cards in your graveyard".
   if (ab.amountGraveyard) {
     const f = ab.amountGraveyard;
     return (s.players[controller]?.graveyard ?? []).filter((x) => matchesCard(s, controller, x, { ...f, controller: undefined }))
       .length;
   }
   if (ab.amountSelfPower) return Math.max(0, chars(s, id).power);
-  // Loot, the Nexus : un mana pour chaque force différente parmi vos créatures.
+  // Loot, the Nexus: one mana for each different power among your creatures.
   if (ab.amountDistinctPowers) {
     const powers = s.battlefield
       .filter((x) => obj(s, x).controller === controller && isCreature(s, x))
@@ -307,73 +308,72 @@ function baseManaAmount(s: GameState, id: ObjectId, controller: PlayerId, ab: Ma
   return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length;
 }
 
-/** À quoi le mana est destiné (mana restreint : « dépensez ce mana uniquement pour lancer un sort d'Ange »). */
+/** What the mana is for (restricted mana: "spend this mana only to cast an Angel spell"). */
 export interface ManaPurpose {
   spell?: LkiSnapshot;
-  /** Capacité activée : sa source. */
+  /** Activated ability: its source. */
   abilitySource?: ObjectId;
-  /** Capacité activée : ses sortes (Équiper, déverrouiller une porte, retourner face visible…). */
+  /** Activated ability: its kinds (equip, unlocking a door, turning face up…). */
   abilityKinds?: readonly AbilityKind[];
-  /** Convocation (702.51) : les créatures dégagées peuvent payer {1} ou un mana de leur couleur. */
+  /** Convoke (702.51): untapped creatures can pay {1} or one mana of their color. */
   convoke?: boolean;
-  /** Cave (702.66, Teval) : chaque carte exilée de votre cimetière paie {1}. */
+  /** Delve (702.66, Teval): each card exiled from your graveyard pays {1}. */
   delve?: boolean;
-  /** Sort lancé depuis la main. */
+  /** Spell cast from the hand. */
   fromHand?: boolean;
   /**
-   * Maîtrise de l'eau N : au plus N du générique peut être payé en engageant des artefacts et créatures dégagés (un {1}
-   * chacun).
+   * Waterbend N: at most N of the generic part can be paid by tapping untapped artifacts and creatures ({1} each).
    */
   waterbend?: number;
-  /** Improvisation (702.126) : chaque artefact dégagé peut payer {1} du générique. */
+  /** Improvise (702.126): each untapped artifact can pay {1} of the generic part. */
   improvise?: boolean;
   /**
-   * « En coût additionnel, vous pouvez sacrifier un nombre quelconque de [filtre] ; ce sort coûte {1} de moins pour
-   * chacun » (Rottenmouth Viper) : chaque permanent correspondant sacrifié paie {1} du générique.
+   * "As an additional cost, you may sacrifice any number of [filter]; this spell costs {1} less for each" (Rottenmouth
+   * Viper): each matching permanent sacrificed pays {1} of the generic part.
    */
   sacrificeToPay?: ObjectFilter;
   /**
-   * Permanents sacrifiés pour payer le coût : leurs capacités de mana peuvent servir avant (601.2g, 602.2b), sauf celles qui
-   * les sacrifient eux-mêmes (Trésor).
+   * Permanents sacrificed to pay the cost: their mana abilities can be used first (601.2g, 602.2b), except those that
+   * sacrifice them themselves (Treasure).
    */
   sacrificedForCost?: ReadonlySet<ObjectId>;
   /**
-   * Cartes que le paiement ne doit pas consommer (preuves, cave) : la carte de cimetière qui s'exile pour payer le coût de
-   * sa propre capacité (renouveau de Sage of the Fang, payé avec Cryptex).
+   * Cards the payment must not consume (evidence, delve): the graveyard card that exiles itself to pay the cost of its
+   * own ability (Sage of the Fang's renew, paid with Cryptex).
    */
   keep?: readonly ObjectId[];
-  /** Sources proposées à l'engagement manuel (`legalActions`) : les sources restreintes aussi. */
+  /** Sources offered for manual tapping (`legalActions`): restricted sources too. */
   manual?: boolean;
   /**
-   * Objets choisis par le joueur pour la convocation, l'improvisation, la maîtrise de l'eau ou la cave : seuls ceux-là
-   * servent pour ce mode de paiement, en premier, et tous doivent servir.
+   * Objects chosen by the player for convoke, improvise, waterbending or delve: only those are used for that payment
+   * mode, first, and all of them must be used.
    */
   only?: Partial<Record<"convoke" | "improvise" | "waterbend" | "delve" | "sacrificeToPay", ObjectId[]>>;
   /**
-   * Permanents qui auront quitté le champ de bataille avant le paiement du mana (`legalActions` : exilés, renvoyés ou
-   * sacrifiés par un coût additionnel ou alternatif, payé avant le mana dans `castSpell`) : leurs remplacements de mana ne
-   * comptent plus (Lavaleaper exilé en contemplant pour Champion of the Path). Leur propre mana : `exclude`.
+   * Permanents that will have left the battlefield before the mana is paid (`legalActions`: exiled, returned or
+   * sacrificed by an additional or alternative cost, paid before the mana in `castSpell`): their mana replacements no
+   * longer count (Lavaleaper exiled by beholding for Champion of the Path). Their own mana: `exclude`.
    */
   gone?: ReadonlySet<ObjectId>;
 }
 
 /**
- * Cartes que le paiement ne consomme pas : celles de `keep`, la source de la capacité payée (qui peut s'exiler) et les
- * objets réservés par le reste du coût (`exclude` : matériaux de fabrication que Cryptex ne doit pas exiler en preuves).
+ * Cards the payment does not consume: those of `keep`, the source of the ability being paid (which may exile itself)
+ * and the objects reserved by the rest of the cost (`exclude`: craft materials that Cryptex must not exile as evidence).
  */
 function kept(purpose?: ManaPurpose, exclude?: ReadonlySet<ObjectId>): ObjectId[] {
   return [...(purpose?.keep ?? []), ...(purpose?.abilitySource ? [purpose.abilitySource] : []), ...(exclude ?? [])];
 }
 
-/** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
+/** Pseudo mana ability of a creature tapped for convoke. */
 export const CONVOKE = -1;
-/** Pseudo-capacité de mana d'une carte du cimetière exilée pour la cave. */
+/** Pseudo mana ability of a graveyard card exiled for delve. */
 export const DELVE = -2;
-/** Pseudo-capacité : un artefact ou une créature engagé pour la maîtrise de l'eau ({1}). */
+/** Pseudo ability: an artifact or creature tapped for waterbending ({1}). */
 export const WATERBEND = -4;
-/** Pseudo-capacité : un permanent sacrifié en coût additionnel paie {1} (Rottenmouth Viper). */
+/** Pseudo ability: a permanent sacrificed as an additional cost pays {1} (Rottenmouth Viper). */
 export const SACRIFICE_PAY = -5;
-/** Pseudo-capacité : un mana restreint de la réserve (`restrictedMana`, Ashling, Rimebound) ; `id` : `pool:<rang>`. */
+/** Pseudo ability: a restricted mana in the pool (`restrictedMana`, Ashling, Rimebound); `id`: `pool:<index>`. */
 export const RESTRICTED_POOL = -3;
 
 function restrictionAllows(
@@ -383,12 +383,12 @@ function restrictionAllows(
   player: PlayerId,
   purpose?: ManaPurpose,
 ): boolean {
-  // Engagée à la main, une source restreinte remplit la réserve marquée (`activateManaAbility`).
+  // Tapped manually, a restricted source fills the tagged pool (`activateManaAbility`).
   if (purpose?.manual) return true;
   return allows(s, ab.restriction, s.objects[sourceId], sourceId, player, purpose);
 }
 
-/** Le mana restreint peut-il servir à ce paiement ? (`source` : ce qui l'a produit, pour « du type choisi »). */
+/** Can the restricted mana be used for this payment? (`source`: what produced it, for "of the chosen type"). */
 function allows(
   s: GameState,
   r: ManaRestriction | undefined,
@@ -425,15 +425,15 @@ export function manaSources(
     if (o.controller !== player || exclude.has(id)) continue;
     manaAbilitiesOf(s, id).forEach((ab, i) => {
       if (!canActivateMana(s, id, ab)) return;
-      // Mana restreint : seulement utilisable par le solveur pour un paiement autorisé.
+      // Restricted mana: usable by the solver only for an allowed payment.
       if (!restrictionAllows(s, id, ab, player, purpose)) return;
-      // Un permanent exclu (engagé ou sacrifié pour un autre coût du même paiement) ne sert pas de « permanent à engager ».
+      // An excluded permanent (tapped or sacrificed for another cost of the same payment) does not serve as "permanent to tap".
       if (ab.tapAnother && !otherToTap(s, id, ab, true, exclude)) return;
       if (ab.cost.self === "sacrifice" && purpose?.sacrificedForCost?.has(id)) return;
       if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose, exclude))) return;
-      // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).
+      // No possible color (Pit of Offerings without a colored exiled card): the ability produces nothing (106.7).
       if (ab.produce.length === 0) return;
-      // Aucun mana produit (Vivi Ornitier de force 0) : la source ne paie rien.
+      // No mana produced (Vivi Ornitier with power 0): the source pays nothing.
       const amount = manaAmount(s, id, ab, purpose?.gone);
       if (amount <= 0) return;
       out.push({
@@ -448,7 +448,7 @@ export function manaSources(
       });
     });
   }
-  // Convocation : chaque créature dégagée sans capacité de mana paie {1} ou un mana de sa couleur (utilisée en dernier).
+  // Convoke: each untapped creature without a mana ability pays {1} or one mana of its color (used last).
   if (purpose?.convoke) {
     for (const id of s.battlefield) {
       const o = obj(s, id);
@@ -468,7 +468,7 @@ export function manaSources(
       });
     }
   }
-  // Maîtrise de l'eau : chaque artefact ou créature dégagé paie {1} (même clé que ses capacités de mana : une seule sert).
+  // Waterbending: each untapped artifact or creature pays {1} (same key as its mana abilities: only one is used).
   if (purpose?.waterbend) {
     for (const id of s.battlefield) {
       const o = obj(s, id);
@@ -479,7 +479,7 @@ export function manaSources(
       out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, waterbend: true, key: id });
     }
   }
-  // Improvisation : chaque artefact dégagé paie {1} (sans plafond ; même clé que ses capacités de mana).
+  // Improvise: each untapped artifact pays {1} (no cap; same key as its mana abilities).
   if (purpose?.improvise) {
     const taken = new Set(out.filter((x) => x.waterbend).map((x) => x.id));
     for (const id of s.battlefield) {
@@ -490,8 +490,8 @@ export function manaSources(
       out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, improvise: true, key: id });
     }
   }
-  // Sacrifice en coût additionnel : chaque permanent correspondant paie {1} (en dernier recours : on sacrifie le moins
-  // possible ; même clé que ses capacités de mana).
+  // Sacrifice as an additional cost: each matching permanent pays {1} (as a last resort: sacrifice as little as
+  // possible; same key as its mana abilities).
   if (purpose?.sacrificeToPay) {
     const taken = new Set(out.filter((x) => x.ability < 0).map((x) => x.id));
     for (const id of s.battlefield) {
@@ -511,7 +511,7 @@ export function manaSources(
       });
     }
   }
-  // Mana restreint de la réserve : seulement pour un paiement permis (utilisé d'abord, il est déjà là).
+  // Restricted mana in the pool: only for an allowed payment (used first, it is already there).
   (s.players[player]?.restrictedMana ?? []).forEach((m, i) => {
     if (!allows(s, m.restriction, m.chosen ? { chosen: m.chosen } : undefined, m.source ?? `pool:${i}`, player, purpose)) return;
     out.push({
@@ -524,7 +524,7 @@ export function manaSources(
       key: `pool:${i}`,
     });
   });
-  // Cave : chaque carte du cimetière paie {1} (utilisée en tout dernier, choix automatique).
+  // Delve: each graveyard card pays {1} (used very last, automatic choice).
   if (purpose?.delve) {
     const keep = kept(purpose);
     for (const id of s.players[player]?.graveyard ?? []) {
@@ -533,9 +533,9 @@ export function manaSources(
       out.push({ id, ability: DELVE, colors: ["C"], amount: 1, isCreature: false, sacrifice: false, delve: true, key: id });
     }
   }
-  // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation et maîtrise de l'eau, puis cave ; les
-  // moins flexibles d'abord.
-  // Objets choisis par le joueur (convocation, improvisation, maîtrise de l'eau, cave) : en premier, ils doivent servir.
+  // Preference: lands, then creatures, then sacrificed sources, then convoke and waterbending, then delve; the least
+  // flexible first.
+  // Objects chosen by the player (convoke, improvise, waterbending, delve): first, they must be used.
   const chosen = (x: ManaSource) =>
     (x.convoke && purpose?.only?.convoke) ||
     (x.waterbend && purpose?.only?.waterbend) ||
@@ -562,9 +562,9 @@ export function manaSources(
 }
 
 /**
- * `forPayment` : le paiement automatique d'un coût, dont le solveur a vérifié la restriction (mana versé dans la réserve).
- * `color` : le type produit ; une liste pour une source « en n'importe quelle combinaison » (le type de chaque mana, le
- * premier pour ceux qui restent).
+ * `forPayment`: the automatic payment of a cost, whose restriction the solver has checked (mana added to the pool).
+ * `color`: the type produced; a list for an "in any combination" source (the type of each mana, the first for the
+ * remaining ones).
  */
 export function activateManaAbility(
   s: GameState,
@@ -576,16 +576,16 @@ export function activateManaAbility(
   keep: readonly ObjectId[] = [],
 ): void {
   const o = s.objects[id];
-  if (!o || o.controller !== player) throw new RulesError("Vous ne contrôlez pas cette source");
+  if (!o || o.controller !== player) throw new RulesError(msg("You don't control this source"));
   const ab = manaAbilitiesOf(s, id)[ability];
-  if (!ab || !canActivateMana(s, id, ab)) throw new RulesError("Capacité de mana indisponible");
+  if (!ab || !canActivateMana(s, id, ab)) throw new RulesError(msg("Mana ability unavailable"));
   const types = Array.isArray(color) ? color : color ? [color] : [];
-  if (types.length > 1 && !ab.combination) throw new RulesError("Cette source produit un seul type de mana");
+  if (types.length > 1 && !ab.combination) throw new RulesError(msg("This source produces a single type of mana"));
   const c = types[0] ?? ab.produce[0];
-  if (!c || types.concat(c).some((m) => !ab.produce.includes(m))) throw new RulesError("Couleur de mana invalide");
-  // Type de chaque mana produit : ceux demandés, puis le premier pour le reste.
+  if (!c || types.concat(c).some((m) => !ab.produce.includes(m))) throw new RulesError(msg("Invalid mana color"));
+  // Type of each mana produced: those asked for, then the first for the rest.
   const unitTypes = (n: number): ManaType[] => Array.from({ length: Math.max(0, n) }, (_, k) => types[k] ?? c);
-  // Annulable seulement si {T} est le seul coût, sans autre effet ni déclenchement (façon Arena).
+  // Undoable only if {T} is the only cost, with no other effect or trigger (Arena style).
   const simple =
     !!ab.cost.tap &&
     !ab.oncePerTurn &&
@@ -599,26 +599,25 @@ export function activateManaAbility(
     !ab.drawback;
   const triggersBefore = s.triggers.length;
   const poolBefore = s.players[player]?.manaPool[c] ?? 0;
-  // Source sacrifiée pour son coût (Trésor) : la quantité et les remplacements de mana se lisent d'après sa dernière
-  // information connue, avant le sacrifice (Roxanne, Starfall Savant et un Trésor : deux mana), comme le solveur les a
-  // comptés.
+  // Source sacrificed for its cost (Treasure): the amount and the mana replacements are read from its last known
+  // information, before the sacrifice (Roxanne, Starfall Savant and a Treasure: two mana), as the solver counted them.
   const before = ab.cost.self === "sacrifice" ? { amount: manaAmount(s, id, ab), reps: manaReplacements(s, id, ab) } : null;
   const amountNow = () => before?.amount ?? manaAmount(s, id, ab);
   if (ab.cost.tap) tapObject(s, o);
   if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id, ab) as ObjectId));
   if (ab.cost.self === "sacrifice") sacrifice(s, id);
-  // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
+  // Haunted Screen: "{T}, Pay 1 life"; Twitching Doll: "put a nest counter on this creature".
   if (ab.cost.payLife) payLife(s, player, lifeCost(s, player, id, ab.cost.payLife));
-  // Cryptex : « {T}, réunissez des preuves 3 : ajoutez un mana… ».
+  // Cryptex: "{T}, Collect evidence 3: Add one mana…".
   if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, id, ab.cost.collectEvidence, keep) ?? []);
   if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;
   const pl = s.players[player];
-  // Mana restreint (« ne dépensez ce mana que pour… », Woodland Weavemaster) ou porteur d'un effet (Cavern of Souls : « ne
-  // peut pas être contrecarré ») engagé à la main : il va dans la réserve marquée avec sa source et son choix, pour que la
-  // restriction et l'effet s'appliquent quand il sera dépensé.
+  // Restricted mana ("spend this mana only to…", Woodland Weavemaster) or mana carrying an effect (Cavern of Souls:
+  // "can't be countered") tapped manually: it goes into the pool tagged with its source and its choice, so that the
+  // restriction and the effect apply when it is spent.
   if (!forPayment && (ab.restriction || ab.rider) && pl) {
     const tag: Omit<TaggedMana, "type"> = {
       ...(ab.restriction ? { restriction: ab.restriction } : {}),
@@ -628,7 +627,7 @@ export function activateManaAbility(
     };
     pl.restrictedMana = [...(pl.restrictedMana ?? []), ...unitTypes(amountNow()).map((type) => ({ ...tag, type }))];
   } else if (pool) for (const m of unitTypes(amountNow())) pool[m] += 1;
-  // Mana en plus d'un autre type (Shimmerwilds Growth : la couleur choisie) ou seulement pour ce type (Ultima : {C}).
+  // Additional mana of another type (Shimmerwilds Growth: the chosen color) or only for this type (Ultima: {C}).
   let otherBonus = false;
   for (const a of before?.reps ?? manaReplacements(s, id, ab)) {
     const same = (a.r.extraMana ?? "same") === "same";
@@ -648,21 +647,22 @@ export function activateManaAbility(
     if (type !== c) otherBonus = true;
   }
   const amount = (pool?.[c] ?? 0) - poolBefore;
-  // Contrepartie (605.3b) : blessures infligées par la source à son contrôleur, PV gagnés par chaque adversaire.
+  // Drawback (605.3b): damage dealt by the source to its controller, life gained by each opponent.
   if (ab.drawback?.damageYou && s.objects[id]) dealDamage(s, sourceFromObject(s, id), player, ab.drawback.damageYou, false);
   if (ab.drawback?.opponentsGainLife) for (const p of opponentsOf(s, player)) gainLife(s, p, ab.drawback.opponentsGainLife);
   if (simple && !otherBonus && types.length <= 1 && s.triggers.length === triggersBefore && amount > 0)
     s.manaUndo = [...(s.manaUndo ?? []), { player, source: id, color: c, amount }];
-  // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).
+  // The pool changed: a static ability may depend on it (Ozai, the Phoenix King).
   bumpFor(s, "mana");
 }
 
-/** Annule l'engagement d'une source pour son mana (voir `GameState.manaUndo`) : elle se dégage, le mana disparaît. */
+/** Undoes the tapping of a source for its mana (see `GameState.manaUndo`): it untaps, the mana disappears. */
 export function undoMana(s: GameState, player: PlayerId, source: ObjectId): void {
   const entry = s.manaUndo?.find((x) => x.player === player && x.source === source);
   const o = s.objects[source];
   const pool = s.players[player]?.manaPool;
-  if (!entry || !o?.tapped || !pool || pool[entry.color] < entry.amount) throw new RulesError("Ce mana ne peut plus être annulé");
+  if (!entry || !o?.tapped || !pool || pool[entry.color] < entry.amount)
+    throw new RulesError(msg("This mana can no longer be undone"));
   pool[entry.color] -= entry.amount;
   o.tapped = false;
   s.manaUndo = s.manaUndo?.filter((x) => x !== entry);
@@ -670,21 +670,21 @@ export function undoMana(s: GameState, player: PlayerId, source: ObjectId): void
 }
 
 // ---------------------------------------------------------------------------
-// Solveur
+// Solver
 // ---------------------------------------------------------------------------
 
 export interface PaymentPlan {
-  /** Capacités de mana à activer. `colors` : le type de chaque mana d'une source « en n'importe quelle combinaison ». */
+  /** Mana abilities to activate. `colors`: the type of each mana of an "in any combination" source. */
   taps: { id: ObjectId; ability: number; color: ManaType; colors?: ManaType[] }[];
-  /** Mana dépensé de la réserve, par type, une fois les capacités activées. */
+  /** Mana spent from the pool, by type, once the abilities are activated. */
   spend: Record<ManaType, number>;
 }
 
 const zero = (): Record<ManaType, number> => ({ W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 });
 
 /**
- * Cherche comment payer `cost` avec la réserve puis les sources disponibles.
- * Renvoie le plan de paiement, ou null si c'est impossible.
+ * Finds how to pay `cost` with the pool then the available sources.
+ * Returns the payment plan, or null if it is impossible.
  */
 export function solvePayment(
   s: GameState,
@@ -693,14 +693,14 @@ export function solvePayment(
   exclude: ReadonlySet<ObjectId> = new Set(),
   purpose?: ManaPurpose,
 ): PaymentPlan | null {
-  // « {T}, engagez une créature dégagée : ajoutez un mana » (Springleaf Drum) : les sources de ce genre se partagent les
-  // permanents à engager. Un plan qui en utilise plus qu'il n'y a de permanents disponibles est refait sans l'une d'elles.
+  // "{T}, Tap an untapped creature you control: Add one mana" (Springleaf Drum): sources of this kind share the
+  // permanents to tap. A plan that uses more of them than there are available permanents is redone without one of them.
   let without = new Set(exclude);
   for (let tries = 0; tries < 8; tries++) {
     const plan = solvePaymentOnce(s, player, cost, without, purpose);
     if (!plan) return null;
-    // Sources qui coûtent des PV (Mana Confluence, Horizon of Progress) : le total ne peut dépasser ce que le joueur peut
-    // payer (119.4 : à 1 PV, une seule) ; sinon le plan est refait sans l'une d'elles.
+    // Sources that cost life (Mana Confluence, Horizon of Progress): the total cannot exceed what the player can pay
+    // (119.4: at 1 life, only one); otherwise the plan is redone without one of them.
     const lifeOf = (t: { id: ObjectId; ability: number }) =>
       t.ability >= 0 ? lifeCost(s, player, t.id, manaAbilitiesOf(s, t.id)[t.ability]?.cost.payLife) : 0;
     const lifeTaps = plan.taps.filter((t) => lifeOf(t) > 0);
@@ -712,7 +712,7 @@ export function solvePayment(
     if (sharing.length <= 1) return plan;
     const inPlan = new Set(plan.taps.map((t) => t.id));
     const creature = sharing.some((t) => manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother === "creature");
-    // Relic of Legends : les permanents à engager correspondent au filtre de chaque source qui en a un.
+    // Relic of Legends: the permanents to tap match the filter of each source that has one.
     const filtered = sharing.filter((t) => typeof manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother === "object");
     const others = s.battlefield.filter(
       (x) =>
@@ -737,7 +737,7 @@ function solvePaymentOnce(
   exclude: ReadonlySet<ObjectId>,
   purpose?: ManaPurpose,
 ): PaymentPlan | null {
-  // Hybrides monocolores {2/W} : on essaie d'abord de tout payer en couleur, puis avec de plus en plus de génériques.
+  // Monocolored hybrids {2/W}: first try paying everything in color, then with more and more generic.
   const two = cost.twoHybrid ?? [];
   if (two.length > 0) {
     const masks = [...Array(1 << two.length).keys()].sort((a, b) => bitCount(a) - bitCount(b));
@@ -753,13 +753,13 @@ function solvePaymentOnce(
     return null;
   }
   const pool = { ...(s.players[player]?.manaPool ?? zero()) } as Record<ManaType, number>;
-  // Une même source à plusieurs capacités (Tablet of Discovery : {R}, ou {R}{R} pour un éphémère ou un rituel) : celle qui
-  // produit le plus d'abord, son surplus paie le générique.
+  // One source with several abilities (Tablet of Discovery: {R}, or {R}{R} for an instant or sorcery): the one that
+  // produces the most first, its surplus pays the generic part.
   const listed = manaSources(s, player, exclude, purpose);
   const byKey = new Map<string, ManaSource[]>();
   for (const src of listed) byKey.set(src.key, [...(byKey.get(src.key) ?? []), src]);
   const sources = [...byKey.values()].flatMap((group) => [...group].sort((a, b) => b.amount - a.amount));
-  // Symboles à payer : chacun accepte un ensemble de types (un seul pour un symbole coloré, deux pour un hybride).
+  // Symbols to pay: each accepts a set of types (one for a colored symbol, two for a hybrid).
   const pips: ManaType[][] = [];
   for (const m of MANA_TYPES) for (let i = 0; i < (cost.colored[m] ?? 0); i++) pips.push([m]);
   for (const pair of cost.hybrid ?? []) pips.push([...pair]);
@@ -771,13 +771,13 @@ function solvePaymentOnce(
   const taps: PaymentPlan["taps"] = [];
   const extra = zero();
   const spend = zero();
-  // Surplus des sources « en n'importe quelle combinaison » : chaque mana restant prend l'un des types de la source.
+  // Surplus of "in any combination" sources: each remaining mana takes one of the types of the source.
   const wild: { colors: ManaType[]; n: number; tap: PaymentPlan["taps"][number] }[] = [];
 
   const assign = (i: number): boolean => {
     if (i === pips.length) return true;
     const allowed = pips[i] as ManaType[];
-    // 1. La réserve (gratuite), puis le surplus des sources qui produisent plusieurs mana.
+    // 1. The pool (free), then the surplus of sources that produce several mana.
     for (const bucket of [pool, extra]) {
       for (const m of allowed) {
         if (bucket[m] <= 0) continue;
@@ -801,7 +801,7 @@ function solvePaymentOnce(
         w.n += 1;
       }
     }
-    // 2. Une source non utilisée.
+    // 2. An unused source.
     for (let k = 0; k < sources.length; k++) {
       const src = sources[k] as ManaSource;
       if (used.has(src.key)) continue;
@@ -825,7 +825,7 @@ function solvePaymentOnce(
   };
   if (!assign(0)) return null;
 
-  // Générique : réserve (incolore d'abord), surplus, puis sources restantes dans l'ordre de préférence.
+  // Generic: pool (colorless first), surplus, then remaining sources in order of preference.
   let generic = cost.generic;
   for (const bucket of [pool, extra]) {
     for (const m of ["C", ...MANA_TYPES.filter((x) => x !== "C")] as ManaType[]) {
@@ -843,7 +843,7 @@ function solvePaymentOnce(
     spend[m] += n;
     generic -= n;
   }
-  // Maîtrise de l'eau : au plus `purpose.waterbend` artefacts et créatures engagés.
+  // Waterbending: at most `purpose.waterbend` artifacts and creatures tapped.
   let waterbent = 0;
   for (let k = 0; k < sources.length && generic > 0; k++) {
     const src = sources[k] as ManaSource;
@@ -866,7 +866,7 @@ function bitCount(n: number): number {
   return c;
 }
 
-/** Quantité maximale de mana disponible (réserve + sources). */
+/** Maximum amount of mana available (pool + sources). */
 export function availableMana(
   s: GameState,
   player: PlayerId,
@@ -875,7 +875,7 @@ export function availableMana(
 ): number {
   const pool = s.players[player]?.manaPool;
   const inPool = pool ? MANA_TYPES.reduce((n, m) => n + pool[m], 0) : 0;
-  // Sources exclusives (même permanent engagé) : seule la plus productive compte.
+  // Exclusive sources (same permanent tapped): only the most productive counts.
   const best = new Map<string, number>();
   for (const src of manaSources(s, player, exclude, purpose)) best.set(src.key, Math.max(best.get(src.key) ?? 0, src.amount));
   return inPool + [...best.values()].reduce((n, a) => n + a, 0);
@@ -893,8 +893,8 @@ export function canPay(
 }
 
 /**
- * Mana phyrexian (107.4f) : chaque {G/P} se paie avec {G} ou 2 points de vie. Choix automatique : le mana d'abord, des
- * points de vie pour les symboles que le mana disponible ne couvre pas. Renvoie le coût en mana et les PV à payer.
+ * Phyrexian mana (107.4f): each {G/P} is paid with {G} or 2 life. Automatic choice: mana first, life for the symbols
+ * the available mana does not cover. Returns the mana cost and the life to pay.
  */
 function phyrexianSplit(
   s: GameState,
@@ -915,35 +915,35 @@ function phyrexianSplit(
   return null;
 }
 
-/** Active les sources nécessaires puis retire le coût de la réserve. Lève une erreur si impossible. */
+/** Activates the needed sources then removes the cost from the pool. Throws if impossible. */
 export function payMana(
   s: GameState,
   player: PlayerId,
   cost: ManaCost,
   exclude?: ReadonlySet<ObjectId>,
   purpose?: ManaPurpose,
-  /** Reçoit les activations du paiement automatique : source, capacité et quantité produite. */
+  /** Receives the activations of the automatic payment: source, ability and amount produced. */
   sources?: { id: ObjectId; ab?: ManaAbilityDef; amount: number; chosen?: GameObject["chosen"] }[],
-  /** Reçoit le mana dépensé, par type (« si {U}{U} a été dépensé pour le lancer »). */
+  /** Receives the mana spent, by type ("if {U}{U} was spent to cast it"). */
   spent?: Partial<Record<ManaType, number>>,
 ): ManaAbilityDef[] {
   if (cost.phyrexian?.length) {
     const split = phyrexianSplit(s, player, cost, exclude, purpose);
-    if (!split) throw new RulesError("Mana insuffisant");
+    if (!split) throw new RulesError(msg("Not enough mana"));
     if (split.life) payLife(s, player, split.life);
     cost = split.cost;
   }
   const plan = solvePayment(s, player, cost, exclude, purpose);
-  if (!plan) throw new RulesError("Mana insuffisant");
-  // Les objets choisis par le joueur pour la convocation (ou l'improvisation, la maîtrise de l'eau, la cave) servent tous.
+  if (!plan) throw new RulesError(msg("Not enough mana"));
+  // The objects chosen by the player for convoke (or improvise, waterbending, delve) are all used.
   const tapped = new Set(plan.taps.map((t) => t.id));
   for (const ids of Object.values(purpose?.only ?? {}))
-    if (ids?.some((id) => !tapped.has(id))) throw new RulesError("Trop d'objets choisis pour payer ce coût");
+    if (ids?.some((id) => !tapped.has(id))) throw new RulesError(msg("Too many objects chosen to pay this cost"));
   if (spent) for (const m of MANA_TYPES) if (plan.spend[m]) spent[m] = plan.spend[m];
   if (sources) {
     for (const t of plan.taps) {
       if (t.ability === RESTRICTED_POOL) {
-        // Mana marqué : sa source et son effet (Cavern of Souls), avec le choix figé à la production.
+        // Tagged mana: its source and its effect (Cavern of Souls), with the choice frozen when produced.
         const m = s.players[player]?.restrictedMana?.[Number(t.id.slice("pool:".length))];
         sources.push({
           id: m?.source ?? t.id,
@@ -957,33 +957,33 @@ export function payMana(
       sources.push({ id: t.id, ab, amount: ab ? manaAmount(s, t.id, ab) : 1 });
     }
   }
-  // Capacités de mana utilisées (effets associés au mana dépensé : Carnelian Orb…).
+  // Mana abilities used (effects tied to the mana spent: Carnelian Orb…).
   const used = plan.taps
     .filter((t) => t.ability >= 0)
     .map((t) => manaAbilitiesOf(s, t.id)[t.ability])
     .filter((a): a is ManaAbilityDef => !!a);
   const pool = s.players[player]?.manaPool;
-  if (!pool) throw new Error("Joueur inconnu");
+  if (!pool) throw new Error("Unknown player");
   const usedRestricted = new Set<number>();
   for (const t of plan.taps) {
     if (t.ability === RESTRICTED_POOL) {
-      // Mana restreint de la réserve : il rejoint la réserve pour être dépensé aussitôt.
+      // Restricted mana from the pool: it joins the pool to be spent at once.
       usedRestricted.add(Number(t.id.slice("pool:".length)));
       pool[t.color] += 1;
     } else if (t.ability === WATERBEND) {
-      // L'artefact ou la créature engagé paie {1}.
+      // The tapped artifact or creature pays {1}.
       tapObject(s, obj(s, t.id));
       pool.C += 1;
     } else if (t.ability === CONVOKE) {
-      // La créature engagée paie un mana de sa couleur (ou {1}).
+      // The tapped creature pays one mana of its color (or {1}).
       tapObject(s, obj(s, t.id));
       pool[t.color] += 1;
     } else if (t.ability === SACRIFICE_PAY) {
-      // Le permanent sacrifié en coût additionnel paie {1} (Rottenmouth Viper).
+      // The permanent sacrificed as an additional cost pays {1} (Rottenmouth Viper).
       sacrifice(s, t.id);
       pool.C += 1;
     } else if (t.ability === DELVE) {
-      // La carte exilée de votre cimetière paie {1} (702.66a).
+      // The card exiled from your graveyard pays {1} (702.66a).
       const o = obj(s, t.id);
       emit({ type: "moved", owner: o.owner, objectId: t.id, defId: o.defId, from: "graveyard", to: "exile" });
       moveObject(s, t.id, "exile");
@@ -996,11 +996,11 @@ export function payMana(
     if (pl.restrictedMana.length === 0) pl.restrictedMana = undefined;
   }
   for (const m of MANA_TYPES) {
-    // Le solveur a promis ce mana : un manque ici est un bug, pas une décision illégale.
-    if (pool[m] < plan.spend[m]) throw new Error(`Paiement incohérent : ${m} manquant`);
+    // The solver promised this mana: a shortfall here is a bug, not an illegal decision.
+    if (pool[m] < plan.spend[m]) throw new Error(`Inconsistent payment: ${m} missing`);
     pool[m] -= plan.spend[m];
   }
-  // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).
+  // The pool changed: a static ability may depend on it (Ozai, the Phoenix King).
   bumpFor(s, "mana");
   return used;
 }

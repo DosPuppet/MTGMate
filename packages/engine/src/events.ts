@@ -1,6 +1,6 @@
 /**
- * Événements d'affichage (`GameEvent`) : le moteur est synchrone, un collecteur global suffit. Module sans dépendance
- * d'exécution, pour que tout fichier puisse émettre sans entrer dans le cycle d'imports du moteur.
+ * Display events (`GameEvent`): the engine is synchronous, so a global collector is enough. A module without runtime
+ * dependencies, so that any file can emit without entering the engine's import cycle.
  */
 import type { GameEvent } from "./types";
 

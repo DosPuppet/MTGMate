@@ -1,13 +1,13 @@
-/** Types du moteur — Décisions, choix, options d'action et événements. Réexportés par `types.ts`. */
+/** Engine types — Decisions, choices, action options and events. Re-exported by `types.ts`. */
 import type { GiftKind, ManaCost, ManaType, ObjectId, PlayerId, Step, Zone } from "../types";
 
 export type PendingDecision =
-  /** `bottom` : cartes à mettre au-dessous en gardant (le premier mulligan est gratuit à trois joueurs ou plus, 103.5c). */
+  /** `bottom`: cards to put on the bottom when keeping (the first mulligan is free with three or more players, 103.5c). */
   | { kind: "mulligan"; player: PlayerId; mulligans: number; bottom: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
   /**
-   * `castNow` : priorité restreinte pendant une résolution (608.2g, « vous pouvez lancer cette carte ») : le joueur
-   * lance l'une des cartes proposées, ou passe pour refuser. La résolution reprend ensuite.
+   * `castNow`: restricted priority during a resolution (608.2g, "you may cast that card"): the player casts one of the
+   * offered cards, or passes to decline. The resolution then resumes.
    */
   | { kind: "priority"; player: PlayerId; castNow?: CastNowRequest }
   | { kind: "declareAttackers"; player: PlayerId }
@@ -15,20 +15,20 @@ export type PendingDecision =
   | { kind: "discard"; player: PlayerId; count: number }
   | { kind: "choice"; player: PlayerId; request: ChoiceRequest; purpose: ChoicePurpose };
 
-/** Cartes qu'un joueur peut lancer pendant la résolution d'un sort ou d'une capacité. */
+/** Cards a player may cast during the resolution of a spell or ability. */
 export interface CastNowRequest {
   cards: ObjectId[];
   prompt: string;
 }
 
 // ---------------------------------------------------------------------------
-// Choix génériques : toute question posée à un joueur passe par ce modèle,
-// que l'interface sait afficher une fois pour toutes.
+// Generic choices: every question asked of a player goes through this model,
+// which the interface knows how to display once and for all.
 // ---------------------------------------------------------------------------
 
 export type ChoiceValue = string | number;
 
-/** Ce qu'une question « nom » fait nommer (`ChoiceRequest` de type `name`, names.ts). */
+/** What a "name" question asks to name (`ChoiceRequest` of type `name`, names.ts). */
 export type NameKind = "card" | "land" | "creatureType";
 
 export type ChoiceIntent =
@@ -63,19 +63,19 @@ export type ChoiceIntent =
   | "keepWithinPower"
   | "reveal"
   | "discover"
-  /** 903.9a : remettre son commandant dans la zone de commandement (oui / non). */
+  /** 903.9a: return one's commander to the command zone (yes / no). */
   | "commanderZone"
   | "other";
 
 interface ChoiceBase {
   prompt: string;
-  /** À quoi sert ce choix (utile à l'IA et à l'interface). */
+  /** What this choice is for (useful to the AI and the interface). */
   intent: ChoiceIntent;
-  /** Réponse proposée par le moteur, toujours valide : autopilot, repli de l'IA, pré-remplissage. */
+  /** Answer proposed by the engine, always valid: autopilot, AI fallback, pre-filling. */
   suggested: ChoiceValue[];
-  /** L'autopilot peut répondre avec `suggested` (hors contrôle total). */
+  /** The autopilot may answer with `suggested` (outside full control). */
   autoOk?: boolean;
-  /** Libellés des options qui ne sont ni des objets ni des joueurs (ex. capacités déclenchées). */
+  /** Labels of the options that are neither objects nor players (e.g. triggered abilities). */
   labels?: Record<string, string>;
 }
 
@@ -86,14 +86,14 @@ export type ChoiceRequest = ChoiceBase &
         options: string[];
         min: number;
         max: number;
-        /** Contrainte entre les options choisies : même joueur ou joueurs différents (joueur de chaque option). */
+        /** Constraint between the chosen options: same player or different players (the player of each option). */
         group?: { kind: "same" | "different"; holders: Record<string, string> };
       }
     /**
-     * Un nom à choisir (nom de carte, de carte de terrain, type de créature) : toute valeur du catalogue est permise
-     * (`isNameAllowed`, names.ts), sans que la question liste les cartes de la partie (la decklist adverse) ; `featured` :
-     * des noms publics mis en avant (permanents adverses, puis les vôtres, puis cimetières, exil et zone de commandement ;
-     * types de créature : les plus présents parmi vos cartes). Réponse : un nom (anglais).
+     * A name to choose (card name, land card name, creature type): any value of the catalog is allowed
+     * (`isNameAllowed`, names.ts), without the question listing the cards of the game (the opponent's decklist);
+     * `featured`: public names put forward (opponents' permanents, then yours, then graveyards, exile and command zone;
+     * creature types: the most common among your cards). Answer: a name (English).
      */
     | { type: "name"; of: NameKind; featured: string[] }
     | { type: "number"; min: number; max: number }
@@ -103,9 +103,9 @@ export type ChoiceRequest = ChoiceBase &
         type: "divide";
         among: string[];
         total: number;
-        /** Contrainte de piétinement : le joueur ne reçoit des blessures que si chaque bloqueur a reçu ses blessures mortelles. */
+        /** Trample constraint: the player is dealt damage only if each blocker has been assigned lethal damage. */
         lethal?: { player: string; needs: Record<string, number> };
-        /** Minimum par destinataire (601.2d : au moins 1 par cible). */
+        /** Minimum per recipient (601.2d: at least 1 per target). */
         minEach?: number;
       }
   );
@@ -118,57 +118,57 @@ export type ChoicePurpose =
   | { kind: "triggerTarget"; trigger: string; spec: string }
   | { kind: "triggerMode"; trigger: string }
   | { kind: "leyline"; player: PlayerId }
-  /** Choix d'un élément déjà sur la pile : nouvelles cibles d'une copie, répartition (voir `StackItem.pendingChoices`). */
+  /** Choice for an item already on the stack: new targets of a copy, division (see `StackItem.pendingChoices`). */
   | { kind: "stackChoice"; stackId: string }
-  /** 903.9a : commandant au cimetière ou en exil, que son propriétaire peut remettre dans la zone de commandement. */
+  /** 903.9a: commander in a graveyard or in exile, which its owner may return to the command zone. */
   | { kind: "commanderZone"; card: ObjectId }
-  /** 502.3 : permanents que le joueur actif peut choisir de ne pas dégager (Hedge Whisperer). */
+  /** 502.3: permanents the active player may choose not to untap (Hedge Whisperer). */
   | { kind: "untap"; player: PlayerId };
 
 export interface CastChoices {
-  /** Sans payer le coût de mana (Omniscience). */
+  /** Without paying the mana cost (Omniscience). */
   free?: boolean;
   /**
-   * Le mana hybride du sort est payé de cette couleur (« si {U}{U} a été dépensé », Deceit) ; sans choix, le paiement
-   * automatique décide. Proposé par `legalActions` (`hybridColors`) quand une capacité du sort dépend du mana dépensé.
+   * The spell's hybrid mana is paid with this color ("if {U}{U} was spent", Deceit); without a choice, automatic
+   * payment decides. Offered by `legalActions` (`hybridColors`) when an ability of the spell depends on the mana spent.
    */
   hybridAs?: ManaType;
-  /** Coût alternatif de la carte. */
+  /** The card's alternative cost. */
   alternative?: boolean;
   mode?: number;
   targets?: Record<string, string[]>;
   x?: number;
   kicked?: boolean;
-  /** Coûts additionnels : cartes défaussées, permanents sacrifiés. */
+  /** Additional costs: discarded cards, sacrificed permanents. */
   discard?: ObjectId[];
   sacrifice?: ObjectId[];
-  /** Permanents engagés pour le coût (station, équipage, monture), choisis par le joueur. */
+  /** Permanents tapped for the cost (station, crew, saddle), chosen by the player. */
   tap?: ObjectId[];
-  /** Matériaux d'une fabrication (702.167), choisis par le joueur. */
+  /** Materials of a craft (702.167), chosen by the player. */
   materials?: ObjectId[];
-  /** Créature engagée renvoyée en main pour le Web-slinging, choisie par le joueur (la moins chère par défaut). */
+  /** Tapped creature returned to hand for Web-slinging, chosen by the player (the cheapest by default). */
   bounce?: ObjectId[];
-  /** Face lancée d'une carte à plusieurs faces (1 : l'aventure) ; absente : la carte elle-même (recto). */
+  /** Face cast of a multi-faced card (1: the adventure); absent: the card itself (front face). */
   face?: number;
-  /** Lancée face cachée pour {3} (déguisement). */
+  /** Cast face down for {3} (disguise). */
   faceDown?: boolean;
-  /** Lancée pour son coût de distorsion (702.185). */
+  /** Cast for its warp cost (702.185). */
   warp?: boolean;
   /**
-   * Objets payés en coût, choisis par le joueur, par emplacement (`CostPick.slot`) ; un emplacement absent prend la
-   * suggestion du moteur (PLAN-C, lots C7 et C8).
+   * Objects paid as a cost, chosen by the player, by slot (`CostPick.slot`); a missing slot takes the engine's
+   * suggestion (PLAN-C, lots C7 and C8).
    */
   picks?: Partial<Record<CostSlot, ObjectId[]>>;
 }
 
 /**
- * Coûts payés avec des objets choisis : flétrir, retirer des marqueurs, exiler des cartes du cimetière (fixe ou X), réunir
- * des preuves, sacrifier X permanents, exiler un autre permanent, renvoyer un attaquant non bloqué (ninjutsu).
+ * Costs paid with chosen objects: blight, remove counters, exile cards from the graveyard (fixed or X), collect
+ * evidence, sacrifice X permanents, exile another permanent, return an unblocked attacker (ninjutsu).
  */
 export type CostSlot =
   | "blight"
   | "counterFrom"
-  /** « Retirez un marqueur de cette créature » : les sortes de marqueurs retirées (options : des sortes, pas des objets). */
+  /** "Remove a counter from this creature": the kinds of counters removed (options: kinds, not objects). */
   | "counterKind"
   | "graveyardExile"
   | "graveyardExileX"
@@ -181,38 +181,38 @@ export type CostSlot =
   | "waterbend"
   | "delve"
   | "sacrificeToPay"
-  /** Coûts additionnels d'un sort (Duskmourn, contempler et exiler) : permanents exilés, renvoyés, engagés ; cartes du cimetière. */
+  /** Additional costs of a spell (Duskmourn, behold and exile): permanents exiled, returned, tapped; graveyard cards. */
   | "costExile"
   | "costBounce"
   | "costTap"
   | "costGraveyard"
-  /** Contempler : le permanent ou la carte de la main contemplé (aucun : ne pas contempler). */
+  /** Behold: the permanent or the card in hand beheld (none: don't behold). */
   | "behold";
 
-/** Un coût payé avec des objets, tel que proposé au joueur (`legalActions`) et vérifié au paiement. */
+/** A cost paid with objects, as offered to the player (`legalActions`) and checked on payment. */
 export interface CostPick {
   slot: CostSlot;
   label: string;
-  /** Nombre d'objets ; `countIsX` : autant que le X choisi. */
+  /** Number of objects; `countIsX`: as many as the chosen X. */
   count: number;
   countIsX?: boolean;
   options: ObjectId[];
-  /** Le choix par défaut (celui du moteur quand le joueur ne choisit pas). */
+  /** The default choice (the engine's, when the player doesn't choose). */
   suggested: ObjectId[];
-  /** Retirer des marqueurs : un même objet peut revenir, au plus autant de fois que ses marqueurs. */
+  /** Removing counters: the same object may come back, at most as many times as it has counters. */
   repeat?: Record<ObjectId, number>;
-  /** Options qui ne sont pas des objets (sortes de marqueurs, `counterKind`) : leur libellé. */
+  /** Options that are not objects (kinds of counters, `counterKind`): their label. */
   labels?: Record<string, string>;
-  /** Réunir des preuves N : des cartes de valeur de mana totale N ou plus (`count` ignoré). */
+  /** Collect evidence N: cards with total mana value N or greater (`count` ignored). */
   minTotal?: { n: number; values: Record<ObjectId, number> };
-  /** Sort : seulement s'il est kické (ou marchandé…), ou lancé pour son coût alternatif. */
+  /** Spell: only if it is kicked (or bargained…), or cast for its alternative cost. */
   when?: "kicked" | "alternative";
   /**
-   * Au plus `count` objets, tous utilisés pour payer (convocation, improvisation, maîtrise de l'eau, cave) ; aucun choix :
-   * le paiement automatique décide (`suggested` vide).
+   * At most `count` objects, all used to pay (convoke, improvise, waterbend, delve); no choice: automatic payment
+   * decides (`suggested` empty).
    */
   atMost?: boolean;
-  /** Le joueur peut ne rien choisir (« vous pouvez contempler ») : une liste vide est une réponse. */
+  /** The player may choose nothing ("you may behold"): an empty list is an answer. */
   optional?: boolean;
 }
 
@@ -221,14 +221,14 @@ export type Decision =
   | { type: "mulligan" }
   | { type: "bottom"; cards: ObjectId[] }
   | { type: "pass" }
-  /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
-  /** `chosen` : « en arrivant, choisissez… » (Cavern of Souls : un type de créature), parmi les options de l'action. */
-  /** `back` : jouer le verso terrain d'une carte modale dont le recto est aussi un terrain (Blightstep Pathway). */
+  /** `landType`: basic land type chosen as it enters (Multiversal Passage). */
+  /** `chosen`: "as it enters, choose…" (Cavern of Souls: a creature type), among the action's options. */
+  /** `back`: play the land back face of a modal card whose front face is also a land (Blightstep Pathway). */
   | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string; chosen?: string; back?: boolean }
   | ({ type: "cast"; card: ObjectId } & CastChoices)
   | ({ type: "activate"; source: ObjectId; ability: number } & CastChoices)
   | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType }
-  /** Annule l'engagement d'une source pour son mana, tant que ce mana n'a pas servi (`GameState.manaUndo`). */
+  /** Undoes tapping a source for its mana, as long as that mana hasn't been used (`GameState.manaUndo`). */
   | { type: "undoMana"; source: ObjectId }
   | { type: "declareAttackers"; attackers: { id: ObjectId; defender: PlayerId }[] }
   | { type: "declareBlockers"; blocks: { blocker: ObjectId; attacker: ObjectId }[] }
@@ -241,36 +241,36 @@ export interface TargetOption {
   label?: string;
   optional: boolean;
   legal: string[];
-  /** Nombre maximal de cibles pour ce mot « cible » (1 par défaut). */
+  /** Maximum number of targets for this "target" word (1 by default). */
   count?: number;
-  /** Nombre minimal de cibles (« une ou deux cibles ») ; `count` par défaut. */
+  /** Minimum number of targets ("one or two targets"); `count` by default. */
   min?: number;
-  /** Exactement X cibles (`true`), ou jusqu'à X (`"upTo"`), X étant choisi pour le sort ou la capacité. */
+  /** Exactly X targets (`true`), or up to X (`"upTo"`), X being chosen for the spell or ability. */
   countX?: boolean | "upTo";
-  /** Contrainte entre les cibles : même joueur, ou joueurs différents (avec le joueur de chaque cible). */
+  /** Constraint between the targets: same player, or different players (with the player of each target). */
   group?: { kind: "same" | "different"; holders: Record<string, string> };
   kickedCount?: number;
-  /** Cibles légales si le sort est kické ou si le cadeau est promis (filtre différent). */
+  /** Legal targets if the spell is kicked or if the gift is promised (different filter). */
   kickedLegal?: string[];
   otherThan?: string[];
   attachedToTarget?: string;
   /**
-   * « Le joueur ciblé … les cartes ciblées de son cimetière » (Rite of Renewal) : chaque cible doit être tenue par une cible
-   * de l'autre mot `id` ; `holders` : le joueur qui tient chaque cible légale.
+   * "Target player … target cards from their graveyard" (Rite of Renewal): each target must be held by a target of the
+   * other word `id`; `holders`: the player who holds each legal target.
    */
   ofTarget?: { id: string; holders: Record<string, string> };
-  /** « Valeur de mana totale N ou moins » (Scout for Survivors) : N et la valeur de mana de chaque cible légale. */
+  /** "Total mana value N or less" (Scout for Survivors): N and the mana value of each legal target. */
   maxTotalManaValue?: { max: number; values: Record<string, number> };
   /**
-   * « Qui partagent un type de créature » (Secret Tunnel) : les types de créature de chaque cible légale (`"*"` : tous,
-   * changelin).
+   * "That share a creature type" (Secret Tunnel): the creature types of each legal target (`"*"`: all,
+   * changeling).
    */
   shareCreatureType?: Record<string, string[]>;
-  /** Au moins une des cibles doit être l'une de celles-ci (la réduction de coût qui rend le sort payable). */
+  /** At least one of the targets must be one of these (the cost reduction that makes the spell affordable). */
   requiredAmong?: string[];
   /**
-   * « Valeur de mana X ou moins » (`TargetSpec.maxManaValueAmount` valant X) : la plus petite valeur de X qui rend chaque
-   * cible légale (sa valeur de mana) ; les cibles qui demandent plus que le plus grand X payable ne sont pas proposées
+   * "Mana value X or less" (`TargetSpec.maxManaValueAmount` being X): the smallest value of X that makes each target
+   * legal (its mana value); targets that require more than the largest affordable X are not offered
    * (Kozilek's Command, Here Comes a New Hero!, Agadeem's Awakening).
    */
   xAtLeast?: Record<string, number>;
@@ -280,17 +280,17 @@ export interface ModeOption {
   index: number;
   label?: string;
   targets: TargetOption[];
-  /** Mode possible seulement en payant le coût additionnel (« si vous l'avez payé, choisissez les deux »). */
+  /** Mode possible only by paying the additional cost ("if you paid it, choose both"). */
   requiresKicker?: boolean;
-  /** Mode possible seulement sans payer le coût additionnel (un seul mode : « s'il a été payé, choisissez les deux »). */
+  /** Mode possible only without paying the additional cost (a single mode: "if it was paid, choose both"). */
   forbidsKicker?: boolean;
 }
 
 export type ActionOption =
   | { type: "pass" }
-  /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
-  /** `choose` : la question « en arrivant, choisissez… » du terrain, à poser en le jouant (réponse : `chosen`). */
-  /** `back` et `faceName` : le verso terrain d'une carte modale dont le recto est aussi un terrain. */
+  /** `landType`: basic land type chosen as it enters (Multiversal Passage). */
+  /** `choose`: the land's "as it enters, choose…" question, to ask when playing it (answer: `chosen`). */
+  /** `back` and `faceName`: the land back face of a modal card whose front face is also a land. */
   | {
       type: "playLand";
       card: ObjectId;
@@ -303,61 +303,61 @@ export type ActionOption =
   | {
       type: "cast";
       card: ObjectId;
-      /** Face lancée (aventure…) et son nom, pour l'interface. */
+      /** Face cast (adventure…) and its name, for the interface. */
       face?: number;
       faceName?: string;
-      /** Lancée face cachée pour {3} (déguisement). */
+      /** Cast face down for {3} (disguise). */
       faceDown?: boolean;
-      /** Lancée pour son coût de distorsion. */
+      /** Cast for its warp cost. */
       warp?: boolean;
       modes: ModeOption[];
       xMax: number | null;
       kickerAffordable: boolean;
-      /** Coût optionnel propre à l'extension (Bloomburrow) : question et réponses affichées à la place de « kicker ». */
+      /** Optional cost specific to the set (Bloomburrow): question and answers displayed instead of "kicker". */
       kickerPrompt?: { title: string; without: string; with: string };
-      /** Couleurs possibles pour payer le mana hybride, quand le résultat en dépend (`CastChoices.hybridAs`). */
+      /** Possible colors to pay the hybrid mana, when the outcome depends on it (`CastChoices.hybridAs`). */
       hybridColors?: ManaType[];
-      /** Lancée depuis le cimetière grâce au flashback. */
+      /** Cast from the graveyard thanks to flashback. */
       fromGraveyard?: boolean;
-      /** Carte exilée jouable (impulsion, Etali, Tinybones). */
+      /** Playable exiled card (impulse, Etali, Tinybones). */
       fromExile?: boolean;
-      /** Doit être lancée sans payer son coût de mana (Etali). */
+      /** Must be cast without paying its mana cost (Etali). */
       free?: boolean;
-      /** Peut être lancée sans payer son coût de mana (Omniscience). */
+      /** May be cast without paying its mana cost (Omniscience). */
       freeAvailable?: boolean;
-      /** Coût alternatif payable (Blasphemous Edict). */
+      /** Alternative cost affordable (Blasphemous Edict). */
       altAvailable?: boolean;
-      /** Libellé du coût alternatif (« Imminence 4 — {2}{W}{W} »). */
+      /** Label of the alternative cost ("Impending 4—{2}{W}{W}"). */
       altLabel?: string;
-      /** Coût normal payable. */
+      /** Normal cost affordable. */
       normalAvailable?: boolean;
       additional?: {
-        /** `orLife` : on peut payer ces PV au lieu de défausser ; `orSacrifice` : les options comprennent des permanents. */
+        /** `orLife`: this life may be paid instead of discarding; `orSacrifice`: the options include permanents. */
         discard?: {
           count: number;
           options: ObjectId[];
           orLife?: number;
           orSacrifice?: boolean;
-          /** « … ou payez [mana] » (Titania) ; `orPayAffordable` : ce mana est payable. */
+          /** "… or pay [mana]" (Titania); `orPayAffordable`: this mana is affordable. */
           orPay?: ManaCost;
           orPayAffordable?: boolean;
         };
-        /** `orPay` : on peut payer ce mana au lieu de sacrifier (Eaten Alive). */
+        /** `orPay`: this mana may be paid instead of sacrificing (Eaten Alive). */
         sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
         /**
-         * Harmonie (702.180) : au plus `count` (1) créature à engager, facultative, qui réduit le coût de sa force
-         * (`powers`) ; `suggested` : le choix par défaut (appliqué si la décision n'a pas de `tap`).
+         * Harmonize (702.180): at most `count` (1) creature to tap, optional, which reduces the cost by its power
+         * (`powers`); `suggested`: the default choice (applied if the decision has no `tap`).
          */
         tap?: { count: number; options: ObjectId[]; powers: Record<ObjectId, number>; suggested: ObjectId[]; optional: true };
       };
       /**
-       * Kicker sans mana (Marchandage, FIN) : permanents qui peuvent le payer si le sort est kické, le choix par défaut en
-       * premier ; le joueur en désigne un par `sacrifice`.
+       * Kicker without mana (Bargain, FIN): permanents that can pay it if the spell is kicked, the default choice
+       * first; the player designates one with `sacrifice`.
        */
       kickerPermanents?: ObjectId[];
-      /** Web-slinging : créatures engagées qui peuvent être renvoyées (la moins chère en premier), désignées par `bounce`. */
+      /** Web-slinging: tapped creatures that can be returned (the cheapest first), designated with `bounce`. */
       altBounce?: ObjectId[];
-      /** Travail d'équipe : créatures à engager si le sort est kické (force totale `minPower`), désignées par `tap`. */
+      /** Teamwork: creatures to tap if the spell is kicked (total power `minPower`), designated with `tap`. */
       kickerTap?: {
         count: number;
         options: ObjectId[];
@@ -365,7 +365,7 @@ export type ActionOption =
         powers: Record<ObjectId, number>;
         suggested: ObjectId[];
       };
-      /** Objets payés en coût à choisir (preuves, exil du cimetière, flétrir X), quand il y a un choix. */
+      /** Objects paid as a cost to choose (evidence, graveyard exile, blight X), when there is a choice. */
       picks?: CostPick[];
     }
   | {
@@ -375,13 +375,13 @@ export type ActionOption =
       label?: string;
       targets: TargetOption[];
       xMax: number | null;
-      /** Plus petite valeur de X permise (« X ne peut pas être 0 »). */
+      /** Smallest allowed value of X ("X can't be 0"). */
       xMin?: number;
       additional?: {
         sacrifice?: { count: number; options: ObjectId[] };
         /**
-         * Permanents à engager : exactement `count` (station), ou, avec `minPower`, autant qu'on veut pourvu que leur force
-         * totale (`powers`) atteigne `minPower` (équipage, monture). `suggested` : le choix par défaut.
+         * Permanents to tap: exactly `count` (station), or, with `minPower`, as many as desired provided their total
+         * power (`powers`) reaches `minPower` (crew, saddle). `suggested`: the default choice.
          */
         tap?: {
           count: number;
@@ -391,16 +391,16 @@ export type ActionOption =
           suggested?: ObjectId[];
         };
         discard?: { count: number; options: ObjectId[] };
-        /** Fabrication : entre `min` et `max` matériaux parmi `options` (cimetière et permanents). */
+        /** Craft: between `min` and `max` materials among `options` (graveyard and permanents). */
         materials?: { min: number; max: number; options: ObjectId[]; suggested: ObjectId[] };
       };
-      /** Objets payés en coût à choisir (flétrir, preuves, exil du cimetière…), quand il y a un choix. */
+      /** Objects paid as a cost to choose (blight, evidence, graveyard exile…), when there is a choice. */
       picks?: CostPick[];
     }
   | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[] };
 
 // ---------------------------------------------------------------------------
-// Événements (journal, animations)
+// Events (log, animations)
 // ---------------------------------------------------------------------------
 
 export type GameEvent =
@@ -417,9 +417,9 @@ export type GameEvent =
   | { type: "fizzle"; stackId: string; defId: string }
   | { type: "copy"; stackId: string; defId: string; player: PlayerId }
   | { type: "poison"; player: PlayerId; amount: number; total: number }
-  /** Marqueurs de radiation reçus (`amount` > 0) ou retirés par la radiation (`amount` < 0) ; `total` : après. */
+  /** Rad counters received (`amount` > 0) or removed by radiation (`amount` < 0); `total`: afterwards. */
   | { type: "rad"; player: PlayerId; amount: number; total: number }
-  /** Le joueur devient le monarque (724). */
+  /** The player becomes the monarch (724). */
   | { type: "monarch"; player: PlayerId }
   | { type: "endTurn"; player: PlayerId }
   | { type: "countered"; stackId: string; defId: string; by: string }
@@ -429,26 +429,26 @@ export type GameEvent =
   | { type: "dies"; objectId: ObjectId; defId: string; to: Zone }
   | { type: "destroy"; objectId: ObjectId; defId: string }
   | { type: "token"; objectId: ObjectId; defId: string; controller: PlayerId }
-  /** Cartes révélées à tous (dessus de la bibliothèque qui explore…). */
+  /** Cards revealed to everyone (top of the library of a creature that explores…). */
   | { type: "reveal"; player: PlayerId; defIds: string[] }
-  /** Cadeau (702.174) offert par `player` à `to`. */
+  /** Gift (702.174) offered by `player` to `to`. */
   | { type: "gift"; player: PlayerId; to: PlayerId; kind: GiftKind }
-  /** Un permanent face cachée est retourné face visible (la carte est révélée). */
+  /** A face-down permanent is turned face up (the card is revealed). */
   | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
-  /** 702.170 : la carte devient complotée. */
+  /** 702.170: the card becomes plotted. */
   | { type: "plotted"; player: PlayerId; defId: string }
-  /** 705 : pile ou face. */
+  /** 705: coin flip. */
   | { type: "coinFlip"; player: PlayerId; won: boolean }
   | { type: "dieRoll"; player: PlayerId; sides: number; result: number }
-  /** Un plafond de sécurité a coupé un montant (`limits.ts`) : approximation signalée au journal. */
+  /** A safety cap cut an amount (`limits.ts`): approximation reported in the log. */
   | { type: "capReached"; cap: "tokens" | "amount" | "permutations" | "layers" }
-  /** 702.179 : nouvelle vitesse du joueur. */
+  /** 702.179: the player's new speed. */
   | { type: "speed"; player: PlayerId; speed: number }
-  /** 722 : `by` contrôle le tour de `player`. */
+  /** 722: `by` controls `player`'s turn. */
   | { type: "turnControl"; player: PlayerId; by: PlayerId; combatOnly?: boolean }
-  /** Présage (702.143) : une carte de la main est exilée, lançable plus tard. */
+  /** Foretell (702.143): a card in hand is exiled, castable later. */
   | { type: "foretold"; player: PlayerId; defId: string }
-  /** Un permanent recto-verso se transforme (`defId` : la face désormais visible). */
+  /** A double-faced permanent transforms (`defId`: the face now visible). */
   | { type: "transform"; objectId: ObjectId; defId: string }
   | { type: "attack"; player: PlayerId; attackers: { id: ObjectId; defId: string }[] }
   | {
@@ -457,13 +457,13 @@ export type GameEvent =
       blocks: { blocker: ObjectId; attacker: ObjectId; blockerDefId: string; attackerDefId: string }[];
     }
   | { type: "discard"; player: PlayerId; defIds: string[] }
-  /** `objectId` et `defId` sont retirés (filterEvents) pour un déplacement caché → caché d'une carte adverse. */
-  /** `faceDown` : exilée face cachée, visible des seuls joueurs listés (filtré par `filterEvents`). */
+  /** `objectId` and `defId` are removed (filterEvents) for a hidden → hidden move of an opponent's card. */
+  /** `faceDown`: exiled face down, visible only to the listed players (filtered by `filterEvents`). */
   | { type: "moved"; owner: PlayerId; objectId?: ObjectId; defId?: string; from: Zone; to: Zone; faceDown?: PlayerId[] }
   | { type: "scry"; player: PlayerId; top: number; bottom: number }
   | { type: "choice"; player: PlayerId; intent: ChoiceIntent }
   | { type: "trigger"; player: PlayerId; stackId: string; defId: string; targets: string[] }
-  /** `commander` : 21 blessures de combat d'un même commandant (704.6c). */
+  /** `commander`: 21 combat damage from the same commander (704.6c). */
   | { type: "lose"; player: PlayerId; reason: "life" | "draw" | "poison" | "concede" | "commander" }
-  /** `reason` : « loop », partie nulle sur une boucle d'actions obligatoires (104.4b). */
+  /** `reason`: "loop", game drawn on a loop of mandatory actions (104.4b). */
   | { type: "gameOver"; winner: PlayerId | null; reason?: "loop" };

@@ -1,10 +1,10 @@
 /**
- * Types centraux du moteur. Tout ce qui est dans GameState est sérialisable en JSON :
- * pas de classes, pas de fonctions, pas de Map/Set.
+ * Core types of the engine. Everything in GameState is JSON-serializable:
+ * no classes, no functions, no Map/Set.
  */
 
 // ---------------------------------------------------------------------------
-// Cartes
+// Cards
 // ---------------------------------------------------------------------------
 
 export type Color = "W" | "U" | "B" | "R" | "G";
@@ -14,25 +14,25 @@ export const MANA_TYPES: readonly ManaType[] = ["W", "U", "B", "R", "G", "C"];
 
 export interface ManaCost {
   generic: number;
-  /** Symboles colorés (ou {C}) : nombre de chaque type requis. */
+  /** Colored symbols (or {C}): number of each type required. */
   colored: Partial<Record<ManaType, number>>;
-  /** Nombre de {X} dans le coût. */
+  /** Number of {X} in the cost. */
   x: number;
-  /** Symboles hybrides : chacun se paie avec l'un des deux types. */
+  /** Hybrid symbols: each is paid with either of the two types. */
   hybrid?: [ManaType, ManaType][];
-  /** Hybrides monocolores {2/W} : un mana de cette couleur ou deux mana génériques. */
+  /** Monocolored hybrids {2/W}: one mana of that color or two generic mana. */
   twoHybrid?: ManaType[];
-  /** Mana phyrexian {G/P} (107.4f) : un mana de cette couleur ou 2 points de vie. */
+  /** Phyrexian mana {G/P} (107.4f): one mana of that color or 2 life. */
   phyrexian?: ManaType[];
 }
 
 export type CardType = "Land" | "Creature" | "Artifact" | "Enchantment" | "Instant" | "Sorcery" | "Planeswalker" | "Battle";
 
-/** Types de permanent (110.4). */
+/** Permanent types (110.4). */
 export const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
-/** Types de terrain de base (305.6). */
+/** Basic land types (305.6). */
 export const BASIC_LAND_TYPES: readonly string[] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
-/** Types de terrain (205.3i) : de nouveaux types de terrain ne remplacent que ceux-là (205.1a, 305.7). */
+/** Land types (205.3i): new land types replace only these (205.1a, 305.7). */
 export const LAND_TYPES: ReadonlySet<string> = new Set([
   "Cave",
   "Cloud",
@@ -68,61 +68,61 @@ export type Keyword =
   | "defender"
   | "flash"
   | "hexproof"
-  /** Défense totale (702.18) : ne peut être la cible d'aucun sort ni capacité. */
+  /** Shroud (702.18): can't be the target of spells or abilities. */
   | "shroud"
   | "indestructible"
   | "prowess"
-  /** Garde (702.21) : la capacité déclenchée est générée à partir du coût lu dans le texte. */
+  /** Ward (702.21): the triggered ability is generated from the cost read in the text. */
   | "ward"
-  /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
+  /** Changeling (702.73): has every creature type, in every zone. */
   | "changeling"
-  /** Flétrissure (702.80) : ses blessures aux créatures prennent la forme de marqueurs −1/−1. */
+  /** Wither (702.80): its damage to creatures is dealt in the form of −1/−1 counters. */
   | "wither"
-  /** Infection (702.90) : marqueurs −1/−1 aux créatures, marqueurs poison aux joueurs. */
+  /** Infect (702.90): −1/−1 counters to creatures, poison counters to players. */
   | "infect"
-  /** Toxique N (702.164) : un joueur qu'elle blesse au combat reçoit aussi N marqueurs poison (N : `CardDef.toxic`). */
+  /** Toxic N (702.164): a player it deals combat damage to also gets N poison counters (N: `CardDef.toxic`). */
   | "toxic"
-  /** « Doit être bloquée si possible » (509.1c). */
+  /** "Must be blocked if able" (509.1c). */
   | "mustBeBlocked"
-  /** Wolverine : « si des blessures devaient lui être infligées, elles le sont, mais les autres blessures sont guéries ». */
+  /** Wolverine: "if damage would be dealt to it, it is, but its other damage is healed". */
   | "damageHealsFirst"
-  /** Restrictions (pas des mots-clés imprimés, mais gérées comme des capacités de couche 6). */
+  /** Restrictions (not printed keywords, but handled as layer 6 abilities). */
   | "cantBlock"
   | "cantAttack"
   | "unblockable"
   | "mustAttack"
-  /** Stuck in Summoner's Sanctum : « ses capacités activées ne peuvent pas être activées ». */
+  /** Stuck in Summoner's Sanctum: "its activated abilities can't be activated". */
   | "noActivatedAbilities"
-  /** Ancient Adamantoise : « les blessures ne sont pas retirées de cette créature pendant l'étape de nettoyage ». */
+  /** Ancient Adamantoise: "damage isn't removed from this creature during cleanup steps". */
   | "keepsDamage"
-  /** Ancient Adamantoise : les blessures infligées à son contrôleur et à ses autres permanents lui sont infligées à la place. */
+  /** Ancient Adamantoise: damage that would be dealt to its controller and their other permanents is dealt to it instead. */
   | "absorbsDamage"
-  /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
+  /** Convoke (702.51): creatures can help pay for the spell. */
   | "convoke"
-  /** Improvisation (702.126) : les artefacts dégagés peuvent payer {1} chacun du coût du sort. */
+  /** Improvise (702.126): untapped artifacts can each pay {1} of the spell's cost. */
   | "improvise"
-  /** Cave (702.66) : chaque carte exilée de votre cimetière paie {1} du coût du sort. */
+  /** Delve (702.66): each card exiled from your graveyard pays {1} of the spell's cost. */
   | "delve"
-  /** Second partagé (702.61) : tant que ce sort est sur la pile, ni sorts ni capacités (hors mana). */
+  /** Split second (702.61): while this spell is on the stack, no spells or abilities (other than mana abilities). */
   | "splitSecond"
-  /** Rebond (702.88) : lancé depuis la main, exilé en se résolvant ; relançable gratuitement à votre prochain entretien. */
+  /** Rebound (702.88): cast from hand, exiled as it resolves; may be cast again for free at your next upkeep. */
   | "rebound"
-  /** Émeute (702.136) : il arrive avec un marqueur +1/+1 ou la célérité, au choix de son contrôleur. */
+  /** Riot (702.136): it enters with a +1/+1 counter or haste, as its controller chooses. */
   | "riot"
-  /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
+  /** Ghalta the Immovable: can attack as though it didn't have defender. */
   | "attacksDespiteDefender"
-  /** « Start your engines! » (702.179) : si vous n'avez pas de vitesse, elle démarre à 1. */
+  /** "Start your engines!" (702.179): if you have no speed, it starts at 1. */
   | "startYourEngines"
-  /** Décomposition (702.147) : ne peut pas bloquer, et quand elle attaque, elle est sacrifiée à la fin du combat. */
+  /** Decayed (702.147): can't block, and when it attacks, it is sacrificed at end of combat. */
   | "decayed"
-  /** Ascension (702.131) : avec dix permanents ou plus, son contrôleur reçoit la bénédiction de la cité pour la partie. */
+  /** Ascend (702.131): with ten or more permanents, its controller gets the city's blessing for the rest of the game. */
   | "ascend"
-  /** « Ne peut pas être sacrifié » (Zurgo, Thunder's Decree : ses jetons Guerrier pendant votre étape de fin). */
+  /** "Can't be sacrificed" (Zurgo, Thunder's Decree: its Warrior tokens during your end step). */
   | "cantBeSacrificed"
-  /** « Ne peut pas devenir suspecte » (Airtight Alibi, 701.60). */
+  /** "Can't become suspected" (Airtight Alibi, 701.60). */
   | "cantBeSuspected";
 
-/** Restrictions : affichées différemment des mots-clés. */
+/** Restrictions: displayed differently from keywords. */
 export const RESTRICTIONS: readonly Keyword[] = [
   "cantBlock",
   "cantAttack",
@@ -160,7 +160,7 @@ import type { Effect } from "./model/effects";
 
 const MANA_OPS = new Set<Effect["op"]>(["addMana", "addManaChoice", "addManaColorsAmong", "addManaUntilEndOfTurn"]);
 
-/** Un effet (ou un effet imbriqué : « si… », « vous pouvez… ») ajoute-t-il du mana ? */
+/** Does an effect (or a nested effect: "if…", "you may…") add mana? */
 function addsMana(effects: readonly Effect[]): boolean {
   return effects.some(
     (e) =>
@@ -170,14 +170,14 @@ function addsMana(effects: readonly Effect[]): boolean {
 }
 
 /**
- * 605.1a : une capacité activée sans cible, qui n'est pas une capacité de loyauté et qui peut ajouter du mana, est une
- * capacité de mana (Ramos, Capital City, Loot, the Pathfinder…).
+ * 605.1a: an activated ability without a target, that isn't a loyalty ability and that could add mana, is a mana
+ * ability (Ramos, Capital City, Loot, the Pathfinder…).
  */
 export function isManaAbility(ab: ActivatedAbilityDef): boolean {
   return ab.targets.length === 0 && ab.cost.loyalty === undefined && addsMana(ab.effects);
 }
 
-/** Une capacité de mana (605.1a) : une capacité `mana`, ou une capacité activée qui en est une (`isManaAbility`). */
+/** A mana ability (605.1a): a `mana` ability, or an activated ability that is one (`isManaAbility`). */
 export function isAnyManaAbility(ab: AbilityDef): boolean {
   return ab.kind === "mana" || (ab.kind === "activated" && isManaAbility(ab));
 }

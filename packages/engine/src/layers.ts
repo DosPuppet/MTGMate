@@ -1,17 +1,17 @@
 /**
- * Système de couches (613) : caractéristiques calculées des objets.
+ * Layer system (613): computed characteristics of objects.
  *
- * Toutes les caractéristiques du champ de bataille sont calculées en une passe, couche par couche,
- * les effets de chaque couche étant appliqués par ordre d'horodatage :
- *   4 types · 5 couleurs · 6 capacités · 7b F/E fixées · 7c modifications et marqueurs · 7d échange.
- * Les effets viennent de deux sources : les effets continus issus de résolutions (s.effects, ensemble
- * d'objets verrouillé) et les capacités statiques des permanents (ensemble réévalué à chaque calcul).
+ * All characteristics of the battlefield are computed in one pass, layer by layer, the effects of each layer being
+ * applied in timestamp order:
+ *   4 types · 5 colors · 6 abilities · 7b set P/T · 7c modifications and counters · 7d switch.
+ * Effects come from two sources: continuous effects from resolutions (s.effects, locked set of objects) and static
+ * abilities of permanents (set re-evaluated at each computation).
  *
- * Le résultat est mis en cache par état et par `s.version`, que le moteur incrémente à chaque changement
- * pouvant affecter les caractéristiques (voir `bump`). Le fuzz vérifie que le cache ne diverge jamais.
- * Couche 1 : copie d'une définition (`copyOf`), pour une durée, avec ses exceptions copiables (707.9b). La couche 2
- * (contrôle) est calculée à part (`control.ts`). Dépendances (613.8) : par point fixe (`computeBattlefield`) ; limite :
- * une statique accordée par une autre statique n'est pas gérée.
+ * The result is cached per state and per `s.version`, which the engine increments at each change that can affect
+ * characteristics (see `bump`). The fuzz checks that the cache never diverges.
+ * Layer 1: copy of a definition (`copyOf`), for a duration, with its copiable exceptions (707.9b). Layer 2 (control)
+ * is computed separately (`control.ts`). Dependencies (613.8): by fixed point (`computeBattlefield`); limit: a static
+ * granted by another static isn't handled.
  */
 import { capReached, MAX_LAYER_PASSES } from "./limits";
 import { manaValue } from "./mana";
@@ -20,6 +20,7 @@ import { grantedSpellKeywords } from "./stack";
 import { commandZoneAbilities, counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
 import { ALL_CREATURE_TYPES, hasChosen, matchesObjectFilter, matchesView, withChosen } from "./targets";
+import { msg } from "./text";
 import { checkCondition } from "./triggers";
 import { countersPutThisTurn, countTurnEvents, onTurnLogged } from "./turnlog";
 import type {
@@ -51,26 +52,26 @@ export interface Characteristics {
   colors: Color[];
   power: number;
   toughness: number;
-  /** Force de base : après la couche 7b (F/E fixées), avant les marqueurs et les modifications. */
+  /** Base power: after layer 7b (set P/T), before counters and modifications. */
   basePower?: number;
   keywords: Keyword[];
-  /** Capacités non-mot-clé effectives (vides si l'objet a perdu toutes ses capacités). */
+  /** Effective non-keyword abilities (empty if the object lost all its abilities). */
   abilities: AbilityDef[];
   /**
-   * Capacités accordées par la capacité statique d'un autre permanent (« la créature équipée a "…" ») : le permanent qui
-   * accorde chacune, par rang dans `abilities` (Fishing Pole, Trusty Boomerang : `ref.grantor`, coût `grantor`).
+   * Abilities granted by the static ability of another permanent ("equipped creature has '…'"): the permanent that
+   * grants each, by rank in `abilities` (Fishing Pole, Trusty Boomerang: `ref.grantor`, cost `grantor`).
    */
   grantors?: Record<number, ObjectId>;
-  /** Règles de blocage (« ne peut pas être bloquée par… »), comme des capacités. */
+  /** Blocking rules ("can't be blocked by…"), as abilities. */
   blockRules: BlockRule[];
-  /** Protections et défenses talismaniques « contre [filtre] ». */
+  /** Protections and hexproofs "from [filter]". */
   protections: ProtectionRule[];
-  /** « Utilise son endurance pour » (blessures de combat, équipage, station). */
+  /** "Uses its toughness for" (combat damage, crew, station). */
   powerRules: PowerRule[];
   controller: PlayerId;
 }
 
-/** 122.1b : marqueurs qui donnent un mot-clé (le nom du marqueur est celui du mot-clé du moteur). */
+/** 122.1b: counters that grant a keyword (the counter name is that of the engine keyword). */
 const KEYWORD_COUNTERS: Record<string, Keyword> = {
   flying: "flying",
   firstStrike: "firstStrike",
@@ -87,7 +88,7 @@ const KEYWORD_COUNTERS: Record<string, Keyword> = {
   decayed: "decayed",
 };
 
-/** Une règle de blocage qui désigne « vous », le joueur ou l'objet de l'événement (à figer, `resolveBlockRules`). */
+/** A blocking rule that designates "you", the player or the object of the event (to be fixed, `resolveBlockRules`). */
 export function blockRulePlaceholder(r: BlockRule): boolean {
   return (
     r.cantAttackPlayer === "you" ||
@@ -99,9 +100,9 @@ export function blockRulePlaceholder(r: BlockRule): boolean {
 }
 
 /**
- * Fige les joueurs et objets désignés dans un script : « vous » devient le contrôleur de la source (statique) ou de
- * l'effet (résolution), le joueur et l'objet de l'événement ceux de l'événement déclencheur. Sans événement, l'exigence
- * correspondante disparaît.
+ * Fixes the players and objects designated in a script: "you" becomes the controller of the source (static) or of the
+ * effect (resolution), the player and the object of the event those of the trigger event. Without an event, the
+ * matching requirement disappears.
  */
 export function resolveBlockRules(
   rules: BlockRule[],
@@ -121,19 +122,19 @@ export function resolveBlockRules(
   });
 }
 
-/** Invalide le cache des caractéristiques. */
+/** Invalidates the characteristics cache. */
 export function bump(s: GameState): void {
   s.version += 1;
 }
 
-/** 604.3 / 613.4a : F/E définies par une capacité (« égales au nombre de cartes dans les cimetières adverses »). */
-/** Filtre évalué sur les caractéristiques imprimées (types, sous-types, « l'un de ») : pas de récursion dans les couches. */
-/** Force totale (imprimée) des cartes liées. */
+/** 604.3 / 613.4a: P/T defined by an ability ("equal to the number of cards in opponents' graveyards"). */
+/** Filter evaluated on the printed characteristics (types, subtypes, "one of"): no recursion into the layers. */
+/** Total (printed) power of the linked cards. */
 export function linkedTotalPower(s: GameState, linked: ObjectId[] | undefined): number {
   return (linked ?? []).reduce((n, id) => n + Math.max(0, s.defs[s.objects[id]?.defId ?? ""]?.power ?? 0), 0);
 }
 
-/** Couleurs (imprimées) parmi les cartes liées. */
+/** (Printed) colors among the linked cards. */
 export function linkedColors(s: GameState, linked: ObjectId[] | undefined): Color[] {
   return [...new Set((linked ?? []).flatMap((id) => s.defs[s.objects[id]?.defId ?? ""]?.colors ?? []))];
 }
@@ -144,7 +145,7 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
   if (f.notTypes?.some((t) => d.types.includes(t))) return false;
   if (f.subtype && !d.subtypes.includes(f.subtype)) return false;
   if (f.notSubtype && d.subtypes.includes(f.notSubtype)) return false;
-  // Super-Adaptoid : « le nombre de créatures légendaires que vous contrôlez ».
+  // Super-Adaptoid: "the number of legendary creatures you control".
   if (f.legendary && !(d as { supertypes?: string[] }).supertypes?.includes("Legendary")) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => d.subtypes.includes(t))) return false;
   if (f.anyOf && !f.anyOf.some((g) => printedMatch(d, g))) return false;
@@ -152,7 +153,7 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
   return true;
 }
 
-/** Une valeur de F/E définie par une capacité qui lit les permanents (et dépend donc des couches, 613.8). */
+/** A P/T value defined by an ability that reads the permanents (and therefore depends on the layers, 613.8). */
 function readsBattlefield(a: Amount): boolean {
   if (typeof a === "number") return false;
   if (a.kind === "sum") return a.of.some(readsBattlefield);
@@ -160,41 +161,41 @@ function readsBattlefield(a: Amount): boolean {
   return a.kind === "count" && (!a.zone || a.zone === "battlefield");
 }
 
-/** Types et sous-types d'un permanent pendant le calcul : ceux de la passe précédente (613.8), sinon imprimés. */
+/** Types and subtypes of a permanent during the computation: those of the previous pass (613.8), otherwise printed. */
 function typesOf(s: GameState, id: ObjectId): { types: CardType[]; subtypes: string[] } | undefined {
   return provisional?.get(id) ?? s.defs[obj(s, id).defId];
 }
 
 /**
- * Montants que `cdaValue` sait calculer pendant le calcul des couches (F/E définies par une capacité, bonus « pour
- * chaque »), par clé (`cdaKey` : la sorte, ou pour un agrégat sa fonction, sa propriété et ses objets). Tout autre montant
- * vaudrait 0 : `cards/test/cda.test.ts` vérifie qu'aucune carte n'en utilise (PLAN-C, lot C10).
+ * Amounts `cdaValue` can compute during the layer computation (P/T defined by an ability, "for each" bonuses), by key
+ * (`cdaKey`: the kind, or for an aggregate its function, its property and its objects). Any other amount would be 0:
+ * `cards/test/cda.test.ts` checks that no card uses one (PLAN-C, lot C10).
  */
 export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
   "sum",
-  // Omnath, Locus of the Void : le mana inutilisé de son contrôleur.
+  // Omnath, Locus of the Void: its controller's unspent mana.
   "manaInPool",
   "graveyardsWithAtLeast",
   "turnEvents",
   "count",
-  // Fabrication : cartes exilées pour fabriquer ce permanent (Mastercraft Raptor, Sunbird Effigy).
+  // Fabricate: cards exiled to craft this permanent (Mastercraft Raptor, Sunbird Effigy).
   "aggregate:sum:power:linked",
   "aggregate:distinct:color:linked",
-  // Tarmogoyf : types de cartes parmi les cartes de tous les cimetières.
+  // Tarmogoyf: card types among cards in all graveyards.
   "aggregate:distinct:cardType:graveyard:all",
-  // Domaine ; Vivid (Squawkroaster) ; Toph, the Blind Bandit ; Emissary Escort.
+  // Domain; Vivid (Squawkroaster); Toph, the Blind Bandit; Emissary Escort.
   "aggregate:distinct:basicLandType",
   "aggregate:distinct:color",
   "aggregate:sum:counters",
   "aggregate:max:manaValue",
-  // Dragon Man, Reformed Robot : la plus grande valeur de mana parmi vos permanents et vos cartes de cimetière.
+  // Dragon Man, Reformed Robot: the greatest mana value among your permanents and graveyard cards.
   "max",
   "aggregate:max:manaValue:graveyard:you",
-  // Unlicensed Hearse : nombre de cartes exilées avec lui (cartes liées encore en exil).
+  // Unlicensed Hearse: number of cards exiled with it (linked cards still in exile).
   "refCount:linked",
 ]);
 
-/** Clé d'un montant pour `CDA_AMOUNT_KINDS`. */
+/** Key of an amount for `CDA_AMOUNT_KINDS`. */
 export function cdaKey(a: Exclude<Amount, number>): string {
   if (a.kind === "refCount") return `refCount:${a.ref.kind}`;
   if (a.kind !== "aggregate") return a.kind;
@@ -202,10 +203,10 @@ export function cdaKey(a: Exclude<Amount, number>): string {
   return ["aggregate", a.fn, a.property, ...objects].join(":");
 }
 
-/** Agrégats calculables pendant le calcul des couches : caractéristiques imprimées, ou de la passe précédente (613.8). */
+/** Aggregates computable during the layer computation: printed characteristics, or of the previous pass (613.8). */
 function cdaAggregate(s: GameState, o: GameObject, a: Extract<Amount, { kind: "aggregate" }>): number {
   const filter = a.filter ?? {};
-  // Permanents du filtre, vus du contrôleur de `o` (types de la passe précédente, sinon imprimés).
+  // Permanents of the filter, seen from the controller of `o` (types of the previous pass, otherwise printed).
   const permanents = () =>
     s.battlefield.filter((id) => {
       const x = obj(s, id);
@@ -225,12 +226,12 @@ function cdaAggregate(s: GameState, o: GameObject, a: Extract<Amount, { kind: "a
       return types.size;
     }
     case "aggregate:distinct:basicLandType": {
-      // Domaine : sous-types des terrains du contrôleur (passe précédente, sinon imprimés).
+      // Domain: subtypes of the controller's lands (previous pass, otherwise printed).
       const subtypes = new Set(permanents().flatMap((id) => typesOf(s, id)?.subtypes ?? []));
       return BASIC_LAND_TYPES.filter((t) => subtypes.has(t)).length;
     }
     case "aggregate:distinct:color": {
-      // Couleurs imprimées (les couleurs modifiées des autres permanents ne sont pas encore connues).
+      // Printed colors (the modified colors of the other permanents aren't known yet).
       const colors = new Set<string>();
       for (const id of permanents()) {
         const x = obj(s, id);
@@ -258,10 +259,10 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + cdaValue(s, o, x), 0);
   if (a.kind === "max") return Math.max(0, ...a.of.map((x) => cdaValue(s, o, x)));
-  // Master's Councillors : cimetières de N cartes ou plus.
+  // Master's Councillors: graveyards with N or more cards.
   if (a.kind === "graveyardsWithAtLeast")
     return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
-  // Journal du tour (Duelist of the Mind : cartes piochées ce tour-ci), vu du contrôleur.
+  // Turn log (Duelist of the Mind: cards drawn this turn), seen from the controller.
   if (a.kind === "turnEvents" && !a.of) return countTurnEvents(s, a.query, o.controller);
   if (a.kind === "aggregate") return cdaAggregate(s, o, a);
   if (a.kind === "manaInPool") {
@@ -270,14 +271,14 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   }
   if (a.kind === "refCount" && a.ref.kind === "linked")
     return (o.linked ?? []).filter((id) => s.objects[id]?.zone === "exile").length;
-  // Sorte non prise en charge (`CDA_AMOUNT_KINDS`) : aucune carte n'en utilise (cards/test/cda.test.ts).
+  // Unsupported kind (`CDA_AMOUNT_KINDS`): no card uses one (cards/test/cda.test.ts).
   if (a.kind !== "count") return 0;
   if (a.zone === "exile") {
-    // Cosmogoyf : cartes que vous possédez en exil.
+    // Cosmogoyf: cards you own in exile.
     return s.exile.filter((id) => obj(s, id).owner === o.controller).length;
   }
   if (!a.zone || a.zone === "battlefield") {
-    // « égales au nombre de créatures que vous contrôlez » (types de la passe précédente, sinon imprimés).
+    // "equal to the number of creatures you control" (types of the previous pass, otherwise printed).
     return s.battlefield.filter((id) => {
       const x = obj(s, id);
       if (a.filter.controller === "you" && x.controller !== o.controller) return false;
@@ -298,16 +299,16 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
 }
 
 /**
- * Définition effective d'un objet : celle qu'il copie (couche 1, effet le plus récent), sinon sa face active
- * (aventure lancée, verso), sinon la sienne.
+ * Effective definition of an object: the one it copies (layer 1, most recent effect), otherwise its active face
+ * (adventure cast, back face), otherwise its own.
  */
 export function copiedDefId(s: GameState, id: ObjectId): string {
   let best: { t: number; def: string } | null = null;
   for (const e of s.effects) {
     if (e.copyOf && e.affected.includes(id) && (!best || e.timestamp > best.t)) best = { t: e.timestamp, def: e.copyOf };
   }
-  // Copie portée par une statique d'un permanent attaché (Assimilation Aegis : « la créature équipée devient une copie de
-  // la carte exilée ») ; horodatage de la statique : celui de l'attachement (613.7e).
+  // Copy carried by a static of an attached permanent (Assimilation Aegis: "equipped creature becomes a copy of the
+  // exiled card"); timestamp of the static: that of the attachment (613.7e).
   for (const x of s.battlefield) {
     const src = s.objects[x];
     if (src?.attachedTo !== id) continue;
@@ -319,8 +320,8 @@ export function copiedDefId(s: GameState, id: ObjectId): string {
 }
 
 /**
- * `copiedDefId` des permanents copiés, en un parcours (mêmes règles d'horodatage : le premier plus récent l'emporte, les
- * effets avant les statiques d'attachement) ; un permanent absent de la table n'est pas une copie.
+ * `copiedDefId` of the copied permanents, in one scan (same timestamp rules: the first most recent wins, effects before
+ * attachment statics); a permanent absent from the table isn't a copy.
  */
 export function copiedDefMap(s: GameState): Map<ObjectId, string> {
   const best = new Map<ObjectId, { t: number; def: string }>();
@@ -342,12 +343,12 @@ export function copiedDefMap(s: GameState): Map<ObjectId, string> {
   return new Map([...best].map(([id, b]) => [id, b.def]));
 }
 
-/** Des copies sont en jeu (effet de copie, ou statique de copie d'un permanent attaché) : sinon `copiedDefId` est la face. */
+/** Copies are in play (copy effect, or copy static of an attached permanent): otherwise `copiedDefId` is the face. */
 export function copyingIn(s: GameState): boolean {
   return s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x));
 }
 
-/** Champs de `LayerMods` qui sont des listes (cumulées quand on fusionne des modifications). */
+/** Fields of `LayerMods` that are lists (accumulated when modifications are merged). */
 const LIST_MODS = [
   "addAbilities",
   "addTypes",
@@ -363,7 +364,7 @@ const LIST_MODS = [
   "addPowerRules",
 ] as const satisfies (keyof LayerMods)[];
 
-/** Fusionne des modifications dans l'ordre : les listes se cumulent, les autres valeurs sont remplacées. */
+/** Merges modifications in order: lists accumulate, other values are replaced. */
 export function mergeMods(...all: (LayerMods | undefined)[]): LayerMods | undefined {
   const out: Record<string, unknown> = {};
   for (const m of all) {
@@ -379,8 +380,8 @@ export function mergeMods(...all: (LayerMods | undefined)[]): LayerMods | undefi
 }
 
 /**
- * 707.9b : exceptions copiables d'un permanent (celles des effets de copie qui le touchent, dans l'ordre des
- * horodatages), que reprend une copie de ce permanent. Sans la définition copiée elle-même (`copiedDefId`).
+ * 707.9b: copiable exceptions of a permanent (those of the copy effects that affect it, in timestamp order), which a
+ * copy of this permanent takes over. Without the copied definition itself (`copiedDefId`).
  */
 export function copiableExceptions(s: GameState, id: ObjectId | undefined): LayerMods | undefined {
   if (!id || s.objects[id]?.zone !== "battlefield") return undefined;
@@ -391,7 +392,7 @@ export function copiableExceptions(s: GameState, id: ObjectId | undefined): Laye
   );
 }
 
-/** Champs d'un effet continu qui ne sont pas des modifications de couches (ni la copie elle-même). */
+/** Fields of a continuous effect that aren't layer modifications (nor the copy itself). */
 const EFFECT_FIELDS = new Set([
   "id",
   "timestamp",
@@ -409,8 +410,8 @@ const EFFECT_FIELDS = new Set([
 ]);
 
 /**
- * Valeur de mana vue par les filtres : celle de ce que copie le permanent (707.2) ; sinon celle de la carte (le verso
- * d'une carte transformable a la valeur de mana du recto, 712.8e).
+ * Mana value seen by filters: that of what the permanent copies (707.2); otherwise that of the card (the back face of a
+ * transforming card has the mana value of the front face, 712.8e).
  */
 function viewManaValue(s: GameState, id: ObjectId, o: GameObject): number {
   if (o.zone === "battlefield") {
@@ -420,13 +421,13 @@ function viewManaValue(s: GameState, id: ObjectId, o: GameObject): number {
   return manaValue(s.defs[o.defId]?.manaCost);
 }
 
-/** Comme `viewManaValue`, d'après la table des copies du contexte de parcours. */
+/** Like `viewManaValue`, according to the copy table of the scan context. */
 function scanManaValue(s: GameState, copied: Map<ObjectId, string> | null, o: GameObject): number {
   const c = copied && o.zone === "battlefield" ? copied.get(o.id) : undefined;
   return manaValue(s.defs[c !== undefined && c !== (o.faceDefId ?? o.defId) ? c : o.defId]?.manaCost);
 }
 
-/** Définition que copie le permanent auquel `source` est attaché, d'après une statique `copyLinkedExile` de `source`. */
+/** Definition copied by the permanent `source` is attached to, according to a `copyLinkedExile` static of `source`. */
 function staticCopyOf(s: GameState, source: ObjectId): string | undefined {
   const d = s.defs[s.objects[source]?.defId ?? ""];
   if (!d?.abilities.some((ab) => ab.kind === "static" && ab.affects === "attached" && ab.mods.copyLinkedExile)) return undefined;
@@ -436,14 +437,14 @@ function staticCopyOf(s: GameState, source: ObjectId): string | undefined {
 
 function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   const d = s.defs[defId];
-  if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
+  if (!d) throw new Error(`Unknown definition: ${o.defId}`);
   if (o.zone === "battlefield" && d.layout === "split" && d.faceDefs) return roomBase(o, d);
   if (o.faceDown) return faceDownBase(o, s.defs[o.faceDown.card]);
   const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
   const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
   const station = stationTraits(o, d);
-  // Imminence (702.176a) : ce n'est pas une créature tant qu'il a un marqueur de temps (ni ses types de créature).
+  // Impending (702.176a): it isn't a creature as long as it has a time counter (nor its creature types).
   const impending = o.cast?.via === "impending" && o.zone === "battlefield" && (o.counters.time ?? 0) > 0;
   return {
     name: printedName(d),
@@ -466,17 +467,17 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   };
 }
 
-/** Capacités imprimées d'un permanent : niveaux atteints d'une Classe (716), capacités « Résolue » d'une Affaire (719). */
+/** Printed abilities of a permanent: levels reached by a Class (716), "Solved" abilities of a Case (719). */
 export function levelAbilities(o: GameObject, d: CardDef): AbilityDef[] {
   if (o.zone !== "battlefield" || (!d.classLevels && !d.caseSolved && !d.station)) return d.abilities;
   const levels = (d.classLevels ?? []).slice(0, Math.max(0, (o.classLevel ?? 1) - 1)).flatMap((l) => l.abilities);
-  // Station (702.184) : capacités des paliers atteints par les marqueurs de charge.
+  // Station (702.184): abilities of the thresholds reached by the charge counters.
   const charge = o.counters.charge ?? 0;
   const station = (d.station?.thresholds ?? []).filter((t) => charge >= t.n).flatMap((t) => t.abilities);
   return [...d.abilities, ...levels, ...station, ...(o.solved ? (d.caseSolved ?? []) : [])];
 }
 
-/** Station : un Vaisseau devient une créature-artefact à son seuil ; mots-clés des paliers atteints. */
+/** Station: a Spacecraft becomes an artifact creature at its threshold; keywords of the thresholds reached. */
 function stationTraits(o: GameObject, d: CardDef): { creature: boolean; keywords: Keyword[] } {
   const charge = o.counters.charge ?? 0;
   const st = d.station;
@@ -487,8 +488,8 @@ function stationTraits(o: GameObject, d: CardDef): { creature: boolean; keywords
   };
 }
 
-/** Garde {2} des permanents face cachée par déguisement ou cape (702.168b, 701.58a). */
-const FACE_DOWN_WARD: AbilityDef = {
+/** Ward {2} of permanents face down by disguise or cloak (702.168b, 701.58a). */
+export const FACE_DOWN_WARD: AbilityDef = {
   kind: "triggered",
   ward: true,
   trigger: { on: "becomesTarget", who: "self", by: "opponent" },
@@ -497,16 +498,16 @@ const FACE_DOWN_WARD: AbilityDef = {
     { op: "unlessPay", who: { kind: "eventPlayer" }, mana: { generic: 2, colored: {}, x: 0 }, skip: 1 },
     { op: "counter", what: { kind: "eventObject" } },
   ],
-  label: "Garde {2}",
+  label: msg("Ward {2}"),
 };
 
 /**
- * Face cachée (708.2) : créature 2/2 sans nom, sans couleur ni sous-type ; garde {2} s'il y a lieu, et l'action
- * spéciale « retourner face visible » pour chaque coût possible (déguisement, coût de mana d'une carte de créature).
+ * Face down (708.2): 2/2 creature without a name, color or subtype; ward {2} if applicable, and the special action
+ * "turn face up" for each possible cost (disguise, mana cost of a creature card).
  */
 function faceDownBase(o: GameObject, card?: CardDef): Characteristics {
   const fd = o.faceDown as NonNullable<GameObject["faceDown"]>;
-  // Fugitive Codebreaker : « ce coût [de déguisement] est réduit de {1} pour chaque… » (le premier coût, s'il y en a un).
+  // Fugitive Codebreaker: "this [disguise] cost is reduced by {1} for each…" (the first cost, if there is one).
   const disguiseReduction = card?.disguise && card.disguiseReduction ? { generic: card.disguiseReduction } : undefined;
   return {
     name: "",
@@ -527,7 +528,7 @@ function faceDownBase(o: GameObject, card?: CardDef): Characteristics {
           effects: [{ op: "turnFaceUp", what: { kind: "self" } }],
           specialAction: true,
           ...(i === 0 && disguiseReduction ? { reduction: disguiseReduction } : {}),
-          label: "Retourner face visible",
+          label: msg("Turn face up"),
         }),
       ),
     ],
@@ -539,8 +540,8 @@ function faceDownBase(o: GameObject, card?: CardDef): Characteristics {
 }
 
 /**
- * Salle sur le champ de bataille (709.5c) : nom, couleurs et capacités de ses portes déverrouillées ; les
- * capacités « déverrouiller » de la carte restent (actions spéciales).
+ * Room on the battlefield (709.5c): name, colors and abilities of its unlocked doors; the card's "unlock" abilities
+ * remain (special actions).
  */
 function roomBase(o: GameObject, d: CardDef): Characteristics {
   const open = (d.faceDefs ?? []).filter((_, i) => o.unlocked?.includes(i));
@@ -564,25 +565,25 @@ function roomBase(o: GameObject, d: CardDef): Characteristics {
 interface Applied {
   timestamp: number;
   mods: LayerMods;
-  /** Objets concernés : fixés (résolution) ou déterminés au moment de la couche (statique). */
+  /** Affected objects: fixed (resolution) or determined when the layer applies (static). */
   affected: ObjectId[] | { sourceId: ObjectId; controller: PlayerId; filter: "self" | "attached" | ObjectFilter };
 }
 
 /**
- * Ce dont dépend le calcul en cache (PLAN-C, lot C15) : l'état engagé des permanents (filtre `tapped`, condition « tant
- * qu'elle est engagée ») et la réserve de mana (`manaPoolAtLeast`, `amount.manaInPool`). Engager, dégager ou payer du mana n'invalide le cache
- * que si une capacité statique, un effet ou une F/E définie par une capacité en vigueur les lit (`bumpFor`).
+ * What the cached computation depends on (PLAN-C, lot C15): the tapped state of permanents (`tapped` filter, "as long as
+ * it's tapped" condition) and the mana pool (`manaPoolAtLeast`, `amount.manaInPool`). Tapping, untapping or paying mana invalidates the cache
+ * only if a static ability, an effect or a P/T defined by an ability in force reads them (`bumpFor`).
  */
 interface CacheDeps {
   tapped: boolean;
   mana: boolean;
-  /** Le journal du tour (`amount.turnEvents`, filtres « a attaqué / infligé des blessures ce tour-ci »). */
+  /** The turn log (`amount.turnEvents`, "attacked / dealt damage this turn" filters). */
   turnLog: boolean;
-  /** Les points de vie des joueurs (`perLife`, `lifeTotal`, `mostLife`, `refLife`, `opponentHasMore` des points de vie). */
+  /** The players' life (`perLife`, `lifeTotal`, `mostLife`, `refLife`, `opponentHasMore` of life). */
   life: boolean;
-  /** « Tant qu'il n'a pas encore infligé de blessures (de combat) » (`sourceDealtDamage`, `sourceDealtCombatDamage`). */
+  /** "As long as it hasn't dealt (combat) damage yet" (`sourceDealtDamage`, `sourceDealtCombatDamage`). */
   dealt: boolean;
-  /** Les blocages déclarés (filtres `blocked` et `blocking` : attaquant bloqué ou non, bloqueuse). */
+  /** Declared blocks (`blocked` and `blocking` filters: attacker blocked or not, blocker). */
   blocks: boolean;
 }
 const noDeps = (): CacheDeps => ({ tapped: false, mana: false, turnLog: false, life: false, dealt: false, blocks: false });
@@ -590,9 +591,9 @@ const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Character
 const depsMemo = new WeakMap<object, CacheDeps>();
 
 /**
- * Copie de l'état (`cloneState`) : la copie reprend le cache de l'original (PLAN-S, P1). Il reste validé par sa clé
- * (version, tour, étape) : une modification de la copie qui fait avancer la version l'invalide comme avant. Les
- * caractéristiques en cache ne sont jamais modifiées par ceux qui les lisent.
+ * State copy (`cloneState`): the copy takes over the cache of the original (PLAN-S, P1). It stays validated by its key
+ * (version, turn, step): a modification of the copy that advances the version invalidates it as before. Cached
+ * characteristics are never modified by those who read them.
  */
 export function carryLayerCache(from: GameState, to: GameState): void {
   const hit = cache.get(from);
@@ -605,16 +606,16 @@ function scanDeps(x: unknown, out: CacheDeps): void {
     return;
   }
   if (!x || typeof x !== "object") {
-    // La réserve de mana : condition « tant que vous avez N mana » ou montant « mana inutilisé » (Omnath).
+    // The mana pool: "as long as you have N mana" condition or "unspent mana" amount (Omnath).
     if (x === "manaPoolAtLeast" || x === "manaInPool") out.mana = true;
     if (x === "turnEvents") out.turnLog = true;
-    // Par prudence, toute valeur « life » (`opponentHasMore` des points de vie, déclencheur accordé « gagnez des PV »).
+    // To be safe, any "life" value (`opponentHasMore` of life, granted "gain life" trigger).
     if (x === "life" || x === "lifeTotal" || x === "mostLife" || x === "refLife") out.life = true;
     if (x === "sourceDealtDamage" || x === "sourceDealtCombatDamage") out.dealt = true;
     return;
   }
   for (const [k, v] of Object.entries(x)) {
-    // Une clé sans valeur ne lit rien (`perTurnEvents: undefined`, toujours écrit par `staticAbility`).
+    // A key without a value reads nothing (`perTurnEvents: undefined`, always written by `staticAbility`).
     if (v === undefined) continue;
     if (k === "tapped" || k === "whileSourceTapped") out.tapped = true;
     if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "perTurnEvents" || k === "countersPutByYouThisTurn")
@@ -625,7 +626,7 @@ function scanDeps(x: unknown, out: CacheDeps): void {
   }
 }
 
-/** Dépendances d'une définition immuable (capacité, définition de carte), mémorisées. */
+/** Dependencies of an immutable definition (ability, card definition), memoized. */
 function depsOf(x: object, pick?: (x: object) => unknown): CacheDeps {
   const hit = depsMemo.get(x);
   if (hit) return hit;
@@ -669,8 +670,8 @@ function cacheDeps(s: GameState, map: Map<ObjectId, Characteristics>): CacheDeps
 const cacheKey = (s: GameState) => `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}`;
 
 /**
- * Invalide le cache des couches seulement s'il dépend de cet aspect de l'état (engagement, réserve de mana) ; un cache
- * déjà périmé l'est de toute façon.
+ * Invalidates the layer cache only if it depends on this aspect of the state (tapping, mana pool); an already stale
+ * cache is stale anyway.
  */
 export function bumpFor(s: GameState, dep: keyof CacheDeps): void {
   const hit = cache.get(s);
@@ -679,15 +680,15 @@ export function bumpFor(s: GameState, dep: keyof CacheDeps): void {
 }
 onTurnLogged((s) => bumpFor(s, "turnLog"));
 let computing = false;
-/** Caractéristiques de la passe précédente (613.8), lues pendant le calcul à la place des caractéristiques imprimées. */
+/** Characteristics of the previous pass (613.8), read during the computation instead of the printed characteristics. */
 let provisional: Map<ObjectId, Characteristics> | null = null;
-/** Lectures de caractéristiques d'un permanent pendant le calcul : une condition qui n'en fait pas ne dépend pas des couches. */
+/** Reads of a permanent's characteristics during the computation: a condition that makes none doesn't depend on the layers. */
 let reads = 0;
-/** Vues des permanents pendant une collecte des statiques (les caractéristiques lues ne changent pas pendant elle). */
+/** Views of the permanents during a collection of statics (the characteristics read don't change during it). */
 let viewCache: Map<ObjectId, LkiSnapshot> | null = null;
 /**
- * Contexte de parcours d'un état figé (collecte des statiques, couches, sources des déclencheurs) : permanents équipés et
- * enchantés, définitions copiées (`copied`, absente sans copie : la valeur de mana est alors celle de la carte).
+ * Scan context of a frozen state (collection of statics, layers, sources of triggers): equipped and enchanted
+ * permanents, copied definitions (`copied`, absent without a copy: the mana value is then that of the card).
  */
 let scan: { equipped: Set<ObjectId>; enchanted: Map<ObjectId, PlayerId[]>; copied: Map<ObjectId, string> | null } | null = null;
 
@@ -705,8 +706,8 @@ function scanOf(s: GameState): NonNullable<typeof scan> {
 }
 
 /**
- * Exécute `fn` avec le contexte de parcours de `s` calculé une fois : les vues construites pendant `fn` (`snapshot`) ne
- * refont pas ces parcours du champ de bataille. `s` ne doit pas changer pendant `fn`.
+ * Runs `fn` with the scan context of `s` computed once: the views built during `fn` (`snapshot`) don't redo these
+ * scans of the battlefield. `s` must not change during `fn`.
  */
 export function withScan<T>(s: GameState, fn: () => T): T {
   const prev = scan;
@@ -718,7 +719,7 @@ export function withScan<T>(s: GameState, fn: () => T): T {
   }
 }
 
-/** Contrôleurs des Auras attachées à chaque permanent (sous-types imprimés : une Aura ne perd pas ce sous-type). */
+/** Controllers of the Auras attached to each permanent (printed subtypes: an Aura doesn't lose that subtype). */
 function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
   const out = new Map<ObjectId, PlayerId[]>();
   for (const x of s.battlefield) {
@@ -729,7 +730,7 @@ function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
   return out;
 }
 
-/** Les bloqueurs ont été déclarés (509.1h) : de la fin de leur déclaration à la fin du combat. */
+/** Blockers have been declared (509.1h): from the end of their declaration to the end of combat. */
 export function blockersDeclared(s: GameState): boolean {
   const c = s.combat;
   if (!c || c.blockQueue.length > 0 || c.pendingBlocks) return false;
@@ -737,14 +738,14 @@ export function blockersDeclared(s: GameState): boolean {
   return s.turn.step === "firstStrikeDamage" || s.turn.step === "combatDamage" || s.turn.step === "endCombat";
 }
 
-/** Attaquant bloqué (`true`), non bloqué une fois les bloqueurs déclarés (`false`), sinon `undefined` (filtre `blocked`). */
+/** Attacker blocked (`true`), unblocked once blockers are declared (`false`), otherwise `undefined` (`blocked` filter). */
 function blockedState(s: GameState, id: ObjectId): boolean | undefined {
   const a = s.combat?.attackers.find((x) => x.id === id);
   if (!a) return undefined;
   return a.blocked ? true : blockersDeclared(s) ? false : undefined;
 }
 
-/** `defender` : ce qu'attaque l'objet (joueur ou planeswalker), s'il attaque. */
+/** `defender`: what the object is attacking (player or planeswalker), if it is attacking. */
 function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, defender: string | undefined): LkiSnapshot {
   return {
     id,
@@ -766,7 +767,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
     name: c.name,
     manaValue: scan ? scanManaValue(s, scan.copied, o) : viewManaValue(s, id, o),
     suspected: o.suspected || undefined,
-    // « un sort avec {X} dans son coût de mana » (Matterbending Mage).
+    // "a spell with {X} in its mana cost" (Matterbending Mage).
     hasX: (!o.faceDown && (s.defs[o.faceDefId ?? o.defId]?.manaCost?.x ?? 0) > 0) || undefined,
     tapped: o.tapped,
     damage: o.zone === "battlefield" ? o.damage : undefined,
@@ -783,7 +784,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
     prepared: !!o.preparedCopy || undefined,
     warped: o.cast?.via === "warp" || undefined,
     faceDown: !!o.faceDown || undefined,
-    // Sort sur la pile : le mana dépensé est porté par l'élément de pile (Unravel).
+    // Spell on the stack: the mana spent is carried by the stack item (Unravel).
     manaSpent: o.cast?.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.cast?.manaSpent : undefined),
     lastAttachedTo: o.lastAttachedTo,
     cast: !!o.cast || undefined,
@@ -799,7 +800,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
   };
 }
 
-/** Vue d'un objet pendant le calcul des couches : caractéristiques de la passe précédente, sinon imprimées. */
+/** View of an object during the layer computation: characteristics of the previous pass, otherwise printed. */
 function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
   const o = obj(s, id);
   if (o.zone !== "battlefield") return view(s, id, base(s, o), o, undefined);
@@ -812,11 +813,11 @@ function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
 }
 
 /**
- * Calcule, sans cache, les caractéristiques de tous les objets du champ de bataille.
+ * Computes, without a cache, the characteristics of all objects on the battlefield.
  *
- * 613.8 par point fixe : une première passe évalue les statiques (conditions, « pour chaque », F/E définies par une
- * capacité, capacités copiées) sur les caractéristiques imprimées. Si l'une d'elles dépend du champ de bataille, on
- * les réévalue sur le résultat provisoire (`provisional`) et on recommence tant que leur signature change.
+ * 613.8 by fixed point: a first pass evaluates the statics (conditions, "for each", P/T defined by an ability, copied
+ * abilities) on the printed characteristics. If one of them depends on the battlefield, they are re-evaluated on the
+ * provisional result (`provisional`) and this repeats as long as their signature changes.
  */
 export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics> {
   const copied = copyingIn(s) ? copiedDefMap(s) : null;
@@ -830,7 +831,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       provisional = out;
       const next = collectStatics(s, defOfId, collected);
       if (next.signature === collected.signature) break;
-      // Au plus `MAX_LAYER_PASSES` applications des couches (613.8) : au-delà, une dépendance circulaire.
+      // At most `MAX_LAYER_PASSES` applications of the layers (613.8): beyond that, a circular dependency.
       if (pass >= MAX_LAYER_PASSES) {
         capReached("layers");
         break;
@@ -844,7 +845,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   }
 }
 
-/** Capacité statique d'un objet, avec l'horodatage de sa source. */
+/** Static ability of an object, with the timestamp of its source. */
 interface StaticSlot {
   id: ObjectId;
   ab: Extract<AbilityDef, { kind: "static" }>;
@@ -852,25 +853,25 @@ interface StaticSlot {
 }
 
 interface Collected {
-  /** Effets à appliquer, dans l'ordre des horodatages. */
+  /** Effects to apply, in timestamp order. */
   applied: Applied[];
-  /** Ce qui ne dépend pas des couches : réutilisé tel quel aux passes suivantes. */
+  /** What doesn't depend on the layers: reused as is in the following passes. */
   fixed: Applied[];
-  /** Statiques qui lisent des permanents, réévaluées à chaque passe (613.8). */
+  /** Statics that read permanents, re-evaluated at each pass (613.8). */
   dependentSlots: StaticSlot[];
-  /** Résumé de ce qui dépend des couches ; `dependent` : il y en a. */
+  /** Summary of what depends on the layers; `dependent`: there is some. */
   signature: string;
   dependent: boolean;
 }
 
 /**
- * Effets à appliquer : effets de résolution et capacités statiques. Avec `previous` (passe suivante), seules les
- * statiques dépendantes et les F/E définies par une capacité qui lisent des permanents sont réévaluées.
+ * Effects to apply: resolution effects and static abilities. With `previous` (following pass), only the dependent
+ * statics and the P/T defined by an ability that read permanents are re-evaluated.
  */
 function collectStatics(s: GameState, defOfId: (id: ObjectId) => string, previous?: Collected): Collected {
   const sig: (string | number)[] = [];
   let dependent = false;
-  // F/E définies par une capacité qui comptent des permanents (types, types de terrain de base).
+  // P/T defined by an ability that count permanents (types, basic land types).
   for (const id of s.battlefield) {
     const d = s.defs[defOfId(id)];
     if (!d || (d.cdaPT === undefined && d.cdaPower === undefined && d.cdaToughness === undefined)) continue;
@@ -917,10 +918,10 @@ function collectStatics(s: GameState, defOfId: (id: ObjectId) => string, previou
   }
 }
 
-/** Capacités statiques en vigueur : permanents, puis emblèmes (zone de commandement). */
+/** Static abilities in force: permanents, then emblems (command zone). */
 function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlot[] {
-  // Une source qui perd toutes ses capacités (Witness Protection, effet « perd toutes ses capacités ») n'applique plus
-  // les siennes ; approximation de 613.8 à un niveau.
+  // A source that loses all its abilities (Witness Protection, "loses all abilities" effect) no longer applies its
+  // own; approximation of 613.8 at one level.
   const lost = new Set<ObjectId>();
   for (const e of s.effects) if (e.loseAllAbilities) for (const id of e.affected) lost.add(id);
   for (const id of s.battlefield) {
@@ -930,8 +931,8 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
       if (ab.kind === "static" && ab.affects === "attached" && ab.mods.loseAllAbilities) lost.add(o.attachedTo);
     }
   }
-  // Statique qui retire les capacités des permanents d'un filtre (« les terrains non-base sont des Montagnes », 305.7) :
-  // les permanents touchés d'après leurs caractéristiques de base, sans la source elle-même (même approximation).
+  // Static that removes the abilities of the permanents of a filter ("nonbasic lands are Mountains", 305.7): the
+  // affected permanents according to their base characteristics, without the source itself (same approximation).
   for (const id of s.battlefield) {
     if (lost.has(id)) continue;
     const o = obj(s, id);
@@ -949,8 +950,8 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
     const o = obj(s, id);
     const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
     const ownDef = s.defs[own];
-    // Salle : capacités de ses portes déverrouillées. Face cachée : aucune capacité statique. Zone de commandement :
-    // celles d'un emblème seulement (113.6).
+    // Room: abilities of its unlocked doors. Face down: no static ability. Command zone: those of an emblem only
+    // (113.6).
     const printed = o.faceDown
       ? []
       : o.zone === "command"
@@ -960,9 +961,9 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
           : ownDef
             ? levelAbilities(o, ownDef)
             : [];
-    // Statiques accordées par un effet de résolution (Roar of the Fifth People, chapitre II : « gagne “Les
-    // créatures que vous contrôlez ont…” »). Une statique accordée par une autre statique n'est pas gérée (613.8).
-    // 613.7a : horodatage le plus récent entre l'objet et l'effet qui accorde la capacité.
+    // Statics granted by a resolution effect (Roar of the Fifth People, chapter II: "gains 'Creatures you control
+    // have…'"). A static granted by another static isn't handled (613.8).
+    // 613.7a: most recent timestamp between the object and the effect that grants the ability.
     const grantedAt = new Map<AbilityDef, number>();
     for (const e of s.effects) {
       if (!e.affected.includes(id)) continue;
@@ -976,8 +977,8 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
 }
 
 /**
- * Évalue une statique : l'effet qu'elle applique (ou aucun si sa condition n'est pas remplie), et si elle dépend des
- * couches (condition ou compte qui lit des permanents). Ajoute à `sig` ce qui en dépend.
+ * Evaluates a static: the effect it applies (or none if its condition isn't met), and whether it depends on the layers
+ * (condition or count that reads permanents). Adds to `sig` what depends on them.
  */
 function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): { entry: Applied | null; dependent: boolean } {
   const { id, ab } = slot;
@@ -986,14 +987,14 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
   if (ab.condition) {
     const before = reads;
     const ok = checkCondition(s, ab.condition, o.controller, id);
-    // Seule une condition qui lit des permanents dépend des couches (« tant que vous contrôlez un Dragon »).
+    // Only a condition that reads permanents depends on the layers ("as long as you control a Dragon").
     if (reads !== before) dependent = true;
     sig.push(ok ? 1 : 0);
     if (!ok) return { entry: null, dependent };
   }
   let mods = ab.mods;
   if (mods.gainLinkedActivated) {
-    // Territory Forge : les capacités activées (et de mana) des cartes liées ; Koh : aussi déclenchées, de la carte choisie.
+    // Territory Forge: the activated (and mana) abilities of the linked cards; Koh: also triggered, of the chosen card.
     const g = typeof mods.gainLinkedActivated === "object" ? mods.gainLinkedActivated : {};
     const extra = (o.linked ?? [])
       .filter((c) => s.objects[c]?.zone === "exile")
@@ -1006,7 +1007,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
   }
   if (mods.gainActivatedFromGraveyard) {
-    // Thranduil, the Elvenking : les capacités activées imprimées des cartes d'Elfe de votre cimetière.
+    // Thranduil, the Elvenking: the printed activated abilities of the Elf cards in your graveyard.
     const f = mods.gainActivatedFromGraveyard;
     const extra = (s.players[o.controller]?.graveyard ?? [])
       .filter((x) => matchesView(snapshot(s, x), { ...f, controller: undefined }, o.controller, id))
@@ -1017,7 +1018,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     sig.push(`ag${extra.length}`);
   }
   if (mods.gainActivatedFrom) {
-    // Marvin, Murderous Mimic : les capacités activées imprimées des créatures correspondantes qui n'ont pas son nom.
+    // Marvin, Murderous Mimic: the printed activated abilities of the matching creatures that don't have its name.
     const f = mods.gainActivatedFrom;
     const own = s.defs[o.defId];
     const name = own && printedName(own);
@@ -1059,11 +1060,11 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
           ? (pl?.hand.length ?? 0)
           : Math.max(0, pl?.life ?? 0);
     mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
-    // Aettir and Priwen : « F/E de base X/X, où X est votre total de points de vie ».
+    // Aettir and Priwen: "base power and toughness X/X, where X is your life total".
     if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
     if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
   } else if (ab.perAmount !== undefined) {
-    // Earthen Ally : « +1/+0 pour chaque couleur parmi les Alliés que vous contrôlez » (calculé comme une F/E de CDA).
+    // Earthen Ally: "+1/+0 for each color among Allies you control" (computed like a CDA P/T).
     const n = cdaValue(s, o, ab.perAmount);
     if (readsBattlefield(ab.perAmount)) {
       dependent = true;
@@ -1071,7 +1072,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     }
     mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
   } else if (ab.per || ab.perCounter || ab.perGraveyard) {
-    // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie » / « pour chaque carte de créature de votre cimetière ».
+    // "+1/+1 for each Forest" / "for each fellowship counter" / "for each creature card in your graveyard".
     const f = ab.per ? withChosen(ab.per, o) : null;
     const g = ab.perGraveyard;
     const raw = g
@@ -1085,7 +1086,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
       sig.push(`n${n}`);
     }
     mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
-    // Porcelain Gallery : « F/E de base égales au nombre de créatures que vous contrôlez ».
+    // Porcelain Gallery: "base power and toughness each equal to the number of creatures you control".
     if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
     if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
   }
@@ -1096,14 +1097,14 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
   if (mods.addChosen === "landType" && o.chosen?.landType) {
     mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.landType] };
   }
-  // « Vos créatures ont la protection contre le type de carte choisi » (Serra's Emissary) : le choix est celui de la
-  // source de la statique, pas celui du permanent protégé (que `protectedFrom` lirait sinon).
+  // "Creatures you control have protection from the chosen card type" (Serra's Emissary): the choice is that of the
+  // source of the static, not that of the protected permanent (which `protectedFrom` would read otherwise).
   if (mods.addProtections?.some((p) => hasChosen(p.from))) {
     mods = {
       ...mods,
       addProtections: mods.addProtections.map((p) => (hasChosen(p.from) ? { ...p, from: withChosen(p.from, o) } : p)),
     };
-    // Seule une statique réévaluée à chaque passe porte sa part de signature (les autres sont figées après la première).
+    // Only a static re-evaluated at each pass carries its part of the signature (the others are frozen after the first).
     if (dependent) {
       const c = o.chosen;
       sig.push(
@@ -1118,9 +1119,9 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
 }
 
 /**
- * Sous-types remplacés sans changement de type (couche 4). De nouveaux types de terrain remplacent seulement les types de
- * terrain (205.1a, 305.7 : « les terrains non-base sont des Montagnes » laisse à une créature-terrain ses types de
- * créature, à un terrain-Saga son type d'enchantement) ; sinon, tous les sous-types.
+ * Subtypes replaced without a type change (layer 4). New land types replace only the land types (205.1a, 305.7:
+ * "nonbasic lands are Mountains" leaves a land creature its creature types, a Saga land its enchantment type);
+ * otherwise, all subtypes.
  */
 function replacedSubtypes(old: string[], set: string[]): string[] {
   if (set.length > 0 && set.every((t) => LAND_TYPES.has(t)))
@@ -1128,7 +1129,7 @@ function replacedSubtypes(old: string[], set: string[]): string[] {
   return [...set];
 }
 
-/** Applique les couches 1 et 4 à 7 aux objets du champ de bataille (vues construites avec le contexte de parcours). */
+/** Applies layers 1 and 4 to 7 to the objects of the battlefield (views built with the scan context). */
 function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) => string): Map<ObjectId, Characteristics> {
   return withScan(s, () => applyLayersScanned(s, applied, defOfId));
 }
@@ -1136,7 +1137,7 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
 function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: ObjectId) => string): Map<ObjectId, Characteristics> {
   const out = new Map<ObjectId, Characteristics>();
   const attacking = new Map(s.combat?.attackers.map((a) => [a.id, a.defender]) ?? []);
-  // Couche 1 : copie (valeurs copiables de la définition copiée).
+  // Layer 1: copy (copiable values of the copied definition).
   for (const id of s.battlefield) out.set(id, base(s, obj(s, id), defOfId(id)));
 
   const targets = (a: Applied): ObjectId[] => {
@@ -1153,8 +1154,8 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
     }
     return ids;
   };
-  // Les ensembles des capacités statiques sont déterminés au moment où leur couche s'applique (613.6) :
-  // on les fige à la première couche où l'effet agit.
+  // The sets of the static abilities are determined when their layer applies (613.6):
+  // they are frozen at the first layer where the effect acts.
   const fixed = new Map<Applied, ObjectId[]>();
   const affectedBy = (a: Applied) => {
     let ids = fixed.get(a);
@@ -1168,7 +1169,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
     for (const a of applied) if (has(a.mods)) for (const id of affectedBy(a)) apply(out.get(id) as Characteristics, a.mods, a);
   };
 
-  // Couche 4 : types (et nom, pour Witness Protection).
+  // Layer 4: types (and name, for Witness Protection).
   layer(
     (m) =>
       !!(
@@ -1194,7 +1195,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       for (const t of m.addSubtypes ?? []) if (!c.subtypes.includes(t)) c.subtypes.push(t);
     },
   );
-  // Couche 5 : couleurs, remplacées ou ajoutées (« en plus de ses autres couleurs »).
+  // Layer 5: colors, replaced or added ("in addition to its other colors").
   layer(
     (m) => !!(m.setColors || m.addColors),
     (c, m) => {
@@ -1202,7 +1203,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       for (const k of m.addColors ?? []) if (!c.colors.includes(k)) c.colors.push(k);
     },
   );
-  // Couche 6 : capacités. Mots-clés interdits (`forbidKeywords`), retirés en fin de couche.
+  // Layer 6: abilities. Forbidden keywords (`forbidKeywords`), removed at the end of the layer.
   const forbidden = new Map<Characteristics, Keyword[]>();
   layer(
     (m) =>
@@ -1221,7 +1222,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
         c.keywords = [];
         c.abilities = [];
         c.grantors = undefined;
-        // 701.38 : la provocation n'est pas une capacité ; une créature provoquée qui perd ses capacités reste provoquée.
+        // 701.38: goad isn't an ability; a goaded creature that loses its abilities stays goaded.
         c.blockRules = c.blockRules.filter((r) => r.goadedBy);
         c.protections = [];
         c.powerRules = [];
@@ -1233,8 +1234,8 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       for (const k of m.addKeywords ?? []) if (!c.keywords.includes(k)) c.keywords.push(k);
       if (m.forbidKeywords?.length) forbidden.set(c, [...(forbidden.get(c) ?? []), ...m.forbidKeywords]);
       if (m.addAbilities?.length) {
-        // Capacité accordée par la statique d'un permanent : il est retenu pour `ref.grantor` (« renvoyez Trusty
-        // Boomerang »). Un effet de résolution (Dreadmaw's Ire) n'a pas d'objet qui l'accorde.
+        // Ability granted by the static of a permanent: it is kept for `ref.grantor` ("return Trusty Boomerang"). A
+        // resolution effect (Dreadmaw's Ire) has no object that grants it.
         if (!Array.isArray(a.affected)) {
           const from = a.affected.sourceId;
           const at = c.abilities.length;
@@ -1244,25 +1245,25 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       }
     },
   );
-  // 122.1b : marqueurs de capacité (vol, lien de vie, contact mortel…), appliqués après les autres effets de couche 6.
+  // 122.1b: ability counters (flying, lifelink, deathtouch…), applied after the other layer 6 effects.
   for (const [id, c] of out) {
     for (const [kind, n] of Object.entries(obj(s, id).counters)) {
       const k = KEYWORD_COUNTERS[kind];
       if (k && n > 0 && !c.keywords.includes(k)) c.keywords.push(k);
     }
-    // 701.60c : un permanent suspect a la menace et « ne peut pas bloquer » tant qu'il est suspect.
+    // 701.60c: a suspected permanent has menace and "can't block" for as long as it's suspected.
     if (obj(s, id).suspected) for (const k of ["menace", "cantBlock"] as const) if (!c.keywords.includes(k)) c.keywords.push(k);
-    // 702.108 : une prouesse accordée (Bria) ou portée par un jeton (Loutre) a sa capacité déclenchée.
-    if (c.keywords.includes("prowess") && !c.abilities.some((ab) => ab.kind === "triggered" && ab.label === "Prouesse")) {
+    // 702.108: a granted prowess (Bria) or one carried by a token (Otter) has its triggered ability.
+    if (c.keywords.includes("prowess") && !c.abilities.some((ab) => ab.kind === "triggered" && ab.label === PROWESS_LABEL)) {
       c.abilities = [...c.abilities, PROWESS];
     }
-    // 702.147 : la décomposition (imprimée, accordée ou par un marqueur) a sa capacité déclenchée.
+    // 702.147: decayed (printed, granted or by a counter) has its triggered ability.
     if (c.keywords.includes("decayed") && !c.abilities.includes(DECAYED)) c.abilities = [...c.abilities, DECAYED];
-    // « Ne peut pas avoir ni acquérir [mot-clé] » : après tout le reste de la couche 6 (Archetype of Courage).
+    // "Can't have or gain [keyword]": after all the rest of layer 6 (Archetype of Courage).
     const no = forbidden.get(c);
     if (no) c.keywords = c.keywords.filter((k) => !no.includes(k));
   }
-  // Couche 7b : F/E fixées.
+  // Layer 7b: set P/T.
   layer(
     (m) => m.setPower !== undefined || m.setToughness !== undefined,
     (c, m) => {
@@ -1270,8 +1271,8 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       if (m.setToughness !== undefined) c.toughness = m.setToughness;
     },
   );
-  // Couche 7c : marqueurs, puis modifications (tout est additif : l'ordre n'importe pas). 122.1 : chaque marqueur
-  // d'affûtage sur un Équipement donne +1/+0 à la créature équipée (Dwalin, Sting).
+  // Layer 7c: counters, then modifications (everything is additive: the order doesn't matter). 122.1: each hone counter
+  // on an Equipment gives +1/+0 to the equipped creature (Dwalin, Sting).
   const hone = new Map<string, number>();
   for (const x of s.battlefield) {
     const e = s.objects[x];
@@ -1287,7 +1288,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
   layer(
     (m) => !!(m.power || m.toughness),
     (c, m) => {
-      // Diligent Zookeeper : multiplié par le nombre de types de créature de l'objet touché (changelin : tous).
+      // Diligent Zookeeper: multiplied by the number of creature types of the affected object (changeling: all).
       const k =
         m.perOwnCreatureTypes === undefined
           ? 1
@@ -1296,7 +1297,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       c.toughness += (m.toughness ?? 0) * k;
     },
   );
-  // Couche 7d : échange.
+  // Layer 7d: switch.
   layer(
     (m) => !!m.switchPT,
     (c) => {
@@ -1306,16 +1307,18 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
   return out;
 }
 
-/** Prouesse (702.108) : « chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour ». */
+const PROWESS_LABEL = msg("Prowess");
+
+/** Prowess (702.108): "whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn". */
 const PROWESS: AbilityDef = {
   kind: "triggered",
   trigger: { on: "castSpell", by: "you", filter: { notTypes: ["Creature"] } },
   targets: [],
   effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
-  label: "Prouesse",
+  label: PROWESS_LABEL,
 };
 
-/** Décomposition (702.147b) : « quand cette créature attaque, sacrifiez-la à la fin du combat ». */
+/** Decayed (702.147b): "when this creature attacks, sacrifice it at end of combat". */
 const DECAYED: AbilityDef = {
   kind: "triggered",
   trigger: { on: "attacks", who: "self" },
@@ -1328,7 +1331,7 @@ const DECAYED: AbilityDef = {
       bind: { d: { kind: "self" } },
     },
   ],
-  label: "Décomposition",
+  label: msg("Decayed"),
 };
 
 function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
@@ -1342,9 +1345,9 @@ function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
 
 export function chars(s: GameState, id: ObjectId): Characteristics {
   const o = obj(s, id);
-  // Pendant le calcul (conditions des capacités statiques), on lit la passe précédente, sinon les caractéristiques de base.
-  // Un sort sur la pile : ses mots-clés comprennent ceux que lui accordent les statiques de son contrôleur (« vos éphémères
-  // et rituels ont le lien de vie », Heartflame Duelist ; PLAN-C, lot C11).
+  // During the computation (conditions of static abilities), the previous pass is read, otherwise the base
+  // characteristics. A spell on the stack: its keywords include those granted to it by its controller's statics
+  // ("instant and sorcery spells you control have lifelink", Heartflame Duelist; PLAN-C, lot C11).
   if (o.zone === "stack" && !computing) {
     const c = base(s, o, o.faceDefId ?? o.defId);
     const d = s.defs[o.faceDefId ?? o.defId];
@@ -1359,8 +1362,8 @@ export function chars(s: GameState, id: ObjectId): Characteristics {
 }
 
 /**
- * Force qui compte pour un usage (famille R4.3) : blessures de combat, équipage et selle, station. Valeur absolue, puis
- * endurance, puis bonus.
+ * Power that counts for a use (family R4.3): combat damage, crew and saddle, station. Absolute value, then toughness,
+ * then bonus.
  */
 export function effectivePower(
   c: Pick<Characteristics, "power" | "toughness"> & { powerRules?: PowerRule[] },
@@ -1387,12 +1390,12 @@ export function isCreature(s: GameState, id: ObjectId): boolean {
 }
 
 /**
- * Mal d'invocation (302.6) : une créature ne peut attaquer ni utiliser {T} que si son contrôleur
- * la contrôle sans interruption depuis le début de son tour le plus récent.
+ * Summoning sickness (302.6): a creature can attack or use {T} only if its controller has controlled it
+ * continuously since the beginning of their most recent turn.
  */
 /**
- * Mal d'invocation pour activer une capacité avec {T} : Shang-Chi, Master of Kung Fu (« comme si elles avaient la
- * célérité ») le lève, mais pas pour attaquer.
+ * Summoning sickness for activating an ability with {T}: Shang-Chi, Master of Kung Fu ("as though they had haste")
+ * lifts it, but not for attacking.
  */
 export function sickForActivation(s: GameState, id: ObjectId): boolean {
   if (!isSummoningSick(s, id)) return false;
@@ -1413,7 +1416,7 @@ export function creaturesControlledBy(s: GameState, p: PlayerId): ObjectId[] {
   return s.battlefield.filter((id) => obj(s, id).controller === p && isCreature(s, id));
 }
 
-/** Instantané des caractéristiques actuelles d'un objet (dernières informations connues). */
+/** Snapshot of the current characteristics of an object (last known information). */
 export function snapshot(s: GameState, id: ObjectId): LkiSnapshot {
   const o = obj(s, id);
   const c = chars(s, id);
@@ -1421,7 +1424,7 @@ export function snapshot(s: GameState, id: ObjectId): LkiSnapshot {
     ...view(s, id, c, o, s.combat?.attackers.find((a) => a.id === id)?.defender),
     abilities: c.abilities,
     counters: { ...o.counters },
-    // Choix fait en arrivant (type, couleur…) : lu par « du type choisi » même après son départ (dernière information).
+    // Choice made as it entered (type, color…): read by "of the chosen type" even after it leaves (last information).
     ...(o.chosen ? { chosen: { ...o.chosen } } : {}),
   };
 }

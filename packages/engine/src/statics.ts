@@ -18,8 +18,8 @@ import type {
 type Entry = { id: ObjectId; ab: AbilityDef };
 
 /**
- * Index des capacités par contrôleur, recalculé seulement quand l'état change (même clé que le cache des couches) ; les
- * statiques de joueur y sont aussi rangées par clé, et les remplacements d'événement par sorte d'événement (PLAN-C, C15).
+ * Index of the abilities by controller, recomputed only when the state changes (same key as the layer cache); player
+ * statics are also stored there by key, and event replacements by kind of event (PLAN-C, C15).
  */
 interface Index {
   key: string;
@@ -29,7 +29,7 @@ interface Index {
 }
 const cache = new WeakMap<GameState, Index>();
 
-/** Copie de l'état : la copie reprend l'index de l'original, validé par sa clé (voir `carryLayerCache`). */
+/** State copy: the copy takes over the index of the original, validated by its key (see `carryLayerCache`). */
 export function carryStaticsCache(from: GameState, to: GameState): void {
   const hit = cache.get(from);
   if (hit) cache.set(to, hit);
@@ -51,14 +51,14 @@ function current(s: GameState): Index {
     for (const ab of chars(s, id).abilities) add(p, { id, ab });
   }
   for (const p of s.playerOrder) {
-    // Zone de commandement : les emblèmes (un commandant qui attend d'être lancé n'a pas de capacité active, 113.6).
+    // Command zone: emblems (a commander waiting to be cast has no active ability, 113.6).
     for (const id of s.players[p]?.command ?? []) {
       for (const ab of commandZoneAbilities(s, id)) add(p, { id, ab });
     }
   }
   const statics = new Map<PlayerId, Map<string, Entry[]>>();
   const replacements = new Map<string, { p: PlayerId; e: Entry }[]>();
-  // Statiques de joueur : rangées pour chaque joueur qu'elles concernent (son contrôleur, ses adversaires, ou tous).
+  // Player statics: stored for each player they concern (their controller, their opponents, or all).
   const keysOf = (p: PlayerId) => {
     let m = statics.get(p);
     if (!m) {
@@ -93,7 +93,7 @@ function current(s: GameState): Index {
   return out;
 }
 
-/** Joueurs que touche une statique de joueur contrôlée par `p` (`affects`). */
+/** Players affected by a player static controlled by `p` (`affects`). */
 function affectedPlayers(s: GameState, p: PlayerId, sourceId: ObjectId, affects: PlayerStaticAbilityDef["affects"]): PlayerId[] {
   switch (affects) {
     case "each":
@@ -101,7 +101,7 @@ function affectedPlayers(s: GameState, p: PlayerId, sourceId: ObjectId, affects:
     case "opponents":
       return opponentsOf(s, p);
     case "enchanted": {
-      // Grievous Wound : le joueur que la source enchante (aucun si elle n'est pas attachée à un joueur).
+      // Grievous Wound: the player the source enchants (none if it is not attached to a player).
       const host = s.objects[sourceId]?.attachedTo;
       return host && s.players[host] && !s.players[host]?.lost ? [host] : [];
     }
@@ -114,32 +114,32 @@ function index(s: GameState): Map<PlayerId, Entry[]> {
   return current(s).byPlayer;
 }
 
-/** Capacités des permanents (et emblèmes) que contrôle ce joueur, avec leur source. */
+/** Abilities of the permanents (and emblems) this player controls, with their source. */
 export function controlledAbilitiesWithSource(s: GameState, player: PlayerId): Entry[] {
   return index(s).get(player) ?? [];
 }
 
 export type PlayerStaticKey = keyof Omit<PlayerStaticAbilityDef, "kind" | "label" | "condition">;
 
-/** Effets sur ce joueur encore en vigueur (créés par des résolutions, `s.playerEffects`). */
+/** Effects on this player still in force (created by resolutions, `s.playerEffects`). */
 function liveEffects(s: GameState, player: PlayerId): PlayerEffect[] {
   return s.playerEffects.filter((e) => e.player === player && (e.until === null || s.turn.number <= e.until));
 }
 
 /**
- * Statiques de joueur en vigueur pour ce joueur : celles des permanents et emblèmes qu'il contrôle dont la condition est
- * remplie, puis les effets sur lui (`s.playerEffects`, sans source). Seul accès aux statiques de joueur : ne jamais
- * filtrer `controlledAbilitiesWithSource` sur `kind === "playerStatic"` à la main (condition et effets oubliés).
+ * Player statics in force for this player: those of the permanents and emblems they control whose condition is met,
+ * then the effects on them (`s.playerEffects`, without a source). The only access to player statics: never filter
+ * `controlledAbilitiesWithSource` on `kind === "playerStatic"` by hand (condition and effects forgotten).
  */
 export function playerStatics(
   s: GameState,
   player: PlayerId,
-  /** Seulement celles qui portent cette clé ; la condition des autres n'est pas évaluée (une condition peut lire une statique). */
+  /** Only those that carry this key; the condition of the others is not evaluated (a condition can read a static). */
   key: PlayerStaticKey,
 ): { id?: ObjectId; ab: PlayerStaticAbilityDef; timestamp?: number }[] {
   const out: { id?: ObjectId; ab: PlayerStaticAbilityDef; timestamp?: number }[] = [];
   for (const { id, ab } of current(s).statics.get(player)?.get(key) ?? []) {
-    // La condition se lit du point de vue du contrôleur de la source (`affects` : la statique touche d'autres joueurs).
+    // The condition is read from the point of view of the source's controller (`affects`: the static affects other players).
     const controller = (id && s.objects[id]?.controller) || player;
     if (ab.kind === "playerStatic" && (!ab.condition || checkCondition(s, ab.condition, controller, id))) out.push({ id, ab });
   }
@@ -147,19 +147,19 @@ export function playerStatics(
   return out;
 }
 
-/** Un remplacement d'événement chiffré en vigueur : son contrôleur, sa source (capacité imprimée) ou son effet (bouclier). */
+/** A numeric event replacement in force: its controller, its source (printed ability) or its effect (shield). */
 export interface ActiveReplacement {
   r: EventReplacement;
   controller: PlayerId;
   sourceId?: ObjectId;
-  /** Effet de joueur qui le porte : un bouclier à usage unique (615.7) est retiré quand il s'applique. */
+  /** Player effect that carries it: a one-shot shield (615.7) is removed when it applies. */
   effectId?: string;
   once?: boolean;
 }
 
 /**
- * « Autant plus N » d'un remplacement (`modify.add`), évalué de son point de vue (`ref.self` : sa source, Fated
- * Firepower, Hawkeye) ; un montant qui n'est pas un nombre écrit est borné à 0 (« autant que sa force »). 0 : rien à ajouter.
+ * "That much plus N" of a replacement (`modify.add`), evaluated from its point of view (`ref.self`: its source, Fated
+ * Firepower, Hawkeye); an amount that is not a written number is floored at 0 ("that much as its power"). 0: nothing to add.
  */
 export function replacementAdd(s: GameState, a: ActiveReplacement): number {
   const add = a.r.modify.add;
@@ -167,15 +167,15 @@ export function replacementAdd(s: GameState, a: ActiveReplacement): number {
   return Math.max(0, evalAmount(s, staticContext(s, a.controller, a.sourceId ?? ""), add));
 }
 
-/** « Au moins N » d'un remplacement (`modify.atLeast`, Ojer Axonil : sa force), évalué de son point de vue. */
+/** "At least N" of a replacement (`modify.atLeast`, Ojer Axonil: its power), evaluated from its point of view. */
 export function replacementAtLeast(s: GameState, a: ActiveReplacement): number | undefined {
   const min = a.r.modify.atLeast;
   return min === undefined ? undefined : evalAmount(s, staticContext(s, a.controller, a.sourceId ?? ""), min);
 }
 
 /**
- * Remplacements d'événements chiffrés en vigueur (R1) : capacités `eventReplacement` des permanents et emblèmes de chaque
- * joueur encore en partie (condition remplie), puis effets de joueur qui portent un `replacement`.
+ * Numeric event replacements in force (R1): `eventReplacement` abilities of the permanents and emblems of each player
+ * still in the game (condition met), then player effects that carry a `replacement`.
  */
 export function eventReplacements(s: GameState, event: EventReplacement["event"]): ActiveReplacement[] {
   const out: ActiveReplacement[] = [];
@@ -196,8 +196,8 @@ export function eventReplacements(s: GameState, event: EventReplacement["event"]
 }
 
 /**
- * Le remplacement vise-t-il ce joueur ou ce permanent ? `to` est relatif au contrôleur du remplacement (le permanent
- * compte pour son contrôleur) ; `toFilter` : un permanent correspondant.
+ * Does the replacement apply to this player or this permanent? `to` is relative to the replacement's controller (the
+ * permanent counts for its controller); `toFilter`: a matching permanent.
  */
 export function recipientMatches(s: GameState, a: ActiveReplacement, target: string): boolean {
   const r = a.r;
@@ -219,7 +219,7 @@ export function recipientMatches(s: GameState, a: ActiveReplacement, target: str
   }
 }
 
-/** Le joueur concerné par un remplacement, sans filtre de permanent (`to` vu du contrôleur du remplacement). */
+/** The player concerned by a replacement, without a permanent filter (`to` seen from the replacement's controller). */
 export function playerSide(s: GameState, a: ActiveReplacement, player: PlayerId): boolean {
   switch (a.r.to) {
     case "you":
@@ -234,9 +234,9 @@ export function playerSide(s: GameState, a: ActiveReplacement, player: PlayerId)
 }
 
 /**
- * Modifications d'un événement chiffré (R1, 616.1) : les remplacements en vigueur qui s'appliquent (`applies`), en
- * « autant plus N » et « le double » ; `prevented` : l'un d'eux empêche l'événement (Mornsong Aria : « les joueurs ne
- * peuvent pas piocher »). Les boucliers à usage unique qui s'appliquent sont retirés.
+ * Modifications of a numeric event (R1, 616.1): the replacements in force that apply (`applies`), as "that much plus N"
+ * and "twice that"; `prevented`: one of them prevents the event (Mornsong Aria: "players can't draw cards"). One-shot
+ * shields that apply are removed.
  */
 export function quantityMods(
   s: GameState,
@@ -256,7 +256,7 @@ export function quantityMods(
   return { mods, prevented };
 }
 
-/** Retire un bouclier « la prochaine fois que » qui vient de s'appliquer (615.7). */
+/** Removes a "the next time" shield that just applied (615.7). */
 export function consumeReplacement(s: GameState, a: ActiveReplacement): void {
   if (!a.once || !a.effectId) return;
   s.playerEffects = s.playerEffects.filter((e) => e.id !== a.effectId);
@@ -268,22 +268,22 @@ export function playerStatic(s: GameState, player: PlayerId, key: PlayerStaticKe
 }
 
 /**
- * Le joueur ne peut-il pas perdre la partie (104.3) ? `reason: "life"` : pour avoir 0 point de vie ou moins (704.5a),
- * que `cantLose: "life"` suffit à empêcher (Marina Vendrell's Grimoire) ; sinon seul `cantLose: true` (Herald of Eternal
- * Dawn), qui empêche aussi ses adversaires de gagner.
+ * Can the player not lose the game (104.3)? `reason: "life"`: for having 0 or less life (704.5a), which
+ * `cantLose: "life"` is enough to prevent (Marina Vendrell's Grimoire); otherwise only `cantLose: true` (Herald of
+ * Eternal Dawn), which also prevents their opponents from winning.
  */
 export function cantLose(s: GameState, player: PlayerId, reason?: "life"): boolean {
   return playerStatics(s, player, "cantLose").some(({ ab }) => ab.cantLose === true || (reason && ab.cantLose === reason));
 }
 
-/** Le joueur passe-t-il son étape de pioche, ou les tours supplémentaires qu'il devrait commencer (500.11) ? */
+/** Does the player skip their draw step, or the extra turns they would begin (500.11)? */
 export function skips(s: GameState, player: PlayerId, what: "drawStep" | "extraTurns"): boolean {
   return playerStatics(s, player, "skips").some(({ ab }) => ab.skips === what);
 }
 
 /**
- * Les blessures ne peuvent-elles pas être prévenues (Sunspine Lynx ; Frenzied Baloth : celles de combat) ? Ces statiques
- * concernent tous les joueurs : il suffit qu'un joueur en ait une.
+ * Can damage not be prevented (Sunspine Lynx; Frenzied Baloth: combat damage)? These statics concern all players: one
+ * player having one is enough.
  */
 export function damageUnpreventable(s: GameState, combat: boolean): boolean {
   return s.playerOrder.some((p) =>
@@ -292,9 +292,9 @@ export function damageUnpreventable(s: GameState, combat: boolean): boolean {
 }
 
 /**
- * Le joueur peut-il regarder cet objet caché à tout moment (`lookAt`) ? La carte du dessus de sa bibliothèque (Vizier of
- * the Menagerie, et toute permission de jouer depuis le dessus de la bibliothèque, famille C) ou une créature face cachée
- * d'un adversaire (Found Footage ; 708.5 : son contrôleur la voit toujours).
+ * Can the player look at this hidden object at any time (`lookAt`)? The top card of their library (Vizier of the
+ * Menagerie, and any permission to play from the top of the library, family C) or a face-down creature of an opponent
+ * (Found Footage; 708.5: its controller can always see it).
  */
 export function mayLookAt(s: GameState, viewer: PlayerId, id: ObjectId): boolean {
   const o = s.objects[id];
@@ -316,9 +316,9 @@ export function mayLookAt(s: GameState, viewer: PlayerId, id: ObjectId): boolean
 }
 
 /**
- * 502.3 : comment ce permanent se dégage lors de l'étape de dégagement de son contrôleur, d'après les remplacements
- * `untap` limités à cette étape (`untapStep`) : `true`, il ne se dégage pas ; `"may"`, son contrôleur peut choisir de ne
- * pas le dégager (Hedge Whisperer) ; `undefined`, normalement.
+ * 502.3: how this permanent untaps during its controller's untap step, according to the `untap` replacements limited
+ * to that step (`untapStep`): `true`, it doesn't untap; `"may"`, its controller may choose not to untap it (Hedge
+ * Whisperer); `undefined`, normally.
  */
 export function untapStepRule(s: GameState, id: ObjectId): true | "may" | undefined {
   let rule: true | "may" | undefined;
@@ -330,16 +330,16 @@ export function untapStepRule(s: GameState, id: ObjectId): true | "may" | undefi
   return rule;
 }
 
-/** Le joueur ne peut pas perdre de points de vie (« votre total de points de vie ne peut pas changer ») ? */
+/** Can the player not lose life ("your life total can't change")? */
 export function lifeLossPrevented(s: GameState, player: PlayerId): boolean {
   return eventReplacements(s, "lifeLoss").some((a) => a.r.modify.prevent && recipientMatches(s, a, player));
 }
 
 /**
- * Points de vie qu'un joueur peut payer (119.4) : son total, ou aucun s'il ne peut pas perdre de points de vie (119.8,
- * Teferi's Protection). Payer 0 PV reste toujours possible.
+ * Life a player can pay (119.4): their total, or none if they can't lose life (119.8, Teferi's Protection). Paying 0
+ * life is always possible.
  */
-/** PV d'un coût « payez N points de vie » (`CostDef.payLife`), un montant évalué pour la source (War Room). */
+/** Life of a "pay N life" cost (`CostDef.payLife`), an amount evaluated for the source (War Room). */
 export function lifeCost(s: GameState, player: PlayerId, source: ObjectId, n: Amount | undefined): number {
   if (n === undefined) return 0;
   return typeof n === "number" ? n : Math.max(0, evalAmount(s, staticContext(s, player, source), n));
@@ -351,14 +351,14 @@ export function payableLife(s: GameState, player: PlayerId): number {
 }
 
 /**
- * Le joueur a-t-il la protection contre une source contrôlée par `from` (702.16) ? Contre tout (702.16j), ou contre ses
- * adversaires (une source d'un autre joueur).
+ * Does the player have protection from a source controlled by `from` (702.16)? From everything (702.16j), or from their
+ * opponents (a source of another player).
  */
 export function playerProtectedFrom(
   s: GameState,
   player: PlayerId,
   from: PlayerId | undefined,
-  /** La source (Serra's Emissary : protection contre le type de carte choisi). */
+  /** The source (Serra's Emissary: protection from the chosen card type). */
   sourceId?: ObjectId,
 ): boolean {
   return playerStatics(s, player, "protection").some(({ id, ab }) => {
@@ -372,7 +372,7 @@ export function playerProtectedFrom(
   });
 }
 
-/** Somme d'une statique de joueur numérique (un booléen vaut 1) : capacités contrôlées et effets en vigueur. */
+/** Sum of a numeric player static (a boolean counts as 1): controlled abilities and effects in force. */
 export function playerStaticTotal(s: GameState, player: PlayerId, key: PlayerStaticKey): number {
   let n = 0;
   for (const { ab } of playerStatics(s, player, key)) {
@@ -382,7 +382,7 @@ export function playerStaticTotal(s: GameState, player: PlayerId, key: PlayerSta
   return n;
 }
 
-/** Valeurs d'une statique de joueur portées par les effets en vigueur (« ne peut pas attaquer ce joueur »). */
+/** Values of a player static carried by the effects in force ("can't attack this player"). */
 export function playerEffectValues<K extends PlayerStaticKey>(
   s: GameState,
   player: PlayerId,
@@ -393,7 +393,7 @@ export function playerEffectValues<K extends PlayerStaticKey>(
     .filter((v): v is NonNullable<PlayerStaticAbilityDef[K]> => v !== undefined && v !== null && v !== false);
 }
 
-/** Crée un effet sur un joueur jusqu'à la fin du tour `until` (null : toute la partie). */
+/** Creates an effect on a player until the end of turn `until` (null: the whole game). */
 export function addPlayerEffect(
   s: GameState,
   player: PlayerId,
@@ -409,12 +409,12 @@ export function addPlayerEffect(
     once: once || undefined,
     timestamp: nextTimestamp(s),
   });
-  s.version += 1; // des caractéristiques peuvent en dépendre
+  s.version += 1; // characteristics can depend on it
 }
 
 /**
- * Retire le premier effet à usage unique de ce joueur qui porte `key` (avec cette valeur, si elle est donnée) ; true s'il
- * y en avait un.
+ * Removes the first one-shot effect of this player that carries `key` (with this value, if given); true if there was
+ * one.
  */
 export function consumePlayerEffect<K extends PlayerStaticKey>(
   s: GameState,
@@ -427,12 +427,12 @@ export function consumePlayerEffect<K extends PlayerStaticKey>(
   );
   if (!live) return false;
   s.playerEffects = s.playerEffects.filter((e) => e !== live);
-  // Des capacités statiques ou des F/E peuvent dépendre des effets du joueur (comme `consumeReplacement`).
+  // Static abilities or P/T can depend on the player's effects (like `consumeReplacement`).
   s.version += 1;
   return true;
 }
 
-/** Préventions statiques des permanents de tous les joueurs, avec leur contrôleur et leur source. */
+/** Static preventions of the permanents of all players, with their controller and their source. */
 export function preventions(s: GameState): { controller: PlayerId; sourceId: ObjectId; ab: PreventionAbilityDef }[] {
   const out: { controller: PlayerId; sourceId: ObjectId; ab: PreventionAbilityDef }[] = [];
   for (const [controller, list] of index(s)) {

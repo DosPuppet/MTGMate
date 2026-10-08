@@ -1,4 +1,4 @@
-/** Types du moteur — Cartes, capacités, coûts, effets continus (couches), jetons et déplacements. Réexportés par `types.ts`. */
+/** Engine types — Cards, abilities, costs, continuous effects (layers), tokens and moves. Re-exported by `types.ts`. */
 import type {
   Amount,
   CardType,
@@ -21,7 +21,7 @@ import type {
 } from "../types";
 
 export interface CardDef {
-  /** Identifiant stable (slug du nom, ou "token:..." pour les jetons). */
+  /** Stable identifier (slug of the name, or "token:..." for tokens). */
   id: string;
   name: string;
   typeLine: string;
@@ -34,16 +34,16 @@ export interface CardDef {
   power?: number;
   toughness?: number;
   keywords: Keyword[];
-  /** Capacités des permanents (mana, activées). */
+  /** Abilities of permanents (mana, activated). */
   abilities: AbilityDef[];
-  /** Effet à la résolution d'un éphémère ou d'un rituel. */
+  /** Effect on resolution of an instant or a sorcery. */
   spell?: SpellDef;
   kicker?: ManaCost;
-  /** Kicker sans mana (FIN) : « sacrifiez un artefact ou une créature », « renvoyez un terrain que vous contrôlez ». */
+  /** Kicker without mana (FIN): "sacrifice an artifact or creature", "return a land you control". */
   /**
-   * Kicker sans mana : sacrifier (FIN, Marchandage) ou renvoyer un permanent, flétrir N (`blight`, Lorwyn Eclipsed :
-   * N marqueurs -1/-1 sur une créature que vous contrôlez), ou engager des créatures de force totale N (`tapPower`,
-   * Travail d'équipe, Marvel Super Heroes).
+   * Kicker without mana: sacrifice (FIN, Bargain) or return a permanent, blight N (`blight`, Lorwyn Eclipsed:
+   * N -1/-1 counters on a creature you control), or tap creatures with total power N (`tapPower`,
+   * Teamwork, Marvel Super Heroes).
    */
   kickerCost?: {
     sacrifice?: ObjectFilter;
@@ -51,65 +51,65 @@ export interface CardDef {
     blight?: number;
     tapPower?: number;
     collectEvidence?: number;
-    /** « Exilez N cartes de votre cimetière ou payez [mana] » (Soaring Stoneglider), avec `kickerOrPay`. */
+    /** "Exile N cards from your graveyard or pay [mana]" (Soaring Stoneglider), with `kickerOrPay`. */
     exileGraveyard?: number;
-    /** « Payez N points de vie ou payez [mana] » (Redirect Lightning), avec `kickerOrPay`. */
+    /** "Pay N life or pay [mana]" (Redirect Lightning), with `kickerOrPay`. */
     life?: number;
   };
   /**
-   * X du sort payé autrement qu'en mana, en coût additionnel : « payez X points de vie » (`life`, Vicious Rivalry),
-   * « flétrissez X » (`blight`, Soul Immolation : X au plus la plus grande endurance parmi vos créatures ; la créature
-   * est choisie comme pour un coût de capacité, `blightTarget`).
+   * X of the spell paid other than with mana, as an additional cost: "pay X life" (`life`, Vicious Rivalry),
+   * "blight X" (`blight`, Soul Immolation: X at most the greatest toughness among your creatures; the creature
+   * is chosen as for an ability cost, `blightTarget`).
    */
   xCost?: "life" | "blight" | "waterbend";
   /**
-   * Maîtrise de l'eau en coût additionnel du sort (Avatar) : « waterbend {N} » (`waterbend: N`), « waterbend {X} »
-   * (`xCost: "waterbend"`), ou facultatif « you may waterbend {N} » (le kicker, `kickerKind: "waterbend"`). Ce mana-là
-   * peut être payé en engageant des artefacts et créatures dégagés ({1} chacun).
+   * Waterbend as an additional cost of the spell (Avatar): "waterbend {N}" (`waterbend: N`), "waterbend {X}"
+   * (`xCost: "waterbend"`), or optional "you may waterbend {N}" (the kicker, `kickerKind: "waterbend"`). That mana
+   * may be paid by tapping untapped artifacts and creatures ({1} each).
    */
   waterbend?: number;
   /**
-   * Coût additionnel obligatoire « flétrissez N ou payez [mana] » (Wild Unraveling, Bogslither's Embrace) : le kicker
-   * sans mana (`kickerCost.blight`) ou, s'il n'est pas payé, ce mana.
+   * Mandatory additional cost "blight N or pay [mana]" (Wild Unraveling, Bogslither's Embrace): the kicker without
+   * mana (`kickerCost.blight`) or, if it isn't paid, this mana.
    */
   kickerOrPay?: ManaCost;
-  /** Web-slinging (Spider-Man) : coût alternatif (dans `altCost`), en renvoyant en main une créature engagée. */
+  /** Web-slinging (Spider-Man): alternative cost (in `altCost`), by returning a tapped creature to hand. */
   webSlinging?: ManaCost;
-  /** Storied (Le Hobbit) : son contrôleur peut acquérir un récit durable (voir `stateBasedActions`). */
+  /** Storied (The Hobbit): its controller may gain an enduring story (see `stateBasedActions`). */
   storied?: boolean;
-  /** Faufilement (Sneak, Tortues Ninja) : coût alternatif (dans `altCost`), en renvoyant un attaquant non bloqué. */
+  /** Sneak (Teenage Mutant Ninja Turtles): alternative cost (in `altCost`), by returning an unblocked attacker. */
   sneak?: ManaCost;
-  /** Chaos (Mayhem, Spider-Man) : lançable depuis le cimetière pour ce coût si elle a été défaussée ce tour-ci. */
+  /** Mayhem (Spider-Man): castable from the graveyard for this cost if it was discarded this turn. */
   mayhem?: ManaCost;
-  /** Paradigme (Strixhaven) : exilée à la résolution ; une copie gratuite au début de chacune de vos phases principales. */
+  /** Paradigm (Strixhaven): exiled on resolution; a free copy at the beginning of each of your main phases. */
   paradigm?: boolean;
-  /** Évocation (702.74) : coût alternatif (dans `altCost`) ; la créature est sacrifiée en arrivant. */
+  /** Evoke (702.74): alternative cost (in `altCost`); the creature is sacrificed when it enters. */
   evoke?: ManaCost;
-  /** Coût de flashback : peut être lancée depuis le cimetière, puis exilée (702.34). */
-  /** Harmonie (702.180) : son coût est aussi rangé ici (même lancement depuis le cimetière, puis exil), avec `harmonize`. */
+  /** Flashback cost: may be cast from the graveyard, then exiled (702.34). */
+  /** Harmonize (702.180): its cost is also stored here (same casting from the graveyard, then exile), with `harmonize`. */
   flashback?: ManaCost;
   /**
-   * Harmonie (702.180) : lancée depuis le cimetière pour `flashback`, on peut engager une créature qu'on contrôle pour
-   * réduire ce coût de {X}, X étant sa force.
+   * Harmonize (702.180): cast from the graveyard for `flashback`, you may tap a creature you control to
+   * reduce that cost by {X}, X being its power.
    */
   harmonize?: boolean;
-  /** « Ce sort ne peut pas être contrecarré. » */
+  /** "This spell can't be countered." */
   cantBeCountered?: boolean;
-  /** « Ce sort ne peut pas être copié » (Choreographed Sparks). */
+  /** "This spell can't be copied" (Choreographed Sparks). */
   cantBeCopied?: boolean;
-  /** « Ce sort coûte [mana] de plus pour chaque cible au-delà de la première » (Officious Interrogation). */
+  /** "This spell costs [mana] more to cast for each target beyond the first" (Officious Interrogation). */
   costPerExtraTarget?: ManaCost;
-  /** Planeswalker : loyauté de départ (306.5b). */
+  /** Planeswalker: starting loyalty (306.5b). */
   loyalty?: number;
-  /** Aura : ce qu'elle peut enchanter (cible du sort d'Aura, puis légalité de l'attachement). */
+  /** Aura: what it can enchant (target of the Aura spell, then legality of the attachment). */
   enchant?: { filter: ObjectFilter; label: string; player?: boolean };
-  /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
+  /** "If this card is in your opening hand, you may begin the game with it on the battlefield." */
   /**
-   * `notStartingPlayer` : seulement si vous ne commencez pas ; `counter` : il arrive avec ce marqueur ; `exileFromHand` :
-   * une carte de votre main est alors exilée (Gemstone Caverns).
+   * `notStartingPlayer`: only if you're not the starting player; `counter`: it enters with this counter;
+   * `exileFromHand`: a card from your hand is then exiled (Gemstone Caverns).
    */
   leyline?: boolean | { notStartingPlayer?: boolean; counter?: string; exileFromHand?: boolean };
-  /** Garde : coût à payer (mana ou points de vie). */
+  /** Ward: cost to pay (mana or life). */
   ward?: {
     mana?: ManaCost;
     life?: number;
@@ -117,71 +117,70 @@ export interface CardDef {
     discard?: boolean;
     discardRandom?: boolean;
     sacrifice?: number;
-    /** Les permanents à sacrifier : non-terrains (Valgavoth), créatures (Vein Ripper). */
+    /** The permanents to sacrifice: nonland (Valgavoth), creatures (Vein Ripper). */
     sacrificeFilter?: ObjectFilter;
-    /** « Garde — Réunissez des preuves N » (Axebane Ferox). */
+    /** "Ward—Collect evidence N" (Axebane Ferox). */
     collectEvidence?: number;
-    /** « Garde — Maîtrise de l'eau {N} » (The Unagi of Kyoshi Island) : le mana de la garde est un coût de maîtrise de l'eau. */
+    /** "Ward—Waterbend {N}" (The Unagi of Kyoshi Island): the ward's mana is a waterbend cost. */
     waterbend?: boolean;
-    /** « Garde — Recevez N marqueurs poison » (The Serpent Society). */
+    /** "Ward—Get N poison counters" (The Serpent Society). */
     poison?: number;
-    /** « Garde — Défaussez une carte ou payez [mana] » (Titania) : `discard` ou ce mana, au choix. */
+    /** "Ward—Discard a card or pay [mana]" (Titania): `discard` or this mana, as chosen. */
     orMana?: ManaCost;
   };
-  /** Coûts en plus du coût de flashback (Twinned Vision : « défaussez une carte » ; Group Project : « engagez trois créatures »). */
+  /** Costs in addition to the flashback cost (Twinned Vision: "discard a card"; Group Project: "tap three creatures"). */
   flashbackCost?: AdditionalCost;
-  /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
+  /** "As an additional cost to cast this spell, …" (601.2b, 601.2h). */
   additionalCost?: AdditionalCost;
-  /** « Ce sort coûte {N} de moins à lancer [si…] » (601.2f). */
-  /** « Ce sort coûte {N} de moins si… » ; `colored` : symboles colorés retirés aussi (Brush Off : {1}{U}). */
+  /** "This spell costs {N} less to cast [if…]" (601.2f). */
+  /** "This spell costs {N} less if…"; `colored`: colored symbols removed too (Brush Off: {1}{U}). */
   costReduction?: { generic: Amount; colored?: ManaCost["colored"]; condition?: Condition };
-  /** Coût alternatif (« vous pouvez payer {B} plutôt que le coût de mana de ce sort si… »). */
-  /** `via` : nom du coût, noté au lancement (`CastInfo.via`) et lu par `cond.castVia` (ruée). */
+  /** Alternative cost ("you may pay {B} rather than pay this spell's mana cost if…"). */
+  /** `via`: name of the cost, recorded at cast time (`CastInfo.via`) and read by `cond.castVia` (blitz). */
   /**
-   * `pay` : d'autres choses payées avec le mana alternatif (Force of Will : 1 PV et une carte bleue de la main exilée ;
-   * Daze : une Île que vous contrôlez renvoyée en main) ; les objets sont choisis automatiquement.
+   * `pay`: other things paid along with the alternative mana (Force of Will: 1 life and a blue card exiled from hand;
+   * Daze: an Island you control returned to hand); the objects are chosen automatically.
    */
   altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean; via?: CastVia; pay?: AltCostPay };
-  /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
+  /** P/T defined by an ability (604.3, layer 7a), e.g. cards in opponents' graveyards. */
   cdaPT?: Amount;
   /**
-   * « En arrivant » (614.1c, 614.12, PLAN-H H9) : les effets faits pendant que le permanent arrive, avant l'événement
-   * d'arrivée, par une seule boucle (`asEntersChoices`, `replacement.ts`) quel que soit le chemin (sort de permanent qui se
-   * résout, terrain joué, effet qui le met sur le champ de bataille, autre arrivée). Choix : `chooseOnEnter` (type de
-   * créature, couleur, nom, mode…, `options` pour les choix permis), `chooseCopy` (« arrive comme une copie », 707.9),
-   * `devour` (702.82) ; tout autre effet s'y écrit aussi (Sin : retirer des marqueurs) ; des marqueurs mis sur
-   * `ref.self` sont ceux avec lesquels il arrive.
+   * "As it enters" (614.1c, 614.12, PLAN-H H9): the effects done while the permanent enters, before the enter event,
+   * by a single loop (`asEntersChoices`, `replacement.ts`) whatever the path (permanent spell resolving, land played,
+   * effect putting it onto the battlefield, other entry). Choices: `chooseOnEnter` (creature type, color, name,
+   * mode…, `options` for the allowed choices), `chooseCopy` ("enters as a copy", 707.9), `devour` (702.82); any other
+   * effect is written there too (Sin: remove counters); counters put on `ref.self` are the ones it enters with.
    */
   asEnters?: Effect[];
-  /** Cloud, Planet's Champion : « les capacités d'équipement que vous activez qui la ciblent coûtent {N} de moins ». */
+  /** Cloud, Planet's Champion: "equip abilities you activate that target it cost {N} less to activate". */
   equipDiscountWhenTargeted?: number;
-  /** « Si cette carte devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque à la place. » */
+  /** "If this card would be put into a graveyard from anywhere, shuffle it into its owner's library instead." */
   shuffleIntoLibrary?: boolean;
-  /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
+  /** May be cast from the graveyard by removing N counters from among your creatures (Quilled Greatwurm). */
   graveyardCastRemoveCounters?: number;
-  /** « [Cette carte] a le flash tant que … » (Take for a Ride, Colossal Rattlewurm). */
+  /** "[This card] has flash as long as …" (Take for a Ride, Colossal Rattlewurm). */
   flashIf?: Condition;
   /**
-   * « … si vous contrôliez une Fée en lançant ce sort » (Faerie Fencing, Steer Clear) : évaluée au lancement, retenue par
-   * le sort (`cond.metWhenCast`).
+   * "… if you controlled a Faerie as you cast this spell" (Faerie Fencing, Steer Clear): evaluated at cast time,
+   * remembered by the spell (`cond.metWhenCast`).
    */
   whenCast?: Condition;
-  /** « Exilez [ce sort] » à la résolution, au lieu du cimetière (Step Between Worlds). */
+  /** "Exile [this spell]" on resolution, instead of the graveyard (Step Between Worlds). */
   exileOnResolve?: boolean;
-  /** Plot (702.170) : coût de l'action spéciale « complotez cette carte » (lu dans le texte). */
+  /** Plot (702.170): cost of the special action "plot this card" (read from the text). */
   plot?: ManaCost;
-  /** Présage (702.143) : coût pour lancer la carte présagée à un tour ultérieur (lu dans le texte). */
+  /** Foretell (702.143): cost to cast the foretold card on a later turn (read from the text). */
   foretell?: ManaCost;
   /**
-   * Les capacités activées des sources du nom choisi (`GameObject.chosen.cardName`) : coûtent {N} de plus (Skyseer's
-   * Chariot), ou ne peuvent être activées que si ce sont des capacités de mana (`"forbid"` : Sorcerous Spyglass, Petrified
+   * Activated abilities of sources with the chosen name (`GameObject.chosen.cardName`): cost {N} more (Skyseer's
+   * Chariot), or can't be activated unless they're mana abilities (`"forbid"`: Sorcerous Spyglass, Petrified
    * Hamlet).
    */
   chosenNameAbilities?: number | "forbid";
-  /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
+  /** "You may cast this card from your graveyard [if…]" (Lightwheel Enhancements: max speed). */
   /**
-   * Lançable depuis le cimetière ; `discard` : en défaussant autant de cartes en plus (Alien Symbiosis), correspondant à
-   * `discardFilter` (retrace, 702.81 : une carte de terrain, lu dans le texte).
+   * Castable from the graveyard; `discard`: by discarding that many additional cards (Alien Symbiosis), matching
+   * `discardFilter` (retrace, 702.81: a land card, read from the text).
    */
   castFromGraveyard?: {
     condition?: Condition;
@@ -191,68 +190,68 @@ export interface CardDef {
     discardFilter?: ObjectFilter;
     finality?: boolean;
   };
-  /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
+  /** "You can't cast this spell unless…" (Proft, Sinister Mastermind: threshold). */
   castCondition?: Condition;
-  /** Seule l'endurance est définie par une capacité (Tarmogoyf, avec `cdaPower`). */
+  /** Only toughness is defined by an ability (Tarmogoyf, with `cdaPower`). */
   cdaToughness?: Amount;
-  /** Seule la force est définie par une capacité (Enigma Drake). */
+  /** Only power is defined by an ability (Enigma Drake). */
   cdaPower?: Amount;
-  /** « Vous pouvez lancer ce sort comme s'il avait le flash si vous payez {2} de plus. » */
+  /** "You may cast this spell as though it had flash if you pay {2} more to cast it." */
   flashExtraCost?: ManaCost;
-  /** Aura : « Vous contrôlez le permanent enchanté » (Confiscate). */
+  /** Aura: "You control enchanted permanent" (Confiscate). */
   controlsEnchanted?: boolean;
-  /** Wilt-Leaf Liege : défaussée par un sort ou une capacité adverse, va sur le champ de bataille. */
+  /** Wilt-Leaf Liege: discarded by a spell or ability an opponent controls, it goes to the battlefield. */
   opponentDiscardToBattlefield?: boolean;
-  /** Équipage N (Véhicule). */
+  /** Crew N (Vehicle). */
   crew?: number;
   text: string;
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
   image?: string;
   artCrop?: string;
   /**
-   * Autres impressions de la carte, avec leur illustration (PLAN-G : une réédition d'une carte déjà présente) ; un deck
-   * peut en choisir une (`DeckEntries`, `PlayerSetup.printings`).
+   * Other printings of the card, with their art (PLAN-G: a reprint of a card already present); a deck
+   * may choose one (`DeckEntries`, `PlayerSetup.printings`).
    */
   printings?: CardPrinting[];
-  /** Carte « à préparer » (Reality Fracture) : le sort attaché à la créature (seconde face). */
+  /** "Prepare" card (Reality Fracture): the spell attached to the creature (second face). */
   prepareFace?: PrepareFace;
-  /** Disposition à plusieurs faces (aventure, carte scindée, recto-verso transformable ou modal, assemblage). */
+  /** Multi-face layout (adventure, split card, transforming or modal double-faced card, meld). */
   layout?: MultiFaceLayout;
   /**
-   * Définitions complètes de chaque face (0 : recto, créature d'une aventure, moitié gauche). La carte elle-même
-   * porte les caractéristiques hors du jeu : celles du recto, ou la réunion des deux moitiés d'une carte scindée.
+   * Full definitions of each face (0: front face, creature of an adventure, left half). The card itself
+   * carries the characteristics outside the game: those of the front face, or the union of both halves of a split card.
    */
   faceDefs?: CardDef[];
-  /** « En arrivant, vous pouvez payer N points de vie ; sinon, il arrive engagé » (terrains choc). */
+  /** "As it enters, you may pay N life; if you don't, it enters tapped" (shock lands). */
   shockLand?: number;
-  /** Distorsion (702.185) : coût, points de vie en plus, et lançable aussi depuis le cimetière (Timeline Culler). */
+  /** Warp (702.185): cost, additional life, and also castable from the graveyard (Timeline Culler). */
   warp?: { cost: ManaCost; life?: number; fromGraveyard?: boolean };
   /**
-   * Station (702.184) : paliers « N+ | … » (mots-clés lus dans le texte, autres capacités dans le script) et seuil où le
-   * Vaisseau devient une créature-artefact.
+   * Station (702.184): "N+ | …" thresholds (keywords read from the text, other abilities in the script) and the
+   * threshold at which the Spacecraft becomes an artifact creature.
    */
   station?: { creatureAt?: number; thresholds: { n: number; keywords: Keyword[]; abilities: AbilityDef[] }[] };
-  /** Imminence N (702.176) : marqueurs de temps à l'arrivée si le coût d'imminence (`altCost`) a été payé. */
+  /** Impending N (702.176): time counters on entering if the impending cost (`altCost`) was paid. */
   impending?: number;
-  /** Déguisement (702.168) : coût pour retourner face visible une carte lancée face cachée pour {3}. */
+  /** Disguise (702.168): cost to turn face up a card cast face down for {3}. */
   disguise?: ManaCost;
-  /** Mue (702.37) : `disguise` porte le coût de mue ; la créature face cachée n'a pas la garde {2}. */
+  /** Morph (702.37): `disguise` carries the morph cost; the face-down creature doesn't have ward {2}. */
   morph?: true;
-  /** Folie (702.35) : défaussée, la carte va en exil et peut être lancée pour ce coût (lu dans le texte). */
+  /** Madness (702.35): when discarded, the card goes to exile and may be cast for this cost (read from the text). */
   madness?: ManaCost;
-  /** Toxique N (702.164) : le nombre de marqueurs poison (le mot-clé est dans `keywords`). */
+  /** Toxic N (702.164): the number of poison counters (the keyword is in `keywords`). */
   toxic?: number;
-  /** « Ce coût est réduit de {1} pour chaque… » (Fugitive Codebreaker) : réduction du coût de déguisement. */
+  /** "This cost is reduced by {1} for each…" (Fugitive Codebreaker): reduction of the disguise cost. */
   disguiseReduction?: Amount;
-  /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
+  /** Saga (714): number of the final chapter (read from the text). */
   saga?: { chapters: number };
-  /** Classe (716) : capacités des niveaux 2, 3… (coût du niveau et capacités ajoutées). */
+  /** Class (716): abilities of levels 2, 3… (level cost and added abilities). */
   classLevels?: { cost: ManaCost | null; abilities: AbilityDef[] }[];
-  /** Affaire (719) : capacités « Résolue » (la condition « Pour résoudre » est compilée dans la capacité `solveCase`). */
+  /** Case (719): "Solved" abilities (the "To solve" condition is compiled into the `solveCase` ability). */
   caseSolved?: AbilityDef[];
-  /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
+  /** Meld (701.42): the two parts and the melded card, by name. */
   meld?: { parts: string[]; result?: string };
-  /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
+  /** Kicker label: Offspring (702.175) or Gift (702.174), read from the text (Bloomburrow). */
   kickerKind?:
     | "offspring"
     | "gift"
@@ -263,90 +262,90 @@ export interface CardDef {
     | "exileGraveyard"
     | "waterbend"
     | "life"
-    /** Réplique (702.56) : le kicker est payé X fois (X du sort) ; le sort est copié X fois. */
+    /** Replicate (702.56): the kicker is paid X times (X of the spell); the spell is copied X times. */
     | "replicate"
-    /** Escouade (702.157) : le kicker est payé X fois ; en arrivant, le permanent crée X jetons qui sont ses copies. */
+    /** Squad (702.157): the kicker is paid X times; as it enters, the permanent creates X tokens that are copies of it. */
     | "squad"
-    /** Multikicker (702.33c) : le kicker est payé X fois (X du sort, lu par `amount.x`). */
+    /** Multikicker (702.33c): the kicker is paid X times (X of the spell, read by `amount.x`). */
     | "multikicker";
-  /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
+  /** Gift (702.174): what the chosen opponent gets if the gift is promised. */
   gift?: GiftKind;
-  /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
+  /** "As an additional cost, forage or pay [mana]" (Feed the Cycle): the "Forage" alternative cost avoids it. */
   forageOrPay?: ManaCost;
-  /** Carte assemblée (verso commun de deux cartes) : elle ne se met pas dans un deck. */
+  /** Melded card (shared back face of two cards): it doesn't go into a deck. */
   meldResult?: boolean;
-  /** Définition de la carte assemblée, enregistrée dans la partie avec la carte (partie d'un assemblage). */
+  /** Definition of the melded card, registered in the game with the card (part of a meld pair). */
   meldResultDef?: CardDef;
-  /** Définition du sort préparé (copiée en exil quand la créature devient préparée). */
+  /** Definition of the prepared spell (copied into exile when the creature becomes prepared). */
   prepareSpell?: CardDef;
-  /** false si la carte a des capacités que le moteur ne sait pas encore gérer. */
+  /** false if the card has abilities the engine can't handle yet. */
   implemented: boolean;
-  /** Impression de référence (code de set, numéro de collection, rareté) : export des decklists, filtres. */
+  /** Reference printing (set code, collector number, rarity): decklist export, filters. */
   set?: string;
   number?: string;
   /**
-   * Carte d'un pseudo-ensemble importé par nom (EDH, PLAN-E) : ensemble Scryfall de son impression (`number` est le numéro
-   * dans cet ensemble). Sert à l'export des decklists et au menu des illustrations ; `set` reste le pseudo-ensemble.
+   * Card of a pseudo-set imported by name (EDH, PLAN-E): Scryfall set of its printing (`number` is the number
+   * in that set). Used by decklist export and the art menu; `set` stays the pseudo-set.
    */
   origin?: string;
   rarity?: string;
-  /** Légalité par format, d'après Scryfall au moment de l'import (« legal », « not_legal », « banned »…). */
+  /** Legality by format, from Scryfall at import time ("legal", "not_legal", "banned"…). */
   legalities?: Partial<Record<LegalityFormat, Legality>>;
   isToken?: boolean;
 }
 
 export type MultiFaceLayout = "adventure" | "split" | "transform" | "modal_dfc" | "meld" | "saga" | "class" | "case";
 
-/** Une face affichable (sort préparé, autre face d'une carte à plusieurs faces). */
+/** A displayable face (prepared spell, other face of a multi-faced card). */
 export interface PrepareFace {
   name: string;
   manaCost: string;
   typeLine: string;
   text: string;
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
-  /** Image propre à cette face (verso d'une carte recto-verso). */
+  /** Image specific to this face (back face of a double-faced card). */
   image?: string;
 }
 
-/** Ce qu'un coût alternatif fait payer en plus de son mana (Force of Will, Force of Vigor, Daze). */
+/** What an alternative cost makes you pay in addition to its mana (Force of Will, Force of Vigor, Daze). */
 export interface AltCostPay {
   life?: number;
-  /** Cartes de votre main (autres que le sort) correspondant au filtre, exilées. */
+  /** Cards from your hand (other than the spell) matching the filter, exiled. */
   exileFromHand?: { filter: ObjectFilter; count: number };
-  /** Un permanent correspondant que vous contrôlez, renvoyé dans la main de son propriétaire. */
+  /** A matching permanent you control, returned to its owner's hand. */
   bounce?: ObjectFilter;
   /**
-   * Émerger (702.119) : un permanent correspondant que vous contrôlez, sacrifié ; le coût est réduit de sa valeur de mana
-   * (choix automatique : la plus grande).
+   * Emerge (702.119): a matching permanent you control, sacrificed; the cost is reduced by its mana value
+   * (automatic choice: the greatest).
    */
   sacrificeReduce?: ObjectFilter;
 }
 
-/** Une impression d'une carte : son ensemble, son numéro et son illustration. */
+/** A printing of a card: its set, its number and its art. */
 export interface CardPrinting {
-  /** « SPG-13 » : code de l'ensemble et numéro de collection. */
+  /** "SPG-13": set code and collector number. */
   key: string;
   set: string;
   number: string;
   image?: string;
   artCrop?: string;
-  /** Image de l'impression française, si elle existe. */
+  /** Image of the French printing, if there is one. */
   frImage?: string;
 }
 
 /**
- * Formats de partie : le Standard, « sans limite » (toute carte du catalogue, quelle que soit sa légalité : bannie,
- * hors Standard… ; seules restent les règles de construction) et le Commander (903, PLAN-E : 100 cartes dont le
- * commandant, singleton, identité de couleur, liste de bannissement de `cards/data/commander.json`). Les légalités
- * importées de Scryfall ne portent que sur les formats de `LegalityFormat`.
+ * Game formats: Standard, "unlimited" (any card of the catalog, whatever its legality: banned, outside Standard…;
+ * only the deck construction rules remain) and Commander (903, PLAN-E: 100 cards including the commander,
+ * singleton, color identity, banned list of `cards/data/commander.json`). The legalities imported from Scryfall
+ * only cover the formats of `LegalityFormat`.
  */
 export type Format = "standard" | "unlimited" | "commander";
-/** Formats des légalités importées de Scryfall. */
+/** Formats of the legalities imported from Scryfall. */
 export type LegalityFormat = "standard";
 export type Legality = "legal" | "not_legal" | "banned" | "restricted";
 
 export interface SpellDef {
-  /** Un seul mode = sort normal ; plusieurs = « Choisissez un — ». */
+  /** A single mode = normal spell; several = "Choose one —". */
   modes: ModeDef[];
 }
 
@@ -354,13 +353,13 @@ export interface ModeDef {
   label?: string;
   targets: TargetSpec[];
   effects: Effect[];
-  /** Spree (702.172) : coût supplémentaire de ce mode (les modes combinés additionnent les leurs). */
+  /** Spree (702.172): additional cost of this mode (combined modes add theirs up). */
   extraCost?: ManaCost;
-  /** Mode disponible seulement si la condition est remplie (délire : « choisissez-en un ou plus à la place »). */
+  /** Mode available only if the condition is met (delirium: "choose one or more instead"). */
   condition?: Condition;
   /**
-   * Coût alternatif propre au mode, qui remplace le coût de mana (surcharge 702.96, fendre 702.148) : le texte change
-   * avec le coût payé. Ni gratuit ni avec un autre coût alternatif (118.9a) ; la valeur de mana reste celle de la carte.
+   * Alternative cost specific to the mode, which replaces the mana cost (overload 702.96, cleave 702.148): the text
+   * changes with the cost paid. Neither free nor with another alternative cost (118.9a); the mana value stays the card's.
    */
   cost?: ManaCost;
 }
@@ -380,71 +379,71 @@ export type AbilityDef =
 
 export interface AdditionalCost {
   discard?: number;
-  /** Seulement des cartes correspondantes (retrace, 702.81 : une carte de terrain). */
+  /** Only matching cards (retrace, 702.81: a land card). */
   discardFilter?: ObjectFilter;
   /**
-   * Alternative à la défausse : « Défaussez une carte ou … ». `life` : « … payez N points de vie » (Bitter Triumph : sans
-   * défausse, le joueur paie ces PV) ; `mana` : « … payez [mana] » (Titania : sans défausse, ce mana s'ajoute au coût) ;
-   * `sacrifice` : « … sacrifiez un permanent » (Souls of the Lost : un permanent choisi est sacrifié), un filtre :
-   * « … sacrifiez un artefact » (Demand Answers).
+   * Alternative to discarding: "Discard a card or …". `life`: "… pay N life" (Bitter Triumph: without discarding,
+   * the player pays that life); `mana`: "… pay [mana]" (Titania: without discarding, this mana is added to the cost);
+   * `sacrifice`: "… sacrifice a permanent" (Souls of the Lost: a chosen permanent is sacrificed), a filter:
+   * "… sacrifice an artifact" (Demand Answers).
    */
   discardOr?: { life?: number; mana?: ManaCost; sacrifice?: boolean | ObjectFilter };
   /**
-   * Contempler (701.65) : choisir un permanent correspondant que vous contrôlez ou révéler une telle carte de votre main.
-   * « Vous pouvez contempler » (les Exhales) ; avec `orPay` : « contemplez … ou payez [mana] » (ce mana s'ajoute sans
-   * contemplation). Le sort retient qu'on a contemplé (`cond.beheld`) et ce qu'il a contemplé (`ref.cost("beheld")`).
-   * `required` : obligatoire (« choisissez une créature que vous contrôlez ou révélez une carte de créature de votre main »,
-   * Monstrous Emergence) ; `exiled` : une carte exilée correspondante au lieu d'une carte de la main (Close Encounter).
+   * Behold (701.65): choose a matching permanent you control or reveal such a card from your hand.
+   * "You may behold" (the Exhales); with `orPay`: "behold … or pay [mana]" (this mana is added without
+   * beholding). The spell remembers that it beheld (`cond.beheld`) and what it beheld (`ref.cost("beheld")`).
+   * `required`: mandatory ("choose a creature you control or reveal a creature card from your hand",
+   * Monstrous Emergence); `exiled`: a matching exiled card instead of a card from hand (Close Encounter).
    */
   behold?: { filter: ObjectFilter; orPay?: ManaCost; required?: boolean; exiled?: ExiledFilter };
-  /** Réunir des preuves X, X étant la valeur de mana totale des permanents ciblés (Urgent Necropsy). */
+  /** Collect evidence X, X being the total mana value of the targeted permanents (Urgent Necropsy). */
   collectEvidenceTargetsManaValue?: boolean;
   /**
-   * Choisis automatiquement (Duskmourn) : permanents exilés (liés au permanent), renvoyés, engagés ; cartes du cimetière
-   * exilées. `fromHand` : « contemplez un [type] et exilez-le » (Lorwyn Eclipsed) : un permanent que vous contrôlez ou
-   * une carte de votre main.
+   * Chosen automatically (Duskmourn): permanents exiled (linked to the permanent), returned, tapped; graveyard cards
+   * exiled. `fromHand`: "behold a [type] and exile it" (Lorwyn Eclipsed): a permanent you control or
+   * a card from your hand.
    */
   exile?: { filter: ObjectFilter; count: number; fromHand?: boolean };
   bounce?: { filter: ObjectFilter; count: number };
   tap?: { filter: ObjectFilter; count: number };
   exileGraveyard?: number;
-  /** `orPay` : « sacrifiez une créature ou payez {3}{B} » (sans sacrifice, ce mana s'ajoute au coût). */
+  /** `orPay`: "sacrifice a creature or pay {3}{B}" (without a sacrifice, this mana is added to the cost). */
   sacrifice?: { filter: ObjectFilter; count: number; orPay?: ManaCost };
   /**
-   * « Vous pouvez sacrifier un nombre quelconque de [filtre]. Ce sort coûte {1} de moins pour chaque permanent sacrifié
-   * ainsi » (Rottenmouth Viper) : chaque sacrifice paie {1} du générique, au choix du joueur (sinon le moins possible).
+   * "You may sacrifice any number of [filter]. This spell costs {1} less to cast for each permanent sacrificed
+   * this way" (Rottenmouth Viper): each sacrifice pays {1} of the generic, as the player chooses (otherwise as few as possible).
    */
   sacrificeToPay?: ObjectFilter;
 }
 
-/** « Les sorts de [filtre] que vous lancez coûtent {N} de moins. » */
+/** "[Filter] spells you cast cost {N} less." */
 export interface CostReductionAbilityDef {
   kind: "costReduction";
   filter: ObjectFilter;
   generic: number;
-  /** S'applique aux sorts des adversaires (Thalia, the Survivor : générique négatif = taxe) ; `everyone` : à ceux de
-   * tous les joueurs (Arachne, Psionic Weaver). */
+  /** Applies to opponents' spells (Thalia, the Survivor: negative generic = tax); `everyone`: to those of
+   * all players (Arachne, Psionic Weaver). */
   opponents?: boolean;
   everyone?: boolean;
-  /** Réduction variable (affinité pour les artefacts : Sami, Wildcat Captain), ajoutée à `generic`. */
+  /** Variable reduction (affinity for artifacts: Sami, Wildcat Captain), added to `generic`. */
   genericAmount?: Amount;
-  /** Seulement si la condition est remplie (Uthros Psionicist : « le deuxième sort que vous lancez chaque tour »). */
+  /** Only if the condition is met (Uthros Psionicist: "the second spell you cast each turn"). */
   condition?: Condition;
-  /** Seulement pour les sorts lancés depuis ces zones (Aven Interrupter, Doc Aurlock : cimetière ou exil). */
+  /** Only for spells cast from these zones (Aven Interrupter, Doc Aurlock: graveyard or exile). */
   fromZones?: ("graveyard" | "exile")[];
   label?: string;
 }
 
 /**
- * Sorte d'une capacité activée ou d'une action spéciale (modificateurs de coût, mana restreint) : exhaust, Équiper,
- * déverrouiller une porte, comploter, mise sous tension, retourner un permanent face visible.
+ * Kind of an activated ability or special action (cost modifiers, restricted mana): exhaust, Equip,
+ * unlock a door, plot, power-up, turn a permanent face up.
  */
 export type AbilityKind = "exhaust" | "equip" | "unlock" | "plot" | "powerUp" | "turnFaceUp";
 
-/** Usage permis d'un mana restreint (capacité de mana, ou mana ajouté par un effet : Ashling, Rimebound). */
+/** Allowed use of restricted mana (mana ability, or mana added by an effect: Ashling, Rimebound). */
 export interface ManaRestriction {
   spell?: ObjectFilter;
-  /** Activer une capacité de ces sortes (« ou activer une capacité d'équipement », « déverrouiller une porte »). */
+  /** Activate an ability of these kinds ("or activate an equip ability", "unlock a door"). */
   ability?: AbilityKind[];
   abilityOfCreature?: ObjectFilter;
   abilityOfSource?: ObjectFilter;
@@ -455,65 +454,65 @@ export interface ManaRestriction {
 export interface ManaAbilityDef {
   kind: "mana";
   cost: CostDef;
-  /** Le joueur choisit l'un de ces types. */
+  /** The player chooses one of these types. */
   produce: ManaType[];
-  /** « N mana en n'importe quelle combinaison de [ces types] » : chaque mana a son propre type (Vivi Ornitier). */
+  /** "N mana in any combination of [these types]": each mana has its own type (Vivi Ornitier). */
   combination?: boolean;
-  /** Produit la couleur choisie en arrivant (Heraldic Banner). */
+  /** Produces the color chosen as it entered (Heraldic Banner). */
   produceChosen?: boolean;
-  /** Mana dépensable seulement pour un sort (ou une capacité d'une créature source) correspondant au filtre. */
-  /** `notSpellFromHand` : « ce mana ne peut pas servir à lancer des sorts depuis votre main » (Heartwood Crafter). */
-  /** `abilityOfSource` : capacité d'une source quelconque correspondant au filtre (Steelswarm Operator) ; */
-  /** `spellNotFromHand` : « seulement pour lancer un sort depuis ailleurs que votre main » (Mm'menon, the Right Hand). */
+  /** Mana that can be spent only on a spell (or an ability of a source creature) matching the filter. */
+  /** `notSpellFromHand`: "this mana can't be spent to cast spells from your hand" (Heartwood Crafter). */
+  /** `abilityOfSource`: ability of any source matching the filter (Steelswarm Operator); */
+  /** `spellNotFromHand`: "only to cast a spell from anywhere other than your hand" (Mm'menon, the Right Hand). */
   restriction?: ManaRestriction;
-  /** Gene Pollinator : « engagez un permanent dégagé que vous contrôlez » en plus de {T} (choisi automatiquement). */
-  /** `"creature"` : une créature dégagée (Springleaf Drum) ; un filtre : un permanent correspondant (Relic of Legends). */
+  /** Gene Pollinator: "tap an untapped permanent you control" in addition to {T} (chosen automatically). */
+  /** `"creature"`: an untapped creature (Springleaf Drum); a filter: a matching permanent (Relic of Legends). */
   tapAnother?: boolean | "creature" | "artifact" | ObjectFilter;
-  /** « N'activez que si vous contrôlez… » (Verges d'Aetherdrift). */
+  /** "Activate only if you control…" (Aetherdrift verges). */
   condition?: Condition;
-  /** « Une seule fois par tour » (Vivi Ornitier). */
+  /** "Activate only once each turn" (Vivi Ornitier). */
   oncePerTurn?: boolean;
-  /** Twitching Doll : « mettez un marqueur [nid] sur cette créature » quand on l'active. */
+  /** Twitching Doll: "put a [nest] counter on this creature" when it's activated. */
   addCounter?: string;
-  /** Temple of Cyclical Time : « retirez un marqueur [de temps] de ce terrain » quand on l'active. */
+  /** Temple of Cyclical Time: "remove a [time] counter from this land" when it's activated. */
   removeCounter?: string;
-  /** Pit of Offerings : un mana de l'une des couleurs des cartes liées à la source (exilées avec elle). */
+  /** Pit of Offerings: one mana of any of the colors of the cards linked to the source (exiled with it). */
   produceLinkedColors?: boolean;
   /**
-   * Contrepartie de la capacité de mana, appliquée en la résolvant (605.3b) : la source inflige des blessures à son
-   * contrôleur (Ancient Tomb, terrains « douloureux »), chaque adversaire gagne des PV (Grove of the Burnwillows).
+   * Drawback of the mana ability, applied as it resolves (605.3b): the source deals damage to its
+   * controller (Ancient Tomb, "pain" lands), each opponent gains life (Grove of the Burnwillows).
    */
   drawback?: { damageYou?: number; opponentsGainLife?: number };
-  /** Un mana d'une des couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater, Plaza of Heroes). */
+  /** One mana of any of the colors among permanents you control matching the filter (Meteor Crater, Plaza of Heroes). */
   produceColorsOf?: ObjectFilter;
-  /** Avec `produceColorsOf` : les couleurs des cartes correspondantes de votre cimetière (The Grey Havens). */
+  /** With `produceColorsOf`: the colors of the matching cards in your graveyard (The Grey Havens). */
   produceColorsZone?: "graveyard";
   /**
-   * Un mana d'un type de `produce` qu'un terrain correspondant pourrait produire : que vous contrôlez (Reflecting Pool ;
-   * Star Compass : de base), ou d'un adversaire si le filtre le dit (`controller: "opponent"` : Exotic Orchard).
+   * One mana of a type of `produce` that a matching land could produce: that you control (Reflecting Pool;
+   * Star Compass: basic), or an opponent's if the filter says so (`controller: "opponent"`: Exotic Orchard).
    */
   produceLikeLands?: ObjectFilter;
   /**
-   * Commander (903.4) : un mana d'une couleur de l'identité de couleur de votre commandant (Command Tower, Arcane
-   * Signet) ; sans commandant, aucun mana (903.4f).
+   * Commander (903.4): one mana of any color in your commander's color identity (Command Tower, Arcane
+   * Signet); without a commander, no mana (903.4f).
    */
   produceIdentity?: boolean;
-  /** The Core : autant de mana que de cartes de votre cimetière correspondant au filtre. */
+  /** The Core: as much mana as there are cards in your graveyard matching the filter. */
   amountGraveyard?: ObjectFilter;
   /**
-   * Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie ;
-   * `uncounterable` : « ce sort ne peut pas être contrecarré », Cavern of Souls). `effects` : « quand ce mana est dépensé
-   * pour lancer [un sort correspondant], [effets] », capacité déclenchée de la source (Path of Ancestry : regard 1).
+   * Effect if this mana is spent to cast a matching spell (Carnelian Orb: haste; Pyromancer's Goggles: copy;
+   * `uncounterable`: "that spell can't be countered", Cavern of Souls). `effects`: "when this mana is spent
+   * to cast [a matching spell], [effects]", triggered ability of the source (Path of Ancestry: scry 1).
    */
   rider?: { spell: ObjectFilter; effect?: "haste" | "copy" | "uncounterable"; effects?: Effect[] };
   amount: number;
-  /** « {G} pour chaque Elfe que vous contrôlez » : le montant est le nombre de permanents correspondant. */
+  /** "{G} for each Elf you control": the amount is the number of matching permanents. */
   amountPer?: ObjectFilter;
-  /** The Eternity Elevator : autant de mana que de marqueurs de ce type sur la source. */
+  /** The Eternity Elevator: as much mana as there are counters of this type on the source. */
   amountCounters?: string;
-  /** Redshift : autant de mana que la force de la source. */
+  /** Redshift: as much mana as the source's power. */
   amountSelfPower?: boolean;
-  /** Loot, the Nexus : un mana pour chaque force différente parmi les créatures que vous contrôlez. */
+  /** Loot, the Nexus: one mana for each different power among creatures you control. */
   amountDistinctPowers?: boolean;
 }
 
@@ -524,34 +523,34 @@ export interface ActivatedAbilityDef {
   effects: Effect[];
   sorcerySpeed?: boolean;
   label?: string;
-  /** « N'activez cette capacité qu'une seule fois. » */
+  /** "Activate this ability only once." */
   once?: boolean;
   /**
-   * Montée en puissance (Power-up, Marvel Super Heroes) : une seule fois, et le coût est réduit du coût de mana de la
-   * source si elle est arrivée ce tour-ci.
+   * Power-up (Marvel Super Heroes): only once, and the cost is reduced by the mana cost of the
+   * source if it entered this turn.
    */
   powerUp?: boolean;
-  /** Capacité activée depuis le cimetière (« Renvoyez cette carte de votre cimetière… »). */
+  /** Ability activated from the graveyard ("Return this card from your graveyard…"). */
   fromGraveyard?: boolean;
-  /** Capacité activée depuis la main (cycle, « défaussez cette carte : … »). */
+  /** Ability activated from hand (cycling, "discard this card: …"). */
   fromHand?: boolean;
-  /** Capacité de cycle (702.29) : déclencheurs « quand vous cyclez cette carte ». */
+  /** Cycling ability (702.29): "when you cycle this card" triggers. */
   cycling?: boolean;
-  /** Exhaust (702.177) : une seule activation ; déclencheurs « chaque fois que vous activez une capacité d'exhaust ». */
+  /** Exhaust (702.177): a single activation; "whenever you activate an exhaust ability" triggers. */
   exhaust?: boolean;
-  /** « N'activez qu'une fois par tour. » */
+  /** "Activate only once each turn." */
   oncePerTurn?: boolean;
-  /** « N'activez que si… » / « … que pendant votre tour ». */
+  /** "Activate only if…" / "… only during your turn". */
   activationCondition?: Condition;
-  /** « Coûte {1} de moins pour chaque marqueur +1/+1 sur la créature ciblée » (Warrior's Blades). */
+  /** "Costs {1} less to activate for each +1/+1 counter on target creature" (Warrior's Blades). */
   reduceByTargetCounters?: boolean;
-  /** Dragonfire Blade : « coûte {1} de moins par couleur de la créature ciblée ». */
+  /** Dragonfire Blade: "costs {1} less for each color of target creature". */
   reduceByTargetColors?: boolean;
-  /** Capacité d'équipement (Kíli : la première de chaque tour peut coûter {0}). */
+  /** Equip ability (Kíli: the first each turn may cost {0}). */
   equip?: boolean;
-  /** Action spéciale (116) : pas de pile, effets immédiats (déverrouiller une porte de Salle). */
+  /** Special action (116): no stack, immediate effects (unlock a door of a Room). */
   specialAction?: boolean;
-  /** « Cette capacité coûte {N} de moins à activer [si …] » (N évalué à l'activation). */
+  /** "This ability costs {N} less to activate [if …]" (N evaluated on activation). */
   reduction?: { generic: Amount; condition?: Condition };
 }
 
@@ -559,15 +558,15 @@ export interface CostDef {
   mana?: ManaCost;
   tap?: boolean;
   /**
-   * Ce qu'on fait de la source pour payer : la sacrifier, l'exiler (du champ de bataille ou du cimetière), la défausser
-   * (capacité activée depuis la main), la renvoyer dans la main (Maze's End), l'épuiser (701.43 : elle ne se dégagera pas
-   * lors de la prochaine étape de dégagement de son contrôleur).
+   * What is done with the source to pay: sacrifice it, exile it (from the battlefield or the graveyard), discard it
+   * (ability activated from hand), return it to hand (Maze's End), exert it (701.43: it won't untap
+   * during its controller's next untap step).
    */
   self?: "sacrifice" | "exile" | "discard" | "bounce" | "exert";
   /**
-   * Fabrication (702.167) : exiler des matériaux parmi les autres permanents que vous contrôlez et/ou les cartes de votre
-   * cimetière (choisis automatiquement, cartes du cimetière d'abord). `each` : un matériau par filtre (The Grim Captain) ;
-   * `orMore` : un ou plusieurs ; `preferHighManaValue` : les plus chers d'abord (Jadeheart Attendant).
+   * Craft (702.167): exile materials from among the other permanents you control and/or the cards in your
+   * graveyard (chosen automatically, graveyard cards first). `each`: one material per filter (The Grim Captain);
+   * `orMore`: one or more; `preferHighManaValue`: the most expensive first (Jadeheart Attendant).
    */
   craft?: {
     filter?: ObjectFilter;
@@ -575,135 +574,135 @@ export interface CostDef {
     orMore?: boolean;
     each?: ObjectFilter[];
     preferHighManaValue?: boolean;
-    /** « Un ou plusieurs » : un matériau par couleur nouvelle (Sunbird Standard), plutôt que tout le cimetière. */
+    /** "One or more": one material per new color (Sunbird Standard), rather than the whole graveyard. */
     distinctColors?: boolean;
   };
-  /** Sacrifier d'autres permanents (choisis par le joueur). */
-  /** `includeSelf` : la source peut faire partie des permanents sacrifiés (Rat King : « sacrifiez trois Rats »). */
-  /** `distinct: "name"` : des permanents de noms différents (Transmutation Font : « trois jetons d'artefact de noms différents »). */
+  /** Sacrifice other permanents (chosen by the player). */
+  /** `includeSelf`: the source may be among the sacrificed permanents (Rat King: "sacrifice three Rats"). */
+  /** `distinct: "name"`: permanents with different names (Transmutation Font: "three artifact tokens with different names"). */
   sacrifice?: { filter: ObjectFilter; count: number; includeSelf?: boolean; distinct?: "name" };
-  /** Flétrir N (ECL) : N marqueurs −1/−1 sur une créature que vous contrôlez (choisie automatiquement : `blightTarget`). */
+  /** Blight N (ECL): N −1/−1 counters on a creature you control (chosen automatically: `blightTarget`). */
   blight?: number;
-  /** Réunir des preuves N (701.59, MKM) : cartes du cimetière de valeur de mana totale N ou plus (choisies automatiquement). */
+  /** Collect evidence N (701.59, MKM): graveyard cards with total mana value N or greater (chosen automatically). */
   collectEvidence?: number;
   /**
-   * Maîtrise de l'eau (Avatar) : le coût de mana est un coût « waterbend » ; en le payant, chaque artefact ou créature
-   * dégagé que vous contrôlez peut être engagé pour payer {1} (choisi par le solveur, comme la convocation).
+   * Waterbend (Avatar): the mana cost is a "waterbend" cost; while paying it, each untapped artifact or creature
+   * you control may be tapped to pay {1} (chosen by the solver, like convoke).
    */
   waterbend?: boolean;
-  /** « X ne peut pas être 0 » : plus petite valeur de X permise (Katara, Water Tribe's Hope ; Gogo, Master of Mimicry). */
+  /** "X can't be 0": smallest allowed value of X (Katara, Water Tribe's Hope; Gogo, Master of Mimicry). */
   minX?: number;
-  /** Les preuves exilées sont liées à la source (Kylox's Voltstrider : « parmi les cartes exilées avec lui »). */
+  /** The exiled evidence is linked to the source (Kylox's Voltstrider: "among cards exiled with it"). */
   linkEvidence?: boolean;
   /**
-   * Retirer des marqueurs de la source. `kind: "any"` : « retirez N marqueurs de cette créature », de n'importe quelle
-   * sorte (ECL), retirés par le moteur : les −1/−1 d'abord, les +1/+1 en dernier.
+   * Remove counters from the source. `kind: "any"`: "remove N counters from this creature", of any
+   * kind (ECL), removed by the engine: −1/−1 first, +1/+1 last.
    */
   removeCounters?: { kind: string; n: number };
   /**
-   * « Exilez un nombre quelconque de cartes [couleur] de votre cimetière avec N symboles de mana [couleur] ou plus parmi
-   * leurs coûts » (Baron Helmut Zemo : vantardise) : choisies automatiquement (le moins de cartes), notées dans
+   * "Exile any number of [color] cards from your graveyard with N or more [color] mana symbols among
+   * their mana costs" (Baron Helmut Zemo: boast): chosen automatically (fewest cards), recorded in
    * `costExiled`.
    */
   exileGraveyardSymbols?: { color: ManaType; n: number };
-  /** « Retirez un nombre quelconque de marqueurs [sorte] de cette créature » : X marqueurs (The Astonishing Ant-Man). */
+  /** "Remove any number of [kind] counters from this creature": X counters (The Astonishing Ant-Man). */
   removeCountersX?: string;
-  /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). `includeSelf` : « engagez N
-   * créatures dégagées que vous contrôlez », la source peut en être une, même avec le mal d'invocation (302.6). */
+  /** Tap other untapped permanents you control (chosen automatically). `includeSelf`: "tap N untapped
+   * creatures you control", the source may be one of them, even with summoning sickness (302.6). */
   tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
   /**
-   * Capacité accordée par un autre permanent (`Characteristics.grantors`) : ce qu'on en fait pour payer (« Engagez Fishing
-   * Pole », « Exilez The Dominion Bracelet », « Sacrifiez Deconstruction Hammer »).
+   * Ability granted by another permanent (`Characteristics.grantors`): what is done with it to pay ("Tap Fishing
+   * Pole", "Exile The Dominion Bracelet", "Sacrifice Deconstruction Hammer").
    */
   grantor?: "tap" | "exile" | "sacrifice";
   /**
-   * Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N) ; `"X"` : « −X », X marqueurs de
-   * loyauté retirés (X choisi à l'activation).
+   * Loyalty ability (606): loyalty counters added (+N) or removed (−N); `"X"`: "−X", X loyalty
+   * counters removed (X chosen on activation).
    */
   loyalty?: number | "X";
-  /** Retirer un marqueur d'un permanent que vous contrôlez (choisi automatiquement : Sunstar Chaplain). */
-  /** Retirer `n` marqueurs (1 par défaut) parmi des permanents correspondants que vous contrôlez (Iron Spider : deux). */
+  /** Remove a counter from a permanent you control (chosen automatically: Sunstar Chaplain). */
+  /** Remove `n` counters (1 by default) from among matching permanents you control (Iron Spider: two). */
   removeCounterFrom?: { filter: ObjectFilter; kind: string; n?: number };
-  /** Engager X permanents dégagés que vous contrôlez (X choisi à l'activation : Secluded Starforge). */
+  /** Tap X untapped permanents you control (X chosen on activation: Secluded Starforge). */
   tapX?: ObjectFilter;
-  /** Exiler X cartes correspondantes de votre cimetière (X choisi à l'activation, cartes choisies automatiquement : Winter). */
+  /** Exile X matching cards from your graveyard (X chosen on activation, cards chosen automatically: Winter). */
   exileFromGraveyardX?: ObjectFilter;
-  /** Sacrifier X permanents correspondants, X ≥ 1 (Radiant Lotus ; choisis automatiquement, la source en dernier). */
+  /** Sacrifice X matching permanents, X ≥ 1 (Radiant Lotus; chosen automatically, the source last). */
   sacrificeX?: ObjectFilter;
-  /** « Défaussez X cartes » (Gix, Yawgmoth Praetor) : X choisi, les cartes choisies par le joueur ou automatiquement. */
+  /** "Discard X cards" (Gix, Yawgmoth Praetor): X chosen, the cards chosen by the player or automatically. */
   discardX?: boolean;
-  /** Exiler d'autres cartes de votre cimetière (choisies automatiquement : Gallia). */
+  /** Exile other cards from your graveyard (chosen automatically: Gallia). */
   exileFromGraveyard?: { filter: ObjectFilter; count: number };
-  /** Mettre des marqueurs sur la source (Mazemind Tome : marqueur de page). */
+  /** Put counters on the source (Mazemind Tome: page counter). */
   addCounters?: { kind: string; n: number };
-  /** Équipage N (702.122) : engager des créatures dégagées de force totale N ou plus (choisies automatiquement). */
+  /** Crew N (702.122): tap untapped creatures with total power N or greater (chosen automatically). */
   crew?: number;
-  /** « Payez N points de vie » ; un montant évalué pour la source (War Room : les couleurs de l'identité de vos commandants). */
+  /** "Pay N life"; an amount evaluated for the source (War Room: the colors in your commanders' color identity). */
   payLife?: Amount;
-  /** « Payez X points de vie » (Krumar Initiate), X étant celui de la capacité. */
+  /** "Pay X life" (Krumar Initiate), X being the ability's. */
   payLifeX?: boolean;
-  /** Défausser N cartes (choisies par le joueur ; par défaut les premières de la main). */
+  /** Discard N cards (chosen by the player; by default the first ones in hand). */
   discard?: number;
-  /** « Défaussez votre main » (payable même main vide). */
+  /** "Discard your hand" (payable even with an empty hand). */
   discardHand?: boolean;
-  /** … seulement des cartes correspondantes (Lluwen : « défaussez une carte de terrain »). */
+  /** … only matching cards (Lluwen: "discard a land card"). */
   discardFilter?: ObjectFilter;
-  /** Ninjutsu : renvoyer en main un attaquant non bloqué que vous contrôlez (choisi automatiquement : le plus faible). */
+  /** Ninjutsu: return an unblocked attacker you control to hand (chosen automatically: the weakest). */
   returnUnblockedAttacker?: boolean;
-  /** « Renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (Urban Retreat : une créature
-   * engagée) ; choisi par le joueur (`bounce`), sinon le moins cher. */
+  /** "Return [a permanent] you control to its owner's hand" (Urban Retreat: a tapped
+   * creature); chosen by the player (`bounce`), otherwise the cheapest. */
   bounceOther?: ObjectFilter;
-  /** « Exilez [un permanent] que vous contrôlez » (The Soul Stone : une créature), le moins cher par défaut. */
+  /** "Exile [a permanent] you control" (The Soul Stone: a creature), the cheapest by default. */
   exileOther?: ObjectFilter;
-  /** Fourrager (701.61) : exiler trois cartes de votre cimetière ou sacrifier une Nourriture (choix automatique). */
+  /** Forage (701.61): exile three cards from your graveyard or sacrifice a Food (automatic choice). */
   forage?: boolean;
 }
-/** Modifications apportées par un effet continu, rangées par couche (613). */
+/** Modifications made by a continuous effect, sorted by layer (613). */
 /**
- * Règle de blocage d'une créature (couche 6, famille R4.1) : « ne peut pas être bloquée par [filtre] », « ne peut
- * bloquer que [filtre] », nombre de bloqueurs, « ne peut ni attaquer ni bloquer seule ». `label` : badge affiché.
+ * Blocking rule of a creature (layer 6, family R4.1): "can't be blocked by [filter]", "can block
+ * only [filter]", number of blockers, "can't attack or block alone". `label`: displayed badge.
  */
 export interface BlockRule {
-  /** Les bloqueurs qui correspondent au filtre ne peuvent pas la bloquer. */
+  /** Blockers matching the filter can't block it. */
   cantBeBlockedBy?: ObjectFilter;
-  /** Elle ne peut bloquer qu'un attaquant qui correspond au filtre. */
+  /** It can block only an attacker matching the filter. */
   canBlockOnly?: ObjectFilter;
-  /** Bloquée par au moins / au plus N créatures. */
+  /** Blocked by at least / at most N creatures. */
   minBlockers?: number;
   maxBlockers?: number;
-  /** Ne peut ni attaquer ni bloquer seule (Toby, Beastie Befriender). */
+  /** Can't attack or block alone (Toby, Beastie Befriender). */
   notAlone?: boolean;
   /**
-   * Ne peut pas attaquer ce joueur ni ses planeswalkers. Dans un script : `"you"` (Eriette of the Charmed Apple : « ne
-   * peut pas vous attaquer »), remplacé par le contrôleur de la source quand la statique s'applique, ou par celui de
-   * l'effet à sa résolution (Promise of Loyalty) ; voir `resolveBlockRules`.
+   * Can't attack this player or their planeswalkers. In a script: `"you"` (Eriette of the Charmed Apple: "can't
+   * attack you"), replaced by the source's controller when the static ability applies, or by the controller of
+   * the effect as it resolves (Promise of Loyalty); see `resolveBlockRules`.
    */
   cantAttackPlayer?: PlayerId | "you";
   /**
-   * Provocation (701.38) : elle attaque à chaque combat si possible, et un joueur autre que celui-ci si possible (508.1d).
-   * Dans un script, `"you"` (`fx.goad`) : le contrôleur de l'effet, figé à la résolution. Plusieurs joueurs peuvent la
-   * provoquer (701.38c) : autant d'exigences. Maximum Carnage impose les mêmes exigences sans le mot « provoquer ».
+   * Goad (701.38): it attacks each combat if able, and a player other than this one if able (508.1d).
+   * In a script, `"you"` (`fx.goad`): the controller of the effect, fixed on resolution. Several players can goad
+   * it (701.38c): as many requirements. Maximum Carnage imposes the same requirements without the word "goad".
    */
   goadedBy?: PlayerId | "you";
   /**
-   * Exigence d'attaque (508.1d) : elle attaque ce joueur à chaque combat si possible (Silver Surfer : `"eventPlayer"`, le
-   * joueur de l'événement, figé à la résolution), ou un adversaire qui a le plus de points de vie parmi les adversaires
-   * de son contrôleur (Galactus : `"mostLifeOpponent"`, lu à chaque déclaration). Un planeswalker ne la satisfait pas.
+   * Attack requirement (508.1d): it attacks this player each combat if able (Silver Surfer: `"eventPlayer"`, the
+   * player of the event, fixed on resolution), or an opponent with the most life among the opponents
+   * of its controller (Galactus: `"mostLifeOpponent"`, read at each declaration). A planeswalker doesn't satisfy it.
    */
   mustAttackPlayer?: PlayerId | "eventPlayer" | "mostLifeOpponent";
-  /** Traversée de terrain (702.14) : imblocable tant que le joueur défenseur contrôle un permanent correspondant. */
+  /** Landwalk (702.14): can't be blocked as long as the defending player controls a matching permanent. */
   unblockableIfDefenderControls?: ObjectFilter;
   /**
-   * « Ne peut pas être bloquée par les créatures que ce joueur contrôle » (The Black Gate : le joueur choisi). Dans un
-   * effet, une référence (`ref.stored("…")`), figée à la résolution (`resolveBlockRules`) ; une référence non figée (dans
-   * une statique) ne désigne personne.
+   * "Can't be blocked by creatures that player controls" (The Black Gate: the chosen player). In an
+   * effect, a reference (`ref.stored("…")`), fixed on resolution (`resolveBlockRules`); an unfixed reference (in
+   * a static ability) designates no one.
    */
   cantBeBlockedByPlayer?: PlayerId | Ref;
-  /** « Ne peut pas attaquer un joueur qu'elle a déjà attaqué ce tour-ci » (Port Razer). */
+  /** "Can't attack a player it already attacked this turn" (Port Razer). */
   notDefendersAttackedThisTurn?: boolean;
   /**
-   * Exigence de blocage (509.1c) : elle bloque ce tour-ci si possible (Culvert Ambusher, Hustle), ou bloque cet attaquant
-   * si possible (Tolsimir : `"eventObject"` dans un script, remplacé à la résolution par l'objet de l'événement).
+   * Block requirement (509.1c): it blocks this turn if able (Culvert Ambusher, Hustle), or blocks that attacker
+   * if able (Tolsimir: `"eventObject"` in a script, replaced on resolution by the object of the event).
    */
   mustBlock?: boolean;
   mustBlockAttacker?: ObjectId | "eventObject";
@@ -711,205 +710,206 @@ export interface BlockRule {
 }
 
 /**
- * Protection (702.16) ou défense talismanique (702.11d) contre une qualité, décrite par un filtre sur la source (le
- * sort, ou la source de la capacité ou des blessures ; famille R4.2). Protection contre tout : filtre vide.
+ * Protection (702.16) or hexproof (702.11d) from a quality, described by a filter on the source (the
+ * spell, or the source of the ability or damage; family R4.2). Protection from everything: empty filter.
  */
 export interface ProtectionRule {
   from: ObjectFilter;
-  /** Défense talismanique : seulement contre le ciblage par un adversaire. Sinon protection (DEBT). */
+  /** Hexproof: only against targeting by an opponent. Otherwise protection (DEBT). */
   hexproofOnly?: boolean;
   /**
-   * Commander : protection contre chaque couleur hors de l'identité de couleur des commandants du contrôleur du permanent
-   * protégé (903.4 ; Commander's Plate), ajoutée au filtre `from` ; aucune protection si l'identité a les cinq couleurs.
+   * Commander: protection from each color outside the color identity of the commanders of the protected
+   * permanent's controller (903.4; Commander's Plate), added to the `from` filter; no protection if the identity has
+   * all five colors.
    */
   outsideIdentity?: boolean;
   label: string;
 }
 
 /**
- * « Utilise son endurance (ou une force modifiée) pour … » (famille R4.3) : blessures de combat (Ghalta, Loot, the
- * Anomaly), équipage et selle (pilotes, Interface Ace), station (Tapestry Warden).
+ * "Uses its toughness (or a modified power) for …" (family R4.3): combat damage (Ghalta, Loot, the
+ * Anomaly), crew and saddle (pilots, Interface Ace), station (Tapestry Warden).
  */
 export interface PowerRule {
   uses: ("combatDamage" | "crew" | "station")[];
-  /** L'endurance à la place de la force : toujours, ou seulement si elle est plus grande. */
+  /** Toughness instead of power: always, or only if it's greater. */
   toughness?: "always" | "ifGreater";
-  /** La valeur absolue d'une force négative. */
+  /** The absolute value of a negative power. */
   absolute?: boolean;
-  /** Comme si sa force était supérieure de N. */
+  /** As though its power were N greater. */
   bonus?: number;
   label: string;
 }
 
 export interface LayerMods {
   /**
-   * Couche 7c : `power`/`toughness` multipliés, pour chaque objet touché, par son nombre de types de créature, au plus
-   * cette valeur (Diligent Zookeeper : « +1/+1 pour chacun de ses types de créature, au maximum 10 » ; changelin : tous).
+   * Layer 7c: `power`/`toughness` multiplied, for each affected object, by its number of creature types, at most
+   * this value (Diligent Zookeeper: "+1/+1 for each of its creature types, to a maximum of 10"; changeling: all).
    */
   perOwnCreatureTypes?: number;
-  /** Couche 6 : règles « utilise son endurance pour » accordées. */
+  /** Layer 6: "uses its toughness for" rules granted. */
   addPowerRules?: PowerRule[];
-  /** Couche 6 : protections et défenses talismaniques « contre [filtre] » accordées. */
+  /** Layer 6: protections and hexproof "from [filter]" granted. */
   addProtections?: ProtectionRule[];
-  /** Couche 6 : capacités (non mots-clés) accordées. */
+  /** Layer 6: (non-keyword) abilities granted. */
   addAbilities?: AbilityDef[];
-  /** Couche 6 : règles de blocage accordées. */
+  /** Layer 6: blocking rules granted. */
   addBlockRules?: BlockRule[];
-  /** Couche 4 : types et sous-types ajoutés. */
+  /** Layer 4: types and subtypes added. */
   addTypes?: CardType[];
   addSubtypes?: string[];
-  /** Couche 4 : surtypes ajoutés (« sauf que c'est légendaire »). */
+  /** Layer 4: supertypes added ("except it's legendary"). */
   addSupertypes?: string[];
-  /** Supertypes retirés (« sauf qu'elle n'est pas légendaire », The Apprentice's Folly, Yenna). */
+  /** Supertypes removed ("except it isn't legendary", The Apprentice's Folly, Yenna). */
   removeSupertypes?: string[];
-  /** Couche 4 : types remplacés (« est un terrain et perd tous ses autres types »), sous-types remplacés. */
+  /** Layer 4: types replaced ("is a land and loses all other card types"), subtypes replaced. */
   setTypes?: CardType[];
   setSubtypes?: string[];
-  /** Nom remplacé (Witness Protection). */
+  /** Name replaced (Witness Protection). */
   setName?: string;
-  /** Couche 5 : couleurs remplacées ; `addColors` : « en plus de ses autres couleurs ». */
+  /** Layer 5: colors replaced; `addColors`: "in addition to its other colors". */
   setColors?: Color[];
   /**
-   * « Le terrain enchanté est de la couleur choisie » (Shimmerwilds Growth) : la couleur choisie par la source ; `"add"` :
-   * « en plus de ses autres couleurs » (Painter's Servant).
+   * "Enchanted land is the chosen color" (Shimmerwilds Growth): the color chosen by the source; `"add"`:
+   * "in addition to its other colors" (Painter's Servant).
    */
   setColorsChosen?: boolean | "add";
   addColors?: Color[];
-  /** Couche 4 : a tous les types de créature (Soulstone Sanctuary, changelin). */
+  /** Layer 4: has all creature types (Soulstone Sanctuary, changeling). */
   allCreatureTypes?: boolean;
   /**
-   * Couche 4 : a en plus le sous-type choisi par la source : `"subtype"`, le type de créature choisi (Adaptive
-   * Automaton) ; `"landType"`, le type de terrain de base choisi (Multiversal Passage).
+   * Layer 4: additionally has the subtype chosen by the source: `"subtype"`, the chosen creature type (Adaptive
+   * Automaton); `"landType"`, the chosen basic land type (Multiversal Passage).
    */
   addChosen?: "subtype" | "landType";
-  /** Couche 6 : capacités (mots-clés) ajoutées ou retirées. */
+  /** Layer 6: abilities (keywords) added or removed. */
   addKeywords?: Keyword[];
   removeKeywords?: Keyword[];
   /**
-   * « … perd [mot-clé] et ne peut pas l'avoir ni l'acquérir » (Archetype of Courage) : retiré après tous les autres effets
-   * de couche 6, quels que soient leurs horodatages (marqueurs de capacité compris, 122.1b).
+   * "… loses [keyword] and can't have or gain it" (Archetype of Courage): removed after all other layer 6
+   * effects, whatever their timestamps (keyword counters included, 122.1b).
    */
   forbidKeywords?: Keyword[];
   loseAllAbilities?: boolean;
-  /** Couche 1 : devient une copie de cette définition (valeurs copiables ; Hall of Echoes). */
+  /** Layer 1: becomes a copy of this definition (copiable values; Hall of Echoes). */
   copyOf?: string;
-  /** Assimilation Aegis : copie de la carte exilée par la source (liée par « exilez jusqu'à ce que »). */
+  /** Assimilation Aegis: copy of the card exiled by the source (linked by "exile until"). */
   copyLinkedExile?: boolean;
   /**
-   * Territory Forge : a les capacités activées des cartes liées à la source ; `triggered` : aussi leurs capacités
-   * déclenchées ; `chosenName` : seulement la carte liée dont le nom a été choisi en dernier (Koh, the Face Stealer).
+   * Territory Forge: has the activated abilities of the cards linked to the source; `triggered`: also their triggered
+   * abilities; `chosenName`: only the linked card whose name was chosen last (Koh, the Face Stealer).
    */
   gainLinkedActivated?: boolean | { triggered?: boolean; chosenName?: boolean };
-  /** Marvin : a les capacités activées (imprimées) des créatures correspondantes qui n'ont pas son nom. */
+  /** Marvin: has the (printed) activated abilities of matching creatures that don't have its name. */
   gainActivatedFrom?: ObjectFilter;
-  /** Les capacités activées des cartes correspondantes du cimetière de son contrôleur (Thranduil, the Elvenking). */
+  /** The activated abilities of matching cards in its controller's graveyard (Thranduil, the Elvenking). */
   gainActivatedFromGraveyard?: ObjectFilter;
-  /** Couche 7b : F/E fixées. */
+  /** Layer 7b: P/T set. */
   setPower?: number;
   setToughness?: number;
-  /** Couche 7c : modifications de F/E. */
+  /** Layer 7c: P/T modifications. */
   power?: number;
   toughness?: number;
-  /** Couche 7d : échange de F et E. */
+  /** Layer 7d: P and T switched. */
   switchPT?: boolean;
 }
 
-/** Effet de remplacement porté par la carte elle-même (614.1c–d : « arrive engagé », « arrive avec… »). */
+/** Replacement effect carried by the card itself (614.1c–d: "enters tapped", "enters with…"). */
 export interface ReplacementAbilityDef {
   kind: "replacement";
   entersTapped?: boolean;
-  /** « Cette créature arrive préparée. » */
+  /** "This creature enters prepared." */
   entersPrepared?: boolean;
-  /** Nombre de marqueurs +1/+1 à l'arrivée (X du sort compris). */
+  /** Number of +1/+1 counters on entering (X of the spell included). */
   entersWithCounters?: Amount;
-  /** Condition (raid, kicker…) évaluée au moment de l'arrivée. */
+  /** Condition (raid, kicker…) evaluated as it enters. */
   condition?: Condition;
   /**
-   * Type des marqueurs (+1/+1 par défaut) : « revival », « fellowship »… ; `*` (avec `affects`) : chaque sorte présente sur
-   * la source (Blue, Loyal Raptor).
+   * Type of the counters (+1/+1 by default): "revival", "fellowship"…; `*` (with `affects`): each kind present on
+   * the source (Blue, Loyal Raptor).
    */
   counterKind?: string;
-  /** S'applique aux autres permanents correspondant au filtre (vus du contrôleur de la source), pas à la source. */
+  /** Applies to the other permanents matching the filter (seen from the source's controller), not to the source. */
   affects?: ObjectFilter;
   label?: string;
 }
 
 /**
- * 614.1a : « si [un objet] devait être mis dans un cimetière, exilez-le à la place » (Rest in Peace, Leyline of the Void,
- * Garruk, The Darkness Crystal, Valgavoth…). Plusieurs remplacements : voir `replaceGraveyard` (replacement.ts, 616.1).
+ * 614.1a: "if [an object] would be put into a graveyard, exile it instead" (Rest in Peace, Leyline of the Void,
+ * Garruk, The Darkness Crystal, Valgavoth…). Several replacements: see `replaceGraveyard` (replacement.ts, 616.1).
  */
 export interface GraveyardReplacementAbilityDef {
   kind: "graveyardReplacement";
-  /** Objets concernés, vus du contrôleur de la source (types, jetons, « contrôlée par un adversaire »…). */
+  /** Objects concerned, seen from the source's controller (types, tokens, "controlled by an opponent"…). */
   filter?: ObjectFilter;
-  /** Seulement depuis le champ de bataille (« mourir »). */
+  /** Only from the battlefield ("die"). */
   fromBattlefield?: boolean;
-  /** Cimetière visé : celui du contrôleur de la source, ou celui d'un de ses adversaires ; tous par défaut. */
+  /** Graveyard concerned: that of the source's controller, or that of one of their opponents; all by default. */
   graveyardOf?: "you" | "opponent";
-  /** Seulement ce que le contrôleur de la source ne contrôlait pas (Valgavoth). */
+  /** Only what the source's controller didn't control (Valgavoth). */
   notControlledByYou?: boolean;
-  /** La carte exilée est liée à la source : par identifiant (Valgavoth, jouable) ou par identité physique (Darkness Crystal). */
+  /** The exiled card is linked to the source: by identifier (Valgavoth, playable) or by physical identity (Darkness Crystal). */
   link?: "object" | "uid";
-  /** Le contrôleur de la source gagne ces points de vie. */
+  /** The source's controller gains this much life. */
   gainLife?: number;
-  /** Head of the Hunt : « quand vous le faites, créez [ce jeton] » (créé aussitôt). */
+  /** Head of the Hunt: "when you do, create [this token]" (created at once). */
   createToken?: TokenSpec;
   condition?: Condition;
   label?: string;
 }
 
 /**
- * Remplacement ou prévention d'un événement chiffré (614, 615, 616 ; famille E et F de PLAN-R, lot R1) : blessures ou
- * perte de points de vie, vues du contrôleur du remplacement. Imprimé : `EventReplacementAbilityDef` ; temporaire :
- * effet de joueur (`fx.thisTurn({ replacement })`) ; bouclier « la prochaine fois que » (615.7) : effet à usage unique.
+ * Replacement or prevention of a numeric event (614, 615, 616; families E and F of PLAN-R, lot R1): damage or
+ * life loss, seen from the replacement's controller. Printed: `EventReplacementAbilityDef`; temporary:
+ * player effect (`fx.thisTurn({ replacement })`); "the next time" shield (615.7): single-use effect.
  */
 export interface EventReplacement {
   /**
-   * L'événement chiffré : blessures et perte de PV (familles E et F) ; jetons créés et marqueurs mis (famille H) ; PV
-   * gagnés, cartes piochées, cartes meulées, mana produit (famille I) ; `untap` : un permanent qui se dégage (seule la
-   * prévention s'y applique : Blossombind, « ne peut pas être dégagée » ; avec `untapStep`, « ne se dégage pas lors de
-   * l'étape de dégagement de son contrôleur ») ; `payLife` : des PV payés (Ashiok, Wicked
-   * Manipulator : `instead.exileFromLibrary`, autant de cartes du dessus de la bibliothèque exilées à la place).
+   * The numeric event: damage and life loss (families E and F); tokens created and counters put (family H); life
+   * gained, cards drawn, cards milled, mana produced (family I); `untap`: a permanent untapping (only
+   * prevention applies to it: Blossombind, "can't become untapped"; with `untapStep`, "doesn't untap during
+   * its controller's untap step"); `payLife`: life paid (Ashiok, Wicked
+   * Manipulator: `instead.exileFromLibrary`, that many cards from the top of the library exiled instead).
    */
-  /** `connive` : une créature va comploter ; `modify.add` : son contrôleur pioche d'abord autant de cartes (Leader). */
+  /** `connive`: a creature is about to connive; `modify.add`: its controller first draws that many cards (Leader). */
   event: "damage" | "lifeLoss" | "lifeGain" | "draw" | "mill" | "counters" | "tokens" | "mana" | "untap" | "payLife" | "connive";
-  /** Source des blessures (filtre vu du contrôleur : `controller: "you"` pour « vos sources ») ; mana : le permanent engagé. */
+  /** Source of the damage (filter seen from the controller: `controller: "you"` for "your sources"); mana: the tapped permanent. */
   source?: ObjectFilter;
   /**
-   * Joueur concerné, vu du contrôleur : lui (`you`), lui ou ses permanents (`yourSide`), un adversaire (`opponent`), un
-   * adversaire ou ses permanents (`opponentSide`) ; absent : tous. Blessures : le blessé ; perte ou gain de PV, pioche,
-   * meule : le joueur ; marqueurs : le contrôleur du permanent ; jetons : celui qui les crée ; mana : celui qui engage.
+   * Player concerned, seen from the controller: them (`you`), them or their permanents (`yourSide`), an opponent (`opponent`), an
+   * opponent or their permanents (`opponentSide`); absent: all. Damage: the one dealt damage; life loss or gain, draw,
+   * mill: the player; counters: the permanent's controller; tokens: the one who creates them; mana: the one who taps.
    */
   to?: "you" | "yourSide" | "opponent" | "opponentSide";
-  /** Seulement un permanent correspondant : blessé (Summon: Alexander), qui reçoit les marqueurs ; jetons : le jeton créé. */
+  /** Only a matching permanent: dealt damage (Summon: Alexander), receiving the counters; tokens: the token created. */
   toFilter?: ObjectFilter;
-  /** Marqueurs : seulement cette sorte (« +1/+1 »). */
+  /** Counters: only this kind ("+1/+1"). */
   counter?: string;
-  /** Marqueurs : pas ceux mis pour payer un coût (Doubling Season : « si un effet devait mettre des marqueurs »). */
+  /** Counters: not those put to pay a cost (Doubling Season: "if an effect would put counters"). */
   effectOnly?: boolean;
-  /** Marqueurs : seulement ceux que met le contrôleur du remplacement (Innkeeper's Talent : « si vous deviez mettre »). */
+  /** Counters: only those put by the replacement's controller (Innkeeper's Talent: "if you would put"). */
   byYou?: boolean;
   /**
-   * Jetons : d'autres jetons à la place (Draconic Visitor : un Dragon 5/5) ou des copies du permanent auquel la source est
-   * attachée (Moonlit Meditation, Mirrormind Crown) ; `firstEachTurn` : seulement la première fois de chaque tour ; `may` :
-   * « vous pouvez à la place » (demandé par l'effet qui crée les jetons, avant leur création).
+   * Tokens: other tokens instead (Draconic Visitor: a 5/5 Dragon) or copies of the permanent the source is
+   * attached to (Moonlit Meditation, Mirrormind Crown); `firstEachTurn`: only the first time each turn; `may`:
+   * "you may instead" (asked by the effect creating the tokens, before they are created).
    */
   instead?: { token?: TokenSpec; copyOfAttached?: boolean; firstEachTurn?: boolean; exileFromLibrary?: boolean; may?: boolean };
-  /** Jetons : « ces jetons plus un jeton [N] » (Quina : une Grenouille ; Worldwalker Helm : une Carte). */
+  /** Tokens: "those tokens plus a [N] token" (Quina: a Frog; Worldwalker Helm: a Map). */
   plus?: TokenSpec;
   /**
-   * Mana : seulement quand ce type est produit (Ultima : un terrain engagé pour {C}) ; le mana ajouté en plus est du même
-   * type (`same`, par défaut), de la couleur choisie par la source (`chosen`, Shimmerwilds Growth) ou de ce type.
+   * Mana: only when this type is produced (Ultima: a land tapped for {C}); the additional mana added is of the same
+   * type (`same`, by default), of the color chosen by the source (`chosen`, Shimmerwilds Growth) or of this type.
    */
   manaProduced?: ManaType;
-  /** `any` : un mana de n'importe quelle couleur (Buried in the Garden) — approché : la couleur du mana produit. */
+  /** `any`: one mana of any color (Buried in the Garden) — approximated: the color of the mana produced. */
   extraMana?: "same" | "chosen" | "any" | ManaType;
-  /** true : seulement les blessures de combat ; false : seulement les autres. */
+  /** true: only combat damage; false: only other damage. */
   combat?: boolean;
   /**
-   * « autant plus N », « le double », « au moins N », « prévenez-les ». `add` et `atLeast` sont évalués du point de vue du
-   * remplacement (`ref.self` : sa source) : les marqueurs de feu de Fated Firepower, la force de Hawkeye, Young Avenger ou
-   * d'Ojer Axonil ; un montant qui n'est pas un nombre écrit est borné à 0 (voir `replacementAmounts`, statics.ts).
+   * "That much plus N", "twice that much", "at least N", "prevent it". `add` and `atLeast` are evaluated from the
+   * replacement's point of view (`ref.self`: its source): the flame counters of Fated Firepower, the power of Hawkeye,
+   * Young Avenger or of Ojer Axonil; an amount that isn't a written number is floored at 0 (see `replacementAmounts`, statics.ts).
    */
   modify: {
     add?: Amount;
@@ -917,427 +917,427 @@ export interface EventReplacement {
     atLeast?: Amount;
     prevent?: boolean;
   };
-  /** Après une prévention : chaque adversaire du contrôleur meule autant (The Mindskinner) ; capacité réflexive
-   * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source) ;
-   * autant de marqueurs de ce type sur la source du remplacement, dans le même remplacement (Anti-Venom), ou sur le
-   * permanent qui devait les subir (`countersOnDamaged` : Vigor). */
+  /** After a prevention: each opponent of the controller mills that many (The Mindskinner); reflexive ability
+   * "when damage is prevented this way" (New Way Forward: `amount.eventAmount` and `ref.eventObject`, the source);
+   * that many counters of this type on the replacement's source, in the same replacement (Anti-Venom), or on the
+   * permanent that would have been dealt the damage (`countersOnDamaged`: Vigor). */
   onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[]; counters?: string; countersOnDamaged?: string };
-  /** Blessures : infligées à la place au permanent auquel la source est attachée (With Great Power). */
+  /** Damage: dealt instead to the permanent the source is attached to (With Great Power). */
   redirectToAttached?: boolean;
-  /** Bouclier : seulement cette source, choisie à la création (`sourceDefIs` pour un sort sans objet). */
+  /** Shield: only this source, chosen at creation (`sourceDefIs` for a spell without an object). */
   sourceIs?: ObjectId;
   sourceDefIs?: string;
-  /** Bouclier : l'objet qui l'a créé (source de la capacité réflexive). */
+  /** Shield: the object that created it (source of the reflexive ability). */
   origin?: { id: ObjectId; defId: string };
   /**
-   * `untap` : seulement lors de l'étape de dégagement du contrôleur du permanent (502.3, « ne se dégage pas lors de
-   * l'étape de dégagement de son contrôleur ») ; `"may"` : son contrôleur choisit de le dégager ou non (Hedge Whisperer :
-   * « vous pouvez choisir de ne pas dégager cette créature lors de votre étape de dégagement »). Sans ce champ, il ne
-   * peut pas être dégagé du tout (Blossombind).
+   * `untap`: only during the untap step of the permanent's controller (502.3, "doesn't untap during
+   * its controller's untap step"); `"may"`: its controller chooses whether to untap it (Hedge Whisperer:
+   * "you may choose not to untap this creature during your untap step"). Without this field, it can't
+   * become untapped at all (Blossombind).
    */
   untapStep?: true | "may";
 }
 
-/** Remplacement d'un événement chiffré imprimé sur un permanent (« si une source que vous contrôlez devait… »). */
+/** Replacement of a numeric event printed on a permanent ("if a source you control would…"). */
 export interface EventReplacementAbilityDef extends EventReplacement {
   kind: "eventReplacement";
   condition?: Condition;
   label?: string;
 }
 
-/** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
+/** "You may cast spells as though they had flash." */
 export interface CastPermissionAbilityDef {
   kind: "castPermission";
-  /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
+  /** "You may cast spells as though they had flash." */
   flash?: true;
   /**
-   * Sorts sans payer leur coût de mana : `hand`, ceux de votre main (Omniscience) ; `any`, de toute zone d'où vous pouvez
-   * les lancer (Dracogenesis, As Foretold).
+   * Spells without paying their mana cost: `hand`, those from your hand (Omniscience); `any`, from any zone you can
+   * cast them from (Dracogenesis, As Foretold).
    */
   freeFrom?: "hand" | "any";
-  /** Seulement les sorts correspondants (Dracogenesis : « vous pouvez lancer des sorts de Dragon sans payer »). */
+  /** Only matching spells (Dracogenesis: "you may cast Dragon spells without paying"). */
   freeFilter?: ObjectFilter;
-  /** Une fois par tour (Zaffai and the Tempests) ; `condition` : seulement quand elle est remplie (pendant votre tour). */
+  /** Once each turn (Zaffai and the Tempests); `condition`: only when it's met (during your turn). */
   freeOncePerTurn?: true;
-  /** Omnipresence : seulement les sorts de valeur de mana ≤ nombre de créatures que vous contrôlez. */
+  /** Omnipresence: only spells with mana value ≤ the number of creatures you control. */
   freeMaxManaValueCreatures?: true;
   condition?: Condition;
-  /** Tinybones : pendant votre tour, jouer les cartes exilées avec un marqueur de butin que vous ne possédez pas (mana de n'importe quel type). */
+  /** Tinybones: during your turn, play the cards exiled with a stash counter that you don't own (mana of any type). */
   stash?: true;
-  /** Muldrotha : pendant votre tour, un terrain et un sort de permanent de chaque type depuis votre cimetière. */
+  /** Muldrotha: during your turn, a land and a permanent spell of each type from your graveyard. */
   graveyardPermanentTypes?: true;
   label?: string;
 }
 
 /**
- * « Le prochain sort [correspondant] que vous lancez ce tour-ci… » (famille N, R4.6) : copié (Teach by Example),
- * incontrecarrable (Theorist's Proxy), avec des marqueurs ou la célérité à l'arrivée (Summon: Fenrir).
+ * "The next [matching] spell you cast this turn…" (family N, R4.6): copied (Teach by Example),
+ * can't be countered (Theorist's Proxy), with counters or haste on entering (Summon: Fenrir).
  */
 export interface NextSpell {
   filter?: ObjectFilter;
   copy?: boolean;
-  /** Avec `copy` : la copie n'est pas légendaire (exception de copie, 707.9b ; The Clone Saga). */
+  /** With `copy`: the copy isn't legendary (copy exception, 707.9b; The Clone Saga). */
   nonlegendary?: boolean;
-  /** Réduction du coût générique de ce sort (Don & Raph : l'affinité pour les artefacts, `amount.count(…)`). */
+  /** Reduction of the generic cost of that spell (Don & Raph: affinity for artifacts, `amount.count(…)`). */
   reduce?: Amount;
   uncounterable?: boolean;
-  /** « … peut être lancé sans payer son coût de mana », de toute zone (World War Hulk) ; consommé même s'il est payé. */
+  /** "… may be cast without paying its mana cost", from any zone (World War Hulk); consumed even if paid. */
   free?: boolean;
   counters?: number;
   haste?: boolean;
-  /** Capacité déclenchée « quand vous lancez [ce sort] » (Codie, Vociferous Codex) ; le sort est `ref.target("s")`. */
+  /** Triggered ability "when you cast [that spell]" (Codie, Vociferous Codex); the spell is `ref.target("s")`. */
   trigger?: Effect[];
 }
 
 /**
- * Restriction de lancer (famille D, R4.5), vue du joueur qui a la statique : qui est concerné, quand, et ce qui est
- * interdit (tous les sorts, au-delà de N par tour, ou ceux lancés d'ailleurs que de la main).
+ * Casting restriction (family D, R4.5), seen from the player who has the static ability: who is concerned, when, and
+ * what is forbidden (all spells, beyond N per turn, or those cast from anywhere other than hand).
  */
 export interface CastLimit {
   who: "you" | "opponents" | "each";
-  /** Seulement pendant le tour du joueur de la statique, ou pendant le combat. */
+  /** Only during the turn of the static ability's player, or during combat. */
   during?: "yourTurn" | "combat";
-  /** Seulement les adversaires qui ont attaqué le joueur de la statique ce tour-ci (Sandswirl Wanderglyph). */
+  /** Only the opponents who attacked the static ability's player this turn (Sandswirl Wanderglyph). */
   attackedYou?: boolean;
-  /** Au plus N sorts par tour (High Noon : 1). */
+  /** At most N spells per turn (High Noon: 1). */
   maxSpells?: number;
-  /** Seulement les sorts de ces types, comptés eux seuls (Deafening Silence : un sort non-créature par tour). */
+  /** Only spells of these types, counted by themselves (Deafening Silence: one noncreature spell per turn). */
   spellTypes?: { types?: CardType[]; notTypes?: CardType[] };
-  /** Seulement les sorts lancés d'ailleurs que de la main (Avatar's Wrath). */
+  /** Only spells cast from anywhere other than hand (Avatar's Wrath). */
   exceptFromHand?: boolean;
-  /** Les sorts ne se lancent qu'au moment où l'on pourrait lancer un rituel (Teferi, Mage of Zhalfir). */
+  /** Spells can be cast only any time you could cast a sorcery (Teferi, Mage of Zhalfir). */
   sorceryTiming?: boolean;
-  /** Seulement retourner des permanents face visible (Karlov Watchdog) : ni les sorts ni les capacités ne sont bloqués. */
+  /** Only turning permanents face up (Karlov Watchdog): neither spells nor abilities are blocked. */
   faceUp?: boolean;
-  /** Bloque aussi les capacités activées (hors mana) : toutes (Yuriko), ou d'artefacts, de créatures et d'enchantements (Grand Abolisher). */
+  /** Also blocks activated abilities (other than mana): all (Yuriko), or of artifacts, creatures and enchantments (Grand Abolisher). */
   abilities?: "all" | "artifactsCreaturesEnchantments";
 }
 
 /**
- * Déclenchements modifiés (famille G, R4.5) : une fois de plus (Fractured Realm, Starfield Vocalist, Annie Joins Up,
- * Roaming Throne, Traveling Chocobo) ou jamais (Torpor Orb, Karn, Argent Defender).
+ * Modified triggers (family G, R4.5): one more time (Fractured Realm, Starfield Vocalist, Annie Joins Up,
+ * Roaming Throne, Traveling Chocobo) or never (Torpor Orb, Karn, Argent Defender).
  */
 export interface TriggerMod {
   effect: "again" | "none";
   /**
-   * Seulement les déclenchements dus à un événement : `enter`, l'arrivée d'un permanent, qui correspond à `entering` ;
-   * `attack`, une créature qui attaque (« chaque fois que … attaque », « … que vous attaquez ») ; `dies`, la mort d'une
-   * créature (The Masamune) ; `draw`, la pioche d'une carte, par n'importe quel joueur (Krang, the All-Powerful).
+   * Only triggers caused by an event: `enter`, a permanent entering, matching `entering`;
+   * `attack`, a creature attacking ("whenever … attacks", "… you attack with"); `dies`, a creature
+   * dying (The Masamune); `draw`, a card being drawn, by any player (Krang, the All-Powerful).
    */
   on?: "enter" | "attack" | "dies" | "draw";
   entering?: ObjectFilter;
   /**
-   * Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). `attached: "host"` : le
-   * permanent auquel la source de la statique est attachée, y compris s'il vient de quitter le champ de bataille. Avec
-   * `effect: "none"` : les permanents dont l'arrivée ne déclenche pas les capacités (Elesh Norn, Mother of Machines :
+   * Abilities concerned: those of matching permanents (by default, your permanents). `attached: "host"`: the
+   * permanent the static ability's source is attached to, even if it has just left the battlefield. With
+   * `effect: "none"`: the permanents whose entering doesn't trigger abilities (Elesh Norn, Mother of Machines:
    * `controller: "opponent"`).
    */
   sources?: ObjectFilter;
-  /** Aussi les capacités de vos emblèmes (The Masamune : « … ou d'un emblème que vous possédez »). */
+  /** Also the abilities of your emblems (The Masamune: "… or an emblem you own"). */
   emblems?: boolean;
-  /** Concerne les capacités de tous les joueurs (Torpor Orb). */
+  /** Concerns the abilities of all players (Torpor Orb). */
   everyone?: boolean;
 }
 
 /**
- * Modificateur de coût des capacités activées (famille A, R4.4) : {N} de moins, ou {0} pour la première de ce tour.
+ * Cost modifier of activated abilities (family A, R4.4): {N} less, or {0} for the first one this turn.
  */
 export interface AbilityCostMod {
-  /** Capacités concernées : exhaust, Équiper, déverrouiller une porte, comploter… ; sinon toutes. */
+  /** Abilities concerned: exhaust, Equip, unlock a door, plot…; otherwise all. */
   ability?: AbilityKind;
-  /** Sources concernées (Mutagen Man : vos jetons d'artefact). */
+  /** Sources concerned (Mutagen Man: your artifact tokens). */
   source?: ObjectFilter;
-  /** Pas les capacités de la source de la statique (Boom Scholar : « vos autres permanents »). */
+  /** Not the abilities of the static ability's source (Boom Scholar: "your other permanents"). */
   notSelf?: boolean;
   /**
-   * {N} de moins ; une quantité variable est évaluée pour la source de la statique (Agatha of the Vile Cauldron : sa
-   * force). `minOneMana` : le coût en mana ne descend pas sous un mana.
+   * {N} less; a variable quantity is evaluated for the static ability's source (Agatha of the Vile Cauldron: its
+   * power). `minOneMana`: the mana cost doesn't go below one mana.
    */
   reduce?: number | Amount;
   minOneMana?: boolean;
   /**
-   * Le mana se dépense pour ces capacités comme s'il était de n'importe quel type (Agatha's Soul Cauldron : capacités
-   * des créatures que vous contrôlez).
+   * Mana is spent on these abilities as though it were mana of any type (Agatha's Soul Cauldron: abilities
+   * of creatures you control).
    */
   anyMana?: boolean;
-  /** La première de ces capacités activée ce tour-ci coûte {0} (Kíli the Resourceful, Équiper). */
+  /** The first of these abilities activated this turn costs {0} (Kíli the Resourceful, Equip). */
   firstThisTurnFree?: boolean;
 }
 
 /**
- * Permission de jouer depuis une zone (famille C, R4.4) : les cartes de son cimetière ou la carte du dessus de sa
- * bibliothèque, qui correspondent au filtre, se jouent (terrains) ou se lancent (sorts), avec d'éventuels coûts ou
- * effets en plus. `linked` : les cartes exilées liées à la source (`GameObject.linked`), de tout propriétaire sauf filtre
- * `owner` (Null Summoner, Intrepid Paleontologist, Taster of Wares, Maralen, Hama, Valgavoth…).
+ * Permission to play from a zone (family C, R4.4): the cards of its graveyard or the top card of its
+ * library, matching the filter, may be played (lands) or cast (spells), with possible additional costs or
+ * effects. `linked`: the exiled cards linked to the source (`GameObject.linked`), of any owner unless the filter
+ * has `owner` (Null Summoner, Intrepid Paleontologist, Taster of Wares, Maralen, Hama, Valgavoth…).
  */
 export interface PlayFromZone {
   zone: "graveyard" | "libraryTop" | "linked";
-  /** Lu par `matchesCard` (« que vous possédez » : `owner` ; « exilées ce tour-ci » : `enteredThisTurn`). */
+  /** Read by `matchesCard` ("you own": `owner`; "exiled this turn": `enteredThisTurn`). */
   filter?: ObjectFilter;
-  /** Valeur de mana au plus égale à ce montant, évalué pour la source (Maralen : vos Elfes et Faeries). */
+  /** Mana value at most this amount, evaluated for the source (Maralen: your Elves and Faeries). */
   maxManaValue?: Amount;
-  /** Sans payer son coût de mana (Maralen). */
+  /** Without paying its mana cost (Maralen). */
   free?: boolean;
-  /** En maîtrisant l'eau {X} plutôt qu'en payant son coût de mana, X étant sa valeur de mana (Hama, the Bloodbender). */
+  /** By waterbending {X} rather than paying its mana cost, X being its mana value (Hama, the Bloodbender). */
   waterbend?: boolean;
-  /** En retirant en plus N marqueurs parmi les créatures que vous contrôlez (Dawnhand Dissident). */
+  /** By also removing N counters from among creatures you control (Dawnhand Dissident). */
   removeCountersAmong?: number;
-  /** Terrains, sorts, ou les deux (par défaut). */
+  /** Lands, spells, or both (by default). */
   what?: "lands" | "spells";
-  /** Points de vie payés en plus (Noctis, Festival of Embers). */
+  /** Additional life paid (Noctis, Festival of Embers). */
   payLife?: number;
-  /** Fourrager en plus (Osteomancer Adept). */
+  /** Additional forage (Osteomancer Adept). */
   forage?: boolean;
-  /** Évasion (702.138) donnée : exiler en plus N autres cartes de votre cimetière (Underworld Breach : 3). */
+  /** Escape (702.138) granted: also exile N other cards from your graveyard (Underworld Breach: 3). */
   exileOthers?: number;
-  /** Le permanent arrive avec un marqueur de finalité. */
+  /** The permanent enters with a finality counter. */
   finality?: boolean;
-  /** Du mana de n'importe quel type (Vizier of the Menagerie). */
+  /** Mana of any type (Vizier of the Menagerie). */
   anyMana?: boolean;
-  /** Sous-types en plus à l'arrivée (The Tomb of Aclazotz : Vampire). */
+  /** Additional subtypes on entering (The Tomb of Aclazotz: Vampire). */
   addSubtypes?: string[];
-  /** Une fois par tour (Johann, Apprentice Sorcerer) ; `onceKey` : posé par le moteur, la permission utilisée. */
+  /** Once each turn (Johann, Apprentice Sorcerer); `onceKey`: set by the engine, the permission used. */
   oncePerTurn?: boolean;
   onceKey?: string;
   /**
-   * La carte a le flashback (Iroh, Grand Lotus) : lancée depuis le cimetière, puis exilée ; son coût est `cost`, sinon
-   * son coût de mana.
+   * The card has flashback (Iroh, Grand Lotus): cast from the graveyard, then exiled; its cost is `cost`, otherwise
+   * its mana cost.
    */
   flashback?: boolean;
-  /** Un sort de créature lancé ainsi arrive avec N marqueurs +1/+1 de plus (Mikey & Don, Party Planners). */
+  /** A creature spell cast this way enters with N additional +1/+1 counters (Mikey & Don, Party Planners). */
   counters?: number;
-  /** Faufilement donné (Ninja Teen : « vos cartes de créature du cimetière ont le faufilement {3}{B} ») : la carte se
-   * lance pour ce coût pendant la fenêtre de faufilement, en renvoyant un attaquant non bloqué. */
+  /** Sneak granted (Ninja Teen: "creature cards in your graveyard have sneak {3}{B}"): the card is
+   * cast for this cost during the sneak window, by returning an unblocked attacker. */
   sneak?: ManaCost;
-  /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Gwenom, Remorseless ; Valgavoth, Terror Eater). */
+  /** "Pay life equal to its mana value rather than pay its mana cost" (Gwenom, Remorseless; Valgavoth, Terror Eater). */
   payLifeManaValue?: boolean;
-  /** La carte a le chaos (Goblin Formula) : lancée depuis le cimetière pour son coût de chaos, son coût de mana. */
+  /** The card has mayhem (Goblin Formula): cast from the graveyard for its mayhem cost, its mana cost. */
   mayhem?: boolean;
   cost?: ManaCost;
 }
 
-/** Capacité statique qui s'applique à des joueurs (défense talismanique, « ne peut pas perdre »…). */
+/** Static ability that applies to players (hexproof, "can't lose"…). */
 export interface PlayerStaticAbilityDef {
-  /** Fonctionne aussi depuis la zone de commandement (113.6 ; éminence : The Ur-Dragon). */
+  /** Also works from the command zone (113.6; eminence: The Ur-Dragon). */
   fromCommand?: boolean;
-  /** Jouer ou lancer des cartes depuis le cimetière ou le dessus de la bibliothèque (famille C, R4.4). */
+  /** Play or cast cards from the graveyard or the top of the library (family C, R4.4). */
   playFrom?: PlayFromZone;
-  /** Coût des capacités activées modifié (famille A, R4.4). */
+  /** Cost of activated abilities modified (family A, R4.4). */
   abilityCost?: AbilityCostMod;
-  /** Restriction de lancer des sorts (et d'activer des capacités) (famille D, R4.5). */
+  /** Restriction on casting spells (and activating abilities) (family D, R4.5). */
   castLimit?: CastLimit;
   /**
-   * Coût des sorts correspondants : {N} de moins (`reduce`, Goblin Maskmaker : « vos sorts face cachée lancés ce
-   * tour-ci ») ; le mana se dépense comme s'il était de n'importe quelle couleur (`anyMana`, Case File Auditor) ; des
-   * symboles colorés de moins (`reduceSymbols`, Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins »), chacun retirant
-   * un symbole de sa couleur, sinon {1} du générique (601.2f).
+   * Cost of matching spells: {N} less (`reduce`, Goblin Maskmaker: "face-down spells you cast this
+   * turn"); mana is spent as though it were mana of any color (`anyMana`, Case File Auditor); fewer
+   * colored symbols (`reduceSymbols`, Aang, Master of Elements: "{W}{U}{B}{R}{G} less"), each removing
+   * a symbol of its color, otherwise {1} of the generic (601.2f).
    */
   spellCost?: { filter: ObjectFilter; reduce?: number; anyMana?: boolean; reduceSymbols?: ManaCost["colored"] };
-  /** Déclenchements doublés ou supprimés (famille G, R4.5). */
+  /** Triggers doubled or suppressed (family G, R4.5). */
   triggerMod?: TriggerMod;
-  /** Remplacement ou prévention d'un événement chiffré, posé par un effet (familles E et F, R1). */
+  /** Replacement or prevention of a numeric event, set by an effect (families E and F, R1). */
   replacement?: EventReplacement;
-  /** « Le prochain sort que vous lancez ce tour-ci… » (famille N, R4.6), posé par un effet à usage unique. */
+  /** "The next spell you cast this turn…" (family N, R4.6), set by a single-use effect. */
   nextSpell?: NextSpell;
   kind: "playerStatic";
-  /** Hall of Echoes : la règle des légendes ne s'applique pas à vos permanents ; seulement à ceux-ci (Spider-Verse : vos
-   * Araignées). */
+  /** Hall of Echoes: the legend rule doesn't apply to your permanents; only to these (Spider-Verse: your
+   * Spiders). */
   noLegendRule?: boolean | ObjectFilter;
-  /** Jace's Machinations : capacités de loyauté de vos Jace à vitesse d'éphémère. */
+  /** Jace's Machinations: loyalty abilities of your Jaces at instant speed. */
   jaceLoyaltyInstant?: boolean;
   /**
-   * « Ne peut pas gagner de points de vie » (119.7) : Screaming Nemesis (effet), Rampaging Ferocidon (`affects: "each"`),
-   * Archfiend of Despair (`affects: "opponents"`), Grievous Wound (`affects: "enchanted"`). Un « ne peut pas » l'emporte (101.2) : aucun remplacement du gain ne s'applique alors
-   * (ni « autant plus N », ni « le double »), et rien ne se déclenche.
+   * "Can't gain life" (119.7): Screaming Nemesis (effect), Rampaging Ferocidon (`affects: "each"`),
+   * Archfiend of Despair (`affects: "opponents"`), Grievous Wound (`affects: "enchanted"`). A "can't" wins (101.2): no replacement of the gain applies then
+   * (neither "that much plus N" nor "twice that much"), and nothing triggers.
    */
   cantGainLife?: boolean;
-  /** K'rrik : chaque symbole de cette couleur de vos coûts se paie aussi avec 2 PV (mana phyrexian, 107.4f). */
+  /** K'rrik: each symbol of this color in your costs can also be paid with 2 life (Phyrexian mana, 107.4f). */
   phyrexianMana?: ManaType;
-  /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
+  /** Pit Automaton: your next exhaust ability is copied (single use). */
   copyNextExhaust?: boolean;
   /**
-   * Les créatures de ce joueur ne peuvent pas attaquer `of` ni ses planeswalkers (Sandswirl Wanderglyph) ; avec `subtype`,
-   * seulement ses planeswalkers de ce sous-type (Jace, Multiverse Architect : « vos Jace »). Dans un effet
-   * (`fx.thisTurn`), `"you"` désigne le contrôleur de l'effet, fixé à la résolution. Lu par `attackableDefenders`.
+   * This player's creatures can't attack `of` or their planeswalkers (Sandswirl Wanderglyph); with `subtype`,
+   * only their planeswalkers of that subtype (Jace, Multiverse Architect: "your Jaces"). In an effect
+   * (`fx.thisTurn`), `"you"` designates the controller of the effect, fixed on resolution. Read by `attackableDefenders`.
    */
   cantAttack?: { of: PlayerId; subtype?: string };
-  /** « Vous avez la défense talismanique » ; un filtre : seulement contre ces sources (Veil of Summer : bleues et noires). */
+  /** "You have hexproof"; a filter: only against these sources (Veil of Summer: blue and black). */
   hexproof?: boolean | ObjectFilter;
   /**
-   * `true` : « vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner » (Herald of Eternal Dawn,
-   * Angel's Grace) ; `"life"` : vous ne perdez pas la partie pour avoir 0 point de vie ou moins (Marina Vendrell's
-   * Grimoire, Phyrexian Unlife). Lu par `cantLose` (statics.ts).
+   * `true`: "you can't lose the game and your opponents can't win the game" (Herald of Eternal Dawn,
+   * Angel's Grace); `"life"`: you don't lose the game for having 0 or less life (Marina Vendrell's
+   * Grimoire, Phyrexian Unlife). Read by `cantLose` (statics.ts).
    */
   cantLose?: true | "life";
-  /** « Vous gagnez des points de vie au lieu d'en perdre à cause de la radiation » (Strong, the Brutish Thespian). */
+  /** "You gain life rather than lose life from radiation" (Strong, the Brutish Thespian). */
   radiationGains?: boolean;
-  /** Mots-clés des sorts correspondants que le joueur contrôle (Lo and Li : « vos sorts de Leçon ont le lien de vie »). */
+  /** Keywords of matching spells the player controls (Lo and Li: "your Lesson spells have lifelink"). */
   spellKeywords?: { filter: ObjectFilter; keywords: Keyword[] };
   /**
-   * Mana non dépensé (500.4) : ces types ne se vident pas à la fin des étapes et des phases (The Last Agni Kai, posé par
-   * `fx.thisTurn`) ; `becomes` : il devient de ce type au lieu de se vider (Ozai, the Phoenix King).
+   * Unspent mana (500.4): these types don't empty at the end of steps and phases (The Last Agni Kai, set by
+   * `fx.thisTurn`); `becomes`: it becomes this type instead of emptying (Ozai, the Phoenix King).
    */
   keepUnspentMana?: { types?: ManaType[]; becomes?: ManaType };
-  /** « Vous pouvez jouer un terrain supplémentaire lors de chacun de vos tours. » */
+  /** "You may play an additional land on each of your turns." */
   extraLands?: number;
-  /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */
+  /** "Lands you control enter untapped" (The Wandering Minstrel). */
   landsEnterUntapped?: boolean;
   /**
-   * Protection du joueur (702.16) : contre chacun de ses adversaires (`opponents`, Absolute Virtue) ou contre tout
-   * (`everything`, 702.16j : Teferi's Protection, The One Ring). Le joueur ne peut pas être ciblé par les sorts et
-   * capacités de ces sources, et les blessures qu'elles devraient lui infliger sont prévenues ; on peut l'attaquer.
+   * Player protection (702.16): from each of their opponents (`opponents`, Absolute Virtue) or from everything
+   * (`everything`, 702.16j: Teferi's Protection, The One Ring). The player can't be targeted by spells and
+   * abilities of those sources, and damage they would deal to them is prevented; they can be attacked.
    */
-  /** Un filtre : protection contre les sources qui y correspondent (Serra's Emissary : le type de carte choisi). */
+  /** A filter: protection from the sources matching it (Serra's Emissary: the chosen card type). */
   protection?: "opponents" | "everything" | ObjectFilter;
-  /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
+  /** "The first time you flip coins each turn, you win those flips" (Edgar, King of Figaro). */
   winFirstCoinFlips?: boolean;
   /**
-   * « [Les sorts] que vous contrôlez ne peuvent pas être contrecarrés » (`filter` : éphémères et rituels, Sphinx of the
-   * Final Word ; créatures, Frenzied Baloth ; absent : tous, Chimil) ; `abilities` : les capacités non plus ; `everyone` :
-   * ceux de tous les joueurs (Spider-Punk : « les sorts et les capacités ne peuvent pas être contrecarrés »).
+   * "[Spells] you control can't be countered" (`filter`: instants and sorceries, Sphinx of the
+   * Final Word; creatures, Frenzied Baloth; absent: all, Chimil); `abilities`: abilities neither; `everyone`:
+   * those of all players (Spider-Punk: "spells and abilities can't be countered").
    */
   uncounterable?: { filter?: ObjectFilter; abilities?: boolean; everyone?: boolean };
-  /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
+  /** Weftwalking (applies to everyone): each player's first spell during their turn may be cast without paying. */
   firstSpellFree?: boolean;
-  /** Tannuk, Steadfast Second : les cartes de votre main correspondant au filtre ont la distorsion à ce coût. */
+  /** Tannuk, Steadfast Second: cards in your hand matching the filter have warp at this cost. */
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };
   /**
-   * Au plus une créature peut attaquer à chaque combat : chacun de vos planeswalkers (`walkers`, Tomik, Orzhov Lawmage) ou
-   * vous (`you`, Mirri, Weatherlight Duelist, tant qu'elle est engagée).
+   * At most one creature can attack each combat: each of your planeswalkers (`walkers`, Tomik, Orzhov Lawmage) or
+   * you (`you`, Mirri, Weatherlight Duelist, as long as it's tapped).
    */
   maxOneAttacker?: "walkers" | "you";
-  /** Mirri, Weatherlight Duelist (posé par `fx.thisTurn` sur les adversaires) : ce joueur bloque avec au plus N créatures. */
+  /** Mirri, Weatherlight Duelist (set by `fx.thisTurn` on the opponents): this player blocks with at most N creatures. */
   maxBlockingCreatures?: number;
-  /** « Max speed — … » : la capacité ne s'applique que si la condition est remplie. */
+  /** "Max speed — …": the ability applies only if the condition is met. */
   condition?: Condition;
   /**
-   * Joueurs concernés : son contrôleur (par défaut), ses adversaires, chaque joueur (« les joueurs ne peuvent pas… »), ou
-   * le joueur que la source enchante (`enchanted`, Grievous Wound : « le joueur enchanté ne peut pas… »).
+   * Players concerned: its controller (by default), their opponents, each player ("players can't…"), or
+   * the player the source enchants (`enchanted`, Grievous Wound: "enchanted player can't…").
    */
   affects?: "opponents" | "each" | "enchanted";
   /**
-   * Informations cachées que le joueur peut regarder à tout moment : la carte du dessus de sa bibliothèque (`libraryTop`,
-   * Vizier of the Menagerie) ou les créatures face cachée de ses adversaires (`faceDown`, Found Footage). Lu par
+   * Hidden information the player may look at any time: the top card of their library (`libraryTop`,
+   * Vizier of the Menagerie) or their opponents' face-down creatures (`faceDown`, Found Footage). Read by
    * `mayLookAt` (statics.ts).
    */
   lookAt?: "libraryTop" | "faceDown";
   /**
-   * Taxe d'attaque : les créatures ne peuvent vous attaquer que si leur contrôleur paie {N} pour chacune (Propaganda : pas
-   * les attaques contre vos planeswalkers) ; `defending: "youOrYourPlaneswalkers"` : vous ou vos planeswalkers (Archangel of
+   * Attack tax: creatures can't attack you unless their controller pays {N} for each (Propaganda: not
+   * attacks on your planeswalkers); `defending: "youOrYourPlaneswalkers"`: you or your planeswalkers (Archangel of
    * Tithes).
    */
   attackTax?: number | { amount: number; defending: "youOrYourPlaneswalkers" };
-  /** Archangel of Tithes (attaquant) : les créatures adverses ne bloquent que si leur contrôleur paie {1} pour chacune. */
+  /** Archangel of Tithes (attacking): opposing creatures block only if their controller pays {1} for each. */
   blockTax?: number;
-  /** Terror of the Peaks : les sorts adverses qui ciblent cette créature coûtent N PV de plus. */
+  /** Terror of the Peaks: spells opponents cast that target this creature cost N more life. */
   targetLifeTax?: number;
-  /** Eriette, the Beguiler : vos Auras attachées à un permanent non-terrain adverse de VM inférieure ou égale en prennent le contrôle. */
+  /** Eriette, the Beguiler: your Auras attached to an opponent's nonland permanent with lesser or equal MV gain control of it. */
   auraStealsCheaper?: boolean;
-  /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
+  /** Elvish Refueler: during your turn, as long as no exhaust ability has been activated, they can be activated again. */
   exhaustReuse?: boolean;
-  /** Shang-Chi : les capacités des créatures correspondantes s'activent comme si elles avaient la célérité (pas l'attaque). */
+  /** Shang-Chi: abilities of matching creatures are activated as though they had haste (not attacking). */
   activateAsThoughHaste?: ObjectFilter;
-  /** Wonder Man, Hollywood Hero : chaque montée en puissance de vos permanents peut être activée N fois de plus. */
+  /** Wonder Man, Hollywood Hero: each power-up of your permanents may be activated N more times. */
   powerUpExtraUses?: number;
-  /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */
+  /** Enduring story (Storied, The Hobbit): gained for the rest of the game (permanent player effect). */
   enduringStory?: boolean;
   /**
-   * Ce que le joueur passe (500.11) : son prochain tour (`turn`, Ral Zarek : un effet par tour passé, consommé), son
-   * étape de pioche (`drawStep`, Necropotence, Necrodominance) ou les tours supplémentaires qu'il devrait commencer
-   * (`extraTurns`, Trouble in Pairs avec `affects: "opponents"`). Lu par `skips` (statics.ts).
+   * What the player skips (500.11): their next turn (`turn`, Ral Zarek: one effect per skipped turn, consumed), their
+   * draw step (`drawStep`, Necropotence, Necrodominance) or the extra turns they would begin
+   * (`extraTurns`, Trouble in Pairs with `affects: "opponents"`). Read by `skips` (statics.ts).
    */
   skips?: "turn" | "drawStep" | "extraTurns";
-  /** Library of Leng : une carte défaussée par un effet peut être mise au-dessus de votre bibliothèque. */
+  /** Library of Leng: a card discarded by an effect may be put on top of your library. */
   discardToLibraryTop?: boolean;
-  /** Notion Thief : un adversaire qui pioche (sauf la première carte de son étape de pioche) ne pioche pas ; vous piochez. */
+  /** Notion Thief: an opponent who draws (except the first card of their draw step) doesn't draw; you draw. */
   stealsOpponentDraws?: boolean;
-  /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
+  /** Sanctum Lurker: your planeswalkers aren't put into the graveyard for lack of loyalty. */
   walkersSurviveZeroLoyalty?: boolean;
   /**
-   * Vos permanents correspondants se dégagent pendant l'étape de dégagement de chaque autre joueur : vos créatures (Prop
-   * Room), vos artefacts (Unwinding Clock).
+   * Your matching permanents untap during each other player's untap step: your creatures (Prop
+   * Room), your artifacts (Unwinding Clock).
    */
   untapOnOthersUntap?: ObjectFilter;
-  /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
+  /** Nowhere to Run: opposing creatures can be targeted despite hexproof; their ward doesn't trigger. */
   ignoreOpponentsHexproofWard?: boolean;
-  /** Warped Space : une fois par tour, un sort lancé depuis l'exil peut l'être en payant {0}. */
+  /** Warped Space: once each turn, a spell cast from exile may be cast by paying {0}. */
   freeFromExileOncePerTurn?: boolean;
-  /** Leyline of Mutation : coût alternatif pour tous vos sorts. */
+  /** Leyline of Mutation: alternative cost for all your spells. */
   /**
-   * Coût alternatif de vos sorts : un coût de mana (Leyline of Mutation : {W}{U}{B}{R}{G}) ou réunir des preuves N
-   * (Conspiracy Unraveler : 10) « plutôt que payer le coût de mana » ; seulement les sorts correspondant à `filter`, et
-   * avec `webSlinging` en renvoyant une créature engagée (Amazing Spider-Man : « Web-slinging {G}{W}{U} »).
+   * Alternative cost of your spells: a mana cost (Leyline of Mutation: {W}{U}{B}{R}{G}) or collect evidence N
+   * (Conspiracy Unraveler: 10) "rather than pay the mana cost"; only the spells matching `filter`, and
+   * with `webSlinging` by returning a tapped creature (Amazing Spider-Man: "Web-slinging {G}{W}{U}").
    */
   altCostAll?: { mana?: ManaCost; collectEvidence?: number; filter?: ObjectFilter; webSlinging?: boolean };
   /**
-   * Taille de main maximale (402.2), évaluée pour le contrôleur de la source : Necrodominance (5), Winter, Misanthropic
-   * Guide (`affects: "opponents"`) ; `"none"` : « vous n'avez pas de taille de main maximale ». Effets sur les règles,
-   * appliqués dans l'ordre de leurs horodatages (613.11, `maxHandSize` de turn.ts).
+   * Maximum hand size (402.2), evaluated for the source's controller: Necrodominance (5), Winter, Misanthropic
+   * Guide (`affects: "opponents"`); `"none"`: "you have no maximum hand size". Rule-changing effects,
+   * applied in timestamp order (613.11, `maxHandSize` of turn.ts).
    */
   maxHandSize?: Amount | "none";
-  /** Phyrexian Unlife : tant que vous avez 0 point de vie ou moins, les blessures vous sont infligées comme par l'infection. */
+  /** Phyrexian Unlife: as long as you have 0 or less life, damage is dealt to you as though its source had infect. */
   infectDamageAtZeroLife?: boolean;
-  /** Angel's Grace : les blessures qui réduiraient vos PV en dessous de N les réduisent à N à la place. */
+  /** Angel's Grace: damage that would reduce your life total below N reduces it to N instead. */
   damageLifeFloor?: number;
-  /** Laboratory Maniac : si vous deviez piocher dans une bibliothèque vide, vous gagnez la partie à la place. */
+  /** Laboratory Maniac: if you would draw a card from an empty library, you win the game instead. */
   winOnEmptyDraw?: boolean;
-  /** Ground Seal (`affects: "each"`) : les cartes des cimetières ne peuvent pas être ciblées par vos sorts et capacités. */
+  /** Ground Seal (`affects: "each"`): cards in graveyards can't be the targets of your spells and abilities. */
   cantTargetGraveyardCards?: boolean;
   /**
-   * Les blessures ne peuvent pas être prévenues (tous les joueurs) : toutes (`true`, Sunspine Lynx) ou celles de combat
-   * (`"combat"`, Frenzied Baloth). Lu par `damageUnpreventable` (statics.ts).
+   * Damage can't be prevented (all players): all of it (`true`, Sunspine Lynx) or combat damage
+   * (`"combat"`, Frenzied Baloth). Read by `damageUnpreventable` (statics.ts).
    */
   damageUnpreventable?: true | "combat";
-  /** Twists and Turns : « si une créature que vous contrôlez devait explorer, regardez 1 d'abord ». */
+  /** Twists and Turns: "if a creature you control would explore, scry 1 first". */
   scryBeforeExplore?: boolean;
   label?: string;
 }
 
-/** Prévention statique : « prévenez toutes les blessures [non de combat] qui devraient être infligées à [filtre]. » */
+/** Static prevention: "prevent all [noncombat] damage that would be dealt to [filter]." */
 export interface PreventionAbilityDef {
   kind: "prevention";
   filter: ObjectFilter;
   noncombatOnly?: boolean;
   combatOnly?: boolean;
-  /** Prévient aussi les blessures infligées PAR la source (Fog Bank). */
+  /** Also prevents the damage dealt BY the source (Fog Bank). */
   bySource?: boolean;
   label?: string;
 }
 
-/** Remplacements qui doublent (614.1a) : jetons, marqueurs, blessures infligées aux adversaires. */
+/** Doubling replacements (614.1a): tokens, counters, damage dealt to opponents. */
 
-/** Capacité statique : génère un effet continu tant que la source est sur le champ de bataille (604, 611.3). */
+/** Static ability: generates a continuous effect as long as the source is on the battlefield (604, 611.3). */
 export interface StaticAbilityDef {
   kind: "static";
-  /** Fonctionne aussi depuis la zone de commandement (113.6 ; éminence, Commander). */
+  /** Also works from the command zone (113.6; eminence, Commander). */
   fromCommand?: boolean;
   /**
-   * « self » : la source elle-même ; « attached » : le permanent auquel la source est attachée
-   * (« la créature équipée / enchantée ») ; sinon les permanents correspondant au filtre (vus du contrôleur).
+   * "self": the source itself; "attached": the permanent the source is attached to
+   * ("equipped / enchanted creature"); otherwise the permanents matching the filter (seen from the controller).
    */
   affects: "self" | "attached" | ObjectFilter;
-  /** « tant que… » */
+  /** "as long as…" */
   condition?: Condition;
   mods: LayerMods;
-  /** F/E multipliées par le nombre de permanents correspondant (« +1/+1 pour chaque Forêt que vous contrôlez »). */
+  /** P/T multiplied by the number of matching permanents ("+1/+1 for each Forest you control"). */
   per?: ObjectFilter;
-  /** F/E multipliées par le nombre de marqueurs de ce type sur la source (Banner of Kinship). */
+  /** P/T multiplied by the number of counters of this type on the source (Banner of Kinship). */
   perCounter?: string;
-  /** F/E multipliées par le nombre de cartes du cimetière du contrôleur correspondant au filtre (Winter). */
+  /** P/T multiplied by the number of cards in the controller's graveyard matching the filter (Winter). */
   perGraveyard?: ObjectFilter;
-  /** … par tranche de N cartes (Dark Matter Manipulator : « pour chaque tranche de sept cartes »). */
+  /** … per group of N cards (Dark Matter Manipulator: "for every seven cards"). */
   perDivisor?: number;
-  /** F/E multipliées par la vitesse du contrôleur (Samut, the Driving Force). */
+  /** P/T multiplied by the controller's speed (Samut, the Driving Force). */
   perSpeed?: boolean;
-  /** F/E multipliées par les points de vie du contrôleur (The Last Ride). */
+  /** P/T multiplied by the controller's life total (The Last Ride). */
   perLife?: boolean;
-  /** F/E multipliées par le nombre de cartes dans la main du contrôleur (Stingerback Terror). */
+  /** P/T multiplied by the number of cards in the controller's hand (Stingerback Terror). */
   perHand?: boolean;
-  /** F/E multipliées par un compte du journal du tour (Kinbinding : « créatures arrivées sous votre contrôle ce tour-ci »). */
+  /** P/T multiplied by a count from the turn log (Kinbinding: "creatures that entered under your control this turn"). */
   perTurnEvents?: TurnLogQuery;
   /**
-   * F/E multipliées par un montant calculé comme une F/E définie par une capacité (Earthen Ally : « pour chaque couleur
-   * parmi les Alliés que vous contrôlez ») : montants lisibles pendant les couches (`colorsAmong`, `count`…).
+   * P/T multiplied by an amount computed like a P/T defined by an ability (Earthen Ally: "for each color
+   * among Allies you control"): amounts readable during the layers (`colorsAmong`, `count`…).
    */
   perAmount?: Amount;
   label?: string;
@@ -1346,34 +1346,34 @@ export interface StaticAbilityDef {
 export interface TriggeredAbilityDef {
   kind: "triggered";
   trigger: TriggerSpec;
-  /** Condition vérifiée au déclenchement et à la résolution. */
+  /** Condition checked on triggering and on resolution. */
   condition?: Condition;
   /**
-   * Condition du déclencheur lui-même, vérifiée au déclenchement seulement (« quand vous lancez ce sort en contrôlant une
-   * créature », Social Snub) : ce n'est pas un « si » (603.4), la résolution ne la revérifie pas.
+   * Condition of the trigger itself, checked on triggering only ("when you cast this spell while you control a
+   * creature", Social Snub): it isn't an "if" (603.4), the resolution doesn't check it again.
    */
   triggerCondition?: Condition;
   targets: TargetSpec[];
   effects: Effect[];
-  /** Capacité modale (« choisissez un — ») : le mode est choisi à la mise sur la pile. */
+  /** Modal ability ("choose one —"): the mode is chosen as it's put on the stack. */
   modes?: ModeDef[];
-  /** « Cette capacité ne se déclenche qu'une fois par tour. » ; `ifDone` : « faites ceci une seule fois par tour » (elle se
-   * déclenche tant que l'effet n'a pas été fait, `fx.doneOncePerTurn` le note ; Spider-Verse) ; `firstEvent` : « … pour la
-   * première fois chaque tour » (noté au premier événement, même si la condition « si … » n'est pas remplie, 603.4 :
+  /** "This ability triggers only once each turn."; `ifDone`: "do this only once each turn" (it
+   * triggers as long as the effect hasn't been done, `fx.doneOncePerTurn` records it; Spider-Verse); `firstEvent`: "… for the
+   * first time each turn" (recorded at the first event, even if the "if …" condition isn't met, 603.4:
    * Fear of Missing Out). */
   oncePerTurn?: boolean | "ifDone" | "firstEvent";
-  /** Se déclenche depuis le cimetière de son propriétaire (Flamewake Phoenix). */
+  /** Triggers from its owner's graveyard (Flamewake Phoenix). */
   fromGraveyard?: boolean;
   /**
-   * Fonctionne aussi depuis la zone de commandement (113.6 ; éminence, Commander : « si [ce commandant] est dans la zone
-   * de commandement ou sur le champ de bataille »).
+   * Also works from the command zone (113.6; eminence, Commander: "if [this commander] is in the command zone
+   * or on the battlefield").
    */
   fromCommand?: boolean;
-  /** « Choisissez un mode qui n'a pas déjà été choisi » (Demonic Pact) ; `turn` : ce tour-ci (Monument to Endurance). */
+  /** "Choose a mode that hasn't been chosen" (Demonic Pact); `turn`: this turn (Monument to Endurance). */
   uniqueModes?: boolean | "turn";
-  /** « une ou plusieurs … » : une seule occurrence en attente à la fois (même lot d'événements). */
+  /** "one or more …": a single pending occurrence at a time (same batch of events). */
   batched?: boolean;
-  /** Garde (702.21) : Nowhere to Run l'empêche de se déclencher. */
+  /** Ward (702.21): Nowhere to Run prevents it from triggering. */
   ward?: boolean;
   label?: string;
 }
@@ -1389,54 +1389,54 @@ export interface TokenSpec {
   text?: string;
   legendary?: boolean;
   tapped?: boolean;
-  /** F/E définies par une capacité (Beau : le nombre de terrains que vous contrôlez). */
+  /** P/T defined by an ability (Beau: the number of lands you control). */
   cdaPT?: Amount;
-  /** Jeton Aura (Rôles de Wilds of Eldraine) : ce qu'il peut enchanter. */
+  /** Aura token (Roles of Wilds of Eldraine): what it can enchant. */
   enchant?: CardDef["enchant"];
-  /** Toxique N (702.164). */
+  /** Toxic N (702.164). */
   toxic?: number;
 }
 
-/** Destination d'un déplacement d'objet. */
+/** Destination of an object move. */
 export interface MoveSpec {
-  /** `command` : la zone de commandement de son propriétaire (Hellkite Courser : « renvoyez-le dans la zone de commandement »). */
+  /** `command`: its owner's command zone (Hellkite Courser: "return it to the command zone"). */
   to: "hand" | "battlefield" | "graveyard" | "exile" | "libraryTop" | "libraryBottom" | "command";
-  /** Exilé par la distorsion : lançable depuis l'exil un tour suivant (`exiledVia` de sorte `warp`). */
+  /** Exiled by warp: castable from exile on a later turn (`exiledVia` of kind `warp`). */
   warp?: boolean;
   tapped?: boolean;
-  /** Sur le champ de bataille : sous le contrôle du contrôleur de l'effet (sinon du propriétaire). */
+  /** On the battlefield: under the control of the effect's controller (otherwise of the owner). */
   underYourControl?: boolean;
-  /** Marqueurs posés à l'arrivée (614.1c) ou sur la carte exilée ; « avec X marqueurs » : un montant. */
+  /** Counters put on entering (614.1c) or on the exiled card; "with X counters": an amount. */
   counters?: { kind: string; n: Amount };
-  /** Types et sous-types ajoutés à l'objet (« c'est un Démon en plus de ses autres types »). */
+  /** Types and subtypes added to the object ("it's a Demon in addition to its other types"). */
   addTypes?: CardType[];
   addSubtypes?: string[];
   addKeywords?: Keyword[];
-  /** Types et sous-types remplacés (« c'est un enchantement ; ce n'est pas une créature », Duskmourn). */
+  /** Types and subtypes replaced ("it's an enchantment; it's not a creature", Duskmourn). */
   setTypes?: CardType[];
   setSubtypes?: string[];
-  /** Arrive transformé (verso d'une carte recto-verso). */
+  /** Enters transformed (back face of a double-faced card). */
   transformed?: boolean;
   /**
-   * Engagé et attaquant (508.4) : ce que choisit son contrôleur parmi ses adversaires et leurs planeswalkers (Chorale of the
-   * Void), ou le joueur ou planeswalker désigné (Shark Shredder : « ce joueur » ; ninjutsu : `ref.cost("defender")`).
+   * Tapped and attacking (508.4): what its controller chooses among their opponents and their planeswalkers (Chorale of the
+   * Void), or the designated player or planeswalker (Shark Shredder: "that player"; ninjutsu: `ref.cost("defender")`).
    */
   attacking?: boolean | Ref;
-  /** Avec `libraryTop` : N-ième depuis le dessus (Riptide Gearhulk : 3). */
+  /** With `libraryTop`: Nth from the top (Riptide Gearhulk: 3). */
   fromTop?: number;
-  /** Avec `libraryTop` : « mélangez-le dans la bibliothèque de son propriétaire ». */
+  /** With `libraryTop`: "shuffle it into its owner's library". */
   shuffle?: boolean;
   /**
-   * Exilée face cachée (406.3) : qui peut la regarder — le contrôleur de l'effet (« vous pouvez la regarder »), son
-   * propriétaire (présage) ou personne (Doomsday Excruciator).
+   * Exiled face down (406.3): who may look at it — the effect's controller ("you may look at it"), its
+   * owner (foretell) or nobody (Doomsday Excruciator).
    */
   faceDown?: "you" | "owner" | "nobody";
   /**
-   * Sur le champ de bataille face cachée, 2/2 : enveloppé d'une cape (`cloak`, 701.58 : avec la garde {2}, sous le contrôle
-   * du contrôleur de l'effet ; Vannifar) ou manifesté (`manifest`, 701.40 : sous le contrôle de son propriétaire, sauf
-   * `underYourControl` ; Kozilek, the Broken Reality : depuis la main).
+   * On the battlefield face down, 2/2: cloaked (`cloak`, 701.58: with ward {2}, under the control
+   * of the effect's controller; Vannifar) or manifested (`manifest`, 701.40: under its owner's control, unless
+   * `underYourControl`; Kozilek, the Broken Reality: from hand).
    */
   as?: "cloak" | "manifest";
-  /** Sur le champ de bataille : s'il devait le quitter, il est exilé à la place (exhumation, 702.84a). */
+  /** On the battlefield: if it would leave, it is exiled instead (unearth, 702.84a). */
   exileIfLeaves?: boolean;
 }

@@ -1,4 +1,4 @@
-/** Effets du moteur : contrôle du déroulement (si, peut, réflexif, retardé). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+/** Engine effects: flow control (if, may, reflexive, delayed). Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 import { canForage, forage, payLife } from "../actions";
 import type { OpHandlers } from "../effects";
 import { concreteSpec, evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
@@ -7,6 +7,7 @@ import { canPay, manaValue, payMana } from "../mana";
 import { beholdOptions, collectEvidence, pickEvidence } from "../stack";
 import { emit, isPlayer } from "../state";
 import { payableLife } from "../statics";
+import { msg } from "../text";
 import { createDelayed, pushInline } from "../triggers";
 import type { ChoiceValue } from "../types";
 
@@ -19,7 +20,12 @@ export const HANDLERS: OpHandlers = {
         ask: {
           player: ctx.controller,
           key: key("pay"),
-          request: { type: "yesNo", intent: "may", prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`, suggested: [1] },
+          request: {
+            type: "yesNo",
+            intent: "may",
+            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            suggested: [1],
+          },
         },
       };
     }
@@ -31,7 +37,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   forage(s, r, e, ctx, key) {
-    // « Vous pouvez fourrager. Si vous le faites, … » (701.61).
+    // "You may forage. If you do, …" (701.61).
     if (!canForage(s, ctx.controller)) return { skip: e.skip };
     const answer = r.vars[key("forage")];
     if (!answer) {
@@ -42,7 +48,9 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "yesNo",
             intent: "may",
-            prompt: `${nameOf(s, ctx.sourceId)} : fourrager (exiler trois cartes de votre cimetière ou sacrifier une Nourriture) ?`,
+            prompt: msg("{card}: forage (exile three cards from your graveyard or sacrifice a Food)?", {
+              card: nameOf(s, ctx.sourceId),
+            }),
             suggested: [1],
           },
         },
@@ -58,7 +66,7 @@ export const HANDLERS: OpHandlers = {
     const total = pool.reduce((n, id) => n + mv(id), 0);
     let n: number;
     if (e.n === undefined) {
-      // Réunir des preuves X : X choisi (0 : rien).
+      // Collect evidence X: X is chosen (0: nothing).
       const answer = r.vars[key("x")];
       if (!answer) {
         if (total <= 0) return { skip: e.skip };
@@ -69,7 +77,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "number",
               intent: "payX",
-              prompt: `${nameOf(s, ctx.sourceId)} : réunir des preuves X (0 : non) ?`,
+              prompt: msg("{card}: collect evidence X (0: no)?", { card: nameOf(s, ctx.sourceId) }),
               min: 0,
               max: total,
               suggested: [total],
@@ -91,7 +99,10 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "yesNo",
               intent: "may",
-              prompt: `${nameOf(s, ctx.sourceId)} : réunir des preuves ${n} (exiler des cartes de votre cimetière de valeur de mana totale ${n} ou plus) ?`,
+              prompt: msg(
+                "{card}: collect evidence {n} (exile cards with total mana value {n} or greater from your graveyard)?",
+                { card: nameOf(s, ctx.sourceId), n },
+              ),
               suggested: [1],
             },
           },
@@ -99,8 +110,8 @@ export const HANDLERS: OpHandlers = {
       }
       if (answer[0] !== 1) return { skip: e.skip };
     }
-    // Les cartes exilées sont choisies par le joueur (par défaut : la moins chère qui suffit) ; si leur total n'atteint pas
-    // N, le choix du moteur complète.
+    // The exiled cards are chosen by the player (by default: the cheapest set that suffices); if their total does not
+    // reach N, the engine's choice completes it.
     const suggested = pickEvidence(s, pool, n) ?? [];
     let chosen = suggested;
     if (suggested.length < pool.length) {
@@ -113,7 +124,10 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: `${nameOf(s, ctx.sourceId)} : réunir des preuves ${n} — cartes de votre cimetière à exiler (valeur de mana totale ${n} ou plus)`,
+              prompt: msg("{card}: collect evidence {n} — cards in your graveyard to exile (total mana value {n} or greater)", {
+                card: nameOf(s, ctx.sourceId),
+                n,
+              }),
               options: pool,
               min: 1,
               max: pool.length,
@@ -146,11 +160,11 @@ export const HANDLERS: OpHandlers = {
   delayed(s, _r, e, ctx) {
     const bound: Record<string, string[]> = {};
     for (const [k, ref] of Object.entries(e.bind ?? {})) bound[k] = resolveRef(s, ctx, ref);
-    // Valeurs figées maintenant (« avec un marqueur de moins »), lues ensuite avec amount.v(nom).
+    // Values frozen now ("with one fewer counter"), read later with amount.v(name).
     const vars: Record<string, ChoiceValue[]> = {};
     for (const [k, a] of Object.entries(e.vars ?? {})) vars[`$${k}`] = [evalAmount(s, ctx, a)];
     const ability = { targets: e.targets ?? [], effects: e.effects, bound, vars, ...(e.label ? { label: e.label } : {}) };
-    // « Quand [cet objet] … ce tour-ci » : les objets surveillés sont désignés maintenant.
+    // "When [this object] … this turn": the watched objects are designated now.
     const watch = e.watch ? resolveRef(s, ctx, e.watch) : undefined;
     if (watch?.length === 0) return;
     const event = e.on ? { on: e.on, ...(watch ? { watch } : {}) } : undefined;
@@ -158,15 +172,15 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   reflexive(s, r, e, ctx) {
-    // Valeurs évaluées maintenant : « jusqu'à X cibles » (Miasma Demon), « de valeur de mana égale au nombre de marqueurs
-    // de pièce » (Wishing Well), « de valeur de mana totale X ou moins » (Fire Lord Sozin).
+    // Values evaluated now: "up to X targets" (Miasma Demon), "with mana value equal to the number of coin counters"
+    // (Wishing Well), "with total mana value X or less" (Fire Lord Sozin).
     const targets2 = e.targets.map((t) => concreteSpec(s, ctx, t));
-    // Aucune cible possible (X = 0) : rien ne se passe.
+    // No possible target (X = 0): nothing happens.
     if (targets2.some((t) => t.count === 0)) return;
     const bound: Record<string, string[]> = {};
     for (const [k, r] of Object.entries(e.bind ?? {})) bound[k] = resolveRef(s, ctx, r);
     const kept = e.keepVars ? Object.fromEntries(e.keepVars.map((k) => [`$${k}`, r.vars[`$${k}`] ?? []])) : undefined;
-    // Valeurs figées maintenant, lues ensuite avec amount.v(nom) (comme pour une capacité retardée).
+    // Values frozen now, read later with amount.v(name) (as for a delayed ability).
     const frozen = e.vars
       ? Object.fromEntries(Object.entries(e.vars).map(([k, a]) => [`$${k}`, [evalAmount(s, ctx, a)]]))
       : undefined;
@@ -192,7 +206,9 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: `${nameOf(s, ctx.sourceId)} : vous pouvez contempler (un permanent, ou une carte de votre main révélée)`,
+            prompt: msg("{card}: you may behold (a permanent, or a revealed card from your hand)", {
+              card: nameOf(s, ctx.sourceId),
+            }),
             options,
             min: 0,
             max: 1,
@@ -210,7 +226,7 @@ export const HANDLERS: OpHandlers = {
   chooseOption(s, r, e, ctx, key) {
     const answer = r.vars[key("option")];
     const options = e.labels.map((_, i) => String(i));
-    // Expropriate : un autre joueur choisit (vote) ; sans joueur désigné en partie, rien n'est choisi.
+    // Expropriate: another player chooses (vote); with no designated player left in the game, nothing is chosen.
     const chooser = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x) && !s.players[x]?.lost) : ctx.controller;
     if (!chooser) return;
     if (!answer) {
@@ -221,7 +237,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "other",
-            prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`,
+            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
             options,
             labels: Object.fromEntries(e.labels.map((l, i) => [String(i), l])),
             min: 1,
@@ -232,12 +248,12 @@ export const HANDLERS: OpHandlers = {
       };
     }
     const i = options.indexOf(String(answer[0]));
-    if (i < 0) throw new RulesError("Option inconnue");
+    if (i < 0) throw new RulesError(msg("Unknown option"));
     store(r, e.store, i + 1);
     return;
   },
   may(s, r, e, ctx, key) {
-    // « [Ce joueur] peut… » : la question est posée au joueur désigné (un adversaire, Terrapact Intimidator).
+    // "[That player] may…": the question is asked to the designated player (an opponent, Terrapact Intimidator).
     const asked = e.who ? (resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) ?? ctx.controller) : ctx.controller;
     const answer = r.vars[key("may")];
     if (!answer) {
@@ -245,7 +261,12 @@ export const HANDLERS: OpHandlers = {
         ask: {
           player: asked,
           key: key("may"),
-          request: { type: "yesNo", intent: "may", prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`, suggested: [1] },
+          request: {
+            type: "yesNo",
+            intent: "may",
+            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            suggested: [1],
+          },
         },
       };
     }

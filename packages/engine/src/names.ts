@@ -1,23 +1,23 @@
 /**
- * Noms à choisir (« choisissez un nom de carte », « un nom de carte de terrain », « un type de créature ») sans révéler
- * la decklist adverse : la question (`ChoiceRequest` de type `name`) ne liste plus les cartes de la partie (`s.defs`
- * contient celles de tous les decks) ; elle met en avant des noms publics (`featured`) et accepte tout nom du catalogue.
+ * Names to choose ("choose a card name", "a land card name", "a creature type") without revealing the opponent's
+ * decklist: the question (`ChoiceRequest` of type `name`) no longer lists the cards of the game (`s.defs` holds those of
+ * all the decks); it highlights public names (`featured`) and accepts any name of the catalog.
  *
- * Le catalogue des noms de cartes est hors de l'état (l'état est copié à chaque simulation de l'IA) : l'hôte
- * l'enregistre une fois (`registerNameCatalog` : serveur au démarrage, interface et worker du navigateur, tests). Sans
- * catalogue, les noms des cartes de la partie restent acceptés (tests du moteur, IA, parties rejouées) ; le catalogue ne
- * change que les réponses acceptées, jamais une suggestion ni le déroulement d'une partie.
+ * The catalog of card names is outside the state (the state is copied at each AI simulation): the host registers it
+ * once (`registerNameCatalog`: server at startup, interface and browser worker, tests). Without a catalog, the names of
+ * the cards of the game remain accepted (engine tests, AI, replayed games); the catalog only changes the accepted
+ * answers, never a suggestion nor the course of a game.
  */
 import type { CardDef, GameState, NameKind } from "./types";
 
-/** Catalogue des noms (noms anglais canoniques) : toutes les cartes (faces comprises), et les cartes de terrain. */
+/** Catalog of names (canonical English names): all the cards (faces included), and the land cards. */
 export interface NameCatalog {
   cards: readonly string[];
   lands: readonly string[];
 }
 
-/** 205.3m : la liste officielle des types de créature (Règles complètes du 25/09/2026). */
-// biome-ignore format: liste officielle, gardée compacte
+/** 205.3m: the official list of creature types (Comprehensive Rules of 2026-09-25). */
+// biome-ignore format: official list, kept compact
 export const CREATURE_TYPES: readonly string[] = [
   "Advisor", "Aetherborn", "Alien", "Ally", "Angel", "Antelope", "Ape", "Archer", "Archon", "Armadillo", "Army",
   "Artificer", "Assassin", "Assembly-Worker", "Astartes", "Atog", "Aurochs", "Avatar", "Azra", "Badger", "Balloon",
@@ -53,42 +53,42 @@ export const CREATURE_TYPES: readonly string[] = [
 
 const CREATURE_TYPE_SET = new Set(CREATURE_TYPES);
 
-/** Un type de créature de la liste officielle (205.3m). */
+/** A creature type of the official list (205.3m). */
 export const isCreatureType = (t: string): boolean => CREATURE_TYPE_SET.has(t);
 
 let catalog: { cards: Set<string>; lands: Set<string> } | null = null;
 
 /**
- * Séparateur des noms d'une carte à plusieurs faces dans `CardDef.name` (« A // B ») : « A // B » n'est pas un nom de
- * carte (201.3) ; chaque face en est un.
+ * Separator of the names of a multi-faced card in `CardDef.name` ("A // B"): "A // B" is not a card name (201.3); each
+ * face is one.
  */
 const FACE_SEPARATOR = " // ";
 
-/** Un nom qu'on peut choisir (201.3) : pas le nom complet « A // B » d'une carte à plusieurs faces. */
+/** A name that can be chosen (201.3): not the full name "A // B" of a multi-faced card. */
 export const isSingleName = (name: string): boolean => !!name && !name.includes(FACE_SEPARATOR);
 
 /**
- * Nom d'une carte qui n'utilise aucune de ses faces (caractéristiques de base, `layers.ts`) : une carte scindée (Salle
- * comprise) garde « A // B », qui porte ses deux noms (709.4, lus par `nameList`) ; un aventurier a seulement son nom
- * principal (715.4), une carte à deux faces le nom de son recto (712.8a).
+ * Name of a card that uses none of its faces (base characteristics, `layers.ts`): a split card (Room included) keeps
+ * "A // B", which carries both its names (709.4, read by `nameList`); an adventurer has only its main name (715.4), a
+ * double-faced card the name of its front face (712.8a).
  */
 export function printedName(d: CardDef): string {
   return d.layout && d.layout !== "split" && d.faceDefs?.[0] ? d.faceDefs[0].name : d.name;
 }
 
-/** Noms d'un objet d'après son nom calculé (`chars(s, id).name`) : les deux moitiés d'une carte scindée (709.4). */
+/** Names of an object from its computed name (`chars(s, id).name`): both halves of a split card (709.4). */
 export function nameList(name: string | undefined): string[] {
   return name ? name.split(FACE_SEPARATOR) : [];
 }
 
-/** L'objet de ce nom calculé a-t-il le nom `wanted` (« carte du nom choisi », filtre `name`) ? */
+/** Whether the object with this computed name has the name `wanted` ("card with the chosen name", `name` filter). */
 export function hasName(name: string | undefined, wanted: string | undefined): boolean {
   return !!wanted && nameList(name).includes(wanted);
 }
 
 /**
- * « de noms différents » : les éléments gardés un à un, tant qu'ils n'ont aucun nom en commun avec un élément déjà gardé
- * (un objet sans nom, face cachée, n'en partage aucun).
+ * "with different names": the items kept one by one, as long as they share no name with an item already kept (an object
+ * without a name, face down, shares none).
  */
 export function firstOfEachName<T>(items: readonly T[], nameOf: (x: T) => string | undefined): T[] {
   const seen = new Set<string>();
@@ -100,18 +100,18 @@ export function firstOfEachName<T>(items: readonly T[], nameOf: (x: T) => string
   });
 }
 
-/** Deux objets ont-ils un nom en commun (« du même nom », 201.2a) ? */
+/** Whether two objects share a name ("with the same name", 201.2a). */
 export function shareName(a: string | undefined, b: string | undefined): boolean {
   const other = nameList(b);
   return nameList(a).some((n) => other.includes(n));
 }
 
-/** Enregistre le catalogue des noms de cartes (`null` : aucun, seuls les noms des cartes de la partie sont acceptés). */
+/** Registers the catalog of card names (`null`: none, only the names of the cards of the game are accepted). */
 export function registerNameCatalog(c: NameCatalog | null): void {
   catalog = c ? { cards: new Set(c.cards), lands: new Set(c.lands) } : null;
 }
 
-/** Sous-types des jetons de créature que décrivent ces capacités (`token: { types, subtypes }` dans leurs effets). */
+/** Subtypes of the creature tokens described by these abilities (`token: { types, subtypes }` in their effects). */
 export function tokenCreatureTypes(v: unknown, out: string[] = []): string[] {
   if (Array.isArray(v)) for (const x of v) tokenCreatureTypes(x, out);
   else if (v && typeof v === "object") {
@@ -123,9 +123,9 @@ export function tokenCreatureTypes(v: unknown, out: string[] = []): string[] {
 }
 
 /**
- * Noms de la partie (cartes et chacune de leurs faces, pas le nom complet « A // B » ni les jetons ; types de créature
- * des cartes et des jetons qu'elles créent) : ceux que proposait l'ancienne question, toujours acceptés (une partie enregistrée avant le catalogue se
- * rejoue à l'identique).
+ * Names of the game (cards and each of their faces, not the full name "A // B" nor the tokens; creature types of the
+ * cards and of the tokens they create): those the former question offered, always accepted (a game recorded before the
+ * catalog replays identically).
  */
 export function gameNames(s: GameState, of: NameKind): Set<string> {
   const out = new Set<string>();
@@ -138,12 +138,12 @@ export function gameNames(s: GameState, of: NameKind): Set<string> {
   return out;
 }
 
-/** Réponse acceptée à une question « nom » : un nom du catalogue (types de créature : la liste officielle), ou de la partie. */
+/** Accepted answer to a "name" question: a name of the catalog (creature types: the official list), or of the game. */
 export function isNameAllowed(s: GameState, of: NameKind, name: string): boolean {
   return nameValidator(s, of)(name);
 }
 
-/** `isNameAllowed` pour plusieurs noms (les noms de la partie ne sont parcourus qu'une fois, au besoin). */
+/** `isNameAllowed` for several names (the names of the game are walked only once, if needed). */
 export function nameValidator(s: GameState, of: NameKind): (name: string) => boolean {
   const known = of === "creatureType" ? CREATURE_TYPE_SET : catalog?.[of === "card" ? "cards" : "lands"];
   let game: Set<string> | undefined;

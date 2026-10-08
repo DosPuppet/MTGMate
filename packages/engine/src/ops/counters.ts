@@ -1,4 +1,4 @@
-/** Effets du moteur : marqueurs, niveaux, stations, portes. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+/** Engine effects: counters, levels, stations, doors. Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
 import { createTokens } from "../actions";
 import { cardRef } from "../choices";
@@ -22,9 +22,10 @@ import {
   unlockDoor,
 } from "../state";
 import { matchesObjectFilter } from "../targets";
+import { msg } from "../text";
 import type { GameObject, ObjectId, TokenSpec } from "../types";
 
-/** Jeton de l'endurance (701.64) : Esprit blanc N/N. */
+/** Endure token (701.64): white N/N Spirit. */
 const ENDURE_SPIRIT: TokenSpec = {
   name: "Spirit",
   colors: ["W"],
@@ -34,7 +35,7 @@ const ENDURE_SPIRIT: TokenSpec = {
   toughness: 0,
 };
 
-/** Ordre proposé par défaut : loyauté, +1/+1, puis les autres sortes. */
+/** Order suggested by default: loyalty, +1/+1, then the other kinds. */
 const DEFAULT_ORDER = (kinds: string[]): string[] => [
   ...["loyalty", "+1/+1"].filter((k) => kinds.includes(k)),
   ...kinds.filter((k) => k !== "loyalty" && k !== "+1/+1"),
@@ -42,7 +43,7 @@ const DEFAULT_ORDER = (kinds: string[]): string[] => [
 
 export const HANDLERS: OpHandlers = {
   countersAboveBase(s, _r, e, ctx) {
-    // Les écarts sont mesurés d'abord, puis les marqueurs sont posés.
+    // The differences are measured first, then the counters are put.
     const gaps = s.battlefield
       .filter((id) => matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
       .map((id) => {
@@ -65,8 +66,8 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   counterOnOrCreate(s, _r, e, ctx) {
-    // Renforcer Jace (un jeton Jace), amasser (une Armée) : le premier permanent correspondant du joueur, sinon un jeton
-    // créé d'abord ; puis les marqueurs, et les sous-types en plus (701.47a).
+    // Reinforce Jace (a Jace token), amass (an Army): the player's first matching permanent, otherwise a token created
+    // first; then the counters, and the extra subtypes (701.47a).
     const n = Math.max(0, evalAmount(s, ctx, e.amount));
     for (const p of resolveRef(s, ctx, e.who).filter((x) => !!s.players[x])) {
       let id = s.battlefield.find((x) => s.objects[x]?.controller === p && matchesObjectFilter(s, p, x, e.find));
@@ -80,21 +81,21 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   proliferate(s, r, e, ctx, key) {
-    // 701.34a : choisissez des permanents et/ou joueurs qui ont des marqueurs ; chacun reçoit un marqueur de plus de
-    // chaque sorte qu'il a déjà. Suggestion (automatisme, IA) : vos permanents sans marqueur nuisible, et les
-    // marqueurs nuisibles (-1/-1, étourdissement, poison) de vos adversaires.
+    // 701.34a: choose permanents and/or players that have counters; each gets one additional counter of each kind it
+    // already has. Suggestion (autopilot, AI): your permanents without a harmful counter, and your opponents' harmful
+    // counters (-1/-1, stun, poison).
     const times = evalAmount(s, ctx, e.times);
     const bad = new Set(["-1/-1", "stun"]);
     for (let t = 0; t < times; t++) {
       if (r.vars[key(`done${t}`)]) continue;
       const withCounters = s.battlefield.filter((id) => Object.values(s.objects[id]?.counters ?? {}).some((n) => n > 0));
-      // Joueurs avec des marqueurs poison ou de radiation (Fallout).
+      // Players with poison or rad counters (Fallout).
       const poisoned = s.playerOrder.filter(
         (p) => !s.players[p]?.lost && ((s.players[p]?.counters?.poison ?? 0) > 0 || (s.players[p]?.counters?.rad ?? 0) > 0),
       );
       const options = [...withCounters, ...poisoned];
       if (options.length === 0) return;
-      // Powerful Broker : « donnez au permanent ou joueur ciblé un marqueur de plus de chaque sorte » (sans choix).
+      // Powerful Broker: "give target permanent or player an additional counter of each kind" (no choice).
       if (e.what && !r.vars[key(`pick${t}`)])
         r.vars[key(`pick${t}`)] = resolveRef(s, ctx, e.what).filter((x) => options.includes(x));
       const answer = r.vars[key(`pick${t}`)];
@@ -115,7 +116,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "proliferate",
-              prompt: "Proliférer : choisissez les permanents et joueurs qui reçoivent un marqueur de plus",
+              prompt: msg("Proliferate: choose the permanents and players that get an additional counter"),
               options,
               min: 0,
               max: options.length,
@@ -134,11 +135,11 @@ export const HANDLERS: OpHandlers = {
           const counters = pl?.counters;
           if (counters && (counters.poison ?? 0) > 0) {
             counters.poison = (counters.poison ?? 0) + 1;
-            bump(s); // corrompu : des statiques en dépendent
+            bump(s); // corrupted: statics depend on it
           }
           if (counters && (counters.rad ?? 0) > 0) {
             counters.rad = (counters.rad ?? 0) + 1;
-            bump(s); // des statiques en dépendent (Nightkin Ambusher)
+            bump(s); // statics depend on it (Nightkin Ambusher)
             emit({ type: "rad", player: v, amount: 1, total: counters.rad });
           }
         }
@@ -148,12 +149,12 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   removeCounters(s, r, e, ctx, key) {
-    // « Retirez N marqueurs » sans sorte imposée : le joueur choisit la sorte de chacun (une question par marqueur, tant
-    // qu'il reste plusieurs sortes), avant tout retrait ; l'opération est rejouée avec les réponses.
+    // "Remove N counters" with no kind imposed: the player chooses the kind of each (one question per counter, as long
+    // as several kinds remain), before any removal; the operation is replayed with the answers.
     const plans: [GameObject, string[]][] = [];
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
-      // Une carte suspendue perd ses marqueurs de temps en exil (702.62).
+      // A suspended card loses its time counters in exile (702.62).
       if (o?.zone !== "battlefield" && !(o?.zone === "exile" && o.suspended)) continue;
       const n = Math.max(0, evalAmount(s, ctx, e.n));
       const left: Record<string, number> = e.kind
@@ -164,7 +165,7 @@ export const HANDLERS: OpHandlers = {
         const kinds = DEFAULT_ORDER(Object.keys(left).filter((k) => (left[k] ?? 0) > 0));
         if (kinds.length === 0) break;
         let kind = kinds[0] as string;
-        // Tous les marqueurs restants partent (« retirez tous les marqueurs ») : aucun choix à faire.
+        // All the remaining counters go ("remove all counters"): no choice to make.
         const remaining = Object.values(left).reduce((a, c) => a + Math.max(0, c ?? 0), 0);
         if (kinds.length > 1 && n - i < remaining) {
           const k = key(`rc-${id}-${i}`);
@@ -177,9 +178,14 @@ export const HANDLERS: OpHandlers = {
                 request: {
                   type: "pick",
                   intent: "other",
-                  prompt: `${cardRef(o.defId)} : quel marqueur retirer${n > 1 ? ` (${i + 1} sur ${n})` : ""} ?`,
+                  prompt:
+                    n > 1
+                      ? msg("{card}: which counter to remove ({i} of {n})?", { card: cardRef(o.defId), i: i + 1, n })
+                      : msg("{card}: which counter to remove?", { card: cardRef(o.defId) }),
                   options: kinds,
-                  labels: Object.fromEntries(kinds.map((x) => [x, `${counterLabel(x)} (${left[x]})`])),
+                  labels: Object.fromEntries(
+                    kinds.map((x) => [x, msg("{counter} ({n})", { counter: counterLabel(x), n: left[x] ?? 0 })]),
+                  ),
                   min: 1,
                   max: 1,
                   suggested: [kind],
@@ -188,7 +194,7 @@ export const HANDLERS: OpHandlers = {
             };
           }
           const picked = String(answer[0]);
-          if (!kinds.includes(picked)) throw new RulesError("Sorte de marqueur invalide");
+          if (!kinds.includes(picked)) throw new RulesError(msg("Invalid counter kind"));
           kind = picked;
         }
         plan.push(kind);
@@ -205,13 +211,13 @@ export const HANDLERS: OpHandlers = {
         removed += take;
       }
     }
-    // Garnet : « un marqueur +1/+1 pour chaque marqueur de savoir retiré ainsi ».
+    // Garnet: "a +1/+1 counter for each lore counter removed this way".
     store(r, e.store, removed);
     return;
   },
   endure(s, r, e, ctx, key) {
-    // 701.64 : « [ce permanent] endure N » : N marqueurs +1/+1 sur lui, ou un jeton Esprit blanc N/N. S'il n'est plus sur
-    // le champ de bataille, le jeton est créé ; endurer 0 ne fait rien.
+    // 701.64: "[this permanent] endures N": N +1/+1 counters on it, or a white N/N Spirit token. If it is no longer on
+    // the battlefield, the token is created; enduring 0 does nothing.
     const n = evalAmount(s, ctx, e.amount);
     if (n <= 0) return;
     const id = resolveRef(s, ctx, e.what).find((x) => s.objects[x]?.zone === "battlefield");
@@ -227,9 +233,15 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "other",
-              prompt: `Endurance ${n} : ${n} marqueur${n > 1 ? "s" : ""} +1/+1 sur ${cardRef(o.defId)}, ou un Esprit ${n}/${n} ?`,
+              prompt:
+                n > 1
+                  ? msg("Endure {n}: {n} +1/+1 counters on {card}, or a {n}/{n} Spirit?", { n, card: cardRef(o.defId) })
+                  : msg("Endure {n}: {n} +1/+1 counter on {card}, or a {n}/{n} Spirit?", { n, card: cardRef(o.defId) }),
               options: ["counters", "token"],
-              labels: { counters: `${n} marqueur${n > 1 ? "s" : ""} +1/+1`, token: `Un jeton Esprit ${n}/${n}` },
+              labels: {
+                counters: n > 1 ? msg("{n} +1/+1 counters", { n }) : msg("{n} +1/+1 counter", { n }),
+                token: msg("A {n}/{n} Spirit token", { n }),
+              },
               min: 1,
               max: 1,
               suggested: ["counters"],
@@ -252,9 +264,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   blight(s, r, e, ctx, key) {
-    // Flétrir N (ECL) : chaque joueur désigné choisit une créature qu'il contrôle et y met N marqueurs −1/−1. Tous les
-    // choix sont faits avant les marqueurs (une question en attente reprend l'effet depuis le début). `store` : 1 si
-    // c'est fait, et les créatures flétries (`ref.stored`, « la créature flétrie »).
+    // Blight N (ECL): each designated player chooses a creature they control and puts N −1/−1 counters on it. All the
+    // choices are made before the counters (a pending question resumes the effect from the start). `store`: 1 if it
+    // was done, and the blighted creatures (`ref.stored`, "the blighted creature").
     const n = Math.max(0, evalAmount(s, ctx, e.amount));
     const picks: ObjectId[] = [];
     for (const p of resolveRef(s, ctx, e.who).filter((x) => !!s.players[x] && !s.players[x]?.lost)) {
@@ -273,7 +285,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "other",
-              prompt: `Flétrir ${n} : choisissez une créature que vous contrôlez (${n} marqueur(s) −1/−1)`,
+              prompt: msg("Blight {n}: choose a creature you control ({n} −1/−1 counter(s))", { n }),
               options,
               min: 1,
               max: 1,
@@ -296,7 +308,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   countersDivided(s, r, e, ctx, key) {
-    // Répartition annoncée à la mise sur la pile (601.2d) : la part d'une cible devenue illégale est perdue (608.2b).
+    // Division announced as the spell is put on the stack (601.2d): the share of a target that became illegal is lost (608.2b).
     const total = evalAmount(s, ctx, e.total);
     const division = e.to.kind === "target" ? r.item.division?.[e.to.id] : undefined;
     if (division && e.to.kind === "target") {
@@ -322,10 +334,12 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "divide",
               intent: "divideCounters",
-              prompt: `Répartissez ${total} marqueurs ${e.counter ?? P1P1} entre ${e.anyNumber ? "ces créatures" : "les cibles"}`,
+              prompt: e.anyNumber
+                ? msg("Divide {n} {counter} counters among these creatures", { n: total, counter: e.counter ?? P1P1 })
+                : msg("Divide {n} {counter} counters among the targets", { n: total, counter: e.counter ?? P1P1 }),
               among,
               total: total,
-              // 601.2d : au moins un marqueur par cible ; avec moins de marqueurs que de cibles (X réduit), sans minimum.
+              // 601.2d: at least one counter per target; with fewer counters than targets (reduced X), no minimum.
               minEach: !e.anyNumber && total >= among.length ? 1 : 0,
               suggested: among.map((_, i) => each + (i < total - each * among.length ? 1 : 0)),
             },
@@ -341,8 +355,8 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   station(s, _r, _e, ctx) {
-    // 702.184a : des marqueurs de charge égaux à la force de la créature engagée (Tapestry Warden : son endurance si
-    // elle est plus grande).
+    // 702.184a: charge counters equal to the power of the tapped creature (Tapestry Warden: its toughness if that is
+    // greater).
     const o = s.objects[ctx.sourceId];
     const tapped = ctx.paid?.tapped?.[0];
     if (o?.zone !== "battlefield" || !tapped) return;
@@ -389,7 +403,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "other",
-              prompt: "Sorte du marqueur à déplacer",
+              prompt: msg("Kind of counter to move"),
               options: kinds,
               labels: Object.fromEntries(kinds.map((k) => [k, counterLabel(k)])),
               min: 1,
@@ -399,7 +413,7 @@ export const HANDLERS: OpHandlers = {
           },
         };
       const chosen = String(answer[0]);
-      if (!kinds.includes(chosen)) throw new RulesError("Sorte de marqueur invalide");
+      if (!kinds.includes(chosen)) throw new RulesError(msg("Invalid counter kind"));
       kind = chosen;
     }
     changeCounters(s, from, kind, -1);
@@ -421,6 +435,8 @@ export const HANDLERS: OpHandlers = {
     if (r.vars[key("doorDone")]) return;
     const options: string[] = [];
     const labels: Record<string, string> = {};
+    // Doors that can be unlocked (suggested first).
+    const locked = new Set<string>();
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       const faces = s.defs[o?.defId ?? ""]?.faceDefs ?? [];
@@ -430,7 +446,8 @@ export const HANDLERS: OpHandlers = {
         if (e.mode === "unlock" && open) return;
         const opt = `${id}#${door}`;
         options.push(opt);
-        labels[opt] = `${open ? "Verrouiller" : "Déverrouiller"} ${f.name}`;
+        labels[opt] = open ? msg("Lock {door}", { door: f.name }) : msg("Unlock {door}", { door: f.name });
+        if (!open) locked.add(opt);
       });
     }
     if (options.length === 0) return;
@@ -445,12 +462,12 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "other",
-              prompt: e.mode === "unlock" ? "Porte à déverrouiller" : "Porte à verrouiller ou à déverrouiller",
+              prompt: e.mode === "unlock" ? msg("Door to unlock") : msg("Door to lock or unlock"),
               options,
               labels,
               min: 1,
               max: 1,
-              suggested: [options.find((o) => labels[o]?.startsWith("Déverrouiller")) ?? chosen],
+              suggested: [options.find((o) => locked.has(o)) ?? chosen],
             },
           },
         };
@@ -462,7 +479,7 @@ export const HANDLERS: OpHandlers = {
     const o = s.objects[id];
     if (!o) return;
     if (o.unlocked?.includes(Number(door))) {
-      // 709.5g : verrouiller une porte ne déclenche rien ; elle pourra être déverrouillée de nouveau.
+      // 709.5g: locking a door triggers nothing; it can be unlocked again.
       o.unlocked = o.unlocked.filter((d) => d !== Number(door));
       bump(s);
     } else unlockDoor(s, id, Number(door));

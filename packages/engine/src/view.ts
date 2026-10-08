@@ -1,15 +1,16 @@
 /**
- * Vue d'un joueur : tout ce qui est public + sa propre main + les options de sa décision.
- * Les informations cachées (main adverse, bibliothèques) ne sortent jamais du moteur.
+ * A player's view: everything public + their own hand + the options of their decision.
+ * Hidden information (opponent's hand, libraries) never leaves the engine.
  */
 
-import { copiedDefId } from "./layers";
+import { copiedDefId, FACE_DOWN_WARD } from "./layers";
 import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
 import { CUSTOM_PRINTING, keyedPrinting } from "./printing";
 import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
 import { chars, commanderOf, decider, HIDDEN_CARD_ID, isSummoningSick, obj } from "./state";
 import { mayLookAt, untapStepRule } from "./statics";
+import { msg } from "./text";
 import { pendingTriggerSource } from "./triggers";
 import { allowedDefenders, attackableDefenders, attackCandidates, blockCandidates, forcedAttacks } from "./turn";
 import type {
@@ -43,16 +44,16 @@ export interface CardFace {
   baseToughness?: number;
   implemented: boolean;
   isToken: boolean;
-  /** Jeton : ses couleurs (image correspondante, `tokenImage` du paquet des cartes). */
+  /** Token: its colors (matching image, `tokenImage` of the cards package). */
   colors?: Color[];
-  /** Sort attaché d'une carte « à préparer » (affiché dans l'aperçu). */
+  /** Attached spell of a "prepare" card (shown in the preview). */
   prepareFace?: CardDef["prepareFace"];
-  /** Carte à plusieurs faces : sa disposition et ses autres faces (verso, aventure, autre moitié). */
+  /** Multi-faced card: its layout and its other faces (back face, adventure, other half). */
   layout?: CardDef["layout"];
   otherFaces?: CardDef["prepareFace"][];
   /**
-   * Impression personnelle (`CUSTOM_PRINTING`) : l'interface affiche l'illustration personnelle de la carte (par son
-   * nom), s'il y en a une ; aussi sur les jetons d'un joueur dont le deck en utilise.
+   * Custom printing (`CUSTOM_PRINTING`): the interface shows the card's custom art (by its name), if there is one;
+   * also on the tokens of a player whose deck uses it.
    */
   customArt?: true;
 }
@@ -72,55 +73,55 @@ export interface ObjectView extends CardFace {
   power?: number;
   toughness?: number;
   keywords: Keyword[];
-  /** Règles de blocage (« imblocable par les Humains »…) : leurs libellés. */
+  /** Blocking rules ("can't be blocked by Humans"…): their labels. */
   blockRules?: string[];
   /**
-   * Provocation (701.38) et exigences du même genre (Maximum Carnage) : le joueur qui provoque et le libellé. Elle attaque
-   * à chaque combat si possible, et un joueur autre que lui si possible. Ces règles ne sont pas dans `blockRules`.
+   * Goad (701.38) and requirements of the same kind (Maximum Carnage): the goading player and the label. It attacks
+   * each combat if able, and a player other than them if able. These rules are not in `blockRules`.
    */
   goaded?: { by: PlayerId; label: string }[];
-  /** Protections et défenses talismaniques « contre [filtre] » : leurs libellés. */
+  /** Protections and hexproofs "from [filter]": their labels. */
   protections?: string[];
-  /** Règles « utilise son endurance pour » : leurs libellés. */
+  /** "Uses its toughness to" rules: their labels. */
   powerRules?: string[];
   /**
-   * Étape de dégagement de son contrôleur (502.3) : « ne se dégage pas » ou « peut ne pas se dégager » (Hedge Whisperer),
-   * d'après les remplacements `untap` limités à cette étape (`untapStepRule`) ; affiché comme une restriction.
+   * Its controller's untap step (502.3): "doesn't untap" or "may not untap" (Hedge Whisperer), from the `untap`
+   * replacements limited to that step (`untapStepRule`); shown as a restriction.
    */
   untapRule?: string;
-  /** Engagé pour son mana, encore annulable par son contrôleur (décision `undoMana`). Seulement dans sa propre vue. */
+  /** Tapped for its mana, still undoable by its controller (`undoMana` decision). Only in their own view. */
   undoMana?: boolean;
   sick: boolean;
   attacking: boolean;
   blocking: ObjectId | null;
-  /** Aura ou Équipement : le permanent auquel il est attaché. */
+  /** Aura or Equipment: the permanent it is attached to. */
   attachedTo: ObjectId | null;
-  /** Choix fait en arrivant (type de créature, couleur, mode d'un Siège). */
+  /** Choice made as it entered (creature type, color, mode of a Siege). */
   chosen: {
     creatureType?: string;
     color?: Color;
     mode?: string;
     number?: number;
   } | null;
-  /** Reality Fracture : permanent préparé (son sort peut être lancé depuis l'exil). */
+  /** Reality Fracture: prepared permanent (its spell can be cast from exile). */
   prepared?: boolean;
-  /** Murders at Karlov Manor : créature suspecte (menace, ne peut pas bloquer). */
+  /** Murders at Karlov Manor: suspected creature (menace, can't block). */
   suspected?: boolean;
-  /** Classe : niveau atteint (au-delà de 1) ; Affaire : résolue. */
+  /** Class: level reached (beyond 1); Case: solved. */
   classLevel?: number;
   solved?: boolean;
-  /** Permanent (ou sort) face cachée du spectateur : la vraie carte, que lui seul connaît (708.5). */
+  /** The viewer's face-down permanent (or spell): the real card, which only they know (708.5). */
   faceDownCard?: CardFace;
-  /** Coût de sa garde (imprimée ou accordée), pour l'affichage : « {2} », « 3 PV »… */
+  /** Cost of its ward (printed or granted), for display: "{2}", "3 life"… */
   ward?: string;
   /**
-   * Capacités activées d'un permanent (hors capacités de mana), activables ou non : l'interface montre celles qui ne le
-   * sont pas en ce moment (coût impayable, cible absente, timing) au lieu de les taire. `index` : celui de `activate`.
+   * Activated abilities of a permanent (mana abilities excluded), activatable or not: the interface shows those that
+   * are not right now (unpayable cost, no target, timing) instead of hiding them. `index`: the one of `activate`.
    */
   activated?: { index: number; label: string; cost: string }[];
   /**
-   * Carte jouable de la main du spectateur (ou hors de sa main) dont le coût de mana à payer diffère du coût imprimé :
-   * réductions et taxes, flashback, coût alternatif imposé… `delta` : écart de valeur de mana (négatif : moins cher).
+   * Playable card of the viewer's hand (or outside their hand) whose mana cost to pay differs from the printed cost:
+   * reductions and taxes, flashback, imposed alternative cost… `delta`: mana value difference (negative: cheaper).
    */
   castCost?: { text: string; delta: number };
 }
@@ -135,9 +136,9 @@ export interface StackItemView extends CardFace {
   x: number;
   kicked: boolean;
   mode: number;
-  /** Copie d'un sort (Thousand-Year Storm). */
+  /** Copy of a spell (Thousand-Year Storm). */
   copy: boolean;
-  /** L'effet joué, quand la carte en a plusieurs : mode choisi d'un sort modal, ou capacité (activée, déclenchée). */
+  /** The effect played, when the card has several: chosen mode of a modal spell, or ability (activated, triggered). */
   effect?: string;
 }
 
@@ -149,42 +150,42 @@ export interface PlayerView {
   handCount: number;
   graveyard: ObjectView[];
   manaPool: Record<ManaType, number>;
-  /** Mana restreint de la réserve (« ne dépensez ce mana que pour… »), par type ; absent s'il n'y en a pas. */
+  /** Restricted mana of the pool ("spend this mana only to…"), by type; absent when there is none. */
   restrictedMana?: ManaType[];
   lost: boolean;
-  /** Son deck utilise l'impression personnelle : le dos de ses cartes cachées est le dos personnel, s'il y en a un. */
+  /** Their deck uses the custom printing: the back of their hidden cards is the custom back, if there is one. */
   customArt?: true;
-  /** Emblèmes (zone de commandement). */
-  /** Emblèmes (114) ; `id` : l'objet, source des capacités activées d'un emblème (Karn, Living Legacy). */
+  /** Emblems (command zone). */
+  /** Emblems (114); `id`: the object, source of an emblem's activated abilities (Karn, Living Legacy). */
   emblems: { id: ObjectId; name: string; text: string }[];
   /**
-   * Commander (PLAN-E) : les commandants de ce joueur (information publique), leur zone, leur objet quand il est dans
-   * une zone publique, et la taxe de leur prochain lancer depuis la zone de commandement (903.8).
+   * Commander (PLAN-E): this player's commanders (public information), their zone, their object when it is in a
+   * public zone, and the tax of their next cast from the command zone (903.8).
    */
   commanders?: { defId: string; zone: Zone; id?: ObjectId; tax: number }[];
-  /** Commander : blessures de combat reçues de chaque commandant (903.10a ; 21 d'un même commandant, le joueur perd). */
+  /** Commander: combat damage received from each commander (903.10a; 21 from the same commander, the player loses). */
   commanderDamage?: { defId: string; owner: PlayerId; amount: number }[];
-  /** Vitesse (702.179), absente tant qu'elle n'a pas démarré. */
+  /** Speed (702.179), absent until it has started. */
   speed?: number;
-  /** Bénédiction de la cité (702.131, ascension), absente tant que le joueur ne l'a pas. */
+  /** The city's blessing (702.131, ascend), absent until the player has it. */
   citysBlessing?: true;
-  /** Monarque (724), absent si le joueur ne l'est pas. */
+  /** Monarch (724), absent if the player is not. */
   monarch?: true;
-  /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd), absents s'il n'en a aucun. */
+  /** Poison counters (104.3d: 10 or more, the player loses), absent when they have none. */
   poison?: number;
-  /** Marqueurs de radiation (Fallout), absents s'il n'en a aucun. */
+  /** Rad counters (Fallout), absent when they have none. */
   rad?: number;
 }
 
 export type PendingView =
   | { kind: "mulligan"; player: PlayerId; mulligans: number; bottom: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
-  /** `castNow` : lancer une carte pendant une résolution (608.2g), seulement pour le joueur qui décide. */
+  /** `castNow`: cast a card during a resolution (608.2g), only for the deciding player. */
   | { kind: "priority"; player: PlayerId; actions?: ActionOption[]; castNow?: CastNowRequest }
-  /** `defenders` : adversaires et planeswalkers adverses attaquables. */
+  /** `defenders`: attackable opponents and opposing planeswalkers. */
   /**
-   * `forced` : les attaques obligées (508.1d), présélectionnées par l'interface ; `allowed` : ce que peut attaquer une
-   * créature qui ne peut pas attaquer tous les `defenders` (« ne peut pas vous attaquer »).
+   * `forced`: the required attacks (508.1d), preselected by the interface; `allowed`: what a creature that can't attack
+   * all the `defenders` can attack ("can't attack you").
    */
   | {
       kind: "declareAttackers";
@@ -199,21 +200,21 @@ export type PendingView =
   | {
       kind: "choice";
       player: PlayerId;
-      /** Présents seulement pour le joueur qui choisit. */
+      /** Present only for the choosing player. */
       request?: ChoiceRequest;
       purpose?: ChoicePurpose;
-      /** Objets mentionnés par la demande (y compris cachés, ex. dessus de bibliothèque pour un regard). */
+      /** Objects mentioned by the request (hidden ones included, e.g. top of library for a scry). */
       objects?: ObjectView[];
-      /** Déclenchement dont on choisit les cibles ou le mode : sa carte et sa capacité (pas encore sur la pile). */
+      /** Trigger whose targets or mode are being chosen: its card and its ability (not yet on the stack). */
       source?: { face: CardFace; effect?: string };
     };
 
 export interface GameView {
   viewer: PlayerId;
-  /** Tous les autres joueurs (y compris éliminés), dans l'ordre du tour à partir du suivant. */
+  /** All the other players (eliminated ones included), in turn order starting from the next one. */
   opponents: PlayerId[];
   turn: { number: number; active: PlayerId; step: Step; landsPlayed: number };
-  /** 722 : joueur dont le contrôleur prend la décision en cours (sa main remplace alors `hand`). */
+  /** 722: player whose controller makes the current decision (their hand then replaces `hand`). */
   controlling?: PlayerId;
   players: Record<PlayerId, PlayerView>;
   hand: ObjectView[];
@@ -221,25 +222,25 @@ export interface GameView {
   stack: StackItemView[];
   exile: ObjectView[];
   /**
-   * Cartes exilées « par » un permanent encore sur le champ de bataille (Sheltered by Ghosts, Deep-Cavern Bat, cartes
-   * liées, matériaux d'une fabrication) : identifiant du permanent → cartes exilées. Information publique.
+   * Cards exiled "by" a permanent still on the battlefield (Sheltered by Ghosts, Deep-Cavern Bat, linked cards,
+   * materials of a craft): permanent id → exiled cards. Public information.
    */
   exiledWith: Record<ObjectId, ObjectId[]>;
   /**
-   * Cartes hors de la main que le spectateur peut jouer (présentées au bout de sa main, `zone` dit d'où elles viennent) :
-   * exilées jouables (Chandra, sorts préparés), du cimetière (flashback, Icetill Explorer, capacités activables depuis le
-   * cimetière), dessus de la bibliothèque (Vizier of the Menagerie).
+   * Cards outside the hand that the viewer can play (shown at the end of their hand, `zone` says where they come from):
+   * playable exiled cards (Chandra, prepared spells), from the graveyard (flashback, Icetill Explorer, abilities
+   * activatable from the graveyard), top of the library (Vizier of the Menagerie).
    */
   playableElsewhere: ObjectView[];
   combat: { attackers: { id: ObjectId; defender: string; blockers: ObjectId[] }[] } | null;
   pending: PendingView | null;
-  /** Nombre de créatures du spectateur qui pourraient attaquer ce tour-ci (pour l'interface). */
+  /** Number of the viewer's creatures that could attack this turn (for the interface). */
   potentialAttackers: number;
   over: boolean;
   winner: PlayerId | null;
 }
 
-/** Cartes en exil rattachées au permanent qui les a exilées (exil lié « jusqu'à ce que… » et cartes liées). */
+/** Cards in exile tied to the permanent that exiled them (linked "until…" exile and linked cards). */
 function exiledWith(s: GameState): Record<ObjectId, ObjectId[]> {
   const out: Record<ObjectId, ObjectId[]> = {};
   const add = (source: ObjectId, cards: ObjectId[]) => {
@@ -252,7 +253,13 @@ function exiledWith(s: GameState): Record<ObjectId, ObjectId[]> {
   return out;
 }
 
-/** Libellé de l'effet joué : mode d'un sort modal (spree, tiered…), ou capacité d'un permanent. */
+/** An ability label and its chosen mode, as one text ("label — mode"); either one alone, else the fallback. */
+function withMode(label: string | undefined, mode: string | undefined, fallback: string): string {
+  if (label && mode) return msg("{ability} — {mode}", { ability: label, mode });
+  return label || mode || fallback;
+}
+
+/** Label of the effect played: mode of a modal spell (spree, tiered…), or ability of a permanent. */
 function playedEffect(s: GameState, item: GameState["stack"][number]): string | undefined {
   const d = s.defs[item.sourceDefId];
   if (!d) return undefined;
@@ -262,21 +269,21 @@ function playedEffect(s: GameState, item: GameState["stack"][number]): string | 
   }
   if (item.inline) {
     const mode = item.inline.modes?.[item.mode]?.label;
-    return [item.inline.label, mode].filter(Boolean).join(" — ") || "Capacité";
+    return withMode(item.inline.label, mode, msg("Ability"));
   }
   const ab = d.abilities[item.abilityIndex];
   if (ab?.kind === "triggered" && ab.modes) {
     const mode = ab.modes[item.mode]?.label;
-    return [ab.label, mode].filter(Boolean).join(" — ") || "Capacité déclenchée";
+    return withMode(ab.label, mode, msg("Triggered ability"));
   }
-  if (ab?.kind === "triggered") return ab.label ?? "Capacité déclenchée";
-  if (ab?.kind === "activated") return ab.label ?? "Capacité activée";
-  return "Capacité";
+  if (ab?.kind === "triggered") return ab.label ?? msg("Triggered ability");
+  if (ab?.kind === "activated") return ab.label ?? msg("Activated ability");
+  return msg("Ability");
 }
 
 /**
- * Ce que l'interface propose pour déclarer les attaquants : les créatures, les défenseurs, les attaques obligées (508.1d,
- * présélectionnées) et, pour une créature qui ne peut pas attaquer tous les défenseurs, ceux qu'elle peut attaquer.
+ * What the interface offers to declare attackers: the creatures, the defenders, the required attacks (508.1d,
+ * preselected) and, for a creature that can't attack all the defenders, those it can attack.
  */
 function attackChoices(
   s: GameState,
@@ -323,12 +330,12 @@ export function cardFace(d: CardDef): CardFace {
 }
 
 /**
- * Les faces autres que celle affichée (pour l'aperçu) : le verso, l'aventure, ou les deux moitiés d'une carte
- * scindée. Une face n'a sa propre image que si elle est imprimée à part (verso d'une carte recto-verso).
+ * The faces other than the displayed one (for the preview): the back face, the adventure, or the two halves of a split
+ * card. A face has its own image only when it is printed separately (back face of a double-faced card).
  */
 function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
   const faces = d.faceDefs ?? [];
-  // Carte scindée : ses deux moitiés (pas la face fusionnée, 702.102).
+  // Split card: its two halves (not the fused face, 702.102).
   return (d.layout === "split" ? faces.slice(0, 2) : faces.slice(1)).map((f) => ({
     name: f.name,
     manaCost: f.manaCostText,
@@ -342,8 +349,8 @@ function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
 }
 
 /**
- * L'illustration de l'impression choisie par le deck (PLAN-G : une réédition), pour la face imprimée de la carte
- * elle-même ; une copie ou un autre côté gardent la leur.
+ * The art of the printing chosen by the deck (PLAN-G: a reprint), for the printed face of the card itself; a copy or
+ * another side keep their own.
  */
 function printedFace(s: GameState, uid: string, defId: string, d: CardDef): CardFace {
   const face = cardFace(d);
@@ -355,7 +362,7 @@ function printedFace(s: GameState, uid: string, defId: string, d: CardDef): Card
 }
 
 const NO_OWNERS: ReadonlySet<PlayerId> = new Set();
-/** Joueurs dont le deck utilise l'impression personnelle, par table d'impressions (fixée à la création de la partie). */
+/** Players whose deck uses the custom printing, per printing table (fixed when the game is created). */
 const customOwnersCache = new WeakMap<object, ReadonlySet<PlayerId>>();
 function customArtOwners(s: GameState): ReadonlySet<PlayerId> {
   const printings = s.printings;
@@ -371,16 +378,16 @@ function customArtOwners(s: GameState): ReadonlySet<PlayerId> {
   return owners;
 }
 
-/** `ObjectView.untapRule` d'un permanent. */
+/** `ObjectView.untapRule` of a permanent. */
 function untapRuleView(s: GameState, id: ObjectId | undefined): { untapRule?: string } {
   const rule = id ? untapStepRule(s, id) : undefined;
   if (!rule) return {};
-  return { untapRule: rule === true ? "Ne se dégage pas lors de l'étape de dégagement" : "Peut ne pas se dégager" };
+  return { untapRule: rule === true ? msg("Doesn't untap during the untap step") : msg("May not untap") };
 }
 
 export function objectView(s: GameState, id: ObjectId): ObjectView {
   const o = obj(s, id);
-  // Une copie (couche 1) s'affiche avec la face de ce qu'elle copie.
+  // A copy (layer 1) is shown with the face of what it copies.
   const d = s.defs[o.zone === "battlefield" ? copiedDefId(s, id) : (o.faceDefId ?? o.defId)] as CardDef;
   const c = chars(s, id);
   const isCreature = c.types.includes("Creature");
@@ -388,7 +395,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
   const blocking = s.combat?.blockers.find((b) => b.id === id)?.attacker ?? null;
   return {
     ...printedFace(s, o.uid, o.defId, d),
-    // Jeton d'un joueur dont le deck utilise les illustrations personnelles : la sienne, s'il y en a une.
+    // Token of a player whose deck uses custom art: its own, if there is one.
     ...(o.isToken && customArtOwners(s).has(o.owner) ? { customArt: true as const } : {}),
     id,
     uid: o.uid,
@@ -430,48 +437,60 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
   };
 }
 
-/** Capacités activées depuis le champ de bataille, avec un libellé et leur coût (mana et {T}). */
+/** Abilities activated from the battlefield, with a label and their cost (mana and {T}). */
 function activatedView(abilities: CardDef["abilities"]): Pick<ObjectView, "activated"> {
   const out: NonNullable<ObjectView["activated"]> = [];
   abilities.forEach((ab, index) => {
     if (ab.kind !== "activated" || ab.fromGraveyard || ab.fromHand) return;
     const cost = [ab.cost.mana ? costToText(ab.cost.mana) : "", ab.cost.tap ? "{T}" : ""].filter(Boolean).join(", ");
-    out.push({ index, label: ab.label ?? "Capacité activée", cost });
+    out.push({ index, label: ab.label ?? msg("Activated ability"), cost });
   });
   return out.length ? { activated: out } : {};
 }
 
-/** Coût de la garde (702.21) lu dans sa capacité déclenchée : « à moins de payer … ». */
+/** Joins texts into one: `{a} and {b}` (several parts nest, left to right). */
+function joinAnd(parts: string[]): string {
+  return parts.reduce((a, b) => msg("{a} and {b}", { a, b }));
+}
+
+/**
+ * Cost of the ward (702.21) read in its triggered ability: "unless … pays …". The ward {2} of a face-down permanent is
+ * not shown.
+ */
 function wardCost(abilities: CardDef["abilities"]): string | undefined {
   const costs = abilities.flatMap((ab) => {
-    if (ab.kind !== "triggered" || ab.trigger.on !== "becomesTarget" || ab.label !== "Garde") return [];
+    if (ab.kind !== "triggered" || ab.trigger.on !== "becomesTarget" || !ab.ward || ab === FACE_DOWN_WARD) return [];
     const pay = ab.effects[0];
     if (pay?.op !== "unlessPay") return [];
     const parts = [
       pay.mana ? costToText(pay.mana) : "",
-      pay.life ? `${pay.life} PV` : "",
-      pay.lifeAmount ? "PV égaux à sa force" : "",
-      pay.discard ? (pay.discardRandom ? "une carte au hasard" : "défausser une carte") : "",
+      pay.life ? msg("ctx:short|{n} life", { n: pay.life }) : "",
+      pay.lifeAmount ? msg("life equal to its power") : "",
+      pay.discard ? (pay.discardRandom ? msg("a card at random") : msg("discard a card")) : "",
       pay.sacrifice
-        ? `sacrifier ${pay.sacrifice} ${pay.sacrificeFilter?.types?.includes("Creature") ? "créature(s)" : pay.sacrificeFilter?.notTypes?.includes("Land") ? "permanents non-terrains" : "permanents"}`
+        ? pay.sacrificeFilter?.types?.includes("Creature")
+          ? msg("sacrifice {n} creature(s)", { n: pay.sacrifice })
+          : pay.sacrificeFilter?.notTypes?.includes("Land")
+            ? msg("sacrifice {n} nonland permanents", { n: pay.sacrifice })
+            : msg("sacrifice {n} permanents", { n: pay.sacrifice })
         : "",
-      pay.collectEvidence ? `réunir des preuves ${pay.collectEvidence}` : "",
+      pay.collectEvidence ? msg("collect evidence {n}", { n: pay.collectEvidence }) : "",
     ].filter(Boolean);
-    return parts.length ? [parts.join(" et ")] : [];
+    return parts.length ? [joinAnd(parts)] : [];
   });
-  return costs.length ? costs.join(", ") : undefined;
+  return costs.length ? costs.reduce((a, b) => msg("{a}, {b}", { a, b })) : undefined;
 }
 
-/** 708.5 : le contrôleur d'un permanent face cachée peut le regarder ; les autres joueurs non. */
+/** 708.5: the controller of a face-down permanent can look at it; the other players can't. */
 function withFaceDownCard(s: GameState, v: ObjectView, viewer: PlayerId): ObjectView {
   const o = s.objects[v.id];
-  // Found Footage : « vous pouvez regarder les créatures face cachée de vos adversaires à tout moment ».
+  // Found Footage: "you may look at face-down creatures your opponents control any time".
   const sees = o?.controller === viewer || (!!o && mayLookAt(s, viewer, o.id));
   const card = o?.faceDown && sees ? s.defs[o.faceDown.card] : undefined;
   return card ? { ...v, faceDownCard: cardFace(card) } : v;
 }
 
-/** Une carte exilée face cachée que le spectateur ne peut pas regarder : son dos seulement (406.3). */
+/** A card exiled face down that the viewer can't look at: its back only (406.3). */
 function hiddenTo(s: GameState, id: ObjectId, viewer: PlayerId): boolean {
   const seen = s.objects[id]?.exiledFaceDown;
   return !!seen && !seen.includes(viewer);
@@ -480,11 +499,11 @@ function hiddenTo(s: GameState, id: ObjectId, viewer: PlayerId): boolean {
 function exiledView(s: GameState, id: ObjectId, viewer: PlayerId): ObjectView {
   const v = objectView(s, id);
   if (!hiddenTo(s, id, viewer)) return v;
-  // Rien que l'objet lui-même : ni nom, ni types, ni capacités ; ses marqueurs restent visibles.
+  // Nothing but the object itself: no name, no types, no abilities; its counters stay visible.
   return {
     defId: HIDDEN_CARD_ID,
     name: "",
-    typeLine: "Carte face cachée",
+    typeLine: msg("Face-down card"),
     manaCost: "",
     text: "",
     implemented: true,
@@ -509,12 +528,12 @@ function exiledView(s: GameState, id: ObjectId, viewer: PlayerId): ObjectView {
   };
 }
 
-/** Zones publiques où l'objet d'un commandant est montré (sa zone seule ailleurs : main, bibliothèque). */
+/** Public zones where a commander's object is shown (only its zone elsewhere: hand, library). */
 const PUBLIC_ZONES: readonly Zone[] = ["command", "battlefield", "stack", "graveyard", "exile"];
 
-/** Commander (PLAN-E) : les commandants d'un joueur et les blessures de commandant qu'il a reçues. */
+/** Commander (PLAN-E): a player's commanders and the commander damage they have received. */
 function commanderViews(s: GameState, p: PlayerId): Pick<PlayerView, "commanders" | "commanderDamage"> {
-  // Un joueur éliminé a quitté la partie avec ses cartes (800.4a) : plus rien à montrer.
+  // An eliminated player has left the game with their cards (800.4a): nothing left to show.
   if (s.players[p]?.lost) return {};
   const cards = s.commander?.cards ?? {};
   const where = new Map<string, GameObject>();
@@ -558,7 +577,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
         .filter((id) => obj(s, id).isToken)
         .map((id) => {
           const d = s.defs[obj(s, id).defId];
-          return { id, name: d?.name ?? "Emblème", text: d?.text ?? "" };
+          return { id, name: d?.name ?? msg("Emblem"), text: d?.text ?? "" };
         }),
       ...(s.commander ? commanderViews(s, p) : {}),
     };
@@ -584,7 +603,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
   });
 
   let pending: PendingView | null = null;
-  // 722 : le joueur qui contrôle le tour voit la décision comme la sienne (options du joueur contrôlé).
+  // 722: the player who controls the turn sees the decision as their own (options of the controlled player).
   const actor = decider(s);
   const p = s.pending ? { ...s.pending, player: actor ?? s.pending.player } : null;
   const who = s.pending?.player ?? viewer;
@@ -614,7 +633,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
             : null;
         const def = trig ? s.defs[trig.defId] : undefined;
         if (trig && def) pending.source = { face: cardFace(def), ...(trig.label ? { effect: trig.label } : {}) };
-        // Nouvelles cibles d'une copie, répartition : l'élément de pile concerné.
+        // New targets of a copy, division: the stack item concerned.
         const purpose = p.purpose;
         const onStack = purpose.kind === "stackChoice" ? stack.find((x) => x.id === purpose.stackId) : undefined;
         if (onStack) pending.source = { face: onStack, ...(onStack.effect ? { effect: onStack.effect } : {}) };
@@ -625,7 +644,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     }
   }
 
-  // Pendant un tour contrôlé, le contrôleur voit et joue la main du joueur contrôlé quand il décide pour lui.
+  // During a controlled turn, the controller sees and plays the controlled player's hand when deciding for them.
   const handOwner = actor === viewer && who !== viewer ? who : viewer;
   return {
     viewer,
@@ -639,7 +658,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     controlling: actor === viewer && who !== viewer ? who : undefined,
     battlefield: s.battlefield.map((id) => {
       const o0 = withFaceDownCard(s, objectView(s, id), viewer);
-      // A Killer Among Us : un choix secret n'est montré qu'à son contrôleur.
+      // A Killer Among Us: a secret choice is shown only to its controller.
       const o = s.objects[id]?.chosen?.secret && s.objects[id]?.controller !== viewer ? { ...o0, chosen: null } : o0;
       return s.manaUndo?.some((u) => u.player === viewer && u.source === id) ? { ...o, undoMana: true } : o;
     }),
@@ -647,10 +666,10 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     exile: s.exile.map((id) => exiledView(s, id, viewer)),
     exiledWith: exiledWith(s),
     playableElsewhere: [
-      // Son commandant dans la zone de commandement (903.8), toujours montré : la pastille donne sa taxe.
+      // Their commander in the command zone (903.8), always shown: the badge gives its tax.
       ...(s.players[viewer]?.command ?? []).filter((id) => commanderOf(s, s.objects[id])),
       ...s.exile.filter((id) => castTerms(s, viewer, id) || landPermitted(s, viewer, id)),
-      // Cimetières (le sien, et ceux des autres avec une permission : Tinybones).
+      // Graveyards (their own, and the others' with a permission: Tinybones).
       ...s.playerOrder.flatMap((p) =>
         (s.players[p]?.graveyard ?? []).filter(
           (id) =>
@@ -659,8 +678,8 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
             (s.objects[id]?.owner === viewer && abilitiesOf(s, id).some((ab) => ab.kind === "activated" && ab.fromGraveyard)),
         ),
       ),
-      // « Vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment » : Vizier of the Menagerie, et
-      // toute permission de jouer depuis le dessus de la bibliothèque (famille C).
+      // "You may look at the top card of your library any time": Vizier of the Menagerie, and any permission to play
+      // from the top of the library (family C).
       ...(s.players[viewer]?.library.slice(0, 1) ?? []).filter((id) => mayLookAt(s, viewer, id)),
     ].map((id) => withCastCost(s, viewer, objectView(s, id))),
     combat: s.combat
@@ -676,9 +695,9 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
 const HIDDEN_ZONES: ReadonlySet<Zone> = new Set(["hand", "library"]);
 
 /**
- * Retire des événements les informations cachées au spectateur : cartes piochées par un autre joueur,
- * cartes d'un autre joueur déplacées d'une zone cachée à une autre (recherche vers la main, remise
- * dans la bibliothèque…).
+ * Removes from the events the information hidden from the viewer: cards drawn by another player,
+ * another player's cards moved from one hidden zone to another (search into the hand, put back
+ * into the library…).
  */
 export function filterEvents(events: GameEvent[], viewer: PlayerId): GameEvent[] {
   return events.map((e) => {
@@ -686,11 +705,11 @@ export function filterEvents(events: GameEvent[], viewer: PlayerId): GameEvent[]
     if (e.type === "moved" && e.owner !== viewer && HIDDEN_ZONES.has(e.from) && HIDDEN_ZONES.has(e.to)) {
       return { type: "moved", owner: e.owner, from: e.from, to: e.to };
     }
-    // Exilée face cachée (406.3) : seuls les joueurs qui peuvent la regarder la voient passer.
+    // Exiled face down (406.3): only the players who can look at it see it go by.
     if (e.type === "moved" && e.faceDown && !e.faceDown.includes(viewer)) {
       return { type: "moved", owner: e.owner, objectId: e.objectId, from: e.from, to: e.to };
     }
-    // Présage : la carte exilée n'est connue que de son propriétaire.
+    // Foretell: the exiled card is known only to its owner.
     if (e.type === "foretold" && e.player !== viewer) return { type: "foretold", player: e.player, defId: HIDDEN_CARD_ID };
     return e;
   });
@@ -698,7 +717,7 @@ export function filterEvents(events: GameEvent[], viewer: PlayerId): GameEvent[]
 
 const DEF_KEYS = new Set(["defId", "sourceDefId", "targetDefId", "attackerDefId", "blockerDefId", "toDefId"]);
 
-/** Identifiants de définitions cités dans une valeur JSON (vue, événements). */
+/** Definition ids cited in a JSON value (view, events). */
 function collectDefIds(value: unknown, out: Set<string>): void {
   if (Array.isArray(value)) {
     for (const v of value) collectDefIds(v, out);
@@ -712,12 +731,15 @@ function collectDefIds(value: unknown, out: Set<string>): void {
         collectDefIds(v, out);
       }
     }
+  } else if (typeof value === "string" && value.includes("⟦")) {
+    // Cards cited in a text (`cardRef`: a prompt, an ability label): the reader needs their face to name them.
+    for (const m of value.matchAll(/⟦([^⟧]+)⟧/g)) out.add(m[1] as string);
   }
 }
 
 /**
- * Faces des cartes que le spectateur a le droit de connaître : celles citées par sa vue et ses
- * événements filtrés (jamais la decklist adverse entière).
+ * Faces of the cards the viewer is allowed to know: those cited by their view and their
+ * filtered events (never the whole opposing decklist).
  */
 export function visibleFaces(s: GameState, view: GameView, events: GameEvent[]): Record<string, CardFace> {
   const ids = new Set<string>();
@@ -728,12 +750,20 @@ export function visibleFaces(s: GameState, view: GameView, events: GameEvent[]):
     const d = s.defs[id];
     if (d) out[id] = cardFace(d);
     else if (id === HIDDEN_CARD_ID)
-      out[id] = { defId: id, name: "", typeLine: "Carte face cachée", manaCost: "", text: "", implemented: true, isToken: false };
+      out[id] = {
+        defId: id,
+        name: "",
+        typeLine: msg("Face-down card"),
+        manaCost: "",
+        text: "",
+        implemented: true,
+        isToken: false,
+      };
   }
   return out;
 }
 
-/** Coût à payer pour lancer cette carte, s'il diffère du coût imprimé (affiché sur la carte dans la main). */
+/** Cost to pay to cast this card, if it differs from the printed cost (shown on the card in the hand). */
 function withCastCost(s: GameState, player: PlayerId, v: ObjectView): ObjectView {
   const o = s.objects[v.id];
   const d = o ? s.defs[o.defId] : undefined;
@@ -750,7 +780,7 @@ function withCastCost(s: GameState, player: PlayerId, v: ObjectView): ObjectView
     card: v.id,
   });
   if (terms.extraCost) cost = totalCost(cost, 0, { generic: terms.extraCost, colored: {}, x: 0 });
-  // Le X reste à choisir : il est affiché tel quel.
+  // X is still to be chosen: it is shown as is.
   const shown = { ...cost, x: terms.free ? 0 : ((flashback ? d.flashback : d.manaCost)?.x ?? 0) };
   const text = costToText(shown);
   if (text === costToText(d.manaCost)) return v;

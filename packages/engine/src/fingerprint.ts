@@ -1,13 +1,13 @@
 /**
- * Empreinte canonique d'un état de partie : points de contrôle des enregistrements (record.ts) et détection des boucles
- * d'actions obligatoires (104.4b, game.ts).
+ * Canonical fingerprint of a game state: checkpoints of the records (record.ts) and detection of loops of mandatory
+ * actions (104.4b, game.ts).
  */
 import type { GameState } from "./types";
 
 /**
- * Empreinte de ce qu'une partie « est » : tour, étape, décision attendue, joueurs (PV, poison, zones), champ de bataille
- * et pile. Elle ne cite aucun identifiant d'objet ni compteur interne (horodatages, version du cache, hasard) : deux
- * versions du moteur qui jouent la même partie donnent la même empreinte.
+ * Fingerprint of what a game "is": turn, step, pending decision, players (life, poison, zones), battlefield and stack.
+ * It cites no object id nor internal counter (timestamps, cache version, randomness): two versions of the engine that
+ * play the same game give the same fingerprint.
  */
 export function outcomeHash(s: GameState, collapse = false): string {
   const def = (id: string | undefined) => (id ? (s.objects[id]?.defId ?? "?") : null);
@@ -18,7 +18,7 @@ export function outcomeHash(s: GameState, collapse = false): string {
     over: [s.over, s.winner],
     players: s.playerOrder.map((p) => {
       const pl = s.players[p];
-      // Marqueurs de radiation : seulement s'il y en a (les empreintes des parties sans Fallout ne changent pas).
+      // Rad counters: only if there are any (the fingerprints of games without Fallout do not change).
       return pl
         ? [
             p,
@@ -48,9 +48,9 @@ export function outcomeHash(s: GameState, collapse = false): string {
       s.stack.map((i) => [i.kind, i.sourceDefId, i.controller]),
       () => collapse,
     ),
-    // Monarque (724) : absent tant que personne ne l'est.
+    // Monarch (724): absent as long as nobody is.
     ...(s.monarch ? { monarch: s.monarch } : {}),
-    // Commander (PLAN-E) : zone de commandement, taxes et blessures de commandant ; absent hors Commander.
+    // Commander (PLAN-E): command zone, taxes and commander damage; absent outside Commander.
     ...(s.commander
       ? {
           command: s.playerOrder.map((p) => zone(s.players[p]?.command ?? [])),
@@ -64,8 +64,8 @@ export function outcomeHash(s: GameState, collapse = false): string {
 }
 
 /**
- * `collapse` (détection d'une boucle qui accumule, 104.4b) : les éléments pour lesquels `dup` est vrai (jetons, objets
- * de la pile) ne comptent qu'une fois, triés ; sinon la liste telle quelle.
+ * `collapse` (detection of a loop that accumulates, 104.4b): the elements for which `dup` is true (tokens, stack
+ * objects) count only once, sorted; otherwise the list as is.
  */
 function once<T>(list: T[], dup: (x: T, i: number) => boolean): (T | string)[] {
   if (!list.some(dup)) return list;
@@ -74,7 +74,7 @@ function once<T>(list: T[], dup: (x: T, i: number) => boolean): (T | string)[] {
   return [...keep, ...seen];
 }
 
-/** Hachage 53 bits (cyrb53), en hexadécimal : pur et déterministe. */
+/** 53-bit hash (cyrb53), in hexadecimal: pure and deterministic. */
 function cyrb53(str: string): string {
   let h1 = 0xdeadbeef;
   let h2 = 0x41c6ce57;

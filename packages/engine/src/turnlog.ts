@@ -1,39 +1,39 @@
 /**
- * Journal des événements du tour (P1 de l'audit, étape 8) : au lieu d'un compteur par carte dans `TurnStats`
- * (« Nourritures sacrifiées ce tour-ci », « créatures exilées ce tour-ci »…), le moteur note chaque événement du tour
- * dans `s.turnLog`, et les cartes l'interrogent par un montant générique (`amount.turnEvents(requête)`).
+ * Log of the turn's events (P1 of the audit, step 8): instead of one counter per card in `TurnStats` ("Foods
+ * sacrificed this turn", "creatures exiled this turn"…), the engine records each event of the turn in `s.turnLog`, and
+ * the cards query it through a generic amount (`amount.turnEvents(query)`).
  *
- * Le journal est vidé au début de chaque tour. Ses entrées sont petites et en JSON pur (invariants du fuzz).
+ * The log is emptied at the beginning of each turn. Its entries are small and plain JSON (fuzz invariants).
  */
 import type { CardType, Color, GameState, ObjectId, PlayerId, TurnLogEntry, TurnLogQuery, Zone } from "./types";
 
-/** L'objet a-t-il attaqué ce tour-ci (sous cette identité : un objet revenu sur le champ de bataille est neuf) ? */
+/** Did the object attack this turn (under this identity: an object that came back to the battlefield is new)? */
 export function attackedThisTurn(s: GameState, id: ObjectId): boolean {
   return objectDidThisTurn(s, id, "attack");
 }
 
-/** L'objet a-t-il infligé des blessures ce tour-ci ? (même identité que `sourceKey`, voir `logDamage`) */
+/** Did the object deal damage this turn? (same identity as `sourceKey`, see `logDamage`) */
 export function dealtDamageThisTurn(s: GameState, id: ObjectId): boolean {
   const key = s.objects[id]?.uid ?? id;
   return s.turnLog.some((e) => e.e === "damage" && e.sourceKey === key);
 }
 
 /**
- * Index des entrées par objet (`id` : marqueurs, activations, engagements, défausses, montures, attaques), dérivé du
- * journal et mémorisé par tableau : le journal ne fait que grandir pendant un tour (`logTurnEvent`) et il est remplacé
- * par un nouveau tableau au début du tour suivant (de même dans une copie de l'état). Les entrées d'un objet sont celles
- * de cet objet seulement : un objet qui change de zone est un nouvel objet (400.7), avec un nouvel identifiant.
+ * Index of the entries by object (`id`: counters, activations, taps, discards, mounts, attacks), derived from the log
+ * and memoized per array: the log only grows during a turn (`logTurnEvent`) and it is replaced by a new array at the
+ * beginning of the next turn (likewise in a copy of the state). The entries of an object are those of that object
+ * only: an object that changes zones is a new object (400.7), with a new id.
  */
 interface ObjectIndex {
-  /** Entrées déjà indexées. */
+  /** Entries already indexed. */
   n: number;
   byId: Map<ObjectId, TurnLogEntry[]>;
-  /** Marqueurs mis, « joueur|sorte » (une valeur par couple, dans l'ordre de la première fois) ; copie à chaque ajout. */
+  /** Counters put, "player|kind" (one value per pair, in order of first occurrence); copied on each addition. */
   countersPut: Map<ObjectId, string[]>;
 }
 const objectIndexes = new WeakMap<TurnLogEntry[], ObjectIndex>();
 const NO_ENTRIES: readonly TurnLogEntry[] = [];
-/** Aucun marqueur mis ce tour-ci : un tableau partagé (pas d'allocation, forme d'objet constante pour V8). */
+/** No counter put this turn: a shared array (no allocation, constant object shape for V8). */
 const NO_COUNTERS_PUT: string[] = [];
 
 function objectIndex(s: GameState): ObjectIndex {
@@ -59,18 +59,18 @@ function objectIndex(s: GameState): ObjectIndex {
   return ix;
 }
 
-/** Entrées du tour qui concernent cet objet (sous cette identité). */
+/** Entries of the turn that concern this object (under this identity). */
 export function objectTurnEvents(s: GameState, id: ObjectId): readonly TurnLogEntry[] {
   return objectIndex(s).byId.get(id) ?? NO_ENTRIES;
 }
 
-/** Une entrée de cette sorte pour l'objet ce tour-ci ? */
+/** An entry of this kind for the object this turn? */
 export function objectDidThisTurn(s: GameState, id: ObjectId, event: TurnLogEntry["e"]): boolean {
   return objectTurnEvents(s, id).some((e) => e.e === event);
 }
 
 /**
- * Activations de l'objet ce tour-ci : une capacité de loyauté (606.3), ou la capacité « une fois par tour » d'indice
+ * Activations of the object this turn: a loyalty ability (606.3), or the "only once each turn" ability at index
  * `index`.
  */
 export function activatedThisTurn(s: GameState, id: ObjectId, which: { loyalty: true } | { index: number }): boolean {
@@ -78,16 +78,16 @@ export function activatedThisTurn(s: GameState, id: ObjectId, which: { loyalty: 
 }
 
 /**
- * Marqueurs mis sur l'objet ce tour-ci, « joueur|sorte » (filtre `countersPutByYouThisTurn`) ; le tableau renvoyé n'est
- * jamais modifié ensuite (les dernières informations connues le gardent).
+ * Counters put on the object this turn, "player|kind" (filter `countersPutByYouThisTurn`); the returned array is never
+ * modified afterwards (the last known information keeps it).
  */
 export function countersPutThisTurn(s: GameState, id: ObjectId): string[] {
   return objectIndex(s).countersPut.get(id) ?? NO_COUNTERS_PUT;
 }
 
 /**
- * Invalidation du cache des couches après une entrée : installée par `layers.ts` (qui dépend de ce module) pour ne
- * l'invalider que s'il lit le journal (PLAN-S, P2) ; par défaut, toujours.
+ * Invalidation of the layer cache after an entry: installed by `layers.ts` (which depends on this module) so as to
+ * invalidate it only if it reads the log (PLAN-S, P2); by default, always.
  */
 let invalidate = (s: GameState): void => {
   s.version += 1;
@@ -98,13 +98,13 @@ export function onTurnLogged(fn: (s: GameState) => void): void {
 
 export function logTurnEvent(s: GameState, entry: TurnLogEntry): void {
   s.turnLog.push(entry);
-  // Des capacités statiques en dépendent (raid, « si vous avez attaqué avec un Vaisseau »).
+  // Static abilities depend on it (raid, "if you attacked with a Spacecraft").
   invalidate(s);
 }
 
 /**
- * Joueur « concerné » par une entrée : contrôleur d'un permanent qui quitte ou rejoint le champ de bataille, sinon
- * propriétaire de la carte déplacée (`byOwner` : toujours le propriétaire) ; lanceur ; joueur blessé ; sacrificateur.
+ * Player "concerned" by an entry: controller of a permanent that leaves or enters the battlefield, otherwise owner of
+ * the moved card (`byOwner`: always the owner); caster; damaged player; sacrificing player.
  */
 function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
   switch (e.e) {
@@ -125,7 +125,7 @@ type Chars = {
   colors?: readonly Color[];
 };
 
-/** Le comparateur des caractéristiques (`TurnLogQuery` : de l'objet de l'entrée, ou de la source des blessures). */
+/** The characteristics comparator (`TurnLogQuery`: of the entry's object, or of the damage source). */
 function charsMatch(have: Chars, q: Pick<TurnLogQuery, "types" | "subtype" | "supertype" | "colors">): boolean {
   if (!hasAny<CardType>(have.types, q.types)) return false;
   if (q.subtype && !have.subtypes?.includes(q.subtype)) return false;
@@ -136,7 +136,7 @@ function charsMatch(have: Chars, q: Pick<TurnLogQuery, "types" | "subtype" | "su
 function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): boolean {
   if (e.e !== q.event) return false;
   const who = subjectOf(e, q.byOwner);
-  // « Un adversaire » : un adversaire encore en partie (800.4a : un joueur qui a quitté la partie n'est plus un adversaire).
+  // "An opponent": an opponent still in the game (800.4a: a player who has left the game is no longer an opponent).
   const opponent = () => who !== me && !!who && !s.players[who]?.lost;
   if (subject !== undefined ? who !== subject : q.who === "you" ? who !== me : q.who === "opponent" ? !opponent() : false)
     return false;
@@ -173,12 +173,12 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
   return true;
 }
 
-/** Poids d'une entrée : sa quantité (blessures, vie, cartes défaussées) pour une somme, sinon 1. */
+/** Weight of an entry: its quantity (damage, life, discarded cards) for a sum, otherwise 1. */
 const weight = (e: TurnLogEntry, q: TurnLogQuery) => (q.sum && "amount" in e ? e.amount : 1);
 
 /**
- * Valeurs d'une entrée pour `distinct` : source des blessures, sorte de maîtrise, types de carte, joueur concerné, créature
- * qui attaque.
+ * Values of an entry for `distinct`: damage source, bending kind, card types, concerned player, attacking
+ * creature.
  */
 function distinctValues(e: TurnLogEntry, d: NonNullable<TurnLogQuery["distinct"]>): readonly string[] {
   switch (d) {
@@ -200,9 +200,9 @@ function distinctValues(e: TurnLogEntry, d: NonNullable<TurnLogQuery["distinct"]
 }
 
 /**
- * Nombre d'entrées du tour qui correspondent (ou somme des quantités, `sum` ; ou nombre de valeurs différentes,
- * `distinct`), vu de `me`. `perPlayer` : le plus grand total parmi les joueurs concernés (« un joueur a subi 10 blessures
- * de combat ou plus ce tour-ci »).
+ * Number of matching entries of the turn (or sum of the quantities, `sum`; or number of different values,
+ * `distinct`), seen from `me`. `perPlayer`: the largest total among the concerned players ("a player was dealt 10 or
+ * more combat damage this turn").
  */
 export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): number {
   if (q.distinct) {
@@ -221,8 +221,8 @@ export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, sub
 }
 
 /**
- * Entrée d'un déplacement de zone (caractéristiques connues au moment du déplacement). `controller` : celui qui le
- * contrôlait en partant du champ de bataille, ou qui le contrôle en y arrivant.
+ * Entry of a zone change (characteristics known at the time of the move). `controller`: the one who controlled it when
+ * it left the battlefield, or who controls it when it enters.
  */
 export function zoneEntry(
   from: Zone | null,

@@ -1,7 +1,7 @@
 /**
- * Lancer des sorts (601), activer des capacités (602), résoudre la pile (608).
- * Côté moteur, un lancement est atomique : le client envoie d'un coup mode, cibles, X et kicker,
- * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
+ * Casting spells (601), activating abilities (602), resolving the stack (608).
+ * On the engine side, casting is atomic: the client sends mode, targets, X and kicker at once,
+ * and the mana payment is resolved automatically (mana pool first, then the solver).
  */
 
 import {
@@ -80,6 +80,7 @@ import {
   validateTargets,
   withChosen,
 } from "./targets";
+import { msg } from "./text";
 import { checkCondition, checkCrime, createDelayed, onceKey, pushInline, simultaneously } from "./triggers";
 import { activatedThisTurn, countTurnEvents, logTurnEvent, objectDidThisTurn } from "./turnlog";
 import type {
@@ -118,7 +119,7 @@ import { BASIC_LAND_TYPES, isManaAbility, PERMANENT_TYPES } from "./types";
 
 export { RulesError };
 
-/** Coût alternatif disponible : celui de la carte (si sa condition est remplie), sinon celui accordé à vos sorts (`altCostAll`). */
+/** Available alternative cost: the card's own (if its condition is met), otherwise the one granted to your spells (`altCostAll`). */
 export function altCostFor(
   s: GameState,
   player: PlayerId,
@@ -138,31 +139,37 @@ export function altCostFor(
   for (const { id, ab } of playerStatics(s, player, "altCostAll")) {
     const a = ab.altCostAll;
     if (!a || (a.filter && !matchesView(spellView(d, player), a.filter, player))) continue;
-    // Web-slinging donné (Amazing Spider-Man) : il faut une créature engagée à renvoyer.
+    // Granted web-slinging (Amazing Spider-Man): it needs a tapped creature to return.
     if (a.webSlinging && a.mana) {
       if (webSlingingOptions(s, player).length === 0) continue;
-      return { mana: a.mana, label: `Web-slinging — ${costToText(a.mana)}`, webSlinging: true };
+      return { mana: a.mana, label: msg("Web-slinging — {cost}", { cost: costToText(a.mana) }), webSlinging: true };
     }
-    // Conspiracy Unraveler : réunir des preuves N plutôt que payer le coût de mana.
+    // Conspiracy Unraveler: collect evidence N rather than pay the mana cost.
     if (a.collectEvidence)
       return {
         mana: { generic: 0, colored: {}, x: 0 },
         collectEvidence: a.collectEvidence,
-        label: `Réunir des preuves ${a.collectEvidence}`,
+        label: msg("Collect evidence {n}", { n: a.collectEvidence }),
       };
-    // Libellé : le nom de la carte qui accorde le coût (Leyline of Mutation : « Leyline of Mutation — {W}{U}{B}{R}{G} »).
+    // Label: the name of the card that grants the cost (Leyline of Mutation: "Leyline of Mutation — {W}{U}{B}{R}{G}").
     const giver = id ? (s.defs[s.objects[id]?.defId ?? ""]?.name ?? "") : "";
-    if (a.mana) return { mana: a.mana, label: `${giver || "Coût alternatif"} — ${costToText(a.mana)}` };
+    if (a.mana)
+      return {
+        mana: a.mana,
+        label: giver
+          ? msg("{card} — {cost}", { card: giver, cost: costToText(a.mana) })
+          : msg("Alternative cost — {cost}", { cost: costToText(a.mana) }),
+      };
   }
   return undefined;
 }
 
-/** Convocation : le sort l'a, ou Dazzling Theater la donne à vos sorts de créature. */
-/** Improvisation (702.126) : imprimée, ou donnée aux sorts du joueur (Ironheart : « vos sorts non-créature »). */
+/** Convoke: the spell has it, or Dazzling Theater gives it to your creature spells. */
+/** Improvise (702.126): printed, or given to the player's spells (Ironheart: "noncreature spells you cast"). */
 /**
- * Le sort a-t-il ce mot-clé, imprimé ou accordé aux sorts par une statique du joueur (`spellKeywords` : « vos sorts de
- * créature ont la convocation », « vos rituels ont le flash »…) ? Seule lecture des mots-clés d'un sort hors du champ de
- * bataille (PLAN-C, lot C11).
+ * Does the spell have this keyword, printed or granted to spells by a static ability of the player (`spellKeywords`:
+ * "creature spells you cast have convoke", "sorcery spells you cast have flash"…)? The only reading of a spell's keywords
+ * outside the battlefield (PLAN-C, lot C11).
  */
 export function spellHasKeyword(s: GameState, player: PlayerId, d: CardDef, kw: Keyword): boolean {
   if (d.keywords.includes(kw)) return true;
@@ -171,7 +178,7 @@ export function spellHasKeyword(s: GameState, player: PlayerId, d: CardDef, kw: 
   );
 }
 
-/** Mots-clés accordés à ce sort par les statiques de son contrôleur (`spellKeywords`), sans ceux qu'il a déjà. */
+/** Keywords granted to this spell by its controller's static abilities (`spellKeywords`), without those it already has. */
 export function grantedSpellKeywords(s: GameState, player: PlayerId, d: CardDef): Keyword[] {
   const out = new Set<Keyword>();
   for (const { ab } of playerStatics(s, player, "spellKeywords"))
@@ -193,10 +200,10 @@ export function isPermanentCard(d: CardDef): boolean {
 }
 
 /**
- * Condition d'un mode à l'annonce du sort (601.2b) : « kické » (coût additionnel payé, travail d'équipe, flétrir…) se lit
- * dans les choix du lancement, et non sur l'objet ; `not`, `all` et `any` le composent (« choisissez-en un ; si le coût
- * additionnel a été payé, choisissez les deux à la place » : chaque mode seul exige qu'il ne l'ait pas été). Les autres
- * sortes se lisent hors résolution (`checkCondition`). Commune à `legalActions` et à `castSpell`.
+ * Condition of a mode when the spell is announced (601.2b): "kicked" (additional cost paid, teamwork, blight…) is read
+ * from the casting choices, not from the object; `not`, `all` and `any` compose it ("choose one; if the additional cost
+ * was paid, choose both instead": each single mode requires that it was not). The other kinds are read outside
+ * resolution (`checkCondition`). Shared by `legalActions` and `castSpell`.
  */
 export function modeConditionHolds(s: GameState, player: PlayerId, card: ObjectId, c: Condition, kicked: boolean): boolean {
   switch (c.kind) {
@@ -213,10 +220,10 @@ export function modeConditionHolds(s: GameState, player: PlayerId, card: ObjectI
   }
 }
 
-/** Mot « cible » d'un sort d'Aura (303.4a). */
+/** The "target" word of an Aura spell (303.4a). */
 export const ENCHANT_SPEC = "enchant";
 
-/** Modes d'un sort ; un permanent sans cible a un unique mode vide, une Aura cible ce qu'elle enchantera. */
+/** Modes of a spell; a permanent without targets has a single empty mode, an Aura targets what it will enchant. */
 export function modesOf(d: CardDef): ModeDef[] {
   if (d.spell) return d.spell.modes;
   if (d.enchant) {
@@ -234,47 +241,47 @@ export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boole
   if (d.types.includes("Instant") || d.keywords.includes("flash")) return true;
   if (d.flashIf && checkCondition(s, d.flashIf, player)) return true;
   if (sorceryTiming(s, player)) return true;
-  // Valley Floodcaller : « vous pouvez lancer des sorts non-créature comme s'ils avaient le flash ».
+  // Valley Floodcaller: "you may cast noncreature spells as though they had flash".
   if (spellHasKeyword(s, player, d, "flash")) return true;
-  // « Vous pouvez lancer des sorts comme s'ils avaient le flash. »
+  // "You may cast spells as though they had flash."
   return s.battlefield.some(
     (id) => obj(s, id).controller === player && chars(s, id).abilities.some((ab) => ab.kind === "castPermission" && ab.flash),
   );
 }
 
-/** Faufilement (702.190a) : le sort se lance pour son coût de faufilement pendant l'étape de déclaration des bloqueurs. */
+/** Sneak (702.190a): the spell is cast for its sneak cost during the declare blockers step. */
 export function sneakTiming(s: GameState, player: PlayerId, d: CardDef): boolean {
   return !!d.sneak && sneakOptions(s, player).length > 0 && checkCondition(s, { kind: "sneakWindow" }, player);
 }
 
-/** Faufilement : les attaquants non bloqués que vous pouvez renvoyer, le plus faible en premier (le choix par défaut). */
+/** Sneak: the unblocked attackers you can return, weakest first (the default choice). */
 export function sneakOptions(s: GameState, player: PlayerId): ObjectId[] {
   return [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power);
 }
 
-/** Capacités (sur le champ de bataille) des permanents que ce joueur contrôle. */
+/** Abilities (on the battlefield) of the permanents this player controls. */
 function controlledAbilities(s: GameState, player: PlayerId): CardDef["abilities"] {
   return controlledAbilitiesWithSource(s, player).map((e) => e.ab);
 }
 
-/** Nombre de terrains que le joueur peut jouer ce tour-ci (305.2 : 1, plus les effets comme Loot). */
+/** Number of lands the player can play this turn (305.2: 1, plus effects like Loot). */
 export function landsAllowed(s: GameState, player: PlayerId): number {
   return 1 + playerStaticTotal(s, player, "extraLands");
 }
 
-/** Permission de jouer une carte exilée (impulsion, Etali…) encore valable. */
+/** Permission to play an exiled card (impulse draw, Etali…) that is still valid. */
 function exilePermission(s: GameState, player: PlayerId, card: ObjectId) {
   return s.playPermissions?.find(
     (p) =>
       p.card === card &&
       p.player === player &&
       permissionActive(s, p) &&
-      // Possibility Technician : « tant que vous contrôlez un Kavu ».
+      // Possibility Technician: "as long as you control a Kavu".
       (!p.condition || checkCondition(s, p.condition, player, p.source)),
   );
 }
 
-/** Muldrotha : type de permanent encore disponible pour jouer cette carte depuis le cimetière ce tour-ci. */
+/** Muldrotha: permanent type still available to play this card from the graveyard this turn. */
 function graveyardTypeAvailable(s: GameState, player: PlayerId, card: ObjectId): string | null {
   if (s.turn.active !== player) return null;
   if (!controlledAbilities(s, player).some((ab) => ab.kind === "castPermission" && ab.graveyardPermanentTypes)) return null;
@@ -288,10 +295,10 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
 }
 
 /**
- * Le joueur a-t-il le droit de jouer ce terrain depuis sa zone (main, exil, cimetière, dessus de la bibliothèque), sans
- * tenir compte du moment ni des terrains déjà joués ? (L'interface présente ces cartes au bout de la main.)
+ * May the player play this land from its zone (hand, exile, graveyard, top of the library), regardless of timing and of
+ * the lands already played? (The interface shows these cards at the end of the hand.)
  */
-/** Tinybones, Bauble Burglar : pendant votre tour, les cartes exilées avec un marqueur de butin que vous ne possédez pas. */
+/** Tinybones, Bauble Burglar: during your turn, the exiled cards with a stash counter that you don't own. */
 function stashPlayable(s: GameState, player: PlayerId, o: GameObject): boolean {
   return (
     o.zone === "exile" &&
@@ -303,8 +310,8 @@ function stashPlayable(s: GameState, player: PlayerId, o: GameObject): boolean {
 }
 
 /**
- * Face qui se joue comme terrain : la carte si c'est un terrain, sinon le verso terrain d'une carte modale recto-verso
- * (712.12 : Sink into Stupor // Soporific Springs).
+ * Face played as a land: the card if it is a land, otherwise the land back face of a modal double-faced card
+ * (712.12: Sink into Stupor // Soporific Springs).
  */
 export function landFace(d: CardDef | undefined): CardDef | undefined {
   if (!d) return undefined;
@@ -313,7 +320,7 @@ export function landFace(d: CardDef | undefined): CardDef | undefined {
   return back?.types.includes("Land") ? back : undefined;
 }
 
-/** Verso terrain d'une carte modale dont le recto est aussi un terrain (Pathways : on choisit la face jouée). */
+/** Land back face of a modal card whose front is also a land (Pathways: the played face is chosen). */
 export function landBackFace(d: CardDef | undefined): CardDef | undefined {
   const back = d?.layout === "modal_dfc" && d.types.includes("Land") ? d.faceDefs?.[1] : undefined;
   return back?.types.includes("Land") ? back : undefined;
@@ -327,35 +334,35 @@ export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): b
   return (
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
-    // Valgavoth : les cartes liées, terrains compris.
+    // Valgavoth: the linked cards, lands included.
     (o.zone === "exile" && playFromRules(s, player, card, "linked", "lands").length > 0) ||
-    // Tinybones : « jouer » les cartes de butin, terrains compris.
+    // Tinybones: "play" the stash cards, lands included.
     stashPlayable(s, player, o) ||
     (o.zone === "library" &&
       o.owner === player &&
       s.players[player]?.library[0] === card &&
       playFromRules(s, player, card, "libraryTop", "lands").length > 0) ||
-    // Ville à aventure (FIN) : la carte « en aventure » se joue comme terrain depuis l'exil (715.4).
+    // Town with an adventure (FIN): the card "on an adventure" is played as a land from exile (715.4).
     (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
-    // « Vous pouvez jouer cette carte ce tour-ci » (Tablet of Discovery : la carte meulée, terrain compris).
+    // "You may play that card this turn" (Tablet of Discovery: the milled card, land included).
     (o.zone === "graveyard" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
     (o.zone === "graveyard" &&
       o.owner === player &&
       (graveyardTypeAvailable(s, player, card) === "Land" ||
         playFromRules(s, player, card, "graveyard", "lands").length > 0 ||
-        // Chaos d'un terrain (Oscorp Industries) : défaussé ce tour-ci, il se joue depuis le cimetière.
+        // Mayhem of a land (Oscorp Industries): discarded this turn, it is played from the graveyard.
         (!!d.mayhem && objectDidThisTurn(s, o.id, "discard"))))
   );
 }
 
-/** Types de terrain de base (205.3i). */
+/** Basic land types (205.3i). */
 
-/** Le coût alternatif du sort est un Web-slinging : imprimé, ou donné (Amazing Spider-Man). */
+/** The spell's alternative cost is web-slinging: printed, or given (Amazing Spider-Man). */
 export function isWebSlinging(s: GameState, player: PlayerId, d: CardDef): boolean {
   return !!d.webSlinging || !!altCostFor(s, player, d)?.webSlinging;
 }
 
-/** Le sort de créature aura-t-il l'émeute en arrivant : imprimée, ou donnée par un de vos permanents (Spider-Punk) ? */
+/** Will the creature spell have riot as it enters: printed, or given by one of your permanents (Spider-Punk)? */
 export function willHaveRiot(s: GameState, player: PlayerId, d: CardDef): boolean {
   if (d.keywords.includes("riot")) return true;
   if (!d.types.includes("Creature")) return false;
@@ -373,7 +380,7 @@ export function willHaveRiot(s: GameState, player: PlayerId, d: CardDef): boolea
   );
 }
 
-/** Web-slinging : les créatures engagées que vous contrôlez, la moins chère en premier (le choix par défaut). */
+/** Web-slinging: the tapped creatures you control, cheapest first (the default choice). */
 export function webSlingingOptions(s: GameState, player: PlayerId): ObjectId[] {
   const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
   return s.battlefield
@@ -381,7 +388,7 @@ export function webSlingingOptions(s: GameState, player: PlayerId): ObjectId[] {
     .sort((a, b) => mv(a) - mv(b));
 }
 
-/** Multiversal Passage : le premier choix « en arrivant » du terrain est un type de terrain de base (une option par type). */
+/** Multiversal Passage: the land's first "as it enters" choice is a basic land type (one option per type). */
 export function landTypeChoice(face: CardDef): boolean {
   const first = face.asEnters?.find((e) => e.op === "chooseOnEnter" || e.op === "chooseCopy");
   return first?.op === "chooseOnEnter" && first.kind === "landType";
@@ -396,41 +403,41 @@ export function playLand(
   chosen?: string,
   back = false,
 ): void {
-  if (!canPlayLand(s, player, card)) throw new RulesError("Vous ne pouvez pas jouer ce terrain maintenant");
+  if (!canPlayLand(s, player, card)) throw new RulesError(msg("You can't play this land now"));
   const o = obj(s, card);
-  // La face jouée : la carte, ou le verso terrain d'une carte modale (qui arrive alors verso visible) ; Pathways : le
-  // verso si le joueur le choisit.
+  // The played face: the card, or the land back face of a modal card (which then enters back face up); Pathways: the
+  // back face if the player chooses it.
   const backLand = back ? landBackFace(s.defs[o.defId]) : undefined;
-  if (back && !backLand) throw new RulesError("Cette carte n'a pas de verso terrain à jouer");
+  if (back && !backLand) throw new RulesError(msg("This card has no land back face to play"));
   const face = backLand ?? landFace(s.defs[o.defId]);
   const backFace = !!face && face.id !== o.defId;
-  // 614.12 : la première question « en arrivant » du terrain (Cavern of Souls : un type de créature ; Multiversal Passage :
-  // un type de terrain de base, `landType` ; Echoing Deeps : la carte copiée, "" pour aucune) est répondue avec la
-  // décision ; sans réponse, et pour les suivantes, la réponse suggérée (`asEntersChoices`).
+  // 614.12: the land's first "as it enters" question (Cavern of Souls: a creature type; Multiversal Passage: a basic land
+  // type, `landType`; Echoing Deeps: the copied card, "" for none) is answered with the decision; without an answer, and
+  // for the next ones, the suggested answer (`asEntersChoices`).
   const entering = { id: card, defId: face?.id ?? o.defId, controller: player };
   const choosesType = face ? landTypeChoice(face) : false;
   if (landType !== undefined && (!choosesType || !BASIC_LAND_TYPES.includes(landType)))
-    throw new RulesError("Type de terrain de base invalide");
-  if (chosen !== undefined && choosesType) throw new RulesError("Ce terrain ne demande pas de choix");
+    throw new RulesError(msg("Invalid basic land type"));
+  if (chosen !== undefined && choosesType) throw new RulesError(msg("This land asks for no choice"));
   let first: ChoiceValue[] | undefined;
   const given = landType ?? chosen;
   if (given !== undefined) {
     const probe = asEntersChoices(s, {}, entering, "land:", "probe");
     const request = "ask" in probe ? probe.ask.request : undefined;
     if (request?.type === "name") {
-      // Cavern of Souls : un type de créature (toute la liste officielle, `isNameAllowed`).
-      if (!isNameAllowed(s, request.of, given)) throw new RulesError("Choix invalide");
+      // Cavern of Souls: a creature type (the whole official list, `isNameAllowed`).
+      if (!isNameAllowed(s, request.of, given)) throw new RulesError(msg("Invalid choice"));
       first = [given];
-    } else if (request?.type !== "pick") throw new RulesError("Ce terrain ne demande pas de choix");
+    } else if (request?.type !== "pick") throw new RulesError(msg("This land asks for no choice"));
     else if (given === "" && request.min === 0) first = [];
     else if (request.options.includes(given)) first = [given];
-    else throw new RulesError("Choix invalide");
+    else throw new RulesError(msg("Invalid choice"));
   }
-  // Terrains choc : « vous pouvez payer 2 points de vie ; sinon, il arrive engagé ».
+  // Shock lands: "you may pay 2 life; if you don't, it enters tapped".
   const shock = face?.shockLand;
-  if (payLife && !shock) throw new RulesError("Ce terrain ne demande pas de points de vie");
+  if (payLife && !shock) throw new RulesError(msg("This land asks for no life payment"));
   if (payLife && shock) {
-    if (payableLife(s, player) < shock) throw new RulesError("Pas assez de points de vie");
+    if (payableLife(s, player) < shock) throw new RulesError(msg("Not enough life"));
     payLife_(s, player, shock);
   }
   if (o.zone === "graveyard") s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), "Land"];
@@ -438,8 +445,8 @@ export function playLand(
   const fromZone = o.zone;
   const fromExile = o.zone === "exile" ? exilePermission(s, player, card) : undefined;
   const choices = asEntersChoices(s, {}, entering, "land:", first ? { first } : "auto");
-  // Scorched Ruins : ses effets « en arrivant » l'ont mis ailleurs (au cimetière, faute de terrains à sacrifier) ; le
-  // terrain a quand même été joué (305.1).
+  // Scorched Ruins: its "as it enters" effects put it elsewhere (into the graveyard, for lack of lands to sacrifice); the
+  // land was still played (305.1).
   if (s.objects[card]?.zone !== fromZone) {
     s.turn.landsPlayed += 1;
     logTurnEvent(s, { e: "playLand", player, fromZone, types: face?.types ?? [], subtypes: face?.subtypes ?? [] });
@@ -455,7 +462,7 @@ export function playLand(
   if (id) rulesEvent(s, { e: "playLand", player, objectId: id, from: fromZone });
   const land = face;
   logTurnEvent(s, { e: "playLand", player, fromZone, types: land?.types ?? [], subtypes: land?.subtypes ?? [] });
-  // Lightstall Inquisitor : un terrain joué depuis l'exil ainsi arrive engagé.
+  // Lightstall Inquisitor: a land played from exile this way enters tapped.
   const landed = id ? s.objects[id] : undefined;
   if (landed && fromExile?.tapped) {
     landed.tapped = true;
@@ -467,7 +474,7 @@ function flatTargets(t: Record<string, string[]>): string[] {
   return Object.values(t).flat();
 }
 
-/** Le sort vu comme un objet, pour les filtres (« les sorts de Dragon que vous lancez… »). */
+/** The spell seen as an object, for filters ("Dragon spells you cast…"). */
 export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
   return {
     id: "",
@@ -482,17 +489,17 @@ export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
     toughness: d.toughness ?? 0,
     keywords: d.keywords,
     isToken: false,
-    // « un sort de valeur de mana 4 ou plus » (mana restreint d'Ashling, réductions de coût), « nommé … ».
+    // "a spell with mana value 4 or greater" (Ashling's restricted mana, cost reductions), "named …".
     name: d.name,
     manaValue: manaValue(d.manaCost),
     ...(d.layout === "adventure" || d.subtypes.includes("Adventure") ? { adventure: true } : {}),
     ...((d.manaCost?.x ?? 0) > 0 ? { hasX: true } : {}),
-    // Un sort lancé face cachée (déguisement) : « les sorts face cachée » (Goblin Maskmaker).
+    // A spell cast face down (disguise): "face-down spells" (Goblin Maskmaker).
     ...(d.id === FACE_DOWN_ID ? { faceDown: true } : {}),
   };
 }
 
-/** La réduction propre au sort (« ce sort coûte {N} de moins si… ») s'applique-t-elle ? */
+/** Does the spell's own reduction ("this spell costs {N} less to cast if…") apply? */
 function ownReductionApplies(
   s: GameState,
   player: PlayerId,
@@ -504,8 +511,8 @@ function ownReductionApplies(
   const cond = d.costReduction?.condition;
   if (!cond) return true;
   if (cond.kind === "targetMatches") {
-    // « Ce sort coûte {3} de moins s'il cible une créature engagée » (Luminous Rebuke) ; un sort ciblé sur la pile
-    // (Brush Off : « s'il cible un sort d'éphémère ou de rituel »).
+    // "This spell costs {3} less to cast if it targets a tapped creature" (Luminous Rebuke); a targeted spell on the stack
+    // (Brush Off: "if it targets an instant or sorcery spell").
     const spec = modesOf(d)[0]?.targets.find((t) => t.id === cond.spec);
     const ids = targets ? (targets[cond.spec] ?? []) : spec ? legalTargets(s, player, spec) : [];
     return ids.some((id) =>
@@ -514,13 +521,13 @@ function ownReductionApplies(
         : matchesObjectFilter(s, player, id, cond.filter),
     );
   }
-  // « Ce sort coûte {2} de moins s'il est marchandé » (Hamlet Glutton) : le choix du lanceur.
+  // "This spell costs {2} less to cast if it's bargained" (Hamlet Glutton): the caster's choice.
   if (cond.kind === "kicked") return !!kicked;
-  // La carte lancée est la source : « contemplez un Gobelin » ne la compte pas elle-même (601.2a).
+  // The cast card is the source: "behold a Goblin" doesn't count the card itself (601.2a).
   return checkCondition(s, cond, player, card);
 }
 
-/** Réduction de coût générique applicable à ce sort (601.2f). */
+/** Generic cost reduction applicable to this spell (601.2f). */
 export function spellReduction(
   s: GameState,
   player: PlayerId,
@@ -537,11 +544,11 @@ export function spellReduction(
     r += evalAmount(s, staticContext(s, player, "", { sourceDefId: d.id }), own.generic);
   }
   const view = spellView(d, player);
-  // Réductions accordées au joueur (effets « ce tour-ci » : Goblin Maskmaker).
+  // Reductions granted to the player ("this turn" effects: Goblin Maskmaker).
   for (const { ab } of playerStatics(s, player, "spellCost")) {
     if (ab.spellCost && matchesView(view, ab.spellCost.filter, player)) r += ab.spellCost.reduce ?? 0;
   }
-  // « Le prochain sort non-créature que vous lancez ce tour-ci a l'affinité pour les artefacts » (Don & Raph).
+  // "The next noncreature spell you cast this turn has affinity for artifacts" (Don & Raph).
   for (const e of s.playerEffects) {
     const n = e.player === player && e.once ? e.ability.nextSpell : undefined;
     if (n?.reduce !== undefined && (!n.filter || matchesView(view, n.filter, player)))
@@ -551,12 +558,12 @@ export function spellReduction(
     const o = obj(s, id);
     for (const ab of chars(s, id).abilities) {
       if (ab.kind !== "costReduction") continue;
-      // Réductions de vos permanents ; taxes des permanents adverses sur vos sorts (Thalia, the Survivor).
+      // Reductions from your permanents; taxes from opposing permanents on your spells (Thalia, the Survivor).
       const applies = ab.everyone || (ab.opponents ? o.controller !== player : o.controller === player);
-      // Gathering Stone : « les sorts du type choisi ».
+      // Gathering Stone: "spells of the chosen type".
       if (!applies || !matchesView(view, withChosen(ab.filter, o), player)) continue;
       if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
-      // « Les sorts lancés depuis un cimetière ou depuis l'exil » (Aven Interrupter, Doc Aurlock).
+      // "Spells cast from graveyards or from exile" (Aven Interrupter, Doc Aurlock).
       const zone = fromZone === "flashback" ? "graveyard" : fromZone;
       if (ab.fromZones && !(zone === "graveyard" || zone === "exile" ? ab.fromZones.includes(zone) : false)) continue;
       r += ab.generic;
@@ -566,21 +573,21 @@ export function spellReduction(
   return r;
 }
 
-/** Modifications à l'arrivée d'un sort (Noctis ; prochain sort de créature : Summon: Fenrir, Summon: Brynhildr). */
+/** Modifications as a spell enters (Noctis; next creature spell: Summon: Fenrir, Summon: Brynhildr). */
 function arrivalFor(terms: CastTerms, next: NextSpell[]): StackItem["arrival"] {
   const counters: { kind: string; n: number }[] = terms.finality ? [{ kind: "finality", n: 1 }] : [];
-  // Mikey & Don : « si vous lancez ainsi un sort de créature, elle arrive avec un marqueur +1/+1 de plus ».
+  // Mikey & Don: "if you cast a creature spell this way, it enters with an additional +1/+1 counter".
   if (terms.playFrom?.counters) counters.push({ kind: "+1/+1", n: terms.playFrom.counters });
   for (const n of next) if (n.counters) counters.push({ kind: "+1/+1", n: n.counters });
   const haste = next.some((n) => n.haste) || undefined;
-  // The Tomb of Aclazotz : « c'est un Vampire en plus de ses autres types ».
+  // The Tomb of Aclazotz: "it's a Vampire in addition to its other types".
   const subtypes = terms.playFrom?.addSubtypes;
   return counters.length || haste || subtypes ? { counters, haste, ...(subtypes ? { subtypes } : {}) } : undefined;
 }
 
 /**
- * « Le prochain sort que vous lancez ce tour-ci… » (famille N) : les effets à usage unique qui correspondent à ce sort
- * sont retirés et renvoyés (Teach by Example : copié ; Theorist's Proxy : incontrecarrable ; Summon: Fenrir : marqueur).
+ * "The next spell you cast this turn…" (family N): the one-shot effects that match this spell are removed and returned
+ * (Teach by Example: copied; Theorist's Proxy: can't be countered; Summon: Fenrir: counter).
  */
 function consumeNextSpells(s: GameState, player: PlayerId, d: CardDef): NextSpell[] {
   const view = spellView(d, player);
@@ -595,16 +602,16 @@ function consumeNextSpells(s: GameState, player: PlayerId, d: CardDef): NextSpel
   return used.map((e) => e.ability.nextSpell as NextSpell);
 }
 
-/** Cloud, Planet's Champion : réduction d'une capacité d'Équiper qui cible la créature. */
+/** Cloud, Planet's Champion: reduction of an equip ability that targets the creature. */
 export function equipDiscount(s: GameState, player: PlayerId, ab: ActivatedAbilityDef, target: ObjectId | undefined): number {
-  if (!target || !ab.label?.startsWith("Équiper") || s.objects[target]?.controller !== player) return 0;
+  if (!target || !ab.equip || s.objects[target]?.controller !== player) return 0;
   return s.defs[copiedDefId(s, target)]?.equipDiscountWhenTargeted ?? 0;
 }
 
 /**
- * Permissions « jouer depuis une zone » (famille C) qui s'appliquent à cette carte, sans coût ni effet en plus d'abord
- * (Case of the Uneaten Feast avant Noctis), puis celles qui laissent dépenser du mana de n'importe quel type. `linked` :
- * seulement celles d'un permanent auquel la carte est liée (pas les effets, qui n'ont pas de source).
+ * "Play from a zone" permissions (family C) that apply to this card, those without an extra cost or effect first
+ * (Case of the Uneaten Feast before Noctis), then those that let mana of any type be spent. `linked`: only those of a
+ * permanent the card is linked to (not effects, which have no source).
  */
 export function playFromRules(
   s: GameState,
@@ -625,7 +632,7 @@ export function playFromRules(
       if (!r || r.zone !== zone || (r.what && r.what !== what)) return [];
       if (zone === "linked" && !(id && s.objects[id]?.linked?.includes(card))) return [];
       if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
-      // Maralen : valeur de mana au plus égale à un montant évalué pour la source.
+      // Maralen: mana value at most an amount evaluated for the source.
       if (r.maxManaValue !== undefined && id) {
         const max = evalAmount(s, reductionContext(s, player, id, obj(s, id).defId), r.maxManaValue);
         if (manaValue(s.defs[obj(s, card).defId]?.manaCost) > max) return [];
@@ -634,9 +641,9 @@ export function playFromRules(
       if (r.payLife && payableLife(s, player) < r.payLife) return [];
       if (r.forage && !canForage(s, player, card)) return [];
       if (r.exileOthers && !graveyardToExile(s, player, card, r.exileOthers)) return [];
-      // Faufilement donné : seulement pendant la fenêtre de faufilement, avec un attaquant à renvoyer.
+      // Granted sneak: only during the sneak window, with an attacker to return.
       if (r.sneak && !(sneakOptions(s, player).length > 0 && checkCondition(s, { kind: "sneakWindow" }, player))) return [];
-      // Johann : « une fois par tour » (la clé de cette permission, notée au lancement).
+      // Johann: "once each turn" (the key of this permission, recorded on casting).
       const onceKey = r.oncePerTurn ? `playFrom:${id}` : undefined;
       if (onceKey && s.turn.onceFired.includes(onceKey)) return [];
       return [onceKey ? { ...r, onceKey } : r];
@@ -644,13 +651,13 @@ export function playFromRules(
     .sort((a, b) => weight(a) - weight(b));
 }
 
-/** Conditions de lancement données par une permission « jouer depuis une zone ». */
+/** Casting terms given by a "play from a zone" permission. */
 function playFromTerms(r: PlayFromZone, source: "graveyard" | "library"): CastTerms {
   return {
-    // Iroh, Grand Lotus : la carte a le flashback (exilée ensuite), pour son coût de mana ou le coût donné.
+    // Iroh, Grand Lotus: the card has flashback (exiled afterwards), for its mana cost or the given cost.
     source: r.flashback && source === "graveyard" ? "flashback" : source,
     ...(r.mayhem ? { mayhem: true } : {}),
-    // Faufilement donné : son coût, à l'étape des bloqueurs (le moment est déjà vérifié par `playFromRules`).
+    // Granted sneak: its cost, in the declare blockers step (the timing is already checked by `playFromRules`).
     ...(r.sneak ? { costOverride: r.sneak, sneakGranted: true, anyTime: true } : {}),
     ...(r.cost ? { costOverride: r.cost } : {}),
     playFrom: r,
@@ -663,8 +670,8 @@ function playFromTerms(r: PlayFromZone, source: "graveyard" | "library"): CastTe
 }
 
 /**
- * Kicker sans mana (FIN, Marchandage de WOE) : les permanents qui peuvent le payer, le moins précieux d'abord (jetons,
- * puis valeur de mana croissante). Le joueur choisit (`CastChoices.sacrifice`) ; sans choix, le premier.
+ * Kicker without mana (FIN, WOE's bargain): the permanents that can pay it, the least valuable first (tokens, then by
+ * increasing mana value). The player chooses (`CastChoices.sacrifice`); without a choice, the first one.
  */
 export function kickerCostOptions(
   s: GameState,
@@ -678,10 +685,10 @@ export function kickerCostOptions(
     d.kickerCost?.bounce ??
     (d.kickerCost?.blight ? ({ types: ["Creature"] } as ObjectFilter) : undefined);
   if (!f) return [];
-  // Un coût se paie après le choix des cibles (601.2h) : une cible peut le payer. Les cibles viennent en dernier (choix par
-  // défaut), puis le moins cher, jeton d'abord.
+  // A cost is paid after targets are chosen (601.2h): a target can pay it. Targets come last (default choice), then the
+  // cheapest, tokens first.
   const mv = (id: ObjectId) => (s.objects[id]?.isToken ? -1 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost));
-  // Flétrir : comme `blightTarget`, d'abord une créature qui survit (la plus résistante), sinon la moins précieuse.
+  // Blight: like `blightTarget`, first a creature that survives (the toughest), otherwise the least valuable.
   const n = d.kickerCost?.blight ?? 0;
   const left = (id: ObjectId) => chars(s, id).toughness - (s.objects[id]?.damage ?? 0) - n;
   const value = (id: ObjectId) => (n > 0 ? (left(id) > 0 ? -left(id) - 100 : mv(id)) : mv(id));
@@ -692,8 +699,8 @@ export function kickerCostOptions(
 }
 
 /**
- * Réunir des preuves N (701.59, Meurtres au manoir Karlov) : cartes de votre cimetière de valeur de mana totale N ou
- * plus, choisies automatiquement ; null si impossible.
+ * Collect evidence N (701.59, Murders at Karlov Manor): cards from your graveyard with total mana value N or greater,
+ * chosen automatically; null if impossible.
  */
 export function evidenceCards(
   s: GameState,
@@ -710,8 +717,8 @@ export function evidenceCards(
 }
 
 /**
- * Choix automatique des preuves parmi `pool` : à chaque étape, la carte la moins chère qui suffit à atteindre N, sinon
- * la plus chère (peu de cartes exilées, sans gâcher une carte chère pour un petit N) ; null si le total n'y suffit pas.
+ * Automatic choice of evidence among `pool`: at each step, the cheapest card that is enough to reach N, otherwise the
+ * most expensive (few cards exiled, without wasting an expensive card on a small N); null if the total is not enough.
  */
 export function pickEvidence(s: GameState, pool: ObjectId[], n: number): ObjectId[] | null {
   const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
@@ -729,8 +736,8 @@ export function pickEvidence(s: GameState, pool: ObjectId[], n: number): ObjectI
 }
 
 /**
- * « Exilez N cartes de votre cimetière » (kicker de Soaring Stoneglider) : choisies automatiquement, terrains d'abord puis
- * les moins chères ; null s'il n'y en a pas assez.
+ * "Exile N cards from your graveyard" (Soaring Stoneglider's kicker): chosen automatically, lands first then the
+ * cheapest; null if there are not enough.
  */
 export function graveyardToExile(s: GameState, player: PlayerId, card: ObjectId, n: number): ObjectId[] | null {
   const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
@@ -740,14 +747,14 @@ export function graveyardToExile(s: GameState, player: PlayerId, card: ObjectId,
   return [...pool].sort((a, b) => land(a) - land(b) || mv(a) - mv(b)).slice(0, n);
 }
 
-/** Réunit des preuves (701.59) : les cartes sont exilées, et « chaque fois que vous réunissez des preuves » se déclenche. */
+/** Collects evidence (701.59): the cards are exiled, and "whenever you collect evidence" triggers. */
 export function collectEvidence(s: GameState, player: PlayerId, cards: ObjectId[]): ObjectId[] {
   const exiled = cards.map((id) => moveObject(s, id, "exile")).filter((id): id is ObjectId => !!id);
   rulesEvent(s, { e: "collectEvidence", player });
   return exiled;
 }
 
-/** Le permanent qui paie le kicker sans mana par défaut, s'il y en a un. */
+/** The permanent that pays the manaless kicker by default, if there is one. */
 export function kickerCostPermanent(
   s: GameState,
   player: PlayerId,
@@ -759,9 +766,9 @@ export function kickerCostPermanent(
 }
 
 /**
- * Harmonie (702.180) : créatures dégagées que le joueur peut engager pour réduire de sa force le coût d'harmonie, et le
- * choix par défaut pour un coût générique `generic` : la plus petite force qui couvre tout le générique, sinon la plus
- * grande (aucune si le coût n'a pas de générique).
+ * Harmonize (702.180): untapped creatures the player can tap to reduce the harmonize cost by its power, and the default
+ * choice for a generic cost `generic`: the smallest power that covers the whole generic part, otherwise the greatest
+ * (none if the cost has no generic part).
  */
 export function harmonizeOptions(
   s: GameState,
@@ -775,18 +782,18 @@ export function harmonizeOptions(
   });
   const powers = Object.fromEntries(options.map((id) => [id, chars(s, id).power]));
   const byPower = [...options].sort((a, b) => (powers[a] ?? 0) - (powers[b] ?? 0));
-  // Par défaut : la plus faible qui suffit, d'abord parmi les créatures sans capacité de mana (une créature-terrain
-  // engagée pour l'harmonie ne paierait plus le reste du coût, Restless Reef).
+  // By default: the weakest one that is enough, first among creatures without a mana ability (a land creature tapped for
+  // harmonize could no longer pay the rest of the cost, Restless Reef).
   const pick = (ids: ObjectId[]) => ids.find((id) => (powers[id] ?? 0) >= generic) ?? ids[ids.length - 1];
   const plain = byPower.filter((id) => manaAbilitiesOf(s, id).length === 0);
   const best = plain.find((id) => (powers[id] ?? 0) >= generic) ?? pick(byPower);
   return { options, powers, suggested: generic > 0 && best ? [best] : [] };
 }
 
-/** Coût total d'un sort : coût de base, de flashback ou alternatif (ou rien), X, kicker, réductions. */
+/** Total cost of a spell: base, flashback or alternative cost (or nothing), X, kicker, reductions. */
 /**
- * Ce que paie en plus un coût alternatif (Force of Will, Daze) : les cartes de la main exilées (les moins chères d'abord)
- * et le permanent renvoyé (un engagé d'abord), choisis automatiquement ; `null` si c'est impossible.
+ * What an alternative cost pays on top (Force of Will, Daze): the cards exiled from the hand (cheapest first) and the
+ * returned permanent (a tapped one first), chosen automatically; `null` if it is impossible.
  */
 export function altCostPayment(
   s: GameState,
@@ -818,7 +825,7 @@ export function altCostPayment(
   return { exile, ...(bounce ? { bounce } : {}), ...(sacrifice ? { sacrifice } : {}) };
 }
 
-/** Émerger (702.119) : le permanent sacrifié, choisi automatiquement (la plus grande valeur de mana, donc la plus forte réduction). */
+/** Emerge (702.119): the sacrificed permanent, chosen automatically (the greatest mana value, hence the biggest reduction). */
 function emergeVictim(s: GameState, player: PlayerId, f: ObjectFilter): ObjectId | undefined {
   const mv = (id: ObjectId) => snapshot(s, id).manaValue ?? 0;
   return s.battlefield
@@ -826,14 +833,14 @@ function emergeVictim(s: GameState, player: PlayerId, f: ObjectFilter): ObjectId
     .sort((a, b) => mv(b) - mv(a))[0];
 }
 
-/** Un coût de mana payé N fois (réplique, entretien cumulatif). */
+/** A mana cost paid N times (replicate, cumulative upkeep). */
 export function timesCost(c: ManaCost, n: number): ManaCost {
   const colored: ManaCost["colored"] = {};
   for (const [k, v] of Object.entries(c.colored)) colored[k as ManaType] = (v ?? 0) * n;
   return { ...c, generic: c.generic * n, colored, ...(c.hybrid ? { hybrid: Array(n).fill(c.hybrid).flat() } : {}) };
 }
 
-/** K'rrik, Son of Yawgmoth : « pour chaque {B} d'un coût, vous pouvez payer 2 PV à la place » (mana phyrexian). */
+/** K'rrik, Son of Yawgmoth: "for each {B} in a cost, you may pay 2 life rather than pay that mana" (Phyrexian mana). */
 function asPhyrexian(s: GameState, player: PlayerId, cost: ManaCost): ManaCost {
   let out = cost;
   for (const { ab } of playerStatics(s, player, "phyrexianMana")) {
@@ -853,29 +860,29 @@ export function spellCost(
     x?: number;
     kicked?: boolean;
     flashback?: boolean;
-    /** Sans payer le coût de mana (118.9) : X vaut 0, le kicker reste payable. */
+    /** Without paying the mana cost (118.9): X is 0, the kicker can still be paid. */
     free?: boolean;
-    /** Coût alternatif de la carte (Blasphemous Edict). */
+    /** The card's alternative cost (Blasphemous Edict). */
     alternative?: boolean;
-    /** Du mana de n'importe quel type peut être dépensé : les symboles colorés deviennent génériques. */
+    /** Mana of any type can be spent: colored symbols become generic. */
     anyMana?: boolean;
-    /** Lancée pour son coût de chaos (Mayhem). */
+    /** Cast for its mayhem cost (Mayhem). */
     mayhem?: boolean;
-    /** Coût remplaçant le coût de mana (maîtrise de l'air : {2}). */
+    /** Cost replacing the mana cost (airbending: {2}). */
     costOverride?: ManaCost;
-    /** Cibles choisies (réduction « si ce sort cible… ») ; absentes : on suppose la cible la plus favorable. */
+    /** Chosen targets ("if this spell targets…" reduction); absent: the most favorable target is assumed. */
     targets?: Record<string, string[]>;
-    /** Zone d'où le sort est lancé (réductions et taxes « depuis un cimetière ou l'exil »). */
+    /** Zone the spell is cast from (reductions and taxes "from a graveyard or from exile"). */
     fromZone?: CastTerms["source"];
-    /** La carte lancée (conditions de réduction qui l'excluent : contempler). */
+    /** The cast card (reduction conditions that exclude it: behold). */
     card?: ObjectId;
-    /** Contemplation faite (coût additionnel `behold`) ; absente : faite si possible. */
+    /** Behold done (additional cost `behold`); absent: done if possible. */
     beheld?: boolean;
   },
 ): ManaCost {
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
   const alt = opts.alternative ? altCostFor(s, player, d) : undefined;
-  // Émerger : le coût alternatif est réduit de la valeur de mana du permanent sacrifié.
+  // Emerge: the alternative cost is reduced by the mana value of the sacrificed permanent.
   const victim = alt?.pay?.sacrificeReduce ? emergeVictim(s, player, alt.pay.sacrificeReduce) : undefined;
   const altMana =
     alt && victim ? { ...alt.mana, generic: Math.max(0, alt.mana.generic - (snapshot(s, victim).manaValue ?? 0)) } : alt?.mana;
@@ -888,16 +895,16 @@ export function spellCost(
         : opts.mayhem
           ? (d.mayhem ?? d.manaCost)
           : (opts.costOverride ?? d.manaCost);
-  // « Ce sort coûte {1}{U} de moins » (Brush Off) : les symboles colorés retirés du coût de base.
+  // "This spell costs {1}{U} less to cast" (Brush Off): the colored symbols removed from the base cost.
   const ownColored = d.costReduction?.colored;
   const base1 =
     base && ownColored && !opts.free && ownReductionApplies(s, player, d, opts.targets, opts.card, opts.kicked)
       ? withoutColored(base, ownColored)
       : base;
-  // Maîtrise de l'eau en coût additionnel (Avatar) : {N} ou {X} de plus, à payer même sans payer le coût de mana.
+  // Waterbend as an additional cost (Avatar): {N} or {X} more, to pay even without paying the mana cost.
   const bend = (d.waterbend ?? 0) + (d.xCost === "waterbend" ? Math.max(0, opts.x ?? 0) : 0);
   const bendCost: ManaCost | undefined = bend ? { generic: bend, colored: {}, x: 0 } : undefined;
-  // Réplique (702.56), escouade (702.157) : le coût payé X fois.
+  // Replicate (702.56), squad (702.157): the cost paid X times.
   const replicated = kickerPaidTimes(d) && d.kicker && (opts.x ?? 0) > 0 ? timesCost(d.kicker, opts.x ?? 0) : undefined;
   const kick = replicated ?? (opts.kicked && d.kicker ? d.kicker : undefined);
   const extra = kick ? (bendCost ? totalCost(kick, 0, bendCost) : kick) : bendCost;
@@ -905,22 +912,22 @@ export function spellCost(
     base1,
     opts.free ? 0 : (opts.x ?? 0),
     extra,
-    // 601.2f / 118.9d : un sort lancé sans payer son coût de mana paie quand même les augmentations (Thalia, the
-    // Survivor) ; une réduction ne descend pas sous zéro.
+    // 601.2f / 118.9d: a spell cast without paying its mana cost still pays the increases (Thalia, the Survivor); a
+    // reduction doesn't go below zero.
     spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card, opts.kicked),
   );
-  // Officious Interrogation : « coûte {W}{U} de plus pour chaque cible au-delà de la première ».
+  // Officious Interrogation: "costs {W}{U} more to cast for each target beyond the first".
   const extraTargets = d.costPerExtraTarget && opts.targets ? Math.max(0, flatTargets(opts.targets).length - 1) : 0;
   for (let i = 0; i < extraTargets && d.costPerExtraTarget; i++) cost0 = totalCost(cost0, 0, d.costPerExtraTarget);
-  // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
+  // Feed the Cycle: "forage or pay {B}" — the mana is added unless one forages (alternative cost).
   const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
-  // Wild Unraveling : « flétrissez 2 ou payez {1} » — le mana s'ajoute sauf si l'on flétrit (kicker).
+  // Wild Unraveling: "blight 2 or pay {1}" — the mana is added unless one blights (kicker).
   const cost1b = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
-  // « Contemplez un Dragon ou payez {1} » : le mana s'ajoute sans contemplation (par défaut : contempler si possible).
+  // "Behold a Dragon or pay {1}": the mana is added without beholding (by default: behold if possible).
   const behold = d.additionalCost?.behold;
   const beheld = opts.beheld ?? (!!behold && beholdOptions(s, player, opts.card ?? "", behold.filter, behold.exiled).length > 0);
   const cost2 = behold?.orPay && !beheld ? totalCost(cost1b, 0, behold.orPay) : cost1b;
-  // Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins » ; un symbole sans pendant dans le coût réduit le générique.
+  // Aang, Master of Elements: "{W}{U}{B}{R}{G} less"; a symbol with no match in the cost reduces the generic part.
   const symbols = playerStatics(s, player, "spellCost").filter(
     ({ ab }) => ab.spellCost?.reduceSymbols && matchesView(spellView(d, player), ab.spellCost.filter, player),
   );
@@ -935,7 +942,7 @@ export function spellCost(
       }
     }
   }
-  // Case File Auditor : « comme s'il était de n'importe quelle couleur » pour les sorts correspondants.
+  // Case File Auditor: "as though it were mana of any color" for the matching spells.
   const anyMana =
     opts.anyMana ||
     playerStatics(s, player, "spellCost").some(
@@ -949,72 +956,72 @@ export function spellCost(
   return { generic: cost.generic + colored, colored: {}, x: 0 };
 }
 
-/** Conditions de lancement d'une carte depuis sa zone actuelle. */
+/** Terms for casting a card from its current zone. */
 export interface CastTerms {
-  /** Seulement l'Aventure de la carte (permission « lancez-la en Aventure », Mosswood Dreadknight). */
+  /** Only the card's Adventure (permission "cast it as an Adventure", Mosswood Dreadknight). */
   adventureOnly?: boolean;
-  /** Lancée pour un faufilement donné (Ninja Teen) : un attaquant non bloqué est renvoyé, le permanent arrive attaquant. */
+  /** Cast for a granted sneak (Ninja Teen): an unblocked attacker is returned, the permanent enters attacking. */
   sneakGranted?: boolean;
-  /** {N} de plus (Lightstall Inquisitor). */
+  /** {N} more (Lightstall Inquisitor). */
   extraCost?: number;
-  /** Lançable d'ici seulement avec la distorsion (Timeline Culler, depuis le cimetière). */
+  /** Castable from here only with warp (Timeline Culler, from the graveyard). */
   warpOnly?: boolean;
-  /** Chaos (Mayhem) : lancée depuis le cimetière pour son coût de chaos, défaussée ce tour-ci. */
+  /** Mayhem: cast from the graveyard for its mayhem cost, discarded this turn. */
   mayhem?: boolean;
-  /** Maîtrise de l'air : lancée pour ce coût plutôt que pour son coût de mana. */
+  /** Airbending: cast for this cost rather than for its mana cost. */
   costOverride?: ManaCost;
-  /** Le coût de remplacement est un coût de maîtrise de l'eau (Hama, the Bloodbender). */
+  /** The replacement cost is a waterbend cost (Hama, the Bloodbender). */
   waterbendOverride?: boolean;
   source: "hand" | "graveyard" | "exile" | "flashback" | "library" | "command";
-  /** Doit être lancée sans payer son coût de mana (Etali). */
+  /** Must be cast without paying its mana cost (Etali). */
   free?: boolean;
-  /** Peut être lancée sans payer son coût de mana, au choix (Omniscience). */
+  /** May be cast without paying its mana cost, by choice (Omniscience). */
   freeOptional?: boolean;
-  /** La gratuité vient de Warped Space (une fois par tour). */
+  /** The free cast comes from Warped Space (once each turn). */
   warpedSpace?: boolean;
-  /** Ignore les restrictions de timing (Etali : lancée pendant la résolution, approximation). */
+  /** Ignores timing restrictions (Etali: cast during resolution, approximation). */
   anyTime?: boolean;
-  /** Du mana de n'importe quel type peut être dépensé (Tinybones). */
+  /** Mana of any type can be spent (Tinybones). */
   anyMana?: boolean;
-  /** Muldrotha : type de permanent utilisé. */
+  /** Muldrotha: permanent type used. */
   graveyardType?: string;
-  /** Quilled Greatwurm : marqueurs à retirer parmi vos créatures. */
+  /** Quilled Greatwurm: counters to remove from among your creatures. */
   removeCounters?: number;
-  /** Permission utilisable une fois par tour (Maralen) : clé notée dans `turn.onceFired` au lancement. */
+  /** Permission usable once each turn (Maralen): key recorded in `turn.onceFired` on casting. */
   onceKey?: string;
-  /** Permission gratuite une fois par tour (Zaffai) : consommée seulement si le sort est lancé sans payer. */
+  /** Free permission once each turn (Zaffai): consumed only if the spell is cast without paying. */
   freeOnceKey?: string;
-  /** Points de vie payés en plus (Wickerfolk Indomitable, depuis le cimetière). */
+  /** Life paid in addition (Wickerfolk Indomitable, from the graveyard). */
   payLife?: number;
-  /** Seulement au moment où l'on pourrait lancer un rituel (carte complotée). */
+  /** Only when one could cast a sorcery (plotted card). */
   sorceryTiming?: boolean;
-  /** Exilé (`exile`, Quistis Trepe) ou au-dessous de la bibliothèque (`bottom`, Kylox's Voltstrider) au lieu du cimetière. */
+  /** Exiled (`exile`, Quistis Trepe) or put on the bottom of the library (`bottom`, Kylox's Voltstrider) instead of the graveyard. */
   after?: "exile" | "bottom";
-  /** Le permanent arrive avec un marqueur de finalité (Noctis). */
+  /** The permanent enters with a finality counter (Noctis). */
   finality?: boolean;
-  /** Il faut fourrager en plus (Osteomancer Adept). */
+  /** Must also forage (Osteomancer Adept). */
   forage?: boolean;
-  /** Permission « jouer depuis une zone » utilisée (famille C) : sous-types à l'arrivée, usage unique consommé. */
+  /** "Play from a zone" permission used (family C): subtypes on entering, one-shot use consumed. */
   playFrom?: PlayFromZone;
-  /** Harmonie accordée (Songcrafter Mage) à une carte lancée depuis le cimetière. */
+  /** Harmonize granted (Songcrafter Mage) to a card cast from the graveyard. */
   harmonize?: boolean;
 }
 
-/** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
+/** 702.170: the card (from the hand or the stack) is exiled face up and becomes plotted. */
 export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
   const player = o.owner;
   const onStack = s.stack.findIndex((x) => x.id === id);
   if (onStack >= 0) s.stack.splice(onStack, 1);
-  // Déjà exilée (Kellan Joins Up : « exilez une carte de votre main ; elle devient complotée ») : elle reste là.
+  // Already exiled (Kellan Joins Up: "exile a card from your hand; it becomes plotted"): it stays there.
   const exiled = o.zone === "exile" ? id : moveObject(s, id, "exile");
   const card = exiled ? s.objects[exiled] : undefined;
   if (!card) return null;
   card.exiledVia = { kind: "plot", turn: s.turn.number };
   emit({ type: "plotted", player, defId: card.defId });
   rulesEvent(s, { e: "plotted", card: card.id });
-  // « Quand cette carte devient complotée » : la carte est en exil, la capacité se déclenche de là.
+  // "When this card becomes plotted": the card is in exile, the ability triggers from there.
   for (const ab of s.defs[card.defId]?.abilities ?? []) {
     if (ab.kind === "triggered" && ab.trigger.on === "plottedSelf") {
       pushInline(s, player, card.id, card.defId, { targets: ab.targets, effects: ab.effects, label: ab.label });
@@ -1023,12 +1030,12 @@ export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
   return card.id;
 }
 
-/** Suspendre (702.62) : la carte (en main, ou le sort sur la pile) est exilée avec N marqueurs de temps. */
+/** Suspend (702.62): the card (in hand, or the spell on the stack) is exiled with N time counters. */
 export function suspendCard(s: GameState, id: ObjectId, time: number): void {
   const o = s.objects[id];
   if (!o) return;
   if (o.zone === "stack") {
-    // Le sort quitte la pile sans être contrecarré (une copie cesse simplement d'exister).
+    // The spell leaves the stack without being countered (a copy simply ceases to exist).
     const i = s.stack.findIndex((x) => x.id === id && x.kind === "spell");
     const item = s.stack[i];
     if (!item || item.copy) return;
@@ -1042,7 +1049,7 @@ export function suspendCard(s: GameState, id: ObjectId, time: number): void {
   changeCounters(s, card, "time", time);
 }
 
-/** Présage (702.143a) : la carte est exilée de la main ; son propriétaire peut la lancer à un tour ultérieur. */
+/** Foretell (702.143a): the card is exiled from the hand; its owner may cast it on a later turn. */
 export function foretellCard(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (o?.zone !== "hand") return;
@@ -1050,16 +1057,16 @@ export function foretellCard(s: GameState, id: ObjectId): void {
   const card = exiled ? s.objects[exiled] : undefined;
   if (!card) return;
   card.exiledVia = { kind: "foretell", turn: s.turn.number };
-  // Exilée face cachée : seul son propriétaire peut la regarder (702.143a).
+  // Exiled face down: only its owner may look at it (702.143a).
   card.exiledFaceDown = [card.owner];
   emit({ type: "foretold", player: card.owner, defId: card.defId });
 }
 
-/** D'où, et à quelles conditions, ce joueur peut-il lancer cette carte ? */
-/** 702.61 : un sort avec le second partagé est sur la pile — seules les capacités de mana restent possibles. */
+/** From where, and on what terms, may this player cast this card? */
+/** 702.61: a spell with split second is on the stack — only mana abilities remain possible. */
 export function splitSecondOnStack(s: GameState): boolean {
-  // Yuriko, Blade of the Mighty : « pendant le combat, les joueurs ne peuvent ni lancer de sorts ni activer de capacités
-  // (hors mana) » : comme le second partagé, pour tous.
+  // Yuriko, Blade of the Mighty: "during combat, players can't cast spells or activate abilities (other than mana
+  // abilities)": like split second, for everyone.
   if (
     inCombat(s) &&
     s.playerOrder.some((p) =>
@@ -1076,15 +1083,15 @@ export function splitSecondOnStack(s: GameState): boolean {
   });
 }
 
-/** Contexte minimal pour évaluer un montant hors résolution (réductions de coût). */
+/** Minimal context to evaluate an amount outside resolution (cost reductions). */
 function reductionContext(s: GameState, controller: PlayerId, sourceId: string, sourceDefId: string) {
   return staticContext(s, controller, sourceId, { sourceDefId });
 }
 
 /**
- * Modificateurs de coût des capacités activées (famille A) : Boom Scholar (exhaust de vos autres permanents), Mutagen
- * Man (vos jetons d'artefact), Kíli the Resourceful (premier Équiper du tour gratuit), Inquisitive Glimmer
- * (déverrouiller), Doc Aurlock (comploter).
+ * Cost modifiers of activated abilities (family A): Boom Scholar (exhaust of your other permanents), Mutagen Man (your
+ * artifact tokens), Kíli the Resourceful (first equip of the turn free), Inquisitive Glimmer (unlock), Doc Aurlock
+ * (plot).
  */
 function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
   const kind = (m: AbilityCostMod) => !m.ability || isAbilityKind(ab, m.ability);
@@ -1104,7 +1111,7 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
           : typeof m.reduce === "number"
             ? m.reduce
             : evalAmount(s, reductionContext(s, player, by, s.objects[by]?.defId ?? ""), m.reduce);
-      // « Ne peut pas réduire le mana de ce coût à moins d'un mana » : au plus la valeur de mana moins un.
+      // "Can't reduce the mana in that cost to less than one mana": at most the mana value minus one.
       if (m.minOneMana) k = Math.min(k, Math.max(0, manaValue(ab.cost.mana ?? null) - 1));
       n += Math.max(0, k);
     }
@@ -1113,12 +1120,12 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
 }
 
 /**
- * Coût de mana d'une capacité activée : celui qui est imprimé, ou, pour une montée en puissance d'une source arrivée ce
- * tour-ci, ce coût diminué du coût de mana de la source (générique et symboles colorés).
+ * Mana cost of an activated ability: the printed one, or, for a power-up of a source that entered this turn, that cost
+ * minus the source's mana cost (generic and colored symbols).
  */
 /**
- * Part d'un sort payable par la maîtrise de l'eau : son coût additionnel « waterbend {N} » ou « {X} », et son kicker s'il
- * en est un (« you may waterbend {N} »).
+ * Part of a spell payable by waterbending: its additional cost "waterbend {N}" or "{X}", and its kicker if it is one
+ * ("you may waterbend {N}").
  */
 export function waterbendAmount(d: CardDef, kicked: boolean, x: number): number {
   return (
@@ -1130,7 +1137,7 @@ export function waterbendAmount(d: CardDef, kicked: boolean, x: number): number 
 
 const ABILITY_KINDS: readonly AbilityKind[] = ["exhaust", "equip", "unlock", "plot", "powerUp", "turnFaceUp"];
 
-/** La capacité activée (ou l'action spéciale) est-elle de cette sorte ? */
+/** Is the activated ability (or the special action) of this kind? */
 export function isAbilityKind(ab: ActivatedAbilityDef, kind: AbilityKind): boolean {
   switch (kind) {
     case "exhaust":
@@ -1149,8 +1156,8 @@ export function isAbilityKind(ab: ActivatedAbilityDef, kind: AbilityKind): boole
 }
 
 /**
- * À quoi sert le mana d'une capacité activée : sa source, ses sortes (mana restreint : « activer une capacité
- * d'équipement »), et la maîtrise de l'eau (tout le coût en est une, X compris).
+ * What the mana of an activated ability is spent on: its source, its kinds (restricted mana: "activate an equip
+ * ability"), and waterbending (the whole cost is one, X included).
  */
 export function abilityPurpose(source: ObjectId, ab: ActivatedAbilityDef): ManaPurpose {
   const kinds = ABILITY_KINDS.filter((k) => isAbilityKind(ab, k));
@@ -1165,14 +1172,14 @@ export function abilityMana(s: GameState, source: ObjectId, ab: ActivatedAbility
   const m = printedAbilityMana(s, source, ab);
   const o = s.objects[source];
   if (!m || !o) return m;
-  // Agatha's Soul Cauldron : le mana se dépense comme s'il était de n'importe quel type (les symboles colorés deviennent
-  // génériques).
+  // Agatha's Soul Cauldron: the mana is spent as though it were mana of any type (colored symbols become
+  // generic).
   const any = playerStatics(s, o.controller, "abilityCost").some(
     ({ ab: x }) =>
       x.abilityCost?.anyMana && (!x.abilityCost.source || matchesObjectFilter(s, o.controller, source, x.abilityCost.source)),
   );
   if (!any) return m;
-  // « De n'importe quelle couleur » : {C} reste dû en mana incolore.
+  // "Of any color": {C} is still owed as colorless mana.
   const colored =
     Object.entries(m.colored).reduce<number>((n, [k, v]) => (k === "C" ? n : n + (v ?? 0)), 0) +
     (m.hybrid?.length ?? 0) +
@@ -1194,7 +1201,7 @@ function printedAbilityMana(s: GameState, source: ObjectId, ab: ActivatedAbility
   return { ...m, generic: Math.max(0, m.generic - own.generic), colored };
 }
 
-/** Réduction propre à la cible d'une capacité (Warrior's Blades, Dragonfire Blade, Équiper réduit par la créature ciblée). */
+/** Reduction specific to an ability's target (Warrior's Blades, Dragonfire Blade, equip reduced by the targeted creature). */
 function targetReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef, target: ObjectId | undefined): number {
   if (!target || !s.objects[target]) return 0;
   return (
@@ -1204,14 +1211,15 @@ function targetReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef
   );
 }
 
-/** La capacité a-t-elle un coût qui dépend de sa cible ? */
+/** Does the ability have a cost that depends on its target? */
 export function costDependsOnTarget(ab: ActivatedAbilityDef): boolean {
-  return !!ab.reduceByTargetColors || !!ab.reduceByTargetCounters || !!ab.label?.startsWith("Équiper");
+  return !!ab.reduceByTargetColors || !!ab.reduceByTargetCounters || !!ab.equip;
 }
 
 /**
- * Coût de mana d'une capacité activée, réductions comprises (seul calcul, partagé par `legal.ts` et `activateAbility`) :
- * pour une cible donnée, ou `"best"` (la cible la plus favorable, pour savoir si la capacité peut être proposée).
+ * Mana cost of an activated ability, reductions included (the only computation, shared by `legal.ts` and
+ * `activateAbility`): for a given target, or `"best"` (the most favorable target, to know whether the ability can be
+ * offered).
  */
 export function abilityManaCost(
   s: GameState,
@@ -1227,8 +1235,8 @@ export function abilityManaCost(
         ? Math.max(0, ...s.battlefield.map((c) => targetReduction(s, player, ab, c)))
         : 0
       : targetReduction(s, player, ab, target);
-  // Une action spéciale (retourner face visible, comploter, déverrouiller) n'est pas une capacité activée : Agatha's Soul
-  // Cauldron (« pour activer des capacités ») ne s'y applique pas.
+  // A special action (turning face up, plotting, unlocking) is not an activated ability: Agatha's Soul Cauldron ("to
+  // activate abilities") doesn't apply to it.
   const mana = ab.specialAction ? ab.cost.mana : abilityMana(s, source, ab);
   return asPhyrexian(s, player, totalCost(mana, x, undefined, byTarget + abilityReduction(s, player, source, ab)));
 }
@@ -1238,14 +1246,14 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
   const red = ab.reduction;
   const tax = chosenNameTax(s, source) - mods;
   if (!red) return -tax;
-  // « Cette capacité coûte {N} de moins à activer » (Starport Security, Survey Mechan, The Dominion Bracelet).
+  // "This ability costs {N} less to activate" (Starport Security, Survey Mechan, The Dominion Bracelet).
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
   return -tax + Math.max(0, evalAmount(s, reductionContext(s, player, source, s.objects[source]?.defId ?? ""), red.generic));
 }
 
 /**
- * Capacité à usage unique encore disponible : pas encore activée, ou moins de fois que permis (Wonder Man, Hollywood
- * Hero : « chaque montée en puissance des permanents que vous contrôlez peut être activée une fois de plus »).
+ * One-shot ability still available: not activated yet, or fewer times than allowed (Wonder Man, Hollywood Hero: "each
+ * power-up of permanents you control can be activated an additional time").
  */
 function onceAvailable(s: GameState, o: GameObject, ab: ActivatedAbilityDef, index: number): boolean {
   const uses = (o.used ?? []).filter((i) => i === index).length;
@@ -1256,8 +1264,8 @@ function onceAvailable(s: GameState, o: GameObject, ab: ActivatedAbilityDef, ind
 }
 
 /**
- * Baron Helmut Zemo : les cartes de la couleur au cimetière à exiler pour totaliser N symboles de cette couleur (les plus
- * riches d'abord), ou null si c'est impossible.
+ * Baron Helmut Zemo: the cards of the color in the graveyard to exile to total N symbols of that color (richest first),
+ * or null if it is impossible.
  */
 export function symbolCards(s: GameState, player: PlayerId, req: { color: ManaType; n: number }): ObjectId[] | null {
   const symbols = (id: ObjectId) => {
@@ -1277,7 +1285,7 @@ export function symbolCards(s: GameState, player: PlayerId, req: { color: ManaTy
   return total >= req.n ? out : null;
 }
 
-/** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée ce tour-ci. */
+/** Elvish Refueler: during your turn, as long as no exhaust ability has been activated this turn. */
 function exhaustReusable(s: GameState, player: PlayerId, ab: ActivatedAbilityDef): boolean {
   return (
     !!ab.exhaust &&
@@ -1288,8 +1296,8 @@ function exhaustReusable(s: GameState, player: PlayerId, ab: ActivatedAbilityDef
 }
 
 /**
- * Distorsion d'une carte : la sienne, ou celle qu'accorde Tannuk, Steadfast Second aux cartes de votre main
- * (« les cartes d'artefact et de créature rouges de votre main ont la distorsion {2}{R} »).
+ * Warp of a card: its own, or the one Tannuk, Steadfast Second grants to the cards in your hand
+ * ("artifact cards and red creature cards in your hand have warp {2}{R}").
  */
 export function warpOf(s: GameState, player: PlayerId, card: ObjectId, d: CardDef): CardDef["warp"] {
   if (d.warp) return d.warp;
@@ -1303,25 +1311,25 @@ export function warpOf(s: GameState, player: PlayerId, card: ObjectId, d: CardDe
   return undefined;
 }
 
-/** Sort face cachée (déguisement) : la définition « face cachée », au coût de {3} (702.168a). */
+/** Face-down spell (disguise): the "face-down" definition, costing {3} (702.168a). */
 export const FACE_DOWN_SPELL: CardDef = { ...FACE_DOWN_DEF, manaCost: { generic: 3, colored: {}, x: 0 }, manaCostText: "{3}" };
 
 /**
- * Faces lançables d'une carte : la carte elle-même (recto) et, pour une aventure, l'aventure (face 1), sauf si la
- * carte est déjà « en aventure » (on ne peut alors lancer que la créature).
+ * Castable faces of a card: the card itself (front) and, for an adventurer card, the Adventure (face 1), unless the card
+ * is already "on an adventure" (then only the creature can be cast).
  */
 export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number | undefined, CardDef][] {
   const o = s.objects[card];
   const adventure = d.layout === "adventure" ? d.faceDefs?.[1] : undefined;
-  // Carte de terrain à aventure (Villes de FIN) : seule l'Aventure se lance.
+  // Land card with an Adventure (FIN towns): only the Adventure is cast.
   if (d.types.includes("Land")) return adventure && !o?.onAdventure ? [[1, adventure]] : [];
   if (adventure && !o?.onAdventure)
     return [
       [undefined, d],
       [1, adventure],
     ];
-  // Carte scindée (709.3) : l'une ou l'autre moitié se lance (portes d'une Salle comprises) ; avec la fusion (702.102),
-  // les deux moitiés ensemble depuis la main (troisième face, construite à l'import).
+  // Split card (709.3): either half is cast (doors of a Room included); with fuse (702.102), both halves together from
+  // the hand (third face, built at import).
   if (d.layout === "split" && (d.faceDefs?.length ?? 0) >= 2) {
     const halves: [number, CardDef][] = [
       [0, d.faceDefs?.[0] as CardDef],
@@ -1330,7 +1338,7 @@ export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number
     const fused = d.faceDefs?.[2];
     return fused && o?.zone === "hand" ? [...halves, [2, fused]] : halves;
   }
-  // Carte recto-verso modale (712.12) : l'une ou l'autre face se lance.
+  // Modal double-faced card (712.12): either face is cast.
   const back = d.layout === "modal_dfc" ? d.faceDefs?.[1] : undefined;
   if (back && !back.types.includes("Land"))
     return [
@@ -1351,8 +1359,8 @@ const COMBAT_STEPS: readonly string[] = [
 const inCombat = (s: GameState) => COMBAT_STEPS.includes(s.turn.step);
 
 /**
- * Restrictions de lancer (famille D) qui pèsent en ce moment sur ce joueur, d'où qu'elles viennent : Bilbo's Gambit,
- * Avatar's Wrath, Kutzil, Grand Abolisher, Sandswirl Wanderglyph, High Noon, Yuriko.
+ * Casting restrictions (family D) currently weighing on this player, wherever they come from: Bilbo's Gambit, Avatar's
+ * Wrath, Kutzil, Grand Abolisher, Sandswirl Wanderglyph, High Noon, Yuriko.
  */
 function castLimits(s: GameState, player: PlayerId): CastLimit[] {
   const out: CastLimit[] = [];
@@ -1370,12 +1378,12 @@ function castLimits(s: GameState, player: PlayerId): CastLimit[] {
   return out;
 }
 
-/** Karlov Watchdog : ce joueur peut-il retourner ses permanents face visible ? */
+/** Karlov Watchdog: may this player turn their permanents face up? */
 export function faceUpLocked(s: GameState, player: PlayerId): boolean {
   return castLimits(s, player).some((l) => l.faceUp);
 }
 
-/** Grand Abolisher, Yuriko : les capacités activées (hors mana) de cette source sont-elles bloquées ? */
+/** Grand Abolisher, Yuriko: are the activated abilities (other than mana abilities) of this source locked? */
 function abilitiesLocked(s: GameState, player: PlayerId, source: ObjectId): boolean {
   return castLimits(s, player).some(
     (l) =>
@@ -1405,7 +1413,7 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   }
   const base = baseCastTerms(s, player, card);
   const terms = base && freeCastTerms(s, player, card, base);
-  // Weftwalking : « le premier sort que chaque joueur lance pendant chacun de ses tours peut être lancé sans payer ».
+  // Weftwalking: "the first spell each player casts during each of their turns may be cast without paying".
   if (
     terms &&
     !terms.free &&
@@ -1415,7 +1423,7 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   ) {
     return { ...terms, freeOptional: true };
   }
-  // Warped Space : « une fois par tour, vous pouvez payer {0} plutôt que le coût de mana d'un sort lancé depuis l'exil ».
+  // Warped Space: "once each turn, you may pay {0} rather than the mana cost for a spell you cast from exile".
   if (
     terms?.source === "exile" &&
     !terms.free &&
@@ -1429,11 +1437,11 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
 }
 
 /**
- * « Vous pouvez lancer des sorts sans payer leur coût de mana » : permissions `freeFrom` (de la main : Omniscience ; de
- * toute zone : Dracogenesis, As Foretold), et « le prochain sort … peut être lancé sans payer son coût de mana »
- * (`NextSpell.free` : World War Hulk). Une permission « une fois par tour » n'est consommée que si elle sert
- * (`freeOnceKey`) ; le prochain sort, lui, consomme l'effet qu'il soit payé ou non. Jamais avec un autre coût alternatif
- * (118.9a : flashback, chaos, distorsion seule, coût de remplacement).
+ * "You may cast spells without paying their mana costs": `freeFrom` permissions (from the hand: Omniscience; from any
+ * zone: Dracogenesis, As Foretold), and "the next spell … may be cast without paying its mana cost" (`NextSpell.free`:
+ * World War Hulk). A "once each turn" permission is consumed only if it is used (`freeOnceKey`); the next spell, for its
+ * part, consumes the effect whether it is paid or not. Never with another alternative cost (118.9a: flashback, mayhem,
+ * warp alone, replacement cost).
  */
 function freeCastTerms(s: GameState, player: PlayerId, card: ObjectId, terms: CastTerms): CastTerms {
   if (terms.free || terms.freeOptional || terms.source === "flashback" || terms.mayhem || terms.warpOnly || terms.costOverride)
@@ -1446,17 +1454,17 @@ function freeCastTerms(s: GameState, player: PlayerId, card: ObjectId, terms: Ca
     return !!n?.free && (!n.filter || matchesView(view, n.filter, player));
   });
   if (next) return { ...terms, freeOptional: true };
-  // Omnipresence : seulement si la valeur de mana ne dépasse pas le nombre de créatures que vous contrôlez.
+  // Omnipresence: only if the mana value doesn't exceed the number of creatures you control.
   const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
   const perms = controlledAbilitiesWithSource(s, player).filter(
     ({ id, ab }) =>
       ab.kind === "castPermission" &&
       (ab.freeFrom === "any" || (ab.freeFrom === "hand" && terms.source === "hand")) &&
       (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()) &&
-      // Dracogenesis : seulement les sorts de Dragon.
+      // Dracogenesis: only Dragon spells.
       (!ab.freeFilter || matchesView(view, resolveFilter(s, ab.freeFilter, id), player)) &&
       (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
-      // Zaffai and the Tempests : une fois par tour (la permission est consommée par un sort lancé gratuitement).
+      // Zaffai and the Tempests: once each turn (the permission is consumed by a spell cast for free).
       !(ab.freeOncePerTurn && s.turn.onceFired.includes(`freeCast:${id}`)),
   );
   if (perms.length === 0) return terms;
@@ -1473,20 +1481,20 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
   if (d.castCondition && !checkCondition(s, d.castCondition, player, card)) return null;
   if (o.zone === "hand") {
     if (o.owner !== player) return null;
-    // Buster Sword : un sort de votre main sans payer son coût de mana, ce tour-ci.
+    // Buster Sword: a spell from your hand without paying its mana cost, this turn.
     const handPerm = exilePermission(s, player, card);
     if (handPerm) return { source: "hand", free: handPerm.free, anyTime: handPerm.anyTime, costOverride: handPerm.cost };
     return { source: "hand" };
   }
-  // 903.8 : son propriétaire peut lancer son commandant depuis la zone de commandement, pour {2} de plus par lancer
-  // précédent depuis cette zone (taxe de commandant, payée même si le sort est gratuit).
+  // 903.8: its owner may cast their commander from the command zone, for {2} more for each previous cast from that zone
+  // (commander tax, paid even if the spell is free).
   if (o.zone === "command") {
     const rec = o.owner === player ? commanderOf(s, o) : undefined;
     if (!rec) return null;
     return { source: "command", ...(rec.casts ? { extraCost: 2 * rec.casts } : {}) };
   }
   if (o.zone === "graveyard") {
-    // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
+    // Tinybones, the Pickpocket: a card from another graveyard, castable with mana of any type.
     const gyPerm = exilePermission(s, player, card);
     if (gyPerm?.flashback) return { source: "flashback", free: gyPerm.free, harmonize: gyPerm.harmonize };
     if (gyPerm)
@@ -1494,19 +1502,19 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         source: "graveyard",
         anyMana: gyPerm.anyMana,
         free: gyPerm.free,
-        // « Vous pouvez lancer [la carte] » pendant une résolution (608.2g) : le moment de lancement est ignoré.
+        // "You may cast [the card]" during a resolution (608.2g): the casting timing is ignored.
         anyTime: gyPerm.anyTime,
         after: gyPerm.after === "exile" ? "exile" : undefined,
         ...(gyPerm.adventureOnly ? { adventureOnly: true } : {}),
       };
     if (o.owner !== player) return null;
-    // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
+    // Timeline Culler: "you may cast this card from your graveyard using its warp ability".
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
-    // Chaos (Mayhem) : défaussée ce tour-ci, elle se lance depuis le cimetière pour son coût de chaos.
+    // Mayhem: discarded this turn, it is cast from the graveyard for its mayhem cost.
     if (d.mayhem && objectDidThisTurn(s, o.id, "discard")) return { source: "graveyard", mayhem: true };
     if (d.flashback) return { source: "flashback" };
-    // Permissions « jouer depuis le cimetière » (famille C) : Case of the Uneaten Feast, Hades, The Tomb of Aclazotz,
-    // Noctis (PV et finalité), Festival of Embers (PV), Osteomancer Adept (fourrager et finalité)…
+    // "Play from the graveyard" permissions (family C): Case of the Uneaten Feast, Hades, The Tomb of Aclazotz,
+    // Noctis (life and finality), Festival of Embers (life), Osteomancer Adept (forage and finality)…
     const rules = playFromRules(s, player, card, "graveyard", "spells");
     const free = rules.find((r) => !r.payLife && !r.forage && !r.exileOthers && !r.finality && !r.addSubtypes);
     if (free) return playFromTerms(free, "graveyard");
@@ -1515,9 +1523,9 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (rules[0]) return playFromTerms(rules[0], "graveyard");
     const fromGy = d.castFromGraveyard;
     if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
-      // Wickerfolk Indomitable : « en payant 2 PV et en sacrifiant un artefact ou une créature en plus ».
+      // Wickerfolk Indomitable: "by paying 2 life and sacrificing an artifact or creature in addition".
       if (fromGy.payLife && payableLife(s, player) < fromGy.payLife) return null;
-      // Hundred-Battle Veteran : « si vous le faites, il arrive avec un marqueur de finalité ».
+      // Hundred-Battle Veteran: "if you do, it enters with a finality counter".
       return { source: "graveyard", payLife: fromGy.payLife, finality: fromGy.finality };
     }
     if (d.graveyardCastRemoveCounters && countersAmongCreatures(s, player) >= d.graveyardCastRemoveCounters) {
@@ -1526,10 +1534,10 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     return null;
   }
   if (o.zone === "library") {
-    // Vizier of the Menagerie (créatures, mana de n'importe quel type), The Lunar Whale, Mm'menon (artefacts)…
+    // Vizier of the Menagerie (creatures, mana of any type), The Lunar Whale, Mm'menon (artifacts)…
     const top = s.players[o.owner]?.library[0];
     if (o.owner !== player || top !== card) return null;
-    // Planetarium of Wan Shi Tong : « vous pouvez lancer cette carte sans payer son coût » (permission, `castNow`).
+    // Planetarium of Wan Shi Tong: "you may cast that card without paying its mana cost" (permission, `castNow`).
     const libPerm = exilePermission(s, player, card);
     if (libPerm)
       return {
@@ -1540,7 +1548,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         anyTime: libPerm.anyTime,
       };
     const rule = playFromRules(s, player, card, "libraryTop", "spells")[0];
-    // Gwenom : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
+    // Gwenom: life equal to its mana value rather than its mana cost (like Valgavoth).
     if (rule?.payLifeManaValue) {
       const life = manaValue(d.manaCost);
       if (life > 0 && payableLife(s, player) < life) return null;
@@ -1549,25 +1557,25 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     return rule ? playFromTerms(rule, "library") : null;
   }
   if (o.zone === "exile") {
-    // 702.143a : une carte présagée se lance à un tour ultérieur pour son coût de présage.
+    // 702.143a: a foretold card is cast on a later turn for its foretell cost.
     const via = o.exiledVia;
     if (via?.kind === "foretell") {
       return o.owner === player && via.turn < s.turn.number && d.foretell ? { source: "exile", costOverride: d.foretell } : null;
     }
-    // 702.170d : une carte complotée se lance sans payer son coût, à un tour ultérieur, au moment d'un rituel.
+    // 702.170d: a plotted card is cast without paying its cost, on a later turn, at sorcery speed.
     if (via?.kind === "plot") {
       return o.owner === player && via.turn < s.turn.number ? { source: "exile", free: true, sorceryTiming: true } : null;
     }
-    // Reality Fracture : la copie du sort d'un permanent préparé, lançable par le contrôleur actuel de ce permanent.
+    // Reality Fracture: the copy of a prepared permanent's spell, castable by that permanent's current controller.
     if (o.preparedFor) {
       const perm = s.objects[o.preparedFor];
       return perm?.zone === "battlefield" && perm.controller === player && perm.preparedCopy === card
         ? { source: "exile" }
         : null;
     }
-    // Cartes exilées liées à un permanent (famille C, `zone: "linked"`) : Null Summoner, Intrepid Paleontologist (finalité),
-    // Taster of Wares (mana de n'importe quel type), Maralen (gratuit, une fois par tour), Dawnhand Dissident (marqueurs
-    // retirés), Hama (maîtrise de l'eau), Valgavoth (des PV égaux à sa valeur de mana).
+    // Exiled cards linked to a permanent (family C, `zone: "linked"`): Null Summoner, Intrepid Paleontologist (finality),
+    // Taster of Wares (mana of any type), Maralen (free, once each turn), Dawnhand Dissident (counters removed), Hama
+    // (waterbend), Valgavoth (life equal to its mana value).
     const linked = playFromRules(s, player, card, "linked", "spells")[0];
     if (linked?.waterbend) {
       const generic = manaValue(d.manaCost);
@@ -1587,12 +1595,12 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         ...(linked.removeCountersAmong ? { removeCounters: linked.removeCountersAmong } : {}),
         ...(linked.onceKey ? { onceKey: linked.onceKey } : {}),
       };
-    // 715.4 : la carte « en aventure » : son propriétaire peut lancer la créature.
+    // 715.4: the card "on an adventure": its owner may cast the creature.
     if (o.onAdventure && o.owner === player) return { source: "exile" };
-    // 702.185a : exilée par la distorsion, lançable depuis l'exil à partir du tour suivant.
+    // 702.185a: exiled by warp, castable from exile from the next turn on.
     if (via?.kind === "warp" && o.owner === player && s.turn.number > via.turn) return { source: "exile" };
     const perm = exilePermission(s, player, card);
-    // Inside Information : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
+    // Inside Information: life equal to its mana value rather than its mana cost (like Valgavoth).
     if (perm?.payLifeManaValue && !d.types.includes("Land")) {
       const life = manaValue(d.manaCost);
       if (life > 0 && payableLife(s, player) < life) return null;
@@ -1606,21 +1614,21 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         extraCost: perm.extraCost,
         anyMana: perm.anyMana,
         costOverride: perm.cost,
-        // « … puis exilez-la » (Nita, Forum Conciliator), comme depuis le cimetière.
+        // "… then exile it" (Nita, Forum Conciliator), as from the graveyard.
         after: perm.after,
       };
-    // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
+    // Tinybones: opponents' cards exiled with a stash counter, during your turn.
     if (stashPlayable(s, player, o)) return { source: "exile", anyMana: true };
   }
   return null;
 }
 
-/** D'où ce sort peut-il être lancé par ce joueur ? */
+/** From where may this player cast this spell? */
 export function castSource(s: GameState, player: PlayerId, card: ObjectId): CastTerms["source"] | null {
   return castTerms(s, player, card)?.source ?? null;
 }
 
-/** Marqueurs (tous types) sur les créatures que ce joueur contrôle. */
+/** Counters (all kinds) on the creatures this player controls. */
 function countersAmongCreatures(s: GameState, player: PlayerId): number {
   return s.battlefield
     .filter((id) => obj(s, id).controller === player && isCreature(s, id))
@@ -1628,8 +1636,8 @@ function countersAmongCreatures(s: GameState, player: PlayerId): number {
 }
 
 /**
- * « Retirez N marqueurs parmi les créatures que vous contrôlez » (Quilled Greatwurm, Dawnhand Dissident) : le joueur
- * répartit les retraits entre ses créatures, un objet par marqueur (`repeat`) ; suggestion : les plus chargées d'abord.
+ * "Remove N counters from among creatures you control" (Quilled Greatwurm, Dawnhand Dissident): the player divides the
+ * removals among their creatures, one object per counter (`repeat`); suggestion: the most loaded first.
  */
 function countersAmongPick(s: GameState, player: PlayerId, n: number): CostPick {
   const options = s.battlefield
@@ -1637,7 +1645,7 @@ function countersAmongPick(s: GameState, player: PlayerId, n: number): CostPick 
     .sort((a, b) => countersOf(s, b) - countersOf(s, a));
   return {
     slot: "counterFrom",
-    label: `Retirez ${n} marqueur(s) parmi les créatures que vous contrôlez`,
+    label: msg("Remove {n} counter(s) from among creatures you control", { n }),
     count: n,
     options,
     suggested: options.flatMap((id) => Array<ObjectId>(countersOf(s, id)).fill(id)).slice(0, n),
@@ -1645,7 +1653,7 @@ function countersAmongPick(s: GameState, player: PlayerId, n: number): CostPick 
   };
 }
 
-/** Retire un marqueur par occurrence de chaque créature choisie ; sa sorte : les −1/−1 d'abord, les +1/+1 en dernier. */
+/** Removes one counter per occurrence of each chosen creature; its kind: −1/−1 first, +1/+1 last. */
 function removeCountersFromEach(s: GameState, from: ObjectId[]): void {
   const times = new Map<ObjectId, number>();
   for (const id of from) times.set(id, (times.get(id) ?? 0) + 1);
@@ -1660,7 +1668,7 @@ function countersOf(s: GameState, id: ObjectId): number {
   return Object.values(obj(s, id).counters).reduce((a, b) => a + Math.max(0, b), 0);
 }
 
-/** Options des coûts additionnels (cartes à défausser, permanents à sacrifier), ou null s'ils sont impayables. */
+/** Options of the additional costs (cards to discard, permanents to sacrifice), or null if they can't be paid. */
 export function additionalOptions(
   s: GameState,
   player: PlayerId,
@@ -1679,13 +1687,13 @@ export function additionalOptions(
   sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
 } | null {
   let add = additionalCostOf(d, flashback);
-  // Wickerfolk Indomitable : sacrifice supplémentaire quand elle est lancée depuis le cimetière.
+  // Wickerfolk Indomitable: additional sacrifice when it is cast from the graveyard.
   const gy = s.objects[card]?.zone === "graveyard" ? d.castFromGraveyard : undefined;
   if (gy?.sacrifice) add = { ...add, sacrifice: { filter: gy.sacrifice, count: 1 } };
-  // Alien Symbiosis : « en défaussant une carte en plus de ses autres coûts ».
+  // Alien Symbiosis: "by discarding a card in addition to paying its other costs".
   if (gy?.discard) add = { ...add, discard: gy.discard, ...(gy.discardFilter ? { discardFilter: gy.discardFilter } : {}) };
   if (!add) return {};
-  // Contemplation obligatoire (Monstrous Emergence) : il faut un permanent ou une carte à choisir.
+  // Mandatory behold (Monstrous Emergence): there must be a permanent or a card to choose.
   if (add.behold?.required && beholdOptions(s, player, card, add.behold.filter, add.behold.exiled).length === 0) return null;
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
@@ -1693,13 +1701,13 @@ export function additionalOptions(
     const hand = (s.players[player]?.hand ?? []).filter(
       (id) => id !== card && (!df || matchesCard(s, player, id, { ...df, controller: undefined })),
     );
-    // Souls of the Lost : « … ou sacrifiez un permanent ».
+    // Souls of the Lost: "… or sacrifice a permanent".
     const sf = typeof add.discardOr?.sacrifice === "object" ? add.discardOr.sacrifice : undefined;
     const perms = add.discardOr?.sacrifice
       ? s.battlefield.filter((id) => obj(s, id).controller === player && (!sf || matchesObjectFilter(s, player, id, sf)))
       : [];
     const options = [...hand, ...perms];
-    // Bitter Triumph : « … ou payez 3 points de vie » (il faut en avoir au moins autant, 119.4).
+    // Bitter Triumph: "… or pay 3 life" (one must have at least that much, 119.4).
     const life = add.discardOr?.life;
     const orLife = life !== undefined && payableLife(s, player) >= life ? life : undefined;
     const orPay = add.discardOr?.mana;
@@ -1715,7 +1723,7 @@ export function additionalOptions(
   if (add.sacrifice) {
     const f = add.sacrifice.filter;
     const options = s.battlefield.filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f));
-    // « Sacrifiez une créature ou payez {3}{B} » : sans créature, il reste l'option de payer.
+    // "Sacrifice a creature or pay {3}{B}": without a creature, the option to pay remains.
     if (options.length < add.sacrifice.count && !add.sacrifice.orPay) return null;
     out.sacrifice = { count: add.sacrifice.count, options, orPay: add.sacrifice.orPay };
   }
@@ -1723,11 +1731,11 @@ export function additionalOptions(
 }
 
 /**
- * Coûts additionnels choisis automatiquement (Duskmourn) : exiler ou renvoyer des permanents que vous contrôlez, engager
- * des permanents dégagés, exiler des cartes de votre cimetière. On paie avec ce qui vaut le moins : jetons et petits
- * permanents d'abord ; pour engager, les créatures avant les terrains. `null` : le coût ne peut pas être payé.
+ * Additional costs chosen automatically (Duskmourn): exile or return permanents you control, tap untapped permanents,
+ * exile cards from your graveyard. Payment uses what is worth the least: tokens and small permanents first; to tap,
+ * creatures before lands. `null`: the cost can't be paid.
  */
-/** Coûts additionnels du sort, et ceux du flashback quand il est lancé ainsi (Twinned Vision, Group Project). */
+/** Additional costs of the spell, and those of flashback when it is cast that way (Twinned Vision, Group Project). */
 function additionalCostOf(d: CardDef, flashback: boolean): CardDef["additionalCost"] {
   return flashback && d.flashbackCost ? { ...d.additionalCost, ...d.flashbackCost } : d.additionalCost;
 }
@@ -1755,8 +1763,8 @@ export function autoAdditional(
   const isLand = (id: ObjectId) => chars(s, id).types.includes("Land");
   if (add.exile) {
     const f = add.exile.filter;
-    // Contempler : une carte de la main (autre que celle qu'on lance) convient aussi ; on exile d'abord un jeton, puis une
-    // carte de la main, puis un permanent, chaque fois le moins cher.
+    // Behold: a card from the hand (other than the one being cast) also fits; a token is exiled first, then a card from
+    // the hand, then a permanent, each time the cheapest.
     const hand = add.exile.fromHand
       ? (s.players[player]?.hand ?? []).filter((id) => id !== card && matchesCard(s, player, id, f, card))
       : [];
@@ -1777,8 +1785,8 @@ export function autoAdditional(
     const score = (id: ObjectId) => (isLand(id) ? 100 : chars(s, id).power);
     let c = pick(options, add.tap.count, score);
     if (!c) return null;
-    // Guardian of the Great Door : si les permanents engagés par défaut ne laissent pas de quoi payer le mana du sort, on
-    // les choisit un par un en gardant les sources nécessaires (quand c'est possible).
+    // Guardian of the Great Door: if the permanents tapped by default don't leave enough to pay the spell's mana, they are
+    // chosen one by one, keeping the needed sources (when possible).
     const cost = spellCost(s, player, d, { flashback, card });
     const others = [...used].filter((id) => !c?.includes(id));
     if (!canPay(s, player, cost, new Set(used))) {
@@ -1808,8 +1816,8 @@ export function autoAdditional(
 }
 
 /**
- * Contempler (701.65) : les permanents correspondants que vous contrôlez, puis les cartes correspondantes de votre main
- * (autres que la carte lancée). Un permanent d'abord : il n'y a rien à révéler.
+ * Behold (701.65): the matching permanents you control, then the matching cards in your hand (other than the cast
+ * card). A permanent first: there is nothing to reveal.
  */
 export function beholdOptions(
   s: GameState,
@@ -1821,7 +1829,7 @@ export function beholdOptions(
   const mine = s.battlefield.filter(
     (id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, { ...filter, controller: "you" }, card),
   );
-  // Close Encounter : une carte exilée correspondante au lieu d'une carte de la main.
+  // Close Encounter: a matching exiled card instead of a card from the hand.
   const others = exiled
     ? s.exile.filter((id) => matchesExiled(s, player, id, exiled, card))
     : (s.players[player]?.hand ?? []).filter((id) => id !== card && matchesCard(s, player, id, filter, card));
@@ -1829,8 +1837,8 @@ export function beholdOptions(
 }
 
 /**
- * Contemplation suggérée : un permanent d'abord (rien à révéler) ; obligatoire (Monstrous Emergence, Close Encounter : des
- * blessures égales à sa force), la plus grande force, un permanent à force égale.
+ * Suggested behold: a permanent first (nothing to reveal); when mandatory (Monstrous Emergence, Close Encounter: damage
+ * equal to its power), the greatest power, a permanent on equal power.
  */
 function beholdSuggestion(s: GameState, options: ObjectId[], required?: boolean): ObjectId | null {
   if (!required) return options[0] ?? null;
@@ -1844,32 +1852,32 @@ function beholdSuggestion(s: GameState, options: ObjectId[], required?: boolean)
 }
 
 /**
- * Le permanent ou la carte contemplé au lancement : celui choisi (vérifié ; liste vide : aucun, sauf contemplation
- * obligatoire), sinon la suggestion.
+ * The permanent or card beheld on casting: the chosen one (checked; empty list: none, unless beholding is mandatory),
+ * otherwise the suggestion.
  */
 function beholdChoice(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, chosen: ObjectId[] | undefined) {
   const behold = d.additionalCost?.behold;
   if (!behold) {
-    if (chosen?.length) throw new RulesError("Ce sort ne demande pas de contempler");
+    if (chosen?.length) throw new RulesError(msg("This spell doesn't ask you to behold"));
     return null;
   }
   const options = beholdOptions(s, player, card, behold.filter, behold.exiled);
   const id = chosen === undefined ? beholdSuggestion(s, options, behold.required) : (chosen[0] ?? null);
-  if (chosen && chosen.length > 1) throw new RulesError("Contemplation invalide");
+  if (chosen && chosen.length > 1) throw new RulesError(msg("Invalid behold choice"));
   if (id === null) {
-    if (behold.required) throw new RulesError("Choisissez ce que le coût additionnel demande");
+    if (behold.required) throw new RulesError(msg("Choose what the additional cost asks for"));
     return null;
   }
-  if (!options.includes(id)) throw new RulesError("Contemplation invalide");
+  if (!options.includes(id)) throw new RulesError(msg("Invalid behold choice"));
   return id;
 }
 
-/** Emplacement de chaque coût additionnel choisi par le joueur. */
+/** Slot of each additional cost chosen by the player. */
 const ADDITIONAL_SLOTS = { exile: "costExile", bounce: "costBounce", tap: "costTap", graveyard: "costGraveyard" } as const;
 
 /**
- * Coûts additionnels payés avec des objets (exiler, renvoyer ou engager des permanents, exiler des cartes du cimetière) :
- * le joueur les choisit ; la suggestion est le choix automatique (`autoAdditional`).
+ * Additional costs paid with objects (exile, return or tap permanents, exile cards from the graveyard): the player
+ * chooses them; the suggestion is the automatic choice (`autoAdditional`).
  */
 export function additionalPicks(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, flashback = false): CostPick[] {
   const add = additionalCostOf(d, flashback);
@@ -1886,8 +1894,8 @@ export function additionalPicks(s: GameState, player: PlayerId, card: ObjectId, 
     out.push({
       slot: "costExile",
       label: add.exile.fromHand
-        ? `Contemplez et exilez ${add.exile.count} carte(s) (en jeu ou de votre main)`
-        : `Exilez ${add.exile.count} permanent(s) que vous contrôlez`,
+        ? msg("Behold and exile {n} card(s) (on the battlefield or from your hand)", { n: add.exile.count })
+        : msg("Exile {n} permanent(s) you control", { n: add.exile.count }),
       count: add.exile.count,
       options: [...mine(f), ...hand],
       suggested: auto.exile,
@@ -1896,7 +1904,7 @@ export function additionalPicks(s: GameState, player: PlayerId, card: ObjectId, 
   if (add.bounce)
     out.push({
       slot: "costBounce",
-      label: `Renvoyez ${add.bounce.count} permanent(s) que vous contrôlez en main`,
+      label: msg("Return {n} permanent(s) you control to hand", { n: add.bounce.count }),
       count: add.bounce.count,
       options: mine(add.bounce.filter),
       suggested: auto.bounce,
@@ -1904,7 +1912,7 @@ export function additionalPicks(s: GameState, player: PlayerId, card: ObjectId, 
   if (add.tap)
     out.push({
       slot: "costTap",
-      label: `Engagez ${add.tap.count} permanent(s) dégagé(s) que vous contrôlez`,
+      label: msg("Tap {n} untapped permanent(s) you control", { n: add.tap.count }),
       count: add.tap.count,
       options: mine({ ...add.tap.filter, tapped: false }),
       suggested: auto.tap,
@@ -1912,7 +1920,7 @@ export function additionalPicks(s: GameState, player: PlayerId, card: ObjectId, 
   if (add.exileGraveyard)
     out.push({
       slot: "costGraveyard",
-      label: `Exilez ${add.exileGraveyard} carte(s) de votre cimetière`,
+      label: msg("Exile {n} card(s) from your graveyard", { n: add.exileGraveyard }),
       count: add.exileGraveyard,
       options: (s.players[player]?.graveyard ?? []).filter((id) => id !== card),
       suggested: auto.graveyard,
@@ -1920,7 +1928,7 @@ export function additionalPicks(s: GameState, player: PlayerId, card: ObjectId, 
   return out;
 }
 
-/** Les objets des coûts additionnels : ceux choisis par le joueur (vérifiés, sans doublon d'un coût à l'autre), sinon le choix automatique. */
+/** The objects of the additional costs: those chosen by the player (checked, no duplicate across costs), otherwise the automatic choice. */
 function chosenAdditional(
   s: GameState,
   player: PlayerId,
@@ -1933,14 +1941,15 @@ function chosenAdditional(
   const out = { ...auto };
   const offered = additionalPicks(s, player, card, d, flashback);
   for (const slot of Object.values(ADDITIONAL_SLOTS))
-    if (picks?.[slot] && !offered.some((p) => p.slot === slot)) throw new RulesError("Ce sort n'a pas ce coût additionnel");
+    if (picks?.[slot] && !offered.some((p) => p.slot === slot))
+      throw new RulesError(msg("This spell doesn't have that additional cost"));
   const used = new Set<ObjectId>();
   for (const [key, slot] of Object.entries(ADDITIONAL_SLOTS) as [keyof typeof ADDITIONAL_SLOTS, CostSlot][]) {
     const p = offered.find((x) => x.slot === slot);
     if (!p) continue;
     const chosen = resolvePick(s, p, picks?.[slot]);
     if (new Set(chosen).size !== chosen.length || chosen.some((id) => used.has(id)))
-      throw new RulesError("Un même objet ne paie pas deux coûts");
+      throw new RulesError(msg("The same object can't pay two costs"));
     for (const id of chosen) used.add(id);
     out[key] = chosen;
   }
@@ -1948,8 +1957,8 @@ function chosenAdditional(
 }
 
 /**
- * Couleurs proposées pour le mana hybride d'un sort, seulement si une de ses capacités lit les couleurs dépensées (`spentColor`) :
- * sinon le paiement automatique choisit sans que le résultat change.
+ * Colors offered for a spell's hybrid mana, only if one of its abilities reads the spent colors (`spentColor`):
+ * otherwise the automatic payment chooses without changing the result.
  */
 export function hybridColors(d: CardDef): ManaType[] {
   const pairs = [...(d.manaCost?.hybrid ?? []), ...((d.evoke ?? d.altCost?.mana)?.hybrid ?? [])];
@@ -1957,7 +1966,7 @@ export function hybridColors(d: CardDef): ManaType[] {
   return [...new Set(pairs.flat())];
 }
 
-/** Le coût, chaque symbole hybride qui contient cette couleur payé de cette couleur. */
+/** The cost, with each hybrid symbol that contains this color paid with this color. */
 export function hybridPaidAs(cost: ManaCost, color: ManaType): ManaCost {
   const keep = (cost.hybrid ?? []).filter((h) => !h.includes(color));
   const n = (cost.hybrid ?? []).length - keep.length;
@@ -1966,67 +1975,67 @@ export function hybridPaidAs(cost: ManaCost, color: ManaType): ManaCost {
 
 export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choices: CastChoices): void {
   const terms = castTerms(s, player, card);
-  if (!terms) throw new RulesError("Vous ne pouvez pas lancer cette carte d'ici");
+  if (!terms) throw new RulesError(msg("You can't cast this card from here"));
   const o = obj(s, card);
   const cardDef = s.defs[o.defId];
-  // Un terrain avec le déguisement (Branch of Vitu-Ghazi) se lance face cachée.
+  // A land with disguise (Branch of Vitu-Ghazi) is cast face down.
   const landFaceDown = !!cardDef?.types.includes("Land") && !!choices.faceDown && !!cardDef.disguise;
   if (!cardDef || (cardDef.types.includes("Land") && cardDef.layout !== "adventure" && !landFaceDown))
-    throw new RulesError("Ce n'est pas un sort");
-  if (!cardDef.implemented) throw new RulesError(`${cardDef.name} n'est pas encore géré par le moteur`);
-  // Face lancée : la carte elle-même, ou son aventure (715.3).
+    throw new RulesError(msg("This is not a spell"));
+  if (!cardDef.implemented) throw new RulesError(msg("{card} is not handled by the engine yet", { card: cardDef.name }));
+  // Cast face: the card itself, or its Adventure (715.3).
   const face = landFaceDown
     ? ([undefined, cardDef] as [number | undefined, CardDef])
     : castableFaces(s, card, cardDef).find(([f]) => f === choices.face);
-  if (!face) throw new RulesError("Cette face ne peut pas être lancée");
+  if (!face) throw new RulesError(msg("This face can't be cast"));
   if (terms.adventureOnly && !(face[0] === 1 && face[1].subtypes.includes("Adventure")))
-    throw new RulesError("Cette carte ne se lance d'ici qu'en Aventure");
-  // Déguisement (702.168a) : lancée face cachée comme une créature 2/2 sans nom pour {3}.
-  if (choices.faceDown && !cardDef.disguise) throw new RulesError("Cette carte ne peut pas être lancée face cachée");
-  // Distorsion (702.185) : depuis la main (ou le cimetière si la carte le permet), pour son coût de distorsion.
+    throw new RulesError(msg("This card can only be cast from here as an Adventure"));
+  // Disguise (702.168a): cast face down as a 2/2 creature with no name for {3}.
+  if (choices.faceDown && !cardDef.disguise) throw new RulesError(msg("This card can't be cast face down"));
+  // Warp (702.185): from the hand (or the graveyard if the card allows it), for its warp cost.
   const warp = choices.warp ? warpOf(s, player, card, cardDef) : undefined;
   if (choices.warp && (!warp || (terms.source !== "hand" && !(terms.source === "graveyard" && warp.fromGraveyard)))) {
-    throw new RulesError("Cette carte ne peut pas être lancée avec la distorsion");
+    throw new RulesError(msg("This card can't be cast with warp"));
   }
-  if (terms.warpOnly && !choices.warp) throw new RulesError("Cette carte ne se lance d'ici qu'avec la distorsion");
-  if (warp?.life && payableLife(s, player) < warp.life) throw new RulesError("Pas assez de points de vie");
+  if (terms.warpOnly && !choices.warp) throw new RulesError(msg("This card can only be cast from here with warp"));
+  if (warp?.life && payableLife(s, player) < warp.life) throw new RulesError(msg("Not enough life"));
   const d = choices.faceDown ? FACE_DOWN_SPELL : warp ? { ...face[1], manaCost: warp.cost } : face[1];
-  if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
-  // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
+  if (splitSecondOnStack(s)) throw new RulesError(msg("No spells or abilities now (split second or combat)"));
+  // Harbinger of the Tides: "as though it had flash if you pay {2} more".
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
-  // Faufilement (702.190a) : à l'étape de déclaration des bloqueurs, quand vous avez la priorité.
+  // Sneak (702.190a): in the declare blockers step, when you have priority.
   const sneakNow = !!choices.alternative && sneakTiming(s, player, d);
   if (!terms.anyTime && !canCastTiming(s, player, d) && !flashExtra && !sneakNow)
-    throw new RulesError("Vous ne pouvez pas lancer ce sort maintenant");
-  if (terms.sorceryTiming && !sorceryTiming(s, player)) throw new RulesError("Seulement au moment d'un rituel");
+    throw new RulesError(msg("You can't cast this spell now"));
+  if (terms.sorceryTiming && !sorceryTiming(s, player)) throw new RulesError(msg("Only at sorcery speed"));
   const flashback = terms.source === "flashback";
   const free = !!terms.free || (!!choices.free && !!terms.freeOptional);
   if (free && terms.warpedSpace) {
     const stats = s.players[player]?.turnStats;
     if (stats) stats.freeFromExile = (stats.freeFromExile ?? 0) + 1;
   }
-  if (choices.free && !free) throw new RulesError("Ce sort ne peut pas être lancé sans payer son coût");
+  if (choices.free && !free) throw new RulesError(msg("This spell can't be cast without paying its cost"));
   const alternative = !!choices.alternative && !free;
   if (alternative && !altCostFor(s, player, d)) {
-    throw new RulesError("Coût alternatif indisponible");
+    throw new RulesError(msg("Alternative cost unavailable"));
   }
   const modes = modesOf(d);
   const modeIndex = choices.mode ?? 0;
   const mode = modes[modeIndex];
-  if (!mode) throw new RulesError("Mode invalide");
-  // Surcharge, fendre : le mode se lance pour son propre coût, ni gratuitement ni avec un autre coût alternatif (118.9a).
-  if (mode.cost && (free || alternative)) throw new RulesError("Ce mode se lance seulement pour son propre coût");
+  if (!mode) throw new RulesError(msg("Invalid mode"));
+  // Overload, cleave: the mode is cast for its own cost, neither for free nor with another alternative cost (118.9a).
+  if (mode.cost && (free || alternative)) throw new RulesError(msg("This mode can only be cast for its own cost"));
   const dc = mode.cost ? { ...d, manaCost: mode.cost } : d;
-  // « Si le coût additionnel a été payé, choisissez les deux à la place » : le mode exige (ou exclut) le kicker choisi
-  // avec la décision.
+  // "If the additional cost was paid, choose both instead": the mode requires (or excludes) the kicker chosen with the
+  // decision.
   if (mode.condition && !modeConditionHolds(s, player, card, mode.condition, !!choices.kicked)) {
     if (modeConditionHolds(s, player, card, mode.condition, !choices.kicked))
       throw new RulesError(
-        choices.kicked ? "Coût additionnel payé : choisissez les deux modes" : "Ce mode demande de payer le coût additionnel",
+        choices.kicked ? msg("Additional cost paid: choose both modes") : msg("This mode requires paying the additional cost"),
       );
-    throw new RulesError("Ce mode n'est pas disponible");
+    throw new RulesError(msg("This mode is not available"));
   }
-  // « Valeur de mana X ou moins » : la cible est vérifiée avec le X annoncé (601.2b, puis 601.2c).
+  // "Mana value X or less": the target is checked with the announced X (601.2b, then 601.2c).
   const xCtx = { ...staticContext(s, player, card, { sourceDefId: d.id }), x: Math.max(0, Math.floor(choices.x ?? 0)) };
   const castSpecs = mode.targets.map((t) =>
     t.maxManaValueAmount !== undefined || t.manaValueAmount !== undefined ? concreteSpec(s, xCtx, t) : t,
@@ -2038,31 +2047,31 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   });
   const hasX = (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost || kickerPaidTimes(d);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
-  // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
-  if (d.xCost === "life" && x > payableLife(s, player)) throw new RulesError("Pas assez de points de vie");
-  // Soul Immolation : « flétrissez X ; X ne peut pas dépasser la plus grande endurance parmi vos créatures ».
-  if (d.xCost === "blight" && x > greatestToughness(s, player)) throw new RulesError("X dépasse la plus grande endurance");
+  // Vicious Rivalry: "as an additional cost to cast this spell, pay X life".
+  if (d.xCost === "life" && x > payableLife(s, player)) throw new RulesError(msg("Not enough life"));
+  // Soul Immolation: "blight X; X can't be greater than the greatest toughness among creatures you control".
+  if (d.xCost === "blight" && x > greatestToughness(s, player)) throw new RulesError(msg("X exceeds the greatest toughness"));
   const kicked = !!choices.kicked && !!d.kicker && !kickerPaidTimes(d);
-  // Part du coût payable par la maîtrise de l'eau : coût additionnel, kicker, ou coût de remplacement (Hama).
+  // Part of the cost payable by waterbending: additional cost, kicker, or replacement cost (Hama).
   const bendPaid =
     waterbendAmount(d, kicked, x) +
     (terms.waterbendOverride && terms.costOverride && !free && !alternative ? terms.costOverride.generic : 0);
-  // Coûts additionnels : vérifiés avant tout changement d'état.
+  // Additional costs: checked before any state change.
   const opts = additionalOptions(s, player, card, d, flashback);
-  if (!opts) throw new RulesError("Impossible de payer le coût additionnel");
-  // Kicker sans mana (Marchandage) : le permanent à sacrifier ou à renvoyer, choisi par le joueur (`sacrifice`, quand le
-  // sort n'a pas d'autre sacrifice en coût) ; sans choix, le moins cher, jeton d'abord.
+  if (!opts) throw new RulesError(msg("Can't pay the additional cost"));
+  // Kicker without mana (bargain): the permanent to sacrifice or return, chosen by the player (`sacrifice`, when the
+  // spell has no other sacrifice as a cost); without a choice, the cheapest, tokens first.
   const kickerOptions =
     kicked && d.kickerCost && d.kickerCost.life === undefined ? kickerCostOptions(s, player, card, d, flatTargets(targets)) : [];
   const kickerChoice = kicked && d.kickerCost && !opts.sacrifice && choices.sacrifice?.length ? choices.sacrifice : undefined;
   if (kickerChoice && (kickerChoice.length !== 1 || !kickerOptions.includes(kickerChoice[0] as ObjectId)))
-    throw new RulesError("Permanent invalide pour ce coût");
+    throw new RulesError(msg("Invalid permanent for this cost"));
   const kickerPermanent = kickerChoice?.[0] ?? kickerOptions[0];
   const teamwork = kicked ? d.kickerCost?.tapPower : undefined;
   const evidence =
     kicked && d.kickerCost?.collectEvidence ? spellPickNow(s, player, card, d, x, "evidence", "kicked", choices) : undefined;
-  if (evidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
-  // Urgent Necropsy : « réunissez des preuves X, X étant la valeur de mana totale des permanents ciblés ».
+  if (evidence === null) throw new RulesError(msg("Not enough evidence to collect in your graveyard"));
+  // Urgent Necropsy: "collect evidence X, where X is the total mana value of the target permanents".
   const targetEvidenceX = d.additionalCost?.collectEvidenceTargetsManaValue
     ? flatTargets(targets).reduce(
         (n, id) => n + (s.objects[id]?.zone === "battlefield" ? (snapshot(s, id).manaValue ?? 0) : 0),
@@ -2070,39 +2079,39 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       )
     : 0;
   const targetEvidence = targetEvidenceX > 0 ? evidenceCards(s, player, card, targetEvidenceX) : undefined;
-  if (targetEvidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
+  if (targetEvidence === null) throw new RulesError(msg("Not enough evidence to collect in your graveyard"));
   const gyExile =
     kicked && d.kickerCost?.exileGraveyard ? spellPickNow(s, player, card, d, x, "graveyardExile", "kicked", choices) : undefined;
-  if (gyExile === null) throw new RulesError("Pas assez de cartes dans votre cimetière");
-  // Redirect Lightning : « payez 5 PV ou payez {2} » (le kicker est le paiement en PV).
+  if (gyExile === null) throw new RulesError(msg("Not enough cards in your graveyard"));
+  // Redirect Lightning: "pay 5 life or pay {2}" (the kicker is the life payment).
   const kickerLife = kicked ? d.kickerCost?.life : undefined;
-  if (kickerLife !== undefined && payableLife(s, player) < kickerLife) throw new RulesError("Pas assez de points de vie");
+  if (kickerLife !== undefined && payableLife(s, player) < kickerLife) throw new RulesError(msg("Not enough life"));
   if (kicked && d.kickerCost && kickerLife === undefined && !teamwork && !evidence && !gyExile && !kickerPermanent)
-    throw new RulesError("Impossible de payer le kicker");
-  // Travail d'équipe : les créatures engagées (choisies par `tap`, sinon les plus faibles suffisantes).
+    throw new RulesError(msg("Can't pay the kicker"));
+  // Teamwork: the tapped creatures (chosen by `tap`, otherwise the weakest that suffice).
   const teamTap = teamwork !== undefined ? chosenCrew(s, player, card, teamwork, choices.tap) : [];
-  if (teamwork !== undefined && teamTap.length === 0) throw new RulesError("Force totale insuffisante pour le travail d'équipe");
+  if (teamwork !== undefined && teamTap.length === 0) throw new RulesError(msg("Not enough total power for teamwork"));
   const discard = choices.discard ?? [];
   const sacrifice = kickerChoice ? [] : (choices.sacrifice ?? []);
   const check = (chosen: ObjectId[], spec?: { count: number; options: ObjectId[]; orPay?: ManaCost; orLife?: number }) => {
     const need = spec?.count ?? 0;
-    if (spec?.orPay && chosen.length === 0) return; // on paiera le mana à la place
-    if (spec?.orLife !== undefined && chosen.length === 0) return; // on paiera les points de vie à la place
+    if (spec?.orPay && chosen.length === 0) return; // the mana will be paid instead
+    if (spec?.orLife !== undefined && chosen.length === 0) return; // the life will be paid instead
     if (chosen.length !== need || new Set(chosen).size !== need || chosen.some((id) => !spec?.options.includes(id))) {
-      throw new RulesError("Choix du coût additionnel invalide");
+      throw new RulesError(msg("Invalid additional cost choice"));
     }
   };
   check(discard, opts.discard);
   check(sacrifice, opts.sacrifice);
   const autoPaid = autoAdditional(s, player, card, d, flashback);
-  if (!autoPaid) throw new RulesError("Impossible de payer le coût additionnel");
+  if (!autoPaid) throw new RulesError(msg("Can't pay the additional cost"));
   const auto = chosenAdditional(s, player, card, d, flashback, autoPaid, choices.picks);
   const beheldId = beholdChoice(s, player, card, d, choices.picks?.behold);
-  // « … si vous contrôliez une Fée en lançant ce sort » : évaluée maintenant (601.2), avant le paiement.
+  // "… if you controlled a Faerie as you cast this spell": evaluated now (601.2), before the payment.
   const metWhenCast = d.whenCast ? checkCondition(s, d.whenCast, player, card) : undefined;
-  // Molten Exhale : « comme s'il avait le flash si vous contemplez » : lancé ainsi, il faut contempler.
+  // Molten Exhale: "as though it had flash if you behold": cast that way, it must behold.
   if (d.additionalCost?.behold && d.flashIf && !beheldId && !canCastTiming(s, player, { ...d, flashIf: undefined }))
-    throw new RulesError("Sans contempler, ce sort ne se lance qu'au moment d'un rituel");
+    throw new RulesError(msg("Without beholding, this spell can only be cast at sorcery speed"));
   let cost = spellCost(s, player, dc, {
     beheld: !!beheldId,
     x,
@@ -2117,98 +2126,98 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     fromZone: terms.source,
     card,
   });
-  // Terror of the Peaks : « les sorts de vos adversaires qui ciblent cette créature coûtent 3 PV de plus ».
+  // Terror of the Peaks: "spells your opponents cast that target this creature cost an additional 3 life".
   const lifeTax = flatTargets(targets).reduce((n, id) => {
     const t = s.objects[id];
     if (t?.zone !== "battlefield" || t.controller === player) return n;
     return n + chars(s, id).abilities.reduce((m, ab) => m + (ab.kind === "playerStatic" ? (ab.targetLifeTax ?? 0) : 0), 0);
   }, 0);
-  // Payer 0 PV est toujours possible (119.4), même avec un total négatif (Herald of Eternal Dawn).
-  if (lifeTax > 0 && lifeTax > payableLife(s, player)) throw new RulesError("Pas assez de points de vie");
-  // Spree : les coûts supplémentaires des modes choisis (payés même si le sort est gratuit).
+  // Paying 0 life is always possible (119.4), even with a negative total (Herald of Eternal Dawn).
+  if (lifeTax > 0 && lifeTax > payableLife(s, player)) throw new RulesError(msg("Not enough life"));
+  // Spree: the additional costs of the chosen modes (paid even if the spell is free).
   if (mode.extraCost) cost = addCosts(cost, mode.extraCost);
   if (opts.sacrifice?.orPay && sacrifice.length === 0) cost = addCosts(cost, opts.sacrifice.orPay);
-  // Titania : « défaussez une carte ou payez {2} ».
+  // Titania: "discard a card or pay {2}".
   if (opts.discard?.orPay && discard.length === 0) cost = addCosts(cost, opts.discard.orPay);
   if (flashExtra) cost = addCosts(cost, flashExtra);
   if (terms.extraCost) cost = addCosts(cost, { generic: terms.extraCost, colored: {}, x: 0 });
-  // Harmonie : une créature engagée réduit le coût de sa force (`tap` absent : le choix par défaut ; [] : aucune).
+  // Harmonize: a tapped creature reduces the cost by its power (`tap` absent: the default choice; []: none).
   const harmonize = flashback && (!!d.harmonize || !!terms.harmonize);
-  if (choices.tap?.length && !harmonize && teamwork === undefined) throw new RulesError("Aucune créature à engager pour ce sort");
+  if (choices.tap?.length && !harmonize && teamwork === undefined) throw new RulesError(msg("No creature to tap for this spell"));
   const harmony = harmonize ? harmonizeOptions(s, player, card, cost.generic) : undefined;
   const harmonyTap = harmony ? (choices.tap ?? harmony.suggested) : [];
   if (harmonyTap.length > 1 || harmonyTap.some((id) => !harmony?.options.includes(id)))
-    throw new RulesError("Créature invalide pour l'harmonie");
+    throw new RulesError(msg("Invalid creature for harmonize"));
   for (const id of harmonyTap) cost = totalCost(cost, 0, undefined, harmony?.powers[id] ?? 0);
-  // Mana hybride payé d'une couleur choisie (Deceit : « si {U}{U} a été dépensé »).
+  // Hybrid mana paid with a chosen color (Deceit: "if {U}{U} was spent").
   if (choices.hybridAs) {
-    if (!hybridColors(d).includes(choices.hybridAs)) throw new RulesError("Ce mana hybride ne se paie pas de cette couleur");
+    if (!hybridColors(d).includes(choices.hybridAs)) throw new RulesError(msg("This hybrid mana can't be paid with this color"));
     cost = hybridPaidAs(cost, choices.hybridAs);
   }
 
-  // Marqueurs retirés parmi vos créatures : répartis par le joueur (`counterFrom`), sinon la suggestion.
+  // Counters removed from among your creatures: divided by the player (`counterFrom`), otherwise the suggestion.
   const countersFrom = terms.removeCounters
     ? resolvePick(s, countersAmongPick(s, player, terms.removeCounters), choices.picks?.counterFrom)
     : undefined;
-  // 601.2a : le sort passe sur la pile (nouvel objet), puis on paie les coûts (601.2g–h).
+  // 601.2a: the spell moves to the stack (new object), then the costs are paid (601.2g–h).
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
-  // The Tomb of Aclazotz : la permission à usage unique est consommée.
+  // The Tomb of Aclazotz: the one-shot permission is consumed.
   const once = terms.playFrom && s.playerEffects.find((e) => e.once && e.ability.playFrom === terms.playFrom);
   if (once) s.playerEffects = s.playerEffects.filter((e) => e !== once);
   if (countersFrom) removeCountersFromEach(s, countersFrom);
   if (terms.onceKey) s.turn.onceFired.push(terms.onceKey);
   if (free && terms.freeOnceKey) s.turn.onceFired.push(terms.freeOnceKey);
   const view = spellView(d, player);
-  // Lancer la copie d'un sort préparé dé-prépare son permanent (même si le sort est ensuite contrecarré).
+  // Casting the copy of a prepared spell unprepares its permanent (even if the spell is then countered).
   const preparedFor = o.preparedFor ? s.objects[o.preparedFor] : undefined;
   if (preparedFor?.preparedCopy === card) delete preparedFor.preparedCopy;
-  // Permission à usage unique (Buster Sword) : les autres cartes du groupe la perdent.
+  // One-shot permission (Buster Sword): the other cards of the group lose it.
   const group = exilePermission(s, player, card)?.group;
   if (group) s.playPermissions = (s.playPermissions ?? []).filter((p) => p.group !== group);
   const stackId = moveObject(s, card, "stack", { controller: player }) as string;
-  // Fourrager en coût (Osteomancer Adept, ou le coût alternatif de Feed the Cycle) : la carte a quitté le cimetière.
+  // Forage as a cost (Osteomancer Adept, or Feed the Cycle's alternative cost): the card has left the graveyard.
   if ((terms.forage || (alternative && altCostFor(s, player, d)?.forage)) && !forage(s, player))
-    throw new RulesError("Impossible de fourrager");
-  // Évasion donnée (Underworld Breach) : N autres cartes du cimetière exilées en plus.
+    throw new RulesError(msg("Can't forage"));
+  // Granted escape (Underworld Breach): N other cards from the graveyard exiled in addition.
   const escapeN = terms.playFrom?.exileOthers;
   if (escapeN) {
     const cards = graveyardToExile(s, player, stackId, escapeN);
-    if (!cards) throw new RulesError(`Il faut exiler ${escapeN} autres cartes de votre cimetière`);
+    if (!cards) throw new RulesError(msg("You must exile {n} other cards from your graveyard", { n: escapeN }));
     for (const id of cards) moveObject(s, id, "exile");
   }
-  // Force of Will, Daze : PV, cartes de la main exilées, permanent renvoyé, payés avec le coût alternatif.
+  // Force of Will, Daze: life, cards exiled from the hand, returned permanent, paid with the alternative cost.
   const altPay = alternative ? altCostFor(s, player, d)?.pay : undefined;
   if (altPay) {
     const paid = altCostPayment(s, player, stackId, altPay);
-    if (!paid) throw new RulesError("Impossible de payer ce coût alternatif");
+    if (!paid) throw new RulesError(msg("Can't pay this alternative cost"));
     if (altPay.life) payLife_(s, player, altPay.life);
     for (const id of paid.exile) moveObject(s, id, "exile");
     if (paid.bounce) moveObject(s, paid.bounce, "hand");
     if (paid.sacrifice) sacrificePermanent(s, paid.sacrifice);
   }
-  // Conspiracy Unraveler : « réunir des preuves 10 plutôt que payer le coût de mana ».
+  // Conspiracy Unraveler: "collect evidence 10 rather than pay the mana cost".
   const altEvidence = alternative ? altCostFor(s, player, d)?.collectEvidence : undefined;
   if (altEvidence) {
     const cards = spellPickNow(s, player, stackId, d, x, "evidence", "alternative", choices);
-    if (!cards) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
+    if (!cards) throw new RulesError(msg("Not enough evidence to collect in your graveyard"));
     collectEvidence(s, player, cards);
   }
-  // Coûts additionnels, choisis par le joueur ou automatiquement (avant le mana : ces permanents ne produisent plus de mana).
+  // Additional costs, chosen by the player or automatically (before the mana: these permanents no longer produce mana).
   for (const id of [...auto.tap, ...harmonyTap]) tapObject(s, obj(s, id));
-  // Agent Maria Hill : « engagée pour payer un coût de travail d'équipe ».
+  // Agent Maria Hill: "tapped to pay a teamwork cost".
   for (const id of teamTap) tapObject(s, obj(s, id), "teamwork");
   for (const id of auto.bounce) moveObject(s, id, "hand");
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
-  // Faufilement : l'attaquant non bloqué le plus faible retourne dans la main de son propriétaire.
-  // Web-slinging : une créature engagée que vous contrôlez retourne en main (au choix, la moins chère par défaut).
+  // Sneak: the weakest unblocked attacker returns to its owner's hand.
+  // Web-slinging: a tapped creature you control returns to hand (by choice, the cheapest by default).
   const bounced: ObjectId[] = [];
   const webSlinging = alternative && isWebSlinging(s, player, d);
   if (webSlinging) {
     const options = webSlingingOptions(s, player);
     const tapped = choices.bounce?.length ? choices.bounce[0] : options[0];
     if (!tapped || !options.includes(tapped) || (choices.bounce?.length ?? 1) !== 1)
-      throw new RulesError("Aucune créature engagée à renvoyer");
+      throw new RulesError(msg("No tapped creature to return"));
     removeFromCombat(s, tapped);
     const back = moveObject(s, tapped, "hand");
     if (back) bounced.push(back);
@@ -2216,20 +2225,20 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const sneaked = (alternative && !!d.sneak) || !!terms.sneakGranted;
   let sneakDefender: string | undefined;
   if (sneaked) {
-    // L'attaquant non bloqué renvoyé : au choix (`bounce`), le plus faible par défaut.
+    // The returned unblocked attacker: by choice (`bounce`), the weakest by default.
     const options = sneakOptions(s, player);
     const back = choices.bounce?.length ? choices.bounce[0] : options[0];
     if (!back || !options.includes(back) || (choices.bounce?.length ?? 1) !== 1)
-      throw new RulesError("Aucun attaquant non bloqué");
+      throw new RulesError(msg("No unblocked attacker"));
     sneakDefender = s.combat?.attackers.find((a) => a.id === back)?.defender;
     removeFromCombat(s, back);
     moveObject(s, back, "hand");
   }
-  // Réunir des preuves : les cartes du cimetière sont exilées en payant le coût.
+  // Collect evidence: the graveyard cards are exiled while paying the cost.
   if (evidence) collectEvidence(s, player, evidence);
   if (targetEvidence) collectEvidence(s, player, targetEvidence);
   for (const id of gyExile ?? []) moveObject(s, id, "exile");
-  // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
+  // Only an Adventure goes "on an adventure"; an omen (same Scryfall layout) is shuffled into the library.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");
   if (choices.face !== undefined) obj(s, stackId).faceDefId = d.id;
   if (choices.faceDown && cardDef.disguise) {
@@ -2238,10 +2247,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     spellObj.faceDown = { card: spellObj.defId, ward: !cardDef.morph, upCosts: [cardDef.disguise] };
     spellObj.defId = FACE_DOWN_ID;
   }
-  // Le prochain sort : incontrecarrable (Theorist's Proxy), marqueurs ou célérité (Summon: Fenrir), copié (plus bas).
+  // The next spell: can't be countered (Theorist's Proxy), counters or haste (Summon: Fenrir), copied (below).
   const next = consumeNextSpells(s, player, d);
   const uncounterable = next.some((n) => n.uncounterable);
-  // Coût alternatif payé (601.2b : un seul), lu par les règles et les conditions « s'il a été lancé ainsi ».
+  // Alternative cost paid (601.2b: only one), read by the rules and by "if it was cast this way" conditions.
   const castVia: CastVia | undefined = webSlinging
     ? "webSlinging"
     : terms.mayhem
@@ -2269,7 +2278,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     x,
     kicked,
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
-    // Quistis Trepe : exilé en quittant la pile, comme un flashback.
+    // Quistis Trepe: exiled as it leaves the stack, like flashback.
     flashback: flashback || terms.after === "exile",
     ...(terms.after === "bottom" ? { bottomInstead: true } : {}),
     arrival: arrivalFor(terms, next),
@@ -2283,7 +2292,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       beheld: beheldId ? true : undefined,
       metWhenCast: metWhenCast || undefined,
     },
-    // Permanents sacrifiés comme coût additionnel (« si le permanent sacrifié était un Véhicule »).
+    // Permanents sacrificed as an additional cost ("if the sacrificed permanent was a Vehicle").
     paid: {
       sacrificed: sacrifice.length ? [...sacrifice] : undefined,
       exiled: costExiled.length ? costExiled : undefined,
@@ -2292,7 +2301,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     uncounterable: uncounterable || undefined,
   };
   s.stack.push(item);
-  // Contempler une carte de la main : elle est révélée.
+  // Beholding a card from the hand: it is revealed.
   if (beheldId && s.objects[beheldId]?.zone === "hand")
     emit({ type: "reveal", player, defIds: [s.objects[beheldId]?.defId ?? ""] });
   try {
@@ -2317,7 +2326,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       spent,
     );
     if (Object.keys(spent).length && item.cast) item.cast.spentColors = spent;
-    // Un coût de maîtrise de l'eau a été payé (« chaque fois que vous maîtrisez l'eau »).
+    // A waterbend cost was paid ("whenever you waterbend").
     if (
       d.waterbend !== undefined ||
       d.xCost === "waterbend" ||
@@ -2325,27 +2334,27 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       (terms.waterbendOverride && !free && !alternative)
     )
       bent(s, player, "water");
-    // Mana des Cavernes (Bat Colony) et sources utilisées (Tecutlan, Barracks of the Thousand).
+    // Mana from Caves (Bat Colony) and sources used (Tecutlan, Barracks of the Thousand).
     if (taps.length) {
       item.manaSources = taps.flatMap((t) => Array(t.amount).fill(t.id) as ObjectId[]);
-      // Une source sacrifiée pour son mana (Trésor) est connue par ses dernières informations.
+      // A source sacrificed for its mana (Treasure) is known by its last known information.
       const subtypes = (id: ObjectId) => (s.objects[id] ? chars(s, id).subtypes : (s.lki[id]?.subtypes ?? []));
       const caves = taps.filter((t) => subtypes(t.id).includes("Cave")).reduce((n, t) => n + t.amount, 0);
       if (caves && item.cast) item.cast.spentFrom = { ...item.cast.spentFrom, cave: caves };
-      // Coin of Mastery : mana dépensé venant de sources d'artefact (un Trésor sacrifié, par ses dernières informations).
-      // Le mana produit en trop (Sol Ring pour un seul {1}) reste dans la réserve : il est d'abord compté aux artefacts.
+      // Coin of Mastery: mana spent from artifact sources (a sacrificed Treasure, by its last known information).
+      // Excess mana produced (Sol Ring for a single {1}) stays in the pool: it is counted against the artifacts first.
       const types = (id: ObjectId) => (s.objects[id] ? chars(s, id).types : (s.lki[id]?.types ?? []));
       const artifacts = taps.filter((t) => types(t.id).includes("Artifact")).reduce((n, t) => n + t.amount, 0);
       const excess = Math.max(0, taps.reduce((n, t) => n + t.amount, 0) - Object.values(spent).reduce((n, k) => n + (k ?? 0), 0));
       if (artifacts > excess && item.cast) item.cast.spentFrom = { ...item.cast.spentFrom, artifact: artifacts - excess };
     }
-    // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles ; Cavern of Souls :
-    // « du type choisi » se lit sur la source ; Path of Ancestry : « qui partage un type de créature avec votre
-    // commandant », capacité déclenchée de la source).
+    // Effects tied to the spent mana, if this spell matches (Carnelian Orb, Pyromancer's Goggles; Cavern of Souls: "of
+    // the chosen type" is read on the source; Path of Ancestry: "that shares a creature type with your commander", a
+    // triggered ability of the source).
     const riders = taps.flatMap(({ id, ab, chosen }) => {
       const rider = ab?.rider;
       if (!rider) return [];
-      // Mana marqué de la réserve : le choix de sa source, figé à la production (Cavern of Souls).
+      // Marked mana in the pool: its source's choice, fixed when produced (Cavern of Souls).
       const src = chosen ? { chosen } : s.objects[id];
       const filter = withX(s, src ? withChosen(rider.spell, src) : rider.spell, staticContext(s, player, id));
       if (!matchesView(view, filter, player, id)) return [];
@@ -2356,9 +2365,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (riders.length) item.riders = riders;
     if (riders.includes("uncounterable")) item.uncounterable = true;
   } catch (e) {
-    rethrowAsRules(e, "Mana insuffisant");
+    rethrowAsRules(e, msg("Not enough mana"));
   }
-  // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
+  // Warp "Warp—{B}, Pay 2 life": the life is part of the cost.
   if (warp?.life) payLife_(s, player, warp.life);
   if (terms.payLife) payLife_(s, player, terms.payLife);
   if (d.xCost === "life" && x > 0) payLife_(s, player, x);
@@ -2368,25 +2377,25 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, true);
   }
   if (lifeTax) payLife_(s, player, lifeTax);
-  // Emrakul, the Exigent Doom : « jusqu'à ce que cette carte soit lancée depuis l'exil » — les coûts sont payés, le sort
-  // est lancé (601.2i) ; la capacité accordée au terrain a pu servir à les payer.
+  // Emrakul, the Exigent Doom: "until this card is cast from exile" — the costs are paid, the spell is cast (601.2i);
+  // the ability granted to the land may have been used to pay them.
   const uid = s.objects[item.id]?.uid;
   if (uid && s.effects.some((e) => e.untilExiledUid === uid)) {
     s.effects = s.effects.filter((e) => e.untilExiledUid !== uid);
     bump(s);
   }
-  // Pyromancer's Goggles : « copiez ce sort ».
+  // Pyromancer's Goggles: "copy that spell".
   for (const r of item.riders ?? []) if (r === "copy") copyStackItem(s, item, player);
-  // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
+  // Teach by Example: "when you next cast an instant or sorcery spell this turn, copy that spell".
   for (const n of next) {
     if (!n.copy) continue;
     const id = copyStackItem(s, item, player);
     const copy = n.nonlegendary && id ? s.stack.find((x) => x.id === id) : undefined;
     if (copy) copy.arrival = { ...copy.arrival, nonlegendary: true };
   }
-  // Bitter Triumph : sans carte défaussée, les points de vie sont payés.
+  // Bitter Triumph: without a discarded card, the life is paid.
   if (opts.discard?.orLife !== undefined && discard.length === 0) payLife_(s, player, opts.discard.orLife);
-  // Souls of the Lost : un permanent choisi à la place d'une carte est sacrifié.
+  // Souls of the Lost: a permanent chosen instead of a card is sacrificed.
   const sacrificedInstead = discard.filter((id) => obj(s, id).zone === "battlefield");
   const handDiscard = discard.filter((id) => !sacrificedInstead.includes(id));
   for (const id of sacrificedInstead) sacrificePermanent(s, id);
@@ -2395,7 +2404,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     const discarded = handDiscard.map((id) => moveDiscarded(s, player, id));
     for (const id of discarded) announceDiscard(s, player, id);
     announceDiscardBatch(s, player, handDiscard.length);
-    // Grab the Prize : « si la carte défaussée n'était pas une carte de terrain ».
+    // Grab the Prize: "if the discarded card wasn't a land card".
     item.paid = { ...item.paid, discarded: discarded.filter((id): id is string => !!id) };
   }
   for (const id of sacrifice) sacrificePermanent(s, id);
@@ -2405,20 +2414,20 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   else if (kicked && kickerPermanent && d.kickerCost?.bounce) moveObject(s, kickerPermanent, "hand");
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
-  // 903.8 : un lancer de plus depuis la zone de commandement (la taxe du suivant augmente de {2}).
+  // 903.8: one more cast from the command zone (the next one's tax increases by {2}).
   if (terms.source === "command") {
     const rec = commanderOf(s, s.objects[stackId]);
     if (rec) rec.casts += 1;
   }
   const caster = s.players[player];
   const instantOrSorcery = d.types.includes("Instant") || d.types.includes("Sorcery");
-  // Thousand-Year Storm : éphémères et rituels lancés avant celui-ci ce tour-ci (lu avant d'inscrire ce sort au journal).
+  // Thousand-Year Storm: instants and sorceries cast before this one this turn (read before logging this spell).
   const before = countTurnEvents(s, { event: "cast", who: "you", types: ["Instant", "Sorcery"] }, player);
-  // Déluge (702.40a) : sorts lancés avant celui-ci ce tour-ci, par tous les joueurs.
+  // Storm (702.40a): spells cast before this one this turn, by all players.
   const spellsBefore = countTurnEvents(s, { event: "cast" }, player);
   if (caster) {
     caster.turnStats.spellsCast += 1;
-    // Journal du tour : « sort de créature légendaire lancé ce tour-ci », « sort lancé depuis votre main ».
+    // Turn log: "legendary creature spell cast this turn", "spell cast from your hand".
     logTurnEvent(s, {
       e: "cast",
       player,
@@ -2431,14 +2440,19 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       keywords: chars(s, stackId).keywords,
       colors: chars(s, stackId).colors,
     });
-    bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
+    bump(s); // static abilities depend on it ("if you've cast two spells this turn")
   }
   rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined, spellsBefore });
-  // Codie, Vociferous Codex : « quand vous lancerez votre prochain sort ce tour-ci, … » (le sort : `ref.target("s")`).
+  // Codie, Vociferous Codex: "when you next cast a spell this turn, …" (the spell: `ref.target("s")`).
   for (const n of next)
     if (n.trigger)
-      pushInline(s, player, stackId, d.id, { targets: [], effects: n.trigger, bound: { s: [stackId] }, label: "Prochain sort" });
-  // Dépense N (Bloomburrow) : le N-ième mana total dépensé pour lancer des sorts ce tour-ci.
+      pushInline(s, player, stackId, d.id, {
+        targets: [],
+        effects: n.trigger,
+        bound: { s: [stackId] },
+        label: msg("Next spell"),
+      });
+  // Expend N (Bloomburrow): the N-th total mana spent to cast spells this turn.
   const spent = item.cast?.manaSpent ?? 0;
   if (caster && spent > 0) {
     const was = caster.turnStats.manaSpentOnSpells ?? 0;
@@ -2448,7 +2462,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   announceTargets(s, stackId, player, targets);
 }
 
-/** Retire des symboles colorés d'un coût (sans descendre sous zéro). */
+/** Removes colored symbols from a cost (without going below zero). */
 function withoutColored(cost: ManaCost, colored: ManaCost["colored"]): ManaCost {
   const out = { ...cost.colored };
   for (const [k, n] of Object.entries(colored)) {
@@ -2459,7 +2473,7 @@ function withoutColored(cost: ManaCost, colored: ManaCost["colored"]): ManaCost 
   return { ...cost, colored: out };
 }
 
-/** Somme de deux coûts de mana. */
+/** Sum of two mana costs. */
 function addCosts(a: ManaCost, b: ManaCost): ManaCost {
   const colored = { ...a.colored };
   for (const [k, n] of Object.entries(b.colored)) colored[k as ManaType] = (colored[k as ManaType] ?? 0) + (n ?? 0);
@@ -2472,7 +2486,7 @@ function addCosts(a: ManaCost, b: ManaCost): ManaCost {
   };
 }
 
-/** Signale les cibles d'un élément mis sur la pile (garde, « devient la cible »). */
+/** Announces the targets of an item put on the stack (ward, "becomes the target"). */
 export function announceTargets(s: GameState, stackId: string, controller: PlayerId, targets: Record<string, string[]>): void {
   const all = flatTargets(targets);
   if (all.length) rulesEvent(s, { e: "targeted", stackId, controller, targets: all });
@@ -2480,8 +2494,8 @@ export function announceTargets(s: GameState, stackId: string, controller: Playe
 }
 
 /**
- * Statiques « ne peut pas être contrecarré » : les sorts du contrôleur (Sphinx of the Final Word, Frenzied Baloth,
- * Chimil), ou les sorts et capacités de tous (Spider-Punk).
+ * "Can't be countered" static abilities: the controller's spells (Sphinx of the Final Word, Frenzied Baloth, Chimil),
+ * or everyone's spells and abilities (Spider-Punk).
  */
 function protectedFromCounter(s: GameState, item: StackItem): boolean {
   const d = s.defs[item.sourceDefId];
@@ -2496,7 +2510,7 @@ function protectedFromCounter(s: GameState, item: StackItem): boolean {
   return false;
 }
 
-/** 701.5 : contrecarre l'élément de pile ; un sort contrecarré va au cimetière (exil s'il a été lancé en flashback). */
+/** 701.5: counters the stack item; a countered spell goes to the graveyard (exile if it was cast with flashback). */
 export function counterItem(s: GameState, id: string, by: string, exile = false): boolean {
   const i = s.stack.findIndex((x) => x.id === id);
   const item = s.stack[i];
@@ -2505,13 +2519,13 @@ export function counterItem(s: GameState, id: string, by: string, exile = false)
   if (protectedFromCounter(s, item)) return false;
   s.stack.splice(i, 1);
   emit({ type: "countered", stackId: item.id, defId: item.sourceDefId, by });
-  // Dernières informations connues (« son contrôleur crée… »).
+  // Last known information ("its controller creates…").
   if (item.kind === "spell" && s.objects[item.sourceId]) s.lki[item.id] = snapshot(s, item.sourceId);
   if (item.kind === "spell" && s.objects[item.sourceId]) spellToRest(s, item, exile);
   return true;
 }
 
-/** « Exilez le sort » (maîtrise de l'air) : il quitte la pile sans être contrecarré ; une copie cesse d'exister. */
+/** "Exile the spell" (airbending): it leaves the stack without being countered; a copy ceases to exist. */
 export function exileSpell(s: GameState, id: string): ObjectId | undefined {
   const i = s.stack.findIndex((x) => x.id === id);
   const item = s.stack[i];
@@ -2522,12 +2536,12 @@ export function exileSpell(s: GameState, id: string): ObjectId | undefined {
   return moved ?? undefined;
 }
 
-/** « Renvoyez le sort ciblé dans la main de son propriétaire » : une copie cesse d'exister. */
+/** "Return target spell to its owner's hand": a copy ceases to exist. */
 export function bounceSpell(s: GameState, id: string): void {
   spellToZone(s, id, "hand");
 }
 
-/** Retire un sort de la pile vers la main ou la bibliothèque de son propriétaire (Swat Away : dessus ou dessous). */
+/** Removes a spell from the stack to its owner's hand or library (Swat Away: top or bottom). */
 export function spellToZone(s: GameState, id: string, to: "hand" | "libraryTop" | "libraryBottom"): void {
   const i = s.stack.findIndex((x) => x.id === id);
   const item = s.stack[i];
@@ -2540,14 +2554,14 @@ export function spellToZone(s: GameState, id: string, to: "hand" | "libraryTop" 
   bump(s);
 }
 
-/** Capacités d'un objet : calculées par les couches sur le champ de bataille (accordées, perdues), imprimées ailleurs. */
+/** Abilities of an object: computed by the layers on the battlefield (granted, lost), printed elsewhere. */
 export function abilitiesOf(s: GameState, id: ObjectId): CardDef["abilities"] {
   const o = s.objects[id];
   if (!o) return [];
   return o.zone === "battlefield" ? chars(s, id).abilities : (s.defs[o.defId]?.abilities ?? []);
 }
 
-/** Le permanent qui accorde à `source` sa capacité de rang `index` (« la créature équipée a "…" »), s'il est en jeu. */
+/** The permanent that grants `source` its ability at rank `index` ("equipped creature has '…'"), if it is on the battlefield. */
 export function grantorOf(s: GameState, source: ObjectId, index: number): ObjectId | undefined {
   if (s.objects[source]?.zone !== "battlefield") return undefined;
   const g = chars(s, source).grantors?.[index];
@@ -2559,7 +2573,7 @@ export function activatedAbility(s: GameState, source: ObjectId, index: number):
   return ab?.kind === "activated" ? ab : null;
 }
 
-/** Permanents qui peuvent être sacrifiés pour le coût de la capacité (hors source). */
+/** Permanents that can be sacrificed for the ability's cost (source excluded). */
 export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
   const f = ab.cost.sacrifice?.filter;
   if (!f) return [];
@@ -2571,23 +2585,23 @@ export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectI
       matchesObjectFilter(s, player, id, f, source) &&
       !hasKeyword(s, id, "cantBeSacrificed"),
   );
-  // Choix par défaut (les premiers) : d'abord ce qui ne produit pas de mana (un Trésor peut encore payer le coût).
+  // Default choice (the first ones): first what doesn't produce mana (a Treasure can still pay the cost).
   const makesMana = (id: ObjectId) => manaAbilitiesOf(s, id).length > 0;
   const ordered = [...ids.filter((id) => !makesMana(id)), ...ids.filter(makesMana)];
   if (ab.cost.sacrifice?.distinct !== "name") return ordered;
-  // « de noms différents » (Transmutation Font) : un permanent par nom d'abord, pour que le choix par défaut soit permis.
+  // "with different names" (Transmutation Font): one permanent per name first, so that the default choice is allowed.
   const first = firstOfEachName(ordered, (id) => chars(s, id).name);
   return [...first, ...ordered.filter((id) => !first.includes(id))];
 }
 
-/** Nombre de noms différents parmi des permanents (coût « de noms différents »). */
+/** Number of different names among permanents ("with different names" cost). */
 function distinctNames(s: GameState, ids: readonly ObjectId[]): number {
   return firstOfEachName(ids, (id) => chars(s, id).name).length;
 }
 
 /**
- * « Engagez X [permanents] dégagés » (Secluded Starforge) : les candidats, d'abord ceux qui ne produisent pas de mana (les
- * X premiers sont le choix par défaut ; ils ne paient pas le mana de la capacité).
+ * "Tap X untapped [permanents]" (Secluded Starforge): the candidates, first those that don't produce mana (the first X
+ * are the default choice; they don't pay the ability's mana).
  */
 export function tapXCandidates(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): ObjectId[] {
   const ids = s.battlefield.filter(
@@ -2611,7 +2625,7 @@ export function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectI
   );
 }
 
-/** Équipage N : créatures dégagées (autres que la source) de force totale N ou plus, les plus faibles d'abord. */
+/** Crew N: untapped creatures (other than the source) with total power N or greater, weakest first. */
 function crewOptions(s: GameState, player: PlayerId, source: ObjectId, n: number): ObjectId[] | null {
   const ids = crewCandidates(s, player, source).sort((a, b) => crewPower(s, a) - crewPower(s, b));
   const out: ObjectId[] = [];
@@ -2624,14 +2638,14 @@ function crewOptions(s: GameState, player: PlayerId, source: ObjectId, n: number
   return total >= n ? out : null;
 }
 
-/** Créatures qui peuvent monter ou équiper la source. */
+/** Creatures that can saddle or crew the source. */
 export function crewCandidates(s: GameState, player: PlayerId, source: ObjectId): ObjectId[] {
   return s.battlefield.filter(
     (id) => id !== source && obj(s, id).controller === player && !obj(s, id).tapped && isCreature(s, id),
   );
 }
 
-/** Choix par défaut de l'équipage (les plus faibles d'abord), pour l'interface et l'IA. */
+/** Default crew choice (weakest first), for the interface and the AI. */
 export function suggestedCrew(s: GameState, player: PlayerId, source: ObjectId, n: number): ObjectId[] {
   return crewOptions(s, player, source, n) ?? [];
 }
@@ -2640,20 +2654,20 @@ function chosenCrew(s: GameState, player: PlayerId, source: ObjectId, n: number,
   if (!picked?.length) return crewOptions(s, player, source, n) ?? [];
   const legal = crewCandidates(s, player, source);
   if (new Set(picked).size !== picked.length || picked.some((id) => !legal.includes(id)))
-    throw new RulesError("Créatures d'équipage invalides");
+    throw new RulesError(msg("Invalid crew creatures"));
   if (picked.reduce((t, id) => t + Math.max(0, crewPower(s, id)), 0) < n)
-    throw new RulesError(`Force totale insuffisante (${n} requise)`);
+    throw new RulesError(msg("Not enough total power ({n} required)", { n }));
   return picked;
 }
 
-/** Force comptée pour monter et équiper : endurance (Interface Ace), +2 pour les pilotes. */
+/** Power counted to saddle and crew: toughness (Interface Ace), +2 for pilots. */
 export function crewPower(s: GameState, id: ObjectId): number {
   return effectivePower(chars(s, id), "crew");
 }
 
 /**
- * Une source dont le nom a été choisi par un permanent dont la règle est `chosenNameAbilities: "forbid"` (Sorcerous
- * Spyglass, Petrified Hamlet) ; la règle est celle de la définition effective (une copie de Spyglass l'a aussi).
+ * A source whose name was chosen by a permanent whose rule is `chosenNameAbilities: "forbid"` (Sorcerous Spyglass,
+ * Petrified Hamlet); the rule is that of the effective definition (a copy of Spyglass has it too).
  */
 function spyglassed(s: GameState, source: ObjectId): boolean {
   const name = s.objects[source] && chars(s, source).name;
@@ -2662,7 +2676,7 @@ function spyglassed(s: GameState, source: ObjectId): boolean {
   );
 }
 
-/** Skyseer's Chariot : {N} de plus pour les capacités activées des sources du nom choisi (`chosenNameAbilities: N`). */
+/** Skyseer's Chariot: {N} more for activated abilities of sources with the chosen name (`chosenNameAbilities: N`). */
 function chosenNameTax(s: GameState, source: ObjectId): number {
   const name = s.objects[source] && chars(s, source).name;
   return s.battlefield.reduce((n, id) => {
@@ -2672,14 +2686,14 @@ function chosenNameTax(s: GameState, source: ObjectId): number {
   }, 0);
 }
 
-/** Jace's Machinations : capacité de loyauté d'un Jace activable à vitesse d'éphémère ce tour-ci. */
+/** Jace's Machinations: loyalty ability of a Jace activatable at instant speed this turn. */
 export function instantLoyalty(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): boolean {
   return (
     ab.cost.loyalty !== undefined && playerStatic(s, player, "jaceLoyaltyInstant") && chars(s, source).subtypes.includes("Jace")
   );
 }
 
-/** Cartes de votre cimetière exilables pour le coût (« exilez une autre carte de créature de votre cimetière ») : les moins chères d'abord. */
+/** Cards in your graveyard that can be exiled for the cost ("exile another creature card from your graveyard"): cheapest first. */
 function graveyardExileOptions(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
   const f = ab.cost.exileFromGraveyard;
   const o = s.objects[source];
@@ -2690,11 +2704,11 @@ function graveyardExileOptions(s: GameState, source: ObjectId, ab: ActivatedAbil
 }
 
 /**
- * Fabrication (702.167) : matériaux choisis automatiquement parmi les cartes du cimetière du joueur (d'abord), puis ses
- * jetons, puis ses autres permanents (les moins chers d'abord, sauf `preferHighManaValue`). « Un ou plusieurs » : toutes les
- * cartes correspondantes du cimetière, sinon un permanent. `null` si le coût ne peut pas être payé.
+ * Craft (702.167): materials chosen automatically among the cards in the player's graveyard (first), then their tokens,
+ * then their other permanents (cheapest first, unless `preferHighManaValue`). "One or more": all the matching cards in
+ * the graveyard, otherwise a permanent. `null` if the cost can't be paid.
  */
-/** Matériaux possibles d'une fabrication : cartes du cimetière puis jetons puis autres permanents correspondants. */
+/** Possible materials of a craft: graveyard cards, then tokens, then other matching permanents. */
 function craftPool(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef) {
   const c = ab.cost.craft;
   const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
@@ -2713,7 +2727,7 @@ function craftPool(s: GameState, player: PlayerId, source: ObjectId, ab: Activat
   return { matches, candidates };
 }
 
-/** Choix des matériaux d'une fabrication proposé au joueur : options, nombre, choix par défaut. */
+/** Choice of craft materials offered to the player: options, number, default choice. */
 export function craftSpec(
   s: GameState,
   player: PlayerId,
@@ -2729,7 +2743,7 @@ export function craftSpec(
   return { min: c.orMore ? 1 : n, max: c.orMore ? options.length : n, options, suggested };
 }
 
-/** Matériaux choisis par le joueur, vérifiés (702.167) ; sans choix, ceux par défaut. */
+/** Materials chosen by the player, checked (702.167); without a choice, the default ones. */
 export function chosenCraftMaterials(
   s: GameState,
   player: PlayerId,
@@ -2742,11 +2756,11 @@ export function chosenCraftMaterials(
   if (!picked?.length) return craftMaterials(s, player, source, ab);
   const spec = craftSpec(s, player, source, ab);
   if (!spec) return null;
-  const bad = () => new RulesError("Matériaux de fabrication invalides");
+  const bad = () => new RulesError(msg("Invalid craft materials"));
   if (new Set(picked).size !== picked.length || picked.some((id) => !spec.options.includes(id))) throw bad();
   if (picked.length < spec.min || picked.length > spec.max) throw bad();
   if (c.each) {
-    // Un matériau distinct par filtre : il faut une affectation complète.
+    // One distinct material per filter: a complete assignment is needed.
     const { matches } = craftPool(s, player, source, ab);
     const assign = (i: number, used: Set<ObjectId>): boolean => {
       const f = c.each?.[i];
@@ -2763,7 +2777,7 @@ export function craftMaterials(s: GameState, player: PlayerId, source: ObjectId,
   if (!c) return [];
   const { candidates } = craftPool(s, player, source, ab);
   if (c.each) {
-    // Un matériau distinct par filtre (affectation par retour arrière, les listes sont courtes).
+    // One distinct material per filter (assignment by backtracking, the lists are short).
     const pick = (i: number, used: ObjectId[]): ObjectId[] | null => {
       const f = c.each?.[i];
       if (!f) return used;
@@ -2794,8 +2808,8 @@ export function craftMaterials(s: GameState, player: PlayerId, source: ObjectId,
 }
 
 /**
- * Permanents dont on retire les marqueurs du coût, un identifiant par marqueur (ceux qui en portent le plus d'abord) ;
- * `null` s'il n'y en a pas assez.
+ * Permanents the cost's counters are removed from, one id per counter (those that carry the most first); `null` if there
+ * are not enough.
  */
 function counterSources(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] | null {
   const c = ab.cost.removeCounterFrom;
@@ -2813,25 +2827,25 @@ function counterSources(s: GameState, player: PlayerId, source: ObjectId, ab: Ac
   return out.length >= n ? out.slice(0, n) : null;
 }
 
-/** Zone d'où s'active une capacité : champ de bataille, cimetière ou main. */
+/** Zone an ability is activated from: battlefield, graveyard or hand. */
 export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" {
   return ab.fromGraveyard ? "graveyard" : ab.fromHand ? "hand" : "battlefield";
 }
 
 /**
- * Zone d'où cet objet active cette capacité : celle de la capacité, ou la zone de commandement pour un emblème (114.4 :
- * ses capacités y fonctionnent ; Karn, Living Legacy). Hors du champ de bataille, c'est le propriétaire qui l'active.
+ * Zone this object activates this ability from: the ability's own, or the command zone for an emblem (114.4: its
+ * abilities work there; Karn, Living Legacy). Outside the battlefield, the owner activates it.
  */
 export function activationZone(o: GameObject, ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" | "command" {
   return o.zone === "command" && o.isToken ? "command" : abilityZone(ab);
 }
 
-/** Marqueurs d'une sorte sur un objet (`any` : tous). */
+/** Counters of a kind on an object (`any`: all). */
 function countersFor(o: GameObject, kind: string): number {
   return kind === "any" ? Object.values(o.counters).reduce<number>((n, k) => n + (k ?? 0), 0) : (o.counters[kind] ?? 0);
 }
 
-/** N marqueurs de n'importe quelle sorte, choix par défaut : les −1/−1 d'abord, les +1/+1 en dernier (une sorte par marqueur). */
+/** N counters of any kind, default choice: −1/−1 first, +1/+1 last (one kind per counter). */
 function anyCountersDefault(o: GameObject, n: number): string[] {
   const kinds = Object.keys(o.counters).sort(
     (a, b) => Number(b === "-1/-1") - Number(a === "-1/-1") || Number(a === "+1/+1") - Number(b === "+1/+1"),
@@ -2841,7 +2855,7 @@ function anyCountersDefault(o: GameObject, n: number): string[] {
   return out;
 }
 
-/** Plus grande endurance parmi les créatures d'un joueur (0 s'il n'en a pas). */
+/** Greatest toughness among a player's creatures (0 if they have none). */
 export function greatestToughness(s: GameState, player: PlayerId): number {
   let best = 0;
   for (const id of s.battlefield) {
@@ -2851,8 +2865,8 @@ export function greatestToughness(s: GameState, player: PlayerId): number {
 }
 
 /**
- * Créature que `player` flétrit (ECL) quand le choix est fait pour lui : d'abord une qui survit aux N marqueurs −1/−1
- * (la plus résistante), sinon la moins précieuse (jeton, puis plus petite valeur de mana). Null s'il n'a pas de créature.
+ * Creature that `player` blights (ECL) when the choice is made for them: first one that survives the N −1/−1 counters
+ * (the toughest), otherwise the least valuable (token, then smallest mana value). Null if they have no creature.
  */
 export function blightTarget(s: GameState, player: PlayerId, n: number): ObjectId | null {
   const mine = s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id));
@@ -2863,7 +2877,7 @@ export function blightTarget(s: GameState, player: PlayerId, n: number): ObjectI
   return survivors[0] ?? [...mine].sort((a, b) => value(a) - value(b))[0] ?? null;
 }
 
-/** Les coûts non-mana de la capacité peuvent-ils être payés ? */
+/** Can the ability's non-mana costs be paid? */
 export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
   const o = s.objects[source];
   if (!o || o.zone !== activationZone(o, ab)) return false;
@@ -2873,13 +2887,13 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.oncePerTurn && activatedThisTurn(s, source, { index })) return false;
   const who = o.zone !== "battlefield" ? o.owner : o.controller;
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;
-  // Sorcerous Spyglass : les capacités (non de mana) des sources du nom choisi ne peuvent pas être activées.
+  // Sorcerous Spyglass: the (non-mana) abilities of sources with the chosen name can't be activated.
   if (spyglassed(s, source)) return false;
-  // Karlov Watchdog : « les permanents de vos adversaires ne peuvent pas être retournés face visible pendant votre tour ».
+  // Karlov Watchdog: "permanents your opponents control can't be turned face up during your turn".
   if (ab.effects.some((e) => e.op === "turnFaceUp") && faceUpLocked(s, who)) return false;
   if (ab.cost.crew !== undefined && crewOptions(s, who, source, ab.cost.crew) === null) return false;
   if (ab.cost.tap && (o.tapped || sickForActivation(s, source))) return false;
-  // 606.3 : une seule capacité de loyauté par planeswalker et par tour ; on ne peut pas retirer plus que sa loyauté.
+  // 606.3: only one loyalty ability per planeswalker each turn; no more than its loyalty can be removed.
   if (ab.cost.loyalty !== undefined) {
     if (activatedThisTurn(s, source, { loyalty: true })) return false;
     const lc = ab.cost.loyalty === "X" ? 0 : ab.cost.loyalty;
@@ -2889,7 +2903,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.removeCounterFrom && !counterSources(s, who, source, ab)) return false;
   if (ab.cost.blight && !blightTarget(s, o.controller, ab.cost.blight)) return false;
   if (ab.cost.collectEvidence && !evidenceCards(s, who, source, ab.cost.collectEvidence)) return false;
-  // « Engagez / exilez / sacrifiez [le permanent qui accorde la capacité] » (Fishing Pole, The Dominion Bracelet).
+  // "Tap / exile / sacrifice [the permanent that grants the ability]" (Fishing Pole, The Dominion Bracelet).
   if (ab.cost.grantor) {
     const g = grantorOf(s, source, index);
     if (!g || (ab.cost.grantor === "tap" && obj(s, g).tapped)) return false;
@@ -2913,7 +2927,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   return true;
 }
 
-/** Permanents que le joueur peut renvoyer en main pour un coût (`bounceOther`), le moins cher en premier. */
+/** Permanents the player can return to hand for a cost (`bounceOther`), cheapest first. */
 export function bounceCostOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): ObjectId[] {
   const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
   return s.battlefield
@@ -2921,7 +2935,7 @@ export function bounceCostOptions(s: GameState, player: PlayerId, source: Object
     .sort((a, b) => mv(a) - mv(b));
 }
 
-/** Ninjutsu (702.49) : attaquants non bloqués du joueur, une fois les bloqueurs déclarés. */
+/** Ninjutsu (702.49): the player's unblocked attackers, once blockers are declared. */
 export function unblockedAttackers(s: GameState, player: PlayerId): ObjectId[] {
   const afterBlocks = ["declareBlockers", "firstStrikeDamage", "combatDamage", "endCombat"].includes(s.turn.step);
   if (!s.combat || !afterBlocks || s.turn.active !== player) return [];
@@ -2929,7 +2943,7 @@ export function unblockedAttackers(s: GameState, player: PlayerId): ObjectId[] {
   return s.combat.attackers.filter((a) => !a.blocked && s.objects[a.id]?.controller === player).map((a) => a.id);
 }
 
-/** Cartes de la main qui peuvent être défaussées pour un coût d'activation (pas la source elle-même). */
+/** Cards in hand that can be discarded for an activation cost (not the source itself). */
 export function discardCostOptions(s: GameState, player: PlayerId, source: ObjectId, filter?: ObjectFilter): ObjectId[] {
   return (s.players[player]?.hand ?? []).filter(
     (id) => id !== source && (!filter || matchesCard(s, player, id, { ...filter, controller: undefined }, source)),
@@ -2937,15 +2951,15 @@ export function discardCostOptions(s: GameState, player: PlayerId, source: Objec
 }
 
 // ---------------------------------------------------------------------------
-// Objets payés en coût, choisis par le joueur (PLAN-C, lots C7 et C8)
+// Objects paid as costs, chosen by the player (PLAN-C, lots C7 and C8)
 // ---------------------------------------------------------------------------
 
 const manaValueOf = (s: GameState, id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
 
 /**
- * Coûts d'une capacité payés avec des objets à choisir, avec la suggestion du moteur (son choix quand le joueur ne choisit
- * pas). `x` : le X de l'activation ; absent (`legalActions`), les coûts « X » valent `countIsX`. Calculé au moment du
- * paiement de chaque coût : la suggestion est celle qu'appliquait le moteur à cet instant.
+ * Costs of an ability paid with objects to choose, with the engine's suggestion (its choice when the player doesn't
+ * choose). `x`: the X of the activation; absent (`legalActions`), the "X" costs are `countIsX`. Computed when each cost
+ * is paid: the suggestion is the one the engine applied at that moment.
  */
 export function activationPicks(
   s: GameState,
@@ -2963,23 +2977,28 @@ export function activationPicks(
     if (best)
       out.push({
         slot: "blight",
-        label: `Flétrir ${c.blight} : la créature qui reçoit ${c.blight > 1 ? `${c.blight} marqueurs` : "le marqueur"} −1/−1`,
+        label:
+          c.blight > 1
+            ? msg("Blight {n}: the creature that gets {n} −1/−1 counters", { n: c.blight })
+            : msg("Blight {n}: the creature that gets the −1/−1 counter", { n: c.blight }),
         count: 1,
         options: [best, ...options.filter((id) => id !== best)],
         suggested: [best],
       });
   }
-  // « Retirez un marqueur de cette créature » : la sorte, quand la source en porte plusieurs.
+  // "Remove a counter from this creature": the kind, when the source carries several.
   const self = s.objects[source];
   if (c.removeCounters?.kind === "any" && self) {
     const kinds = Object.keys(self.counters).filter((k) => (self.counters[k] ?? 0) > 0);
     if (kinds.length > 1)
       out.push({
         slot: "counterKind",
-        label: `Retirez ${c.removeCounters.n} marqueur(s) de cette créature`,
+        label: msg("Remove {n} counter(s) from this creature", { n: c.removeCounters.n }),
         count: c.removeCounters.n,
         options: kinds,
-        labels: Object.fromEntries(kinds.map((k) => [k, `Marqueur ${counterLabel(k)} (${self.counters[k]})`])),
+        labels: Object.fromEntries(
+          kinds.map((k) => [k, msg("{counter} counter ({n})", { counter: counterLabel(k), n: self.counters[k] ?? 0 })]),
+        ),
         suggested: anyCountersDefault(self, c.removeCounters.n),
         repeat: Object.fromEntries(kinds.map((k) => [k, self.counters[k] ?? 0])),
       });
@@ -2993,7 +3012,7 @@ export function activationPicks(
     if (suggested)
       out.push({
         slot: "counterFrom",
-        label: `Retirez ${r.n ?? 1} marqueur(s) ${r.kind}`,
+        label: msg("Remove {n} {kind} counter(s)", { n: r.n ?? 1, kind: r.kind }),
         count: r.n ?? 1,
         options,
         suggested,
@@ -3006,7 +3025,7 @@ export function activationPicks(
     if (options.length >= n)
       out.push({
         slot: "graveyardExile",
-        label: `Exilez ${n} carte(s) de votre cimetière`,
+        label: msg("Exile {n} card(s) from your graveyard", { n }),
         count: n,
         options,
         suggested: options.slice(0, n),
@@ -3017,7 +3036,7 @@ export function activationPicks(
     const options = (s.players[player]?.graveyard ?? []).filter((id) => id !== source && matchesCard(s, player, id, f, source));
     out.push({
       slot: "graveyardExileX",
-      label: "Exilez X cartes de votre cimetière",
+      label: msg("Exile X cards from your graveyard"),
       count: x ?? 0,
       countIsX: x === undefined,
       options,
@@ -3026,13 +3045,13 @@ export function activationPicks(
   }
   if (c.sacrificeX) {
     const f = c.sacrificeX;
-    // Les autres d'abord, la source en dernier (Radiant Lotus).
+    // The others first, the source last (Radiant Lotus).
     const options = s.battlefield
       .filter((id) => mine(id) && matchesObjectFilter(s, player, id, f, source))
       .sort((a, b) => (a === source ? 1 : 0) - (b === source ? 1 : 0));
     out.push({
       slot: "sacrificeX",
-      label: "Sacrifiez X permanents",
+      label: msg("Sacrifice X permanents"),
       count: x ?? 0,
       countIsX: x === undefined,
       options,
@@ -3042,14 +3061,14 @@ export function activationPicks(
   if (c.exileOther) {
     const options = bounceCostOptions(s, player, source, c.exileOther);
     if (options.length)
-      out.push({ slot: "exileOther", label: "Exilez un permanent", count: 1, options, suggested: options.slice(0, 1) });
+      out.push({ slot: "exileOther", label: msg("Exile a permanent"), count: 1, options, suggested: options.slice(0, 1) });
   }
   if (c.returnUnblockedAttacker) {
     const options = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power);
     if (options.length)
       out.push({
         slot: "returnAttacker",
-        label: "Renvoyez un attaquant non bloqué dans la main de son propriétaire",
+        label: msg("Return an unblocked attacker to its owner's hand"),
         count: 1,
         options,
         suggested: options.slice(0, 1),
@@ -3062,7 +3081,7 @@ export function activationPicks(
     if (suggested)
       out.push({
         slot: "evidence",
-        label: `Réunissez des preuves ${c.collectEvidence} (valeur de mana totale ${c.collectEvidence} ou plus)`,
+        label: msg("Collect evidence {n} (total mana value {n} or greater)", { n: c.collectEvidence }),
         count: suggested.length,
         options,
         suggested,
@@ -3073,8 +3092,8 @@ export function activationPicks(
 }
 
 /**
- * Coûts d'un sort payés avec des objets à choisir : preuves (kicker, coût alternatif), exil de cartes du cimetière
- * (kicker), flétrir X. `x` absent (`legalActions`) : la suggestion de flétrir X suppose X = 1.
+ * Costs of a spell paid with objects to choose: evidence (kicker, alternative cost), exiling cards from the graveyard
+ * (kicker), blight X. `x` absent (`legalActions`): the blight X suggestion assumes X = 1.
  */
 export function spellPicks(
   s: GameState,
@@ -3083,12 +3102,12 @@ export function spellPicks(
   d: CardDef,
   x?: number,
   flashback = false,
-  /** Marqueurs à retirer parmi vos créatures pour la lancer d'ici (`CastTerms.removeCounters`). */
+  /** Counters to remove from among your creatures to cast it from here (`CastTerms.removeCounters`). */
   removeCounters?: number,
 ): CostPick[] {
   const out: CostPick[] = additionalPicks(s, player, card, d, flashback);
   if (removeCounters) out.push(countersAmongPick(s, player, removeCounters));
-  // Contempler : un permanent ou une carte de la main, ou rien (« vous pouvez », ou payer le supplément).
+  // Behold: a permanent or a card from the hand, or nothing ("you may", or pay the extra cost).
   const behold = d.additionalCost?.behold;
   if (behold) {
     const options = beholdOptions(s, player, card, behold.filter, behold.exiled);
@@ -3098,11 +3117,11 @@ export function spellPicks(
         slot: "behold",
         label: behold.required
           ? behold.exiled
-            ? "Choisissez un permanent que vous contrôlez ou une carte exilée"
-            : "Choisissez un permanent que vous contrôlez ou révélez une carte de votre main"
+            ? msg("Choose a permanent you control or an exiled card")
+            : msg("Choose a permanent you control or reveal a card from your hand")
           : behold.orPay
-            ? "Contemplez (ou ne choisissez rien et payez le supplément)"
-            : "Vous pouvez contempler (un permanent ou une carte de votre main, révélée)",
+            ? msg("Behold (or choose nothing and pay the extra cost)")
+            : msg("You may behold (a permanent or a card from your hand, revealed)"),
         count: 1,
         options,
         suggested: suggested ? [suggested] : [],
@@ -3115,7 +3134,7 @@ export function spellPicks(
     if (!suggested) return null;
     return {
       slot: "evidence",
-      label: `Réunissez des preuves ${n} (valeur de mana totale ${n} ou plus)`,
+      label: msg("Collect evidence {n} (total mana value {n} or greater)", { n }),
       count: suggested.length,
       options: graveyard,
       suggested,
@@ -3138,7 +3157,7 @@ export function spellPicks(
     if (suggested)
       out.push({
         slot: "graveyardExile",
-        label: `Exilez ${n} carte(s) de votre cimetière`,
+        label: msg("Exile {n} card(s) from your graveyard", { n }),
         count: n,
         options: graveyard,
         suggested,
@@ -3160,7 +3179,7 @@ export function spellPicks(
     if (best)
       out.push({
         slot: "blight",
-        label: "Flétrir X : la créature qui reçoit les X marqueurs −1/−1",
+        label: msg("Blight X: the creature that gets the X −1/−1 counters"),
         count: 1,
         options: [best, ...options.filter((id) => id !== best)],
         suggested: [best],
@@ -3170,8 +3189,8 @@ export function spellPicks(
 }
 
 /**
- * Objets qui peuvent aider à payer le mana (convocation, improvisation, maîtrise de l'eau, cave) : au choix du joueur,
- * sinon du paiement automatique (`atMost`, suggestion vide).
+ * Objects that can help pay the mana (convoke, improvise, waterbend, delve): chosen by the player, otherwise by the
+ * automatic payment (`atMost`, empty suggestion).
  */
 function manaHelperPicks(
   s: GameState,
@@ -3188,26 +3207,26 @@ function manaHelperPicks(
   if (kinds.convoke)
     add(
       "convoke",
-      "Convocation : les créatures à engager (chacune paie {1} ou un mana de sa couleur)",
+      msg("Convoke: the creatures to tap (each pays {1} or one mana of its color)"),
       s.battlefield.filter((id) => untapped(id) && isCreature(s, id) && manaAbilitiesOf(s, id).length === 0),
     );
   if (kinds.improvise)
     add(
       "improvise",
-      "Improvisation : les artefacts à engager (chacun paie {1})",
+      msg("Improvise: the artifacts to tap (each pays {1})"),
       s.battlefield.filter((id) => untapped(id) && chars(s, id).types.includes("Artifact")),
     );
   if (kinds.waterbend)
     add(
       "waterbend",
-      "Maîtrise de l'eau : les artefacts et créatures à engager (chacun paie {1})",
+      msg("Waterbend: the artifacts and creatures to tap (each pays {1})"),
       s.battlefield.filter((id) => untapped(id) && (chars(s, id).types.includes("Artifact") || isCreature(s, id))),
     );
   if (kinds.sacrificeToPay) {
     const f = kinds.sacrificeToPay;
     add(
       "sacrificeToPay",
-      "Coût additionnel : les permanents à sacrifier (chacun réduit le coût de {1})",
+      msg("Additional cost: the permanents to sacrifice (each reduces the cost by {1})"),
       s.battlefield.filter(
         (id) => id !== except && s.objects[id]?.controller === player && matchesObjectFilter(s, player, id, f),
       ),
@@ -3216,13 +3235,13 @@ function manaHelperPicks(
   if (kinds.delve)
     add(
       "delve",
-      "Cave : les cartes de votre cimetière à exiler (chacune paie {1})",
+      msg("Delve: the cards in your graveyard to exile (each pays {1})"),
       (s.players[player]?.graveyard ?? []).filter((id) => id !== except),
     );
   return out;
 }
 
-/** Les choix de convocation, d'improvisation, de maîtrise de l'eau et de cave d'un sort, vérifiés (sinon `RulesError`). */
+/** A spell's convoke, improvise, waterbend and delve choices, checked (otherwise `RulesError`). */
 function validHelperPicks(
   s: GameState,
   player: PlayerId,
@@ -3236,18 +3255,18 @@ function validHelperPicks(
   }
   for (const k of ["convoke", "improvise", "waterbend", "delve", "sacrificeToPay"] as const)
     if (choices.picks?.[k] && !spellPicks(s, player, card, d).some((p) => p.slot === k))
-      throw new RulesError("Ce sort ne se paie pas ainsi");
+      throw new RulesError(msg("This spell can't be paid this way"));
   return choices.picks;
 }
 
-/** Contrainte de paiement : les objets choisis par le joueur pour la convocation, l'improvisation, la cave… */
+/** Payment constraint: the objects chosen by the player for convoke, improvise, delve… */
 function onlyChosen(picks: CastChoices["picks"]): ManaPurpose["only"] | undefined {
   const only: NonNullable<ManaPurpose["only"]> = {};
   for (const k of ["convoke", "improvise", "waterbend", "delve", "sacrificeToPay"] as const) if (picks?.[k]) only[k] = picks[k];
   return Object.keys(only).length ? only : undefined;
 }
 
-/** Les objets d'un emplacement de coût d'un sort, choisis au moment de payer ce coût. */
+/** The objects of a spell's cost slot, chosen when that cost is paid. */
 function spellPickNow(
   s: GameState,
   player: PlayerId,
@@ -3263,30 +3282,33 @@ function spellPickNow(
   return resolvePick(s, pick, choices.picks?.[slot]);
 }
 
-/** Objets choisis pour un coût : ceux du joueur s'ils sont valides (sinon `RulesError`), à défaut la suggestion. */
+/** Objects chosen for a cost: the player's if they are valid (otherwise `RulesError`), failing that the suggestion. */
 export function resolvePick(s: GameState, pick: CostPick, chosen: ObjectId[] | undefined): ObjectId[] {
   if (chosen === undefined) return pick.suggested;
-  if (chosen.some((id) => !pick.options.includes(id))) throw new RulesError(`Choix invalide : ${pick.label}`);
+  if (chosen.some((id) => !pick.options.includes(id)))
+    throw new RulesError(msg("Invalid choice: {label}", { label: pick.label }));
   if (pick.atMost) {
     if (new Set(chosen).size !== chosen.length || chosen.length > pick.count)
-      throw new RulesError(`Choix invalide : ${pick.label}`);
+      throw new RulesError(msg("Invalid choice: {label}", { label: pick.label }));
     return chosen;
   }
   if (pick.minTotal) {
     const total = chosen.reduce((n, id) => n + (pick.minTotal?.values[id] ?? 0), 0);
     if (new Set(chosen).size !== chosen.length || total < pick.minTotal.n)
-      throw new RulesError(`Valeur de mana totale insuffisante : ${pick.label}`);
+      throw new RulesError(msg("Not enough total mana value: {label}", { label: pick.label }));
     return chosen;
   }
-  if (chosen.length !== pick.count) throw new RulesError(`${pick.count} objet(s) à choisir : ${pick.label}`);
+  if (chosen.length !== pick.count)
+    throw new RulesError(msg("{n} object(s) to choose: {label}", { n: pick.count, label: pick.label }));
   const times = new Map<ObjectId, number>();
   for (const id of chosen) times.set(id, (times.get(id) ?? 0) + 1);
-  for (const [id, n] of times) if (n > (pick.repeat?.[id] ?? 1)) throw new RulesError(`Choix invalide : ${pick.label}`);
+  for (const [id, n] of times)
+    if (n > (pick.repeat?.[id] ?? 1)) throw new RulesError(msg("Invalid choice: {label}", { label: pick.label }));
   void s;
   return chosen;
 }
 
-/** Les objets d'un emplacement de coût d'une capacité, choisis au moment de payer ce coût. */
+/** The objects of an ability's cost slot, chosen when that cost is paid. */
 function pickNow(
   s: GameState,
   player: PlayerId,
@@ -3298,7 +3320,7 @@ function pickNow(
 ): ObjectId[] {
   const pick = activationPicks(s, player, source, ab, x).find((p) => p.slot === slot);
   if (!pick) {
-    if (choices.picks?.[slot]?.length) throw new RulesError("Ce coût ne demande pas ce choix");
+    if (choices.picks?.[slot]?.length) throw new RulesError(msg("This cost doesn't ask for this choice"));
     return [];
   }
   return resolvePick(s, pick, choices.picks?.[slot]);
@@ -3307,31 +3329,31 @@ function pickNow(
 export function activateAbility(s: GameState, player: PlayerId, source: ObjectId, index: number, choices: CastChoices): void {
   const o = s.objects[source];
   const ab = activatedAbility(s, source, index);
-  if (!ab || !o) throw new RulesError("Capacité inconnue");
+  if (!ab || !o) throw new RulesError(msg("Unknown ability"));
   const zone = activationZone(o, ab);
   if (o.zone !== zone || (zone === "battlefield" ? o.controller : o.owner) !== player) {
-    throw new RulesError("Vous ne contrôlez pas ce permanent");
+    throw new RulesError(msg("You don't control this permanent"));
   }
   if (
     ab.sorcerySpeed &&
     !instantLoyalty(s, player, source, ab) &&
     !(s.turn.active === player && (s.turn.step === "main1" || s.turn.step === "main2") && s.stack.length === 0)
   ) {
-    throw new RulesError("Cette capacité s'active seulement en rituel");
+    throw new RulesError(msg("This ability can only be activated at sorcery speed"));
   }
-  if (!canPayNonManaCost(s, source, ab, index)) throw new RulesError("Impossible de payer le coût");
-  // 702.61b : le second partagé n'empêche pas les actions spéciales (retourner une carte face visible).
+  if (!canPayNonManaCost(s, source, ab, index)) throw new RulesError(msg("Can't pay the cost"));
+  // 702.61b: split second doesn't prevent special actions (turning a card face up).
   if (!ab.specialAction && splitSecondOnStack(s))
-    throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
+    throw new RulesError(msg("No spells or abilities now (split second or combat)"));
   let sacrificed: ObjectId[] = [];
   if (ab.cost.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
     sacrificed = choices.sacrifice ?? options.slice(0, ab.cost.sacrifice.count);
     if (sacrificed.length !== ab.cost.sacrifice.count || sacrificed.some((id) => !options.includes(id))) {
-      throw new RulesError("Sacrifice invalide");
+      throw new RulesError(msg("Invalid sacrifice"));
     }
     if (ab.cost.sacrifice.distinct === "name" && distinctNames(s, sacrificed) !== sacrificed.length)
-      throw new RulesError("Les permanents sacrifiés doivent avoir des noms différents");
+      throw new RulesError(msg("The sacrificed permanents must have different names"));
   }
   const x =
     ab.cost.mana?.x ||
@@ -3344,40 +3366,40 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       ? Math.max(0, Math.floor(choices.x ?? 0))
       : 0;
   const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source, x });
-  // Krumar Initiate : « payez X points de vie ».
-  if (ab.cost.payLifeX && x > 0 && payableLife(s, player) < x) throw new RulesError("Pas assez de points de vie");
-  if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
-  if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(`X doit valoir au moins ${ab.cost.minX}`);
-  if (ab.cost.loyalty === "X" && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
-  if (ab.cost.removeCountersX && x > (o.counters[ab.cost.removeCountersX] ?? 0)) throw new RulesError("Pas assez de marqueurs");
-  // « Engagez X artefacts dégagés » : choisis maintenant, ils ne paient pas le mana de la capacité.
+  // Krumar Initiate: "pay X life".
+  if (ab.cost.payLifeX && x > 0 && payableLife(s, player) < x) throw new RulesError(msg("Not enough life"));
+  if (ab.cost.sacrificeX && x < 1) throw new RulesError(msg("Sacrifice at least one permanent"));
+  if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(msg("X must be at least {n}", { n: ab.cost.minX }));
+  if (ab.cost.loyalty === "X" && x > (o.counters.loyalty ?? 0)) throw new RulesError(msg("Not enough loyalty counters"));
+  if (ab.cost.removeCountersX && x > (o.counters[ab.cost.removeCountersX] ?? 0)) throw new RulesError(msg("Not enough counters"));
+  // "Tap X untapped artifacts": chosen now, they don't pay the ability's mana.
   const tapXOptions = ab.cost.tapX ? tapXCandidates(s, player, source, ab.cost.tapX) : [];
   const tapXChosen = ab.cost.tapX ? (choices.tap?.length === x ? choices.tap : tapXOptions.slice(0, x)) : [];
   if (tapXChosen.length < (ab.cost.tapX ? x : 0) || tapXChosen.some((id) => !tapXOptions.includes(id)))
-    throw new RulesError("Pas assez de permanents à engager");
+    throw new RulesError(msg("Not enough permanents to tap"));
   const c = chars(s, source);
   const grantor = grantorOf(s, source, index);
-  // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
+  // Special action (116.2, unlocking a door): the costs are paid, the effects apply without the stack.
   if (ab.specialAction) {
     if (ab.cost.mana) {
-      // Doc Aurlock (comploter), Inquisitive Glimmer (déverrouiller) : moins cher.
+      // Doc Aurlock (plot), Inquisitive Glimmer (unlock): cheaper.
       try {
-        // Le X d'un coût de déguisement (Aurelia's Vindicator) ; la réduction propre à la capacité (Fugitive Codebreaker).
+        // The X of a disguise cost (Aurelia's Vindicator); the ability's own reduction (Fugitive Codebreaker).
         payMana(s, player, abilityManaCost(s, player, source, ab, undefined, x), undefined, abilityPurpose(source, ab));
       } catch (e) {
-        rethrowAsRules(e, "Mana insuffisant");
+        rethrowAsRules(e, msg("Not enough mana"));
       }
     }
     for (const e of ab.effects) {
       if (e.op === "unlockDoor") unlockDoor(s, source, e.door);
       if (e.op === "turnFaceUp") {
-        // « jusqu'à X cibles » au retournement : le X payé (`amount.sourceX`).
+        // "up to X targets" when turned face up: the X paid (`amount.sourceX`).
         if (ab.cost.mana?.x) o.x = x;
         turnFaceUp(s, source);
       }
       if (e.op === "plot") plotCard(s, source);
       if (e.op === "foretell") foretellCard(s, source);
-      // Suspension (702.62a) : une action spéciale depuis la main.
+      // Suspend (702.62a): a special action from the hand.
       if (e.op === "suspend") suspendCard(s, source, e.time);
     }
     s.priority.passes = 0;
@@ -3395,8 +3417,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     x,
     kicked: false,
     sourceSnapshot: { keywords: c.keywords, power: c.power, controller: player },
-    // Capacité accordée (pas dans la définition imprimée) : ses effets voyagent avec elle, et le permanent qui l'accorde
-    // (`ref.grantor`).
+    // Granted ability (not in the printed definition): its effects travel with it, and so does the permanent that grants
+    // it (`ref.grantor`).
     inline:
       s.defs[o.defId]?.abilities[index] === ab
         ? undefined
@@ -3408,15 +3430,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
           },
   };
   s.stack.push(item);
-  // Coûts : mana (sans engager la source si elle doit s'engager pour le coût), puis {T}, puis sacrifice.
-  // Les permanents choisis pour d'autres coûts (sacrifier, engager, équipage) ne servent pas à payer le mana.
-  // Permanents à engager : choisis par le joueur (station), sinon automatiquement.
+  // Costs: mana (without tapping the source if it must tap for the cost), then {T}, then sacrifice.
+  // The permanents chosen for other costs (sacrifice, tap, crew) are not used to pay the mana.
+  // Permanents to tap: chosen by the player (station), otherwise automatically.
   const tapOptions = ab.cost.tapOthers ? tapOthersOptions(s, player, source, ab) : [];
   const tapOthers = ab.cost.tapOthers
     ? choices.tap?.length
       ? choices.tap
       : [...tapOptions]
-          // La source (« engagez N créatures », elle comprise) en dernier recours.
+          // The source ("tap N creatures", itself included) as a last resort.
           .sort((a, b) => Number(a === source) - Number(b === source) || chars(s, b).power - chars(s, a).power)
           .slice(0, ab.cost.tapOthers.count)
     : [];
@@ -3426,14 +3448,14 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       new Set(tapOthers).size !== tapOthers.length ||
       tapOthers.some((id) => !tapOptions.includes(id)))
   ) {
-    throw new RulesError("Permanents à engager invalides");
+    throw new RulesError(msg("Invalid permanents to tap"));
   }
-  // Équipage et monture (702.122, 702.171) : les créatures choisies par le joueur (force totale suffisante), sinon le
-  // choix par défaut (les plus faibles d'abord).
+  // Crew and saddle (702.122, 702.171): the creatures chosen by the player (enough total power), otherwise the default
+  // choice (weakest first).
   const crew = ab.cost.crew !== undefined ? chosenCrew(s, player, source, ab.cost.crew, choices.tap) : [];
-  // Fabrication : les matériaux choisis par le joueur, sinon ceux par défaut (cartes du cimetière d'abord).
+  // Craft: the materials chosen by the player, otherwise the default ones (graveyard cards first).
   const materials = ab.cost.craft ? chosenCraftMaterials(s, player, source, ab, choices.materials) : [];
-  if (!materials) throw new RulesError("Matériaux de fabrication insuffisants");
+  if (!materials) throw new RulesError(msg("Not enough craft materials"));
   if (ab.cost.mana) {
     const reserved = new Set([
       ...tapOthers,
@@ -3444,10 +3466,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       ...(ab.cost.grantor && grantor ? [grantor] : []),
     ]);
     try {
-      // Warrior's Blades, Dragonfire Blade : le coût dépend de la créature ciblée.
+      // Warrior's Blades, Dragonfire Blade: the cost depends on the targeted creature.
       const cost = abilityManaCost(s, player, source, ab, targets.t?.[0], x);
       const purpose0 = abilityPurpose(source, ab);
-      // Maîtrise de l'eau : les objets choisis par le joueur (vérifiés), sinon le paiement automatique.
+      // Waterbend: the objects chosen by the player (checked), otherwise the automatic payment.
       const only =
         ab.cost.waterbend && choices.picks?.waterbend
           ? { waterbend: pickNow(s, player, source, ab, x, "waterbend", choices) }
@@ -3456,7 +3478,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       payMana(s, player, cost, reserved, sacrificed.length ? { ...purpose, sacrificedForCost: new Set(sacrificed) } : purpose);
       if (ab.cost.waterbend) bent(s, player, "water");
     } catch (e) {
-      rethrowAsRules(e, "Mana insuffisant");
+      rethrowAsRules(e, msg("Not enough mana"));
     }
   }
   if (ab.cost.tap) tapObject(s, o);
@@ -3467,26 +3489,26 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (cost !== 0) changeCounters(s, o, "loyalty", cost, true);
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
   }
-  // Une entrée par activation : Wonder Man permet une activation de plus des montées en puissance.
+  // One entry per activation: Wonder Man allows one more activation of power-ups.
   if (ab.once) o.used = [...(o.used ?? []), index];
   if (ab.exhaust) {
     const pl = s.players[player];
     const stats = pl?.turnStats;
     if (stats) stats.exhaustActivated = (stats.exhaustActivated ?? 0) + 1;
     rulesEvent(s, { e: "exhaust", player, source });
-    // Pit Automaton : la prochaine capacité d'exhaust de ce tour est copiée (nouvelles cibles au choix).
+    // Pit Automaton: the next exhaust ability this turn is copied (new targets may be chosen).
     if (consumePlayerEffect(s, player, "copyNextExhaust")) copyStackItem(s, item, player);
   }
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n, true);
   for (const id of crew) tapObject(s, obj(s, id));
   if (crew.length) {
-    // « Les créatures qui l'ont pilotée / montée ce tour-ci » (702.122, 702.171) : toutes celles des activations du tour.
+    // "The creatures that crewed / saddled it this turn" (702.122, 702.171): all those of the turn's activations.
     const before = o.crewedBy?.turn === s.turn.number ? o.crewedBy.ids : [];
     o.crewedBy = { turn: s.turn.number, ids: [...before, ...crew.filter((id) => !before.includes(id))] };
     rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
   }
   if (ab.cost.self === "exert") o.exerted = true;
-  // « Retirez un marqueur de cette créature » : les sortes choisies (`counterKind`), sinon le choix par défaut.
+  // "Remove a counter from this creature": the chosen kinds (`counterKind`), otherwise the default choice.
   if (ab.cost.removeCounters?.kind === "any") {
     const n = ab.cost.removeCounters.n;
     const kinds = pickNow(s, player, source, ab, x, "counterKind", choices);
@@ -3497,7 +3519,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.payLife) payLife_(s, player, lifeCost(s, player, source, ab.cost.payLife));
   if (ab.cost.payLifeX && x > 0) payLife_(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));
-  // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
+  // The sacrificed permanents remain readable (last known information: "its toughness").
   item.paid = {
     sacrificed: sacrificed.length ? [...sacrificed] : undefined,
     tapped: tapOthers.length ? [...tapOthers] : undefined,
@@ -3509,85 +3531,85 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     s.lki[grantor] ??= snapshot(s, grantor);
     moveObject(s, grantor, "exile");
   }
-  // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).
+  // The source leaves its zone to pay the cost: its last known information is kept ("this card", wherever it is).
   if (ab.cost.self === "exile" || ab.cost.self === "discard" || ab.cost.self === "bounce") s.lki[source] ??= snapshot(s, source);
-  // Coûts payés avec des objets choisis par le joueur (sinon la suggestion du moteur) : `activationPicks`.
+  // Costs paid with objects chosen by the player (otherwise the engine's suggestion): `activationPicks`.
   const pick = (slot: CostSlot) => pickNow(s, player, source, ab, x, slot, choices);
   if (ab.cost.exileFromGraveyard) for (const id of pick("graveyardExile")) moveObject(s, id, "exile");
-  // Flétrir N comme coût (ECL) : par défaut, `blightTarget`.
+  // Blight N as a cost (ECL): by default, `blightTarget`.
   const blighted = ab.cost.blight ? pick("blight")[0] : undefined;
   if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
-  // « Retirez un marqueur d'une créature que vous contrôlez » : par défaut, celle qui en porte le plus.
+  // "Remove a counter from a creature you control": by default, the one that carries the most.
   if (ab.cost.removeCounterFrom)
     for (const id of pick("counterFrom")) changeCounters(s, obj(s, id), ab.cost.removeCounterFrom.kind, -1, true);
-  // Réunir des preuves N comme coût (Forensic Researcher, Polygraph Orb).
+  // Collect evidence N as a cost (Forensic Researcher, Polygraph Orb).
   if (ab.cost.collectEvidence) {
     const exiled = collectEvidence(s, player, pick("evidence"));
     if (ab.cost.linkEvidence) o.linked = [...(o.linked ?? []), ...exiled];
   }
-  // « Engagez X artefacts dégagés » : X choisi à l'activation (permanents choisis avant le paiement du mana).
+  // "Tap X untapped artifacts": X chosen on activation (permanents chosen before the mana payment).
   for (const id of tapXChosen) tapObject(s, obj(s, id));
-  // Winter, Cursed Rider : « exilez X cartes d'artefact de votre cimetière ».
+  // Winter, Cursed Rider: "exile X artifact cards from your graveyard".
   if (ab.cost.exileFromGraveyardX) {
     const chosen = pick("graveyardExileX");
-    if (chosen.length < x) throw new RulesError("Pas assez de cartes à exiler");
+    if (chosen.length < x) throw new RulesError(msg("Not enough cards to exile"));
     for (const id of chosen) moveObject(s, id, "exile");
   }
-  // Radiant Lotus : « sacrifiez un ou plusieurs artefacts » (par défaut, les autres d'abord, la source en dernier).
+  // Radiant Lotus: "sacrifice one or more artifacts" (by default, the others first, the source last).
   if (ab.cost.sacrificeX) {
     const chosen = pick("sacrificeX");
-    if (chosen.length < x) throw new RulesError("Pas assez de permanents à sacrifier");
+    if (chosen.length < x) throw new RulesError(msg("Not enough permanents to sacrifice"));
     item.paid = { ...item.paid, sacrificed: chosen };
     for (const id of chosen) sacrificePermanent(s, id);
   }
-  // Fourrager (701.61) : trois cartes du cimetière ou une Nourriture (choix automatique).
-  if (ab.cost.forage && !forage(s, player)) throw new RulesError("Impossible de fourrager");
-  // Ninjutsu : un attaquant non bloqué retourne dans la main de son propriétaire (par défaut, le plus faible).
+  // Forage (701.61): three cards from the graveyard or a Food (automatic choice).
+  if (ab.cost.forage && !forage(s, player)) throw new RulesError(msg("Can't forage"));
+  // Ninjutsu: an unblocked attacker returns to its owner's hand (by default, the weakest).
   if (ab.cost.returnUnblockedAttacker) {
     const weakest = pick("returnAttacker")[0];
-    if (!weakest) throw new RulesError("Aucun attaquant non bloqué");
-    // 702.49c : le ninja attaquera ce qu'attaquait la créature renvoyée (`ref.cost("defender")`).
+    if (!weakest) throw new RulesError(msg("No unblocked attacker"));
+    // 702.49c: the ninja will attack what the returned creature was attacking (`ref.cost("defender")`).
     const defender = s.combat?.attackers.find((a) => a.id === weakest)?.defender;
     if (defender) item.paid = { ...item.paid, defender };
     removeFromCombat(s, weakest);
     moveObject(s, weakest, "hand");
   }
-  // Urban Retreat : « renvoyez une créature engagée que vous contrôlez dans la main de son propriétaire ».
+  // Urban Retreat: "return a tapped creature you control to its owner's hand".
   if (ab.cost.bounceOther) {
     const options = bounceCostOptions(s, player, source, ab.cost.bounceOther);
     const back = choices.bounce?.length ? choices.bounce[0] : options[0];
     if (!back || !options.includes(back) || (choices.bounce?.length ?? 1) !== 1)
-      throw new RulesError("Aucun permanent à renvoyer");
+      throw new RulesError(msg("No permanent to return"));
     removeFromCombat(s, back);
     moveObject(s, back, "hand");
   }
-  // The Soul Stone : « exilez une créature que vous contrôlez ».
+  // The Soul Stone: "exile a creature you control".
   if (ab.cost.exileOther) {
     const gone = pick("exileOther")[0];
-    if (!gone) throw new RulesError("Aucun permanent à exiler");
+    if (!gone) throw new RulesError(msg("No permanent to exile"));
     removeFromCombat(s, gone);
     moveObject(s, gone, "exile");
   }
-  // « Défaussez une carte » : choisie par le joueur (sinon la première de la main).
+  // "Discard a card": chosen by the player (otherwise the first one in the hand).
   if (ab.cost.discard) {
     const options = discardCostOptions(s, player, source, ab.cost.discardFilter);
     const chosen = choices.discard?.length ? choices.discard : options.slice(0, ab.cost.discard);
     if (chosen.length !== ab.cost.discard || chosen.some((id) => !options.includes(id)))
-      throw new RulesError("Défausse invalide");
+      throw new RulesError(msg("Invalid discard"));
     emit({ type: "discard", player, defIds: chosen.map((id) => obj(s, id).defId) });
     for (const id of chosen) announceDiscard(s, player, moveDiscarded(s, player, id));
     announceDiscardBatch(s, player, chosen.length);
   }
-  // Gix, Yawgmoth Praetor : « défaussez X cartes » (les cartes choisies, sinon les premières proposées).
+  // Gix, Yawgmoth Praetor: "discard X cards" (the chosen cards, otherwise the first ones offered).
   if (ab.cost.discardX && x > 0) {
     const options = discardCostOptions(s, player, source, undefined);
     const chosen = choices.discard?.length ? choices.discard : options.slice(0, x);
-    if (chosen.length !== x || chosen.some((id) => !options.includes(id))) throw new RulesError("Défausse invalide");
+    if (chosen.length !== x || chosen.some((id) => !options.includes(id))) throw new RulesError(msg("Invalid discard"));
     emit({ type: "discard", player, defIds: chosen.map((id) => obj(s, id).defId) });
     for (const id of chosen) announceDiscard(s, player, moveDiscarded(s, player, id));
     announceDiscardBatch(s, player, chosen.length);
   }
-  // « Défaussez votre main » : toute la main, en payant le coût (601.2h).
+  // "Discard your hand": the whole hand, while paying the cost (601.2h).
   if (ab.cost.discardHand) {
     const hand = [...(s.players[player]?.hand ?? [])];
     if (hand.length) {
@@ -3596,17 +3618,17 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       announceDiscardBatch(s, player, hand.length);
     }
   }
-  // Fabrication : les matériaux sont exilés (et liés au verso à la résolution), puis la source.
+  // Craft: the materials are exiled (and linked to the back face on resolution), then the source.
   if (materials.length) {
     s.turn.crafting = true;
     const exiled = materials.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
     delete s.turn.crafting;
     item.paid = { ...item.paid, exiled };
   }
-  // Baron Helmut Zemo : les cartes exilées du cimetière, notées pour l'effet (« copiez ces cartes »).
+  // Baron Helmut Zemo: the cards exiled from the graveyard, recorded for the effect ("copy those cards").
   if (ab.cost.exileGraveyardSymbols) {
     const cards = symbolCards(s, player, ab.cost.exileGraveyardSymbols);
-    if (!cards) throw new RulesError("Pas assez de symboles de mana dans votre cimetière");
+    if (!cards) throw new RulesError(msg("Not enough mana symbols in your graveyard"));
     item.paid = { ...item.paid, exiled: cards.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id) };
   }
   if (ab.cost.self === "exile") moveObject(s, source, "exile");
@@ -3619,7 +3641,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.self === "bounce") moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
-  // Journal du tour : aussi « une capacité de loyauté par tour » (606.3) et les capacités « une fois par tour », lues par
+  // Turn log: also "one loyalty ability per turn" (606.3) and the "once each turn" abilities, read by
   // `canPayNonManaCost` (`activatedThisTurn`).
   logTurnEvent(s, {
     e: "activate",
@@ -3631,11 +3653,11 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   });
   rulesEvent(s, { e: "activated", player, stackId: item.id });
   announceTargets(s, item.id, player, targets);
-  // 605.1a / 605.3b : une capacité de mana ne va pas sur la pile ; elle se résout aussitôt.
+  // 605.1a / 605.3b: a mana ability doesn't use the stack; it resolves immediately.
   if (isManaAbility(ab)) resolveManaAbilityNow(s, item);
 }
 
-/** 605.3b : résout une capacité de mana sans passer par la pile ; le joueur garde la priorité. */
+/** 605.3b: resolves a mana ability without using the stack; the player keeps priority. */
 function resolveManaAbilityNow(s: GameState, item: StackItem): void {
   const i = s.stack.findIndex((x) => x.id === item.id);
   if (i >= 0) s.stack.splice(i, 1);
@@ -3650,17 +3672,17 @@ function resolveManaAbilityNow(s: GameState, item: StackItem): void {
     awaiting: null,
     returnPriority: { ...s.priority },
   };
-  // Un choix (couleur du mana) suspend la résolution ; la réponse rendra la priorité (`game.ts`).
+  // A choice (color of the mana) suspends the resolution; the answer will give priority back (`game.ts`).
   if (continueResolution(s)) s.flow = "priority";
 }
 
-/** Mots « cible » d'un élément de pile (Bolt Bend). */
+/** "Target" words of a stack item (Bolt Bend). */
 /**
- * Mots « cible » d'un élément de la pile, rendus concrets dans son contexte (608.2b : valeurs évaluées de nouveau, Moseo ;
- * joueur qui tient les cibles, Fear of Falling).
+ * "Target" words of a stack item, made concrete in its context (608.2b: values evaluated again, Moseo; the player who
+ * holds the targets, Fear of Falling).
  */
 export function stackItemSpecs(s: GameState, item: StackItem, specs = specsAndEffects(s, item).specs): TargetSpec[] {
-  // Le nombre de cibles et les autres valeurs, figés au ciblage, ne sont pas évalués de nouveau.
+  // The number of targets and the other values, fixed when targeting, are not evaluated again.
   const again = (x: TargetSpec) => x.maxManaValueAmount !== undefined || (x.of !== undefined && x.of.kind !== "target");
   if (!specs.some(again)) return specs;
   const ctx = {
@@ -3675,15 +3697,15 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
   if (!d) return { specs: [], effects: [] };
   if (item.kind === "spell") {
     const mode = modesOf(d)[item.mode];
-    // 614.1c, 614.12 : les effets « en arrivant » (choix, copie, dévorer, émeute 702.136) se font pendant la résolution du
-    // sort de permanent (`asEntersChoices`). Une copie d'un sort de permanent aussi : elle devient un jeton qui arrive de
-    // la même façon (707.10).
+    // 614.1c, 614.12: the "as it enters" effects (choices, copy, devour, riot 702.136) happen during the resolution of the
+    // permanent spell (`asEntersChoices`). A copy of a permanent spell too: it becomes a token that enters the same way
+    // (707.10).
     const enters: Effect[] =
       isPermanentCard(d) && (d.asEnters?.length || willHaveRiot(s, item.controller, d)) ? [{ op: "asEnters" }] : [];
     return { specs: mode?.targets ?? [], effects: [...(mode?.effects ?? []), ...enters] };
   }
-  // Capacité retardée, réflexive ou accordée : ses effets voyagent avec elle ; la condition d'une capacité accordée « si… »
-  // aussi (603.4).
+  // Delayed, reflexive or granted ability: its effects travel with it; so does the condition of a granted "if…" ability
+  // (603.4).
   if (item.inline) {
     const c = item.inline.condition;
     if (c && !checkCondition(s, c, item.controller, item.sourceId, item.event?.objectId, item.event))
@@ -3693,10 +3715,10 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
   }
   const ab = d.abilities[item.abilityIndex];
   if (ab?.kind === "triggered") {
-    // 603.4 : la condition d'une capacité « si… » est vérifiée à nouveau à la résolution.
+    // 603.4: the condition of an "if…" ability is checked again on resolution.
     if (ab.condition && !checkCondition(s, ab.condition, item.controller, item.sourceId, item.event?.objectId, item.event))
       return { specs: [], effects: [] };
-    // « Faites ceci une seule fois par tour » : déjà fait par un autre déclenchement de la même capacité (deux sur la pile).
+    // "Do this only once each turn": already done by another trigger of the same ability (two on the stack).
     if (ab.oncePerTurn === "ifDone" && s.turn.onceFired.includes(onceKey(item.sourceDefId, item.sourceId, item.abilityIndex)))
       return { specs: [], effects: [] };
     if (ab.modes) {
@@ -3709,27 +3731,27 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
 }
 
 /**
- * Commence la résolution de l'objet au sommet de la pile (608).
- * Renvoie true si la résolution est terminée, false si elle attend un choix (s.flow = "resolving").
+ * Starts the resolution of the object on top of the stack (608).
+ * Returns true if the resolution is over, false if it waits for a choice (s.flow = "resolving").
  */
 export function resolveTop(s: GameState): boolean {
-  // L'objet reste sur la pile pendant toute sa résolution (608.2) ; il n'en sort qu'à la fin.
+  // The object stays on the stack during its whole resolution (608.2); it leaves only at the end.
   const item = s.stack[s.stack.length - 1];
   if (!item) return true;
   const { specs: specs0, effects } = specsAndEffects(s, item);
-  // Valeurs de cible évaluées de nouveau à la résolution (Moseo : les PV gagnés ce tour-ci ; Fear of Falling : le joueur
-  // défenseur).
+  // Target values evaluated again on resolution (Moseo: the life gained this turn; Fear of Falling: the defending
+  // player).
   const specs = stackItemSpecs(s, item, specs0);
 
-  // 608.2b : on revérifie les cibles. Si toutes sont devenues illégales, le sort ne se résout pas.
-  // Références figées d'une capacité retardée (`bind`) : conservées telles quelles, ce ne sont pas des cibles.
+  // 608.2b: the targets are checked again. If all of them have become illegal, the spell doesn't resolve.
+  // Fixed references of a delayed ability (`bind`): kept as they are, they are not targets.
   const legal: Record<string, string[]> = { ...(item.inline?.bound ?? {}) };
   let chosen = 0;
   let stillLegal = 0;
   for (const spec of specs) {
     const ids = item.targets[spec.id] ?? [];
     chosen += ids.length;
-    // Cadeau promis ou kicker : le filtre propre (« à la place, un permanent non-terrain ciblé »).
+    // Promised gift or kicker: its own filter ("instead, target nonland permanent").
     const legalSpec = item.kicked && spec.kickedFilter ? { ...spec, filter: spec.kickedFilter } : spec;
     legal[spec.id] = ids.filter((id) => isLegalTarget(s, item.controller, legalSpec, id, item.sourceId));
     stillLegal += legal[spec.id]?.length ?? 0;
@@ -3748,22 +3770,22 @@ export function resolveTop(s: GameState): boolean {
     pc: 0,
     controller: item.controller,
     targets: legal,
-    // Capacité retardée : valeurs figées à sa création.
+    // Delayed ability: values fixed when it was created.
     vars: { ...(item.inline?.vars ?? {}) },
     awaiting: null,
   };
   return continueResolution(s);
 }
 
-/** Exécute les effets restants ; s'arrête sur le premier choix à poser. */
+/** Runs the remaining effects; stops at the first choice to ask. */
 export function continueResolution(s: GameState): boolean {
   const r = s.resolving;
   if (!r) return true;
   while (r.pc < r.effects.length && !s.over) {
-    // Chaque effet est un ensemble d'événements simultanés (regard en arrière des déclencheurs).
+    // Each effect is a set of simultaneous events (look-back of triggers).
     const result = simultaneously(s, () => runEffect(s, r, r.effects[r.pc] as Effect));
-    // 800.4a : un joueur qui a quitté la partie (« ce joueur peut… » adressé à l'adversaire blessé, éliminé par ces
-    // blessures) n'a plus rien à décider : sa réponse est celle d'un absent, et l'effet est repris avec elle.
+    // 800.4a: a player who has left the game ("that player may…" addressed to the damaged opponent, eliminated by that
+    // damage) has nothing left to decide: their answer is that of an absent player, and the effect resumes with it.
     if (result && "ask" in result && !isAlive(s, result.ask.player)) {
       r.vars[result.ask.key] = absentAnswer(result.ask.request);
       continue;
@@ -3796,28 +3818,28 @@ export function continueResolution(s: GameState): boolean {
   return true;
 }
 
-/** Réponse à un choix posé pendant la résolution. */
+/** Answer to a choice asked during the resolution. */
 export function answerResolutionChoice(s: GameState, values: ChoiceValue[]): boolean {
   const r = s.resolving;
-  if (!r?.awaiting) throw new RulesError("Aucune résolution en attente");
+  if (!r?.awaiting) throw new RulesError(msg("No pending resolution"));
   r.vars[r.awaiting] = values;
   r.awaiting = null;
   return continueResolution(s);
 }
 
 /**
- * Réponse à une priorité « lancer maintenant » (608.2g) : `card` est la carte lancée (déjà mise sur la pile par
- * l'appelant), ou `null` pour un refus. La résolution reprend.
+ * Answer to a "cast now" priority (608.2g): `card` is the cast card (already put on the stack by the caller), or `null`
+ * for a refusal. The resolution resumes.
  */
 export function answerCastNow(s: GameState, card: ObjectId | null): boolean {
   const r = s.resolving;
-  if (!r?.awaiting) throw new RulesError("Aucune résolution en attente");
+  if (!r?.awaiting) throw new RulesError(msg("No pending resolution"));
   r.vars[r.awaiting] = card ? [card] : [];
   r.awaiting = null;
   return continueResolution(s);
 }
 
-/** Retire les permissions d'un « lancez-la » pendant une résolution (elles ne valent que pour la réponse). */
+/** Removes the permissions of a "cast it" during a resolution (they are valid only for the answer). */
 export function dropNowPermissions(s: GameState): void {
   if (s.playPermissions?.some((p) => p.now)) s.playPermissions = s.playPermissions.filter((p) => !p.now);
 }
@@ -3830,9 +3852,9 @@ function finishResolution(
 ): void {
   const i = s.stack.findIndex((x) => x.id === item.id);
   if (i >= 0) s.stack.splice(i, 1);
-  // 707.10 : une copie de sort cesse d'exister en quittant la pile ; celle d'un sort de permanent devient un jeton en se
-  // résolvant (Double Down).
-  // 614.1c, 614.12 : ce qu'apportent les effets « en arrivant » faits pendant la résolution (opération `asEnters`).
+  // 707.10: a copy of a spell ceases to exist as it leaves the stack; a copy of a permanent spell becomes a token as it
+  // resolves (Double Down).
+  // 614.1c, 614.12: what the "as it enters" effects done during the resolution bring (operation `asEnters`).
   const entering = (d: CardDef) =>
     asEntersChoices(
       s,
@@ -3844,8 +3866,8 @@ function finishResolution(
   if (item.kind === "spell" && item.copy) {
     const d = s.defs[item.sourceDefId];
     const choices = d && isPermanentCard(d) ? entering(d) : undefined;
-    // Une copie que ses effets « en arrivant » ont envoyée ailleurs (Mox Diamond sans terrain défaussé) ne devient pas un
-    // jeton.
+    // A copy that its "as it enters" effects sent elsewhere (Mox Diamond with no land discarded) doesn't become a
+    // token.
     const stays = !!s.objects[item.sourceId];
     if (stays) removeFromGame(s, item.sourceId);
     if (d && stays && choices && !("ask" in choices)) {
@@ -3857,7 +3879,7 @@ function finishResolution(
           {
             x: item.x,
             kicked: item.kicked,
-            // Choreographed Sparks : « la copie gagne la célérité ».
+            // Choreographed Sparks: "the copy gains haste".
             counters: item.arrival?.counters,
             ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
             haste: item.arrival?.haste,
@@ -3866,13 +3888,13 @@ function finishResolution(
           choices,
         ),
       );
-      // « … et "au début de l'étape de fin, sacrifiez ce jeton" ».
+      // "… and 'At the beginning of the end step, sacrifice this token'".
       if (item.arrival?.atEnd === "sacrifice" && s.objects[token]?.zone === "battlefield")
         createDelayed(s, item.controller, token, s.objects[token]?.defId ?? d.id, {
           targets: [],
           effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }],
           bound: { c: [token] },
-          label: "sacrifier la copie",
+          label: msg("sacrifice the copy"),
         });
     }
     return;
@@ -3881,9 +3903,9 @@ function finishResolution(
     const d = s.defs[item.sourceDefId];
     const choices = d && isPermanentCard(d) ? entering(d) : undefined;
     if (d && choices && !("ask" in choices)) {
-      // Verso d'une carte recto-verso modale lancé : le permanent arrive avec cette face.
+      // Back face of a modal double-faced card cast: the permanent enters with that face.
       const face = s.objects[item.sourceId]?.faceDefId;
-      // 303.4f : une Aura arrive attachée à l'objet qu'elle ciblait.
+      // 303.4f: an Aura enters attached to the object it targeted.
       const enteredId = moveObject(s, item.sourceId, "battlefield", {
         controller: item.controller,
         enters: withEntersChoices(
@@ -3892,9 +3914,9 @@ function finishResolution(
             kicked: item.kicked,
             cast: item.cast,
             attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
-            // Faufilement : il arrive engagé et attaquant ce qu'attaquait la créature renvoyée.
+            // Sneak: it enters tapped and attacking what the returned creature was attacking.
             ...(item.cast?.sneakDefender ? { tapped: true, attacking: item.cast.sneakDefender } : {}),
-            // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
+            // Counters, haste and subtypes on entering (Torgal, Summon: Fenrir, Noctis), impending: before the event.
             counters: item.arrival?.counters,
             ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
             haste: item.arrival?.haste,
@@ -3906,28 +3928,28 @@ function finishResolution(
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
       if (arrived && item.x) arrived.x = item.x;
-      // Fear of Abduction : les cartes exilées pour payer le coût additionnel sont liées au permanent.
+      // Fear of Abduction: the cards exiled to pay the additional cost are linked to the permanent.
       const exiled = item.paid?.exiled ?? [];
       if (arrived && exiled.length) arrived.linked = [...(arrived.linked ?? []), ...exiled];
-      // Distorsion : exilé au début de la prochaine étape de fin.
+      // Warp: exiled at the beginning of the next end step.
       if (item.cast?.via === "warp" && arrived) {
         createDelayed(s, item.controller, arrived.id, arrived.defId, {
           targets: [],
           effects: [{ op: "moveTo", what: { kind: "target", id: "w" }, spec: { to: "exile", warp: true } }],
           bound: { w: [arrived.id] },
-          label: "Distorsion : exilez-le",
+          label: msg("Warp: exile it"),
         });
       }
       const card = arrived ? s.defs[arrived.defId] : undefined;
       if (face && arrived && card?.layout === "split") {
-        // Salle (709.5d) : la porte lancée est déverrouillée à l'arrivée.
+        // Room (709.5d): the cast door is unlocked as it enters.
         const door = card.faceDefs?.findIndex((f) => f.id === face) ?? -1;
         if (door >= 0) unlockDoor(s, arrived.id, door);
       } else if (face && arrived) {
         arrived.faceDefId = face;
         bump(s);
       }
-      // Carnelian Orb : « il acquiert la célérité jusqu'à la fin du tour ».
+      // Carnelian Orb: "it gains haste until end of turn".
       const entered = s.battlefield[s.battlefield.length - 1];
       if (item.riders?.includes("haste") && entered) {
         bump(s);
@@ -3944,24 +3966,24 @@ function finishResolution(
 }
 
 /**
- * Destination d'un éphémère ou d'un rituel qui a fini de se résoudre : cimetière ; exil pour un flashback ;
- * exil « en aventure » pour une aventure (715.4) ; bibliothèque mélangée pour un présage.
+ * Destination of an instant or sorcery that has finished resolving: graveyard; exile for flashback;
+ * exile "on an adventure" for an Adventure (715.4); shuffled into the library for an omen.
  */
 function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined): void {
-  // Esper Origins : exilé, puis sur le champ de bataille transformé avec un marqueur de finalité.
+  // Esper Origins: exiled, then onto the battlefield transformed with a finality counter.
   if (item.toBattlefieldTransformed) {
     const exiled = moveObject(s, item.sourceId, "exile");
     if (exiled)
       moveWithSpec(s, item.controller, exiled, { to: "battlefield", transformed: true, counters: { kind: "finality", n: 1 } });
     return;
   }
-  // Lilah : exilé et comploté au lieu d'aller au cimetière.
+  // Lilah: exiled and plotted instead of going to the graveyard.
   if (item.plotOnResolve && !item.flashback) {
     plotCard(s, item.sourceId);
     return;
   }
-  // Paradigme : exilé ; après la première résolution, un emblème propose d'en lancer une copie gratuite au début de chacune
-  // de vos premières phases principales.
+  // Paradigm: exiled; after the first resolution, an emblem offers to cast a free copy of it at the beginning of each of
+  // your first main phases.
   if (d?.paradigm && !item.copy) {
     const exiled = moveObject(s, item.sourceId, "exile");
     const defId = `emblem:paradigm-${d.id}`;
@@ -3969,8 +3991,8 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
     if (exiled && !already) {
       s.defs[defId] ??= {
         id: defId,
-        name: `Paradigme : ${d.name}`,
-        typeLine: "Emblème",
+        name: msg("Paradigm: {card}", { card: d.name }),
+        typeLine: msg("Emblem"),
         manaCost: null,
         manaCostText: "",
         colors: [],
@@ -3984,7 +4006,7 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
             trigger: { on: "step", step: "main1", whose: "you" },
             targets: [],
             effects: [{ op: "castCopiesFree", what: [{ kind: "linked" }], maxTotalManaValue: 99 }],
-            label: `Paradigme : lancer une copie de ${d.name}`,
+            label: msg("Paradigm: cast a copy of {card}", { card: d.name }),
           },
         ],
         text: `At the beginning of your first main phase, you may cast a copy of ${d.name} from exile without paying its mana cost.`,
@@ -3997,14 +4019,14 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
     }
     return;
   }
-  // Goliath Daydreamer : exilé avec un marqueur de rêve au lieu d'aller au cimetière (une copie cesse d'exister).
+  // Goliath Daydreamer: exiled with a dream counter instead of going to the graveyard (a copy ceases to exist).
   if (item.exileWithCounter !== undefined && !item.copy) {
     const exiled = moveObject(s, item.sourceId, "exile");
     const o = exiled ? s.objects[exiled] : undefined;
     if (o && item.exileWithCounter) changeCounters(s, o, item.exileWithCounter, 1);
     return;
   }
-  // « Exilez [ce sort] » (Step Between Worlds).
+  // "Exile [this spell]" (Step Between Worlds).
   if (d?.exileOnResolve) {
     moveObject(s, item.sourceId, "exile");
     return;
@@ -4015,9 +4037,9 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
     if (o) o.onAdventure = true;
     return;
   }
-  // Rebond (702.88) : un sort lancé depuis la main est exilé ; au début de votre prochain entretien, vous pouvez le lancer
-  // depuis l'exil sans payer son coût de mana (pendant la résolution de la capacité retardée, 608.2g). Mot-clé imprimé
-  // (Quantum Misalignment) ou accordé au sort (Ojer Pakpatiq : `item.rebound`).
+  // Rebound (702.88): a spell cast from the hand is exiled; at the beginning of your next upkeep, you may cast it from
+  // exile without paying its mana cost (during the resolution of the delayed ability, 608.2g). Printed keyword (Quantum
+  // Misalignment) or granted to the spell (Ojer Pakpatiq: `item.rebound`).
   const rebound = item.rebound || (!!d && spellHasKeyword(s, item.controller, d, "rebound"));
   if (rebound && item.cast?.from === "hand" && !item.flashback && !item.copy) {
     const exiled = moveObject(s, item.sourceId, "exile");
@@ -4043,7 +4065,7 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
   spellToRest(s, item);
 }
 
-/** Un sort qui quitte la pile : en exil (flashback, « exilez-la »), au-dessous de la bibliothèque, sinon au cimetière. */
+/** A spell leaving the stack: into exile (flashback, "exile it"), on the bottom of the library, otherwise into the graveyard. */
 function spellToRest(s: GameState, item: StackItem, exile = false): void {
   if (item.flashback || exile) moveObject(s, item.sourceId, "exile");
   else if (item.bottomInstead) moveObject(s, item.sourceId, "library", { position: "bottom" });

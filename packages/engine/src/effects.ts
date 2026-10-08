@@ -1,6 +1,6 @@
 /**
- * Interpréteur d'effets. Les effets sont des données (voir types.ts) : l'état reste sérialisable,
- * et une résolution pourra être suspendue sur un choix du joueur puis reprise.
+ * Effect interpreter. Effects are data (see types.ts): the state stays serializable,
+ * and a resolution can be suspended on a player choice and then resumed.
  */
 
 import { type DamageSource, payLife, removeFromCombat, sourceFromObject } from "./actions";
@@ -48,6 +48,7 @@ import {
   resolveFilter,
   sourceView,
 } from "./targets";
+import { msg } from "./text";
 import { checkCondition, mostLife, pushInline } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -77,59 +78,60 @@ import { BASIC_LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 export interface EffectContext {
   controller: PlayerId;
-  /** Sort : l'objet sur la pile. Capacité : le permanent source. */
+  /** Spell: the object on the stack. Ability: the source permanent. */
   sourceId: ObjectId;
   sourceDefId: string;
-  /** Informations de dernière connaissance de la source. */
+  /** Last known information of the source. */
   sourceSnapshot: { keywords: Keyword[]; power: number };
-  /** Cibles encore légales à la résolution. */
+  /** Targets still legal at resolution. */
   targets: Record<string, string[]>;
   x: number;
   kicked: boolean;
-  /** Capacité déclenchée : données de l'événement déclencheur. */
+  /** Triggered ability: data of the trigger event. */
   event?: TriggerEventData;
-  /** Valeurs mémorisées pendant la résolution (voir `store`). */
+  /** Values stored during the resolution (see `store`). */
   vars?: Record<string, ChoiceValue[]>;
-  /** Objets payés pour le coût de ce qui se résout ; créature renvoyée en main pour le Web-slinging. */
+  /** Objects paid for the cost of what is resolving; creature returned to hand for Web-slinging. */
   paid?: CostPaid & { bounced?: ObjectId[] };
 }
 
 /**
- * Valeurs du filtre qui dépendent de ce qui se résout : les comparaisons (`resolveCompare` avec ce contexte : « … X ou
- * moins », le X de la capacité ou du sort, Day of Black Sun, Doppelgang ; « de force supérieure à celle de la créature
- * ciblée », Fell the Mighty) ; « qui partage un type de créature avec elle » (Shared Animosity : l'objet de l'événement).
+ * Filter values that depend on what is resolving: comparisons (`resolveCompare` with this context: "… X or less", the
+ * X of the ability or the spell, Day of Black Sun, Doppelgang; "with greater power than the targeted creature", Fell
+ * the Mighty); "that shares a creature type with it" (Shared Animosity: the object of the event).
  */
 export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): ObjectFilter {
   if (f.sharesCreatureTypeWith) {
-    // Plusieurs objets désignés (deux commandants) : un type de créature de l'un d'eux suffit.
+    // Several designated objects (two commanders): a creature type of one of them is enough.
     const vs = resolveRef(s, ctx, f.sharesCreatureTypeWith)
       .filter((x) => s.objects[x])
       .map((x) => snapshot(s, x));
     const all = vs.some((v) => v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES));
     const types = [...new Set(vs.flatMap((v) => v.subtypes.filter((st) => !NON_CREATURE_SUBTYPES.has(st))))];
-    // Un changelin partage chacun de ses types avec toute créature (approché : toute créature).
+    // A changeling shares each of its types with any creature (approximated: any creature).
     f = all
       ? { ...f, sharesCreatureTypeWith: undefined, types: [...(f.types ?? []), "Creature"] }
       : { ...f, sharesCreatureTypeWith: undefined, anySubtype: types };
   }
-  // « … qui attaquent ce joueur » (Namor, Atlantean King) : les joueurs désignés.
+  // "… attacking that player" (Namor, Atlantean King): the designated players.
   if (f.attacking && typeof f.attacking === "object" && !Array.isArray(f.attacking))
     f = { ...f, attacking: resolveRef(s, ctx, f.attacking).filter((p) => isPlayer(s, p)) };
   if (f.nameOf) {
     const id = resolveRef(s, ctx, f.nameOf).find((x) => s.objects[x] || s.lki[x]);
-    // Son nom calculé (ou dernier connu) : « A // B » pour une carte scindée, qui partage chacun de ses noms.
+    // Its computed (or last known) name: "A // B" for a split card, which shares each of its names.
     const name = id ? ((s.objects[id] ? chars(s, id).name : s.lki[id]?.name) ?? "") : "";
-    // Sans objet désigné, rien ne correspond.
+    // Without a designated object, nothing matches.
     f = { ...f, nameOf: undefined, name: name || "\u0000" };
   }
   return resolveCompare(s, f, ctx.sourceId, ctx);
 }
 
 /**
- * Seul résolveur des comparaisons dynamiques des filtres (`ObjectFilter.compare`, PLAN-H H10) : chaque montant `to` est
- * remplacé par sa valeur. Pendant une résolution (`withX`), il est évalué avec le contexte de ce qui se résout (son X, ses
- * cibles, ses valeurs mémorisées) ; ailleurs (`resolveFilter` : cibles, statiques, déclencheurs, permissions), du point
- * de vue de la source seule, et le X est alors celui du permanent (le X du sort qui l'a mis en jeu, 0 sans X).
+ * The only resolver of the dynamic comparisons of filters (`ObjectFilter.compare`, PLAN-H H10): each amount `to` is
+ * replaced by its value. During a resolution (`withX`), it is evaluated with the context of what is resolving (its X,
+ * its targets, its stored values); elsewhere (`resolveFilter`: targets, statics, triggers, permissions), from the
+ * point of view of the source alone, and the X is then that of the permanent (the X of the spell that put it onto the
+ * battlefield, 0 without X).
  */
 export function resolveCompare(s: GameState, f: ObjectFilter, sourceId?: ObjectId, ctx?: EffectContext): ObjectFilter {
   if (!f.compare?.some((c) => typeof c.to === "object")) return f;
@@ -142,7 +144,7 @@ export function resolveCompare(s: GameState, f: ObjectFilter, sourceId?: ObjectI
   return { ...f, compare: f.compare.map((x) => (typeof x.to === "object" ? { ...x, to: evalAmount(s, c, x.to) } : x)) };
 }
 
-/** La référence `zone` : les objets d'une zone des joueurs désignés, correspondant au filtre. */
+/** The `zone` reference: the objects of a zone of the designated players, matching the filter. */
 function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind: "zone" }>): string[] {
   const players = resolveRef(s, ctx, ref.who);
   const f = ref.filter ? { ...withX(s, ref.filter, ctx), controller: undefined } : undefined;
@@ -162,13 +164,13 @@ function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind:
       );
     }
     case "exile":
-      // Face visible seulement ; ni les copies de cartes ni les copies de sorts préparés.
+      // Face up only; neither card copies nor copies of prepared spells.
       return s.exile.filter((id) => {
         const o = s.objects[id];
         return !!o && players.includes(o.owner) && !o.faceDown && !o.cardCopy && !o.preparedFor && card(id);
       });
     case "command":
-      // Les cartes de la zone de commandement (commandants), pas les emblèmes.
+      // The cards of the command zone (commanders), not emblems.
       return players.flatMap((p) => s.players[p]?.command ?? []).filter((id) => !s.objects[id]?.isToken && card(id));
     case "stack": {
       const resolving = s.resolving?.item.id;
@@ -177,23 +179,23 @@ function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind:
   }
 }
 
-/** Caractéristiques d'un objet vivant, ou ses dernières informations connues. */
+/** Characteristics of a live object, or its last known information. */
 export function viewOf(s: GameState, id: string): LkiSnapshot | undefined {
   if (s.objects[id]) return snapshot(s, id);
   return s.lki[id];
 }
 
 /**
- * « Son contrôleur » : le contrôleur d'un permanent, d'un sort ou d'une capacité ; d'un objet parti du champ de bataille ce
- * tour-ci (la carte qu'il est devenu, ou ses dernières informations), son dernier contrôleur connu (608.2h : Winds of
- * Abandon, Indomitable Creativity) ; d'une autre carte, son propriétaire.
+ * "Its controller": the controller of a permanent, a spell or an ability; of an object that left the battlefield this
+ * turn (the card it became, or its last information), its last known controller (608.2h: Winds of Abandon,
+ * Indomitable Creativity); of another card, its owner.
  */
 export function lastController(s: GameState, id: ObjectId): PlayerId | undefined {
   const o = s.objects[id];
   if (!o) return s.stack.find((x) => x.id === id)?.controller ?? s.lki[id]?.controller;
   if (o.zone === "battlefield" || o.zone === "stack") return o.controller;
   if (o.arrivedFrom === "battlefield") {
-    // Les dernières informations sont effacées à chaque tour : la plus récente de cette carte est celle de son départ.
+    // Last information is cleared every turn: the most recent one of this card is that of its leaving.
     let last: PlayerId | undefined;
     for (const k in s.lki) if (s.lki[k]?.uid === o.uid) last = s.lki[k]?.controller;
     if (last) return last;
@@ -201,7 +203,7 @@ export function lastController(s: GameState, id: ObjectId): PlayerId | undefined
   return o.owner;
 }
 
-/** Mémorise une valeur de résolution (« si vous le faites », « la vie perdue de cette façon »). */
+/** Stores a resolution value ("if you do", "the life lost this way"). */
 export function store(r: Resolution, name: string | undefined, n: number): void {
   if (!name) return;
   r.vars[`$${name}`] = [n];
@@ -211,10 +213,10 @@ export function readVar(ctx: EffectContext, name: string): number {
   return Number(ctx.vars?.[`$${name}`]?.[0] ?? 0);
 }
 
-/** Référence figée (`InlineAbility.bound`) du permanent qui accorde une capacité activée (`ref.grantor`). */
+/** Fixed reference (`InlineAbility.bound`) of the permanent that grants an activated ability (`ref.grantor`). */
 export const GRANTOR_KEY = "$grantor";
 
-/** La spécification dépend-elle de la partie (valeurs ou joueur évalués au ciblage et à la résolution) ? */
+/** Does the specification depend on the game (values or player evaluated at targeting and at resolution)? */
 export function needsConcrete(t: TargetSpec): boolean {
   return (
     t.countAmount !== undefined ||
@@ -226,11 +228,12 @@ export function needsConcrete(t: TargetSpec): boolean {
 }
 
 /**
- * Une spécification de cible dont des valeurs dépendent de la partie, rendue concrète dans ce contexte : nombre de cibles
- * (`countAmount`), valeur de mana exacte (`manaValueAmount`) ou maximale (`maxManaValueAmount`), valeur de mana totale
- * (`maxTotalManaValueAmount`), joueur qui tient les cibles (`of` → `ofPlayers` ; un autre mot « cible » se vérifie avec
- * les cibles choisies, dans `validateTargets`). Évaluée au ciblage et à la résolution. `resolving` : à la résolution, un
- * joueur qui n'est plus désigné (le joueur défenseur d'une créature retirée du combat) laisse les cibles telles quelles.
+ * A target specification whose values depend on the game, made concrete in this context: number of targets
+ * (`countAmount`), exact mana value (`manaValueAmount`) or maximum (`maxManaValueAmount`), total mana value
+ * (`maxTotalManaValueAmount`), player who holds the targets (`of` → `ofPlayers`; another "target" word is checked
+ * against the chosen targets, in `validateTargets`). Evaluated at targeting and at resolution. `resolving`: at
+ * resolution, a player who is no longer designated (the defending player of a creature removed from combat) leaves the
+ * targets as they are.
  */
 export function concreteSpec(s: GameState, ctx: EffectContext, t: TargetSpec, resolving = false): TargetSpec {
   if (!needsConcrete(t)) return t;
@@ -261,8 +264,8 @@ export function concreteSpec(s: GameState, ctx: EffectContext, t: TargetSpec, re
 }
 
 /**
- * Contexte d'évaluation hors résolution (statiques, coûts, conditions de déclenchement, taille de main…) : ni cibles, ni
- * X, ni valeurs mémorisées. Le seul constructeur de ce contexte (PLAN-C, lot C10) ; `kicked` : celui de la source.
+ * Evaluation context outside a resolution (statics, costs, trigger conditions, hand size…): no targets, no X, no
+ * stored values. The only constructor of this context (PLAN-C, lot C10); `kicked`: that of the source.
  */
 export function staticContext(
   s: GameState,
@@ -284,7 +287,7 @@ export function staticContext(
   };
 }
 
-/** Condition évaluée pendant la résolution (elle peut dépendre du kicker ou des valeurs mémorisées). */
+/** Condition evaluated during the resolution (it can depend on the kicker or the stored values). */
 export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): boolean {
   switch (c.kind) {
     case "kicked":
@@ -304,7 +307,7 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       return !!p && s.players[p]?.life === c.equals;
     }
     case "refMatches": {
-      // « du type choisi » : le choix de la source (ses dernières informations si elle a été sacrifiée : A Killer Among Us).
+      // "of the chosen type": the choice of the source (its last information if it was sacrificed: A Killer Among Us).
       const f = resolveFilter(s, c.filter, ctx.sourceId);
       return resolveRef(s, ctx, c.ref).some((id) => {
         const v = viewOf(s, id);
@@ -321,7 +324,7 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
         ...(pl?.hand ?? []).filter((id) => s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Creature")),
       ].filter((id) => !found.includes(id) && id !== ctx.sourceId);
       const views = candidates.map((id) => viewOf(s, id)).filter((x): x is NonNullable<typeof x> => !!x);
-      // Types possibles : ceux de l'objet, ou (changelin) ceux des créatures à contempler.
+      // Possible types: those of the object, or (changeling) those of the creatures to behold.
       const types = new Set(
         (v.keywords.includes("changeling") ? views.flatMap((x) => x.subtypes) : v.subtypes).filter((t) => t !== "*"),
       );
@@ -330,9 +333,9 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       );
     }
     case "targetMatches":
-      // « Si [la cible] … » pendant la résolution (cible encore présente, ou ses dernières informations).
+      // "If [the target] …" during the resolution (target still present, or its last information).
       return (ctx.targets[c.spec] ?? []).some((id) => {
-        // Encore sur le champ de bataille : le filtre complet (« arrivée ce tour-ci »… : Malamet Battle Glyph).
+        // Still on the battlefield: the full filter ("entered this turn"…: Malamet Battle Glyph).
         if (s.objects[id]?.zone === "battlefield") return matchesObjectFilter(s, ctx.controller, id, c.filter, ctx.sourceId);
         const v = s.lki[id] && !s.objects[id] ? s.lki[id] : viewOf(s, id);
         return !!v && matchesView(v, c.filter, ctx.controller, ctx.sourceId);
@@ -353,19 +356,19 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
     case "handAtMost":
       return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
     default:
-      // L'objet et l'événement déclencheur, pour une condition lue à la résolution (Selvala : « si sa force est
-      // supérieure à celle de chaque autre créature »).
+      // The object and the trigger event, for a condition read at resolution (Selvala: "if its power is greater than
+      // each other creature's").
       return checkCondition(s, c, ctx.controller, ctx.sourceId, ctx.event?.objectId, ctx.event);
   }
 }
 
-/** L'objet d'un événement tel qu'il est encore, sinon ce qu'il est devenu, sinon ses dernières informations connues. */
+/** The object of an event as it still is, otherwise what it became, otherwise its last known information. */
 function eventObjectNow(s: GameState, ev: { objectId?: ObjectId; newObjectId?: ObjectId }): ObjectId[] {
   if (!ev.objectId) return [];
-  // L'objet tel qu'il est encore, sinon ce qu'il est devenu après son changement de zone.
+  // The object as it still is, otherwise what it became after its zone change.
   if (s.objects[ev.objectId] || s.stack.some((x) => x.id === ev.objectId)) return [ev.objectId];
   if (ev.newObjectId && s.objects[ev.newObjectId]) return [ev.newObjectId];
-  // Parti sans laisser d'objet (jeton, copie) : ses dernières informations connues (marqueurs, définition copiée).
+  // Gone without leaving an object (token, copy): its last known information (counters, copied definition).
   return s.lki[ev.objectId] ? [ev.objectId] : [];
 }
 
@@ -405,11 +408,11 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         return p ? [p] : [];
       });
     case "stored":
-      // Objets mémorisés, encore présents ou connus par leurs dernières informations (sacrifiés…), ou joueurs choisis
+      // Stored objects, still present or known by their last information (sacrificed…), or chosen players
       // (`fx.chooseOpponent`).
       return (ctx.vars?.[`$ids:${ref.name}`] ?? []).map(String).filter((id) => !!s.objects[id] || !!s.lki[id] || isPlayer(s, id));
     case "selfCard": {
-      // « Cette carte » : l'objet qui porte la même identité physique que la source, où qu'il soit.
+      // "This card": the object that has the same physical identity as the source, wherever it is.
       const uid = s.objects[ctx.sourceId]?.uid ?? s.lki[ctx.sourceId]?.uid;
       if (!uid) return [];
       const found = Object.values(s.objects).find((o) => o.uid === uid);
@@ -455,7 +458,7 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return resolveRef(s, ctx, ref.ref).filter((id) => !out.has(id));
     }
     case "filtered": {
-      // `controller` : le contrôleur, ou le dernier contrôleur connu (Winds of Abandon : « ses créatures exilées »).
+      // `controller`: the controller, or the last known controller (Winds of Abandon: "their exiled creatures").
       const c = ref.filter.controller;
       return resolveRef(s, ctx, ref.ref).filter(
         (id) =>
@@ -467,7 +470,7 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
     case "sameName": {
-      // Les noms sont lus maintenant, avant ce que fait l'effet (sur le champ de bataille : le nom calculé).
+      // The names are read now, before what the effect does (on the battlefield: the computed name).
       const nameOf_ = (id: string) => (s.objects[id] ? chars(s, id).name : s.lki[id]?.name);
       const names = resolveRef(s, ctx, ref.ref).map(nameOf_);
       const same = (id: ObjectId) => names.some((n) => shareName(chars(s, id).name, n));
@@ -475,7 +478,7 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return (s.players[ctx.controller]?.graveyard ?? []).filter(same);
     }
     case "targetsOfEventObject": {
-      // Le sort lancé (l'objet de l'événement) : ses cibles, d'après son élément de pile.
+      // The cast spell (the object of the event): its targets, according to its stack item.
       const id = ctx.event?.objectId;
       const item = s.stack.find((x) => x.id === id || x.sourceId === id);
       return item ? Object.values(item.targets).flat() : [];
@@ -508,9 +511,9 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return alive.filter((p) => count(p) === most);
     }
     case "defendingPlayer": {
-      // Capacité déclenchée : le joueur défenseur figé au déclenchement (508.5 ; Namor tué en réponse, myriade).
+      // Triggered ability: the defending player fixed on triggering (508.5; Namor killed in response, myriad).
       if (ctx.event?.defendingPlayer) return [ctx.event.defendingPlayer];
-      // La source attaque ; sinon, l'attaquant de l'événement (« chaque fois qu'une de vos créatures attaque », Raid
+      // The source attacks; otherwise, the attacker of the event ("whenever a creature you control attacks", Raid
       // Bombardment).
       const atk =
         s.combat?.attackers.find((a) => a.id === ctx.sourceId) ?? s.combat?.attackers.find((a) => a.id === ctx.event?.objectId);
@@ -550,13 +553,13 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "attached": {
       const host = s.objects[ctx.sourceId]?.attachedTo ?? s.lki[ctx.sourceId]?.attachedTo;
-      // Aura de joueur (Grievous Wound) : le joueur enchanté.
+      // Player Aura (Grievous Wound): the enchanted player.
       return host && (onBattlefield(s, host) || isPlayer(s, host)) ? [host] : [];
     }
   }
 }
 
-/** Nombres choisis (`fx.chooseNumbers`) : [joueur, nombre], mémorisés sous `$num:<store>:<joueur>`. */
+/** Chosen numbers (`fx.chooseNumbers`): [player, number], stored under `$num:<store>:<player>`. */
 function numbersChosen(ctx: EffectContext, store: string): [string, number][] {
   const prefix = `$num:${store}:`;
   return Object.entries(ctx.vars ?? {})
@@ -572,8 +575,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "kicked":
       return ctx.kicked ? a.yes : a.no;
     case "powerOf": {
-      // La créature de l'événement qui a quitté le champ de bataille (« quand elle meurt, X étant sa force ») : sa force au
-      // moment de partir (608.2h, dernières informations connues), pas celle de la carte qu'elle est devenue.
+      // The creature of the event that left the battlefield ("when it dies, where X is its power"): its power at the time
+      // of leaving (608.2h, last known information), not that of the card it became.
       const gone = a.ref.kind === "eventObject" ? ctx.event?.objectId : undefined;
       const lki = gone && !s.objects[gone] ? s.lki[gone] : undefined;
       if (lki) return Math.max(0, lki.power);
@@ -582,7 +585,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       if (onBattlefield(s, id)) return Math.max(0, chars(s, id).power);
       if (id === ctx.sourceId) return Math.max(0, ctx.sourceSnapshot.power);
       if (s.lki[id]) return Math.max(0, s.lki[id].power);
-      // Carte hors du champ de bataille (Close Encounter : carte exilée) : force imprimée.
+      // Card outside the battlefield (Close Encounter: exiled card): printed power.
       return Math.max(0, s.defs[s.objects[id]?.defId ?? ""]?.power ?? 0);
     }
     case "eventAmount":
@@ -605,13 +608,13 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       }
       return boardAmount(s, a, ctx.controller, ctx.sourceId);
     case "countersOn": {
-      // L'objet de l'événement qui a quitté le champ de bataille (« quand une créature avec des marqueurs meurt ») : ses
-      // marqueurs au moment de partir (dernières informations connues), pas ceux de la carte qu'il est devenu.
+      // The object of the event that left the battlefield ("when a creature with counters on it dies"): its counters at
+      // the time of leaving (last known information), not those of the card it became.
       const gone = a.ref.kind === "eventObject" ? ctx.event?.objectId : undefined;
       const lki = gone && !s.objects[gone] ? s.lki[gone]?.counters : undefined;
       const id = resolveRef(s, ctx, a.ref)[0];
       const counters = lki ?? ((id && (s.objects[id]?.counters ?? s.lki[id]?.counters)) || {});
-      // « le nombre de marqueurs sur … » (Warden of the Grove) : tous types confondus.
+      // "the number of counters on …" (Warden of the Grove): all kinds together.
       if (a.counter === "any") return Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0);
       return counters[a.counter] ?? 0;
     }
@@ -635,7 +638,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "manaValueOf": {
       const id = resolveRef(s, ctx, a.ref)[0];
       if (!id) return 0;
-      // Un objet qui a cessé d'exister (jeton déplacé hors du champ de bataille) : ses dernières informations connues.
+      // An object that ceased to exist (token moved off the battlefield): its last known information.
       if (!s.objects[id]) return s.lki[id]?.manaValue ?? manaValue(s.defs[s.lki[id]?.defId ?? ""]?.manaCost);
       return viewOf(s, id)?.manaValue ?? manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
     }
@@ -651,7 +654,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "refCount":
       return resolveRef(s, ctx, a.ref).length;
     case "manaSymbols": {
-      // Dévotion : vos permanents (coût de ce qu'ils copient) ; sinon les objets désignés (dernières informations connues).
+      // Devotion: your permanents (cost of what they copy); otherwise the designated objects (last known information).
       const ids = a.of ? resolveRef(s, ctx, a.of) : s.battlefield.filter((id) => s.objects[id]?.controller === ctx.controller);
       return ids.reduce((n, id) => {
         const defId = onBattlefield(s, id) ? copiedDefId(s, id) : (s.objects[id]?.defId ?? s.lki[id]?.defId ?? "");
@@ -718,13 +721,13 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.turnStats.untappedInUntapStep ?? 0;
     case "raw": {
       if (a.of) {
-        // Sans objet désigné encore sur le champ de bataille, aucune valeur : aucune comparaison n'est vraie.
+        // Without a designated object still on the battlefield, no value: no comparison is true.
         const id = resolveRef(s, ctx, a.of).find((x) => s.objects[x]?.zone === "battlefield");
         return id ? chars(s, id).power : Number.NaN;
       }
       const id = ctx.sourceId;
       if (a.what === "power") return id && s.objects[id]?.zone === "battlefield" ? chars(s, id).power : (s.lki[id]?.power ?? 0);
-      // Sort de permanent en cours de résolution (Mockingbird) : le mana dépensé est sur l'élément de pile.
+      // Resolving permanent spell (Mockingbird): the mana spent is on the stack item.
       return (
         (id && (s.objects[id]?.cast?.manaSpent ?? s.lki[id]?.manaSpent ?? s.stack.find((x) => x.id === id)?.cast?.manaSpent)) || 0
       );
@@ -732,7 +735,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
   }
 }
 
-/** Nombre de permanents correspondant au filtre, vus d'un joueur. */
+/** Number of permanents matching the filter, seen from a player. */
 export function boardAmount(
   s: GameState,
   a: Extract<Amount, { kind: "count" }>,
@@ -744,11 +747,11 @@ export function boardAmount(
 
 const PERMANENT = new Set<string>(PERMANENT_TYPES);
 
-/** Valeurs d'une propriété d'un objet (une seule pour un nombre, plusieurs pour des couleurs, des types…). */
+/** Values of a property of an object (only one for a number, several for colors, types…). */
 function propertyValues(s: GameState, id: ObjectId, property: AggregateProperty, counter?: string): (number | string)[] {
   const o = s.objects[id];
-  // Sur le champ de bataille : les caractéristiques calculées ; un objet parti : ses dernières informations connues ;
-  // ailleurs : la carte imprimée (708.2 : face cachée, valeur de mana 0).
+  // On the battlefield: the computed characteristics; an object that left: its last known information; elsewhere: the
+  // printed card (708.2: face down, mana value 0).
   const here = o?.zone === "battlefield";
   const v: Pick<LkiSnapshot, "power" | "toughness" | "colors" | "types" | "subtypes" | "name"> | undefined = here
     ? chars(s, id)
@@ -781,29 +784,29 @@ function propertyValues(s: GameState, id: ObjectId, property: AggregateProperty,
     case "basicLandType":
       return (v ? v.subtypes : (d?.subtypes ?? [])).filter((t) => (BASIC_LAND_TYPES as readonly string[]).includes(t));
     case "name":
-      // 709.4 : chaque nom d'une carte scindée ; un objet sans nom n'en a aucun.
+      // 709.4: each name of a split card; an object without a name has none.
       return nameList(v ? v.name : o ? chars(s, id).name : undefined);
     case "counterKind":
       return Object.entries(counters)
         .filter(([, n]) => n > 0)
         .map(([k]) => k);
     case "counters":
-      // « le nombre de marqueurs parmi les permanents que vous contrôlez » (Dimension X Pizzasaur) : toutes sortes.
+      // "the number of counters among permanents you control" (Dimension X Pizzasaur): all kinds.
       if (counter === "any") return [Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0)];
       return [Math.max(0, counters[counter ?? ""] ?? 0)];
     case "colorIdentity": {
-      // L'identité de couleur est celle de la carte (903.4), où qu'elle soit.
+      // The color identity is that of the card (903.4), wherever it is.
       const def = s.defs[o?.defId ?? s.lki[id]?.defId ?? ""];
       return def ? colorIdentity(def) : [];
     }
   }
 }
 
-/** Objets d'un agrégat : désignés (`of`), d'une zone (`zone`, `whose`), ou du filtre sur le champ de bataille. */
+/** Objects of an aggregate: designated (`of`), of a zone (`zone`, `whose`), or of the filter on the battlefield. */
 function aggregateObjects(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: "aggregate" }>): ObjectId[] {
   if (a.of) {
-    // Les objets du lot qui ont quitté le champ de bataille : leurs dernières informations connues (608.2h ; « la force
-    // totale de ces créatures », The Skullspore Nexus), pas les cartes qu'ils sont devenus.
+    // The objects of the batch that left the battlefield: their last known information (608.2h; "the total power of
+    // those creatures", The Skullspore Nexus), not the cards they became.
     const ev = ctx.event;
     const ids =
       a.of.kind === "eventObjects" && ev
@@ -827,11 +830,11 @@ function aggregateObjects(s: GameState, ctx: EffectContext, a: Extract<Amount, {
     .filter((id) => matchesCard(s, ctx.controller, id, { ...filter, controller: undefined }, ctx.sourceId));
 }
 
-/** `Amount` `aggregate` : somme, plus grande valeur, valeurs différentes ou type de créature le plus partagé. */
+/** `Amount` `aggregate`: sum, greatest value, distinct values or most shared creature type. */
 function aggregate(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: "aggregate" }>): number {
   const ids = aggregateObjects(s, ctx, a);
   if (a.fn === "mostShared") {
-    // Le plus grand nombre d'objets qui ont un type de créature en commun ; un changelin les a tous.
+    // The greatest number of objects that have a creature type in common; a changeling has them all.
     const views = ids.map((id) => viewOf(s, id)).filter((v): v is LkiSnapshot => !!v);
     const changelings = views.filter((v) => v.keywords.includes("changeling")).length;
     const per = new Map<string, number>();
@@ -849,7 +852,7 @@ function aggregate(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: 
 }
 
 /**
- * Ce qui a été dépensé pour lancer l'objet : le sort sur la pile (ou qui se résout), sinon le permanent qu'il est devenu.
+ * What was spent to cast the object: the spell on the stack (or resolving), otherwise the permanent it became.
  */
 function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "cave" | "artifact"): number {
   switch (what) {
@@ -872,14 +875,14 @@ function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "ca
 
 export function damageSource(s: GameState, ctx: EffectContext, ref?: Ref): DamageSource | null {
   if (!ref || (ref.kind === "self" && !onBattlefield(s, ctx.sourceId))) {
-    // 120.3 : une capacité d'un permanent inflige ses blessures avec ce permanent pour source (Trance Kuja).
+    // 120.3: an ability of a permanent deals its damage with that permanent as the source (Trance Kuja).
     if (!ref && onBattlefield(s, ctx.sourceId) && s.objects[ctx.sourceId]?.defId === ctx.sourceDefId) {
       return sourceFromObject(s, ctx.sourceId);
     }
-    // Un sort qui se résout : il est identifié par son élément de pile (Imodane, the Pyrohammer).
+    // A resolving spell: it is identified by its stack item (Imodane, the Pyrohammer).
     const spell =
       s.resolving?.item.kind === "spell" && s.resolving.item.sourceId === ctx.sourceId ? s.resolving.item.id : undefined;
-    // Lo and Li : « vos sorts de Leçon ont le lien de vie » (statique lue au moment des blessures).
+    // Lo and Li: "Lesson spells you control have lifelink" (static read at the time of damage).
     const d = s.defs[ctx.sourceDefId];
     const granted = d
       ? playerStatics(s, ctx.controller, "spellKeywords")
@@ -910,7 +913,7 @@ export function addPump(s: GameState, affected: ObjectId[], power: number, tough
   });
 }
 
-/** Résultat d'un effet : terminé, question au joueur (la résolution est suspendue), ou saut d'effets. */
+/** Result of an effect: done, question to the player (the resolution is suspended), or skipping effects. */
 export type OpResult =
   | undefined
   | { ask: { player: PlayerId; request: ChoiceRequest; key: string } }
@@ -945,9 +948,8 @@ export function moveAndLog(s: GameState, id: ObjectId, to: "hand" | "exile" | "g
 }
 
 /**
- * Meule (701.13) : les cartes désignées, de la bibliothèque de chaque joueur, vont dans son cimetière ; un seul
- * événement groupé (« chaque fois qu'une ou plusieurs cartes non-terrain sont meulées », Fallout). Renvoie les cartes
- * dans les cimetières.
+ * Mill (701.13): the designated cards, from each player's library, go to their graveyard; a single grouped event
+ * ("whenever one or more nonland cards are milled", Fallout). Returns the cards in the graveyards.
  */
 export function millCards(s: GameState, byPlayer: [PlayerId, ObjectId[]][]): ObjectId[] {
   const out: ObjectId[] = [];
@@ -969,26 +971,26 @@ export function millCards(s: GameState, byPlayer: [PlayerId, ObjectId[]][]): Obj
   return out;
 }
 
-/** Ajoute un effet continu (couches) à des objets. */
+/** Adds a continuous effect (layers) to objects. */
 export function addEffect(s: GameState, ids: ObjectId[], mods: LayerMods, duration: "endOfTurn" | "permanent"): void {
   if (ids.length === 0) return;
   bump(s);
   s.effects.push({ id: newId(s, "e"), timestamp: nextTimestamp(s), affected: ids, duration, ...mods });
 }
 
-/** Destination dont le nombre de marqueurs est évalué (`evalMoveSpec`) : ce que reçoit `moveWithSpec`. */
+/** Destination whose number of counters is evaluated (`evalMoveSpec`): what `moveWithSpec` receives. */
 export type EvaluatedMoveSpec = Omit<MoveSpec, "counters"> & { counters?: { kind: string; n: number } };
 
-/** Évalue le nombre de marqueurs d'une destination d'effet (« avec X marqueurs +1/+1 supplémentaires »). */
+/** Evaluates the number of counters of an effect destination ("with X additional +1/+1 counters"). */
 export function evalMoveSpec(s: GameState, ctx: EffectContext, spec: MoveSpec): EvaluatedMoveSpec {
   const c = spec.counters;
   if (!c || typeof c.n === "number") return spec as EvaluatedMoveSpec;
   return { ...spec, counters: { kind: c.kind, n: Math.max(0, evalAmount(s, ctx, c.n)) } };
 }
 
-/** Déplace un objet selon une destination d'effet ; renvoie son nouvel identifiant. */
-/** `choices` : choix d'arrivée faits pendant la résolution (ce que copie un Clone, ce qu'enchante une Aura, les points de */
-/** vie payés pour un terrain choc). */
+/** Moves an object according to an effect destination; returns its new id. */
+/** `choices`: entering choices made during the resolution (what a Clone copies, what an Aura enchants, the life */
+/** paid for a shock land). */
 export function moveWithSpec(
   s: GameState,
   controller: PlayerId,
@@ -998,14 +1000,14 @@ export function moveWithSpec(
 ): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
-  // Face cachée, 2/2 : enveloppée d'une cape (701.58, Vannifar : « enveloppez d'une cape une carte de votre main »), avec la
-  // garde {2}, sous votre contrôle ; manifestée (701.40), sous le contrôle de son propriétaire (sauf « sous votre contrôle »).
+  // Face down, 2/2: cloaked (701.58, Vannifar: "cloak a card from your hand"), with ward {2}, under your control;
+  // manifested (701.40), under its owner's control (except "under your control").
   if (spec.to === "battlefield" && spec.as) {
     const cloak = spec.as === "cloak";
     return putFaceDown(s, cloak || spec.underYourControl ? controller : o.owner, id, cloak);
   }
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
-  // Exilée face cachée (406.3) : les joueurs qui peuvent la regarder.
+  // Exiled face down (406.3): the players who can look at it.
   const viewers =
     zone === "exile" && spec.faceDown
       ? spec.faceDown === "you"
@@ -1025,7 +1027,7 @@ export function moveWithSpec(
   });
   if (o.zone === "battlefield") removeFromCombat(s, id);
   const newController = spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined;
-  // Terrain choc : les points de vie sont payés en arrivant, par le joueur qui le contrôlera.
+  // Shock land: the life is paid as it enters, by the player who will control it.
   const shock = s.defs[o.defId]?.shockLand;
   if (choices?.shockPaid && shock && newController) payLife(s, newController, shock);
   const mods = { addTypes: spec.addTypes, addSubtypes: spec.addSubtypes, addKeywords: spec.addKeywords };
@@ -1034,20 +1036,20 @@ export function moveWithSpec(
     position: spec.to === "libraryBottom" ? "bottom" : "top",
     transformed: spec.transformed,
     tapped: spec.tapped || !!spec.attacking,
-    // Marqueurs, types et attaque : en place avant l'événement d'arrivée (614.1c, 614.12, 508.4).
+    // Counters, types and attack: in place before the entering event (614.1c, 614.12, 508.4).
     enters:
       spec.to === "battlefield"
         ? {
             mods: { ...mods, setTypes: spec.setTypes, setSubtypes: spec.setSubtypes },
-            // 508.4 : le défenseur choisi pendant la résolution (`chooseAttacked`), sinon celui d'une de vos créatures.
+            // 508.4: the defender chosen during the resolution (`chooseAttacked`), otherwise that of one of your creatures.
             attacking: spec.attacking === true && s.combat ? attackingDefender(s, newController ?? o.owner) : undefined,
             ...choices,
-            // Les marqueurs de l'effet, puis ceux des effets « en arrivant » (Altered Ego, Sin).
+            // The counters of the effect, then those of the "as it enters" effects (Altered Ego, Sin).
             counters: [...(spec.counters ? [spec.counters] : []), ...(choices?.counters ?? [])],
           }
         : undefined,
   });
-  // « … N-ième depuis le dessus de la bibliothèque » (Riptide Gearhulk).
+  // "… Nth from the top of the library" (Riptide Gearhulk).
   if (newId_ && spec.to === "libraryTop" && spec.fromTop && spec.fromTop > 1) {
     const lib = s.players[o.owner]?.library;
     if (lib && lib[0] === newId_) {
@@ -1055,24 +1057,24 @@ export function moveWithSpec(
       lib.splice(Math.min(spec.fromTop - 1, lib.length), 0, newId_);
     }
   }
-  // « Mélangez-le dans la bibliothèque de son propriétaire. »
+  // "Shuffle it into its owner's library."
   if (newId_ && zone === "library" && spec.shuffle) shuffle(s, s.players[o.owner]?.library ?? []);
   const moved = newId_ ? s.objects[newId_] : undefined;
-  // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
+  // Counters on an exiled card ("exile it with a loot counter on it", Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (moved && zone === "exile" && viewers) moved.exiledFaceDown = viewers;
-  // Distorsion : lançable depuis l'exil à partir du tour suivant.
+  // Warp: castable from exile from the next turn.
   if (moved && zone === "exile" && spec.warp) moved.exiledVia = { kind: "warp", turn: s.turn.number };
-  // Exhumation (702.84a) : « s'il devait quitter le champ de bataille, exilez-le à la place ».
+  // Unearth (702.84a): "if it would leave the battlefield, exile it instead".
   if (moved && zone === "battlefield" && spec.exileIfLeaves) moved.exileIfLeaves = true;
-  // Le verso (712.14), l'état engagé, les marqueurs, les types et l'attaque sont posés par `moveObject` avant l'événement
-  // d'arrivée (voir `EntersContext`).
+  // The back face (712.14), the tapped state, the counters, the types and the attack are set by `moveObject` before the
+  // entering event (see `EntersContext`).
   return newId_;
 }
 
 /**
- * 508.4 : défenseur d'un permanent mis sur le champ de bataille attaquant, faute de choix : ce qu'attaque une créature de
- * son contrôleur, sinon son premier adversaire.
+ * 508.4: defender of a permanent put onto the battlefield attacking, lacking a choice: what a creature of its
+ * controller is attacking, otherwise its first opponent.
  */
 export function attackingDefender(s: GameState, controller: PlayerId): string {
   return (
@@ -1080,40 +1082,40 @@ export function attackingDefender(s: GameState, controller: PlayerId): string {
   );
 }
 
-/** Peut-on attacher cette Aura ou cet Équipement à ce permanent ? (301.5c, 303.4d) */
+/** Can this Aura or Equipment be attached to this permanent? (301.5c, 303.4d) */
 export function canAttach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   const a = s.objects[what];
-  // Malédiction (Aura « enchanter un joueur ») : un joueur encore en partie (Maddening Hex).
+  // Curse (Aura "enchant player"): a player still in the game (Maddening Hex).
   if (a?.zone === "battlefield" && isPlayer(s, to)) return !!s.defs[a.defId]?.enchant?.player && !s.players[to]?.lost;
   if (a?.zone !== "battlefield" || !onBattlefield(s, to) || what === to) return false;
   const d = s.defs[a.defId];
-  // 702.16c : protection — ni enchantée, ni équipée par ce qui correspond à sa qualité.
+  // 702.16c: protection — neither enchanted nor equipped by what matches its quality.
   if (protectedFrom(s, to, sourceView(s, what))) return false;
   if (d?.enchant) return matchesObjectFilter(s, a.controller, to, d.enchant.filter, what);
   if (chars(s, what).subtypes.includes("Equipment")) return isCreature(s, to);
   return false;
 }
 
-/** 701.3 : attache l'objet ; sans effet si c'est impossible ou s'il y est déjà attaché. */
+/** 701.3: attaches the object; no effect if impossible or if it is already attached to it. */
 export function attach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   const a = s.objects[what];
   if (!a || a.attachedTo === to || !canAttach(s, what, to)) return false;
   a.attachedTo = to;
-  a.timestamp = nextTimestamp(s); // 613.7e : nouvel horodatage
+  a.timestamp = nextTimestamp(s); // 613.7e: new timestamp
   bump(s);
   emit({ type: "attach", objectId: what, defId: a.defId, to, toDefId: s.objects[to]?.defId ?? "" });
   return true;
 }
 
 /**
- * Met une carte défaussée à sa place (701.9) : au cimetière, ou en exil si elle a la folie (702.35a) ; dans ce cas, une
- * capacité déclenchée « lancez-la pour son coût de folie, sinon mettez-la dans votre cimetière » est mise en attente.
- * `byEffect` : la défausse vient d'un effet (pas d'un coût ni de la taille de main maximale).
+ * Puts a discarded card in its place (701.9): into the graveyard, or into exile if it has madness (702.35a); in that
+ * case, a triggered ability "cast it for its madness cost, otherwise put it into your graveyard" is put on hold.
+ * `byEffect`: the discard comes from an effect (not from a cost or the maximum hand size).
  */
 export function moveDiscarded(s: GameState, player: PlayerId, card: ObjectId, byEffect = false): ObjectId | null {
   const d = s.defs[s.objects[card]?.defId ?? ""];
-  // Library of Leng : défaussée par un effet, la carte peut aller au-dessus de la bibliothèque (choix automatique : oui,
-  // sauf une carte avec la folie).
+  // Library of Leng: discarded by an effect, the card can go on top of the library (automatic choice: yes, except a
+  // card with madness).
   if (byEffect && !d?.madness && playerStatic(s, player, "discardToLibraryTop"))
     return moveObject(s, card, "library", { position: "top" });
   if (!d?.madness) return moveObject(s, card, "graveyard");
@@ -1127,24 +1129,24 @@ export function moveDiscarded(s: GameState, player: PlayerId, card: ObjectId, by
         { op: "moveTo", what: c, spec: { to: "graveyard" } },
       ],
       bound: { c: [exiled] },
-      label: "Folie : lancez-la pour son coût de folie, sinon elle va au cimetière",
+      label: msg("Madness: cast it for its madness cost, otherwise it goes to the graveyard"),
     });
   }
   return exiled;
 }
 
-/** Signale une carte défaussée (déclencheurs « chaque fois qu'un adversaire défausse une carte »). */
+/** Signals a discarded card ("whenever an opponent discards a card" triggers). */
 export function announceDiscard(s: GameState, player: PlayerId, card: ObjectId | null): void {
-  // Chaos (Mayhem) : la carte défaussée ce tour-ci peut être lancée depuis le cimetière (journal du tour, `rulesEvent`).
+  // Chaos (Mayhem): the card discarded this turn can be cast from the graveyard (turn log, `rulesEvent`).
   if (card) rulesEvent(s, { e: "discard", player, cards: [card] });
 }
 
-/** Fin d'une défausse : « chaque fois que vous défaussez une ou plusieurs cartes » (une fois, avec leur nombre). */
+/** End of a discard: "whenever you discard one or more cards" (once, with their number). */
 export function announceDiscardBatch(s: GameState, player: PlayerId, count: number): void {
   if (count > 0) rulesEvent(s, { e: "discardBatch", player, count });
 }
 
-/** Numéro du prochain tour de ce joueur (tour en cours exclu). */
+/** Number of this player's next turn (current turn excluded). */
 export function nextTurnOf(s: GameState, player: PlayerId): number {
   const alive = s.playerOrder.filter((p) => !s.players[p]?.lost);
   const i = alive.indexOf(s.turn.active);
@@ -1152,7 +1154,7 @@ export function nextTurnOf(s: GameState, player: PlayerId): number {
   return s.turn.number + alive.length;
 }
 
-/** Permet à un joueur de jouer ces cartes exilées jusqu'à la fin de ce tour, ou de son prochain tour. */
+/** Allows a player to play these exiled cards until the end of this turn, or of their next turn. */
 export function grantPlay(
   s: GameState,
   player: PlayerId,
@@ -1192,27 +1194,27 @@ export function grantPlay(
   ];
 }
 
-/** C'est le tour de ce joueur, avant son étape de fin : « votre prochaine étape de fin » est celle de ce tour. */
+/** It is this player's turn, before their end step: "your next end step" is that of this turn. */
 function beforeYourEndStep(s: GameState, player: PlayerId): boolean {
   return s.turn.active === player && s.turn.step !== "end" && s.turn.step !== "cleanup";
 }
 
-/** Une permission de jouer encore valable : avant la fin de son dernier tour, ou avant son étape de fin. */
+/** A play permission still valid: before the end of its last turn, or before its end step. */
 export function permissionActive(s: GameState, p: { until: number; beforeEndStep?: boolean }): boolean {
   if (p.until > s.turn.number) return true;
   if (p.until < s.turn.number) return false;
   return !(p.beforeEndStep && (s.turn.step === "end" || s.turn.step === "cleanup"));
 }
 
-/** Identité physique de la carte désignée (pour un effet qui dure tant qu'elle reste exilée). */
+/** Physical identity of the designated card (for an effect that lasts as long as it remains exiled). */
 export function exiledUid(s: GameState, ctx: EffectContext, ref: Ref): string | undefined {
   const id = resolveRef(s, ctx, ref)[0];
   return id ? s.objects[id]?.uid : undefined;
 }
 
 /**
- * Met une carte sur le champ de bataille face cachée sous le contrôle de `controller`. Elle pourra être retournée
- * pour son coût de mana si c'est une carte de créature, ou pour son coût de déguisement (701.34c, 701.58c).
+ * Puts a card onto the battlefield face down under the control of `controller`. It can be turned face up for its mana
+ * cost if it is a creature card, or for its disguise cost (701.34c, 701.58c).
  */
 export function putFaceDown(s: GameState, controller: PlayerId, id: ObjectId, ward: boolean): ObjectId | null {
   const o = s.objects[id];
@@ -1223,16 +1225,16 @@ export function putFaceDown(s: GameState, controller: PlayerId, id: ObjectId, wa
   return moveObject(s, id, "battlefield", { controller, faceDown: { ward, upCosts } });
 }
 
-/** Cartes d'une zone appartenant à des joueurs donnés. */
+/** Cards of a zone owned by given players. */
 export function zoneCards(s: GameState, players: string[], zone: "graveyard" | "library" | "hand"): ObjectId[] {
   return players.flatMap((p) => s.players[p]?.[zone] ?? []);
 }
 
 /**
- * Exécute un effet. Les effets qui demandent un choix renvoient `ask` : la résolution est suspendue,
- * puis l'effet est rejoué une fois la réponse rangée dans `r.vars[key]`.
+ * Runs an effect. Effects that ask for a choice return `ask`: the resolution is suspended,
+ * then the effect is replayed once the answer is stored in `r.vars[key]`.
  */
-/** Traitement d'un `op` d'effet : s, résolution, effet (typé selon son `op`), contexte, clé de choix. */
+/** Handling of an effect `op`: s, resolution, effect (typed by its `op`), context, choice key. */
 type Handler<E extends Effect> = (
   s: GameState,
   r: Resolution,
@@ -1241,11 +1243,11 @@ type Handler<E extends Effect> = (
   key: (suffix: string) => string,
 ) => OpResult;
 type AnyHandler = Handler<never>;
-/** Table `op → traitement`, découpée par domaine dans `ops/`. */
+/** `op → handler` table, split by domain in `ops/`. */
 export type OpHandlers = { [K in Effect["op"]]?: Handler<Extract<Effect, { op: K }>> };
 
 let allHandlers: OpHandlers | null = null;
-/** Assemblée au premier appel (les modules `ops/` importent effects.ts). */
+/** Assembled on the first call (the `ops/` modules import effects.ts). */
 function handlers(): OpHandlers {
   const all: OpHandlers =
     allHandlers ??
@@ -1268,7 +1270,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
   return runEffectWith(s, r, e, contextOf(r), (suffix: string) => `${r.pc}:${suffix}`);
 }
 
-/** Exécute un effet avec un contexte et des clés de choix donnés (boucle « en arrivant », `asEntersChoices`). */
+/** Runs an effect with a given context and choice keys ("as it enters" loop, `asEntersChoices`). */
 export function runEffectWith(
   s: GameState,
   r: Resolution,

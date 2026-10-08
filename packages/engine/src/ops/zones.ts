@@ -1,4 +1,4 @@
-/** Effets du moteur : déplacements entre zones (détruire, exiler, sacrifier, chercher, meuler, défausser…). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+/** Engine effects: moves between zones (destroy, exile, sacrifice, search, mill, discard…). Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
 import { dealDamage, destroy, drawCards, sacrifice } from "../actions";
 import { cardRef } from "../choices";
@@ -56,37 +56,38 @@ import {
 } from "../state";
 import { payableLife, playerStatic, quantityMods, recipientMatches } from "../statics";
 import { holderOf, matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
+import { msg } from "../text";
 import { logTurnEvent } from "../turnlog";
 import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
 import { PERMANENT_TYPES } from "../types";
 import { chooseAttacked } from "./permanents";
 
-/** Noms français des types de permanent (questions de `keep`). */
+/** Names of the permanent types (questions of `keep`). */
 const TYPE_LABEL: Partial<Record<CardType, string>> = {
-  Artifact: "artefact",
-  Creature: "créature",
-  Enchantment: "enchantement",
-  Land: "terrain",
-  Planeswalker: "planeswalker",
-  Battle: "bataille",
+  Artifact: msg("artifact"),
+  Creature: msg("creature"),
+  Enchantment: msg("enchantment"),
+  Land: msg("land"),
+  Planeswalker: msg("planeswalker"),
+  Battle: msg("battle"),
 };
 
-/** Le joueur qui contrôlera l'objet mis sur le champ de bataille : vous, ou son propriétaire. */
+/** The player who will control the object put onto the battlefield: you, or its owner. */
 const ownerOr =
   (s: GameState, spec: MoveSpec, you: PlayerId) =>
   (id: ObjectId): PlayerId =>
     spec.underYourControl ? you : (s.objects[id]?.owner ?? you);
 
-/** Choix d'arrivée d'un objet mis sur le champ de bataille par un effet (terrain choc, défenseur, effets « en arrivant »). */
+/** Entering choices of an object put onto the battlefield by an effect (shock land, defender, "as this enters" effects). */
 type Arrival = Partial<EntersContext>;
 
 /**
- * Choix d'arrivée des objets mis sur le champ de bataille par un effet, demandés au joueur qui les contrôlera avant tout
- * déplacement (l'opération est rejouée avec la réponse) : terrains choc (« en arrivant, vous pouvez payer 2 points de vie ;
- * sinon, il arrive engagé ») ; effets « en arrivant » (614.1c, 614.12 : `asEntersChoices`, comme pour un sort de permanent
- * qui se résout ; aucun pour un permanent mis face cachée, 708.2) ; ce qu'attaque un permanent mis sur le champ de bataille
- * attaquant (508.4). `random` : après un tirage au hasard, qui ne serait pas rejoué, aucune question (pas de points de vie
- * payés, les réponses suggérées). Renvoie la question à poser, sinon les choix de chaque objet.
+ * Entering choices of the objects put onto the battlefield by an effect, asked of the player who will control them
+ * before any move (the operation is replayed with the answer): shock lands ("as this enters, you may pay 2 life; if you
+ * don't, it enters tapped"); "as this enters" effects (614.1c, 614.12: `asEntersChoices`, as for a resolving permanent
+ * spell; none for a permanent put face down, 708.2); what a permanent put onto the battlefield attacking attacks (508.4).
+ * `random`: after a random draw, which would not be replayed, no question (no life paid, the suggested answers).
+ * Returns the question to ask, otherwise the choices of each object.
  */
 function arrivalChoices(
   s: GameState,
@@ -116,7 +117,7 @@ function arrivalChoices(
             request: {
               type: "yesNo",
               intent: "may",
-              prompt: `${cardRef(d.id)} : payer ${n} points de vie pour qu'il arrive dégagé ?`,
+              prompt: msg("{card}: pay {n} life so that it enters untapped?", { card: cardRef(d.id), n }),
               suggested: [payableLife(s, who) > 2 * n + 4 ? 1 : 0],
             },
           },
@@ -125,7 +126,7 @@ function arrivalChoices(
       if (answer[0] === 1) out.set(id, { shockPaid: true });
     }
     if (d && !spec.as) {
-      // La face qui arrive : le verso d'une carte transformable mise sur le champ de bataille transformée (712.14).
+      // The entering face: the back face of a transforming card put onto the battlefield transformed (712.14).
       const face = spec.transformed && d.layout === "transform" ? (d.faceDefs?.[1] ?? d) : d;
       const entering = { id, defId: face.id, controller: who };
       const res = asEntersChoices(s, r.vars, entering, key(`enter-${id}:`), random ? "auto" : "ask");
@@ -133,7 +134,7 @@ function arrivalChoices(
       out.set(id, { ...out.get(id), ...res });
     }
     if (d && spec.attacking && !spec.as) {
-      const prompt = `${cardRef(d.id)} : que doit-il attaquer ?`;
+      const prompt = msg("{card}: what should it attack?", { card: cardRef(d.id) });
       const c = chooseAttacked(s, r, ctx, key(`attack-${id}`), who, designated, prompt, { ask: !random });
       if ("ask" in c) return c;
       out.set(id, { ...out.get(id), attacking: c.defender });
@@ -142,7 +143,7 @@ function arrivalChoices(
   return out;
 }
 
-/** Chaque carte reçoit un type de carte qu'elle a, tous différents (couplage, au plus dix cartes) : possible ? */
+/** Can each card be given a card type it has, all different (matching, at most ten cards)? */
 function assignTypes(s: GameState, ids: ObjectId[]): boolean {
   const types = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? [];
   const used = new Map<string, ObjectId>();
@@ -161,7 +162,7 @@ function assignTypes(s: GameState, ids: ObjectId[]): boolean {
   return ids.every((id) => place(id, new Set()));
 }
 
-/** Suggestion « une carte par type » : les cartes dans l'ordre, tant qu'elles prennent un type encore libre. */
+/** "One card per type" suggestion: the cards in order, as long as they take a type still free. */
 function greedyOnePerType(s: GameState, ids: ObjectId[]): ObjectId[] {
   const out: ObjectId[] = [];
   for (const id of ids) if (assignTypes(s, [...out, id])) out.push(id);
@@ -169,8 +170,8 @@ function greedyOnePerType(s: GameState, ids: ObjectId[]): ObjectId[] {
 }
 
 /**
- * « Un adversaire … » sans le cibler, au milieu d'un effet (piles : celui qui sépare ou qui choisit) : le contrôleur le
- * choisit par `chooseAmong` (aucune question avec un seul adversaire ; suggestion : l'adversaire suivant).
+ * "An opponent …" without targeting, in the middle of an effect (piles: the one who separates or chooses): the
+ * controller chooses them with `chooseAmong` (no question with a single opponent; suggestion: the next opponent).
  */
 function opponentChoice(
   s: GameState,
@@ -188,7 +189,9 @@ function opponentChoice(
       what: { kind: "eachOpponent" },
       chooser: { kind: "you" },
       store,
-      prompt: `${nameOf(s, ctx.sourceId)} : choisissez l'adversaire qui ${separates ? "sépare les cartes en deux piles" : "choisit une des piles"}`,
+      prompt: separates
+        ? msg("{card}: choose the opponent who separates the cards into two piles", { card: nameOf(s, ctx.sourceId) })
+        : msg("{card}: choose the opponent who chooses one of the piles", { card: nameOf(s, ctx.sourceId) }),
     },
     ctx,
     (x) => key(`opponent-${x}`),
@@ -204,7 +207,7 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (destroy(s, id, e.noRegenerate, ctx.controller)) destroyed++;
-      // Come Back Wrong, Zero Point Ballad : les cartes mises au cimetière de cette façon.
+      // Come Back Wrong, Zero Point Ballad: the cards put into the graveyard this way.
       const card = o && (s.players[o.owner]?.graveyard ?? []).find((x) => s.objects[x]?.uid === o.uid);
       if (card) stored.push(card);
     }
@@ -213,14 +216,14 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   chooseAmong(s, r, e, ctx, key) {
-    // Des objets, ou des joueurs (« choisissez un adversaire », sans le cibler : `fx.chooseOpponent`).
+    // Objects, or players ("choose an opponent", without targeting: `fx.chooseOpponent`).
     const ids = resolveRef(s, ctx, e.what).filter((id) =>
       isPlayer(s, id) ? !s.players[id]?.lost : e.anyZone ? !!s.objects[id] : onBattlefield(s, id),
     );
     if (ids.length === 0) return;
     const players = ids.every((id) => isPlayer(s, id));
     const chooser = resolveRef(s, ctx, e.chooser).find((x) => isPlayer(s, x)) ?? ctx.controller;
-    // « Un nombre quelconque » (Expose the Culprit) : de zéro à toutes.
+    // "Any number" (Expose the Culprit): from zero to all.
     if (e.anyNumber) {
       const answer = r.vars[key("among")];
       if (!answer) {
@@ -231,7 +234,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: e.prompt ?? "Choisissez un nombre quelconque de ces créatures",
+              prompt: e.prompt ?? msg("Choose any number of these creatures"),
               options: ids,
               min: 0,
               max: ids.length,
@@ -245,13 +248,13 @@ export const HANDLERS: OpHandlers = {
       r.vars[`$ids:${e.store}Rest`] = ids.filter((x) => !chosen.includes(x));
       return;
     }
-    // « Jusqu'à un » : la question est posée même pour un seul objet, et peut rester sans réponse.
+    // "Up to one": the question is asked even for a single object, and can be left unanswered.
     if (e.optional) {
       const answer = r.vars[key("among")];
       if (!answer) {
-        // Suggestion : d'abord un objet d'un autre joueur (Light of Judgment, The Legend of Yangchen) ; parmi les siens
-        // seulement, le premier quand le joueur choisit pour son propre effet (champion, Deepfathom Echo), rien quand il
-        // choisit pour l'effet d'un autre (un adversaire de The Legend of Yangchen n'exile pas l'un des siens).
+        // Suggestion: first an object of another player (Light of Judgment, The Legend of Yangchen); among their own only,
+        // the first when the player chooses for their own effect (champion, Deepfathom Echo), nothing when they choose
+        // for another player's effect (an opponent of The Legend of Yangchen does not exile one of their own).
         const others = ids.filter((id) => holderOf(s, id) !== chooser);
         const suggested = others.length > 0 ? others.slice(0, 1) : chooser === ctx.controller ? ids.slice(0, 1) : [];
         return {
@@ -261,7 +264,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: e.prompt ?? "Choisissez jusqu'à une de ces créatures",
+              prompt: e.prompt ?? msg("Choose up to one of these creatures"),
               options: ids,
               min: 0,
               max: 1,
@@ -279,15 +282,15 @@ export const HANDLERS: OpHandlers = {
       return;
     }
     let picked = ids.length === 1 ? ids[0] : r.vars[key("among")]?.map(String)[0];
-    // « … au hasard » (Indoraptor) : le tirage est gardé avec les réponses (la résolution reprise ne le refait pas) ; aucun
-    // tirage pour une seule option.
+    // "… at random" (Indoraptor): the draw is kept with the answers (the resumed resolution does not redo it); no draw
+    // for a single option.
     if (picked === undefined && e.random) {
       picked = ids[Math.floor(random(s) * ids.length)] as string;
       r.vars[key("among")] = [picked];
     }
     if (picked === undefined) {
-      // Suggestion : un joueur, le premier désigné (l'adversaire suivant dans l'ordre du tour) ; un objet, celui qui a la
-      // plus grande endurance.
+      // Suggestion: a player, the first designated (the next opponent in turn order); an object, the one with the
+      // greatest toughness.
       const suggested = players
         ? (ids[0] as string)
         : ([...ids].sort((a, b) => chars(s, b).toughness - chars(s, a).toughness)[0] as string);
@@ -298,7 +301,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: players ? "other" : "pickCards",
-            prompt: e.prompt ?? (players ? "Choisissez un joueur" : "Choisissez l'une de ces créatures"),
+            prompt: e.prompt ?? (players ? msg("Choose a player") : msg("Choose one of these creatures")),
             options: ids,
             min: 1,
             max: 1,
@@ -338,8 +341,8 @@ export const HANDLERS: OpHandlers = {
               intent: "pickCards",
               prompt:
                 e.exactly !== undefined
-                  ? `Vous pouvez engager ${e.exactly} permanents`
-                  : "Permanents à engager (autant que vous voulez)",
+                  ? msg("You may tap {n} permanents", { n: e.exactly })
+                  : msg("Permanents to tap (as many as you want)"),
               options,
               min: 0,
               max: e.exactly ?? options.length,
@@ -350,7 +353,7 @@ export const HANDLERS: OpHandlers = {
       }
       chosen = answer.map(String).filter((id) => options.includes(id));
       if (e.exactly !== undefined && chosen.length !== 0 && chosen.length !== e.exactly)
-        throw new RulesError(`Engagez exactement ${e.exactly} permanents, ou aucun`);
+        throw new RulesError(msg("Tap exactly {n} permanents, or none", { n: e.exactly }));
     }
     for (const id of chosen) {
       const o = s.objects[id];
@@ -360,8 +363,8 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   millWhileShared(s, _r, e, ctx) {
-    // On recommence tant que les deux cartes meulées partagent un type de carte ou une couleur (la bibliothèque, qui perd
-    // deux cartes à chaque tour de boucle, la borne).
+    // Repeat as long as the two milled cards share a card type or a color (the library, which loses two cards on each
+    // loop iteration, bounds it).
     const def = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""];
     const traits = (id: ObjectId): string[] =>
       e.nonland && def(id)?.types.includes("Land") ? [] : e.share === "color" ? (def(id)?.colors ?? []) : (def(id)?.types ?? []);
@@ -381,7 +384,7 @@ export const HANDLERS: OpHandlers = {
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
     if (!p) return;
     const fullHand = s.players[p]?.hand ?? [];
-    // Taster of Wares : « révèle X cartes de sa main » ; le joueur choisit lesquelles (les moins chères suggérées).
+    // Taster of Wares: "reveals X cards from their hand"; the player chooses which (the cheapest suggested).
     const n = e.reveal !== undefined ? Math.max(0, evalAmount(s, ctx, e.reveal)) : fullHand.length;
     let hand = fullHand;
     if (n < fullHand.length) {
@@ -399,7 +402,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: `Révélez ${n} carte(s) de votre main`,
+              prompt: msg("Reveal {n} card(s) from your hand", { n }),
               options: fullHand,
               min: n,
               max: n,
@@ -409,7 +412,7 @@ export const HANDLERS: OpHandlers = {
         };
       }
       hand = shown.map(String).filter((id) => fullHand.includes(id));
-      if (hand.length !== n) throw new RulesError(`Révélez exactement ${n} carte(s)`);
+      if (hand.length !== n) throw new RulesError(msg("Reveal exactly {n} card(s)", { n }));
     }
     const options = hand.filter((id) => matchesCard(s, p, id, { ...e.filter, controller: undefined }));
     if (options.length === 0) return;
@@ -425,7 +428,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: e.untilLeaves || e.optional ? "Vous pouvez exiler une carte" : "Choisissez la carte à exiler",
+            prompt: e.untilLeaves || e.optional ? msg("You may exile a card") : msg("Choose the card to exile"),
             options,
             min: e.untilLeaves || e.optional ? 0 : 1,
             max: 1,
@@ -437,7 +440,7 @@ export const HANDLERS: OpHandlers = {
     if (answer.length === 0) return;
     const id = String(answer[0]);
     if (!options.includes(id)) return;
-    // Deep-Cavern Bat : « jusqu'à ce que cette créature quitte le champ de bataille » (rien si elle est déjà partie).
+    // Deep-Cavern Bat: "until this creature leaves the battlefield" (nothing if it is already gone).
     if (e.untilLeaves) {
       if (s.objects[ctx.sourceId]?.zone !== "battlefield") return;
       const moved = moveObject(s, id, "exile");
@@ -450,24 +453,30 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   keep(s, r, e, ctx, key) {
-    // « Gardez les permanents choisis » : tous les choix d'abord, joueur par joueur dans l'ordre APNAP (101.4), par chacun
-    // ou par le contrôleur de l'effet ; rien ne bouge avant la fin des choix. Puis le sort tombe en même temps sur tous
-    // les autres permanents du filtre des joueurs désignés.
+    // "Keep the chosen permanents": all the choices first, player by player in APNAP order (101.4), by each player or by
+    // the controller of the effect; nothing moves before the choices are over. Then the fate falls at the same time on
+    // all the other permanents of the filter of the designated players.
     const who = resolveRef(s, ctx, e.who);
     const players = apnapOrder(s).filter((p) => who.includes(p) && !s.players[p]?.lost);
     const among = e.among ?? e.filter;
     const max = e.max !== undefined ? evalAmount(s, ctx, e.max) : 0;
     const power = (id: ObjectId) => Math.max(0, chars(s, id).power);
     const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
-    const noun = among.types?.length === 1 && among.types[0] === "Creature" ? "créature" : "permanent";
-    const fem = noun === "créature" ? "e" : "";
-    const fate = `${e.fate === "destroy" ? "détruit" : "sacrifié"}${fem}s`;
+    const creatures = among.types?.length === 1 && among.types[0] === "Creature";
+    // What happens to the permanents not kept (the French agreement follows the noun).
+    const fate = creatures
+      ? e.fate === "destroy"
+        ? msg("ctx:creatures|destroyed")
+        : msg("ctx:creatures|sacrificed")
+      : e.fate === "destroy"
+        ? msg("ctx:permanents|destroyed")
+        : msg("ctx:permanents|sacrificed");
     const kept = new Set<ObjectId>();
     for (const p of players) {
       const chooser = e.chooser === "you" ? ctx.controller : p;
-      // Suggestion : le meilleur pour soi, le moins bon pour un autre joueur.
+      // Suggestion: the best for oneself, the worst for another player.
       const forSelf = chooser === p;
-      const whose = forSelf ? "" : ` de ${s.players[p]?.name ?? p}`;
+      const owner = s.players[p]?.name ?? p;
       const candidates = s.battlefield.filter(
         (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, ctx.controller, id, among, ctx.sourceId),
       );
@@ -491,7 +500,7 @@ export const HANDLERS: OpHandlers = {
           },
         },
       });
-      // Un seul permanent parmi `options` : sans question s'il n'y en a qu'un.
+      // A single permanent among `options`: no question if there is only one.
       const pickOne = (k: string, options: ObjectId[], prompt: string, best: (a: ObjectId, b: ObjectId) => number) => {
         if (options.length <= 1) return options[0];
         const answer = r.vars[key(k)];
@@ -500,7 +509,7 @@ export const HANDLERS: OpHandlers = {
           return ask(k, prompt, options, 1, 1, [(forSelf ? sorted[0] : sorted[sorted.length - 1]) as string]);
         }
         const id = String(answer[0]);
-        if (answer.length !== 1 || !options.includes(id)) throw new RulesError("Choisissez un des permanents proposés");
+        if (answer.length !== 1 || !options.includes(id)) throw new RulesError(msg("Choose one of the permanents offered"));
         return id;
       };
       if (e.pick === "onePerType") {
@@ -512,8 +521,8 @@ export const HANDLERS: OpHandlers = {
             `keep-${p}-${t}`,
             ofType,
             forSelf
-              ? `Choisissez le permanent de type ${label} que vous gardez (les autres seront ${fate})`
-              : `Choisissez le permanent de type ${label}${whose} qui sera gardé`,
+              ? msg("Choose the {type} permanent you keep (the others will be {fate})", { type: label, fate })
+              : msg("Choose {player}'s {type} permanent that will be kept", { type: label, player: owner }),
             (a, b) => mv(b) - mv(a),
           );
           if (typeof got === "object") return got;
@@ -523,7 +532,7 @@ export const HANDLERS: OpHandlers = {
         if (candidates.length === 0) continue;
         const answer = r.vars[key(`keep-${p}`)];
         if (!answer) {
-          // Suggestion : les plus fortes qui tiennent dans la limite.
+          // Suggestion: the strongest that fit within the limit.
           const suggested: ObjectId[] = [];
           let total = 0;
           for (const id of forSelf ? [...candidates].sort((a, b) => power(b) - power(a)) : []) {
@@ -533,7 +542,21 @@ export const HANDLERS: OpHandlers = {
           }
           return ask(
             `keep-${p}`,
-            `Choisissez les ${noun}s${whose} gardé${fem}s (force totale ${max} ou moins) ; les autres seront ${fate}`,
+            creatures
+              ? forSelf
+                ? msg("Choose the creatures kept (total power {max} or less); the others will be {fate}", { max, fate })
+                : msg("Choose {player}'s creatures kept (total power {max} or less); the others will be {fate}", {
+                    player: owner,
+                    max,
+                    fate,
+                  })
+              : forSelf
+                ? msg("Choose the permanents kept (total power {max} or less); the others will be {fate}", { max, fate })
+                : msg("Choose {player}'s permanents kept (total power {max} or less); the others will be {fate}", {
+                    player: owner,
+                    max,
+                    fate,
+                  }),
             candidates,
             0,
             candidates.length,
@@ -542,18 +565,31 @@ export const HANDLERS: OpHandlers = {
         }
         const chosen = answer.map(String);
         if (chosen.some((id) => !candidates.includes(id)) || new Set(chosen).size !== chosen.length)
-          throw new RulesError("Choisissez parmi les permanents proposés");
-        if (chosen.reduce((n, id) => n + power(id), 0) > max) throw new RulesError(`Force totale supérieure à ${max}`);
+          throw new RulesError(msg("Choose among the permanents offered"));
+        if (chosen.reduce((n, id) => n + power(id), 0) > max)
+          throw new RulesError(msg("Total power greater than {max}", { max }));
         for (const id of chosen) kept.add(id);
       } else if (e.pick === "sharesType") {
-        // Créatures qui partagent un type avec `id` (elle comprise) : on en garde le plus chez soi, le moins ailleurs.
+        // Creatures that share a type with `id` (itself included): keep the most at home, the fewest elsewhere.
         const keptWith = (id: ObjectId) => candidates.filter((x) => x === id || shareCreatureType(s, [id, x])).length;
         const got = pickOne(
           `keep-${p}`,
           candidates,
           forSelf
-            ? `Choisissez une de vos ${noun}s : vos autres ${noun}s sans type en commun avec elle seront ${fate}`
-            : `Choisissez une ${noun}${whose} : ses autres ${noun}s sans type en commun avec elle seront ${fate}`,
+            ? creatures
+              ? msg("Choose one of your creatures: your other creatures that share no type with it will be {fate}", { fate })
+              : msg("Choose one of your permanents: your other permanents that share no type with it will be {fate}", {
+                  fate,
+                })
+            : creatures
+              ? msg("Choose one of {player}'s creatures: their other creatures that share no type with it will be {fate}", {
+                  player: owner,
+                  fate,
+                })
+              : msg("Choose one of {player}'s permanents: their other permanents that share no type with it will be {fate}", {
+                  player: owner,
+                  fate,
+                }),
           (a, b) => keptWith(b) - keptWith(a),
         );
         if (typeof got === "object") return got;
@@ -566,8 +602,12 @@ export const HANDLERS: OpHandlers = {
           `keep-${p}`,
           candidates,
           forSelf
-            ? `Choisissez ${noun === "créature" ? "la créature" : "le permanent"} que vous gardez (les autres seront ${fate})`
-            : `${noun === "créature" ? "Créature épargnée" : "Permanent épargné"} chez ${s.players[p]?.name ?? p}`,
+            ? creatures
+              ? msg("Choose the creature you keep (the others will be {fate})", { fate })
+              : msg("Choose the permanent you keep (the others will be {fate})", { fate })
+            : creatures
+              ? msg("Creature spared for {player}", { player: owner })
+              : msg("Permanent spared for {player}", { player: owner }),
           (a, b) => power(b) - power(a),
         );
         if (typeof got === "object") return got;
@@ -586,12 +626,12 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   craftReturn(s, _r, _e, ctx) {
-    // « Renvoyez cette carte transformée sous le contrôle de son propriétaire » : la carte exilée pour le coût.
+    // "Return it to the battlefield transformed under its owner's control": the card exiled for the cost.
     const card = resolveRef(s, ctx, { kind: "selfCard" }).find((id) => s.objects[id]?.zone === "exile");
     if (!card) return;
     const back = moveWithSpec(s, s.objects[card]?.owner ?? ctx.controller, card, { to: "battlefield", transformed: true });
     const o = back ? s.objects[back] : undefined;
-    // Les matériaux sont liés au verso (Mastercraft Raptor, Sunbird Effigy, The Grim Captain…).
+    // The materials are linked to the back face (Mastercraft Raptor, Sunbird Effigy, The Grim Captain…).
     const exiled = ctx.paid?.exiled ?? [];
     if (o && exiled.length) {
       o.linked = [...(o.linked ?? []), ...exiled];
@@ -600,11 +640,11 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   exileUntilLeaves(s, _r, e, ctx) {
-    // 610.3c : si la source a déjà quitté le champ de bataille, rien n'est exilé.
+    // 610.3c: if the source has already left the battlefield, nothing is exiled.
     if (!onBattlefield(s, ctx.sourceId)) return;
     const cards: string[] = [];
     for (const id of resolveRef(s, ctx, e.what)) {
-      // Aurelia's Vindicator : des cartes de créature des cimetières aussi (elles reviendront en main).
+      // Aurelia's Vindicator: creature cards from graveyards too (they will return to the hand).
       if (!onBattlefield(s, id) && !(e.toHand && s.objects[id]?.zone === "graveyard")) continue;
       const n = moveWithSpec(s, ctx.controller, id, { to: "exile" });
       if (n) cards.push(n);
@@ -613,7 +653,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   pickFromZone(s, r, e, ctx, key) {
-    // Worlds Within Worlds : chaque joueur, dans l'ordre APNAP, choisit dans sa propre zone (pour lui-même).
+    // Worlds Within Worlds: each player, in APNAP order, chooses from their own zone (for themselves).
     if (e.who) {
       for (const p of apnapOrder(s).filter((x) => resolveRef(s, ctx, e.who as NonNullable<typeof e.who>).includes(x))) {
         if (r.vars[key(`pz-${p}-done`)]) continue;
@@ -623,11 +663,11 @@ export const HANDLERS: OpHandlers = {
       }
       return;
     }
-    // « une autre carte » : les objets mémorisés, reconnus par leur identité physique (ils ont changé de zone).
+    // "another card": the stored objects, recognized by their physical identity (they have changed zones).
     const stored = (e.excludeStored ? r.vars[`$ids:${e.excludeStored}`] : undefined)?.map(String) ?? [];
     const excludedUids = new Set(stored.map((id) => s.objects[id]?.uid ?? s.lki[id]?.uid).filter(Boolean));
     const maxMv = e.maxManaValue !== undefined ? evalAmount(s, ctx, e.maxManaValue) : undefined;
-    // Sanar : les couleurs permises (celles des permanents correspondants), une carte au plus par couleur.
+    // Sanar: the allowed colors (those of the matching permanents), at most one card per color.
     const allowed = e.onePerColorOf
       ? new Set(
           s.battlefield
@@ -649,7 +689,7 @@ export const HANDLERS: OpHandlers = {
           ctx.sourceId,
         ),
     );
-    // Eerie Ultimatum : « de noms différents » (au plus une carte par nom).
+    // Eerie Ultimatum: "with different names" (at most one card per name).
     const nameOf = (id: string) => (s.objects[id] ? chars(s, id).name : id);
     const onePerName = e.distinct === "name" ? firstOfEachName(pool, nameOf) : pool;
     const count = Math.min(
@@ -674,7 +714,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: e.prompt ?? `Choisissez ${count} carte(s)`,
+              prompt: e.prompt ?? msg("Choose {n} card(s)", { n: count }),
               options: pool,
               min,
               max: count,
@@ -685,10 +725,10 @@ export const HANDLERS: OpHandlers = {
       }
       picked = answer.map(String);
     }
-    if (allowed && !distinctColors(picked.map(colorsOf))) throw new RulesError("Une carte au plus par couleur");
+    if (allowed && !distinctColors(picked.map(colorsOf))) throw new RulesError(msg("At most one card per color"));
     if (e.distinct === "name" && firstOfEachName(picked, nameOf).length !== picked.length)
-      throw new RulesError("Des cartes de noms différents");
-    // Un tirage au hasard n'est pas rejoué : pas de question après lui.
+      throw new RulesError(msg("Cards with different names"));
+    // A random draw is not replayed: no question after it.
     const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
     if (!(arrival instanceof Map)) return arrival;
     const moved = picked
@@ -700,7 +740,7 @@ export const HANDLERS: OpHandlers = {
   },
   libraryTopOrBottom(s, r, e, ctx, key) {
     for (const id of resolveRef(s, ctx, e.what)) {
-      // Swat Away : un sort ciblé va aussi dans la bibliothèque de son propriétaire.
+      // Swat Away: a targeted spell also goes into its owner's library.
       const spell = s.stack.find((x) => x.id === id && x.kind === "spell");
       const o = s.objects[spell ? spell.sourceId : id];
       if (!o || (!spell && o.zone !== "battlefield")) continue;
@@ -714,10 +754,16 @@ export const HANDLERS: OpHandlers = {
               type: "pick",
               intent: "topOrBottom",
               prompt: e.fromTop
-                ? `${nameOf(s, o.id)} : en position ${e.fromTop} depuis le dessus ou au-dessous de votre bibliothèque ?`
-                : `${nameOf(s, o.id)} : au-dessus ou au-dessous de votre bibliothèque ?`,
+                ? msg("{card}: in position {n} from the top or on the bottom of your library?", {
+                    card: nameOf(s, o.id),
+                    n: e.fromTop,
+                  })
+                : msg("{card}: on top of or on the bottom of your library?", { card: nameOf(s, o.id) }),
               options: ["top", "bottom"],
-              labels: { top: e.fromTop ? `${e.fromTop}e depuis le dessus` : "Au-dessus", bottom: "Au-dessous" },
+              labels: {
+                top: e.fromTop ? msg("Position {n} from the top", { n: e.fromTop }) : msg("On top"),
+                bottom: msg("On the bottom"),
+              },
               min: 1,
               max: 1,
               suggested: [o.controller === ctx.controller ? "top" : "bottom"],
@@ -732,7 +778,7 @@ export const HANDLERS: OpHandlers = {
           to: answer[0] === "top" ? "libraryTop" : "libraryBottom",
           ...(answer[0] === "top" && e.fromTop ? { fromTop: e.fromTop } : {}),
         });
-      // Clash of Elements : « si il le fait, [la source] lui inflige 2 blessures ».
+      // Clash of Elements: "if they do, [the source] deals 2 damage to them".
       const src = e.topDamage && answer[0] === "top" ? damageSource(s, ctx) : null;
       if (src && e.topDamage) dealDamage(s, src, owner, e.topDamage, false);
     }
@@ -746,7 +792,7 @@ export const HANDLERS: OpHandlers = {
           ? exileSpell(s, id)
           : undefined;
       const card = exiled ? s.objects[exiled] : undefined;
-      // Un jeton ou une copie cesse d'exister en exil : rien à lancer.
+      // A token or a copy ceases to exist in exile: nothing to cast.
       if (!card || card.isToken) continue;
       grantPlay(s, card.owner, [card.id], "forever", { cost: { generic: 2, colored: {}, x: 0 }, source: ctx.sourceId });
     }
@@ -780,21 +826,21 @@ export const HANDLERS: OpHandlers = {
         : e.graveyardSize
           ? (s.players[p]?.graveyard.length ?? 0)
           : n;
-      // Remplacements de la meule (R1, famille I) : The Water Crystal (« il en meule autant plus quatre »).
+      // Mill replacements (R1, family I): The Water Crystal ("they mill that many cards plus four").
       const q = quantityMods(s, "mill", (a) => recipientMatches(s, a, p));
       const count = base > 0 && !q.prevented ? chooseReplacementOrder(base, q.mods, "min") : 0;
       const cards = library.slice(0, count);
       for (const id of cards) if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
       batch.push([p, cards]);
     }
-    // Les cartes meulées sont mémorisées (Dredger's Insight : « parmi les cartes meulées »).
+    // The milled cards are stored (Dredger's Insight: "among the milled cards").
     const milled = millCards(s, batch);
     if (e.store) r.vars[`$ids:${e.store.name}`] = [...(r.vars[`$ids:${e.store.name}`] ?? []), ...milled];
     if (e.store) store(r, e.store.name, f ? matching : n);
     return;
   },
   scry(s, r, e, ctx, key) {
-    // « Le joueur ciblé regarde N » : le regard est fait par ce joueur.
+    // "Target player scries N": the scry is done by that player.
     const who = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
     return who ? scryOrSurveil(s, r, e, who === ctx.controller ? ctx : { ...ctx, controller: who }, key) : undefined;
   },
@@ -805,7 +851,7 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who)) {
       if (r.vars[key(`done-${p}`)]) continue;
       const hand = (s.players[p]?.hand ?? []).filter((id) => !f || matchesCard(s, p, id, { ...f, controller: undefined }));
-      // Pox Plague : « la moitié des cartes de sa main, arrondie à l'inférieur ».
+      // Pox Plague: "half the cards in their hand, rounded down".
       const n = e.half ? Math.floor(hand.length / 2) : amount;
       if (e.half && n <= 0) {
         r.vars[key(`done-${p}`)] = [1];
@@ -816,7 +862,7 @@ export const HANDLERS: OpHandlers = {
       const unless = e.unlessFilter;
       const exempt = unless ? hand.filter((id) => matchesCard(s, p, id, { ...unless, controller: undefined })) : [];
       if (unless && exempt.length > 0) {
-        // « Défaussez deux cartes à moins de défausser une carte d'artefact » : une carte d'artefact, ou deux cartes.
+        // "Discard two cards unless you discard an artifact card": an artifact card, or two cards.
         const answer = r.vars[key(`discard-${p}`)];
         if (!answer) {
           return {
@@ -826,7 +872,7 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "discard",
-                prompt: `Défaussez ${n} cartes, ou une seule carte correspondante`,
+                prompt: msg("Discard {n} cards, or a single matching card", { n }),
                 options: [...hand],
                 min: 1,
                 max: Math.min(n, hand.length),
@@ -836,19 +882,19 @@ export const HANDLERS: OpHandlers = {
           };
         }
         chosen = answer.map(String);
-        // Une seule carte qui ne correspond pas : il faut en défausser une autre.
+        // A single card that does not match: another one must be discarded.
         if (chosen.length < n && !chosen.some((id) => exempt.includes(id))) {
           chosen = [...chosen, ...hand.filter((id) => !chosen.includes(id)).slice(0, n - chosen.length)];
         }
       } else if (hand.length <= n && !e.optional && !e.chooser) chosen = [...hand];
       else if (hand.length === 0) chosen = [];
       else if (e.random) {
-        // « … au hasard »
+        // "… at random"
         const pool = [...hand];
         shuffle(s, pool);
         chosen = pool.slice(0, n);
       } else {
-        // Klaw, Sonic Subjugator : le joueur révèle d'abord N cartes de son choix ; le choix se fait parmi elles.
+        // Klaw, Sonic Subjugator: the player first reveals N cards of their choice; the choice is made among them.
         let pool = hand;
         if (e.reveal !== undefined) {
           const k = Math.min(Math.max(0, evalAmount(s, ctx, e.reveal)), hand.length);
@@ -862,7 +908,7 @@ export const HANDLERS: OpHandlers = {
                   request: {
                     type: "pick",
                     intent: "reveal",
-                    prompt: `Révélez ${k} carte(s) de votre main`,
+                    prompt: msg("Reveal {n} card(s) from your hand", { n: k }),
                     options: [...hand],
                     min: k,
                     max: k,
@@ -887,8 +933,10 @@ export const HANDLERS: OpHandlers = {
                 intent: "discard",
                 prompt:
                   chooser === p
-                    ? `${e.optional ? "Vous pouvez défausser" : "Défaussez"} ${n} carte(s)`
-                    : `Choisissez ${max} carte(s) que ce joueur défausse`,
+                    ? e.optional
+                      ? msg("You may discard {n} card(s)", { n })
+                      : msg("Discard {n} card(s)", { n })
+                    : msg("Choose {n} card(s) that this player discards", { n: max }),
                 options: [...pool],
                 min: e.optional ? 0 : max,
                 max,
@@ -905,21 +953,21 @@ export const HANDLERS: OpHandlers = {
       store(r, e.store, readVar(ctx, e.store ?? "") + counted);
       if (chosen.length === 0) continue;
       if (e.exile) {
-        // Intimidation Tactics : la carte choisie est exilée (ce n'est pas une défausse).
+        // Intimidation Tactics: the chosen card is exiled (it is not a discard).
         for (const id of chosen) {
           const moved = moveObject(s, id, "exile");
-          // Cruelclaw's Heist : « vous pouvez lancer cette carte tant qu'elle reste exilée ».
+          // Cruelclaw's Heist: "you may cast that card for as long as it remains exiled".
           if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
         }
         continue;
       }
       emit({ type: "discard", player: p, defIds: chosen.map((id) => s.objects[id]?.defId ?? "") });
       for (const id of chosen) {
-        // Wilt-Leaf Liege : défaussée par un effet adverse, elle va sur le champ de bataille.
+        // Wilt-Leaf Liege: discarded by an opposing effect, it goes onto the battlefield.
         const toField = p !== ctx.controller && !!s.defs[s.objects[id]?.defId ?? ""]?.opponentDiscardToBattlefield;
         const moved = toField ? moveObject(s, id, "battlefield") : moveDiscarded(s, p, id, true);
         if (!toField) announceDiscard(s, p, moved);
-        // Les cartes défaussées, pour `ref.stored` (Ninja's Blades : « la valeur de mana de la carte défaussée »).
+        // The discarded cards, for `ref.stored` (Ninja's Blades: "the discarded card's mana value").
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
       }
       announceDiscardBatch(s, p, chosen.length);
@@ -936,7 +984,7 @@ export const HANDLERS: OpHandlers = {
           matchesObjectFilter(s, p, id, e.filter, ctx.sourceId) &&
           !hasKeyword(s, id, "cantBeSacrificed"),
       );
-      // Zodiark : « la moitié des créatures qu'il contrôle, arrondie à l'inférieur ».
+      // Zodiark: "half the creatures they control, rounded down".
       const n = e.half ? Math.floor(candidates.length / 2) : all;
       if (n <= 0) {
         r.vars[key(`done-${p}`)] = [1];
@@ -967,10 +1015,12 @@ export const HANDLERS: OpHandlers = {
                 intent: "sacrifice",
                 prompt:
                   e.to === "hand"
-                    ? `Renvoyez ${n} permanent(s) dans la main de leur propriétaire`
+                    ? msg("Return {n} permanent(s) to their owner's hand", { n })
                     : e.to === "exile"
-                      ? `Exilez ${n} permanent(s)`
-                      : `${e.optional ? "Vous pouvez sacrifier" : "Sacrifiez"} ${n} permanent(s)`,
+                      ? msg("Exile {n} permanent(s)", { n })
+                      : e.optional
+                        ? msg("You may sacrifice {n} permanent(s)", { n })
+                        : msg("Sacrifice {n} permanent(s)", { n }),
                 options: candidates,
                 min: e.optional ? 0 : max,
                 max,
@@ -984,7 +1034,7 @@ export const HANDLERS: OpHandlers = {
       r.vars[key(`done-${p}`)] = [1];
       store(r, e.store, readVar(ctx, e.store ?? "") + chosen.length);
       if (e.to) {
-        // « … l'exile » : les cartes exilées sont mémorisées (pour les lier à la source) ; « … la renvoie en main ».
+        // "… exiles it": the exiled cards are stored (to link them to the source); "… returns it to hand".
         const exiled = chosen
           .filter((id) => onBattlefield(s, id))
           .map((id) => moveWithSpec(s, ctx.controller, id, { to: e.to ?? "exile" }))
@@ -1043,9 +1093,9 @@ export const HANDLERS: OpHandlers = {
         e.store.name,
         ids.filter((id) => !f || matchesCard(s, ctx.controller, id, { ...f, controller: undefined })).length,
       );
-    // Choix d'arrivée d'un permanent qui n'est pas lancé, demandés avant tout déplacement (la résolution reprend l'effet
-    // depuis le début une fois la réponse donnée) : ce qu'enchante une Aura (303.4f) ; puis `arrivalChoices` (effets « en
-    // arrivant », terrains choc, défenseur).
+    // Entering choices of a permanent that is not cast, asked before any move (the resolution resumes the effect from the
+    // start once the answer is given): what an Aura enchants (303.4f); then `arrivalChoices` ("as this enters" effects,
+    // shock lands, defender).
     const choices: Record<string, Partial<EntersContext>> = {};
     if (e.spec.to === "battlefield") {
       const host = e.attachTo ? resolveRef(s, ctx, e.attachTo).find((x) => onBattlefield(s, x)) : undefined;
@@ -1054,7 +1104,7 @@ export const HANDLERS: OpHandlers = {
         const d = s.defs[o?.defId ?? ""];
         if (!o || !d) continue;
         const who = e.spec.underYourControl ? ctx.controller : o.owner;
-        // « … attachée à [une créature] » : l'Aura ou l'Équipement arrive attaché, s'il peut l'être.
+        // "… attached to [a creature]": the Aura or Equipment enters attached, if it can be.
         if (
           host &&
           (d.enchant
@@ -1075,7 +1125,7 @@ export const HANDLERS: OpHandlers = {
                 request: {
                   type: "pick",
                   intent: "pickCards",
-                  prompt: `${cardRef(d.id)} : choisissez ce qu'elle enchante`,
+                  prompt: msg("{card}: choose what it enchants", { card: cardRef(d.id) }),
                   options,
                   min: 1,
                   max: 1,
@@ -1096,16 +1146,16 @@ export const HANDLERS: OpHandlers = {
     for (const id of ids) {
       const n = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), choices[id]);
       if (n) moved.push(n);
-      // Un jeton qui cesse d'exister (hors du champ de bataille) : son ancien identifiant, pour ses dernières
-      // informations connues (Zoyowa's Justice : propriétaire et valeur de mana).
+      // A token that ceases to exist (off the battlefield): its old identifier, for its last known information
+      // (Zoyowa's Justice: owner and mana value).
       else if (!s.objects[id] && s.lki[id]) moved.push(id);
     }
     if (e.store) r.vars[`$ids:${e.store.name}`] = moved;
     return;
   },
   exileNamesakes(s, r, e, ctx, key) {
-    // The End : le permanent ciblé, exilé, puis ses homonymes chez son contrôleur (qui pioche autant que de cartes
-    // exilées de sa main). Surgical Extraction : la carte de cimetière ciblée et ses homonymes chez son propriétaire.
+    // The End: the targeted permanent, exiled, then the cards with the same name of its controller (who draws as many as
+    // cards exiled from their hand). Surgical Extraction: the targeted graveyard card and its namesakes of its owner.
     if (e.of) {
       const target = resolveRef(s, ctx, e.of).find((id) => onBattlefield(s, id) || s.objects[id]?.zone === "graveyard");
       if (!target) return;
@@ -1134,7 +1184,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "other",
-            prompt: "Exilez une carte du cimetière d'un adversaire (et toutes celles du même nom)",
+            prompt: msg("Exile a card from an opponent's graveyard (and all those with the same name)"),
             options,
             min: 1,
             max: 1,
@@ -1163,8 +1213,8 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
       const pl = s.players[p];
       if (!pl) continue;
-      // « les cartes du nom choisi » : chaque nom d'une carte scindée (709.4), le nom principal d'un aventurier (715.4),
-      // celui du recto d'une carte à deux faces (712.8a).
+      // "the cards with the chosen name": each name of a split card (709.4), the main name of an adventurer (715.4), that
+      // of the front face of a double-faced card (712.8a).
       const named = [...pl.graveyard, ...pl.hand, ...pl.library].filter((x) => hasName(chars(s, x).name, name));
       for (const x of named.slice(0, e.max)) moveObject(s, x, "exile");
       shuffle(s, pl.library);
@@ -1173,7 +1223,7 @@ export const HANDLERS: OpHandlers = {
   },
   moveAll(s, r, e, ctx, key) {
     const players = resolveRef(s, ctx, e.whose).filter((p) => isPlayer(s, p));
-    // « de valeur de mana X » (Fix What's Broken) : le X du sort ou de la capacité.
+    // "with mana value X" (Fix What's Broken): the X of the spell or ability.
     const filter = withX(s, e.filter, ctx);
     const ids =
       e.from === "battlefield"
@@ -1204,7 +1254,7 @@ export const HANDLERS: OpHandlers = {
     const whose = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
     const player = whose ? s.players[whose] : undefined;
     if (!player || !whose) return;
-    // Celui qui choisit : le contrôleur, ou le propriétaire de la bibliothèque (« chaque joueur regarde … »).
+    // The chooser: the controller, or the owner of the library ("each player looks at …").
     const chooser = e.chooser === "owner" ? whose : ctx.controller;
     const top = player.library.slice(0, evalAmount(s, ctx, e.n));
     if (top.length === 0) return;
@@ -1212,7 +1262,7 @@ export const HANDLERS: OpHandlers = {
     const filter = maxMv === undefined ? e.filter : { ...e.filter, maxManaValue: maxMv };
     const options = top.filter((id) => !filter || matchesCard(s, ctx.controller, id, filter, ctx.sourceId));
     const count = evalAmount(s, ctx, e.count);
-    // Suggestion qui respecte la limite de valeur de mana totale (les premières cartes qui tiennent).
+    // Suggestion that respects the total mana value limit (the first cards that fit).
     const withinTotal = (ids: string[]) => {
       if (e.onePerType) return greedyOnePerType(s, options).slice(0, count);
       if (e.maxTotalManaValue === undefined) return ids;
@@ -1230,7 +1280,7 @@ export const HANDLERS: OpHandlers = {
       shuffle(s, pool);
       picked = pool.slice(0, count);
     } else if (e.exact && !e.onePerType && e.maxTotalManaValue === undefined && count > 0 && options.length <= count) {
-      // Toutes les cartes correspondantes doivent être prises (Scroll Rack : « autant de cartes du dessus ») : pas de question.
+      // All the matching cards must be taken (Scroll Rack: "that many cards from the top"): no question.
       picked = options;
     } else if (options.length > 0 && count > 0) {
       const answer = r.vars[key("look")];
@@ -1243,8 +1293,8 @@ export const HANDLERS: OpHandlers = {
               type: "pick",
               intent: "lookAtTop",
               prompt: e.exact
-                ? `Vous regardez les ${top.length} cartes du dessus : choisissez-en ${Math.min(count, options.length)}`
-                : `Vous regardez les ${top.length} cartes du dessus : choisissez-en jusqu'à ${count}`,
+                ? msg("You look at the top {n} cards: choose {k} of them", { n: top.length, k: Math.min(count, options.length) })
+                : msg("You look at the top {n} cards: choose up to {k} of them", { n: top.length, k: count }),
               options,
               min: e.exact ? Math.min(count, options.length) : 0,
               max: Math.min(count, options.length),
@@ -1254,16 +1304,17 @@ export const HANDLERS: OpHandlers = {
         };
       }
       picked = answer.map(String);
-      // Atraxa, Grand Unifier : « pour chaque type de carte, une carte de ce type » (chaque carte prise pour un type différent).
-      if (e.onePerType && !assignTypes(s, picked)) throw new RulesError("Une seule carte par type de carte");
-      // « de valeur de mana totale N ou moins » : un choix qui dépasse est refusé.
+      // Atraxa, Grand Unifier: "for each card type, a card of that type" (each card taken for a different type).
+      if (e.onePerType && !assignTypes(s, picked)) throw new RulesError(msg("Only one card per card type"));
+      // "with total mana value N or less": a choice that exceeds it is refused.
       if (e.maxTotalManaValue !== undefined) {
         const total = picked.reduce((n, id) => n + manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost), 0);
-        if (total > e.maxTotalManaValue) throw new RulesError(`Valeur de mana totale supérieure à ${e.maxTotalManaValue}`);
+        if (total > e.maxTotalManaValue)
+          throw new RulesError(msg("Total mana value greater than {n}", { n: e.maxTotalManaValue }));
       }
     }
     const rest = top.filter((id) => !picked.includes(id));
-    // « Remettez-les dans l'ordre de votre choix » : celui qui regarde ordonne le reste avant tout déplacement.
+    // "Put them back in any order": the player looking orders the rest before any move.
     let order = rest;
     if (e.rest === "reorder" && rest.length > 1) {
       const answer = r.vars[key("order")];
@@ -1275,7 +1326,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "order",
               intent: "scryOrder",
-              prompt: "Ordre des cartes remises au-dessus (la première sera piochée en premier)",
+              prompt: msg("Order of the cards put back on top (the first will be drawn first)"),
               items: rest,
               suggested: rest,
             },
@@ -1284,7 +1335,7 @@ export const HANDLERS: OpHandlers = {
       }
       order = answer.map(String);
       if (order.length !== rest.length || !rest.every((id) => order.includes(id)))
-        throw new RulesError("L'ordre doit reprendre chacune des cartes regardées");
+        throw new RulesError(msg("The order must include each of the cards looked at"));
     }
     const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
     if (!(arrival instanceof Map)) return arrival;
@@ -1299,7 +1350,7 @@ export const HANDLERS: OpHandlers = {
       const lib = player.library.filter((id) => !order.includes(id));
       player.library = [...order.filter((id) => player.library.includes(id)), ...lib];
     } else if (e.rest === "bottom") {
-      // Ordre aléatoire (« dans un ordre aléatoire »).
+      // Random order ("in a random order").
       const lib = player.library.filter((id) => !rest.includes(id));
       const shuffled = [...rest];
       shuffle(s, shuffled);
@@ -1308,17 +1359,17 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   search(s, r, e, ctx, key) {
-    // Chaque joueur désigné cherche dans SA bibliothèque (Demolition Field) ; par défaut, le contrôleur.
+    // Each designated player searches THEIR library (Demolition Field); by default, the controller.
     for (const p of e.who ? resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)) : [ctx.controller]) {
       if (r.vars[key(`sdone-${p}`)]) continue;
       const player = s.players[p];
       if (!player) continue;
-      // Le nombre se lit du point de vue de celui qui cherche (Winds of Abandon : autant que de ses créatures exilées).
+      // The number is read from the point of view of the searching player (Winds of Abandon: as many as their exiled creatures).
       const count = evalAmount(s, e.who ? { ...ctx, controller: p } : ctx, e.count);
       const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
-      // Grim Servant : « valeur de mana au plus égale à votre dévotion au noir ».
+      // Grim Servant: "mana value less than or equal to your devotion to black".
       const maxMv = e.maxManaValue !== undefined ? evalAmount(s, ctx, e.maxManaValue) : undefined;
-      // « valeur de mana X ou moins » : le X du sort qui se résout (Nature's Rhythm).
+      // "mana value X or less": the X of the resolving spell (Nature's Rhythm).
       const base = withX(s, e.filter, ctx);
       const options = player.library.filter((id) =>
         matchesCard(
@@ -1344,7 +1395,7 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "search",
-                prompt: `Cherchez dans votre bibliothèque : jusqu'à ${count} carte(s)`,
+                prompt: msg("Search your library: up to {n} card(s)", { n: count }),
                 options,
                 min: 0,
                 max: Math.min(count, options.length),
@@ -1354,7 +1405,7 @@ export const HANDLERS: OpHandlers = {
           };
         }
         picked = answer.map(String);
-        // « avec des noms différents » : un seul exemplaire de chaque nom.
+        // "with different names": a single copy of each name.
         if (e.distinctNames) picked = firstOfEachName(picked, (id) => (s.objects[id] ? chars(s, id).name : id));
       }
       const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
@@ -1362,7 +1413,7 @@ export const HANDLERS: OpHandlers = {
       r.vars[key(`sdone-${p}`)] = [1];
       rulesEvent(s, { e: "search", player: p });
       logTurnEvent(s, { e: "search", player: p });
-      // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.
+      // 701.23: shuffle after searching; "on top" applies after the shuffle.
       const toTop = e.to.to === "libraryTop";
       for (const id of picked) {
         if (toTop) continue;
@@ -1394,8 +1445,8 @@ export const HANDLERS: OpHandlers = {
             type: "pick",
             intent: "sacrifice",
             prompt: fromGy
-              ? `${nameOf(s, ctx.sourceId)} : exilez jusqu'à ${max} carte(s) de votre cimetière`
-              : `${nameOf(s, ctx.sourceId)} : dévorer (sacrifiez autant de permanents que vous voulez)`,
+              ? msg("{card}: exile up to {n} card(s) from your graveyard", { card: nameOf(s, ctx.sourceId), n: max })
+              : msg("{card}: devour (sacrifice as many permanents as you want)", { card: nameOf(s, ctx.sourceId) }),
             options,
             min: 0,
             max,
@@ -1415,7 +1466,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   revealUntilN(s, r, e, ctx, key) {
-    // La bibliothèque d'un autre joueur (Jhoira, Weatherlight Corsair : un adversaire ciblé).
+    // Another player's library (Jhoira, Weatherlight Corsair: a targeted opponent).
     const owner = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
     const player = owner ? s.players[owner] : undefined;
     if (!player || !owner) return;
@@ -1442,7 +1493,7 @@ export const HANDLERS: OpHandlers = {
       const m = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), arrival.get(id));
       if (m) moved.push(m);
     }
-    // Les cartes déplacées (Jhoira : « perdez autant de PV que sa valeur de mana »).
+    // The moved cards (Jhoira: "lose life equal to its mana value").
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     const lib = player.library.filter((id) => !rest.includes(id));
     shuffle(s, rest);
@@ -1454,13 +1505,13 @@ export const HANDLERS: OpHandlers = {
     if (!player) return;
     const top = player.library.slice(0, e.n);
     if (top.length === 0) return;
-    // Fact or Fiction : un adversaire sépare les cartes révélées, le contrôleur choisit sa pile.
+    // Fact or Fiction: an opponent separates the revealed cards, the controller chooses their pile.
     if (e.opponentSeparates && !r.vars[key("revealed")]) {
       r.vars[key("revealed")] = [1];
       emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
     }
-    // « Un adversaire sépare » (après la révélation) ou « un adversaire choisit » (après la séparation) : le contrôleur
-    // choisit lequel, sans le cibler (aucune question s'il n'y en a qu'un).
+    // "An opponent separates" (after the reveal) or "an opponent chooses" (after the separation): the controller
+    // chooses which one, without targeting (no question if there is only one).
     const asked = r.vars[key("down")] || e.opponentSeparates ? opponentChoice(s, r, ctx, key, e.opponentSeparates) : null;
     if (asked && "ask" in asked) return asked;
     const opp = asked?.player;
@@ -1476,8 +1527,8 @@ export const HANDLERS: OpHandlers = {
             type: "pick",
             intent: "piles",
             prompt: e.revealed
-              ? "Séparez les cartes révélées en deux piles : choisissez celles de la première pile"
-              : "Choisissez les cartes de la pile face cachée (les autres forment la pile face visible)",
+              ? msg("Separate the revealed cards into two piles: choose those of the first pile")
+              : msg("Choose the cards of the face-down pile (the others form the face-up pile)"),
             options: top,
             min: 0,
             max: top.length,
@@ -1490,8 +1541,8 @@ export const HANDLERS: OpHandlers = {
     const faceUp = top.filter((id) => !faceDown.includes(id));
     let pick = r.vars[key("pile")]?.[0];
     if (pick === undefined && chooser) {
-      const names = faceUp.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
-      const downNames = faceDown.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
+      const names = faceUp.map((id) => nameOf(s, id)).join(", ") || msg("no card");
+      const downNames = faceDown.map((id) => nameOf(s, id)).join(", ") || msg("no card");
       if (e.revealed && !e.opponentSeparates)
         emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
       return {
@@ -1502,12 +1553,19 @@ export const HANDLERS: OpHandlers = {
             type: "pick",
             intent: "piles",
             prompt: e.opponentSeparates
-              ? `${nameOf(s, ctx.sourceId)} : choisissez la pile à mettre dans votre main (l'autre va au cimetière)`
-              : `${nameOf(s, ctx.sourceId)} : choisissez la pile que l'adversaire met dans sa main (l'autre va au cimetière)`,
+              ? msg("{card}: choose the pile to put into your hand (the other goes to the graveyard)", {
+                  card: nameOf(s, ctx.sourceId),
+                })
+              : msg("{card}: choose the pile the opponent puts into their hand (the other goes to the graveyard)", {
+                  card: nameOf(s, ctx.sourceId),
+                }),
             options: ["down", "up"],
             labels: e.revealed
-              ? { down: `Première pile : ${downNames}`, up: `Seconde pile : ${names}` }
-              : { down: `Pile face cachée (${faceDown.length} carte(s))`, up: `Pile face visible : ${names}` },
+              ? { down: msg("First pile: {cards}", { cards: downNames }), up: msg("Second pile: {cards}", { cards: names }) }
+              : {
+                  down: msg("Face-down pile ({n} card(s))", { n: faceDown.length }),
+                  up: msg("Face-up pile: {cards}", { cards: names }),
+                },
             min: 1,
             max: 1,
             suggested: [faceDown.length >= faceUp.length !== !!e.opponentSeparates ? "up" : "down"],
@@ -1534,7 +1592,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: `${nameOf(s, ctx.sourceId)} : choisissez les permanents à exiler puis renvoyer`,
+            prompt: msg("{card}: choose the permanents to exile then return", { card: nameOf(s, ctx.sourceId) }),
             options,
             min: 0,
             max: options.length,
@@ -1568,7 +1626,7 @@ export const HANDLERS: OpHandlers = {
     if (!pl) return;
     const revealed = pl.library.slice(0, Math.max(0, ctx.x));
     const typesOf = (id: string) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? [];
-    // Une carte par type de carte : on attribue d'abord les cartes qui ont le moins de types.
+    // One card per card type: the cards with the fewest types are assigned first.
     const order: CardType[] = ["Battle", "Planeswalker", "Enchantment", "Artifact", "Sorcery", "Instant", "Creature", "Land"];
     const picked: string[] = [];
     for (const t of order) {
@@ -1580,8 +1638,8 @@ export const HANDLERS: OpHandlers = {
     emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
     const exiled = picked.map((id) => moveWithSpec(s, ctx.controller, id, { to: "exile" })).filter((x): x is string => !!x);
     for (const id of revealed) if (!picked.includes(id) && s.objects[id]) moveAndLog(s, id, "graveyard");
-    // Quatre cartes ou plus : un sort parmi elles peut être lancé gratuitement (au choix, pendant la résolution) ;
-    // le reste va ensuite en main.
+    // Four or more cards: a spell among them may be cast for free (optionally, during the resolution); the rest then
+    // goes to the hand.
     r.vars["$ids:free"] = exiled.length >= 4 ? exiled.filter((id) => !typesOf(id).includes("Land")) : [];
     r.vars["$ids:rest"] = exiled;
     return;
@@ -1628,9 +1686,9 @@ export const HANDLERS: OpHandlers = {
       r.vars[`$ids:${e.store}`] = all;
       return;
     }
-    // Exiler depuis le dessus jusqu'à une carte correspondante ; seule cette dernière est mémorisée. Black Widow, Super
-    // Spy : la bibliothèque du joueur désigné.
-    // Krang & Shredder : « chaque adversaire exile… » : chacun, les cartes trouvées réunies.
+    // Exile from the top until a matching card; only that last one is stored. Black Widow, Super Spy: the designated
+    // player's library.
+    // Krang & Shredder: "each opponent exiles…": each of them, the cards found gathered.
     const players = e.who ? resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)) : [ctx.controller];
     const all: string[] = [];
     for (const whose of players) {
@@ -1661,7 +1719,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: "Exilez une carte de votre main",
+              prompt: msg("Exile a card from your hand"),
               options: [...hand],
               min: 1,
               max: 1,
@@ -1682,7 +1740,7 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       const d = o ? s.defs[o.defId] : undefined;
-      // Marvel Super Heroes : des cartes modales recto-verso se transforment aussi (Jennifer Walters).
+      // Marvel Super Heroes: modal double-faced cards transform too (Jennifer Walters).
       const back = d?.layout === "transform" || d?.layout === "modal_dfc" ? d.faceDefs?.[1] : undefined;
       if (o?.zone !== "battlefield" || !back) continue;
       o.faceDefId = o.faceDefId === back.id ? undefined : back.id;
@@ -1693,7 +1751,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   meld(s, _r, e, ctx) {
-    // 701.42a : il faut posséder et contrôler les deux permanents.
+    // 701.42a: you must own and control both permanents.
     const src = s.objects[ctx.sourceId];
     const result = src ? s.defs[src.defId]?.meldResultDef : undefined;
     const partner = s.battlefield.find(
@@ -1717,8 +1775,8 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   explore(s, r, e, ctx, key) {
-    // 701.44a : révéler la carte du dessus ; un terrain va en main ; sinon, un marqueur +1/+1 sur la créature et
-    // son contrôleur peut mettre la carte au cimetière.
+    // 701.44a: reveal the top card; a land goes to the hand; otherwise, a +1/+1 counter on the creature and its
+    // controller may put the card into the graveyard.
     const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
     const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
     for (const id of ids) {
@@ -1727,7 +1785,7 @@ export const HANDLERS: OpHandlers = {
         if (r.vars[key(`${k}-done`)]) continue;
         const o = s.objects[id];
         const p = o?.controller;
-        // Twists and Turns : « à la place, regardez 1, puis cette créature explore ».
+        // Twists and Turns: "instead, scry 1, then that creature explores".
         if (p && playerStatic(s, p, "scryBeforeExplore") && !r.vars[key(`${k}-scried`)]) {
           const asked = scryOrSurveil(s, r, { op: "scry", amount: 1 }, { ...ctx, controller: p }, (x) => key(`${k}-scry-${x}`));
           if (asked) return asked;
@@ -1751,7 +1809,7 @@ export const HANDLERS: OpHandlers = {
                 request: {
                   type: "yesNo",
                   intent: "may",
-                  prompt: `Exploration : mettre ${nameOf(s, top)} dans votre cimetière ?`,
+                  prompt: msg("Explore: put {card} into your graveyard?", { card: nameOf(s, top) }),
                   suggested: [0],
                 },
               },
@@ -1772,13 +1830,13 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   connive(s, r, e, ctx, key) {
-    // 701.50a : piocher, défausser ; si une carte non-terrain est défaussée, un marqueur +1/+1 sur la créature.
+    // 701.50a: draw, discard; if a nonland card is discarded, a +1/+1 counter on the creature.
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       const p = o?.controller;
       if (!o || !p || r.vars[key(`connive-${id}-done`)]) continue;
       if (!r.vars[key(`connive-${id}-drew`)]) {
-        // Leader, Super-Genius : « si une créature que vous contrôlez devait comploter, piochez d'abord une carte ».
+        // Leader, Super-Genius: "if a creature you control would connive, draw a card first".
         const first = quantityMods(s, "connive", (a) => recipientMatches(s, a, id)).mods.reduce(
           (n, m) => n + ("add" in m ? (m.add ?? 0) : 0),
           0,
@@ -1805,7 +1863,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "discard",
-              prompt: "Connivence : choisissez la carte à défausser",
+              prompt: msg("Connive: choose the card to discard"),
               options: [...hand],
               min: 1,
               max: 1,
@@ -1826,7 +1884,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   putFaceDown(s, r, e, ctx) {
-    // Manifester (701.34) / cape (701.58) : face cachée, sous le contrôle du contrôleur de l'effet (ou du propriétaire).
+    // Manifest (701.34) / cloak (701.58): face down, under the control of the effect's controller (or of the owner).
     const made: string[] = [];
     for (const id of resolveRef(s, ctx, e.what)) {
       const owner = s.objects[id]?.owner ?? ctx.controller;
@@ -1860,7 +1918,7 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "pickCards",
-                prompt: "Manifestation effroyable : la carte à manifester (l'autre va au cimetière)",
+                prompt: msg("Manifest dread: the card to manifest (the other goes to the graveyard)"),
                 options: top,
                 min: 1,
                 max: 1,
@@ -1897,7 +1955,12 @@ export const HANDLERS: OpHandlers = {
           ask: {
             player: ctx.controller,
             key: key(`up-${id}`),
-            request: { type: "yesNo", intent: "may", prompt: `Retourner ${cardRef(card.id)} face visible ?`, suggested: [1] },
+            request: {
+              type: "yesNo",
+              intent: "may",
+              prompt: msg("Turn {card} face up?", { card: cardRef(card.id) }),
+              suggested: [1],
+            },
           },
         };
       }
@@ -1908,8 +1971,8 @@ export const HANDLERS: OpHandlers = {
   turnFaceUp(s, r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
       const card = s.objects[id]?.faceDown ? s.defs[s.objects[id]?.faceDown?.card ?? ""] : undefined;
-      // Une carte d'éphémère ou de rituel ne peut pas être retournée face visible : Etrata l'exile (`store`), pour la
-      // lancer ensuite sans payer.
+      // An instant or sorcery card can't be turned face up: Etrata exiles it (`store`), to cast it later without
+      // paying.
       if (e.orExileCast && card && (card.types.includes("Instant") || card.types.includes("Sorcery"))) {
         const exiled = moveObject(s, id, "exile");
         if (exiled && e.store) r.vars[`$ids:${e.store}`] = [exiled];
@@ -1921,7 +1984,7 @@ export const HANDLERS: OpHandlers = {
   },
 };
 
-/** « Regard » et « surveillance » (même traitement, selon `e.op`). */
+/** "Scry" and "surveil" (same handling, depending on `e.op`). */
 function scryOrSurveil(
   s: GameState,
   r: Resolution,
@@ -1943,8 +2006,8 @@ function scryOrSurveil(
           type: "pick",
           intent: scry ? "scryBottom" : "surveilGraveyard",
           prompt: scry
-            ? `Regard ${top.length} : choisissez les cartes à mettre au-dessous de votre bibliothèque`
-            : `Surveillance ${top.length} : choisissez les cartes à mettre dans votre cimetière`,
+            ? msg("Scry {n}: choose the cards to put on the bottom of your library", { n: top.length })
+            : msg("Surveil {n}: choose the cards to put into your graveyard", { n: top.length }),
           options: top,
           min: 0,
           max: top.length,
@@ -1965,7 +2028,7 @@ function scryOrSurveil(
           request: {
             type: "order",
             intent: "scryOrder",
-            prompt: "Ordre des cartes remises au-dessus (la première sera piochée en premier)",
+            prompt: msg("Order of the cards put back on top (the first will be drawn first)"),
             items: keep,
             suggested: keep,
           },
@@ -1977,7 +2040,7 @@ function scryOrSurveil(
   const player = s.players[ctx.controller];
   if (!player) return;
   const rest = player.library.slice(top.length);
-  // « Chaque fois que vous regardez ou surveillez » (Reality Fracture).
+  // "Whenever you scry or surveil" (Reality Fracture).
   logTurnEvent(s, { e: "scry", player: ctx.controller });
   rulesEvent(s, { e: "scry", player: ctx.controller });
   if (scry) {
@@ -1986,7 +2049,7 @@ function scryOrSurveil(
   } else {
     player.library = [...order, ...rest];
     if (e.op === "surveil") store(r, e.store, order.length);
-    // Enlightened Confidant, Chandra : certaines des cartes ainsi mises au cimetière vont ensuite en main.
+    // Enlightened Confidant, Chandra: some of the cards put into the graveyard this way then go to the hand.
     const toHand = e.op === "surveil" ? e.toHand : undefined;
     const maxMv = toHand?.maxManaValue !== undefined ? evalAmount(s, ctx, toHand.maxManaValue) : Number.POSITIVE_INFINITY;
     for (const id of picked.map(String)) {
@@ -1995,7 +2058,7 @@ function scryOrSurveil(
         manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost) <= maxMv &&
         (!toHand.filter || matchesCard(s, ctx.controller, id, { ...toHand.filter, controller: undefined }));
       const uid = s.objects[id]?.uid;
-      player.library.push(id); // temporaire : moveAndLog le retire de la bibliothèque
+      player.library.push(id); // temporary: moveAndLog removes it from the library
       moveAndLog(s, id, "graveyard");
       const now = back ? player.graveyard.find((g) => s.objects[g]?.uid === uid) : undefined;
       if (now) moveAndLog(s, now, "hand");
@@ -2004,7 +2067,7 @@ function scryOrSurveil(
   return;
 }
 
-/** Peut-on attribuer à chaque carte une couleur distincte parmi les siennes ? (petits ensembles : recherche exhaustive) */
+/** Can each card be given a distinct color among its own? (small sets: exhaustive search) */
 function distinctColors(options: string[][], used = new Set<string>()): boolean {
   const [first, ...rest] = options;
   if (!first) return true;
@@ -2017,7 +2080,7 @@ function distinctColors(options: string[][], used = new Set<string>()): boolean 
   });
 }
 
-/** Suggestion « une carte par couleur » : chaque carte prend une couleur pas encore prise (dans l'ordre). */
+/** "One card per color" suggestion: each card takes a color not yet taken (in order). */
 function onePerColor(pool: string[], colorsOf: (id: string) => string[]): string[] {
   const used = new Set<string>();
   return pool.filter((id) => {

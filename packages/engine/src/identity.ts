@@ -1,9 +1,8 @@
 /**
- * Identité de couleur (903.4, Commander, PLAN-E) : les couleurs de la carte (indicateur de couleur et capacités qui
- * définissent sa couleur compris, d'après les couleurs importées), plus celles des symboles de mana de son coût et de son
- * texte de règles (texte de rappel exclu ; symboles hybrides et phyrexians compris), sur toutes ses faces (903.4d), plus
- * celles des types de terrain de base de sa ligne de type (les Triomes et terrains doubles à types : Scryfall les compte
- * aussi). Pure, mise en cache par définition.
+ * Color identity (903.4, Commander, PLAN-E): the card's colors (color indicator and color-defining abilities included,
+ * from the imported colors), plus those of the mana symbols of its cost and of its rules text (reminder text excluded;
+ * hybrid and Phyrexian symbols included), on all its faces (903.4d), plus those of the basic land types of its type
+ * line (the Triomes and typed dual lands: Scryfall counts them too). Pure, cached per definition.
  */
 import type { CardDef } from "./model/cards";
 import type { Color } from "./types";
@@ -12,7 +11,7 @@ const ORDER: readonly Color[] = ["W", "U", "B", "R", "G"];
 const LAND_TYPE_COLOR: Record<string, Color> = { Plains: "W", Island: "U", Swamp: "B", Mountain: "R", Forest: "G" };
 const cache = new WeakMap<CardDef, Color[]>();
 
-/** Couleurs des symboles de mana d'un texte (`{W}`, `{2/U}`, `{B/P}`, `{G/U/P}` ; `{C}`, `{X}`, `{T}` ignorés). */
+/** Colors of the mana symbols of a text (`{W}`, `{2/U}`, `{B/P}`, `{G/U/P}`; `{C}`, `{X}`, `{T}` ignored). */
 function symbolColors(text: string, out: Set<Color>): void {
   for (const m of text.matchAll(/\{([^}]+)\}/g))
     for (const part of (m[1] as string).split("/")) if ((ORDER as string[]).includes(part)) out.add(part as Color);
@@ -21,7 +20,7 @@ function symbolColors(text: string, out: Set<Color>): void {
 function addFace(def: Pick<CardDef, "colors" | "manaCostText" | "text" | "subtypes">, out: Set<Color>): void {
   for (const c of def.colors ?? []) out.add(c);
   symbolColors(def.manaCostText ?? "", out);
-  // Texte de rappel (entre parenthèses) exclu : il ne fait pas partie du texte de règles.
+  // Reminder text (in parentheses) excluded: it is not part of the rules text.
   symbolColors((def.text ?? "").replace(/\([^)]*\)/g, ""), out);
   for (const t of def.subtypes ?? []) {
     const c = LAND_TYPE_COLOR[t];
@@ -29,7 +28,7 @@ function addFace(def: Pick<CardDef, "colors" | "manaCostText" | "text" | "subtyp
   }
 }
 
-/** Identité de couleur d'une carte, dans l'ordre WUBRG. */
+/** Color identity of a card, in WUBRG order. */
 export function colorIdentity(def: CardDef): Color[] {
   const known = cache.get(def);
   if (known) return known;
@@ -45,7 +44,7 @@ export function colorIdentity(def: CardDef): Color[] {
   return result;
 }
 
-/** L'identité `inner` est-elle comprise dans `outer` ? */
+/** Is the identity `inner` contained in `outer`? */
 export function withinIdentity(inner: readonly Color[], outer: readonly Color[]): boolean {
   return inner.every((c) => outer.includes(c));
 }

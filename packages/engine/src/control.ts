@@ -1,13 +1,13 @@
 /**
- * Couche 2 (613.1b) : le contrôle des permanents. Chaque permanent a un contrôleur de base (`baseController`, fixé à
- * son arrivée) ; les effets de contrôle (`ContinuousEffect.controller` : vol « jusqu'à la fin du tour », don, échange,
- * « tant que vous contrôlez ») et les Auras qui donnent le contrôle (Confiscate, Eriette) s'y appliquent par ordre
- * d'horodatage (613.7). `syncControl` recalcule le contrôleur de chaque permanent et le change si besoin : quand un
- * effet prend fin, le permanent revient à qui le contrôlerait sans lui, même si d'autres effets ont pris fin entre-temps.
+ * Layer 2 (613.1b): control of permanents. Each permanent has a base controller (`baseController`, set when it
+ * enters); control effects (`ContinuousEffect.controller`: steal "until end of turn", donate, exchange, "for as long as
+ * you control") and the Auras that grant control (Confiscate, Eriette) apply to it in timestamp order (613.7).
+ * `syncControl` recomputes the controller of each permanent and changes it if needed: when an effect ends, the
+ * permanent goes back to whoever would control it without it, even if other effects ended in the meantime.
  *
- * `o.controller` reste la valeur stockée que lit tout le moteur ; elle n'est à jour qu'après `syncControl`, appelé à la
- * fin de chaque opération de contrôle, dans les actions basées sur l'état, après le nettoyage et quand un joueur quitte
- * la partie (800.4a).
+ * `o.controller` remains the stored value that the whole engine reads; it is up to date only after `syncControl`,
+ * called at the end of each control operation, in state-based actions, after cleanup and when a player leaves the game
+ * (800.4a).
  */
 import { removeFromCombat } from "./actions";
 import { chars } from "./layers";
@@ -16,7 +16,7 @@ import { bump, newId, nextTimestamp, setController } from "./state";
 import { playerStatic } from "./statics";
 import type { ContinuousEffect, GameState, ObjectId, PlayerId } from "./types";
 
-/** Ajoute un effet de contrôle et l'applique aussitôt. */
+/** Adds a control effect and applies it at once. */
 export function addControlEffect(
   s: GameState,
   ids: ObjectId[],
@@ -30,16 +30,16 @@ export function addControlEffect(
   syncControl(s);
 }
 
-/** Un joueur qui a quitté la partie ne contrôle plus rien par un effet (800.4a). */
+/** A player who has left the game no longer controls anything through an effect (800.4a). */
 const inGame = (s: GameState, p: PlayerId | undefined) => !!p && !!s.players[p] && !s.players[p]?.lost;
 
 /**
- * Recalcule le contrôleur de chaque permanent (couche 2). Renvoie true si un contrôleur a changé. Idempotent : un
- * second appel ne change rien (invariant du fuzz).
+ * Recomputes the controller of each permanent (layer 2). Returns true if a controller changed. Idempotent: a second
+ * call changes nothing (fuzz invariant).
  */
 export function syncControl(s: GameState): boolean {
   let changed = false;
-  // Le contrôleur d'une Aura qui donne le contrôle peut lui-même dépendre d'un effet : quelques passes au plus.
+  // The controller of an Aura that grants control can itself depend on an effect: a few passes at most.
   for (let pass = 0; pass < 4; pass++) {
     const claims = controlClaims(s);
     let moved = false;
@@ -65,7 +65,7 @@ export function syncControl(s: GameState): boolean {
   return changed;
 }
 
-/** Contrôleurs imposés à chaque permanent, avec leur horodatage. Retire les effets « tant que » qui ont pris fin. */
+/** Controllers imposed on each permanent, with their timestamp. Removes the "for as long as" effects that have ended. */
 function controlClaims(s: GameState): Map<ObjectId, { ts: number; to: PlayerId }[]> {
   const claims = new Map<ObjectId, { ts: number; to: PlayerId }[]>();
   const claim = (id: ObjectId, ts: number, to: PlayerId) => {
@@ -73,7 +73,7 @@ function controlClaims(s: GameState): Map<ObjectId, { ts: number; to: PlayerId }
     if (list) list.push({ ts, to });
     else claims.set(id, [{ ts, to }]);
   };
-  // Possession Engine : « tant que vous contrôlez [la source] » ; l'effet cesse pour de bon (611.2b).
+  // Possession Engine: "for as long as you control [the source]"; the effect ends for good (611.2b).
   const ended = s.effects.filter(
     (e) => e.whileControlledBy && e.whileSource && s.objects[e.whileSource]?.controller !== e.whileControlledBy,
   );
@@ -90,9 +90,9 @@ function controlClaims(s: GameState): Map<ObjectId, { ts: number; to: PlayerId }
     const host = aura?.attachedTo ? s.objects[aura.attachedTo] : undefined;
     if (!aura || host?.zone !== "battlefield" || !inGame(s, aura.controller)) continue;
     const d = s.defs[aura.defId];
-    // Confiscate : « vous contrôlez le permanent enchanté ».
-    // Eriette, the Beguiler : une Aura attachée à un permanent non-terrain de valeur de mana inférieure ou égale (sur un
-    // permanent que son contrôleur contrôle déjà, sans effet).
+    // Confiscate: "you control enchanted permanent".
+    // Eriette, the Beguiler: an Aura attached to a nonland permanent with lesser or equal mana value (on a permanent
+    // its controller already controls, no effect).
     const steals =
       !!d?.subtypes.includes("Aura") &&
       !chars(s, host.id).types.includes("Land") &&
