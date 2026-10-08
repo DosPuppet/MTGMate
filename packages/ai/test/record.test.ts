@@ -20,8 +20,8 @@ describe("enregistrement et rejeu", () => {
     const { state, events, record } = createRecordedGame({
       seed: 1234,
       players: [
-        { id: "p1", name: "Alice", deck: buildDeck(deckById("bienvenue-vert")) },
-        { id: "p2", name: "Bob", deck: buildDeck(deckById("bienvenue-rouge")) },
+        { id: "p1", name: "Alice", deck: buildDeck(deckById("welcome-green")) },
+        { id: "p2", name: "Bob", deck: buildDeck(deckById("welcome-red")) },
       ],
     });
     const host = new GameHost(state, { agents: { p1: heuristicAgent(), p2: randomAgent(7) }, record }, events);
@@ -77,8 +77,8 @@ describe("enregistrement et rejeu", () => {
     const { state, events, record } = createRecordedGame({
       seed: 99,
       players: [
-        { id: "p1", name: "Alice", deck: buildDeck(deckById("bienvenue-bleu")) },
-        { id: "p2", name: "Bob", deck: buildDeck(deckById("bienvenue-noir")) },
+        { id: "p1", name: "Alice", deck: buildDeck(deckById("welcome-blue")) },
+        { id: "p2", name: "Bob", deck: buildDeck(deckById("welcome-black")) },
       ],
     });
     const host = new GameHost(state, { agents: { p1: randomAgent(3), p2: heuristicAgent() }, record }, events);
@@ -123,8 +123,8 @@ describe("enregistrement et rejeu", () => {
     const { state, events, record } = createRecordedGame({
       seed: 99,
       players: [
-        { id: "p1", name: "Alice", deck: buildDeck(deckById("bienvenue-bleu")) },
-        { id: "p2", name: "Bob", deck: buildDeck(deckById("bienvenue-noir")) },
+        { id: "p1", name: "Alice", deck: buildDeck(deckById("welcome-blue")) },
+        { id: "p2", name: "Bob", deck: buildDeck(deckById("welcome-black")) },
       ],
     });
     const host = new GameHost(

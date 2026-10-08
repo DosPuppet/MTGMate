@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./protocol": "./src/protocol.ts"
+    "./protocol": "./src/protocol.ts",
+    "./locales/fr.json": "./locales/fr.json"
   },
   "scripts": {
     "start": "tsx src/main.ts"

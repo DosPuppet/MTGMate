@@ -22,10 +22,10 @@ describe("checkInvariants", () => {
     const s = base();
     const n = sizes(s);
     (s.players.p1 as unknown as Record<string, unknown>).x = [1, new Map()];
-    expect(checkInvariants(s, n)).toEqual(["état non sérialisable en JSON : état.players.p1.x[1] : instance de Map"]);
+    expect(checkInvariants(s, n)).toEqual(["state not serializable to JSON: state.players.p1.x[1]: instance of Map"]);
     (s.players.p1 as unknown as Record<string, unknown>).x = undefined;
     s.players.p1!.life = Number.NaN;
-    expect(checkInvariants(s, n).join("\n")).toContain("état.players.p1.life = NaN");
+    expect(checkInvariants(s, n).join("\n")).toContain("state.players.p1.life = NaN");
   });
 
   it("un cache des caractéristiques périmé (bump oublié) est signalé, champ par champ", () => {
@@ -33,9 +33,7 @@ describe("checkInvariants", () => {
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     chars(s, bear);
     s.objects[bear]!.counters["+1/+1"] = 2;
-    expect(checkInvariants(s, sizes(s))).toEqual([
-      expect.stringMatching(/cache des caractéristiques périmé \(power, toughness\)/),
-    ]);
+    expect(checkInvariants(s, sizes(s))).toEqual([expect.stringMatching(/stale characteristics cache \(power, toughness\)/)]);
   });
 
   it("un contrôle périmé (aucun effet ne justifie le contrôleur actuel) est signalé", () => {
@@ -43,6 +41,6 @@ describe("checkInvariants", () => {
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
     s.objects[bear]!.baseController = "p2";
     s.objects[bear]!.controller = "p1";
-    expect(checkInvariants(s, sizes(s)).join("\n")).toContain("contrôle périmé, p1 au lieu de p2");
+    expect(checkInvariants(s, sizes(s)).join("\n")).toContain("stale control, p1 instead of p2");
   });
 });

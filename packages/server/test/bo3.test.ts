@@ -66,6 +66,6 @@ describe("BO3", () => {
     // Deck vert contre deck rouge : ce ne sont pas les cartes d'Alice.
     a.bot = b.bot = false;
     a.send({ type: "sideboard", main: RED, sideboard: [] });
-    expect((await a.next("error", (m) => m.code === "deck")).message).toMatch(/mêmes cartes/);
+    expect((await a.next("error", (m) => m.code === "deck")).message).toMatch(/same cards/);
   }, 60_000);
 });

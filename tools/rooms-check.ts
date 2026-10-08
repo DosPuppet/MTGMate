@@ -1,9 +1,9 @@
 /**
- * Avant un déploiement (PLAN-C, lot C16) : rejoue une copie des parties en ligne sauvegardées avec le moteur du dépôt, et
- * dit combien reprendraient, combien seraient interrompues (autre version des règles, empreintes différentes) et combien
- * sont illisibles. Les fichiers d'origine ne sont pas touchés.
+ * Before a deployment (PLAN-C, lot C16): replays a copy of the saved online games with the repository's engine, and
+ * tells how many would resume, how many would be interrupted (other rules version, different fingerprints) and how
+ * many are unreadable. The original files are not touched.
  *
- * Usage : npx tsx tools/rooms-check.ts [dossier]   (par défaut data/rooms ; MTGX_DATA_DIR s'il est défini)
+ * Usage: npx tsx tools/rooms-check.ts [dir]   (data/rooms by default; MTGX_DATA_DIR if it is set)
  */
 import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -13,14 +13,14 @@ import { DEFAULT_CONFIG, RoomManager } from "../packages/server/src/rooms";
 
 const source = process.argv[2] ?? process.env.MTGX_DATA_DIR ?? join(process.cwd(), "data", "rooms");
 if (!existsSync(source)) {
-  console.log(`Aucune sauvegarde dans ${source} : rien à vérifier.`);
+  console.log(`No save in ${source}: nothing to check.`);
   process.exit(0);
 }
 const saved = readdirSync(source).filter((f) => f.endsWith(".jsonl"));
 const copy = mkdtempSync(join(tmpdir(), "mtgx-rooms-check-"));
 try {
   for (const f of saved) cpSync(join(source, f), join(copy, f));
-  // Les journaux de la reprise (« Salon … repris ») ne servent pas ici.
+  // The resumption logs ("room … resumed") are of no use here.
   const log = console.log;
   const warn = console.warn;
   const error = console.error;
@@ -32,10 +32,10 @@ try {
   const after = readdirSync(copy);
   const interrupted = after.filter((f) => /\.jsonl\.rules\d+$/.test(f)).length;
   const bad = after.filter((f) => f.endsWith(".jsonl.bad")).length;
-  console.log(`Règles du moteur : version ${RULES_VERSION}. Parties sauvegardées : ${saved.length}.`);
-  console.log(`  reprises : ${rooms.size}`);
-  console.log(`  interrompues par la mise à jour des règles : ${interrupted}`);
-  console.log(`  illisibles ou différentes (mises de côté) : ${bad}`);
+  console.log(`Engine rules: version ${RULES_VERSION}. Saved games: ${saved.length}.`);
+  console.log(`  resumed: ${rooms.size}`);
+  console.log(`  interrupted by the rules update: ${interrupted}`);
+  console.log(`  unreadable or different (set aside): ${bad}`);
   rooms.closeAll();
   process.exitCode = interrupted + bad > 0 ? 2 : 0;
 } finally {

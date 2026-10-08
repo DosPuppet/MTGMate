@@ -1,8 +1,8 @@
 /**
- * Décisions corrompues, pour le fuzz « chaos » : à partir d'une décision légale, on fabrique ce qu'un client
- * malveillant ou bogué pourrait envoyer (identifiant inconnu ou d'une zone cachée, index hors bornes, tableau vidé
- * ou dupliqué, champ supprimé, mauvais type…). Le moteur doit refuser chacune par une RulesError, ou l'accepter
- * si elle est légale par hasard, sans jamais modifier l'état reçu.
+ * Corrupted decisions, for the "chaos" fuzz: from a legal decision, we craft what a malicious or buggy client
+ * could send (unknown id or one from a hidden zone, out-of-bounds index, emptied or duplicated array, removed
+ * field, wrong type…). The engine must refuse each one with a RulesError, or accept it if it happens to be legal,
+ * without ever changing the received state.
  */
 import type { Decision, GameState } from "@mtgx/engine";
 
@@ -28,7 +28,7 @@ function pick<T>(rand: () => number, items: readonly T[]): T {
   return items[Math.floor(rand() * items.length)] as T;
 }
 
-/** Chemins de tous les nœuds (feuilles et conteneurs) de la décision, sauf la racine. */
+/** Paths of all the nodes (leaves and containers) of the decision, except the root. */
 function paths(v: Json, prefix: Path = [], out: Path[] = []): Path[] {
   if (v && typeof v === "object") {
     for (const [k, x] of Array.isArray(v) ? v.map((x, i) => [i, x] as const) : Object.entries(v)) {
@@ -46,14 +46,14 @@ function parentOf(root: Json, path: Path): { parent: Record<string | number, Jso
   return { parent: cur, key: path[path.length - 1] as string | number };
 }
 
-/** Une variante corrompue de `d` (copie : `d` n'est pas modifiée). */
+/** A corrupted variant of `d` (a copy: `d` is not changed). */
 export function corruptDecision(s: GameState, d: Decision, rand: () => number): Decision {
   const out = JSON.parse(JSON.stringify(d)) as Json & { type: string };
   const all = paths(out).filter((p) => p[0] !== "type");
   const ids = Object.keys(s.objects);
   const kind = Math.floor(rand() * 8);
   if (kind === 0 || all.length === 0) {
-    // Autre type de décision, mêmes champs.
+    // Another decision type, same fields.
     out.type = pick(rand, DECISION_TYPES);
     return out as Decision;
   }
@@ -64,7 +64,7 @@ export function corruptDecision(s: GameState, d: Decision, rand: () => number): 
       parent[key] = "o999999";
       break;
     case 2:
-      // Objet existant, souvent dans une zone cachée (bibliothèque, main adverse).
+      // Existing object, often in a hidden zone (library, opponent's hand).
       parent[key] = ids.length ? pick(rand, ids) : "o1";
       break;
     case 3:

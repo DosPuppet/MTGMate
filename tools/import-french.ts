@@ -1,20 +1,20 @@
 /**
- * Données françaises manquantes d'une extension (PLAN-C, C19), sans réimporter le reste (FDN et FRA sont retouchés à la
- * main) : pour chaque carte sans `fr`, l'impression française du même set (même numéro, sinon même nom anglais), sinon
- * celle d'une autre extension (nom, type, texte ; l'image reste l'anglaise, l'illustration pouvant différer).
- * Cartes « à préparer » : le sort préparé reçoit aussi son texte français. Les cartes à plusieurs faces sont laissées à
- * l'importeur (un français par face).
+ * Missing French data of a set (PLAN-C, C19), without reimporting the rest (FDN and FRA are edited by hand): for each
+ * card without `fr`, the French printing of the same set (same number, otherwise same English name), otherwise that of
+ * another set (name, type, text; the image stays the English one, since the art may differ).
+ * "prepare" cards: the prepared spell also gets its French text. Multi-face cards are left to the importer (one French
+ * text per face).
  *
- * Usage : npx tsx tools/import-french.ts <set>   (réécrit packages/cards/data/<set>.json à l'identique, fr ajouté)
+ * Usage: npx tsx tools/import-french.ts <set>   (rewrites packages/cards/data/<set>.json identically, fr added)
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SET = (process.argv[2] ?? "").toLowerCase();
-if (!SET) throw new Error("Usage : npx tsx tools/import-french.ts <set>");
+if (!SET) throw new Error("Usage: npx tsx tools/import-french.ts <set>");
 const FILE = join(dirname(fileURLToPath(import.meta.url)), "..", "packages", "cards", "data", `${SET}.json`);
-const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "application/json" };
+const HEADERS = { "User-Agent": "MTGX/0.1 (non-commercial project)", Accept: "application/json" };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 interface FrPrint {
@@ -45,7 +45,7 @@ async function search(query: string): Promise<FrPrint[]> {
       res = await fetch(url, { headers: HEADERS });
     }
     if (res.status === 404) return out;
-    if (!res.ok) throw new Error(`Scryfall ${res.status} sur ${url}`);
+    if (!res.ok) throw new Error(`Scryfall ${res.status} on ${url}`);
     const page = (await res.json()) as { data: FrPrint[]; has_more: boolean; next_page?: string };
     out.push(...page.data);
     url = page.has_more ? (page.next_page ?? null) : null;
@@ -56,15 +56,15 @@ async function search(query: string): Promise<FrPrint[]> {
 
 const raw = readFileSync(FILE, "utf8");
 const data = JSON.parse(raw) as Entry[];
-// Cartes à plusieurs faces : un français par face, que donne l'importeur (`tools/import-scryfall.ts`).
+// Multi-face cards: one French text per face, given by the importer (`tools/import-scryfall.ts`).
 const missing = data.filter((c) => !c.fr && !(c as { faces?: unknown }).faces);
 const front = (n: string) => n.split(" // ")[0] as string;
 
-// 1. Même set : par numéro, sinon par nom anglais.
+// 1. Same set: by number, otherwise by English name.
 const same = await search(`set:${SET} lang:fr`);
 const byNumber = new Map(same.map((p) => [p.collector_number, p]));
 const byName = new Map(same.map((p) => [front(p.name), p]));
-// 2. Autres extensions : la plus récente impression française de chaque nom encore manquant (requêtes groupées).
+// 2. Other sets: the newest French printing of each name still missing (grouped queries).
 const elsewhere = new Map<string, FrPrint>();
 const rest = missing.filter((c) => !byNumber.get(c.number) && !byName.get(c.name)).map((c) => c.name);
 for (let i = 0; i < rest.length; i += 20) {
@@ -93,5 +93,5 @@ for (const c of missing) {
 }
 writeFileSync(FILE, `${JSON.stringify(data, null, 1)}\n`);
 console.log(
-  `${SET} : ${filled} / ${missing.length} cartes sans français complétées (${same.length} impressions françaises du set, ${elsewhere.size} d'autres extensions)`,
+  `${SET}: ${filled} / ${missing.length} cards without French completed (${same.length} French printings of the set, ${elsewhere.size} from other sets)`,
 );

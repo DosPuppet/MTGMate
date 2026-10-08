@@ -1,9 +1,9 @@
 /**
- * Serveur compilé pour la production (PLAN-C, lot C16) : un seul fichier `packages/server/dist/main.mjs` (moteur, cartes,
- * ws compris), lancé par Node sans `tsx` (`deploy/ecosystem.config.cjs`). Le commit est inscrit dans le fichier
- * (`MTGX_BUILD`, affiché par `/healthz`).
+ * Server compiled for production (PLAN-C, lot C16): a single file `packages/server/dist/main.mjs` (engine, cards, ws
+ * included), run by Node without `tsx` (`deploy/ecosystem.config.cjs`). The commit is written into the file
+ * (`MTGX_BUILD`, shown by `/healthz`).
  *
- * Usage : npm run build:server
+ * Usage: npm run build:server
  */
 import { execSync } from "node:child_process";
 import { statSync } from "node:fs";
@@ -14,12 +14,12 @@ import { build } from "esbuild";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outfile = join(root, "packages", "server", "dist", "main.mjs");
 
-let commit = "inconnu";
+let commit = "unknown";
 try {
   commit = execSync("git rev-parse --short HEAD", { cwd: root }).toString().trim();
-  if (execSync("git status --porcelain", { cwd: root }).toString().trim()) commit += "+modifié";
+  if (execSync("git status --porcelain", { cwd: root }).toString().trim()) commit += "+modified";
 } catch {
-  // Hors d'un dépôt git : version inconnue.
+  // Outside a git repository: unknown version.
 }
 
 await build({
@@ -30,14 +30,14 @@ await build({
   format: "esm",
   target: "node22",
   sourcemap: true,
-  // Dépendances natives facultatives de ws : absentes, ws s'en passe.
+  // Optional native dependencies of ws: absent, ws does without them.
   external: ["bufferutil", "utf-8-validate"],
   define: { "process.env.MTGX_BUILD": JSON.stringify(commit) },
-  // Modules CommonJS empaquetés (ws) : `require` en ESM.
+  // Bundled CommonJS modules (ws): `require` in ESM.
   banner: { js: "import { createRequire as __mtgxRequire } from 'node:module'; const require = __mtgxRequire(import.meta.url);" },
   logLevel: "warning",
 });
-// Worker des sièges IA (PLAN-E, E14) : un second fichier à côté du serveur, chargé par `aiPool.ts`.
+// Worker of the AI seats (PLAN-E, E14): a second file next to the server, loaded by `aiPool.ts`.
 const workerFile = join(root, "packages", "server", "dist", "ai-worker.mjs");
 await build({
   entryPoints: [join(root, "packages", "server", "src", "aiWorker.ts")],
@@ -50,5 +50,5 @@ await build({
   banner: { js: "import { createRequire as __mtgxRequire } from 'node:module'; const require = __mtgxRequire(import.meta.url);" },
   logLevel: "warning",
 });
-console.log(`Worker d'IA compilé : ${workerFile} (${(statSync(workerFile).size / 1_048_576).toFixed(1)} Mo)`);
-console.log(`Serveur compilé : ${outfile} (${(statSync(outfile).size / 1_048_576).toFixed(1)} Mo, ${commit})`);
+console.log(`AI worker compiled: ${workerFile} (${(statSync(workerFile).size / 1_048_576).toFixed(1)} MB)`);
+console.log(`Server compiled: ${outfile} (${(statSync(outfile).size / 1_048_576).toFixed(1)} MB, ${commit})`);

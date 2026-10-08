@@ -1,24 +1,24 @@
 /**
- * Illustrations personnelles : un dossier local d'images de cartes (proxys, versions alternatives) qui remplacent celles
- * de Scryfall, partout où la carte s'affiche, quand la case « Illustrations personnelles » est cochée. Rien de ce dossier
- * n'entre dans Git : les images préparées vont dans `data/art/` (ignoré), servi sur /art/ par le serveur de parties et par
- * Vite en développement (`MTGX_ART_DIR` pour un autre dossier).
+ * Custom art: a local directory of card images (proxies, alternative versions) that replace the Scryfall ones,
+ * wherever the card is shown, when the "Custom art" box is checked. Nothing from this directory goes into Git: the
+ * prepared images go to `data/art/` (ignored), served on /art/ by the game server and by Vite in development
+ * (`MTGX_ART_DIR` for another directory).
  *
- * Noms de fichiers reconnus (le nom anglais de la carte, comme dans le catalogue, casse indifférente) :
- * - « Sol Ring.png », « Ancient Tomb (City Ruins).png » : le texte entre parenthèses (nom alternatif) est ignoré ;
- * - « _ » tient lieu d'apostrophe (« Urza_s Saga ») ; ponctuation ignorée ; une lettre d'écart admise si une seule carte
- *   convient (« Ugin, Eye of the Storm ») ;
- * - « Wastes (The Cage) 2.png » : variante numérotée ; « Extra - Basalt Monolith.png » ; « 1_2_Explore the Vastlands »
- *   (face 2 d'une carte à deux faces : chaque face est cherchée par son nom) ;
- * - « Token - Robot 1.png » : jeton, par son nom ; « Card Back 1.png » : dos des cartes.
- * Une seule image par nom : celle du premier niveau du dossier avant celles des sous-dossiers, la non numérotée avant la
- * plus petite variante. Les noms inconnus et les variantes écartées sont listés.
+ * File names recognized (the English name of the card, as in the catalog, case-insensitive):
+ * - "Sol Ring.png", "Ancient Tomb (City Ruins).png": the text in parentheses (alternative name) is ignored;
+ * - "_" stands for an apostrophe ("Urza_s Saga"); punctuation ignored; one letter of difference allowed if only one
+ *   card matches ("Ugin, Eye of the Storm");
+ * - "Wastes (The Cage) 2.png": numbered variant; "Extra - Basalt Monolith.png"; "1_2_Explore the Vastlands" (face 2
+ *   of a double-faced card: each face is looked up by its name);
+ * - "Token - Robot 1.png": token, by its name; "Card Back 1.png": card back.
+ * A single image per name: the one at the top level of the directory before those of the subdirectories, the
+ * unnumbered one before the smallest variant. Unknown names and discarded variants are listed.
  *
- * Les images sont recadrées au format d'une carte (63 × 88 : le fond perdu d'impression est retiré), réduites à 672 px de
- * large et converties en WebP par le Chromium de Playwright (aucune dépendance de plus). Une image déjà préparée et non
- * modifiée n'est pas refaite ; les fichiers qui ne servent plus sont effacés.
+ * The images are cropped to the card format (63 × 88: the print bleed is removed), scaled down to 672 px wide and
+ * converted to WebP by Playwright's Chromium (no extra dependency). An image already prepared and not modified is not
+ * redone; the files no longer used are deleted.
  *
- * Usage : npm run custom-art -- <dossier des images> [--out data/art]
+ * Usage: npm run custom-art -- <image directory> [--out data/art]
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -31,7 +31,7 @@ const outIdx = args.indexOf("--out");
 const OUT = outIdx >= 0 ? (args[outIdx + 1] ?? "") : process.env.MTGX_ART_DIR || "data/art";
 const srcArg = args.find((a, i) => !a.startsWith("--") && (outIdx < 0 || i !== outIdx + 1));
 if (!srcArg || !existsSync(srcArg) || !OUT) {
-  console.error("Usage : npm run custom-art -- <dossier des images> [--out data/art]");
+  console.error("Usage: npm run custom-art -- <image directory> [--out data/art]");
   process.exit(1);
 }
 const SRC = resolve(srcArg);
@@ -43,9 +43,9 @@ interface Source {
   file: string;
   kind: Kind;
   name: string;
-  /** 0 : premier niveau du dossier ; 1 : sous-dossier. */
+  /** 0: top level of the directory; 1: subdirectory. */
   depth: number;
-  /** 0 : sans numéro. */
+  /** 0: no number. */
   variant: number;
 }
 
@@ -75,18 +75,18 @@ function parse(file: string): Source {
   return { file, kind, name, depth, variant };
 }
 
-/** Clé de comparaison des noms : casse, accents, ponctuation et espaces ignorés (« Power-Plant » = « Power Plant »). */
+/** Comparison key of names: case, accents, punctuation and spaces ignored ("Power-Plant" = "Power Plant"). */
 const nameKey = (s: string) =>
   s
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
-/** Noms du catalogue (cartes et faces) → nom exact. */
+/** Names of the catalog (cards and faces) → exact name. */
 const catalog = new Map<string, string>();
 for (const c of Object.values(CARDS)) for (const d of [c, ...(c.faceDefs ?? [])]) catalog.set(nameKey(d.name), d.name);
 
-/** Une lettre de plus, de moins ou changée (« Eye of the Storm » pour « Eye of the Storms ») : le seul nom si un seul convient. */
+/** One letter more, less or changed ("Eye of the Storm" for "Eye of the Storms"): the only name if only one matches. */
 function oneEdit(a: string, b: string): boolean {
   if (Math.abs(a.length - b.length) > 1) return false;
   let i = 0;
@@ -130,7 +130,7 @@ const slug = (s: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-/** Nom du fichier préparé : change avec l'image source (cache d'un an côté navigateur). */
+/** Name of the prepared file: changes with the source image (one-year cache in the browser). */
 function outName(src: Source): string {
   const st = statSync(src.file);
   const hash = createHash("sha1").update(`${src.file}:${st.size}:${st.mtimeMs}`).digest("hex").slice(0, 8);
@@ -153,8 +153,8 @@ for (const src of chosen.values()) {
   if (!existsSync(join(OUT, out))) todo.push({ src, out });
 }
 
-// Recadrage (fond perdu retiré : marge égale sur les quatre côtés qui ramène au format 63 × 88), réduction par moitiés
-// successives (meilleur lissage qu'une seule réduction), puis WebP. Code de page en texte : pas de fonction nommée.
+// Cropping (bleed removed: an equal margin on the four sides that brings back the 63 × 88 format), scaling down by
+// successive halves (better smoothing than a single scaling), then WebP. Page code as text: no named function.
 const RESIZE = `async ([url, W, H]) => {
   const img = new Image();
   img.src = url;
@@ -207,23 +207,23 @@ if (todo.length) {
       const data = (await page.evaluate(`(${RESIZE})(${JSON.stringify([url, WIDTH, HEIGHT])})`)) as string;
       writeFileSync(join(OUT, t.out), Buffer.from(data.slice(data.indexOf(",") + 1), "base64"));
       done++;
-      if (done % 10 === 0) console.log(`  ${done} images préparées…`);
+      if (done % 10 === 0) console.log(`  ${done} images prepared…`);
     }
     await page.close();
   };
   const started = Date.now();
   await Promise.all(Array.from({ length: 4 }, work));
   await browser.close();
-  console.log(`${done} images préparées en ${((Date.now() - started) / 1000).toFixed(0)} s.`);
+  console.log(`${done} images prepared in ${((Date.now() - started) / 1000).toFixed(0)} s.`);
 }
 
-// Fichiers préparés qui ne servent plus (image source modifiée ou retirée).
+// Prepared files no longer used (source image modified or removed).
 const used = new Set([...Object.values(manifest.cards), ...Object.values(manifest.tokens), manifest.back]);
 for (const f of readdirSync(OUT)) if (f.endsWith(".webp") && !used.has(f)) unlinkSync(join(OUT, f));
 writeFileSync(join(OUT, "manifest.json"), `${JSON.stringify(manifest, null, 1)}\n`);
 
 const n = Object.keys(manifest.cards).length;
 const tk = Object.keys(manifest.tokens).length;
-console.log(`${OUT}/manifest.json : ${n} cartes, ${tk} jetons${manifest.back ? ", dos des cartes" : ""}.`);
-if (skipped.length) console.log(`Variantes écartées (une seule image par nom) : ${skipped.length}.`);
-if (unknown.size) console.log(`Cartes absentes du catalogue (ignorées) : ${[...unknown].sort().join(", ")}.`);
+console.log(`${OUT}/manifest.json: ${n} cards, ${tk} tokens${manifest.back ? ", card back" : ""}.`);
+if (skipped.length) console.log(`Discarded variants (a single image per name): ${skipped.length}.`);
+if (unknown.size) console.log(`Cards absent from the catalog (ignored): ${[...unknown].sort().join(", ")}.`);

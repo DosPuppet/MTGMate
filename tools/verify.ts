@@ -1,17 +1,17 @@
 /**
- * Vérification d'un lot, parallélisée et chronométrée.
+ * Verification of a lot, parallelized and timed.
  *
- * Usage :
- *   npm run verify -- --set FIN     vérification d'un lot (fuzz ciblé sur l'extension, environ 2 min)
- *   npm run verify -- --set META    lot du méta (plan P4) : fuzz entre les decks du méta jouables (docs/meta/)
- *   npm run verify -- --full        vérification complète (fin d'extension, avant une fusion)
- *   npm run verify -- --ci          intégration continue (GitHub Actions) : contrôles, tests et fuzz courts sur tout
- *                                   le pool, sans tests d'interface ni bench
- *   options : --ui (force les tests d'interface), --no-ui (les saute), --no-bench (saute le bench de --full)
+ * Usage:
+ *   npm run verify -- --set FIN     verification of a lot (fuzz targeted on the set, about 2 min)
+ *   npm run verify -- --set META    meta lot (plan P4): fuzz between the playable meta decks (docs/meta/)
+ *   npm run verify -- --full        full verification (end of a set, before a merge)
+ *   npm run verify -- --ci          continuous integration (GitHub Actions): checks, tests and short fuzzes on the
+ *                                   whole pool, without interface tests or bench
+ *   options: --ui (forces the interface tests), --no-ui (skips them), --no-bench (skips the bench of --full)
  *
- * Chaque étape affiche sa durée ; le détail d'une étape n'est affiché qu'en cas d'échec
- * (journaux complets dans test-results/verify/). Les tests d'interface demandent Vite (npm run dev) :
- * par défaut, ils ne tournent que si le client, la vue ou le protocole ont changé depuis le dernier commit.
+ * Each step prints its duration; the detail of a step is printed only on failure (full logs in
+ * test-results/verify/). The interface tests require Vite (npm run dev): by default, they run only if the client,
+ * the view or the protocol changed since the last commit.
  */
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -26,12 +26,12 @@ const opt = (n: string) => {
 const full = flag("full");
 const ci = flag("ci");
 const set = opt("set")?.toUpperCase();
-// Lot du méta : les cartes touchent plusieurs extensions ; le fuzz ciblé joue les decks du méta. Commander (PLAN-E) :
-// `--set COMMANDER` joue les préconstruits Commander ; `--set EDH` ajoute des parties de Commander aux séries ciblées.
+// Meta lot: the cards span several sets; the targeted fuzz plays the meta decks. Commander (PLAN-E):
+// `--set COMMANDER` plays the Commander precons; `--set EDH` adds Commander games to the targeted series.
 const pool = set === "META" ? "meta" : set === "COMMANDER" ? "commander" : set;
 const commanderOnly = set === "COMMANDER" ? " --format commander" : "";
 if (!full && !ci && !set) {
-  console.error("Préciser --set <extension> (vérification d'un lot), --full ou --ci.");
+  console.error("Specify --set <set> (verification of a lot), --full or --ci.");
   process.exit(2);
 }
 const jobs = Math.max(1, availableParallelism() - 2);
@@ -41,7 +41,7 @@ mkdirSync(LOGS, { recursive: true });
 interface Step {
   name: string;
   cmd: string;
-  /** Ligne(s) de résultat à afficher même en cas de succès. */
+  /** Result line(s) to print even on success. */
   show?: RegExp;
 }
 
@@ -77,21 +77,21 @@ function report(r: Result): void {
   if (!r.ok) console.log(`${r.out.split("\n").slice(-40).join("\n")}\n`);
 }
 
-/** Étapes lancées ensemble ; on attend la fin du groupe avant le suivant. */
+/** Steps started together; the group must finish before the next one. */
 async function group(steps: Step[]): Promise<boolean> {
   const results = await Promise.all(steps.map(run));
   for (const r of results) report(r);
   return results.every((r) => r.ok);
 }
 
-/** Une série de fuzz ; toutes les séries tournent ensemble (`runFuzz`). */
+/** A fuzz series; all the series run together (`runFuzz`). */
 const fuzz = (name: string, args: string) => ({ name, args });
-const FUZZ_SHOW = /^résultats : .*$/;
+const FUZZ_SHOW = /^results: .*$/;
 
 /**
- * Toutes les séries de fuzz sur un seul groupe de processus (`fuzz.ts --batch`) : pas de démarrage ni d'attente du plus
- * lent entre deux séries. Une ligne par série, dans l'ordre où elles se terminent ; la durée d'une série court de son
- * premier paquet au dernier (les séries se chevauchent un peu).
+ * All the fuzz series on a single process group (`fuzz.ts --batch`): no start-up or waiting for the slowest between two
+ * series. One line per series, in the order they finish; the duration of a series runs from its first batch to its
+ * last (the series overlap a little).
  */
 async function runFuzz(series: { name: string; args: string }[]): Promise<boolean> {
   const file = `${LOGS}/fuzz-batch.json`;
@@ -122,15 +122,15 @@ async function runFuzz(series: { name: string; args: string }[]): Promise<boolea
       stderr += d;
     });
     child.on("close", (code) => {
-      // Arrêt brutal (processus tué, mémoire) : les séries sans bilan sont en échec.
+      // Abrupt stop (process killed, memory): the series without a summary have failed.
       for (const s of series.filter((x) => !reported.has(x.name)))
-        report({ step: { name: s.name, cmd: "" }, ok: false, seconds: 0, out: stderr || `fuzz arrêté (code ${code})` });
+        report({ step: { name: s.name, cmd: "" }, ok: false, seconds: 0, out: stderr || `fuzz stopped (code ${code})` });
       resolve(ok && code === 0 && reported.size === series.length);
     });
   });
 }
 
-/** Fichiers modifiés depuis le dernier commit (suivis ou non). */
+/** Files changed since the last commit (tracked or not). */
 async function changedFiles(): Promise<string[]> {
   const r = await run({ name: "git-status", cmd: "git status --porcelain" });
   return r.out
@@ -151,77 +151,76 @@ async function viteUp(): Promise<boolean> {
 const t0 = performance.now();
 let ok = true;
 
-// 1. Contrôles statiques (légers, ensemble), puis vitest (il occupe déjà tous les cœurs).
+// 1. Static checks (light, together), then vitest (it already takes all the cores).
 ok &&= await group([
   { name: "tsc", cmd: "npx tsc -p tsconfig.json" },
   { name: "biome", cmd: "npx biome check .", show: /^Found .*$/ },
   {
-    name: "couverture",
+    name: "coverage",
     cmd:
       set === "COMMANDER"
         ? "npx tsx tools/card-coverage.ts --deck all"
         : `npx tsx tools/card-coverage.ts --set ${set && set !== "META" ? set : "standard"}`,
-    show: /^.* cartes gérées .*$/,
+    show: /^.* cards handled .*$/,
   },
-  { name: "bundle", cmd: "npx tsx tools/bundle-size.ts", show: /^bundle : .*$/ },
+  { name: "bundle", cmd: "npx tsx tools/bundle-size.ts", show: /^bundle: .*$/ },
 ]);
 ok &&= await group([{ name: "vitest", cmd: "npx vitest run", show: /^\s*Tests .*$/ }]);
 
-// 2. Fuzz : toutes les séries ensemble, sur tous les cœurs.
+// 2. Fuzz: all the series together, on all the cores.
 const fuzzes = ci
   ? [
-      fuzz("fuzz 2 j.", "--games 150 --pool all --seed 1 --offers 4"),
-      fuzz("fuzz 3 joueurs", "--games 40 --pool all --players 3"),
-      fuzz("fuzz niveaux d'IA", "--games 20 --pool all --ai levels"),
-      fuzz("fuzz chaos 2 j.", "--games 100 --pool all --ai chaos --seed 3000"),
-      fuzz("fuzz méta", "--games 60 --pool meta --ai mixed"),
-      fuzz("fuzz Commander 4 j.", "--games 20 --pool all --players 4 --format commander"),
+      fuzz("fuzz 2 p.", "--games 150 --pool all --seed 1 --offers 4"),
+      fuzz("fuzz 3 players", "--games 40 --pool all --players 3"),
+      fuzz("fuzz AI levels", "--games 20 --pool all --ai levels"),
+      fuzz("fuzz chaos 2 p.", "--games 100 --pool all --ai chaos --seed 3000"),
+      fuzz("fuzz meta", "--games 60 --pool meta --ai mixed"),
+      fuzz("fuzz Commander 4 p.", "--games 20 --pool all --players 4 --format commander"),
     ]
   : full
     ? [
-        fuzz("fuzz 2 j. graine 1", "--games 300 --pool all --seed 1 --offers 4"),
-        fuzz("fuzz 2 j. graine 1000", "--games 300 --pool all --seed 1000"),
-        fuzz("fuzz 2 j. graine 5000", "--games 300 --pool all --seed 5000"),
-        fuzz("fuzz 3 joueurs", "--games 200 --pool all --players 3"),
-        fuzz("fuzz 4 joueurs", "--games 100 --pool all --players 4"),
-        fuzz("fuzz IA mixte", "--games 100 --pool all --ai mixed"),
-        fuzz("fuzz niveaux d'IA", "--games 60 --pool all --ai levels"),
-        fuzz("fuzz chaos 2 j.", "--games 300 --pool all --ai chaos --seed 3000"),
-        fuzz("fuzz chaos 4 j.", "--games 60 --pool all --ai chaos --players 4"),
-        fuzz("fuzz méta", "--games 100 --pool meta --ai levels"),
-        fuzz("fuzz Commander 2 j.", "--games 100 --pool all --format commander --offers 4"),
-        fuzz("fuzz Commander 4 j.", "--games 60 --pool all --players 4 --format commander"),
-        fuzz("fuzz Commander chaos 4 j.", "--games 30 --pool all --players 4 --format commander --ai chaos"),
+        fuzz("fuzz 2 p. seed 1", "--games 300 --pool all --seed 1 --offers 4"),
+        fuzz("fuzz 2 p. seed 1000", "--games 300 --pool all --seed 1000"),
+        fuzz("fuzz 2 p. seed 5000", "--games 300 --pool all --seed 5000"),
+        fuzz("fuzz 3 players", "--games 200 --pool all --players 3"),
+        fuzz("fuzz 4 players", "--games 100 --pool all --players 4"),
+        fuzz("fuzz mixed AI", "--games 100 --pool all --ai mixed"),
+        fuzz("fuzz AI levels", "--games 60 --pool all --ai levels"),
+        fuzz("fuzz chaos 2 p.", "--games 300 --pool all --ai chaos --seed 3000"),
+        fuzz("fuzz chaos 4 p.", "--games 60 --pool all --ai chaos --players 4"),
+        fuzz("fuzz meta", "--games 100 --pool meta --ai levels"),
+        fuzz("fuzz Commander 2 p.", "--games 100 --pool all --format commander --offers 4"),
+        fuzz("fuzz Commander 4 p.", "--games 60 --pool all --players 4 --format commander"),
+        fuzz("fuzz Commander chaos 4 p.", "--games 30 --pool all --players 4 --format commander --ai chaos"),
       ]
     : [
-        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${pool} --seed 1 --offers 4${commanderOnly}`),
-        fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${pool} --players 3${commanderOnly}`),
-        fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${pool} --players 4${commanderOnly}`),
-        fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${pool} --ai mixed${commanderOnly}`),
-        fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${pool} --ai levels${commanderOnly}`),
-        fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
+        fuzz(`fuzz ${set} 2 players`, `--games 300 --pool ${pool} --seed 1 --offers 4${commanderOnly}`),
+        fuzz(`fuzz ${set} 3 players`, `--games 100 --pool ${pool} --players 3${commanderOnly}`),
+        fuzz(`fuzz ${set} 4 players`, `--games 60 --pool ${pool} --players 4${commanderOnly}`),
+        fuzz(`fuzz ${set} mixed AI`, `--games 60 --pool ${pool} --ai mixed${commanderOnly}`),
+        fuzz(`fuzz ${set} AI levels`, `--games 30 --pool ${pool} --ai levels${commanderOnly}`),
+        fuzz("fuzz whole pool", "--games 200 --pool all --seed 2000"),
         fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${pool} --ai chaos${commanderOnly}`),
         ...(set === "EDH"
           ? [
-              fuzz("fuzz Commander 2 j.", "--games 100 --pool EDH --format commander --offers 4"),
-              fuzz("fuzz Commander 4 j.", "--games 30 --pool EDH --players 4 --format commander"),
+              fuzz("fuzz Commander 2 p.", "--games 100 --pool EDH --format commander --offers 4"),
+              fuzz("fuzz Commander 4 p.", "--games 30 --pool EDH --players 4 --format commander"),
             ]
           : []),
       ];
 ok = (await runFuzz(fuzzes)) && ok;
 
-// 3. Bench (vérification complète seulement : il juge mal une régression d'un lot, surtout sur batterie).
-if (full && !flag("no-bench"))
-  ok = (await group([{ name: "bench", cmd: "npx tsx tools/bench.ts", show: /^(Cibles.*|.*non atteinte.*)$/ }])) && ok;
+// 3. Bench (full verification only: it judges a lot's regression poorly, especially on battery).
+if (full && !flag("no-bench")) ok = (await group([{ name: "bench", cmd: "npx tsx tools/bench.ts", show: /^Targets .*$/ }])) && ok;
 
-// 4. Tests d'interface, si le client, la vue ou le protocole ont changé (ou --ui, ou --full).
+// 4. Interface tests, if the client, the view or the protocol changed (or --ui, or --full).
 const changed = await changedFiles();
 const uiTouched = changed.some((f) => /packages\/client\/|engine\/src\/view\.ts|server\/src\/protocol\.ts/.test(f));
 if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
   if (await viteUp()) {
-    // Deux files en parallèle, de durées voisines (environ 100 s chacune) : ui-smoke, mobile-smoke et tutorial-smoke
-    // d'un côté, les autres de l'autre.
-    // Pas plus : sous une charge plus forte, les parties jouées dans le navigateur manquent de temps.
+    // Two queues in parallel, of similar durations (about 100 s each): ui-smoke, mobile-smoke and tutorial-smoke on
+    // one side, the others on the other.
+    // No more: under a heavier load, the games played in the browser run out of time.
     const chain = async (steps: Step[]) => {
       let chainOk = true;
       for (const step of steps) chainOk = (await group([step])) && chainOk;
@@ -229,36 +228,34 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
     };
     const results = await Promise.all([
       chain([
-        { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
-        { name: "mobile-smoke", cmd: "npx tsx tools/mobile-smoke.ts", show: /^ok : aucune erreur de page$/ },
-        { name: "tutorial-smoke", cmd: "npx tsx tools/tutorial-smoke.ts", show: /^ok : tutoriel suivi de bout en bout$/ },
-        { name: "commander-smoke", cmd: "npx tsx tools/commander-smoke.ts", show: /^ok : aucune erreur de page$/ },
+        { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^No page error\.$/ },
+        { name: "mobile-smoke", cmd: "npx tsx tools/mobile-smoke.ts", show: /^ok: no page error$/ },
+        { name: "tutorial-smoke", cmd: "npx tsx tools/tutorial-smoke.ts", show: /^ok: tutorial followed end to end$/ },
+        { name: "commander-smoke", cmd: "npx tsx tools/commander-smoke.ts", show: /^ok: no page error$/ },
       ]),
       chain([
-        { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
-        { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
-        { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok : aucune erreur de page$/ },
-        { name: "replay-smoke", cmd: "npx tsx tools/replay-smoke.ts", show: /^ok : replay .*$/ },
-        { name: "bo3-smoke", cmd: "npx tsx tools/bo3-smoke.ts", show: /^ok : BO3 .*$/ },
+        { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok: game started.*$/ },
+        { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok: no page error$/ },
+        { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok: no page error$/ },
+        { name: "replay-smoke", cmd: "npx tsx tools/replay-smoke.ts", show: /^ok: replay .*$/ },
+        { name: "bo3-smoke", cmd: "npx tsx tools/bo3-smoke.ts", show: /^ok: BO3 .*$/ },
       ]),
     ]);
     ok = results.every(Boolean) && ok;
-    // Latence de l'IA élevée en temps réel : seule (une charge parallèle fausserait la mesure), vérification complète.
+    // Latency of the high AI in real time: alone (a parallel load would skew the measurement), full verification.
     if (full)
       ok =
-        (await group([
-          { name: "ai-smoke", cmd: "npx tsx tools/ai-smoke.ts", show: /^ok : niveau de l'IA et latence vérifiés$/ },
-        ])) && ok;
+        (await group([{ name: "ai-smoke", cmd: "npx tsx tools/ai-smoke.ts", show: /^ok: AI level and latency checked$/ }])) && ok;
   } else {
-    console.log("⚠️  tests d'interface sautés : Vite ne répond pas sur http://localhost:5173 (lancer npm run dev)");
+    console.log("⚠️  interface tests skipped: Vite does not answer on http://localhost:5173 (run npm run dev)");
     ok = false;
   }
 } else {
-  const why = ci ? "intégration continue" : flag("no-ui") ? "--no-ui" : "ni client, ni vue, ni protocole modifiés";
-  console.log(`·  tests d'interface sautés (${why})`);
+  const why = ci ? "continuous integration" : flag("no-ui") ? "--no-ui" : "neither client, nor view, nor protocol changed";
+  console.log(`·  interface tests skipped (${why})`);
 }
 
 console.log(
-  `\n${ok ? "✅ Vérification réussie" : "❌ Vérification en échec"} en ${((performance.now() - t0) / 1000).toFixed(0)} s.`,
+  `\n${ok ? "✅ Verification passed" : "❌ Verification failed"} in ${((performance.now() - t0) / 1000).toFixed(0)} s.`,
 );
 process.exitCode = ok ? 0 : 1;

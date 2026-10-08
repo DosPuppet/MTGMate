@@ -1,5 +1,5 @@
-# Intégration continue : vérification courte à chaque push et pull request, vérification complète chaque nuit.
-# Les tests d'interface (Playwright + Vite) et le bench restent locaux : npm run verify -- --full.
+# Continuous integration: short verification on every push and pull request, full verification every night.
+# The interface tests (Playwright + Vite) and the bench stay local: npm run verify -- --full.
 name: CI
 
 on:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   verify:
-    name: ${{ github.event_name == 'schedule' && 'Vérification complète' || 'Vérification' }}
+    name: ${{ github.event_name == 'schedule' && 'Full verification' || 'Verification' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -33,16 +33,16 @@ jobs:
           else
             npm run verify -- --ci
           fi
-      # Chaque nuit, le pool d'une extension, en rotation (une par jour), avec le fuzz strict (options proposées acceptées).
-      - name: Fuzz d'une extension (rotation)
+      # Every night, the pool of one set, in rotation (one per day), with the strict fuzz (offered options accepted).
+      - name: Fuzz of one set (rotation)
         if: github.event_name == 'schedule'
         run: |
           SETS=(FDN FRA EOE DFT OTJ BIG FIN DSK BLB LCI TDM ECL WOE SOS MKM TLA MSH SPM TMT HOB)
           SET=${SETS[$(( $(date +%j | sed 's/^0*//') % ${#SETS[@]} ))]}
-          echo "Extension du jour : $SET"
+          echo "Set of the day: $SET"
           npm run fuzz -- --games 300 --pool "$SET" --offers 3 --seed "$(date +%j | sed 's/^0*//')" --jobs 4
           npm run fuzz -- --games 100 --pool "$SET" --players 3 --offers 3 --jobs 4
-      - name: Journaux de vérification
+      - name: Verification logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:

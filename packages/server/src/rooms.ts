@@ -1,7 +1,7 @@
 /**
- * Salons de deux à quatre joueurs (duel, multijoueur, Commander) : une partie (GameHost), minuteur par décision,
- * déconnexions avec délai de retour (un joueur qui ne revient pas abandonne : à plusieurs, la partie continue sans lui),
- * revanche, BO3 en duel. Le serveur fait autorité sur tout.
+ * Rooms of two to four players (duel, multiplayer, Commander): one game (GameHost), a timer per decision, disconnections
+ * with a return delay (a player who does not come back concedes: with more players, the game goes on without them),
+ * rematch, BO3 in a duel. The server is authoritative on everything.
  */
 import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
 import {
@@ -45,6 +45,7 @@ import {
   type GameView,
   isGameRecord,
   meaningfulActions,
+  msg,
   outcomeHash,
   type PlayerId,
   RULES_VERSION,
@@ -55,45 +56,45 @@ import {
 import type { AiPool } from "./aiPool";
 import type { Clock, ErrorCode, MatchInfo, RoomInfo, Seat, ServerMessage } from "./protocol";
 
-/** Connexion d'un joueur (WebSocket en production, faux client dans les tests). */
+/** Connection of a player (WebSocket in production, fake client in the tests). */
 export interface Peer {
   send(msg: ServerMessage): void;
 }
 
 export interface RoomConfig {
-  /** Temps par décision (ms). */
+  /** Time per decision (ms). */
   decisionMs: number;
-  /** Corde affichée pendant la fin du temps (ms). */
+  /** Rope shown during the end of the time (ms). */
   ropeMs: number;
-  /** Expirations avant défaite. */
+  /** Timeouts before a loss. */
   maxTimeouts: number;
-  /** Délai pour revenir après une déconnexion (ms). */
+  /** Delay to come back after a disconnection (ms). */
   graceMs: number;
-  /** Suppression d'un salon vide ou terminé et abandonné (ms). */
+  /** Removal of an empty room, or of a finished and abandoned one (ms). */
   cleanupMs: number;
-  /** Fermeture d'un salon resté sans adversaire (ms). */
+  /** Closing of a room left without an opponent (ms). */
   waitingMs: number;
-  /** Nombre maximal de salons ouverts sur le serveur. */
+  /** Maximum number of open rooms on the server. */
   maxRooms: number;
-  /** Salons ouverts au plus par adresse IP de créateur (un salon abandonné reste ouvert quelques minutes). */
+  /** Most open rooms per creator IP address (an abandoned room stays open for a few minutes). */
   maxRoomsPerIp: number;
   /**
-   * Dossier de sauvegarde des parties (un fichier par salon : en-tête, puis une décision par ligne). Au démarrage, les
-   * parties en cours y sont reprises : un redémarrage du serveur ne les coupe plus. Absent : parties en mémoire seulement.
+   * Save directory of the games (one file per room: header, then one decision per line). On start-up, the games in
+   * progress are resumed from it: a server restart no longer cuts them. Absent: games in memory only.
    */
   dataDir?: string;
   /**
-   * Tas JavaScript (Mo) au-delà duquel aucun salon n'est plus créé : le serveur refuse avant que pm2 ne le redémarre
-   * (`max_memory_restart`). Un salon de partie en cours occupe de 0,2 à 0,3 Mo de tas (`tools/load-test.ts`).
+   * JavaScript heap (MB) beyond which no room is created any more: the server refuses before pm2 restarts it
+   * (`max_memory_restart`). A room with a game in progress takes 0.2 to 0.3 MB of heap (`tools/load-test.ts`).
    */
   maxHeapMb?: number;
-  /** Sièges IA (PLAN-E, E14) : le pool de workers où réfléchissent les IA (absent : pas de siège IA). */
+  /** AI seats (PLAN-E, E14): the worker pool where the AIs think (absent: no AI seat). */
   aiPool?: AiPool;
-  /** Salons avec des sièges IA ouverts au plus sur le serveur (le CPU du VPS est partagé). */
+  /** Most open rooms with AI seats on the server (the VPS CPU is shared). */
   maxAiRooms?: number;
   /**
-   * Mémoire du processus (RSS, Mo, workers d'IA compris) au-delà de laquelle aucun salon avec IA n'est créé : `heapUsed`
-   * ne voit pas les workers.
+   * Process memory (RSS, MB, AI workers included) beyond which no room with AI is created: `heapUsed` does not see the
+   * workers.
    */
   maxRssMb?: number;
 }
@@ -108,18 +109,18 @@ export const DEFAULT_CONFIG: RoomConfig = {
   maxRooms: 200,
   maxRoomsPerIp: 4,
   maxHeapMb: 384,
-  // Mesuré (load-test --ai 3) : environ 20 Mo de RSS par salon avec IA, en plus des workers ; sous le
-  // `max_memory_restart` de pm2 (768 Mo).
+  // Measured (load-test --ai 3): about 20 MB of RSS per room with AI, besides the workers; below the
+  // `max_memory_restart` of pm2 (768 MB).
   maxAiRooms: 12,
   maxRssMb: 640,
 };
 
-/** Empreinte d'un secret (jeton de reconnexion, adresse) : seule elle est écrite sur le disque. */
+/** Digest of a secret (reconnection token, address): only the digest is written to disk. */
 export const digest = (x: string): string => createHash("sha256").update(x).digest("hex");
 
 /**
- * Clé d'une adresse pour les plafonds : l'adresse IPv4, ou le préfixe /64 d'une adresse IPv6 (un abonné en reçoit
- * souvent un /64 entier, et changer d'adresse ne doit pas contourner les plafonds).
+ * Key of an address for the caps: the IPv4 address, or the /64 prefix of an IPv6 address (a subscriber often gets a
+ * whole /64, and changing address must not get around the caps).
  */
 export function ipKey(ip: string): string {
   const v4 = /^(?:::ffff:)?(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
@@ -135,12 +136,12 @@ export function ipKey(ip: string): string {
     .join(":")}::/64`;
 }
 
-/** Fichiers mis de côté (`.bad`, `.rules<N>`) et jetons interrompus gardés au plus ce temps. */
+/** Files set aside (`.bad`, `.rules<N>`) and interrupted tokens are kept at most this long. */
 const KEEP_ASIDE_MS = 7 * 24 * 3_600_000;
-/** Fichier des jetons interrompus par une mise à jour des règles (empreintes, date). */
+/** File of the tokens interrupted by a rules update (digests, date). */
 const INTERRUPTED_FILE = "interrupted.json";
 
-/** Erreur destinée au client (message en français). */
+/** Error meant for the client (player-facing message, written with `msg`: the client translates it). */
 export class ClientError extends Error {
   constructor(
     readonly code: ErrorCode,
@@ -150,14 +151,14 @@ export class ClientError extends Error {
   }
 }
 
-/** Première ligne du fichier d'un salon : les sièges (jetons de reconnexion compris) et l'enregistrement de la partie. */
-/** Partie sauvegardée par une autre version des règles du moteur, qui ne se rejoue plus à l'identique. */
+/** Game saved by another version of the engine rules, which no longer replays identically. */
 export class RulesChangedError extends Error {
   constructor(readonly rules: number) {
-    super(`partie enregistrée avec la version ${rules} des règles (moteur : ${RULES_VERSION})`);
+    super(`game recorded with rules version ${rules} (engine: ${RULES_VERSION})`);
   }
 }
 
+/** First line of a room's file: the seats (reconnection tokens included) and the record of the game. */
 interface SavedRoom {
   code: string;
   seats: {
@@ -165,95 +166,108 @@ interface SavedRoom {
     name: string;
     deck: DeckEntries;
     side?: DeckEntries;
-    /** Commander : le commandant du joueur. */
+    /** Commander: the player's commander. */
     commander?: DeckEntries;
-    /** Siège tenu par l'IA du serveur : son niveau. */
+    /** Seat held by the server AI: its level. */
     ai?: AiLevel;
     original?: { main: DeckEntries; sideboard: DeckEntries };
-    /** Empreinte du jeton de reconnexion (`digest`) ; anciennes sauvegardes : le jeton lui-même. */
+    /** Digest of the reconnection token (`digest`); old saves: the token itself. */
     tokenHash?: string;
     token?: string;
   }[];
-  /** Empreinte de la clé d'adresse du créateur (plafond par adresse, compté aussi après une reprise). */
+  /** Digest of the creator's address key (cap per address, also counted after a resume). */
   creator?: string;
   record: GameRecord;
-  /** Match au début de cette manche (victoires des manches précédentes). */
+  /** Match at the start of this game (wins of the previous games). */
   match?: MatchInfo;
 }
 
 interface SeatState {
   seat: Seat;
   name: string;
-  /** Deck et réserve de la manche en cours (modifiables entre les manches d'un BO3). */
+  /** Deck and sideboard of the current game (can change between the games of a BO3). */
   deck: DeckEntries;
   side: DeckEntries;
-  /** Commander : le commandant (vide hors Commander). */
+  /** Commander: the commander (empty outside Commander). */
   commander: DeckEntries;
-  /** Siège tenu par l'IA du serveur (son niveau) : pas de connexion, pas de minuteur. */
+  /** Seat held by the server AI (its level): no connection, no timer. */
   ai?: AiLevel;
-  /** Deck et réserve du début du match : un échange de réserve doit garder les mêmes cartes. */
+  /** Deck and sideboard at the start of the match: a sideboard swap must keep the same cards. */
   original: { main: DeckEntries; sideboard: DeckEntries };
-  /** Entre deux manches : réserve validée, prêt pour la suivante. */
+  /** Between two games: sideboard confirmed, ready for the next one. */
   ready: boolean;
-  /** Jeton de reconnexion : connu en mémoire, vide après une reprise tant que le joueur n'est pas revenu. */
+  /** Reconnection token: known in memory, empty after a resume until the player has come back. */
   token: string;
   tokenHash: string;
   peer: Peer | null;
   timeouts: number;
   rematch: boolean;
-  /** Échéance de retour après une déconnexion (Date.now()), ou null si connecté. */
+  /** Return deadline after a disconnection (Date.now()), or null if connected. */
   graceDeadline: number | null;
   graceTimer: ReturnType<typeof setTimeout> | null;
 }
 
-/** Libellés des niveaux d'IA (nom des sièges IA). */
-const AI_LEVEL_LABELS: Record<AiLevel, string> = { beginner: "débutante", medium: "moyenne", expert: "élevée" };
+/**
+ * Levels of the AI seats, in their names: `msg("AI {n} ({level})")`, which each client shows in its language (a name
+ * without marker, a nickname, is shown as it is).
+ */
+const AI_LEVEL_LABELS: Record<AiLevel, string> = {
+  beginner: msg("ctx:aiSeat|beginner"),
+  medium: msg("ctx:aiSeat|medium"),
+  expert: msg("ctx:aiSeat|expert"),
+};
 
-/** Préconstruits jouables par l'IA dans un format : ceux du Commander en Commander, les autres sinon. */
+/** Precons the AI can play in a format: the Commander ones in Commander, the others otherwise. */
 function aiDecks(format: Format): DeckList[] {
   return DECKS.filter((d) => (format === "commander") === (d.format === "commander") && validateDeck(d, CARDS, format).playable);
 }
 
-/** Codes sans caractères ambigus (0/O, 1/I/L). */
+/** Codes without ambiguous characters (0/O, 1/I/L). */
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const MAX_DECK_LINES = 120;
 
 export function cleanName(raw: unknown): string {
   const name = String(raw ?? "")
-    // biome-ignore lint/suspicious/noControlCharactersInRegex: suppression voulue des caractères de contrôle
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters removed on purpose
     .replace(/[\u0000-\u001f\u007f<>]/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 20);
-  if (!name) throw new ClientError("name", "Choisissez un pseudo.");
+  if (!name) throw new ClientError("name", msg("Choose a nickname."));
   return name;
 }
 
-/** Réserve reçue (facultative) : même forme qu'un deck ; le deck complet (deck et réserve) doit être légal dans le format. */
+/** Received sideboard (optional): same shape as a deck; the whole deck (deck and sideboard) must be legal in the format. */
 export function checkSide(main: DeckEntries, raw: unknown, format: Format = "standard"): DeckEntries {
   if (raw === undefined || (Array.isArray(raw) && raw.length === 0)) return [];
   const side = checkEntries(raw);
   const v = validateDeck({ main, sideboard: side }, CARDS, format);
-  if (!v.legal) throw new ClientError("deck", `Réserve refusée : ${v.errors[0] ?? `illégale en ${FORMAT_LABELS[format]}`}.`);
+  if (!v.legal)
+    throw new ClientError(
+      "deck",
+      v.errors[0]
+        ? msg("Sideboard refused: {error}.", { error: v.errors[0] })
+        : msg("Sideboard refused: illegal in {format}.", { format: FORMAT_LABELS[format] }),
+    );
   return side;
 }
 
-/** Lignes de deck reçues : [nombre, nom, impression ?], forme vérifiée. */
+/** Received deck lines: [count, name, printing?], shape checked. */
 function checkEntries(raw: unknown): DeckEntries {
-  if (!Array.isArray(raw) || raw.length > MAX_DECK_LINES) throw new ClientError("deck", "Deck invalide.");
+  if (!Array.isArray(raw) || raw.length > MAX_DECK_LINES) throw new ClientError("deck", msg("Invalid deck."));
   const out: DeckEntries = [];
   for (const line of raw) {
-    if (!Array.isArray(line) || (line.length !== 2 && line.length !== 3)) throw new ClientError("deck", "Deck invalide.");
+    if (!Array.isArray(line) || (line.length !== 2 && line.length !== 3)) throw new ClientError("deck", msg("Invalid deck."));
     const [n, name, key] = line as [unknown, unknown, unknown];
-    // Au plus 100 exemplaires sur une ligne (Commander : 99 terrains de base possibles).
+    // At most 100 copies on one line (Commander: 99 basic lands are possible).
     if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > 100 || typeof name !== "string") {
-      throw new ClientError("deck", "Deck invalide.");
+      throw new ClientError("deck", msg("Invalid deck."));
     }
     if (key !== undefined && key !== null && (typeof key !== "string" || key.length > 64)) {
-      throw new ClientError("deck", "Deck invalide.");
+      throw new ClientError("deck", msg("Invalid deck."));
     }
-    // Une impression que la carte n'a pas (table des impressions plus ancienne ou plus récente que le client) : la
-    // carte garde son illustration. Le moteur ne vérifie pas les clés de la table : c'est fait ici.
+    // A printing the card does not have (printings table older or newer than the client's): the card keeps its
+    // artwork. The engine does not check the keys of the table: it is done here.
     const c = CARDS[name];
     const printed = typeof key === "string" && c && hasPrinting(c, key);
     out.push(printed ? [n as number, name, key] : [n as number, name]);
@@ -261,43 +275,51 @@ function checkEntries(raw: unknown): DeckEntries {
   return out;
 }
 
-/** Commander reçu : une ou deux lignes de deck (sa légalité est vérifiée avec le deck). */
+/** Received commander: one or two deck lines (its legality is checked with the deck). */
 function checkCommander(raw: unknown): DeckEntries {
-  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 2) throw new ClientError("deck", "Choisissez un commandant.");
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 2) throw new ClientError("deck", msg("Choose a commander."));
   return checkEntries(raw);
 }
 
 /**
- * Vérifie la forme et la légalité d'un deck reçu : légal dans le format du salon et entièrement jouable. Commander :
- * avec son commandant (`commander`).
+ * Checks the shape and the legality of a received deck: legal in the room's format and fully playable. Commander: with
+ * its commander (`commander`).
  */
 export function checkDeck(raw: unknown, format: Format = "standard", commander?: DeckEntries): DeckEntries {
-  if (!Array.isArray(raw) || raw.length === 0) throw new ClientError("deck", "Deck invalide.");
+  if (!Array.isArray(raw) || raw.length === 0) throw new ClientError("deck", msg("Invalid deck."));
   const deck = checkEntries(raw);
   const v = validateDeck({ main: deck, ...(commander ? { commander } : {}) }, CARDS, format);
-  if (!v.legal) throw new ClientError("deck", `Deck refusé : ${v.errors[0] ?? `illégal en ${FORMAT_LABELS[format]}`}.`);
-  if (!v.playable) throw new ClientError("deck", "Deck refusé : il contient des cartes pas encore jouables.");
+  if (!v.legal)
+    throw new ClientError(
+      "deck",
+      v.errors[0]
+        ? msg("Deck refused: {error}.", { error: v.errors[0] })
+        : msg("Deck refused: illegal in {format}.", { format: FORMAT_LABELS[format] }),
+    );
+  if (!v.playable) throw new ClientError("deck", msg("Deck refused: it contains cards that are not playable yet."));
   return deck;
 }
 
 export class Room {
   readonly seats: SeatState[] = [];
   status: RoomInfo["status"] = "waiting";
-  /** Match : BO1 ou BO3, victoires, manche en cours. */
+  /** Match: BO1 or BO3, wins, current game. */
   match: MatchInfo = { bestOf: 1, wins: { p1: 0, p2: 0 }, game: 0, winner: null };
-  /** Nombre de joueurs du salon (2 à 4). */
+  /** Number of players of the room (2 to 4). */
   get size(): number {
     return this.match.seats ?? 2;
   }
-  /** Joueur qui commence la prochaine manche (le perdant de la précédente) ; null : tirage au sort. */
+  /** Player who starts the next game (the loser of the previous one); null: random draw. */
   private nextStarter: Seat | null = null;
   private host: GameHost | null = null;
-  /** Mises à jour produites par la dernière action, envoyées avec le minuteur à jour. */
-  /** Mises à jour en attente d'envoi, par joueur et dans l'ordre (une par résolution). */
+  /**
+   * Updates produced by the last action, sent with the updated timer: waiting to be sent, per player and in order
+   * (one per resolution).
+   */
   private outbox = new Map<Seat, { view: GameView; events: GameEvent[] }[]>();
   private clock: { player: Seat; deadline: number; timer: ReturnType<typeof setTimeout> } | null = null;
   private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
-  /** File des actions : une seule à la fois modifie la partie. */
+  /** Action queue: only one at a time changes the game. */
   private queue: Promise<void> = Promise.resolve();
 
   private waitingTimer: ReturnType<typeof setTimeout> | null = null;
@@ -307,23 +329,23 @@ export class Room {
     private readonly config: RoomConfig,
     private readonly onClose: (room: Room) => void,
   ) {
-    // Personne ne rejoint : le salon est fermé et son créateur prévenu.
+    // Nobody joins: the room is closed and its creator told.
     this.waitingTimer = setTimeout(() => {
       if (this.status !== "waiting") return;
       for (const s of this.seats)
-        s.peer?.send({ type: "error", code: "closed", message: "Salon fermé : aucun adversaire ne l'a rejoint à temps." });
+        s.peer?.send({ type: "error", code: "closed", message: msg("Room closed: no opponent joined it in time.") });
       this.close();
     }, config.waitingMs);
     this.waitingTimer.unref?.();
   }
 
-  /** Empreinte de la clé d'adresse du créateur (plafond par adresse). */
+  /** Digest of the creator's address key (cap per address). */
   creator: string | undefined;
 
   seatOf(token: string): SeatState | undefined {
     const h = digest(token);
     const seat = this.seats.find((s) => s.tokenHash === h);
-    // Après une reprise, le jeton n'est connu que par son empreinte : celui présenté est le bon.
+    // After a resume, the token is known only by its digest: the one presented is the right one.
     if (seat) seat.token = token;
     return seat;
   }
@@ -336,8 +358,8 @@ export class Room {
     commander: DeckEntries = [],
     ai?: AiLevel,
   ): SeatState {
-    if (this.seats.length >= this.size) throw new ClientError("full", "Ce salon est complet.");
-    // Premier siège libre (un joueur parti avant le début libère le sien).
+    if (this.seats.length >= this.size) throw new ClientError("full", msg("This room is full."));
+    // First free seat (a player who left before the start frees theirs).
     const taken = new Set(this.seats.map((s) => s.seat));
     const free = (["p1", "p2", "p3", "p4"] as Seat[]).find((x) => !taken.has(x)) as Seat;
     const seat: SeatState = {
@@ -368,7 +390,7 @@ export class Room {
   }
 
   // -------------------------------------------------------------------------
-  // Partie
+  // Game
   // -------------------------------------------------------------------------
 
   private async start(): Promise<void> {
@@ -380,7 +402,7 @@ export class Room {
       s.ready = false;
     }
     this.match = { ...this.match, game: this.match.game + 1 };
-    // Première manche : tirage au sort ; ensuite, le perdant de la manche précédente commence.
+    // First game: random draw; then the loser of the previous game starts.
     const starter = this.nextStarter ?? this.seats[randomInt(0, this.seats.length)]?.seat;
     const commander = this.match.format === "commander";
     const { state, events, record } = createRecordedGame({
@@ -388,7 +410,7 @@ export class Room {
       startingPlayer: starter,
       ...(commander ? { variant: "commander" as const } : {}),
       players: this.seats.map((s) => {
-        // Commander : le commandant en tête du deck, désigné par son indice.
+        // Commander: the commander at the top of the deck, designated by its index.
         const built = buildGameDeck({ main: s.deck, ...(commander ? { commander: s.commander } : {}) });
         return {
           id: s.seat,
@@ -408,30 +430,30 @@ export class Room {
   }
 
   /**
-   * Exécute une action sur la partie, puis minuteur et envois si l'état a changé, même si l'action a échoué
-   * en cours de route (erreur interne) : une partie ne doit jamais rester sans minuteur. Une décision refusée
-   * ne change pas l'état et ne relance donc pas le minuteur.
+   * Runs an action on the game, then timer and sends if the state changed, even if the action failed midway
+   * (internal error): a game must never be left without a timer. A refused decision does not change the state and
+   * so does not restart the timer.
    */
   async advancing(host: GameHost, fn: () => Promise<void>): Promise<void> {
     const before = host.state;
     try {
       await fn();
     } catch (e) {
-      console.error(`Salon ${this.code} : erreur interne`, e);
+      console.error(`Room ${this.code}: internal error`, e);
       throw e;
     } finally {
       if (host.state !== before || this.outbox.size) this.afterStep();
     }
   }
 
-  /** Le salon a-t-il des sièges IA ? */
+  /** Does the room have AI seats? */
   get hasAi(): boolean {
     return this.seats.some((s) => s.ai);
   }
 
   /**
-   * IA d'un siège : sa décision est calculée dans le pool de workers (le fil principal sert les autres salons). Une
-   * priorité où il n'y a rien d'autre à faire que passer se règle ici, sans worker.
+   * AI of a seat: its decision is computed in the worker pool (the main thread serves the other rooms). A priority
+   * where there is nothing to do but pass is settled here, without a worker.
    */
   private aiAgentFor(seat: Seat, level: AiLevel): AsyncAgent {
     return (state, player) => {
@@ -447,7 +469,7 @@ export class Room {
         level,
         players: state.playerOrder.length,
         seed,
-        // Niveau élevé (ISMCTS, en duel) : une seconde et demie au plus.
+        // Expert level (ISMCTS, in a duel): one and a half seconds at most.
         ...(level === "expert" ? { budget: { ms: 1500 } } : {}),
         state,
       });
@@ -460,13 +482,13 @@ export class Room {
     return out;
   }
 
-  /** Hôte d'une partie enregistrée : chaque décision est ajoutée au fichier du salon. */
+  /** Host of a recorded game: each decision is appended to the room's file. */
   private newHost(state: GameHost["state"], record: GameRecord, events: GameEvent[]): GameHost {
     return new GameHost(
       state,
       {
         agents: this.agents(),
-        // Une mise à jour par résolution : l'interface montre chaque effet l'un après l'autre.
+        // One update per resolution: the interface shows each effect one after the other.
         frames: true,
         onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts),
         record,
@@ -477,7 +499,7 @@ export class Room {
   }
 
   // -------------------------------------------------------------------------
-  // Sauvegarde sur disque
+  // Save to disk
   // -------------------------------------------------------------------------
 
   private get file(): string | null {
@@ -505,27 +527,27 @@ export class Room {
         record: { ...record, decisions: [], checkpoints: [] },
         match: this.match,
       };
-      // Lisible par le seul compte du serveur : la sauvegarde révèle les decks.
+      // Readable by the server account only: the save reveals the decks.
       writeFileSync(file, `${JSON.stringify(saved)}\n`, { mode: 0o600 });
     } catch (e) {
-      console.error(`Salon ${this.code} : sauvegarde impossible`, e);
+      console.error(`Room ${this.code}: save failed`, e);
     }
   }
 
-  /** Une ligne par décision : [joueur, décision, empreinte de l'état obtenu] (vérifiée à la reprise). */
+  /** One line per decision: [player, decision, digest of the resulting state] (checked on resume). */
   private appendDecision(player: PlayerId, d: Decision, after: GameState): void {
     const file = this.file;
     if (!file) return;
     try {
       appendFileSync(file, `${JSON.stringify([player, d, outcomeHash(after)])}\n`);
     } catch (e) {
-      console.error(`Salon ${this.code} : sauvegarde impossible`, e);
+      console.error(`Room ${this.code}: save failed`, e);
     }
   }
 
   /**
-   * Reprise d'un salon sauvegardé (redémarrage du serveur) : la partie est rejouée depuis son enregistrement, les deux
-   * joueurs sont considérés comme déconnectés (délai de retour ordinaire) et reviennent avec leur jeton.
+   * Resume of a saved room (server restart): the game is replayed from its record, the players are considered
+   * disconnected (ordinary return delay) and come back with their token.
    */
   static restore(
     saved: SavedRoom,
@@ -538,10 +560,10 @@ export class Room {
     const { state, divergence } = replayChecked(record, card);
     const rules = saved.record.rules ?? 0;
     if (rules !== RULES_VERSION) {
-      // Autre version des règles : la partie ne reprend que si chaque décision a son empreinte, et qu'elles concordent.
+      // Another rules version: the game resumes only if each decision has its digest, and they match.
       if (divergence || checkpoints.length < decisions.length) throw new RulesChangedError(rules);
     } else if (divergence) {
-      throw new Error(`rejeu différent de la partie jouée (${divergence.message}) : moteur non déterministe ?`);
+      throw new Error(`replay differs from the game played (${divergence.message}): non-deterministic engine?`);
     }
     const room = new Room(saved.code, config, onClose);
     room.creator = saved.creator;
@@ -563,13 +585,13 @@ export class Room {
     }
     if (saved.match) room.match = saved.match;
     room.host = room.newHost(state, record, []);
-    // Manche terminée avant l'arrêt : sa victoire est comptée par `afterStep` (passage « en cours » → « terminée »).
+    // Game finished before the shutdown: its win is counted by `afterStep` (change from "playing" to "over").
     room.status = "playing";
     if (room.waitingTimer) clearTimeout(room.waitingTimer);
     room.waitingTimer = null;
     for (const seat of room.seats) if (!seat.ai) room.disconnect(seat);
     room.afterStep();
-    // Une IA devait décider au moment de l'arrêt : elle reprend.
+    // An AI had to decide at the time of the shutdown: it resumes.
     const pending = room.host.state.pending;
     if (
       pending &&
@@ -584,7 +606,7 @@ export class Room {
     this.outbox.set(p, [...(this.outbox.get(p) ?? []), { view, events }]);
   }
 
-  /** Après chaque action : minuteur, envoi des vues, fin de partie. */
+  /** After each action: timer, sending of the views, end of the game. */
   private afterStep(): void {
     const host = this.host;
     if (!host) return;
@@ -597,8 +619,8 @@ export class Room {
       }
       this.scheduleCleanupIfIdle();
     } else if (s.pending) {
-      // Chaque nouvelle décision a son temps plein (comme sur MTGA) ; une décision refusée ne relance rien.
-      // 722 : pendant un tour contrôlé, c'est le contrôleur qui décide. Une IA n'a pas de minuteur.
+      // Each new decision gets its full time (as on MTGA); a refused decision restarts nothing.
+      // 722: during a controlled turn, the controller decides. An AI has no timer.
       const who = (decider(s) ?? s.pending.player) as Seat;
       if (this.seats.find((x) => x.seat === who)?.ai) this.stopClock();
       else this.armClock(who);
@@ -610,13 +632,13 @@ export class Room {
   }
 
   /**
-   * Fin d'une manche : victoire comptée ; en BO3, tant que personne n'a deux victoires, les joueurs ajustent leur deck
-   * avec leur réserve (statut `sideboard`), et le perdant commencera la manche suivante.
+   * End of a game: win counted; in BO3, as long as nobody has two wins, the players adjust their deck with their
+   * sideboard (status `sideboard`), and the loser will start the next game.
    */
   private finishGame(winner: Seat | null): void {
     const wins = { ...this.match.wins };
     if (winner) wins[winner] = (wins[winner] ?? 0) + 1;
-    // À plusieurs : une seule manche, le vainqueur de la partie gagne le match.
+    // With more players: a single game, the winner of the game wins the match.
     if (this.size > 2) {
       this.match = { ...this.match, wins, winner };
       this.nextStarter = null;
@@ -626,7 +648,7 @@ export class Room {
     const need = Math.ceil(this.match.bestOf / 2);
     const w1 = wins.p1 ?? 0;
     const w2 = wins.p2 ?? 0;
-    // Au plus trois manches (une partie nulle compte comme une manche jouée).
+    // At most three games (a draw counts as a game played).
     const decided = w1 >= need || w2 >= need || this.match.game >= this.match.bestOf;
     const matchWinner = decided ? (w1 > w2 ? "p1" : w2 > w1 ? "p2" : null) : null;
     this.match = { ...this.match, wins, winner: matchWinner };
@@ -634,10 +656,10 @@ export class Room {
     this.status = decided ? "over" : "sideboard";
   }
 
-  /** Entre deux manches : deck et réserve pour la suivante (mêmes cartes au total, deck légal), puis prêt. */
+  /** Between two games: deck and sideboard for the next one (same cards in total, legal deck), then ready. */
   sideboard(seat: SeatState, main: unknown, side: unknown): Promise<void> {
     return this.enqueue(async () => {
-      if (this.status !== "sideboard") throw new ClientError("state", "Pas de réserve à ajuster maintenant.");
+      if (this.status !== "sideboard") throw new ClientError("state", msg("No sideboard to adjust now."));
       const next = { main: checkEntries(main), sideboard: checkEntries(side) };
       const error = sideboardSwapError(seat.original, next, CARDS, this.match.format);
       if (error) throw new ClientError("deck", error);
@@ -673,7 +695,7 @@ export class Room {
     this.clock = null;
   }
 
-  /** Temps écoulé : décision par défaut ; défaite au-delà du nombre d'expirations permis. */
+  /** Time is up: default decision; loss beyond the number of timeouts allowed. */
   private async expire(player: Seat): Promise<void> {
     const host = this.host;
     const seat = this.seats.find((s) => s.seat === player);
@@ -681,20 +703,20 @@ export class Room {
     if (!host || !seat || host.state.over || !p || decider(host.state) !== player) return;
     seat.timeouts += 1;
     await this.advancing(host, async () => {
-      // Une décision par défaut qui échouerait (erreur du moteur) ne doit pas laisser la partie sans issue.
+      // A default decision that fails (engine error) must not leave the game stuck.
       let played = false;
       if (seat.timeouts < this.config.maxTimeouts) {
         try {
           played = (await host.submitHuman(player, fallbackDecision(host.state, p))) === null;
         } catch (e) {
-          console.error(`Salon ${this.code} : décision par défaut impossible`, e);
+          console.error(`Room ${this.code}: default decision failed`, e);
         }
       }
       if (!played && !host.state.over && host.state.pending === p) await host.submitHuman(player, { type: "concede" });
     });
   }
 
-  /** Enregistrement de la partie, seulement si elle est terminée (il révèle les decks et la graine). */
+  /** Record of the game, only if it is over (it reveals the decks and the seed). */
   exportRecord(): GameRecord | null {
     const host = this.host;
     return host?.state.over && host.record ? structuredClone(host.record) : null;
@@ -703,10 +725,10 @@ export class Room {
   decide(seat: SeatState, d: Decision): Promise<void> {
     return this.enqueue(async () => {
       const host = this.host;
-      if (!host || this.status !== "playing") throw new ClientError("state", "Aucune partie en cours.");
+      if (!host || this.status !== "playing") throw new ClientError("state", msg("No game in progress."));
       await this.advancing(host, async () => {
         const error = await host.submitHuman(seat.seat, d);
-        // Décision refusée : l'état n'a pas changé, le minuteur continue.
+        // Refused decision: the state did not change, the timer goes on.
         if (error) seat.peer?.send({ type: "error", code: "rules", message: error });
       });
     });
@@ -724,12 +746,12 @@ export class Room {
 
   rematch(seat: SeatState): Promise<void> {
     return this.enqueue(async () => {
-      if (this.status !== "over") throw new ClientError("state", "La partie n'est pas terminée.");
+      if (this.status !== "over") throw new ClientError("state", msg("The game is not over."));
       seat.rematch = true;
       this.broadcastRoom();
-      // Les sièges IA acceptent toujours la revanche.
+      // AI seats always accept the rematch.
       if (this.seats.length === this.size && this.seats.every((s) => s.ai || (s.rematch && s.peer))) {
-        // Nouveau match : score à zéro, decks d'origine.
+        // New match: score reset, original decks.
         this.match = { ...this.match, wins: {}, game: 0, winner: null };
         this.nextStarter = null;
         for (const s of this.seats) {
@@ -742,10 +764,10 @@ export class Room {
   }
 
   // -------------------------------------------------------------------------
-  // Connexions
+  // Connections
   // -------------------------------------------------------------------------
 
-  /** Reconnexion : vue complète et minuteur à jour. */
+  /** Reconnection: full view and updated timer. */
   reconnect(seat: SeatState, peer: Peer): void {
     seat.peer = peer;
     seat.graceDeadline = null;
@@ -760,7 +782,7 @@ export class Room {
     this.sendOpponentStatus();
   }
 
-  /** Connexion perdue : les autres sont prévenus ; sans retour à temps, défaite (ou salon supprimé). */
+  /** Connection lost: the others are told; without a return in time, loss (or room removed). */
   disconnect(seat: SeatState): void {
     seat.peer = null;
     if (this.status === "playing") {
@@ -773,18 +795,18 @@ export class Room {
     this.scheduleCleanupIfIdle();
   }
 
-  /** Départ volontaire : abandon si la partie est en cours. */
+  /** Voluntary leave: concession if the game is in progress. */
   leave(seat: SeatState): Promise<void> {
     return this.enqueue(async () => {
       if (this.status === "waiting") {
         this.seats.splice(this.seats.indexOf(seat), 1);
-        // Plus aucun humain (il ne reste que des sièges IA) : le salon ferme.
+        // No human left (only AI seats remain): the room closes.
         if (!this.seats.some((s) => !s.ai)) this.close();
         else this.broadcastRoom();
         return;
       }
       seat.peer = null;
-      // Entre deux manches d'un BO3 : partir, c'est concéder le match.
+      // Between two games of a BO3: leaving concedes the match.
       if (this.status === "sideboard") {
         const other = this.seats.find((s) => s !== seat)?.seat ?? null;
         this.match = { ...this.match, winner: other };
@@ -805,11 +827,11 @@ export class Room {
     await this.advancing(host, async () => {
       await host.submitHuman(seat.seat, { type: "concede" });
     });
-    // Sièges IA : sans humain encore connecté, la partie s'arrête et le salon ferme (le CPU du serveur est partagé).
+    // AI seats: with no human still connected, the game stops and the room closes (the server CPU is shared).
     if (this.hasAi && !this.seats.some((s) => !s.ai && s.peer)) this.close();
   }
 
-  /** Duel : l'état de connexion de l'adversaire (à plusieurs, `RoomInfo.players` le donne pour chacun). */
+  /** Duel: the opponent's connection state (with more players, `RoomInfo.players` gives it for each one). */
   private sendOpponentStatus(): void {
     if (this.size > 2) return;
     for (const s of this.seats) {
@@ -835,7 +857,7 @@ export class Room {
     this.cleanupTimer = null;
   }
 
-  /** Fermeture définitive du salon : son fichier de sauvegarde disparaît. */
+  /** Final closing of the room: its save file is removed. */
   close(): void {
     this.shutdown();
     this.config.aiPool?.forget(this.code);
@@ -844,7 +866,7 @@ export class Room {
     this.onClose(this);
   }
 
-  /** Arrêt du serveur : les minuteurs s'arrêtent, la sauvegarde reste (la partie sera reprise au redémarrage). */
+  /** Server shutdown: the timers stop, the save stays (the game will be resumed on restart). */
   shutdown(): void {
     this.stopClock();
     this.cancelCleanup();
@@ -853,7 +875,7 @@ export class Room {
   }
 
   // -------------------------------------------------------------------------
-  // Envois
+  // Sending
   // -------------------------------------------------------------------------
 
   private sendTo(p: Seat, msg: ServerMessage): void {
@@ -887,8 +909,8 @@ export class Room {
   }
 
   /**
-   * Exécute les actions une par une : une décision, une expiration et une déconnexion ne se
-   * croisent jamais sur la même partie. Les erreurs client remontent à l'appelant.
+   * Runs the actions one by one: a decision, a timeout and a disconnection never overlap on the same game. Client
+   * errors go up to the caller.
    */
   enqueue(fn: () => Promise<void>): Promise<void> {
     const run = this.queue.then(fn);
@@ -900,19 +922,19 @@ export class Room {
 export class RoomManager {
   private readonly rooms = new Map<string, Room>();
   /**
-   * Empreintes des jetons des joueurs dont la partie a été interrompue par une mise à jour des règles, avec leur date :
-   * gardées dans `interrupted.json` pour qu'un joueur l'apprenne même après un second redémarrage.
+   * Digests of the tokens of the players whose game was interrupted by a rules update, with their date: kept in
+   * `interrupted.json` so that a player learns it even after a second restart.
    */
   private readonly interrupted = new Map<string, number>();
 
   constructor(private readonly config: RoomConfig = DEFAULT_CONFIG) {
-    // « Choisissez un nom de carte » : tout nom du catalogue est accepté (la question ne liste pas la decklist adverse) ;
-    // avant la reprise des parties sauvegardées, qui rejouent leurs réponses.
+    // "Choose a card name": any name of the catalog is accepted (the question does not list the opponent's decklist);
+    // before the resume of the saved games, which replay their answers.
     registerNameCatalog(nameCatalog());
     if (config.dataDir) this.restore(config.dataDir);
   }
 
-  /** Salons ouverts par cette adresse (empreinte de sa clé), reprises comprises. */
+  /** Rooms opened by this address (digest of its key), resumed ones included. */
   private openedBy(creator: string): number {
     let n = 0;
     for (const r of this.rooms.values()) if (r.creator === creator) n++;
@@ -923,14 +945,14 @@ export class RoomManager {
     try {
       writeFileSync(join(dir, INTERRUPTED_FILE), JSON.stringify(Object.fromEntries(this.interrupted)), { mode: 0o600 });
     } catch (e) {
-      console.error("Jetons interrompus : sauvegarde impossible", e);
+      console.error("Interrupted tokens: save failed", e);
     }
   }
 
   /**
-   * Reprend les parties sauvegardées ; un fichier illisible est mis de côté (`.bad`) sans bloquer le démarrage. Les
-   * fichiers mis de côté et les jetons interrompus de plus de sept jours disparaissent. Au plus `maxRooms` salons, les plus
-   * récents : un serveur redémarré pour manque de mémoire ne doit pas reprendre plus qu'il ne peut tenir.
+   * Resumes the saved games; an unreadable file is set aside (`.bad`) without blocking the start-up. Files set aside
+   * and interrupted tokens older than seven days are removed. At most `maxRooms` rooms, the most recent ones: a server
+   * restarted for lack of memory must not resume more than it can hold.
    */
   private restore(dir: string): void {
     if (!existsSync(dir)) return;
@@ -940,7 +962,7 @@ export class RoomManager {
       for (const [h, at] of Object.entries(raw))
         if (typeof at === "number" && now - at < KEEP_ASIDE_MS) this.interrupted.set(h, at);
     } catch {
-      // Pas encore de fichier (ou illisible) : aucun jeton interrompu connu.
+      // No file yet (or unreadable): no known interrupted token.
     }
     for (const name of readdirSync(dir).filter((f) => /\.jsonl\.(?:bad|rules\d+)$/.test(f))) {
       const file = join(dir, name);
@@ -951,7 +973,7 @@ export class RoomManager {
       .map((name) => ({ name, mtime: statSync(join(dir, name)).mtimeMs }))
       .sort((a, b) => b.mtime - a.mtime);
     for (const { name } of files.slice(this.config.maxRooms)) {
-      console.warn(`Sauvegarde ${name} non reprise (plafond de ${this.config.maxRooms} salons), mise de côté`);
+      console.warn(`Save ${name} not resumed (cap of ${this.config.maxRooms} rooms), set aside`);
       renameSync(join(dir, name), join(dir, `${name}.bad`));
     }
     for (const { name } of files.slice(0, this.config.maxRooms)) {
@@ -964,18 +986,18 @@ export class RoomManager {
         const decisions = rows.map(([p, d]): [PlayerId, Decision] => [p, d]);
         const checkpoints = rows.flatMap(([, , h], i): [number, string][] => (typeof h === "string" ? [[i + 1, h]] : []));
         if (!saved?.code || !Array.isArray(saved.seats) || !isGameRecord({ ...saved.record, decisions }))
-          throw new Error("format inconnu");
+          throw new Error("unknown format");
         const room = Room.restore(saved, decisions, checkpoints, this.config, (r) => this.rooms.delete(r.code));
         this.rooms.set(room.code, room);
-        console.log(`Salon ${room.code} repris (${decisions.length} décisions)`);
+        console.log(`Room ${room.code} resumed (${decisions.length} decisions)`);
       } catch (e) {
         if (e instanceof RulesChangedError && saved) {
-          // Mise à jour du moteur : la partie est interrompue ; ses joueurs l'apprennent en revenant.
+          // Engine update: the game is interrupted; its players learn it when they come back.
           for (const s of saved.seats) this.interrupted.set(s.tokenHash ?? digest(s.token ?? ""), now);
-          console.warn(`Salon ${saved.code} interrompu par la mise à jour des règles : ${e.message}`);
+          console.warn(`Room ${saved.code} interrupted by the rules update: ${e.message}`);
           renameSync(file, `${file}.rules${e.rules}`);
         } else {
-          console.error(`Sauvegarde ${name} illisible, mise de côté :`, e);
+          console.error(`Save ${name} unreadable, set aside:`, e);
           renameSync(file, `${file}.bad`);
         }
       }
@@ -983,7 +1005,7 @@ export class RoomManager {
     this.saveInterrupted(dir);
   }
 
-  /** La partie de ce jeton a-t-elle été interrompue par une mise à jour des règles du moteur ? */
+  /** Was the game of this token interrupted by an update of the engine rules? */
   wasInterrupted(token: unknown): boolean {
     return typeof token === "string" && this.interrupted.has(digest(token));
   }
@@ -1019,21 +1041,21 @@ export class RoomManager {
     const players = opts.players === 3 || opts.players === 4 ? opts.players : 2;
     const commander = format === "commander" ? checkCommander(opts.commander) : [];
     const d = checkDeck(deck, format, format === "commander" ? commander : undefined);
-    // Pas de réserve en Commander.
+    // No sideboard in Commander.
     const side = format === "commander" ? [] : checkSide(d, opts.sideboard, format);
-    if (this.rooms.size >= this.config.maxRooms) throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
-    // Mémoire : refuser un salon plutôt que de laisser pm2 redémarrer le serveur (et couper toutes les parties).
+    if (this.rooms.size >= this.config.maxRooms) throw new ClientError("busy", msg("Server full, try again later."));
+    // Memory: refuse a room rather than let pm2 restart the server (and cut all the games).
     const heapMb = process.memoryUsage().heapUsed / 1_048_576;
     if (this.config.maxHeapMb && heapMb > this.config.maxHeapMb)
-      throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
-    // Créer puis abandonner des salons en boucle ne doit pas occuper toutes les places du serveur.
+      throw new ClientError("busy", msg("Server full, try again later."));
+    // Creating then abandoning rooms in a loop must not take all the places of the server.
     const creator = opts.ip ? digest(ipKey(opts.ip)) : undefined;
     if (creator && this.openedBy(creator) >= this.config.maxRoomsPerIp)
-      throw new ClientError("busy", "Trop de salons ouverts depuis cette adresse : fermez-en un avant d'en créer un autre.");
+      throw new ClientError("busy", msg("Too many rooms open from this address: close one before creating another."));
     const room = new Room(this.newCode(), this.config, (r) => this.rooms.delete(r.code));
     room.creator = creator;
     const ai = this.checkAi(opts.ai, players, format);
-    // Le BO3 n'existe qu'en duel, hors Commander.
+    // BO3 exists only in a duel, outside Commander.
     const bestOf = opts.bestOf === 3 && players === 2 && format !== "commander" ? 3 : 1;
     room.match = {
       ...room.match,
@@ -1043,36 +1065,36 @@ export class RoomManager {
     };
     this.rooms.set(room.code, room);
     const seat = room.addPlayer(n, d, peer, side, commander);
-    // Sièges IA : remplis tout de suite, avec des préconstruits jouables du format tirés au sort.
+    // AI seats: filled at once, with playable precons of the format drawn at random.
     if (ai) {
       const decks = aiDecks(format);
       for (let i = 0; i < ai.count; i++) {
         const deck = decks[randomInt(0, decks.length)] as DeckList;
         const label = AI_LEVEL_LABELS[ai.level];
-        room.addPlayer(`IA ${i + 1} (${label})`, deck.main, null, [], deck.commander ?? [], ai.level);
+        room.addPlayer(msg("AI {n} ({level})", { n: i + 1, level: label }), deck.main, null, [], deck.commander ?? [], ai.level);
       }
     }
     return { room, seat };
   }
 
   /**
-   * Sièges IA demandés à la création : au plus `players` − 1, niveau connu (l'élevé, avec l'ISMCTS, seulement en duel :
-   * sinon le moyen), un pool d'IA, de la place pour un salon avec IA et de la mémoire.
+   * AI seats asked for on creation: at most `players` − 1, known level (expert, with ISMCTS, only in a duel: otherwise
+   * medium), an AI pool, room for a room with AI, and memory.
    */
   private checkAi(raw: unknown, players: number, format: Format): { count: number; level: AiLevel } | null {
     const r = raw as { count?: unknown; level?: unknown } | null | undefined;
     const count = Number(r?.count ?? 0);
     if (!r || !Number.isInteger(count) || count <= 0) return null;
-    if (count > players - 1) throw new ClientError("state", "Il faut au moins un joueur humain dans le salon.");
-    if (!this.config.aiPool) throw new ClientError("busy", "L'IA n'est pas disponible sur ce serveur.");
+    if (count > players - 1) throw new ClientError("state", msg("The room needs at least one human player."));
+    if (!this.config.aiPool) throw new ClientError("busy", msg("The AI is not available on this server."));
     let level: AiLevel = (AI_LEVELS as readonly unknown[]).includes(r.level) ? (r.level as AiLevel) : "medium";
     if (level === "expert" && players > 2) level = "medium";
     let aiRooms = 0;
     for (const room of this.rooms.values()) if (room.hasAi) aiRooms++;
     const rssMb = process.memoryUsage().rss / 1_048_576;
     if (aiRooms >= (this.config.maxAiRooms ?? 12) || (this.config.maxRssMb && rssMb > this.config.maxRssMb))
-      throw new ClientError("busy", "Trop de parties contre l'IA en cours sur le serveur, réessayez plus tard.");
-    if (aiDecks(format).length === 0) throw new ClientError("deck", "Aucun deck jouable pour l'IA dans ce format.");
+      throw new ClientError("busy", msg("Too many games against the AI in progress on the server, try again later."));
+    if (aiDecks(format).length === 0) throw new ClientError("deck", msg("No deck the AI can play in this format."));
     return { count, level };
   }
 
@@ -1089,9 +1111,9 @@ export class RoomManager {
         .toUpperCase()
         .trim(),
     );
-    if (!room) throw new ClientError("room", "Salon introuvable : vérifiez le code.");
-    if (room.status !== "waiting" || room.seats.length >= room.size) throw new ClientError("full", "Ce salon est complet.");
-    // Le deck doit être légal dans le format choisi par le créateur du salon.
+    if (!room) throw new ClientError("room", msg("Room not found: check the code."));
+    if (room.status !== "waiting" || room.seats.length >= room.size) throw new ClientError("full", msg("This room is full."));
+    // The deck must be legal in the format chosen by the room's creator.
     const format = room.match.format ?? "standard";
     const commander = format === "commander" ? checkCommander(commanderRaw) : [];
     const d = checkDeck(deck, format, format === "commander" ? commander : undefined);
@@ -1108,7 +1130,7 @@ export class RoomManager {
     return null;
   }
 
-  /** Arrêt du serveur : les salons s'arrêtent sans effacer leur sauvegarde. */
+  /** Server shutdown: the rooms stop without erasing their save. */
   closeAll(): void {
     for (const room of [...this.rooms.values()]) room.shutdown();
     this.rooms.clear();

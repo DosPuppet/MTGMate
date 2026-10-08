@@ -1,8 +1,8 @@
 /**
- * Test de bout en bout du deckbuilder : import d'une decklist (noms FR, faute de frappe corrigée par suggestion),
- * édition par clics, export, persistance après rechargement, puis partie jouée avec le deck.
+ * End-to-end test of the deck builder: import of a decklist (French names, a typo fixed by a suggestion), editing by
+ * clicks, export, persistence after a reload, then a game played with the deck.
  *
- * Prérequis : `npm run dev` lancé. Usage : npx tsx tools/deck-smoke.ts [dossier-captures]
+ * Requires: `npm run dev` running. Usage: npx tsx tools/deck-smoke.ts [screenshot-dir]
  */
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -18,9 +18,9 @@ const errors: string[] = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const check = (cond: boolean, msg: string) => {
   if (!cond) {
-    console.log(`ÉCHEC : ${msg}`);
+    console.log(`FAILED: ${msg}`);
     process.exitCode = 1;
-  } else console.log(`ok : ${msg}`);
+  } else console.log(`ok: ${msg}`);
 };
 
 await page.goto("http://localhost:5173/?fast");
@@ -48,45 +48,45 @@ Sideboard
 `;
 await page.locator(".decklist-input").fill(LIST);
 await page.screenshot({ path: join(OUT, "01-import.png") });
-check((await page.locator(".import-report .v-error").count()) === 1, "une seule ligne en erreur (Overun)");
+check((await page.locator(".import-report .v-error").count()) === 1, "a single line in error (Overun)");
 await page.getByRole("button", { name: /Remplacer par « Overrun »/ }).click();
-check((await page.locator(".import-report .v-error").count()) === 0, "suggestion appliquée");
+check((await page.locator(".import-report .v-error").count()) === 0, "suggestion applied");
 await page.getByRole("button", { name: "Créer un nouveau deck" }).click();
 await page.waitForTimeout(300);
-check((await page.locator(".deck-name-input").inputValue()) === "Test importé", "nom du deck repris de la liste");
-check((await page.locator(".deck-tabs").innerText()).includes("60"), "60 cartes dans le deck");
-check((await page.locator(".v-ok").count()) === 1, "deck valide et jouable");
+check((await page.locator(".deck-name-input").inputValue()) === "Test importé", "deck name taken from the list");
+check((await page.locator(".deck-tabs").innerText()).includes("60"), "60 cards in the deck");
+check((await page.locator(".v-ok").count()) === 1, "deck valid and playable");
 await page.screenshot({ path: join(OUT, "02-deck.png") });
 
-// Édition par clics : retirer un Giant Growth, ajouter un Llanowar Elves refusé (déjà 4).
+// Editing by clicks: remove a Giant Growth, add a Llanowar Elves, refused (already 4).
 await page
   .locator(".deck-line", { hasText: /Croissance gigantesque|Giant Growth/ })
   .getByRole("button", { name: "Retirer" })
   .click();
-check((await page.locator(".deck-tabs").innerText()).includes("59"), "retrait d'une carte");
+check((await page.locator(".deck-tabs").innerText()).includes("59"), "card removed");
 await page.locator(".filters .search").fill("elfes de llanowar");
 await page.locator(".collection-grid .card").first().click();
-check((await page.locator(".toast").innerText()).includes("4 exemplaires"), "5e exemplaire refusé");
+check((await page.locator(".toast").innerText()).includes("4 exemplaires"), "5th copy refused");
 await page.locator(".filters .search").fill("croissance");
 await page.locator(".collection-grid .card").first().click();
-check((await page.locator(".deck-tabs").innerText()).includes("60"), "ajout depuis la collection");
+check((await page.locator(".deck-tabs").innerText()).includes("60"), "added from the collection");
 
 // Export.
 await page.getByRole("button", { name: "Exporter" }).click();
 const exported = await page.locator(".decklist-output").inputValue();
-check(/^About\nName Test importé\n\nDeck\n/.test(exported) && exported.includes("(FDN)"), "export au format MTGA");
-check(exported.includes("Sideboard\n2 Broken Wings"), "réserve exportée");
+check(/^About\nName Test importé\n\nDeck\n/.test(exported) && exported.includes("(FDN)"), "export in MTGA format");
+check(exported.includes("Sideboard\n2 Broken Wings"), "sideboard exported");
 await page.getByRole("button", { name: "Fermer" }).click();
 
-// Persistance.
+// Persistence.
 await page.reload();
 await page.getByRole("button", { name: "Mes decks" }).click();
-check((await page.locator(".deck-name-input").inputValue()) === "Test importé", "deck conservé après rechargement");
+check((await page.locator(".deck-name-input").inputValue()) === "Test importé", "deck kept after reload");
 
-// Partie avec le deck.
+// Game with the deck.
 await page.getByRole("button", { name: "Tester contre l'IA" }).click();
 await page.getByRole("button", { name: "Garder" }).click();
-// Jusqu'au 3e tour (inutile d'aller au bout : ui-smoke joue déjà une partie complète).
+// Up to turn 3 (no need to go to the end: ui-smoke already plays a whole game).
 const turn = () =>
   page
     .locator(".phase-turn")
@@ -96,7 +96,7 @@ const turn = () =>
 for (let i = 0; i < 300 && !(await page.locator(".gameover").count()) && (await turn()) < 3; i++) {
   await page.waitForTimeout(150);
   if (await page.getByRole("dialog").count()) {
-    // Choix avec suggestion (options, ou permanents sur le champ de bataille) : suggestion, puis validation.
+    // Choice with a suggestion (options, or permanents on the battlefield): suggestion, then confirmation.
     const suggest = page.getByRole("dialog").getByRole("button", { name: "Suggestion" });
     if (await suggest.count()) {
       await suggest.click({ timeout: 1000 }).catch(() => {});
@@ -108,7 +108,7 @@ for (let i = 0; i < 300 && !(await page.locator(".gameover").count()) && (await 
         .catch(() => {});
       continue;
     }
-    // Défausse (taille de main maximale) : les premières cartes, puis validation.
+    // Discard (maximum hand size): the first cards, then confirmation.
     const title = await page
       .getByRole("dialog")
       .locator("h2")
@@ -142,8 +142,8 @@ for (let i = 0; i < 300 && !(await page.locator(".gameover").count()) && (await 
   if (await main.isDisabled()) continue;
   await main.click({ timeout: 3000 }).catch(() => {});
 }
-await page.screenshot({ path: join(OUT, "03-partie.png") });
-check((await page.locator(".battlefield").count()) >= 2, "partie lancée avec le deck importé");
-check((await turn()) >= 3 || (await page.locator(".gameover").count()) > 0, "partie jouée jusqu'au 3e tour");
-console.log(errors.length ? `Erreurs de page :\n${errors.join("\n")}` : "Aucune erreur de page.");
+await page.screenshot({ path: join(OUT, "03-game.png") });
+check((await page.locator(".battlefield").count()) >= 2, "game started with the imported deck");
+check((await turn()) >= 3 || (await page.locator(".gameover").count()) > 0, "game played up to turn 3");
+console.log(errors.length ? `Page errors:\n${errors.join("\n")}` : "No page error.");
 await browser.close();

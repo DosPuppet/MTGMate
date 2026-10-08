@@ -1,10 +1,10 @@
 /**
- * Test de bout en bout du tutoriel : chaque leçon est suivie dans le navigateur en cliquant comme un joueur
- * (cartes, cibles, bouton principal, « Suivant »), d'après les décisions attendues par ses étapes.
- * Vérifie aussi le refus d'une action hors guide et la reprise après rechargement de la page.
- * La leçon 9 (partie libre) est suivie jusqu'au début de la partie.
+ * End-to-end test of the tutorial: each lesson is followed in the browser by clicking like a player (cards, targets,
+ * main button, "Next"), from the decisions its steps expect.
+ * Also checks the refusal of an action outside the guide and the resumption after a page reload.
+ * Lesson 9 (free game) is followed up to the start of the game.
  *
- * Prérequis : `npm run dev` lancé. Usage : npx tsx tools/tutorial-smoke.ts [dossier-captures]
+ * Requires: `npm run dev` running. Usage: npx tsx tools/tutorial-smoke.ts [screenshot-dir]
  */
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -15,7 +15,7 @@ import { type Allow, solve } from "../packages/client/src/tutorial/runtime";
 
 const args = process.argv.slice(2);
 const onlyAt = args.indexOf("--only");
-/** `--only 2,3` : seulement ces leçons (sans les vérifications du menu). */
+/** `--only 2,3`: only these lessons (without the menu checks). */
 const ONLY = onlyAt >= 0 ? (args.splice(onlyAt, 2)[1] ?? "").split(",").map(Number) : null;
 const DEBUG = args.includes("--debug");
 const OUT = args.find((a) => !a.startsWith("--")) ?? "test-results/tutorial";
@@ -25,16 +25,16 @@ const page = await browser.newPage({ viewport: { width: 1500, height: 880 } });
 const errors: string[] = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => {
-  if (m.type() === "error") errors.push(`console : ${m.text()}`);
+  if (m.type() === "error") errors.push(`console: ${m.text()}`);
 });
-page.on("worker", (w) => w.on("console", (m) => m.type() === "error" && errors.push(`worker : ${m.text()}`)));
+page.on("worker", (w) => w.on("console", (m) => m.type() === "error" && errors.push(`worker: ${m.text()}`)));
 let failed = false;
 const check = (cond: boolean, msg: string) => {
   if (!cond) {
-    console.log(`ÉCHEC : ${msg}`);
+    console.log(`FAILED: ${msg}`);
     failed = true;
     process.exitCode = 1;
-  } else console.log(`ok : ${msg}`);
+  } else console.log(`ok: ${msg}`);
 };
 
 interface TutoState {
@@ -53,10 +53,10 @@ const gameView = (p: Page) =>
     () => (window as unknown as { __mtgx: { getState(): { view: unknown } } }).__mtgx.getState().view,
   ) as Promise<GameView | null>;
 
-/** Élément d'un objet ou d'un joueur (les jetons d'une pile n'ont pas tous d'élément). */
+/** Element of an object or of a player (the tokens of a pile do not all have an element). */
 const objectEl = (id: string) => page.locator(`[data-oid="${id}"], [data-oids~="${id}"]`).first();
 
-/** Clic comme un joueur : les cartes de la main se chevauchent, on vise leur coin visible (en haut à gauche). */
+/** Click like a player: the cards of the hand overlap, so aim at their visible corner (top left). */
 async function clickObj(id: string, v: GameView): Promise<void> {
   const inHand = v.hand.some((o) => o.id === id);
   await objectEl(id).click(inHand ? { position: { x: 14, y: 30 } } : undefined);
@@ -68,10 +68,10 @@ async function clickMain(): Promise<void> {
   else await page.locator('[data-tuto="main-button"]').click();
 }
 
-/** Réalise l'étape comme un joueur, à partir de la décision attendue. */
+/** Performs the step like a player, from the expected decision. */
 async function act(allow: Allow, v: GameView): Promise<void> {
   const intent = solve(allow, v);
-  if (!intent) throw new Error(`rien à faire pour ${JSON.stringify(allow)}`);
+  if (!intent) throw new Error(`nothing to do for ${JSON.stringify(allow)}`);
   switch (intent.type) {
     case "keep":
       await page.getByRole("button", { name: "Garder" }).click();
@@ -88,7 +88,7 @@ async function act(allow: Allow, v: GameView): Promise<void> {
       await clickObj(intent.type === "cast" ? intent.card : intent.source, v);
       const target = Object.values(intent.targets ?? {}).flat()[0];
       if (!target) return;
-      // Cible choisie automatiquement quand elle est la seule possible : pas de clic.
+      // Target chosen automatically when it is the only one possible: no click.
       const targeting = await page
         .waitForFunction(
           () =>
@@ -109,7 +109,7 @@ async function act(allow: Allow, v: GameView): Promise<void> {
     case "declareBlockers":
       for (const b of intent.blocks) {
         await objectEl(b.blocker).click();
-        // Un bloqueur qui ne peut bloquer qu'un attaquant est assigné dès le premier clic.
+        // A blocker that can block only one attacker is assigned on the first click.
         const assigned = await page.evaluate(
           (id) =>
             id in (window as unknown as { __mtgx: { getState(): { blocks: Record<string, string> } } }).__mtgx.getState().blocks,
@@ -120,11 +120,11 @@ async function act(allow: Allow, v: GameView): Promise<void> {
       await clickMain();
       return;
     default:
-      throw new Error(`décision non gérée : ${intent.type}`);
+      throw new Error(`unhandled decision: ${intent.type}`);
   }
 }
 
-/** Attend que l'étape (ou la leçon) change ; échoue si le tutoriel reste bloqué. */
+/** Waits until the step (or the lesson) changes; fails if the tutorial stays stuck. */
 async function waitProgress(before: TutoState, what: string): Promise<void> {
   const deadline = Date.now() + 15_000;
   while (Date.now() < deadline) {
@@ -132,7 +132,7 @@ async function waitProgress(before: TutoState, what: string): Promise<void> {
     if (s.step !== before.step || s.finished !== before.finished || s.lessonId !== before.lessonId) return;
     await page.waitForTimeout(100);
   }
-  throw new Error(`bloqué : ${what}`);
+  throw new Error(`stuck: ${what}`);
 }
 
 async function playLesson(index: number): Promise<void> {
@@ -142,9 +142,9 @@ async function playLesson(index: number): Promise<void> {
     const s = await tuto(page);
     if (s.finished || s.lessonId !== lesson.id) return;
     const step = lesson.steps[s.step];
-    if (!step) throw new Error(`étape ${s.step} introuvable`);
-    const where = `${lesson.id} étape ${s.step + 1}`;
-    if (step.free) return; // partie libre (leçon 9) : on s'arrête là
+    if (!step) throw new Error(`step ${s.step} not found`);
+    const where = `${lesson.id} step ${s.step + 1}`;
+    if (step.free) return; // free game (lesson 9): stop here
     if (step.next) {
       await page.locator(".coach-next").click();
       await waitProgress(s, where);
@@ -152,7 +152,7 @@ async function playLesson(index: number): Promise<void> {
     }
     const t = step.target;
     if (step.allow) {
-      // Étape d'action : on attend que la décision attendue soit possible (worker qui démarre, tour adverse…).
+      // Action step: wait until the expected decision is possible (worker starting, opponent's turn…).
       const deadline = Date.now() + 15_000;
       let done = false;
       while (!done && Date.now() < deadline) {
@@ -168,13 +168,13 @@ async function playLesson(index: number): Promise<void> {
           else await page.waitForTimeout(100);
         }
       }
-      if (!done) throw new Error(`bloqué : ${where} (action attendue impossible)`);
-      // L'étape peut demander plusieurs décisions (« Passer » puis bloquer) : on repasse dans la boucle.
+      if (!done) throw new Error(`stuck: ${where} (expected action impossible)`);
+      // The step may ask for several decisions ("Pass" then block): go through the loop again.
       await waitProgress(s, where).catch(() => {});
       continue;
     }
     if (typeof t === "object") {
-      // Étape de survol : on attend que la carte soit à l'écran.
+      // Hover step: wait until the card is on screen.
       await page.waitForFunction((name) => {
         const v = (window as unknown as { __mtgx: { getState(): { view: GameView | null } } }).__mtgx.getState().view;
         return !!v && [...v.battlefield, ...v.hand].some((o) => o.name === name);
@@ -183,17 +183,17 @@ async function playLesson(index: number): Promise<void> {
       const id = v?.battlefield.find((o) => o.name === t.card)?.id ?? v?.hand.find((o) => o.name === t.card)?.id;
       if (id) await objectEl(id).hover();
     }
-    // Étape d'attente (tour adverse) : on laisse la partie avancer.
+    // Waiting step (opponent's turn): let the game go on.
     await waitProgress(s, where);
   }
-  throw new Error(`${lesson.id} : trop d'étapes`);
+  throw new Error(`${lesson.id}: too many steps`);
 }
 
-/** Leçon 2 : une action hors guide est refusée ; après rechargement de la page, la leçon est proposée à la reprise. */
+/** Lesson 2: an action outside the guide is refused; after a page reload, the lesson is offered for resumption. */
 async function refusalAndResume(): Promise<void> {
   await page.locator(".lesson-tile").nth(1).click();
   await page.locator(".coach-next").click();
-  // La partie doit être prête (priorité au joueur) : un délai fixe ne suffit pas sur une machine chargée.
+  // The game must be ready (priority to the player): a fixed delay is not enough on a loaded machine.
   await page.waitForFunction(() => {
     const v = (window as unknown as { __mtgx: { getState(): { view: GameView | null } } }).__mtgx.getState().view;
     return !!v && v.pending?.kind === "priority" && v.pending.player === v.viewer;
@@ -209,16 +209,13 @@ async function refusalAndResume(): Promise<void> {
         .innerText()
         .catch(() => "")
     ).includes("Forêt"),
-    "action hors guide refusée",
+    "action outside the guide refused",
   );
-  check(!((await gameView(page))?.battlefield.some((o) => o.name === "Plains") ?? true), "la Plaine n'a pas été jouée");
-  await page.screenshot({ path: join(OUT, "01-refus.png") });
+  check(!((await gameView(page))?.battlefield.some((o) => o.name === "Plains") ?? true), "the Plains was not played");
+  await page.screenshot({ path: join(OUT, "01-refusal.png") });
   await page.reload();
   await page.getByRole("button", { name: "Apprendre à jouer" }).click();
-  check(
-    await page.getByRole("button", { name: /Reprendre : Terrains et mana/ }).isVisible(),
-    "reprise proposée après rechargement",
-  );
+  check(await page.getByRole("button", { name: /Reprendre : Terrains et mana/ }).isVisible(), "resumption offered after reload");
 }
 
 try {
@@ -227,7 +224,7 @@ try {
   await page.reload();
   await page.getByRole("button", { name: "Apprendre à jouer" }).click();
   await page.screenshot({ path: join(OUT, "00-menu.png") });
-  check((await page.locator(".lesson-tile").count()) === LESSONS.length, `${LESSONS.length} leçons au menu`);
+  check((await page.locator(".lesson-tile").count()) === LESSONS.length, `${LESSONS.length} lessons in the menu`);
   if (ONLY === null) await refusalAndResume();
 
   for (let i = 0; i < LESSONS.length; i++) {
@@ -241,18 +238,18 @@ try {
     const t0 = Date.now();
     try {
       await playLesson(i);
-      if (DEBUG) console.log(`  leçon ${i + 1} : ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+      if (DEBUG) console.log(`  lesson ${i + 1}: ${((Date.now() - t0) / 1000).toFixed(1)} s`);
       await page.waitForTimeout(300);
       const s = await tuto(page);
       await page.screenshot({ path: join(OUT, `lesson-${i + 1}-${lesson.id}.png`) });
       if (lesson.steps.some((st) => st.free))
-        check(s.lessonId === lesson.id && !s.finished, `leçon ${i + 1} : partie libre atteinte`);
-      else check(s.finished, `leçon ${i + 1} (${lesson.title}) terminée`);
+        check(s.lessonId === lesson.id && !s.finished, `lesson ${i + 1}: free game reached`);
+      else check(s.finished, `lesson ${i + 1} (${lesson.title}) finished`);
     } catch (e) {
-      await page.screenshot({ path: join(OUT, `lesson-${i + 1}-${lesson.id}-echec.png`) });
-      check(false, `leçon ${i + 1} (${lesson.title}) : ${(e as Error).message}`);
+      await page.screenshot({ path: join(OUT, `lesson-${i + 1}-${lesson.id}-failed.png`) });
+      check(false, `lesson ${i + 1} (${lesson.title}): ${(e as Error).message}`);
     }
-    // Retour au menu du tutoriel.
+    // Back to the tutorial menu.
     const coach = page.locator(".coach");
     if (
       await coach
@@ -271,11 +268,11 @@ try {
   }
   if (ONLY === null) {
     await page.waitForTimeout(200);
-    await page.screenshot({ path: join(OUT, "99-menu-fin.png") });
-    check((await page.locator(".lesson-tile.done").count()) === LESSONS.length - 1, "leçons 1 à 8 marquées terminées");
+    await page.screenshot({ path: join(OUT, "99-menu-end.png") });
+    check((await page.locator(".lesson-tile.done").count()) === LESSONS.length - 1, "lessons 1 to 8 marked finished");
   }
 } finally {
-  check(errors.length === 0, errors.length ? `erreurs de page : ${errors.join(" | ")}` : "aucune erreur de page");
+  check(errors.length === 0, errors.length ? `page errors: ${errors.join(" | ")}` : "no page error");
   await browser.close();
 }
-if (!failed) console.log("ok : tutoriel suivi de bout en bout");
+if (!failed) console.log("ok: tutorial followed end to end");

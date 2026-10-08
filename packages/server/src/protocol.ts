@@ -1,73 +1,73 @@
 /**
- * Protocole du jeu en ligne (WebSocket, JSON). Types partagés : le client les importe en `import type`.
- * Le serveur fait autorité : il valide les decks et chaque décision (RulesError du moteur).
+ * Online play protocol (WebSocket, JSON). Shared types: the client imports them with `import type`.
+ * The server is authoritative: it validates the decks and every decision (engine RulesError).
  */
 import type { AiLevel } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameRecord, GameView } from "@mtgx/engine";
 
 /**
- * Version du protocole : avec `RULES_VERSION`, envoyée par le client à la création, à l'arrivée et à la reprise d'un
- * salon. Un client d'une autre version (onglet resté ouvert, service worker périmé) est refusé et invité à recharger
- * la page. À faire avancer à tout changement incompatible des messages.
- * - 2 : une ligne de deck peut citer une impression, `[nombre, nom, impression]` (PLAN-G, G1).
- * - 3 : salons de 2 à 4 joueurs et Commander (PLAN-E, E13) : sièges p1 à p4, `players` et `commander` à la création,
- *   `commander` à l'arrivée, victoires par siège facultatives ; sièges IA (`ai` à la création, `players[].ai`).
- * - 4 : question « nom » (`ChoiceRequest` de type `name` : nom de carte, de carte de terrain, type de créature), qui ne
- *   liste plus les cartes de la partie ; l'interface cherche dans tout le catalogue.
+ * Protocol version: sent by the client, with `RULES_VERSION`, when it creates, joins or resumes a room. A client of
+ * another version (tab left open, stale service worker) is refused and asked to reload the page. Bump it on every
+ * incompatible change of the messages.
+ * - 2: a deck line can cite a printing, `[count, name, printing]` (PLAN-G, G1).
+ * - 3: rooms of 2 to 4 players and Commander (PLAN-E, E13): seats p1 to p4, `players` and `commander` on create,
+ *   `commander` on join, optional wins per seat; AI seats (`ai` on create, `players[].ai`).
+ * - 4: "name" question (`ChoiceRequest` of type `name`: card name, land card name, creature type), which no longer
+ *   lists the cards of the game; the interface searches the whole catalog.
  */
 export const PROTOCOL_VERSION = 4;
 
-/** Versions du client (protocole et règles du moteur). */
+/** Client versions (protocol and engine rules). */
 export interface ClientVersion {
   protocol: number;
   rules: number;
 }
 
-/** Sièges d'un salon (deux à quatre joueurs) : identifiants des joueurs dans le moteur. */
+/** Seats of a room (two to four players): the player ids in the engine. */
 export type Seat = "p1" | "p2" | "p3" | "p4";
 
-/** Minuteur de la décision en cours (durées relatives : pas de dépendance à l'horloge du client). */
+/** Timer of the current decision (relative durations: no dependency on the client's clock). */
 export interface Clock {
-  /** Joueur qui doit décider. */
+  /** Player who must decide. */
   player: Seat;
-  /** Temps restant à la réception du message (ms). */
+  /** Time left when the message is received (ms). */
   remainingMs: number;
-  /** Durée totale d'une décision (ms). */
+  /** Total duration of a decision (ms). */
   totalMs: number;
-  /** Durée pendant laquelle la corde s'affiche (ms, fin du temps). */
+  /** Duration during which the rope is shown (ms, end of the time). */
   ropeMs: number;
-  /** Expirations déjà subies par joueur (défaite à `maxTimeouts`). */
+  /** Timeouts already suffered per player (loss at `maxTimeouts`). */
   timeouts: Partial<Record<Seat, number>>;
   maxTimeouts: number;
 }
 
-/** Match : une manche (BO1) ou au meilleur des trois (BO3). */
+/** Match: one game (BO1) or best of three (BO3). */
 export interface MatchInfo {
   bestOf: 1 | 3;
-  /** Format des decks du salon, choisi à sa création (absent : Standard). */
+  /** Deck format of the room, chosen when it is created (absent: Standard). */
   format?: Format;
-  /** Nombre de joueurs du salon (absent : 2, un duel). Le BO3 n'existe qu'en duel. */
+  /** Number of players of the room (absent: 2, a duel). BO3 exists only in a duel. */
   seats?: 2 | 3 | 4;
-  /** Manches gagnées par siège. */
+  /** Games won per seat. */
   wins: Partial<Record<Seat, number>>;
-  /** Numéro de la manche en cours (ou de la dernière jouée). */
+  /** Number of the current game (or of the last one played). */
   game: number;
-  /** Vainqueur du match (null tant qu'il n'est pas décidé). */
+  /** Winner of the match (null until it is decided). */
   winner: Seat | null;
 }
 
 export interface RoomInfo {
   code: string;
   seat: Seat;
-  /** Jeton de reconnexion du destinataire (à garder pour `rejoin`). */
+  /** Reconnection token of the recipient (kept for `rejoin`). */
   token: string;
-  /** `sideboard` : entre deux manches d'un BO3, chacun ajuste son deck avec sa réserve. */
+  /** `sideboard`: between two games of a BO3, each player adjusts their deck with their sideboard. */
   status: "waiting" | "playing" | "sideboard" | "over";
-  /** `ready` : réserve validée, prêt pour la manche suivante ; `ai` : siège tenu par l'IA du serveur (son niveau). */
+  /** `ready`: sideboard confirmed, ready for the next game; `ai`: seat held by the server AI (its level). */
   players: { seat: Seat; name: string; connected: boolean; rematch: boolean; ready: boolean; ai?: AiLevel }[];
   match: MatchInfo;
-  /** Deck et réserve actuels du destinataire (entre les manches : point de départ de l'échange) ; son commandant. */
+  /** Current deck and sideboard of the recipient (between games: starting point of the swap); their commander. */
   deck: { main: DeckEntries; sideboard: DeckEntries; commander?: DeckEntries };
 }
 
@@ -79,11 +79,11 @@ export type ClientMessage =
       sideboard?: DeckEntries;
       bestOf?: 1 | 3;
       format?: Format;
-      /** Nombre de joueurs (2 par défaut). */
+      /** Number of players (2 by default). */
       players?: 2 | 3 | 4;
-      /** Commander : le commandant du créateur. */
+      /** Commander: the creator's commander. */
       commander?: DeckEntries;
-      /** Sièges tenus par l'IA du serveur (au plus `players` − 1) et son niveau ; decks choisis par le serveur. */
+      /** Seats held by the server AI (at most `players` − 1) and its level; decks chosen by the server. */
       ai?: { count: number; level: AiLevel };
       version?: ClientVersion;
     }
@@ -93,7 +93,7 @@ export type ClientMessage =
       name: string;
       deck: DeckEntries;
       sideboard?: DeckEntries;
-      /** Commander : le commandant de celui qui arrive. */
+      /** Commander: the commander of the joining player. */
       commander?: DeckEntries;
       version?: ClientVersion;
     }
@@ -102,14 +102,14 @@ export type ClientMessage =
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> }
   | { type: "rematch" }
-  /** Entre deux manches (BO3) : deck et réserve pour la manche suivante (mêmes cartes au total), puis prêt. */
+  /** Between two games (BO3): deck and sideboard for the next game (same cards in total), then ready. */
   | { type: "sideboard"; main: DeckEntries; sideboard: DeckEntries }
-  /** Enregistrement de la partie terminée (replay, signalement d'un bug) ; refusé pendant la partie (decks, graine). */
+  /** Record of the finished game (replay, bug report); refused during the game (decks, seed). */
   | { type: "export" };
 
 /**
- * `busy` : serveur complet ; `closed` : salon fermé par le serveur (attente trop longue) ; `version` : client d'une autre
- * version que le serveur (recharger la page).
+ * `busy`: server full; `closed`: room closed by the server (waited too long); `version`: client of another version than
+ * the server (reload the page).
  */
 export type ErrorCode = "deck" | "name" | "room" | "full" | "busy" | "closed" | "token" | "rules" | "state" | "version";
 

@@ -1,7 +1,7 @@
 /**
- * Worker d'IA du serveur (PLAN-E, E14) : réfléchit à une décision d'un siège IA hors du fil principal, pour que les
- * autres salons ne soient pas bloqués. Reçoit l'état de la partie sans ses définitions de cartes (gardées ici par
- * salon, complétées à chaque envoi par celles qui manquaient : jetons créés en cours de partie).
+ * Server AI worker (PLAN-E, E14): thinks about a decision of an AI seat off the main thread, so that the other rooms
+ * are not blocked. Receives the game state without its card definitions (kept here per room, completed on each message
+ * by the missing ones: tokens created during the game).
  */
 import { parentPort } from "node:worker_threads";
 import { type AiBudget, type AiLevel, aiAgent } from "@mtgx/ai";
@@ -18,14 +18,14 @@ export type ToAiWorker =
       seed: number;
       budget?: AiBudget;
       state: Omit<GameState, "defs">;
-      /** Définitions que ce worker n'a pas encore pour ce salon. */
+      /** Definitions this worker does not have yet for this room. */
       defs?: Record<string, CardDef>;
     }
   | { type: "forget"; room: string };
 
 export type FromAiWorker = { id: number; decision: Decision } | { id: number; error: string };
 
-/** Définitions par salon (les salons les plus anciens sont oubliés au-delà de 64). */
+/** Definitions per room (the oldest rooms are forgotten beyond 64). */
 const defsByRoom = new Map<string, Record<string, CardDef>>();
 const MAX_ROOMS = 64;
 

@@ -6,6 +6,7 @@
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { plainText } from "@mtgx/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RunningServer } from "../src/index";
 import { Client, GREEN, server } from "./helpers";
@@ -33,10 +34,10 @@ describe("sièges IA", () => {
     a.send({ type: "create", name: "Alice", deck: GREEN, ai: { count: 1, level: "beginner" } });
     const room = await a.next("room", (m) => m.room.status === "playing", 10_000);
     expect(room.room.players.map((p) => p.ai ?? null)).toEqual([null, "beginner"]);
-    expect(room.room.players[1]?.name).toBe("IA 1 (débutante)");
+    expect(plainText(room.room.players[1]?.name ?? "")).toBe("AI 1 (beginner)");
     // L'IA a gardé sa main et joue des terrains : son champ de bataille se remplit.
     const later = await a.next("update", (u) => u.view.battlefield.some((o) => o.controller === "p2"), 30_000);
-    expect(later.view.players.p2?.name).toBe("IA 1 (débutante)");
+    expect(plainText(later.view.players.p2?.name ?? "")).toBe("AI 1 (beginner)");
   }, 45_000);
 
   it("à trois avec deux IA : quand l'humain abandonne, le salon ferme", async () => {
@@ -83,7 +84,7 @@ describe("sièges IA", () => {
     const back = await human(srv.port);
     back.send({ type: "rejoin", token: created.room.token });
     const up = await back.next("update");
-    expect(up.view.players.p2?.name).toBe("IA 1 (débutante)");
+    expect(plainText(up.view.players.p2?.name ?? "")).toBe("AI 1 (beginner)");
     back.bot = true;
     back.play(up.view);
     const turn = up.view.turn.number;

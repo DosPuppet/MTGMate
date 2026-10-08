@@ -6,7 +6,7 @@ import { act, idOf, passUntil, scenario } from "../../engine/test/helpers";
 import { heuristicAgent, playGame, randomAgent } from "../src";
 
 const decks = () =>
-  [buildDeck(deckById("bienvenue-vert")), buildDeck(deckById("bienvenue-rouge"))] as [
+  [buildDeck(deckById("welcome-green")), buildDeck(deckById("welcome-red"))] as [
     ReturnType<typeof buildDeck>,
     ReturnType<typeof buildDeck>,
   ];
@@ -25,8 +25,8 @@ describe("fuzz", () => {
     let { state } = createGame({
       seed: 7,
       players: [
-        { id: "p1", name: "IA 1", deck: decks()[0] },
-        { id: "p2", name: "IA 2", deck: decks()[1] },
+        { id: "p1", name: "AI 1", deck: decks()[0] },
+        { id: "p2", name: "AI 2", deck: decks()[1] },
       ],
     });
     for (const { player, decision } of r.decisions) state = submit(state, player, decision).state;
@@ -38,7 +38,7 @@ describe("fuzz", () => {
     const r = playGame({ seed: 11, decks: deckList, agents: [heuristicAgent(), heuristicAgent(), randomAgent(3)] });
     let { state } = createGame({
       seed: 11,
-      players: deckList.map((deck, i) => ({ id: `p${i + 1}`, name: `IA ${i + 1}`, deck })),
+      players: deckList.map((deck, i) => ({ id: `p${i + 1}`, name: `AI ${i + 1}`, deck })),
     });
     for (const { player, decision } of r.decisions) state = submit(state, player, decision).state;
     expect(r.decisions.length).toBeGreaterThan(100);

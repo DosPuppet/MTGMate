@@ -1,14 +1,14 @@
 /**
- * Parties dorées (docs/plans/PLAN-R.md, lot F1 ; rendues détectrices par docs/plans/PLAN-C.md, lot C2) : quelques parties
- * à graine fixe, enregistrées avec leurs points de contrôle (`packages/ai/test/golden/*.json`). Le test
- * `ai/test/golden.test.ts` les rejoue toutes :
- * - une partie qui se rejoue à l'identique passe, quelle que soit la version des règles qui l'a enregistrée ;
- * - une divergence à version égale est une erreur : le comportement du moteur a changé sans faire avancer `RULES_VERSION` ;
- * - une divergence après un changement de `RULES_VERSION` demande de régénérer **cette** partie (`--update`).
+ * Golden games (docs/plans/PLAN-R.md, lot F1; made into detectors by docs/plans/PLAN-C.md, lot C2): a few fixed-seed
+ * games, recorded with their checkpoints (`packages/ai/test/golden/*.json`). The test `ai/test/golden.test.ts`
+ * replays them all:
+ * - a game that replays identically passes, whatever the rules version that recorded it;
+ * - a divergence at the same version is an error: the engine's behavior changed without bumping `RULES_VERSION`;
+ * - a divergence after a change of `RULES_VERSION` requires regenerating **that** game (`--update`).
  *
- * Usage : npm run golden              vérifie (comme le test)
- *         npm run golden -- --update   régénère seulement les parties qui divergent (et les parties absentes)
- *         npm run golden -- --all      régénère toutes les parties
+ * Usage: npm run golden              checks (like the test)
+ *        npm run golden -- --update   regenerates only the games that diverge (and the missing games)
+ *        npm run golden -- --all      regenerates all the games
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { heuristicAgent, randomAgent } from "@mtgx/ai";
@@ -30,76 +30,76 @@ import { randomCommanderDeck, randomDeck } from "./random-deck";
 interface GoldenSpec {
   name: string;
   seed: number;
-  /** Decks préconstruits (`deckById`), un par joueur ; ou `pools` : deck aléatoire tiré surtout d'une extension. */
+  /** Precons (`deckById`), one per player; or `pools`: a random deck drawn mostly from one set. */
   decks?: string[];
   pools?: string[];
-  /** IA aléatoire (parties variées, coupées à `maxDecisions`) ou heuristique (parties qui vont au bout). */
+  /** Random AI (varied games, cut at `maxDecisions`) or heuristic AI (games that go to the end). */
   agent: "random" | "heuristic";
   maxDecisions: number;
-  /** Partie de Commander (PLAN-E) : decks Commander aléatoires (`pools` : extension privilégiée, « all » : tout le pool). */
+  /** Commander game (PLAN-E): random Commander decks (`pools`: preferred set, "all": the whole pool). */
   commander?: boolean;
 }
 
 const GOLDEN_GAMES: GoldenSpec[] = [
   {
-    name: "izzet-contre-landfall",
+    name: "izzet-vs-landfall",
     seed: 11,
     decks: ["meta-izzet-spellementals", "meta-mono-green-landfall"],
     agent: "random",
     maxDecisions: 1200,
   },
   {
-    name: "dimir-contre-jund",
+    name: "dimir-vs-jund",
     seed: 12,
     decks: ["meta-dimir-midrange", "meta-jund-sacrifice"],
     agent: "random",
     maxDecisions: 1200,
   },
   {
-    name: "4c-contre-izzet",
+    name: "4c-vs-izzet",
     seed: 13,
     decks: ["meta-4c-control", "meta-izzet-spellementals"],
     agent: "random",
     maxDecisions: 1200,
   },
   {
-    name: "landfall-contre-dimir",
+    name: "landfall-vs-dimir",
     seed: 14,
     decks: ["meta-mono-green-landfall", "meta-dimir-midrange"],
     agent: "random",
     maxDecisions: 1200,
   },
   {
-    name: "quatre-joueurs-a",
+    name: "four-players-a",
     seed: 15,
     decks: ["meta-jund-sacrifice", "meta-4c-control", "meta-izzet-spellementals", "meta-mono-green-landfall"],
     agent: "random",
     maxDecisions: 1200,
   },
   {
-    name: "quatre-joueurs-b",
+    name: "four-players-b",
     seed: 16,
     decks: ["meta-dimir-midrange", "meta-mono-green-landfall", "meta-jund-sacrifice", "meta-4c-control"],
     agent: "random",
     maxDecisions: 1200,
   },
-  // Extensions récentes, jouées par l'IA heuristique jusqu'au bout de la partie.
-  { name: "recentes-ecl-contre-tla", seed: 21, pools: ["ECL", "TLA"], agent: "heuristic", maxDecisions: 6000 },
-  { name: "recentes-msh-contre-spm", seed: 22, pools: ["MSH", "SPM"], agent: "heuristic", maxDecisions: 6000 },
-  { name: "recentes-hob-contre-tmt", seed: 23, pools: ["HOB", "TMT"], agent: "heuristic", maxDecisions: 6000 },
-  { name: "recentes-woe-sos-mkm", seed: 24, pools: ["WOE", "SOS", "MKM"], agent: "heuristic", maxDecisions: 9000 },
-  // Commander (PLAN-E) : quatre decks Commander aléatoires, IA aléatoire (zone de commandement, taxe, retours, blessures).
+  // Recent sets, played by the heuristic AI to the end of the game.
+  { name: "recent-ecl-vs-tla", seed: 21, pools: ["ECL", "TLA"], agent: "heuristic", maxDecisions: 6000 },
+  { name: "recent-msh-vs-spm", seed: 22, pools: ["MSH", "SPM"], agent: "heuristic", maxDecisions: 6000 },
+  { name: "recent-hob-vs-tmt", seed: 23, pools: ["HOB", "TMT"], agent: "heuristic", maxDecisions: 6000 },
+  { name: "recent-woe-sos-mkm", seed: 24, pools: ["WOE", "SOS", "MKM"], agent: "heuristic", maxDecisions: 9000 },
+  // Commander (PLAN-E): four random Commander decks, random AI (command zone, tax, returns, damage).
   {
-    name: "commandant-aleatoire-4j",
+    name: "commander-random-4p",
     seed: 31,
     pools: ["all", "all", "all", "all"],
     agent: "random",
     maxDecisions: 2000,
     commander: true,
   },
-  // Les deux préconstruits Commander (Edgar Markov, Y'shtola) : en duel avec l'IA heuristique jusqu'au bout, et à quatre.
+  // The two Commander precons (Edgar Markov, Y'shtola): in a duel with the heuristic AI to the end, and with four players.
   {
-    name: "commandant-duel-precons",
+    name: "commander-duel-precons",
     seed: 32,
     decks: ["cmd-edgar-markov", "cmd-yshtola"],
     agent: "heuristic",
@@ -107,7 +107,7 @@ const GOLDEN_GAMES: GoldenSpec[] = [
     commander: true,
   },
   {
-    name: "commandant-quatre-precons",
+    name: "commander-four-precons",
     seed: 33,
     decks: ["cmd-yshtola", "cmd-edgar-markov", "cmd-yshtola", "cmd-edgar-markov"],
     agent: "random",
@@ -122,7 +122,7 @@ function decksOf(spec: GoldenSpec): CardDef[][] {
   return (spec.pools ?? []).map((set, i) => randomDeck(spec.seed * 100 + i, set));
 }
 
-/** Decks d'une partie dorée de Commander : préconstruits (`decks`), ou decks Commander aléatoires (`pools`). */
+/** Decks of a Commander golden game: precons (`decks`), or random Commander decks (`pools`). */
 function commanderDecksOf(spec: GoldenSpec): { deck: CardDef[]; commanders: number[] }[] {
   if (spec.decks)
     return spec.decks.map((id) => {
@@ -132,7 +132,7 @@ function commanderDecksOf(spec: GoldenSpec): { deck: CardDef[]; commanders: numb
   return (spec.pools ?? []).map((set, i) => randomCommanderDeck(spec.seed * 100 + i, set === "all" ? undefined : set));
 }
 
-/** Joue une partie dorée et renvoie son enregistrement. */
+/** Plays a golden game and returns its record. */
 function playGolden(spec: GoldenSpec): GameRecord {
   const decks = decksOf(spec);
   const commanders = spec.commander ? commanderDecksOf(spec).map((d) => d.commanders) : undefined;
@@ -156,7 +156,7 @@ function playGolden(spec: GoldenSpec): GameRecord {
     }
     recordDecision(record, p.player, d, state);
   }
-  // Toujours un point de contrôle sur le dernier état, même si la partie n'est pas finie.
+  // Always a checkpoint on the last state, even if the game is not over.
   const n = record.decisions.length;
   if (record.checkpoints?.at(-1)?.[0] !== n) record.checkpoints = [...(record.checkpoints ?? []), [n, outcomeHash(state)]];
   delete record.createdAt;
@@ -172,24 +172,24 @@ for (const spec of GOLDEN_GAMES) {
   const file = new URL(`${spec.name}.json`, dir);
   const old = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as GameRecord) : null;
   const divergence = old ? replayChecked(old, card).divergence : null;
-  const verdict = !old ? "absente" : divergence ? `divergence (${divergence.message})` : "identique";
+  const verdict = !old ? "missing" : divergence ? `divergence (${divergence.message})` : "identical";
   if (all || (update && !old) || (update && divergence)) {
     if (old && divergence && old.rules === RULES_VERSION) {
-      console.error(`${spec.name} : ${verdict} à version égale (${RULES_VERSION}) : faire avancer RULES_VERSION d'abord`);
+      console.error(`${spec.name}: ${verdict} at the same version (${RULES_VERSION}): bump RULES_VERSION first`);
       failed++;
       continue;
     }
     const record = playGolden(spec);
     writeFileSync(file, `${JSON.stringify(record)}\n`);
     console.log(
-      `${spec.name} : ${verdict} → régénérée (${record.decisions.length} décisions, ${record.checkpoints?.length ?? 0} points de contrôle, règles ${record.rules})`,
+      `${spec.name}: ${verdict} → regenerated (${record.decisions.length} decisions, ${record.checkpoints?.length ?? 0} checkpoints, rules ${record.rules})`,
     );
     continue;
   }
   if (!old || divergence) failed++;
-  console.log(`${spec.name} : ${verdict}${old ? ` (règles ${old.rules})` : ""}`);
+  console.log(`${spec.name}: ${verdict}${old ? ` (rules ${old.rules})` : ""}`);
 }
 if (failed) {
-  console.error(`${failed} partie(s) dorée(s) à revoir ; après un lot [règles] : npm run golden -- --update`);
+  console.error(`${failed} golden game(s) to review; after a [rules] lot: npm run golden -- --update`);
   process.exit(1);
 }

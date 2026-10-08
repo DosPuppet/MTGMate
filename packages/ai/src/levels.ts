@@ -1,5 +1,5 @@
 /**
- * Niveaux de l'IA : débutant, moyen, élevé (voir docs/ia.md).
+ * AI levels: beginner, medium, expert (see docs/ia.md).
  */
 import type { Agent } from "@mtgx/engine";
 import { decide } from "./heuristic";
@@ -11,14 +11,14 @@ export type AiLevel = "beginner" | "medium" | "expert";
 
 export const AI_LEVELS: readonly AiLevel[] = ["beginner", "medium", "expert"];
 
-/** Budget de réflexion : en temps (interface), ou en itérations (tests, tournoi : reproductible). */
+/** Thinking budget: in time (interface), or in iterations (tests, tournament: reproducible). */
 export type AiBudget = { ms: number } | { iterations: number };
 
 export interface AiOptions {
-  /** Graine du hasard de l'IA (bruit du débutant, déterminisations de l'ISMCTS). */
+  /** Seed of the AI's randomness (beginner noise, ISMCTS determinizations). */
   seed?: number;
   budget?: AiBudget;
-  /** Nombre de joueurs de la partie : l'ISMCTS n'est utilisé qu'en duel. */
+  /** Number of players of the game: ISMCTS is used only in a duel. */
   players?: number;
 }
 
@@ -49,14 +49,14 @@ export function aiAgent(level: AiLevel, opts: AiOptions = {}): Agent {
             outOfTime: () => Date.now() > deadline,
           }
         : { ...MEDIUM_PROFILE, rand };
-  // ISMCTS : niveau élevé, en duel seulement (en multijoueur, trop coûteux pour rester fluide).
+  // ISMCTS: expert level, in a duel only (in multiplayer, too costly to stay smooth).
   const ismcts = level === "expert" && (opts.players ?? 2) === 2;
   const iterations = budget && "iterations" in budget ? budget.iterations : undefined;
   return (s, me) => {
-    // Budget en temps : la recherche s'arrête à l'échéance (machine lente) en gardant le meilleur trouvé.
+    // Time budget: the search stops at the deadline (slow machine), keeping the best found.
     deadline = ms === null ? Number.POSITIVE_INFINITY : Date.now() + ms;
-    // Les attaques restent à la recherche par simulation (combat.ts) : départagées par l'ISMCTS, dont les simulations
-    // font bloquer l'adversaire naïvement, elles devenaient trop agressives (mesuré au tournoi, voir docs/ia.md).
+    // Attacks stay with the search by simulation (combat.ts): when decided by ISMCTS, whose simulations
+    // make the opponent block naively, they became too aggressive (measured in the tournament, see docs/ia.md).
     const p = s.pending;
     if (ismcts && p?.kind === "priority" && p.player === me && (iterations ?? 1) > 0) {
       const d = ismctsPriority(s, me, profile, { rand, iterations, ms: ms ?? undefined });

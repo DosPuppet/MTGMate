@@ -1,14 +1,14 @@
 /**
- * Mesures de performance du moteur et de l'IA.
- * Cibles : ≥ 5 000 décisions/s en simulation aléatoire ; IA moyenne < 50 ms par décision en moyenne ;
- * IA élevée (ISMCTS à 100 itérations, budget fixe pour une mesure reproductible) < 150 ms en moyenne.
+ * Performance measurements of the engine and the AI.
+ * Targets: ≥ 5,000 decisions/s in random simulation; medium AI < 50 ms per decision on average;
+ * high AI (ISMCTS with 100 iterations, fixed budget for a reproducible measurement) < 150 ms on average.
  *
- * Usage : npm run bench
+ * Usage: npm run bench
  */
 import { aiAgent, heuristicAgent, randomAgent } from "@mtgx/ai";
 import { buildDeck, DECKS } from "@mtgx/cards";
 
-/** Préconstruits hors Commander (les decks Commander se jouent avec leurs règles, PLAN-E). */
+/** Precons other than Commander (Commander decks are played with their own rules, PLAN-E). */
 const PRECONS = DECKS.filter((d) => d.format !== "commander");
 
 import { type Agent, createGame, fallbackDecision, RulesError, submit } from "@mtgx/engine";
@@ -48,21 +48,21 @@ function run(label: string, players: number, games: number, agentFor: (seed: num
   times.sort((a, b) => a - b);
   const p99 = times[Math.floor(times.length * 0.99)] ?? 0;
   console.log(
-    `${label.padEnd(28)} ${String(decisions).padStart(7)} décisions · ${Math.round((decisions / total) * 1000)
+    `${label.padEnd(28)} ${String(decisions).padStart(7)} decisions · ${Math.round((decisions / total) * 1000)
       .toString()
-      .padStart(6)} déc/s · moy ${(total / decisions).toFixed(2)} ms · p99 ${p99.toFixed(1)} ms · max ${worst.toFixed(0)} ms`,
+      .padStart(6)} dec/s · mean ${(total / decisions).toFixed(2)} ms · p99 ${p99.toFixed(1)} ms · max ${worst.toFixed(0)} ms`,
   );
   return { perSecond: (decisions / total) * 1000, mean: total / decisions };
 }
 
-const random = run("aléatoire, 2 joueurs", 2, 60, (s, i) => randomAgent(s * 7 + i));
-run("aléatoire, 4 joueurs", 4, 20, (s, i) => randomAgent(s * 7 + i));
-const ai2 = run("IA heuristique, 2 joueurs", 2, 10, () => heuristicAgent());
-const ai4 = run("IA heuristique, 4 joueurs", 4, 4, () => heuristicAgent());
-const expert = run("IA élevée, 2 joueurs", 2, 2, (s, i) =>
+const random = run("random, 2 players", 2, 60, (s, i) => randomAgent(s * 7 + i));
+run("random, 4 players", 4, 20, (s, i) => randomAgent(s * 7 + i));
+const ai2 = run("heuristic AI, 2 players", 2, 10, () => heuristicAgent());
+const ai4 = run("heuristic AI, 4 players", 4, 4, () => heuristicAgent());
+const expert = run("high AI, 2 players", 2, 2, (s, i) =>
   aiAgent("expert", { seed: s + i, budget: { iterations: 100 }, players: 2 }),
 );
 
 const ok = random.perSecond >= 5000 && ai2.mean < 50 && ai4.mean < 50 && expert.mean < 150;
-console.log(ok ? "Cibles atteintes." : "Cibles NON atteintes.");
+console.log(ok ? "Targets met." : "Targets NOT met.");
 if (!ok) process.exitCode = 1;

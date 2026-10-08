@@ -1,31 +1,31 @@
 /**
- * Importe les données d'un set depuis l'API Scryfall (anglais + français)
- * et écrit un JSON réduit aux champs utiles dans packages/cards/data/<set>.json.
+ * Imports the data of a set from the Scryfall API (English + French) and writes a JSON reduced to the useful fields
+ * to packages/cards/data/<set>.json.
  *
- * Usage : npm run import-cards -- [set|all|reprints|edh]   (défaut : fdn ; « all » : toutes les extensions Standard hors
- * FDN et FRA ; « reprints » : les ensembles de rééditions du registre, PLAN-G ; « edh » : le pseudo-ensemble Commander,
- * importé par nom depuis les decklists de `docs/commander/decks/`, PLAN-E)
+ * Usage: npm run import-cards -- [set|all|reprints|edh]   (default: fdn; "all": every Standard set except FDN and FRA;
+ * "reprints": the reprint sets of the registry, PLAN-G; "edh": the Commander pseudo-set, imported by name from the
+ * decklists of `docs/commander/decks/`, PLAN-E)
  *
- * Les images ne sont pas téléchargées : on conserve seulement leurs URLs (CDN Scryfall).
+ * The images are not downloaded: only their URLs are kept (Scryfall CDN).
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EXCLUDED_REPRINTS, SET_INFO, STANDARD_SETS } from "../packages/cards/src/setRegistry";
 
-/** Extensions Standard importées par « all » : le registre (`cards/src/setRegistry.ts`), sauf FDN et FRA, déjà importées
- * et retouchées, qui s'importent à part. */
+/** Standard sets imported by "all": the registry (`cards/src/setRegistry.ts`), except FDN and FRA, already imported
+ * and edited by hand, which are imported separately. */
 const STANDARD = STANDARD_SETS.map((x) => x.code.toLowerCase()).filter((c) => c !== "fdn" && c !== "fra");
-/** Ensembles de rééditions (Special Guests, feuilles bonus) : importés par « reprints ». */
+/** Reprint sets (Special Guests, bonus sheets): imported by "reprints". */
 const REPRINTS = SET_INFO.filter((x) => x.reprint).map((x) => x.code.toLowerCase());
 const ARG = (process.argv[2] ?? "fdn").toLowerCase();
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "packages", "cards", "data");
-/** Textes français complétés à la main (cartes sans impression française qui ait son texte). */
+/** French texts completed by hand (cards without a French printing that has its text). */
 const FRENCH_OVERRIDES = JSON.parse(readFileSync(join(DATA_DIR, "french-overrides.json"), "utf8")) as Record<
   string,
   { name?: string; typeLine?: string; text?: string; faces?: { name?: string; typeLine?: string; text?: string }[] }
 >;
-const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "application/json" };
+const HEADERS = { "User-Agent": "MTGX/0.1 (non-commercial project)", Accept: "application/json" };
 
 interface ScryfallCard {
   name: string;
@@ -55,7 +55,7 @@ interface ScryfallCard {
   printed_type_line?: string;
   printed_text?: string;
   image_uris?: { small: string; normal: string; art_crop: string };
-  /** Faces : sort préparé, aventure, carte scindée, recto-verso (chaque face a alors son image), assemblage. */
+  /** Faces: prepared spell, adventure, split card, double-faced card (each face then has its image), meld. */
   card_faces?: {
     name: string;
     mana_cost?: string;
@@ -71,7 +71,7 @@ interface ScryfallCard {
     image_uris?: { small: string; normal: string; art_crop: string };
   }[];
   legalities: Record<string, string>;
-  /** Cartes liées (assemblage : les deux parties et la carte assemblée). */
+  /** Related cards (meld: the two parts and the melded card). */
   all_parts?: { component: string; name: string }[];
   booster: boolean;
   promo: boolean;
@@ -84,30 +84,30 @@ async function search(query: string): Promise<ScryfallCard[]> {
   let url: string | null = `https://api.scryfall.com/cards/search?unique=prints&order=set&q=${encodeURIComponent(query)}`;
   while (url) {
     let res = await fetch(url, { headers: HEADERS });
-    // Trop de requêtes : Scryfall demande d'attendre avant de réessayer.
+    // Too many requests: Scryfall asks to wait before retrying.
     for (let wait = 5000; res.status === 429 && wait <= 80000; wait *= 2) {
-      console.log(`Scryfall 429 : nouvel essai dans ${wait / 1000} s`);
+      console.log(`Scryfall 429: retrying in ${wait / 1000} s`);
       await sleep(wait);
       res = await fetch(url, { headers: HEADERS });
     }
-    if (res.status === 404) return cards; // aucune carte
-    if (!res.ok) throw new Error(`Scryfall ${res.status} sur ${url}`);
+    if (res.status === 404) return cards; // no card
+    if (!res.ok) throw new Error(`Scryfall ${res.status} on ${url}`);
     const page = (await res.json()) as { data: ScryfallCard[]; has_more: boolean; next_page?: string };
     cards.push(...page.data);
     url = page.has_more ? (page.next_page ?? null) : null;
-    await sleep(120); // Scryfall demande 50–100 ms entre deux requêtes
+    await sleep(120); // Scryfall asks for 50–100 ms between two requests
   }
   return cards;
 }
 
-/** Dispositions à une face (une image) : cartes simples, « à préparer » (créature + sort), Sagas, Classes, Affaires. */
+/** Single-face layouts (one image): plain cards, "prepare" (creature + spell), Sagas, Classes, Cases. */
 const SINGLE = new Set(["normal", "prepare", "saga", "class", "case", "meld"]);
-/** Dispositions à plusieurs faces : gardées telles quelles (faces), gérées par le moteur aux lots 0.3 à 0.6. */
+/** Multi-face layouts: kept as they are (faces), handled by the engine in lots 0.3 to 0.6. */
 const MULTI = new Set(["adventure", "split", "transform", "modal_dfc"]);
 
 async function importSet(SET: string): Promise<void> {
   const OUT = join(DATA_DIR, `${SET}.json`);
-  // Ensemble de rééditions : seulement les numéros retenus, sans les cartes exclues (PLAN-G).
+  // Reprint set: only the selected numbers, without the excluded cards (PLAN-G).
   const reprint = SET_INFO.find((x) => x.code.toLowerCase() === SET)?.reprint;
   const kept = (c: ScryfallCard) => {
     if (!reprint) return true;
@@ -118,15 +118,15 @@ async function importSet(SET: string): Promise<void> {
   const en = (await search(`set:${SET} lang:en`)).filter(kept);
   const fr = await search(`set:${SET} lang:fr`);
   const frByNumber = new Map(fr.map((c) => [c.collector_number, c]));
-  // Numérotation française différente (réimpressions, promotions) : rapprochement par le nom anglais.
+  // Different French numbering (reprints, promos): matched by the English name.
   const frByName = new Map(fr.map((c) => [c.name, c]));
   const frOf = (c: ScryfallCard) => frByNumber.get(c.collector_number) ?? frByName.get(c.name);
 
-  // Une seule entrée par nom : la première impression « normale » (numéro le plus bas).
+  // A single entry per name: the first "normal" printing (lowest number).
   const byName = new Map<string, Record<string, unknown>>();
   const sorted = [...en].sort((a, b) => Number.parseInt(a.collector_number, 10) - Number.parseInt(b.collector_number, 10));
-  // Une impression promotionnelle ne compte que pour une carte qui n'en a pas d'autre dans le set (Melek, Reforged
-  // Researcher, Tomik, Wielder of Law et Voja, Jaws of the Conclave : promotions de MKM seulement, légales en Standard).
+  // A promo printing counts only for a card that has no other one in the set (Melek, Reforged Researcher, Tomik,
+  // Wielder of Law and Voja, Jaws of the Conclave: MKM promos only, legal in Standard).
   const regular = new Set(sorted.filter((c) => !c.promo).map((c) => c.name));
   for (const c of sorted) {
     if (c.promo && regular.has(c.name)) continue;
@@ -136,27 +136,27 @@ async function importSet(SET: string): Promise<void> {
 
   const out = [...byName.values()];
   writeFileSync(OUT, `${JSON.stringify(out, null, 1)}\n`);
-  console.log(`${SET} : ${out.length} cartes (${fr.length} impressions FR) écrites dans ${OUT}`);
+  console.log(`${SET}: ${out.length} cards (${fr.length} FR printings) written to ${OUT}`);
 }
 
-/** Types d'ensembles Scryfall dont l'impression peut servir d'impression par défaut (pas de Secret Lair ni de promotion). */
+/** Scryfall set types whose printing can serve as the default printing (no Secret Lair, no promo). */
 const PRINT_SET_TYPES = new Set(["commander", "expansion", "core", "masters", "draft_innovation", "starter"]);
-/** Ensembles écartés malgré leur type : The List (impressions tamponnées), Mystery Booster. */
+/** Sets left out despite their type: The List (stamped printings), Mystery Booster. */
 const PRINT_SETS_EXCLUDED = new Set(["plst", "mb1", "mb2", "mbc"]);
-/** Noms des cartes par lots (requêtes « !"A" or !"B" ») : une URL de recherche reste courte. */
+/** Card names in batches (queries `!"A" or !"B"`): a search URL stays short. */
 const NAME_BATCH = 15;
 
 /**
- * Pseudo-ensemble importé par nom (PLAN-E) : toutes les cartes des decklists du registre (`byName.decks`) absentes des
- * autres ensembles du catalogue, chacune avec une impression par défaut (la plus récente d'un ensemble ordinaire, cadre
- * normal), son ensemble d'origine (`origin`) et l'identité de couleur de Scryfall (`colorIdentity`, vérifiée contre
- * l'identité calculée par le moteur). Le texte français vient de l'impression française de même ensemble si elle existe,
- * sinon de la plus récente (sans son image). Une carte déjà importée le reste, même si plus aucune decklist ne la cite
- * (deck modifié) : elle sert aux decks des joueurs.
+ * Pseudo-set imported by name (PLAN-E): every card of the registry's decklists (`byName.decks`) absent from the other
+ * sets of the catalog, each with a default printing (the newest one from an ordinary set, normal frame), its set of
+ * origin (`origin`) and Scryfall's color identity (`colorIdentity`, checked against the identity computed by the
+ * engine). The French text comes from the French printing of the same set if it exists, otherwise from the newest one
+ * (without its image). A card already imported stays, even if no decklist cites it any more (modified deck): it serves
+ * the players' decks.
  */
 async function importByName(SET: string): Promise<void> {
   const info = SET_INFO.find((x) => x.code.toLowerCase() === SET);
-  if (!info?.byName) throw new Error(`${SET} n'est pas un ensemble importé par nom`);
+  if (!info?.byName) throw new Error(`${SET} is not a set imported by name`);
   const ROOT = join(DATA_DIR, "..", "..", "..");
   const deckDir = join(ROOT, info.byName.decks);
   const wanted = new Set<string>();
@@ -168,12 +168,12 @@ async function importByName(SET: string): Promise<void> {
       if (m && !line.trim().startsWith("//")) wanted.add((m[1] as string).replace(/\s+\([A-Za-z0-9]{2,6}\).*$/, "").trim());
     }
   }
-  // Cartes déjà importées : gardées (deck modifié, carte retirée de sa liste).
+  // Cards already imported: kept (modified deck, card removed from its list).
   const ownFile = join(DATA_DIR, `${info.code.toLowerCase()}.json`);
   if (existsSync(ownFile))
     for (const c of JSON.parse(readFileSync(ownFile, "utf8")) as { name: string }[])
       wanted.add(c.name.split(" // ")[0] as string);
-  // Noms déjà au catalogue (nom complet et première face), hors de l'ensemble importé.
+  // Names already in the catalog (full name and first face), outside the imported set.
   const known = new Set<string>();
   for (const s of SET_INFO.filter((x) => x.code !== info.code)) {
     const data = JSON.parse(readFileSync(join(DATA_DIR, `${s.code.toLowerCase()}.json`), "utf8")) as { name: string }[];
@@ -193,7 +193,7 @@ async function importByName(SET: string): Promise<void> {
     en.push(...(await search(`${query(b)} lang:en game:paper`)));
     fr.push(...(await search(`${query(b)} lang:fr game:paper`)));
   }
-  // Une impression annoncée mais pas encore sortie n'est pas retenue.
+  // A printing announced but not yet released is not selected.
   const today = new Date().toISOString().slice(0, 10);
   const regularPrint = (c: ScryfallCard) =>
     !c.promo &&
@@ -215,10 +215,10 @@ async function importByName(SET: string): Promise<void> {
     }
     const newest = (list: ScryfallCard[]) => [...list].sort((a, b) => b.released_at.localeCompare(a.released_at))[0];
     const chosen = newest(prints.filter(regularPrint)) ?? newest(prints.filter((c) => !c.digital)) ?? prints[0];
-    // Les cartes sont de préférence en français : l'impression française de la même extension si elle a son texte, sinon
-    // la plus récente impression française (ordinaire d'abord, avec son texte imprimé d'abord), image comprise.
+    // Cards are preferably in French: the French printing of the same set if it has its text, otherwise the newest
+    // French printing (ordinary first, with its printed text first), image included.
     const frPrints = fr.filter((c) => c.name === chosen?.name);
-    // Texte imprimé en français : certaines impressions (EOC sur Scryfall) portent le texte anglais.
+    // Text printed in French: some printings (EOC on Scryfall) carry the English text.
     const printed = (c: ScryfallCard) =>
       c.card_faces?.length
         ? c.card_faces.some((x) => x.printed_text && x.printed_text !== x.oracle_text)
@@ -236,12 +236,12 @@ async function importByName(SET: string): Promise<void> {
       unsupported.push(`${name} (${chosen?.layout})`);
       continue;
     }
-    // Texte français complété à la main quand aucune impression française n'a le sien (`french-overrides.json`).
-    // Par le nom de la decklist (le recto d'une carte à plusieurs faces) ou par le nom complet de la carte.
+    // French text completed by hand when no French printing has its own (`french-overrides.json`).
+    // By the decklist name (the front of a multi-face card) or by the full name of the card.
     const fix = FRENCH_OVERRIDES[name] ?? FRENCH_OVERRIDES[String(entry.name)];
     const { faces: faceFixes, ...cardFix } = fix ?? {};
     const withFr = fix ? { ...entry, fr: { ...(entry.fr as object | undefined), ...cardFix } } : entry;
-    // Carte à plusieurs faces : le texte de chaque face (Double Jump // Flying Kick, sans impression française).
+    // Multi-face card: the text of each face (Double Jump // Flying Kick, without a French printing).
     if (faceFixes && Array.isArray(withFr.faces))
       withFr.faces = (withFr.faces as { fr?: object }[]).map((face, i) =>
         faceFixes[i] ? { ...face, fr: { ...face.fr, ...faceFixes[i] } } : face,
@@ -251,20 +251,20 @@ async function importByName(SET: string): Promise<void> {
   const OUT = join(DATA_DIR, `${SET}.json`);
   writeFileSync(OUT, `${JSON.stringify(out, null, 1)}\n`);
   console.log(
-    `${SET} : ${out.length} cartes écrites dans ${OUT} (${wanted.size} noms dans les decklists, ${known.size} au catalogue)`,
+    `${SET}: ${out.length} cards written to ${OUT} (${wanted.size} names in the decklists, ${known.size} in the catalog)`,
   );
-  if (missing.length) console.log(`Introuvables chez Scryfall (${missing.length}) : ${missing.join(", ")}`);
-  if (unsupported.length) console.log(`Disposition non gérée (${unsupported.length}) : ${unsupported.join(", ")}`);
+  if (missing.length) console.log(`Not found on Scryfall (${missing.length}): ${missing.join(", ")}`);
+  if (unsupported.length) console.log(`Unhandled layout (${unsupported.length}): ${unsupported.join(", ")}`);
   if (missing.length || unsupported.length) process.exitCode = 1;
 }
 
-/** Entrée de données d'une impression Scryfall (et de son impression française), ou rien pour une disposition non gérée. */
+/** Data entry of a Scryfall printing (and of its French printing), or nothing for an unhandled layout. */
 function entryOf(c: ScryfallCard, f: ScryfallCard | undefined): Record<string, unknown> | undefined {
   if (!(SINGLE.has(c.layout) || MULTI.has(c.layout))) return undefined;
   const image = c.image_uris ?? c.card_faces?.[0]?.image_uris;
   if (!image) return undefined;
   if (MULTI.has(c.layout)) return multiFace(c, f, image);
-  // Carte à préparer : la face 0 (la créature) donne la carte, la face 1 est le sort qu'elle prépare.
+  // "prepare" card: face 0 (the creature) gives the card, face 1 is the spell it prepares.
   const [main, spell] = c.layout === "prepare" ? (c.card_faces ?? []) : [];
   const name = main?.name ?? c.name;
   const [frMain, frSpell] = f?.card_faces ?? [];
@@ -284,9 +284,9 @@ function entryOf(c: ScryfallCard, f: ScryfallCard | undefined): Record<string, u
     producedMana: c.produced_mana,
     image: image.normal,
     artCrop: image.art_crop,
-    // Seuls les formats du périmètre : à réimporter à chaque rotation ou annonce de bannissement.
+    // Only the formats in scope: to reimport at each rotation or ban announcement.
     legalities: { standard: c.legalities.standard },
-    // Saga, Classe, Affaire, assemblage : la disposition sert au moteur.
+    // Saga, Class, Case, meld: the layout is used by the engine.
     layout: c.layout === "normal" || c.layout === "prepare" ? undefined : c.layout,
     meld:
       c.layout === "meld"
@@ -318,8 +318,8 @@ function entryOf(c: ScryfallCard, f: ScryfallCard | undefined): Record<string, u
 }
 
 /**
- * Carte à plusieurs faces : la face 0 donne les caractéristiques par défaut (nom complet « A // B » gardé),
- * et toutes les faces sont conservées avec leur texte, leurs F/E et, pour les recto-verso, leur image.
+ * Multi-face card: face 0 gives the default characteristics (full name "A // B" kept), and all the faces are kept
+ * with their text, their P/T and, for double-faced cards, their image.
  */
 function multiFace(
   c: ScryfallCard,
@@ -374,6 +374,6 @@ function multiFace(
   };
 }
 
-// Après les déclarations : `await` au niveau du module s'exécute avant les `const` qui le suivent.
+// After the declarations: a module-level `await` runs before the `const`s that follow it.
 if (ARG === "edh") await importByName("edh");
 else for (const set of ARG === "all" ? STANDARD : ARG === "reprints" ? REPRINTS : [ARG]) await importSet(set);

@@ -71,7 +71,7 @@ describe("parties sauvegardées", () => {
     expect(upA.view.turn).toEqual(before.a?.turn);
     // Pas d'export pendant la partie (il révèle les decks et la graine).
     a2.send({ type: "export" });
-    expect((await a2.next("error", (m) => m.code === "state")).message).toMatch(/pas terminée/);
+    expect((await a2.next("error", (m) => m.code === "state")).message).toMatch(/not over/);
     // Et elle continue : les bots jouent quelques secondes, puis Alice concède (si elle n'est pas déjà finie).
     a2.bot = b2.bot = true;
     a2.play(upA.view);
@@ -130,7 +130,7 @@ describe("parties sauvegardées", () => {
     const c = await Client.connect(srv.port);
     clients.push(c);
     c.send({ type: "rejoin", token: tokens[0] as string });
-    expect((await c.next("error", (m) => m.code === "token")).message).toMatch(/interrompue par une mise à jour du moteur/);
+    expect((await c.next("error", (m) => m.code === "token")).message).toMatch(/interrupted by an engine update/);
     // L'interruption survit à un second redémarrage (interrupted.json, empreintes seulement).
     await srv.close();
     servers.splice(servers.indexOf(srv), 1);
@@ -140,7 +140,7 @@ describe("parties sauvegardées", () => {
     const c2 = await Client.connect(again.port);
     clients.push(c2);
     c2.send({ type: "rejoin", token: tokens[1] as string });
-    expect((await c2.next("error", (m) => m.code === "token")).message).toMatch(/interrompue par une mise à jour du moteur/);
+    expect((await c2.next("error", (m) => m.code === "token")).message).toMatch(/interrupted by an engine update/);
   }, 30_000);
 
   it("la sauvegarde ne contient que l'empreinte des jetons, et n'est lisible que par le serveur", async () => {

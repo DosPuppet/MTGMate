@@ -18,8 +18,8 @@ const game = () =>
     seed: 3,
     startingPlayer: "p1",
     players: [
-      { id: "p1", name: "A", deck: buildDeck(deckById("bienvenue-vert")) },
-      { id: "p2", name: "B", deck: buildDeck(deckById("bienvenue-rouge")) },
+      { id: "p1", name: "A", deck: buildDeck(deckById("welcome-green")) },
+      { id: "p2", name: "B", deck: buildDeck(deckById("welcome-red")) },
     ],
   }).state;
 

@@ -1,6 +1,6 @@
 /**
- * Politique rapide des simulations de l'ISMCTS : des règles simples, sans simulation interne, pour les deux joueurs.
- * Elle doit être très rapide (des milliers de décisions par recherche) plutôt que forte.
+ * Fast policy of the ISMCTS simulations: simple rules, without inner simulation, for both players.
+ * It must be very fast (thousands of decisions per search) rather than strong.
  */
 import {
   type ActionOption,
@@ -21,7 +21,7 @@ import {
 import { profileValue, staysTapped } from "./evaluate";
 import { chooseAttackers, chooseDefenders, naiveBlocks, withRequiredBlocks } from "./heuristic";
 
-/** Effets qui nuisent à leur cible : on vise alors l'adversaire (sinon ses propres créatures). */
+/** Effects that harm their target: we then aim at the opponent (otherwise at one's own creatures). */
 const HARMFUL = [
   '"op":"damage"',
   '"op":"destroy"',
@@ -50,7 +50,7 @@ function harmful(d: CardDef | undefined): boolean {
   return h;
 }
 
-/** Cible simple : la meilleure créature adverse (ou l'adversaire) pour un effet nuisible, sa meilleure créature sinon. */
+/** Simple target: the best opposing creature (or the opponent) for a harmful effect, one's best creature otherwise. */
 function pickTarget(s: GameState, me: PlayerId, spec: TargetOption, bad: boolean): string | undefined {
   const auto = autoTarget(spec);
   if (auto) return auto;
@@ -70,7 +70,7 @@ function castDecision(s: GameState, me: PlayerId, a: ActionOption): Decision | n
   const specs = a.type === "cast" ? (a.modes[0]?.targets ?? []) : a.targets;
   const targets: Record<string, string[]> = {};
   for (const spec0 of specs) {
-    // « Le joueur ciblé … les cartes de son cimetière » : celles du joueur déjà choisi.
+    // "Target player … the cards in their graveyard": those of the player already chosen.
     const of = spec0.ofTarget;
     const spec = of
       ? { ...spec0, legal: spec0.legal.filter((id) => (targets[of.id] ?? []).includes(of.holders[id] ?? "")) }
@@ -80,11 +80,11 @@ function castDecision(s: GameState, me: PlayerId, a: ActionOption): Decision | n
     targets[spec.id] = t ? [t] : [];
   }
   if (a.type === "cast") {
-    // Coûts additionnels (défausse, sacrifice) : ignorés par la politique rapide.
+    // Additional costs (discard, sacrifice): ignored by the fast policy.
     if (a.additional?.discard || a.additional?.sacrifice) return null;
     return { type: "cast", card: a.card, face: a.face, mode: a.modes[0]?.index ?? 0, targets, x: a.xMax ?? undefined };
   }
-  // Équipage : le choix par défaut du moteur (sans `tap`) convient.
+  // Crew: the engine's default choice (without `tap`) is fine.
   if (
     (a.additional?.tap && a.additional.tap.minPower === undefined) ||
     a.additional?.sacrifice ||
@@ -95,8 +95,8 @@ function castDecision(s: GameState, me: PlayerId, a: ActionOption): Decision | n
 }
 
 /**
- * Pendant sa phase principale, pile vide : un terrain, puis le sort le plus cher. « Lancez-la » pendant une
- * résolution : le sort le plus cher proposé. Sinon, passer.
+ * During one's main phase, empty stack: a land, then the most expensive spell. "Cast it" during a
+ * resolution: the most expensive spell offered. Otherwise, pass.
  */
 function priority(s: GameState, me: PlayerId): Decision {
   const pass: Decision = { type: "pass" };

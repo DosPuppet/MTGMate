@@ -1,7 +1,7 @@
 /**
- * Adversaire scripté (tutoriel) : il joue les actions prévues, désignées par le nom des cartes,
- * puis se contente du minimum (passer, ne pas attaquer, blocages obligatoires, choix suggéré).
- * Le script est une donnée sérialisable, envoyée telle quelle au worker de partie.
+ * Scripted opponent (tutorial): it plays the planned actions, designated by card names,
+ * then does the bare minimum (pass, no attack, required blocks, suggested choice).
+ * The script is serializable data, sent as is to the game worker.
  */
 import {
   type ActionOption,
@@ -18,8 +18,8 @@ import {
 } from "@mtgx/engine";
 
 /**
- * Cibles : "you" = l'adversaire du joueur scripté (le joueur humain), "self" = le joueur scripté,
- * sinon le nom d'un permanent ou d'un sort sur la pile (le premier qui est une cible légale).
+ * Targets: "you" = the scripted player's opponent (the human player), "self" = the scripted player,
+ * otherwise the name of a permanent or of a spell on the stack (the first one that is a legal target).
  */
 export type ScriptTarget = string;
 
@@ -30,9 +30,9 @@ export type ScriptAction =
       do: "cast";
       card: string;
       targets?: ScriptTarget[];
-      /** Étape où lancer le sort (par défaut : première phase principale, pile vide). */
+      /** Step at which to cast the spell (by default: first main phase, empty stack). */
       step?: Step;
-      /** En réponse à un sort ou une capacité du joueur (la pile n'est pas vide). */
+      /** In response to a spell or ability of the player (the stack is not empty). */
       respond?: boolean;
     }
   | { turn: number; do: "activate"; card: string; ability?: number; targets?: ScriptTarget[]; step?: Step }
@@ -65,7 +65,7 @@ function targetsFor(
   return specs.every((spec) => spec.optional || (out[spec.id]?.length ?? 0) > 0) ? out : null;
 }
 
-/** L'action prévue est-elle à faire maintenant (bon moment dans le tour) ? */
+/** Is the planned action to be done now (right moment in the turn)? */
 function timely(s: GameState, me: PlayerId, a: ScriptAction): boolean {
   if (a.do === "playLand") return s.turn.active === me && s.stack.length === 0 && s.turn.step.startsWith("main");
   if (a.do === "cast" && a.respond) return s.stack.length > 0;
@@ -99,14 +99,14 @@ function priorityDecision(s: GameState, me: PlayerId, a: ScriptAction, actions: 
   return null;
 }
 
-/** Permanent de `owner` sur le champ de bataille, par nom, en évitant ceux déjà pris. */
+/** Permanent of `owner` on the battlefield, by name, avoiding those already taken. */
 function permanent(s: GameState, name: string, among: string[], taken: string[]): string | undefined {
   return among.find((id) => !taken.includes(id) && nameOf(s, id) === name);
 }
 
 export function scriptedAgent(script: ScriptAction[], fallback?: Agent): Agent {
   const done = new Set<number>();
-  /** Prochaine action du tour en cours parmi celles d'un type, dans l'ordre du script. */
+  /** Next action of the current turn among those of one type, in the order of the script. */
   const next = (s: GameState, kinds: ScriptAction["do"][]) => {
     const i = script.findIndex((a, k) => !done.has(k) && a.turn === s.turn.number && kinds.includes(a.do));
     return i < 0 ? null : { i, a: script[i] as ScriptAction };

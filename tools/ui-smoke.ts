@@ -1,8 +1,8 @@
 /**
- * Test de bout en bout de l'interface : joue une partie complète contre l'IA en cliquant
- * comme un humain (cartes jouables, bouton principal, cibles), et prend des captures.
+ * End-to-end test of the interface: plays a whole game against the AI by clicking like a human (playable cards, main
+ * button, targets), and takes screenshots.
  *
- * Prérequis : `npm run dev` lancé. Usage : npx tsx tools/ui-smoke.ts [dossier-captures] [maxActions] [nombre d'IA]
+ * Requires: `npm run dev` running. Usage: npx tsx tools/ui-smoke.ts [screenshot-dir] [maxActions] [number of AIs]
  */
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -18,7 +18,7 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 const errors: string[] = [];
 page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
 page.on("response", (r) => {
-  if (r.url().includes("/sounds/") && !r.ok()) errors.push(`son introuvable : ${r.url()} (${r.status()})`);
+  if (r.url().includes("/sounds/") && !r.ok()) errors.push(`sound not found: ${r.url()} (${r.status()})`);
 });
 page.on("console", (m) => {
   if (m.type() === "error") errors.push(`console: ${m.text()}`);
@@ -41,8 +41,8 @@ const seen = new Set<string>();
 for (let i = 0; i < MAX; i++) {
   await page.waitForTimeout(120);
   if (await page.locator(".gameover").count()) {
-    await shot("fin");
-    console.log("Partie terminée :", await page.locator(".gameover h2").innerText());
+    await shot("end");
+    console.log("Game over:", await page.locator(".gameover h2").innerText());
     break;
   }
   const turn = await page
@@ -52,10 +52,10 @@ for (let i = 0; i < MAX; i++) {
   if (turn !== lastTurn && /Tour (3|6|9)\b/.test(turn)) await shot(turn.replace(/\W+/g, "-"));
   lastTurn = turn;
 
-  // Fenêtres de choix
+  // Choice dialogs
   const dialog = page.getByRole("dialog");
   if (await dialog.count()) {
-    // Choix avec suggestion (fenêtre d'options ou choix sur le champ de bataille) : suggestion, puis validation.
+    // Choice with a suggestion (options dialog or choice on the battlefield): suggestion, then confirmation.
     const suggest = dialog.getByRole("button", { name: "Suggestion" });
     if (await suggest.count()) {
       await suggest.click({ timeout: 1000 }).catch(() => {});
@@ -66,7 +66,7 @@ for (let i = 0; i < MAX; i++) {
         .catch(() => {});
       continue;
     }
-    // La fenêtre peut se refermer entre-temps (l'IA joue vite en mode rapide) : on retente au tour suivant.
+    // The dialog may close in the meantime (the AI plays fast in fast mode): retry on the next round.
     const title = await dialog
       .locator("h2")
       .innerText({ timeout: 1000 })
@@ -87,20 +87,20 @@ for (let i = 0; i < MAX; i++) {
     continue;
   }
 
-  // Ciblage en cours : choisir la première cible légale.
+  // Targeting in progress: choose the first legal target.
   const target = page.locator(".glow-target").first();
   if (await target.count()) {
-    if (!seen.has("ciblage")) {
-      seen.add("ciblage");
+    if (!seen.has("targeting")) {
+      seen.add("targeting");
       await page.mouse.move(800, 300);
       await page.waitForTimeout(200);
-      await shot("ciblage");
+      await shot("targeting");
     }
-    // La cible peut disparaître entre-temps (l'IA joue vite en mode rapide) : on retente au tour suivant.
+    // The target may disappear in the meantime (the AI plays fast in fast mode): retry on the next round.
     await target.click({ force: true, timeout: 3000 }).catch(() => {});
     continue;
   }
-  // Cible optionnelle : si rien n'est ciblable, « Aucune cible ».
+  // Optional target: if nothing can be targeted, "Aucune cible" (no target).
   const none = page.getByRole("button", { name: "Aucune cible" });
   if (await none.count()) {
     await none.click();
@@ -110,9 +110,9 @@ for (let i = 0; i < MAX; i++) {
     .locator(".banner")
     .innerText()
     .catch(() => "");
-  if (/répondre/.test(banner) && !seen.has("reponse")) {
-    seen.add("reponse");
-    await shot("reponse");
+  if (/répondre/.test(banner) && !seen.has("response")) {
+    seen.add("response");
+    await shot("response");
   }
 
   const main = page.locator(".main-button");
@@ -120,20 +120,20 @@ for (let i = 0; i < MAX; i++) {
   if (await main.isDisabled()) continue;
 
   if (label === "Attaquer avec tous") {
-    // Façon MTGA : un premier appui sélectionne toutes les créatures, un second confirme.
+    // MTGA style: a first press selects all the creatures, a second one confirms.
     await main.click({ timeout: 3000 }).catch(() => {});
-    await shot("attaque");
+    await shot("attack");
     await main.click({ timeout: 3000 }).catch(() => {});
     continue;
   }
   if (label === "Pas de blocage") {
-    // Bloquer avec la première créature proposée, si possible.
+    // Block with the first creature offered, if possible.
     const blocker = page.locator(".battlefield.me .glow-selectable").first();
     if (await blocker.count()) {
       await blocker.click({ force: true });
       const att = page.locator(".battlefield.opp .glow-target").first();
       if (await att.count()) await att.click({ force: true });
-      await shot("blocage");
+      await shot("block");
     }
     await page
       .locator(".main-button")
@@ -142,34 +142,34 @@ for (let i = 0; i < MAX; i++) {
     continue;
   }
 
-  // Jouer une carte jouable de la main (terrain d'abord), sinon bouton principal.
+  // Play a playable card from the hand (land first), otherwise the main button.
   const playable = page.locator(".hand .glow-playable");
   if ((await playable.count()) && !/Résoudre/.test(label)) {
-    // Survoler d'abord : la carte passe au premier plan de l'éventail (comme pour un joueur).
+    // Hover first: the card comes to the front of the fan (as for a player).
     await playable.first().hover({ force: true });
     await page.waitForTimeout(200);
     await playable.first().click({ force: true });
     continue;
   }
-  // L'IA peut agir entre la vérification et le clic : un clic manqué est simplement retenté au tour de boucle suivant.
+  // The AI may act between the check and the click: a missed click is simply retried on the next loop round.
   await main.click({ timeout: 3000 }).catch(() => {});
 }
 
 if (!(await page.locator(".gameover").count())) {
-  await shot("arret");
+  await shot("stop");
   const dialog = await page
     .getByRole("dialog")
     .locator("h2")
     .innerText()
-    .catch(() => "(aucune)");
-  errors.push(`arrêt sans fin de partie. Bouton : « ${await page.locator(".main-button").innerText()} », fenêtre : ${dialog}`);
+    .catch(() => "(none)");
+  errors.push(`stopped without game over. Button: "${await page.locator(".main-button").innerText()}", dialog: ${dialog}`);
 }
-// Effets sonores joués pendant la partie (journal du mode dev, audio/sfx.ts).
+// Sound effects played during the game (dev-mode log, audio/sfx.ts).
 const played = new Set(await page.evaluate(() => (window as unknown as { __sfxLog?: string[] }).__sfxLog ?? []));
 const expected = ["shuffle", "draw", "land", "cast", "attack", "click"];
 const silent = expected.filter((k) => !played.has(k));
-console.log(`Sons joués : ${[...played].sort().join(", ")}`);
-if (silent.length) errors.push(`sons jamais joués : ${silent.join(", ")}`);
-console.log(errors.length ? `Erreurs :\n${errors.join("\n")}` : "Aucune erreur de page.");
+console.log(`Sounds played: ${[...played].sort().join(", ")}`);
+if (silent.length) errors.push(`sounds never played: ${silent.join(", ")}`);
+console.log(errors.length ? `Errors:\n${errors.join("\n")}` : "No page error.");
 await browser.close();
 if (errors.length) process.exit(1);

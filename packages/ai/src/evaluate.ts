@@ -1,9 +1,9 @@
 /**
- * Évaluation d'une position du point de vue d'un joueur, et simulation par clonage de l'état.
+ * Evaluation of a position from a player's point of view, and simulation by cloning the state.
  *
- * Les créatures sont estimées d'après leurs caractéristiques **durables** : celles du champ de bataille, sans les
- * effets « jusqu'à la fin du tour ». Une Aura (Pacifisme), un Équipement ou un renfort permanent comptent donc
- * par leur effet sur la créature ; un renfort temporaire ne compte que par ce qu'il change au combat.
+ * Creatures are valued from their **lasting** characteristics: those on the battlefield, without the "until end of
+ * turn" effects. An Aura (Pacifism), an Equipment or a permanent pump therefore count through their effect on the
+ * creature; a temporary pump counts only through what it changes in combat.
  */
 import {
   applyMutable,
@@ -25,20 +25,20 @@ import {
 } from "@mtgx/engine";
 
 // ---------------------------------------------------------------------------
-// Valeur des créatures
+// Creature value
 // ---------------------------------------------------------------------------
 
 type Profile = Pick<Characteristics, "power" | "toughness" | "keywords" | "abilities">;
 
-/** Une créature qui ne se dégage pas lors de l'étape de dégagement de son contrôleur (Claustrophobia, Mana Vault…). */
+/** A creature that does not untap during its controller's untap step (Claustrophobia, Mana Vault…). */
 export function staysTapped(s: GameState, id: ObjectId): boolean {
   return untapStepRule(s, id) === true;
 }
 
 /**
- * Valeur d'une créature : une part offensive (force, évasion) et une part défensive (endurance, blocage).
- * « Ne peut pas attaquer » annule la première, « ne peut pas bloquer » l'essentiel de la seconde (Pacifisme : les deux).
- * `stuck` : elle ne se dégage pas lors de l'étape de dégagement de son contrôleur (`staysTapped`).
+ * Value of a creature: an offensive part (power, evasion) and a defensive part (toughness, blocking).
+ * "Can't attack" cancels the first, "can't block" most of the second (Pacifism: both).
+ * `stuck`: it does not untap during its controller's untap step (`staysTapped`).
  */
 export function profileValue(c: Profile, stuck = false): number {
   const p = Math.max(0, c.power);
@@ -69,7 +69,7 @@ export function profileValue(c: Profile, stuck = false): number {
   return v;
 }
 
-/** Valeur d'une créature d'après sa définition (carte en main, au cimetière…) et ses marqueurs +1/+1. */
+/** Value of a creature from its definition (card in hand, in the graveyard…) and its +1/+1 counters. */
 export function creatureValue(d: CardDef, counters = 0): number {
   return profileValue({
     power: (d.power ?? 0) + counters,
@@ -80,8 +80,8 @@ export function creatureValue(d: CardDef, counters = 0): number {
 }
 
 /**
- * Caractéristiques durables du champ de bataille : sans les effets « jusqu'à la fin du tour ».
- * Sans effet temporaire (cas courant), ce sont les caractéristiques en cache du moteur.
+ * Lasting characteristics on the battlefield: without the "until end of turn" effects.
+ * Without a temporary effect (the usual case), they are the engine's cached characteristics.
  */
 export function durableChars(s: GameState): (id: ObjectId) => Characteristics {
   if (!s.effects.some((e) => e.duration === "endOfTurn")) return (id) => chars(s, id);
@@ -89,14 +89,14 @@ export function durableChars(s: GameState): (id: ObjectId) => Characteristics {
   return (id) => map.get(id) ?? chars(s, id);
 }
 
-/** Valeur de la vie : chaque point compte davantage quand on est bas. */
+/** Value of life: each point counts more when one is low. */
 export function lifeValue(life: number): number {
   return life <= 0 ? -1000 : 8 * Math.log(1 + life);
 }
 
 /**
- * Points de vie « effectifs » (Commander, PLAN-E) : les points de vie, réduits en proportion des blessures de combat
- * reçues du commandant le plus menaçant (21 tuent, 704.6c) ; sans blessure de commandant, les points de vie.
+ * "Effective" life (Commander, PLAN-E): life, reduced in proportion to the combat damage received from the most
+ * threatening commander (21 kill, 704.6c); without commander damage, the life total.
  */
 export function effectiveLife(s: GameState, p: PlayerId): number {
   const life = s.players[p]?.life ?? 0;
@@ -107,8 +107,8 @@ export function effectiveLife(s: GameState, p: PlayerId): number {
 }
 
 /**
- * Commander (PLAN-E) : un commandant qui attend dans la zone de commandement est une menace toujours disponible ; il
- * vaut un peu moins qu'une fois en jeu, et d'autant moins que sa taxe est élevée.
+ * Commander (PLAN-E): a commander waiting in the command zone is a threat that is always available; it is worth a bit
+ * less than once in play, and all the less as its tax is high.
  */
 function commandZoneValue(s: GameState, p: PlayerId): number {
   let v = 0;
@@ -122,8 +122,8 @@ function commandZoneValue(s: GameState, p: PlayerId): number {
 }
 
 /**
- * Valeur d'une carte en main : un potentiel. Un permanent vaut moins en main qu'une fois en jeu (où il agit) ;
- * un éphémère ou un rituel garde sa souplesse jusqu'au bon moment.
+ * Value of a card in hand: a potential. A permanent is worth less in hand than once in play (where it acts);
+ * an instant or a sorcery keeps its flexibility until the right moment.
  */
 function handCardValue(d: CardDef): number {
   if (d.types.includes("Land")) return 0.3;
@@ -132,8 +132,8 @@ function handCardValue(d: CardDef): number {
 }
 
 /**
- * Adversaire visé en priorité : le plus bas en points de vie (à égalité, le plus menaçant sur le plateau).
- * En duel, c'est simplement l'adversaire.
+ * Opponent targeted first: the lowest in life (on a tie, the most threatening on the board).
+ * In a duel, it is simply the opponent.
  */
 export function targetOpponent(s: GameState, me: PlayerId): PlayerId {
   const opps = opponentsOf(s, me);
@@ -146,14 +146,14 @@ export function targetOpponent(s: GameState, me: PlayerId): PlayerId {
 }
 
 // ---------------------------------------------------------------------------
-// Menace adverse au prochain tour (niveau élevé)
+// Opposing threat next turn (expert level)
 // ---------------------------------------------------------------------------
 
 /**
- * Blessures que les adversaires peuvent infliger à `me` à leur prochaine attaque, d'après les bloqueurs dont
- * `me` disposera (ses créatures dégagées : celles qui ont attaqué restent engagées jusqu'à son prochain tour).
- * Estimation simple : les créatures volantes passent si `me` n'a ni vol ni portée ; chaque bloqueur arrête
- * un des plus gros attaquants restants.
+ * Damage the opponents can deal to `me` on their next attack, given the blockers `me` will have (its untapped
+ * creatures: those that attacked stay tapped until its next turn).
+ * Simple estimate: flying creatures get through if `me` has neither flying nor reach; each blocker stops
+ * one of the biggest remaining attackers.
  */
 export function incomingDamage(s: GameState, me: PlayerId, dc = durableChars(s)): number {
   const creatures = (p: PlayerId) =>
@@ -178,17 +178,17 @@ export function incomingDamage(s: GameState, me: PlayerId, dc = durableChars(s))
 }
 
 // ---------------------------------------------------------------------------
-// Évaluation
+// Evaluation
 // ---------------------------------------------------------------------------
 
 export interface EvalOptions {
-  /** Tenir compte de la contre-attaque adverse (pendant son propre tour). */
+  /** Take the opposing counterattack into account (during one's own turn). */
   exposure?: boolean;
 }
 
 /**
- * Évaluation du point de vue de `me`. En multijoueur, chaque adversaire pèse 1/n :
- * affaiblir un seul adversaire compte moins que gagner soi-même. En duel, rien ne change.
+ * Evaluation from the point of view of `me`. In multiplayer, each opponent weighs 1/n:
+ * weakening a single opponent counts less than winning oneself. In a duel, nothing changes.
  */
 export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): number {
   const mine = s.players[me];
@@ -213,21 +213,21 @@ export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): nu
     const sign = c.controller === me ? 1 : -w;
     let v: number;
     if (c.types.includes("Creature")) v = profileValue(c, staysTapped(s, id));
-    // Planeswalker : vaut d'autant plus qu'il a de loyauté (source d'avantage à chaque tour).
+    // Planeswalker: worth all the more as it has loyalty (a source of advantage every turn).
     else if (c.types.includes("Planeswalker")) v = 3 + (o.counters.loyalty ?? 0) * 0.9;
     else if (c.types.includes("Land")) {
-      // Au-delà de 7 terrains, un terrain de plus apporte peu.
+      // Beyond 7 lands, one more land brings little.
       lands[c.controller] = (lands[c.controller] ?? 0) + 1;
       v = (lands[c.controller] ?? 0) > 7 ? 0.4 : 1;
     }
-    // Équipement : une valeur propre, attaché ou non (il peut changer de porteur) ; son effet se lit sur la créature
-    // équipée. Aura attachée : sa valeur se lit sur son hôte (elle part avec lui).
+    // Equipment: a value of its own, attached or not (it can change bearer); its effect shows on the equipped
+    // creature. Attached Aura: its value shows on its host (it goes away with it).
     else if (c.subtypes.includes("Equipment")) v = 1.1;
     else if (o.attachedTo) v = 0.3;
     else v = 1 + Math.min(1, c.abilities.length * 0.3);
     score += sign * v;
   }
-  // Emblèmes : avantage permanent (jetons de la zone de commandement ; un commandant qui attend n'en est pas un).
+  // Emblems: lasting advantage (tokens of the command zone; a waiting commander is not one).
   const emblems = (p: string) => (s.players[p]?.command ?? []).filter((id) => s.objects[id]?.isToken).length;
   score += emblems(mine.id) * 8;
   for (const p of opps) score -= w * emblems(p) * 8;
@@ -239,8 +239,8 @@ export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): nu
   if (mine.library.length === 0) score -= 5;
 
   if (opts.exposure && s.turn.active === me) {
-    // Ce que la contre-attaque coûterait : la moitié de la perte de vie (l'adversaire peut ne pas attaquer),
-    // mais une contre-attaque létale est très lourdement pénalisée.
+    // What the counterattack would cost: half of the life loss (the opponent may not attack),
+    // but a lethal counterattack is very heavily penalized.
     const dmg = incomingDamage(s, me, dc);
     if (dmg > 0) score -= dmg >= mine.life ? 40 : 0.5 * (lifeValue(mine.life) - lifeValue(mine.life - dmg));
   }
@@ -252,8 +252,8 @@ export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): nu
 // ---------------------------------------------------------------------------
 
 /**
- * Seules les décisions illégales (RulesError) sont attendues dans une simulation : toute autre erreur est un bug du
- * moteur et remonte (le fuzz la voit ; en partie, GameHost se replie sur la décision par défaut).
+ * Only illegal decisions (RulesError) are expected in a simulation: any other error is an engine bug and goes up
+ * (the fuzz sees it; in a game, GameHost falls back on the default decision).
  */
 export function onlyRulesErrors(e: unknown): void {
   if (!(e instanceof RulesError)) throw e;
@@ -269,12 +269,12 @@ export function trySubmit(s: GameState, player: PlayerId, d: Decision): GameStat
 }
 
 /**
- * Tout le monde passe jusqu'à ce que `until` soit vrai, ou qu'une décision autre que la priorité apparaisse. `owned` :
- * `s` est déjà une copie de travail que l'appelant ne relit pas (résultat de `trySubmit`), modifiée sur place.
+ * Everybody passes until `until` is true, or a decision other than priority appears. `owned`: `s` is already a
+ * working copy the caller does not read again (result of `trySubmit`), changed in place.
  */
 export function rollout(s: GameState, until: (s: GameState) => boolean, max = 60, owned = false): GameState {
   if (s.over || s.pending?.kind !== "priority" || until(s)) return s;
-  // Une seule copie, puis on mute la copie de travail : passer est toujours légal.
+  // A single copy, then we mutate the working copy: passing is always legal.
   const cur = owned ? s : cloneState(s);
   for (let i = 0; i < max && !cur.over && cur.pending?.kind === "priority" && !until(cur); i++) {
     applyMutable(cur, cur.pending.player, { type: "pass" });
@@ -283,10 +283,10 @@ export function rollout(s: GameState, until: (s: GameState) => boolean, max = 60
 }
 
 /**
- * Applique une décision dans une simulation. Passer (toujours légal, et de loin le plus fréquent) modifie la copie
- * de travail sur place ; toute autre décision passe par `submit`, qui travaille sur une copie : si elle est illégale,
- * l'exception laisse `cur` intact (`applyMutable` n'est pas transactionnel).
- * `owned` : `cur` est déjà une copie de travail qu'on peut modifier.
+ * Applies a decision in a simulation. Passing (always legal, and by far the most frequent) changes the working copy
+ * in place; any other decision goes through `submit`, which works on a copy: if it is illegal, the exception leaves
+ * `cur` intact (`applyMutable` is not transactional).
+ * `owned`: `cur` is already a working copy that may be changed.
  */
 export function step(cur: GameState, player: PlayerId, d: Decision, owned: boolean): GameState {
   if (d.type === "pass" && owned) {
@@ -297,8 +297,8 @@ export function step(cur: GameState, player: PlayerId, d: Decision, owned: boole
 }
 
 /**
- * Comme `rollout`, mais chaque décision reçoit la réponse par défaut (passer, choix suggéré, blocages obligatoires…) :
- * la simulation traverse les choix de résolution et de combat (répartition des blessures, cibles de déclencheurs).
+ * Like `rollout`, but each decision gets the default answer (pass, suggested choice, required blocks…):
+ * the simulation goes through the resolution and combat choices (damage assignment, trigger targets).
  */
 export function simulate(s: GameState, until: (s: GameState) => boolean, max = 120): GameState {
   if (s.over || !s.pending || until(s)) return s;

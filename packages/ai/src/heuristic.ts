@@ -1,9 +1,9 @@
 /**
- * IA heuristique, paramétrée par un profil de niveau (profile.ts) :
- * - sorts et capacités : simulation à un coup sur un clone de l'état, puis évaluation du plateau ;
- * - blocages : recherche gloutonne par simulation du combat (niveau élevé : recherche, voir combat.ts) ;
- * - attaques : règles de combat simples (duels, attaque totale létale, sécurité en défense) ;
- *   niveau élevé : simulation des blocages adverses (combat.ts).
+ * Heuristic AI, parameterized by a level profile (profile.ts):
+ * - spells and abilities: one-move simulation on a clone of the state, then evaluation of the board;
+ * - blocks: greedy search by combat simulation (expert level: search, see combat.ts);
+ * - attacks: simple combat rules (duels, lethal all-out attack, defensive safety);
+ *   expert level: simulation of the opposing blocks (combat.ts).
  */
 import {
   type Agent,
@@ -32,7 +32,7 @@ import { afterCombat, creatureValue, evaluate, rollout, stackEmpty, targetOppone
 import { enumerateDecisions } from "./options";
 import { MEDIUM_PROFILE, type Profile } from "./profile";
 
-/** IA de niveau moyen (fuzz, bench, tests). */
+/** Medium-level AI (fuzz, bench, tests). */
 export function heuristicAgent(): Agent {
   return (s, me) => decide(s, me, MEDIUM_PROFILE);
 }
@@ -73,19 +73,19 @@ export function decide(s: GameState, me: PlayerId, pr: Profile): Decision {
 }
 
 /**
- * Répartition des attaquants : on envoie sur chaque planeswalker adverse (le plus chargé d'abord) juste assez
- * de force pour l'abattre, en commençant par les créatures évasives ; le reste attaque le joueur.
- * Si les attaquants suffisent à tuer le joueur, tout va sur le joueur.
- * Chaque créature n'attaque que ce qu'elle peut attaquer (« ne peut pas vous attaquer ») et, si elle a des exigences
- * d'attaque (provocation, « attaque ce joueur »), ce qui en satisfait le plus ; la déclaration est enfin complétée pour
- * respecter le plus d'exigences possible (508.1d).
+ * Distribution of the attackers: each opposing planeswalker (the most loaded first) gets just enough power to take it
+ * down, starting with the evasive creatures; the rest attacks the player.
+ * If the attackers are enough to kill the player, everything goes at the player.
+ * Each creature attacks only what it can attack ("can't attack you") and, if it has attack requirements (goad,
+ * "attacks that player"), what satisfies the most of them; the declaration is then completed to respect as many
+ * requirements as possible (508.1d).
  */
 export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[]): { id: string; defender: string }[] {
   const opp = attackTarget(s, me, attackers);
   const power = (id: string) => Math.max(0, chars(s, id).power);
   const total = attackers.reduce((n, id) => n + power(id), 0);
   const preferred = new Map(attackers.map((id) => [id, preferredDefenders(s, id)]));
-  // Le joueur visé s'il est permis, sinon le premier joueur permis, sinon un planeswalker permis.
+  // The targeted player if allowed, otherwise the first allowed player, otherwise an allowed planeswalker.
   const fallback = (id: string) => {
     const list = preferred.get(id) ?? [];
     return list.includes(opp) ? opp : (list.find((d) => !!s.players[d]) ?? list[0]);
@@ -117,16 +117,16 @@ export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[])
 }
 
 /**
- * Joueur attaqué (multijoueur, PLAN-C C17) : celui que l'attaque peut tuer (le moins de points de vie d'abord) ; sinon
- * le plus menaçant (force sur le champ de bataille, planeswalkers, main), à points de vie bas départagés en faveur de
- * celui qui en a le moins. En duel, le seul adversaire.
+ * Attacked player (multiplayer, PLAN-C C17): the one the attack can kill (lowest life first); otherwise the most
+ * threatening one (power on the battlefield, planeswalkers, hand), with low life breaking ties in favor of the one who
+ * has the least. In a duel, the only opponent.
  */
 function attackTarget(s: GameState, me: PlayerId, attackers: string[]): PlayerId {
   const opps = opponentsOf(s, me);
   if (opps.length <= 1) return opps[0] ?? targetOpponent(s, me);
   const total = attackers.reduce((n, id) => n + Math.max(0, chars(s, id).power), 0);
   const life = (p: PlayerId) => s.players[p]?.life ?? 0;
-  // Commander : un commandant qui attaque peut achever un joueur par ses blessures de commandant (21, 704.6c).
+  // Commander: an attacking commander can finish a player off with its commander damage (21, 704.6c).
   const commanderKills = (p: PlayerId) =>
     attackers.some((id) => {
       const c = commanderOf(s, s.objects[id]);
@@ -147,7 +147,7 @@ function attackTarget(s: GameState, me: PlayerId, attackers: string[]): PlayerId
   return [...opps].sort((a, b) => threat(b) - threat(a))[0] ?? targetOpponent(s, me);
 }
 
-/** Complète les blocages pour respecter le plus d'exigences de blocage possible (509.1c, `repairBlocks`). */
+/** Completes the blocks to respect as many blocking requirements as possible (509.1c, `repairBlocks`). */
 export function withRequiredBlocks(
   s: GameState,
   me: PlayerId,
@@ -157,14 +157,14 @@ export function withRequiredBlocks(
 }
 
 // ---------------------------------------------------------------------------
-// Main de départ
+// Opening hand
 // ---------------------------------------------------------------------------
 
 const isLand = (s: GameState, id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land");
 
 const BASIC_MANA: Record<string, string> = { Plains: "W", Island: "U", Swamp: "B", Mountain: "R", Forest: "G" };
 
-/** Couleurs que produisent les terrains de la main (capacités de mana imprimées, types de terrain de base). */
+/** Colors produced by the lands in hand (printed mana abilities, basic land types). */
 function landColors(s: GameState, hand: ObjectId[]): Set<string> {
   const out = new Set<string>();
   for (const id of hand.filter((x) => isLand(s, x))) {
@@ -172,7 +172,7 @@ function landColors(s: GameState, hand: ObjectId[]): Set<string> {
     for (const ab of d?.abilities ?? []) {
       if (ab.kind === "mana") for (const c of ab.produce) out.add(c);
     }
-    // 305.6 : un type de terrain de base donne sa capacité de mana (les terrains de base n'en impriment pas).
+    // 305.6: a basic land type grants its mana ability (basic lands do not print it).
     for (const t of d?.subtypes ?? []) {
       const c = BASIC_MANA[t];
       if (c) out.add(c);
@@ -187,12 +187,12 @@ function keepHand(s: GameState, me: PlayerId, pr: Profile): boolean {
   if (hand.length <= 5) return true;
   if (pr.mulligan === "loose") return lands >= 1 && lands <= 6;
   if (lands < 2 || lands > (hand.length === 7 ? 5 : 4)) return false;
-  // Couleurs (P3) : au moins un sort de la main dont les symboles colorés sont tous produits par ses terrains.
+  // Colors (P3): at least one spell in hand whose colored symbols are all produced by its lands.
   const colors = landColors(s, hand);
   const spells = hand.filter((id) => !isLand(s, id));
   if (spells.length === 0) return true;
-  // Courbe de mana (PLAN-C C17) : avec deux terrains, un sort de valeur 2 ou moins ; avec plus, un sort jouable au
-  // tour qui suit l'arrivée du dernier terrain (pas une main de sorts à 6 avec trois terrains).
+  // Mana curve (PLAN-C C17): with two lands, a spell of mana value 2 or less; with more, a spell castable on the turn
+  // after the last land enters (not a hand of 6-drops with three lands).
   const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost ?? { generic: 0, colored: {}, x: 0 });
   if (Math.min(...spells.map(mv)) > (lands <= 2 ? 2 : lands + 1)) return false;
   if (colors.size === 0) return true;
@@ -202,7 +202,7 @@ function keepHand(s: GameState, me: PlayerId, pr: Profile): boolean {
   });
 }
 
-/** Les cartes dont on se sépare en premier : terrains en trop, puis sorts les plus chers. */
+/** The cards we part with first: extra lands, then the most expensive spells. */
 function worstCards(s: GameState, me: PlayerId, count: number): ObjectId[] {
   const hand = [...(s.players[me]?.hand ?? [])];
   const landsInPlay = s.battlefield.filter((id) => s.objects[id]?.controller === me && isLand(s, id)).length;
@@ -216,18 +216,18 @@ function worstCards(s: GameState, me: PlayerId, count: number): ObjectId[] {
 }
 
 // ---------------------------------------------------------------------------
-// Priorité : sorts et capacités par simulation
+// Priority: spells and abilities by simulation
 // ---------------------------------------------------------------------------
 
 export interface ScoredOption {
   decision: Decision;
-  /** Évaluation après résolution (simulation à un coup). */
+  /** Evaluation after resolution (one-move simulation). */
   score: number;
 }
 
 /**
- * Options de l'IA à la priorité, évaluées par simulation à un coup. `null` : rien à jouer (hors de ses fenêtres
- * de jeu, ou aucune action). `forced` : décision évidente (un terrain, un renfort global létal).
+ * Options of the AI at priority, evaluated by one-move simulation. `null`: nothing to play (outside its play windows,
+ * or no action). `forced`: obvious decision (a land, a lethal global pump).
  */
 export function priorityOptions(
   s: GameState,
@@ -235,7 +235,7 @@ export function priorityOptions(
   pr: Profile,
 ): { baseline: number; options: ScoredOption[]; forced?: Decision } | null {
   const top = s.stack[s.stack.length - 1];
-  // « Lancez-la » pendant une résolution (608.2g) : une offre à évaluer, à tous les niveaux, même sur son propre sort.
+  // "Cast it" during a resolution (608.2g): an offer to evaluate, at every level, even on its own spell.
   const castNow = s.pending?.kind === "priority" && !!s.pending.castNow;
   if (top?.controller === me && !castNow) return null;
 
@@ -245,13 +245,13 @@ export function priorityOptions(
   const mainPhase = myTurn && (step === "main1" || step === "main2") && !top;
   const response = !!top;
   const opponentEnd = !myTurn && step === "end" && !top;
-  // Débutant : ni réponse, ni tour de combat, ni jeu à la fin du tour adverse.
+  // Beginner: no response, no combat trick, no play at the end of the opponent's turn.
   if (!castNow && !mainPhase && (!pr.responds || (!combatWindow && !response && !opponentEnd))) return null;
 
   const actions = legalActions(s, me).filter((a) => a.type === "cast" || a.type === "activate" || a.type === "playLand");
   if (actions.length === 0) return null;
 
-  // Jouer un terrain d'abord.
+  // Play a land first.
   const land = actions.find((a) => a.type === "playLand");
   if (land && land.type === "playLand")
     return { baseline: 0, options: [], forced: { type: "playLand", card: land.card, payLife: land.payLife } };
@@ -263,22 +263,22 @@ export function priorityOptions(
   const baseline = afterPass ? evaluate(rollout(afterPass, until, 60, true), me, opts) : evaluate(s, me, opts);
   const options: ScoredOption[] = [];
   for (const a of actions) {
-    // Renfort global de la force en rituel (Overrun…) : seulement pour une attaque potentiellement létale. Un renfort
-    // sans bonus de force (Flawless Maneuver : indestructible) est évalué comme les autres sorts.
+    // Global power pump as a sorcery (Overrun…): only for a potentially lethal attack. A pump without a power bonus
+    // (Flawless Maneuver: indestructible) is evaluated like the other spells.
     if (a.type === "cast") {
       const d = s.defs[s.objects[a.card]?.defId ?? ""];
       const overrun = d?.spell?.modes[0]?.effects.some(
         (e) => e.op === "pump" && e.what.kind === "zone" && (typeof e.power !== "number" || e.power > 0),
       );
       if (overrun) {
-        // Une façon de le lancer réellement payable (coût normal, sans payer, coût alternatif…).
+        // A way to cast it that can really be paid (normal cost, without paying, alternative cost…).
         const forced =
           step === "main1" && overrunIsLethal(s, me) ? enumerateDecisions(a).find((v) => trySubmit(s, me, v)) : undefined;
         if (forced) return { baseline, options, forced };
         continue;
       }
     }
-    // Coûts additionnels : on se sépare d'abord de ce qui a le moins de valeur.
+    // Additional costs: we part first with what has the least value.
     const rank = (ids: string[]) => [...ids].sort((x, y) => keepValue(s, me, x) - keepValue(s, me, y));
     for (const d of enumerateDecisions(a, 40, rank)) {
       const next = trySubmit(s, me, d);
@@ -294,11 +294,11 @@ export function choosePriority(s: GameState, me: PlayerId, pr: Profile): Decisio
   const found = priorityOptions(s, me, pr);
   if (!found) return pass;
   if (found.forced) return found.forced;
-  // Débutant : oublie parfois de jouer.
+  // Beginner: sometimes forgets to play.
   if (pr.forgetfulness && pr.rand() < pr.forgetfulness) return pass;
   let best: Decision = pass;
   let bestScore = found.baseline + 0.25;
-  /** Options meilleures que passer (le débutant prend parfois l'une d'elles au hasard). */
+  /** Options better than passing (the beginner sometimes takes one of them at random). */
   const good: Decision[] = [];
   for (const { decision, score } of found.options) {
     if (score > found.baseline + 0.25) good.push(decision);
@@ -322,7 +322,7 @@ function overrunIsLethal(s: GameState, me: PlayerId): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Blocages : glouton, par simulation du combat
+// Blocks: greedy, by combat simulation
 // ---------------------------------------------------------------------------
 
 export function chooseBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
@@ -342,7 +342,7 @@ export function chooseBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; a
     let bestBlock: ObjectId[] | null = null;
     let bestScore = current + 0.05;
     const tries: ObjectId[][] = options.map((b) => [b]);
-    // Menace : essayer les paires de bloqueurs.
+    // Menace: try pairs of blockers.
     if (hasKeyword(s, a.id, "menace")) {
       tries.length = 0;
       for (let i = 0; i < options.length; i++)
@@ -367,10 +367,10 @@ export function chooseBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; a
 }
 
 // ---------------------------------------------------------------------------
-// Attaques : règles de combat
+// Attacks: combat rules
 // ---------------------------------------------------------------------------
 
-/** Issue d'un duel attaquant/bloqueur, initiative et contact mortel compris. */
+/** Outcome of an attacker/blocker duel, first strike and deathtouch included. */
 export function duel(s: GameState, a: ObjectId, b: ObjectId): { aDies: boolean; bDies: boolean } {
   const A = chars(s, a);
   const B = chars(s, b);
@@ -422,7 +422,7 @@ function worth(s: GameState, id: ObjectId): number {
 }
 
 export function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
-  // On attaque l'adversaire visé ; la contre-attaque peut venir de n'importe quel adversaire.
+  // We attack the targeted opponent; the counterattack can come from any opponent.
   const opp = targetOpponent(s, me);
   const cands = attackCandidates(s, me).filter((id) => chars(s, id).power > 0);
   const blockers = creaturesControlledBy(s, opp).filter((id) => !s.objects[id]?.tapped);
@@ -430,7 +430,7 @@ export function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
   const oppLife = s.players[opp]?.life ?? 20;
   const myLife = s.players[me]?.life ?? 20;
 
-  // Attaque totale si les dégâts non bloquables suffisent.
+  // All-out attack if the unblockable damage is enough.
   const powers = cands.map((id) => chars(s, id).power).sort((a, b) => b - a);
   const surelyThrough = powers.slice(blockers.length).reduce((a, b) => a + b, 0);
   if (cands.length > 0 && surelyThrough >= oppLife) return cands;
@@ -439,13 +439,13 @@ export function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
     const able = blockers.filter((b) => couldBlock(s, b, a));
     return able.every((b) => {
       const { aDies, bDies } = duel(s, a, b);
-      if (!aDies) return true; // au pire, le bloqueur encaisse
-      if (bDies) return worth(s, a) <= worth(s, b) * 1.2; // échange acceptable
-      return false; // bloqueur qui tue sans mourir
+      if (!aDies) return true; // at worst, the blocker takes it
+      if (bDies) return worth(s, a) <= worth(s, b) * 1.2; // acceptable trade
+      return false; // blocker that kills without dying
     });
   });
 
-  // Sécurité : garder assez de bloqueurs pour ne pas mourir à la contre-attaque.
+  // Safety: keep enough blockers not to die on the counterattack.
   const threat = oppCreatures
     .filter((id) => !hasKeyword(s, id, "defender"))
     .map((id) => chars(s, id).power)
@@ -464,11 +464,11 @@ export function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
 }
 
 // ---------------------------------------------------------------------------
-// Débutant : attaques et blocages naïfs
+// Beginner: naive attacks and blocks
 // ---------------------------------------------------------------------------
 
 /**
- * Attaque avec ce qu'aucun bloqueur ne tue sans mourir, plus un peu au hasard ; sans penser à la contre-attaque.
+ * Attacks with what no blocker kills without dying, plus a bit at random; without thinking of the counterattack.
  */
 function naiveAttackers(s: GameState, me: PlayerId, pr: Profile): ObjectId[] {
   const opp = targetOpponent(s, me);
@@ -486,7 +486,7 @@ function naiveAttackers(s: GameState, me: PlayerId, pr: Profile): ObjectId[] {
 }
 
 /**
- * Bloque quand le bloqueur tue l'attaquant sans mourir ; sinon seulement pour ne pas mourir (bloqueurs sacrifiés).
+ * Blocks when the blocker kills the attacker without dying; otherwise only so as not to die (chump blockers).
  */
 export function naiveBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
   const cands = blockCandidates(s, me);
@@ -504,7 +504,7 @@ export function naiveBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; at
       used.add(good);
     }
   }
-  // Attaque létale : on sacrifie les plus petits bloqueurs devant les plus gros attaquants non bloqués.
+  // Lethal attack: we chump the biggest unblocked attackers with the smallest blockers.
   const life = s.players[me]?.life ?? 20;
   const unblocked = () =>
     attackers.filter((a) => !blocks.some((b) => b.attacker === a.id)).reduce((n, a) => n + Math.max(0, chars(s, a.id).power), 0);

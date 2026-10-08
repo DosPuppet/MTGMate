@@ -1,7 +1,7 @@
 /**
- * Decks Commander (PLAN-E) : `docs/commander/decks/<id>.txt`, une decklist par deck (« // Nom — … » en première ligne,
- * section `Commander` puis `Deck`). Ce sont aussi les listes que lit l'import par nom du pseudo-ensemble EDH
- * (`npm run import-cards -- edh`). Lus par `npm run coverage -- --deck <id|all>` et par les tests des decks.
+ * Commander decks (PLAN-E): `docs/commander/decks/<id>.txt`, one decklist per deck ("// Name — …" on the first line,
+ * `Commander` section then `Deck`). These are also the lists read by the by-name import of the EDH pseudo-set
+ * (`npm run import-cards -- edh`). Read by `npm run coverage -- --deck <id|all>` and by the deck tests.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -11,12 +11,12 @@ import { CARDS, CardIndex, type DeckEntries, parseDeckList } from "@mtgx/cards";
 const DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "commander", "decks");
 
 export interface CommanderDeckFile {
-  /** Nom du fichier sans extension (`edgar-markov`). */
+  /** File name without extension (`edgar-markov`). */
   id: string;
   name: string;
   commander: DeckEntries;
   main: DeckEntries;
-  /** Noms de cartes inconnus du catalogue (à importer : `npm run import-cards -- edh`). */
+  /** Card names unknown to the catalog (to import: `npm run import-cards -- edh`). */
   unknown: string[];
 }
 

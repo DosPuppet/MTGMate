@@ -1,7 +1,7 @@
 /**
- * Pool de workers d'IA du serveur (PLAN-E, E14) : les sièges IA d'un salon réfléchissent dans des `worker_threads`, pas
- * dans le fil principal qui sert tous les salons. Une décision à la fois par worker, file d'attente commune ; une
- * réflexion trop longue est abandonnée (worker relancé) et l'hôte joue la décision par défaut.
+ * Server AI worker pool (PLAN-E, E14): the AI seats of a room think in `worker_threads`, not in the main thread that
+ * serves all the rooms. One decision at a time per worker, shared queue; a thinking that takes too long is abandoned
+ * (worker restarted) and the host plays the default decision.
  */
 import { availableParallelism } from "node:os";
 import { Worker } from "node:worker_threads";
@@ -21,12 +21,12 @@ export interface AiJob {
 
 interface Slot {
   worker: Worker;
-  /** Définitions déjà envoyées, par salon. */
+  /** Definitions already sent, per room. */
   sent: Map<string, Set<string>>;
   busy: { id: number; resolve: (d: Decision) => void; reject: (e: Error) => void; timer: NodeJS.Timeout; at: number } | null;
 }
 
-/** Le worker : source TypeScript (développement, tests : chargé par tsx), ou fichier compilé à côté du serveur. */
+/** The worker: TypeScript source (development, tests: loaded by tsx), or compiled file next to the server. */
 function workerUrl(): { url: URL; execArgv: string[] } {
   const ts = import.meta.url.endsWith(".ts");
   return ts
@@ -38,7 +38,7 @@ export class AiPool {
   private readonly slots: Slot[] = [];
   private readonly queue: { job: AiJob; resolve: (d: Decision) => void; reject: (e: Error) => void }[] = [];
   private nextId = 1;
-  /** Durées des dernières réflexions (ms), pour `/healthz`. */
+  /** Durations of the last thinkings (ms), for `/healthz`. */
   private readonly times: number[] = [];
   private closed = false;
 
@@ -47,16 +47,16 @@ export class AiPool {
     private readonly timeoutMs = 10_000,
   ) {}
 
-  /** Décision d'un siège IA ; rejetée si le worker échoue ou dépasse le délai (l'hôte joue alors la décision par défaut). */
+  /** Decision of an AI seat; rejected if the worker fails or exceeds the delay (the host then plays the default decision). */
   decide(job: AiJob): Promise<Decision> {
-    if (this.closed) return Promise.reject(new Error("pool d'IA fermé"));
+    if (this.closed) return Promise.reject(new Error("AI pool closed"));
     return new Promise((resolve, reject) => {
       this.queue.push({ job, resolve, reject });
       this.pump();
     });
   }
 
-  /** Salon fermé : ses définitions sont oubliées des workers. */
+  /** Room closed: the workers forget its definitions. */
   forget(room: string): void {
     for (const slot of this.slots) {
       if (!slot.sent.delete(room)) continue;
@@ -78,7 +78,7 @@ export class AiPool {
 
   async close(): Promise<void> {
     this.closed = true;
-    for (const q of this.queue.splice(0)) q.reject(new Error("pool d'IA fermé"));
+    for (const q of this.queue.splice(0)) q.reject(new Error("AI pool closed"));
     await Promise.all(this.slots.splice(0).map((s) => this.stop(s)));
   }
 
@@ -103,13 +103,13 @@ export class AiPool {
     });
     slot.worker.on("error", (e) => this.fail(slot, e instanceof Error ? e : new Error(String(e))));
     slot.worker.on("exit", (code) => {
-      if (code !== 0) this.fail(slot, new Error(`worker d'IA arrêté (${code})`));
+      if (code !== 0) this.fail(slot, new Error(`AI worker stopped (${code})`));
     });
     this.slots.push(slot);
     return slot;
   }
 
-  /** Worker en échec (erreur, délai dépassé) : la réflexion en cours échoue, le worker est remplacé. */
+  /** Failed worker (error, delay exceeded): the current thinking fails, the worker is replaced. */
   private fail(slot: Slot, e: Error): void {
     const i = this.slots.indexOf(slot);
     if (i < 0) return;
@@ -141,7 +141,7 @@ export class AiPool {
 
   private send(slot: Slot, job: AiJob, resolve: (d: Decision) => void, reject: (e: Error) => void): void {
     const id = this.nextId++;
-    // Définitions que ce worker n'a pas encore pour ce salon (le deck au premier envoi, puis les jetons créés).
+    // Definitions this worker does not have yet for this room (the deck on the first message, then the created tokens).
     let sent = slot.sent.get(job.room);
     if (!sent) {
       sent = new Set();
@@ -154,7 +154,7 @@ export class AiPool {
         sent.add(k);
       }
     const { defs: _all, ...state } = job.state;
-    const timer = setTimeout(() => this.fail(slot, new Error("réflexion de l'IA trop longue")), this.timeoutMs);
+    const timer = setTimeout(() => this.fail(slot, new Error("AI thinking took too long")), this.timeoutMs);
     slot.busy = { id, resolve, reject, timer, at: Date.now() };
     slot.worker.postMessage({
       type: "decide",

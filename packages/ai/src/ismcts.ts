@@ -1,13 +1,13 @@
 /**
- * ISMCTS (Information Set Monte Carlo Tree Search) pour les décisions de priorité du niveau élevé, en duel.
+ * ISMCTS (Information Set Monte Carlo Tree Search) for the priority decisions of the expert level, in a duel.
  *
- * L'IA ne voit ni la main adverse, ni la liste de son deck, ni l'ordre des bibliothèques. À chaque itération, on tire
- * une **déterminisation** : les cartes cachées adverses sont tirées de ce qu'on a vu de lui (`determinize`). On joue alors l'une des options de la racine (choisie par
- * UCB1, avec un biais vers les options que l'évaluation à un coup préfère), puis une simulation rapide (policy.ts)
- * jusqu'au début du prochain tour de l'IA, et on évalue la position obtenue.
+ * The AI sees neither the opponent's hand, nor their decklist, nor the order of the libraries. At each iteration, a
+ * **determinization** is drawn: the opponent's hidden cards are drawn from what was seen of them (`determinize`). One of the root options is then played (chosen by
+ * UCB1, with a bias toward the options the one-move evaluation prefers), then a fast simulation (policy.ts)
+ * until the start of the AI's next turn, and the resulting position is evaluated.
  *
- * L'arbre est limité à la racine (les options de l'IA à cette décision) : avec quelques dizaines à quelques centaines
- * d'itérations, les nœuds plus profonds seraient trop peu visités pour être fiables.
+ * The tree is limited to the root (the AI's options at this decision): with a few tens to a few hundred
+ * iterations, deeper nodes would be visited too rarely to be reliable.
  */
 import {
   cloneState,
@@ -25,16 +25,16 @@ import type { Profile } from "./profile";
 
 export interface IsmctsConfig {
   rand: () => number;
-  /** Nombre fixe d'itérations (tests, tournoi : reproductible). */
+  /** Fixed number of iterations (tests, tournament: reproducible). */
   iterations?: number;
-  /** Sinon, budget en temps (interface) : on s'arrête à l'échéance. */
+  /** Otherwise, time budget (interface): we stop at the deadline. */
   ms?: number;
-  /** En dessous (machine lente), la recherche n'est pas assez fiable : on garde la décision heuristique. */
+  /** Below it (slow machine), the search is not reliable enough: we keep the heuristic decision. */
   minIterations?: number;
   maxIterations?: number;
-  /** Nombre d'options examinées à la racine (passer compris). */
+  /** Number of options examined at the root (passing included). */
   width?: number;
-  /** Nombre maximal de décisions par simulation. */
+  /** Maximum number of decisions per simulation. */
   horizon?: number;
 }
 
@@ -47,16 +47,16 @@ function shuffleInPlace<T>(items: T[], rand: () => number): void {
   }
 }
 
-/** Proportion de terrains supposée dans les cartes cachées d'un adversaire (deck de 60 à 24 terrains). */
+/** Assumed share of lands in an opponent's hidden cards (60-card deck with 24 lands). */
 const LAND_SHARE = 0.4;
 const BASICS: Record<string, string> = { W: "Plains", U: "Island", B: "Swamp", R: "Mountain", G: "Forest" };
 
 /**
- * Cartes vues d'un adversaire : ce qu'il possède sur le champ de bataille, dans son cimetière, en exil (face visible)
- * et ses sorts sur la pile. Ses terrains de base, ceux des couleurs vues.
+ * Cards seen from an opponent: what they own on the battlefield, in their graveyard, in exile (face up)
+ * and their spells on the stack. Their basic lands, those of the colors seen.
  */
 function seenCards(s: GameState, p: PlayerId, me: PlayerId): { spells: string[]; lands: string[] } {
-  // Une carte exilée face cachée que `me` ne peut pas regarder n'est pas vue (406.3).
+  // A card exiled face down that `me` cannot look at is not seen (406.3).
   const hidden = (id: string) => !!s.objects[id]?.exiledFaceDown && !s.objects[id]?.exiledFaceDown?.includes(me);
   const visible = [
     ...s.battlefield,
@@ -65,7 +65,7 @@ function seenCards(s: GameState, p: PlayerId, me: PlayerId): { spells: string[];
     ...s.stack.filter((i) => i.kind === "spell" && !i.copy).map((i) => i.sourceId),
   ]
     .map((id) => s.objects[id])
-    // Un commandant (singleton, toujours connu) ne sert pas à deviner les cartes cachées.
+    // A commander (singleton, always known) is no help to guess the hidden cards.
     .filter((o) => !!o && o.owner === p && !o.faceDown && !o.isToken && !o.cardCopy && !commanderOf(s, o));
   const defs = visible.map((o) => o?.defId as string);
   const spells = defs.filter((id) => !s.defs[id]?.types.includes("Land"));
@@ -81,10 +81,10 @@ function seenCards(s: GameState, p: PlayerId, me: PlayerId): { spells: string[];
 }
 
 /**
- * Une déterminisation de l'état vu par `me` (P3 de l'audit) : les cartes cachées de chaque adversaire (main et
- * bibliothèque) sont remplacées par un tirage fondé sur ses seules cartes vues (et des terrains de base de ses couleurs),
- * dans la proportion d'un deck ordinaire. L'IA ne tire donc profit ni de sa main ni de la liste de son deck. Sa propre
- * bibliothèque est mélangée. Le hasard du moteur est retiré.
+ * A determinization of the state seen by `me` (P3 of the audit): the hidden cards of each opponent (hand and
+ * library) are replaced by a draw based on their seen cards only (and basic lands of their colors),
+ * in the proportion of an ordinary deck. The AI therefore takes advantage of neither their hand nor their decklist. Its
+ * own library is shuffled. The engine's randomness is removed.
  */
 export function determinize(s: GameState, me: PlayerId, rand: () => number): GameState {
   const d = cloneState(s);
@@ -93,19 +93,19 @@ export function determinize(s: GameState, me: PlayerId, rand: () => number): Gam
     const pl = d.players[p];
     if (!pl) continue;
     const { spells, lands } = seenCards(s, p, me);
-    // Ses permanents face cachée (déguisement, cape, manifestation) : la carte cachée est tirée aussi.
+    // Their face-down permanents (disguise, cloak, manifest): the hidden card is drawn too.
     for (const id of d.battlefield) {
       const o = d.objects[id];
       if (o?.faceDown && o.controller === p && spells.length) o.faceDown = { ...o.faceDown, card: pick(spells) };
     }
-    // Ses cartes exilées face cachée que `me` ne peut pas regarder (présage, Hideaway…).
+    // Their cards exiled face down that `me` cannot look at (omen, Hideaway…).
     for (const id of d.exile) {
       const o = d.objects[id];
       if (o?.owner === p && o.exiledFaceDown && !o.exiledFaceDown.includes(me) && spells.length) o.defId = pick(spells);
     }
     for (const id of [...pl.hand, ...pl.library]) {
       const o = d.objects[id];
-      // Un commandant est public (Commander) : il reste ce qu'il est, même dans une main.
+      // A commander is public (Commander): it stays what it is, even in a hand.
       if (!o || commanderOf(d, o)) continue;
       const land = spells.length === 0 || rand() < LAND_SHARE;
       const def = land && lands.length ? pick(lands) : spells.length ? pick(spells) : undefined;
@@ -126,7 +126,7 @@ export function determinize(s: GameState, me: PlayerId, rand: () => number): Gam
     shuffleInPlace(canonical, rand);
     mine.library = canonical;
   }
-  // Le hasard du moteur (pile ou face…) ne doit pas non plus être connu d'avance.
+  // The engine's randomness (coin flips…) must not be known in advance either.
   d.rng = Math.floor(rand() * 2 ** 31);
   d.version += 1;
   return d;
@@ -135,8 +135,8 @@ export function determinize(s: GameState, me: PlayerId, rand: () => number): Gam
 const policy = fastPolicy();
 
 /**
- * Simulation rapide jusqu'au début du prochain tour de `me` (ou la fin de la partie, ou `horizon` décisions).
- * Une décision refusée par le moteur est remplacée par la décision par défaut ; si elle aussi échoue, on s'arrête.
+ * Fast simulation until the start of `me`'s next turn (or the end of the game, or `horizon` decisions).
+ * A decision refused by the engine is replaced by the default decision; if that also fails, we stop.
  */
 function playout(start: GameState, me: PlayerId, horizon: number): GameState {
   let d = start;
@@ -163,19 +163,19 @@ const keyOf = (d: Decision) => JSON.stringify(d);
 
 export interface Candidate {
   decision: Decision;
-  /** Évaluation à un coup : biais initial de la recherche. */
+  /** One-move evaluation: initial bias of the search. */
   prior: number;
 }
 
 /**
- * Choisit parmi `cands` par ISMCTS, ou `null` si trop peu d'itérations ont tenu dans le temps imparti
- * (la décision heuristique est alors meilleure qu'une recherche bâclée).
+ * Chooses among `cands` by ISMCTS, or `null` if too few iterations fit in the allotted time
+ * (the heuristic decision is then better than a sloppy search).
  */
 export function ismctsChoose(s: GameState, me: PlayerId, cands: Candidate[], cfg: IsmctsConfig): Decision | null {
   if (cands.length < 2) return cands[0]?.decision ?? null;
   const root = evaluate(s, me);
   const bestPrior = Math.max(...cands.map((c) => c.prior));
-  // Biais initial : les options que l'évaluation à un coup préfère sont explorées d'abord et départagent les égalités.
+  // Initial bias: the options the one-move evaluation prefers are explored first and break the ties.
   const bias = cands.map((c) => 0.3 * sigmoid((c.prior - bestPrior) / 3));
   const n = cands.map(() => 0);
   const w = cands.map(() => 0);
@@ -185,8 +185,8 @@ export function ismctsChoose(s: GameState, me: PlayerId, cands: Candidate[], cfg
   let total = 0;
   for (let it = 0; it < maxIt * 2 && total < maxIt; it++) {
     if (cfg.iterations === undefined && Date.now() - t0 > (cfg.ms ?? 700)) break;
-    // UCB1 : d'abord chaque option une fois (dans l'ordre de l'évaluation à un coup), puis compromis
-    // entre les meilleures moyennes et les options peu explorées.
+    // UCB1: first each option once (in the order of the one-move evaluation), then a trade-off
+    // between the best averages and the little-explored options.
     let i = n.indexOf(0);
     if (i < 0) {
       let best = Number.NEGATIVE_INFINITY;
@@ -204,7 +204,7 @@ export function ismctsChoose(s: GameState, me: PlayerId, cands: Candidate[], cfg
       d = step(d, me, (cands[i] as Candidate).decision, true);
     } catch (e) {
       onlyRulesErrors(e);
-      // Option impossible dans cette déterminisation : elle ne compte pas.
+      // Option impossible in this determinization: it does not count.
       n[i] = (n[i] as number) + 1;
       total++;
       continue;
@@ -216,7 +216,7 @@ export function ismctsChoose(s: GameState, me: PlayerId, cands: Candidate[], cfg
     total++;
   }
   if (cfg.iterations === undefined && total < (cfg.minIterations ?? 24)) return null;
-  // Option la plus visitée (la plus sûre) ; à égalité, la meilleure moyenne.
+  // Most visited option (the safest); on a tie, the best average.
   let pick = 0;
   for (let k = 1; k < cands.length; k++) {
     const better =
@@ -228,8 +228,8 @@ export function ismctsChoose(s: GameState, me: PlayerId, cands: Candidate[], cfg
 }
 
 /**
- * Décision de priorité par ISMCTS, ou `null` : pas de choix à faire (une seule option sensée), ou trop peu
- * d'itérations dans le temps imparti.
+ * Priority decision by ISMCTS, or `null`: no choice to make (a single sensible option), or too few
+ * iterations in the allotted time.
  */
 export function ismctsPriority(s: GameState, me: PlayerId, pr: Profile, cfg: IsmctsConfig): Decision | null {
   const found = priorityOptions(s, me, pr);

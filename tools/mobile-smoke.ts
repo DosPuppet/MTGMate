@@ -1,11 +1,11 @@
 /**
- * Test de bout en bout de l'interface sur tablette et téléphone (émulation d'appareils Playwright) :
- * main de 10 cartes et champ de bataille chargé par le bac à sable du mode dev. On vérifie que la main,
- * le bouton principal et les deux champs tiennent dans l'écran, sans défilement de page ; puis les gestes
- * tactiles (appui long = aperçu ; tap = carte levée, second tap = jouée) et l'écran « tournez l'appareil ».
- * Captures dans test-results/mobile/.
+ * End-to-end test of the interface on tablet and phone (Playwright device emulation): a 10-card hand and a battlefield
+ * filled by the dev-mode sandbox. Checks that the hand, the main button and both battlefields fit on the screen,
+ * without page scrolling; then the touch gestures (long press = preview; tap = card lifted, second tap = played) and
+ * the "rotate your device" screen.
+ * Screenshots in test-results/mobile/.
  *
- * Prérequis : `npm run dev` lancé (redémarré après une modification du moteur).
+ * Requires: `npm run dev` running (restarted after an engine change).
  */
 import { mkdirSync } from "node:fs";
 import { type BrowserContextOptions, chromium, devices, type Page } from "playwright";
@@ -63,7 +63,7 @@ const OPP: Side = {
 const failures: string[] = [];
 const errors: string[] = [];
 function check(ok: boolean, label: string, detail?: unknown): void {
-  console.log(`${ok ? "ok" : "ÉCHEC"} : ${label}${ok || detail === undefined ? "" : ` (${JSON.stringify(detail)})`}`);
+  console.log(`${ok ? "ok" : "FAILED"}: ${label}${ok || detail === undefined ? "" : ` (${JSON.stringify(detail)})`}`);
   if (!ok) failures.push(label);
 }
 
@@ -86,9 +86,9 @@ async function keep(page: Page): Promise<void> {
   await page.waitForTimeout(1500);
 }
 
-/** Éléments hors de l'écran : cartes de la main, bouton principal, cartes des champs de bataille. */
+/** Elements off the screen: cards of the hand, main button, cards of the battlefields. */
 async function fits(page: Page, label: string): Promise<void> {
-  // Code passé en texte : tsx injecterait __name dans les fonctions fléchées nommées.
+  // Code passed as text: tsx would inject __name into named arrow functions.
   const r = (await page.evaluate(`(() => {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -96,7 +96,7 @@ async function fits(page: Page, label: string): Promise<void> {
       const b = el.getBoundingClientRect();
       return b.left < -1 || b.top < -1 || b.right > vw + 1 || b.bottom > vh + 1;
     };
-    // Une carte de la main peut dépasser sous l'écran (comme sur MTGA), mais ses bords et son haut (nom de la carte) doivent se voir.
+    // A card of the hand may go past the bottom of the screen (as on MTGA), but its edges and its top (card name) must show.
     const handOut = [...document.querySelectorAll(".hand-card")].filter((el) => {
       const b = el.getBoundingClientRect();
       return b.left < -1 || b.right > vw + 1 || b.top > vh - 30;
@@ -110,18 +110,18 @@ async function fits(page: Page, label: string): Promise<void> {
     };
   })()`)) as { hand: number; handOut: number; button: number; perms: number; scroll: boolean };
   console.log(label, JSON.stringify(r));
-  check(r.hand >= 10 && r.handOut === 0, `${label} : main entière à l'écran`, r);
-  check(r.button === 0, `${label} : bouton principal à l'écran`, r);
-  check(r.perms === 0, `${label} : champs de bataille à l'écran`, r);
-  check(!r.scroll, `${label} : pas de défilement de page`, r);
+  check(r.hand >= 10 && r.handOut === 0, `${label}: whole hand on screen`, r);
+  check(r.button === 0, `${label}: main button on screen`, r);
+  check(r.perms === 0, `${label}: battlefields on screen`, r);
+  check(!r.scroll, `${label}: no page scrolling`, r);
 }
 
 const DEVICES: [string, BrowserContextOptions][] = [
-  ["ipad-paysage", devices["iPad (gen 7) landscape"]],
+  ["ipad-landscape", devices["iPad (gen 7) landscape"]],
   ["ipad-pro-portrait", devices["iPad Pro 11"]],
-  ["tablette-android", devices["Galaxy Tab S4 landscape"]],
-  ["pixel-paysage", devices["Pixel 7 landscape"]],
-  ["iphone-paysage", devices["iPhone 13 landscape"]],
+  ["android-tablet", devices["Galaxy Tab S4 landscape"]],
+  ["pixel-landscape", devices["Pixel 7 landscape"]],
+  ["iphone-landscape", devices["iPhone 13 landscape"]],
 ];
 
 for (const [name, device] of DEVICES) {
@@ -132,7 +132,7 @@ for (const [name, device] of DEVICES) {
   await page.context().close();
 }
 
-/** Passe (bouton principal) jusqu'à avoir la priorité pendant votre propre tour. */
+/** Passes (main button) until having priority during your own turn. */
 async function myPriority(page: Page): Promise<void> {
   for (let i = 0; i < 60; i++) {
     const v = await page.evaluate(() => {
@@ -148,10 +148,10 @@ async function myPriority(page: Page): Promise<void> {
     if (v?.mine && v.kind === "priority") await page.locator(".main-button").click();
     await page.waitForTimeout(500);
   }
-  throw new Error("pas de priorité pendant votre tour");
+  throw new Error("no priority during your turn");
 }
 
-/** Appui long au doigt (vrais événements tactiles, via CDP). */
+/** Long press with a finger (real touch events, through CDP). */
 async function longPress(page: Page, x: number, y: number): Promise<void> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
@@ -161,67 +161,67 @@ async function longPress(page: Page, x: number, y: number): Promise<void> {
 
 const handCount = (page: Page) => page.evaluate(() => (window as unknown as DevWindow).__mtgx.getState().view?.hand.length ?? 0);
 
-// Gestes tactiles sur iPad paysage (adversaire sans créatures : pas d'attaque à bloquer avant votre tour).
+// Touch gestures on a landscape iPad (opponent without creatures: no attack to block before your turn).
 {
   const page = await open(devices["iPad (gen 7) landscape"], { cards: repeat(4, "Mountain") });
   await keep(page);
   await myPriority(page);
-  // Appui long sur une carte du champ de bataille : aperçu en surimpression, fermé par un tap.
+  // Long press on a battlefield card: overlay preview, closed by a tap.
   const perm = page.locator(".battlefield.me .perm > .card-slot").first();
   const pb = await perm.boundingBox();
   if (pb) await longPress(page, pb.x + pb.width / 2, pb.y + pb.height / 2);
   await page.waitForTimeout(300);
-  check(await page.locator(".touch-preview .preview-img").isVisible(), "appui long : aperçu de la carte en surimpression");
-  await page.screenshot({ path: `${OUT}/geste-appui-long.png` });
+  check(await page.locator(".touch-preview .preview-img").isVisible(), "long press: overlay preview of the card");
+  await page.screenshot({ path: `${OUT}/gesture-long-press.png` });
   await page.locator(".touch-preview").tap({ position: { x: 10, y: 10 } });
-  check((await page.locator(".touch-preview").count()) === 0, "un tap ferme l'aperçu");
+  check((await page.locator(".touch-preview").count()) === 0, "a tap closes the preview");
 
-  // Premier tap sur un terrain jouable : il se lève sans être joué ; second tap : il est joué.
+  // First tap on a playable land: it is lifted without being played; second tap: it is played.
   const before = await handCount(page);
   const land = page.locator(".hand-card:has(.glow-playable)").first();
   const lb = await land.boundingBox();
-  // Tap sur le haut visible de la carte (le reste dépasse sous l'écran ou sous ses voisines).
+  // Tap on the visible top of the card (the rest goes under the screen or under its neighbors).
   if (lb) await page.touchscreen.tap(lb.x + 12, lb.y + 12);
   await page.waitForTimeout(500);
-  check((await page.locator(".hand-card.lifted").count()) === 1, "premier tap : carte levée");
-  check((await handCount(page)) === before, "premier tap : carte pas encore jouée");
-  await page.screenshot({ path: `${OUT}/geste-carte-levee.png` });
+  check((await page.locator(".hand-card.lifted").count()) === 1, "first tap: card lifted");
+  check((await handCount(page)) === before, "first tap: card not played yet");
+  await page.screenshot({ path: `${OUT}/gesture-card-lifted.png` });
   const up = await page.locator(".hand-card.lifted").boundingBox();
   if (up) await page.touchscreen.tap(up.x + up.width / 2, up.y + up.height / 3);
   await page.waitForTimeout(800);
-  check((await handCount(page)) < before, "second tap : carte jouée", { before, after: await handCount(page) });
+  check((await handCount(page)) < before, "second tap: card played", { before, after: await handCount(page) });
   await page.context().close();
 }
 
-// Tiroir (réglages, journal) sur iPad en portrait.
+// Drawer (settings, log) on an iPad in portrait.
 {
   const page = await open(devices["iPad Pro 11"]);
   await keep(page);
   const vw = page.viewportSize()?.width ?? 0;
   const hidden = await page.locator(".sidebar").boundingBox();
-  check(!!hidden && hidden.x >= vw - 1, "portrait : barre latérale repliée");
+  check(!!hidden && hidden.x >= vw - 1, "portrait: sidebar folded");
   await page.locator(".drawer-toggle").tap();
   await page.waitForTimeout(400);
   const shown = await page.locator(".sidebar").boundingBox();
-  check(!!shown && shown.x + shown.width <= vw + 1 && shown.x < vw - 100, "☰ : tiroir ouvert", shown);
-  await page.screenshot({ path: `${OUT}/tiroir.png` });
+  check(!!shown && shown.x + shown.width <= vw + 1 && shown.x < vw - 100, "☰: drawer open", shown);
+  await page.screenshot({ path: `${OUT}/drawer.png` });
   await page.locator(".drawer-scrim").tap({ position: { x: 20, y: 300 } });
   await page.waitForTimeout(400);
   const closed = await page.locator(".sidebar").boundingBox();
-  check(!!closed && closed.x >= vw - 1, "tap à côté : tiroir refermé");
+  check(!!closed && closed.x >= vw - 1, "tap beside: drawer closed");
   await page.context().close();
 }
 
-// Téléphone en portrait : invitation à tourner l'appareil.
+// Phone in portrait: prompt to rotate the device.
 {
   const page = await open(devices["iPhone 13"]);
   await page.waitForTimeout(1500);
-  check(await page.locator(".rotate-hint").isVisible(), "téléphone en portrait : « Tournez votre appareil »");
+  check(await page.locator(".rotate-hint").isVisible(), "phone in portrait: rotate-your-device hint");
   await page.screenshot({ path: `${OUT}/iphone-portrait.png` });
   await page.context().close();
 }
 
 await browser.close();
-if (errors.length) console.log(`Erreurs de page :\n${errors.join("\n")}`);
-else console.log("ok : aucune erreur de page");
+if (errors.length) console.log(`Page errors:\n${errors.join("\n")}`);
+else console.log("ok: no page error");
 process.exit(failures.length || errors.length ? 1 : 0);

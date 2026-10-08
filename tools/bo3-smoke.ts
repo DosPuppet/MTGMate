@@ -1,7 +1,7 @@
 /**
- * Match BO3 contre l'IA de bout en bout : manche 1 concédée, score et réserve entre les manches (un échange dans
- * chaque sens), manche 2 commencée par le perdant, puis match perdu 0–2. Captures dans test-results/bo3/.
- * Prérequis : `npm run dev` lancé (redémarré après une modification du moteur).
+ * End-to-end BO3 match against the AI: game 1 conceded, score and sideboard between the games (one swap in each
+ * direction), game 2 started by the loser, then match lost 0–2. Screenshots in test-results/bo3/.
+ * Requires: `npm run dev` running (restarted after an engine change).
  */
 import { mkdirSync } from "node:fs";
 import { deckById } from "@mtgx/cards";
@@ -10,12 +10,12 @@ import { chromium } from "playwright";
 const OUT = "test-results/bo3";
 mkdirSync(OUT, { recursive: true });
 
-// Deck légal de 60 cartes (deck de bienvenue vert + Forêts) et une réserve de deux Giant Growth.
-const green = deckById("bienvenue-vert").main;
+// A legal 60-card deck (green welcome deck + Forests) and a sideboard of two Giant Growth.
+const green = deckById("welcome-green").main;
 const forests = (green.find(([, n]) => n === "Forest")?.[0] ?? 0) + 20;
 const MAIN = [...green.filter(([, n]) => n !== "Forest"), [forests, "Forest"]] as [number, string][];
 const SIDE: [number, string][] = [[2, "Giant Growth"]];
-const AI = deckById("bienvenue-rouge").main;
+const AI = deckById("welcome-red").main;
 
 type View = {
   viewer: string;
@@ -36,8 +36,8 @@ const page = await browser.newPage({ viewport: { width: 1500, height: 900 } });
 const errors: string[] = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 const fail = async (msg: string) => {
-  await page.screenshot({ path: `${OUT}/echec.png` });
-  console.log(`ÉCHEC : ${msg}`);
+  await page.screenshot({ path: `${OUT}/failed.png` });
+  console.log(`FAILED: ${msg}`);
   await browser.close();
   process.exit(1);
 };
@@ -53,7 +53,7 @@ const concedeWhenReady = async () => {
       { timeout: 20_000 },
     )
     .catch(() => undefined);
-  // Mulligan éventuel : on garde, puis on concède.
+  // Possible mulligan: keep, then concede.
   await page
     .getByRole("button", { name: "Garder" })
     .click({ timeout: 5_000 })
@@ -70,17 +70,17 @@ await page.evaluate(
 );
 await concedeWhenReady();
 
-// Entre les manches : score et réserve.
+// Between the games: score and sideboard.
 await page
   .getByText("Score 0 – 1")
   .waitFor({ timeout: 5_000 })
-  .catch(() => fail("score absent"));
+  .catch(() => fail("score missing"));
 await page
   .getByRole("heading", { name: "Réserve (2)" })
   .waitFor()
-  .catch(() => fail("réserve absente"));
-await page.screenshot({ path: `${OUT}/1-reserve.png` });
-// Un Giant Growth dans le deck, une Forêt en réserve.
+  .catch(() => fail("sideboard missing"));
+await page.screenshot({ path: `${OUT}/1-sideboard.png` });
+// One Giant Growth into the deck, one Forest into the sideboard.
 await page
   .locator(".sideboard-editor li", { hasText: /Giant Growth|Croissance gigantesque/ })
   .getByRole("button", { name: "←" })
@@ -92,10 +92,10 @@ await page
 await page
   .getByRole("heading", { name: "Deck (60)" })
   .waitFor()
-  .catch(() => fail("le deck ne compte plus 60 cartes"));
+  .catch(() => fail("the deck no longer has 60 cards"));
 await page.getByRole("button", { name: "Manche suivante" }).click();
 
-// Manche 2 : le perdant (vous) commence, avec le deck modifié.
+// Game 2: the loser (you) starts, with the modified deck.
 await page
   .waitForFunction(
     () => {
@@ -105,10 +105,10 @@ await page
     undefined,
     { timeout: 20_000 },
   )
-  .catch(() => fail("la manche 2 ne démarre pas"));
+  .catch(() => fail("game 2 does not start"));
 const m2 = await state();
 const growth = m2.localMatch?.deck.main.find(([, n]) => n === "Giant Growth")?.[0];
-if (growth !== 1) await fail(`deck de la manche 2 : ${growth} Giant Growth au lieu de 1`);
+if (growth !== 1) await fail(`deck of game 2: ${growth} Giant Growth instead of 1`);
 await page
   .waitForFunction(() => ((window as unknown as W).__mtgx.getState().view?.turn.number ?? 0) >= 1, undefined, { timeout: 20_000 })
   .catch(() => undefined);
@@ -120,20 +120,18 @@ await page.waitForFunction(() => ((window as unknown as W).__mtgx.getState().vie
   timeout: 20_000,
 });
 const starter = (await state()).view?.turn.active;
-if (starter !== "p1") await fail(`la manche 2 commence par ${starter} (le perdant, p1, devait commencer)`);
+if (starter !== "p1") await fail(`game 2 starts with ${starter} (the loser, p1, should have started)`);
 await concedeWhenReady();
 
-// Match perdu 0–2 : plus de réserve.
+// Match lost 0–2: no more sideboard.
 await page
   .getByRole("heading", { name: "Match perdu" })
   .waitFor({ timeout: 5_000 })
-  .catch(() => fail("issue du match absente"));
-if ((await page.locator(".sideboard-editor").count()) > 0) await fail("réserve proposée après la fin du match");
-await page.screenshot({ path: `${OUT}/2-match-perdu.png` });
+  .catch(() => fail("match outcome missing"));
+if ((await page.locator(".sideboard-editor").count()) > 0) await fail("sideboard offered after the end of the match");
+await page.screenshot({ path: `${OUT}/2-match-lost.png` });
 console.log(
-  errors.length
-    ? `erreurs de page : ${errors.join(" | ")}`
-    : "ok : BO3 contre l'IA (réserve, perdant qui commence, issue du match)",
+  errors.length ? `page errors: ${errors.join(" | ")}` : "ok: BO3 against the AI (sideboard, loser starts, match outcome)",
 );
 await browser.close();
 process.exit(errors.length ? 1 : 0);

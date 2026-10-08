@@ -1,16 +1,16 @@
 /**
- * Couverture des cartes : combien de cartes d'un set sont gérées, et quelles mécaniques manquent
- * (pour prioriser le travail de l'étape 4b).
+ * Card coverage: how many cards of a set are handled, and which mechanics are missing (to prioritize the work of
+ * step 4b).
  *
- * Usage : npm run coverage [-- --set all|standard|main|<set>] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
- *         npm run coverage -- --set FIN --text [--color W|U|B|R|G|M|C|L]
- *         npm run coverage -- --deck <id|all> [--text]   (decks Commander de `docs/commander/decks/`, PLAN-E)
+ * Usage: npm run coverage [-- --set all|standard|main|<set>] [-- --list <mechanic>] [-- --missing] [-- --card "<name>"]
+ *        npm run coverage -- --set FIN --text [--color W|U|B|R|G|M|C|L]
+ *        npm run coverage -- --deck <id|all> [--text]   (Commander decks of `docs/commander/decks/`, PLAN-E)
  *
- * --audit : écarts entre le texte Oracle et le script des cartes gérées (capacités manquantes, nombres absents).
- * --tests : part des cartes gérées nommées dans un test de règles (`engine/test`, attentes de l'Oracle), par extension ;
- * avec --set, la liste des cartes jamais nommées (rares et mythiques d'abord) ; --meta : celles des decks du méta.
- * --text : textes Oracle des cartes non gérées (toutes faces), pour préparer un lot ; --color filtre par couleur
- * (M = multicolore, C = incolore, L = terrain).
+ * --audit: gaps between the Oracle text and the script of the handled cards (missing abilities, absent numbers).
+ * --tests: share of the handled cards named in a rules test (`engine/test`, Oracle expectations), by set; with --set,
+ * the list of cards never named (rares and mythics first); --meta: those of the meta decks.
+ * --text: Oracle texts of the unhandled cards (all faces), to prepare a lot; --color filters by color
+ * (M = multicolored, C = colorless, L = land).
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { CARDS, isMainSet, SET_BY_CODE, SETS } from "@mtgx/cards";
@@ -22,22 +22,22 @@ import { metaDecks } from "./meta-decks";
 
 const MECHANICS: [string, RegExp][] = [
   ["aura", /^Enchant (creature|land|permanent)/m],
-  ["équipement", /Equip \{/],
+  ["equipment", /Equip \{/],
   ["planeswalker", /Planeswalker/],
-  ["contresort", /[Cc]ounter target/],
-  ["recherche dans la bibliothèque", /[Ss]earch your library/],
+  ["counterspell", /[Cc]ounter target/],
+  ["library search", /[Ss]earch your library/],
   ["ward", /Ward/],
-  ["retour du cimetière", /from (your|a) graveyard to/],
-  ["copie", /[Cc]opy/],
-  ["mode d'une capacité déclenchée", /When .*, choose one/],
+  ["return from the graveyard", /from (your|a) graveyard to/],
+  ["copy", /[Cc]opy/],
+  ["mode of a triggered ability", /When .*, choose one/],
   ["protection", /[Pp]rotection from/],
-  ["engager / dégager une cible", /[Tt]ap target|[Uu]ntap target/],
-  ["ne peut pas bloquer / attaquer", /can't (block|attack)/],
-  ["changement de contrôle", /[Gg]ain control/],
-  ["marqueurs -1/-1 ou autres", /counter on|counters on/],
-  ["F/E -X/-X", /gets? -\d+\/-\d+/],
-  ["détruire", /[Dd]estroy (target|all|each)/],
-  ["exiler", /[Ee]xile target/],
+  ["tap / untap a target", /[Tt]ap target|[Uu]ntap target/],
+  ["can't block / attack", /can't (block|attack)/],
+  ["control change", /[Gg]ain control/],
+  ["-1/-1 or other counters", /counter on|counters on/],
+  ["P/T -X/-X", /gets? -\d+\/-\d+/],
+  ["destroy", /[Dd]estroy (target|all|each)/],
+  ["exile", /[Ee]xile target/],
 ];
 
 const arg = (name: string) => {
@@ -51,12 +51,12 @@ if (cardName !== undefined) {
     (x) => x.name.toLowerCase() === cardName.toLowerCase() || x.fr?.name?.toLowerCase() === cardName.toLowerCase(),
   );
   if (!c) {
-    console.log(`Carte inconnue : ${cardName}`);
+    console.log(`Unknown card: ${cardName}`);
     process.exit(1);
   }
   console.log(`${c.name} ${c.manaCostText} — ${c.typeLine}${c.power !== undefined ? ` ${c.power}/${c.toughness}` : ""}`);
   console.log(`${[c.text, ...(c.faceDefs ?? []).map((f) => `// ${f.name}\n${f.text}`)].join("\n")}\n`);
-  console.log(`Gérée : ${c.implemented ? "oui" : "non"}`);
+  console.log(`Handled: ${c.implemented ? "yes" : "no"}`);
   const { text: _t, fr: _f, image: _i, artCrop: _a, ...script } = c;
   console.log(
     JSON.stringify(
@@ -76,7 +76,7 @@ if (cardName !== undefined) {
   process.exit(0);
 }
 
-// --deck <id|all> : les cartes d'un deck Commander (ou de tous), jouables, au catalogue mais non jouables, ou inconnues.
+// --deck <id|all>: the cards of a Commander deck (or of all of them): playable, in the catalog but not playable, or unknown.
 const deckArg = arg("--deck");
 const deckCards = deckArg === undefined ? undefined : deckCoverage(deckArg);
 
@@ -84,7 +84,7 @@ function deckCoverage(id: string): Set<string> {
   const decks = commanderDecks().filter((d) => id === "all" || d.id === id);
   if (!decks.length) {
     console.log(
-      `Deck Commander inconnu : ${id} (connus : ${commanderDecks()
+      `Unknown Commander deck: ${id} (known: ${commanderDecks()
         .map((d) => d.id)
         .join(", ")})`,
     );
@@ -102,15 +102,15 @@ function deckCoverage(id: string): Set<string> {
     }
     const detail = [...bySet].map(([set, n]) => `${set} ${n}`).join(", ");
     console.log(
-      `${d.name} (${d.id}) : ${ok} / ${cards.length} cartes jouables (hors terrains de base)` +
-        `${detail ? ` ; à faire : ${detail}` : ""}${d.unknown.length ? ` ; inconnues : ${d.unknown.join(", ")}` : ""}`,
+      `${d.name} (${d.id}): ${ok} / ${cards.length} playable cards (basic lands excluded)` +
+        `${detail ? `; to do: ${detail}` : ""}${d.unknown.length ? `; unknown: ${d.unknown.join(", ")}` : ""}`,
     );
   }
   return names;
 }
 
-// --set main : sets principaux ; --set fdn|fra|… : une extension (toutes ses cartes) ;
-// --set all (ou sans option) : tout, avec le détail par extension ; --set standard : cartes légales en Standard.
+// --set main: main sets; --set fdn|fra|…: one set (all its cards);
+// --set all (or no option): everything, with the detail by set; --set standard: cards legal in Standard.
 const setArg0 = (arg("--set") ?? "").toUpperCase();
 const setArg = setArg0 === "ALL" ? "" : setArg0;
 const main = setArg === "MAIN";
@@ -125,20 +125,20 @@ const all = Object.values(CARDS).filter(
 );
 const done = all.filter((c) => c.implemented);
 const label = deckCards
-  ? `deck${deckArg === "all" ? "s" : ""} Commander`
+  ? `Commander deck${deckArg === "all" ? "s" : ""}`
   : main
-    ? "sets principaux"
+    ? "main sets"
     : standard
-      ? "Standard (cartes légales)"
+      ? "Standard (legal cards)"
       : setArg
         ? (SET_BY_CODE[setArg]?.name ?? setArg)
-        : "toutes extensions";
-console.log(`${label} : ${done.length} / ${all.length} cartes gérées (${Math.round((done.length / all.length) * 100)} %)`);
+        : "all sets";
+console.log(`${label}: ${done.length} / ${all.length} cards handled (${Math.round((done.length / all.length) * 100)} %)`);
 if (!setArg && !deckCards) {
-  // Rééditions (PLAN-G) : hors Standard, jouables en « Sans limite ».
+  // Reprints (PLAN-G): outside Standard, playable in "Unlimited".
   const reprintCodes = new Set(SETS.filter((s) => s.reprint).map((s) => s.code));
   const reprints = all.filter((c) => reprintCodes.has(c.set ?? ""));
-  console.log(`  dont rééditions (« Sans limite ») : ${reprints.filter((c) => c.implemented).length} / ${reprints.length}`);
+  console.log(`  of which reprints ("Unlimited"): ${reprints.filter((c) => c.implemented).length} / ${reprints.length}`);
   for (const s of SETS) {
     const inSet = all.filter((c) => c.set === s.code);
     console.log(`  ${s.code.padEnd(4)} ${s.name.padEnd(30)} ${inSet.filter((c) => c.implemented).length} / ${inSet.length}`);
@@ -150,18 +150,18 @@ const byMechanic = new Map<string, string[]>();
 for (const c of missing) {
   const text = [c.text, ...(c.faceDefs ?? []).map((f) => f.text)].join("\n");
   const tags = MECHANICS.filter(([, re]) => re.test(text)).map(([n]) => n);
-  for (const t of tags.length ? tags : ["sans mécanique bloquante détectée"])
+  for (const t of tags.length ? tags : ["no blocking mechanic detected"])
     byMechanic.set(t, [...(byMechanic.get(t) ?? []), c.name]);
 }
-console.log("\nCartes non gérées par mécanique (une carte peut compter plusieurs fois) :");
+console.log("\nUnhandled cards by mechanic (a card may count several times):");
 for (const [m, names] of [...byMechanic.entries()].sort((a, b) => b[1].length - a[1].length)) {
   console.log(`  ${String(names.length).padStart(4)}  ${m}`);
 }
 
 const i = process.argv.indexOf("--list");
 if (i >= 0) {
-  const m = process.argv[i + 1] ?? "sans mécanique bloquante détectée";
-  console.log(`\n${m} :\n  ${(byMechanic.get(m) ?? []).join("\n  ")}`);
+  const m = process.argv[i + 1] ?? "no blocking mechanic detected";
+  console.log(`\n${m}:\n  ${(byMechanic.get(m) ?? []).join("\n  ")}`);
 }
 
 if (process.argv.includes("--text")) {
@@ -183,32 +183,32 @@ if (process.argv.includes("--text")) {
         console.log(`[${f.name} — ${f.typeLine}${fpt}]\n${f.text}`);
       }
     } else console.log(c.text);
-    // Disposition « prepare » : le sort de la carte (script `prepareSpell`).
+    // "prepare" layout: the card's spell (script `prepareSpell`).
     if (c.prepareFace)
       console.log(
-        `[Sort préparé : ${c.prepareFace.name} ${c.prepareFace.manaCost} — ${c.prepareFace.typeLine}]\n${c.prepareFace.text}`,
+        `[Prepared spell: ${c.prepareFace.name} ${c.prepareFace.manaCost} — ${c.prepareFace.typeLine}]\n${c.prepareFace.text}`,
       );
   }
 }
 
 if (process.argv.includes("--missing")) {
-  console.log(`\nCartes non gérées :\n  ${missing.map((c) => c.name).join("\n  ")}`);
+  console.log(`\nUnhandled cards:\n  ${missing.map((c) => c.name).join("\n  ")}`);
 }
 
-// --audit : écarts Oracle ↔ script des cartes gérées (packages/cards/src/audit.ts), connus ou nouveaux.
+// --audit: Oracle ↔ script gaps of the handled cards (packages/cards/src/audit.ts), known or new.
 if (process.argv.includes("--audit")) {
   const issues = done.flatMap(auditCard);
   const known = auditBaseline as Record<string, string>;
   const fresh = issues.filter((x) => !(issueKey(x) in known));
-  console.log(`\nAudit Oracle ↔ script : ${issues.length} écart(s), dont ${fresh.length} nouveau(x)`);
+  console.log(`\nOracle ↔ script audit: ${issues.length} gap(s), of which ${fresh.length} new`);
   for (const x of issues) {
     const why = known[issueKey(x)];
-    console.log(`  ${why ? "·" : "✗"} [${x.kind}] ${x.card} — ${x.detail}${why ? ` (connu : ${why})` : ""}`);
+    console.log(`  ${why ? "·" : "✗"} [${x.kind}] ${x.card} — ${x.detail}${why ? ` (known: ${why})` : ""}`);
   }
 }
 
-// --tests : une carte compte comme testée si son nom (ou celui de sa première face) apparaît, comme mot entier,
-// dans un fichier de `packages/engine/test` ou dans les attentes de l'Oracle (méthode de l'audit du 02/10/2026).
+// --tests: a card counts as tested if its name (or that of its first face) appears, as a whole word, in a file of
+// `packages/engine/test` or in the Oracle expectations (method of the 2026-10-02 audit).
 if (process.argv.includes("--tests")) {
   const dir = "packages/engine/test";
   const corpus = [
@@ -225,7 +225,7 @@ if (process.argv.includes("--tests")) {
   const pool = done.filter((c) => !c.supertypes.includes("Basic"));
   const tested = new Set(pool.filter(named).map((c) => c.name));
   const pct = (a: number, b: number) => `${b ? Math.round((a / b) * 100) : 0} %`;
-  console.log(`\nCartes nommées dans un test : ${tested.size} / ${pool.length} (${pct(tested.size, pool.length)})`);
+  console.log(`\nCards named in a test: ${tested.size} / ${pool.length} (${pct(tested.size, pool.length)})`);
   for (const s of SETS) {
     const inSet = pool.filter((c) => c.set === s.code);
     if (!inSet.length) continue;
@@ -239,14 +239,14 @@ if (process.argv.includes("--tests")) {
     const untested = [...copies]
       .filter(([name]) => CARDS[name] && !CARDS[name].supertypes.includes("Basic") && !tested.has(name))
       .sort((a, b) => b[1] - a[1]);
-    console.log(`\nCartes du méta jamais nommées dans un test : ${untested.length}`);
+    console.log(`\nMeta cards never named in a test: ${untested.length}`);
     for (const [name, n] of untested) console.log(`  ${name} (${CARDS[name]?.set}, ×${n})`);
   } else if (setArg && !main && !standard) {
     const rank: Record<string, number> = { mythic: 0, rare: 1, uncommon: 2, common: 3 };
     const untested = pool
       .filter((c) => !tested.has(c.name))
       .sort((a, b) => (rank[a.rarity ?? ""] ?? 4) - (rank[b.rarity ?? ""] ?? 4) || a.name.localeCompare(b.name));
-    console.log(`\nJamais nommées (${untested.length}) :`);
+    console.log(`\nNever named (${untested.length}):`);
     for (const c of untested) console.log(`  ${c.name} (${c.rarity ?? "?"})`);
   }
 }

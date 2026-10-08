@@ -1,10 +1,9 @@
 /**
- * Test de bout en bout du champ de bataille chargé (disposition façon MTGA, board/layout.ts) :
- * des plateaux fournis sont mis en jeu par le bac à sable du mode dev (voir client/src/protocol.ts),
- * puis on vérifie les rangées, les piles de jetons, les lignes, l'absence de carte rognée et
- * l'attaque d'un jeton depuis une pile. Captures dans test-results/battlefield/.
+ * End-to-end test of a crowded battlefield (MTGA-style layout, board/layout.ts): full boards are put into play by the
+ * dev-mode sandbox (see client/src/protocol.ts), then the rows, the token piles, the lines, the absence of clipped
+ * cards and the attack of a token from a pile are checked. Screenshots in test-results/battlefield/.
  *
- * Prérequis : `npm run dev` lancé (redémarré après une modification du moteur).
+ * Requires: `npm run dev` running (restarted after an engine change).
  */
 import { mkdirSync } from "node:fs";
 import { chromium, type Page } from "playwright";
@@ -13,7 +12,7 @@ const OUT = "test-results/battlefield";
 mkdirSync(OUT, { recursive: true });
 
 type Side = { cards?: string[]; tokens?: [number, string][]; attach?: [string, string, string?][] };
-/** Accès au store exposé en mode dev (client/src/main.tsx). */
+/** Access to the store exposed in dev mode (client/src/main.tsx). */
 type DevWindow = {
   __mtgx: {
     getState(): {
@@ -37,7 +36,7 @@ const ME: Side = {
     "Savannah Lions",
     "Elvish Archdruid",
     "Gigantosaurus",
-    // Enchantements avant les artefacts : l'affichage doit quand même les ranger après.
+    // Enchantments before the artifacts: the display must still place them after.
     "Omniscience",
     "Thousand-Year Storm",
     "Fishing Pole",
@@ -53,7 +52,7 @@ const ME: Side = {
     [3, "Goblin"],
     [5, "Treasure"],
   ],
-  // Équipement attaché, et Aura posée sur une créature adverse.
+  // Attached Equipment, and an Aura on an opposing creature.
   attach: [
     ["Swiftfoot Boots", "Serra Angel"],
     ["Pacifism", "Brazen Scourge", "p2"],
@@ -88,7 +87,7 @@ const LIGHT: Side = {
 const failures: string[] = [];
 const errors: string[] = [];
 function check(ok: boolean, label: string, detail?: unknown): void {
-  console.log(`${ok ? "ok" : "ÉCHEC"} : ${label}${ok || detail === undefined ? "" : ` (${JSON.stringify(detail)})`}`);
+  console.log(`${ok ? "ok" : "FAILED"}: ${label}${ok || detail === undefined ? "" : ` (${JSON.stringify(detail)})`}`);
   if (!ok) failures.push(label);
 }
 
@@ -106,7 +105,7 @@ async function open(viewport: { width: number; height: number }, sandbox: Record
   return page;
 }
 
-/** Mesures du plateau : cartes rognées par leur zone, piles de jetons, lignes par rangée, place des supports. */
+/** Board measurements: cards clipped by their zone, token piles, lines per row, place of the support permanents. */
 async function audit(page: Page, label: string) {
   const r = await page.evaluate(() => {
     const zones = [...document.querySelectorAll(".battlefield")];
@@ -120,22 +119,22 @@ async function audit(page: Page, label: string) {
       }),
       stacks: [...document.querySelectorAll(".battlefield.me .token-count")].map((e) => e.textContent),
       lines: zones.map((bf) => [...bf.querySelectorAll(".perm-row")].map((row) => row.querySelectorAll(".perm-line").length)),
-      /** Rangement selon l'audit MTGA (voir le plan) : créatures devant, rien de vivant derrière, planeswalkers à part. */
+      /** Placement from the MTGA audit (see the plan): creatures in front, nothing alive behind, planeswalkers apart. */
       placement: (() => {
         const view = (window as unknown as DevWindow).__mtgx.getState().view;
         const objs = new Map(view?.battlefield.map((o) => [o.id, o]) ?? []);
         const problems: string[] = [];
-        // Pas de fonction nommée ici : tsx y injecterait __name, inconnu dans la page.
+        // No named function here: tsx would inject __name, unknown in the page.
         for (const el of document.querySelectorAll(".perm-row.front .perm > [data-oid]"))
           if (!(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Creature"))
-            problems.push(`devant : ${(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).join(" ")}`);
+            problems.push(`front: ${(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).join(" ")}`);
         for (const el of document.querySelectorAll(".perm-row.back .perm > [data-oid]"))
           if (
             (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Creature") ||
             (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Planeswalker")
           )
-            problems.push(`derrière : ${(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).join(" ")}`);
-        // Planeswalkers : dans la zone dédiée, à droite de toutes les rangées de leur camp.
+            problems.push(`back: ${(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).join(" ")}`);
+        // Planeswalkers: in their own zone, to the right of all the rows of their side.
         for (const bf of document.querySelectorAll(".battlefield")) {
           const rowsRight = Math.max(
             0,
@@ -147,11 +146,11 @@ async function audit(page: Page, label: string) {
               (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Creature")
             )
               continue;
-            if (!el.closest(".walker-zone")) problems.push("planeswalker hors de sa zone");
-            else if (el.getBoundingClientRect().left < rowsRight) problems.push("planeswalker pas à droite des rangées");
+            if (!el.closest(".walker-zone")) problems.push("planeswalker outside its zone");
+            else if (el.getBoundingClientRect().left < rowsRight) problems.push("planeswalker not to the right of the rows");
           }
         }
-        // Rangée arrière : terrains, puis artefacts, puis enchantements.
+        // Back row: lands, then artifacts, then enchantments.
         for (const bf of document.querySelectorAll(".battlefield")) {
           const ranks = [...bf.querySelectorAll(".perm-row.back .perm > [data-oid]")].map((el) =>
             (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Land")
@@ -162,17 +161,17 @@ async function audit(page: Page, label: string) {
                   ? 2
                   : 3,
           );
-          if (ranks.some((r, k) => k > 0 && r < (ranks[k - 1] as number))) problems.push(`ordre arrière ${ranks.join("")}`);
+          if (ranks.some((r, k) => k > 0 && r < (ranks[k - 1] as number))) problems.push(`back order ${ranks.join("")}`);
         }
-        // Objets attachés : rendus avec leur hôte, jamais dans une rangée.
+        // Attached objects: rendered with their host, never in a row.
         for (const o of view?.battlefield ?? []) {
           if (!o.attachedTo) continue;
           const el = document.querySelector(`[data-oid="${o.id}"]`);
-          if (!el?.closest(".attachment")) problems.push(`attaché hors de son hôte : ${o.id}`);
+          if (!el?.closest(".attachment")) problems.push(`attached outside its host: ${o.id}`);
         }
         return problems;
       })(),
-      /** Largeur des cartes de la rangée de devant, par zone (hauteur / 1,395 : insensible à l'engagement). */
+      /** Width of the cards of the front row, per zone (height / 1.395: unaffected by tapping). */
       frontW: zones.map((bf) =>
         Math.round((bf.querySelector(".perm-row.front .perm > .card-slot")?.getBoundingClientRect().height ?? 0) / 1.395),
       ),
@@ -182,33 +181,33 @@ async function audit(page: Page, label: string) {
   console.log(label, JSON.stringify(r));
   check(
     r.placement.length === 0,
-    `${label} : rangement MTGA (créatures devant ; terrains, artefacts puis enchantements ; planeswalkers à droite ; attachements sur leur hôte)`,
+    `${label}: MTGA placement (creatures in front; lands, artifacts then enchantments; planeswalkers on the right; attachments on their host)`,
     r.placement,
   );
   check(
     r.clipped.every((n) => n === 0),
-    `${label} : aucune carte rognée`,
+    `${label}: no clipped card`,
     r.clipped,
   );
   return r;
 }
 
-// 1. Duel chargé, 1600×900 : piles, rangées, deuxième ligne chez l'adversaire.
+// 1. Crowded duel, 1600×900: piles, rows, second line for the opponent.
 let page = await open({ width: 1600, height: 900 }, { p1: ME, p2: CROWDED });
 await page.screenshot({ path: `${OUT}/1-duel-1600.png` });
 let r = await audit(page, "duel 1600");
-check(r.stacks.includes("×12") && r.stacks.includes("×5"), "jetons identiques regroupés (×12, ×5)", r.stacks);
-check(!r.stacks.includes("×3"), "3 jetons identiques ne sont pas regroupés", r.stacks);
-check(r.supportInBack === 1, "artefacts et enchantements dans la rangée arrière, séparés des terrains", r.supportInBack);
+check(r.stacks.includes("×12") && r.stacks.includes("×5"), "identical tokens grouped (×12, ×5)", r.stacks);
+check(!r.stacks.includes("×3"), "3 identical tokens are not grouped", r.stacks);
+check(r.supportInBack === 1, "artifacts and enchantments in the back row, apart from the lands", r.supportInBack);
 
-check((r.lines[0]?.[1] ?? 0) >= 2, "l'adversaire chargé passe sur plusieurs lignes", r.lines);
+check((r.lines[0]?.[1] ?? 0) >= 2, "the crowded opponent goes over several lines", r.lines);
 check(
   (r.frontW[1] ?? 0) > (r.frontW[0] ?? 0) + 10,
-  "chaque camp a sa taille : vos cartes restent plus grandes que celles de l'adversaire chargé",
+  "each side has its own size: your cards stay larger than those of the crowded opponent",
   r.frontW,
 );
 
-// 2. Attaque d'un jeton à la fois depuis la pile.
+// 2. Attack with one token at a time from the pile.
 const pending = () =>
   page.evaluate(() => {
     const v = (window as unknown as DevWindow).__mtgx.getState().view;
@@ -219,11 +218,11 @@ for (let i = 0; i < 80 && (await pending()) !== "declareAttackers|true"; i++) {
   if (!(await main.isDisabled())) await main.click().catch(() => {});
   await page.waitForTimeout(300);
 }
-check((await pending()) === "declareAttackers|true", "déclaration des attaquants atteinte");
-// Plusieurs cibles d'attaque (joueur et planeswalkers) : façon MTGA, on clique la créature, puis sa cible.
+check((await pending()) === "declareAttackers|true", "declare attackers reached");
+// Several attack targets (player and planeswalkers): MTGA style, click the creature, then its target.
 check(
   (await page.locator(".battlefield.opp .walker-zone .glow-target").count()) === 0,
-  "sans attaquant en visée, les planeswalkers adverses ne sont pas en surbrillance",
+  "without an attacker aiming, the opposing planeswalkers are not highlighted",
 );
 const stackTop = (n: number) =>
   page.locator(".battlefield.me .token-stack", { hasText: `×${n}` }).locator(":scope > .perm .card");
@@ -232,7 +231,7 @@ await page.waitForTimeout(400);
 check(
   (await page.locator(".battlefield.opp .walker-zone .glow-target").count()) > 0 &&
     (await page.locator(".player-bar.opp .avatar.glow-target").count()) > 0,
-  "attaquant en visée : planeswalkers et avatar adverses en surbrillance",
+  "attacker aiming: opposing planeswalkers and avatar highlighted",
 );
 await page.locator(".player-bar.opp .avatar").first().click();
 await page.waitForTimeout(400);
@@ -241,26 +240,26 @@ await page.waitForTimeout(400);
 await page.locator(".battlefield.opp .walker-zone .glow-target").first().click();
 await page.waitForTimeout(400);
 const after = await page.locator(".battlefield.me .token-count").allInnerTexts();
-check(after.includes("×10"), "deux clics sur la pile font attaquer deux jetons (×12 → ×10)", after);
-check(/Attaquer \(2\)/.test(await page.locator(".main-button").innerText()), "le bouton compte 2 attaquants");
+check(after.includes("×10"), "two clicks on the pile make two tokens attack (×12 → ×10)", after);
+check(/Attaquer \(2\)/.test(await page.locator(".main-button").innerText()), "the button counts 2 attackers");
 await page.screenshot({ path: `${OUT}/2-attack.png` });
 await page.context().browser()?.close();
 
-// 3. Petit écran.
+// 3. Small screen.
 page = await open({ width: 1280, height: 720 }, { p1: ME, p2: CROWDED });
 await page.screenshot({ path: `${OUT}/3-duel-1280.png` });
 await audit(page, "duel 1280");
 await page.context().browser()?.close();
 
-// 4. Quatre joueurs : zones adverses étroites.
+// 4. Four players: narrow opposing zones.
 page = await open({ width: 1600, height: 900 }, { p1: ME, p2: LIGHT, p3: LIGHT, p4: CROWDED }, 3);
 await page.screenshot({ path: `${OUT}/4-four-players.png` });
-r = await audit(page, "4 joueurs");
-check((r.lines[2]?.[1] ?? 0) > 2, "zone adverse étroite et chargée : plus de 2 lignes plutôt que des cartes rognées", r.lines);
+r = await audit(page, "4 players");
+check((r.lines[2]?.[1] ?? 0) > 2, "narrow and crowded opposing zone: more than 2 lines rather than clipped cards", r.lines);
 await page.context().browser()?.close();
 
-check(errors.length === 0, "aucune erreur de page", errors);
+check(errors.length === 0, "no page error", errors);
 if (failures.length) {
-  console.log(`${failures.length} échec(s)`);
+  console.log(`${failures.length} failure(s)`);
   process.exit(1);
 }

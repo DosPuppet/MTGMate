@@ -1,9 +1,9 @@
 /**
- * Test d'interface du niveau de l'IA : sélecteur de l'accueil (retenu après rechargement), niveau transmis à la partie,
- * et latence de l'IA élevée en temps réel (sans le mode rapide), processeur normal puis ralenti 4 fois (CDP) :
- * l'écart entre deux actions visibles de l'IA doit rester proche de la pause de 0,9 s, réflexion comprise.
+ * Interface test of the AI level: home-screen selector (remembered after a reload), level passed to the game, and
+ * latency of the high AI in real time (without fast mode), with a normal CPU then a CPU throttled 4 times (CDP): the
+ * gap between two visible AI actions must stay close to the 0.9 s pause, thinking included.
  *
- * Prérequis : `npm run dev` lancé. Usage : npx tsx tools/ai-smoke.ts [dossier-captures]
+ * Requires: `npm run dev` running. Usage: npx tsx tools/ai-smoke.ts [screenshot-dir]
  */
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -15,13 +15,13 @@ const browser = await chromium.launch();
 let failed = false;
 const check = (cond: boolean, msg: string) => {
   if (!cond) {
-    console.log(`ÉCHEC : ${msg}`);
+    console.log(`FAILED: ${msg}`);
     failed = true;
     process.exitCode = 1;
-  } else console.log(`ok : ${msg}`);
+  } else console.log(`ok: ${msg}`);
 };
 
-/** Joue en passant ses tours et mesure l'écart entre les mises à jour dues aux actions de l'IA (son tour). */
+/** Plays by passing its turns and measures the gap between the updates due to the AI's actions (its turn). */
 async function measure(page: Page, label: string): Promise<number[]> {
   await page.evaluate(`(() => {
     window.__gaps = [];
@@ -37,25 +37,25 @@ async function measure(page: Page, label: string): Promise<number[]> {
       orig(m);
     } });
   })()`);
-  // Nos tours : fin du tour aussitôt ; les tours de l'IA se jouent en temps réel. Blocages et choix : réponse par défaut.
+  // Our turns: end of turn at once; the AI's turns are played in real time. Blocks and choices: default answer.
   const deadline = Date.now() + 90_000;
   while (Date.now() < deadline) {
     const state = await page.evaluate(`(() => {
       const g = window.__mtgx.getState();
       const v = g.view;
-      if (!v) return "attente";
-      if (v.over) return "fin";
+      if (!v) return "waiting";
+      if (v.over) return "over";
       const p = v.pending;
-      if (!p || p.player !== v.viewer) return "adverse";
-      if (p.kind === "mulligan") { g.decide({ type: "keep" }); return "joué"; }
-      if (p.kind === "declareBlockers") { g.decide({ type: "declareBlockers", blocks: [] }); return "joué"; }
-      if (p.kind === "declareAttackers") { g.decide({ type: "declareAttackers", attackers: [] }); return "joué"; }
-      if (p.kind === "choice" && p.request) { g.decide({ type: "choose", values: p.request.suggested }); return "joué"; }
-      if (p.kind === "discard" || p.kind === "bottomCards") { g.decide({ type: p.kind === "discard" ? "discard" : "bottom", cards: v.hand.slice(0, p.count).map((c) => c.id) }); return "joué"; }
+      if (!p || p.player !== v.viewer) return "opponent";
+      if (p.kind === "mulligan") { g.decide({ type: "keep" }); return "played"; }
+      if (p.kind === "declareBlockers") { g.decide({ type: "declareBlockers", blocks: [] }); return "played"; }
+      if (p.kind === "declareAttackers") { g.decide({ type: "declareAttackers", attackers: [] }); return "played"; }
+      if (p.kind === "choice" && p.request) { g.decide({ type: "choose", values: p.request.suggested }); return "played"; }
+      if (p.kind === "discard" || p.kind === "bottomCards") { g.decide({ type: p.kind === "discard" ? "discard" : "bottom", cards: v.hand.slice(0, p.count).map((c) => c.id) }); return "played"; }
       if (v.turn.active === v.viewer) g.endTurn(); else g.decide({ type: "pass" });
-      return "joué";
+      return "played";
     })()`);
-    if (state === "fin") break;
+    if (state === "over") break;
     const gaps = (await page.evaluate("window.__gaps.length")) as number;
     if (gaps >= 8) break;
     await page.waitForTimeout(150);
@@ -72,18 +72,18 @@ try {
   await page.goto("http://localhost:5173/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  // Le choix du format a la même présentation (`.ai-level`) : le bloc du niveau se reconnaît à son libellé.
+  // The format choice has the same look (`.ai-level`): the level block is recognized by its label.
   const levels = page.locator(".ai-level", { hasText: "Niveau de l'IA" }).locator(".seg button");
-  check((await levels.and(page.locator(".on")).innerText()) === "Moyen", "niveau Moyen par défaut");
+  check((await levels.and(page.locator(".on")).innerText()) === "Moyen", "medium level by default");
   await levels.filter({ hasText: "Élevé" }).click();
   await page.reload();
-  check((await levels.and(page.locator(".on")).innerText()) === "Élevé", "niveau retenu après rechargement");
+  check((await levels.and(page.locator(".on")).innerText()) === "Élevé", "level remembered after reload");
   await page.screenshot({ path: join(OUT, "lobby.png") });
 
   const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
   for (const [label, rate] of [
     ["normal", 1],
-    ["ralenti-x4", 4],
+    ["throttled-x4", 4],
   ] as const) {
     await page.goto("http://localhost:5173/");
     const cdp = await page.context().newCDPSession(page);
@@ -91,14 +91,14 @@ try {
     await page.getByRole("button", { name: "Jouer contre l'IA" }).click();
     const gaps = await measure(page, label);
     const m = median(gaps);
-    console.log(`${label} : ${gaps.length} écarts entre actions de l'IA, médiane ${m} ms, max ${Math.max(0, ...gaps)} ms`);
-    check(gaps.length >= 3, `${label} : l'IA élevée joue`);
-    check(m < 1600, `${label} : écart médian entre deux actions de l'IA < 1,6 s (pause 0,9 s + réflexion absorbée)`);
+    console.log(`${label}: ${gaps.length} gaps between AI actions, median ${m} ms, max ${Math.max(0, ...gaps)} ms`);
+    check(gaps.length >= 3, `${label}: the high AI plays`);
+    check(m < 1600, `${label}: median gap between two AI actions < 1.6 s (0.9 s pause + thinking absorbed)`);
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
     await page.evaluate("window.__mtgx.getState().backToLobby()");
   }
-  check(errors.length === 0, errors.length ? `erreurs de page : ${errors.join(" | ")}` : "aucune erreur de page");
+  check(errors.length === 0, errors.length ? `page errors: ${errors.join(" | ")}` : "no page error");
 } finally {
   await browser.close();
 }
-if (!failed) console.log("ok : niveau de l'IA et latence vérifiés");
+if (!failed) console.log("ok: AI level and latency checked");

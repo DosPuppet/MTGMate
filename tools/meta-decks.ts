@@ -1,6 +1,6 @@
 /**
- * Decks du méta Standard relevés pour le plan P4 (`docs/meta/<date>/`, un fichier texte par archétype : « // Nom (part %) »,
- * deck, puis réserve). Lus par le test `cards/test/meta-decks.test.ts` et par `npm run fuzz -- --pool meta`.
+ * Standard meta decks collected for plan P4 (`docs/meta/<date>/`, one text file per archetype: "// Name (share %)",
+ * deck, then sideboard). Read by the test `cards/test/meta-decks.test.ts` and by `npm run fuzz -- --pool meta`.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -13,13 +13,13 @@ const DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "docs", "meta", 
 export interface MetaDeck {
   file: string;
   name: string;
-  /** Part du méta, en %. */
+  /** Share of the meta, in %. */
   share: number;
   main: DeckEntries;
   sideboard: DeckEntries;
-  /** Noms de cartes non reconnus (doit rester vide). */
+  /** Card names not recognized (must stay empty). */
   unknown: string[];
-  /** Deck principal et réserve légaux et entièrement gérés par le moteur. */
+  /** Main deck and sideboard legal and fully handled by the engine. */
   playable: boolean;
 }
 

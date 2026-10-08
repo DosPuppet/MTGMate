@@ -1,10 +1,10 @@
 /**
- * Test de bout en bout du Commander (PLAN-E, E5) : partie à quatre joueurs contre trois IA, lancée par le magasin du mode
- * dev (`window.__mtgx`, decks simples de Foundations : un commandant bon marché et des terrains de base). Vérifie les
- * 40 points de vie, une puce de commandant par joueur, le commandant au bout de la main (lançable depuis la zone de
- * commandement), son passage en jeu, et prend des captures (`test-results/commander/`).
+ * End-to-end test of Commander (PLAN-E, E5): a four-player game against three AIs, started by the dev-mode store
+ * (`window.__mtgx`, simple Foundations decks: a cheap commander and basic lands). Checks the 40 life, one commander
+ * chip per player, the commander at the end of the hand (castable from the command zone), its entering the
+ * battlefield, and takes screenshots (`test-results/commander/`).
  *
- * Prérequis : `npm run dev` lancé. Usage : npx tsx tools/commander-smoke.ts [dossier-captures] [maxActions]
+ * Requires: `npm run dev` running. Usage: npx tsx tools/commander-smoke.ts [screenshot-dir] [maxActions]
  */
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -24,36 +24,36 @@ page.on("console", (m) => {
 
 await page.goto("http://localhost:5173/?fast");
 await page.getByRole("button", { name: "Jouer contre l'IA" }).waitFor({ timeout: 30_000 });
-// Le format Commander est proposé à l'accueil.
+// The Commander format is offered on the home screen.
 await page.getByRole("button", { name: "Commander", exact: true }).first().click();
-// Les préconstruits Commander, classés par bracket estimé (pastille sur l'illustration).
+// The Commander precons, sorted by estimated bracket (badge on the art).
 await page
   .locator(".deck-choice")
   .first()
   .getByRole("tab", { name: /^Commander/ })
   .click();
 const brackets = await page.locator(".deck-choice").first().locator(".deck-tile .deck-bracket").allInnerTexts();
-// Bracket déclaré par la source (« Bracket 2 ») ou estimé (« Bracket ≈ 3 », « ≈ 1–2 » rangé à 1,5).
+// Bracket declared by the source ("Bracket 2") or estimated ("Bracket ≈ 3", "≈ 1–2" ranked at 1.5).
 const ranks = brackets.map((b) => {
   const m = /Bracket (≈ )?(\d)(–\d)?/.exec(b.trim());
   return m ? Number(m[2]) + (m[3] ? 0.5 : 0) : Number.NaN;
 });
 if (brackets.length < 3 || ranks.some((r, i) => Number.isNaN(r) || (i > 0 && r < (ranks[i - 1] ?? 0))))
-  errors.push(`decks Commander non classés par bracket : ${brackets.join(", ")}`);
-await page.screenshot({ path: join(OUT, "01-accueil-commander.png") });
+  errors.push(`Commander decks not sorted by bracket: ${brackets.join(", ")}`);
+await page.screenshot({ path: join(OUT, "01-home-commander.png") });
 
-// Éditeur de deck : le préconstruit Edgar Markov, validé en Commander (100 cartes, Game Changers, bracket estimé).
+// Deck builder: the Edgar Markov precon, validated in Commander (100 cards, Game Changers, estimated bracket).
 await page.getByRole("button", { name: "Mes decks" }).click();
 await page.locator(".deck-select").selectOption("cmd-edgar-markov");
 const summary = await page.locator("[data-testid=commander-summary]").innerText({ timeout: 10_000 });
-if (!/Game Changers : 5 · bracket estimé 4\+ · déclaré 4/.test(summary)) errors.push(`éditeur : « ${summary} »`);
+if (!/Game Changers : 5 · bracket estimé 4\+ · déclaré 4/.test(summary)) errors.push(`deck builder: "${summary}"`);
 const deckTab = await page.locator(".deck-tabs button").first().innerText();
-if (!/100\s*\/\s*100/.test(deckTab)) errors.push(`éditeur : onglet du deck « ${deckTab} »`);
-await page.screenshot({ path: join(OUT, "01b-editeur-commander.png") });
+if (!/100\s*\/\s*100/.test(deckTab)) errors.push(`deck builder: deck tab "${deckTab}"`);
+await page.screenshot({ path: join(OUT, "01b-deck-builder-commander.png") });
 await page.getByRole("button", { name: "← Accueil" }).click();
 await page.getByRole("button", { name: "Jouer contre l'IA" }).waitFor({ timeout: 10_000 });
 
-// Partie à quatre : Giada (W) contre Fynn (G), Kellan (R) et Zul Ashur (B), decks de terrains de base et de créatures.
+// Four-player game: Giada (W) against Fynn (G), Kellan (R) and Zul Ashur (B), decks of basic lands and creatures.
 await page.evaluate(() => {
   const w = window as unknown as {
     __mtgx: { getState: () => { startGame: (...args: unknown[]) => void } };
@@ -89,13 +89,13 @@ await page.getByRole("button", { name: "Garder" }).click();
 let shots = 2;
 const shot = async (name: string) => page.screenshot({ path: join(OUT, `${String(shots++).padStart(2, "0")}-${name}.png`) });
 
-// Début de partie : 40 PV et une puce de commandant par joueur.
+// Start of the game: 40 life and one commander chip per player.
 await page.locator("[data-testid=commander-chip]").first().waitFor({ timeout: 15_000 });
 const chips = await page.locator("[data-testid=commander-chip]").count();
-if (chips !== 4) errors.push(`${chips} puce(s) de commandant au lieu de 4`);
+if (chips !== 4) errors.push(`${chips} commander chip(s) instead of 4`);
 const life = (await page.locator(".player-bar.me .avatar").innerText()).replace(/\D+/g, "");
-if (!life.startsWith("40")) errors.push(`points de vie de départ : ${life} au lieu de 40`);
-await shot("debut");
+if (!life.startsWith("40")) errors.push(`starting life: ${life} instead of 40`);
+await shot("start");
 
 let castCommander = false;
 let commanderInPlay = false;
@@ -114,13 +114,13 @@ for (let i = 0; i < MAX; i++) {
         .catch(() => "?"),
     );
   if (await page.locator(".gameover").count()) {
-    await shot("fin");
-    console.log("Partie terminée :", await page.locator(".gameover h2").innerText());
+    await shot("end");
+    console.log("Game over:", await page.locator(".gameover h2").innerText());
     break;
   }
   if (await page.locator("[data-testid=eliminated]").count()) {
-    await shot("elimine");
-    console.log("Joueur éliminé : la partie continue sans lui.");
+    await shot("eliminated");
+    console.log("Player eliminated: the game goes on without them.");
     break;
   }
   const myChip = await page
@@ -129,7 +129,7 @@ for (let i = 0; i < MAX; i++) {
     .catch(() => "");
   if (!commanderInPlay && /en jeu/.test(myChip)) {
     commanderInPlay = true;
-    await shot("commandant-en-jeu");
+    await shot("commander-in-play");
   }
   if (commanderInPlay && i > 120) break;
 
@@ -150,9 +150,9 @@ for (let i = 0; i < MAX; i++) {
       .innerText({ timeout: 1000 })
       .catch(() => null);
     if (title === null) continue;
-    // 903.9a : remettre le commandant dans la zone de commandement.
+    // 903.9a: return the commander to the command zone.
     if (/zone de commandement/.test(title)) {
-      await shot("retour-commandant");
+      await shot("commander-return");
       await dialog
         .getByRole("button", { name: "Oui" })
         .click({ timeout: 2000 })
@@ -185,21 +185,21 @@ for (let i = 0; i < MAX; i++) {
     await main.click({ timeout: 3000 }).catch(() => {});
     continue;
   }
-  // Le commandant, au bout de la main avec l'étiquette « Commandant » : lancé dès qu'il est jouable.
+  // The commander, at the end of the hand with the "Commandant" tag: cast as soon as it is playable.
   const commanderCard = page
     .locator(".hand > *", { has: page.locator(".zone-tag", { hasText: "Commandant" }) })
     .locator(".glow-playable")
     .first();
   if (!castCommander && (await commanderCard.count())) {
-    await shot("commandant-lancable");
+    await shot("commander-castable");
     await commanderCard.hover({ force: true });
     await commanderCard.click({ force: true }).catch(() => {});
     castCommander = true;
     continue;
   }
   const playable = page.locator(".hand .glow-playable");
-  // Sous charge, un clic sur une carte peut rester sans effet : après quelques essais sans progrès (même bouton, même
-  // main, même journal), on passe par le bouton principal au lieu de recliquer la même carte jusqu'à la fin de la boucle.
+  // Under load, a click on a card may have no effect: after a few tries without progress (same button, same hand,
+  // same log), go through the main button instead of clicking the same card again until the end of the loop.
   const progress = `${label}|${await page.locator(".hand > *").count()}|${await page.locator(".log .log-line").count()}`;
   stuck = progress === lastProgress ? stuck + 1 : 0;
   lastProgress = progress;
@@ -212,9 +212,9 @@ for (let i = 0; i < MAX; i++) {
   await main.click({ timeout: 3000 }).catch(() => {});
 }
 
-if (!castCommander) errors.push("le commandant n'a jamais été proposé au bout de la main");
-if (!commanderInPlay) errors.push("le commandant n'est jamais arrivé en jeu");
-await shot("arret");
-console.log(errors.length ? `Erreurs :\n${errors.join("\n")}` : "ok : aucune erreur de page");
+if (!castCommander) errors.push("the commander was never offered at the end of the hand");
+if (!commanderInPlay) errors.push("the commander never entered the battlefield");
+await shot("stop");
+console.log(errors.length ? `Errors:\n${errors.join("\n")}` : "ok: no page error");
 await browser.close();
 if (errors.length) process.exit(1);

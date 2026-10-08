@@ -1,12 +1,12 @@
 /**
- * Combat par simulation (niveau élevé).
+ * Combat by simulation (expert level).
  *
- * Attaques : chaque ensemble d'attaquants candidat est joué sur une copie de l'état ; l'adversaire bloque comme
- * l'IA moyenne ; on évalue la position après le combat en tenant compte de la contre-attaque (les créatures qui ont
- * attaqué restent engagées pendant le tour adverse).
+ * Attacks: each candidate set of attackers is played on a copy of the state; the opponent blocks like the medium
+ * AI; the position after the combat is evaluated taking the counterattack into account (the creatures that
+ * attacked stay tapped during the opponent's turn).
  *
- * Blocages : on part des blocages gloutons de l'IA moyenne, puis on essaie les blocages à deux et quelques
- * améliorations locales (retirer, échanger un bloqueur).
+ * Blocks: starting from the greedy blocks of the medium AI, we then try double blocks and a few local
+ * improvements (remove, swap a blocker).
  */
 import {
   attackCandidates,
@@ -26,7 +26,7 @@ type Block = { blocker: ObjectId; attacker: ObjectId };
 
 const keyOf = (ids: ObjectId[]) => [...ids].sort().join(",");
 
-/** Ensembles d'attaquants à essayer : le choix des règles d'abord, puis tous les sous-ensembles (ou des préfixes). */
+/** Sets of attackers to try: the rules' choice first, then all the subsets (or prefixes). */
 function attackSets(s: GameState, me: PlayerId): ObjectId[][] {
   const forced = forcedAttackers(s, me);
   const cands = attackCandidates(s, me).filter((id) => chars(s, id).power > 0 || forced.includes(id));
@@ -35,7 +35,7 @@ function attackSets(s: GameState, me: PlayerId): ObjectId[][] {
   if (optional.length <= 4) {
     for (let mask = 1; mask < 1 << optional.length; mask++) sets.push([...forced, ...optional.filter((_, i) => (mask >> i) & 1)]);
   } else {
-    // Trop de combinaisons : les plus évasives et les plus fortes d'abord, par préfixes croissants.
+    // Too many combinations: the most evasive and the strongest first, by growing prefixes.
     const evasive = (id: ObjectId) =>
       chars(s, id).keywords.some((k) => k === "flying" || k === "unblockable" || k === "menace" || k === "trample");
     const order = [...optional].sort((a, b) => Number(evasive(b)) - Number(evasive(a)) || chars(s, b).power - chars(s, a).power);
@@ -50,12 +50,12 @@ function attackSets(s: GameState, me: PlayerId): ObjectId[][] {
   });
 }
 
-/** Joue le combat sur une copie : attaque, blocages adverses (comme l'IA moyenne), blessures. */
+/** Plays the combat on a copy: attack, opposing blocks (like the medium AI), damage. */
 function playCombat(s: GameState, me: PlayerId, attackers: ObjectId[]): GameState | null {
   const until = afterCombat(s.turn.number);
   let cur = trySubmit(s, me, { type: "declareAttackers", attackers: chooseDefenders(s, me, attackers) });
   if (!cur) return null;
-  // Chaque défenseur bloque à son tour (multijoueur : un défenseur par joueur attaqué).
+  // Each defender blocks in turn (multiplayer: one defender per attacked player).
   for (let guard = 0; guard < 6; guard++) {
     cur = simulate(cur, (x) => x.pending?.kind === "declareBlockers" || until(x));
     const p = cur.pending;
@@ -66,16 +66,16 @@ function playCombat(s: GameState, me: PlayerId, attackers: ObjectId[]): GameStat
   return simulate(cur, until);
 }
 
-/** Ensembles d'attaquants évalués par simulation, du meilleur au moins bon. */
+/** Sets of attackers evaluated by simulation, from best to worst. */
 export function rankedAttacks(s: GameState, me: PlayerId, pr: Profile): { attackers: ObjectId[]; score: number }[] {
   const out: { attackers: ObjectId[]; score: number }[] = [];
   for (const [i, set] of attackSets(s, me).entries()) {
-    // Machine lente : on garde les attaques déjà évaluées (le choix des règles est toujours essayé).
+    // Slow machine: we keep the attacks already evaluated (the rules' choice is always tried).
     if (i > 0 && pr.outOfTime()) break;
     const after = playCombat(s, me, set);
     if (after) out.push({ attackers: set, score: evaluate(after, me, { exposure: true }) });
   }
-  // Tri stable : à égalité, l'ordre des candidats (le choix des règles d'abord).
+  // Stable sort: on a tie, the order of the candidates (the rules' choice first).
   return out.sort((a, b) => b.score - a.score);
 }
 
@@ -84,7 +84,7 @@ export function searchAttackers(s: GameState, me: PlayerId, pr: Profile): Object
 }
 
 // ---------------------------------------------------------------------------
-// Blocages
+// Blocks
 // ---------------------------------------------------------------------------
 
 export function searchBlocks(s: GameState, me: PlayerId, pr: Profile): Block[] {
@@ -107,7 +107,7 @@ export function searchBlocks(s: GameState, me: PlayerId, pr: Profile): Block[] {
     }
     return false;
   };
-  // Blocages à deux : deux bloqueurs libres sur un même attaquant.
+  // Double blocks: two free blockers on the same attacker.
   for (const a of attackers) {
     const free = cands.filter((c) => c.attackers.includes(a) && !best.some((b) => b.blocker === c.blocker)).map((c) => c.blocker);
     let done = false;
@@ -117,7 +117,7 @@ export function searchBlocks(s: GameState, me: PlayerId, pr: Profile): Block[] {
         done = improve([...best, ...extra.map((blocker) => ({ blocker, attacker: a }))]);
       }
   }
-  // Améliorations locales : retirer un bloqueur, ou le remplacer par un bloqueur libre.
+  // Local improvements: remove a blocker, or replace it with a free blocker.
   for (const b of [...best]) {
     if (improve(best.filter((x) => x !== b))) continue;
     const free = cands.filter((c) => c.attackers.includes(b.attacker) && !best.some((x) => x.blocker === c.blocker));

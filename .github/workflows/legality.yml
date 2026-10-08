@@ -1,9 +1,9 @@
-# Légalités Standard comparées à Scryfall, chaque semaine (PLAN-C, C19) : une annonce de bannissement, une rotation ou
-# une nouvelle extension fait échouer la tâche. Corriger : réimport (npm run import-cards), dérogation
-# (packages/cards/data/legality-overrides.json), liste du README (test cards/test/legality.test.ts).
-# Commander (PLAN-E) : bannissements, Game Changers et cartes non légales, comparés à packages/cards/data/commander.json
-# (corriger : npx tsx tools/check-legality.ts --commander --write).
-name: Légalités Standard
+# Standard legalities compared with Scryfall, every week (PLAN-C, C19): a ban announcement, a rotation or a new set
+# makes the job fail. Fix: reimport (npm run import-cards), override (packages/cards/data/legality-overrides.json),
+# README list (test cards/test/legality.test.ts).
+# Commander (PLAN-E): bans, Game Changers and non-legal cards, compared with packages/cards/data/commander.json
+# (fix: npx tsx tools/check-legality.ts --commander --write).
+name: Standard legalities
 
 on:
   schedule:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   legality:
-    name: Légalités Standard (Scryfall)
+    name: Standard legalities (Scryfall)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

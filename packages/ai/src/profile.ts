@@ -1,25 +1,25 @@
 /**
- * Profil de jeu d'un niveau d'IA : ce qui distingue le débutant, le moyen et l'élevé dans les décisions heuristiques.
+ * Play profile of an AI level: what sets the beginner, the medium and the expert apart in the heuristic decisions.
  */
 
 export interface Profile {
-  /** Hasard à graine (bruit du débutant). */
+  /** Seeded randomness (beginner noise). */
   rand: () => number;
-  /** Probabilité de prendre une option correcte au hasard plutôt que la meilleure (débutant). */
+  /** Probability of taking a correct option at random rather than the best one (beginner). */
   sloppiness: number;
-  /** Probabilité de ne rien lancer alors qu'un sort est possible (débutant). */
+  /** Probability of casting nothing while a spell is possible (beginner). */
   forgetfulness: number;
-  /** Répond aux sorts adverses, fait des tours de combat, joue à la fin du tour adverse. */
+  /** Responds to opposing spells, plays combat tricks, plays at the end of the opponent's turn. */
   responds: boolean;
-  /** Attaques : naïves, par règles, ou par simulation des blocages adverses. */
+  /** Attacks: naive, by rules, or by simulation of the opposing blocks. */
   attack: "naive" | "rules" | "search";
-  /** Blocages : naïfs, gloutons par simulation, ou par recherche (blocages à deux, améliorations). */
+  /** Blocks: naive, greedy by simulation, or by search (double blocks, improvements). */
   block: "naive" | "greedy" | "search";
-  /** L'évaluation tient compte de la contre-attaque adverse. */
+  /** The evaluation takes the opposing counterattack into account. */
   exposure: boolean;
-  /** Mulligans : larges (garde de 1 à 6 terrains) ou normaux. */
+  /** Mulligans: loose (keeps 1 to 6 lands) or normal. */
   mulligan: "loose" | "normal";
-  /** Budget écoulé (recherches bornées en temps) : on garde la meilleure option trouvée. */
+  /** Budget elapsed (time-bounded searches): we keep the best option found. */
   outOfTime: () => boolean;
 }
 

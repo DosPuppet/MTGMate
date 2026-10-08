@@ -1,7 +1,7 @@
 /** Format du salon : Standard, ou sans limite (choisi à la création, imposé à celui qui rejoint). */
 import { CARDS, card, type DeckEntries } from "@mtgx/cards";
 import { printingOptions } from "@mtgx/cards/printings";
-import { keyedPrinting, printingKey } from "@mtgx/engine";
+import { keyedPrinting, plainText, printingKey } from "@mtgx/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RunningServer } from "../src/index";
 import { Client, RED, server } from "./helpers";
@@ -34,7 +34,7 @@ describe("format du salon", () => {
     a.send({ type: "create", name: "Alice", deck: BANNED });
     const refused = await a.next("error");
     expect(refused.code).toBe("deck");
-    expect(refused.message).toContain("bannie en Standard");
+    expect(plainText(refused.message)).toContain("is banned in Standard");
     a.send({ type: "create", name: "Alice", deck: RED });
     const created = await a.next("room");
     expect(created.room.match.format).toBeUndefined();

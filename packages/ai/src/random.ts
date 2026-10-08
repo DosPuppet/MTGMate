@@ -1,5 +1,5 @@
 /**
- * IA aléatoire : choisit une option légale au hasard. Sert au fuzzing du moteur.
+ * Random AI: chooses a legal option at random. Used for fuzzing the engine.
  */
 import {
   type Agent,
@@ -52,14 +52,14 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
       case "discard":
         return { type: "discard", cards: sample(rand, hand, p.count) };
       case "declareAttackers": {
-        // Chaque créature attaque au hasard ce qu'elle peut attaquer ; les exigences d'attaque (508.1d) sont réparées.
+        // Each creature attacks at random what it can attack; the attack requirements (508.1d) are repaired.
         const attackers = attackCandidates(s, me)
           .filter((id) => rand() < 0.6 || forcedAttackers(s, me).includes(id))
           .flatMap((id) => {
             const defender = pick(rand, allowedDefenders(s, id));
             return defender ? [{ id, defender }] : [];
           });
-        // Taxes d'attaque (Propaganda, Ghostly Prison) : on retire des attaques taxées tant que le total n'est pas payable.
+        // Attack taxes (Propaganda, Ghostly Prison): taxed attacks are removed as long as the total cannot be paid.
         const taxOf = (list: typeof attackers) => list.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
         const payable = (list: typeof attackers) =>
           taxOf(list) === 0 || solvePayment(s, me, { generic: taxOf(list), colored: {}, x: 0 }) !== null;
@@ -75,7 +75,7 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
         for (const c of blockCandidates(s, me)) {
           if (rand() < 0.5) blocks.push({ blocker: c.blocker, attacker: pick(rand, c.attackers) as string });
         }
-        // Retire les blocages seuls sur une créature avec la menace.
+        // Removes the lone blocks on a creature with menace.
         const count = (a: string) => blocks.filter((b) => b.attacker === a).length;
         const menace = (a: string) => s.defs[s.objects[a]?.defId ?? ""]?.keywords.includes("menace");
         return { type: "declareBlockers", blocks: blocks.filter((b) => !(menace(b.attacker) && count(b.attacker) < 2)) };
@@ -83,8 +83,8 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
       case "choice":
         return { type: "choose", values: mulberryChoice(rand, p.request) };
       case "priority": {
-        // Pas une deuxième activation d'une source dont une capacité attend déjà sur la pile : une capacité gratuite
-        // (Wandering Fumarole, {0}) ferait grossir la pile plus vite que les passes ne la vident.
+        // Not a second activation of a source with an ability already waiting on the stack: a free ability
+        // (Wandering Fumarole, {0}) would grow the stack faster than the passes empty it.
         const busy = new Set(s.stack.filter((i) => i.kind === "ability" && i.controller === me).map((i) => i.sourceId));
         const actions = legalActions(s, me).filter((a) => a.type !== "pass" && !(a.type === "activate" && busy.has(a.source)));
         if (actions.length === 0 || rand() < passChance) return { type: "pass" };

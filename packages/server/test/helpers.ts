@@ -9,8 +9,8 @@ import { PROTOCOL_VERSION } from "../src/protocol";
 /** Versions d'un client à jour (poignée de main). */
 export const VERSION = { protocol: PROTOCOL_VERSION, rules: RULES_VERSION };
 
-export const GREEN: DeckEntries = deckById("bienvenue-vert").main;
-export const RED: DeckEntries = deckById("bienvenue-rouge").main;
+export const GREEN: DeckEntries = deckById("welcome-green").main;
+export const RED: DeckEntries = deckById("welcome-red").main;
 
 export function server(
   config: Partial<RoomConfig> = {},

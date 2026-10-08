@@ -1,6 +1,6 @@
 /**
- * Validation à l'exécution des messages reçus : le typage TypeScript du protocole ne protège rien à la frontière
- * réseau. Les décisions sont vérifiées en profondeur par le moteur (RulesError) ; ici, seulement leur forme.
+ * Run-time validation of the received messages: the TypeScript typing of the protocol protects nothing at the network
+ * boundary. Decisions are checked in depth by the engine (RulesError); here, only their shape.
  */
 import { type AutopilotSettings, type Decision, STEPS, type Step } from "@mtgx/engine";
 
@@ -21,7 +21,7 @@ const DECISION_TYPES = new Set<Decision["type"]>([
   "concede",
 ]);
 
-/** Forme minimale d'une décision : un objet dont le type est connu. */
+/** Minimal shape of a decision: an object whose type is known. */
 export function isDecision(raw: unknown): raw is Decision {
   return (
     !!raw &&
@@ -37,8 +37,8 @@ function steps(raw: unknown): Step[] | undefined {
 }
 
 /**
- * Réglages de l'automatisme reçus d'un client : seuls les champs connus et bien typés sont gardés.
- * Un réglage malformé (`stops: null`…) ferait échouer l'automatisme et figerait la partie.
+ * Autopilot settings received from a client: only the known, well-typed fields are kept.
+ * A malformed setting (`stops: null`…) would make the autopilot fail and freeze the game.
  */
 export function cleanSettings(raw: unknown): Partial<AutopilotSettings> {
   const out: Partial<AutopilotSettings> = {};

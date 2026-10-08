@@ -1,5 +1,5 @@
 /**
- * Réponses de l'IA aux choix génériques (regard, défausse, sacrifice, répartition des blessures…).
+ * AI answers to the generic choices (scry, discard, sacrifice, damage assignment…).
  */
 import { type ChoiceRequest, type ChoiceValue, chars, type GameState, manaValue, type PlayerId } from "@mtgx/engine";
 import { creatureValue, evaluate, rollout, stackEmpty, trySubmit } from "./evaluate";
@@ -12,7 +12,7 @@ function landCount(s: GameState, me: PlayerId): number {
   return onBoard + inHand;
 }
 
-/** Valeur « à garder » d'une carte, du point de vue de `me`. */
+/** "Keep" value of a card, from the point of view of `me`. */
 export function keepValue(s: GameState, me: PlayerId, id: string): number {
   const o = s.objects[id];
   const d = o && s.defs[o.defId];
@@ -25,7 +25,7 @@ export function keepValue(s: GameState, me: PlayerId, id: string): number {
   return 5 - Math.max(0, cost - lands - 1);
 }
 
-/** Essaie chaque réponse candidate, laisse la pile se résoudre et garde la meilleure position. */
+/** Tries each candidate answer, lets the stack resolve and keeps the best position. */
 function bestBySimulation(s: GameState, me: PlayerId, candidates: ChoiceValue[][]): ChoiceValue[] | null {
   let best: ChoiceValue[] | null = null;
   let bestScore = Number.NEGATIVE_INFINITY;
@@ -42,9 +42,9 @@ function bestBySimulation(s: GameState, me: PlayerId, candidates: ChoiceValue[][
 }
 
 /**
- * Suite d'une réponse simulée jusqu'à la pile vide : les questions suivantes (cibles des déclencheurs ordonnés, choix
- * d'une résolution) reçoivent leur réponse suggérée, au lieu d'arrêter la simulation à la première question. `s` est une
- * copie de travail (résultat de `trySubmit`) : elle est modifiée sur place.
+ * Follow-up of a simulated answer until the stack is empty: the next questions (targets of the ordered triggers,
+ * choices of a resolution) get their suggested answer, instead of stopping the simulation at the first question. `s` is
+ * a working copy (result of `trySubmit`): it is changed in place.
  */
 function settle(s: GameState): GameState {
   let cur = s;
@@ -61,7 +61,7 @@ function settle(s: GameState): GameState {
   return cur;
 }
 
-/** Comme `bestBySimulation`, en menant chaque simulation jusqu'à la pile vide (`settle`). */
+/** Like `bestBySimulation`, running each simulation until the stack is empty (`settle`). */
 function bestSettled(s: GameState, me: PlayerId, candidates: ChoiceValue[][]): ChoiceValue[] | null {
   let best: ChoiceValue[] | null = null;
   let bestScore = Number.NEGATIVE_INFINITY;
@@ -81,7 +81,7 @@ function bestSettled(s: GameState, me: PlayerId, candidates: ChoiceValue[][]): C
   return best;
 }
 
-/** Blessures qui détruisent ce destinataire (créature : endurance moins les blessures ; contact mortel non compté). */
+/** Damage that destroys this recipient (creature: toughness minus damage; deathtouch not counted). */
 function lethalNeed(s: GameState, id: string): number {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return Number.POSITIVE_INFINITY;
@@ -92,8 +92,8 @@ function lethalNeed(s: GameState, id: string): number {
 }
 
 /**
- * Répartitions candidates : la suggestion du moteur, tout sur un destinataire (le minimum aux autres), et pour des
- * blessures, de quoi détruire d'abord les créatures adverses les plus précieuses, le reste au joueur s'il en fait partie.
+ * Candidate assignments: the engine's suggestion, everything on one recipient (the minimum to the others), and for
+ * damage, enough to destroy the most valuable opposing creatures first, the rest to the player if they are included.
  */
 function divideCandidates(s: GameState, me: PlayerId, req: Extract<ChoiceRequest, { type: "divide" }>): ChoiceValue[][] {
   const out: ChoiceValue[][] = [req.suggested];
@@ -128,10 +128,10 @@ function divideCandidates(s: GameState, me: PlayerId, req: Extract<ChoiceRequest
 }
 
 /**
- * Choix de plusieurs options (regard, recherche, piles, prolifération…) : le sens d'un bon choix dépend de l'effet
- * (garder ses meilleures cartes, exiler les pires de l'adversaire). Candidats : la suggestion du moteur, les options les
- * plus et les moins précieuses, et pour des permanents ou des joueurs, les siens seuls ou ceux des adversaires seuls ;
- * la simulation départage.
+ * Choice of several options (scry, search, piles, proliferate…): what a good choice means depends on the effect
+ * (keep one's best cards, exile the opponent's worst). Candidates: the engine's suggestion, the most and least
+ * valuable options, and for permanents or players, one's own only or the opponents' only;
+ * the simulation decides.
  */
 function pickCandidates(s: GameState, me: PlayerId, req: Extract<ChoiceRequest, { type: "pick" }>): ChoiceValue[][] {
   const out: ChoiceValue[][] = [req.suggested];
@@ -143,16 +143,16 @@ function pickCandidates(s: GameState, me: PlayerId, req: Extract<ChoiceRequest, 
   return out.filter((v) => v.length >= req.min && v.length <= req.max);
 }
 
-/** Toutes les permutations (petits ensembles seulement). */
+/** All the permutations (small sets only). */
 function permutations<T>(xs: T[]): T[][] {
   if (xs.length <= 1) return [xs];
   return xs.flatMap((x, i) => permutations([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p]));
 }
 
 /**
- * Pile très haute ou plateau énorme (boucle de déclenchements : Ganax et Draconic Visitor, Scourge of Valkas) : chaque
- * simulation résoudrait toute la pile, et une réponse coûterait des minutes (mesuré au tournoi Commander du 06/10/2026).
- * Les choix y prennent la suggestion du moteur, ou l'ordre par valeur.
+ * Very tall stack or huge board (trigger loop: Ganax and Draconic Visitor, Scourge of Valkas): each simulation would
+ * resolve the whole stack, and one answer would cost minutes (measured in the Commander tournament of 2026-10-06).
+ * The choices there take the engine's suggestion, or the order by value.
  */
 const COSTLY_STACK = 12;
 const COSTLY_FIELD = 150;
@@ -162,9 +162,9 @@ export function heuristicChoice(s: GameState, me: PlayerId, req: ChoiceRequest):
     if (req.type === "order") return [...req.items].sort((a, b) => keepValue(s, me, b) - keepValue(s, me, a));
     return req.suggested;
   }
-  // Répartition (blessures de combat, blessures ou marqueurs répartis) : candidats simulés (PLAN-C, C17).
+  // Assignment (combat damage, divided damage or counters): simulated candidates (PLAN-C, C17).
   if (req.type === "divide") return bestSettled(s, me, divideCandidates(s, me, req)) ?? req.suggested;
-  // Ordre des déclencheurs : chaque ordre essayé jusqu'à trois capacités (six ordres).
+  // Order of the triggers: each order tried up to three abilities (six orders).
   if (req.type === "order" && req.intent === "triggerOrder" && req.items.length <= 3)
     return bestSettled(s, me, permutations(req.items)) ?? req.suggested;
   if (req.type === "pick" && req.max > 1 && !["discard", "sacrifice", "scryBottom", "surveilGraveyard"].includes(req.intent))
@@ -179,13 +179,13 @@ export function heuristicChoice(s: GameState, me: PlayerId, req: ChoiceRequest):
     switch (req.intent) {
       case "scryBottom":
       case "surveilGraveyard":
-        // On se débarrasse de ce qui ne servira pas (terrains en trop, sorts trop chers).
+        // We get rid of what will be of no use (extra lands, spells too expensive).
         return req.options.filter((id) => keepValue(s, me, id) < 3).slice(0, req.max);
       case "discard":
       case "sacrifice":
         return byValue.slice(0, req.min);
       default: {
-        // Choix d'une seule option parmi peu : on essaie chacune (P3 ; avant, la réponse suggérée).
+        // Choice of a single option among few: each one is tried (P3; before, the suggested answer).
         if (req.max === 1 && req.options.length <= 6) {
           const candidates = req.options.map((o) => [o] as ChoiceValue[]);
           if (req.min === 0) candidates.push([]);
@@ -195,15 +195,15 @@ export function heuristicChoice(s: GameState, me: PlayerId, req: ChoiceRequest):
       }
     }
   }
-  // « Vous pouvez », « à moins que … ne paie » : oui et non sont essayés (P3 ; avant, toujours la suggestion).
+  // "You may", "unless … pays": yes and no are both tried (P3; before, always the suggestion).
   if (req.type === "yesNo") return bestBySimulation(s, me, [[1], [0]]) ?? req.suggested;
-  // Petit nombre à choisir (X à payer…) : chaque valeur est essayée.
+  // Small number to choose (X to pay…): each value is tried.
   if (req.type === "number" && req.max - req.min <= 5) {
     const candidates = Array.from({ length: req.max - req.min + 1 }, (_, i) => [req.min + i] as ChoiceValue[]);
     return bestBySimulation(s, me, candidates) ?? req.suggested;
   }
   if (req.type === "order") {
-    // Le plus utile en premier.
+    // The most useful first.
     return [...req.items].sort((a, b) => keepValue(s, me, b) - keepValue(s, me, a));
   }
   return req.suggested;
@@ -224,7 +224,7 @@ export function mulberryChoice(rand: () => number, req: ChoiceRequest): ChoiceVa
       return out.length >= req.min ? out : req.suggested.map(String);
     }
     case "name": {
-      // Un nom public mis en avant, ou la suggestion (jamais un nom tiré du catalogue : rien de caché).
+      // A public name put forward, or the suggestion (never a name drawn from the catalog: nothing hidden).
       const pool = [...req.suggested.map(String), ...req.featured];
       return [pool[Math.floor(rand() * pool.length)] ?? ""];
     }
@@ -241,8 +241,8 @@ export function mulberryChoice(rand: () => number, req: ChoiceRequest): ChoiceVa
     case "yesNo":
       return [rand() < 0.5 ? 0 : 1];
     case "divide": {
-      // Répartition aléatoire entre les bloqueurs uniquement (toujours légale, même avec le piétinement), au moins
-      // `minEach` pour chacun (« au moins 1 à chaque cible »).
+      // Random assignment among the blockers only (always legal, even with trample), at least
+      // `minEach` for each one ("at least 1 to each target").
       if (rand() < 0.5) return req.suggested;
       const minEach = req.minEach ?? 0;
       if (req.total < minEach * req.among.length) return req.suggested;

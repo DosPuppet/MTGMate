@@ -1,8 +1,8 @@
 /**
- * Decks aléatoires pour le fuzz et le tournoi d'IA : 60 cartes sur deux couleurs (trois une fois sur quatre), 24 terrains
- * (dont jusqu'à 8 terrains non basiques qui produisent ces couleurs), 36 cartes gérées par le moteur, incolores comprises
- * (`set` : d'abord celles de l'extension). Tout le pool peut sortir : cartes à trois couleurs, incolores, terrains non
- * basiques (docs/plans/PLAN-C.md, lot C2).
+ * Random decks for the fuzz and the AI tournament: 60 cards in two colors (three once in four), 24 lands (of which up
+ * to 8 nonbasic lands that produce these colors), 36 cards handled by the engine, colorless ones included (`set`: those
+ * of the set first). The whole pool can come up: three-color cards, colorless cards, nonbasic lands
+ * (docs/plans/PLAN-C.md, lot C2).
  */
 import { mulberry32 } from "@mtgx/ai";
 import { implementedCards, legalityIssue } from "@mtgx/cards";
@@ -11,7 +11,7 @@ import { type CardDef, type Color, colorIdentity, withinIdentity } from "@mtgx/e
 const BASICS: Record<Color, string> = { W: "Plains", U: "Island", B: "Swamp", R: "Mountain", G: "Forest" };
 let all: CardDef[] | null = null;
 
-/** Couleurs que produisent les capacités de mana d'une carte (« C » pour l'incolore). */
+/** Colors that the mana abilities of a card produce ("C" for colorless). */
 function produced(c: CardDef): string[] {
   return c.abilities.flatMap((ab) => (ab.kind === "mana" ? ab.produce : []));
 }
@@ -26,12 +26,12 @@ export function randomDeck(seed: number, set?: string): CardDef[] {
   const spells = ALL.filter(fits);
   const own = set ? ALL.filter((c) => c.set === set && fits(c)) : [];
   const deck: CardDef[] = [];
-  // Extension ciblée : trois quarts des sorts viennent d'elle (s'il y en a), le reste des autres cartes gérées.
+  // Targeted set: three quarters of the spells come from it (if it has any), the rest from the other handled cards.
   for (let i = 0; i < 36 && spells.length; i++) {
     const from = own.length && i < 27 ? own : spells;
     deck.push(from[Math.floor(rand() * from.length)] as CardDef);
   }
-  // Terrains non basiques qui ne produisent que ces couleurs (ou de l'incolore), au plus 4 exemplaires chacun.
+  // Nonbasic lands that produce only these colors (or colorless), at most 4 copies each.
   const lands = ALL.filter(
     (c) =>
       c.types.includes("Land") &&
@@ -51,10 +51,10 @@ export function randomDeck(seed: number, set?: string): CardDef[] {
 }
 
 /**
- * Deck Commander aléatoire (PLAN-E) : un commandant (créature légendaire gérée, d'au moins une couleur ; `set` : d'abord
- * de l'extension), puis 99 cartes dans son identité de couleur, un exemplaire de chacune sauf les terrains de base :
- * 61 sorts (trois quarts de l'extension ciblée s'il y en a), jusqu'à 10 terrains non basiques, des terrains de base.
- * `commanders` : l'indice du commandant (0).
+ * Random Commander deck (PLAN-E): a commander (handled legendary creature, of at least one color; `set`: from the set
+ * first), then 99 cards within its color identity, one copy of each except basic lands: 61 spells (three quarters from
+ * the targeted set if it has any), up to 10 nonbasic lands, basic lands.
+ * `commanders`: the index of the commander (0).
  */
 export function randomCommanderDeck(seed: number, set?: string): { deck: CardDef[]; commanders: number[] } {
   all ??= implementedCards();

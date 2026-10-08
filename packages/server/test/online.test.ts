@@ -79,9 +79,9 @@ describe("salons", () => {
   });
 
   it("accepte un deck de bienvenue de 40 cartes tel quel, pas un deck quelconque de 40 cartes", () => {
-    const welcome = DECKS.find((d) => d.id === "bienvenue-vert")!.main;
+    const welcome = DECKS.find((d) => d.id === "welcome-green")!.main;
     expect(checkDeck(welcome)).toEqual(welcome);
-    expect(() => checkDeck([[40, "Forest"]])).toThrow(/minimum 60/);
+    expect(() => checkDeck([[40, "Forest"]])).toThrow(/minimum ⟨min\|60⟩/);
   });
 
   it("une décision hors tour ou illégale est refusée sans casser la partie", async () => {
@@ -103,7 +103,7 @@ describe("salons", () => {
     const { a } = await pair(port, false);
     for (const decision of [null, "keep", [], { type: "inconnu" }]) {
       a.send({ type: "decision", decision } as never);
-      expect((await a.next("error")).message).toBe("Décision invalide.");
+      expect((await a.next("error")).message).toBe("Invalid decision.");
     }
   });
 

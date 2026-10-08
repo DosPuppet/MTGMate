@@ -1,25 +1,24 @@
 /**
- * Fuzzing du moteur : parties IA contre IA avec vérification d'invariants à chaque décision.
+ * Engine fuzzing: AI-versus-AI games with an invariant check at every decision.
  *
- * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels|chaos] [--players 2] [--offers 4]
+ * Usage: npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels|chaos] [--players 2] [--offers 4]
  *                        [--pool decks|all|meta|<SET>] [--format commander]
  *                        [--jobs N]
- *         npx tsx tools/fuzz.ts --batch <fichier.json> --jobs N    (plusieurs séries, utilisé par verify)
+ *        npx tsx tools/fuzz.ts --batch <file.json> --jobs N    (several series, used by verify)
  *
- * --pool all : decks aléatoires bicolores tirés de toutes les cartes gérées par le moteur.
- * --pool FIN : decks tirés d'abord des cartes de cette extension (complétés par les autres cartes gérées).
- * --pool meta : les decks du méta Standard déjà jouables (`docs/meta/`, plan P4), les uns contre les autres.
- * --format commander : parties de Commander (PLAN-E) ; decks Commander aléatoires tirés du pool (`all` ou une extension :
- * commandant légendaire et 99 cartes singleton dans son identité), ou `--pool commander` : les préconstruits Commander
- * jouables.
- * --jobs N : les parties sont réparties sur N processus, par petits paquets de graines contiguës ; chaque partie ne dépend
- * que de sa graine, donc les résultats sont identiques quel que soit N.
- * --ai : heuristic = medium ; mixed : une IA moyenne contre des IA aléatoires ; levels : les trois niveaux mélangés
- * (l'ISMCTS du niveau élevé avec un petit budget en itérations, pour rester rapide) ; chaos : IA aléatoires, et avant chaque
- * décision, des variantes corrompues qui doivent être refusées par une RulesError sans modifier l'état.
- * --batch : un tableau JSON de séries `{ name, args }` (args : les options ci-dessus, sauf --jobs). Toutes les séries
- * partagent le même groupe de processus (pas de démarrage ni d'attente du plus lent entre deux séries) ; une ligne JSON
- * par série terminée : `{ name, ok, seconds, out }`.
+ * --pool all: random two-color decks drawn from all the cards the engine handles.
+ * --pool FIN: decks drawn first from the cards of this set (completed with the other handled cards).
+ * --pool meta: the Standard meta decks already playable (`docs/meta/`, plan P4), against each other.
+ * --format commander: Commander games (PLAN-E); random Commander decks drawn from the pool (`all` or a set: a legendary
+ * commander and 99 singleton cards within its identity), or `--pool commander`: the playable Commander precons.
+ * --jobs N: the games are spread over N processes, in small batches of contiguous seeds; each game depends only on its
+ * seed, so the results are identical whatever N is.
+ * --ai: heuristic = medium; mixed: one medium AI against random AIs; levels: the three levels mixed (the ISMCTS of the
+ * high level with a small iteration budget, to stay fast); chaos: random AIs and, before each decision, corrupted
+ * variants that must be refused by a RulesError without changing the state.
+ * --batch: a JSON array of series `{ name, args }` (args: the options above, except --jobs). All the series share the
+ * same process group (no start-up or waiting for the slowest between two series); one JSON line per finished series:
+ * `{ name, ok, seconds, out }`.
  */
 import { type ChildProcess, fork } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -27,23 +26,23 @@ import { inspect } from "node:util";
 import { type AiLevel, aiAgent, heuristicAgent, playGame, randomAgent } from "@mtgx/ai";
 import { buildDeck, buildGameDeck, CARDS, DECKS, validateDeck } from "@mtgx/cards";
 
-/** Préconstruits hors Commander (les decks Commander se jouent avec leurs règles, PLAN-E). */
+/** Precons other than Commander (Commander decks are played with their own rules, PLAN-E). */
 const PRECONS = DECKS.filter((d) => d.format !== "commander");
 
 import type { Agent, CardDef } from "@mtgx/engine";
 import { metaDecks } from "./meta-decks";
 import { randomCommanderDeck, randomDeck } from "./random-deck";
 
-/** Une série de parties. */
+/** A series of games. */
 interface Spec {
   games: number;
   seed0: number;
   mode: string;
   players: number;
   pool: string;
-  /** Toutes les N priorités, chaque option proposée doit être acceptée avec ses choix par défaut (0 : jamais). */
+  /** Every N priorities, each offered option must be accepted with its default choices (0: never). */
   offers: number;
-  /** `commander` : parties de Commander (PLAN-E). */
+  /** `commander`: Commander games (PLAN-E). */
   format?: string;
 }
 
@@ -77,7 +76,7 @@ const agentFor = (spec: Spec, seed: number, which: number): Agent => {
 let metaCache: ReturnType<typeof metaDecks> | null = null;
 const meta = () => {
   metaCache ??= metaDecks().filter((d) => d.playable);
-  if (metaCache.length === 0) throw new Error("Aucun deck du méta n'est encore jouable");
+  if (metaCache.length === 0) throw new Error("No meta deck is playable yet");
   return metaCache;
 };
 
@@ -88,15 +87,15 @@ const deckFor = (spec: Spec, seed: number, g: number, i: number): CardDef[] =>
       ? buildDeck(meta()[(g + i) % meta().length]!)
       : randomDeck(seed * 31 + i, spec.pool === "all" ? undefined : spec.pool.toUpperCase());
 
-/** Préconstruits Commander jouables (`--pool commander`). */
+/** Playable Commander precons (`--pool commander`). */
 let commanderPrecons: typeof DECKS | null = null;
 const commanderPool = () => {
   commanderPrecons ??= DECKS.filter((d) => d.format === "commander" && validateDeck(d, CARDS, "commander").playable);
-  if (commanderPrecons.length === 0) throw new Error("Aucun préconstruit Commander n'est encore jouable");
+  if (commanderPrecons.length === 0) throw new Error("No Commander precon is playable yet");
   return commanderPrecons;
 };
 
-/** Deck Commander d'un joueur : un préconstruit (`--pool commander`) ou un deck aléatoire. */
+/** A player's Commander deck: a precon (`--pool commander`) or a random deck. */
 const commanderDeckFor = (spec: Spec, seed: number, g: number, i: number): { deck: CardDef[]; commanders: number[] } => {
   if (spec.pool === "commander") {
     const pool = commanderPool();
@@ -113,13 +112,13 @@ interface Tally {
   decisions: number;
   caps: number;
   /**
-   * Empreinte des parties (somme modulo 2³² d'une empreinte par partie : décisions, gagnant, points de vie) : indépendante
-   * de `--jobs` ; égale avant et après un remaniement qui ne doit pas changer le jeu (PLAN-S).
+   * Fingerprint of the games (sum modulo 2³² of one fingerprint per game: decisions, winner, life totals): independent
+   * of `--jobs`; equal before and after a refactoring that must not change the game (PLAN-S).
    */
   print: number;
 }
 
-const emptyTally = (): Tally => ({ wins: { nul: 0, inachevée: 0 }, turns: 0, illegal: 0, decisions: 0, caps: 0, print: 0 });
+const emptyTally = (): Tally => ({ wins: { draw: 0, unfinished: 0 }, turns: 0, illegal: 0, decisions: 0, caps: 0, print: 0 });
 
 /** FNV-1a 32 bits. */
 function fnv(text: string): number {
@@ -137,7 +136,7 @@ function addTally(total: Tally, r: Tally): void {
   total.print = (total.print + r.print) >>> 0;
 }
 
-/** Joue `count` parties de la série à partir de la graine `first` (dans ce processus). */
+/** Plays `count` games of the series from seed `first` (in this process). */
 function run(spec: Spec, first: number, count: number): Tally {
   const tally = emptyTally();
   for (let g = first - spec.seed0; g < first - spec.seed0 + count; g++) {
@@ -150,13 +149,13 @@ function run(spec: Spec, first: number, count: number): Tally {
       decks: ids.map((i) => cmd?.[i]?.deck ?? deckFor(spec, seed, g, i)),
       ...(cmd ? { variant: "commander" as const, commanders: cmd.map((c) => c.commanders) } : {}),
       agents: ids.map((i) => agentFor(spec, seed, i)),
-      // Commander : 40 PV et 100 cartes, des parties bien plus longues.
+      // Commander: 40 life and 100 cards, much longer games.
       maxDecisions: (commander ? 15000 : 5000) * spec.players,
       check: true,
       chaos: spec.mode === "chaos" ? { seed: seed * 13 + 5, perDecision: 3 } : undefined,
       offers: spec.offers || undefined,
     });
-    const key = !r.state.over ? "inachevée" : (r.state.winner ?? "nul");
+    const key = !r.state.over ? "unfinished" : (r.state.winner ?? "draw");
     tally.wins[key] = (tally.wins[key] ?? 0) + 1;
     tally.turns += r.turns;
     tally.illegal += r.illegal;
@@ -168,14 +167,14 @@ function run(spec: Spec, first: number, count: number): Tally {
   return tally;
 }
 
-/** Bilan d'une série, au format attendu par verify (`résultats : …`). */
+/** Summary of a series, in the format verify expects (`results: …`). */
 function summary(spec: Spec, total: Tally, ms: number): string {
   const { wins, turns, illegal, decisions, caps, print } = total;
   return [
-    `${spec.games} parties à ${spec.players} joueurs (${spec.mode}, pool ${spec.pool}${spec.format ? `, ${spec.format}` : ""}) en ${(ms / 1000).toFixed(1)} s — ${(ms / Math.max(1, decisions)).toFixed(2)} ms/décision`,
-    `résultats : ${inspect(wins)}`,
-    `tours moyens : ${(turns / spec.games).toFixed(1)}, décisions illégales de l'IA : ${illegal}, plafonds atteints : ${caps}`,
-    `empreinte : ${print.toString(16).padStart(8, "0")} (${decisions} décisions)`,
+    `${spec.games} games with ${spec.players} players (${spec.mode}, pool ${spec.pool}${spec.format ? `, ${spec.format}` : ""}) in ${(ms / 1000).toFixed(1)} s — ${(ms / Math.max(1, decisions)).toFixed(2)} ms/decision`,
+    `results: ${inspect(wins)}`,
+    `average turns: ${(turns / spec.games).toFixed(1)}, illegal AI decisions: ${illegal}, caps reached: ${caps}`,
+    `fingerprint: ${print.toString(16).padStart(8, "0")} (${decisions} decisions)`,
   ].join("\n");
 }
 
@@ -187,8 +186,8 @@ interface Task {
 type FromWorker = { ok: true; tally: Tally } | { ok: false; error: string };
 
 /**
- * Joue toutes les séries sur `jobs` processus persistants qui prennent les paquets dans l'ordre. `done` est appelé
- * quand tous les paquets d'une série sont terminés.
+ * Plays all the series on `jobs` persistent processes that take the batches in order. `done` is called when all the
+ * batches of a series are finished.
  */
 async function runPool(
   specs: Spec[],
@@ -198,7 +197,7 @@ async function runPool(
   const tasks: Task[] = [];
   const remaining = specs.map(() => 0);
   for (const [i, spec] of specs.entries()) {
-    // Des paquets assez petits pour que la fin d'une série ne laisse pas de cœurs inoccupés.
+    // Batches small enough that the end of a series leaves no core idle.
     const size = Math.max(1, Math.ceil(spec.games / (jobs * 4)));
     for (let k = 0; k < spec.games; k += size) {
       tasks.push({ spec: i, first: spec.seed0 + k, count: Math.min(size, spec.games - k) });
@@ -231,9 +230,7 @@ async function runPool(
         feed();
       });
       child.on("exit", (code) =>
-        current === null
-          ? resolve()
-          : reject(new Error(`processus de fuzz arrêté (code ${code}) pendant ${JSON.stringify(current)}`)),
+        current === null ? resolve() : reject(new Error(`fuzz process stopped (code ${code}) during ${JSON.stringify(current)}`)),
       );
       feed();
     });
@@ -244,7 +241,7 @@ const argv = process.argv.slice(2);
 const jobs = Math.max(1, Number(argOf(argv, "jobs", "1")));
 
 if (argv.includes("--worker")) {
-  // Processus fils : joue les paquets reçus, renvoie un décompte (ou l'erreur) pour chacun.
+  // Child process: plays the batches it receives, sends back a tally (or the error) for each.
   process.on("message", (m: { quit?: boolean; spec: Spec; first: number; count: number }) => {
     if (m.quit) {
       process.disconnect?.();
@@ -259,15 +256,15 @@ if (argv.includes("--worker")) {
     process.send?.(reply);
   });
 } else if (argv.includes("--batch")) {
-  // Plusieurs séries (verify) : une ligne JSON par série terminée.
+  // Several series (verify): one JSON line per finished series.
   const batch = JSON.parse(readFileSync(argOf(argv, "batch", ""), "utf8")) as { name: string; args: string }[];
   const specs = batch.map((b) => specOf(b.args.split(/\s+/).filter(Boolean)));
   let failed = false;
   await runPool(specs, jobs, (i, total, error, ms) => {
     const spec = specs[i] as Spec;
-    const ok = !error && !total.wins.inachevée;
+    const ok = !error && !total.wins.unfinished;
     failed ||= !ok;
-    const out = error ? `Erreur :\n${error}` : summary(spec, total, ms);
+    const out = error ? `Error:\n${error}` : summary(spec, total, ms);
     console.log(JSON.stringify({ name: batch[i]?.name, ok, seconds: ms / 1000, out }));
   });
   if (failed) process.exitCode = 1;
@@ -284,5 +281,5 @@ if (argv.includes("--worker")) {
   else total = run(spec, spec.seed0, spec.games);
   if (error) throw new Error(error);
   console.log(summary(spec, total, performance.now() - t0));
-  if (total.wins.inachevée) process.exitCode = 1;
+  if (total.wins.unfinished) process.exitCode = 1;
 }

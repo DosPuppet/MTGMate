@@ -1,5 +1,5 @@
 /**
- * Parties IA contre IA avec vérification d'invariants : sert au fuzzing du moteur et aux tests.
+ * AI against AI games with invariant checks: used for fuzzing the engine and for the tests.
  */
 
 import type { CardDef, GameVariant } from "@mtgx/engine";
@@ -13,6 +13,7 @@ import {
   fallbackDecision,
   type GameState,
   legalActions,
+  plainText,
   RulesError,
   submit,
   syncControl,
@@ -26,18 +27,18 @@ export interface SelfPlayResult {
   decisions: { player: string; decision: Decision }[];
   illegal: number;
   turns: number;
-  /** Coupures par un plafond de sécurité du moteur (événements `capReached`, `engine/src/limits.ts`). */
+  /** Cut-offs by a safety cap of the engine (`capReached` events, `engine/src/limits.ts`). */
   caps: number;
 }
 
-/** Vérifie la cohérence de l'état ; renvoie la liste des violations. */
+/** Checks the consistency of the state; returns the list of violations. */
 export function checkInvariants(s: GameState, deckSizes: Record<string, number>): string[] {
   const errors: string[] = [];
   const seen = new Map<string, string>();
   const place = (id: string, where: string) => {
-    if (seen.has(id)) errors.push(`${id} présent dans ${seen.get(id)} et ${where}`);
+    if (seen.has(id)) errors.push(`${id} present in ${seen.get(id)} and ${where}`);
     seen.set(id, where);
-    if (!s.objects[id]) errors.push(`${id} (${where}) n'existe pas`);
+    if (!s.objects[id]) errors.push(`${id} (${where}) does not exist`);
   };
   for (const p of s.playerOrder) {
     const pl = s.players[p];
@@ -47,34 +48,35 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   }
   for (const id of s.battlefield) place(id, "battlefield");
   for (const id of s.exile) place(id, "exile");
-  // Un sort sur la pile, copie comprise (objet sans carte, 707.10).
+  // A spell on the stack, copies included (object without a card, 707.10).
   for (const item of s.stack) if (item.kind === "spell") place(item.sourceId, "stack");
-  // Un seul parcours des objets (à chaque décision) : zone, nombres, cartes de chaque joueur.
-  // Ni les jetons, ni les copies de sorts préparés (Reality Fracture) ne sont des cartes. Un permanent assemblé
-  // représente ses deux cartes.
+  // A single pass over the objects (at each decision): zone, numbers, cards of each player.
+  // Neither tokens nor copies of prepared spells (Reality Fracture) are cards. A melded permanent stands for its two
+  // cards.
   const owned: Record<string, number> = {};
   for (const id in s.objects) {
     const o = s.objects[id] as GameState["objects"][string];
     const where = seen.get(id);
-    if (where === undefined) errors.push(`${id} (${o.defId}) n'est dans aucune zone`);
-    if (!(where ?? "").endsWith(o.zone)) errors.push(`${id} : zone ${o.zone} mais rangé dans ${where ?? ""}`);
-    if (o.damage < 0) errors.push(`${id} : blessures négatives`);
-    if (!Number.isFinite(o.damage)) errors.push(`${id} : blessures ${o.damage}`);
+    if (where === undefined) errors.push(`${id} (${o.defId}) is in no zone`);
+    if (!(where ?? "").endsWith(o.zone)) errors.push(`${id}: zone ${o.zone} but stored in ${where ?? ""}`);
+    if (o.damage < 0) errors.push(`${id}: negative damage`);
+    if (!Number.isFinite(o.damage)) errors.push(`${id}: damage ${o.damage}`);
     for (const k in o.counters) {
       const n = o.counters[k] as number;
-      if (!(Number.isFinite(n) && n >= 0)) errors.push(`${id} : marqueurs ${k} = ${n}`);
+      if (!(Number.isFinite(n) && n >= 0)) errors.push(`${id}: counters ${k} = ${n}`);
     }
     if (!o.isToken && !o.preparedFor && !o.cardCopy) owned[o.owner] = (owned[o.owner] ?? 0) + (o.melded?.length ?? 1);
   }
-  // Les cartes des joueurs éliminés quittent la partie (800.4a) ; les autres sont conservées.
+  // The cards of eliminated players leave the game (800.4a); the others are kept.
   for (const p of s.playerOrder) {
     const n = owned[p] ?? 0;
     const size = deckSizes[p] ?? 0;
-    // Éliminé en cours de partie : 0 carte ; éliminé par le coup final : ses cartes restent.
+    // Eliminated during the game: 0 cards; eliminated by the final blow: their cards stay.
     const ok = s.players[p]?.lost ? n === 0 || n === size : n === size;
-    if (!ok) errors.push(`${p} : ${n} cartes au lieu de ${size}`);
+    if (!ok) errors.push(`${p}: ${n} cards instead of ${size}`);
   }
-  // Commander (PLAN-E) : un joueur en jeu a exactement un objet par commandant (903.3, la désignation suit la carte).
+  // Commander (PLAN-E): a player still in the game has exactly one object per commander (903.3, the designation
+  // follows the card).
   if (s.commander) {
     const copies: Record<string, number> = {};
     for (const id in s.objects) {
@@ -82,12 +84,12 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
       if (!o.isToken && s.commander.cards[o.uid]) copies[o.uid] = (copies[o.uid] ?? 0) + 1;
     }
     for (const [uid, c] of Object.entries(s.commander.cards))
-      if (!s.players[c.owner]?.lost && copies[uid] !== 1) errors.push(`commandant ${c.defId} : ${copies[uid] ?? 0} objet(s)`);
+      if (!s.players[c.owner]?.lost && copies[uid] !== 1) errors.push(`commander ${c.defId}: ${copies[uid] ?? 0} object(s)`);
   }
-  // Couche 2 : le contrôle est déjà à jour (un nouveau calcul ne change rien). Partie finie : les objets du perdant
-  // restent en place, ses effets de contrôle aussi.
-  // La copie coûte cher : seulement s'il existe une source de contrôle (effet de contrôle, contrôleur de base d'origine,
-  // Aura attachée), c'est-à-dire tout ce que lit `controlClaims`.
+  // Layer 2: control is already up to date (a new computation changes nothing). Game over: the loser's objects stay
+  // in place, and so do their control effects.
+  // The copy is costly: only if there is a source of control (control effect, original base controller, attached
+  // Aura), that is everything `controlClaims` reads.
   const controlInPlay =
     s.effects.some((e) => e.controller) ||
     s.battlefield.some((id) => {
@@ -99,51 +101,50 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
     const moved = s.battlefield.filter((id) => probe.objects[id]?.controller !== s.objects[id]?.controller);
     for (const id of moved) {
       const o = s.objects[id];
-      errors.push(`${id} (${o?.defId}) : contrôle périmé, ${o?.controller} au lieu de ${probe.objects[id]?.controller}`);
+      errors.push(`${id} (${o?.defId}): stale control, ${o?.controller} instead of ${probe.objects[id]?.controller}`);
     }
   }
-  // Le cache des couches ne doit jamais diverger d'un calcul à neuf.
+  // The layer cache must never diverge from a fresh computation.
   const fresh = computeBattlefield(s);
   for (const id of s.battlefield) {
     const cached = chars(s, id) as unknown as Record<string, unknown>;
     const now = fresh.get(id) as unknown as Record<string, unknown> | undefined;
     if (!sameJson(cached, now)) {
-      // Champs divergents, pour trouver le `bump` manquant.
+      // Diverging fields, to find the missing `bump`.
       const diff = Object.keys({ ...cached, ...now }).filter((k) => JSON.stringify(cached[k]) !== JSON.stringify(now?.[k]));
-      errors.push(`${id} (${s.objects[id]?.defId}) : cache des caractéristiques périmé (${diff.join(", ")})`);
+      errors.push(`${id} (${s.objects[id]?.defId}): stale characteristics cache (${diff.join(", ")})`);
     }
   }
-  // Nombres : jamais NaN ni infini ; marqueurs, blessures et mana jamais négatifs.
+  // Numbers: never NaN or infinite; counters, damage and mana never negative.
   for (const p of s.playerOrder) {
     const pl = s.players[p];
     if (!pl) continue;
-    if (!Number.isFinite(pl.life)) errors.push(`${p} : points de vie ${pl.life}`);
-    for (const [m, n] of Object.entries(pl.manaPool)) if (!(Number.isFinite(n) && n >= 0)) errors.push(`${p} : mana ${m} = ${n}`);
+    if (!Number.isFinite(pl.life)) errors.push(`${p}: life ${pl.life}`);
+    for (const [m, n] of Object.entries(pl.manaPool)) if (!(Number.isFinite(n) && n >= 0)) errors.push(`${p}: mana ${m} = ${n}`);
   }
-  // Références : une Aura ou un Équipement est attaché à un permanent (ou à un joueur) ; les combattants sont en jeu.
-  // L'attachement n'est vérifié qu'à la priorité : en pleine résolution, les actions basées sur l'état (704.5m-n)
-  // n'ont pas encore détaché ce qui l'est illégalement. La priorité « lancer maintenant » (608.2g) est encore dans la
-  // résolution (Zoyowa's Justice mélange une créature enchantée, puis découvre).
+  // References: an Aura or an Equipment is attached to a permanent (or to a player); the combatants are on the
+  // battlefield. Attachment is checked only at priority: in the middle of a resolution, state-based actions (704.5m-n)
+  // have not yet detached what is illegally attached. The "cast now" priority (608.2g) is still inside the resolution
+  // (Zoyowa's Justice shuffles an enchanted creature, then discovers).
   const onBattlefield = new Set(s.battlefield);
   const settled = s.pending?.kind === "priority" && !s.pending.castNow;
   for (const id of settled ? s.battlefield : []) {
     const to = s.objects[id]?.attachedTo;
-    if (to && !onBattlefield.has(to) && !s.players[to]) errors.push(`${id} attaché à ${to}, absent du champ de bataille`);
+    if (to && !onBattlefield.has(to) && !s.players[to]) errors.push(`${id} attached to ${to}, not on the battlefield`);
   }
-  for (const a of s.combat?.attackers ?? [])
-    if (!onBattlefield.has(a.id)) errors.push(`attaquant ${a.id} absent du champ de bataille`);
-  for (const b of s.combat?.blockers ?? [])
-    if (!onBattlefield.has(b.id)) errors.push(`bloqueur ${b.id} absent du champ de bataille`);
-  if (s.pending && s.players[s.pending.player]?.lost) errors.push(`décision attendue d'un joueur éliminé (${s.pending.player})`);
-  // Sérialisable en JSON (sauvegarde, rejeu, envoi) : ni Map, ni Set, ni fonction, ni nombre non fini.
+  for (const a of s.combat?.attackers ?? []) if (!onBattlefield.has(a.id)) errors.push(`attacker ${a.id} not on the battlefield`);
+  for (const b of s.combat?.blockers ?? []) if (!onBattlefield.has(b.id)) errors.push(`blocker ${b.id} not on the battlefield`);
+  if (s.pending && s.players[s.pending.player]?.lost)
+    errors.push(`decision expected from an eliminated player (${s.pending.player})`);
+  // Serializable to JSON (save, replay, sending): no Map, no Set, no function, no non-finite number.
   const bad = nonJson({ ...s, defs: undefined });
-  if (bad) errors.push(`état non sérialisable en JSON : ${bad}`);
-  if (!s.over && !s.pending) errors.push("partie non terminée sans décision en attente");
-  if (s.over && s.pending) errors.push("partie terminée avec une décision en attente");
+  if (bad) errors.push(`state not serializable to JSON: ${bad}`);
+  if (!s.over && !s.pending) errors.push("game not over without a pending decision");
+  if (s.over && s.pending) errors.push("game over with a pending decision");
   return errors;
 }
 
-/** Égalité au sens de JSON.stringify (clés absentes et `undefined` confondues), sans construire les chaînes. */
+/** Equality in the sense of JSON.stringify (missing keys and `undefined` alike), without building the strings. */
 function sameJson(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
@@ -160,14 +161,14 @@ function sameJson(a: unknown, b: unknown): boolean {
   return true;
 }
 
-/** Chemin du premier élément de `v` qui ne survivrait pas à JSON.stringify / JSON.parse, ou null. */
+/** Path of the first element of `v` that would not survive JSON.stringify / JSON.parse, or null. */
 function nonJson(v: unknown): string | null {
-  // Le chemin n'est construit qu'en cas d'échec (le parcours de tout l'état à chaque décision doit rester léger).
+  // The path is built only on failure (the walk over the whole state at each decision must stay light).
   const path: (string | number)[] = [];
   const walk = (x: unknown): string | null => {
     if (x === null || x === undefined || typeof x === "string" || typeof x === "boolean") return null;
     if (typeof x === "number") return Number.isFinite(x) ? null : ` = ${x}`;
-    if (typeof x !== "object") return ` : ${typeof x}`;
+    if (typeof x !== "object") return `: ${typeof x}`;
     if (Array.isArray(x)) {
       for (let i = 0; i < x.length; i++) {
         const r = walk(x[i]);
@@ -179,7 +180,7 @@ function nonJson(v: unknown): string | null {
       return null;
     }
     const proto = Object.getPrototypeOf(x);
-    if (proto !== Object.prototype && proto !== null) return ` : instance de ${proto?.constructor?.name ?? "?"}`;
+    if (proto !== Object.prototype && proto !== null) return `: instance of ${proto?.constructor?.name ?? "?"}`;
     for (const k in x) {
       const r = walk((x as Record<string, unknown>)[k]);
       if (r) {
@@ -190,30 +191,30 @@ function nonJson(v: unknown): string | null {
     return null;
   };
   const r = walk(v);
-  return r ? `état${path.map((k) => (typeof k === "number" ? `[${k}]` : `.${k}`)).join("")}${r}` : null;
+  return r ? `state${path.map((k) => (typeof k === "number" ? `[${k}]` : `.${k}`)).join("")}${r}` : null;
 }
 
-/** Joue une partie entre IA (2 joueurs ou plus : un deck et un agent par joueur). */
+/** Plays a game between AIs (2 players or more: one deck and one agent per player). */
 export function playGame(opts: {
   seed: number;
   decks: CardDef[][];
   agents: Agent[];
   maxDecisions?: number;
   /**
-   * Plafond de tours : au-delà, la partie s'arrête inachevée. Une partie peut ne jamais finir selon les règles (chaque
-   * joueur contrôle une Darksteel Angel : « vous ne pouvez pas perdre ») et l'IA ralentit quand le plateau grossit.
+   * Turn cap: beyond it, the game stops unfinished. A game may never end under the rules (each player controls a
+   * Darksteel Angel: "you can't lose") and the AI slows down as the board grows.
    */
   maxTurns?: number;
   check?: boolean;
   startingLife?: number;
-  /** Commander (PLAN-E) : variante et indices des commandants de chaque deck. */
+  /** Commander (PLAN-E): variant and indices of the commanders of each deck. */
   variant?: GameVariant;
   commanders?: (number[] | undefined)[];
-  /** Fuzz « chaos » : avant chaque décision, `perDecision` variantes corrompues sont soumises et doivent être refusées proprement. */
+  /** "Chaos" fuzz: before each decision, `perDecision` corrupted variants are submitted and must be refused cleanly. */
   chaos?: { seed: number; perDecision: number };
   /**
-   * Toutes les `offers` priorités, chaque option de `legalActions`, construite avec ses choix par défaut (première cible,
-   * premier mode…), doit être acceptée par le moteur : `legal.ts` ne propose rien que `stack.ts` refuse (PLAN-C, lot C2).
+   * Every `offers` priorities, each option of `legalActions`, built with its default choices (first target, first
+   * mode…), must be accepted by the engine: `legal.ts` offers nothing that `stack.ts` refuses (PLAN-C, lot C2).
    */
   offers?: number;
 }): SelfPlayResult {
@@ -223,7 +224,7 @@ export function playGame(opts: {
     seed: opts.seed,
     startingLife: opts.startingLife,
     variant: opts.variant,
-    players: ids.map((id, i) => ({ id, name: `IA ${i + 1}`, deck: opts.decks[i] ?? [], commanders: opts.commanders?.[i] })),
+    players: ids.map((id, i) => ({ id, name: `AI ${i + 1}`, deck: opts.decks[i] ?? [], commanders: opts.commanders?.[i] })),
   });
   const agents: Record<string, Agent> = Object.fromEntries(ids.map((id, i) => [id, opts.agents[i] as Agent]));
   const decisions: SelfPlayResult["decisions"] = [];
@@ -235,18 +236,18 @@ export function playGame(opts: {
     if (opts.maxTurns && state.turn.number > opts.maxTurns) break;
     const p = state.pending;
     if (opts.offers && p.kind === "priority" && i % opts.offers === 0)
-      checkOffers(state, p.player, `seed ${opts.seed}, décision ${i}`);
-    // La déclaration par défaut de l'hôte (exigences de blocage 509.1c, attaques obligées) est toujours acceptée.
+      checkOffers(state, p.player, `seed ${opts.seed}, decision ${i}`);
+    // The host's default declaration (blocking requirements 509.1c, forced attacks) is always accepted.
     if (opts.offers && (p.kind === "declareBlockers" || p.kind === "declareAttackers")) {
       try {
         submit(state, p.player, fallbackDecision(state, p));
       } catch (e) {
         if (!(e instanceof RulesError)) throw e;
-        throw new Error(`Déclaration par défaut refusée (seed ${opts.seed}, décision ${i}) : ${p.kind} — ${e.message}`);
+        throw new Error(`Default declaration refused (seed ${opts.seed}, decision ${i}): ${p.kind} — ${plainText(e.message)}`);
       }
     }
     let d = (agents[p.player] as Agent)(state, p.player);
-    if (chaosRand && opts.chaos) probe(state, p.player, d, chaosRand, opts.chaos.perDecision, `seed ${opts.seed}, décision ${i}`);
+    if (chaosRand && opts.chaos) probe(state, p.player, d, chaosRand, opts.chaos.perDecision, `seed ${opts.seed}, decision ${i}`);
     let step: ReturnType<typeof submit>;
     try {
       step = submit(state, p.player, d);
@@ -261,21 +262,21 @@ export function playGame(opts: {
     decisions.push({ player: p.player, decision: d });
     if (opts.check) {
       const errors = checkInvariants(state, deckSizes);
-      if (errors.length) throw new Error(`Invariants violés (seed ${opts.seed}, décision ${i}) :\n${errors.join("\n")}`);
+      if (errors.length) throw new Error(`Invariants violated (seed ${opts.seed}, decision ${i}):\n${errors.join("\n")}`);
     }
   }
   return { state, decisions, illegal, turns: state.turn.number, caps };
 }
 
-/** Chaque option proposée, avec ses choix par défaut, est acceptée (sinon : `legal.ts` et `stack.ts` divergent). */
+/** Each offered option, with its default choices, is accepted (otherwise: `legal.ts` and `stack.ts` diverge). */
 export function checkOffers(state: GameState, player: string, where: string): void {
   for (const [k, a] of legalActions(state, player).entries()) {
     if (a.type === "pass") continue;
     const d0 = buildCastDecision(a, (list) => list[0], mulberry32(k + 1));
     if (!d0) continue;
-    // Objets payés en coût : un autre choix que la suggestion (les dernières options) doit aussi être accepté. Sauf pour
-    // les coûts additionnels qui engagent, renvoient ou exilent des permanents : ils peuvent prendre une source de mana
-    // dont le sort a besoin (un tel choix est refusé à juste titre), la suggestion est gardée.
+    // Objects paid as a cost: another choice than the suggestion (the last options) must be accepted too. Except for
+    // the additional costs that tap, return or exile permanents: they can take a mana source the spell needs (such a
+    // choice is rightly refused), the suggestion is kept.
     const keepSuggestion = new Set(["costTap", "costBounce", "costExile"]);
     const picks =
       (a.type === "cast" || a.type === "activate") && a.picks
@@ -295,22 +296,24 @@ export function checkOffers(state: GameState, player: string, where: string): vo
       const id = "card" in a ? a.card : "source" in a ? a.source : "";
       const name = state.defs[state.objects[id]?.defId ?? ""]?.name ?? id;
       if (!(e instanceof RulesError))
-        throw new Error(`Erreur du moteur sur une option proposée (${where}) : ${a.type} ${name}\n${JSON.stringify(d)}`, {
+        throw new Error(`Engine error on an offered option (${where}): ${a.type} ${name}\n${JSON.stringify(d)}`, {
           cause: e,
         });
-      throw new Error(`Option proposée puis refusée (${where}) : ${a.type} ${name} — ${e.message}\n${JSON.stringify(d)}`);
+      throw new Error(
+        `Option offered then refused (${where}): ${a.type} ${name} — ${plainText(e.message)}\n${JSON.stringify(d)}`,
+      );
     }
   }
 }
 
-/** État sans les définitions (partagées, immuables) : sert à vérifier qu'une soumission n'a rien modifié. */
+/** State without the definitions (shared, immutable): used to check that a submission changed nothing. */
 function fingerprint(s: GameState): string {
   return JSON.stringify({ ...s, defs: undefined });
 }
 
 /**
- * Soumet des variantes corrompues de `d` : chacune doit être refusée par une RulesError (ou acceptée si elle est
- * légale par hasard), et l'état d'origine ne doit jamais changer (`submit` est transactionnel).
+ * Submits corrupted variants of `d`: each one must be refused by a RulesError (or accepted if it happens to be legal),
+ * and the original state must never change (`submit` is transactional).
  */
 function probe(state: GameState, player: string, d: Decision, rand: () => number, count: number, where: string): void {
   const before = fingerprint(state);
@@ -320,11 +323,11 @@ function probe(state: GameState, player: string, d: Decision, rand: () => number
       submit(state, player, bad);
     } catch (e) {
       if (!(e instanceof RulesError)) {
-        throw new Error(`Chaos (${where}) : erreur non RulesError pour ${JSON.stringify(bad)} (légale : ${JSON.stringify(d)})`, {
+        throw new Error(`Chaos (${where}): non-RulesError error for ${JSON.stringify(bad)} (legal: ${JSON.stringify(d)})`, {
           cause: e,
         });
       }
     }
   }
-  if (fingerprint(state) !== before) throw new Error(`Chaos (${where}) : une soumission a modifié l'état d'origine`);
+  if (fingerprint(state) !== before) throw new Error(`Chaos (${where}): a submission changed the original state`);
 }
