@@ -1139,6 +1139,13 @@ button {
   color: #e3d8ff;
   cursor: help;
 }
+/* Emblème dont une capacité peut être activée (Karn, Living Legacy) : un bouton qui luit. */
+button.emblem-chip.activatable {
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(160, 120, 255, 0.8);
+}
 .loyalty-badge {
   position: absolute;
   left: 50%;

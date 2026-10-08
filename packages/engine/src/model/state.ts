@@ -357,7 +357,12 @@ export type DelayedTiming =
    * « Quand [cet objet] … ce tour-ci » (603.7c) : la capacité retardée se déclenche sur un événement (`DelayedTrigger.on`),
    * chaque fois qu'il se produit jusqu'à la fin du tour.
    */
-  | "thisTurn";
+  | "thisTurn"
+  /**
+   * « Quand [cet objet] … » sans durée (603.7c) : la capacité retardée se déclenche une seule fois, la prochaine fois que
+   * l'événement se produit, puis cesse (Ugin, the Ineffable : « quand ce jeton quitte le champ de bataille »).
+   */
+  | "next";
 
 export interface DelayedTrigger {
   id: string;

@@ -3,7 +3,7 @@
  * extensions (par Tarkir: Dragonstorm), plus ceux des decks Commander.
  */
 import type { ManaType, TokenSpec } from "@mtgx/engine";
-import { amount, cond, fx, ref, triggered, when } from "../tdm/common";
+import { amount, cond, fx, manaAbility, ref, triggered, when } from "../tdm/common";
 
 export * from "../tdm/common";
 
@@ -22,6 +22,15 @@ export const VAMPIRE_BLACK: TokenSpec = creature("Vampire", ["B"], ["Vampire"], 
 export const VAMPIRE_FLYING: TokenSpec = creature("Vampire", ["B"], ["Vampire"], 2, 2, { keywords: ["flying"] });
 /** Vampire blanc et noir 1/1 avec le lien de vie (Edgar Markov's Coffin). */
 export const VAMPIRE_WB_LIFELINK: TokenSpec = creature("Vampire", ["W", "B"], ["Vampire"], 1, 1, { keywords: ["lifelink"] });
+/** Powerstone : artefact « {T} : ajoutez {C}. Ce mana ne peut pas servir à lancer un sort non-artefact ». */
+export const POWERSTONE: TokenSpec = {
+  name: "Powerstone",
+  colors: [],
+  types: ["Artifact"],
+  subtypes: ["Powerstone"],
+  abilities: [manaAbility("C", 1, { restriction: { spell: { types: ["Artifact"] }, abilityOfSource: {} } })],
+  text: "{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.",
+};
 /** Les cinq couleurs, pour « un mana de n'importe quelle couleur ». */
 export const ANY_COLOR: ManaType[] = ["W", "U", "B", "R", "G"];
 

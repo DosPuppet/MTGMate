@@ -1203,7 +1203,9 @@ export const HANDLERS: OpHandlers = {
   lookAtTop(s, r, e, ctx, key) {
     const whose = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
     const player = whose ? s.players[whose] : undefined;
-    if (!player) return;
+    if (!player || !whose) return;
+    // Celui qui choisit : le contrôleur, ou le propriétaire de la bibliothèque (« chaque joueur regarde … »).
+    const chooser = e.chooser === "owner" ? whose : ctx.controller;
     const top = player.library.slice(0, evalAmount(s, ctx, e.n));
     if (top.length === 0) return;
     const maxMv = e.maxManaValue === undefined ? undefined : evalAmount(s, ctx, e.maxManaValue);
@@ -1235,7 +1237,7 @@ export const HANDLERS: OpHandlers = {
       if (!answer) {
         return {
           ask: {
-            player: ctx.controller,
+            player: chooser,
             key: key("look"),
             request: {
               type: "pick",
@@ -1268,7 +1270,7 @@ export const HANDLERS: OpHandlers = {
       if (!answer) {
         return {
           ask: {
-            player: ctx.controller,
+            player: chooser,
             key: key("order"),
             request: {
               type: "order",

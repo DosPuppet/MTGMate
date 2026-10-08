@@ -486,6 +486,8 @@ export interface ManaAbilityDef {
   drawback?: { damageYou?: number; opponentsGainLife?: number };
   /** Un mana d'une des couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater, Plaza of Heroes). */
   produceColorsOf?: ObjectFilter;
+  /** Avec `produceColorsOf` : les couleurs des cartes correspondantes de votre cimetière (The Grey Havens). */
+  produceColorsZone?: "graveyard";
   /**
    * Un mana d'un type de `produce` qu'un terrain correspondant pourrait produire : que vous contrôlez (Reflecting Pool ;
    * Star Compass : de base), ou d'un adversaire si le filtre le dit (`controller: "opponent"` : Exotic Orchard).
@@ -636,7 +638,8 @@ export interface CostDef {
   addCounters?: { kind: string; n: number };
   /** Équipage N (702.122) : engager des créatures dégagées de force totale N ou plus (choisies automatiquement). */
   crew?: number;
-  payLife?: number;
+  /** « Payez N points de vie » ; un montant évalué pour la source (War Room : les couleurs de l'identité de vos commandants). */
+  payLife?: Amount;
   /** « Payez X points de vie » (Krumar Initiate), X étant celui de la capacité. */
   payLifeX?: boolean;
   /** Défausser N cartes (choisies par le joueur ; par défaut les premières de la main). */
@@ -709,6 +712,11 @@ export interface ProtectionRule {
   from: ObjectFilter;
   /** Défense talismanique : seulement contre le ciblage par un adversaire. Sinon protection (DEBT). */
   hexproofOnly?: boolean;
+  /**
+   * Commander : protection contre chaque couleur hors de l'identité de couleur des commandants du contrôleur du permanent
+   * protégé (903.4 ; Commander's Plate), ajoutée au filtre `from` ; aucune protection si l'identité a les cinq couleurs.
+   */
+  outsideIdentity?: boolean;
   label: string;
 }
 
@@ -1234,8 +1242,11 @@ export interface PlayerStaticAbilityDef {
   stealsOpponentDraws?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
-  /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
-  untapCreaturesOnOthersUntap?: boolean;
+  /**
+   * Vos permanents correspondants se dégagent pendant l'étape de dégagement de chaque autre joueur : vos créatures (Prop
+   * Room), vos artefacts (Unwinding Clock).
+   */
+  untapOnOthersUntap?: ObjectFilter;
   /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
   ignoreOpponentsHexproofWard?: boolean;
   /** Warped Space : une fois par tour, un sort lancé depuis l'exil peut l'être en payant {0}. */

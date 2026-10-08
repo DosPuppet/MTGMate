@@ -9,9 +9,9 @@ import {
   abilitiesOf,
   abilityManaCost,
   abilityPurpose,
-  abilityZone,
   activatedAbility,
   activationPicks,
+  activationZone,
   additionalOptions,
   altCostFor,
   altCostPayment,
@@ -225,6 +225,10 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       ...(t.shareCreatureType ? { shareCreatureType: creatureTypesOf(s, legal) } : {}),
       ...(cap !== undefined
         ? { maxTotalManaValue: { max: cap, values: Object.fromEntries(legal.map((id) => [id, snapshot(s, id).manaValue ?? 0])) } }
+        : {}),
+      // « Valeur de mana X ou moins » : X doit valoir au moins la valeur de mana de la cible (601.2b avant 601.2c).
+      ...(t.maxManaValueAmount !== undefined && typeof t.maxManaValueAmount === "object" && t.maxManaValueAmount.kind === "x"
+        ? { xAtLeast: Object.fromEntries(legal.map((id) => [id, snapshot(s, id).manaValue ?? 0])) }
         : {}),
     };
     if (t.of?.kind === "target")
@@ -642,23 +646,36 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         : d.xCost === "blight"
           ? greatestToughness(s, player)
           : null;
+    const xMax =
+      lifeX ??
+      (hasX && (normal || terms.free)
+        ? maxXFor(
+            s,
+            player,
+            (x) => withExtra(spellCost(s, player, d, { ...base, x, free: terms.free })),
+            (x) => purposeFor(false, x),
+          )
+        : null);
+    // « Valeur de mana X ou moins » : seules les cibles permises par le plus grand X payable sont proposées.
+    const castModes = modes.some((m) => m.targets.some((t) => t.xAtLeast))
+      ? modes
+          .map((m) => ({
+            ...m,
+            targets: m.targets.map((t) =>
+              t.xAtLeast ? { ...t, legal: t.legal.filter((id) => (t.xAtLeast?.[id] ?? 0) <= (xMax ?? 0)) } : t,
+            ),
+          }))
+          .filter((m) => targetsAvailable(m.targets))
+      : modes;
+    if (castModes.length === 0) return;
     out.push({
       type: "cast",
       card,
       ...(face !== undefined ? { face, faceName: d.name } : {}),
       ...(variant === "faceDown" ? { faceDown: true, faceName: "Face cachée" } : {}),
       ...(variant === "warp" ? { warp: true } : {}),
-      modes,
-      xMax:
-        lifeX ??
-        (hasX && (normal || terms.free)
-          ? maxXFor(
-              s,
-              player,
-              (x) => withExtra(spellCost(s, player, d, { ...base, x, free: terms.free })),
-              (x) => purposeFor(false, x),
-            )
-          : null),
+      modes: castModes,
+      xMax,
       kickerAffordable: !modeCost && kickerAffordable,
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       ...(hybridColors(d).length ? { hybridColors: hybridColors(d) } : {}),
@@ -703,12 +720,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     (s.players[player]?.[zone] ?? []).filter((id) =>
       s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated" && ab[flag]),
     );
-  for (const id of [...s.battlefield, ...offField("graveyard", "fromGraveyard"), ...offField("hand", "fromHand")]) {
+  // Emblèmes : leurs capacités activées fonctionnent dans la zone de commandement (114.4 ; Karn, Living Legacy).
+  const emblems = (s.players[player]?.command ?? []).filter(
+    (id) => obj(s, id).isToken && s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated"),
+  );
+  for (const id of [...s.battlefield, ...offField("graveyard", "fromGraveyard"), ...offField("hand", "fromHand"), ...emblems]) {
     const o = obj(s, id);
     if (o.zone === "battlefield" ? o.controller !== player : o.owner !== player) continue;
     abilitiesOf(s, id).forEach((_, index) => {
       const ab = activatedAbility(s, id, index);
-      if (!ab || abilityZone(ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
+      if (!ab || activationZone(o, ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
       if (ab.sorcerySpeed && !instantLoyalty(s, player, id, ab) && !sorceryTiming(s, player)) return;
       // Fabrication : la source et les matériaux exilés ne paient pas le mana.
       const exclude = ab.cost.craft

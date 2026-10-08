@@ -524,6 +524,8 @@ export const amount = {
   rawPowerOf: (r: Ref): Amount => ({ kind: "raw", what: "power", of: r }),
   /** Mana dépensé pour lancer la source, d'après ses dernières informations connues au besoin (Astelli Reclaimer). */
   sourceManaSpent: { kind: "raw", what: "manaSpent" } as Amount,
+  /** Commander : nombre de couleurs de l'identité de couleur de vos commandants (903.4 ; 0 sans commandant). */
+  commanderColors: agg("distinct", "colorIdentity", { of: { kind: "commanders", who: { kind: "you" } } }),
 };
 
 /**
@@ -1531,11 +1533,14 @@ export const fx = {
       random?: boolean;
       /** Une carte par type de carte au plus (Atraxa, Grand Unifier). */
       onePerType?: boolean;
+      /** Le propriétaire de la bibliothèque choisit (« chaque joueur regarde … », avec `who`). */
+      chooser?: "owner";
     } = {},
   ): Effect => ({
     op: "lookAtTop",
     n,
     ...(opts.who ? { who: opts.who } : {}),
+    ...(opts.chooser ? { chooser: opts.chooser } : {}),
     ...(opts.random ? { random: true } : {}),
     ...(opts.onePerType ? { onePerType: true } : {}),
     filter: opts.filter,
@@ -1694,6 +1699,25 @@ export const fx = {
   ): Effect => ({
     op: "delayed",
     at: "thisTurn",
+    on: trigger,
+    watch,
+    effects: effects.flat(),
+    ...(opts.bind ? { bind: opts.bind } : {}),
+    ...(opts.targets ? { targets: opts.targets } : {}),
+    ...(opts.label ? { label: opts.label } : {}),
+  }),
+  /**
+   * Capacité retardée « quand [l'objet désigné] … » sans durée (603.7c) : comme `whenThisTurn`, mais elle ne se déclenche
+   * qu'une fois, la prochaine fois que l'événement se produit, quel que soit le tour (Ugin, the Ineffable).
+   */
+  whenNext: (
+    trigger: TriggerSpec,
+    watch: Ref,
+    effects: Effects,
+    opts: { targets?: TargetSpec[]; bind?: Record<string, Ref>; label?: string } = {},
+  ): Effect => ({
+    op: "delayed",
+    at: "next",
     on: trigger,
     watch,
     effects: effects.flat(),
@@ -1972,6 +1996,8 @@ export function manaAbility(
     drawback?: ManaAbilityDef["drawback"];
     /** Couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater). */
     colorsOf?: ObjectFilter;
+    /** Avec `colorsOf` : les cartes de votre cimetière plutôt que vos permanents (The Grey Havens). */
+    colorsZone?: "graveyard";
     /**
      * Ce que des terrains correspondants pourraient produire, parmi `produce` : les vôtres (Reflecting Pool : {} ; Star
      * Compass : de base), ou ceux d'un adversaire (`{ controller: "opponent" }` : Exotic Orchard).
@@ -1994,6 +2020,7 @@ export function manaAbility(
     produceLinkedColors: opts.linkedColors,
     ...(opts.drawback ? { drawback: opts.drawback } : {}),
     ...(opts.colorsOf ? { produceColorsOf: opts.colorsOf } : {}),
+    ...(opts.colorsZone ? { produceColorsZone: opts.colorsZone } : {}),
     ...(opts.likeLands ? { produceLikeLands: opts.likeLands } : {}),
     ...(opts.commanderIdentity ? { produceIdentity: true } : {}),
     amountGraveyard: opts.perGraveyard,
@@ -2035,7 +2062,7 @@ export function activated(opts: {
   grantor?: "tap" | "exile" | "sacrifice";
   /** Épuiser la source (« Exert »). */
   exert?: boolean;
-  payLife?: number;
+  payLife?: Amount;
   /** « Payez X points de vie » (X de la capacité). */
   payLifeX?: boolean;
   targets?: TargetSpec[];

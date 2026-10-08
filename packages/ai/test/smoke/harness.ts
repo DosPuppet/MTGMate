@@ -53,6 +53,13 @@ const EXTRA_P1: Record<string, string[]> = {
   "Hardlight Containment": ["Nutrient Block"],
   // {C} : une source de mana incolore.
   "Warping Wail": ["Ancient Tomb"],
+  // Deck The Vision : {C}, {C}{C} ou {C}{C}{C} (Ancient Tomb, Sol Ring).
+  "Eldritch Immunity": ["Ancient Tomb"],
+  "Null Elemental Blast": ["Ancient Tomb"],
+  "Glaring Fleshraker": ["Ancient Tomb"],
+  "Eldrazi Confluence": ["Ancient Tomb"],
+  "Kozilek's Command": ["Ancient Tomb"],
+  "Echoes of Eternity": ["Ancient Tomb", "Sol Ring"],
   // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
   "Zodiark, Umbral God": ["Swamp", "Swamp"],
   "Pox Plague": ["Swamp", "Swamp"],

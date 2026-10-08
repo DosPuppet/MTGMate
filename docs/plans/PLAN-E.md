@@ -379,3 +379,4 @@ Elle renvoie aussi, à titre indicatif seulement, `gameChangers` et une tranche 
 - **06/10/2026, après le bilan** (règles 148), à la demande de l'utilisateur : cinquième et sixième decks, les préconstruits officiels Multiverse Reforged (Réalité fracturée) et Turtle Power! (Tortues Ninja) ; détail dans `docs/extensions/edh.md`.
 - **07/10/2026, après le bilan** (règles 149), à la demande de l'utilisateur : les préconstruits officiels Counter Blitz (Final Fantasy X), The Fantastic Four (Marvel Super Heroes) et Mutant Menace (Fallout) ; détail dans `docs/extensions/edh.md`.
 - **08/10/2026, après le bilan** (règles 170), à la demande de l'utilisateur : dixième deck, Nissa, Leyline Tamer (Moxfield, bracket 4) ; détail dans `docs/extensions/edh.md`.
+- **08/10/2026, après le bilan** (règles 172), à la demande de l'utilisateur : onzième deck, The Vision (« Nier Automata Deck », Moxfield, bracket 3) ; détail dans `docs/extensions/edh.md`.

@@ -5,7 +5,7 @@ import { resolveCompare } from "./effects";
 import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
 import { firstOfEachName, shareName } from "./names";
-import { obj } from "./state";
+import { commanderIdentity, obj } from "./state";
 import { playerProtectedFrom, playerStatic, playerStatics } from "./statics";
 import { attackedThisTurn, countersPutThisTurn, dealtDamageThisTurn, objectDidThisTurn } from "./turnlog";
 import type {
@@ -20,7 +20,7 @@ import type {
   PlayerId,
   TargetSpec,
 } from "./types";
-import { LAND_TYPES, PERMANENT_TYPES } from "./types";
+import { COLORS, isAnyManaAbility, LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 /**
  * Vue d'une source (sort, source d'une capacité ou de blessures) : l'objet, ses dernières informations connues, sinon
@@ -59,7 +59,14 @@ export function protectedFrom(s: GameState, id: ObjectId, source: LkiSnapshot | 
   for (const r of chars(s, id).protections) {
     if (r.hexproofOnly && !targetedByOpponent) continue;
     // « défense talismanique contre la couleur choisie » (Mondo Gecko) : le choix du permanent protégé.
-    const from = resolveFilter(s, r.from, id);
+    let from = resolveFilter(s, r.from, id);
+    // Commander's Plate : chaque couleur hors de l'identité des commandants de son contrôleur (903.4).
+    if (r.outsideIdentity) {
+      const identity = commanderIdentity(s, o.controller);
+      const colors = COLORS.filter((c) => !identity.includes(c));
+      if (colors.length === 0) continue;
+      from = { ...from, colors };
+    }
     if (source ? matchesView(source, from, o.controller, id) : Object.keys(from).length === 0) return true;
   }
   return false;
@@ -136,7 +143,9 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
   if (f.compare && !compareMatches(v, f.compare)) return false;
-  if (f.withActivatedAbility && !(v.abilities ?? []).some((a) => a.kind === "activated")) return false;
+  // « avec une capacité de mana » (Moonsilver Key) : une capacité de mana, activée ou non (605.1a).
+  if (f.withActivatedAbility === "mana" && !(v.abilities ?? []).some(isAnyManaAbility)) return false;
+  if (f.withActivatedAbility === true && !(v.abilities ?? []).some((a) => a.kind === "activated")) return false;
   if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
   if (f.noneOfSubtypes && (v.subtypes.includes(ALL_CREATURE_TYPES) || f.noneOfSubtypes.some((t) => v.subtypes.includes(t))))
     return false;

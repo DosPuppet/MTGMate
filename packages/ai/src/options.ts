@@ -90,6 +90,12 @@ export function buildCastDecision(
     }
     return t;
   };
+  /** « Valeur de mana X ou moins » : X vaut au moins la valeur de mana des cibles choisies (`TargetOption.xAtLeast`). */
+  const withXFloor = (targets: Record<string, string[]>, opts: TargetOption[], x: number | undefined) => {
+    let floor = 0;
+    for (const o of opts) for (const id of targets[o.id] ?? []) floor = Math.max(floor, o.xAtLeast?.[id] ?? 0);
+    return { targets, x: x === undefined ? undefined : Math.max(x, floor) };
+  };
   switch (a.type) {
     case "pass":
       return { type: "pass" };
@@ -125,8 +131,7 @@ export function buildCastDecision(
           faceDown: a.faceDown,
           warp: a.warp,
           mode: mode.index,
-          targets: targetsFrom(targetOpts),
-          x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
+          ...withXFloor(targetsFrom(targetOpts), targetOpts, a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1))),
           kicked,
           discard:
             (a.additional?.discard?.orLife !== undefined || a.additional?.discard?.orPayAffordable) && rand() < 0.5

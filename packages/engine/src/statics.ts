@@ -5,6 +5,7 @@ import { matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
+  Amount,
   EventReplacement,
   GameState,
   ObjectId,
@@ -338,6 +339,12 @@ export function lifeLossPrevented(s: GameState, player: PlayerId): boolean {
  * Points de vie qu'un joueur peut payer (119.4) : son total, ou aucun s'il ne peut pas perdre de points de vie (119.8,
  * Teferi's Protection). Payer 0 PV reste toujours possible.
  */
+/** PV d'un coût « payez N points de vie » (`CostDef.payLife`), un montant évalué pour la source (War Room). */
+export function lifeCost(s: GameState, player: PlayerId, source: ObjectId, n: Amount | undefined): number {
+  if (n === undefined) return 0;
+  return typeof n === "number" ? n : Math.max(0, evalAmount(s, staticContext(s, player, source), n));
+}
+
 export function payableLife(s: GameState, player: PlayerId): number {
   const life = s.players[player]?.life ?? 0;
   return lifeLossPrevented(s, player) ? Math.min(life, 0) : life;

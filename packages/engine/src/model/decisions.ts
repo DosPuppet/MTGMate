@@ -268,6 +268,12 @@ export interface TargetOption {
   shareCreatureType?: Record<string, string[]>;
   /** Au moins une des cibles doit être l'une de celles-ci (la réduction de coût qui rend le sort payable). */
   requiredAmong?: string[];
+  /**
+   * « Valeur de mana X ou moins » (`TargetSpec.maxManaValueAmount` valant X) : la plus petite valeur de X qui rend chaque
+   * cible légale (sa valeur de mana) ; les cibles qui demandent plus que le plus grand X payable ne sont pas proposées
+   * (Kozilek's Command, Here Comes a New Hero!, Agadeem's Awakening).
+   */
+  xAtLeast?: Record<string, number>;
 }
 
 export interface ModeOption {

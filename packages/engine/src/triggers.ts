@@ -1047,6 +1047,9 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       if (!!ab.fromGraveyard !== (zone === "graveyard")) return;
       // Zone de commandement : les emblèmes ; d'une carte, seulement « depuis la zone de commandement » (113.6, éminence).
       if (zone === "command" && !s.objects[src.id]?.isToken && !ab.fromCommand) return;
+      // Un sort sur la pile : seulement « quand vous lancez ce sort » (113.6 ; Ugin, Eye of the Storms ne se déclenche pas
+      // lui-même par « chaque fois que vous lancez un sort incolore »).
+      if (zone === "stack" && ab.trigger.on !== "castSelf") return;
       const matched = matchTrigger(s, ev, ab.trigger, src);
       if (!matched || entryMuted(s, ev, src)) return;
       const defending = s.combat ? frozenDefendingPlayer(s, src.id, matched.objectId) : undefined;
@@ -1124,7 +1127,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
  * contrôle de cet Équipement ce tour-ci ») : l'événement doit concerner un objet surveillé.
  */
 function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
-  for (const d of s.delayed) {
+  for (const d of [...s.delayed]) {
     if (!d.on || (d.at === "thisTurn" && d.notBeforeTurn !== s.turn.number)) continue;
     const src = delayedSource(s, d);
     const data = matchTrigger(s, ev, d.on, src);
@@ -1132,6 +1135,8 @@ function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
     if (entryMuted(s, ev, undefined)) continue;
     const c = d.ability.condition;
     if (c && !checkCondition(s, c, d.controller, d.sourceId, data.objectId, data)) continue;
+    // 603.7c : sans durée, elle ne se déclenche qu'une fois.
+    if (d.at === "next") s.delayed = s.delayed.filter((x) => x !== d);
     pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability, data);
   }
 }

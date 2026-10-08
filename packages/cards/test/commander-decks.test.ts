@@ -23,6 +23,7 @@ describe("decks Commander", () => {
       "rakdos",
       "turtle-power",
       "ur-dragon",
+      "vision",
       "yshtola",
     ]);
     for (const d of decks) {

@@ -15,6 +15,8 @@ import { EDH_RAKDOS } from "./rakdos";
 import { EDH_STAPLES } from "./staples";
 import { EDH_TURTLES } from "./turtles";
 import { EDH_URDRAGON } from "./urdragon";
+import { EDH_VISION } from "./vision";
+import { EDH_VISION_LANDS } from "./visionLands";
 import { EDH_YSHTOLA } from "./yshtola";
 
 export const EDH_SCRIPTS: Record<string, CardScript> = {
@@ -31,4 +33,6 @@ export const EDH_SCRIPTS: Record<string, CardScript> = {
   ...EDH_FANTASTIC,
   ...EDH_MUTANT,
   ...EDH_NISSA,
+  ...EDH_VISION,
+  ...EDH_VISION_LANDS,
 };

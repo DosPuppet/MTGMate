@@ -4,6 +4,7 @@
  */
 
 import { type DamageSource, payLife, removeFromCombat, sourceFromObject } from "./actions";
+import { colorIdentity } from "./identity";
 import { copiedDefId, hasType } from "./layers";
 import { manaValue } from "./mana";
 import { nameList, shareName } from "./names";
@@ -790,6 +791,11 @@ function propertyValues(s: GameState, id: ObjectId, property: AggregateProperty,
       // « le nombre de marqueurs parmi les permanents que vous contrôlez » (Dimension X Pizzasaur) : toutes sortes.
       if (counter === "any") return [Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0)];
       return [Math.max(0, counters[counter ?? ""] ?? 0)];
+    case "colorIdentity": {
+      // L'identité de couleur est celle de la carte (903.4), où qu'elle soit.
+      const def = s.defs[o?.defId ?? s.lki[id]?.defId ?? ""];
+      return def ? colorIdentity(def) : [];
+    }
   }
 }
 

@@ -153,15 +153,20 @@ function givePriority(s: GameState): void {
 /**
  * Étape de dégagement (502.3) : les permanents du joueur actif se dégagent, sauf ceux qu'il a choisi de garder engagés
  * (`keep`), ceux qui ne se dégagent pas lors de son étape de dégagement (remplacement `untap` avec `untapStep`) et ceux
- * qui sont épuisés (701.43). Prop Room : les créatures d'un autre joueur se dégagent aussi (ce n'est pas l'étape de
- * dégagement de leur contrôleur).
+ * qui sont épuisés (701.43). Prop Room, Unwinding Clock : les créatures (les artefacts) d'un autre joueur se dégagent
+ * aussi (ce n'est pas l'étape de dégagement de leur contrôleur).
  */
 function untapStep(s: GameState, keep: ObjectId[]): void {
   const active = s.turn.active;
   for (const id of s.battlefield) {
     const o = obj(s, id);
-    // Prop Room : les créatures de ce joueur se dégagent aussi pendant l'étape de dégagement des autres joueurs.
-    const propRoom = o.controller !== active && isCreature(s, id) && playerStatic(s, o.controller, "untapCreaturesOnOthersUntap");
+    // Prop Room, Unwinding Clock : les créatures (les artefacts) de ce joueur se dégagent aussi pendant l'étape de
+    // dégagement des autres joueurs.
+    const propRoom =
+      o.controller !== active &&
+      playerStatics(s, o.controller, "untapOnOthersUntap").some(
+        ({ id: src, ab }) => !!ab.untapOnOthersUntap && matchesObjectFilter(s, o.controller, id, ab.untapOnOthersUntap, src),
+      );
     if (o.controller !== active && !propRoom) continue;
     // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement (de son contrôleur).
     if (o.exerted && !propRoom) {

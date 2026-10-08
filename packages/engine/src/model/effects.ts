@@ -282,6 +282,11 @@ export type Effect =
       exact?: boolean;
       /** Une carte par type de carte au plus (Atraxa, Grand Unifier). */
       onePerType?: boolean;
+      /**
+       * Qui choisit les cartes et ordonne le reste : le contrôleur (par défaut ; Portent : la bibliothèque d'un autre joueur),
+       * ou le propriétaire de la bibliothèque (`owner` : « chaque joueur regarde … et peut révéler », Explore the Vastlands).
+       */
+      chooser?: "owner";
     }
   /** Chercher dans sa bibliothèque jusqu'à `count` cartes correspondant au filtre, puis mélanger. */
   | {

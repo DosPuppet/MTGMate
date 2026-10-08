@@ -90,7 +90,10 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Prop Room": {
     abilities: [
-      playerStatic({ untapCreaturesOnOthersUntap: true, label: "Vos créatures se dégagent pendant le dégagement des autres" }),
+      playerStatic({
+        untapOnOthersUntap: { types: ["Creature"] },
+        label: "Vos créatures se dégagent pendant le dégagement des autres",
+      }),
     ],
   },
   "Dollmaker's Shop": {

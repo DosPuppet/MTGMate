@@ -21,6 +21,7 @@ dans `packages/ai/test/smoke/edh.test.ts`. Couverture par deck : `npm run covera
 | `fantastic-four` | Invisible Woman (préconstruit officiel des Quatre Fantastiques) | 47 (6 en commun avec Counter Blitz) |
 | `mutant-menace` | The Wise Mothman (préconstruit officiel de Fallout) | 57 (3 en commun avec Counter Blitz) |
 | `nissa` | Nissa, Leyline Tamer (toucheterre, quatre couleurs sans le vert) | 34 |
+| `vision` | The Vision (artefacts incolores, terrains d'Urza, Eldrazi) | 63 |
 
 ## E0 — import ✅
 
@@ -221,3 +222,24 @@ Ajouté le 08/10/2026 à la demande de l'utilisateur avec la recette « Ajouter 
 - **Approximations :** Command Beacon (avec deux commandants, les deux vont en main).
 - **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-nissa`, contre les neuf autres préconstruits à tour de rôle) : en duel, 37,7 % ± 6,7 (199 parties décidées sur 200, 19,6 tours) ; à quatre (sièges A, B, A, B, part équitable 50 %), 51,5 % ± 9,8 (99 parties décidées sur 100, 44,8 tours). Sous la cible en duel, dans la cible à quatre. À étudier dans l'IA d'abord (terrains rejoués, dessus de bibliothèque), la liste n'est pas retouchée.
 - **Dette :** aucune entrée nouvelle ; `sacrificeReduce` (émerger) n'est plus propre à une carte et quitte la référence ; plafonds inchangés.
+
+## Deck The Vision : artefacts incolores ✅ (618 / 618)
+
+Ajouté le 08/10/2026 à la demande de l'utilisateur avec la recette « Ajouter un deck Commander ». Liste : « Nier Automata Deck » de DoomMeat sur Moxfield (bracket 3 déclaré, mise à jour le 05/10/2026), dans `docs/commander/decks/vision.txt` ; préconstruit `cmd-vision` (incolore ; 1 Game Changer : The One Ring). Le commandant (Marvel Super Heroes) et 34 autres cartes étaient déjà jouables.
+
+**Import :** 63 cartes absentes du catalogue ajoutées à EDH, avec leur texte français.
+
+**Cartes (63, `edh/vision.ts` et `edh/visionLands.ts`) :** artefacts : Basalt Monolith, Cloud Key, Darksteel Forge, Darksteel Monolith, Forsaken Monument, Fractured Powerstone, Gerrard's Hourglass Pendant, Liquimetal Torque, Manifold Key, Moonsilver Key, Mox Opal, Mystic Forge, Nevinyrral's Disk, The Mightstone and Weakstone, Unwinding Clock, Vedalken Orrery, Voltaic Key ; Équipements : Adaptive Omnitool, Brotherhood Regalia, Champion's Helm, Commander's Plate, Excalibur, Sword of Eden, Hammer of Nazahn, Mithril Coat, Nettlecyst, Silver Shroud Costume, Sword of Feast and Famine, Sword of Truth and Justice ; planeswalkers : Karn, Living Legacy, Ugin, the Ineffable, Ugin, the Spirit Dragon ; créatures : Glaring Fleshraker, Liberator, Urza's Battlethopter, Scrap Trawler, Shimmer Myr, Skittering Cicada, Wandering Archaic // Explore the Vastlands ; sorts : All Is Dust, Desecrate Reality, Echoes of Eternity, Eldrazi Confluence, Eldritch Immunity, Kozilek's Command, Null Elemental Blast ; terrains : Abstergo Entertainment, Buried Ruin, Darksteel Citadel, Emergence Zone, Planar Nexus, Sanctum of Ugin, Scorched Ruins, Shrine of the Forsaken Gods, The Grey Havens, The Mycosynth Gardens, Urza's Cave, Urza's Mine, Urza's Power Plant, Urza's Saga, Urza's Tower, Urza's Workshop, Vesuva, War Room, Witch's Clinic.
+
+- **Moteur :**
+  - capacités activées des emblèmes (114.4) : Karn, Living Legacy (−7) ; l'emblème activable devient un bouton dans la barre du joueur ;
+  - capacité retardée « la prochaine fois que » sans durée (603.7c, `fx.whenNext`) : elle se déclenche une fois (Ugin, the Ineffable) ;
+  - `lookAtTop` avec `chooser: "owner"` : chaque joueur choisit dans sa bibliothèque (Explore the Vastlands) ;
+  - « valeur de mana X ou moins » (`maxManaValueAmount: amount.x`) vérifiée au lancer avec le X annoncé ; `legalActions` publie le X minimal de chaque cible (`TargetOption.xAtLeast`), l'IA prend un X suffisant (Kozilek's Command, et aussi Here Comes a New Hero!, Agadeem's Awakening) ;
+  - filtres et montants : « avec une capacité de mana » (`withActivatedAbility: "mana"`), protection hors de l'identité du commandant (`outsideIdentity`), couleurs de l'identité des commandants (`amount.commanderColors`), PV d'un coût calculés (`CostDef.payLife` montant), dégagement pendant l'étape des autres joueurs selon un filtre (`untapOnOthersUntap`, qui remplace la statique de Prop Room), couleurs des cartes du cimetière pour une capacité de mana (`colorsZone`) ;
+  - « Equip legendary creature {N} » lu dans le texte, comme « Equip commander » ;
+  - corrections : un sort sur la pile ne fait se déclencher que ses capacités « quand vous lancez ce sort » (Ugin, Eye of the Storms se déclenchait lui-même par « chaque fois que vous lancez un sort incolore ») ; un terrain que ses effets « en arrivant » mettent au cimetière (Scorched Ruins) faisait planter `playLand`, il compte maintenant comme joué.
+- **Tests :** `engine/test/edh-vision.test.ts` (62), Echoes of Eternity et Gerrard's Hourglass Pendant dans `rulings.test.ts` ; fumée EDH (618 cartes, sources incolores ajoutées pour les coûts {C}) ; fuzz strict à deux joueurs et Commander à quatre joueurs sans option refusée.
+- **Approximations :** Scorched Ruins (terrains sacrifiés choisis par le moteur), The Mycosynth Gardens (valeur de mana vérifiée à la résolution, comme Likeness Looter).
+- **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-vision`, contre les dix autres préconstruits à tour de rôle) : en duel, 49,7 % ± 6,9 (199 parties décidées sur 200, 20,6 tours) ; à quatre (sièges A, B, A, B, part équitable 50 %), 41,8 % ± 9,8 (98 parties décidées sur 100, 48,8 tours). Dans la cible en duel, un peu sous la cible à quatre (incertitude large).
+- **Dette :** `outsideIdentity` (Commander's Plate) et `produceColorsZone` (The Grey Havens) entrent dans la référence ; `ifManaValue`, `manaProduced`, `withActivatedAbility` et la variante `Ref.commanders` n'y sont plus (partagées) ; plafonds Effect (champs) 639 → 640 et valeurs propres à une carte 104 → 105.

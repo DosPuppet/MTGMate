@@ -278,3 +278,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Nuka-Nuke Launcher : l'intimidation se lit « ne peut être bloquée que par des créatures-artefacts », et les marqueurs de radiation frappent chaque adversaire jusqu'à votre prochain tour ;
   - `règle` Young Deathclaws : la récupération coûte {4} (et non le coût de mana de la carte) et c'est une capacité de Young Deathclaws ;
   - `règle` Mariposa Military Base : elle arrive toujours dégagée, sans marqueurs de radiation.
+  - `choix auto` Scorched Ruins : les deux terrains dégagés sacrifiés en arrivant sont choisis par le moteur (les premiers du champ de bataille), sans question au joueur ;
+  - `timing` The Mycosynth Gardens : la valeur de mana X de l'artefact ciblé est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage, comme Likeness Looter.

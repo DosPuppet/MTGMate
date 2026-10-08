@@ -14,6 +14,7 @@ import {
   loyalty,
   manaAbility,
   modal,
+  POWERSTONE,
   protection,
   protectionAbility,
   ref,
@@ -47,15 +48,6 @@ const shuffleGraveyardBack = () =>
     { fromGraveyard: true, label: "Mise au cimetière : son propriétaire mélange son cimetière dans sa bibliothèque" },
   );
 
-/** Powerstone : artefact « {T} : ajoutez {C}. Ce mana ne peut pas servir à lancer un sort non-artefact ». */
-const POWERSTONE: TokenSpec = {
-  name: "Powerstone",
-  colors: [],
-  types: ["Artifact"],
-  subtypes: ["Powerstone"],
-  abilities: [manaAbility("C", 1, { restriction: { spell: { types: ["Artifact"] }, abilityOfSource: {} } })],
-  text: "{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.",
-};
 /** Diable rouge 1/1 : « quand ce jeton meurt, il inflige 1 blessure à n'importe quelle cible » (Ob Nixilis). */
 const DEVIL: TokenSpec = {
   name: "Devil",

@@ -233,8 +233,11 @@ export interface ObjectFilter {
   noAbilities?: boolean;
   /** Permanent face cachée (Duskmourn). */
   faceDown?: boolean;
-  /** A au moins une capacité activée, autre qu'une capacité de mana (The Enigma Jewel). */
-  withActivatedAbility?: boolean;
+  /**
+   * A au moins une capacité activée (The Enigma Jewel) ; `"mana"` : au moins une capacité de mana (605.1a, Moonsilver
+   * Key : « une carte d'artefact avec une capacité de mana »).
+   */
+  withActivatedAbility?: boolean | "mana";
   /** Valeur de mana de la parité choisie par la source (Gollum, Riddle Master). */
   parityChosen?: boolean;
   /** Valeur de mana, force ou endurance égale au nombre choisi par la source (Talion, the Kindly Lord). */
@@ -661,7 +664,9 @@ export type AggregateProperty =
   /** Sortes de marqueurs présents (Hundred-Battle Veteran). */
   | "counterKind"
   /** Nombre de marqueurs de la sorte `counter`. */
-  | "counters";
+  | "counters"
+  /** Couleurs de l'identité de couleur de la carte (903.4 : War Room, « les couleurs de l'identité de vos commandants »). */
+  | "colorIdentity";
 
 /** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
 export type Ref =

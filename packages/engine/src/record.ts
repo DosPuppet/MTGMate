@@ -467,8 +467,14 @@ export const RECORD_VERSION = 1;
  *   d'un artefact
  * - 171 : Mana : une source qui engage un autre permanent (Springleaf Drum) ne compte pas sur un permanent déjà engagé
  *   ou sacrifié pour un autre coût du même paiement (Guardian of the Great Door)
+ * - 172 : Deck The Vision (Commander) : capacités activées des emblèmes (114.4, Karn, Living Legacy) ; capacité retardée
+ *   « la prochaine fois que » sans durée (603.7c, `at: "next"`) ; un sort sur la pile ne fait se déclencher que ses
+ *   capacités « quand vous lancez ce sort » (Ugin, Eye of the Storms) ; « valeur de mana X ou moins » vérifiée au lancer
+ *   avec le X annoncé (Kozilek's Command, Here Comes a New Hero!, Agadeem's Awakening) ; un terrain que ses effets « en
+ *   arrivant » mettent ailleurs compte comme joué (Scorched Ruins) ; protection hors de l'identité du commandant ; PV
+ *   d'un coût calculés (War Room) ; dégagement pendant l'étape des autres joueurs selon un filtre (Unwinding Clock)
  */
-export const RULES_VERSION = 171;
+export const RULES_VERSION = 172;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

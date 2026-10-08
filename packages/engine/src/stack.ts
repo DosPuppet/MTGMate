@@ -63,6 +63,7 @@ import {
 import {
   consumePlayerEffect,
   controlledAbilitiesWithSource,
+  lifeCost,
   payableLife,
   playerStatic,
   playerStatics,
@@ -113,7 +114,7 @@ import type {
   StackItem,
   TargetSpec,
 } from "./types";
-import { BASIC_LAND_TYPES, PERMANENT_TYPES } from "./types";
+import { BASIC_LAND_TYPES, isManaAbility, PERMANENT_TYPES } from "./types";
 
 export { RulesError };
 
@@ -437,6 +438,13 @@ export function playLand(
   const fromZone = o.zone;
   const fromExile = o.zone === "exile" ? exilePermission(s, player, card) : undefined;
   const choices = asEntersChoices(s, {}, entering, "land:", first ? { first } : "auto");
+  // Scorched Ruins : ses effets « en arrivant » l'ont mis ailleurs (au cimetière, faute de terrains à sacrifier) ; le
+  // terrain a quand même été joué (305.1).
+  if (s.objects[card]?.zone !== fromZone) {
+    s.turn.landsPlayed += 1;
+    logTurnEvent(s, { e: "playLand", player, fromZone, types: face?.types ?? [], subtypes: face?.subtypes ?? [] });
+    return;
+  }
   const id = moveObject(s, card, "battlefield", {
     controller: player,
     enters: { shockPaid: payLife, ...("ask" in choices ? {} : choices) },
@@ -2018,7 +2026,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       );
     throw new RulesError("Ce mode n'est pas disponible");
   }
-  const targets = validateTargets(s, player, mode.targets, choices.targets, {
+  // « Valeur de mana X ou moins » : la cible est vérifiée avec le X annoncé (601.2b, puis 601.2c).
+  const xCtx = { ...staticContext(s, player, card, { sourceDefId: d.id }), x: Math.max(0, Math.floor(choices.x ?? 0)) };
+  const castSpecs = mode.targets.map((t) =>
+    t.maxManaValueAmount !== undefined || t.manaValueAmount !== undefined ? concreteSpec(s, xCtx, t) : t,
+  );
+  const targets = validateTargets(s, player, castSpecs, choices.targets, {
     kicked: !!choices.kicked,
     sourceId: card,
     x: choices.x,
@@ -2805,6 +2818,14 @@ export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard
   return ab.fromGraveyard ? "graveyard" : ab.fromHand ? "hand" : "battlefield";
 }
 
+/**
+ * Zone d'où cet objet active cette capacité : celle de la capacité, ou la zone de commandement pour un emblème (114.4 :
+ * ses capacités y fonctionnent ; Karn, Living Legacy). Hors du champ de bataille, c'est le propriétaire qui l'active.
+ */
+export function activationZone(o: GameObject, ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" | "command" {
+  return o.zone === "command" && o.isToken ? "command" : abilityZone(ab);
+}
+
 /** Marqueurs d'une sorte sur un objet (`any` : tous). */
 function countersFor(o: GameObject, kind: string): number {
   return kind === "any" ? Object.values(o.counters).reduce<number>((n, k) => n + (k ?? 0), 0) : (o.counters[kind] ?? 0);
@@ -2845,12 +2866,12 @@ export function blightTarget(s: GameState, player: PlayerId, n: number): ObjectI
 /** Les coûts non-mana de la capacité peuvent-ils être payés ? */
 export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
   const o = s.objects[source];
-  if (!o || o.zone !== abilityZone(ab)) return false;
+  if (!o || o.zone !== activationZone(o, ab)) return false;
   if (o.zone === "battlefield" && !ab.specialAction && chars(s, source).keywords.includes("noActivatedAbilities")) return false;
   if (ab.once && !onceAvailable(s, o, ab, index) && !exhaustReusable(s, o.controller, ab)) return false;
   if (o.zone === "battlefield" && abilitiesLocked(s, o.controller, source)) return false;
   if (ab.oncePerTurn && activatedThisTurn(s, source, { index })) return false;
-  const who = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
+  const who = o.zone !== "battlefield" ? o.owner : o.controller;
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;
   // Sorcerous Spyglass : les capacités (non de mana) des sources du nom choisi ne peuvent pas être activées.
   if (spyglassed(s, source)) return false;
@@ -2874,9 +2895,9 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
     if (!g || (ab.cost.grantor === "tap" && obj(s, g).tapped)) return false;
     if (ab.cost.grantor === "sacrifice" && hasKeyword(s, g, "cantBeSacrificed")) return false;
   }
-  const player = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
+  const player = o.zone !== "battlefield" ? o.owner : o.controller;
   if (ab.cost.removeCounters && countersFor(o, ab.cost.removeCounters.kind) < ab.cost.removeCounters.n) return false;
-  if (ab.cost.payLife && payableLife(s, player) < ab.cost.payLife) return false;
+  if (ab.cost.payLife && payableLife(s, player) < lifeCost(s, player, source, ab.cost.payLife)) return false;
   if (ab.cost.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
     const n = ab.cost.sacrifice.distinct === "name" ? distinctNames(s, options) : options.length;
@@ -3287,7 +3308,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   const o = s.objects[source];
   const ab = activatedAbility(s, source, index);
   if (!ab || !o) throw new RulesError("Capacité inconnue");
-  const zone = abilityZone(ab);
+  const zone = activationZone(o, ab);
   if (o.zone !== zone || (zone === "battlefield" ? o.controller : o.owner) !== player) {
     throw new RulesError("Vous ne contrôlez pas ce permanent");
   }
@@ -3473,7 +3494,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     for (const k of kinds.length ? kinds : anyCountersDefault(o, n)) byKind.set(k, (byKind.get(k) ?? 0) + 1);
     for (const [k, m] of byKind) changeCounters(s, o, k, -m);
   } else if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
-  if (ab.cost.payLife) payLife_(s, player, ab.cost.payLife);
+  if (ab.cost.payLife) payLife_(s, player, lifeCost(s, player, source, ab.cost.payLife));
   if (ab.cost.payLifeX && x > 0) payLife_(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));
   // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
@@ -3612,25 +3633,6 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   announceTargets(s, item.id, player, targets);
   // 605.1a / 605.3b : une capacité de mana ne va pas sur la pile ; elle se résout aussitôt.
   if (isManaAbility(ab)) resolveManaAbilityNow(s, item);
-}
-
-const MANA_OPS = new Set<Effect["op"]>(["addMana", "addManaChoice", "addManaColorsAmong", "addManaUntilEndOfTurn"]);
-
-/** Un effet (ou un effet imbriqué : « si… », « vous pouvez… ») ajoute-t-il du mana ? */
-function addsMana(effects: readonly Effect[]): boolean {
-  return effects.some(
-    (e) =>
-      MANA_OPS.has(e.op) ||
-      Object.values(e).some((v) => Array.isArray(v) && v.length > 0 && typeof v[0] === "object" && addsMana(v as Effect[])),
-  );
-}
-
-/**
- * 605.1a : une capacité activée sans cible, qui n'est pas une capacité de loyauté et qui peut ajouter du mana, est une
- * capacité de mana (Ramos, Capital City, Loot, the Pathfinder…).
- */
-export function isManaAbility(ab: ActivatedAbilityDef): boolean {
-  return ab.targets.length === 0 && ab.cost.loyalty === undefined && addsMana(ab.effects);
 }
 
 /** 605.3b : résout une capacité de mana sans passer par la pile ; le joueur garde la priorité. */

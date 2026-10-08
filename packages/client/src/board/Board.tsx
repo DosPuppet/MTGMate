@@ -93,6 +93,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const view = useGame((s) => s.view) as GameView;
   const casting = useGame((s) => s.casting);
   const clickPlayer = useGame((s) => s.clickPlayer);
+  const clickPermanent = useGame((s) => s.clickPermanent);
   const openGraveyard = useGame((s) => s.openGraveyard);
   const openExile = useGame((s) => s.openExile);
   const lang = useGame((s) => s.lang);
@@ -171,11 +172,24 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
             </span>
           )}
           {player.speed !== undefined && <SpeedGauge player={player.id} speed={player.speed} />}
-          {player.emblems.map((e, i) => (
-            <span key={`${e.name}-${i}`} className="emblem-chip" title={e.text}>
-              ✦ {e.name}
-            </span>
-          ))}
+          {player.emblems.map((e, i) =>
+            // Emblème avec une capacité activable maintenant (Karn, Living Legacy) : un bouton.
+            isMe && myActions(view).some((a) => a.type === "activate" && a.source === e.id) ? (
+              <button
+                type="button"
+                key={`${e.name}-${i}`}
+                className="emblem-chip activatable"
+                title={`${e.text} (cliquer pour activer)`}
+                onClick={() => clickPermanent(e.id)}
+              >
+                ✦ {e.name}
+              </button>
+            ) : (
+              <span key={`${e.name}-${i}`} className="emblem-chip" title={e.text}>
+                ✦ {e.name}
+              </span>
+            ),
+          )}
         </div>
         <CommanderChips player={player} />
       </div>

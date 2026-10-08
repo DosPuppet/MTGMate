@@ -148,7 +148,8 @@ export interface PlayerView {
   restrictedMana?: ManaType[];
   lost: boolean;
   /** Emblèmes (zone de commandement). */
-  emblems: { name: string; text: string }[];
+  /** Emblèmes (114) ; `id` : l'objet, source des capacités activées d'un emblème (Karn, Living Legacy). */
+  emblems: { id: ObjectId; name: string; text: string }[];
   /**
    * Commander (PLAN-E) : les commandants de ce joueur (information publique), leur zone, leur objet quand il est dans
    * une zone publique, et la taxe de leur prochain lancer depuis la zone de commandement (903.8).
@@ -529,7 +530,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
         .filter((id) => obj(s, id).isToken)
         .map((id) => {
           const d = s.defs[obj(s, id).defId];
-          return { name: d?.name ?? "Emblème", text: d?.text ?? "" };
+          return { id, name: d?.name ?? "Emblème", text: d?.text ?? "" };
         }),
       ...(s.commander ? commanderViews(s, p) : {}),
     };

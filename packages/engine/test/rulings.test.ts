@@ -1398,3 +1398,47 @@ describe("603.2 et 603.2e : Elesh Norn, Mother of Machines (deck Nissa)", () => 
     expect([t.players.p1?.life, t.players.p2?.life]).toEqual([20, 20]);
   });
 });
+
+describe("603.2d et 707.10 : Echoes of Eternity (deck The Vision)", () => {
+  it("la capacité « quand vous lancez ce sort » d'un sort incolore se déclenche une fois de plus ; le sort est copié", () => {
+    // Décision (Modern Horizons 3) : Echoes of Eternity touche aussi les capacités déclenchées des sorts incolores que vous
+    // contrôlez, comme « quand vous lancez ce sort » ; la copie d'un sort de permanent devient un jeton.
+    let s = scenario({
+      p1: { battlefield: ["Echoes of Eternity", ...lands("Wastes", 7)], hand: ["Ugin, Eye of the Storms"] },
+      p2: { battlefield: ["Bear Cub", "Shivan Dragon", "Sol Ring"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ugin, Eye of the Storms") });
+    // Chaque exil vise un permanent coloré différent : Bear Cub, puis Shivan Dragon.
+    const wanted = [idOf(s, "p2", "battlefield", "Bear Cub"), idOf(s, "p2", "battlefield", "Shivan Dragon")];
+    for (let i = 0; i < 200 && !(s.stack.length === 0 && s.triggers.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice") {
+        const req = p.request;
+        const pick =
+          req.type === "pick" && req.intent === "triggerTarget" ? wanted.find((id) => req.options.includes(id)) : undefined;
+        if (pick) wanted.splice(wanted.indexOf(pick), 1);
+        s = act(s, p.player, { type: "choose", values: pick ? [pick] : req.suggested });
+      } else break;
+    }
+    // Deux exils (déclenchement doublé) : les deux permanents colorés ; Sol Ring (incolore) reste.
+    expect(idsOf(s, "p2", "battlefield", "Sol Ring")).toHaveLength(1);
+    expect(s.exile.filter((id) => s.objects[id]?.owner === "p2")).toHaveLength(2);
+    // Le sort et sa copie (un jeton) : la règle des légendes n'en laisse qu'un.
+    expect(s.battlefield.filter((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Ugin, Eye of the Storms")).toHaveLength(1);
+  });
+});
+
+describe("500.7 : Gerrard's Hourglass Pendant (deck The Vision)", () => {
+  it("un joueur qui devrait commencer un tour supplémentaire le passe, quel que soit le contrôleur du Pendentif", () => {
+    let s = scenario({
+      p1: { hand: ["Temporal Manipulation"], battlefield: lands("Island", 5) },
+      p2: { battlefield: ["Gerrard's Hourglass Pendant"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Temporal Manipulation") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    s = advanceUntil(s, (x) => x.turn.number > 3 && x.turn.step === "main1");
+    // Le tour supplémentaire de p1 est passé : le tour suivant est celui de p2.
+    expect([s.turn.number, s.turn.active]).toEqual([4, "p2"]);
+  });
+});

@@ -6,7 +6,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 - Plateforme MTG contre l'IA et en ligne (de 2 à 4 joueurs, BO3 en duel ; Commander), moteur de règles maison en TypeScript, interface fluide façon MTG Arena.
 - **Périmètre : le format Standard.** Extensions légales et bannies : voir le README ; à revérifier à chaque rotation (Scryfall `legal:standard` / `banned:standard`).
-- **Commander (PLAN-E, fait le 06/10/2026) :** règles du format, de 2 à 4 joueurs, contre l'IA et en ligne (sièges IA compris) ; dix préconstruits jouables (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, Multiverse Reforged, Turtle Power!, Counter Blitz, The Fantastic Four, Mutant Menace, Nissa, Leyline Tamer) ; les cartes arrivent deck par deck (pseudo-ensemble `EDH`, `docs/commander/decks/`, recette plus bas).
+- **Commander (PLAN-E, fait le 06/10/2026) :** règles du format, de 2 à 4 joueurs, contre l'IA et en ligne (sièges IA compris) ; onze préconstruits jouables (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, Multiverse Reforged, Turtle Power!, Counter Blitz, The Fantastic Four, Mutant Menace, Nissa, Leyline Tamer, The Vision) ; les cartes arrivent deck par deck (pseudo-ensemble `EDH`, `docs/commander/decks/`, recette plus bas).
 - Hors périmètre : Limité, formats éternels, Alchemy.
 
 ## État (02/10/2026)

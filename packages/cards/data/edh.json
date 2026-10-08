@@ -1,5 +1,37 @@
 [
  {
+  "name": "Abstergo Entertainment",
+  "number": "79",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{3}, {T}, Exile Abstergo Entertainment: Return up to one target historic card from your graveyard to your hand, then exile all graveyards. (Artifacts, legendaries, and Sagas are historic.)",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/d/4d197866-7633-493c-80dd-ec3a09165934.jpg?1783910964",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/d/4d197866-7633-493c-80dd-ec3a09165934.jpg?1783910964",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Abstergo Entertainment",
+   "typeLine": "Terrain légendaire",
+   "text": "{T} : Ajoutez {C}.\n{1}, {T} : Ajoutez un mana de la couleur de votre choix.\n{3}, {T}, exilez Abstergo Entertainment : Renvoyez jusqu'à une carte historique ciblée de votre cimetière dans votre main, puis exilez tous les cimetières. (Les artefacts, les légendaires et les sagas sont historiques.)",
+   "image": "https://cards.scryfall.io/normal/front/e/4/e41776ae-5466-4c0d-a54f-0e944e439b85.jpg?1782790944"
+  },
+  "origin": "ACR",
+  "colorIdentity": []
+ },
+ {
   "name": "Acidic Slime",
   "number": "218",
   "rarity": "uncommon",
@@ -30,6 +62,32 @@
   "colorIdentity": [
    "G"
   ]
+ },
+ {
+  "name": "Adaptive Omnitool",
+  "number": "243",
+  "rarity": "rare",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +1/+1 for each artifact you control.\nWhenever equipped creature attacks, look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.\nEquip {3}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/e/9e84f840-d7c6-4a82-8891-3d12281020ee.jpg?1789753307",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9e84f840-d7c6-4a82-8891-3d12281020ee.jpg?1789753307",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Outil universel évolutif",
+   "typeLine": "Artefact — équipement",
+   "text": "La créature équipée gagne +1/+1 pour chaque artefact que vous contrôlez.\nÀ chaque fois que la créature équipée attaque, regardez les six cartes du dessus de votre bibliothèque. Vous pouvez révéler une carte d'artefact parmi elles et la mettre dans votre main. Mettez le reste au-dessous de votre bibliothèque dans un ordre aléatoire.\nÉquipement {3}",
+   "image": "https://cards.scryfall.io/normal/front/b/1/b1096a8f-da55-45a5-aca4-e2e3f21155b1.jpg?1782776469"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
  },
  {
   "name": "Adarkar Wastes",
@@ -257,6 +315,30 @@
   "colorIdentity": [
    "R"
   ]
+ },
+ {
+  "name": "All Is Dust",
+  "number": "9",
+  "rarity": "rare",
+  "manaCost": "{7}",
+  "cmc": 7,
+  "typeLine": "Kindred Sorcery — Eldrazi",
+  "oracleText": "Each player sacrifices all permanents they control that are one or more colors.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/7/8764ca43-bbbb-43b5-895b-c7049cc76580.jpg?1789787461",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/7/8764ca43-bbbb-43b5-895b-c7049cc76580.jpg?1789787461",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tout n'est que poussière",
+   "typeLine": "Rituel de clan — eldrazi",
+   "text": "Chaque joueur sacrifie tous les permanents qu'il contrôle qui ont au moins une couleur.",
+   "image": "https://cards.scryfall.io/normal/front/9/0/90241501-b262-4d34-a69c-8bdc192a09a0.jpg?1782794929"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
  },
  {
   "name": "Alpha Deathclaw",
@@ -877,6 +959,33 @@
   "colorIdentity": [
    "G"
   ]
+ },
+ {
+  "name": "Basalt Monolith",
+  "number": "274",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/7/97d8dbc9-d9f3-4e8e-95d2-27917c152a29.jpg?1783915906",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/7/97d8dbc9-d9f3-4e8e-95d2-27917c152a29.jpg?1783915906",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Monolithe de basalte",
+   "typeLine": "Artefact",
+   "text": "Le Monolithe de basalte ne se dégage pas pendant votre étape de dégagement.\n{T} : Ajoutez {C}{C}{C}.\n{3} : Dégagez le Monolithe de basalte.",
+   "image": "https://cards.scryfall.io/normal/front/7/3/73f8b4a0-7f33-48af-abfb-ed8ac4d7b771.jpg?1782818769"
+  },
+  "origin": "LTC",
+  "colorIdentity": []
  },
  {
   "name": "Battlefield Forge",
@@ -1895,6 +2004,32 @@
   ]
  },
  {
+  "name": "Brotherhood Regalia",
+  "number": "71",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature has ward {2}, is an Assassin in addition to its other types, and can't be blocked.\nEquip legendary creature {1}\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/a/8a6439a6-288d-427e-b14b-a99e8ef8c5cd.jpg?1783910968",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/a/8a6439a6-288d-427e-b14b-a99e8ef8c5cd.jpg?1783910968",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tenue de la Confrérie",
+   "typeLine": "Artefact — équipement",
+   "text": "La créature équipée a parade {2}, est un assassin en plus de ses autres types et ne peut pas être bloquée.\nÉquipement de créature légendaire {1}\nÉquipement {3} ({3} : Attachez à une créature ciblée que vous contrôlez. N'attachez l'équipement que lorsque vous pourriez lancer un rituel.)",
+   "image": "https://cards.scryfall.io/normal/front/8/f/8fcece0f-c2f1-45ae-b185-27faff1dd338.jpg?1782790984"
+  },
+  "origin": "ACR",
+  "colorIdentity": []
+ },
+ {
   "name": "Brushland",
   "number": "377",
   "rarity": "rare",
@@ -1924,6 +2059,33 @@
    "G",
    "W"
   ]
+ },
+ {
+  "name": "Buried Ruin",
+  "number": "298",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Return target artifact card from your graveyard to your hand.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/e/1e57d7ee-78d8-4e02-b3a8-a4b16ec0cdaf.jpg?1789753358",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1e57d7ee-78d8-4e02-b3a8-a4b16ec0cdaf.jpg?1789753358",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ruine ensevelie",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T}, sacrifiez la Ruine ensevelie : Renvoyez dans votre main une carte d'artefact ciblée depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/3/2/32d2f225-7c12-4c5c-ab58-0be1bf9c8407.jpg?1782799781"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
  },
  {
   "name": "Canopy Vista",
@@ -2171,6 +2333,31 @@
   "colorIdentity": [
    "B"
   ]
+ },
+ {
+  "name": "Champion's Helm",
+  "number": "337",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +2/+2.\nAs long as equipped creature is legendary, it has hexproof. (It can't be the target of spells or abilities your opponents control.)\nEquip {1}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/2/a207957a-16e4-4830-a101-39bcd4a46e61.jpg?1785650623",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a207957a-16e4-4830-a101-39bcd4a46e61.jpg?1785650623",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Heaume du champion",
+   "text": "La créature équipée gagne +2/+2.\nTant que la créature équipée est légendaire, elle a la défense talismanique. (Elle ne peut pas être la cible de sorts ou de capacités que vos adversaires contrôlent.)\nÉquipement {1}",
+   "image": "https://cards.scryfall.io/normal/front/6/9/69f5d618-c8aa-4614-b4c4-576d588b6bc3.jpg?1782769237"
+  },
+  "origin": "FIC",
+  "colorIdentity": []
  },
  {
   "name": "Charismatic Conqueror",
@@ -2498,6 +2685,30 @@
   ]
  },
  {
+  "name": "Cloud Key",
+  "number": "54",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "As this artifact enters, choose artifact, creature, enchantment, instant, or sorcery.\nSpells you cast of the chosen type cost {1} less to cast.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/8/b851ab76-e40e-4232-b120-0bc1905ef0b4.jpg?1783906051",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/8/b851ab76-e40e-4232-b120-0bc1905ef0b4.jpg?1783906051",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Clef de nuage",
+   "typeLine": "Artefact",
+   "text": "Au moment où la Clef de nuage arrive sur le champ de bataille, choisissez artefact, créature, enchantement, éphémère ou rituel.\nLes sorts du type choisi que vous lancez coûtent {1} de moins à lancer.",
+   "image": "https://cards.scryfall.io/normal/front/a/2/a2f7a72e-ab9f-44c5-91c0-58c4dc6d4cfa.jpg?1782889399"
+  },
+  "origin": "EOC",
+  "colorIdentity": []
+ },
+ {
   "name": "Coin of Mastery",
   "number": "38",
   "rarity": "rare",
@@ -2613,6 +2824,32 @@
    "image": "https://cards.scryfall.io/normal/front/a/4/a4e78575-f9cb-42ca-bb05-0c7bb4c462ab.jpg?1790692819"
   },
   "origin": "FRC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Commander's Plate",
+  "number": "305",
+  "rarity": "mythic",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.\nEquip commander {3}\nEquip {5}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/9/19992dbd-7a6a-43d3-b1db-01716b2eed27.jpg?1783928762",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/9/19992dbd-7a6a-43d3-b1db-01716b2eed27.jpg?1783928762",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Plaque de commandant",
+   "typeLine": "Artefact : équipement",
+   "text": "La créature équipée gagne +3/+3 et a la protection contre chaque couleur qui n'apparaît pas dans l'identité couleur de votre commandant.\nÉquipement de commandant {3}\nÉquipement {5}",
+   "image": "https://cards.scryfall.io/normal/front/9/b/9b9ce7ff-85fa-4a1a-8308-210e9d27cf1b.jpg?1782897022"
+  },
+  "origin": "CMR",
   "colorIdentity": []
  },
  {
@@ -3335,6 +3572,85 @@
   "colorIdentity": []
  },
  {
+  "name": "Darksteel Citadel",
+  "number": "300",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Artifact Land",
+  "oracleText": "Indestructible\n{T}: Add {C}.",
+  "colors": [],
+  "keywords": [
+   "Indestructible"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/3/b379ba64-adf5-4a64-9f28-ace36f1b887b.jpg?1789753361",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/3/b379ba64-adf5-4a64-9f28-ace36f1b887b.jpg?1789753361",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Citadelle de sombracier",
+   "typeLine": "Terrain-artefact",
+   "text": "Indestructible\n{T} : Ajoutez {C}.",
+   "image": "https://cards.scryfall.io/normal/front/e/e/eee8fef5-d09a-4864-a29d-2b90719fd03b.jpg?1782837594"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Darksteel Forge",
+  "number": "248",
+  "rarity": "mythic",
+  "manaCost": "{9}",
+  "cmc": 9,
+  "typeLine": "Artifact",
+  "oracleText": "Artifacts you control have indestructible. (Effects that say \"destroy\" don't destroy them. Artifact creatures with indestructible can't be destroyed by damage.)",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/2/421089c4-c8d3-48c5-b313-fb1741546271.jpg?1783930114",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/421089c4-c8d3-48c5-b313-fb1741546271.jpg?1783930114",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Forge de sombracier",
+   "typeLine": "Artefact",
+   "text": "Les artefacts que vous contrôlez ont l'indestructible.",
+   "image": "https://cards.scryfall.io/normal/front/5/1/5113502f-3616-4527-8a3e-9b2f0f8d46c0.jpg?1782902882"
+  },
+  "origin": "2XM",
+  "colorIdentity": []
+ },
+ {
+  "name": "Darksteel Monolith",
+  "number": "743",
+  "rarity": "rare",
+  "manaCost": "{8}",
+  "cmc": 8,
+  "typeLine": "Artifact",
+  "oracleText": "Indestructible\nOnce each turn, you may pay {0} rather than pay the mana cost for a colorless spell you cast from your hand.",
+  "colors": [],
+  "keywords": [
+   "Indestructible"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/5/f5b7d3df-4e9b-422b-a88c-43650a67a9c6.jpg?1783915478",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f5b7d3df-4e9b-422b-a88c-43650a67a9c6.jpg?1783915478",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Monolithe de sombracier",
+   "typeLine": "Artefact",
+   "text": "Indestructible\nUne fois par tour, vous pouvez payer {0} à la place du coût de mana d'un sort incolore que vous lancez depuis votre main.",
+   "image": "https://cards.scryfall.io/normal/front/0/3/0306ca8c-7b09-4694-97c9-9f9db26e02d8.jpg?1782815409"
+  },
+  "origin": "CMM",
+  "colorIdentity": []
+ },
+ {
   "name": "Darkwater Catacombs",
   "number": "384",
   "rarity": "rare",
@@ -3575,6 +3891,32 @@
   "colorIdentity": [
    "R"
   ]
+ },
+ {
+  "name": "Desecrate Reality",
+  "number": "714",
+  "rarity": "rare",
+  "manaCost": "{7}",
+  "cmc": 7,
+  "typeLine": "Instant",
+  "oracleText": "For each opponent, exile up to one target permanent that player controls with an even mana value. (Zero is even.)\nAdamant — If at least three colorless mana was spent to cast this spell, return a permanent card with an odd mana value from your graveyard to the battlefield.",
+  "colors": [],
+  "keywords": [
+   "Adamant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/9/396db2cb-8fa0-436a-993d-de8bb13b848f.jpg?1783915487",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/396db2cb-8fa0-436a-993d-de8bb13b848f.jpg?1783915487",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Profanation de réalité",
+   "typeLine": "Éphémère",
+   "text": "Pour chaque adversaire, exilez jusqu'à un permanent ciblé que ce joueur contrôle avec une valeur de mana paire. (Zéro est pair.)\nInflexible — Si au moins trois manas incolores ont été dépensés pour lancer ce sort, renvoyez sur le champ de bataille une carte de permanent avec une valeur de mana impaire depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/e/5/e5e320f0-f86f-4d54-89fe-db82c2667caf.jpg?1782815489"
+  },
+  "origin": "CMM",
+  "colorIdentity": []
  },
  {
   "name": "Despark",
@@ -4061,6 +4403,30 @@
   ]
  },
  {
+  "name": "Echoes of Eternity",
+  "number": "4",
+  "rarity": "rare",
+  "manaCost": "{3}{C}{C}{C}",
+  "cmc": 6,
+  "typeLine": "Kindred Enchantment — Eldrazi",
+  "oracleText": "If a triggered ability of a colorless spell you control or another colorless permanent you control triggers, that ability triggers an additional time.\nWhenever you cast a colorless spell, copy it. You may choose new targets for the copy. (A copy of a permanent spell becomes a token.)",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/2/b28b9bee-d726-407b-9e5b-2231384df81e.jpg?1783911308",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b28b9bee-d726-407b-9e5b-2231384df81e.jpg?1783911308",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Échos d'éternité",
+   "typeLine": "Enchantement de clan — eldrazi",
+   "text": "Si une capacité déclenchée d'un sort incolore que vous contrôlez ou d'un autre permanent incolore que vous contrôlez se déclenche, cette capacité se déclenche une fois de plus.\nÀ chaque fois que vous lancez un sort incolore, copiez-le. Vous pouvez choisir de nouvelles cibles pour cette copie. (Une copie d'un sort de permanent devient un jeton.)",
+   "image": "https://cards.scryfall.io/normal/front/0/d/0d974265-1e6e-4d4b-8acc-afd6c5d96a53.jpg?1782794271"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
   "name": "Edgar Markov",
   "number": "234",
   "rarity": "mythic",
@@ -4203,6 +4569,59 @@
   ]
  },
  {
+  "name": "Eldrazi Confluence",
+  "number": "32",
+  "rarity": "rare",
+  "manaCost": "{2}{C}{C}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "Choose three. You may choose the same mode more than once.\n• Target creature gets +3/-3 until end of turn.\n• Exile target nonland permanent, then return it to the battlefield tapped under its owner's control.\n• Create a 1/1 colorless Eldrazi Scion creature token with \"Sacrifice this token: Add {C}.\"",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/8/78ee2013-29dc-4879-9d59-1b492996d297.jpg?1783911429",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/8/78ee2013-29dc-4879-9d59-1b492996d297.jpg?1783911429",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Confluence eldrazi",
+   "typeLine": "Éphémère",
+   "text": "Choisissez trois. Vous pouvez choisir le même mode plus d'une fois.\n• Une créature ciblée gagne +3/-3 jusqu'à la fin du tour.\n• Exilez un permanent non-terrain ciblé, puis renvoyez-le sur le champ de bataille, engagé, sous le contrôle de son propriétaire.\n• Créez un jeton de créature 1/1 incolore Eldrazi et Scion avec « Sacrifiez cette créature : Ajoutez {C}. »",
+   "image": "https://cards.scryfall.io/normal/front/d/e/de7007a1-c388-414d-914e-bfa4fa4aa8e3.jpg?1782795210"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
+ },
+ {
+  "name": "Eldritch Immunity",
+  "number": "33",
+  "rarity": "rare",
+  "manaCost": "{C}",
+  "cmc": 1,
+  "typeLine": "Kindred Instant — Eldrazi",
+  "oracleText": "Target creature you control gains protection from each color until end of turn.\nOverload {4}{C} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")",
+  "colors": [],
+  "keywords": [
+   "Overload"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/4/64a63b90-dbd6-4b66-8031-a3e230ada5b9.jpg?1783911428",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/4/64a63b90-dbd6-4b66-8031-a3e230ada5b9.jpg?1783911428",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Immunité indicible",
+   "typeLine": "Éphémère de clan — eldrazi",
+   "text": "Une créature ciblée que vous contrôlez acquiert la protection contre chaque couleur jusqu'à la fin du tour.\nSurcharge {4}{C}",
+   "image": "https://cards.scryfall.io/normal/front/0/9/09900a80-a1d8-4a09-9e58-b36a2b8223b2.jpg?1782795203"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
+ },
+ {
   "name": "Electric Seaweed",
   "number": "23",
   "rarity": "rare",
@@ -4327,6 +4746,33 @@
   "colorIdentity": [
    "W"
   ]
+ },
+ {
+  "name": "Emergence Zone",
+  "number": "245",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{1}, {T}, Sacrifice this land: You may cast spells this turn as though they had flash.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/b/ab95f6e7-b806-47fe-a071-6c38b3176d94.jpg?1783933367",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/b/ab95f6e7-b806-47fe-a071-6c38b3176d94.jpg?1783933367",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Zone d'émergence",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{1}, {T}, sacrifiez la Zone d'émergence : Vous pouvez lancer des sorts ce tour-ci comme s'ils avaient le flash.",
+   "image": "https://cards.scryfall.io/normal/front/2/d/2d5627c7-f00d-47f2-89af-56fe672e9352.jpg?1782920594"
+  },
+  "origin": "WAR",
+  "colorIdentity": []
  },
  {
   "name": "Emeria Angel",
@@ -4598,6 +5044,30 @@
    "image": "https://cards.scryfall.io/normal/front/d/2/d21fca7c-f919-404f-8cf8-1cc7debde02d.jpg?1782769210"
   },
   "origin": "EOC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Excalibur, Sword of Eden",
+  "number": "72",
+  "rarity": "rare",
+  "manaCost": "{12}",
+  "cmc": 12,
+  "typeLine": "Legendary Artifact — Equipment",
+  "oracleText": "This spell costs {X} less to cast, where X is the total mana value of historic permanents you control. (Artifacts, legendaries, and Sagas are historic.)\nEquipped creature gets +10/+0 and has vigilance.\nEquip legendary creature {2}",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/6/26dbf574-3193-413e-a982-4b9d27dafaf5.jpg?1783910966",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/6/26dbf574-3193-413e-a982-4b9d27dafaf5.jpg?1783910966",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Excalibur, épée d'Éden",
+   "typeLine": "Artefact légendaire — équipement",
+   "text": "Ce sort coûte {X} de moins à lancer, X étant la valeur de mana totale des permanents historiques que vous contrôlez. (Les artefacts, les légendaires et les sagas sont historiques.)\nLa créature équipée gagne +10/+0 et a la vigilance.\nÉquipement de créature légendaire {2}",
+   "image": "https://cards.scryfall.io/normal/front/5/0/50be140b-da09-418e-b26f-0eae14ce52fd.jpg?1782790979"
+  },
+  "origin": "ACR",
   "colorIdentity": []
  },
  {
@@ -5511,6 +5981,33 @@
   ]
  },
  {
+  "name": "Forsaken Monument",
+  "number": "258",
+  "rarity": "mythic",
+  "manaCost": "{5}",
+  "cmc": 5,
+  "typeLine": "Legendary Artifact",
+  "oracleText": "Colorless creatures you control get +2/+2.\nWhenever you tap a permanent for {C}, add an additional {C}.\nWhenever you cast a colorless spell, you gain 2 life.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/f/5f9e232e-39d0-4890-b935-98a1c14ef344.jpg?1789753321",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5f9e232e-39d0-4890-b935-98a1c14ef344.jpg?1789753321",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Monument abandonné",
+   "typeLine": "Artefact légendaire",
+   "text": "Les créatures incolores que vous contrôlez gagnent +2/+2.\nÀ chaque fois que vous engagez un permanent pour {C}, ajoutez {C} supplémentaire.\nÀ chaque fois que vous lancez un sort incolore, vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/3/6/3629d766-651c-4a6a-b14f-fd03ae2ab88c.jpg?1782794585"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
   "name": "Fortified Village",
   "number": "245",
   "rarity": "rare",
@@ -5539,6 +6036,33 @@
    "G",
    "W"
   ]
+ },
+ {
+  "name": "Fractured Powerstone",
+  "number": "357",
+  "rarity": "common",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {C}.\n{T}: Roll the planar die. Activate only as a sorcery.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/e/aeaa7115-bebe-4650-9575-f7855c0055cd.jpg?1783917116",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/e/aeaa7115-bebe-4650-9575-f7855c0055cd.jpg?1783917116",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Lithoforce fracturée",
+   "typeLine": "Artefact",
+   "text": "{T} : Ajoutez {C}.\n{T} : Lancez le dé planaire. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/6/7/67d46959-fe96-49fc-a5ba-52062e4db2e0.jpg?1782826223"
+  },
+  "origin": "MOC",
+  "colorIdentity": []
  },
  {
   "name": "Franklin Richards, Ascendant",
@@ -5857,6 +6381,32 @@
   ]
  },
  {
+  "name": "Gerrard's Hourglass Pendant",
+  "number": "17",
+  "rarity": "rare",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Legendary Artifact",
+  "oracleText": "Flash\nIf a player would begin an extra turn, that player skips that turn instead.\n{4}, {T}, Exile Gerrard's Hourglass Pendant: Return to the battlefield tapped all artifact, creature, enchantment, and land cards in your graveyard that were put there from the battlefield this turn.",
+  "colors": [],
+  "keywords": [
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/8/580ca958-4df7-4f42-b497-d412d286bd4e.jpg?1783921470",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/8/580ca958-4df7-4f42-b497-d412d286bd4e.jpg?1783921470",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sablier pendentif de Gerrard",
+   "typeLine": "Artefact légendaire",
+   "text": "Flash\nSi un joueur devait commencer un tour supplémentaire, ce joueur passe ce tour à la place.\n{4}, {T} : Exilez le Sablier pendentif de Gerrard : Renvoyez sur le champ de bataille, engagées, toutes les cartes d'artefact, de créature, d'enchantement et de terrain de votre cimetière qui y ont été mises ce tour-ci depuis le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/5/9/5966c74a-6acb-4c95-addb-5cdfe2433432.jpg?1782846262"
+  },
+  "origin": "DMC",
+  "colorIdentity": []
+ },
+ {
   "name": "Ginger, Queen of Sweets",
   "number": "14",
   "rarity": "rare",
@@ -5910,6 +6460,35 @@
    "U",
    "W"
   ]
+ },
+ {
+  "name": "Glaring Fleshraker",
+  "number": "7",
+  "rarity": "uncommon",
+  "manaCost": "{2}{C}",
+  "cmc": 3,
+  "typeLine": "Creature — Eldrazi Drone",
+  "oracleText": "Whenever you cast a colorless spell, create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\"\nWhenever another colorless creature you control enters, this creature deals 1 damage to each opponent.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/0/80c2a3c7-1486-4ff9-88ec-79ec67a437f8.jpg?1783911308",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/0/80c2a3c7-1486-4ff9-88ec-79ec67a437f8.jpg?1783911308",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ratisse-chair scrutateur",
+   "typeLine": "Créature — eldrazi et drone",
+   "text": "À chaque fois que vous lancez un sort incolore, créez un jeton de créature 0/1 incolore Eldrazi et Engeance avec « Sacrifiez cette créature : Ajoutez {C}. »\nÀ chaque fois qu'une autre créature incolore arrive sur le champ de bataille sous votre contrôle, le Ratisse-chair scrutateur inflige 1 blessure à chaque adversaire.",
+   "image": "https://cards.scryfall.io/normal/front/4/b/4b2286a4-6d9f-49bc-919c-08a0b85ee216.jpg?1782794253"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
  },
  {
   "name": "Glowing One",
@@ -6296,6 +6875,31 @@
    "name": "H.E.R.B.I.E., adorable robot",
    "text": "Vol\nAu début du combat pendant votre tour, si vous avez lancé un sort non-créature ce tour-ci, surveillez 1.\n{T} : Ajoutez {C}.\n{1}, {T} : Ajoutez un mana de la couleur de votre choix.",
    "image": "https://cards.scryfall.io/normal/front/d/5/d5be17cb-f8e2-4c16-a3a8-253d3be9930b.jpg?1785261504"
+  },
+  "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Hammer of Nazahn",
+  "number": "286",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Legendary Artifact — Equipment",
+  "oracleText": "Whenever Hammer of Nazahn or another Equipment you control enters, you may attach that Equipment to target creature you control.\nEquipped creature gets +2/+0 and has indestructible.\nEquip {4}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/1/e1aae864-cad1-48b2-bb33-8c2dbb53f5ec.jpg?1783903189",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/1/e1aae864-cad1-48b2-bb33-8c2dbb53f5ec.jpg?1783903189",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Marteau de Nazahn",
+   "text": "À chaque fois que les Griffes de la Panthère Noire ou un autre équipement que vous contrôlez arrive, vous pouvez attacher cet équipement à une créature ciblée que vous contrôlez.\nLa créature équipée gagne +2/+0 et a l'indestructible.\nÉquipement {4}",
+   "image": "https://cards.scryfall.io/normal/front/8/f/8f454de5-fddc-4533-a23e-822c28031687.jpg?1785268691"
   },
   "origin": "MSC",
   "colorIdentity": []
@@ -7389,6 +7993,34 @@
   ]
  },
  {
+  "name": "Karn, Living Legacy",
+  "number": "1",
+  "rarity": "mythic",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Legendary Planeswalker — Karn",
+  "oracleText": "+1: Create a tapped Powerstone token. (It's an artifact with \"{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.\")\n−1: Pay any amount of mana. Look at that many cards from the top of your library, then put one of those cards into your hand and the rest on the bottom of your library in a random order.\n−7: You get an emblem with \"Tap an untapped artifact you control: This emblem deals 1 damage to any target.\"",
+  "loyalty": "4",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/8/e83b1b87-01d5-4624-8a2b-4b771e13e59c.jpg?1783921372",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e83b1b87-01d5-4624-8a2b-4b771e13e59c.jpg?1783921372",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Karn, Living Legacy",
+   "typeLine": "Legendary Planeswalker — Karn",
+   "text": "+1: Create a tapped Powerstone token. (It's an artifact with \"{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.\")\n−1: Pay any amount of mana. Look at that many cards from the top of your library, then put one of those cards into your hand and the rest on the bottom of your library in a random order.\n−7: You get an emblem with \"Tap an untapped artifact you control: This emblem deals 1 damage to any target.\"",
+   "image": "https://cards.scryfall.io/normal/front/8/d/8da56d79-a264-4940-a1e8-d21d25c4aad2.jpg?1782845282"
+  },
+  "origin": "DMU",
+  "colorIdentity": []
+ },
+ {
   "name": "Keen Duelist",
   "number": "218",
   "rarity": "rare",
@@ -7686,6 +8318,35 @@
   ]
  },
  {
+  "name": "Kozilek's Command",
+  "number": "11",
+  "rarity": "rare",
+  "manaCost": "{X}{C}{C}",
+  "cmc": 2,
+  "typeLine": "Kindred Instant — Eldrazi",
+  "oracleText": "Choose two —\n• Target player creates X 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice this token: Add {C}.\"\n• Target player scries X, then draws a card.\n• Exile target creature with mana value X or less.\n• Exile up to X target cards from graveyards.",
+  "colors": [],
+  "keywords": [
+   "Scry"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/2/92585587-cfdc-406a-9114-4f6dd8802c37.jpg?1784634156",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/92585587-cfdc-406a-9114-4f6dd8802c37.jpg?1784634156",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Commandement de Kozilek",
+   "typeLine": "Éphémère de clan — eldrazi",
+   "text": "Choisissez deux —\n• Un joueur ciblé crée X jetons de créature 0/1 incolore Eldrazi et Engeance avec « Sacrifiez cette créature : Ajoutez {C}. »\n• Un joueur ciblé applique regard X, puis pioche une carte.\n• Exilez une créature ciblée avec une valeur de mana inférieure ou égale à X.\n• Exilez jusqu'à X cartes ciblées depuis des cimetières.",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5ed43e90-1113-4d7f-bc64-ac46084b8cc3.jpg?1782794233"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
   "name": "Kozilek, Butcher of Truth",
   "number": "2",
   "rarity": "mythic",
@@ -7900,6 +8561,35 @@
   ]
  },
  {
+  "name": "Liberator, Urza's Battlethopter",
+  "number": "237",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Legendary Artifact Creature — Thopter",
+  "oracleText": "Flash\nFlying\nYou may cast colorless spells and artifact spells as though they had flash.\nWhenever you cast a spell, if the amount of mana spent to cast that spell is greater than Liberator's power, put a +1/+1 counter on Liberator.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [
+   "Flying",
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/3/c31e6768-bcab-43c4-bfc1-76e961689ae9.jpg?1783920018",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c31e6768-bcab-43c4-bfc1-76e961689ae9.jpg?1783920018",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Libérateur, mécanoptère de combat d'Urza",
+   "typeLine": "Créature-artefact légendaire : mécanoptère",
+   "text": "Flash\nVol\nVous pouvez lancer des sorts incolores et des sorts d'artefact comme s'ils avaient le flash.\nÀ chaque fois que vous lancez un sort, si la quantité de mana dépensée pour lancer ce sort est supérieure à la force de Libérateur, mécanoptère de combat d'Urza, mettez un marqueur +1/+1 sur Libérateur.",
+   "image": "https://cards.scryfall.io/normal/front/3/7/3799c841-fe3e-4b1b-a495-5041ea61ddaa.jpg?1782839657"
+  },
+  "origin": "BRO",
+  "colorIdentity": []
+ },
+ {
   "name": "Lightning Greaves",
   "number": "202",
   "rarity": "uncommon",
@@ -8014,6 +8704,33 @@
    "B",
    "W"
   ]
+ },
+ {
+  "name": "Liquimetal Torque",
+  "number": "145",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add {C}.\n{T}: Target nonland permanent becomes an artifact in addition to its other types until end of turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/a/ca37bdbb-cd35-4d04-a28b-d5eb1f9c2dc3.jpg?1783919665",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/ca37bdbb-cd35-4d04-a28b-d5eb1f9c2dc3.jpg?1783919665",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Torque de liquimétal",
+   "typeLine": "Artefact",
+   "text": "{T} : Ajoutez {C}.\n{T} : Un permanent non-terrain ciblé devient un artefact en plus de ses autres types jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/d/4/d4d312ff-2dc5-4e8a-9203-00c610444dbb.jpg?1782837745"
+  },
+  "origin": "BRC",
+  "colorIdentity": []
  },
  {
   "name": "Lockjaw, Slobbering Teleporter",
@@ -8393,6 +9110,30 @@
    "image": "https://cards.scryfall.io/normal/front/6/2/62f0e14d-ab05-4192-a955-6f6dbf366b60.jpg?1782847098"
   },
   "origin": "2X2",
+  "colorIdentity": []
+ },
+ {
+  "name": "Manifold Key",
+  "number": "319",
+  "rarity": "uncommon",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}: Untap another target artifact.\n{3}, {T}: Target creature can't be blocked this turn.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/f/0f5a15cd-a359-48c9-9280-ce139f1fb061.jpg?1783922673",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/f/0f5a15cd-a359-48c9-9280-ce139f1fb061.jpg?1783922673",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Clé variable",
+   "typeLine": "Artefact",
+   "text": "{1}, {T} : Dégagez un autre artefact ciblé.\n{3}, {T} : Une créature ciblée ne peut pas être bloquée ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/4/c/4c335e1b-34a4-46fb-9ff8-124a0f3c8bc2.jpg?1782851505"
+  },
+  "origin": "CLB",
   "colorIdentity": []
  },
  {
@@ -8881,6 +9622,34 @@
   ]
  },
  {
+  "name": "Mithril Coat",
+  "number": "245",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Legendary Artifact — Equipment",
+  "oracleText": "Flash\nIndestructible\nWhen Mithril Coat enters, attach it to target legendary creature you control.\nEquipped creature has indestructible.\nEquip {3}",
+  "colors": [],
+  "keywords": [
+   "Indestructible",
+   "Equip",
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/f/0fd1fc09-a09d-45e6-8a07-3a8a83b4e6ec.jpg?1783916237",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/f/0fd1fc09-a09d-45e6-8a07-3a8a83b4e6ec.jpg?1783916237",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cotte de mithril",
+   "typeLine": "Artefact légendaire : équipement",
+   "text": "Flash\nIndestructible\nQuand la Cotte de mithril arrive sur le champ de bataille, attachez-la à une créature légendaire ciblée que vous contrôlez.\nLa créature équipée a l'indestructible.\nÉquipement {3}",
+   "image": "https://cards.scryfall.io/normal/front/7/5/750f4b09-d46c-4350-8787-cc79b07fa262.jpg?1782820899"
+  },
+  "origin": "LTR",
+  "colorIdentity": []
+ },
+ {
   "name": "Mole Module",
   "number": "40",
   "rarity": "rare",
@@ -8937,6 +9706,30 @@
   "colorIdentity": [
    "W"
   ]
+ },
+ {
+  "name": "Moonsilver Key",
+  "number": "255",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}, Sacrifice this artifact: Search your library for an artifact card with a mana ability or a basic land card, reveal it, put it into your hand, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/7/87778e37-af92-402e-b037-5fbd6112b682.jpg?1783925547",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/7/87778e37-af92-402e-b037-5fbd6112b682.jpg?1783925547",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Clé d'argent de lune",
+   "typeLine": "Artefact",
+   "text": "{1}, {T}, sacrifiez la Clé d'argent de lune : Cherchez dans votre bibliothèque une carte d'artefact avec une capacité de mana ou une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/8/b/8bfa6479-6e2a-42ee-87d5-e88222eb6cc0.jpg?1782870723"
+  },
+  "origin": "MID",
+  "colorIdentity": []
  },
  {
   "name": "Morphic Pool",
@@ -9030,6 +9823,39 @@
   "colorIdentity": []
  },
  {
+  "name": "Mox Opal",
+  "number": "275",
+  "rarity": "mythic",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Legendary Artifact",
+  "oracleText": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts.",
+  "colors": [],
+  "keywords": [
+   "Metalcraft"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/6/56001a36-126b-4c08-af98-a6cc4d84210e.jpg?1783930101",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/6/56001a36-126b-4c08-af98-a6cc4d84210e.jpg?1783930101",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mox d'opale",
+   "typeLine": "Artefact légendaire",
+   "text": "Art des métaux — {T} : Ajoutez un mana de la couleur de votre choix. N'activez cette capacité que si vous contrôlez au moins trois artefacts.",
+   "image": "https://cards.scryfall.io/normal/front/3/0/3085ed30-14ca-4aaa-a67a-bb242056f5c5.jpg?1782902806"
+  },
+  "origin": "2XM",
+  "colorIdentity": []
+ },
+ {
   "name": "Mutational Advantage",
   "number": "111",
   "rarity": "rare",
@@ -9060,6 +9886,30 @@
    "G",
    "U"
   ]
+ },
+ {
+  "name": "Mystic Forge",
+  "number": "302",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Artifact",
+  "oracleText": "You may look at the top card of your library any time.\nYou may cast artifact spells and colorless spells from the top of your library.\n{T}, Pay 1 life: Exile the top card of your library.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/7/375e6985-e212-4bd0-b06c-0ca7dc1f68e6.jpg?1783911346",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/7/375e6985-e212-4bd0-b06c-0ca7dc1f68e6.jpg?1783911346",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Forge mystique",
+   "typeLine": "Artefact",
+   "text": "Vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment.\nVous pouvez lancer les sorts d'artefact et les sorts incolores depuis le dessus de votre bibliothèque.\n{T}, payez 1 point de vie : Exilez la carte du dessus de votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/c/c/ccb0deee-5a26-4da4-9e5e-235f26d8237d.jpg?1782794561"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
  },
  {
   "name": "Mystic Gate",
@@ -9176,6 +10026,57 @@
    "image": "https://cards.scryfall.io/normal/front/4/8/4812c058-49aa-42b1-80b7-926a1eab7cf3.jpg?1785261635"
   },
   "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Nettlecyst",
+  "number": "275",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Living weapon (When this Equipment enters, create a 0/0 black Phyrexian Germ creature token, then attach this to it.)\nEquipped creature gets +1/+1 for each artifact and/or enchantment you control.\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Equip",
+   "Living weapon"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/1/91ef92af-de6b-4dc4-81ab-8e527cb96fdd.jpg?1789753335",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/1/91ef92af-de6b-4dc4-81ab-8e527cb96fdd.jpg?1789753335",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Urtikyste",
+   "typeLine": "Artefact — équipement",
+   "text": "Arme vivante (Quand cet équipement arrive sur le champ de bataille, créez un jeton de créature 0/0 noire Phyrexian et Germe, puis attachez-lui cet équipement.)\nLa créature équipée gagne +1/+1 pour chaque artefact et/ou enchantement que vous contrôlez.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/4/6/468372dc-f31c-4d76-86f1-77a9aaaba69b.jpg?1782803496"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Nevinyrral's Disk",
+  "number": "276",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Artifact",
+  "oracleText": "This artifact enters tapped.\n{1}, {T}: Destroy all artifacts, creatures, and enchantments.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/8/a8d65c8e-984b-4cc2-8dc4-c8a7dd65be71.jpg?1789753337",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/8/a8d65c8e-984b-4cc2-8dc4-c8a7dd65be71.jpg?1789753337",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Disque de Nevinyrral",
+   "typeLine": "Artefact",
+   "text": "Le Disque de Nevinyrral arrive sur le champ de bataille engagé.\n{1}, {T} : Détruisez tous les artefacts, toutes les créatures et tous les enchantements.",
+   "image": "https://cards.scryfall.io/normal/front/9/3/9366cd14-047d-4fe7-bbdd-a0e2b3809b2c.jpg?1782814899"
+  },
+  "origin": "FDC",
   "colorIdentity": []
  },
  {
@@ -9496,6 +10397,30 @@
    "image": "https://cards.scryfall.io/normal/front/c/0/c0a3bf01-0509-44b1-b4d3-44fc33618c45.jpg?1782800265"
   },
   "origin": "PIP",
+  "colorIdentity": []
+ },
+ {
+  "name": "Null Elemental Blast",
+  "number": "12",
+  "rarity": "uncommon",
+  "manaCost": "{C}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Choose one —\n• Counter target multicolored spell.\n• Destroy target multicolored permanent.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/e/8e259868-d29a-4c03-8ec3-49e914f849fb.jpg?1783911305",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8e259868-d29a-4c03-8ec3-49e914f849fb.jpg?1783911305",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Salve élémentaire d'annulation",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un —\n• Contrecarrez un sort multicolore ciblé.\n• Détruisez un permanent multicolore ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/f/1/f158245b-f82b-4b21-b4bd-da4b7e0ed9a2.jpg?1782794225"
+  },
+  "origin": "MH3",
   "colorIdentity": []
  },
  {
@@ -10225,6 +11150,38 @@
   "colorIdentity": [
    "B"
   ]
+ },
+ {
+  "name": "Planar Nexus",
+  "number": "132",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land is every nonbasic land type. (Nonbasic land types include Cave, Desert, Gate, Lair, Locus, Mine, Power-Plant, Sphere, Tower, and Urza's.)\n{T}: Add {C}.\n{1}, {T}: Add one mana of any color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/4/6429e625-1f18-413a-b7d7-6eb2814ee5a2.jpg?1783911401",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/4/6429e625-1f18-413a-b7d7-6eb2814ee5a2.jpg?1783911401",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nexus planaire",
+   "typeLine": "Terrain",
+   "text": "Le Nexus planaire a chaque type de terrain non-base.\n{T} : Ajoutez {C}.\n{1}, {T} : Ajoutez un mana de la couleur de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/c/f/cf2c3587-12c7-472c-ba75-8847b787161b.jpg?1782795040"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
  },
  {
   "name": "Plateau",
@@ -11766,6 +12723,33 @@
   ]
  },
  {
+  "name": "Sanctum of Ugin",
+  "number": "242",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\nWhenever you cast a colorless spell with mana value 7 or greater, you may sacrifice this land. If you do, search your library for a colorless creature card, reveal it, put it into your hand, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/6/86798d03-9f2d-46bd-a660-13c8dd5535ce.jpg?1783938173",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/6/86798d03-9f2d-46bd-a660-13c8dd5535ce.jpg?1783938173",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sanctuaire d'Ugin",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {1} à votre réserve.À chaque fois que vous lancez un sort incolore avec un coût converti de mana supérieur ou égal à 7, vous pouvez sacrifier le Sanctuaire d'Ugin. Si vous faites ainsi, cherchez dans votre bibliothèque une carte de créature incolore, révélez-la, mettez-la dans votre main et mélangez ensuite votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/1/0/10401c69-a6a9-4989-89ad-a69d84161741.jpg?1782957387"
+  },
+  "origin": "BFZ",
+  "colorIdentity": []
+ },
+ {
   "name": "Sandstone Oracle",
   "number": "406",
   "rarity": "uncommon",
@@ -11947,6 +12931,31 @@
   ]
  },
  {
+  "name": "Scorched Ruins",
+  "number": "166",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "If this land would enter, sacrifice two untapped lands instead. If you do, put this land onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}: Add {C}{C}{C}{C}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/5/75a4e843-937c-47fb-8768-0f42c5cb4e4f.jpg?1783946708",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/5/75a4e843-937c-47fb-8768-0f42c5cb4e4f.jpg?1783946708",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ruines dévastées",
+   "image": "https://cards.scryfall.io/normal/front/e/1/e10ffde5-6b47-4c92-9ac8-5c6f2dd738a9.jpg?1783051889"
+  },
+  "origin": "WTH",
+  "colorIdentity": []
+ },
+ {
   "name": "Scourge of Valkas",
   "number": "174",
   "rarity": "rare",
@@ -11977,6 +12986,32 @@
   "colorIdentity": [
    "R"
   ]
+ },
+ {
+  "name": "Scrap Trawler",
+  "number": "373",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact Creature — Construct",
+  "oracleText": "Whenever this creature dies or another artifact you control is put into a graveyard from the battlefield, return to your hand target artifact card in your graveyard with lesser mana value.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/1/614be454-3829-4c3b-9485-930755dfa16d.jpg?1783917111",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/1/614be454-3829-4c3b-9485-930755dfa16d.jpg?1783917111",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Charrieur de ferraille",
+   "typeLine": "Créature-artefact : construction",
+   "text": "À chaque fois que le Charrieur de ferraille ou un autre artefact que vous contrôlez est mis dans un cimetière depuis le champ de bataille, renvoyez dans votre main une carte d'artefact avec une valeur de mana inférieure ciblée depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/6/f/6f64ee95-d57c-4176-8b59-2e13f097fa82.jpg?1782826139"
+  },
+  "origin": "MOC",
+  "colorIdentity": []
  },
  {
   "name": "Screamer-Killer",
@@ -12525,6 +13560,34 @@
   ]
  },
  {
+  "name": "Shimmer Myr",
+  "number": "283",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact Creature — Myr",
+  "oracleText": "Flash\nYou may cast artifact spells as though they had flash.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/8/e/8eb0c2fc-c7e0-41f2-b532-e4cac30d2ac7.jpg?1789753825",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8eb0c2fc-c7e0-41f2-b532-e4cac30d2ac7.jpg?1789753825",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Myr scintillant",
+   "typeLine": "Créature-artefact : myr",
+   "text": "Flash\nVous pouvez lancer les sorts d'artefact comme s'ils avaient le flash.",
+   "image": "https://cards.scryfall.io/normal/front/e/3/e342b387-e789-428d-bb06-26717a4a8b44.jpg?1782826124"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
   "name": "Shivan Devastator",
   "number": "175",
   "rarity": "mythic",
@@ -12616,6 +13679,60 @@
   "colorIdentity": [
    "B"
   ]
+ },
+ {
+  "name": "Shrine of the Forsaken Gods",
+  "number": "376",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {C}{C}. Spend this mana only to cast colorless spells. Activate only if you control seven or more lands.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/d/dde7ad4e-a38b-4981-8c9f-78a9e9ea2c36.jpg?1783911322",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/dde7ad4e-a38b-4981-8c9f-78a9e9ea2c36.jpg?1783911322",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Reliquaire des Dieux abandonnés",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {C}{C}. Ne dépensez ce mana que pour lancer des sorts incolores. N'activez que si vous contrôlez au moins sept terrains.",
+   "image": "https://cards.scryfall.io/normal/front/8/a/8a838696-cc49-4a1b-8725-7fe3cfde7dc9.jpg?1782794378"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
+ },
+ {
+  "name": "Silver Shroud Costume",
+  "number": "142",
+  "rarity": "uncommon",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Flash\nWhen this Equipment enters, attach it to target creature you control. That creature gains shroud until end of turn. (It can't be the target of spells or abilities.)\nEquipped creature can't be blocked.\nEquip {3}",
+  "colors": [],
+  "keywords": [
+   "Equip",
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/2/f21fba59-330b-4daf-bf77-6dd817327a64.jpg?1783912376",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/2/f21fba59-330b-4daf-bf77-6dd817327a64.jpg?1783912376",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Costume de Silver Shroud",
+   "typeLine": "Artefact — équipement",
+   "text": "Flash\nQuand le Costume de Silver Shroud arrive sur le champ de bataille, attachez-le à une créature ciblée que vous contrôlez. Cette créature acquiert le linceul jusqu'à la fin du tour. (Elle ne peut pas être la cible de sorts ou de capacités.)\nLa créature équipée ne peut pas être bloquée.\nÉquipement {3}",
+   "image": "https://cards.scryfall.io/normal/front/2/0/20668ef8-d4ad-4f7c-b2f9-9a17ffab31ca.jpg?1782800249"
+  },
+  "origin": "PIP",
+  "colorIdentity": []
  },
  {
   "name": "Silver Surfer, Galactus's Herald",
@@ -12741,6 +13858,34 @@
   "colorIdentity": [
    "U"
   ]
+ },
+ {
+  "name": "Skittering Cicada",
+  "number": "717",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Creature — Insect",
+  "oracleText": "Flash\nYou may cast colorless spells as though they had flash.\nWhenever you cast a colorless spell, until end of turn, this creature gains trample and gets +X/+X, where X is that spell's mana value.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [
+   "Flash"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/3/d3a83be9-856d-4c30-95f5-da72a5ac8263.jpg?1783915486",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/3/d3a83be9-856d-4c30-95f5-da72a5ac8263.jpg?1783915486",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cigale fuyarde",
+   "typeLine": "Créature — insecte",
+   "text": "Flash\nVous pouvez lancer les sorts incolores comme s'ils avaient le flash.\nÀ chaque fois que vous lancez un sort incolore, jusqu'à la fin du tour, la Cigale fuyarde acquiert le piétinement et gagne +X/+X, X étant la valeur de mana de ce sort.",
+   "image": "https://cards.scryfall.io/normal/front/c/a/ca74a048-872c-4805-8709-c11e8a7c10d7.jpg?1782815482"
+  },
+  "origin": "CMM",
+  "colorIdentity": []
  },
  {
   "name": "Skrelv's Hive",
@@ -13885,6 +15030,59 @@
   ]
  },
  {
+  "name": "Sword of Feast and Famine",
+  "number": "99",
+  "rarity": "mythic",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +2/+2 and has protection from black and from green.\nWhenever equipped creature deals combat damage to a player, that player discards a card and you untap all lands you control.\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/f/dfb6176a-3938-4c59-b485-8751969358ad.jpg?1783910957",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/dfb6176a-3938-4c59-b485-8751969358ad.jpg?1783910957",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Épée de Festin et de Famine",
+   "typeLine": "Artefact — équipement",
+   "text": "La créature équipée gagne +2/+2 et a la protection contre le noir et le vert.\nÀ chaque fois que la créature équipée inflige des blessures de combat à un joueur, ce joueur se défausse d'une carte et vous dégagez tous les terrains que vous contrôlez.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/8/5/857f4c67-0e23-4cef-8dd9-f801bdd9a917.jpg?1782790839"
+  },
+  "origin": "ACR",
+  "colorIdentity": []
+ },
+ {
+  "name": "Sword of Truth and Justice",
+  "number": "32",
+  "rarity": "mythic",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +2/+2 and has protection from white and from blue.\nWhenever equipped creature deals combat damage to a player, put a +1/+1 counter on a creature you control, then proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Proliferate",
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/7/f714386f-607a-41fd-ae72-f2d2641841aa.jpg?1787739537",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f714386f-607a-41fd-ae72-f2d2641841aa.jpg?1787739537",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Épée de Vérité et de Justice",
+   "typeLine": "Artefact : équipement",
+   "text": "La créature équipée gagne +2/+2 et a la protection contre le blanc et le bleu.\nÀ chaque fois que la créature équipée inflige des blessures de combat à un joueur, mettez un marqueur +1/+1 sur une créature que vous contrôlez, puis proliférez. (Choisissez n'importe quel nombre de permanents et/ou de joueurs, puis donnez-leur à chacun un autre marqueur de chaque sorte déjà présente.)\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/4/1/41cf6164-8cae-4b3f-831b-0e07bb22cd43.jpg?1782918597"
+  },
+  "origin": "H1R",
+  "colorIdentity": []
+ },
+ {
   "name": "Synthetic Destiny",
   "number": "45",
   "rarity": "rare",
@@ -14679,6 +15877,40 @@
   "colorIdentity": []
  },
  {
+  "name": "The Grey Havens",
+  "number": "255",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "When The Grey Havens enters, scry 1.\n{T}: Add {C}.\n{T}: Add one mana of any color among legendary creature cards in your graveyard.",
+  "colors": [],
+  "keywords": [
+   "Scry"
+  ],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/d/dd698f10-b0fc-42fc-84ec-f5a0d96bfa1d.jpg?1783916233",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/dd698f10-b0fc-42fc-84ec-f5a0d96bfa1d.jpg?1783916233",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Les Havres Gris",
+   "typeLine": "Terrain légendaire",
+   "text": "Quand Les Havres Gris arrivent sur le champ de bataille, regard 1.\n{T} : Ajoutez {C}.\n{T} : Ajoutez un mana de la couleur de votre choix parmi les couleurs des cartes de créature légendaire de votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/b/6/b6aa5947-7a4f-45f0-af08-263a9bc6cdce.jpg?1782820834"
+  },
+  "origin": "LTR",
+  "colorIdentity": []
+ },
+ {
   "name": "The Master, Transcendent",
   "number": "6",
   "rarity": "mythic",
@@ -14711,6 +15943,67 @@
    "G",
    "U"
   ]
+ },
+ {
+  "name": "The Mightstone and Weakstone",
+  "number": "238",
+  "rarity": "rare",
+  "manaCost": "{5}",
+  "cmc": 5,
+  "typeLine": "Legendary Artifact — Powerstone",
+  "oracleText": "When The Mightstone and Weakstone enters, choose one —\n• Draw two cards.\n• Target creature gets -5/-5 until end of turn.\n{T}: Add {C}{C}. This mana can't be spent to cast nonartifact spells.\n(Melds with Urza, Lord Protector.)",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/2/02aea379-b444-46a3-82f4-3038f698d4f4.jpg?1783920017",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/02aea379-b444-46a3-82f4-3038f698d4f4.jpg?1783920017",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "layout": "meld",
+  "meld": {
+   "parts": [
+    "The Mightstone and Weakstone",
+    "Urza, Lord Protector"
+   ],
+   "result": "Urza, Planeswalker"
+  },
+  "origin": "BRO",
+  "colorIdentity": []
+ },
+ {
+  "name": "The Mycosynth Gardens",
+  "number": "168",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Sphere",
+  "oracleText": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{X}, {T}: This land becomes a copy of target nontoken artifact you control with mana value X.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/a/0a6f0408-6758-495f-9d6c-7686a1542fbd.jpg?1783906009",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0a6f0408-6758-495f-9d6c-7686a1542fbd.jpg?1783906009",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Les Jardins de mycosynthèse",
+   "typeLine": "Terrain : sphère",
+   "text": "{T} : Ajoutez {C}.\n{1}, {T} : Ajoutez un mana de la couleur de votre choix.\n{X}, {T} : Les Jardins de mycosynthèse deviennent une copie d'un artefact non-jeton ciblé que vous contrôlez avec une valeur de mana de X.",
+   "image": "https://cards.scryfall.io/normal/front/e/b/eb680e0a-f056-4e17-ae57-bb603fdb4437.jpg?1782828827"
+  },
+  "origin": "EOC",
+  "colorIdentity": []
  },
  {
   "name": "The One Ring",
@@ -15568,6 +16861,56 @@
   ]
  },
  {
+  "name": "Ugin, the Ineffable",
+  "number": "160",
+  "rarity": "rare",
+  "manaCost": "{6}",
+  "cmc": 6,
+  "typeLine": "Legendary Planeswalker — Ugin",
+  "oracleText": "Colorless spells you cast cost {2} less to cast.\n+1: Exile the top card of your library face down and look at it. Create a 2/2 colorless Spirit creature token. When that token leaves the battlefield, put the exiled card into your hand.\n−3: Destroy target permanent that's one or more colors.",
+  "loyalty": "4",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/b/fba9e014-8abe-4662-8a47-998b5eaa7a6b.jpg?1783911393",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fba9e014-8abe-4662-8a47-998b5eaa7a6b.jpg?1783911393",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ugin, l'ineffable",
+   "typeLine": "Planeswalker légendaire — Ugin",
+   "text": "Les sorts incolores que vous lancez coûtent {2} de moins à lancer.\n+1: Exilez la carte du dessus de votre bibliothèque, face cachée, et regardez-la. Créez un jeton de créature 2/2 incolore Esprit. Quand ce jeton quitte le champ de bataille, mettez la carte exilée dans votre main.\n-3: Détruisez un permanent ciblé qui a au moins une couleur.",
+   "image": "https://cards.scryfall.io/normal/front/a/9/a9e2a905-2331-4c47-a73e-3cb36d11a264.jpg?1782794910"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
+ },
+ {
+  "name": "Ugin, the Spirit Dragon",
+  "number": "1",
+  "rarity": "mythic",
+  "manaCost": "{8}",
+  "cmc": 8,
+  "typeLine": "Legendary Planeswalker — Ugin",
+  "oracleText": "+2: Ugin deals 3 damage to any target.\n−X: Exile each permanent with mana value X or less that's one or more colors.\n−10: You gain 7 life, draw seven cards, then put up to seven permanent cards from your hand onto the battlefield.",
+  "loyalty": "7",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/c/9c017fa9-7021-417a-9c2e-3df409644fcf.jpg?1783930748",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/c/9c017fa9-7021-417a-9c2e-3df409644fcf.jpg?1783930748",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ugin, le dragon-esprit",
+   "typeLine": "Planeswalker légendaire : Ugin",
+   "text": "+2: Ugin, le dragon-esprit inflige 3 blessures à n'importe quelle cible.\n-X: Exilez chaque permanent avec un coût converti de mana inférieur ou égal à X qui a au moins une couleur.\n-10: Vous gagnez 7 points de vie, piochez sept cartes, puis mettez sur le champ de bataille jusqu'à sept cartes de permanent depuis votre main.",
+   "image": "https://cards.scryfall.io/normal/front/9/b/9b1c028e-baab-4536-aa20-cafde380aab9.jpg?1782906146"
+  },
+  "origin": "M21",
+  "colorIdentity": []
+ },
+ {
   "name": "Ulamog, the Ceaseless Hunger",
   "number": "5",
   "rarity": "mythic",
@@ -15857,6 +17200,30 @@
   ]
  },
  {
+  "name": "Unwinding Clock",
+  "number": "228",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Artifact",
+  "oracleText": "Untap all artifacts you control during each other player's untap step.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/3/c3fd1a59-4ade-459f-90d2-1fc67d6d1384.jpg?1783934255",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c3fd1a59-4ade-459f-90d2-1fc67d6d1384.jpg?1783934255",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Horloge débridée",
+   "typeLine": "Artefact",
+   "text": "Dégagez tous les artefacts que vous contrôlez pendant l'étape de dégagement de chaque autre joueur.",
+   "image": "https://cards.scryfall.io/normal/front/0/5/05abed98-38f0-41f4-bf5b-89150c36791d.jpg?1782928190"
+  },
+  "origin": "C18",
+  "colorIdentity": []
+ },
+ {
   "name": "Urborg, Tomb of Yawgmoth",
   "number": "287",
   "rarity": "rare",
@@ -15919,6 +17286,171 @@
    "R",
    "U"
   ]
+ },
+ {
+  "name": "Urza's Cave",
+  "number": "234",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Urza's Cave",
+  "oracleText": "{T}: Add {C}.\n{3}, {T}, Sacrifice this land: Search your library for a land card, put it onto the battlefield tapped, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/2/926916ed-2f22-4ba9-9427-194886ad6c1e.jpg?1783911233",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/926916ed-2f22-4ba9-9427-194886ad6c1e.jpg?1783911233",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Caverne d'Urza",
+   "typeLine": "Terrain — Caverne d'Urza",
+   "text": "{T} : Ajoutez {C}.\n{3}, {T}, sacrifiez la Caverne d'Urza : Cherchez dans votre bibliothèque une carte de terrain, mettez-la sur le champ de bataille engagée, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/d/b/dbbb3cb9-d1e4-4168-befe-9fdbb067a3b1.jpg?1782792877"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
+  "name": "Urza's Mine",
+  "number": "401",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Urza's Mine",
+  "oracleText": "{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/2/32dbc719-d8aa-47ff-b7ea-20adadc99ec7.jpg?1783911314",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/2/32dbc719-d8aa-47ff-b7ea-20adadc99ec7.jpg?1783911314",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mine d'Urza",
+   "typeLine": "Terrain — mine d'Urza",
+   "text": "{T} : Ajoutez {C}. Si vous contrôlez une Centrale énergétique d'Urza et une Tour d'Urza, ajoutez {C}{C} à la place. (Si vous contrôlez un terrain avec tous les types de terrain, la Mine d'Urza s'engage pour {C}{C}.)",
+   "image": "https://cards.scryfall.io/normal/front/9/7/9771c24f-de65-4f60-b32e-d0e0bb00c0bc.jpg?1782794318"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
+ },
+ {
+  "name": "Urza's Power Plant",
+  "number": "402",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Urza's Power-Plant",
+  "oracleText": "{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/e/5e5786d5-355d-454c-b09b-e307a7a324d4.jpg?1783911314",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/e/5e5786d5-355d-454c-b09b-e307a7a324d4.jpg?1783911314",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Centrale énergétique d'Urza",
+   "typeLine": "Terrain — centrale énergétique d'Urza",
+   "text": "{T} : Ajoutez {C}. Si vous contrôlez une Mine d'Urza et une Tour d'Urza, ajoutez {C}{C} à la place. (Si vous contrôlez un terrain avec tous les types de terrain, la Centrale énergétique d'Urza s'engage pour {C}{C}.)",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5e5dc73b-5830-4511-bf1b-82d62182fcad.jpg?1782794316"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
+ },
+ {
+  "name": "Urza's Saga",
+  "number": "259",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Enchantment Land — Urza's Saga",
+  "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/1/c1e0f201-42cb-46a1-901a-65bb4fc18f6c.jpg?1783926791",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/1/c1e0f201-42cb-46a1-901a-65bb4fc18f6c.jpg?1783926791",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "layout": "saga",
+  "fr": {
+   "name": "Épopée d'Urza",
+   "typeLine": "Terrain-enchantement : Épopée d'Urza",
+   "text": "(Au moment où cette saga arrive sur le champ de bataille et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — L'Épopée d'Urza acquiert « {T} : Ajoutez {C}. »\nII — L'Épopée d'Urza acquiert « {2}, {T} : Créez un jeton de créature-artefact 0/0 incolore Construction avec \"Cette créature gagne +1/+1 pour chaque artefact que vous contrôlez.\" »\nIII — Cherchez dans votre bibliothèque une carte d'artefact avec un coût de mana de {0} ou {1}, mettez-la sur le champ de bataille, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/8/2/8242a46b-da5b-47e5-88b2-cedbff348c2d.jpg?1782880392"
+  },
+  "origin": "MH2",
+  "colorIdentity": []
+ },
+ {
+  "name": "Urza's Tower",
+  "number": "403",
+  "rarity": "common",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Urza's Tower",
+  "oracleText": "{T}: Add {C}. If you control an Urza's Mine and an Urza's Power-Plant, add {C}{C}{C} instead.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/6/7693a698-65be-4d85-8b9d-c02c1596b99d.jpg?1783911314",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/6/7693a698-65be-4d85-8b9d-c02c1596b99d.jpg?1783911314",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tour d'Urza",
+   "typeLine": "Terrain — tour d'Urza",
+   "text": "{T} : Ajoutez {C}. Si vous contrôlez une Mine d'Urza et une Centrale énergétique d'Urza, ajoutez {C}{C}{C} à la place. (Si vous contrôlez un terrain avec tous les types de terrain, la Tour d'Urza s'engage pour {C}{C}{C}.)",
+   "image": "https://cards.scryfall.io/normal/front/1/5/1525eb8c-2713-411e-9d2b-541a3530a1fe.jpg?1782794312"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
+ },
+ {
+  "name": "Urza's Workshop",
+  "number": "28",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land — Urza's",
+  "oracleText": "{T}: Add {C}.\nMetalcraft — {T}: Add {C} for each Urza's land you control. Activate only if you control three or more artifacts.",
+  "colors": [],
+  "keywords": [
+   "Metalcraft"
+  ],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/7/37c9b9d7-2fa7-4710-94bb-c55ee7bf598c.jpg?1783919712",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/7/37c9b9d7-2fa7-4710-94bb-c55ee7bf598c.jpg?1783919712",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Atelier d'Urza",
+   "typeLine": "Terrain : terrain d'Urza",
+   "text": "{T} : Ajoutez {C}.\nArt des métaux — {T} : Ajoutez {C} pour chaque terrain d'Urza que vous contrôlez. N'activez que si vous contrôlez au moins trois artefacts.",
+   "image": "https://cards.scryfall.io/normal/front/9/7/97f3d21a-2af2-47f2-b0f1-b808d6a1af07.jpg?1782838139"
+  },
+  "origin": "BRC",
+  "colorIdentity": []
  },
  {
   "name": "Valakut Awakening // Valakut Stoneforge",
@@ -16253,6 +17785,30 @@
   ]
  },
  {
+  "name": "Vedalken Orrery",
+  "number": "317",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Artifact",
+  "oracleText": "You may cast spells as though they had flash.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/4/44067327-6fe3-4222-b591-6d14d0e360d7.jpg?1783921787",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/44067327-6fe3-4222-b591-6d14d0e360d7.jpg?1783921787",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Planétaire mécanique vedalken",
+   "typeLine": "Artefact",
+   "text": "Vous pouvez lancer les sorts comme s'ils avaient le flash.",
+   "image": "https://cards.scryfall.io/normal/front/1/7/17e6afe9-a893-48bd-921c-444b00dfd5fc.jpg?1782847070"
+  },
+  "origin": "2X2",
+  "colorIdentity": []
+ },
+ {
   "name": "Venser, Fervent Forger",
   "number": "9",
   "rarity": "rare",
@@ -16312,6 +17868,30 @@
    "B",
    "G"
   ]
+ },
+ {
+  "name": "Vesuva",
+  "number": "404",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "You may have this land enter tapped as a copy of any land on the battlefield.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/0/40c17aee-1e93-4db8-b491-cb2c10d0cc67.jpg?1783911313",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40c17aee-1e93-4db8-b491-cb2c10d0cc67.jpg?1783911313",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vésuva",
+   "typeLine": "Terrain",
+   "text": "Vous pouvez faire que Vésuva arrive sur le champ de bataille comme une copie de n'importe quel terrain sur le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/e/e/ee1933c9-825d-4d12-b453-312c1b840745.jpg?1782794310"
+  },
+  "origin": "M3C",
+  "colorIdentity": []
  },
  {
   "name": "Vexing Radgull",
@@ -16620,6 +18200,30 @@
   "colorIdentity": []
  },
  {
+  "name": "Voltaic Key",
+  "number": "219",
+  "rarity": "uncommon",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}: Untap target artifact.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/d/6dd61957-f3a2-4976-8f15-88258f71406a.jpg?1783941788",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6dd61957-f3a2-4976-8f15-88258f71406a.jpg?1783941788",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Clé voltaïque",
+   "typeLine": "Artefact",
+   "text": "{1}, {T} : Dégagez l'artefact ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/d/9/d9fcc8fb-c7cb-4bbd-add1-3c57e52b7791.jpg?1782995764"
+  },
+  "origin": "M11",
+  "colorIdentity": []
+ },
+ {
   "name": "Voracious Hydra",
   "number": "200",
   "rarity": "rare",
@@ -16737,6 +18341,92 @@
    "image": "https://cards.scryfall.io/normal/front/b/3/b3805f57-360f-43e0-9ef1-8549a9c96685.jpg?1782769106"
   },
   "origin": "FIC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Wandering Archaic // Explore the Vastlands",
+  "number": "6",
+  "rarity": "rare",
+  "layout": "modal_dfc",
+  "manaCost": "{5}",
+  "cmc": 5,
+  "typeLine": "Creature — Avatar",
+  "oracleText": "Whenever an opponent casts an instant or sorcery spell, they may pay {2}. If they don't, you may copy that spell. You may choose new targets for the copy.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/8/18a2bdc8-b705-4eb5-b3a5-ff2e2ab8f312.jpg?1783927400",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18a2bdc8-b705-4eb5-b3a5-ff2e2ab8f312.jpg?1783927400",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Wandering Archaic",
+    "manaCost": "{5}",
+    "typeLine": "Creature — Avatar",
+    "oracleText": "Whenever an opponent casts an instant or sorcery spell, they may pay {2}. If they don't, you may copy that spell. You may choose new targets for the copy.",
+    "power": "4",
+    "toughness": "4",
+    "colors": [],
+    "image": "https://cards.scryfall.io/normal/front/1/8/18a2bdc8-b705-4eb5-b3a5-ff2e2ab8f312.jpg?1783927400",
+    "fr": {
+     "name": "Archaïque errant",
+     "typeLine": "Créature — avatar",
+     "text": "À chaque fois qu'un adversaire lance un sort d'éphémère ou de rituel, il peut payer {2}. S'il ne le fait pas, vous pouvez copier ce sort. Vous pouvez choisir de nouvelles cibles pour la copie.\nRituel\n{3}",
+     "image": "https://cards.scryfall.io/normal/front/5/e/5eac1a90-0f81-4ec1-8624-35413cab1ac1.jpg?1782884923"
+    }
+   },
+   {
+    "name": "Explore the Vastlands",
+    "manaCost": "{3}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player looks at the top five cards of their library and may reveal a land card and/or an instant or sorcery card from among them. Each player puts the cards they revealed this way into their hand and the rest on the bottom of their library in a random order. Each player gains 3 life.",
+    "colors": [],
+    "image": "https://cards.scryfall.io/normal/back/1/8/18a2bdc8-b705-4eb5-b3a5-ff2e2ab8f312.jpg?1783927400",
+    "fr": {
+     "name": "Explorer les Vasteterres",
+     "typeLine": "Rituel",
+     "text": "Chaque joueur regarde les cinq cartes du dessus de sa bibliothèque, révèle une carte de terrain et/ou une carte d'éphémère ou de rituel parmi elles, puis met les cartes révélées de cette manière dans sa main et le reste au-dessous de sa bibliothèque dans un ordre aléatoire. Chaque joueur gagne 3 points de vie.\nAvatar\n{5}",
+     "image": "https://cards.scryfall.io/normal/back/5/e/5eac1a90-0f81-4ec1-8624-35413cab1ac1.jpg?1782884923"
+    }
+   }
+  ],
+  "fr": {
+   "name": "Archaïque errant",
+   "typeLine": "Créature — avatar",
+   "text": "À chaque fois qu'un adversaire lance un sort d'éphémère ou de rituel, il peut payer {2}. S'il ne le fait pas, vous pouvez copier ce sort. Vous pouvez choisir de nouvelles cibles pour la copie.\nRituel\n{3}",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5eac1a90-0f81-4ec1-8624-35413cab1ac1.jpg?1782884923"
+  },
+  "origin": "STX",
+  "colorIdentity": []
+ },
+ {
+  "name": "War Room",
+  "number": "317",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{3}, {T}, Pay life equal to the number of colors in your commanders' color identity: Draw a card.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/2/b2593c45-585f-4eaf-bb08-e91a4fc2d425.jpg?1789753455",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b2593c45-585f-4eaf-bb08-e91a4fc2d425.jpg?1789753455",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Salle de guerre",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{3}, {T}, payez un nombre de points de vie égal au nombre de couleurs dans l'identité couleur de vos commandants : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/5/a/5a844fd1-5bee-4229-9505-f0d2073bb241.jpg?1782803257"
+  },
+  "origin": "FDC",
   "colorIdentity": []
  },
  {
@@ -17025,6 +18715,33 @@
    "image": "https://cards.scryfall.io/normal/front/5/a/5ad6adb2-e7fa-4dc6-9e70-22eacf49d115.jpg?1782792871"
   },
   "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
+  "name": "Witch's Clinic",
+  "number": "318",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{2}, {T}: Target commander gains lifelink until end of turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/0/60461a4f-a337-46b0-908f-fbd7479c235a.jpg?1789753456",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/60461a4f-a337-46b0-908f-fbd7479c235a.jpg?1789753456",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dispensaire de l'envoûteuse",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T} : Un commandant ciblé acquiert le lien de vie jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/c/7/c79eca34-9cf0-4bd0-9073-5fdea29aa03f.jpg?1782785841"
+  },
+  "origin": "FDC",
   "colorIdentity": []
  },
  {

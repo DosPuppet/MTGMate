@@ -155,6 +155,33 @@ export const KEYWORDS: readonly Keyword[] = [
   "decayed",
 ];
 
+import type { AbilityDef, ActivatedAbilityDef } from "./model/cards";
+import type { Effect } from "./model/effects";
+
+const MANA_OPS = new Set<Effect["op"]>(["addMana", "addManaChoice", "addManaColorsAmong", "addManaUntilEndOfTurn"]);
+
+/** Un effet (ou un effet imbriqué : « si… », « vous pouvez… ») ajoute-t-il du mana ? */
+function addsMana(effects: readonly Effect[]): boolean {
+  return effects.some(
+    (e) =>
+      MANA_OPS.has(e.op) ||
+      Object.values(e).some((v) => Array.isArray(v) && v.length > 0 && typeof v[0] === "object" && addsMana(v as Effect[])),
+  );
+}
+
+/**
+ * 605.1a : une capacité activée sans cible, qui n'est pas une capacité de loyauté et qui peut ajouter du mana, est une
+ * capacité de mana (Ramos, Capital City, Loot, the Pathfinder…).
+ */
+export function isManaAbility(ab: ActivatedAbilityDef): boolean {
+  return ab.targets.length === 0 && ab.cost.loyalty === undefined && addsMana(ab.effects);
+}
+
+/** Une capacité de mana (605.1a) : une capacité `mana`, ou une capacité activée qui en est une (`isManaAbility`). */
+export function isAnyManaAbility(ab: AbilityDef): boolean {
+  return ab.kind === "mana" || (ab.kind === "activated" && isManaAbility(ab));
+}
+
 export * from "./model/cards";
 export * from "./model/decisions";
 export * from "./model/effects";

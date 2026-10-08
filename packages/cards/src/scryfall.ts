@@ -139,14 +139,19 @@ export function parseEquip(text: string): string | undefined {
  * Variantes d'Équiper lues dans le texte : « Equip worthy {1} » (Marvel Super Heroes : créature légendaire non-Méchant
  * rouge et/ou blanche) ; « coûte {1} de moins par couleur de la créature ciblée » (Dragonfire Blade).
  */
-function equipVariant(text: string): { worthy?: boolean; byColors?: boolean; commander?: string } {
+function equipVariant(text: string): EquipVariant {
   return {
     worthy: /^Equip worthy /m.test(text) || undefined,
     // « Equip commander {2} » (Commander) : une capacité d'Équiper de plus, qui ne cible qu'un commandant.
     commander: /^Equip commander ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1],
+    // « Equip legendary creature {1} » (Brotherhood Regalia, Excalibur) : qui ne cible qu'une créature légendaire.
+    legendary: /^Equip legendary creature ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1],
     byColors: /costs \{1\} less to activate for each color of the creature it targets/.test(text) || undefined,
   };
 }
+
+/** Variantes d'Équiper : « worthy », coût réduit par couleur, et capacités restreintes (commandant, créature légendaire). */
+type EquipVariant = { worthy?: boolean; byColors?: boolean; commander?: string; legendary?: string };
 
 /** « Digne » (worthy) : créature légendaire que vous contrôlez, non-Méchant, rouge et/ou blanche. */
 const WORTHY: ObjectFilter = {
@@ -458,7 +463,7 @@ function intrinsicAbilities(
   equipReduced?: boolean,
   saddle?: number,
   crewOnce?: boolean,
-  equipKind: { worthy?: boolean; byColors?: boolean; commander?: string } = {},
+  equipKind: EquipVariant = {},
   prowessCount = 1,
 ): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
@@ -491,21 +496,21 @@ function intrinsicAbilities(
       label: `Équiper ${equipKind.worthy ? "(digne) " : ""}${equip}`,
     });
   }
-  if (equipKind.commander) {
+  // Capacités d'Équiper restreintes : « Equip commander », « Equip legendary creature ».
+  const restricted: [string | undefined, ObjectFilter, string, string][] = [
+    [equipKind.commander, { commander: true }, "commandant que vous contrôlez", "Équiper un commandant"],
+    [equipKind.legendary, { legendary: true }, "créature légendaire que vous contrôlez", "Équiper une créature légendaire"],
+  ];
+  for (const [cost, extra, targetLabel, label] of restricted) {
+    if (!cost) continue;
     out.push({
       kind: "activated",
-      cost: { mana: parseManaCost(equipKind.commander) },
-      targets: [
-        {
-          id: "t",
-          label: "commandant que vous contrôlez",
-          filter: { objects: { types: ["Creature"], controller: "you", commander: true } },
-        },
-      ],
+      cost: { mana: parseManaCost(cost) },
+      targets: [{ id: "t", label: targetLabel, filter: { objects: { types: ["Creature"], controller: "you", ...extra } } }],
       effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
       sorcerySpeed: true,
       equip: true,
-      label: `Équiper un commandant ${equipKind.commander}`,
+      label: `${label} ${cost}`,
     });
   }
   if (ward) out.push(dsl.wardAbility(ward));

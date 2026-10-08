@@ -21,7 +21,7 @@ import {
   snapshot,
   tapObject,
 } from "./state";
-import { type ActiveReplacement, eventReplacements, payableLife, playerSide, replacementAdd } from "./statics";
+import { type ActiveReplacement, eventReplacements, lifeCost, payableLife, playerSide, replacementAdd } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -164,9 +164,15 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
     // Meteor Crater : les couleurs des permanents correspondants que vous contrôlez.
     else if (a.produceColorsOf) {
       const colors = new Set<ManaType>();
-      for (const pid of s.battlefield)
-        if (obj(s, pid).controller === o.controller && matchesObjectFilter(s, o.controller, pid, a.produceColorsOf, id))
-          for (const c of chars(s, pid).colors) colors.add(c);
+      // The Grey Havens : les couleurs des cartes correspondantes de votre cimetière.
+      if (a.produceColorsZone === "graveyard") {
+        for (const cid of s.players[o.controller]?.graveyard ?? [])
+          if (matchesCard(s, o.controller, cid, { ...a.produceColorsOf, controller: undefined }, id))
+            for (const c of defOf(s, cid).colors) colors.add(c);
+      } else
+        for (const pid of s.battlefield)
+          if (obj(s, pid).controller === o.controller && matchesObjectFilter(s, o.controller, pid, a.produceColorsOf, id))
+            for (const c of chars(s, pid).colors) colors.add(c);
       list.push({ ...a, produce: MANA_TYPES.filter((m) => colors.has(m)) });
     }
     // Reflecting Pool : les types que vos autres terrains pourraient produire (sans les sources du même genre, 106.7) ;
@@ -207,7 +213,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   if (ab.tapAnother && !otherToTap(s, id, ab)) return false;
   if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
   if (ab.oncePerTurn && s.turn.onceFired.includes(`mana:${id}`)) return false;
-  if (ab.cost.payLife && payableLife(s, o.controller) < ab.cost.payLife) return false;
+  if (ab.cost.payLife && payableLife(s, o.controller) < lifeCost(s, o.controller, id, ab.cost.payLife)) return false;
   if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence)) return false;
   return true;
 }
@@ -603,7 +609,7 @@ export function activateManaAbility(
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id, ab) as ObjectId));
   if (ab.cost.self === "sacrifice") sacrifice(s, id);
   // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
-  if (ab.cost.payLife) payLife(s, player, ab.cost.payLife);
+  if (ab.cost.payLife) payLife(s, player, lifeCost(s, player, id, ab.cost.payLife));
   // Cryptex : « {T}, réunissez des preuves 3 : ajoutez un mana… ».
   if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, id, ab.cost.collectEvidence, keep) ?? []);
   if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
@@ -696,7 +702,7 @@ export function solvePayment(
     // Sources qui coûtent des PV (Mana Confluence, Horizon of Progress) : le total ne peut dépasser ce que le joueur peut
     // payer (119.4 : à 1 PV, une seule) ; sinon le plan est refait sans l'une d'elles.
     const lifeOf = (t: { id: ObjectId; ability: number }) =>
-      t.ability >= 0 ? (manaAbilitiesOf(s, t.id)[t.ability]?.cost.payLife ?? 0) : 0;
+      t.ability >= 0 ? lifeCost(s, player, t.id, manaAbilitiesOf(s, t.id)[t.ability]?.cost.payLife) : 0;
     const lifeTaps = plan.taps.filter((t) => lifeOf(t) > 0);
     if (lifeTaps.length > 1 && lifeTaps.reduce((n, t) => n + lifeOf(t), 0) > payableLife(s, player)) {
       without = new Set([...without, (lifeTaps.at(-1) as { id: ObjectId }).id]);
