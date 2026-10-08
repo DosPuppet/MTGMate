@@ -2889,6 +2889,10 @@ export const block = {
     label: n === 1 ? "Bloquée par une seule créature au plus" : `Bloquée par ${n} créatures au plus`,
   }),
   notAlone: { notAlone: true, label: "Ne peut ni attaquer ni bloquer seule" } as BlockRule,
+  /** Peur (702.36) : ne peut être bloquée que par des créatures-artefacts et/ou des créatures noires. */
+  fear: { cantBeBlockedBy: { not: { anyOf: [{ types: ["Artifact"] }, { colors: ["B"] }] } }, label: "Peur" } as BlockRule,
+  /** « Ne peut pas être bloquée par les créatures que ce joueur contrôle » : le joueur désigné, figé à la résolution. */
+  notByPlayer: (who: Ref, label: string): BlockRule => ({ cantBeBlockedByPlayer: who, label }),
   /** Les plus fréquentes. */
   notByPowerLE2: { cantBeBlockedBy: { maxPower: 2 }, label: "Imblocable par les créatures de force 2 ou moins" } as BlockRule,
 };
@@ -2921,6 +2925,25 @@ export const protection = {
 /** Protection ou défense talismanique imprimée sur la carte : une statique sur elle-même. */
 export function protectionAbility(rule: ProtectionRule): AbilityDef {
   return staticAbility("self", { addProtections: [rule] }, { label: rule.label });
+}
+
+/**
+ * Myriade (702.116) : quand elle attaque, pour chaque adversaire autre que le joueur défenseur, vous pouvez créer une
+ * copie engagée qui attaque ce joueur ou un planeswalker qu'il contrôle, exilée à la fin du combat. Lue dans le texte
+ * (`scryfall.ts`) ou accordée (Legion Loyalty).
+ */
+export function myriadAbility(): AbilityDef {
+  return triggered(
+    when.attacksSelf,
+    [
+      fx.copyToken(ref.self, {
+        attackEach: ref.withPlaneswalkers(ref.except(ref.eachOpponent, ref.defendingPlayer)),
+        optional: true,
+        atEndOfCombat: "exile",
+      }),
+    ],
+    { label: "Myriade : une copie attaque chacun de vos autres adversaires" },
+  );
 }
 
 /** Règle de blocage imprimée sur la carte : une statique sur elle-même. */

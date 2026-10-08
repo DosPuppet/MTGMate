@@ -45,6 +45,7 @@ export const {
   pawprint,
   block,
   blockAbility,
+  myriadAbility,
   protection,
   protectionAbility,
   powerFor,

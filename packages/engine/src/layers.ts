@@ -39,6 +39,7 @@ import type {
   PlayerId,
   PowerRule,
   ProtectionRule,
+  Ref,
 } from "./types";
 import { BASIC_LAND_TYPES, LAND_TYPES, PERMANENT_TYPES } from "./types";
 
@@ -92,7 +93,8 @@ export function blockRulePlaceholder(r: BlockRule): boolean {
     r.cantAttackPlayer === "you" ||
     r.goadedBy === "you" ||
     r.mustAttackPlayer === "eventPlayer" ||
-    r.mustBlockAttacker === "eventObject"
+    r.mustBlockAttacker === "eventObject" ||
+    typeof r.cantBeBlockedByPlayer === "object"
   );
 }
 
@@ -105,10 +107,12 @@ export function resolveBlockRules(
   rules: BlockRule[],
   you: PlayerId,
   event?: { player?: PlayerId; objectId?: ObjectId },
+  player?: (r: Ref) => PlayerId | undefined,
 ): BlockRule[] {
   return rules.map((r) => {
     if (!blockRulePlaceholder(r)) return r;
     const out: BlockRule = { ...r };
+    if (typeof r.cantBeBlockedByPlayer === "object") out.cantBeBlockedByPlayer = player?.(r.cantBeBlockedByPlayer);
     if (r.cantAttackPlayer === "you") out.cantAttackPlayer = you;
     if (r.goadedBy === "you") out.goadedBy = you;
     if (r.mustAttackPlayer === "eventPlayer") out.mustAttackPlayer = event?.player;
@@ -352,6 +356,7 @@ const LIST_MODS = [
   "removeSupertypes",
   "addKeywords",
   "removeKeywords",
+  "forbidKeywords",
   "addColors",
   "addBlockRules",
   "addProtections",
@@ -577,8 +582,10 @@ interface CacheDeps {
   life: boolean;
   /** « Tant qu'il n'a pas encore infligé de blessures (de combat) » (`sourceDealtDamage`, `sourceDealtCombatDamage`). */
   dealt: boolean;
+  /** Les blocages déclarés (filtres `blocked` et `blocking` : attaquant bloqué ou non, bloqueuse). */
+  blocks: boolean;
 }
-const noDeps = (): CacheDeps => ({ tapped: false, mana: false, turnLog: false, life: false, dealt: false });
+const noDeps = (): CacheDeps => ({ tapped: false, mana: false, turnLog: false, life: false, dealt: false, blocks: false });
 const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics>; deps: CacheDeps }>();
 const depsMemo = new WeakMap<object, CacheDeps>();
 
@@ -613,6 +620,7 @@ function scanDeps(x: unknown, out: CacheDeps): void {
     if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "perTurnEvents" || k === "countersPutByYouThisTurn")
       out.turnLog = true;
     if (k === "perLife") out.life = true;
+    if (k === "blocked" || k === "blocking") out.blocks = true;
     scanDeps(v, out);
   }
 }
@@ -640,6 +648,7 @@ function cacheDeps(s: GameState, map: Map<ObjectId, Characteristics>): CacheDeps
     out.turnLog ||= d.turnLog;
     out.life ||= d.life;
     out.dealt ||= d.dealt;
+    out.blocks ||= d.blocks;
   };
   for (const e of s.effects) scanDeps(e, out);
   const copied = copyingIn(s) ? copiedDefMap(s) : null;
@@ -720,6 +729,21 @@ function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
   return out;
 }
 
+/** Les bloqueurs ont été déclarés (509.1h) : de la fin de leur déclaration à la fin du combat. */
+export function blockersDeclared(s: GameState): boolean {
+  const c = s.combat;
+  if (!c || c.blockQueue.length > 0 || c.pendingBlocks) return false;
+  if (s.turn.step === "declareBlockers") return s.pending?.kind !== "declareBlockers";
+  return s.turn.step === "firstStrikeDamage" || s.turn.step === "combatDamage" || s.turn.step === "endCombat";
+}
+
+/** Attaquant bloqué (`true`), non bloqué une fois les bloqueurs déclarés (`false`), sinon `undefined` (filtre `blocked`). */
+function blockedState(s: GameState, id: ObjectId): boolean | undefined {
+  const a = s.combat?.attackers.find((x) => x.id === id);
+  if (!a) return undefined;
+  return a.blocked ? true : blockersDeclared(s) ? false : undefined;
+}
+
 /** `defender` : ce qu'attaque l'objet (joueur ou planeswalker), s'il attaque. */
 function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, defender: string | undefined): LkiSnapshot {
   return {
@@ -752,6 +776,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
     damagedBy: o.damagedBy,
     attachedTo: o.attachedTo,
     blocking: !!s.combat?.blockers.some((b) => b.id === id),
+    blocked: defender !== undefined ? blockedState(s, id) : undefined,
     damaged: o.damage > 0 || undefined,
     counters: o.counters,
     preparedSpell: !!o.preparedFor || undefined,
@@ -1177,12 +1202,14 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       for (const k of m.addColors ?? []) if (!c.colors.includes(k)) c.colors.push(k);
     },
   );
-  // Couche 6 : capacités.
+  // Couche 6 : capacités. Mots-clés interdits (`forbidKeywords`), retirés en fin de couche.
+  const forbidden = new Map<Characteristics, Keyword[]>();
   layer(
     (m) =>
       !!(
         m.addKeywords?.length ||
         m.removeKeywords?.length ||
+        m.forbidKeywords?.length ||
         m.loseAllAbilities ||
         m.addAbilities?.length ||
         m.addBlockRules?.length ||
@@ -1204,6 +1231,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       if (m.addProtections?.length) c.protections = [...c.protections, ...m.addProtections];
       for (const k of m.removeKeywords ?? []) c.keywords = c.keywords.filter((x) => x !== k);
       for (const k of m.addKeywords ?? []) if (!c.keywords.includes(k)) c.keywords.push(k);
+      if (m.forbidKeywords?.length) forbidden.set(c, [...(forbidden.get(c) ?? []), ...m.forbidKeywords]);
       if (m.addAbilities?.length) {
         // Capacité accordée par la statique d'un permanent : il est retenu pour `ref.grantor` (« renvoyez Trusty
         // Boomerang »). Un effet de résolution (Dreadmaw's Ire) n'a pas d'objet qui l'accorde.
@@ -1230,6 +1258,9 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
     }
     // 702.147 : la décomposition (imprimée, accordée ou par un marqueur) a sa capacité déclenchée.
     if (c.keywords.includes("decayed") && !c.abilities.includes(DECAYED)) c.abilities = [...c.abilities, DECAYED];
+    // « Ne peut pas avoir ni acquérir [mot-clé] » : après tout le reste de la couche 6 (Archetype of Courage).
+    const no = forbidden.get(c);
+    if (no) c.keywords = c.keywords.filter((k) => !no.includes(k));
   }
   // Couche 7b : F/E fixées.
   layer(

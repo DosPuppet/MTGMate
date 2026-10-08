@@ -385,7 +385,11 @@ export const HANDLERS: OpHandlers = {
       // Joueurs et objets figés à la résolution : « provoquez » (le contrôleur de l'effet), « ne peut pas vous attaquer »
       // (Promise of Loyalty), « attaque ce joueur » (Silver Surfer), « bloque ce Loup si possible » (Tolsimir).
       ...(e.mods.addBlockRules?.some(blockRulePlaceholder)
-        ? { addBlockRules: resolveBlockRules(e.mods.addBlockRules, ctx.controller, ctx.event) }
+        ? {
+            addBlockRules: resolveBlockRules(e.mods.addBlockRules, ctx.controller, ctx.event, (x) =>
+              resolveRef(s, ctx, x).find((p) => isPlayer(s, p)),
+            ),
+          }
         : {}),
       ...(e.basePT !== undefined ? { setPower: evalAmount(s, ctx, e.basePT), setToughness: evalAmount(s, ctx, e.basePT) } : {}),
     });

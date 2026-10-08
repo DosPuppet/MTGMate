@@ -441,6 +441,8 @@ function beginStep(s: GameState): void {
       c.blockQueue = apnapOrder(s).filter(
         (p) => p !== active && c.attackers.some((a) => defendingPlayer(s, a.defender) === p) && hasAnyLegalBlock(s, p),
       );
+      // Les bloqueurs sont en cours de déclaration : aucun attaquant n'est encore « non bloqué » (filtre `blocked`).
+      bumpFor(s, "blocks");
       nextBlockingPlayer(s);
       return;
     }
@@ -1194,6 +1196,8 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
     return false;
   // 702.16f : une créature avec la protection contre [filtre] ne peut pas être bloquée par ce qui y correspond.
   if (protectedFrom(s, attacker, snapshot(s, blocker))) return false;
+  // « Ne peut pas être bloquée par les créatures que ce joueur contrôle » (The Black Gate).
+  if (chars(s, attacker).blockRules.some((r) => r.cantBeBlockedByPlayer === b.controller)) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   // Règles de blocage (R4.1) : « ne peut bloquer que [filtre] » (Drone), « ne peut pas être bloquée par [filtre] ».
   const own = chars(s, blocker).blockRules;
@@ -1456,6 +1460,8 @@ function commitBlocks(s: GameState): void {
   const pending = c.pendingBlocks ?? [];
   c.pendingBlocks = undefined;
   for (const { player, blocks } of pending) applyBlocks(s, c, player, blocks);
+  // Les attaquants deviennent bloqués ou non bloqués (filtres `blocked` et `blocking` des statiques : Throatseeker).
+  bumpFor(s, "blocks");
 }
 
 function applyBlocks(

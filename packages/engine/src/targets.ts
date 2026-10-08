@@ -153,6 +153,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.prepared !== undefined && !!v.prepared !== f.prepared) return false;
   if (f.warped !== undefined && !!v.warped !== f.warped) return false;
   if (f.blocking !== undefined && !!v.blocking !== f.blocking) return false;
+  if (f.blocked !== undefined && v.blocked !== f.blocked) return false;
   if (f.multicolored !== undefined && v.colors.length >= 2 !== f.multicolored) return false;
   if (f.colorCount !== undefined && v.colors.length !== f.colorCount) return false;
   if (f.not && matchesView(v, f.not, perspective, sourceId)) return false;

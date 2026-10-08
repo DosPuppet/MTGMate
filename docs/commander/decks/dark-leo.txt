@@ -1,0 +1,93 @@
+// Dark Leo & Shredder — Ninjas et Foot Clan, blanc et noir. Liste « I Am Ninja, Sneaking in the Shadows » de Fullmoon
+// (Moxfield, bracket 4 : quatre Game Changers), mise à jour le 19/09/2026,
+// relevée le 08/10/2026. Source : https://moxfield.com/decks/TpG7A_Co0EyLNWVaEW1RpQ
+Commander
+1 Dark Leo & Shredder
+
+Deck
+1 Access Tunnel
+1 Akroma's Will
+1 Arcane Signet
+1 Archetype of Courage
+1 Archfiend of Despair
+1 Astarion, the Decadent
+1 Bleachbone Verge
+1 Bloodletter of Aclazotz
+1 Bloodline Pretender
+1 Bloodthirsty Conqueror
+1 Bojuka Bog
+1 Bolas's Citadel
+1 Brotherhood Regalia
+1 Buster Sword
+1 Changeling Outcast
+1 Chronicle of Victory
+1 Command Tower
+1 Continue?
+1 Cover of Darkness
+1 Dark Ritual
+1 Darkness
+1 Elspeth, Storm Slayer
+1 Endless Foot Assault
+1 Exquisite Blood
+1 Farewell
+1 Firdoch Core
+1 Forum of Amity
+1 Game Over
+1 Godless Shrine
+1 Helm of the Host
+1 Ink-Eyes, Servant of Oni
+1 Isolated Chapel
+1 Karai, Future of the Foot
+1 Leader's Talent
+1 Legion Loyalty
+1 Leonardo's Technique
+1 Leonardo, Big Brother
+1 Leonardo, Cutting Edge
+1 Leonardo, Sewer Samurai
+1 Leonardo, Worldly Warrior
+1 Lightning Greaves
+1 Mirror Entity
+1 Nashi, Moon Sage's Scion
+1 Nezumi Prowler
+1 No Mercy
+1 Okiba-Gang Shinobi
+1 Orochi Soul-Reaver
+1 Oroku Saki, Shredder Rising
+1 Patchwork Banner
+7 Plains
+1 Reanimate
+1 Rogue's Passage
+1 Sanguine Bond
+1 Secret Tunnel
+1 Shadowy Backstreet
+1 Shark Shredder, Killer Clone
+1 Shattered Sanctum
+1 Shizo, Death's Storehouse
+1 Shredder's Technique
+1 Shredder, Shadow Master
+1 Shredder, Unrelenting
+1 Silver Shroud Costume
+1 Smothering Tithe
+1 Sol Ring
+1 Sonic Screwdriver
+1 Splinter's Technique
+1 Splinter, Aging Champion
+1 Splinter, Hamato Yoshi
+1 Splinter, the Mentor
+1 Strionic Resonator
+1 Super Shredder
+8 Swamp
+1 Tainted Field
+1 Teferi's Protection
+1 The Black Gate
+1 The Cloning of Shredder
+1 The Last Ronin's Technique
+1 The Soul Stone
+1 Throat Slitter
+1 Throatseeker
+1 Turncoat Kunoichi
+1 Turtle Lair
+1 Urborg, Tomb of Yawgmoth
+1 Vault of Champions
+1 Whispersilk Cloak
+1 Wound Reflection

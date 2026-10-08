@@ -324,6 +324,7 @@ const NOT_MODEL_VALUES = new Set([
   "keywords",
   "addKeywords",
   "removeKeywords",
+  "forbidKeywords",
   "types",
   "supertypes",
   "subtypes",

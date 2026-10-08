@@ -280,3 +280,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Mariposa Military Base : elle arrive toujours dégagée, sans marqueurs de radiation.
   - `choix auto` Scorched Ruins : les deux terrains dégagés sacrifiés en arrivant sont choisis par le moteur (les premiers du champ de bataille), sans question au joueur ;
   - `timing` The Mycosynth Gardens : la valeur de mana X de l'artefact ciblé est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage, comme Likeness Looter.
+  - `règle` Helm of the Host : « ce jeton acquiert la célérité » est écrit comme une exception de la copie (707.9b) : une copie de ce jeton a aussi la célérité ;
+  - `règle` Cover of Darkness, Shizo, Death's Storehouse : la peur (702.36) est une règle de blocage (« ne peut être bloquée que par des créatures-artefacts et/ou noires »), pas un mot-clé : aucune carte ne peut lire qu'une créature « a la peur ».

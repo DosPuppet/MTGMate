@@ -693,6 +693,12 @@ export interface BlockRule {
   mustAttackPlayer?: PlayerId | "eventPlayer" | "mostLifeOpponent";
   /** Traversée de terrain (702.14) : imblocable tant que le joueur défenseur contrôle un permanent correspondant. */
   unblockableIfDefenderControls?: ObjectFilter;
+  /**
+   * « Ne peut pas être bloquée par les créatures que ce joueur contrôle » (The Black Gate : le joueur choisi). Dans un
+   * effet, une référence (`ref.stored("…")`), figée à la résolution (`resolveBlockRules`) ; une référence non figée (dans
+   * une statique) ne désigne personne.
+   */
+  cantBeBlockedByPlayer?: PlayerId | Ref;
   /** « Ne peut pas attaquer un joueur qu'elle a déjà attaqué ce tour-ci » (Port Razer). */
   notDefendersAttackedThisTurn?: boolean;
   /**
@@ -779,6 +785,11 @@ export interface LayerMods {
   /** Couche 6 : capacités (mots-clés) ajoutées ou retirées. */
   addKeywords?: Keyword[];
   removeKeywords?: Keyword[];
+  /**
+   * « … perd [mot-clé] et ne peut pas l'avoir ni l'acquérir » (Archetype of Courage) : retiré après tous les autres effets
+   * de couche 6, quels que soient leurs horodatages (marqueurs de capacité compris, 122.1b).
+   */
+  forbidKeywords?: Keyword[];
   loseAllAbilities?: boolean;
   /** Couche 1 : devient une copie de cette définition (valeurs copiables ; Hall of Echoes). */
   copyOf?: string;

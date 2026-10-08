@@ -1442,3 +1442,83 @@ describe("500.7 : Gerrard's Hourglass Pendant (deck The Vision)", () => {
     expect([s.turn.number, s.turn.active]).toEqual([4, "p2"]);
   });
 });
+
+describe("Deck Dark Leo & Shredder : rulings", () => {
+  const throughCombat = (s0: GameState): GameState => {
+    let s = s0;
+    for (let i = 0; i < 300 && s.turn.step !== "main2"; i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      else if (p?.kind === "declareBlockers") s = act(s, p.player, { type: "declareBlockers", blocks: [] });
+      else break;
+    }
+    return s;
+  };
+
+  it("509.1h et 702.49c : un Ninja mis sur le champ de bataille attaquant par le ninjutsu est non bloqué (Throatseeker)", () => {
+    let s = scenario({ p1: { battlefield: ["Throatseeker", "Bear Cub", ...lands("Swamp", 4)], hand: ["Okiba-Gang Shinobi"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    s = passAccepting(s, (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority");
+    const okiba = idOf(s, "p1", "hand", "Okiba-Gang Shinobi");
+    const o = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === okiba);
+    s = act(s, "p1", {
+      type: "activate",
+      source: okiba,
+      ability: o?.type === "activate" ? o.ability : -1,
+      targets: {},
+      picks: { returnAttacker: [bear] },
+    });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    const ninja = idOf(s, "p1", "battlefield", "Okiba-Gang Shinobi");
+    expect(chars(s, ninja).keywords).toContain("lifelink");
+    s = throughCombat(s);
+    expect(s.players.p1?.life).toBe(23);
+  });
+
+  it("Wound Reflection : les PV perdus ce tour-ci, sans compter ceux gagnés", () => {
+    let s = scenario({ p1: { battlefield: ["Wound Reflection", "Bear Cub"] } });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }] });
+    s = throughCombat(s);
+    gainLife(s, "p2", 5);
+    expect(s.players.p2?.life).toBe(23);
+    s = advanceUntil(s, (x) => x.turn.active === "p2", 200);
+    expect(s.players.p2?.life).toBe(21);
+  });
+
+  it("Akroma's Will : le commandant est vérifié au lancement ; parti ensuite, les deux modes s'appliquent", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Savannah Lions", ...lands("Plains", 4)], hand: ["Akroma's Will"] },
+      p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+    });
+    const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+    const o = s.objects[lions];
+    if (!o) throw new Error("Savannah Lions");
+    s.commander = { cards: { [o.uid]: { owner: "p1", defId: o.defId, casts: 0, damage: {} } } };
+    bump(s);
+    const will = idOf(s, "p1", "hand", "Akroma's Will");
+    const both = legalActions(s, "p1")
+      .flatMap((a) => (a.type === "cast" && a.card === will ? a.modes : []))
+      .find((m) => m.label?.startsWith("Les deux"));
+    expect(both).toBeDefined();
+    s = act(s, "p1", { type: "cast", card: will, mode: both?.index } as never);
+    // En réponse, le commandant meurt.
+    s = act(s, "p1", { type: "pass" });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: [lions] } });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(idsOf(s, "p1", "battlefield", "Savannah Lions")).toHaveLength(0);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["flying", "doubleStrike", "lifelink", "indestructible"]));
+  });
+
+  it("Archetype of Courage : la double initiative d'une créature adverse n'est pas touchée", () => {
+    const s = scenario({
+      p1: { battlefield: ["Archetype of Courage"] },
+      p2: { battlefield: ["Leonardo, Worldly Warrior"] },
+    });
+    expect(chars(s, idOf(s, "p2", "battlefield", "Leonardo, Worldly Warrior")).keywords).toContain("doubleStrike");
+  });
+});

@@ -15,7 +15,7 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau ») ;
 - cartes en français : nom, texte et illustration de l'impression française (celle d'une autre édition quand l'originale n'existe pas en français ; texte complété à la main quand Scryfall ne l'a pas).
 
-**Toutes les cartes légales en Standard sont jouables** (dernière extension ajoutée : The Hobbit, 188 / 188). Dernier ajout : le **Commander**, de 2 à 4 joueurs, contre l'IA et en ligne, avec neuf decks préconstruits (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, et les préconstruits officiels de Réalité fracturée, des Tortues Ninja, de Final Fantasy X, des Quatre Fantastiques et de Fallout) ; les decks suivants arrivent un par un, chacun avec ses cartes.
+**Toutes les cartes légales en Standard sont jouables** (dernière extension ajoutée : The Hobbit, 188 / 188). Dernier ajout : le **Commander**, de 2 à 4 joueurs, contre l'IA et en ligne, avec douze decks préconstruits (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, Nissa, Leyline Tamer, The Vision, Dark Leo & Shredder, et les préconstruits officiels de Réalité fracturée, des Tortues Ninja, de Final Fantasy X, des Quatre Fantastiques et de Fallout) ; les decks suivants arrivent un par un, chacun avec ses cartes.
 
 ## Périmètre : le Standard
 
@@ -80,7 +80,7 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 - Up the Beanstalk
 - Vivi Ornitier
 
-**Commander (plan E, `docs/plans/PLAN-E.md`) :** règles du format (zone de commandement, taxe, retour dans la zone de commandement demandé au propriétaire, blessures de commandant, 40 points de vie, identité de couleur, singleton, liste de bannissement et Game Changers de Scryfall, premier mulligan gratuit), de 2 à 4 joueurs, contre l'IA et en ligne (avec des sièges IA tenus par le serveur), éditeur de deck Commander (100 cartes, identité, tranche estimée d'après les Game Changers). Onze préconstruits jouables : Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4 (06/10/2026), The Ur-Dragon (Dragons, cinq couleurs, liste « How to Train Ur-Dragon » de Moxfield), Rakdos, Lord of Riots (gros sorts presque gratuits, noir et rouge, liste Moxfield), Nissa, Leyline Tamer (toucheterre et grandes créatures, quatre couleurs sans le vert, liste Moxfield), The Vision (artefacts incolores, terrains d'Urza et Eldrazi, liste TappedOut « Weight of the World »), et cinq préconstruits officiels : Multiverse Reforged (Jace, Multiverse Architect, Réalité fracturée), Turtle Power! (Heroes in a Half Shell, Tortues Ninja), Counter Blitz (Tidus, Yuna's Guardian, Final Fantasy X), The Fantastic Four (Invisible Woman, Marvel Super Heroes) et Mutant Menace (The Wise Mothman, Fallout, avec les marqueurs de radiation). Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, 626 / 626 cartes gérées, `docs/extensions/edh.md`). Ajouter un deck : liste dans `docs/commander/decks/`, `npm run import-cards -- edh`, scripts et tests, préconstruit (recette dans CLAUDE.md).
+**Commander (plan E, `docs/plans/PLAN-E.md`) :** règles du format (zone de commandement, taxe, retour dans la zone de commandement demandé au propriétaire, blessures de commandant, 40 points de vie, identité de couleur, singleton, liste de bannissement et Game Changers de Scryfall, premier mulligan gratuit), de 2 à 4 joueurs, contre l'IA et en ligne (avec des sièges IA tenus par le serveur), éditeur de deck Commander (100 cartes, identité, tranche estimée d'après les Game Changers). Douze préconstruits jouables : Edgar Markov (vampires, Mardu) et Y'shtola, Night's Blessed (drain et contrôle, Esper), d'après les listes moyennes d'EDHREC en bracket 4 (06/10/2026), The Ur-Dragon (Dragons, cinq couleurs, liste « How to Train Ur-Dragon » de Moxfield), Rakdos, Lord of Riots (gros sorts presque gratuits, noir et rouge, liste Moxfield), Nissa, Leyline Tamer (toucheterre et grandes créatures, quatre couleurs sans le vert, liste Moxfield), The Vision (artefacts incolores, terrains d'Urza et Eldrazi, liste TappedOut « Weight of the World »), Dark Leo & Shredder (Ninjas et ninjutsu, blanc et noir, liste Moxfield « I Am Ninja, Sneaking in the Shadows »), et cinq préconstruits officiels : Multiverse Reforged (Jace, Multiverse Architect, Réalité fracturée), Turtle Power! (Heroes in a Half Shell, Tortues Ninja), Counter Blitz (Tidus, Yuna's Guardian, Final Fantasy X), The Fantastic Four (Invisible Woman, Marvel Super Heroes) et Mutant Menace (The Wise Mothman, Fallout, avec les marqueurs de radiation). Les cartes arrivent deck par deck : celles qui manquent au catalogue forment le pseudo-ensemble « Commander » (EDH, 653 / 653 cartes gérées, `docs/extensions/edh.md`). Ajouter un deck : liste dans `docs/commander/decks/`, `npm run import-cards -- edh`, scripts et tests, préconstruit (recette dans CLAUDE.md).
 
 | Préconstruit | Couleurs | Source | Game Changers (tranche estimée) |
 |---|---|---|---|
@@ -95,6 +95,7 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 | Mutant Menace — Homme-phalène sage | bleu, noir, vert | préconstruit officiel de Fallout | 0 (1–2) |
 | Nissa, Leyline Tamer — toucheterre et grandes créatures | blanc, bleu, noir, rouge | Moxfield, « Nissa, Non-Green Animist (Landfall w/ Big Creatures) » | 4 (4+) |
 | The Vision — artefacts incolores | incolore | TappedOut, « Weight of the World » | 3 (3) |
+| Dark Leo & Shredder — Ninjas | blanc, noir | Moxfield, « I Am Ninja, Sneaking in the Shadows » | 4 (4+) |
 
 **Hors périmètre pour l'instant :** Limité (scellé, draft), formats éternels, cartes numériques d'Alchemy.
 
@@ -185,7 +186,7 @@ packages/
             src/model/ (types), src/ops/ (traitements des effets par domaine) ; guide : docs/moteur.md
   cards/    données Scryfall (data/<set>.json : 20 extensions Standard, 8 ensembles de rééditions, pseudo-ensemble Commander
             edh.json), scripts des cartes (src/<ext>/*.ts), lecture du texte Scryfall (src/scryfall.ts), decklists, decks
-            préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN, 5 decks du méta, 9 decks Commander)
+            préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN, 5 decks du méta, 12 decks Commander)
   ai/       IA à trois niveaux (heuristique paramétrée, combat par simulation, ISMCTS), IA aléatoire (fuzz),
             adversaire scripté (tutoriel) ; guide : docs/ia.md
   server/   jeu en ligne : salons de 2 à 4 sièges, GameHost côté serveur (fait autorité), sièges IA dans des workers,
@@ -256,7 +257,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
 | 6. JcJ en ligne | de 2 à 4 joueurs (Standard, Sans limite, Commander), sièges IA : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, reprise après redémarrage, revanche, BO3 en duel | ✅ ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; tutoriel ✅ ; musique | en cours |
-| 8. Commander | règles du format, de 2 à 4 joueurs, contre l'IA et en ligne ; decks ajoutés un par un (9 préconstruits, 521 cartes propres au Commander) | ✅ en cours d'enrichissement |
+| 8. Commander | règles du format, de 2 à 4 joueurs, contre l'IA et en ligne ; decks ajoutés un par un (12 préconstruits, 653 cartes propres au Commander) | ✅ en cours d'enrichissement |
 
 Le suivi (état, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md), l'historique dans [docs/historique.md](docs/historique.md), les plans dans [docs/plans/](docs/plans/) (le dernier : [PLAN-E.md](docs/plans/PLAN-E.md), le Commander). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
 

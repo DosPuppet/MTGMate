@@ -2,8 +2,8 @@
  * Éléments partagés par les scripts du pseudo-ensemble Commander (EDH, PLAN-E) : le DSL et les jetons des autres
  * extensions (par Tarkir: Dragonstorm), plus ceux des decks Commander.
  */
-import type { ManaType, TokenSpec } from "@mtgx/engine";
-import { amount, cond, fx, manaAbility, ref, triggered, when } from "../tdm/common";
+import type { AbilityDef, ManaType, TokenSpec } from "@mtgx/engine";
+import { activated, amount, cond, fx, manaAbility, ref, triggered, when } from "../tdm/common";
 
 export * from "../tdm/common";
 
@@ -49,3 +49,16 @@ export const evolve = triggered(
     label: "Évolution",
   },
 );
+
+/**
+ * Ninjutsu (702.49) : « [coût], renvoyez en main un attaquant non bloqué que vous contrôlez : mettez cette carte sur le
+ * champ de bataille depuis votre main, engagée et attaquante » ; elle attaque ce qu'attaquait la créature renvoyée (702.49c).
+ */
+export const ninjutsu = (cost: string): AbilityDef =>
+  activated({
+    mana: cost,
+    fromHand: true,
+    returnUnblockedAttacker: true,
+    effects: [fx.toBattlefield(ref.self, { tapped: true, attacking: ref.cost("defender") })],
+    label: `Ninjutsu ${cost}`,
+  });

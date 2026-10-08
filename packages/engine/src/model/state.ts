@@ -696,6 +696,8 @@ export interface LkiSnapshot {
   /** Le joueur qu'elle attaque (absent si elle attaque un planeswalker ou n'attaque pas). */
   attackedPlayer?: PlayerId;
   blocking?: boolean;
+  /** Attaquante bloquée (`true`), non bloquée une fois les bloqueurs déclarés (`false`), sinon absent (filtre `blocked`). */
+  blocked?: boolean;
   attachedTo?: ObjectId;
   /** Identité physique (suit la carte d'une zone à l'autre). */
   uid?: string;

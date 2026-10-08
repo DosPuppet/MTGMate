@@ -478,8 +478,12 @@ export const RECORD_VERSION = 1;
  *   Foundry Inspector, Palladium Myr, Portal to Phyrexia, Super State) ; les créatures qui attaquent s'engagent avant la
  *   taxe d'attaque (508.1f, 508.1h), et celle sacrifiée pour la payer quitte le combat (Rejeton Eldrazi : le moteur
  *   plantait)
+ * - 174 : Deck Dark Leo & Shredder (Commander) : ninjutsu des cartes EDH ; filtre « attaquante bloquée / non bloquée »
+ *   (509.1h, Throatseeker) ; « ne peut pas avoir ni acquérir [mot-clé] », appliqué en fin de couche 6 (Archetype of
+ *   Courage) ; « ne peut pas être bloquée par les créatures que ce joueur contrôle » (The Black Gate) ; peur ; myriade
+ *   accordée (Legion Loyalty) ; un terrain légendaire qui se nomme « vous pouvez payer N PV » (The Black Gate)
  */
-export const RULES_VERSION = 173;
+export const RULES_VERSION = 174;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

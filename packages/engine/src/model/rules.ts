@@ -169,6 +169,11 @@ export interface ObjectFilter {
   attacking?: boolean | "you" | "opponent" | Ref | PlayerId[];
   /** Bloqueuse. */
   blocking?: boolean;
+  /**
+   * Attaquante bloquée (`true`) ou non bloquée (`false` : une fois les bloqueurs déclarés, 509.1h ; Throatseeker :
+   * « les Ninjas attaquants non bloqués que vous contrôlez »). Avant la déclaration des bloqueurs, aucune ne correspond.
+   */
+  blocked?: boolean;
   /** Multicolore (au moins deux couleurs). */
   /** Nombre exact de couleurs (« monocolore » : 1). */
   colorCount?: number;

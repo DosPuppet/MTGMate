@@ -32,6 +32,33 @@
   "colorIdentity": []
  },
  {
+  "name": "Access Tunnel",
+  "number": "337",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{3}, {T}: Target creature with power 3 or less can't be blocked this turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/b/4bef5957-71a4-4fe0-b2ce-dff8e8690bd9.jpg?1783906998",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/b/4bef5957-71a4-4fe0-b2ce-dff8e8690bd9.jpg?1783906998",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tunnel d'accès",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{3}, {T} : Une créature ciblée de force inférieure ou égale à 3 ne peut pas être bloquée ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/7/f/7f14fb58-ca39-4263-bba9-cf1f77d1bb7a.jpg?1782773011"
+  },
+  "origin": "TDC",
+  "colorIdentity": []
+ },
+ {
   "name": "Acidic Slime",
   "number": "218",
   "rarity": "uncommon",
@@ -248,6 +275,34 @@
   "origin": "M20",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Akroma's Will",
+  "number": "165",
+  "rarity": "rare",
+  "manaCost": "{3}{W}",
+  "cmc": 4,
+  "typeLine": "Instant",
+  "oracleText": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Creatures you control gain flying, vigilance, and double strike until end of turn.\n• Creatures you control gain lifelink, indestructible, and protection from each color until end of turn.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/6/0663dcc8-2f72-4439-bfa9-06c4ef06c54d.jpg?1783911391",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/6/0663dcc8-2f72-4439-bfa9-06c4ef06c54d.jpg?1783911391",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Volonté d'Akroma",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un. Si vous contrôlez un commandant au moment où vous lancez ce sort, vous pouvez choisir les deux à la place.\n• Les créatures que vous contrôlez acquièrent le vol, la vigilance et la double initiative jusqu'à la fin du tour.\n• Les créatures que vous contrôlez acquièrent le lien de vie, l'indestructible et la protection contre chaque couleur jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3c7785d4-3e8b-466f-8309-3dedf5a7b943.jpg?1782794897"
+  },
+  "origin": "M3C",
+  "colorIdentity": [
+   "W"
   ]
  },
  {
@@ -617,6 +672,36 @@
   "colorIdentity": []
  },
  {
+  "name": "Archetype of Courage",
+  "number": "4",
+  "rarity": "uncommon",
+  "manaCost": "{1}{W}{W}",
+  "cmc": 3,
+  "typeLine": "Enchantment Creature — Human Soldier",
+  "oracleText": "Creatures you control have first strike.\nCreatures your opponents control lose first strike and can't have or gain first strike.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/8/e/8e6c4afb-6a94-4519-91c6-9824fed2892c.jpg?1783939584",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8e6c4afb-6a94-4519-91c6-9824fed2892c.jpg?1783939584",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Archétype du courage",
+   "typeLine": "Créature-enchantement : humain et soldat",
+   "text": "Les créatures que vous contrôlez ont l'initiative.\nLes créatures que vos adversaires contrôlent perdent l'initiative et ne peuvent pas avoir ou acquérir l'initiative.",
+   "image": "https://cards.scryfall.io/normal/front/d/0/d02bd919-0e54-4dd9-a5b2-ada14db47c12.jpg?1782973033"
+  },
+  "origin": "BNG",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Archfiend of Despair",
   "number": "46",
   "rarity": "mythic",
@@ -739,6 +824,43 @@
   },
   "origin": "FIC",
   "colorIdentity": []
+ },
+ {
+  "name": "Astarion, the Decadent",
+  "number": "265",
+  "rarity": "rare",
+  "manaCost": "{4}{W}{B}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Vampire Elf Rogue",
+  "oracleText": "Deathtouch, lifelink\nAt the beginning of your end step, choose one —\n• Feed — Target opponent loses life equal to the amount of life they lost this turn.\n• Friends — You gain life equal to the amount of life you gained this turn.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Lifelink",
+   "Feed",
+   "Friends",
+   "Deathtouch"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/4/64d932b9-5682-4427-a871-7d452a488674.jpg?1783922697",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/4/64d932b9-5682-4427-a871-7d452a488674.jpg?1783922697",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Astarion, le décadent",
+   "typeLine": "Créature légendaire — vampire et elfe et gredin",
+   "text": "Contact mortel, lien de vie\nAu début de votre étape de fin, choisissez l'un —\n• Nourrir — Un adversaire ciblé perd un nombre de points de vie égal au nombre de points de vie qu'il a perdus ce tour-ci.\n• Faux amis — Vous gagnez un nombre de points de vie égal au nombre de points de vie que vous avez gagnés ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/e/7/e770a0b6-0db8-408a-8756-37fb861c03fd.jpg?1782851928"
+  },
+  "origin": "CLB",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
  },
  {
   "name": "Atomize",
@@ -1700,6 +1822,34 @@
   ]
  },
  {
+  "name": "Bloodline Pretender",
+  "number": "350",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact Creature — Shapeshifter",
+  "oracleText": "Changeling (This card is every creature type.)\nAs this creature enters, choose a creature type.\nWhenever another creature you control of the chosen type enters, put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [
+   "Changeling"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/3/73f2d0bb-f6d6-4073-8959-31643f3b2bb6.jpg?1783917119",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/3/73f2d0bb-f6d6-4073-8959-31643f3b2bb6.jpg?1783917119",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Prétendant à la lignée",
+   "typeLine": "Créature-artefact : changeforme",
+   "text": "Changelin (Cette carte a tous les types de créature.)\nAu moment où le Prétendant à la lignée arrive sur le champ de bataille, choisissez un type de créature.\nÀ chaque fois qu'une autre créature du type choisi arrive sur le champ de bataille sous votre contrôle, mettez un marqueur +1/+1 sur le Prétendant à la lignée.",
+   "image": "https://cards.scryfall.io/normal/front/0/4/04ba0d6b-d078-4029-87f4-a6d2315099b9.jpg?1782826270"
+  },
+  "origin": "MOC",
+  "colorIdentity": []
+ },
+ {
   "name": "Bloodsoaked Insight // Sanguine Morass",
   "number": "252",
   "rarity": "uncommon",
@@ -2376,6 +2526,38 @@
   },
   "origin": "FIC",
   "colorIdentity": []
+ },
+ {
+  "name": "Changeling Outcast",
+  "number": "128",
+  "rarity": "common",
+  "manaCost": "{B}",
+  "cmc": 1,
+  "typeLine": "Creature — Shapeshifter",
+  "oracleText": "Changeling (This card is every creature type.)\nThis creature can't block and can't be blocked.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Changeling"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/b/ab499df5-ed76-43ad-81b3-70afd0487ccd.jpg?1783911932",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/b/ab499df5-ed76-43ad-81b3-70afd0487ccd.jpg?1783911932",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Proscrit changelin",
+   "typeLine": "Créature — changeforme",
+   "text": "Changelin (Cette carte a tous les types de créature.)\nLe Proscrit changelin ne peut pas bloquer et ne peut pas être bloqué.",
+   "image": "https://cards.scryfall.io/normal/front/f/9/f9970838-6806-4ee3-8e23-3bd16d03fab7.jpg?1782798413"
+  },
+  "origin": "OTC",
+  "colorIdentity": [
+   "B"
+  ]
  },
  {
   "name": "Charismatic Conqueror",
@@ -3109,6 +3291,34 @@
   "origin": "MSC",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Cover of Darkness",
+  "number": "89",
+  "rarity": "rare",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "As this enchantment enters, choose a creature type.\nCreatures of the chosen type have fear. (They can't be blocked except by artifact creatures and/or black creatures.)",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/1/512263f7-975a-4107-b58f-6c8ec85e375e.jpg?1783910960",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/512263f7-975a-4107-b58f-6c8ec85e375e.jpg?1783910960",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Couverture de ténèbres",
+   "typeLine": "Enchantement",
+   "text": "Au moment où la Couverture de ténèbres arrive sur le champ de bataille, choisissez un type de créature.\nLes créatures du type choisi ont la peur. (Elles ne peuvent pas être bloquées excepté par des créatures-artefacts et/ou des créatures noires.)",
+   "image": "https://cards.scryfall.io/normal/front/f/d/fd471746-79aa-40be-bf58-7f6f759f78c2.jpg?1782790894"
+  },
+  "origin": "ACR",
+  "colorIdentity": [
+   "B"
   ]
  },
  {
@@ -7137,6 +7347,31 @@
   ]
  },
  {
+  "name": "Helm of the Host",
+  "number": "200",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Legendary Artifact — Equipment",
+  "oracleText": "At the beginning of combat on your turn, create a token that's a copy of equipped creature, except the token isn't legendary. That token gains haste.\nEquip {5}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/0/70ffc71f-328d-421d-926b-6f2e45ffb812.jpg?1783903218",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/0/70ffc71f-328d-421d-926b-6f2e45ffb812.jpg?1783903218",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Heaume de la multitude",
+   "text": "Au début du combat pendant votre tour, créez un jeton qui est une copie de la créature équipée, excepté que le jeton n'est pas légendaire. Ce jeton acquiert la célérité.\nÉquipement {5}",
+   "image": "https://cards.scryfall.io/normal/front/b/b/bbd1c1d8-4ba4-4577-a7d1-2d9c1f7fed02.jpg?1785265088"
+  },
+  "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
   "name": "Herald's Horn",
   "number": "264",
   "rarity": "uncommon",
@@ -7665,6 +7900,39 @@
    "image": "https://cards.scryfall.io/normal/front/7/2/7287cd43-05e8-4ec3-b21a-69e1f4fcca9f.jpg?1782800646"
   },
   "origin": "PIP",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Ink-Eyes, Servant of Oni",
+  "number": "71",
+  "rarity": "rare",
+  "manaCost": "{4}{B}{B}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Rat Ninja",
+  "oracleText": "Ninjutsu {3}{B}{B} ({3}{B}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhenever Ink-Eyes deals combat damage to a player, you may put target creature card from that player's graveyard onto the battlefield under your control.\n{1}{B}: Regenerate Ink-Eyes.",
+  "power": "5",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Regenerate",
+   "Ninjutsu"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/8/386d391d-a3f8-49a4-802a-409944b2acf3.jpg?1783944198",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/386d391d-a3f8-49a4-802a-409944b2acf3.jpg?1783944198",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Yeux d'encre, servante des oni",
+   "typeLine": "Créature légendaire : rat et ninja",
+   "text": "Ninjutsu {3}{B}{B} ({3}{B}{B}, Renvoyez en main un attaquant non-bloqué que vous contrôlez : Mettez en jeu cette carte, engagée et attaquante, depuis votre main.)\nÀ chaque fois que Yeux d'encre, servante des oni inflige des blessures de combat à un joueur, vous pouvez mettre en jeu, sous votre contrôle, une carte de créature ciblée dans le cimetière de ce joueur.\n{1}{B} : Régénérez Yeux d'encre, servante des oni.",
+   "image": "https://cards.scryfall.io/normal/front/a/2/a2e522fa-e152-42e7-8eb4-c6211ea6bff8.jpg?1783023075"
+  },
+  "origin": "BOK",
   "colorIdentity": [
    "B"
   ]
@@ -8561,6 +8829,61 @@
   "origin": "LCC",
   "colorIdentity": [
    "B",
+   "W"
+  ]
+ },
+ {
+  "name": "Legion Loyalty",
+  "number": "122",
+  "rarity": "mythic",
+  "manaCost": "{6}{W}{W}",
+  "cmc": 8,
+  "typeLine": "Enchantment",
+  "oracleText": "Creatures you control have myriad. (Whenever a creature with myriad attacks, for each opponent other than defending player, you may create a token copy that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/1/11681eae-f5bd-4e78-a980-5ab58db0d9f3.jpg?1783907122",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/11681eae-f5bd-4e78-a980-5ab58db0d9f3.jpg?1783907122",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Loyauté de la légion",
+   "typeLine": "Enchantement",
+   "text": "Les créatures que vous contrôlez ont la myriade. (À chaque fois qu'une créature avec la myriade attaque, pour chaque adversaire autre que le joueur défenseur, vous pouvez créer une copie jeton engagée et attaquant ce joueur ou un planeswalker qu'il contrôle. Exilez ces jetons à la fin du combat.)",
+   "image": "https://cards.scryfall.io/normal/front/b/0/b0f1eda8-b0ae-4748-8b09-969fbc6a181f.jpg?1782773891"
+  },
+  "origin": "TDC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Leonardo, Worldly Warrior",
+  "number": "101",
+  "rarity": "mythic",
+  "manaCost": "{7}{W}",
+  "cmc": 8,
+  "typeLine": "Legendary Creature — Mutant Ninja Turtle",
+  "oracleText": "Affinity for creatures (This spell costs {1} less to cast for each creature you control.)\nDouble strike (This creature deals both first-strike and regular combat damage.)",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Affinity",
+   "Double strike"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/6/b6913056-de4a-45ac-a731-b478bdad6754.jpg?1783904140",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b6913056-de4a-45ac-a731-b478bdad6754.jpg?1783904140",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
    "W"
   ]
  },
@@ -9656,6 +9979,38 @@
   ]
  },
  {
+  "name": "Mirror Entity",
+  "number": "83",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Creature — Shapeshifter",
+  "oracleText": "Changeling (This card is every creature type.)\n{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Changeling"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/2/f2a3107d-bb96-45c6-97ac-b6c6b84cbad4.jpg?1783911947",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/2/f2a3107d-bb96-45c6-97ac-b6c6b84cbad4.jpg?1783911947",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Entité miroir",
+   "typeLine": "Créature — changeforme",
+   "text": "Changelin (Cette carte a tous les types de créature.)\n{X} : Jusqu'à la fin du tour, les créatures que vous contrôlez ont une force et une endurance de base de X/X et acquièrent tous les types de créature.",
+   "image": "https://cards.scryfall.io/normal/front/4/e/4e6a21e9-ac90-4daa-808b-ca6b8c19f8c8.jpg?1782798567"
+  },
+  "origin": "OTC",
+  "colorIdentity": [
+   "W"
+  ]
+ },
+ {
   "name": "Mishra's Workshop",
   "number": "81",
   "rarity": "rare",
@@ -10096,6 +10451,38 @@
   ]
  },
  {
+  "name": "Nashi, Moon Sage's Scion",
+  "number": "143",
+  "rarity": "mythic",
+  "manaCost": "{1}{B}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Rat Ninja",
+  "oracleText": "Ninjutsu {3}{B} ({3}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhenever Nashi deals combat damage to a player, exile the top card of each player's library. Until end of turn, you may play one of those cards. If you cast a spell this way, pay life equal to its mana value rather than paying its mana cost.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Ninjutsu"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/e/1e62de3b-6a41-43e3-93ad-9a1e3894be3b.jpg?1783911927",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1e62de3b-6a41-43e3-93ad-9a1e3894be3b.jpg?1783911927",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Nashi, scion du sage de la lune",
+   "typeLine": "Créature légendaire — rat et ninja",
+   "text": "Ninjutsu {3}{B} ({3}{B}, renvoyez en main un attaquant non-bloqué que vous contrôlez : Mettez sur le champ de bataille cette carte, engagée et attaquante, depuis votre main.)\nÀ chaque fois que Nashi, scion du sage de la lune inflige des blessures de combat à un joueur, exilez la carte du dessus de la bibliothèque de chaque joueur. Jusqu'à fin du tour, vous pouvez jouer une de ces cartes. Si vous lancez un sort de cette manière, payez un nombre de points de vie égal à sa valeur de mana à la place de son coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/c/e/cee8c763-c58a-4219-be4a-5a14a134280f.jpg?1782798366"
+  },
+  "origin": "OTC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Negative Zone Portal",
   "number": "111",
   "rarity": "rare",
@@ -10225,6 +10612,38 @@
   "origin": "CMR",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Nezumi Prowler",
+  "number": "116",
+  "rarity": "uncommon",
+  "manaCost": "{1}{B}",
+  "cmc": 2,
+  "typeLine": "Artifact Creature — Rat Ninja",
+  "oracleText": "Ninjutsu {1}{B} ({1}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhen this creature enters, target creature you control gains deathtouch and lifelink until end of turn.",
+  "power": "3",
+  "toughness": "1",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Ninjutsu"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/a/ca911e9a-bd04-4531-a81e-3485e9cbe89e.jpg?1783923879",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/ca911e9a-bd04-4531-a81e-3485e9cbe89e.jpg?1783923879",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rôdeur nezumi",
+   "typeLine": "Créature-artefact — rat et ninja",
+   "text": "Ninjutsu {1}{B} ({1}{B}, renvoyez en main un attaquant non-bloqué que vous contrôlez : Mettez sur le champ de bataille cette carte, engagée et attaquante, depuis votre main.)\nQuand le Rôdeur nezumi arrive sur le champ de bataille, une créature ciblée que vous contrôlez acquiert le contact mortel et le lien de vie jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/6/9/69b35341-b110-43d1-93e3-5de9545419d5.jpg?1782862340"
+  },
+  "origin": "NEO",
+  "colorIdentity": [
+   "B"
   ]
  },
  {
@@ -10367,6 +10786,34 @@
   "colorIdentity": [
    "B",
    "W"
+  ]
+ },
+ {
+  "name": "No Mercy",
+  "number": "95",
+  "rarity": "mythic",
+  "manaCost": "{2}{B}{B}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "Whenever a creature deals damage to you, destroy it.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/3/63c5e1dd-2fe6-4734-8406-7bcdf17aa60c.jpg?1783918474",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/3/63c5e1dd-2fe6-4734-8406-7bcdf17aa60c.jpg?1783918474",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Aucune pitié",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature vous inflige des blessures, détruisez-la.",
+   "image": "https://cards.scryfall.io/normal/front/d/7/d7f8bfc7-0155-401c-bab9-7076b3d6c987.jpg?1782832970"
+  },
+  "origin": "DMR",
+  "colorIdentity": [
+   "B"
   ]
  },
  {
@@ -10717,6 +11164,38 @@
   ]
  },
  {
+  "name": "Okiba-Gang Shinobi",
+  "number": "76",
+  "rarity": "common",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Creature — Rat Ninja",
+  "oracleText": "Ninjutsu {3}{B} ({3}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhenever this creature deals combat damage to a player, that player discards two cards.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Ninjutsu"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/c/5cd9297e-301e-4e70-af9b-3218eacacf8d.jpg?1783944197",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/c/5cd9297e-301e-4e70-af9b-3218eacacf8d.jpg?1783944197",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Shinobi du gang Okiba",
+   "typeLine": "Créature : rat et ninja",
+   "text": "Ninjutsu {3}{B} ({3}{B}, Renvoyez en main un attaquant non-bloqué que vous contrôlez : Mettez en jeu cette carte, engagée et attaquante, depuis votre main.)\nÀ chaque fois que la Shinobi du gang Okiba inflige des blessures de combat à un joueur, ce joueur se défausse de deux cartes.",
+   "image": "https://cards.scryfall.io/normal/front/1/b/1bdea3e8-ad1e-45b4-9753-b92a8061cf92.jpg?1783023049"
+  },
+  "origin": "BOK",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Old Gnawbone",
   "number": "197",
   "rarity": "mythic",
@@ -10867,6 +11346,40 @@
    "image": "https://cards.scryfall.io/normal/front/1/a/1a22aef4-260f-4f30-ba49-fbe7ed0a162f.jpg?1782821697"
   },
   "origin": "LTR",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Orochi Soul-Reaver",
+  "number": "22",
+  "rarity": "rare",
+  "manaCost": "{5}{B}",
+  "cmc": 6,
+  "typeLine": "Creature — Snake Ninja Rogue",
+  "oracleText": "Ninjutsu {3}{B} ({3}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhenever one or more creatures you control deal combat damage to a player, create a Treasure token and manifest the top card of that player's library. (Put it onto the battlefield face down as a 2/2 creature. Turn it face up any time for its mana cost if it's a creature card.)",
+  "power": "5",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Manifest",
+   "Treasure",
+   "Ninjutsu"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/c/ec8f372a-d8c7-4f5d-a91d-ec7e5eb17104.jpg?1783911966",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/c/ec8f372a-d8c7-4f5d-a91d-ec7e5eb17104.jpg?1783911966",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Voleur d'âme orochi",
+   "typeLine": "Créature — serpent et ninja et gredin",
+   "text": "Ninjutsu {3}{B} ({3}{B}, renvoyez en main un attaquant non-bloqué que vous contrôlez : Mettez sur le champ de bataille cette carte, engagée et attaquante, depuis votre main.)\nÀ chaque fois qu'au moins une créature que vous contrôlez inflige des blessures de combat à un joueur, créez un jeton Trésor et manifestez la carte du dessus de la bibliothèque de ce joueur. (Mettez-la sur le champ de bataille face cachée comme une créature 2/2. Retournez-la face visible à tout moment pour son coût de mana si c'est une carte de créature.)",
+   "image": "https://cards.scryfall.io/normal/front/8/8/889395d0-e747-4451-93ec-2ae741123119.jpg?1782798772"
+  },
+  "origin": "OTC",
   "colorIdentity": [
    "B"
   ]
@@ -13817,6 +14330,35 @@
   ]
  },
  {
+  "name": "Shizo, Death's Storehouse",
+  "number": "233",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "{T}: Add {B}.\n{B}, {T}: Target legendary creature gains fear until end of turn. (It can't be blocked except by artifact creatures and/or black creatures.)",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/9/099352e2-38c8-4fb4-a25f-6d928aa20f9e.jpg?1783921377",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/9/099352e2-38c8-4fb4-a25f-6d928aa20f9e.jpg?1783921377",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Shizo, la réserve de la mort",
+   "typeLine": "Terrain légendaire",
+   "text": "{T} : Ajoutez {B}.\n{B}, {T} : Une créature légendaire ciblée acquiert la peur jusqu'à la fin du tour. (Elle ne peut pas être bloquée excepté par des créatures-artefacts et/ou des créatures noires.)",
+   "image": "https://cards.scryfall.io/normal/front/7/d/7d0bc2d5-29b7-46f4-987b-56259c3e8b07.jpg?1782845320"
+  },
+  "origin": "DMC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Shredder, Shadow Master",
   "number": "20",
   "rarity": "rare",
@@ -14250,6 +14792,39 @@
   "colorIdentity": []
  },
  {
+  "name": "Sonic Screwdriver",
+  "number": "184",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Add one mana of any color.\n{1}, {T}: Untap another target artifact.\n{2}, {T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{3}, {T}: Target creature can't be blocked this turn.",
+  "colors": [],
+  "keywords": [
+   "Scry"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/1/f131027a-9776-41fa-8a5f-d9ef80e0dc2e.jpg?1783914613",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/1/f131027a-9776-41fa-8a5f-d9ef80e0dc2e.jpg?1783914613",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tournevis sonique",
+   "typeLine": "Artefact",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix.\n{1}, {T} : Dégagez un autre artefact ciblé.\n{2}, {T} : Regard 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez mettre cette carte au-dessous.)\n{3}, {T} : Une créature ciblée ne peut pas être bloquée ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/6/b/6b55b359-5fba-4ff3-a4db-6b09c4c369d5.jpg?1782811565"
+  },
+  "origin": "WHO",
+  "colorIdentity": []
+ },
+ {
   "name": "Sorin, Imperious Bloodlord",
   "number": "133",
   "rarity": "mythic",
@@ -14399,6 +14974,30 @@
   "colorIdentity": [
    "G",
    "R"
+  ]
+ },
+ {
+  "name": "Splinter, Aging Champion",
+  "number": "104",
+  "rarity": "rare",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Mutant Ninja Rat",
+  "oracleText": "When Splinter enters, destroy up to one target tapped creature.\nWhen Splinter leaves the battlefield, you and another target player each draw a card.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/a/9a9cd2d2-74ba-497a-828c-ba22fbb9f2b1.jpg?1783904140",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9a9cd2d2-74ba-497a-828c-ba22fbb9f2b1.jpg?1783904140",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "origin": "TMC",
+  "colorIdentity": [
+   "W"
   ]
  },
  {
@@ -14581,6 +15180,30 @@
    "image": "https://cards.scryfall.io/normal/front/4/6/46bab26f-491a-44d8-ba8c-17b6785b48bf.jpg?1782800245"
   },
   "origin": "PIP",
+  "colorIdentity": []
+ },
+ {
+  "name": "Strionic Resonator",
+  "number": "384",
+  "rarity": "rare",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "{2}, {T}: Copy target triggered ability you control. You may choose new targets for the copy. (A triggered ability uses the words \"when,\" \"whenever,\" or \"at.\")",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/9/b9edb215-f967-4968-905e-d1dc3b5d3424.jpg?1783917105",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/9/b9edb215-f967-4968-905e-d1dc3b5d3424.jpg?1783917105",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Résonateur strionique",
+   "typeLine": "Artefact",
+   "text": "{2}, {T} : Copiez une capacité déclenchée ciblée que vous contrôlez. Vous pouvez choisir de nouvelles cibles pour cette copie. (Une capacité déclenchée utilise les mots « quand », « à chaque fois » ou « au/à la »).",
+   "image": "https://cards.scryfall.io/normal/front/3/9/392e5e31-1836-4e42-9e82-5def731f1591.jpg?1782826087"
+  },
+  "origin": "MOC",
   "colorIdentity": []
  },
  {
@@ -15328,6 +15951,38 @@
   ]
  },
  {
+  "name": "Tainted Field",
+  "number": "302",
+  "rarity": "uncommon",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {B}. Activate only if you control a Swamp.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "C",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/6/c6eeab6f-a738-4005-91c2-a5f81df5c569.jpg?1783909567",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c6eeab6f-a738-4005-91c2-a5f81df5c569.jpg?1783909567",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Champ souillé",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{T} : Ajoutez {W} ou {B}. N'activez que si vous contrôlez un marais.",
+   "image": "https://cards.scryfall.io/normal/front/5/5/55b7d030-fd42-4523-afaf-677d30d7597c.jpg?1782785938"
+  },
+  "origin": "DSC",
+  "colorIdentity": [
+   "B",
+   "W"
+  ]
+ },
+ {
   "name": "Tainted Isle",
   "number": "303",
   "rarity": "uncommon",
@@ -16037,6 +16692,35 @@
   ]
  },
  {
+  "name": "The Black Gate",
+  "number": "80",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land — Gate",
+  "oracleText": "As The Black Gate enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {B}.\n{1}{B}, {T}: Choose a player with the most life or tied for most life. Target creature can't be blocked by creatures that player controls this turn.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/6/46418186-c215-47c4-9d0a-d15a1d8ca613.jpg?1783916010",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/6/46418186-c215-47c4-9d0a-d15a1d8ca613.jpg?1783916010",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "La Porte Noire",
+   "typeLine": "Terrain légendaire : porte",
+   "text": "Au moment où La Porte Noire arrive sur le champ de bataille, vous pouvez payer 3 points de vie. Si vous ne le faites pas, elle arrive sur le champ de bataille engagée.\n{T} : Ajoutez {B}.\n{1}{B}, {T} : Choisissez un joueur qui a le total de points de vie le plus élevé ou qui partage le total de points de vie le plus élevé. Une créature ciblée ne peut pas être bloquée par les créatures que ce joueur contrôle ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/c/1/c1994896-4237-470d-ab24-79a35cc3961b.jpg?1782819482"
+  },
+  "origin": "LTC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "The Fantasticar",
   "number": "104",
   "rarity": "rare",
@@ -16544,6 +17228,68 @@
    "image": "https://cards.scryfall.io/normal/front/6/6/665bba10-0c90-4de6-9ccd-4eca950af59a.jpg?1785277874"
   },
   "origin": "MSC",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Throat Slitter",
+  "number": "88",
+  "rarity": "uncommon",
+  "manaCost": "{4}{B}",
+  "cmc": 5,
+  "typeLine": "Creature — Rat Ninja",
+  "oracleText": "Ninjutsu {2}{B} ({2}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nWhenever this creature deals combat damage to a player, destroy target nonblack creature that player controls.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Ninjutsu"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/4/c4dcfdb4-c2ff-4fc5-aa2a-0c6e311d2910.jpg?1783944194",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/4/c4dcfdb4-c2ff-4fc5-aa2a-0c6e311d2910.jpg?1783944194",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tranche-gorge",
+   "typeLine": "Créature : rat et ninja",
+   "text": "Ninjutsu {2}{B} ({2}{B}, Renvoyez en main un attaquant non-bloqué que vous contrôlez : Mettez en jeu cette carte, engagée et attaquante, depuis votre main.)\nÀ chaque fois que le Tranche-gorge inflige des blessures de combat à un joueur, détruisez la créature non-noire ciblée que ce joueur contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/8/f/8f4fc10f-8452-4580-88a0-e7231baab300.jpg?1783022995"
+  },
+  "origin": "BOK",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
+  "name": "Throatseeker",
+  "number": "110",
+  "rarity": "uncommon",
+  "manaCost": "{2}{B}",
+  "cmc": 3,
+  "typeLine": "Creature — Vampire Ninja",
+  "oracleText": "Unblocked attacking Ninjas you control have lifelink.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/0/b07b3736-25e7-46f2-bea5-543ec13995b1.jpg?1783933119",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b07b3736-25e7-46f2-bea5-543ec13995b1.jpg?1783933119",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Traqueur de gorge",
+   "typeLine": "Créature : vampire et ninja",
+   "text": "Les ninjas attaquants non-bloqués que vous contrôlez ont le lien de vie.",
+   "image": "https://cards.scryfall.io/normal/front/e/d/ed02cee3-d8da-467c-a976-e12c07f05858.jpg?1782919553"
+  },
+  "origin": "MH1",
   "colorIdentity": [
    "B"
   ]
@@ -18791,6 +19537,31 @@
   ]
  },
  {
+  "name": "Whispersilk Cloak",
+  "number": "225",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature can't be blocked and has shroud. (It can't be the target of spells or abilities.)\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/3/a3f31ac4-09ca-4712-a311-50d28824bfad.jpg?1783903208",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a3f31ac4-09ca-4712-a311-50d28824bfad.jpg?1783903208",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cape de frémisoie",
+   "text": "La créature équipée ne peut pas être bloquée et a le linceul. (Elle ne peut pas être la cible de sorts ou de capacités.)\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/5/6/56b182f3-2a2e-4189-96ab-fc574d3ef537.jpg?1785266054"
+  },
+  "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
   "name": "White Sun's Twilight",
   "number": "38",
   "rarity": "rare",
@@ -18983,6 +19754,34 @@
   "colorIdentity": [
    "B",
    "G"
+  ]
+ },
+ {
+  "name": "Wound Reflection",
+  "number": "223",
+  "rarity": "rare",
+  "manaCost": "{5}{B}",
+  "cmc": 6,
+  "typeLine": "Enchantment",
+  "oracleText": "At the beginning of each end step, each opponent loses life equal to the life they lost this turn. (Damage causes loss of life.)",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/2/32d7dcdd-bec4-4795-b04f-63430228e48c.jpg?1783914598",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/2/32d7dcdd-bec4-4795-b04f-63430228e48c.jpg?1783914598",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Réverbération de blessure",
+   "typeLine": "Enchantement",
+   "text": "Au début de chaque étape de fin, chaque adversaire perd un nombre de points de vie égal au nombre de points de vie qu'il a perdus ce tour-ci. (Les blessures provoquent la perte de points de vie.)",
+   "image": "https://cards.scryfall.io/normal/front/7/f/7f1f9845-9d89-4498-9388-132010b223e3.jpg?1782811503"
+  },
+  "origin": "WHO",
+  "colorIdentity": [
+   "B"
   ]
  },
  {

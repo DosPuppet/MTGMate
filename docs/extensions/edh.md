@@ -251,3 +251,23 @@ Ajouté le 08/10/2026 à la demande de l'utilisateur avec la recette « Ajouter 
 - **Tests :** 8 de plus dans `engine/test/edh-vision.test.ts` (70) ; fuzz strict EDH à deux et quatre joueurs sans option refusée.
 - **Équilibre** (mêmes réglages qu'avant) : en duel, 50,0 % ± 6,9 (200 parties, 20,0 tours) ; à quatre, 49,0 % ± 9,8 (100 parties, 48,1 tours), contre 41,8 % avec l'ancienne liste.
 - **Illustrations personnelles :** `npm run custom-art -- <dossier>` (`tools/custom-art.ts`) ; toutes les cartes du deck ont la leur sauf Shrine of the Forsaken Gods (absente du dossier).
+
+## Deck Dark Leo & Shredder : Ninjas ✅ (653 / 653)
+
+Ajouté le 08/10/2026 à la demande de l'utilisateur avec la recette « Ajouter un deck Commander ». Liste : « I Am Ninja, Sneaking in the Shadows » de Fullmoon sur Moxfield (mise à jour le 19/09/2026), dans `docs/commander/decks/dark-leo.txt` ; préconstruit `cmd-dark-leo` (blanc et noir), bracket 4 comme sur Moxfield (quatre Game Changers : Smothering Tithe, Bolas's Citadel, Teferi's Protection, Farewell ; d'abord déclaré bracket 3, puis 4 à la demande de l'utilisateur, l'arène le donnant au-dessus des autres préconstruits). Le commandant (Tortues Ninja) et 57 autres cartes étaient déjà jouables.
+
+**Import :** 27 cartes absentes du catalogue ajoutées à EDH, avec leur texte français ; 0 écart d'identité de couleur avec Scryfall.
+
+**Cartes (27, `edh/darkleo.ts`, et Tainted Field dans `edh/lands.ts`) :** Ninjas : Ink-Eyes, Servant of Oni, Nashi, Moon Sage's Scion, Nezumi Prowler, Okiba-Gang Shinobi, Orochi Soul-Reaver, Throat Slitter, Throatseeker ; autres créatures : Archetype of Courage, Astarion, the Decadent, Bloodline Pretender, Changeling Outcast, Leonardo, Worldly Warrior, Mirror Entity, Splinter, Aging Champion ; enchantements : Cover of Darkness, Legion Loyalty, No Mercy, Wound Reflection ; éphémère : Akroma's Will ; artefacts : Helm of the Host, Sonic Screwdriver, Strionic Resonator, Whispersilk Cloak ; terrains : Access Tunnel, Shizo, Death's Storehouse, Tainted Field, The Black Gate.
+
+- **Moteur :**
+  - ninjutsu des cartes EDH : l'aide `ninjutsu(coût)` (`edh/common.ts`), sur le modèle de Kaito (702.49c : le Ninja attaque ce qu'attaquait la créature renvoyée) ;
+  - filtre `blocked` (509.1h) : attaquante bloquée, ou non bloquée une fois les bloqueurs déclarés (Throatseeker ; un Ninja mis en jeu attaquant par le ninjutsu est non bloqué) ; le cache des couches suit les blocages (`bumpFor(s, "blocks")`, filtres `blocked` et `blocking`) ;
+  - `LayerMods.forbidKeywords` : « perd [mot-clé] et ne peut pas l'avoir ni l'acquérir », retiré en fin de couche 6, après les effets plus récents et les marqueurs de capacité (Archetype of Courage) ;
+  - règle de blocage `cantBeBlockedByPlayer` : « ne peut pas être bloquée par les créatures que ce joueur contrôle », le joueur (une référence) figé à la résolution (The Black Gate : le joueur choisi parmi ceux qui ont le plus de PV) ;
+  - peur (702.36) : la règle de blocage `block.fear` (Cover of Darkness, Shizo) ; myriade accordée : `myriadAbility()` (`dsl.ts`), aussi utilisée pour la myriade lue dans le texte (Legion Loyalty) ;
+  - « As The Black Gate enters, you may pay 3 life » : un terrain qui se nomme est lu comme un terrain choc.
+- **Tests :** `engine/test/edh-darkleo.test.ts` (27) ; quatre décisions dans `rulings.test.ts` (Ninja du ninjutsu non bloqué et Throatseeker, Wound Reflection compte les PV perdus et non la perte nette, Akroma's Will garde ses deux modes si le commandant part après le lancement, la double initiative échappe à Archetype of Courage) ; fumée EDH (653 cartes) ; fuzz strict à deux et quatre joueurs sans option refusée.
+- **Approximations :** Helm of the Host (la célérité du jeton est copiable), Cover of Darkness et Shizo (la peur est une règle de blocage, pas un mot-clé).
+- **Équilibre** (IA moyenne des deux côtés, `--by-deck --deck cmd-dark-leo`, contre les onze autres préconstruits à tour de rôle) : en duel, 56,0 % ± 6,9 (200 parties, 18,4 tours) ; à quatre (sièges A, B, A, B, part équitable 50 %), 60,0 % ± 9,6 (100 parties, 43,5 tours). Un peu au-dessus de la cible, dans l'incertitude en duel. Une déclaration de bloqueurs à 128 permanents (jetons de myriade et de copie) a pris environ 9 s à l'IA moyenne adverse (partie 75 à quatre).
+- **Dette :** `blocked` (Throatseeker), `cantBeBlockedByPlayer` (The Black Gate) et `forbidKeywords` (Archetype of Courage) entrent dans la référence ; l'opération `regenerate`, la propriété `returnUnblockedAttacker` et la variante `Condition.mostLife` n'y sont plus (partagées) ; plafonds ObjectFilter 71 → 72, LayerMods 30 → 31, BlockRule 13 → 14.

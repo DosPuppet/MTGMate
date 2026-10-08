@@ -164,6 +164,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Woodland Cemetery": checkLand("B", "G", "Swamp", "Forest"),
   "Talisman of Curiosity": painSource("G", "U"),
   "Talisman of Resilience": painSource("B", "G"),
+  "Tainted Field": taintedLand("W", "B"),
   "Tainted Isle": taintedLand("U", "B"),
   "Tainted Wood": taintedLand("B", "G"),
   "Temple of the False God": {

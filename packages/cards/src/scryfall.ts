@@ -912,6 +912,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Exaltation (702.83), affinité pour les artefacts (702.41), modulaire (702.43), greffe (702.58), extorsion (702.101).
   const exalted = /^Exalted\b/m.test(raw.oracleText);
   const myriad = /^Myriad\b/m.test(raw.oracleText);
+  // « As this land enters, you may pay N life » ; un terrain légendaire se nomme (« As The Black Gate enters »).
+  const selfName = raw.name.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
+  const shockLand = Number(
+    new RegExp(
+      `(?:As (?:this land|${selfName}) enters, |Then )you may pay (\\d+) life\\. If you don't, it enters tapped\\.`,
+    ).exec(raw.oracleText)?.[1] ?? 0,
+  );
   // Annihilateur N (702.86) ; exhumation (702.84).
   const annihilator = Number(/^Annihilator (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const unearth = /^Unearth ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
@@ -997,21 +1004,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   }
   // Myriade (702.116) : quand elle attaque, pour chaque adversaire autre que le joueur défenseur, vous pouvez créer une
   // copie engagée qui attaque ce joueur ou un planeswalker qu'il contrôle, exilée à la fin du combat.
-  if (myriad) {
-    bloomburrowAbilities.push(
-      dsl.triggered(
-        dsl.when.attacksSelf,
-        [
-          dsl.fx.copyToken(dsl.ref.self, {
-            attackEach: dsl.ref.withPlaneswalkers(dsl.ref.except(dsl.ref.eachOpponent, dsl.ref.defendingPlayer)),
-            optional: true,
-            atEndOfCombat: "exile",
-          }),
-        ],
-        { label: "Myriade : une copie attaque chacun de vos autres adversaires" },
-      ),
-    );
-  }
+  if (myriad) bloomburrowAbilities.push(dsl.myriadAbility());
   if (exalted) {
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.attacksAlone({ types: ["Creature"], controller: "you" }), [dsl.fx.pump(dsl.ref.eventObject, 1, 1)], {
@@ -1315,9 +1308,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         : lifeOrPay
           ? parseManaCost(lifeOrPay[2] as string)
           : undefined,
-    shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
-      ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
-      : undefined,
+    shockLand: shockLand || undefined,
     additionalCost: script?.additionalCost,
     costReduction:
       script?.costReduction ??
