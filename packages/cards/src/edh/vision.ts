@@ -1,8 +1,9 @@
 /**
- * Commander : deck « Nier Automata Deck » de DoomMeat (The Vision ; incolore). Artefacts et Équipements (Épées,
+ * Commander : deck « Weight of the World » (The Vision ; incolore ; liste du jeu de proxys Nier: Automata, d'abord
+ * reprise de « Nier Automata Deck » de DoomMeat). Artefacts et Équipements (Épées,
  * Excalibur, Nettlecyst, Commander's Plate), clés et Monolithes qui se dégagent, Eldrazi incolores (All Is Dust,
  * Kozilek's Command, Eldrazi Confluence, Echoes of Eternity), trois Ugin et Karn, Living Legacy. Terrains :
- * `edh/visionLands.ts`.
+ * `edh/visionLands.ts`. En fin de fichier, les cartes de réserve du jeu de proxys (hors du deck).
  */
 import type { AbilityDef, CardScript, Effect, ModeDef, ObjectFilter, ProtectionRule, TargetSpec, TokenSpec } from "@mtgx/engine";
 import {
@@ -736,5 +737,79 @@ export const EDH_VISION: Record<string, CardScript> = {
         [fx.destroy(ref.target("p"))],
       ),
     ),
+  },
+  "Candelabra of Tawnos": {
+    abilities: [
+      activated({
+        mana: "{X}",
+        tap: true,
+        targets: [{ id: "t", label: "terrain", filter: { objects: { types: ["Land"] } }, count: 99, countX: true }],
+        effects: [fx.untap(ref.target())],
+        label: "Dégagez X terrains ciblés",
+      }),
+    ],
+  },
+  "Null Brooch": {
+    abilities: [
+      activated({
+        mana: "{2}",
+        tap: true,
+        discardHand: true,
+        targets: [target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")],
+        effects: [fx.counter(ref.target())],
+        label: "Défaussez votre main : contrecarrez le sort non-créature ciblé",
+      }),
+    ],
+  },
+
+  // --- Réserve : extras du jeu de proxys (hors du deck, pour les decks des joueurs) -----------------------------------
+  "Eldrazi Conscription": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      staticAbility(
+        "attached",
+        {
+          power: 10,
+          toughness: 10,
+          addKeywords: ["trample"],
+          addAbilities: [
+            triggered(when.attacksSelf, [fx.sacrifice(ref.defendingPlayer, { permanent: true }, 2)], {
+              label: "Annihilateur 2 : le joueur défenseur sacrifie 2 permanents",
+            }),
+          ],
+        },
+        { label: "+10/+10, piétinement et annihilateur 2" },
+      ),
+    ],
+  },
+  "Foundry Inspector": {
+    abilities: [costReducer({ types: ["Artifact"] }, 1, "Vos sorts d'artefact coûtent {1} de moins")],
+  },
+  "Palladium Myr": { abilities: [manaAbility("C", 2)] },
+  "Portal to Phyrexia": {
+    abilities: [
+      triggered(when.entersSelf, [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] }, 3)], {
+        label: "Chaque adversaire sacrifie trois créatures",
+      }),
+      triggered(when.yourUpkeep, [fx.toBattlefield(ref.target(), { underYourControl: true, addSubtypes: ["Phyrexian"] })], {
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière")],
+        label: "Une carte de créature d'un cimetière arrive sous votre contrôle ; c'est un Phyrexian en plus",
+      }),
+    ],
+  },
+  "Super State": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      staticAbility(
+        "attached",
+        { setPower: 9, setToughness: 9, addKeywords: ["flying", "firstStrike", "trample", "haste"] },
+        { label: "Force et endurance de base 9/9, vol, initiative, piétinement et célérité" },
+      ),
+      triggered(
+        { on: "dealsCombatDamage", who: { attached: "host" }, to: { players: "opponent" } },
+        [fx.damage(amount.eventAmount, ref.except(ref.eachOpponent, ref.eventPlayer), ref.eventObject)],
+        { label: "Elle inflige autant de blessures à chaque autre adversaire" },
+      ),
+    ],
   },
 };

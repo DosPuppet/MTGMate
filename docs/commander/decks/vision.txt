@@ -1,5 +1,6 @@
-// The Vision — artefacts incolores (« Nier Automata Deck »). Liste de DoomMeat (Moxfield, bracket 3),
-// mise à jour le 05/10/2026, relevée le 08/10/2026. Source : https://moxfield.com/decks/nzBxrghk-U-ZrXpAzDR3Cg
+// The Vision — artefacts incolores (« Weight of the World », jeu de proxys Nier: Automata). Liste de TappedOut
+// (bracket 3 estimé : trois Game Changers), relevée le 08/10/2026. Source : https://tappedout.net/mtg-decks/weight-of-the-world-1/
+// Réserve : les extras du jeu de proxys (cartes de rechange, hors du deck), importés pour les decks des joueurs.
 Commander
 1 The Vision
 
@@ -7,12 +8,12 @@ Deck
 1 Abstergo Entertainment
 1 Adaptive Omnitool
 1 All Is Dust
+1 Ancient Tomb
 1 Arc Reactor
-1 Arid Archway
-1 Basalt Monolith
 1 Brotherhood Regalia
 1 Buried Ruin
 1 Buster Sword
+1 Candelabra of Tawnos
 1 Cavern of Souls
 1 Champion's Helm
 1 Chimil, the Inner Sun
@@ -29,7 +30,6 @@ Deck
 1 Eldrazi Confluence
 1 Eldritch Immunity
 1 Emergence Zone
-1 Everflowing Chalice
 1 Excalibur, Sword of Eden
 1 Expedition Map
 1 Fomori Vault
@@ -44,13 +44,16 @@ Deck
 1 Kozilek's Command
 1 Liberator, Urza's Battlethopter
 1 Liquimetal Torque
+1 Mana Vault
 1 Manifold Key
+1 Mishra's Workshop
 1 Mithril Coat
 1 Moonsilver Key
 1 Mox Opal
 1 Mystic Forge
 1 Nettlecyst
 1 Nevinyrral's Disk
+1 Null Brooch
 1 Null Elemental Blast
 1 Petrified Hamlet
 1 Planar Nexus
@@ -60,6 +63,7 @@ Deck
 1 Scorched Ruins
 1 Scrap Trawler
 1 Secluded Starforge
+1 Sensei's Divining Top
 1 Shadowspear
 1 Shimmer Myr
 1 Shrine of the Forsaken Gods
@@ -79,13 +83,11 @@ Deck
 1 The Grey Havens
 1 The Mightstone and Weakstone
 1 The Mycosynth Gardens
-1 The One Ring
 1 The Ten Rings
 1 Thespian's Stage
 1 Thought Vessel
 1 Ugin, Eye of the Storms
 1 Ugin, the Ineffable
-1 Ugin, the Spirit Dragon
 1 Ultima, Origin of Oblivion
 1 Ultron, Artificial Malevolence
 1 Unwinding Clock
@@ -96,9 +98,25 @@ Deck
 1 Urza's Tower
 1 Urza's Workshop
 1 Vedalken Orrery
-1 Vesuva
 1 Voltaic Key
 1 Wandering Archaic
 1 War Room
 2 Wastes
 1 Witch's Clinic
+
+Sideboard
+1 Arid Archway
+1 Basalt Monolith
+1 Bonders' Enclave
+1 Codie, Vociferous Codex
+1 Echo, Perceptive Prodigy
+1 Eldrazi Conscription
+1 Everflowing Chalice
+1 Foundry Inspector
+1 Meteor Golem
+1 Palladium Myr
+1 Portal to Phyrexia
+1 Shuri, Wakandan Inventor
+1 Super State
+1 Temple of the False God
+1 Vesuva

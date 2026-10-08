@@ -1128,7 +1128,8 @@ function maxHandSize(s: GameState, player: PlayerId): number | null {
   return last.value();
 }
 
-export function declareAttackers(s: GameState, player: PlayerId, attackers: { id: ObjectId; defender: string }[]): void {
+export function declareAttackers(s: GameState, player: PlayerId, declared: { id: ObjectId; defender: string }[]): void {
+  let attackers = declared;
   const seen = new Set<ObjectId>();
   const defenders = attackableDefenders(s, player);
   for (const a of attackers) {
@@ -1154,7 +1155,10 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   const alone = attackers.length === 1 ? attackers[0]?.id : undefined;
   if (alone && chars(s, alone).blockRules.some((r) => r.notAlone))
     throw new RulesError(`${chars(s, alone).name} ne peut pas attaquer seule`);
-  // Archangel of Tithes : {1} pour chaque créature qui attaque un joueur protégé (ou ses planeswalkers).
+  // 508.1f : les créatures qui attaquent s'engagent, puis (508.1h) la taxe d'attaque se paie (Archangel of Tithes : {1}
+  // pour chaque créature qui attaque un joueur protégé ou ses planeswalkers) ; une créature sacrifiée pour la payer
+  // (Rejeton Eldrazi) quitte le combat.
+  for (const a of attackers) if (!hasKeyword(s, a.id, "vigilance")) tapObject(s, obj(s, a.id));
   const tax = attackers.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
   if (tax > 0) {
     try {
@@ -1162,12 +1166,10 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     } catch (e) {
       rethrowAsRules(e, `Il faut payer {${tax}} pour attaquer`);
     }
+    attackers = attackers.filter((a) => s.objects[a.id]?.zone === "battlefield" && s.objects[a.id]?.controller === player);
   }
   if (!s.combat) s.combat = emptyCombat();
-  for (const a of attackers) {
-    if (!hasKeyword(s, a.id, "vigilance")) tapObject(s, obj(s, a.id));
-    s.combat.attackers.push({ id: a.id, defender: a.defender, blockers: [], blocked: false });
-  }
+  for (const a of attackers) s.combat.attackers.push({ id: a.id, defender: a.defender, blockers: [], blocked: false });
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
   // Journal du tour : attaques (« si vous avez attaqué avec un Vaisseau », Sandswirl Wanderglyph).

@@ -2088,6 +2088,24 @@
   "colorIdentity": []
  },
  {
+  "name": "Candelabra of Tawnos",
+  "number": "43",
+  "rarity": "rare",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Artifact",
+  "oracleText": "{X}, {T}: Untap X target lands.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/5/35a335bf-7358-460f-b7c9-1e8bc4300f64.jpg?1783948364",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/5/35a335bf-7358-460f-b7c9-1e8bc4300f64.jpg?1783948364",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "origin": "ATQ",
+  "colorIdentity": []
+ },
+ {
   "name": "Canopy Vista",
   "number": "227",
   "rarity": "rare",
@@ -4596,6 +4614,31 @@
   "colorIdentity": []
  },
  {
+  "name": "Eldrazi Conscription",
+  "number": "131",
+  "rarity": "rare",
+  "manaCost": "{8}",
+  "cmc": 8,
+  "typeLine": "Kindred Enchantment — Eldrazi Aura",
+  "oracleText": "Enchant creature\nEnchanted creature gets +10/+10 and has trample and annihilator 2. (Whenever it attacks, defending player sacrifices two permanents of their choice.)",
+  "colors": [],
+  "keywords": [
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/3/33965c48-a7ce-4a04-8251-8eeb2d908c0b.jpg?1783903818",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/3/33965c48-a7ce-4a04-8251-8eeb2d908c0b.jpg?1783903818",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Conscription eldrazi",
+   "text": "Enchanter : créature\nLa créature enchantée gagne +10/+10 et a le piétinement et annihilateur 2. (À chaque fois qu'elle attaque, le joueur défenseur sacrifie deux permanents de son choix.)",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5ecdf56c-8f00-41d0-9c2e-0011f2ca50ee.jpg?1782759546"
+  },
+  "origin": "SOC",
+  "colorIdentity": []
+ },
+ {
   "name": "Eldritch Immunity",
   "number": "33",
   "rarity": "rare",
@@ -6036,6 +6079,32 @@
    "G",
    "W"
   ]
+ },
+ {
+  "name": "Foundry Inspector",
+  "number": "259",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact Creature — Construct",
+  "oracleText": "Artifact spells you cast cost {1} less to cast.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/f/9ff34a25-85f9-40a4-a3fd-c27148bf7429.jpg?1789753322",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/f/9ff34a25-85f9-40a4-a3fd-c27148bf7429.jpg?1789753322",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Inspecteur de la fonderie",
+   "typeLine": "Créature-artefact : construction",
+   "text": "Les sorts d'artefact que vous lancez coûtent {1} de moins à lancer.",
+   "image": "https://cards.scryfall.io/normal/front/c/f/cf207295-a89c-49e0-91be-b82911c6ef8a.jpg?1782863477"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
  },
  {
   "name": "Fractured Powerstone",
@@ -9587,6 +9656,27 @@
   ]
  },
  {
+  "name": "Mishra's Workshop",
+  "number": "81",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}{C}{C}. Spend this mana only to cast artifact spells.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/3/135de5c7-6ac9-4b68-8f1a-97f120a4b125.jpg?1783948355",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/135de5c7-6ac9-4b68-8f1a-97f120a4b125.jpg?1783948355",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "origin": "ATQ",
+  "colorIdentity": []
+ },
+ {
   "name": "Mister Fantastic",
   "number": "2",
   "rarity": "mythic",
@@ -10400,6 +10490,28 @@
   "colorIdentity": []
  },
  {
+  "name": "Null Brooch",
+  "number": "136",
+  "rarity": "rare",
+  "manaCost": "{4}",
+  "cmc": 4,
+  "typeLine": "Artifact",
+  "oracleText": "{2}, {T}, Discard your hand: Counter target noncreature spell.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/5/d5d5a0c6-916c-428a-ae66-8adc8844e56e.jpg?1783946499",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d5d5a0c6-916c-428a-ae66-8adc8844e56e.jpg?1783946499",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Broche de cassation",
+   "image": "https://cards.scryfall.io/normal/front/0/8/08b7dee5-ace3-4389-8e95-23fad0e6d4e3.jpg?1783048874"
+  },
+  "origin": "EXO",
+  "colorIdentity": []
+ },
+ {
   "name": "Null Elemental Blast",
   "number": "12",
   "rarity": "uncommon",
@@ -10849,6 +10961,35 @@
   ]
  },
  {
+  "name": "Palladium Myr",
+  "number": "278",
+  "rarity": "uncommon",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact Creature — Myr",
+  "oracleText": "{T}: Add {C}{C}.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/6/3679933e-6880-41e3-b9e0-43d002722d4e.jpg?1789753341",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/6/3679933e-6880-41e3-b9e0-43d002722d4e.jpg?1789753341",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Myr de palladium",
+   "typeLine": "Créature-artefact — myr",
+   "text": "{T} : Ajoutez {C}{C}.",
+   "image": "https://cards.scryfall.io/normal/front/d/9/d959ed44-daec-453a-886e-efee953a24e8.jpg?1782814897"
+  },
+  "origin": "FDC",
+  "colorIdentity": []
+ },
+ {
   "name": "Pandemonium",
   "number": "68",
   "rarity": "special",
@@ -11295,6 +11436,30 @@
    "U",
    "W"
   ]
+ },
+ {
+  "name": "Portal to Phyrexia",
+  "number": "240",
+  "rarity": "mythic",
+  "manaCost": "{9}",
+  "cmc": 9,
+  "typeLine": "Artifact",
+  "oracleText": "When this artifact enters, each opponent sacrifices three creatures of their choice.\nAt the beginning of your upkeep, put target creature card from a graveyard onto the battlefield under your control. It's a Phyrexian in addition to its other types.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/f/5f608efc-0dbc-4cc3-aadd-ed473bfc29ab.jpg?1783920015",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5f608efc-0dbc-4cc3-aadd-ed473bfc29ab.jpg?1783920015",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Portail de Phyrexia",
+   "typeLine": "Artefact",
+   "text": "Quand le Portail de Phyrexia arrive sur le champ de bataille, chaque adversaire sacrifie trois créatures.\nAu début de votre entretien, mettez sur le champ de bataille, sous votre contrôle, une carte de créature ciblée depuis un cimetière. C'est un phyrexian en plus de ses autres types.",
+   "image": "https://cards.scryfall.io/normal/front/1/a/1a84424e-84f1-4010-9f83-26fec0d1ad4a.jpg?1782839646"
+  },
+  "origin": "BRO",
+  "colorIdentity": []
  },
  {
   "name": "Portent",
@@ -14973,6 +15138,28 @@
   "colorIdentity": [
    "G"
   ]
+ },
+ {
+  "name": "Super State",
+  "number": "2081",
+  "rarity": "mythic",
+  "manaCost": "{7}",
+  "cmc": 7,
+  "typeLine": "Legendary Enchantment — Aura",
+  "oracleText": "Enchant creature you control\nEnchanted creature has base power and toughness 9/9 and has flying, first strike, trample, and haste.\nWhenever enchanted creature deals combat damage to an opponent, it deals that much damage to each other opponent.",
+  "colors": [],
+  "keywords": [
+   "First strike",
+   "Trample",
+   "Enchant"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/6/a6a39919-a521-4e96-a47a-e09ac4d783bf.jpg?1783906091",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/6/a6a39919-a521-4e96-a47a-e09ac4d783bf.jpg?1783906091",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "origin": "SLD",
+  "colorIdentity": []
  },
  {
   "name": "Swan Song",

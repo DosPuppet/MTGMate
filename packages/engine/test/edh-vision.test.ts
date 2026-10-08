@@ -1,5 +1,5 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du deck « Nier Automata Deck » (The Vision, incolore). Artefacts qui
+ * Commander (pseudo-ensemble EDH) : tests de règles du deck « Weight of the World » (The Vision, incolore), et des cartes de réserve du jeu de proxys. Artefacts qui
  * se dégagent, Équipements, terrains d'Urza, sorts et créatures incolores, trois Ugin et Karn, Living Legacy.
  */
 import { describe, expect, it } from "vitest";
@@ -1143,6 +1143,133 @@ describe("The Vision (EDH)", () => {
       expect(namesIn(s, legal).sort()).toEqual(["Shivan Dragon", "The Vision"]);
       s = settle(activate(s, "p1", clinic, undefined, { targets: { t: [vision] } }));
       expect(chars(s, vision).keywords).toContain("lifelink");
+    });
+  });
+
+  describe("liste « Weight of the World » et réserve du jeu de proxys", () => {
+    it("Candelabra of Tawnos : {X}, {T} : dégagez exactement X terrains ciblés", () => {
+      let s = scenario({ p1: { battlefield: ["Candelabra of Tawnos", ...lands("Wastes", 4)] } });
+      const candelabra = idOf(s, "p1", "battlefield", "Candelabra of Tawnos");
+      const [a, b, c, d] = idsOf(s, "p1", "battlefield", "Wastes") as [string, string, string, string];
+      for (const id of [a, b, c, d]) s = act(s, "p1", { type: "tapForMana", source: id, ability: 0 } as never);
+      expect(pool(s)?.C).toBe(4);
+      expect(() => activate(s, "p1", candelabra, 0, { x: 2, targets: { t: [a, b, c] } })).toThrow();
+      s = settle(activate(s, "p1", candelabra, 0, { x: 2, targets: { t: [a, b] } }));
+      expect([a, b, c].map((id) => s.objects[id]?.tapped)).toEqual([false, false, true]);
+      expect(s.objects[candelabra]?.tapped).toBe(true);
+    });
+
+    it("Null Brooch : {2}, {T}, défaussez votre main : contrecarrez un sort non-créature (pas un sort de créature)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Null Brooch", ...lands("Wastes", 2)], hand: ["Bear Cub", "Forest"] },
+        p2: { hand: ["Shock", "Bear Cub"], battlefield: lands("Mountain", 2).concat(lands("Forest", 2)) },
+        active: "p2",
+      });
+      const brooch = idOf(s, "p1", "battlefield", "Null Brooch");
+      s = castIt(s, "p2", "Bear Cub");
+      s = act(s, "p2", { type: "pass" });
+      expect(canActivate(s, "p1", brooch)).toBe(false);
+      s = settle(s);
+      s = castIt(s, "p2", "Shock", { targets: { t: ["p1"] } });
+      s = act(s, "p2", { type: "pass" });
+      const shock = s.stack[0]?.id as string;
+      s = settle(activate(s, "p1", brooch, 0, { targets: { t: [shock] } }));
+      expect(s.players.p1?.life).toBe(20);
+      expect(s.players.p1?.hand).toEqual([]);
+      expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Bear Cub", "Forest"]);
+      expect(idsOf(s, "p2", "graveyard", "Shock")).toHaveLength(1);
+    });
+
+    it("Mishra's Workshop : {C}{C}{C} à dépenser seulement pour des sorts d'artefact", () => {
+      const s = scenario({
+        p1: { battlefield: ["Mishra's Workshop"], hand: ["Palladium Myr", "Glaring Fleshraker"] },
+      });
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Palladium Myr"))).toBe(true);
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Glaring Fleshraker"))).toBe(false);
+      const t = tapMana(s, "Mishra's Workshop");
+      expect(t.players.p1?.restrictedMana).toHaveLength(3);
+    });
+
+    it("Palladium Myr : {T} : {C}{C} ; Foundry Inspector : vos sorts d'artefact coûtent {1} de moins", () => {
+      let s = scenario({ p1: { battlefield: ["Palladium Myr", "Foundry Inspector"], hand: ["Sol Ring", "Bear Cub"] } });
+      // Sol Ring ({1}) ne coûte rien ; Bear Cub, qui n'est pas un artefact, coûte toujours {1}{G}.
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Sol Ring"))).toBe(true);
+      s = tapMana(s, "Palladium Myr");
+      expect(pool(s)?.C).toBe(2);
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
+    });
+
+    it("Eldrazi Conscription : +10/+10, piétinement et annihilateur 2", () => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", ...lands("Wastes", 8)], hand: ["Eldrazi Conscription"] },
+        p2: { battlefield: ["Forest", "Sol Ring", "Savannah Lions"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(castIt(s, "p1", "Eldrazi Conscription", { targets: { enchant: [bear] } }));
+      expect(pt(s, bear)).toEqual([12, 12]);
+      expect(chars(s, bear).keywords).toContain("trample");
+      s = throughCombat(attack(s, [bear]));
+      // Le joueur défenseur sacrifie deux de ses trois permanents, puis prend 12 blessures (aucun bloqueur).
+      expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2")).toHaveLength(1);
+      expect(s.players.p2?.life).toBe(8);
+    });
+
+    it("Portal to Phyrexia : chaque adversaire sacrifie trois créatures ; à votre entretien, une créature d'un cimetière vous revient, Phyrexian en plus", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: lands("Wastes", 9), hand: ["Portal to Phyrexia"] },
+        p2: { battlefield: ["Bear Cub", "Savannah Lions", "Shivan Dragon", "Llanowar Elves"] },
+        p3: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(castIt(s, "p1", "Portal to Phyrexia"));
+      expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2")).toHaveLength(1);
+      expect(idsOf(s, "p3", "battlefield", "Bear Cub")).toHaveLength(0);
+      const dragon = idsOf(s, "p2", "graveyard", "Shivan Dragon")[0];
+      expect(dragon).toBeDefined();
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3, 2000);
+      const mine = s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Creature"));
+      expect(mine).toHaveLength(1);
+      expect(chars(s, mine[0] as string).subtypes).toContain("Phyrexian");
+    });
+
+    it("508.1f-h : une créature qui attaque est engagée avant la taxe d'attaque ; sacrifiée pour la payer, elle quitte le combat", () => {
+      let s = scenario({
+        p1: { battlefield: ["Glaring Fleshraker", "Wastes"], hand: ["Mox Opal"] },
+        p2: { battlefield: ["Ghostly Prison"] },
+      });
+      s = settle(castIt(s, "p1", "Mox Opal"));
+      const [spawn] = tokens(s, "Eldrazi Spawn") as [string];
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.turn.active === "p1" && x.turn.number > 3);
+      // {2} de taxe pour le Rejeton : le Terrain vague et le Rejeton lui-même (« sacrifiez ce jeton : ajoutez {C} »).
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: spawn, defender: "p2" }] });
+      expect(s.objects[spawn]).toBeUndefined();
+      expect(s.combat?.attackers ?? []).toEqual([]);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Wastes")]?.tapped).toBe(true);
+      // Une créature sans vigilance qui attaque est engagée avant le paiement : elle ne peut pas payer sa propre taxe.
+      let t = scenario({
+        p1: { battlefield: ["Llanowar Elves", "Forest"] },
+        p2: { battlefield: ["Ghostly Prison"] },
+      });
+      t = advanceUntil(t, (x) => x.pending?.kind === "declareAttackers");
+      const elves = idOf(t, "p1", "battlefield", "Llanowar Elves");
+      expect(() => act(t, "p1", { type: "declareAttackers", attackers: [{ id: elves, defender: "p2" }] })).toThrow(
+        "Il faut payer {2} pour attaquer",
+      );
+    });
+
+    it("Super State : base 9/9, vol, initiative, piétinement, célérité ; ses blessures de combat à un adversaire touchent aussi les autres", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Bear Cub", ...lands("Wastes", 7)], hand: ["Super State"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(castIt(s, "p1", "Super State", { targets: { enchant: [bear] } }));
+      expect(pt(s, bear)).toEqual([9, 9]);
+      expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["flying", "firstStrike", "trample", "haste"]));
+      s = throughCombat(attack(s, [bear]));
+      expect(s.players.p2?.life).toBe(11);
+      expect(s.players.p3?.life).toBe(11);
+      expect(s.players.p1?.life).toBe(20);
     });
   });
 });

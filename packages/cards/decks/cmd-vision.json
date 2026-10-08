@@ -1,7 +1,7 @@
 {
   "id": "cmd-vision",
   "name": "The Vision — artefacts incolores",
-  "description": "Commander, incolore, d'après la liste « Nier Automata Deck » de DoomMeat (Moxfield, bracket 3). The Vision pioche et gagne la double initiative ou l'indestructible à chaque sort non-créature ; les terrains d'Urza, les Monolithes et les clés font beaucoup de mana incolore, les Épées, Excalibur et Commander's Plate en font une menace, et All Is Dust, Ugin et Nevinyrral's Disk vident la table.",
+  "description": "Commander, incolore, d'après la liste « Weight of the World » (TappedOut), celle du jeu de proxys Nier: Automata (bracket 3). The Vision pioche et gagne la double initiative ou l'indestructible à chaque sort non-créature ; les terrains d'Urza, Mishra's Workshop, Mana Vault et les clés font beaucoup de mana incolore, les Épées, Excalibur et Commander's Plate en font une menace, et All Is Dust, Ugin et Nevinyrral's Disk vident la table.",
   "colors": [],
   "bracket": 3,
   "cover": "https://cards.scryfall.io/art_crop/front/2/9/2961cf20-33c8-4e66-9d0f-6daca8ea7880.jpg?1783902887",
@@ -27,15 +27,11 @@
     ],
     [
       1,
+      "Ancient Tomb"
+    ],
+    [
+      1,
       "Arc Reactor"
-    ],
-    [
-      1,
-      "Arid Archway"
-    ],
-    [
-      1,
-      "Basalt Monolith"
     ],
     [
       1,
@@ -48,6 +44,10 @@
     [
       1,
       "Buster Sword"
+    ],
+    [
+      1,
+      "Candelabra of Tawnos"
     ],
     [
       1,
@@ -115,10 +115,6 @@
     ],
     [
       1,
-      "Everflowing Chalice"
-    ],
-    [
-      1,
       "Excalibur, Sword of Eden"
     ],
     [
@@ -175,7 +171,15 @@
     ],
     [
       1,
+      "Mana Vault"
+    ],
+    [
+      1,
       "Manifold Key"
+    ],
+    [
+      1,
+      "Mishra's Workshop"
     ],
     [
       1,
@@ -200,6 +204,10 @@
     [
       1,
       "Nevinyrral's Disk"
+    ],
+    [
+      1,
+      "Null Brooch"
     ],
     [
       1,
@@ -236,6 +244,10 @@
     [
       1,
       "Secluded Starforge"
+    ],
+    [
+      1,
+      "Sensei's Divining Top"
     ],
     [
       1,
@@ -315,10 +327,6 @@
     ],
     [
       1,
-      "The One Ring"
-    ],
-    [
-      1,
       "The Ten Rings"
     ],
     [
@@ -336,10 +344,6 @@
     [
       1,
       "Ugin, the Ineffable"
-    ],
-    [
-      1,
-      "Ugin, the Spirit Dragon"
     ],
     [
       1,
@@ -380,10 +384,6 @@
     [
       1,
       "Vedalken Orrery"
-    ],
-    [
-      1,
-      "Vesuva"
     ],
     [
       1,

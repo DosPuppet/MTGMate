@@ -473,8 +473,13 @@ export const RECORD_VERSION = 1;
  *   avec le X annoncé (Kozilek's Command, Here Comes a New Hero!, Agadeem's Awakening) ; un terrain que ses effets « en
  *   arrivant » mettent ailleurs compte comme joué (Scorched Ruins) ; protection hors de l'identité du commandant ; PV
  *   d'un coût calculés (War Room) ; dégagement pendant l'étape des autres joueurs selon un filtre (Unwinding Clock)
+ * - 173 : Deck The Vision d'après la liste « Weight of the World » (Ancient Tomb, Candelabra of Tawnos, Mana Vault,
+ *   Mishra's Workshop, Null Brooch, Sensei's Divining Top) ; cartes de réserve du jeu de proxys (Eldrazi Conscription,
+ *   Foundry Inspector, Palladium Myr, Portal to Phyrexia, Super State) ; les créatures qui attaquent s'engagent avant la
+ *   taxe d'attaque (508.1f, 508.1h), et celle sacrifiée pour la payer quitte le combat (Rejeton Eldrazi : le moteur
+ *   plantait)
  */
-export const RULES_VERSION = 172;
+export const RULES_VERSION = 173;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

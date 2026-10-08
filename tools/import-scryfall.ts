@@ -8,7 +8,7 @@
  *
  * Les images ne sont pas téléchargées : on conserve seulement leurs URLs (CDN Scryfall).
  */
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EXCLUDED_REPRINTS, SET_INFO, STANDARD_SETS } from "../packages/cards/src/setRegistry";
@@ -151,7 +151,8 @@ const NAME_BATCH = 15;
  * autres ensembles du catalogue, chacune avec une impression par défaut (la plus récente d'un ensemble ordinaire, cadre
  * normal), son ensemble d'origine (`origin`) et l'identité de couleur de Scryfall (`colorIdentity`, vérifiée contre
  * l'identité calculée par le moteur). Le texte français vient de l'impression française de même ensemble si elle existe,
- * sinon de la plus récente (sans son image).
+ * sinon de la plus récente (sans son image). Une carte déjà importée le reste, même si plus aucune decklist ne la cite
+ * (deck modifié) : elle sert aux decks des joueurs.
  */
 async function importByName(SET: string): Promise<void> {
   const info = SET_INFO.find((x) => x.code.toLowerCase() === SET);
@@ -167,6 +168,11 @@ async function importByName(SET: string): Promise<void> {
       if (m && !line.trim().startsWith("//")) wanted.add((m[1] as string).replace(/\s+\([A-Za-z0-9]{2,6}\).*$/, "").trim());
     }
   }
+  // Cartes déjà importées : gardées (deck modifié, carte retirée de sa liste).
+  const ownFile = join(DATA_DIR, `${info.code.toLowerCase()}.json`);
+  if (existsSync(ownFile))
+    for (const c of JSON.parse(readFileSync(ownFile, "utf8")) as { name: string }[])
+      wanted.add(c.name.split(" // ")[0] as string);
   // Noms déjà au catalogue (nom complet et première face), hors de l'ensemble importé.
   const known = new Set<string>();
   for (const s of SET_INFO.filter((x) => x.code !== info.code)) {

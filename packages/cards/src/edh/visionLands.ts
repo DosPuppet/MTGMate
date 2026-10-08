@@ -1,5 +1,5 @@
 /**
- * Commander : terrains du deck « Nier Automata Deck » (The Vision). Terrains d'Urza (Mine, Power Plant, Tower, Cave,
+ * Commander : terrains du deck « Weight of the World » (The Vision). Terrains d'Urza (Mine, Power Plant, Tower, Cave,
  * Workshop, Saga), terrains incolores utilitaires (Buried Ruin, Emergence Zone, Sanctum of Ugin, Scorched Ruins, Shrine of
  * the Forsaken Gods, War Room, Witch's Clinic), copies (Vesuva, The Mycosynth Gardens) et Planar Nexus.
  */
@@ -205,6 +205,9 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
         { label: "Chapitre III — cherchez un artefact au coût de mana {0} ou {1}" },
       ),
     ],
+  },
+  "Mishra's Workshop": {
+    abilities: [manaAbility("C", 3, { restriction: { spell: { types: ["Artifact"] } } })],
   },
   "Urza's Workshop": {
     abilities: [
