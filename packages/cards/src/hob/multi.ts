@@ -1,7 +1,7 @@
 /**
- * The Hobbit — cartes multicolores (lot A). Le vol, la portée, la vigilance, la menace, l'initiative et Équiper sont lus
- * dans le texte, ainsi que Storied (récit durable). Recruter (« piochez une carte, puis défaussez une carte ; si vous avez
- * défaussé une carte non-terrain, créez un jeton Humain Soldat 1/1 blanc ») est dans hob/common.ts.
+ * The Hobbit — multicolored cards (lot A). Flying, reach, vigilance, menace, first strike and Equip are read from the
+ * text, as is Storied (enduring story). Recruit ("Draw a card, then discard a card. If you discarded a nonland card,
+ * create a 1/1 white Human Soldier token") is in hob/common.ts.
  */
 import type { ObjectFilter } from "@mtgx/engine";
 import {
@@ -26,53 +26,53 @@ import {
 } from "./common";
 
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
-/** « un Gobelin, un Orque ou une Armée que vous contrôlez » */
+/** "a Goblin, Orc, or Army you control" */
 const GOBLIN_ORC_ARMY: ObjectFilter = { anySubtype: ["Goblin", "Orc", "Army"], controller: "you" };
 
 export const MULTI: Record<string, CardScript> = {
   "Bard, King of Dale": {
-    // Approximation : « la première carte que vous piochez pendant chacune de vos étapes de pioche » est lue comme « une
-    // pioche pendant votre étape de pioche, si vous n'avez encore pioché aucune carte ce tour-ci » (une carte piochée
-    // pendant votre entretien fait doubler la pioche de l'étape).
+    // Approximation: "the first card you draw during each of your draw steps" is read as "a draw during your draw
+    // step, if you haven't drawn any card yet this turn" (a card drawn during your upkeep makes the draw step's draw
+    // doubled).
     abilities: [
       eventReplacement({
         event: "draw",
         to: "you",
         modify: { times: 2 },
         condition: cond.not(cond.all(cond.yourTurn, cond.step("draw"), cond.not(cond.drewAtLeast(1)))),
-        label: "Piochez deux cartes au lieu d'une (sauf la première de votre étape de pioche)",
+        label: "Draw two cards instead of one (except the first of your draw step)",
       }),
-      eventReplacement({ event: "tokens", to: "you", modify: { times: 2 }, label: "Deux fois plus de jetons" }),
+      eventReplacement({ event: "tokens", to: "you", modify: { times: 2 }, label: "Twice as many tokens" }),
     ],
   },
   "Bard the Bowman": {
     abilities: [
       triggered(when.draw(2), [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["lifelink"] })], {
         targets: [target.creature()],
-        label: "Deuxième carte piochée : un marqueur +1/+1 et le lien de vie",
+        label: "Second card drawn: a +1/+1 counter and lifelink",
       }),
     ],
   },
   "Bard's Company": {
     flashIf: cond.controls({ subtype: "Human" }),
     abilities: [
-      staticAbility({ ...YOUR_CREATURES, other: true }, { power: 1, toughness: 1 }, { label: "Vos autres créatures : +1/+1" }),
-      ...[when.entersSelf, when.attacksSelf].map((trigger) => triggered(trigger, recruit(), { label: "Recruter" })),
+      staticAbility({ ...YOUR_CREATURES, other: true }, { power: 1, toughness: 1 }, { label: "Your other creatures: +1/+1" }),
+      ...[when.entersSelf, when.attacksSelf].map((trigger) => triggered(trigger, recruit(), { label: "Recruiting" })),
     ],
   },
   "Bifur, Melodic Rider": {
-    // Storied : lu dans le texte.
+    // Storied: read from the text.
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((trigger) =>
         triggered(trigger, [fx.addCounters(ref.target(), 1)], {
           targets: [target.creature()],
-          label: "Un marqueur +1/+1 sur une créature",
+          label: "A +1/+1 counter on a creature",
         }),
       ),
       playerStatic({
         triggerMod: { effect: "again", sources: { subtype: "Dwarf", controller: "you" } },
         condition: cond.enduringStory,
-        label: "Récit durable : les capacités déclenchées de vos Nains se déclenchent une fois de plus",
+        label: "Enduring story: triggered abilities of your Dwarves trigger an additional time",
       }),
     ],
   },
@@ -94,7 +94,7 @@ export const MULTI: Record<string, CardScript> = {
             ),
           ),
         ],
-        { label: "Sacrifice facultatif : blessures égales à sa force ; l'excès amasse des Gobelins" },
+        { label: "Optional sacrifice: damage equal to its power; the excess amasses Goblins" },
       ),
     ],
   },
@@ -103,77 +103,77 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["haste"] },
-        { condition: cond.controls({ subtype: "Goblin", other: true }), label: "Célérité avec un autre Gobelin" },
+        { condition: cond.controls({ subtype: "Goblin", other: true }), label: "Haste with another Goblin" },
       ),
       activated({
         tap: true,
         sacrificeOther: { filter: { subtype: "Goblin" } },
         effects: [fx.addMana("B", "R")],
-        label: "Sacrifiez un autre Gobelin : ajoutez {B}{R}",
+        label: "Sacrifice another Goblin: add {B}{R}",
       }),
     ],
   },
   "The Chief Warg": {
-    // Menace : lue dans le texte.
+    // Menace: read from the text.
     abilities: [
       triggered(when.attackWith(1), [fx.draw(1), fx.loseLife(1)], {
         condition: cond.ferocious,
-        label: "Férocité : piochez une carte et perdez 1 PV",
+        label: "Ferocious: draw a card and lose 1 life",
       }),
     ],
   },
   "Duskwatch Hunter": {
     abilities: [
-      blockAbility(block.notBy({ token: true }, "Ne peut pas être bloquée par des jetons")),
+      blockAbility(block.notBy({ token: true }, "Can't be blocked by tokens")),
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature()],
-        label: "Un marqueur +1/+1 sur une créature",
+        label: "A +1/+1 counter on a creature",
       }),
     ],
   },
   "Eagle's Rescue": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["flying"] }, { label: "+2/+2 et le vol" }),
+      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["flying"] }, { label: "+2/+2 and flying" }),
       activated({
         mana: "{2}{W/U}{W/U}",
         fromGraveyard: true,
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you", maxPower: 1 })],
-        // L'Aura arrive directement attachée à la créature ciblée (aucun autre hôte n'est demandé).
+        // The Aura enters directly attached to the target creature (no other host is asked for).
         effects: [fx.moveTo(ref.selfCard, { to: "battlefield" }, undefined, ref.target())],
-        label: "Revient du cimetière attachée à une de vos créatures de force 1 ou moins",
+        label: "Returns from the graveyard attached to one of your creatures with power 1 or less",
       }),
     ],
   },
   "Fearsome Goblin Pair": {
-    abilities: [triggered(when.diesSelf, [fx.amass(ref.you, "Goblin", 4)], { label: "Amassez des Gobelins 4" })],
+    abilities: [triggered(when.diesSelf, [fx.amass(ref.you, "Goblin", 4)], { label: "Amass Goblins 4" })],
   },
   "Goblin Plate Mail": {
-    // Équiper {4} : lu dans le texte.
+    // Equip {4}: read from the text.
     abilities: [
       triggered(
         when.entersSelf,
         [
           fx.amass(ref.you, "Goblin", 1),
-          // L'Armée qui vient de recevoir le marqueur : la première que vous contrôlez, comme pour amasser.
+          // The Army that just got the counter: the first one you control, as for amass.
           fx.attach(ref.permanentsOf(ref.you, { subtype: "Army" })),
         ],
-        { label: "Amassez des Gobelins 1, puis attachez-le à l'Armée" },
+        { label: "Amass Goblins 1, then attach it to the Army" },
       ),
-      staticAbility("attached", { power: 1, addKeywords: ["menace"] }, { label: "+1/+0 et la menace" }),
+      staticAbility("attached", { power: 1, addKeywords: ["menace"] }, { label: "+1/+0 and menace" }),
     ],
   },
   "The Great Goblin": {
     abilities: [
       triggered(when.youPutCounters(GOBLIN_ORC_ARMY), [fx.damage(2, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Marqueurs sur un Gobelin, un Orque ou une Armée : 2 blessures à un adversaire",
+        label: "Counters on a Goblin, Orc or Army: 2 damage to an opponent",
       }),
       triggered(
         when.dies({ ...GOBLIN_ORC_ARMY, other: true }),
         [fx.exileTop(ref.you, 1, "e"), fx.grantPlay(ref.stored("e"), { untilYourNextTurn: true })],
-        { label: "Exilez la carte du dessus, jouable jusqu'à la fin de votre prochain tour" },
+        { label: "Exile the top card, playable until the end of your next turn" },
       ),
     ],
   },
@@ -181,12 +181,9 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [...fx.when(cond.targetChosen("t"), fx.bounce(ref.target()), fx.addCounters(ref.self, 1))], {
         targets: [
-          target.upTo(
-            1,
-            targetObj("t", { permanent: true, controller: "you", other: true }, "autre permanent que vous contrôlez"),
-          ),
+          target.upTo(1, targetObj("t", { permanent: true, controller: "you", other: true }, "other permanent you control")),
         ],
-        label: "Renvoie un autre de vos permanents ; un marqueur +1/+1",
+        label: "Returns another of your permanents; a +1/+1 counter",
       }),
     ],
   },
@@ -194,13 +191,13 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.modify(ref.target(), { addKeywords: ["firstStrike"] })], {
         targets: [target.creature("t", { attacking: true })],
-        label: "Une créature attaquante gagne l'initiative",
+        label: "An attacking creature gains first strike",
       }),
     ],
   },
   "Patient Instructor": {
-    // Vigilance : lue dans le texte.
-    abilities: [triggered(when.entersSelf, recruit(), { label: "Recruter" })],
+    // Vigilance: read from the text.
+    abilities: [triggered(when.entersSelf, recruit(), { label: "Recruiting" })],
   },
   "Silvan Reveler": {
     abilities: [
@@ -211,12 +208,12 @@ export const MULTI: Record<string, CardScript> = {
           fx.discard(1, ref.you, { store: "l", storeFilter: { types: ["Land"] } }),
           ...fx.when(cond.v("l"), fx.toBattlefield(ref.stored("l"), { tapped: true })),
         ],
-        { label: "Piochez puis défaussez ; un terrain défaussé arrive engagé" },
+        { label: "Draw then discard; a discarded land enters tapped" },
       ),
       triggered(
         when.landfall,
-        fx.mayPay("{1}{G}{U}", "Payer {1}{G}{U} pour reprendre Silvan Reveler en main ?", fx.toHand(ref.selfCard)),
-        { fromGraveyard: true, label: "Landfall : revient du cimetière dans la main" },
+        fx.mayPay("{1}{G}{U}", "Pay {1}{G}{U} to return Silvan Reveler to hand?", fx.toHand(ref.selfCard)),
+        { fromGraveyard: true, label: "Landfall: returns from the graveyard to hand" },
       ),
     ],
   },
@@ -227,9 +224,9 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         { ...YOUR_CREATURES, subtype: "Elf", other: true },
         { power: 1, toughness: 1 },
-        { label: "Vos autres Elfes : +1/+1" },
+        { label: "Your other Elves: +1/+1" },
       ),
-      triggered(when.landfall, [fx.createTokens(ELF)], { label: "Landfall : un Elfe 1/1" }),
+      triggered(when.landfall, [fx.createTokens(ELF)], { label: "Landfall: a 1/1 Elf" }),
     ],
   },
   "Silvan Rally": {
@@ -241,7 +238,7 @@ export const MULTI: Record<string, CardScript> = {
           "graveyard",
           { types: ["Land"] },
           { to: "hand" },
-          { count: 2, min: 0, pool: ref.stored("m"), prompt: "Jusqu'à deux cartes de terrain meulées dans votre main" },
+          { count: 2, min: 0, pool: ref.stored("m"), prompt: "Up to two milled land cards to your hand" },
         ),
       ],
     ),
@@ -252,11 +249,11 @@ export const MULTI: Record<string, CardScript> = {
       playerStatic({
         extraLands: 1,
         condition: cond.controls({ subtype: "Elf", other: true }),
-        label: "Avec un autre Elfe : un terrain supplémentaire à chacun de vos tours",
+        label: "With another Elf: an additional land on each of your turns",
       }),
       triggered(when.landfall, [fx.addCounters(ref.target(), 2), fx.modify(ref.target(), { addKeywords: ["vigilance"] })], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Landfall : deux marqueurs +1/+1 et la vigilance",
+        label: "Landfall: two +1/+1 counters and vigilance",
       }),
     ],
   },
@@ -266,12 +263,12 @@ export const MULTI: Record<string, CardScript> = {
         mana: "{1}",
         sacrificeOther: { filter: { types: ["Creature"] } },
         effects: [fx.draw(amount.powerOf(ref.costSacrificed)), fx.discard(1)],
-        label: "Piochez autant que la force de la créature sacrifiée, puis défaussez",
+        label: "Draw as many as the sacrificed creature's power, then discard",
       }),
-      // « S'ils étaient une créature » : la mort (en tant que créature) l'assure ; revenus en artefact, ils ne
-      // reviennent plus.
+      // "If they were a creature": dying (as a creature) ensures it; once returned as an artifact, they no longer
+      // return.
       triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { setTypes: ["Artifact"], setSubtypes: [] })], {
-        label: "Reviennent sur le champ de bataille en artefact",
+        label: "Return to the battlefield as an artifact",
       }),
     ],
   },

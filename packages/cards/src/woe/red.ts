@@ -1,6 +1,6 @@
 /**
- * Wilds of Eldraine — cartes rouges (lot A). Les Aventures ont une entrée par face (la créature sous son nom, le sort
- * d'Aventure sous le nom de l'Aventure) ; le Marchandage est lu dans le texte (`cond.kicked`).
+ * Wilds of Eldraine — red cards (lot A). Adventures have one entry per face (the creature under its name, the
+ * Adventure spell under the name of the Adventure); Bargain is read from the text (`cond.kicked`).
  */
 import {
   activated,
@@ -30,19 +30,19 @@ import {
   YOUNG_HERO_ROLE,
 } from "./common";
 
-/** « Créature ciblée que vous contrôlez » */
+/** "Target creature you control" */
 const yourCreature = (id = "t") => target.creature(id, { controller: "you" });
 
-/** « Vous pouvez défausser une carte. Si vous le faites, piochez N cartes. » */
+/** "You may discard a card. If you do, draw N cards." */
 const mayRummage = (n: number) => [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(n))];
 
-/** Cartes d'éphémère, de rituel et/ou avec une Aventure dans votre cimetière (Hearth Elemental, Frantic Firebolt). */
+/** Instant, sorcery and/or Adventure cards in your graveyard (Hearth Elemental, Frantic Firebolt). */
 const SPELLY_CARDS = amount.plus(
   amount.countIn("graveyard", INSTANT_SORCERY),
   amount.countIn("graveyard", { notTypes: ["Instant", "Sorcery"], adventure: true }),
 );
 
-/** Ogre Chitterlord : deux Rats, puis +2/+0 à chaque Rat si vous en contrôlez cinq ou plus. */
+/** Ogre Chitterlord: two Rats, then +2/+0 to each Rat if you control five or more. */
 const chitterlordEffects = [
   fx.createTokens(RAT_NO_BLOCK, 2),
   ...fx.when(cond.controls({ subtype: "Rat" }, 5), fx.pumpAll({ subtype: "Rat", controller: "you" }, 2, 0)),
@@ -54,26 +54,26 @@ export const RED: Record<string, CardScript> = {
       triggered(
         { on: "dealsDamage", who: { types: ["Instant", "Sorcery"], controller: "you" }, spellToSoleTarget: true },
         [fx.damage(amount.eventAmount, ref.eachOpponent)],
-        { label: "Votre sort à cible unique blesse sa créature : autant de blessures à chaque adversaire" },
+        { label: "Your single-target spell deals damage to its creature: that much damage to each opponent" },
       ),
     ],
   },
-  // Portée lue dans le texte.
+  // Reach read from the text.
   "Skewer Slinger": {
     abilities: [
       triggered({ on: "blocks", who: "self", eventObject: "attacker" }, [fx.damage(1, ref.eventObject, ref.self)], {
-        label: "Elle bloque : 1 blessure à cette créature",
+        label: "It blocks: 1 damage to that creature",
       }),
       triggered(
         { on: "blocks", who: { types: ["Creature"] }, attacker: { self: true } },
         [fx.damage(1, ref.eventObject, ref.self)],
         {
-          label: "Elle est bloquée : 1 blessure à cette créature",
+          label: "It becomes blocked: 1 damage to that creature",
         },
       ),
     ],
   },
-  // Double initiative lue dans le texte.
+  // Double strike read from the text.
   "Kellan, the Fae-Blooded": {
     abilities: [
       staticAbility(
@@ -81,7 +81,7 @@ export const RED: Record<string, CardScript> = {
         { power: 1 },
         {
           per: { attached: "toSource", anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }] },
-          label: "Vos autres créatures : +1/+0 par Aura et Équipement attaché à Kellan",
+          label: "Your other creatures: +1/+0 for each Aura and Equipment attached to Kellan",
         },
       ),
     ],
@@ -94,7 +94,7 @@ export const RED: Record<string, CardScript> = {
       triggered(when.yourCombat, [fx.pump(ref.target(), 1, 0, ["menace"])], {
         condition: CELEBRATION,
         targets: [yourCreature()],
-        label: "Célébration : +1/+0 et la menace à une de vos créatures",
+        label: "Celebration: +1/+0 and menace to one of your creatures",
       }),
     ],
   },
@@ -104,11 +104,11 @@ export const RED: Record<string, CardScript> = {
   },
   "Bespoke Battlegarb": {
     abilities: [
-      staticAbility("attached", { power: 2 }, { label: "La créature équipée gagne +2/+0" }),
+      staticAbility("attached", { power: 2 }, { label: "Equipped creature gets +2/+0" }),
       triggered(when.yourCombat, [fx.attach(ref.target())], {
         condition: CELEBRATION,
         targets: [target.upTo(1, yourCreature())],
-        label: "Célébration : attachez-le à une de vos créatures",
+        label: "Celebration: attach it to one of your creatures",
       }),
     ],
   },
@@ -116,7 +116,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, mayRummage(1), {
         condition: cond.ferocious,
-        label: "Force 4 ou plus : défaussez une carte pour en piocher une",
+        label: "Power 4 or greater: discard a card to draw a card",
       }),
     ],
   },
@@ -125,11 +125,11 @@ export const RED: Record<string, CardScript> = {
       triggeredModal(
         when.entersSelf,
         [
-          mode("Défaussez une carte, puis piochez une carte", [], [fx.discard(1), fx.draw(1)]),
-          mode("Un jeton Trésor", [], [fx.createTokens(TREASURE)]),
-          mode("Un Rôle Malveillant sur une de vos créatures", [yourCreature()], createRole(WICKED_ROLE)),
+          mode("Discard a card, then draw a card", [], [fx.discard(1), fx.draw(1)]),
+          mode("A Treasure token", [], [fx.createTokens(TREASURE)]),
+          mode("A Wicked Role on one of your creatures", [yourCreature()], createRole(WICKED_ROLE)),
         ],
-        { label: "Choisissez un mode" },
+        { label: "Choose a mode" },
       ),
     ],
   },
@@ -140,7 +140,7 @@ export const RED: Record<string, CardScript> = {
     ),
   },
   "Edgewall Pack": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(RAT_NO_BLOCK)], { label: "Un Rat 1/1 qui ne peut pas bloquer" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(RAT_NO_BLOCK)], { label: "A 1/1 Rat that can't block" })],
   },
   "Embereth Veteran": {
     abilities: [
@@ -149,7 +149,7 @@ export const RED: Record<string, CardScript> = {
         sacrifice: true,
         targets: [target.creature("t", { other: true })],
         effects: createRole(YOUNG_HERO_ROLE),
-        label: "Un Rôle Jeune héros sur une autre créature",
+        label: "A Young Hero Role on another creature",
       }),
     ],
   },
@@ -166,13 +166,13 @@ export const RED: Record<string, CardScript> = {
               mana: "{2}",
               sacrifice: true,
               targets: [target.any()],
-              // L'artefact sacrifié inflige les blessures (dernières informations connues).
+              // The sacrificed artifact deals the damage (last known information).
               effects: [fx.damage(amount.plus(1, amount.count({ name: "Food Fight", controller: "you" })), ref.target())],
-              label: "Blessures égales à 1 plus le nombre de Food Fight",
+              label: "Damage equal to 1 plus the number of Food Fights",
             }),
           ],
         },
-        { label: "Vos artefacts : {2}, sacrifice : blessures à n'importe quelle cible" },
+        { label: "Your artifacts: {2}, sacrifice: damage to any target" },
       ),
     ],
   },
@@ -184,13 +184,13 @@ export const RED: Record<string, CardScript> = {
       [],
       [
         fx.pumpAll(CREATURE_YOU_CONTROL, 2, 0),
-        // « Chaque fois qu'une créature non-jeton que vous contrôlez meurt ce tour-ci » : emblème du tour.
+        // "Whenever a nontoken creature you control dies this turn": emblem for the turn.
         fx.emblem(
           "Gnawing Crescendo",
           'Whenever a nontoken creature you control dies this turn, create a 1/1 black Rat creature token with "This token can\'t block."',
           [
             triggered(when.dies({ types: ["Creature"], controller: "you", token: false }), [fx.createTokens(RAT_NO_BLOCK)], {
-              label: "Un Rat 1/1 qui ne peut pas bloquer",
+              label: "A 1/1 Rat that can't block",
             }),
           ],
           false,
@@ -201,7 +201,7 @@ export const RED: Record<string, CardScript> = {
   },
   "Goddric, Cloaked Reveler": {
     abilities: [
-      // Le vol, cité dans la phrase, n'est pas un mot-clé imprimé (l'import ne le lit pas) : seulement avec la Célébration.
+      // Flying, quoted in the sentence, is not a printed keyword (the import does not read it): only with Celebration.
       staticAbility(
         "self",
         {
@@ -213,11 +213,11 @@ export const RED: Record<string, CardScript> = {
             activated({
               mana: "{R}",
               effects: [fx.pumpAll({ types: ["Creature"], subtype: "Dragon", controller: "you" }, 1, 0)],
-              label: "Vos Dragons gagnent +1/+0",
+              label: "Your Dragons get +1/+0",
             }),
           ],
         },
-        { condition: CELEBRATION, label: "Célébration : Dragon 4/4 avec le vol" },
+        { condition: CELEBRATION, label: "Celebration: 4/4 Dragon with flying" },
       ),
     ],
   },
@@ -227,7 +227,7 @@ export const RED: Record<string, CardScript> = {
         mana: "{2}{R}",
         sacrificeOther: { filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Land"] }] } },
         effects: [fx.draw(1)],
-        label: "Sacrifiez un artefact ou un terrain : piochez une carte",
+        label: "Sacrifice an artifact or a land: draw a card",
       }),
     ],
   },
@@ -237,22 +237,22 @@ export const RED: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, toughness: 1, addKeywords: ["trample"] },
-        { condition: CELEBRATION, label: "Célébration : +1/+1 et le piétinement" },
+        { condition: CELEBRATION, label: "Celebration: +1/+1 and trample" },
       ),
     ],
   },
   "Harried Spearguard": {
-    abilities: [triggered(when.diesSelf, [fx.createTokens(RAT_NO_BLOCK)], { label: "Un Rat 1/1 qui ne peut pas bloquer" })],
+    abilities: [triggered(when.diesSelf, [fx.createTokens(RAT_NO_BLOCK)], { label: "A 1/1 Rat that can't block" })],
   },
   "Kindled Heroism": {
     spell: spell([target.creature()], [fx.pump(ref.target(), 1, 0, ["firstStrike"]), fx.scry(1)]),
   },
   "Korvold and the Noble Thief": {
     abilities: [
-      chapter([1, 2], [fx.createTokens(TREASURE)], { label: "Un jeton Trésor" }),
+      chapter([1, 2], [fx.createTokens(TREASURE)], { label: "A Treasure token" }),
       chapter([3], [fx.exileTop(ref.target(), 3, "k"), fx.grantPlay(ref.stored("k"))], {
         targets: [target.player("t", "opponent")],
-        label: "Exilez les trois cartes du dessus d'un adversaire ; jouables ce tour-ci",
+        label: "Exile the top three cards of an opponent's library; playable this turn",
       }),
     ],
   },
@@ -260,8 +260,8 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.mayPay("{1}", "Payer {1} pour un Rôle Jeune héros ?", fx.reflexive([yourCreature()], createRole(YOUNG_HERO_ROLE))),
-        { label: "Payez {1} : un Rôle Jeune héros sur une de vos créatures" },
+        fx.mayPay("{1}", "Pay {1} for a Young Hero Role?", fx.reflexive([yourCreature()], createRole(YOUNG_HERO_ROLE))),
+        { label: "Pay {1}: a Young Hero Role on one of your creatures" },
       ),
     ],
   },
@@ -272,11 +272,11 @@ export const RED: Record<string, CardScript> = {
   },
   "Raging Battle Mouse": {
     abilities: [
-      costReducer({}, 1, "Le deuxième sort de chaque tour coûte {1} de moins", { condition: cond.castThisTurn(1, false, true) }),
+      costReducer({}, 1, "The second spell each turn costs {1} less", { condition: cond.castThisTurn(1, false, true) }),
       triggered(when.yourCombat, [fx.pump(ref.target(), 1, 1)], {
         condition: CELEBRATION,
         targets: [yourCreature()],
-        label: "Célébration : +1/+1 à une de vos créatures",
+        label: "Celebration: +1/+1 to one of your creatures",
       }),
     ],
   },
@@ -285,32 +285,32 @@ export const RED: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["firstStrike"] },
-        { condition: cond.yourTurn, label: "L'initiative pendant votre tour" },
+        { condition: cond.yourTurn, label: "Has first strike during your turn" },
       ),
     ],
   },
   "Pest Problem": { spell: spell([], [fx.createTokens(RAT_NO_BLOCK, 2)]) },
   "Realm-Scorcher Hellkite": {
     abilities: [
-      // « Quatre mana en n'importe quelle combinaison de couleurs » : une couleur choisie pour chaque mana.
+      // "four mana in any combination of colors": a color chosen for each mana.
       triggered(
         when.entersSelf,
         [1, 2, 3, 4].map(() => fx.addManaChoice(1)),
         {
           condition: cond.kicked,
-          label: "Marchandée : quatre mana de n'importe quelles couleurs",
+          label: "Bargained: four mana in any combination of colors",
         },
       ),
       activated({
         mana: "{1}{R}",
         targets: [target.any()],
         effects: [fx.damage(1, ref.target())],
-        label: "1 blessure à n'importe quelle cible",
+        label: "1 damage to any target",
       }),
     ],
   },
   "Redcap Thief": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Un jeton Trésor" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "A Treasure token" })],
   },
   "Rotisserie Elemental": {
     abilities: [
@@ -319,10 +319,10 @@ export const RED: Record<string, CardScript> = {
         [
           fx.counters(ref.self, "skewer"),
           fx.sacrifice(ref.you, { self: true }, 1, { optional: true, store: "s" }),
-          // X : les marqueurs brochette qu'elle avait en quittant le champ de bataille.
+          // X: the skewer counters it had when it left the battlefield.
           ...fx.when(cond.v("s"), fx.exileTop(ref.you, amount.lkiCounters("skewer"), "e"), fx.grantPlay(ref.stored("e"))),
         ],
-        { label: "Marqueur brochette ; sacrifiez-la pour exiler X cartes jouables ce tour-ci" },
+        { label: "Skewer counter; sacrifice it to exile X cards playable this turn" },
       ),
     ],
   },
@@ -338,7 +338,7 @@ export const RED: Record<string, CardScript> = {
   "Tattered Ratter": {
     abilities: [
       triggered(when.becomesBlocked({ subtype: "Rat", controller: "you" }), [fx.pump(ref.eventObject, 2, 0)], {
-        label: "Le Rat bloqué gagne +2/+0",
+        label: "The blocked Rat gets +2/+0",
       }),
     ],
   },
@@ -357,8 +357,8 @@ export const RED: Record<string, CardScript> = {
   "Twice the Rage": { spell: spell([target.creature()], [fx.pump(ref.target(), 0, 0, ["doubleStrike"])]) },
   "Unruly Catapult": {
     abilities: [
-      activated({ tap: true, effects: [fx.damage(1, ref.eachOpponent)], label: "1 blessure à chaque adversaire" }),
-      triggered(when.castSpell("you", INSTANT_SORCERY), [fx.untap(ref.self)], { label: "Se dégage" }),
+      activated({ tap: true, effects: [fx.damage(1, ref.eachOpponent)], label: "1 damage to each opponent" }),
+      triggered(when.castSpell("you", INSTANT_SORCERY), [fx.untap(ref.self)], { label: "Untaps" }),
     ],
   },
   "Virtue of Courage": {
@@ -366,11 +366,11 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.dealsDamage({}, { noncombatOnly: true, to: { players: "opponent" }, anySourceYouControl: true }),
         fx.may(
-          "Exiler autant de cartes du dessus de votre bibliothèque ?",
+          "Exile that many cards from the top of your library?",
           fx.exileTop(ref.you, amount.eventAmount, "v"),
           fx.grantPlay(ref.stored("v")),
         ),
-        { label: "Exilez autant de cartes ; jouables ce tour-ci" },
+        { label: "Exile that many cards; playable this turn" },
       ),
     ],
   },
@@ -379,12 +379,12 @@ export const RED: Record<string, CardScript> = {
     spell: spell([target.upTo(1, yourCreature())], [...mayRummage(2), ...createRole(WICKED_ROLE)]),
   },
   "Witchstalker Frenzy": {
-    // {1} de moins pour chaque créature qui a attaqué ce tour-ci (créatures différentes du journal du tour).
+    // {1} less for each creature that attacked this turn (distinct creatures of the turn log).
     costReduction: { generic: amount.turnEvents({ event: "attack", distinct: "object" }) },
     spell: spell([target.creature()], [fx.damage(5, ref.target())]),
   },
   "Decadent Dragon": {
-    abilities: [triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "Un jeton Trésor" })],
+    abilities: [triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "A Treasure token" })],
   },
   "Expensive Taste": {
     spell: spell(
@@ -395,7 +395,7 @@ export const RED: Record<string, CardScript> = {
   "Imodane's Recruiter": {
     abilities: [
       triggered(when.entersSelf, [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["haste"])], {
-        label: "Vos créatures gagnent +1/+0 et la célérité",
+        label: "Your creatures get +1/+0 and gain haste",
       }),
     ],
   },
@@ -404,7 +404,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.self, 0, 0, ["doubleStrike"])], {
         condition: cond.ferocious,
-        label: "Force 4 ou plus : la double initiative",
+        label: "Power 4 or greater: double strike",
       }),
     ],
   },
@@ -412,7 +412,7 @@ export const RED: Record<string, CardScript> = {
     spell: spell([target.between(1, 3, yourCreature())], [fx.countersDivided(3, ref.target())]),
   },
   "Become Brutes": {
-    // « Une ou deux créatures ciblées » : deux mots « cible », le second facultatif et distinct du premier.
+    // "One or two target creatures": two "target" words, the second optional and distinct from the first.
     spell: spell(
       [target.creature("a"), { ...target.optional(target.creature("b")), otherThan: ["a"] }],
       [
@@ -431,14 +431,14 @@ export const RED: Record<string, CardScript> = {
           fx.pump(ref.self, amount.count({ types: ["Creature"], attacking: true }), 0),
           ...fx.when(cond.battlefieldCount({ subtype: "Rat", attacking: true }, 1), fx.pump(ref.self, 0, 0, ["trample"])),
         ],
-        { label: "+1/+0 par créature attaquante ; le piétinement si un Rat attaque" },
+        { label: "+1/+0 for each attacking creature; trample if a Rat is attacking" },
       ),
     ],
   },
   "Ogre Chitterlord": {
     abilities: [
-      triggered(when.entersSelf, chitterlordEffects, { label: "Deux Rats ; cinq Rats ou plus : +2/+0 à vos Rats" }),
-      triggered(when.attacksSelf, chitterlordEffects, { label: "Deux Rats ; cinq Rats ou plus : +2/+0 à vos Rats" }),
+      triggered(when.entersSelf, chitterlordEffects, { label: "Two Rats; five Rats or more: +2/+0 to your Rats" }),
+      triggered(when.attacksSelf, chitterlordEffects, { label: "Two Rats; five Rats or more: +2/+0 to your Rats" }),
     ],
   },
 };

@@ -1,6 +1,6 @@
 /**
- * Commander : préconstruit « Counter Blitz » de Final Fantasy X (Tidus, Yuna's Guardian, vert, blanc, bleu). Marqueurs de
- * toutes sortes, déplacés, proliférés ; Gardiens et invocations (Sagas créatures).
+ * Commander: "Counter Blitz" precon from Final Fantasy X (Tidus, Yuna's Guardian, green, white, blue). Counters of
+ * every kind, moved, proliferated; Guardians and summons (creature Sagas).
  */
 import type { CardScript, ModeDef, ObjectFilter, TokenSpec, TriggerSpec } from "@mtgx/engine";
 import {
@@ -32,7 +32,7 @@ import {
 } from "./common";
 
 const CREATURE_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
-/** Vos créatures avec un marqueur (n'importe quelle sorte). */
+/** Your creatures with a counter (of any kind). */
 const COUNTERED_YOU: ObjectFilter = { ...CREATURE_YOU, withCounter: "any" };
 const P1P1_YOU: ObjectFilter = { ...CREATURE_YOU, withCounter: "+1/+1" };
 const SQUID: TokenSpec = {
@@ -42,10 +42,10 @@ const SQUID: TokenSpec = {
   subtypes: ["Squid"],
   power: 1,
   toughness: 1,
-  abilities: [blockAbility(block.landwalk("Island", "Traversée des îles"))],
+  abilities: [blockAbility(block.landwalk("Island", "Islandwalk"))],
   text: "Islandwalk",
 };
-/** « Quand [un permanent à vous] est mis dans un cimetière depuis le champ de bataille » */
+/** "When [a permanent of yours] is put into a graveyard from the battlefield" */
 const toGraveyard = (who: ObjectFilter): TriggerSpec => ({ on: "leaves", who, to: "graveyard" });
 const mode = (label: string, targets: ModeDef["targets"], effects: ModeDef["effects"]): ModeDef => ({
   label,
@@ -53,53 +53,53 @@ const mode = (label: string, targets: ModeDef["targets"], effects: ModeDef["effe
   effects,
 });
 
-/** « Forge of Heroes » : mana incolore, ou un marqueur sur un commandant arrivé ce tour-ci. */
+/** "Forge of Heroes": colorless mana, or a counter on a commander that entered this turn. */
 const FORGE_OF_HEROES: CardScript = {
   abilities: [
     manaAbility("C"),
     activated({
       tap: true,
       targets: [
-        { ...target.permanent("t", [], { commander: true, enteredThisTurn: true }), label: "commandant arrivé ce tour-ci" },
+        { ...target.permanent("t", [], { commander: true, enteredThisTurn: true }), label: "commander that entered this turn" },
       ],
       effects: [
         ...fx.when(cond.targetMatches("t", { types: ["Creature"] }), fx.addCounters(ref.target(), 1)),
         ...fx.when(cond.targetMatches("t", { types: ["Planeswalker"] }), fx.counters(ref.target(), "loyalty")),
       ],
-      label: "Un marqueur sur un commandant arrivé ce tour-ci",
+      label: "A counter on a commander that entered this turn",
     }),
   ],
 };
 
 export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
-  // --- Commandant ---------------------------------------------------------------------------------------------------
+  // --- Commander ----------------------------------------------------------------------------------------------------
   "Tidus, Yuna's Guardian": {
     abilities: [
       triggered(
         when.yourCombat,
-        fx.may("Déplacer un marqueur d'une de vos créatures sur une autre ?", fx.moveCounter(ref.target("a"), ref.target("b"))),
+        fx.may("Move a counter from one of your creatures onto another?", fx.moveCounter(ref.target("a"), ref.target("b"))),
         {
           targets: [
-            { ...target.creature("a", { controller: "you", withCounter: "any" }), label: "créature à vous avec un marqueur" },
-            { ...target.creature("b", { controller: "you" }), otherThan: ["a"], label: "une autre créature à vous" },
+            { ...target.creature("a", { controller: "you", withCounter: "any" }), label: "creature of yours with a counter" },
+            { ...target.creature("b", { controller: "you" }), otherThan: ["a"], label: "another creature of yours" },
           ],
-          label: "Déplacez un marqueur d'une de vos créatures sur une autre",
+          label: "Move a counter from one of your creatures onto another",
         },
       ),
-      // Encouragement : « faites ceci une seule fois par tour » (la limite n'est consommée que si vous piochez).
+      // Cheer: "do this only once each turn" (the limit is used up only if you draw).
       triggered(
         when.combatDamageBatch(COUNTERED_YOU),
         [
-          ...fx.mayForStore(ref.you, "Piocher une carte et proliférer ?", "c", fx.draw(1), fx.proliferate()),
+          ...fx.mayForStore(ref.you, "Draw a card and proliferate?", "c", fx.draw(1), fx.proliferate()),
           ...fx.when(cond.v("c"), fx.doneOncePerTurn),
         ],
-        { oncePerTurn: "ifDone", label: "Encouragement : piochez une carte et proliférez (une fois par tour)" },
+        { oncePerTurn: "ifDone", label: "Cheer: draw a card and proliferate (once per turn)" },
       ),
     ],
   },
 
-  // --- Gardiens et légendes -----------------------------------------------------------------------------------------
-  // Vigilance : lue dans le texte.
+  // --- Guardians and legends -----------------------------------------------------------------------------------------
+  // Vigilance: read from the text.
   "Auron, Venerated Guardian": {
     abilities: [
       triggered(
@@ -110,18 +110,18 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
             [
               {
                 ...target.creature("t", { controller: "opponent", compare: [cmp.power("<", amount.sourcePower)] }),
-                label: "créature du joueur défenseur de force inférieure à celle d'Auron",
+                label: "creature defending player controls with power less than Auron's",
               },
             ],
             [fx.exileUntilLeaves(ref.target())],
           ),
         ],
-        { label: "Étoile filante : un marqueur, puis exilez une créature plus faible tant qu'Auron reste" },
+        { label: "Shooting Star: a counter, then exile a weaker creature for as long as Auron remains" },
       ),
     ],
   },
   "Gatta and Luzzu": {
-    // Flash : lu dans le texte.
+    // Flash: read from the text.
     abilities: [
       triggered(
         when.entersSelf,
@@ -133,17 +133,17 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
                 toFilter: { self: true },
                 modify: { prevent: true },
                 onPrevent: { countersOnDamaged: "+1/+1" },
-                label: "Blessures prévenues : autant de marqueurs +1/+1",
+                label: "Damage prevented: that many +1/+1 counters",
               }),
             ],
           }),
         ],
-        { targets: [target.creature("t", { controller: "you" })], label: "Ce tour-ci, ses blessures deviennent des marqueurs" },
+        { targets: [target.creature("t", { controller: "you" })], label: "This turn, damage to it becomes counters" },
       ),
     ],
   },
   "Kimahri, Valiant Guardian": {
-    // Vigilance : lue dans le texte.
+    // Vigilance: read from the text.
     abilities: [
       triggered(
         when.yourCombat,
@@ -151,7 +151,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
           fx.addCounters(ref.self, 1),
           fx.tap(ref.target()),
           ...fx.may(
-            "Kimahri devient-il une copie de cette créature ?",
+            "Does Kimahri become a copy of that creature?",
             fx.becomeCopy(ref.self, ref.target(), "permanent", {
               except: { setName: "Kimahri, Valiant Guardian", addKeywords: ["vigilance"] },
               keepAbilities: [0],
@@ -160,41 +160,41 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         ],
         {
           targets: [target.creature("t", { controller: "opponent" })],
-          label: "Rage Ronso : un marqueur, engagez une créature adverse, Kimahri peut en devenir une copie",
+          label: "Ronso Rage: a counter, tap an opposing creature, Kimahri may become a copy of it",
         },
       ),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Lord Jyscal Guado": {
     abilities: [
       triggered(when.eachEndStep, [fx.createTokens(CLUE)], {
         condition: cond.amountAtLeast(amount.turnEvents({ event: "counters", who: "you", types: ["Creature"] }), 1),
-        label: "Vous avez mis un marqueur sur une créature ce tour-ci : enquêtez",
+        label: "You put a counter on a creature this turn: investigate",
       }),
     ],
   },
   "Lulu, Stern Guardian": {
     abilities: [
       triggered(when.opponentAttacksYouWith(1), [fx.counters(ref.target(), "stun")], {
-        targets: [{ ...target.creature("t", { attacking: "you" }), label: "créature qui vous attaque" }],
-        label: "Un marqueur d'étourdissement sur une créature qui vous attaque",
+        targets: [{ ...target.creature("t", { attacking: "you" }), label: "creature attacking you" }],
+        label: "A stun counter on a creature attacking you",
       }),
-      activated({ mana: "{3}{U}", effects: [fx.proliferate()], label: "Proliférez" }),
+      activated({ mana: "{3}{U}", effects: [fx.proliferate()], label: "Proliferate" }),
     ],
   },
   "Maester Seymour": {
     abilities: [
       triggered(when.yourCombat, [fx.addCounters(ref.target(), amount.powerOf(ref.self))], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Autant de marqueurs +1/+1 que sa force sur une autre de vos créatures",
+        label: "+1/+1 counters equal to its power on another of your creatures",
       }),
-      // Monstruosité X : une seule fois (« si elle n'est pas monstrueuse »).
+      // Monstrosity X: only once ("if it isn't monstrous").
       activated({
         mana: "{3}{G}{G}",
         once: true,
         effects: [fx.addCounters(ref.self, amount.countersAmong(CREATURE_YOU, "any"))],
-        label: "Monstruosité X (X : marqueurs parmi vos créatures)",
+        label: "Monstrosity X (X: counters among your creatures)",
       }),
     ],
   },
@@ -204,7 +204,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         tap: true,
         removeCounterFrom: { filter: { notTypes: ["Land"] }, kind: "+1/+1" },
         effects: [fx.draw(1)],
-        label: "Retirez un marqueur +1/+1 d'un de vos permanents non-terrains : piochez une carte",
+        label: "Remove a +1/+1 counter from one of your nonland permanents: draw a card",
       }),
     ],
   },
@@ -214,25 +214,25 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         when.youPutCounters({ types: ["Creature"] }),
         [
           fx.modify(ref.eventObject, {
-            addBlockRules: [{ cantBeBlockedBy: { controller: "opponent" }, label: "Imblocable par les créatures adverses" }],
+            addBlockRules: [{ cantBeBlockedBy: { controller: "opponent" }, label: "Can't be blocked by opposing creatures" }],
           }),
         ],
-        { label: "Elle ne peut pas être bloquée par les créatures de vos adversaires ce tour-ci" },
+        { label: "It can't be blocked by creatures your opponents control this turn" },
       ),
       activated({
         mana: "{1}",
         tap: true,
         sorcerySpeed: true,
         targets: [
-          { ...target.creature("a", { controller: "opponent", withCounter: "any" }), label: "créature adverse avec un marqueur" },
+          { ...target.creature("a", { controller: "opponent", withCounter: "any" }), label: "opposing creature with a counter" },
           target.creature("b", { controller: "you" }),
         ],
         effects: [fx.moveCounter(ref.target("a"), ref.target("b"))],
-        label: "Vol : déplacez un marqueur d'une créature adverse sur une des vôtres",
+        label: "Steal: move a counter from an opposing creature onto one of yours",
       }),
     ],
   },
-  // Lien de vie : lu dans le texte.
+  // Lifelink: read from the text.
   "Shelinda, Yevon Acolyte": {
     abilities: [
       triggered(
@@ -247,14 +247,14 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
             fx.addCounters(ref.self, 1),
           ),
         ],
-        { label: "Un marqueur sur la nouvelle créature si elle est plus faible, sinon sur Shelinda" },
+        { label: "A counter on the new creature if it is weaker, otherwise on Shelinda" },
       ),
     ],
   },
-  // Vol, piétinement : lus dans le texte.
+  // Flying, trample: read from the text.
   "Sin, Unending Cataclysm": {
-    // « En arrivant, retirez tous les marqueurs d'un nombre quelconque d'artefacts, de créatures et d'enchantements. Sin
-    // arrive avec X marqueurs +1/+1, X étant le double du nombre de marqueurs retirés ainsi. »
+    // "As Sin enters, remove all counters from any number of artifacts, creatures, and enchantments. Sin enters with X
+    // +1/+1 counters on it, where X is twice the number of counters removed this way."
     asEnters: [
       fx.chooseAmong(
         ref.permanentsOf(ref.eachPlayer, {
@@ -263,7 +263,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         }),
         ref.you,
         "sin",
-        { anyNumber: true, prompt: "Sin : retirez tous les marqueurs d'un nombre quelconque de ces permanents" },
+        { anyNumber: true, prompt: "Sin: remove all counters from any number of these permanents" },
       ),
       fx.removeCounters(ref.stored("sin"), 999, undefined, "n"),
       fx.addCounters(ref.self, amount.plus(amount.v("n"), amount.v("n"))),
@@ -274,7 +274,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         [fx.lkiCountersTo(ref.target()), fx.moveTo(ref.eventObject, { to: "libraryTop" }), fx.shuffle(ref.you)],
         {
           targets: [target.creature("t", { controller: "you" })],
-          label: "Ses marqueurs sur une de vos créatures, puis mélangez-la dans votre bibliothèque",
+          label: "Its counters onto one of your creatures, then shuffle it into your library",
         },
       ),
     ],
@@ -284,53 +284,55 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
       entersWith({
         affects: { ...CREATURE_YOU, token: false, other: true },
         counters: 1,
-        label: "Vos autres créatures non-jetons arrivent avec un marqueur +1/+1 de plus",
+        label: "Your other nontoken creatures enter with an additional +1/+1 counter",
       }),
       activated({
         mana: "{1}",
         tap: true,
         effects: [fx.proliferate(amount.count({ ...CREATURE_YOU, token: false, enteredThisTurn: true }))],
-        label: "Proliférez X fois (X : vos créatures non-jetons arrivées ce tour-ci)",
+        label: "Proliferate X times (X: your nontoken creatures that entered this turn)",
       }),
     ],
   },
-  // Portée, piétinement : lus dans le texte.
+  // Reach, trample: read from the text.
   "Wakka, Devoted Guardian": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.destroy(ref.target()), fx.addCounters(ref.self, 1)], {
-        targets: [target.upTo(1, target.permanent("t", ["Artifact"], { controller: "opponent" }, "artefact de ce joueur"))],
-        label: "Détruisez un artefact de ce joueur et un marqueur +1/+1 sur Wakka",
+        targets: [
+          target.upTo(1, target.permanent("t", ["Artifact"], { controller: "opponent" }, "artifact that player controls")),
+        ],
+        label: "Destroy an artifact that player controls and a +1/+1 counter on Wakka",
       }),
       triggered(when.yourEndStep, [fx.addCountersAll({ ...CREATURE_YOU, other: true }, 1)], {
         condition: cond.sourceMatches({ countersPutByYouThisTurn: true }),
-        label: "Capitaine de blitzball : un marqueur +1/+1 sur chacune de vos autres créatures",
+        label: "Blitzball Captain: a +1/+1 counter on each of your other creatures",
       }),
     ],
   },
   "Yuna, Grand Summoner": {
     abilities: [
-      // Approximation : les deux marqueurs vont au sort de créature payé avec ce mana (et non au prochain lancé ce tour-ci).
+      // Approximation: the two counters go to the creature spell paid with this mana (not the next one cast this turn).
       manaAbility(ANY_COLOR, 1, {
         rider: { spell: { types: ["Creature"] }, effects: [fx.spellArrivalCounters(ref.eventObject, 2)] },
       }),
       triggered(
         toGraveyard({ permanent: true, controller: "you", other: true, withCounter: "any" }),
         fx.may(
-          "Mettre autant de marqueurs +1/+1 sur une créature ?",
+          "Put that many +1/+1 counters on a creature?",
           fx.addCounters(ref.target(), amount.countersOn(ref.eventObject, "any")),
         ),
         {
           targets: [target.creature()],
-          label: "Un de vos permanents avec des marqueurs va au cimetière : autant de marqueurs +1/+1",
+          label: "One of your permanents with counters goes to the graveyard: that many +1/+1 counters",
         },
       ),
     ],
   },
 
-  // --- Autres créatures ---------------------------------------------------------------------------------------------
+  // --- Other creatures ---------------------------------------------------------------------------------------------
   "Altered Ego": {
     cantBeCountered: true,
-    // « … sauf qu'elle arrive avec X marqueurs +1/+1 supplémentaires » (X du sort ; 0 si elle n'a pas été lancée).
+    // "… except it enters with X additional +1/+1 counters" (X of the spell; 0 if it wasn't cast).
     asEnters: [fx.chooseCopy({ types: ["Creature"] }, { anyController: true, counters: { kind: "+1/+1", n: amount.x } })],
   },
   "Bane of Progress": {
@@ -341,22 +343,22 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
           fx.destroyAll({ anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] }, "d"),
           fx.addCounters(ref.self, amount.refCount(ref.stored("d"))),
         ],
-        { label: "Détruisez tous les artefacts et enchantements ; un marqueur par permanent détruit" },
+        { label: "Destroy all artifacts and enchantments; a counter for each permanent destroyed" },
       ),
     ],
   },
   "Chasm Skulker": {
     abilities: [
-      triggered(when.draw(), [fx.addCounters(ref.self, 1)], { label: "Vous piochez : un marqueur +1/+1" }),
+      triggered(when.draw(), [fx.addCounters(ref.self, 1)], { label: "You draw a card: a +1/+1 counter" }),
       triggered(when.diesSelf, [fx.createTokens(SQUID, amount.lkiCounters("+1/+1"))], {
-        label: "Autant de Calmars 1/1 avec la traversée des îles que de marqueurs",
+        label: "As many 1/1 Squids with islandwalk as counters",
       }),
     ],
   },
   "Chocobo Knights": {
     abilities: [
       triggered(when.attackWith(), [fx.pumpAll(COUNTERED_YOU, 0, 0, ["doubleStrike"])], {
-        label: "Vous attaquez : vos créatures avec des marqueurs gagnent la double initiative",
+        label: "You attack: your creatures with counters gain double strike",
       }),
     ],
   },
@@ -364,36 +366,34 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature()],
-        label: "Un marqueur +1/+1",
+        label: "A +1/+1 counter",
       }),
-      staticAbility(P1P1_YOU, { addKeywords: ["trample"] }, { label: "Vos créatures avec un marqueur +1/+1 ont le piétinement" }),
+      staticAbility(P1P1_YOU, { addKeywords: ["trample"] }, { label: "Your creatures with a +1/+1 counter have trample" }),
     ],
   },
   "Fathom Mage": {
     abilities: [
       evolve,
-      // Approximation : une seule question pour un groupe de marqueurs ; autant de cartes que de marqueurs mis.
-      triggered(
-        when.countersPut("self", "+1/+1"),
-        fx.may("Piocher une carte par marqueur +1/+1 ?", fx.draw(amount.eventAmount)),
-        { label: "Un marqueur +1/+1 : vous pouvez piocher une carte" },
-      ),
+      // Approximation: a single question for a group of counters; as many cards as counters put.
+      triggered(when.countersPut("self", "+1/+1"), fx.may("Draw a card for each +1/+1 counter?", fx.draw(amount.eventAmount)), {
+        label: "A +1/+1 counter: you may draw a card",
+      }),
     ],
   },
   "Forgotten Ancient": {
     abilities: [
-      triggered(when.castSpell("any"), fx.may("Mettre un marqueur +1/+1 sur Forgotten Ancient ?", fx.addCounters(ref.self, 1)), {
-        label: "Un sort est lancé : un marqueur +1/+1",
+      triggered(when.castSpell("any"), fx.may("Put a +1/+1 counter on Forgotten Ancient?", fx.addCounters(ref.self, 1)), {
+        label: "A spell is cast: a +1/+1 counter",
       }),
-      // Approximation : tous ses marqueurs vont sur une seule autre créature.
+      // Approximation: all its counters go onto a single other creature.
       triggered(
         when.yourUpkeep,
         fx.may(
-          "Déplacer ses marqueurs +1/+1 sur une autre créature ?",
+          "Move its +1/+1 counters onto another creature?",
           fx.removeCounters(ref.self, 999, "+1/+1", "m"),
           fx.addCounters(ref.target(), amount.v("m")),
         ),
-        { targets: [target.upTo(1, target.creature("t", { other: true }))], label: "Déplacez ses marqueurs +1/+1" },
+        { targets: [target.upTo(1, target.creature("t", { other: true }))], label: "Move its +1/+1 counters" },
       ),
     ],
   },
@@ -401,16 +401,16 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.upTo(2, target.creature("t", { other: true }))],
-        label: "Soutien 2",
+        label: "Support 2",
       }),
       triggered(when.youPutCounters({ types: ["Creature"], controller: "opponent" }), [fx.draw(1)], {
-        label: "Vous mettez des marqueurs sur une créature adverse : piochez une carte",
+        label: "You put counters on an opposing creature: draw a card",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Grateful Apparition": {
-    abilities: [triggered(when.combatDamage("self", TO_PLAYER_OR_PLANESWALKER), [fx.proliferate()], { label: "Proliférez" })],
+    abilities: [triggered(when.combatDamage("self", TO_PLAYER_OR_PLANESWALKER), [fx.proliferate()], { label: "Proliferate" })],
   },
   "Gyre Sage": {
     abilities: [evolve, { ...manaAbility("G"), amountCounters: "+1/+1" }],
@@ -422,32 +422,32 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
       activated({
         mana: "{3}{G}{G}",
         effects: fx.when(cond.not(cond.counterAtLeast("+1/+1", 1)), fx.addCounters(ref.self, 3)),
-        label: "Adaptation 3",
+        label: "Adapt 3",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Luminous Broodmoth": {
     abilities: [
       triggered(
         when.dies({ ...CREATURE_YOU, not: { keyword: "flying" } }),
         [fx.toBattlefield(ref.eventObject, { counters: { kind: "flying", n: 1 } })],
-        { label: "Une de vos créatures sans le vol meurt : elle revient avec un marqueur de vol" },
+        { label: "One of your creatures without flying dies: it returns with a flying counter" },
       ),
     ],
   },
   "Rampant Rejuvenator": {
     abilities: [
-      entersWith({ counters: 2, label: "Deux marqueurs +1/+1" }),
+      entersWith({ counters: 2, label: "Two +1/+1 counters" }),
       triggered(when.diesSelf, [fx.search(BASIC_LAND, { to: "battlefield" }, amount.powerOf(ref.eventObject))], {
-        label: "Cherchez autant de terrains de base que sa force",
+        label: "Search for as many basic lands as its power",
       }),
     ],
   },
   "Scholar of New Horizons": {
     abilities: [
-      entersWith({ counters: 1, label: "Un marqueur +1/+1" }),
-      // Choix automatique : la Plaine arrive sur le champ de bataille dès que c'est permis.
+      entersWith({ counters: 1, label: "A +1/+1 counter" }),
+      // Automatic choice: the Plains enters the battlefield whenever that is allowed.
       activated({
         tap: true,
         removeCounterFrom: { filter: {}, kind: "+1/+1" },
@@ -455,34 +455,34 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
           ...fx.when(cond.opponentHasMore("lands"), fx.search({ subtype: "Plains" }, { to: "battlefield", tapped: true })),
           ...fx.when(cond.not(cond.opponentHasMore("lands")), fx.search({ subtype: "Plains" }, { to: "hand" })),
         ],
-        label: "Retirez un marqueur : cherchez une carte de Plaine",
+        label: "Remove a counter: search for a Plains card",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Sunscorch Regent": {
     abilities: [
       triggered(when.castSpell("opponent"), [fx.addCounters(ref.self, 1), fx.gainLife(1)], {
-        label: "Un adversaire lance un sort : un marqueur +1/+1 et 1 PV",
+        label: "An opponent casts a spell: a +1/+1 counter and 1 life",
       }),
     ],
   },
 
-  // --- Invocations (Sagas créatures) --------------------------------------------------------------------------------
-  // Initiative : lue dans le texte.
+  // --- Summons (creature Sagas) --------------------------------------------------------------------------------------
+  // First strike: read from the text.
   "Summon: Ixion": {
     abilities: [
       chapter([1], [fx.exileUntilLeaves(ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Aéroétincelle : exilez une créature adverse tant que cette Saga reste",
+        label: "Aerospark: exile an opposing creature for as long as this Saga remains",
       }),
       chapter([2, 3], [fx.addCounters(ref.target(), 1), fx.gainLife(2)], {
         targets: [target.upTo(2, target.creature("t", { controller: "you" }))],
-        label: "Un marqueur +1/+1 sur jusqu'à deux de vos créatures ; 2 PV",
+        label: "A +1/+1 counter on up to two of your creatures; 2 life",
       }),
     ],
   },
-  // Célérité : lue dans le texte. Un mode au hasard (dé à trois faces) ; les cibles des trois modes sont choisies d'abord.
+  // Haste: read from the text. A mode at random (three-sided die); the targets of the three modes are chosen first.
   "Summon: Magus Sisters": {
     abilities: [
       chapter(
@@ -495,31 +495,31 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         ],
         {
           targets: [target.creature("t"), target.upTo(1, target.creature("f", { controller: "opponent" }))],
-          label: "Au hasard : trois marqueurs +1/+1, un marqueur de bouclier et 3 PV, ou un combat",
+          label: "At random: three +1/+1 counters, a shield counter and 3 life, or a fight",
         },
       ),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Summon: Valefor": {
     abilities: [
       chapter([1], [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] }, 1, { greatestManaValue: true, to: "hand" })], {
-        label: "Ailes soniques : chaque adversaire renvoie en main une de ses créatures de plus grande valeur de mana",
+        label: "Sonic Wings: each opponent returns to hand one of their creatures with the greatest mana value",
       }),
       chapter([2, 3, 4], [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
         targets: [target.upTo(1, target.creature())],
-        label: "Engagez une créature et mettez-lui un marqueur d'étourdissement",
+        label: "Tap a creature and put a stun counter on it",
       }),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Summon: Yojimbo": {
     abilities: [
       chapter([1], [fx.exileCard(ref.target())], {
         targets: [
           {
             id: "t",
-            label: "artefact, enchantement ou créature engagée adverse",
+            label: "artifact, enchantment or tapped creature an opponent controls",
             filter: {
               objects: {
                 controller: "opponent",
@@ -528,10 +528,10 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
             },
           },
         ],
-        label: "Exilez un artefact, un enchantement ou une créature engagée adverse",
+        label: "Exile an artifact, enchantment or tapped creature an opponent controls",
       }),
       chapter([2, 3], [fx.untilYourNextTurn({ attackTax: 2 })], {
-        label: "Jusqu'à votre prochain tour, chaque créature qui vous attaque coûte {2}",
+        label: "Until your next turn, each creature attacking you costs {2}",
       }),
       chapter(
         [4],
@@ -541,17 +541,17 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
             amount.refCount(ref.playersWhere(ref.eachOpponent, cond.controls({ types: ["Creature"], minPower: 4 }))),
           ),
         ],
-        { label: "Un Trésor par adversaire qui contrôle une créature de force 4 ou plus" },
+        { label: "A Treasure for each opponent who controls a creature with power 4 or greater" },
       ),
     ],
   },
 
-  // --- Artefacts et enchantements -----------------------------------------------------------------------------------
+  // --- Artifacts and enchantments -----------------------------------------------------------------------------------
   "Blitzball Stadium": {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
-        targets: [{ ...target.creature(), countAmount: amount.sourceX, minCount: 0, label: "jusqu'à X créatures" }],
-        label: "Soutien X",
+        targets: [{ ...target.creature(), countAmount: amount.sourceX, minCount: 0, label: "up to X creatures" }],
+        label: "Support X",
       }),
       activated({
         mana: "{3}",
@@ -562,39 +562,39 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
             addKeywords: ["unblockable"],
             addAbilities: [
               triggered(when.combatDamageToPlayer, [fx.draw(amount.counterKindsAmong({ self: true }))], {
-                label: "Piochez une carte par sorte de marqueur sur elle",
+                label: "Draw a card for each kind of counter on it",
               }),
             ],
           }),
         ],
-        label: "Droit au but ! : imblocable, et pioche par sorte de marqueur quand elle blesse un joueur",
+        label: "Go for the Goal!: unblockable, and draws for each kind of counter when it deals damage to a player",
       }),
     ],
   },
   "Bred for the Hunt": {
     abilities: [
-      triggered(when.combatDamage(P1P1_YOU, true), fx.may("Piocher une carte ?", fx.draw(1)), {
-        label: "Une de vos créatures avec un marqueur +1/+1 blesse un joueur : vous pouvez piocher",
+      triggered(when.combatDamage(P1P1_YOU, true), fx.may("Draw a card?", fx.draw(1)), {
+        label: "One of your creatures with a +1/+1 counter deals damage to a player: you may draw",
       }),
     ],
   },
   "Everflowing Chalice": {
-    // Multikicker {2} : lu dans le texte (X = nombre de fois).
+    // Multikicker {2}: read from the text (X = number of times).
     abilities: [
-      entersWith({ counters: amount.x, counterKind: "charge", label: "Un marqueur de charge par kicker payé" }),
+      entersWith({ counters: amount.x, counterKind: "charge", label: "A charge counter for each time it was kicked" }),
       { ...manaAbility("C"), amountCounters: "charge" },
     ],
   },
   "Fight Rigging": {
     abilities: [
-      // Dissimulation 5 : la carte est exilée face cachée (vous seul la voyez).
+      // Hideaway 5: the card is exiled face down (only you see it).
       triggered(
         when.entersSelf,
         [
           fx.lookAtTop(5, { count: 1, to: { to: "exile", faceDown: "you" }, rest: "bottom", store: "h" }),
           fx.link(ref.stored("h")),
         ],
-        { label: "Dissimulation 5" },
+        { label: "ctx:keyword|Hideaway 5" },
       ),
       triggered(
         when.yourCombat,
@@ -607,45 +607,45 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         ],
         {
           targets: [target.creature("t", { controller: "you" })],
-          label: "Un marqueur +1/+1 ; force 7 ou plus : jouez la carte cachée",
+          label: "A +1/+1 counter; power 7 or greater: play the hidden card",
         },
       ),
     ],
   },
   "Inexorable Tide": {
-    abilities: [triggered(when.castSpell("you"), [fx.proliferate()], { label: "Vous lancez un sort : proliférez" })],
+    abilities: [triggered(when.castSpell("you"), [fx.proliferate()], { label: "You cast a spell: proliferate" })],
   },
   "Path of Discovery": {
     abilities: [
       triggered(when.enters(CREATURE_YOU), [fx.explore(ref.eventObject)], {
-        label: "Une de vos créatures arrive : elle explore",
+        label: "One of your creatures enters: it explores",
       }),
     ],
   },
   "Resourceful Defense": {
     abilities: [
       triggered(when.leaves({ permanent: true, controller: "you", withCounter: "any" }), [fx.lkiCountersTo(ref.target())], {
-        targets: [target.permanent("t", [], { controller: "you" }, "permanent que vous contrôlez")],
-        label: "Ses marqueurs sur un de vos permanents",
+        targets: [target.permanent("t", [], { controller: "you" }, "permanent you control")],
+        label: "Its counters onto one of your permanents",
       }),
-      // Approximation : tous les marqueurs +1/+1 sont déplacés (pas « un nombre quelconque » de chaque sorte).
+      // Approximation: all +1/+1 counters are moved (not "any number" of each kind).
       activated({
         mana: "{4}{W}",
         targets: [
-          target.permanent("a", [], { controller: "you", withCounter: "any" }, "permanent à vous avec des marqueurs"),
-          { ...target.permanent("b", [], { controller: "you" }, "un autre permanent à vous"), otherThan: ["a"] },
+          target.permanent("a", [], { controller: "you", withCounter: "any" }, "permanent of yours with counters"),
+          { ...target.permanent("b", [], { controller: "you" }, "another permanent of yours"), otherThan: ["a"] },
         ],
         effects: [fx.removeCounters(ref.target("a"), 999, "+1/+1", "m"), fx.addCounters(ref.target("b"), amount.v("m"))],
-        label: "Déplacez les marqueurs +1/+1 d'un de vos permanents sur un autre",
+        label: "Move the +1/+1 counters from one of your permanents onto another",
       }),
     ],
   },
   "Sphere Grid": {
     abilities: [
       triggered(when.combatDamage(CREATURE_YOU, true), [fx.addCounters(ref.eventObject, 1)], {
-        label: "Une de vos créatures blesse un joueur : un marqueur +1/+1 sur elle",
+        label: "One of your creatures deals damage to a player: a +1/+1 counter on it",
       }),
-      staticAbility(P1P1_YOU, { addKeywords: ["reach", "trample"] }, { label: "Déblocage : portée et piétinement" }),
+      staticAbility(P1P1_YOU, { addKeywords: ["reach", "trample"] }, { label: "Unlock: reach and trample" }),
     ],
   },
   "Summoner's Sending": {
@@ -653,14 +653,14 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
       triggered(
         when.yourEndStep,
         fx.may(
-          "Exiler une carte de créature d'un cimetière pour un Esprit 1/1 ?",
+          "Exile a creature card from a graveyard for a 1/1 Spirit?",
           fx.exileCard(ref.target()),
           fx.createTokens(SPIRIT, 1, undefined, "s"),
           ...fx.when(cond.amountAtLeast(amount.manaValueOf(ref.target()), 4), fx.addCounters(ref.stored("s"), 1)),
         ),
         {
-          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière")],
-          label: "Exilez une carte de créature d'un cimetière : un Esprit 1/1 volant",
+          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card in a graveyard")],
+          label: "Exile a creature card from a graveyard: a 1/1 flying Spirit",
         },
       ),
     ],
@@ -668,23 +668,23 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
 
   "Forge of Heroes": FORGE_OF_HEROES,
 
-  // --- Éphémères et rituels -----------------------------------------------------------------------------------------
-  // Approximation : l'escalade se paie {1} par mode en plus (et non en engageant une créature dégagée).
+  // --- Instants and sorceries -----------------------------------------------------------------------------------------
+  // Approximation: escalate is paid {1} for each additional mode (not by tapping an untapped creature).
   "Collective Effort": {
     spell: escalate(
       "{1}",
       {
-        label: "Détruisez une créature de force 4 ou plus",
-        targets: [{ ...target.creature("c", { minPower: 4 }), label: "créature de force 4 ou plus" }],
+        label: "Destroy a creature with power 4 or greater",
+        targets: [{ ...target.creature("c", { minPower: 4 }), label: "creature with power 4 or greater" }],
         effects: [fx.destroy(ref.target("c"))],
       },
       {
-        label: "Détruisez un enchantement",
-        targets: [target.permanent("e", ["Enchantment"], {}, "enchantement")],
+        label: "Destroy an enchantment",
+        targets: [target.permanent("e", ["Enchantment"], {}, "enchantment")],
         effects: [fx.destroy(ref.target("e"))],
       },
       {
-        label: "Un marqueur +1/+1 sur chaque créature du joueur ciblé",
+        label: "A +1/+1 counter on each creature target player controls",
         targets: [target.player("p")],
         effects: [fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1)],
       },
@@ -697,13 +697,13 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     spell: {
       modes: [
         mode(
-          "Détruisez une créature d'endurance 4 ou plus",
-          [{ ...target.creature("c", { minToughness: 4 }), label: "créature d'endurance 4 ou plus" }],
+          "Destroy a creature with toughness 4 or greater",
+          [{ ...target.creature("c", { minToughness: 4 }), label: "creature with toughness 4 or greater" }],
           [fx.destroy(ref.target("c"))],
         ),
         mode(
-          "Détruisez un enchantement",
-          [target.permanent("e", ["Enchantment"], {}, "enchantement")],
+          "Destroy an enchantment",
+          [target.permanent("e", ["Enchantment"], {}, "enchantment")],
           [fx.destroy(ref.target("e"))],
         ),
       ],
@@ -718,7 +718,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         fx.modifyWhileCounter(
           ref.permanentsOf(p, { types: ["Creature"], withCounter: "vow" }),
           {
-            addBlockRules: [{ cantAttackPlayer: "you", label: "Ne peut pas attaquer le lanceur de Promise of Loyalty" }],
+            addBlockRules: [{ cantAttackPlayer: "you", label: "Can't attack the player who cast Promise of Loyalty" }],
           },
           "vow",
         ),
@@ -738,7 +738,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     spell: {
       modes: [
         mode(
-          "Poursuivre le pèlerinage",
+          "Continue the pilgrimage",
           [],
           [
             fx.sacrifice(ref.you, { types: ["Creature"] }, 1, { store: "s" }),
@@ -749,22 +749,22 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
                 "hand",
                 { types: ["Creature"] },
                 { to: "battlefield" },
-                { min: 0, prompt: "Une carte de créature à mettre sur le champ de bataille" },
+                { min: 0, prompt: "A creature card to put onto the battlefield" },
               ),
               fx.pickFromZone(
                 "hand",
                 { types: ["Land"] },
                 { to: "battlefield" },
-                { min: 0, prompt: "Une carte de terrain à mettre sur le champ de bataille" },
+                { min: 0, prompt: "A land card to put onto the battlefield" },
               ),
             ),
           ],
         ),
         mode(
-          "Trouver une autre voie",
+          "Find another way",
           [
             {
-              ...target.cardInGraveyard("g", { permanent: true }, "you", "cartes de permanent de votre cimetière"),
+              ...target.cardInGraveyard("g", { permanent: true }, "you", "permanent cards in your graveyard"),
               count: 2,
               minCount: 1,
             },

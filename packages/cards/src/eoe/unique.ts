@@ -1,6 +1,6 @@
 /**
- * Edge of Eternities, lot D : les dernières cartes (dévorer, contrôle du tour d'un adversaire, exils liés,
- * jetons copiés, doublement filtré, cibles de valeur de mana totale).
+ * Edge of Eternities, lot D: the last cards (devour, control of an opponent's turn, linked exiles,
+ * copied tokens, filtered doubling, total mana value targets).
  */
 import type { CardScript, ObjectFilter } from "@mtgx/engine";
 import {
@@ -28,7 +28,7 @@ const CREATURES: ObjectFilter = { types: ["Creature"] };
 const ALL_CREATURES = ref.permanentsOf(ref.eachPlayer, CREATURES);
 const WITH_P1P1 = { ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" };
 
-/** Mutinous Massacre : détruit les créatures de la parité choisie, puis prend le contrôle de toutes les créatures. */
+/** Mutinous Massacre: destroys the creatures of the chosen parity, then gains control of all creatures. */
 const massacre = (parity: "odd" | "even", label: string) =>
   mode(
     label,
@@ -42,13 +42,13 @@ const massacre = (parity: "odd" | "even", label: string) =>
   );
 
 export const UNIQUE: Record<string, CardScript> = {
-  // --- Blanc -----------------------------------------------------------------
+  // --- White -----------------------------------------------------------------
   "Pinnacle Starcage": {
     abilities: [
       triggered(
         when.entersSelf,
         [fx.exileUntilLeaves(ref.permanentsOf(ref.eachPlayer, { types: ["Artifact", "Creature"], maxManaValue: 2 }))],
-        { label: "Exilez les artefacts et créatures de VM 2 ou moins" },
+        { label: "Exile the artifacts and creatures with mana value 2 or less" },
       ),
       activated({
         mana: "{6}{W}{W}",
@@ -57,7 +57,7 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.createTokens(ROBOT, amount.v("g")),
           fx.sacrificeIt(ref.self),
         ],
-        label: "Les cartes exilées au cimetière, un Robot par carte",
+        label: "The exiled cards into the graveyard, a Robot for each card",
       }),
     ],
   },
@@ -65,7 +65,7 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spell(
       [
         {
-          ...target.upTo(3, target.cardInGraveyard("t", CREATURES, "you", "carte de créature")),
+          ...target.upTo(3, target.cardInGraveyard("t", CREATURES, "you", "creature card")),
           maxTotalManaValue: 3,
         },
       ],
@@ -73,11 +73,11 @@ export const UNIQUE: Record<string, CardScript> = {
     ),
   },
 
-  // --- Bleu ------------------------------------------------------------------
+  // --- Blue ------------------------------------------------------------------
   "Moonlit Meditation": {
     enchant: {
       filter: { types: ["Artifact", "Creature"], controller: "you" },
-      label: "artefact ou créature que vous contrôlez",
+      label: "artifact or creature you control",
     },
     abilities: [
       eventReplacement({
@@ -85,14 +85,14 @@ export const UNIQUE: Record<string, CardScript> = {
         to: "you",
         instead: { copyOfAttached: true, firstEachTurn: true, may: true },
         modify: {},
-        label: "Premiers jetons du tour : copies",
+        label: "First tokens of the turn: copies",
       }),
     ],
   },
 
-  // --- Noir ------------------------------------------------------------------
+  // --- Black -----------------------------------------------------------------
   "Chorale of the Void": {
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
       triggered(
         when.attacks({ types: ["Creature"], attached: "host" }),
@@ -101,15 +101,15 @@ export const UNIQUE: Record<string, CardScript> = {
           targets: [
             target.of(
               ref.defendingPlayer,
-              target.cardInGraveyard("t", CREATURES, "any", "carte de créature du cimetière du joueur défenseur"),
+              target.cardInGraveyard("t", CREATURES, "any", "creature card from the defending player's graveyard"),
             ),
           ],
-          label: "Une créature du cimetière du joueur défenseur, attaquante",
+          label: "A creature from the defending player's graveyard, attacking",
         },
       ),
       triggered(when.yourEndStep, [fx.sacrificeIt(ref.self)], {
         condition: cond.not(cond.void),
-        label: "Sans vide : sacrifiez-la",
+        label: "Without void: sacrifice it",
       }),
     ],
   },
@@ -118,7 +118,7 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(
         when.dies(CREATURE_YOU_CONTROL),
         [fx.sacrifice(ref.eachOpponent, CREATURES, 1, { to: "exile", store: "x" }), fx.link(ref.stored("x"))],
-        { label: "Chaque adversaire exile une de ses créatures" },
+        { label: "Each opponent exiles a creature they control" },
       ),
       triggered(
         when.yourEndStep,
@@ -128,10 +128,10 @@ export const UNIQUE: Record<string, CardScript> = {
             "graveyard",
             CREATURES,
             { to: "battlefield", underYourControl: true, counters: { kind: "+1/+1", n: 2 } },
-            { pool: ref.linked, prompt: "Choisissez une carte de créature exilée avec Sothera" },
+            { pool: ref.linked, prompt: "Choose a creature card exiled with Sothera" },
           ),
         ],
-        { condition: cond.playerWithoutCreatures, label: "Un joueur sans créature : sacrifiez-la, reprenez une créature" },
+        { condition: cond.playerWithoutCreatures, label: "A player without creatures: sacrifice it, return a creature" },
       ),
     ],
   },
@@ -140,12 +140,12 @@ export const UNIQUE: Record<string, CardScript> = {
       activated({
         tap: true,
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", CREATURES, "you", "carte de créature")],
+        targets: [target.cardInGraveyard("t", CREATURES, "you", "creature card")],
         effects: [
           fx.moveTo(ref.target(), { to: "battlefield" }, { name: "x" }),
           fx.modify(ref.stored("x"), { addSubtypes: ["Skeleton"], loseAllAbilities: true }, "permanent"),
         ],
-        label: "Renvoyez une créature (Squelette sans capacité)",
+        label: "Return a creature (Skeleton with no abilities)",
       }),
     ],
   },
@@ -161,14 +161,14 @@ export const UNIQUE: Record<string, CardScript> = {
             "graveyard",
             CREATURES,
             { to: "battlefield", underYourControl: true },
-            { pool: ref.stored("z"), prompt: "Choisissez une créature détruite à renvoyer" },
+            { pool: ref.stored("z"), prompt: "Choose a destroyed creature to return" },
           ),
         ),
       ],
     ),
   },
 
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -------------------------------------------------------------------
   "Terminal Velocity": {
     spell: spell(
       [],
@@ -177,7 +177,7 @@ export const UNIQUE: Record<string, CardScript> = {
           "hand",
           { types: ["Artifact", "Creature"] },
           { to: "battlefield" },
-          { min: 0, store: "v", prompt: "Vous pouvez mettre une carte d'artefact ou de créature sur le champ de bataille" },
+          { min: 0, store: "v", prompt: "You may put an artifact or creature card onto the battlefield" },
         ),
         fx.modify(
           ref.stored("v"),
@@ -185,9 +185,9 @@ export const UNIQUE: Record<string, CardScript> = {
             addKeywords: ["haste"],
             addAbilities: [
               triggered(when.leavesSelf, [fx.damageAll(amount.manaValueOf(ref.self), CREATURES)], {
-                label: "Blessures égales à sa VM à chaque créature",
+                label: "Damage equal to its mana value to each creature",
               }),
-              triggered(when.yourEndStep, [fx.sacrificeIt(ref.self)], { label: "Sacrifiez-le" }),
+              triggered(when.yourEndStep, [fx.sacrificeIt(ref.self)], { label: "Sacrifice it" }),
             ],
           },
           "permanent",
@@ -196,9 +196,9 @@ export const UNIQUE: Record<string, CardScript> = {
     ),
   },
 
-  // --- Vert ------------------------------------------------------------------
+  // --- Green -----------------------------------------------------------------
   "Close Encounter": {
-    // Coût additionnel : une créature que vous contrôlez ou une carte de créature distordue que vous possédez en exil.
+    // Additional cost: a creature you control or a warped creature card you own in exile.
     additionalCost: { behold: { filter: CREATURES, required: true, exiled: { warped: true, own: true, filter: CREATURES } } },
     spell: spell([target.creature("t")], [fx.damage(amount.powerOf(ref.cost("beheld")), ref.target("t"))]),
   },
@@ -215,7 +215,7 @@ export const UNIQUE: Record<string, CardScript> = {
           }),
           fx.shuffle(),
         ],
-        { label: "Terrains parmi les X cartes du dessus" },
+        { label: "Lands among the top X cards" },
       ),
     ],
   },
@@ -226,50 +226,46 @@ export const UNIQUE: Record<string, CardScript> = {
         to: "yourSide",
         toFilter: { anyOf: [{ types: ["Creature"] }, { subtype: "Spacecraft" }, { subtype: "Planet" }] },
         modify: { times: 2 },
-        label: "Marqueurs doublés (créatures, Vaisseaux, Planètes)",
+        label: "Counters doubled (creatures, Spacecraft, Planets)",
       }),
     ],
   },
 
-  // --- Multicolores ----------------------------------------------------------
+  // --- Multicolor ------------------------------------------------------------
   "Alpharael, Dreaming Acolyte": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(2), fx.discard(2, ref.you, { unlessFilter: { types: ["Artifact"] } })], {
-        label: "Piochez deux, défaussez deux (ou un artefact)",
+        label: "Draw two, discard two (or an artifact)",
       }),
-      staticAbility(
-        "self",
-        { addKeywords: ["deathtouch"] },
-        { condition: cond.yourTurn, label: "Contact mortel pendant votre tour" },
-      ),
+      staticAbility("self", { addKeywords: ["deathtouch"] }, { condition: cond.yourTurn, label: "Deathtouch during your turn" }),
     ],
   },
   "Dyadrine, Synthesis Amalgam": {
     abilities: [
-      entersWith({ counters: amount.manaSpent, label: "Marqueurs +1/+1 = mana dépensé" }),
+      entersWith({ counters: amount.manaSpent, label: "+1/+1 counters = mana spent" }),
       triggered(
         when.attackWith(1),
-        // Le joueur choisit les deux créatures ; il faut en avoir deux avec un marqueur pour « le faire ».
+        // The player chooses the two creatures; two with a counter are needed to "do so".
         fx.when(
           cond.controls(WITH_P1P1, 2),
           fx.may(
-            "Retirer un marqueur +1/+1 de deux de vos créatures ?",
+            "Remove a +1/+1 counter from two of your creatures?",
             fx.chooseAmong(ref.permanentsOf(ref.you, WITH_P1P1), ref.you, "d1", {
-              prompt: "Première créature dont retirer un marqueur +1/+1",
+              prompt: "First creature to remove a +1/+1 counter from",
             }),
-            fx.chooseAmong(ref.stored("d1Rest"), ref.you, "d2", { prompt: "Seconde créature dont retirer un marqueur +1/+1" }),
+            fx.chooseAmong(ref.stored("d1Rest"), ref.you, "d2", { prompt: "Second creature to remove a +1/+1 counter from" }),
             fx.removeCounters(ref.stored("d1"), 1, "+1/+1"),
             fx.removeCounters(ref.stored("d2"), 1, "+1/+1"),
             fx.draw(1),
             fx.createTokens(ROBOT),
           ),
         ),
-        { label: "Retirez deux marqueurs +1/+1 : piochez et Robot 2/2" },
+        { label: "Remove two +1/+1 counters: draw and 2/2 Robot" },
       ),
     ],
   },
   "Mutinous Massacre": {
-    spell: modal(massacre("odd", "Valeur de mana impaire"), massacre("even", "Valeur de mana paire")),
+    spell: modal(massacre("odd", "Odd mana value"), massacre("even", "Even mana value")),
   },
   "Ragost, Deft Gastronaut": {
     abilities: [
@@ -277,29 +273,29 @@ export const UNIQUE: Record<string, CardScript> = {
         { types: ["Artifact"], controller: "you" },
         {
           addSubtypes: ["Food"],
-          addAbilities: [activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 PV" })],
+          addAbilities: [activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 life" })],
         },
-        { label: "Vos artefacts sont des Nourritures" },
+        { label: "Your artifacts are Foods" },
       ),
       activated({
         mana: "{1}",
         tap: true,
         sacrificeOther: { filter: { subtype: "Food" } },
         effects: [fx.damage(3, ref.eachOpponent)],
-        label: "3 blessures à chaque adversaire",
+        label: "3 damage to each opponent",
       }),
       triggered(when.step("end", "any"), [fx.untap(ref.self)], {
         condition: cond.lifeGainedAtLeast(1),
-        label: "Vous avez gagné des PV : dégagez-le",
+        label: "You gained life: untap it",
       }),
     ],
   },
   "Singularity Rupture": {
-    // « Un nombre quelconque de joueurs ciblés ».
+    // "Any number of target players".
     spell: spell([target.upTo(99, target.player("t"))], [fx.destroyAll(CREATURES), fx.millHalf(ref.target())]),
   },
 
-  // --- Incolores -------------------------------------------------------------
+  // --- Colorless -------------------------------------------------------------
   "Anticausal Vestige": {
     abilities: [
       triggered(
@@ -313,21 +309,21 @@ export const UNIQUE: Record<string, CardScript> = {
             {
               min: 0,
               maxManaValue: amount.count({ types: ["Land"], controller: "you" }),
-              prompt: "Vous pouvez mettre une carte de permanent (VM ≤ vos terrains) sur le champ de bataille",
+              prompt: "You may put a permanent card (mana value ≤ your lands) onto the battlefield",
             },
           ),
         ],
-        { label: "Piochez, puis un permanent de votre main" },
+        { label: "Draw, then a permanent from your hand" },
       ),
     ],
   },
   "Tezzeret, Cruel Captain": {
     abilities: [
       triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.counters(ref.self, "loyalty", 1)], {
-        label: "Un marqueur de loyauté",
+        label: "A loyalty counter",
       }),
       loyalty(0, {
-        targets: [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+        targets: [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
         effects: [
           fx.untap(ref.target()),
           fx.when(
@@ -335,11 +331,11 @@ export const UNIQUE: Record<string, CardScript> = {
             fx.addCounters(ref.target(), 1),
           ),
         ],
-        label: "Dégagez un artefact ou une créature",
+        label: "Untap an artifact or creature",
       }),
       loyalty(-3, {
         effects: [fx.search({ types: ["Artifact"], maxManaValue: 1 })],
-        label: "Cherchez un artefact de VM 1 ou moins",
+        label: "Search for an artifact with mana value 1 or less",
       }),
       loyalty(-7, {
         effects: [
@@ -361,14 +357,14 @@ export const UNIQUE: Record<string, CardScript> = {
                   ),
                 ],
                 {
-                  targets: [target.permanent("t", ["Artifact"], { controller: "you" }, "artefact que vous contrôlez")],
-                  label: "Trois marqueurs +1/+1 sur un artefact",
+                  targets: [target.permanent("t", ["Artifact"], { controller: "you" }, "artifact you control")],
+                  label: "Three +1/+1 counters on an artifact",
                 },
               ),
             ],
           ),
         ],
-        label: "Emblème",
+        label: "Emblem",
       }),
     ],
   },
@@ -386,13 +382,13 @@ export const UNIQUE: Record<string, CardScript> = {
               sorcerySpeed: true,
               targets: [target.player("t", "opponent")],
               effects: [fx.controlNextTurn(ref.target())],
-              // « Cette capacité coûte {X} de moins, X étant la force de cette créature. »
+              // "This ability costs {X} less to activate, where X is this creature's power."
               reduction: { generic: amount.powerOf(ref.self) },
-              label: "Exilez The Dominion Bracelet : contrôlez l'adversaire pendant son prochain tour",
+              label: "Exile The Dominion Bracelet: control the opponent during their next turn",
             }),
           ],
         },
-        { label: "+1/+1 et « {15}, exilez The Dominion Bracelet : contrôlez un adversaire »" },
+        { label: '+1/+1 and "{15}, Exile The Dominion Bracelet: control an opponent"' },
       ),
     ],
   },

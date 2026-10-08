@@ -1,4 +1,4 @@
-/** Duskmourn — cartes multicolores, artefacts et terrains. */
+/** Duskmourn — multicolored cards, artifacts and lands. */
 import type { ManaType } from "@mtgx/engine";
 import {
   activated,
@@ -24,7 +24,7 @@ import {
   when,
 } from "./common";
 
-/** Verge : « {T} : ajoutez [A] » ; « {T} : ajoutez [B]. N'activez que si vous contrôlez un [type] ou un [type] ». */
+/** Verge: "{T}: Add [A]"; "{T}: Add [B]. Activate only if you control a [type] or a [type]". */
 const verge = (a: ManaType, b: ManaType, types: [string, string]): CardScript => ({
   abilities: [
     manaAbility(a),
@@ -40,7 +40,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [fx.damage(amount.count(SMALL_CREATURES), ref.eachOpponent), fx.gainLife(amount.count(SMALL_CREATURES))],
-        { label: "X blessures à chaque adversaire, +X PV" },
+        { label: "X damage to each opponent, +X life" },
       ),
     ],
   },
@@ -48,24 +48,24 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-la à une créature",
+        label: "Attach it to a creature",
       }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
       triggered(when.attacks({ attached: "host" }), [fx.tap(ref.target())], {
         targets: [target.upTo(1, target.creature())],
-        label: "Engagez une créature",
+        label: "Tap a creature",
       }),
     ],
   },
   Broodspinner: {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" }),
+      triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" }),
       activated({
         mana: "{4}{B}{G}",
         tap: true,
         sacrifice: true,
         effects: [fx.createTokens(INSECT, amount.cardTypesInGraveyard)],
-        label: "Insectes 1/1 volants (un par type de carte au cimetière)",
+        label: "1/1 flying Insects (one for each card type in your graveyard)",
       }),
     ],
   },
@@ -76,14 +76,14 @@ export const MULTI: Record<string, CardScript> = {
   "Fear of Infinity": {
     keywords: ["cantBlock"],
     abilities: [
-      eerie([...fx.may("Renvoyer Fear of Infinity dans votre main ?", fx.toHand(ref.selfCard))], {
+      eerie([...fx.may("Return Fear of Infinity to your hand?", fx.toHand(ref.selfCard))], {
         fromGraveyard: true,
-        label: "Revient du cimetière en main",
+        label: "Returns from the graveyard to your hand",
       }),
     ],
   },
   "Gremlin Tamer": {
-    abilities: [eerie([fx.createTokens(GREMLIN)], { label: "Jeton Diablotin 1/1" })],
+    abilities: [eerie([fx.createTokens(GREMLIN)], { label: "1/1 Gremlin token" })],
   },
   "Intruding Soulrager": {
     abilities: [
@@ -91,7 +91,7 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { subtype: "Room" } },
         effects: [fx.damage(2, ref.eachOpponent), fx.draw(1)],
-        label: "Sacrifiez une Salle : 2 blessures à chaque adversaire, piochez",
+        label: "Sacrifice a Room: 2 damage to each opponent, draw",
       }),
     ],
   },
@@ -111,7 +111,7 @@ export const MULTI: Record<string, CardScript> = {
             sacrificeAtEndStep: true,
           }),
         ],
-        label: "Copie Ballon 1/1 volante",
+        label: "1/1 flying Balloon copy",
       }),
     ],
   },
@@ -127,7 +127,7 @@ export const MULTI: Record<string, CardScript> = {
   "Restricted Office": {
     abilities: [
       triggered(when.unlockThisDoor, [fx.destroyAll({ types: ["Creature"], minPower: 3 })], {
-        label: "Détruisez les créatures de force 3 ou plus",
+        label: "Destroy the creatures with power 3 or greater",
       }),
     ],
   },
@@ -136,14 +136,14 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         { controller: "you", other: true },
         { addKeywords: ["hexproof"] },
-        { label: "Vos autres permanents ont la défense talismanique" },
+        { label: "Your other permanents have hexproof" },
       ),
     ],
   },
   "Rite of the Moth": {
     flashback: "{3}{W}{W}{B}",
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+      [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
       [fx.toBattlefield(ref.target(), { counters: { kind: "finality", n: 1 } })],
     ),
   },
@@ -151,33 +151,33 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.unlockThisDoor, [fx.damage(amount.cardsIn("hand"), ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Blessures égales au nombre de cartes en main",
+        label: "Damage equal to the number of cards in your hand",
       }),
     ],
   },
   "Steaming Sauna": {
     abilities: [
-      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
-      triggered(when.yourEndStep, [fx.draw(1)], { label: "Piochez une carte" }),
+      playerStatic({ maxHandSize: "none", label: "No maximum hand size" }),
+      triggered(when.yourEndStep, [fx.draw(1)], { label: "Draw a card" }),
     ],
   },
   "Shrewd Storyteller": {
-    abilities: [survival([fx.addCounters(ref.target(), 1)], { targets: [target.creature()], label: "Marqueur +1/+1" })],
+    abilities: [survival([fx.addCounters(ref.target(), 1)], { targets: [target.creature()], label: "+1/+1 counter" })],
   },
   Shroudstomper: {
     abilities: [
-      triggered(when.entersSelf, [...fx.drain(2), fx.draw(1)], { label: "Drain de 2, piochez" }),
-      triggered(when.attacksSelf, [...fx.drain(2), fx.draw(1)], { label: "Drain de 2, piochez" }),
+      triggered(when.entersSelf, [...fx.drain(2), fx.draw(1)], { label: "Drain 2, draw" }),
+      triggered(when.attacksSelf, [...fx.drain(2), fx.draw(1)], { label: "Drain 2, draw" }),
     ],
   },
-  "Skullsnap Nuisance": { abilities: [eerie([fx.surveil(1)], { label: "Surveillance 1" })] },
+  "Skullsnap Nuisance": { abilities: [eerie([fx.surveil(1)], { label: "Surveil 1" })] },
   "The Swarmweaver": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(INSECT, 2)], { label: "Deux Insectes 1/1 volants" }),
+      triggered(when.entersSelf, [fx.createTokens(INSECT, 2)], { label: "Two 1/1 flying Insects" }),
       staticAbility(
         { ...CREATURE_YOU_CONTROL, anySubtype: ["Insect", "Spider"] },
         { power: 1, toughness: 1, addKeywords: ["deathtouch"] },
-        { condition: cond.delirium, label: "Délire — Insectes et Araignées +1/+1, contact mortel" },
+        { condition: cond.delirium, label: "Delirium — Insects and Spiders +1/+1, deathtouch" },
       ),
     ],
   },
@@ -188,25 +188,19 @@ export const MULTI: Record<string, CardScript> = {
         { power: 1, toughness: 1, addKeywords: ["trample"] },
         {
           condition: cond.delirium,
-          label: "Délire — +1/+1 et le piétinement",
+          label: "Delirium — +1/+1 and trample",
         },
       ),
     ],
   },
 
-  // Artefacts
+  // Artifacts
   "Attack-in-the-Box": {
     abilities: [
       triggered(
         when.attacksSelf,
-        [
-          ...fx.may(
-            "+4/+0 (sacrifiée à la prochaine étape de fin) ?",
-            fx.pump(ref.self, 4, 0),
-            fx.delayed([fx.sacrificeIt(ref.self)]),
-          ),
-        ],
-        { label: "+4/+0, puis sacrifiée" },
+        [...fx.may("+4/+0 (sacrificed at the next end step)?", fx.pump(ref.self, 4, 0), fx.delayed([fx.sacrificeIt(ref.self)]))],
+        { label: "+4/+0, then sacrificed" },
       ),
     ],
   },
@@ -218,16 +212,16 @@ export const MULTI: Record<string, CardScript> = {
         sacrifice: true,
         targets: [target.creature()],
         effects: [fx.damage(3, ref.target())],
-        label: "3 blessures à une créature",
+        label: "3 damage to a creature",
       }),
     ],
   },
   "Friendly Teddy": {
-    abilities: [triggered(when.diesSelf, [fx.draw(1, ref.eachPlayer)], { label: "Chaque joueur pioche" })],
+    abilities: [triggered(when.diesSelf, [fx.draw(1, ref.eachPlayer)], { label: "Each player draws" })],
   },
   Glimmerlight: {
     abilities: [
-      triggered(when.entersSelf, [glimmer()], { label: "Jeton Lueur 1/1" }),
+      triggered(when.entersSelf, [glimmer()], { label: "1/1 Glimmer token" }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
     ],
   },
@@ -238,12 +232,12 @@ export const MULTI: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.cardInGraveyard("t", {}, "any")],
         effects: [fx.moveTo(ref.target(), { to: "libraryBottom" })],
-        label: "Une carte d'un cimetière sous sa bibliothèque",
+        label: "A card from a graveyard to the bottom of its library",
       }),
     ],
   },
 
-  // Terrains
+  // Lands
   "Abandoned Campground": fastLand("W", "U"),
   "Bleeding Woods": fastLand("R", "G"),
   "Etched Cornfield": fastLand("G", "W"),

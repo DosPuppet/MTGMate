@@ -1,4 +1,4 @@
-/** Edge of Eternities — cartes noires. */
+/** Edge of Eternities — black cards. */
 import {
   activated,
   amount,
@@ -25,14 +25,14 @@ const CREATURE_OR_WALKER = ["Creature", "Planeswalker"] as const;
 export const BLACK: Record<string, CardScript> = {
   "Archenemy's Charm": {
     spell: modal(
-      mode("Exilez une créature ou un planeswalker", [target.creatureOrPlaneswalker("t")], [fx.exile(ref.target())]),
+      mode("Exile a creature or planeswalker", [target.creatureOrPlaneswalker("t")], [fx.exile(ref.target())]),
       mode(
-        "Reprenez une ou deux cartes de créature ou de planeswalker",
+        "Return one or two creature or planeswalker cards",
         [target.between(1, 2, target.cardInGraveyard("t", { types: [...CREATURE_OR_WALKER] }))],
         [fx.toHand(ref.target())],
       ),
       mode(
-        "Deux marqueurs +1/+1 et le lien de vie",
+        "Two +1/+1 counters and lifelink",
         [target.creature("t", { controller: "you" })],
         [fx.addCounters(ref.target(), 2), fx.pump(ref.target(), 0, 0, ["lifelink"])],
       ),
@@ -47,7 +47,7 @@ export const BLACK: Record<string, CardScript> = {
           fx.sacrifice(ref.you, OTHER_CREATURE_OR_ARTIFACT, 1, { optional: true, store: "s" }),
           fx.when(cond.v("s"), fx.pump(ref.self, 2, 0)),
         ],
-        { label: "Sacrifiez : +2/+0" },
+        { label: "Sacrifice: +2/+0" },
       ),
     ],
   },
@@ -73,29 +73,29 @@ export const BLACK: Record<string, CardScript> = {
         targets: [target.upTo(1, target.creature("t"))],
         label: "-3/-3",
       }),
-      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 PV" }),
+      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 life" }),
       activated({
         mana: "{2}",
         tap: true,
         sacrifice: true,
         targets: [target.player("t", "opponent")],
         effects: [fx.loseLife(3, ref.target())],
-        label: "Un adversaire perd 3 PV",
+        label: "An opponent loses 3 life",
       }),
     ],
   },
   "Elegy Acolyte": {
     abilities: [
       triggered(when.combatDamageBatch({ types: ["Creature"], controller: "you" }), [fx.draw(1), fx.loseLife(1)], {
-        label: "Piochez, perdez 1 PV",
+        label: "Draw, lose 1 life",
       }),
-      triggered(when.yourEndStep, [fx.createTokens(ROBOT)], { condition: cond.void, label: "Vide : Robot 2/2" }),
+      triggered(when.yourEndStep, [fx.createTokens(ROBOT)], { condition: cond.void, label: "Void: 2/2 Robot" }),
     ],
   },
   "Embrace Oblivion": {
     additionalCost: { sacrifice: { filter: CREATURE_OR_ARTIFACT, count: 1 } },
     spell: spell(
-      [{ id: "t", label: "créature ou Vaisseau", filter: { objects: CREATURE_OR_SPACECRAFT } }],
+      [{ id: "t", label: "creature or Spacecraft", filter: { objects: CREATURE_OR_SPACECRAFT } }],
       [fx.destroy(ref.target())],
     ),
   },
@@ -103,12 +103,12 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        // Détruite d'abord ; « si elle n'a pas subi de blessures ce tour-ci » et son contrôleur : ses dernières informations.
+        // Destroyed first; "if it wasn't dealt damage this turn" and its controller: its last known information.
         [
           fx.destroy(ref.target()),
           fx.when(cond.not(cond.targetMatches("t", { damaged: true })), fx.draw(2, ref.controllerOf(ref.target()))),
         ],
-        { targets: [target.upTo(1, target.creature("t", { other: true }))], label: "Détruisez une autre créature" },
+        { targets: [target.upTo(1, target.creature("t", { other: true }))], label: "Destroy another creature" },
       ),
     ],
   },
@@ -119,19 +119,19 @@ export const BLACK: Record<string, CardScript> = {
         { power: 1, addKeywords: ["deathtouch"] },
         {
           condition: cond.controls({ types: ["Artifact"] }),
-          label: "+1/+0 et le contact mortel avec un artefact",
+          label: "+1/+0 and deathtouch with an artifact",
         },
       ),
     ],
   },
   Gravkill: {
     spell: spell(
-      [{ id: "t", label: "créature ou Vaisseau", filter: { objects: CREATURE_OR_SPACECRAFT } }],
+      [{ id: "t", label: "creature or Spacecraft", filter: { objects: CREATURE_OR_SPACECRAFT } }],
       [fx.exile(ref.target())],
     ),
   },
   "Gravpack Monoist": {
-    abilities: [triggered(when.diesSelf, [fx.createTappedTokens(ROBOT)], { label: "Robot 2/2 engagé" })],
+    abilities: [triggered(when.diesSelf, [fx.createTappedTokens(ROBOT)], { label: "Tapped 2/2 Robot" })],
   },
   Hylderblade: {
     abilities: [
@@ -139,7 +139,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.yourEndStep, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
         condition: cond.void,
-        label: "Vide : attachez-le",
+        label: "Void: attach it",
       }),
     ],
   },
@@ -148,13 +148,11 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Insatiable Skittermaw": {
     abilities: [
-      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: cond.void, label: "Vide : marqueur +1/+1" }),
+      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: cond.void, label: "Void: +1/+1 counter" }),
     ],
   },
   "Lightless Evangel": {
-    abilities: [
-      triggered(when.sacrifice(OTHER_CREATURE_OR_ARTIFACT), [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
-    ],
+    abilities: [triggered(when.sacrifice(OTHER_CREATURE_OR_ARTIFACT), [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" })],
   },
   "Monoist Circuit-Feeder": {
     abilities: [
@@ -166,7 +164,7 @@ export const BLACK: Record<string, CardScript> = {
         ],
         {
           targets: [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
-          label: "+X/+0 et -0/-X",
+          label: "+X/+0 and -0/-X",
         },
       ),
     ],
@@ -179,18 +177,18 @@ export const BLACK: Record<string, CardScript> = {
           fx.modify(ref.target(), {
             power: 2,
             addAbilities: [
-              triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true })], { label: "Revient engagée" }),
+              triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true })], { label: "Returns tapped" }),
             ],
           }),
         ],
-        { targets: [target.creature("t", { controller: "you", other: true })], label: "+2/+0, revient si elle meurt" },
+        { targets: [target.creature("t", { controller: "you", other: true })], label: "+2/+0, returns if it dies" },
       ),
     ],
   },
   "Scrounge for Eternity": {
     additionalCost: { sacrifice: { filter: CREATURE_OR_ARTIFACT, count: 1 } },
     spell: spell(
-      [target.cardInGraveyard("t", { ...CREATURE_OR_SPACECRAFT, maxManaValue: 5 }, "you", "carte de créature ou de Vaisseau")],
+      [target.cardInGraveyard("t", { ...CREATURE_OR_SPACECRAFT, maxManaValue: 5 }, "you", "creature or Spacecraft card")],
       [fx.toBattlefield(ref.target()), lander()],
     ),
   },
@@ -198,7 +196,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Marqueur +1/+1 sur une créature adverse",
+        label: "+1/+1 counter on an opponent's creature",
       }),
     ],
   },
@@ -215,7 +213,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.tapsSelf,
         [fx.sacrifice(ref.you, OTHER_CREATURE_OR_ARTIFACT, 1, { optional: true, store: "s" }), fx.when(cond.v("s"), fx.draw(1))],
-        { label: "Sacrifiez : piochez" },
+        { label: "Sacrifice: draw" },
       ),
     ],
   },
@@ -235,14 +233,14 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Umbral Collar Zealot": {
     abilities: [
-      activated({ sacrificeOther: { filter: OTHER_CREATURE_OR_ARTIFACT }, effects: [fx.surveil(1)], label: "Surveillance 1" }),
+      activated({ sacrificeOther: { filter: OTHER_CREATURE_OR_ARTIFACT }, effects: [fx.surveil(1)], label: "Surveil 1" }),
     ],
   },
   "Virus Beetle": {
-    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Chaque adversaire défausse" })],
+    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Each opponent discards" })],
   },
   "Voidforged Titan": {
-    abilities: [triggered(when.yourEndStep, [fx.draw(1), fx.loseLife(1)], { condition: cond.void, label: "Vide : piochez" })],
+    abilities: [triggered(when.yourEndStep, [fx.draw(1), fx.loseLife(1)], { condition: cond.void, label: "Void: draw" })],
   },
   "Vote Out": { spell: spell([target.creature("t")], [fx.destroy(ref.target())]) },
 };

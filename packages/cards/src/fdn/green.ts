@@ -1,4 +1,4 @@
-/** Foundations — cartes vertes. */
+/** Foundations — green cards. */
 import {
   ART_ENCH_OR_FLYER,
   activated,
@@ -39,7 +39,7 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell(
       [
         target.creature("a", { controller: "you" }),
-        target.permanent("b", ["Creature", "Planeswalker"], { controller: "opponent" }, "créature ou planeswalker adverse"),
+        target.permanent("b", ["Creature", "Planeswalker"], { controller: "opponent" }, "opponent's creature or planeswalker"),
       ],
       [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))],
     ),
@@ -57,16 +57,16 @@ export const GREEN: Record<string, CardScript> = {
         mana: "{8}",
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), 5, 5, ["trample"])],
-        label: "+5/+5 et piétinement",
+        label: "+5/+5 and trample",
       }),
     ],
   },
   "Ghalta, Primal Hunger": { costReduction: { generic: amount.totalPower({ types: ["Creature"], controller: "you" }) } },
-  "Eager Trufflesnout": { abilities: [triggered(when.combatDamageToPlayer, [fx.createTokens(FOOD)], { label: "Nourriture" })] },
+  "Eager Trufflesnout": { abilities: [triggered(when.combatDamageToPlayer, [fx.createTokens(FOOD)], { label: "Food" })] },
   "Mossborn Hydra": {
     abilities: [
       entersWith({ counters: 1 }),
-      triggered(when.landfall, [fx.doubleCounters(ref.self)], { label: "double ses marqueurs" }),
+      triggered(when.landfall, [fx.doubleCounters(ref.self)], { label: "doubles its counters" }),
     ],
   },
   "Heroes' Bane": {
@@ -75,7 +75,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{2}{G}{G}",
         effects: [fx.addCounters(ref.self, amount.powerOf(ref.self))],
-        label: "X marqueurs (X = sa force)",
+        label: "X counters (X = its power)",
       }),
     ],
   },
@@ -84,9 +84,9 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         { subtype: "Elf", controller: "you", other: true },
         { power: 1, toughness: 1 },
-        { label: "Autres Elfes +1/+1" },
+        { label: "Other Elves +1/+1" },
       ),
-      activated({ mana: "{G}", tap: true, effects: [fx.createTokens(ELF_WARRIOR)], label: "Elfe guerrier 1/1" }),
+      activated({ mana: "{G}", tap: true, effects: [fx.createTokens(ELF_WARRIOR)], label: "1/1 Elf Warrior" }),
     ],
   },
   "Dwynen, Gilt-Leaf Daen": {
@@ -95,7 +95,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [fx.gainLife(amount.count({ types: ["Creature"], subtype: "Elf", controller: "you", attacking: true }))],
-        { label: "1 PV par Elfe attaquant" },
+        { label: "1 life for each attacking Elf" },
       ),
     ],
   },
@@ -106,26 +106,26 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.draw(1)], {
         condition: cond.controls({ types: ["Creature"], minPower: 4 }),
-        label: "piochez une carte",
+        label: "draw a card",
       }),
       staticAbility({ types: ["Creature"], controller: "you" }, { addKeywords: ["trample"] }),
       triggered(when.enters({ types: ["Creature"], controller: "you", minPower: 4 }), [fx.draw(1)], {
-        label: "piochez une carte",
+        label: "draw a card",
       }),
     ],
   },
   "Pelakka Wurm": {
     abilities: [
-      triggered(when.entersSelf, [fx.gainLife(7)], { label: "+7 PV" }),
-      triggered(when.diesSelf, [fx.draw(1)], { label: "piochez une carte" }),
+      triggered(when.entersSelf, [fx.gainLife(7)], { label: "+7 life" }),
+      triggered(when.diesSelf, [fx.draw(1)], { label: "draw a card" }),
     ],
   },
-  "Elfsworn Giant": { abilities: [triggered(when.landfall, [fx.createTokens(ELF_WARRIOR)], { label: "Elfe guerrier 1/1" })] },
-  "Rampaging Baloths": { abilities: [triggered(when.landfall, [fx.createTokens(BEAST)], { label: "Bête 4/4" })] },
+  "Elfsworn Giant": { abilities: [triggered(when.landfall, [fx.createTokens(ELF_WARRIOR)], { label: "1/1 Elf Warrior" })] },
+  "Rampaging Baloths": { abilities: [triggered(when.landfall, [fx.createTokens(BEAST)], { label: "4/4 Beast" })] },
   "Wary Thespian": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "surveillance 1" }),
-      triggered(when.diesSelf, [fx.surveil(1)], { label: "surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "surveil 1" }),
+      triggered(when.diesSelf, [fx.surveil(1)], { label: "surveil 1" }),
     ],
   },
   "Needletooth Pack": {
@@ -133,7 +133,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.yourEndStep, [fx.addCounters(ref.target(), 2)], {
         targets: [target.creature("t", { controller: "you" })],
         condition: cond.morbid,
-        label: "Morbide : deux marqueurs +1/+1",
+        label: "Morbid: two +1/+1 counters",
       }),
     ],
   },
@@ -141,7 +141,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(ELF_WARRIOR)], {
         condition: cond.controls({ types: ["Creature"], subtype: "Elf", other: true }),
-        label: "Elfe guerrier 1/1",
+        label: "1/1 Elf Warrior",
       }),
     ],
   },
@@ -152,7 +152,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.addCounters(ref.self, 1)], {
         condition: cond.controls({ types: ["Creature"], other: true, minPower: 4 }),
-        label: "marqueur +1/+1",
+        label: "a +1/+1 counter",
       }),
     ],
   },
@@ -160,28 +160,28 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target())], {
         targets: [target.optional(target.cardInGraveyard("t", {}, "any"))],
-        label: "exile une carte d'un cimetière",
+        label: "exiles a card from a graveyard",
       }),
     ],
   },
   "Apothecary Stomper": {
     abilities: [
       triggeredModal(when.entersSelf, [
-        mode("Deux marqueurs +1/+1", [target.creature("t", { controller: "you" })], [fx.addCounters(ref.target(), 2)]),
-        mode("Vous gagnez 4 PV", [], [fx.gainLife(4)]),
+        mode("Two +1/+1 counters", [target.creature("t", { controller: "you" })], [fx.addCounters(ref.target(), 2)]),
+        mode("You gain 4 life", [], [fx.gainLife(4)]),
       ]),
     ],
   },
   "Cackling Prowler": {
     abilities: [
-      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: cond.morbid, label: "Morbide : marqueur +1/+1" }),
+      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: cond.morbid, label: "Morbid: a +1/+1 counter" }),
     ],
   },
   "Elvish Regrower": {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {
-        targets: [target.cardInGraveyard("t", { permanent: true }, "you", "carte de permanent de votre cimetière")],
-        label: "récupère un permanent",
+        targets: [target.cardInGraveyard("t", { permanent: true }, "you", "permanent card in your graveyard")],
+        label: "gets back a permanent",
       }),
     ],
   },
@@ -198,16 +198,16 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.dies({ types: ["Creature"], controller: "you", token: false, other: true }),
-        fx.may("Révéler jusqu'à une carte de créature ?", fx.revealUntil({ types: ["Creature"] })),
-        { label: "révèle jusqu'à une créature" },
+        fx.may("Reveal until a creature card?", fx.revealUntil({ types: ["Creature"] })),
+        { label: "reveals until a creature" },
       ),
     ],
   },
   "Sylvan Scavenging": {
     abilities: [
       triggeredModal(when.yourEndStep, [
-        mode("Marqueur +1/+1", [target.creature("t", { controller: "you" })], [fx.addCounters(ref.target(), 1)]),
-        mode("Raton laveur 3/3 (férocité)", [], [...fx.when(cond.ferocious, fx.createTokens(RACCOON))]),
+        mode("+1/+1 counter", [target.creature("t", { controller: "you" })], [fx.addCounters(ref.target(), 1)]),
+        mode("3/3 Raccoon (ferocious)", [], [...fx.when(cond.ferocious, fx.createTokens(RACCOON))]),
       ]),
     ],
   },
@@ -218,36 +218,36 @@ export const GREEN: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
   "Affectionate Indrik": {
     abilities: [
-      triggered(when.entersSelf, fx.may("Combattre la créature ciblée ?", fx.fight(ref.self, ref.target())), {
+      triggered(when.entersSelf, fx.may("Fight the target creature?", fx.fight(ref.self, ref.target())), {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "combat",
+        label: "fight",
       }),
     ],
   },
   "Blanchwood Armor": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility(
         "attached",
         { power: 1, toughness: 1 },
-        { per: { subtype: "Forest", controller: "you" }, label: "+1/+1 par Forêt" },
+        { per: { subtype: "Forest", controller: "you" }, label: "+1/+1 for each Forest" },
       ),
     ],
   },
   "Broken Wings": {
-    spell: spell([targetObj("t", ART_ENCH_OR_FLYER, "artefact, enchantement ou créature volante")], [fx.destroy(ref.target())]),
+    spell: spell([targetObj("t", ART_ENCH_OR_FLYER, "artifact, enchantment or flying creature")], [fx.destroy(ref.target())]),
   },
   Bushwhack: {
     spell: modal(
-      mode("Chercher un terrain de base", [], [fx.search(BASIC_LAND)]),
+      mode("ctx:infinitive|Search for a basic land", [], [fx.search(BASIC_LAND)]),
       mode(
-        "Combat",
+        "Fight",
         [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
         [fx.fight(ref.target("a"), ref.target("b"))],
       ),
@@ -276,7 +276,7 @@ export const GREEN: Record<string, CardScript> = {
   "Gnarlid Colony": {
     kicker: "{2}{G}",
     abilities: [
-      entersWith({ counters: 2, condition: cond.kicked, label: "Kicker : deux marqueurs" }),
+      entersWith({ counters: 2, condition: cond.kicked, label: "Kicker: two counters" }),
       staticAbility(WITH_P1P1, { addKeywords: ["trample"] }),
     ],
   },
@@ -293,15 +293,15 @@ export const GREEN: Record<string, CardScript> = {
         mana: "{3}{G}",
         once: true,
         effects: [fx.modify(ref.self, { addSubtypes: ["Werewolf"] }, "permanent"), fx.addCounters(ref.self, 2), fx.draw(1)],
-        label: "Devient un Loup-garou",
+        label: "Becomes a Werewolf",
       }),
     ],
   },
   "Reclamation Sage": {
     abilities: [
-      triggered(when.entersSelf, fx.may("Détruire l'artefact ou l'enchantement ciblé ?", fx.destroy(ref.target())), {
-        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
-        label: "détruit un artefact ou un enchantement",
+      triggered(when.entersSelf, fx.may("Destroy the target artifact or enchantment?", fx.destroy(ref.target())), {
+        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
+        label: "destroys an artifact or an enchantment",
       }),
     ],
   },
@@ -314,7 +314,7 @@ export const GREEN: Record<string, CardScript> = {
           fx.exileCard(ref.target(), { name: "c", filter: { types: ["Creature"] } }),
           ...fx.when(cond.v("c"), fx.addCounters(ref.self, 1), fx.gainLife(1)),
         ],
-        label: "Exiler une carte d'un cimetière",
+        label: "Exile one card from a graveyard",
       }),
     ],
   },
@@ -330,13 +330,13 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.countersPut({ types: ["Creature"], controller: "you", other: true, notSubtype: "Hydra" }, "+1/+1"),
         [fx.addCounters(ref.self, 1)],
-        { label: "marqueur +1/+1" },
+        { label: "a +1/+1 counter" },
       ),
     ],
   },
   "Loot, Exuberant Explorer": {
     abilities: [
-      playerStatic({ extraLands: 1, label: "Un terrain supplémentaire par tour" }),
+      playerStatic({ extraLands: 1, label: "One additional land each turn" }),
       activated({
         mana: "{4}{G}{G}",
         tap: true,
@@ -348,7 +348,7 @@ export const GREEN: Record<string, CardScript> = {
             rest: "bottom",
           }),
         ],
-        label: "Regarder 6 cartes, mettre une créature en jeu",
+        label: "Look at 6 cards, put a creature onto the battlefield",
       }),
     ],
   },
@@ -357,18 +357,18 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.combatDamage(CREATURE_YOU_CONTROL), [fx.addCounters(ref.eventObject, amount.eventAmount)], {
         condition: cond.yourTurn,
-        label: "autant de marqueurs +1/+1",
+        label: "that many +1/+1 counters",
       }),
     ],
   },
   "Doubling Season": {
     abilities: [
-      eventReplacement({ event: "tokens", to: "you", modify: { times: 2 }, label: "Jetons doublés" }),
-      eventReplacement({ event: "counters", to: "yourSide", effectOnly: true, modify: { times: 2 }, label: "Marqueurs doublés" }),
+      eventReplacement({ event: "tokens", to: "you", modify: { times: 2 }, label: "Tokens doubled" }),
+      eventReplacement({ event: "counters", to: "yourSide", effectOnly: true, modify: { times: 2 }, label: "Counters doubled" }),
     ],
   },
 
-  // --- Réimpressions ---
+  // --- Reprints ---
   "Biogenic Upgrade": {
     spell: spell(
       [target.between(1, 3, target.creature())],
@@ -382,9 +382,9 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.may("Chercher une créature de valeur 6 ou plus ?", fx.search({ types: ["Creature"], minManaValue: 6 })),
+        fx.may("Search for a creature with value 6 or greater?", fx.search({ types: ["Creature"], minManaValue: 6 })),
         {
-          label: "cherche une grosse créature",
+          label: "searches for a big creature",
         },
       ),
     ],
@@ -394,12 +394,12 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.combatDamage({ types: ["Creature"], controller: "you", keyword: "deathtouch" }, true),
         [fx.poison(ref.eventPlayer, 2)],
-        { label: "deux marqueurs poison" },
+        { label: "two poison counters" },
       ),
     ],
   },
   "Gnarlback Rhino": {
-    abilities: [triggered(when.targetedBySpellYouCast, [fx.draw(1)], { label: "piochez une carte" })],
+    abilities: [triggered(when.targetedBySpellYouCast, [fx.draw(1)], { label: "draw a card" })],
   },
   "Joraga Invocation": {
     spell: spell(
@@ -412,33 +412,29 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Mold Adder": {
     abilities: [
-      triggered(
-        when.castSpell("opponent", { colors: ["U", "B"] }),
-        fx.may("Mettre un marqueur +1/+1 ?", fx.addCounters(ref.self, 1)),
-        {
-          label: "marqueur +1/+1",
-        },
-      ),
+      triggered(when.castSpell("opponent", { colors: ["U", "B"] }), fx.may("Put a +1/+1 counter?", fx.addCounters(ref.self, 1)), {
+        label: "a +1/+1 counter",
+      }),
     ],
   },
   "New Horizons": {
-    enchant: { filter: { types: ["Land"] }, label: "terrain" },
+    enchant: { filter: { types: ["Land"] }, label: "land" },
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "marqueur +1/+1",
+        label: "a +1/+1 counter",
       }),
       staticAbility(
         "attached",
         { addAbilities: [manaAbility(["W", "U", "B", "R", "G"], 2)] },
         {
-          label: "« {T} : deux mana d'une même couleur »",
+          label: '"{T}: two mana of any one color"',
         },
       ),
     ],
   },
   "Ordeal of Nylea": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       triggered(
         when.attacks({ attached: "host" }),
@@ -446,30 +442,30 @@ export const GREEN: Record<string, CardScript> = {
           fx.addCounters(ref.attached, 1),
           ...fx.when(cond.amountAtLeast(amount.countersOn(ref.attached), 3), fx.sacrificeIt(ref.self)),
         ],
-        { label: "marqueur ; à 3, sacrifiez l'Ordalie" },
+        { label: "counter; at 3, sacrifice the Ordeal" },
       ),
-      // « Quand vous sacrifiez l'Ordalie » : quelle que soit la façon (Marchandage, effet de sacrifice).
+      // "When you sacrifice the Ordeal": however it happens (bargain, sacrifice effect).
       triggered(when.sacrifice({ self: true }), [fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2)], {
-        label: "Sacrifiée : deux terrains de base",
+        label: "Sacrificed: two basic lands",
       }),
     ],
   },
   "Predator Ooze": {
     abilities: [
-      triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+      triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], { label: "a +1/+1 counter" }),
       triggered(when.dies({ types: ["Creature"], damagedBySource: true }), [fx.addCounters(ref.self, 1)], {
-        label: "marqueur +1/+1",
+        label: "a +1/+1 counter",
       }),
     ],
   },
   "Primeval Bounty": {
     abilities: [
-      triggered(when.castSpell("you", { types: ["Creature"] }), [fx.createTokens(BEAST_3)], { label: "Bête 3/3" }),
+      triggered(when.castSpell("you", { types: ["Creature"] }), [fx.createTokens(BEAST_3)], { label: "3/3 Beast" }),
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.addCounters(ref.target(), 3)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "trois marqueurs +1/+1",
+        label: "three +1/+1 counters",
       }),
-      triggered(when.landfall, [fx.gainLife(3)], { label: "+3 PV" }),
+      triggered(when.landfall, [fx.gainLife(3)], { label: "+3 life" }),
     ],
   },
   "Springbloom Druid": {
@@ -480,7 +476,7 @@ export const GREEN: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Land"] }, 1, { optional: true, store: "land" }),
           ...fx.when(cond.v("land"), fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2)),
         ],
-        { label: "sacrifice un terrain : deux terrains de base" },
+        { label: "sacrifices a land: two basic lands" },
       ),
     ],
   },
@@ -489,7 +485,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.yourCombat, [fx.pump(ref.target(), 0, 0, ["haste"])], {
         targets: [target.creature("t", { controller: "you" })],
         condition: cond.amountAtLeast(amount.totalPower({ types: ["Creature"], controller: "you" }), 8),
-        label: "Formidable : célérité",
+        label: "Formidable: haste",
       }),
     ],
   },
@@ -498,9 +494,9 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         sacrifice: true,
-        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruire un artefact ou un enchantement",
+        label: "Sacrifice: destroy an artifact or an enchantment",
       }),
     ],
   },
@@ -516,7 +512,7 @@ export const GREEN: Record<string, CardScript> = {
             fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["deathtouch"] }),
           ),
         ],
-        { label: "Alliance : contact mortel" },
+        { label: "Alliance: deathtouch" },
       ),
     ],
   },
@@ -524,7 +520,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { types: ["Creature"] }, what: "spells", anyMana: true },
-        label: "Créatures du dessus de votre bibliothèque",
+        label: "Creatures from the top of your library",
       }),
     ],
   },
@@ -532,8 +528,8 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ ...OTHER_CREATURE_YOU_CONTROL, notSubtype: "Human" }),
-        [fx.payX("payer X pour X marqueurs +1/+1 ?", "x"), fx.addCounters(ref.self, amount.v("x"))],
-        { label: "payer X : X marqueurs" },
+        [fx.payX("pay X for X +1/+1 counters?", "x"), fx.addCounters(ref.self, amount.v("x"))],
+        { label: "pay X: X counters" },
       ),
     ],
   },

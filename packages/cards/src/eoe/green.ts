@@ -1,4 +1,4 @@
-/** Edge of Eternities — cartes vertes. */
+/** Edge of Eternities — green cards. */
 import {
   activated,
   amount,
@@ -34,7 +34,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 0, 0, ["deathtouch"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Contact mortel",
+        label: "Deathtouch",
       }),
     ],
   },
@@ -43,7 +43,7 @@ export const GREEN: Record<string, CardScript> = {
       entersWith({ counters: amount.x }),
       triggered(when.leavesSelf, [fx.lkiCountersTo(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Ses marqueurs sur une créature",
+        label: "Its counters onto a creature",
       }),
     ],
   },
@@ -58,29 +58,29 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Drix Fatemaker": {
     abilities: [
-      triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], { targets: [target.creature("t")], label: "Marqueur +1/+1" }),
-      staticAbility({ ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" }, { addKeywords: ["trample"] }, { label: "Piétinement" }),
+      triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], { targets: [target.creature("t")], label: "+1/+1 counter" }),
+      staticAbility({ ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" }, { addKeywords: ["trample"] }, { label: "Trample" }),
     ],
   },
   "Edge Rover": {
     abilities: [
-      triggered(when.diesSelf, [fx.createTokens(LANDER, 1, ref.eachPlayer)], { label: "Chaque joueur crée un Lander" }),
+      triggered(when.diesSelf, [fx.createTokens(LANDER, 1, ref.eachPlayer)], { label: "Each player creates a Lander" }),
     ],
   },
   "Eumidian Terrabotanist": {
-    abilities: [triggered(when.landfall, [fx.gainLife(1)], { label: "Landfall : +1 PV" })],
+    abilities: [triggered(when.landfall, [fx.gainLife(1)], { label: "Landfall: +1 life" })],
   },
   "Eusocial Engineering": {
-    abilities: [triggered(when.landfall, [fx.createTokens(ROBOT)], { label: "Landfall : Robot 2/2" })],
+    abilities: [triggered(when.landfall, [fx.createTokens(ROBOT)], { label: "Landfall: 2/2 Robot" })],
   },
   "Fungal Colossus": { costReduction: { generic: amount.distinctNames({ types: ["Land"], controller: "you" }) } },
   "Galactic Wayfarer": { abilities: [triggered(when.entersSelf, [lander()], { label: "Lander" })] },
-  "Germinating Wurm": { abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 PV" })] },
+  "Germinating Wurm": { abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 life" })] },
   "Glacier Godmaw": {
     abilities: [
       triggered(when.entersSelf, [lander()], { label: "Lander" }),
       triggered(when.landfall, [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 1, ["vigilance", "haste"])], {
-        label: "Landfall : vos créatures +1/+1",
+        label: "Landfall: your creatures +1/+1",
       }),
     ],
   },
@@ -94,10 +94,10 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Icecave Crasher": {
-    abilities: [triggered(when.landfall, [fx.pump(ref.self, 1, 0)], { label: "Landfall : +1/+0" })],
+    abilities: [triggered(when.landfall, [fx.pump(ref.self, 1, 0)], { label: "Landfall: +1/+0" })],
   },
   "Intrepid Tenderfoot": {
-    abilities: [activated({ mana: "{3}", sorcerySpeed: true, effects: [fx.addCounters(ref.self, 1)], label: "Marqueur +1/+1" })],
+    abilities: [activated({ mana: "{3}", sorcerySpeed: true, effects: [fx.addCounters(ref.self, 1)], label: "+1/+1 counter" })],
   },
   "Lashwhip Predator": {
     costReduction: {
@@ -106,19 +106,19 @@ export const GREEN: Record<string, CardScript> = {
     },
   },
   "Meltstrider Eulogist": {
-    abilities: [triggered(when.dies({ ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" }), [fx.draw(1)], { label: "Piochez" })],
+    abilities: [triggered(when.dies({ ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" }), [fx.draw(1)], { label: "Draw" })],
   },
   "Meltstrider's Gear": {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-le",
+        label: "Attach it",
       }),
-      staticAbility("attached", { power: 2, toughness: 1, addKeywords: ["reach"] }, { label: "+2/+1 et la portée" }),
+      staticAbility("attached", { power: 2, toughness: 1, addKeywords: ["reach"] }, { label: "+2/+1 and reach" }),
     ],
   },
   "Meltstrider's Resolve": {
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
       triggered(when.entersSelf, [fx.fight(ref.attached, ref.target())], {
         targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
@@ -128,7 +128,7 @@ export const GREEN: Record<string, CardScript> = {
         "attached",
         { toughness: 2, addBlockRules: [block.atMost(1)] },
         {
-          label: "+0/+2, bloquée par une seule créature",
+          label: "+0/+2, can't be blocked by more than one creature",
         },
       ),
     ],
@@ -137,25 +137,22 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.landfall, [fx.pump(ref.target(), amount.powerOf(ref.target()), 0)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Landfall : doublez sa force",
+        label: "Landfall: double its power",
       }),
     ],
   },
   Ouroboroid: {
     abilities: [
       triggered(when.yourCombat, [fx.addCountersAll(CREATURE_YOU_CONTROL, amount.powerOf(ref.self))], {
-        label: "X marqueurs +1/+1 sur vos créatures",
+        label: "X +1/+1 counters on your creatures",
       }),
     ],
   },
   "Pull Through the Weft": {
     spell: spell(
       [
-        target.upTo(
-          2,
-          target.cardInGraveyard("a", { permanent: true, notTypes: ["Land"] }, "you", "carte de permanent non-terrain"),
-        ),
-        target.upTo(2, target.cardInGraveyard("b", { types: ["Land"] }, "you", "carte de terrain")),
+        target.upTo(2, target.cardInGraveyard("a", { permanent: true, notTypes: ["Land"] }, "you", "nonland permanent card")),
+        target.upTo(2, target.cardInGraveyard("b", { types: ["Land"] }, "you", "land card")),
       ],
       [fx.toHand(ref.target("a")), fx.toBattlefield(ref.target("b"), { tapped: true })],
     ),
@@ -164,12 +161,12 @@ export const GREEN: Record<string, CardScript> = {
   "Seedship Agrarian": {
     abilities: [
       triggered(when.tapsSelf, [lander()], { label: "Lander" }),
-      triggered(when.landfall, [fx.addCounters(ref.self, 1)], { label: "Landfall : marqueur +1/+1" }),
+      triggered(when.landfall, [fx.addCounters(ref.self, 1)], { label: "Landfall: +1/+1 counter" }),
     ],
   },
   "Seedship Impact": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+      [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
       [fx.when(cond.targetMatches("t", { maxManaValue: 2 }), lander()), fx.destroy(ref.target())],
     ),
   },
@@ -178,7 +175,7 @@ export const GREEN: Record<string, CardScript> = {
       [
         {
           id: "t",
-          label: "artefact, enchantement ou créature avec le vol",
+          label: "artifact, enchantment or creature with flying",
           filter: { objects: { anyOf: [{ types: ["Artifact", "Enchantment"] }, { types: ["Creature"], keyword: "flying" }] } },
         },
       ],
@@ -187,8 +184,8 @@ export const GREEN: Record<string, CardScript> = {
   },
   Thawbringer: {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
-      triggered(when.diesSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }),
+      triggered(when.diesSelf, [fx.surveil(1)], { label: "Surveil 1" }),
     ],
   },
 };

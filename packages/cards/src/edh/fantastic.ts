@@ -1,6 +1,6 @@
 /**
- * Commander : préconstruit « The Fantastic Four » de Marvel Super Heroes (Invisible Woman, quatre couleurs sans noir).
- * Sorts non-créature (« si vous avez lancé un sort non-créature ce tour-ci »), rebond, payer {R}{G}{W}{U} en attaquant.
+ * Commander: "The Fantastic Four" precon from Marvel Super Heroes (Invisible Woman, four colors without black).
+ * Noncreature spells ("if you've cast a noncreature spell this turn"), rebound, paying {R}{G}{W}{U} when attacking.
  */
 import type { Amount, CardScript, ModeDef, ObjectFilter, TokenSpec } from "@mtgx/engine";
 import {
@@ -23,9 +23,9 @@ import {
 
 const CREATURE_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
 const NONCREATURE: ObjectFilter = { notTypes: ["Creature"] };
-/** « Si vous avez lancé un sort non-créature ce tour-ci » */
+/** "If you've cast a noncreature spell this turn" */
 const CAST_NONCREATURE = cond.castThisTurn(1, true);
-/** « Au début du combat de votre tour, si vous avez lancé un sort non-créature ce tour-ci, … » */
+/** "At the beginning of combat on your turn, if you've cast a noncreature spell this turn, …" */
 const heroCombat = (effects: Parameters<typeof triggered>[1], label: string, extra: object = {}) =>
   triggered(when.yourCombat, effects, { condition: CAST_NONCREATURE, label, ...extra });
 const WALL: TokenSpec = {
@@ -48,9 +48,9 @@ const CONSTRUCT: TokenSpec = {
   keywords: ["flying", "haste"],
 };
 const mode = (label: string, targets: ModeDef["targets"], effects: ModeDef["effects"]): ModeDef => ({ label, targets, effects });
-/** « Vous pouvez payer {R}{G}{W}{U}. Quand vous le faites, … » */
+/** "You may pay {R}{G}{W}{U}. When you do, …" */
 const payRGWU = (prompt: string, ...effects: Parameters<typeof fx.mayPay>[2][]) => fx.mayPay("{R}{G}{W}{U}", prompt, ...effects);
-/** Valeur de mana la plus grande parmi les cartes non-créature de votre cimetière (Dragon Man). */
+/** Greatest mana value among noncreature cards in your graveyard (Dragon Man). */
 const MAX_NONCREATURE_GRAVEYARD: Amount = {
   kind: "aggregate",
   fn: "max",
@@ -60,72 +60,72 @@ const MAX_NONCREATURE_GRAVEYARD: Amount = {
 } as Amount;
 
 export const EDH_FANTASTIC: Record<string, CardScript> = {
-  // --- Commandant ---------------------------------------------------------------------------------------------------
+  // --- Commander ----------------------------------------------------------------------------------------------------
   "Invisible Woman": {
     abilities: [
-      heroCombat([fx.createTokens(WALL)], "Un Mur 0/3 avec le défenseur et la portée"),
+      heroCombat([fx.createTokens(WALL)], "A 0/3 Wall with defender and reach"),
       triggered(
         when.attackWith(),
         payRGWU(
-          "Payer {R}{G}{W}{U} pour renforcer une créature et la rendre imblocable ?",
+          "Pay {R}{G}{W}{U} to pump a creature and make it unblockable?",
           fx.reflexive([target.creature()], [fx.pump(ref.target(), amount.count(CREATURE_YOU), 0, ["unblockable"])]),
         ),
-        { label: "Payez {R}{G}{W}{U} : +1/+0 par créature et imblocable" },
+        { label: "Pay {R}{G}{W}{U}: +1/+0 for each creature and unblockable" },
       ),
     ],
   },
 
-  // --- Héros ----------------------------------------------------------------------------------------------------------
+  // --- Heroes ---------------------------------------------------------------------------------------------------------
   "Alicia Masters, Skilled Sculptor": {
     abilities: [
-      heroCombat([fx.createTokens(TREASURE)], "Un Trésor"),
+      heroCombat([fx.createTokens(TREASURE)], "A Treasure"),
       triggered(when.yourEndStep, [fx.returnControlToOwners(ref.zone("battlefield", ref.eachPlayer, { types: ["Creature"] }))], {
-        label: "Pressentir le bien : chaque joueur reprend ses créatures",
+        label: "Sense the good: each player regains control of their creatures",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Black Bolt, Inhuman King": {
     abilities: [
       triggered(when.castSpell("you", NONCREATURE), [fx.pump(ref.self, 2, 2)], {
-        label: "Sort non-créature : +2/+2 jusqu'à la fin du tour",
+        label: "Noncreature spell: +2/+2 until end of turn",
       }),
-      // « Ce joueur » : le contrôleur du sort ou de la capacité qui le cible (le joueur de l'événement).
+      // "That player": the controller of the spell or ability that targets it (the player of the event).
       triggered(when.targetedByOpponent({ self: true }), [fx.destroy(ref.target())], {
-        targets: [target.of(ref.eventPlayer, target.nonland("t"), "permanent non-terrain de ce joueur")],
-        label: "Voix fatale : détruisez un permanent non-terrain de ce joueur",
+        targets: [target.of(ref.eventPlayer, target.nonland("t"), "nonland permanent that player controls")],
+        label: "Deadly voice: destroy a nonland permanent that player controls",
       }),
     ],
   },
   "Council of Reeds": {
     abilities: [
-      playerStatic({ noLegendRule: { types: ["Creature"] }, label: "La règle des légendes ne s'applique pas à vos créatures" }),
-      heroCombat([fx.copyToken(ref.self)], "Un jeton copie de Council of Reeds"),
+      playerStatic({ noLegendRule: { types: ["Creature"] }, label: "The legend rule doesn't apply to your creatures" }),
+      heroCombat([fx.copyToken(ref.self)], "A token copy of Council of Reeds"),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Crystal, Inhuman Princess": {
     abilities: [
       triggered(when.castSpell("you", NONCREATURE), [fx.damage(amount.colorsOf(ref.eventObject), ref.eachOpponent)], {
-        label: "Sort non-créature : autant de blessures à chaque adversaire que de couleurs",
+        label: "Noncreature spell: as much damage to each opponent as it has colors",
       }),
       manaAbility(["R", "G", "W", "U"]),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Dragon Man, Reformed Robot": {
     cdaPower: amount.max(amount.maxManaValue({ ...NONCREATURE, permanent: true, controller: "you" }), MAX_NONCREATURE_GRAVEYARD),
     castFromGraveyard: { discard: 1 },
   },
   "Franklin Richards, Ascendant": {
-    abilities: [heroCombat([fx.discover(6)], "Découverte 6")],
+    abilities: [heroCombat([fx.discover(6)], "Discover 6")],
   },
-  // Vol, piétinement, indestructible : lus dans le texte.
+  // Flying, trample, indestructible: read from the text.
   "Galactus, Devourer of Worlds": {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target())], {
         targets: [target.permanent("t", [], {}, "permanent")],
-        label: "Exilez un permanent",
+        label: "Exile a permanent",
       }),
       staticAbility(
         "self",
@@ -133,49 +133,49 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
           addBlockRules: [
             {
               mustAttackPlayer: "mostLifeOpponent",
-              label: "Faim insatiable : attaque un adversaire qui a le plus de points de vie à chaque combat si possible",
+              label: "Insatiable hunger: attacks an opponent with the most life each combat if able",
             },
           ],
         },
-        { condition: cond.not(cond.controls({ name: "Silver Surfer, Galactus's Herald" })), label: "Faim insatiable" },
+        { condition: cond.not(cond.controls({ name: "Silver Surfer, Galactus's Herald" })), label: "Insatiable hunger" },
       ),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "H.E.R.B.I.E., Lovable Robot": {
     abilities: [
-      heroCombat([fx.surveil(1)], "Surveillez 1"),
+      heroCombat([fx.surveil(1)], "ctx:imperative|Surveil 1"),
       manaAbility("C"),
       activated({
         mana: "{1}",
         tap: true,
         effects: [fx.addManaChoice(1, ANY_COLOR)],
-        label: "Un mana de n'importe quelle couleur",
+        label: "One mana of any color",
       }),
     ],
   },
   "Human Torch": {
     abilities: [
-      heroCombat([fx.pump(ref.self, 0, 0, ["flying", "doubleStrike", "haste"])], "Vol, double initiative et célérité"),
+      heroCombat([fx.pump(ref.self, 0, 0, ["flying", "doubleStrike", "haste"])], "Flying, double strike and haste"),
       triggered(
         when.attacksSelf,
         payRGWU(
-          "Payer {R}{G}{W}{U} pour que ses blessures à un adversaire touchent aussi les autres ?",
+          "Pay {R}{G}{W}{U} so that its damage to an opponent also hits the others?",
           fx.modify(ref.self, {
             addAbilities: [
               triggered(
                 when.combatDamageToOpponent("self"),
                 [fx.damage(amount.eventAmount, ref.except(ref.eachOpponent, ref.eventPlayer))],
-                { label: "Autant de blessures à chaque autre adversaire" },
+                { label: "That much damage to each other opponent" },
               ),
             ],
           }),
         ),
-        { label: "Payez {R}{G}{W}{U} : ses blessures à un adversaire touchent aussi les autres" },
+        { label: "Pay {R}{G}{W}{U}: its damage to an opponent also hits the others" },
       ),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Lockjaw, Slobbering Teleporter": {
     abilities: [
       heroCombat(
@@ -186,50 +186,50 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
             [fx.pump(ref.self, 0, 0, ["unblockable"]), fx.pump(ref.target(), 0, 0, ["unblockable"])],
           ),
         ],
-        "Un marqueur +1/+1 ; Lockjaw et une autre de vos créatures sont imblocables",
+        "A +1/+1 counter; Lockjaw and another of your creatures can't be blocked",
       ),
     ],
   },
-  // Portée, vigilance : lues dans le texte.
+  // Reach, vigilance: read from the text.
   "Medusa, Inhuman Queen": {
     abilities: [
       triggered(when.castSpell("any", NONCREATURE), [fx.addCounters(ref.self, 1)], {
-        label: "Un joueur lance un sort non-créature : un marqueur +1/+1",
+        label: "A player casts a noncreature spell: a +1/+1 counter",
       }),
     ],
   },
-  // Portée, vigilance : lues dans le texte.
+  // Reach, vigilance: read from the text.
   "Mister Fantastic": {
     abilities: [
-      heroCombat([fx.draw(1)], "Piochez une carte"),
+      heroCombat([fx.draw(1)], "Draw a card"),
       activated({
         mana: "{R}{G}{W}{U}",
         tap: true,
         targets: [
           {
             id: "t",
-            label: "capacité déclenchée que vous contrôlez",
+            label: "triggered ability you control",
             filter: { stackItems: { triggeredOnly: true, controller: "you" } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 2)],
-        label: "Copiez deux fois une de vos capacités déclenchées",
+        label: "Copy one of your triggered abilities twice",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Namor, Atlantean King": {
     abilities: [
-      triggered(when.castSpell("you", NONCREATURE), [fx.createTokens(MERFOLK)], { label: "Sort non-créature : un Ondin 1/1" }),
-      // « Attaque un joueur qui a plus de PV que vous » : le joueur défenseur, comparé au déclenchement ; seules vos autres
-      // créatures qui attaquent ce joueur gagnent +2/+0.
+      triggered(when.castSpell("you", NONCREATURE), [fx.createTokens(MERFOLK)], { label: "Noncreature spell: a 1/1 Merfolk" }),
+      // "Attacks a player who has more life than you": the defending player, compared on trigger; only your other
+      // creatures attacking that player get +2/+0.
       triggered(when.attacksAPlayer, [fx.pumpAll({ ...CREATURE_YOU, attacking: ref.defendingPlayer, other: true }, 2, 0)], {
         triggerCondition: cond.amountGreater({ kind: "lifeTotal", who: ref.defendingPlayer }, amount.lifeTotal),
-        label: "Vos autres créatures attaquantes gagnent +2/+0",
+        label: "Your other attacking creatures get +2/+0",
       }),
     ],
   },
-  // Vol, vigilance, piétinement, célérité : lus dans le texte.
+  // Flying, vigilance, trample, haste: read from the text.
   "Power Pack": {
     abilities: [
       triggered(
@@ -238,58 +238,58 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
           fx.pickFromZone("graveyard", { types: ["Instant", "Sorcery"] }, { to: "exile" }, { random: true, store: "p" }),
           fx.delayedAt("yourNextUpkeep", [fx.castNow(ref.target("p"), { free: true, after: "exile" })], { p: ref.stored("p") }),
         ],
-        { label: "Exilez un éphémère ou un rituel au hasard ; lancez-le gratuitement à votre prochain entretien" },
+        { label: "Exile an instant or sorcery at random; cast it for free at your next upkeep" },
       ),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Silver Surfer, Galactus's Herald": {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.may("Chercher Galactus, Devourer of Worlds ?", fx.search({ name: "Galactus, Devourer of Worlds" }, { to: "hand" })),
-        { label: "Cherchez Galactus" },
+        fx.may("Search for Galactus, Devourer of Worlds?", fx.search({ name: "Galactus, Devourer of Worlds" }, { to: "hand" })),
+        { label: "Search for Galactus" },
       ),
       triggered(
         when.combatDamageToPlayer,
         [
           fx.modify(
             ref.target(),
-            { addBlockRules: [{ mustAttackPlayer: "eventPlayer", label: "Attaque ce joueur à chaque combat si possible" }] },
+            { addBlockRules: [{ mustAttackPlayer: "eventPlayer", label: "Attacks that player each combat if able" }] },
             "endOfYourNextTurn",
           ),
         ],
-        { targets: [target.creature()], label: "Une créature attaque ce joueur à chaque combat si possible" },
+        { targets: [target.creature()], label: "A creature attacks that player each combat if able" },
       ),
     ],
   },
-  // Piétinement : lu dans le texte.
+  // Trample: read from the text.
   "The Thing": {
     abilities: [
-      heroCombat([fx.addCounters(ref.self, 4)], "Quatre marqueurs +1/+1"),
+      heroCombat([fx.addCounters(ref.self, 4)], "Four +1/+1 counters"),
       triggered(
         when.attacksSelf,
         payRGWU(
-          "Payer {R}{G}{W}{U} pour doubler les marqueurs de vos permanents ?",
+          "Pay {R}{G}{W}{U} to double the counters on your permanents?",
           fx.reflexive(
-            [target.upTo(10, target.permanent("t", [], { controller: "you" }, "permanent que vous contrôlez"))],
+            [target.upTo(10, target.permanent("t", [], { controller: "you" }, "permanent you control"))],
             [fx.doubleAllCounters(ref.target())],
           ),
         ),
-        { label: "Payez {R}{G}{W}{U} : doublez chaque sorte de marqueurs sur vos permanents ciblés" },
+        { label: "Pay {R}{G}{W}{U}: double each kind of counter on your target permanents" },
       ),
     ],
   },
   "Valeria Richards, Precocious": {
     abilities: [
-      { kind: "costReduction", filter: NONCREATURE, generic: 1, label: "Vos sorts non-créature coûtent {1} de moins" },
+      { kind: "costReduction", filter: NONCREATURE, generic: 1, label: "Your noncreature spells cost {1} less" },
       triggered(when.castSpell("you", NONCREATURE), [fx.draw(1)], {
         condition: cond.castThisTurn(1, true, true),
-        label: "Premier sort non-créature du tour : piochez une carte",
+        label: "First noncreature spell of the turn: draw a card",
       }),
     ],
   },
-  // « Ne peut pas être bloqué » : lu dans le texte.
+  // "Can't be blocked": read from the text.
   "Willie Lumpkin, Postman": {
     abilities: [
       triggered(
@@ -298,31 +298,31 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
           fx.draw(1),
           ...fx.mayForStore(
             ref.eventPlayer,
-            "Piocher une carte (vous ne pourrez pas attaquer son contrôleur à votre prochain tour) ?",
+            "Draw a card (you won't be able to attack its controller during your next turn)?",
             "d",
             fx.draw(1, ref.eventPlayer),
           ),
-          // « pendant son prochain tour » : jusqu'au prochain tour du contrôleur de Willie (son tour à lui passe avant).
+          // "during their next turn": until the next turn of Willie's controller (that player's own turn comes first).
           ...fx.when(cond.v("d"), fx.untilYourNextTurn({ cantAttack: { of: "you" } }, ref.eventPlayer)),
         ],
-        { label: "Vous piochez ; ce joueur peut piocher, il ne pourra alors pas vous attaquer" },
+        { label: "You draw; that player may draw, and then can't attack you" },
       ),
     ],
   },
 
-  // --- Artefacts et enchantements -----------------------------------------------------------------------------------
+  // --- Artifacts and enchantments -----------------------------------------------------------------------------------
   "Cosmic Crucible": {
     abilities: [
       triggered(when.step("main1", "you"), [fx.addManaCombination(4, ANY_COLOR)], {
-        label: "Première phase principale : quatre mana de n'importe quelles couleurs",
+        label: "First main phase: four mana in any combination of colors",
       }),
       triggered(
         when.castSpell("you", NONCREATURE),
         [
-          ...fx.mayForStore(ref.you, "Copier ce sort ?", "c", fx.copySpell(ref.eventObject, 1)),
+          ...fx.mayForStore(ref.you, "Copy this spell?", "c", fx.copySpell(ref.eventObject, 1)),
           ...fx.when(cond.v("c"), fx.doneOncePerTurn),
         ],
-        { oncePerTurn: "ifDone", label: "Vous pouvez copier un sort non-créature (une fois par tour)" },
+        { oncePerTurn: "ifDone", label: "You may copy a noncreature spell (once per turn)" },
       ),
     ],
   },
@@ -331,7 +331,7 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
       triggered(
         { on: "castSpell", by: "opponent", nth: 1 },
         [fx.exileTop(ref.eventPlayer, 1, "m"), fx.castNow(ref.stored("m"), { free: true })],
-        { label: "Premier sort d'un adversaire : il exile la carte du dessus, vous pouvez la lancer gratuitement" },
+        { label: "An opponent's first spell: they exile the top card, you may cast it for free" },
       ),
     ],
   },
@@ -340,22 +340,17 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
       activated({
         mana: "{2}",
         targets: [
-          target.permanent(
-            "t",
-            ["Artifact", "Creature", "Enchantment", "Land"],
-            {},
-            "artefact, créature, enchantement ou terrain",
-          ),
+          target.permanent("t", ["Artifact", "Creature", "Enchantment", "Land"], {}, "artifact, creature, enchantment or land"),
         ],
         effects: [fx.becomeCopy(ref.self, ref.target(), "endOfTurn")],
-        label: "Devient une copie jusqu'à la fin du tour",
+        label: "Becomes a copy until end of turn",
       }),
     ],
   },
   "Monologue Tax": {
     abilities: [
       triggered({ on: "castSpell", by: "opponent", nth: 2 }, [fx.createTokens(TREASURE)], {
-        label: "Deuxième sort d'un adversaire : un Trésor",
+        label: "An opponent's second spell: a Treasure",
       }),
     ],
   },
@@ -364,15 +359,15 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
       activated({
         mana: "{2}",
         tap: true,
-        targets: [target.cardInGraveyard("t", {}, "opponent", "carte du cimetière d'un adversaire")],
+        targets: [target.cardInGraveyard("t", {}, "opponent", "card in an opponent's graveyard")],
         effects: [
           fx.exileCard(ref.target(), { name: "z" }),
           fx.link(ref.stored("z")),
           ...fx.when(cond.targetMatches("t", { types: ["Creature"] }), fx.draw(1)),
         ],
-        label: "Exilez une carte du cimetière d'un adversaire (une créature : piochez)",
+        label: "Exile a card from an opponent's graveyard (a creature: draw a card)",
       }),
-      // « Une carte exilée avec lui, au hasard » : tirée parmi les cartes liées encore en exil.
+      // "A card exiled with it at random": drawn among the linked cards still in exile.
       triggered(
         when.yourUpkeep,
         [
@@ -385,18 +380,18 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
         ],
         {
           condition: cond.amountAtLeast(amount.refCount(ref.filtered(ref.linked, { types: ["Creature"] })), 4),
-          label: "Quatre créatures exilées : pile ou face ; perdu, sacrifiez-le",
+          label: "Four exiled creatures: flip a coin; on a loss, sacrifice it",
         },
       ),
     ],
   },
-  // Vol : lu dans le texte ; Équipage absent (elle devient une créature quand vous lancez un sort non-créature).
+  // Flying: read from the text; no Crew (it becomes a creature when you cast a noncreature spell).
   "The Fantasticar": {
     abilities: [
       triggered(
         when.castSpell("you", NONCREATURE),
-        fx.may("The Fantasticar devient-elle une créature-artefact jusqu'à la fin du tour ?", fx.animateVehicle(ref.self)),
-        { label: "Sort non-créature : elle peut devenir une créature-artefact" },
+        fx.may("Does The Fantasticar become an artifact creature until end of turn?", fx.animateVehicle(ref.self)),
+        { label: "Noncreature spell: it may become an artifact creature" },
       ),
       triggered(
         { on: "castSpell", by: "you", nth: 4, filter: NONCREATURE },
@@ -404,24 +399,24 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { self: true }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.createTokens(CONSTRUCT, 4)),
         ],
-        { label: "Quatrième sort non-créature : sacrifiez-la pour quatre Constructions 4/4" },
+        { label: "Fourth noncreature spell: sacrifice it for four 4/4 Constructs" },
       ),
     ],
   },
   "Unstable Molecule Suit": {
-    // Équiper {4} et « Equip commander {2} » : lus dans le texte.
+    // Equip {4} and "Equip commander {2}": read from the text.
     abilities: [
       staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["indestructible"] }, { label: "+2/+2, indestructible" }),
     ],
   },
 
-  // --- Éphémères et rituels (rebond, flashback et convocation lus dans le texte) -----------------------------------
+  // --- Instants and sorceries (rebound, flashback and convoke read from the text) -----------------------------------
   "Cleansing Nova": {
     spell: {
       modes: [
-        mode("Détruisez toutes les créatures", [], [fx.destroyAll({ types: ["Creature"] })]),
+        mode("Destroy all creatures", [], [fx.destroyAll({ types: ["Creature"] })]),
         mode(
-          "Détruisez tous les artefacts et enchantements",
+          "Destroy all artifacts and enchantments",
           [],
           [fx.destroyAll({ anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] })],
         ),
@@ -430,39 +425,32 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
   },
   "Clever Concealment": {
     spell: spell(
-      [target.upTo(30, target.nonland("t", { controller: "you" }, "permanent non-terrain à vous"))],
+      [target.upTo(30, target.nonland("t", { controller: "you" }, "nonland permanent of yours"))],
       [fx.phaseOut(ref.target())],
     ),
   },
   "Cut a Deal": {
-    // Approximation : chaque adversaire pioche (même si sa bibliothèque est vide).
+    // Approximation: each opponent draws (even if their library is empty).
     spell: spell([], [fx.draw(1, ref.eachOpponent), fx.draw(amount.refCount(ref.eachOpponent))]),
   },
   "Deep Analysis": {
-    // Approximation : le flashback coûte {1}{U} sans les 3 points de vie.
+    // Approximation: the flashback costs {1}{U} without the 3 life.
     flashback: "{1}{U}",
     spell: spell([target.player("p")], [fx.draw(2, ref.target("p"))]),
   },
   "Fantastic Elasticity": {
     spell: {
       modes: [
-        mode("Renvoyez un permanent non-terrain", [target.nonland("n")], [fx.bounce(ref.target("n"))]),
+        mode("Return a nonland permanent", [target.nonland("n")], [fx.bounce(ref.target("n"))]),
         mode(
-          "Reprenez un éphémère ou un rituel",
-          [
-            target.cardInGraveyard(
-              "g",
-              { types: ["Instant", "Sorcery"] },
-              "you",
-              "carte d'éphémère ou de rituel de votre cimetière",
-            ),
-          ],
+          "Get back an instant or sorcery",
+          [target.cardInGraveyard("g", { types: ["Instant", "Sorcery"] }, "you", "instant or sorcery card in your graveyard")],
           [fx.toHand(ref.target("g"))],
         ),
       ],
     },
   },
-  // Approximation : les couleurs des permanents que vous contrôlez seulement (pas celles des sorts lancés ce tour-ci).
+  // Approximation: only the colors of the permanents you control (not those of the spells cast this turn).
   "First Family": {
     spell: spell([], [fx.draw(amount.colorsAmong()), fx.gainLife(amount.colorsAmong())]),
   },
@@ -482,15 +470,15 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
   "Hull Breach": {
     spell: {
       modes: [
-        mode("Détruisez un artefact", [target.permanent("a", ["Artifact"], {}, "artefact")], [fx.destroy(ref.target("a"))]),
+        mode("Destroy target artifact", [target.permanent("a", ["Artifact"], {}, "artifact")], [fx.destroy(ref.target("a"))]),
         mode(
-          "Détruisez un enchantement",
-          [target.permanent("e", ["Enchantment"], {}, "enchantement")],
+          "Destroy an enchantment",
+          [target.permanent("e", ["Enchantment"], {}, "enchantment")],
           [fx.destroy(ref.target("e"))],
         ),
         mode(
-          "Détruisez un artefact et un enchantement",
-          [target.permanent("a2", ["Artifact"], {}, "artefact"), target.permanent("e2", ["Enchantment"], {}, "enchantement")],
+          "Destroy target artifact and target enchantment",
+          [target.permanent("a2", ["Artifact"], {}, "artifact"), target.permanent("e2", ["Enchantment"], {}, "enchantment")],
           [fx.destroy(ref.target("a2")), fx.destroy(ref.target("e2"))],
         ),
       ],
@@ -502,7 +490,7 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
   },
   "Invisible Force Field": {
     spell: spell(
-      [target.upTo(4, target.permanent("t", [], { controller: "you" }, "permanent que vous contrôlez"))],
+      [target.upTo(4, target.permanent("t", [], { controller: "you" }, "permanent you control"))],
       [fx.modify(ref.target(), { addKeywords: ["indestructible"] })],
     ),
   },
@@ -510,13 +498,13 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
     spell: {
       modes: [
         mode(
-          "Votre créature blesse une créature adverse",
+          "Your creature deals damage to an opposing creature",
           [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
           [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))],
         ),
         mode(
-          "Détruisez un artefact ou un enchantement",
-          [target.permanent("d", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+          "Destroy target artifact or enchantment",
+          [target.permanent("d", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
           [fx.destroy(ref.target("d"))],
         ),
       ],
@@ -555,8 +543,8 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
   Terramorph: {
     spell: spell([], [fx.search(BASIC_LAND, { to: "battlefield" })]),
   },
-  // Vous choisissez pour chaque joueur, parmi tous ses permanents (un artefact-terrain peut être « l'artefact » gardé) ;
-  // seuls ses permanents non-terrains sont sacrifiés.
+  // You choose for each player, among all their permanents (an artifact land can be the "artifact" kept); only their
+  // nonland permanents are sacrificed.
   "Tragic Arrogance": {
     spell: spell(
       [],

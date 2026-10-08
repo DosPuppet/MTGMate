@@ -1,4 +1,4 @@
-/** Lorwyn Eclipsed — cartes blanches. */
+/** Lorwyn Eclipsed: white cards. */
 import type { ObjectFilter } from "@mtgx/engine";
 import {
   activated,
@@ -26,27 +26,26 @@ import {
 } from "./common";
 
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
-const ENCHANT_CREATURE = { filter: { types: ["Creature" as const] }, label: "créature" };
-/** « Un autre Ondin dégagé que vous contrôlez » (Meanders Guide). */
+const ENCHANT_CREATURE = { filter: { types: ["Creature" as const] }, label: "creature" };
+/** "Another untapped Merfolk you control" (Meanders Guide). */
 const OTHER_UNTAPPED_MERFOLK: ObjectFilter = { subtype: "Merfolk", controller: "you", other: true, tapped: false };
 
 /**
- * Persistance (702.79) accordée : « quand elle meurt, si elle n'avait pas de marqueur −1/−1, renvoyez-la sur le champ
- * de bataille sous le contrôle de son propriétaire avec un marqueur −1/−1 » (marqueurs lus dans ses dernières
- * informations connues).
+ * Granted persist (702.79): "when it dies, if it had no −1/−1 counters on it, return it to the battlefield under its
+ * owner's control with a −1/−1 counter on it" (counters read from its last known information).
  */
 const PERSIST = triggered(when.diesSelf, [fx.toBattlefield(ref.eventObject, { counters: { kind: "-1/-1", n: 1 } })], {
   condition: cond.not(cond.amountAtLeast(amount.lkiCounters("-1/-1"), 1)),
-  label: "Persistance",
+  label: "Persist",
 });
 
-/** « [coût], retirez un marqueur de cette créature : … » : un marqueur de n'importe quelle sorte. */
+/** "[cost], remove a counter from this creature: …": a counter of any kind. */
 const removeACounter = (opts: Omit<Parameters<typeof activated>[0], "removeCounters">) => [
   activated({ ...opts, removeCounters: { kind: "any", n: 1 } }),
 ];
 
 export const WHITE: Record<string, CardScript> = {
-  // Convocation lue dans le texte.
+  // Convoke read from the text.
   Winnowing: {
     spell: spell([], [fx.keep(ref.eachPlayer, "sharesType", { types: ["Creature"] }, { chooser: "you" })]),
   },
@@ -57,10 +56,10 @@ export const WHITE: Record<string, CardScript> = {
         { power: 1, toughness: 1 },
         {
           perTurnEvents: { event: "zone", to: "battlefield", types: ["Creature"], who: "you" },
-          label: "Vos créatures : +X/+X, X étant le nombre de créatures arrivées sous votre contrôle ce tour-ci",
+          label: "Your creatures: +X/+X, where X is the number of creatures that entered under your control this turn",
         },
       ),
-      triggered(when.yourCombat, [fx.createTokens(KITHKIN)], { label: "Un jeton Kithkin 1/1" }),
+      triggered(when.yourCombat, [fx.createTokens(KITHKIN)], { label: "A 1/1 Kithkin token" }),
     ],
   },
   "Adept Watershaper": {
@@ -68,17 +67,17 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility(
         { ...YOUR_CREATURES, other: true, tapped: true },
         { addKeywords: ["indestructible"] },
-        { label: "Vos autres créatures engagées sont indestructibles" },
+        { label: "Your other tapped creatures are indestructible" },
       ),
     ],
   },
   "Ajani, Outland Chaperone": {
     abilities: [
-      loyalty(1, { effects: [fx.createTokens(KITHKIN)], label: "Kithkin 1/1" }),
+      loyalty(1, { effects: [fx.createTokens(KITHKIN)], label: "1/1 Kithkin" }),
       loyalty(-2, {
         targets: [target.creature("t", { tapped: true })],
         effects: [fx.damage(4, ref.target())],
-        label: "4 blessures à une créature engagée",
+        label: "4 damage to a tapped creature",
       }),
       loyalty(-8, {
         effects: [
@@ -90,59 +89,59 @@ export const WHITE: Record<string, CardScript> = {
           }),
           fx.shuffle(),
         ],
-        label: "Permanents non-terrains de VM 3 ou moins parmi les X cartes du dessus",
+        label: "Nonland permanents with MV 3 or less among the top X cards",
       }),
     ],
   },
-  // Convocation lue dans le texte.
+  // Convoke read from the text.
   "Appeal to Eirdu": { spell: spell([target.between(1, 2, target.creature())], [fx.pump(ref.target(), 2, 1)]) },
   "Bark of Doran": {
-    // Équiper {1} : lu dans le texte.
+    // Equip {1}: read from the text.
     abilities: [
       staticAbility("attached", { toughness: 1 }, { label: "+0/+1" }),
       staticAbility("attached", { addPowerRules: [powerFor.combatToughness] }, { label: powerFor.combatToughness.label }),
     ],
   },
-  // Recto-verso : « quand elle arrive ou se transforme en Brigid, Clachan's Heart » (`when.transformsSelf`).
+  // Double-faced: "when it enters or transforms into Brigid, Clachan's Heart" (`when.transformsSelf`).
   "Brigid, Clachan's Heart": {
     abilities: [
-      ...[when.entersSelf, when.transformsSelf].map((w) => triggered(w, [fx.createTokens(KITHKIN)], { label: "Kithkin 1/1" })),
-      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Payer {G} pour transformer Brigid ?", fx.transform()), {
-        label: "Payez {G} : transformez Brigid",
+      ...[when.entersSelf, when.transformsSelf].map((w) => triggered(w, [fx.createTokens(KITHKIN)], { label: "1/1 Kithkin" })),
+      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Pay {G} to transform Brigid?", fx.transform()), {
+        label: "Pay {G}: transform Brigid",
       }),
     ],
   },
   "Brigid, Doun's Mind": {
     abilities: [
       manaAbility(["G", "W"], 1, { per: { ...YOUR_CREATURES, other: true } }),
-      triggered(when.step("main1", "you"), fx.mayPay("{W}", "Payer {W} pour transformer Brigid ?", fx.transform()), {
-        label: "Payez {W} : transformez Brigid",
+      triggered(when.step("main1", "you"), fx.mayPay("{W}", "Pay {W} to transform Brigid?", fx.transform()), {
+        label: "Pay {W}: transform Brigid",
       }),
     ],
   },
   "Burdened Stoneback": {
     abilities: [
-      entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
+      entersWith({ counters: 2, counterKind: "-1/-1", label: "Enters with two -1/-1 counters" }),
       ...removeACounter({
         mana: "{1}{W}",
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.modify(ref.target(), { addKeywords: ["indestructible"] })],
-        label: "Une créature gagne l'indestructible",
+        label: "A creature gains indestructible",
       }),
     ],
   },
-  // Flash lu dans le texte.
+  // Flash read from the text.
   "Champion of the Clachan": champion("Kithkin", [
     staticAbility({ ...YOUR_CREATURES, subtype: "Kithkin", other: true }, { power: 1, toughness: 1 }, { label: "Kithkin +1/+1" }),
   ]),
   "Clachan Festival": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(KITHKIN, 2)], { label: "Deux Kithkins 1/1" }),
-      activated({ mana: "{4}{W}", effects: [fx.createTokens(KITHKIN)], label: "Kithkin 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(KITHKIN, 2)], { label: "Two 1/1 Kithkin" }),
+      activated({ mana: "{4}{W}", effects: [fx.createTokens(KITHKIN)], label: "1/1 Kithkin" }),
     ],
   },
-  // Changelin lu dans le texte.
+  // Changeling read from the text.
   "Crib Swap": {
     spell: spell([target.creature()], [fx.exile(ref.target()), fx.createTokens(SHAPESHIFTER, 1, ref.controllerOf(ref.target()))]),
   },
@@ -157,19 +156,19 @@ export const WHITE: Record<string, CardScript> = {
             "permanent",
           ),
         ],
-        { targets: [target.player("t", "opponent")], label: "Les créatures adverses deviennent des Couards 1/1 sans capacité" },
+        { targets: [target.player("t", "opponent")], label: "Opposing creatures become 1/1 Cowards with no abilities" },
       ),
     ],
   },
-  // Vol et lien de vie lus dans le texte.
+  // Flying and lifelink read from the text.
   "Eirdu, Carrier of Dawn": {
     abilities: [
       playerStatic({
         spellKeywords: { filter: { types: ["Creature"] }, keywords: ["convoke"] },
-        label: "Vos sorts de créature ont la convocation",
+        label: "Your creature spells have convoke",
       }),
-      triggered(when.step("main1", "you"), fx.mayPay("{B}", "Payer {B} pour transformer Eirdu ?", fx.transform()), {
-        label: "Payez {B} : transformez Eirdu",
+      triggered(when.step("main1", "you"), fx.mayPay("{B}", "Pay {B} to transform Eirdu?", fx.transform()), {
+        label: "Pay {B}: transform Eirdu",
       }),
     ],
   },
@@ -178,42 +177,42 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility(
         { ...YOUR_CREATURES, other: true, token: false },
         { addAbilities: [PERSIST] },
-        { label: "Vos autres créatures non-jetons ont la persistance" },
+        { label: "Your other nontoken creatures have persist" },
       ),
-      triggered(when.step("main1", "you"), fx.mayPay("{W}", "Payer {W} pour transformer Isilu ?", fx.transform()), {
-        label: "Payez {W} : transformez Isilu",
+      triggered(when.step("main1", "you"), fx.mayPay("{W}", "Pay {W} to transform Isilu?", fx.transform()), {
+        label: "Pay {W}: transform Isilu",
       }),
     ],
   },
   "Encumbered Reejerey": {
     abilities: [
-      entersWith({ counters: 3, counterKind: "-1/-1", label: "Arrive avec trois marqueurs -1/-1" }),
+      entersWith({ counters: 3, counterKind: "-1/-1", label: "Enters with three -1/-1 counters" }),
       triggered(when.tapsSelf, [fx.removeCounters(ref.self, 1, "-1/-1")], {
         condition: cond.counterAtLeast("-1/-1", 1),
-        label: "Engagée : retire un marqueur -1/-1",
+        label: "Becomes tapped: remove a -1/-1 counter",
       }),
     ],
   },
   "Evershrike's Gift": {
     enchant: ENCHANT_CREATURE,
     abilities: [
-      staticAbility("attached", { power: 1, addKeywords: ["flying"] }, { label: "+1/+0 et le vol" }),
+      staticAbility("attached", { power: 1, addKeywords: ["flying"] }, { label: "+1/+0 and flying" }),
       activated({
         mana: "{1}{W}",
         blight: 2,
         fromGraveyard: true,
         sorcerySpeed: true,
         effects: [fx.toHand(ref.selfCard)],
-        label: "Revient du cimetière en main",
+        label: "Returns from the graveyard to your hand",
       }),
     ],
   },
   "Flock Impostor": {
-    // Changelin, flash et vol lus dans le texte.
+    // Changeling, flash and flying read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         targets: [target.upTo(1, target.creature("t", { controller: "you", other: true }))],
-        label: "Renvoie une autre de vos créatures en main",
+        label: "Return another creature you control to your hand",
       }),
     ],
   },
@@ -225,7 +224,7 @@ export const WHITE: Record<string, CardScript> = {
           fx.pumpAll(YOUR_CREATURES, 1, 0),
           fx.modifyAll({ ...YOUR_CREATURES, subtype: "Kithkin" }, { addKeywords: ["firstStrike"] }),
         ],
-        { label: "Vos créatures +1/+0, vos Kithkins l'initiative" },
+        { label: "Your creatures +1/+0, your Kithkin first strike" },
       ),
     ],
   },
@@ -237,26 +236,26 @@ export const WHITE: Record<string, CardScript> = {
         fromGraveyard: true,
         sorcerySpeed: true,
         effects: [fx.createTokens(KITHKIN)],
-        label: "Exilée du cimetière : Kithkin 1/1",
+        label: "Exiled from the graveyard: 1/1 Kithkin",
       }),
     ],
   },
   "Keep Out": {
     spell: modal(
-      mode("4 blessures à une créature engagée", [target.creature("c", { tapped: true })], [fx.damage(4, ref.target("c"))]),
-      mode("Détruisez un enchantement", [target.permanent("e", ["Enchantment"])], [fx.destroy(ref.target("e"))]),
+      mode("4 damage to a tapped creature", [target.creature("c", { tapped: true })], [fx.damage(4, ref.target("c"))]),
+      mode("Destroy an enchantment", [target.permanent("e", ["Enchantment"])], [fx.destroy(ref.target("e"))]),
     ),
   },
   "Kinsbaile Aspirant": {
     additionalCost: beholdOrPay("Kithkin", 2),
     abilities: [
       triggered(when.enters({ ...YOUR_CREATURES, other: true }), [fx.pump(ref.self, 1, 1)], {
-        label: "Une autre créature arrive : +1/+1",
+        label: "Another creature enters: +1/+1",
       }),
     ],
   },
   "Kinscaer Sentry": {
-    // Initiative et lien de vie lus dans le texte.
+    // First strike and lifelink read from the text.
     abilities: [
       triggered(
         when.attacksSelf,
@@ -268,31 +267,31 @@ export const WHITE: Record<string, CardScript> = {
             {
               min: 0,
               maxManaValue: amount.count({ ...YOUR_CREATURES, attacking: true }),
-              prompt: "Créature de votre main à mettre en jeu engagée et attaquante",
+              prompt: "Creature from your hand to put onto the battlefield tapped and attacking",
             },
           ),
         ],
-        { label: "Une créature de votre main arrive engagée et attaquante" },
+        { label: "A creature from your hand enters tapped and attacking" },
       ),
     ],
   },
   Kithkeeper: {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(KITHKIN, amount.colorsAmong())], {
-        label: "Vivid — un Kithkin 1/1 par couleur parmi vos permanents",
+        label: "Vivid — a 1/1 Kithkin for each color among your permanents",
       }),
       activated({
         tapOthers: { filter: { types: ["Creature"] }, count: 3, includeSelf: true },
         effects: [fx.pump(ref.self, 3, 0, ["flying"])],
-        label: "+3/+0 et le vol",
+        label: "+3/+0 and flying",
       }),
     ],
   },
   "Liminal Hold": {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target()), fx.gainLife(2)], {
-        targets: [target.upTo(1, target.nonland("t", { controller: "opponent" }, "permanent non-terrain adverse"))],
-        label: "Exile un permanent adverse ; vous gagnez 2 PV",
+        targets: [target.upTo(1, target.nonland("t", { controller: "opponent" }, "nonland permanent an opponent controls"))],
+        label: "Exile an opposing permanent; you gain 2 life",
       }),
     ],
   },
@@ -303,30 +302,23 @@ export const WHITE: Record<string, CardScript> = {
         fx.when(
           cond.controls(OTHER_UNTAPPED_MERFOLK),
           fx.may(
-            "Engager un autre Ondin dégagé pour renvoyer une créature de votre cimetière ?",
+            "Tap another untapped Merfolk to return a creature from your graveyard?",
             fx.chooseAmong(ref.permanentsOf(ref.you, OTHER_UNTAPPED_MERFOLK), ref.you, "m"),
             fx.tap(ref.stored("m")),
             fx.reflexive(
-              [
-                target.cardInGraveyard(
-                  "t",
-                  { types: ["Creature"], maxManaValue: 3 },
-                  "you",
-                  "carte de créature de VM 3 ou moins",
-                ),
-              ],
+              [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "creature card with MV 3 or less")],
               [fx.toBattlefield(ref.target())],
             ),
           ),
         ),
-        { label: "Engagez un Ondin : une créature revient du cimetière" },
+        { label: "Tap a Merfolk: a creature returns from the graveyard" },
       ),
     ],
   },
   "Moonlit Lamenter": {
     abilities: [
-      entersWith({ counters: 1, counterKind: "-1/-1", label: "Arrive avec un marqueur -1/-1" }),
-      ...removeACounter({ mana: "{1}{W}", sorcerySpeed: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
+      entersWith({ counters: 1, counterKind: "-1/-1", label: "Enters with a -1/-1 counter" }),
+      ...removeACounter({ mana: "{1}{W}", sorcerySpeed: true, effects: [fx.draw(1)], label: "Draw a card" }),
     ],
   },
   "Morningtide's Light": {
@@ -346,71 +338,71 @@ export const WHITE: Record<string, CardScript> = {
       [fx.exileCard(ref.target(), { name: "f" }), fx.toBattlefield(ref.stored("f")), fx.createTokens(SHAPESHIFTER)],
     ),
   },
-  // Convocation lue dans le texte.
+  // Convoke read from the text.
   "Protective Response": {
     spell: spell([target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })], [fx.destroy(ref.target())]),
   },
   "Reluctant Dounguard": {
     abilities: [
-      entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
+      entersWith({ counters: 2, counterKind: "-1/-1", label: "Enters with two -1/-1 counters" }),
       triggered(when.enters({ ...YOUR_CREATURES, other: true }), [fx.removeCounters(ref.self, 1, "-1/-1")], {
         condition: cond.counterAtLeast("-1/-1", 1),
-        label: "Une autre créature arrive : retire un marqueur -1/-1",
+        label: "Another creature enters: removes a -1/-1 counter",
       }),
     ],
   },
   "Rhys, the Evermore": {
-    // Flash lu dans le texte.
+    // Flash read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.modify(ref.target(), { addAbilities: [PERSIST] })], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Une autre de vos créatures gagne la persistance",
+        label: "Another creature you control gains persist",
       }),
       activated({
         mana: "{W}",
         tap: true,
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],
-        // « Retirez n'importe quel nombre de marqueurs » : tous ses marqueurs −1/−1.
+        // "Remove any number of counters": all its −1/−1 counters.
         effects: [fx.removeCounters(ref.target(), 99, "-1/-1")],
-        label: "Retirez les marqueurs -1/-1 d'une de vos créatures",
+        label: "Remove the -1/-1 counters from one of your creatures",
       }),
     ],
   },
   "Riverguard's Reflexes": {
     spell: spell([target.creature()], [fx.pump(ref.target(), 2, 2, ["firstStrike"]), fx.untap(ref.target())]),
   },
-  "Shore Lurker": { abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" })] },
+  "Shore Lurker": { abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" })] },
   "Slumbering Walker": {
     abilities: [
-      entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
+      entersWith({ counters: 2, counterKind: "-1/-1", label: "Enters with two -1/-1 counters" }),
       triggered(
         when.yourEndStep,
         fx.may(
-          "Retirer un marqueur de cette créature ?",
+          "Remove a counter from this creature?",
           fx.removeCounters(ref.self, 1, undefined, "r"),
           fx.when(
             cond.v("r"),
             fx.reflexive(
-              [target.cardInGraveyard("t", { types: ["Creature"], maxPower: 2 }, "you", "carte de créature de force 2 ou moins")],
+              [target.cardInGraveyard("t", { types: ["Creature"], maxPower: 2 }, "you", "creature card with power 2 or less")],
               [fx.toBattlefield(ref.target())],
             ),
           ),
         ),
-        { label: "Retirez un marqueur : une créature revient du cimetière" },
+        { label: "Remove a counter: a creature returns from the graveyard" },
       ),
     ],
   },
   "Spiral into Solitude": {
     enchant: ENCHANT_CREATURE,
     abilities: [
-      staticAbility("attached", { addKeywords: ["cantAttack", "cantBlock"] }, { label: "Ne peut ni attaquer ni bloquer" }),
+      staticAbility("attached", { addKeywords: ["cantAttack", "cantBlock"] }, { label: "Can't attack or block" }),
       activated({
         mana: "{1}{W}",
         blight: 1,
         sacrifice: true,
         effects: [fx.exile(ref.attached)],
-        label: "Exilez la créature enchantée",
+        label: "Exile the enchanted creature",
       }),
     ],
   },
@@ -425,24 +417,24 @@ export const WHITE: Record<string, CardScript> = {
             amount.count({ subtype: "Kithkin", controller: "you" }),
           ),
         ],
-        { label: "Attaque seule : +X/+X (Kithkins)" },
+        { label: "Attacks alone: +X/+X (Kithkin)" },
       ),
     ],
   },
   "Timid Shieldbearer": {
-    abilities: [activated({ mana: "{4}{W}", effects: [fx.pumpAll(YOUR_CREATURES, 1, 1)], label: "Vos créatures +1/+1" })],
+    abilities: [activated({ mana: "{4}{W}", effects: [fx.pumpAll(YOUR_CREATURES, 1, 1)], label: "Your creatures +1/+1" })],
   },
   "Tributary Vaulter": {
-    // Vol lu dans le texte.
+    // Flying read from the text.
     abilities: [
       triggered(when.tapsSelf, [fx.pump(ref.target(), 2, 0)], {
         targets: [target.creature("t", { subtype: "Merfolk", controller: "you", other: true })],
-        label: "Engagée : un autre Ondin +2/+0",
+        label: "Becomes tapped: another Merfolk +2/+0",
       }),
     ],
   },
   "Wanderbrine Preacher": {
-    abilities: [triggered(when.tapsSelf, [fx.gainLife(2)], { label: "Engagée : vous gagnez 2 PV" })],
+    abilities: [triggered(when.tapsSelf, [fx.gainLife(2)], { label: "Becomes tapped: you gain 2 life" })],
   },
   "Wanderbrine Trapper": {
     abilities: [
@@ -452,7 +444,7 @@ export const WHITE: Record<string, CardScript> = {
         tapOthers: { filter: { types: ["Creature"] }, count: 1 },
         targets: [target.creature("t", { controller: "opponent" })],
         effects: [fx.tap(ref.target())],
-        label: "Engagez une créature adverse",
+        label: "Tap an opposing creature",
       }),
     ],
   },

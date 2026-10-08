@@ -1,7 +1,10 @@
 {
   "id": "meta-izzet-spellementals",
   "name": "Izzet Spellementals",
-  "description": "Méta Standard (15,5 %). Bleu-rouge : éphémères et rituels bon marché qui font baisser le coût des Élémentaux (Hearth Elemental, Sunderflock), qui renvoie ensuite toutes les autres créatures en main.",
+  "description": "Standard metagame (15.5%). Blue-red: cheap instants and sorceries that lower the cost of the Elementals (Hearth Elemental, Sunderflock), which then returns all other creatures to their owners' hands.",
+  "fr": {
+    "description": "Méta Standard (15,5 %). Bleu-rouge : éphémères et rituels bon marché qui font baisser le coût des Élémentaux (Hearth Elemental, Sunderflock), qui renvoie ensuite toutes les autres créatures en main."
+  },
   "colors": [
     "U",
     "R"

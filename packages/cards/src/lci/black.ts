@@ -1,4 +1,4 @@
-/** The Lost Caverns of Ixalan — cartes noires. */
+/** The Lost Caverns of Ixalan — black cards. */
 import {
   ARTIFACT_OR_CREATURE,
   activated,
@@ -28,14 +28,14 @@ import {
 
 const CREATURE = { types: ["Creature" as const] };
 const FINALITY = { kind: "finality", n: 1 };
-const mayMillTwo = (label = "Meulez deux cartes") =>
-  triggered(when.entersSelf, [...fx.may("Meuler deux cartes ?", fx.mill(2))], { label });
+const mayMillTwo = (label = "Mill two cards") =>
+  triggered(when.entersSelf, [...fx.may("Mill two cards?", fx.mill(2))], { label });
 
 export const BLACK: Record<string, CardScript> = {
   "Abyssal Gorestalker": {
     abilities: [
       triggered(when.entersSelf, [fx.sacrifice(ref.eachPlayer, CREATURE, 2)], {
-        label: "Chaque joueur sacrifie deux créatures",
+        label: "Each player sacrifices two creatures",
       }),
     ],
   },
@@ -53,34 +53,34 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        ...fx.may("Meuler deux cartes ?", fx.mill(2)),
-        fx.pickFromZone("graveyard", CREATURE, { to: "hand" }, { count: 2, min: 0, prompt: "Jusqu'à deux cartes de créature" }),
+        ...fx.may("Mill two cards?", fx.mill(2)),
+        fx.pickFromZone("graveyard", CREATURE, { to: "hand" }, { count: 2, min: 0, prompt: "Up to two creature cards" }),
       ],
     ),
   },
   "Bloodthorn Flail": {
     abilities: [
       staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
-      equipAbility({ mana: "{3}", label: "Équiper — {3}" }),
-      equipAbility({ discard: 1, label: "Équiper — défaussez une carte" }),
+      equipAbility({ mana: "{3}", label: "Equip — {3}" }),
+      equipAbility({ discard: 1, label: "Equip — discard a card" }),
     ],
   },
   "Chupacabra Echo": {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), amount.neg(PERMANENT_CARDS), amount.neg(PERMANENT_CARDS))], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Descente profonde — −X/−X",
+        label: "Fathomless descent — −X/−X",
       }),
     ],
   },
   "Dead Weight": {
-    enchant: { filter: CREATURE, label: "créature" },
+    enchant: { filter: CREATURE, label: "creature" },
     abilities: [staticAbility("attached", { power: -2, toughness: -2 }, { label: "−2/−2" })],
   },
   "Deathcap Marionette": { abilities: [mayMillTwo()] },
   Defossilize: {
     spell: spell(
-      [target.cardInGraveyard("t", CREATURE, "you", "carte de créature de votre cimetière")],
+      [target.cardInGraveyard("t", CREATURE, "you", "creature card from your graveyard")],
       [fx.moveTo(ref.target(), { to: "battlefield" }, { name: "back" }), fx.explore(ref.stored("back"), 2)],
     ),
   },
@@ -89,7 +89,7 @@ export const BLACK: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, toughness: 1, addKeywords: ["lifelink"] },
-        { condition: descend(4), label: "Descente 4 — +1/+1 et lien de vie" },
+        { condition: descend(4), label: "Descend 4 — +1/+1 and lifelink" },
       ),
     ],
   },
@@ -98,11 +98,11 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell([], [fx.draw(2), fx.createTokens(MAP)]),
   },
   "Fungal Fortitude": {
-    enchant: { filter: CREATURE, label: "créature" },
+    enchant: { filter: CREATURE, label: "creature" },
     abilities: [
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
       triggered(when.dies({ attached: "host" }), [fx.toBattlefield(ref.eventObject, { tapped: true })], {
-        label: "Revient engagée",
+        label: "Returns tapped",
       }),
     ],
   },
@@ -116,7 +116,7 @@ export const BLACK: Record<string, CardScript> = {
           fx.counters(ref.self, "dread", 1),
           ...fx.when(cond.counterAtLeast("dread", 3), fx.transform()),
         ],
-        { label: "Contact mortel et lien de vie, marqueur d'effroi" },
+        { label: "Deathtouch and lifelink, dread counter" },
       ),
     ],
   },
@@ -128,12 +128,12 @@ export const BLACK: Record<string, CardScript> = {
         tap: true,
         removeCounters: { kind: "dread", n: 1 },
         effects: [fx.draw(1), fx.loseLife(1)],
-        label: "Piochez, perdez 1 PV",
+        label: "Draw, lose 1 life",
       }),
     ],
   },
   "Greedy Freebooter": {
-    abilities: [triggered(when.diesSelf, [fx.scry(1), fx.createTokens(TREASURE)], { label: "Regard 1 et Trésor" })],
+    abilities: [triggered(when.diesSelf, [fx.scry(1), fx.createTokens(TREASURE)], { label: "Scry 1 and Treasure" })],
   },
   "Join the Dead": {
     spell: spell(
@@ -146,15 +146,15 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Mephitic Draught": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1), fx.loseLife(1)], { label: "Piochez, perdez 1 PV" }),
-      triggered(when.putIntoGraveyardSelf, [fx.draw(1), fx.loseLife(1)], { label: "Piochez, perdez 1 PV" }),
+      triggered(when.entersSelf, [fx.draw(1), fx.loseLife(1)], { label: "Draw, lose 1 life" }),
+      triggered(when.putIntoGraveyardSelf, [fx.draw(1), fx.loseLife(1)], { label: "Draw, lose 1 life" }),
     ],
   },
   "Queen's Bay Paladin": {
     abilities: [when.entersSelf, when.attacksSelf].map((t) =>
       triggered(t, [fx.loseLife(amount.manaValueOf(ref.target())), fx.toBattlefield(ref.target(), { counters: FINALITY })], {
-        targets: [target.optional(target.cardInGraveyard("t", { subtype: "Vampire" }, "you", "carte de Vampire"))],
-        label: "Vampire du cimetière (finalité)",
+        targets: [target.optional(target.cardInGraveyard("t", { subtype: "Vampire" }, "you", "Vampire card"))],
+        label: "Vampire from the graveyard (finality)",
       }),
     ),
   },
@@ -162,7 +162,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 2, 0, ["indestructible"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "+2/+0 et indestructible",
+        label: "+2/+0 and indestructible",
       }),
     ],
   },
@@ -172,18 +172,18 @@ export const BLACK: Record<string, CardScript> = {
         targetObj(
           "t",
           { anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }, { types: ["Land"], basic: false }] },
-          "créature, Véhicule ou terrain non de base",
+          "creature, Vehicle or nonbasic land",
         ),
       ],
       [fx.exile(ref.target()), fx.scry(1)],
     ),
   },
-  "Screaming Phantom": { abilities: [triggered(when.attacksSelf, [fx.mill(1)], { label: "Meulez une carte" })] },
+  "Screaming Phantom": { abilities: [triggered(when.attacksSelf, [fx.mill(1)], { label: "Mill a card" })] },
   "Skullcap Snail": {
     abilities: [
       triggered(when.entersSelf, [fx.exileFromOwnHand(ref.target(), "x")], {
         targets: [target.player("t", "opponent")],
-        label: "L'adversaire exile une carte de sa main",
+        label: "The opponent exiles a card from their hand",
       }),
     ],
   },
@@ -194,9 +194,9 @@ export const BLACK: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", CREATURE, "you", "carte de créature de votre cimetière")],
+        targets: [target.cardInGraveyard("t", CREATURE, "you", "creature card from your graveyard")],
         effects: [fx.toBattlefield(ref.target(), { counters: FINALITY })],
-        label: "Créature du cimetière (finalité)",
+        label: "Creature from the graveyard (finality)",
       }),
     ],
   },
@@ -204,12 +204,12 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.draw(1), fx.loseLife(1)], {
         condition: descend(4),
-        label: "Descente 4 — piochez, perdez 1 PV",
+        label: "Descend 4 — draw, lose 1 life",
       }),
     ],
   },
   "Synapse Necromage": {
-    abilities: [triggered(when.diesSelf, [fx.createTokens(FUNGUS, 2)], { label: "Deux Champignons 1/1" })],
+    abilities: [triggered(when.diesSelf, [fx.createTokens(FUNGUS, 2)], { label: "Two 1/1 Fungi" })],
   },
   "Terror Tide": {
     spell: spell([], [fx.pumpAll(CREATURE, amount.neg(PERMANENT_CARDS), amount.neg(PERMANENT_CARDS))]),
@@ -220,13 +220,13 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{B}",
         sacrificeOther: { filter: OTHER_ARTIFACT_OR_CREATURE_YOURS },
         effects: [fx.addCounters(ref.self, 1), fx.pump(ref.self, 0, 0, ["menace"])],
-        label: "Marqueur +1/+1 et menace",
+        label: "+1/+1 counter and menace",
       }),
     ],
   },
   "Broodrage Mycoid": {
     abilities: [
-      triggered(when.yourEndStep, [fx.createTokens(FUNGUS)], { condition: cond.descended, label: "Descente — Champignon 1/1" }),
+      triggered(when.yourEndStep, [fx.createTokens(FUNGUS)], { condition: cond.descended, label: "Descend — 1/1 Fungus" }),
     ],
   },
   "Canonized in Blood": {
@@ -234,13 +234,13 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.yourEndStep, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you" })],
         condition: cond.descended,
-        label: "Descente — marqueur +1/+1",
+        label: "Descend — +1/+1 counter",
       }),
       activated({
         mana: "{5}{B}{B}",
         sacrifice: true,
         effects: [fx.createTokens(VAMPIRE_DEMON)],
-        label: "Vampire Démon 4/3",
+        label: "4/3 Vampire Demon",
       }),
     ],
   },
@@ -250,13 +250,13 @@ export const BLACK: Record<string, CardScript> = {
         { types: ["Creature"], subtype: "Skeleton", controller: "you" },
         { power: 1, addKeywords: ["haste"] },
         {
-          label: "Squelettes : +1/+0 et célérité",
+          label: "Skeletons: +1/+0 and haste",
         },
       ),
-      triggered(when.entersSelf, [fx.createTokens(SKELETON_PIRATE)], { label: "Squelette Pirate 2/2" }),
-      triggered(when.yourEndStep, [...fx.mayPayLife(1, "Payer 1 PV pour la reprendre en main ?", fx.toHand(ref.self))], {
+      triggered(when.entersSelf, [fx.createTokens(SKELETON_PIRATE)], { label: "2/2 Skeleton Pirate" }),
+      triggered(when.yourEndStep, [...fx.mayPayLife(1, "Pay 1 life to return it to your hand?", fx.toHand(ref.self))], {
         condition: cond.descended,
-        label: "Descente — 1 PV : reprenez-la",
+        label: "Descend — 1 life: return it to your hand",
       }),
     ],
   },
@@ -264,23 +264,23 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: cond.descended,
-        label: "Descente — marqueur +1/+1",
+        label: "Descend — +1/+1 counter",
       }),
     ],
   },
-  "Primordial Gnawer": { abilities: [triggered(when.diesSelf, [fx.discover(3)], { label: "Découverte 3" })] },
+  "Primordial Gnawer": { abilities: [triggered(when.diesSelf, [fx.discover(3)], { label: "Discover 3" })] },
   "Stalactite Stalker": {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: cond.descended,
-        label: "Descente — marqueur +1/+1",
+        label: "Descend — +1/+1 counter",
       }),
       activated({
         mana: "{2}{B}",
         sacrifice: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), amount.neg(amount.lkiPower), amount.neg(amount.lkiPower))],
-        label: "−X/−X (sa force)",
+        label: "−X/−X (its power)",
       }),
     ],
   },

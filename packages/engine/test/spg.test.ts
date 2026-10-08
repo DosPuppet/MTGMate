@@ -8,6 +8,7 @@ import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { spellCost } from "../src/stack";
 import { chars, moveObject } from "../src/state";
+import { plainText } from "../src/text";
 import { attackTaxFor, canBlock } from "../src/turn";
 import type { GameState } from "../src/types";
 import {
@@ -309,7 +310,7 @@ describe("Special Guests", () => {
       let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Crashing Footfalls"] } });
       const card = idOf(s, "p1", "hand", "Crashing Footfalls");
       const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === card);
-      expect(ab?.type === "activate" && ab.label).toBe("Suspension 4 — {G}");
+      expect(ab?.type === "activate" && plainText(ab.label ?? "")).toBe("Suspend 4 — {G}");
       s = act(s, "p1", { type: "activate", source: card, ability: ab?.type === "activate" ? ab.ability : 0 });
       const exiled = s.exile.find((id) => nameOf(s, id) === "Crashing Footfalls") as string;
       expect([s.objects[exiled]?.counters.time, s.stack.length]).toEqual([4, 0]);
@@ -374,7 +375,7 @@ describe("Special Guests", () => {
       expect(s.players.p2?.life).toBe(16);
       expect(s.pending?.kind).toBe("declareAttackers");
       expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: razer, defender: "p2" }] })).toThrow(
-        /déjà attaqué/,
+        /already attacked/,
       );
     });
 
@@ -804,7 +805,7 @@ describe("Special Guests", () => {
       const opt = castOpt(t, "Austere Command");
       const pair =
         opt?.type === "cast"
-          ? opt.modes.find((m) => m.label?.includes("VM 3 ou moins") && m.label.includes("enchantements"))
+          ? opt.modes.find((m) => m.label?.includes("MV 3 or less") && m.label.includes("enchantments"))
           : undefined;
       t = settle(castIt(t, "Austere Command", { mode: pair?.index }));
       expect(t.battlefield.filter((id) => t.objects[id]?.controller === "p2").map((id) => nameOf(t, id))).toEqual([

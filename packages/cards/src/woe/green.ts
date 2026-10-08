@@ -1,8 +1,8 @@
 /**
- * Wilds of Eldraine — cartes vertes. Les Aventures ont une entrée par face (la créature ou l'enchantement sous son nom,
- * le sort d'Aventure sous le sien) ; le Marchandage est lu dans le texte (`cond.kicked`).
+ * Wilds of Eldraine — green cards. Adventures have one entry per face (the creature or the enchantment under its name,
+ * the Adventure spell under its own); Bargain is read from the text (`cond.kicked`).
  */
-import type { Effect, ModeDef, ObjectFilter } from "@mtgx/engine";
+import { type Effect, type ModeDef, msg, type ObjectFilter } from "@mtgx/engine";
 import {
   ART_ENCH_OR_FLYER,
   activated,
@@ -35,18 +35,18 @@ import {
 } from "./common";
 
 const FOOD_YOU: ObjectFilter = { types: ["Artifact"], subtype: "Food", controller: "you" };
-/** « Quand cette créature arrive, créez un jeton Nourriture. » */
-const ENTERS_FOOD = triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" });
-/** « Chaque fois que vous lancez un sort de valeur de mana 5 ou plus » */
+/** "When this creature enters, create a Food token." */
+const ENTERS_FOOD = triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food token" });
+/** "Whenever you cast a spell with mana value 5 or greater" */
 const CAST_MV5 = when.castSpell("you", { minManaValue: 5 });
 
-/** « Choisissez deux — » : chaque paire de modes devient un mode (identifiants de cibles distincts d'un mode à l'autre). */
+/** "Choose two —": each pair of modes becomes a mode (target ids distinct from one mode to another). */
 function chooseTwo(...modes: ModeDef[]): { modes: ModeDef[] } {
   const out: ModeDef[] = [];
   modes.forEach((a, i) => {
     for (const b of modes.slice(i + 1)) {
       out.push({
-        label: `${a.label} + ${b.label}`,
+        label: msg("{a} + {b}", { a: a.label ?? "", b: b.label ?? "" }),
         targets: [...a.targets, ...b.targets],
         effects: [...a.effects, ...b.effects],
       });
@@ -56,16 +56,16 @@ function chooseTwo(...modes: ModeDef[]): { modes: ModeDef[] } {
 }
 
 /**
- * Curse of the Werefox : « créez un jeton Rôle Monstre attaché à la créature ciblée que vous contrôlez. Quand vous le
- * faites, cette créature se bat contre jusqu'à une créature ciblée que vous ne contrôlez pas » (capacité réflexive, qui
- * n'existe que si le Rôle a été créé).
+ * Curse of the Werefox: "Create a Monster Role token attached to target creature you control. When you do, that
+ * creature fights up to one target creature you don't control" (reflexive ability, which exists only if the Role was
+ * created).
  */
 const WEREFOX_CURSE: Effect[] = [
   ...createRole(MONSTER_ROLE).flat(),
   ...fx.when(
     cond.refMatches(ref.target(), { types: ["Creature"] }),
     fx.reflexive(
-      [target.upTo(1, { ...target.creature("f", { controller: "opponent" }), label: "créature que vous ne contrôlez pas" })],
+      [target.upTo(1, { ...target.creature("f", { controller: "opponent" }), label: "creature you don't control" })],
       [fx.fight(ref.target("c"), ref.target("f"))],
       { c: ref.target() },
     ),
@@ -73,21 +73,23 @@ const WEREFOX_CURSE: Effect[] = [
 ];
 
 /**
- * Feral Encounter : « au début de la prochaine phase de combat de ce tour, la créature ciblée que vous contrôlez inflige
- * des blessures égales à sa force à jusqu'à une créature ciblée que vous ne contrôlez pas » — un emblème de ce tour,
- * dont la capacité ne se déclenche qu'une fois (cibles choisies quand elle se déclenche).
+ * Feral Encounter: "At the beginning of the next combat phase this turn, target creature you control deals damage
+ * equal to its power to up to one target creature you don't control" — an emblem for this turn, whose ability triggers
+ * only once (targets chosen when it triggers).
  */
 const FERAL_ENCOUNTER_COMBAT: Effect = fx.emblem(
   "Feral Encounter",
-  "Au début de la prochaine phase de combat de ce tour, une créature ciblée que vous contrôlez inflige des blessures égales à sa force à jusqu'à une créature ciblée que vous ne contrôlez pas.",
+  msg(
+    "At the beginning of the next combat phase this turn, target creature you control deals damage equal to its power to up to one target creature you don't control.",
+  ),
   [
     triggered(when.yourCombat, [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))], {
       targets: [
         target.creature("a", { controller: "you" }),
-        target.upTo(1, { ...target.creature("b", { controller: "opponent" }), label: "créature que vous ne contrôlez pas" }),
+        target.upTo(1, { ...target.creature("b", { controller: "opponent" }), label: "creature you don't control" }),
       ],
       oncePerTurn: true,
-      label: "Votre créature inflige des blessures égales à sa force",
+      label: "Your creature deals damage equal to its power",
     }),
   ],
   false,
@@ -95,23 +97,23 @@ const FERAL_ENCOUNTER_COMBAT: Effect = fx.emblem(
 );
 
 export const GREEN: Record<string, CardScript> = {
-  // Marchandage et piétinement lus dans le texte.
+  // Bargain and trample read from the text.
   "Hamlet Glutton": {
     costReduction: { generic: 2, condition: cond.kicked },
-    abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "Vous gagnez 3 points de vie" })],
+    abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "When it enters, you gain 3 life" })],
   },
   "Graceful Takedown": {
     spell: spell(
       [
         target.upTo(99, {
           ...target.creature("e", { controller: "you", enchanted: true }),
-          label: "créature enchantée que vous contrôlez",
+          label: "enchanted creature you control",
         }),
         {
-          ...target.upTo(1, { ...target.creature("o", { controller: "you" }), label: "autre créature que vous contrôlez" }),
+          ...target.upTo(1, { ...target.creature("o", { controller: "you" }), label: "other creature you control" }),
           otherThan: ["e"],
         },
-        { ...target.creature("t", { controller: "opponent" }), label: "créature que vous ne contrôlez pas" },
+        { ...target.creature("t", { controller: "opponent" }), label: "creature you don't control" },
       ],
       [fx.eachOfDealsDamage(ref.target("e"), ref.target("t")), fx.eachOfDealsDamage(ref.target("o"), ref.target("t"))],
     ),
@@ -119,11 +121,9 @@ export const GREEN: Record<string, CardScript> = {
   "Agatha's Champion": {
     abilities: [
       triggered(when.entersSelf, [fx.fight(ref.self, ref.target())], {
-        targets: [
-          target.upTo(1, { ...target.creature("t", { controller: "opponent" }), label: "créature que vous ne contrôlez pas" }),
-        ],
+        targets: [target.upTo(1, { ...target.creature("t", { controller: "opponent" }), label: "creature you don't control" })],
         condition: cond.kicked,
-        label: "Marchandée : se bat contre une créature",
+        label: "Bargained: fights a creature",
       }),
     ],
   },
@@ -133,14 +133,14 @@ export const GREEN: Record<string, CardScript> = {
   "Plant Beans": { spell: spell([], [fx.extraLandThisTurn]) },
 
   "Bestial Bloodline": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility("attached", { power: 2, toughness: 2 }, { label: "+2/+2" }),
       activated({
         mana: "{4}{G}",
         fromGraveyard: true,
         effects: [fx.toHand(ref.self)],
-        label: "Revient du cimetière dans la main",
+        label: "Return it from your graveyard to your hand",
       }),
     ],
   },
@@ -155,29 +155,29 @@ export const GREEN: Record<string, CardScript> = {
               "graveyard",
               { types: ["Land"] },
               { to: "battlefield", tapped: true },
-              { count: 1, prompt: "Une carte de terrain de votre cimetière revient engagée" },
+              { count: 1, prompt: "A land card from your graveyard returns tapped" },
             ),
           ],
-          { label: "Meulez trois cartes, puis un terrain de votre cimetière revient engagé" },
+          { label: "Mill three cards, then a land from your graveyard returns tapped" },
         ),
       ),
       playerStatic({
         abilityCost: { source: { types: ["Land"] }, reduce: 1 },
-        label: "Les capacités activées de vos terrains coûtent {1} de moins",
+        label: "Activated abilities of your lands cost {1} less",
       }),
-      // « créatures-terrains » : créature qui a aussi le type terrain.
+      // "land creatures": a creature that also has the land type.
       staticAbility(
         { types: ["Creature"], controller: "you", not: { notTypes: ["Land"] } },
         { power: 1, toughness: 1 },
-        { label: "Vos créatures-terrains gagnent +1/+1" },
+        { label: "Your land creatures get +1/+1" },
       ),
     ],
   },
   "Brave the Wilds": {
-    // Approximation : la cible (« si ce sort a été marchandé, un terrain ciblé ») est facultative, et proposée même
-    // sans marchandage (elle n'est alors pas affectée).
+    // Approximation: the target ("if this spell was bargained, target land") is optional, and offered even without
+    // bargaining (it is then not affected).
     spell: spell(
-      [target.optional(target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez"))],
+      [target.optional(target.permanent("t", ["Land"], { controller: "you" }, "land you control"))],
       [
         ...fx.when(
           cond.kicked,
@@ -200,12 +200,12 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.addCounters(ref.self, 2)], {
         batched: true,
         oncePerTurn: true,
-        label: "Deux marqueurs +1/+1 (une fois par tour)",
+        label: "Two +1/+1 counters (once each turn)",
       }),
       triggered(when.enters({ types: ["Enchantment"], controller: "you" }), [fx.draw(1)], {
         batched: true,
         oncePerTurn: true,
-        label: "Piochez une carte (une fois par tour)",
+        label: "Draw a card (once each turn)",
       }),
     ],
   },
@@ -228,12 +228,12 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.copyToken(ref.self, { count: 2 })], {
         condition: cond.sourceMatches({ token: false }),
-        label: "Deux jetons copies d'elle",
+        label: "Two tokens that are copies of it",
       }),
       triggered(
         when.diesSelf,
         [fx.addCountersAll({ types: ["Creature"], controller: "you", name: "Gruff Triplets" }, amount.lkiPower)],
-        { label: "Autant de marqueurs +1/+1 que sa force sur chacune de vos Gruff Triplets" },
+        { label: "As many +1/+1 counters as its power on each of your Gruff Triplets" },
       ),
     ],
   },
@@ -246,7 +246,7 @@ export const GREEN: Record<string, CardScript> = {
         sacrificeOther: { filter: { types: ["Artifact"], subtype: "Food" } },
         oncePerTurn: true,
         effects: [fx.pump(ref.self, 2, 2)],
-        label: "+2/+2 jusqu'à la fin du tour",
+        label: "+2/+2 until end of turn",
       }),
     ],
   },
@@ -259,25 +259,25 @@ export const GREEN: Record<string, CardScript> = {
         { addKeywords: ["haste"] },
         {
           condition: cond.amountAtLeast(amount.countExiled({ adventure: true }), 1),
-          label: "Célérité tant que vous possédez une carte avec une Aventure en exil",
+          label: "Haste as long as you own a card with an Adventure in exile",
         },
       ),
     ],
   },
   "The Huntsman's Redemption": {
     abilities: [
-      chapter([1], [fx.createTokens(BEAST_3)], { label: "Un jeton Bête 3/3" }),
+      chapter([1], [fx.createTokens(BEAST_3)], { label: "A 3/3 Beast token" }),
       chapter(
         [2],
         [
           fx.sacrifice(ref.you, { types: ["Creature"] }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.search({ anyOf: [{ types: ["Creature"] }, BASIC_LAND] })),
         ],
-        { label: "Sacrifiez une créature : cherchez une créature ou un terrain de base" },
+        { label: "Sacrifice a creature: search for a creature or a basic land" },
       ),
       chapter([3], [fx.pump(ref.target(), 2, 2, ["trample"])], {
         targets: [target.upTo(2, target.creature())],
-        label: "Jusqu'à deux créatures : +2/+2 et le piétinement",
+        label: "Up to two creatures: +2/+2 and trample",
       }),
     ],
   },
@@ -286,22 +286,22 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Night of the Sweets' Revenge": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" }),
-      staticAbility(FOOD_YOU, { addAbilities: [manaAbility("G")] }, { label: "Vos Nourritures ont « {T} : ajoutez {G} »" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food token" }),
+      staticAbility(FOOD_YOU, { addAbilities: [manaAbility("G")] }, { label: 'Your Foods have "{T}: Add {G}"' }),
       activated({
         mana: "{5}{G}{G}",
         sacrifice: true,
         sorcerySpeed: true,
         effects: [fx.pumpAll(CREATURE_YOU_CONTROL, amount.count(FOOD_YOU), amount.count(FOOD_YOU))],
-        label: "Vos créatures gagnent +X/+X (X : vos Nourritures)",
+        label: "Your creatures get +X/+X (X: your Foods)",
       }),
     ],
   },
   "Redtooth Genealogist": {
     abilities: [
       triggered(when.entersSelf, createRole(ROYAL_ROLE), {
-        targets: [{ ...target.creature("t", { controller: "you", other: true }), label: "autre créature que vous contrôlez" }],
-        label: "Un Rôle Royal attaché à une autre de vos créatures",
+        targets: [{ ...target.creature("t", { controller: "you", other: true }), label: "other creature you control" }],
+        label: "A Royal Role attached to another creature you control",
       }),
     ],
   },
@@ -309,22 +309,22 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ types: ["Enchantment"], controller: "you" }),
-        fx.mayPay("{2}", "Payer {2} pour renvoyer Redtooth Vanguard dans votre main ?", fx.toHand(ref.self)),
-        { fromGraveyard: true, label: "Payez {2} : revient du cimetière dans la main" },
+        fx.mayPay("{2}", "Pay {2} to return Redtooth Vanguard to your hand?", fx.toHand(ref.self)),
+        { fromGraveyard: true, label: "Pay {2}: returns from the graveyard to hand" },
       ),
     ],
   },
   "Return from the Wilds": {
     spell: chooseTwo(
-      mode("Un terrain de base, engagé", [], [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })]),
-      mode("Un Humain 1/1", [], [fx.createTokens(HUMAN_W)]),
-      mode("Une Nourriture", [], [fx.createTokens(FOOD)]),
+      mode("A basic land, tapped", [], [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })]),
+      mode("A 1/1 Human", [], [fx.createTokens(HUMAN_W)]),
+      mode("A Food", [], [fx.createTokens(FOOD)]),
     ),
   },
   "Rootrider Faun": {
     abilities: [
       manaAbility("G"),
-      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
+      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "One mana of any color" }),
     ],
   },
   "Royal Treatment": {
@@ -334,11 +334,11 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Skybeast Tracker": {
-    abilities: [triggered(CAST_MV5, [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" })],
+    abilities: [triggered(CAST_MV5, [fx.createTokens(FOOD)], { label: "A Food token" })],
   },
   "Spider Food": {
     spell: spell(
-      [target.optional(targetObj("t", ART_ENCH_OR_FLYER, "artefact, enchantement ou créature avec le vol"))],
+      [target.optional(targetObj("t", ART_ENCH_OR_FLYER, "artifact, enchantment or creature with flying"))],
       [fx.destroy(ref.target()), fx.createTokens(FOOD)],
     ),
   },
@@ -346,20 +346,17 @@ export const GREEN: Record<string, CardScript> = {
   // --- Stormkeld Vanguard // Bear Down ----------------------------------------
   "Stormkeld Vanguard": { abilities: [blockAbility(block.notByPowerLE2)] },
   "Bear Down": {
-    spell: spell(
-      [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
-      [fx.destroy(ref.target())],
-    ),
+    spell: spell([target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")], [fx.destroy(ref.target())]),
   },
 
   "Tanglespan Lookout": {
-    abilities: [triggered(when.enters({ subtype: "Aura", controller: "you" }), [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.enters({ subtype: "Aura", controller: "you" }), [fx.draw(1)], { label: "Draw a card" })],
   },
   "Territorial Witchstalker": {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.self, 1, 0, ["attacksDespiteDefender"])], {
         condition: cond.ferocious,
-        label: "+1/+0 et peut attaquer malgré le défenseur",
+        label: "+1/+0 and can attack as though it didn't have defender",
       }),
     ],
   },
@@ -381,7 +378,7 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Titanic Growth": { spell: spell([target.creature()], [fx.pump(ref.target(), 4, 4)]) },
   "Toadstool Admirer": {
-    abilities: [activated({ mana: "{3}{G}", effects: [fx.addCounters(ref.self, 1)], label: "Un marqueur +1/+1" })],
+    abilities: [activated({ mana: "{3}{G}", effects: [fx.addCounters(ref.self, 1)], label: "A +1/+1 counter" })],
   },
   "Tough Cookie": {
     abilities: [
@@ -389,33 +386,34 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{2}{G}",
         targets: [
-          targetObj(
-            "t",
-            { types: ["Artifact"], notTypes: ["Creature"], controller: "you" },
-            "artefact non-créature que vous contrôlez",
-          ),
+          targetObj("t", { types: ["Artifact"], notTypes: ["Creature"], controller: "you" }, "noncreature artifact you control"),
         ],
         effects: [fx.modify(ref.target(), { addTypes: ["Artifact", "Creature"], setPower: 4, setToughness: 4 })],
-        label: "Un artefact non-créature devient une créature-artefact 4/4",
+        label: "A noncreature artifact becomes a 4/4 artifact creature",
       }),
-      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 PV" }),
+      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 life" }),
     ],
   },
   "Troublemaker Ouphe": {
     abilities: [
       triggered(when.entersSelf, [fx.exile(ref.target())], {
         targets: [
-          target.permanent("t", ["Artifact", "Enchantment"], { controller: "opponent" }, "artefact ou enchantement adverse"),
+          target.permanent(
+            "t",
+            ["Artifact", "Enchantment"],
+            { controller: "opponent" },
+            "artifact or enchantment an opponent controls",
+          ),
         ],
         condition: cond.kicked,
-        label: "Marchandée : exilez un artefact ou un enchantement adverse",
+        label: "Bargained: exile an artifact or an enchantment an opponent controls",
       }),
     ],
   },
   "Up the Beanstalk": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
-      triggered(CAST_MV5, [fx.draw(1)], { label: "Sort de VM 5 ou plus : piochez une carte" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }),
+      triggered(CAST_MV5, [fx.draw(1)], { label: "Spell with MV 5 or greater: draw a card" }),
     ],
   },
   "Verdant Outrider": {
@@ -423,7 +421,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{1}{G}",
         effects: [fx.modify(ref.self, { addBlockRules: [block.notByPowerLE2] })],
-        label: "Imblocable par les créatures de force 2 ou moins ce tour-ci",
+        label: "Can't be blocked by creatures with power 2 or less this turn",
       }),
     ],
   },
@@ -436,7 +434,7 @@ export const GREEN: Record<string, CardScript> = {
         source: { types: ["Land"], basic: true },
         to: "you",
         modify: { times: 3 },
-        label: "Vos terrains de base engagés pour du mana en produisent trois fois plus",
+        label: "Your basic lands tapped for mana produce three times as much",
       }),
     ],
   },
@@ -447,7 +445,7 @@ export const GREEN: Record<string, CardScript> = {
           "t",
           { anyOf: [{ types: ["Creature"] }, { types: ["Land"] }] },
           "you",
-          "carte de créature ou de terrain de votre cimetière",
+          "creature or land card in your graveyard",
         ),
       ],
       [fx.toHand(ref.target())],
@@ -456,11 +454,11 @@ export const GREEN: Record<string, CardScript> = {
 
   "Welcome to Sweettooth": {
     abilities: [
-      chapter([1], [fx.createTokens(HUMAN_W)], { label: "Un jeton Humain 1/1" }),
-      chapter([2], [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" }),
+      chapter([1], [fx.createTokens(HUMAN_W)], { label: "A 1/1 Human token" }),
+      chapter([2], [fx.createTokens(FOOD)], { label: "A Food token" }),
       chapter([3], [fx.addCounters(ref.target(), amount.plus(1, amount.count(FOOD_YOU)))], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Un marqueur +1/+1, plus un par Nourriture que vous contrôlez",
+        label: "A +1/+1 counter, plus one for each Food you control",
       }),
     ],
   },
@@ -473,7 +471,7 @@ export const GREEN: Record<string, CardScript> = {
   "Questing Druid": {
     abilities: [
       triggered(when.castSpell("you", { colors: ["W", "U", "B", "R"] }), [fx.addCounters(ref.self, 1)], {
-        label: "Sort blanc, bleu, noir ou rouge : un marqueur +1/+1",
+        label: "White, blue, black or red spell: a +1/+1 counter",
       }),
     ],
   },
@@ -483,7 +481,7 @@ export const GREEN: Record<string, CardScript> = {
 
   // --- Tempest Hart // Scan the Clouds ----------------------------------------
   "Tempest Hart": {
-    abilities: [triggered(CAST_MV5, [fx.addCounters(ref.self, 1)], { label: "Sort de VM 5 ou plus : un marqueur +1/+1" })],
+    abilities: [triggered(CAST_MV5, [fx.addCounters(ref.self, 1)], { label: "Spell with MV 5 or greater: a +1/+1 counter" })],
   },
   "Scan the Clouds": { spell: spell([], [fx.draw(2), fx.discard(2)]) },
 
@@ -491,7 +489,7 @@ export const GREEN: Record<string, CardScript> = {
   "Intrepid Trufflesnout": {
     abilities: [
       triggered({ on: "attacks", who: "self", alone: true }, [fx.createTokens(FOOD)], {
-        label: "Attaque seule : un jeton Nourriture",
+        label: "Attacks alone: a Food token",
       }),
     ],
   },
@@ -506,18 +504,18 @@ export const GREEN: Record<string, CardScript> = {
           fx.sacrifice(ref.you, FOOD_YOU, 1, { optional: true, store: "f" }),
           ...fx.when(cond.v("f"), fx.pumpAll({ types: ["Creature"], attacking: true }, 1, 1, ["trample"])),
         ],
-        { label: "Sacrifiez une Nourriture : les attaquants gagnent +1/+1 et le piétinement" },
+        { label: "Sacrifice a Food: attackers get +1/+1 and trample" },
       ),
     ],
   },
   "Wildwood Mentor": {
     abilities: [
       triggered(when.enters({ token: true, controller: "you" }), [fx.addCounters(ref.self, 1)], {
-        label: "Un jeton arrive : un marqueur +1/+1",
+        label: "A token enters: a +1/+1 counter",
       }),
       triggered(when.attacksSelf, [fx.pump(ref.target(), amount.powerOf(ref.self), amount.powerOf(ref.self))], {
-        targets: [{ ...target.creature("t", { attacking: true, other: true }), label: "autre créature attaquante" }],
-        label: "Une autre attaquante gagne +X/+X (X : sa force)",
+        targets: [{ ...target.creature("t", { attacking: true, other: true }), label: "other attacking creature" }],
+        label: "Another attacker gets +X/+X (X: its power)",
       }),
     ],
   },

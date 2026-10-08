@@ -112,7 +112,7 @@ describe("Wilds of Eldraine", () => {
       const card = idOf(s, "p1", "graveyard", KNIGHT);
       // Seule l'Aventure se lance depuis le cimetière : la créature, non.
       expect(castOptions(s, "p1", card).map((o) => o.type === "cast" && o.face)).toEqual([1]);
-      expect(() => act(s, "p1", { type: "cast", card })).toThrow(/qu'en Aventure/);
+      expect(() => act(s, "p1", { type: "cast", card })).toThrow(/only be cast from here as an Adventure/);
       const hand = s.players.p1?.hand.length ?? 0;
       s = settle(act(s, "p1", { type: "cast", card, face: 1 }));
       expect(s.players.p1?.hand).toHaveLength(hand + 1);
@@ -3749,14 +3749,14 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
       const greta = idOf(s, "p1", "battlefield", "Greta, Sweettooth Scourge");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", greta, { label: "marqueur", targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", greta, { label: "counter", targets: { t: [bear] } }));
       expect(counters(s, bear)).toBe(1);
       expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
       // Plus de Nourriture : la capacité ne peut plus être activée.
       expect(activations(s, "p1", greta)).toHaveLength(0);
       const t = scenario({ p1: { battlefield: ["Greta, Sweettooth Scourge", "Candy Trail", ...lands("Swamp", 2)] } });
       const hand = t.players.p1?.hand.length ?? 0;
-      const u = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Greta, Sweettooth Scourge"), { label: "Piochez" }));
+      const u = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Greta, Sweettooth Scourge"), { label: "Draw" }));
       expect(u.players.p1?.hand).toHaveLength(hand + 1);
       expect(u.players.p1?.life).toBe(19);
       expect(idsOf(u, "p1", "graveyard", "Candy Trail")).toHaveLength(1);
@@ -3838,20 +3838,20 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
     it("Troyan : {G}{U} seulement pour un sort de VM 5 ou plus ; {U}, {T} : piochez, puis défaussez", () => {
       let s = scenario({ p1: { battlefield: ["Troyan, Gutsy Explorer"], hand: ["Bear Cub"] } });
       const troyan = idOf(s, "p1", "battlefield", "Troyan, Gutsy Explorer");
-      s = settle(activate(s, "p1", troyan, { label: "Ajoutez" }));
+      s = settle(activate(s, "p1", troyan, { label: "Add" }));
       const restricted = s.players.p1?.restrictedMana?.map((m) => m.type).sort();
       expect(restricted).toEqual(["G", "U"]);
       // Bear Cub ({1}{G}, VM 2) ne peut pas être payé avec ce mana.
       expect(() => cast(s, "p1", "Bear Cub")).toThrow();
       const t = scenario({ p1: { battlefield: ["Troyan, Gutsy Explorer", ...lands("Mountain", 4)], hand: ["Shivan Dragon"] } });
-      let u = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Troyan, Gutsy Explorer"), { label: "Ajoutez" }));
+      let u = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Troyan, Gutsy Explorer"), { label: "Add" }));
       // Shivan Dragon ({4}{R}{R}) : 4 Montagnes + {G}{U} restreints = 6 mana.
       u = settle(cast(u, "p1", "Shivan Dragon"));
       expect(idsOf(u, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
       const v = scenario({
         p1: { battlefield: ["Troyan, Gutsy Explorer", "Island"], hand: ["Opt"], library: lands("Forest", 3) },
       });
-      const w = settle(activate(v, "p1", idOf(v, "p1", "battlefield", "Troyan, Gutsy Explorer"), { label: "Piochez" }));
+      const w = settle(activate(v, "p1", idOf(v, "p1", "battlefield", "Troyan, Gutsy Explorer"), { label: "Draw" }));
       expect(w.players.p1?.hand).toHaveLength(1);
       expect(w.players.p1?.graveyard).toHaveLength(1);
     });
@@ -3866,7 +3866,7 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       const will = idOf(s, "p1", "battlefield", "Will, Scion of Peace");
       expect(chars(s, will).keywords).toContain("vigilance");
       // Gingerbrute : {2}, {T}, sacrifice : 3 PV (payés avec deux Plaines).
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Gingerbrute"), { label: "3 points de vie" }));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Gingerbrute"), { label: "3 life" }));
       expect(s.players.p1?.life).toBe(23);
       expect(s.objects[idOf(s, "p1", "battlefield", "Forest")]?.tapped).toBe(false);
       s = settle(activate(s, "p1", will));
@@ -3906,9 +3906,9 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       const t = scenario({ p1: { battlefield: ["Eriette's Tempting Apple", ...lands("Swamp", 2)] } });
       const apple = idOf(t, "p1", "battlefield", "Eriette's Tempting Apple");
       expect(chars(t, apple).subtypes).toContain("Food");
-      const u = settle(activate(t, "p1", apple, { label: "Gagnez" }));
+      const u = settle(activate(t, "p1", apple, { label: "gain" }));
       expect([u.players.p1?.life, u.players.p2?.life]).toEqual([23, 20]);
-      const v = settle(activate(t, "p1", apple, { label: "perd 3", targets: { t: ["p2"] } }));
+      const v = settle(activate(t, "p1", apple, { label: "loses 3", targets: { t: ["p2"] } }));
       expect([v.players.p1?.life, v.players.p2?.life]).toEqual([20, 17]);
       expect(idsOf(v, "p1", "graveyard", "Eriette's Tempting Apple")).toHaveLength(1);
     });
@@ -3917,7 +3917,7 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       let s = scenario({ p1: { battlefield: ["Gingerbrute", "Mountain"] }, p2: { battlefield: ["Bear Cub", HASTY] } });
       const ginger = idOf(s, "p1", "battlefield", "Gingerbrute");
       expect(chars(s, ginger).keywords).toContain("haste");
-      s = settle(activate(s, "p1", ginger, { label: "célérité" }));
+      s = settle(activate(s, "p1", ginger, { label: "haste" }));
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: ginger, defender: "p2" }] });
       s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
@@ -3936,7 +3936,7 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       const crown = idOf(s, "p1", "battlefield", "Hylda's Crown of Winter");
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       // Pendant votre tour, la capacité ne coûte que {T}.
-      s = settle(activate(s, "p1", crown, { label: "Engagez", targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", crown, { label: "Tap a creature", targets: { t: [bear] } }));
       expect(s.objects[bear]?.tapped).toBe(true);
       const opp = scenario({ active: "p2", p1: { battlefield: ["Hylda's Crown of Winter"] }, p2: { battlefield: ["Bear Cub"] } });
       const passed = act(opp, "p2", { type: "pass" });
@@ -3945,7 +3945,7 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
         p1: { battlefield: ["Hylda's Crown of Winter", ...lands("Island", 3)], library: lands("Forest", 4) },
         p2: { battlefield: [{ name: "Bear Cub", tapped: true }, { name: "Serra Angel", tapped: true }, "Bear Cub"] },
       });
-      const u = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Hylda's Crown of Winter"), { label: "Piochez" }));
+      const u = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Hylda's Crown of Winter"), { label: "Draw" }));
       expect(u.players.p1?.hand).toHaveLength(2);
     });
 
@@ -3966,7 +3966,7 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       expect(c.supertypes).toContain("Legendary");
       expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === crag)).toBe(false);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", crag, { label: "Équiper", targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", crag, { label: "Equip", targets: { t: [bear] } }));
       expect(s.objects[crag]?.attachedTo).toBe(bear);
       expect(pt(s, bear)).toEqual([5, 5]);
     });
@@ -4035,15 +4035,15 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       const bowls = idOf(s, "p1", "battlefield", "Three Bowls of Porridge");
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      s = settle(activate(s, "p1", bowls, { label: "2 blessures", targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", bowls, { label: "2 damage", targets: { t: [bear] } }));
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       (s.objects[bowls] as { tapped: boolean }).tapped = false;
-      expect(activations(s, "p1", bowls).map((a) => a.label)).not.toContain("2 blessures à une créature");
-      s = settle(activate(s, "p1", bowls, { label: "Engagez", targets: { t: [angel] } }));
+      expect(activations(s, "p1", bowls).map((a) => a.label)).not.toContain("2 damage to a creature");
+      s = settle(activate(s, "p1", bowls, { label: "Tap a creature", targets: { t: [angel] } }));
       expect(s.objects[angel]?.tapped).toBe(true);
       (s.objects[bowls] as { tapped: boolean }).tapped = false;
-      expect(activations(s, "p1", bowls).map((a) => a.label)).toEqual(["Sacrifiez-le et gagnez 3 points de vie"]);
-      s = settle(activate(s, "p1", bowls, { label: "Sacrifiez" }));
+      expect(activations(s, "p1", bowls).map((a) => a.label)).toEqual(["Sacrifice it and gain 3 life"]);
+      s = settle(activate(s, "p1", bowls, { label: "Sacrifice" }));
       expect(s.players.p1?.life).toBe(23);
       expect(idsOf(s, "p1", "graveyard", "Three Bowls of Porridge")).toHaveLength(1);
     });
@@ -4082,9 +4082,9 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
       });
       const inn2 = idOf(t, "p1", "battlefield", "Edgewall Inn");
       const bear = idOf(t, "p1", "graveyard", "Bear Cub");
-      expect(() => activate(t, "p1", inn2, { label: "Aventure", targets: { t: [bear] } })).toThrow();
+      expect(() => activate(t, "p1", inn2, { label: "Adventure", targets: { t: [bear] } })).toThrow();
       const card = idOf(t, "p1", "graveyard", "Bramble Familiar // Fetch Quest");
-      const u = settle(activate(t, "p1", inn2, { label: "Aventure", targets: { t: [card] } }));
+      const u = settle(activate(t, "p1", inn2, { label: "Adventure", targets: { t: [card] } }));
       expect(idsOf(u, "p1", "hand", "Bramble Familiar // Fetch Quest")).toHaveLength(1);
       expect(idsOf(u, "p1", "graveyard", "Edgewall Inn")).toHaveLength(1);
     });
@@ -4621,7 +4621,7 @@ describe("Wilds of Eldraine, lot C3 : copies non légendaires, copie d'une carte
     );
     expect(chars(s, l2).name).toBe("Bear Cub");
     expect(chars(s, l2).keywords).toContain("flying");
-    expect(chars(s, l2).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Devient une copie"))).toBe(true);
+    expect(chars(s, l2).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Becomes a copy"))).toBe(true);
     void bear;
   });
 });
@@ -4934,7 +4934,7 @@ describe("Wilds of Eldraine, lot C5 : payer des PV, nombre choisi, cartes à Ave
       if (req.intent === "triggerMode") {
         labels = req.options.map((o) => req.labels?.[String(o)] ?? "");
         return req.options.filter(
-          (o) => !(req.labels?.[String(o)] ?? "").includes("+") && /cimetière/.test(req.labels?.[String(o)] ?? ""),
+          (o) => !(req.labels?.[String(o)] ?? "").includes("+") && /graveyard/.test(req.labels?.[String(o)] ?? ""),
         );
       }
       if (req.options.includes("p2")) return ["p2"];
@@ -4942,7 +4942,7 @@ describe("Wilds of Eldraine, lot C5 : payer des PV, nombre choisi, cartes à Ave
     });
     // Pas de carte à Aventure adverse en exil : trois combinaisons (votre carte, le cimetière, les deux).
     expect(labels).toHaveLength(3);
-    expect(labels.some((l) => /ne possédez pas/.test(l))).toBe(false);
+    expect(labels.some((l) => /don't own/.test(l))).toBe(false);
     expect(exiled(s, "Opt")).toHaveLength(1);
     expect(exiled(s, BRAMBLE)).toHaveLength(1);
     expect(idsOf(s, "p1", "hand", BRAMBLE)).toHaveLength(0);

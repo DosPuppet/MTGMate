@@ -1,4 +1,4 @@
-/** Aetherdrift — cartes rouges. */
+/** Aetherdrift — red cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   amount,
@@ -25,7 +25,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 2, 0, ["trample"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "+2/+0 et le piétinement",
+        label: "+2/+0 and gains trample",
       }),
     ],
   },
@@ -33,23 +33,23 @@ export const RED: Record<string, CardScript> = {
   "Count on Luck": {
     abilities: [
       triggered(when.yourUpkeep, [fx.exileTop(ref.you, 1, "c"), fx.grantPlay(ref.stored("c"))], {
-        label: "Exilez la carte du dessus, jouable ce tour-ci",
+        label: "Exile the top card, playable this turn",
       }),
     ],
   },
   "Crash and Burn": {
     spell: modal(
-      mode("Détruisez un Véhicule", [targetObj("t", { subtype: "Vehicle" }, "Véhicule")], [fx.destroy(ref.target())]),
-      mode("6 blessures", [target.creatureOrPlaneswalker("t")], [fx.damage(6, ref.target())]),
+      mode("Destroy target Vehicle", [targetObj("t", { subtype: "Vehicle" }, "Vehicle")], [fx.destroy(ref.target())]),
+      mode("6 damage", [target.creatureOrPlaneswalker("t")], [fx.damage(6, ref.target())]),
     ),
   },
   "Dracosaur Auxiliary": {
-    abilities: [whileSaddled([fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 blessures" })],
+    abilities: [whileSaddled([fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 damage" })],
   },
   "Dynamite Diver": {
     abilities: [
       powerRuleAbility(powerFor.pilot),
-      triggered(when.diesSelf, [fx.damage(1, ref.target())], { targets: [target.any("t")], label: "1 blessure" }),
+      triggered(when.diesSelf, [fx.damage(1, ref.target())], { targets: [target.any("t")], label: "1 damage" }),
     ],
   },
   "Fuel the Flames": { spell: spell([], [fx.damageAll(2, { types: ["Creature"] })]) },
@@ -64,30 +64,30 @@ export const RED: Record<string, CardScript> = {
             fx.reflexive([target.permanent("t", ["Artifact"], { controller: "opponent" })], [fx.destroy(ref.target())]),
           ),
         ],
-        { label: "Sacrifiez : détruisez un artefact" },
+        { label: "Sacrifice: destroy an artifact" },
       ),
     ],
   },
-  "Gilded Ghoda": { abilities: [whileSaddled([fx.createTokens(TREASURE)], { label: "Trésor" })] },
+  "Gilded Ghoda": { abilities: [whileSaddled([fx.createTokens(TREASURE)], { label: "Treasure" })] },
   "Lightning Strike": { spell: spell([target.any("t")], [fx.damage(3, ref.target())]) },
   "Magmakin Artillerist": {
     abilities: [
       triggered(when.discardBatch(), [fx.damage(amount.eventAmount, ref.eachOpponent)], {
-        label: "Autant de blessures à chaque adversaire",
+        label: "That much damage to each opponent",
       }),
-      whenCycled([fx.damage(1, ref.eachOpponent)], { label: "1 blessure à chaque adversaire" }),
+      whenCycled([fx.damage(1, ref.eachOpponent)], { label: "1 damage to each opponent" }),
     ],
   },
   "Marauding Mako": {
     abilities: [
-      triggered(when.discardBatch(), [fx.addCounters(ref.self, amount.eventAmount)], { label: "Autant de marqueurs +1/+1" }),
+      triggered(when.discardBatch(), [fx.addCounters(ref.self, amount.eventAmount)], { label: "That many +1/+1 counters" }),
     ],
   },
   "Pedal to the Metal": { spell: spell([target.creature("t")], [fx.pump(ref.target(), amount.x, 0, ["firstStrike"])]) },
   "Reckless Velocitaur": {
     abilities: [
       triggered(when.crews(true), [fx.pump(ref.eventObject, 2, 0, ["trample"])], {
-        label: "La Monture ou le Véhicule : +2/+0 et le piétinement",
+        label: "The Mount or Vehicle: +2/+0 and trample",
       }),
     ],
   },

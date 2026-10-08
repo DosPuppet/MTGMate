@@ -1,4 +1,4 @@
-/** Teenage Mutant Ninja Turtles (TMT) : faufilement, Mutagène, Alliance, Disparition. */
+/** Teenage Mutant Ninja Turtles (TMT): sneak, Mutagen, Alliance, Disappear. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

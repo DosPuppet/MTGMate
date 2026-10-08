@@ -1,13 +1,13 @@
 /**
- * Éléments propres à Aetherdrift (DFT) : jetons Pilote, Servo, Éléphant, Véhicule, Dinosaure Dragon, Insecte ;
- * filtres « créature ou Véhicule », « Monture ou Véhicule ». Le DSL vient de Foundations (fdn/common.ts).
+ * Aetherdrift (DFT) specifics: Pilot, Servo, Elephant, Vehicle, Dinosaur Dragon and Insect tokens; "creature or
+ * Vehicle" and "Mount or Vehicle" filters. The DSL comes from Foundations (fdn/common.ts).
  */
 import { dsl, type ObjectFilter, type TargetSpec, type TokenSpec } from "@mtgx/engine";
 
 export * from "../eoe/common";
 export { THOPTER } from "../fra/common";
 
-/** Pilote : créature incolore 1/1 qui monte et équipe comme si sa force était supérieure de 2. */
+/** Pilot: 1/1 colorless creature that saddles and crews as though its power were 2 greater. */
 export const PILOT: TokenSpec = {
   name: "Pilot",
   colors: [],
@@ -19,7 +19,7 @@ export const PILOT: TokenSpec = {
   text: "This token saddles Mounts and crews Vehicles as though its power were 2 greater.",
 };
 
-/** Servo : créature-artefact incolore 1/1. */
+/** Servo: 1/1 colorless artifact creature. */
 export const SERVO: TokenSpec = {
   name: "Servo",
   colors: [],
@@ -29,7 +29,7 @@ export const SERVO: TokenSpec = {
   toughness: 1,
 };
 
-/** Éléphant : créature verte 3/3. */
+/** Elephant: 3/3 green creature. */
 export const ELEPHANT: TokenSpec = {
   name: "Elephant",
   colors: ["G"],
@@ -39,7 +39,7 @@ export const ELEPHANT: TokenSpec = {
   toughness: 3,
 };
 
-/** Véhicule : artefact incolore 3/2 avec « Équipage 1 ». */
+/** Vehicle: 3/2 colorless artifact with "Crew 1". */
 export const VEHICLE: TokenSpec = {
   name: "Vehicle",
   colors: [],
@@ -51,7 +51,7 @@ export const VEHICLE: TokenSpec = {
   text: "Crew 1",
 };
 
-/** Dinosaure Dragon : créature rouge 4/4 avec le vol. */
+/** Dinosaur Dragon: 4/4 red creature with flying. */
 export const DINOSAUR_DRAGON: TokenSpec = {
   name: "Dinosaur Dragon",
   colors: ["R"],
@@ -62,7 +62,7 @@ export const DINOSAUR_DRAGON: TokenSpec = {
   keywords: ["flying"],
 };
 
-/** Insecte : créature verte 1/1 (Aatchik). */
+/** Insect: 1/1 green creature (Aatchik). */
 export const GREEN_INSECT: TokenSpec = {
   name: "Insect",
   colors: ["G"],
@@ -72,14 +72,14 @@ export const GREEN_INSECT: TokenSpec = {
   toughness: 1,
 };
 
-/** « créature ou Véhicule » */
+/** "creature or Vehicle" */
 export const CREATURE_OR_VEHICLE: ObjectFilter = { anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }] };
-/** « Monture ou Véhicule » */
+/** "Mount or Vehicle" */
 export const MOUNT_OR_VEHICLE: ObjectFilter = { anyOf: [{ subtype: "Mount" }, { subtype: "Vehicle" }] };
 
 export const targetCreatureOrVehicle = (id = "t", extra: ObjectFilter = {}): TargetSpec => ({
   id,
-  label: "créature ou Véhicule",
+  label: "creature or Vehicle",
   filter: { objects: { ...CREATURE_OR_VEHICLE, ...extra } },
 });
 
@@ -89,7 +89,7 @@ export const whileSaddled = (
   opts: { targets?: TargetSpec[]; label?: string } = {},
 ) => dsl.triggered(dsl.when.attacksSelf, effects, { ...opts, condition: dsl.cond.saddled });
 
-/** Cycle avec un déclencheur « quand vous cyclez cette carte » (depuis le cimetière). */
+/** Cycling with a "when you cycle this card" trigger (from the graveyard). */
 export const whenCycled = (effects: Parameters<typeof dsl.triggered>[1], opts: { targets?: TargetSpec[]; label?: string } = {}) =>
   dsl.triggered(dsl.when.cycleSelf, effects, { ...opts, fromGraveyard: true });
 

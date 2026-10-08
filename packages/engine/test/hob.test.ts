@@ -306,7 +306,7 @@ describe("The Hobbit", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const axe = idOf(s, "p1", "battlefield", "Axe");
       const flail = idOf(s, "p1", "battlefield", "Bloodthorn Flail");
-      s = settle(activate(s, "p1", axe, "Équiper", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", axe, "Equip", { targets: { t: [bear] } }));
       expect(s.objects[axe]?.attachedTo).toBe(bear);
       expect(tappedPlains(s)).toBe(0);
       s = settle(activate(s, "p1", flail, "{3}", { targets: { t: [bear] } }));
@@ -317,7 +317,7 @@ describe("The Hobbit", () => {
       const ids = (name: string) => idOf(s, "p1", "battlefield", name);
       s = settle(activate(s, "p1", ids("Bloodthorn Flail"), "{3}", { targets: { t: [ids("Bear Cub")] } }));
       expect(tappedPlains(s)).toBe(0);
-      s = settle(activate(s, "p1", ids("Axe"), "Équiper", { targets: { t: [ids("Bear Cub")] } }));
+      s = settle(activate(s, "p1", ids("Axe"), "Equip", { targets: { t: [ids("Bear Cub")] } }));
       expect(tappedPlains(s)).toBe(2);
     });
 
@@ -951,7 +951,7 @@ describe("lot A, bleu", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 4), hand: [BAGGINS], library: ["Opt", "Forest", "Island"] } });
       let scried = 0;
       s = settle(cast(s, "p1", BAGGINS, { face: 1 }), (req, _player, cur) => {
-        if (req.type !== "pick" || !req.prompt.startsWith("Regard")) return undefined;
+        if (req.type !== "pick" || !req.prompt.startsWith("Scry")) return undefined;
         scried = req.options.length;
         return pickNamed(cur, req, "Opt");
       });
@@ -1390,8 +1390,8 @@ describe("lot A, bleu", () => {
         const gandalf = idOf(s, "p1", "battlefield", "Gandalf, Wandering Wizard");
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
         // Équiper Sorcier ne vise qu'un Sorcier.
-        expect(() => activate(s, "p1", staff, "Sorcier", { targets: { t: [bear] } })).toThrow();
-        s = settle(activate(s, "p1", staff, "Sorcier", { targets: { t: [gandalf] } }));
+        expect(() => activate(s, "p1", staff, "Wizard", { targets: { t: [bear] } })).toThrow();
+        s = settle(activate(s, "p1", staff, "Wizard", { targets: { t: [gandalf] } }));
         expect(s.objects[staff]?.attachedTo).toBe(gandalf);
         expect(chars(s, gandalf).keywords).toContain("prowess");
         s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
@@ -2385,7 +2385,7 @@ describe("lot A, vert", () => {
       it("blessures de combat à un joueur : un Trésor", () => {
         let s = scenario({ p1: { battlefield: ["Bejeweled Warg"] } });
         const warg = idOf(s, "p1", "battlefield", "Bejeweled Warg");
-        s = throughCombat(attack(s, [warg]), (req) => pickLabel(req, "Trésor"));
+        s = throughCombat(attack(s, [warg]), (req) => pickLabel(req, "Treasure"));
         expect(s.players.p2?.life).toBe(17);
         expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
       });
@@ -2394,7 +2394,7 @@ describe("lot A, vert", () => {
         let s = scenario({ p1: { battlefield: ["Bejeweled Warg", "Wargling"] } });
         const warg = idOf(s, "p1", "battlefield", "Bejeweled Warg");
         const wargling = idOf(s, "p1", "battlefield", "Wargling");
-        s = throughCombat(attack(s, [warg]), (req) => pickLabel(req, "Loup") ?? pickId(wargling)(req));
+        s = throughCombat(attack(s, [warg]), (req) => pickLabel(req, "Wolf") ?? pickId(wargling)(req));
         expect(s.objects[wargling]?.counters["+1/+1"]).toBe(1);
         expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
       });
@@ -3307,7 +3307,7 @@ describe("lot A, incolores et terrains", () => {
   };
   /** Équipe `equipment` sur `creature` (capacité « Équiper »). */
   const equip = (s: S, equipment: string, creature: string) =>
-    settle(activate(s, "p1", equipment, "Équiper", { targets: { t: [creature] } }));
+    settle(activate(s, "p1", equipment, "Equip", { targets: { t: [creature] } }));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
   const DWARF_CARD: CardDef = customCard({ name: "Nain de test", subtypes: ["Dwarf"], power: 2, toughness: 2 });
@@ -3461,7 +3461,7 @@ describe("lot A, incolores et terrains", () => {
 
       it("{1}, {T} : un mana de n'importe quelle couleur", () => {
         let s = scenario({ p1: { battlefield: ["Giant's Boulder", "Wastes"], hand: ["Llanowar Elves"] } });
-        s = activate(s, "p1", idOf(s, "p1", "battlefield", "Giant's Boulder"), "couleur");
+        s = activate(s, "p1", idOf(s, "p1", "battlefield", "Giant's Boulder"), "color");
         s = settle(s, (req) => (req.type === "pick" && req.options.includes("G") ? ["G"] : undefined));
         expect(s.players.p1?.manaPool.G).toBe(1);
         s = settle(cast(s, "p1", "Llanowar Elves"));
@@ -3471,7 +3471,7 @@ describe("lot A, incolores et terrains", () => {
       it("{7}, {T}, sacrifiez-le : détruisez un permanent ciblé", () => {
         let s = scenario({ p1: { battlefield: ["Giant's Boulder", ...lands("Wastes", 7)] }, p2: { battlefield: ["Island"] } });
         const island = idOf(s, "p2", "battlefield", "Island");
-        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Giant's Boulder"), "Détruisez", { targets: { t: [island] } }));
+        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Giant's Boulder"), "Destroy", { targets: { t: [island] } }));
         expect(idsOf(s, "p2", "graveyard", "Island")).toHaveLength(1);
         expect(idsOf(s, "p1", "graveyard", "Giant's Boulder")).toHaveLength(1);
       });
@@ -3674,14 +3674,14 @@ describe("lot A, incolores et terrains", () => {
       const halls = idOf(s, "p1", "battlefield", "Elvenking's Halls");
       const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
       expect(() =>
-        activate(s, "p1", halls, "marqueurs", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }),
+        activate(s, "p1", halls, "counters", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }),
       ).toThrow();
-      s = settle(activate(s, "p1", halls, "marqueurs", { targets: { t: [elf] } }));
+      s = settle(activate(s, "p1", halls, "counters", { targets: { t: [elf] } }));
       expect(s.objects[elf]?.counters["+1/+1"]).toBe(2);
       expect(idsOf(s, "p1", "graveyard", "Elvenking's Halls")).toHaveLength(1);
       let t = setup();
       t = advanceUntil(t, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "priority" && x.pending.player === "p1");
-      expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Elvenking's Halls"), "marqueurs")).toBe(false);
+      expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Elvenking's Halls"), "counters")).toBe(false);
     });
 
     it("Mirkwood : un Ours, une Araignée ou un Loup ; Goblin-town : un Gobelin ou un Orque", () => {
@@ -3691,18 +3691,16 @@ describe("lot A, incolores et terrains", () => {
       const mirkwood = idOf(s, "p1", "battlefield", "Mirkwood");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(() =>
-        activate(s, "p1", mirkwood, "marqueurs", { targets: { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] } }),
+        activate(s, "p1", mirkwood, "counters", { targets: { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] } }),
       ).toThrow();
-      s = settle(activate(s, "p1", mirkwood, "marqueurs", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", mirkwood, "counters", { targets: { t: [bear] } }));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
       const orc = customCard({ name: "Orque de test", subtypes: ["Orc"], power: 2, toughness: 1 });
       let g = scenario({ p1: { battlefield: ["Goblin-town", orc, "Bear Cub", ...lands("Swamp", 2), ...lands("Mountain", 2)] } });
       const town = idOf(g, "p1", "battlefield", "Goblin-town");
       const orcId = idOf(g, "p1", "battlefield", orc.name);
-      expect(() =>
-        activate(g, "p1", town, "marqueurs", { targets: { t: [idOf(g, "p1", "battlefield", "Bear Cub")] } }),
-      ).toThrow();
-      g = settle(activate(g, "p1", town, "marqueurs", { targets: { t: [orcId] } }));
+      expect(() => activate(g, "p1", town, "counters", { targets: { t: [idOf(g, "p1", "battlefield", "Bear Cub")] } })).toThrow();
+      g = settle(activate(g, "p1", town, "counters", { targets: { t: [orcId] } }));
       expect(g.objects[orcId]?.counters["+1/+1"]).toBe(2);
     });
 
@@ -3763,12 +3761,12 @@ describe("lot C1, cartes uniques", () => {
     });
     const hand = s.players.p1?.hand.length ?? 0;
     s = settle(
-      activate(s, "p1", idOf(s, "p1", "battlefield", "Key to the Side-Door"), "bloquée", {
+      activate(s, "p1", idOf(s, "p1", "battlefield", "Key to the Side-Door"), "blocked", {
         targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] },
       }),
     );
     expect(s.players.p1?.hand.length).toBe(hand);
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Elrond, Moon-Reader"), "Exilez", { targets: { t: [] } }));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Elrond, Moon-Reader"), "Exile", { targets: { t: [] } }));
     expect(s.players.p1?.hand.length).toBe(hand + 1);
   });
 
@@ -3891,7 +3889,7 @@ describe("lot C1, cartes uniques", () => {
     const key = idOf(s, "p1", "battlefield", "Key to the Side-Door");
     const opt = legalActions(s, "p1").find(
       (a): a is Extract<ActionOption, { type: "activate" }> =>
-        a.type === "activate" && a.source === key && !!a.label?.includes("piochez"),
+        a.type === "activate" && a.source === key && !!a.label?.includes("draw"),
     );
     expect(opt?.additional?.discard?.options).toEqual([idOf(s, "p1", "hand", "Test Legend")]);
     const hand = s.players.p1?.hand.length ?? 0;

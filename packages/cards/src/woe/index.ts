@@ -1,4 +1,4 @@
-/** Wilds of Eldraine (WOE) : Aventures, Marchandage, Rôles, Célébration, Nourriture. */
+/** Wilds of Eldraine (WOE): Adventures, Bargain, Roles, Celebration, Food. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

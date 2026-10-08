@@ -1,4 +1,5 @@
-/** Bloomburrow — cartes multicolores (dont les légendaires). */
+/** Bloomburrow — multicolored cards (legendaries included). */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -48,14 +49,10 @@ export const MULTI: Record<string, CardScript> = {
   "Alania, Divergent Storm": {
     abilities: [
       triggered(
-        // La copie d'un sort de Loutre devient un jeton en se résolvant (707.10).
+        // The copy of an Otter spell becomes a token as it resolves (707.10).
         { on: "castSpell", by: "you", firstOf: ["Instant", "Sorcery", "Otter"] },
-        fx.may(
-          "Un adversaire pioche une carte pour copier ce sort ?",
-          fx.draw(1, ref.target()),
-          fx.copySpell(ref.eventObject, 1),
-        ),
-        { targets: [target.player("t", "opponent")], label: "Copie le sort (un adversaire pioche)" },
+        fx.may("Have an opponent draw a card to copy this spell?", fx.draw(1, ref.target()), fx.copySpell(ref.eventObject, 1)),
+        { targets: [target.player("t", "opponent")], label: "Copies the spell (an opponent draws)" },
       ),
     ],
   },
@@ -64,17 +61,17 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         tapOthers: { filter: { token: true }, count: 2 },
         effects: [fx.addManaChoice(1)],
-        label: "Engagez deux jetons : un mana",
+        label: "Tap two tokens: one mana",
       }),
       activated({
         tapOthers: { filter: { token: true }, count: 3 },
         effects: [fx.draw(1)],
-        label: "Engagez trois jetons : piochez",
+        label: "Tap three tokens: draw",
       }),
       activated({
         tapOthers: { filter: { token: true }, count: 4 },
         effects: [fx.addCounters(ref.self, 3), fx.pump(ref.self, 0, 0, ["trample"])],
-        label: "Engagez quatre jetons : trois marqueurs +1/+1",
+        label: "Tap four tokens: three +1/+1 counters",
       }),
     ],
   },
@@ -82,18 +79,18 @@ export const MULTI: Record<string, CardScript> = {
   "Camellia, the Seedmiser": {
     abilities: [
       staticAbility(kin(["Squirrel"], { other: true }), { addKeywords: ["menace"] }, { label: "Menace" }),
-      triggered(when.sacrifice({ subtype: "Food" }), [fx.createTokens(SQUIRREL)], { batched: true, label: "Écureuil 1/1" }),
+      triggered(when.sacrifice({ subtype: "Food" }), [fx.createTokens(SQUIRREL)], { batched: true, label: "1/1 Squirrel" }),
       activated({
         mana: "{2}",
         forage: true,
         effects: [fx.addCountersAll(kin(["Squirrel"], { other: true }), 1)],
-        label: "Fourrager : marqueur +1/+1 sur chaque autre Écureuil",
+        label: "Forage: +1/+1 counter on each other Squirrel",
       }),
     ],
   },
   "Cindering Cutthroat": {
     abilities: [
-      entersWith({ counters: 1, condition: cond.opponentLostLife, label: "Un marqueur +1/+1" }),
+      entersWith({ counters: 1, condition: cond.opponentLostLife, label: "A +1/+1 counter" }),
       activated({ mana: "{1}{B/R}", effects: [fx.pump(ref.self, 0, 0, ["menace"])], label: "Menace" }),
     ],
   },
@@ -103,23 +100,23 @@ export const MULTI: Record<string, CardScript> = {
         targets: [
           {
             ...target.upTo(1, target.creature("t", { controller: "you" })),
-            // « Inférieure » à celle de la créature arrivée, au ciblage puis à la résolution (608.2b).
+            // "Lesser" than that of the creature that entered, on targeting then on resolution (608.2b).
             maxManaValueAmount: amount.plus(amount.manaValueOf(ref.eventObject), -1),
           },
         ],
-        label: "Renvoie une créature de VM inférieure",
+        label: "Returns a creature with lesser MV",
       }),
       staticAbility(
         kin(["Frog"]),
         { addAbilities: [manaAbility(["G", "U"], 1, { restriction: { spell: { types: ["Creature"] } } })] },
-        { label: "{T} : {G} ou {U} (sorts de créature)" },
+        { label: "{T}: {G} or {U} (creature spells)" },
       ),
     ],
   },
   "Corpseberry Cultivator": {
     abilities: [
-      triggered(when.yourCombat, fx.mayForage("Fourrager ?"), { label: "Fourrager" }),
-      triggered(when.forage, [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
+      triggered(when.yourCombat, fx.mayForage("Fourrager ?"), { label: "Forage" }),
+      triggered(when.forage, [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }),
     ],
   },
   "Dreamdew Entrancer": {
@@ -131,7 +128,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.counters(ref.target(), "stun", 3),
           ...fx.when(cond.refMatches(ref.target(), { controller: "you" }), fx.draw(2)),
         ],
-        { targets: [target.upTo(1, target.creature())], label: "Engage une créature (trois marqueurs d'étourdissement)" },
+        { targets: [target.upTo(1, target.creature())], label: "Taps a creature (three stun counters)" },
       ),
     ],
   },
@@ -143,7 +140,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.addCountersAll({ ...CREATURE_YOU_CONTROL, other: true, anyOf: [{ token: true }, { subtype: "Rabbit" }] }, 1),
           ...fx.when(cond.amountAtLeast(amount.totalPower(CREATURE_YOU_CONTROL), 10), fx.draw(1)),
         ],
-        { label: "Marqueurs sur les jetons et Lapins ; piochez à force 10" },
+        { label: "Counters on tokens and Rabbits; draw at power 10" },
       ),
     ],
   },
@@ -151,7 +148,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.secondMain, [fx.impulse(2)], {
         condition: cond.opponentLostLife,
-        label: "Exile deux cartes, jouez-en une",
+        label: "Exiles two cards, play one of them",
       }),
     ],
   },
@@ -160,33 +157,33 @@ export const MULTI: Record<string, CardScript> = {
       entersWith({
         affects: { types: ["Creature"], controller: "you", other: true },
         counters: amount.opponentsLostLife,
-        label: "Marqueurs par adversaire ayant perdu des PV",
+        label: "Counters for each opponent who lost life",
       }),
       triggered(when.castSpell("you", { subtype: "Lizard" }), [fx.damage(1, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "1 blessure à un adversaire",
+        label: "1 damage to an opponent",
       }),
     ],
   },
   "Glarb, Calamity's Augur": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Look at the top card" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { anyOf: [{ types: ["Land"] }, { minManaValue: 4, notTypes: ["Land"] }] } },
-        label: "Terrains et sorts de VM 4 ou plus depuis le dessus",
+        label: "Lands and spells with MV 4 or greater from the top",
       }),
-      activated({ tap: true, effects: [fx.surveil(2)], label: "Surveillance 2" }),
+      activated({ tap: true, effects: [fx.surveil(2)], label: "Surveil 2" }),
     ],
   },
   "Head of the Homestead": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(RABBIT, 2)], { label: "Deux Lapins 1/1" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(RABBIT, 2)], { label: "Two 1/1 Rabbits" })],
   },
   "Helga, Skittish Seer": {
     abilities: [
       triggered(
         when.castSpell("you", { types: ["Creature"], minManaValue: 4 }),
         [fx.draw(1), fx.gainLife(1), fx.addCounters(ref.self, 1)],
-        { label: "Piochez, +1 PV, marqueur +1/+1" },
+        { label: "Draw, +1 life, +1/+1 counter" },
       ),
       manaAbility(["W", "U", "B", "R", "G"], 1, {
         selfPower: true,
@@ -199,25 +196,25 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.exileTop(ref.you, amount.sourceX, "h"), fx.grantPlay(ref.stored("h"), { untilYourNextTurn: true })],
-        { label: "Exile X cartes (jouables jusqu'à votre prochain tour)" },
+        { label: "Exiles X cards (playable until your next turn)" },
       ),
-      playerStatic({ extraLands: 1, label: "Un terrain supplémentaire" }),
+      playerStatic({ extraLands: 1, label: "An additional land" }),
     ],
   },
   "The Infamous Cruelclaw": {
-    // Approximation : la défausse précède le lancement (gratuit, ce tour-ci).
+    // Approximation: the discard comes before the cast (free, this turn).
     abilities: [
       triggered(
         when.combatDamageToPlayer,
         [
           fx.exileUntil({ notTypes: ["Land"] }, "c"),
           ...fx.may(
-            "Défausser une carte pour lancer la carte exilée ?",
+            "Discard a card to cast the exiled card?",
             fx.discard(1, ref.you, { store: "d" }),
             ...fx.when(cond.v("d"), fx.castNow(ref.stored("c"), { free: true })),
           ),
         ],
-        { label: "Exile jusqu'à une carte non-terrain ; lancez-la en défaussant" },
+        { label: "Exiles up to one nonland card; cast it by discarding" },
       ),
     ],
   },
@@ -228,7 +225,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggeredModal(when.combatDamageBatch(kin(["Bird"])), [
         mode(
-          "Un Oiseau de votre main ou cimetière",
+          "A Bird from your hand or graveyard",
           [],
           [
             fx.pickFromZone(
@@ -238,7 +235,7 @@ export const MULTI: Record<string, CardScript> = {
               {
                 min: 0,
                 store: "k",
-                prompt: "Oiseau de votre main (ou aucun)",
+                prompt: "Bird from your hand (or none)",
               },
             ),
             ...fx.when(
@@ -247,13 +244,13 @@ export const MULTI: Record<string, CardScript> = {
                 "graveyard",
                 { types: ["Creature"], subtype: "Bird" },
                 { to: "battlefield", counters: { kind: "finality", n: 1 } },
-                { min: 0, prompt: "Oiseau de votre cimetière" },
+                { min: 0, prompt: "Bird from your graveyard" },
               ),
             ),
           ],
         ),
-        mode("Marqueur +1/+1 sur chaque Oiseau", [], [fx.addCountersAll(kin(["Bird"]), 1)]),
-        mode("Piochez une carte", [], [fx.draw(1)]),
+        mode("+1/+1 counter on each Bird", [], [fx.addCountersAll(kin(["Bird"]), 1)]),
+        mode("Draw a card", [], [fx.draw(1)]),
       ]),
     ],
   },
@@ -264,7 +261,7 @@ export const MULTI: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you", other: true })],
         effects: blinkWithCounter,
-        label: "Exile et renvoie une créature (marqueur +1/+1)",
+        label: "Exiles and returns a creature (+1/+1 counter)",
       }),
     ],
   },
@@ -272,78 +269,78 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.loseLife(1, ref.eachOpponent)], {
         condition: cond.lifeGainedAtLeast(1),
-        label: "Chaque adversaire perd 1 PV",
+        label: "Each opponent loses 1 life",
       }),
       triggered(when.yourEndStep, [fx.createTokens(BAT_1)], {
         condition: cond.all(cond.lifeGainedAtLeast(1), cond.lostLife),
-        label: "Chauve-souris 1/1 volante",
+        label: "1/1 flying Bat",
       }),
-      activated({ mana: "{1}{B}", payLife: 2, effects: [fx.draw(1)], label: "Piochez une carte" }),
+      activated({ mana: "{1}{B}", payLife: 2, effects: [fx.draw(1)], label: "Draw a card" }),
     ],
   },
   "Mabel, Heir to Cragflame": {
     abilities: [
-      staticAbility(kin(["Mouse"], { other: true }), { power: 1, toughness: 1 }, { label: "Souris +1/+1" }),
-      triggered(when.entersSelf, [fx.createTokens(CRAGFLAME)], { label: "Cragflame (Équipement)" }),
+      staticAbility(kin(["Mouse"], { other: true }), { power: 1, toughness: 1 }, { label: "Mice +1/+1" }),
+      triggered(when.entersSelf, [fx.createTokens(CRAGFLAME)], { label: "Cragflame (Equipment)" }),
     ],
   },
   "Mind Drill Assailant": {
     abilities: [
-      staticAbility("self", { power: 3 }, { condition: THRESHOLD, label: "Seuil : +3/+0" }),
-      activated({ mana: "{2}{U/B}", effects: [fx.surveil(1)], label: "Surveillance 1" }),
+      staticAbility("self", { power: 3 }, { condition: THRESHOLD, label: "Threshold: +3/+0" }),
+      activated({ mana: "{2}{U/B}", effects: [fx.surveil(1)], label: "Surveil 1" }),
     ],
   },
   "Moonrise Cleric": {
-    abilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "+1 PV" })],
+    abilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "+1 life" })],
   },
   "Muerra, Trash Tactician": {
     abilities: [
       triggered(when.step("main1", "you"), [fx.addManaCombination(amount.count(kin(["Raccoon"])), ["R", "G"])], {
-        label: "{R} ou {G} par Raton laveur",
+        label: "{R} or {G} for each Raccoon",
       }),
-      expend(4, [fx.gainLife(3)], { label: "+3 PV" }),
+      expend(4, [fx.gainLife(3)], { label: "+3 life" }),
       expend(8, [fx.exileTop(ref.you, 2, "m"), fx.grantPlay(ref.stored("m"), { untilYourNextTurn: true })], {
-        label: "Exile deux cartes (jouables)",
+        label: "Exiles two cards (playable)",
       }),
     ],
   },
   "Plumecreed Mentor": {
     abilities: [
       triggered(when.enters(FLYER_YOU), [fx.addCounters(ref.target(), 1)], {
-        targets: [targetObj("t", NONFLYER_YOU, "créature sans le vol que vous contrôlez")],
-        label: "Marqueur +1/+1",
+        targets: [targetObj("t", NONFLYER_YOU, "creature without flying you control")],
+        label: "+1/+1 counter",
       }),
     ],
   },
-  "Pond Prophet": { abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" })] },
+  "Pond Prophet": { abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" })] },
   "Ral, Crackling Wit": {
     abilities: [
-      triggered(when.castSpell("you", NONCREATURE), [fx.counters(ref.self, "loyalty", 1)], { label: "Marqueur de loyauté" }),
-      loyalty(1, { effects: [otter()], label: "Loutre 1/1 avec la prouesse" }),
-      loyalty(-3, { effects: [fx.draw(3), fx.discard(2)], label: "Piochez trois cartes, défaussez-en deux" }),
+      triggered(when.castSpell("you", NONCREATURE), [fx.counters(ref.self, "loyalty", 1)], { label: "Loyalty counter" }),
+      loyalty(1, { effects: [otter()], label: "1/1 Otter with prowess" }),
+      loyalty(-3, { effects: [fx.draw(3), fx.discard(2)], label: "Draw three cards, discard two" }),
       loyalty(-10, {
         effects: [
           fx.draw(3),
-          fx.emblem("Ral", "Les éphémères et les rituels que vous lancez ont la réplique.", [
+          fx.emblem("Ral", msg("Instant and sorcery spells you cast have replicate."), [
             triggered(
               when.castSpell("you", INSTANT_SORCERY),
-              // Réplique : les sorts lancés ce tour-ci par tous les joueurs, moins celui-ci (comptés à la résolution).
+              // Replicate: the spells cast this turn by all players, minus this one (counted on resolution).
               [fx.copySpell(ref.eventObject, amount.plus(amount.turnEvents({ event: "cast" }), -1))],
               {
-                label: "Réplique",
+                label: "Replicate",
               },
             ),
           ]),
         ],
-        label: "Piochez trois cartes, emblème (réplique)",
+        label: "Draw three cards, emblem (replicate)",
       }),
     ],
   },
-  "Seedglaive Mentor": { abilities: [valiant([fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" })] },
+  "Seedglaive Mentor": { abilities: [valiant([fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" })] },
   "Seedpod Squire": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), 1, 1)], {
-        targets: [targetObj("t", NONFLYER_YOU, "créature sans le vol que vous contrôlez")],
+        targets: [targetObj("t", NONFLYER_YOU, "creature without flying you control")],
         label: "+1/+1",
       }),
     ],
@@ -353,30 +350,30 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.yourEndStep, [fx.punisher(ref.target(), 3, { discard: true, sacrifice: { notTypes: ["Land"] } })], {
         condition: GAINED_OR_LOST,
         targets: [target.player("t", "opponent")],
-        label: "Perd 3 PV sauf sacrifice ou défausse",
+        label: "Loses 3 life unless sacrifice or discard",
       }),
     ],
   },
-  "Stormcatch Mentor": { abilities: [costReducer(INSTANT_SORCERY, 1, "Éphémères et rituels {1} de moins")] },
+  "Stormcatch Mentor": { abilities: [costReducer(INSTANT_SORCERY, 1, "Instants and sorceries cost {1} less")] },
   "Tempest Angler": {
-    abilities: [triggered(when.castSpell("you", NONCREATURE), [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" })],
+    abilities: [triggered(when.castSpell("you", NONCREATURE), [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" })],
   },
   "Tidecaller Mentor": {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         condition: THRESHOLD,
         targets: [target.upTo(1, target.nonland("t"))],
-        label: "Seuil — renvoie un permanent non-terrain",
+        label: "Threshold — returns a nonland permanent",
       }),
     ],
   },
   "Veteran Guardmouse": {
-    abilities: [valiant([fx.pump(ref.self, 1, 0, ["firstStrike"]), fx.scry(1)], { label: "+1/+0, initiative, regard 1" })],
+    abilities: [valiant([fx.pump(ref.self, 1, 0, ["firstStrike"]), fx.scry(1)], { label: "+1/+0, first strike, scry 1" })],
   },
   "Vinereap Mentor": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Nourriture" }),
-      triggered(when.diesSelf, [fx.createTokens(FOOD)], { label: "Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Food" }),
+      triggered(when.diesSelf, [fx.createTokens(FOOD)], { label: "Food" }),
     ],
   },
   "Vren, the Relentless": {
@@ -384,61 +381,61 @@ export const MULTI: Record<string, CardScript> = {
       graveyardReplacement({
         fromBattlefield: true,
         filter: { types: ["Creature"], controller: "opponent" },
-        label: "Les créatures adverses sont exilées",
+        label: "Opponents' creatures are exiled",
       }),
       triggered(when.eachEndStep, [fx.createTokens(VREN_RAT, amount.opponentCreaturesExiledThisTurn)], {
-        label: "Rats pour chaque créature adverse exilée",
+        label: "Rats for each exiled creature of opponents",
       }),
     ],
   },
   "Wandertale Mentor": {
-    abilities: [expend(4, [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }), manaAbility(["R", "G"])],
+    abilities: [expend(4, [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }), manaAbility(["R", "G"])],
   },
   "Ygra, Eater of All": {
     abilities: [
       staticAbility(
         { types: ["Creature"], other: true },
         { addTypes: ["Artifact"], addSubtypes: ["Food"], addAbilities: [FOOD_ABILITY] },
-        { label: "Les autres créatures sont des Nourritures" },
+        { label: "Other creatures are Foods" },
       ),
       triggered(when.dies({ types: ["Artifact"], subtype: "Food" }), [fx.addCounters(ref.self, 2)], {
-        label: "Deux marqueurs +1/+1",
+        label: "Two +1/+1 counters",
       }),
     ],
   },
   "Zoraline, Cosmos Caller": {
     abilities: [
-      triggered(when.attacks(kin(["Bat"])), [fx.gainLife(1)], { label: "+1 PV" }),
+      triggered(when.attacks(kin(["Bat"])), [fx.gainLife(1)], { label: "+1 life" }),
       ...[when.entersSelf, when.attacksSelf].map((w) =>
         triggered(
           w,
           fx.mayPayWithLife(
             "{W}{B}",
             2,
-            "Payer {W}{B} et 2 PV pour réanimer un permanent ?",
+            "Pay {W}{B} and 2 life to reanimate a permanent?",
             fx.reflexive(
               [
                 target.cardInGraveyard(
                   "t",
                   { notTypes: ["Land"], permanent: true, maxManaValue: 3 },
                   "you",
-                  "permanent non-terrain de VM 3 ou moins",
+                  "nonland permanent with MV 3 or less",
                 ),
               ],
               [fx.toBattlefield(ref.target(), { counters: { kind: "finality", n: 1 } })],
             ),
           ),
-          { label: "Réanime un permanent (marqueur de finalité)" },
+          { label: "Reanimates a permanent (finality counter)" },
         ),
       ),
     ],
   },
   "Bria, Riptide Rogue": {
     abilities: [
-      staticAbility({ types: ["Creature"], controller: "you", other: true }, { addKeywords: ["prowess"] }, { label: "Prouesse" }),
+      staticAbility({ types: ["Creature"], controller: "you", other: true }, { addKeywords: ["prowess"] }, { label: "Prowess" }),
       triggered(when.castSpell("you", NONCREATURE), [fx.pump(ref.target(), 0, 0, ["unblockable"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Ne peut pas être bloquée",
+        label: "Can't be blocked",
       }),
     ],
   },
@@ -446,13 +443,13 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.upTo(2, target.creature())],
-        label: "Un marqueur +1/+1 sur jusqu'à deux créatures",
+        label: "A +1/+1 counter on up to two creatures",
       }),
       triggered(
         when.attacks({ types: ["Creature"], controller: "you", withCounter: "+1/+1" }),
         [fx.doubleCounters(ref.eventObject)],
         {
-          label: "Double ses marqueurs +1/+1",
+          label: "Doubles its +1/+1 counters",
         },
       ),
     ],

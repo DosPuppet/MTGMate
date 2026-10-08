@@ -12,7 +12,7 @@ describe("Standard legalities", () => {
   it("the README list of banned cards matches the data", () => {
     const text = readFileSync(README, "utf8");
     const m = /\*\*Banned in Standard\*\* \((\d+)\):\n\n((?:- .+\n)+)/.exec(text);
-    expect(m, "\"Banned in Standard\" section of the README").not.toBeNull();
+    expect(m, '"Banned in Standard" section of the README').not.toBeNull();
     const listed = (m?.[2] ?? "")
       .trim()
       .split("\n")

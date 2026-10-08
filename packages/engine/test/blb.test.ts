@@ -11,6 +11,7 @@ import { permissionActive } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, moveObject } from "../src/state";
+import { plainText } from "../src/text";
 import type { GameObject, GameState, PlayerId, TokenSpec } from "../src/types";
 import {
   type Answer,
@@ -50,7 +51,7 @@ describe("Bloomburrow", () => {
   it("Progéniture : payée, la créature crée un jeton 1/1 copie d'elle-même", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Intrepid Rabbit"] } });
     const { card, opt } = castOption(s, "Intrepid Rabbit");
-    expect(opt?.kickerPrompt?.with).toBe("Progéniture {1}");
+    expect(plainText(opt?.kickerPrompt?.with ?? "")).toBe("Offspring {1}");
     s = act(s, "p1", { type: "cast", card, kicked: true });
     s = settle(s);
     const rabbits = idsOf(s, "p1", "battlefield", "Intrepid Rabbit");
@@ -76,7 +77,7 @@ describe("Bloomburrow", () => {
       });
     let s = setup();
     const { card, opt } = castOption(s, "Nocturnal Hunger");
-    expect(opt?.kickerPrompt?.with).toBe("Offrir une Nourriture");
+    expect(opt?.kickerPrompt?.with).toBe("Gift a Food");
     const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
     const hand = s.players.p1?.hand.length ?? 0;
     s = settle(act(s, "p1", { type: "cast", card, kicked: true, targets: { t: [dragon] } }));
@@ -232,7 +233,7 @@ describe("Bloomburrow", () => {
     });
     const { card, opt } = castOption(s, "Feed the Cycle");
     expect(opt?.normalAvailable).toBeFalsy();
-    expect(opt?.altLabel).toBe("Fourrager — {1}{B}");
+    expect(plainText(opt?.altLabel ?? "")).toBe("Forage — {1}{B}");
     const t = settle(
       act(s, "p1", { type: "cast", card, alternative: true, targets: { t: [idOf(s, "p2", "battlefield", "Shivan Dragon")] } }),
     );
@@ -581,7 +582,9 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     };
   /** Active la capacité de `source` dont le libellé contient `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
@@ -591,7 +594,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
 
   it("Fountainport : un Poisson 1/1 bleu pour {3} et 1 PV", () => {
     let s = scenario({ p1: { battlefield: ["Fountainport", ...lands("Island", 3)] } });
-    s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Poisson"));
+    s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Fish"));
     const fish = idOf(s, "p1", "battlefield", "Fish");
     expect(pt(s, fish)).toEqual([1, 1]);
     expect(chars(s, fish).colors).toEqual(["U"]);
@@ -602,14 +605,14 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     let s = scenario({ p1: { battlefield: ["Fountainport", ...lands("Island", 2)], library: lands("Plains", 5) } });
     createTokens(s, "p1", TOKEN_SPECS.Treasure as TokenSpec, 1);
     s.version += 1;
-    s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Sacrifiez un jeton"));
+    s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Sacrifice a token"));
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Plains"]);
   });
 
   it("Fountainport : {4}, {T} : un Trésor", () => {
     let s = scenario({ p1: { battlefield: ["Fountainport", ...lands("Island", 4)] } });
-    s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Trésor"));
+    s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Treasure"));
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
   });
 
@@ -654,7 +657,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     expect(canActivate(s, "p1", claw)).toBe(false);
     s = resolve(attack(s, [claw]));
     expect(s.players.p2?.life).toBe(19);
-    s = resolve(activate(s, "p1", claw, "Marqueur"));
+    s = resolve(activate(s, "p1", claw, "counter"));
     expect(s.objects[claw]?.counters["+1/+1"]).toBe(1);
     expect(canActivate(s, "p1", claw)).toBe(false);
   });
@@ -710,7 +713,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
         p1: { battlefield: ["Lunar Convocation", "Vampire Neonate", ...lands("Swamp", 4)], library: lands("Plains", 5) },
       });
       s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Vampire Neonate"), ""));
-      s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Lunar Convocation"), "Piochez"));
+      s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Lunar Convocation"), "Draw"));
       expect(s.players.p1?.life).toBe(19);
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Plains"]);
       s = toNextTurn(s);
@@ -817,11 +820,11 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     s = resolve(cast(s, "p1", "Hop to It"));
     expect(s.players.p1?.hand).toHaveLength(1); // un seul déclenchement pour trois jetons
     const rabbit = idOf(s, "p1", "battlefield", "Rabbit");
-    s = resolve(activate(s, "p1", talent, "Niveau 2"), choosing([rabbit]));
+    s = resolve(activate(s, "p1", talent, "Level 2"), choosing([rabbit]));
     expect(idsOf(s, "p1", "battlefield", "Rabbit")).toHaveLength(4);
     expect(s.players.p1?.hand).toHaveLength(1); // une seule fois par tour
     expect(pt(s, rabbit)).toEqual([1, 1]);
-    s = resolve(activate(s, "p1", talent, "Niveau 3"));
+    s = resolve(activate(s, "p1", talent, "Level 3"));
     for (const r of idsOf(s, "p1", "battlefield", "Rabbit")) expect(pt(s, r)).toEqual([3, 3]);
   });
 
@@ -955,7 +958,7 @@ describe("Choix non ciblés rendus au joueur (lot K6)", () => {
     const ward = shielded("Test Green Ward", "G");
     let s = scenario({ p1: { battlefield: [...lands("Forest", 6), ward, "Bear Cub"], hand: ["Season of Gathering"] } });
     const { card, opt } = castOption(s, "Season of Gathering");
-    const one = opt?.modes.find((m) => m.label === "Marqueur +1/+1, vigilance et piétinement");
+    const one = opt?.modes.find((m) => m.label === "+1/+1 counter, vigilance and trample");
     expect(one?.targets).toEqual([]);
     const wardId = idOf(s, "p1", "battlefield", "Test Green Ward");
     let options: string[] = [];
@@ -975,7 +978,7 @@ describe("Choix non ciblés rendus au joueur (lot K6)", () => {
     const ward = shielded("Test Blue Ward", "U");
     let s = scenario({ p1: { battlefield: [...lands("Island", 6), ward, "Bear Cub"], hand: ["Season of Weaving"] } });
     const { card, opt } = castOption(s, "Season of Weaving");
-    const copy = opt?.modes.find((m) => m.label === "Copie d'un artefact ou d'une créature");
+    const copy = opt?.modes.find((m) => m.label === "Copy of an artifact or creature");
     expect(copy?.targets).toEqual([]);
     const wardId = idOf(s, "p1", "battlefield", "Test Blue Ward");
     s = resolve(act(s, "p1", { type: "cast", card, mode: copy?.index }), (req) => (req.type === "pick" ? [wardId] : undefined));
@@ -1066,8 +1069,7 @@ describe("Season of the Bold (lot K7)", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Season of the Bold"] } });
     const card = idOf(s, "p1", "hand", "Season of the Bold");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
-    const three =
-      opt?.type === "cast" ? opt.modes.find((m) => m.label === "Chaque sort : 2 blessures à une créature") : undefined;
+    const three = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Each spell: 2 damage to a creature") : undefined;
     expect(three).toBeDefined();
     s = resolve(act(s, "p1", { type: "cast", card, mode: three?.index }));
     const emblems = (x: S) => (x.players.p1?.command ?? []).length;
@@ -1100,7 +1102,9 @@ const answer =
   };
 /** Active la capacité de `source` dont le libellé contient `label`. */
 const activateK8 = (s: S, player: PlayerId, source: string, label: string, extra: object = {}): S => {
-  const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+  const a = legalActions(s, player).find(
+    (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+  );
   if (a?.type !== "activate") throw new Error(`capacité « ${label} » introuvable`);
   return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
 };
@@ -1128,7 +1132,7 @@ const playable = (s: S, card: string) => (s.playPermissions ?? []).some((p) => p
 /** La combinaison de modes d'un sort à modes « patte » dont les libellés sont exactement `labels`. */
 const pawMode = (s: S, name: string, labels: string[]) => {
   const { opt } = castOption(s, name);
-  const m = opt?.modes.find((x) => x.label === labels.join(" + "));
+  const m = opt?.modes.find((x) => plainText(x.label ?? "") === labels.join(" + "));
   if (!m) throw new Error(`combinaison introuvable : ${labels.join(" + ")}`);
   return m.index;
 };
@@ -1231,7 +1235,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
   it("Glarb : {T} : surveillance 2", () => {
     let s = scenario({ p1: { battlefield: ["Glarb, Calamity's Augur"], library: ["Opt", "Stab", "Forest"] } });
     const glarb = idOf(s, "p1", "battlefield", "Glarb, Calamity's Augur");
-    s = resolve(activateK8(s, "p1", glarb, "Surveillance 2"), (req) =>
+    s = resolve(activateK8(s, "p1", glarb, "Surveil 2"), (req) =>
       req.type === "pick" && req.intent === "surveilGraveyard" ? req.options : undefined,
     );
     expect(graveOf(s).sort()).toEqual(["Opt", "Stab"]);
@@ -1321,7 +1325,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     let s = scenario({ p1: { battlefield: ["Kitsa, Otterball Elite"], hand: ["Stab"], library: ["Opt", "Forest"] } });
     const kitsa = idOf(s, "p1", "battlefield", "Kitsa, Otterball Elite");
     expect(chars(s, kitsa).keywords).toEqual(expect.arrayContaining(["vigilance", "prowess"]));
-    s = resolve(activateK8(s, "p1", kitsa, "Piochez, puis défaussez"), (req, _p, cur) => pickNamed(cur, req, "Stab"));
+    s = resolve(activateK8(s, "p1", kitsa, "Draw, and then discard"), (req, _p, cur) => pickNamed(cur, req, "Stab"));
     expect(handOf(s)).toEqual(["Opt"]);
     expect(graveOf(s)).toEqual(["Stab"]);
   });
@@ -1337,10 +1341,10 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     s = cast(s, "p1", "Shock", { targets: { t: ["p2"] } });
     const shock = s.stack[0]?.id as string;
     // Force 2 tant que la prouesse ne s'est pas résolue.
-    expect(canActivateK8(s, "p1", kitsa, "Copie")).toBe(false);
+    expect(canActivateK8(s, "p1", kitsa, "Copies")).toBe(false);
     s = passBoth(s);
     expect(chars(s, kitsa).power).toBe(3);
-    s = resolve(activateK8(s, "p1", kitsa, "Copie", { targets: { t: [shock] } }));
+    s = resolve(activateK8(s, "p1", kitsa, "Copies", { targets: { t: [shock] } }));
     expect(s.players.p2?.life).toBe(16);
   });
 
@@ -1388,7 +1392,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.objects[ral]?.counters.loyalty).toBe(5);
     s = resolve(cast(s, "p1", "Llanowar Elves"));
     expect(s.objects[ral]?.counters.loyalty).toBe(5);
-    s = resolve(activateK8(s, "p1", ral, "Loutre"));
+    s = resolve(activateK8(s, "p1", ral, "Otter"));
     expect(s.objects[ral]?.counters.loyalty).toBe(6);
     const otter = idOf(s, "p1", "battlefield", "Otter");
     expect(ptOf(s, otter)).toEqual([1, 1]);
@@ -1399,7 +1403,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
   it("Ral : −3 : piochez trois cartes, puis défaussez-en deux", () => {
     let s = scenario({ p1: { battlefield: ["Ral, Crackling Wit"], hand: ["Opt"], library: ["Plains", "Island", "Swamp"] } });
     const ral = idOf(s, "p1", "battlefield", "Ral, Crackling Wit");
-    s = resolve(activateK8(s, "p1", ral, "défaussez-en deux"));
+    s = resolve(activateK8(s, "p1", ral, "discard two"));
     expect(s.objects[ral]?.counters.loyalty).toBe(1);
     expect(s.players.p1?.hand).toHaveLength(2);
     expect(s.players.p1?.graveyard).toHaveLength(2);
@@ -1414,7 +1418,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
       },
     });
     const ral = idOf(s, "p1", "battlefield", "Ral, Crackling Wit");
-    s = resolve(activateK8(s, "p1", ral, "emblème"));
+    s = resolve(activateK8(s, "p1", ral, "emblem"));
     expect(s.players.p1?.hand).toHaveLength(5);
     expect(s.players.p1?.command ?? []).toHaveLength(1);
     // Premier sort du tour : pas de copie ; deuxième : une copie.
@@ -1433,7 +1437,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
       },
       p2: { battlefield: ["Mountain"], hand: ["Shock"] },
     });
-    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Ral, Crackling Wit"), "emblème"));
+    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Ral, Crackling Wit"), "emblem"));
     s = act(s, "p1", { type: "pass" });
     s = resolve(cast(s, "p2", "Shock", { targets: { t: ["p1"] } }));
     expect(s.players.p1?.life).toBe(18);
@@ -1449,8 +1453,8 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
       p2: { battlefield: ["Serra Angel"] },
     });
     const mode = pawMode(s, "Season of Loss", [
-      "Chaque joueur sacrifie une créature",
-      "Piochez par créature morte sous votre contrôle",
+      "Each player sacrifices a creature",
+      "Draw for each creature that died under your control",
     ]);
     s = resolve(cast(s, "p1", "Season of Loss", { mode }));
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
@@ -1464,8 +1468,8 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
       p2: { battlefield: ["Serra Angel"] },
     });
     const mode = pawMode(s, "Season of Loss", [
-      "Chaque joueur sacrifie une créature",
-      "Chaque adversaire perd X PV (créatures du cimetière)",
+      "Each player sacrifices a creature",
+      "Each opponent loses X life (creatures in the graveyard)",
     ]);
     s = resolve(cast(s, "p1", "Season of Loss", { mode }));
     // Llanowar Elves et Bear Cub, sacrifié par le premier mode.
@@ -1507,13 +1511,13 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     const setup = () => scenario({ p1: { battlefield: ["Warren Warleader", "Bear Cub", "Savannah Lions"] } });
     let s = setup();
     const ids = ["Warren Warleader", "Bear Cub"].map((n) => idOf(s, "p1", "battlefield", n));
-    s = resolve(attack(s, ids), answer({ mode: "Lapin" }));
+    s = resolve(attack(s, ids), answer({ mode: "Rabbit" }));
     const rabbit = idOf(s, "p1", "battlefield", "Rabbit");
     expect(s.objects[rabbit]?.tapped).toBe(true);
     expect(s.combat?.attackers.map((a) => a.id)).toContain(rabbit);
     expect(ptOf(s, ids[1] as string)).toEqual([2, 2]);
     let t = setup();
-    t = resolve(attack(t, ids), answer({ mode: "Attaquants" }));
+    t = resolve(attack(t, ids), answer({ mode: "Attackers" }));
     expect(ptOf(t, ids[0] as string)).toEqual([5, 5]);
     expect(ptOf(t, ids[1] as string)).toEqual([3, 3]);
     expect(ptOf(t, idOf(t, "p1", "battlefield", "Savannah Lions"))).toEqual([2, 1]);
@@ -1543,7 +1547,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
       expect(chars(s, id).subtypes).toContain("Food");
     }
     // La créature-Nourriture a « {2}, {T}, sacrifiez ce permanent : vous gagnez 3 PV ».
-    s = resolve(activateK8(s, "p1", cub, "+3 PV"));
+    s = resolve(activateK8(s, "p1", cub, "+3 life"));
     expect(s.players.p1?.life).toBe(23);
     expect(plusOne(s, ygra)).toBe(2);
     destroy(s, angel);
@@ -1584,15 +1588,15 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
   it("Baylen : engagez quatre jetons — trois marqueurs +1/+1 et le piétinement ; engagez trois jetons — piochez ; deux — un mana", () => {
     let s = tokens(scenario({ p1: { battlefield: ["Baylen, the Haymaker"], library: lands("Plains", 3) } }), "Treasure", 4);
     const baylen = idOf(s, "p1", "battlefield", "Baylen, the Haymaker");
-    expect(canActivateK8(s, "p1", baylen, "trois jetons")).toBe(true);
-    s = resolve(activateK8(s, "p1", baylen, "quatre jetons"));
+    expect(canActivateK8(s, "p1", baylen, "three tokens")).toBe(true);
+    s = resolve(activateK8(s, "p1", baylen, "four tokens"));
     expect(plusOne(s, baylen)).toBe(3);
     expect(chars(s, baylen).keywords).toContain("trample");
     expect(idsOf(s, "p1", "battlefield", "Treasure").every((id) => s.objects[id]?.tapped)).toBe(true);
-    expect(canActivateK8(s, "p1", baylen, "deux jetons")).toBe(false);
+    expect(canActivateK8(s, "p1", baylen, "two tokens")).toBe(false);
     let t = tokens(scenario({ p1: { battlefield: ["Baylen, the Haymaker"], library: lands("Plains", 3) } }), "Treasure", 3);
-    expect(canActivateK8(t, "p1", baylen, "quatre jetons")).toBe(false);
-    t = resolve(activateK8(t, "p1", idOf(t, "p1", "battlefield", "Baylen, the Haymaker"), "trois jetons"));
+    expect(canActivateK8(t, "p1", baylen, "four tokens")).toBe(false);
+    t = resolve(activateK8(t, "p1", idOf(t, "p1", "battlefield", "Baylen, the Haymaker"), "three tokens"));
     expect(handOf(t)).toEqual(["Plains"]);
   });
 
@@ -1632,10 +1636,10 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(chars(s, bushy).keywords).toContain("menace");
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("menace");
     expect(chars(s, idOf(s, "p2", "battlefield", "Bushy Bodyguard")).keywords).not.toContain("menace");
-    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Food"), "+3 PV"));
+    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Food"), "+3 life"));
     const squirrel = idOf(s, "p1", "battlefield", "Squirrel");
     expect(ptOf(s, squirrel)).toEqual([1, 1]);
-    s = resolve(activateK8(s, "p1", camellia, "Fourrager"));
+    s = resolve(activateK8(s, "p1", camellia, "Forage"));
     expect(s.players.p1?.graveyard).toHaveLength(0);
     expect([plusOne(s, bushy), plusOne(s, squirrel), plusOne(s, camellia)]).toEqual([1, 1, 0]);
     expect(plusOne(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
@@ -1895,10 +1899,10 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
     expect(chars(s, cub).keywords).not.toContain("ward");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
     expect(chars(s, cub).keywords).toContain("ward");
     expect(chars(s, elves).keywords).not.toContain("ward");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"));
+    s = resolve(activateK8(s, "p1", talent, "Level 3"));
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Plains") });
     s = resolve(cast(s, "p1", "Fleeting Flight", { targets: { t: [elves] } }));
     expect(plusOne(s, elves)).toBe(2);
@@ -1911,8 +1915,8 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
       p2: { battlefield: ["Serra Angel", "Plains"], hand: ["Fleeting Flight"] },
     });
     const talent = idOf(s, "p1", "battlefield", "Innkeeper's Talent");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
+    s = resolve(activateK8(s, "p1", talent, "Level 3"));
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     // Vous mettez un marqueur sur l'Ange adverse : deux.
     s = resolve(cast(s, "p1", "Fleeting Flight", { targets: { t: [angel] } }));
@@ -1980,12 +1984,12 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
         ids,
       };
     };
-    const a = go("Marqueur");
+    const a = go("counter");
     expect(a.ids.map((id) => plusOne(a.s, id))).toEqual([1, 1]);
     expect(plusOne(a.s, idOf(a.s, "p1", "battlefield", "Bear Cub"))).toBe(0);
     // Un seul déclenchement pour deux Oiseaux.
     expect(a.s.players.p1?.hand).toHaveLength(0);
-    const b = go("Piochez");
+    const b = go("Draw");
     expect(handOf(b.s)).toEqual(["Plains"]);
     expect(b.ids.map((id) => plusOne(b.s, id))).toEqual([0, 0]);
   });
@@ -1994,7 +1998,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     let s = scenario({ p1: { battlefield: ["Kastral, the Windcrested"], hand: ["Healer's Hawk"] } });
     s = resolve(
       passAccepting(attack(s, [idOf(s, "p1", "battlefield", "Kastral, the Windcrested")]), (x) => x.turn.step === "combatDamage"),
-      answer({ mode: "Oiseau" }),
+      answer({ mode: "Bird" }),
     );
     const hawk = idOf(s, "p1", "battlefield", "Healer's Hawk");
     expect(s.objects[hawk]?.counters.finality).toBe(1);
@@ -2057,7 +2061,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(c.colors).toEqual([]);
     expect(c.subtypes).toContain("Equipment");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = resolve(activateK8(s, "p1", crag, "Équiper {2}", { targets: { t: [cub] } }));
+    s = resolve(activateK8(s, "p1", crag, "Equip {2}", { targets: { t: [cub] } }));
     expect(ptOf(s, cub)).toEqual([3, 3]);
     expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["vigilance", "trample", "haste"]));
   });
@@ -2068,14 +2072,14 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
       const sword = idOf(s, "p1", "battlefield", "Flowerfoot Swordmaster");
       return { s: driveUntil(s, (x) => x.pending?.kind === "declareAttackers", answer({ mode, pick: [sword] })), sword };
     };
-    const a = run("Double initiative");
+    const a = run("Double strike");
     expect(chars(a.s, a.sword).keywords).toContain("doubleStrike");
     expect(chars(a.s, a.sword).keywords).not.toContain("trample");
-    const b = run("Piétinement");
+    const b = run("Trample");
     expect(chars(b.s, b.sword).keywords).toContain("trample");
     // Seules vos Souris sont des cibles légales : Bear Cub ne gagne rien.
     let s = scenario({ p1: { battlefield: ["Manifold Mouse", "Bear Cub"] } });
-    s = driveUntil(s, (x) => x.pending?.kind === "declareAttackers", answer({ mode: "Piétinement" }));
+    s = driveUntil(s, (x) => x.pending?.kind === "declareAttackers", answer({ mode: "Trample" }));
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("trample");
     expect(chars(s, idOf(s, "p1", "battlefield", "Manifold Mouse")).keywords).toContain("trample");
   });
@@ -2157,10 +2161,10 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     s.version += 1;
     createTokens(s, "p1", TOKEN_SPECS.Food as TokenSpec, 4);
     const talent = idOf(s, "p1", "battlefield", "Scavenger's Talent");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
-    s = resolve(activateK8(s, "p1", idsOf(s, "p1", "battlefield", "Food")[0] as string, "+3 PV"), answer({ pick: ["p2"] }));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
+    s = resolve(activateK8(s, "p1", idsOf(s, "p1", "battlefield", "Food")[0] as string, "+3 life"), answer({ pick: ["p2"] }));
     expect(s.players.p2?.graveyard).toHaveLength(2);
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"));
+    s = resolve(activateK8(s, "p1", talent, "Level 3"));
     s = driveUntil(
       s,
       (x) => x.turn.active === "p2",
@@ -2200,7 +2204,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     const guide = idOf(s, "p1", "battlefield", "Tender Wildguide");
     const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === guide ? a.colors : []));
     expect(colors.sort()).toEqual(["B", "G", "R", "U", "W"]);
-    s = resolve(activateK8(s, "p1", guide, "Marqueur"));
+    s = resolve(activateK8(s, "p1", guide, "counter"));
     expect(plusOne(s, guide)).toBe(1);
     expect(s.objects[guide]?.tapped).toBe(true);
     let t = scenario({ p1: { battlefield: lands("Forest", 4), hand: ["Tender Wildguide"] } });
@@ -2214,14 +2218,14 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === forager && a.colors.includes("G"))).toBe(
       true,
     );
-    s = resolve(activateK8(s, "p1", forager, "Fourrager"));
+    s = resolve(activateK8(s, "p1", forager, "Forage"));
     const pool = s.players.p1?.manaPool ?? {};
     expect(Object.values(pool).reduce((n: number, v) => n + (typeof v === "number" ? v : 0), 0)).toBe(2);
     expect(s.players.p1?.graveyard).toHaveLength(0);
     let t = scenario({
       p1: { battlefield: ["Thornvault Forager", ...lands("Forest", 4)], library: ["Forest", "Bushy Bodyguard", "Opt"] },
     });
-    t = resolve(activateK8(t, "p1", idOf(t, "p1", "battlefield", "Thornvault Forager"), "Écureuil"));
+    t = resolve(activateK8(t, "p1", idOf(t, "p1", "battlefield", "Thornvault Forager"), "Squirrel"));
     expect(handOf(t)).toEqual(["Bushy Bodyguard"]);
   });
 
@@ -2434,8 +2438,8 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
       p2: { hand: ["Opt", "Opt"], library: lands("Island", 5) },
     });
     const talent = idOf(s, "p1", "battlefield", "Bandit's Talent");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
+    s = resolve(activateK8(s, "p1", talent, "Level 3"));
     // Deux cartes à son entretien : rien.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(s.players.p2?.life).toBe(20);
@@ -2475,8 +2479,8 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(chars(s, sword).colors).toEqual([]);
     const talent = idOf(s, "p1", "battlefield", "Blacksmith's Talent");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
+    s = resolve(activateK8(s, "p1", talent, "Level 3"));
     s = driveUntil(s, (x) => x.pending?.kind === "declareAttackers", answer({ pick: [sword, cub] }));
     expect(s.objects[sword]?.attachedTo).toBe(cub);
     expect(ptOf(s, cub)).toEqual([3, 3]);
@@ -2517,11 +2521,11 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(chars(s, wall).colors).toEqual(["W"]);
     expect(chars(s, wall).keywords).toContain("defender");
     const talent = idOf(s, "p1", "battlefield", "Builder's Talent");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
     s = resolve(cast(s, "p1", "Banishing Light"), answer({ pick: [idOf(s, "p2", "battlefield", "Serra Angel"), wall] }));
     expect(plusOne(s, wall)).toBe(1);
     let options: string[] = [];
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"), (req, _p, cur) => {
+    s = resolve(activateK8(s, "p1", talent, "Level 3"), (req, _p, cur) => {
       if (req.type === "pick" && req.intent === "triggerTarget") options = namesIn(cur, req.options) as string[];
       return undefined;
     });
@@ -2598,7 +2602,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(castOption(s, "Downwind Ambusher").opt).toBeDefined();
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     s = resolve(cast(s, "p1", "Shock", { targets: { t: [angel] } }));
-    s = resolve(cast(s, "p1", "Downwind Ambusher"), answer({ mode: "Détruit", pick: [angel] }));
+    s = resolve(cast(s, "p1", "Downwind Ambusher"), answer({ mode: "Destroy", pick: [angel] }));
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
     let t = scenario({
       p1: { battlefield: lands("Swamp", 4), hand: ["Downwind Ambusher"] },
@@ -2631,7 +2635,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     });
     t = resolve(cast(t, "p1", "Flamecache Gecko"));
     expect(t.players.p1?.manaPool.B ?? 0).toBe(0);
-    t = resolve(activateK8(t, "p1", idOf(t, "p1", "battlefield", "Flamecache Gecko"), "Défaussez"));
+    t = resolve(activateK8(t, "p1", idOf(t, "p1", "battlefield", "Flamecache Gecko"), "Discard"));
     expect(graveOf(t)).toEqual(["Opt"]);
     expect(handOf(t)).toEqual(["Plains"]);
   });
@@ -2666,8 +2670,8 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     });
     const talent = idOf(s, "p1", "battlefield", "Gossip's Talent");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
+    s = resolve(activateK8(s, "p1", talent, "Level 3"));
     s = resolve(attack(s, [cub]));
     expect(chars(s, cub).keywords).toContain("unblockable");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
@@ -2703,18 +2707,18 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
       );
     let s = setup();
     const cat = idOf(s, "p2", "battlefield", "Cat");
-    s = resolve(cast(s, "p1", "Hivespine Wolverine"), answer({ mode: "Se bat", pick: [cat] }));
+    s = resolve(cast(s, "p1", "Hivespine Wolverine"), answer({ mode: "Fights", pick: [cat] }));
     expect(idsOf(s, "p2", "battlefield", "Cat")).toHaveLength(0);
     expect(s.objects[idOf(s, "p1", "battlefield", "Hivespine Wolverine")]?.damage).toBe(1);
     let t = setup();
     t = resolve(
       cast(t, "p1", "Hivespine Wolverine"),
-      answer({ mode: "Détruit", pick: [idOf(t, "p2", "battlefield", "Banishing Light")] }),
+      answer({ mode: "Destroy", pick: [idOf(t, "p2", "battlefield", "Banishing Light")] }),
     );
     expect(idsOf(t, "p2", "battlefield", "Banishing Light")).toHaveLength(0);
     let u = setup();
     const cub = idOf(u, "p1", "battlefield", "Bear Cub");
-    u = resolve(cast(u, "p1", "Hivespine Wolverine"), answer({ mode: "Marqueur", pick: [cub] }));
+    u = resolve(cast(u, "p1", "Hivespine Wolverine"), answer({ mode: "counter", pick: [cub] }));
     expect(plusOne(u, cub)).toBe(1);
   });
 
@@ -2723,7 +2727,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
       p1: { battlefield: lands("Forest", 5), hand: ["Hivespine Wolverine"] },
       p2: { battlefield: ["Serra Angel"] },
     });
-    const t = resolve(cast(s, "p1", "Hivespine Wolverine"), answer({ mode: "Se bat" }));
+    const t = resolve(cast(s, "p1", "Hivespine Wolverine"), answer({ mode: "Fights" }));
     expect(t.objects[idOf(t, "p2", "battlefield", "Serra Angel")]?.damage).toBe(0);
   });
 
@@ -2740,7 +2744,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(s.objects[hoard]?.counters.stash).toBe(1);
     s = resolve(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
     expect(s.objects[hoard]?.counters.stash).toBe(2);
-    s = resolve(activateK8(s, "p1", hoard, "Défaussez votre main"));
+    s = resolve(activateK8(s, "p1", hoard, "Discard your hand"));
     expect(graveOf(s)).toEqual(expect.arrayContaining(["Opt", "Hoarder's Overflow"]));
     expect(handOf(s)).toEqual(["Plains", "Plains"]);
   });
@@ -2785,8 +2789,8 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     });
     const talent = idOf(s, "p1", "battlefield", "Hunter's Talent");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = resolve(activateK8(s, "p1", talent, "Niveau 2"));
-    s = resolve(activateK8(s, "p1", talent, "Niveau 3"));
+    s = resolve(activateK8(s, "p1", talent, "Level 2"));
+    s = resolve(activateK8(s, "p1", talent, "Level 3"));
     s = resolve(attack(s, [cub]));
     expect(ptOf(s, cub)).toEqual([3, 2]);
     expect(chars(s, cub).keywords).toContain("trample");
@@ -2843,9 +2847,9 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
       p1: { battlefield: ["Lilypad Village", "Island", "Plains"], hand: ["Healer's Hawk"], library: ["Opt", "Stab", "Forest"] },
     });
     const village = idOf(s, "p1", "battlefield", "Lilypad Village");
-    expect(canActivateK8(s, "p1", village, "Surveillance 2")).toBe(false);
+    expect(canActivateK8(s, "p1", village, "Surveil 2")).toBe(false);
     s = resolve(cast(s, "p1", "Healer's Hawk"));
-    s = resolve(activateK8(s, "p1", village, "Surveillance 2"), (req) =>
+    s = resolve(activateK8(s, "p1", village, "Surveil 2"), (req) =>
       req.type === "pick" && req.intent === "surveilGraveyard" ? req.options : undefined,
     );
     expect(graveOf(s).sort()).toEqual(["Opt", "Stab"]);
@@ -2856,7 +2860,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     const mentor = idOf(s, "p1", "battlefield", "Lilysplash Mentor");
     expect(chars(s, mentor).keywords).toContain("reach");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = resolve(activateK8(s, "p1", mentor, "Exile", { targets: { t: [cub] } }));
+    s = resolve(activateK8(s, "p1", mentor, "Exiles", { targets: { t: [cub] } }));
     const back = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(back).not.toBe(cub);
     expect(plusOne(s, back)).toBe(1);
@@ -2922,7 +2926,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     });
     let options: string[] = [];
     s = resolve(
-      activateK8(s, "p1", idOf(s, "p1", "battlefield", "Lupinflower Village"), "Regarde six cartes"),
+      activateK8(s, "p1", idOf(s, "p1", "battlefield", "Lupinflower Village"), "Looks at six cards"),
       (req, _p, cur) => {
         if (req.type === "pick" && req.intent === "lookAtTop") options = namesIn(cur, req.options) as string[];
         return undefined;
@@ -3006,8 +3010,8 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     const village = idOf(s, "p1", "battlefield", "Mudflat Village");
     const claw = idOf(s, "p1", "graveyard", "Hired Claw");
     const cub = idOf(s, "p1", "graveyard", "Bear Cub");
-    expect(() => activateK8(s, "p1", village, "Récupère", { targets: { t: [cub] } })).toThrow(RulesError);
-    s = resolve(activateK8(s, "p1", village, "Récupère", { targets: { t: [claw] } }));
+    expect(() => activateK8(s, "p1", village, "Gets back", { targets: { t: [cub] } })).toThrow(RulesError);
+    s = resolve(activateK8(s, "p1", village, "Gets back", { targets: { t: [claw] } }));
     expect(handOf(s)).toEqual(["Hired Claw"]);
     expect(graveOf(s).sort()).toEqual(["Bear Cub", "Mudflat Village"]);
   });
@@ -3021,7 +3025,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     s = resolve(cast(s, "p1", "Bear Cub"));
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Oakhollow Village") });
     const fresh = idsOf(s, "p1", "battlefield", "Bushy Bodyguard").find((id) => id !== old) as string;
-    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Oakhollow Village"), "nouveaux venus"));
+    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Oakhollow Village"), "newcomers"));
     expect(plusOne(s, fresh)).toBe(1);
     expect(plusOne(s, old)).toBe(0);
     expect(plusOne(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
@@ -3080,14 +3084,14 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
       });
     const modeOf = (s: S, label: string) => castOption(s, "Pawpatch Formation").opt?.modes.find((m) => m.label?.includes(label));
     let s = setup();
-    const fly = modeOf(s, "vol");
+    const fly = modeOf(s, "flying");
     expect(fly?.targets[0]?.legal).toEqual([idOf(s, "p2", "battlefield", "Serra Angel")]);
     s = resolve(
       cast(s, "p1", "Pawpatch Formation", { mode: fly?.index, targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }),
     );
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
     let t = setup();
-    const ench = modeOf(t, "enchantement");
+    const ench = modeOf(t, "enchantment");
     t = resolve(
       cast(t, "p1", "Pawpatch Formation", {
         mode: ench?.index,
@@ -3096,7 +3100,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     );
     expect(idsOf(t, "p2", "battlefield", "Banishing Light")).toHaveLength(0);
     let u = setup();
-    u = resolve(cast(u, "p1", "Pawpatch Formation", { mode: modeOf(u, "Nourriture")?.index }));
+    u = resolve(cast(u, "p1", "Pawpatch Formation", { mode: modeOf(u, "Food")?.index }));
     expect(handOf(u)).toEqual(["Plains"]);
     expect(idsOf(u, "p1", "battlefield", "Food")).toHaveLength(1);
   });
@@ -3247,10 +3251,10 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     });
     const village = idOf(s, "p1", "battlefield", "Rockface Village");
     const claw = idOf(s, "p1", "battlefield", "Hired Claw");
-    expect(() =>
-      activateK8(s, "p1", village, "célérité", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }),
-    ).toThrow(RulesError);
-    s = resolve(activateK8(s, "p1", village, "célérité", { targets: { t: [claw] } }));
+    expect(() => activateK8(s, "p1", village, "haste", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } })).toThrow(
+      RulesError,
+    );
+    s = resolve(activateK8(s, "p1", village, "haste", { targets: { t: [claw] } }));
     expect(ptOf(s, claw)).toEqual([2, 2]);
     expect(chars(s, claw).keywords).toContain("haste");
   });
@@ -3308,7 +3312,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
   it("Short Bow : la créature équipée a +1/+1, la portée et la vigilance ; équiper {1}", () => {
     let s = scenario({ p1: { battlefield: ["Short Bow", "Bear Cub", "Forest"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Short Bow"), "Équiper {1}", { targets: { t: [cub] } }));
+    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Short Bow"), "Equip {1}", { targets: { t: [cub] } }));
     expect(ptOf(s, cub)).toEqual([3, 3]);
     expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["reach", "vigilance"]));
   });
@@ -3316,7 +3320,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
   it("Sinister Monolith : au début du combat de votre tour, chaque adversaire perd 1 PV et vous en gagnez 1 ; {T}, 2 PV, sacrifiez-le : piochez deux cartes (rituel)", () => {
     let s = scenario({ p1: { battlefield: ["Sinister Monolith"], library: lands("Plains", 3) } });
     const mono = idOf(s, "p1", "battlefield", "Sinister Monolith");
-    s = resolve(activateK8(s, "p1", mono, "Piochez deux cartes"));
+    s = resolve(activateK8(s, "p1", mono, "Draw two cards"));
     expect(s.players.p1?.life).toBe(18);
     expect(handOf(s)).toEqual(["Plains", "Plains"]);
     expect(graveOf(s)).toEqual(["Sinister Monolith"]);
@@ -3333,11 +3337,11 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     });
     s = act(cast(s, "p2", "Shock", { targets: { t: ["p1"] } }), "p2", { type: "pass" });
     const modes = castOption(s, "Spellgyre").opt?.modes ?? [];
-    const counter = modes.find((m) => m.label?.includes("Contrecarrez"));
+    const counter = modes.find((m) => m.label?.includes("Counter"));
     const t = s;
     s = resolve(cast(s, "p1", "Spellgyre", { mode: counter?.index, targets: { t: [s.stack[0]?.id as string] } }));
     expect(s.players.p1?.life).toBe(20);
-    const draw = modes.find((m) => m.label?.includes("Surveillance"));
+    const draw = modes.find((m) => m.label?.includes("Surveil"));
     const u = resolve(cast(t, "p1", "Spellgyre", { mode: draw?.index }), (req) =>
       req.type === "pick" && req.intent === "surveilGraveyard" ? req.options : undefined,
     );
@@ -3421,9 +3425,9 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
       1,
     );
     const over = idOf(s, "p1", "battlefield", "Bonecache Overseer");
-    expect(canActivateK8(s, "p1", over, "Piochez")).toBe(false);
-    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Food"), "+3 PV"));
-    s = resolve(activateK8(s, "p1", over, "Piochez"));
+    expect(canActivateK8(s, "p1", over, "Draw")).toBe(false);
+    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Food"), "+3 life"));
+    s = resolve(activateK8(s, "p1", over, "Draw"));
     expect(handOf(s)).toEqual(["Plains"]);
     expect(s.players.p1?.life).toBe(22);
     let t = scenario({
@@ -3435,7 +3439,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     });
     t = resolve(cast(t, "p1", "Bushy Bodyguard"), answer({ yes: true }));
     expect(t.players.p1?.graveyard).toHaveLength(0);
-    expect(canActivateK8(t, "p1", idOf(t, "p1", "battlefield", "Bonecache Overseer"), "Piochez")).toBe(true);
+    expect(canActivateK8(t, "p1", idOf(t, "p1", "battlefield", "Bonecache Overseer"), "Draw")).toBe(true);
   });
 
   it("Brambleguard Captain : au début du combat de votre tour, une de vos créatures gagne +X/+0 (X = la force du Capitaine)", () => {
@@ -3587,10 +3591,10 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
   it("Heirloom Epic : {4}, {T} : piochez une carte (rituel)", () => {
     let s = scenario({ p1: { battlefield: ["Heirloom Epic", ...lands("Plains", 4)], library: lands("Island", 2) } });
     const epic = idOf(s, "p1", "battlefield", "Heirloom Epic");
-    s = resolve(activateK8(s, "p1", epic, "Piochez"));
+    s = resolve(activateK8(s, "p1", epic, "Draw"));
     expect(handOf(s)).toEqual(["Island"]);
     const t = scenario({ active: "p2", p1: { battlefield: ["Heirloom Epic", ...lands("Plains", 4)] } });
-    expect(canActivateK8(act(t, "p2", { type: "pass" }), "p1", epic, "Piochez")).toBe(false);
+    expect(canActivateK8(act(t, "p2", { type: "pass" }), "p1", epic, "Draw")).toBe(false);
   });
 
   it("Starforged Sword : avec le cadeau (un Poisson engagé), s'attache en arrivant ; +3/+3 et perd le vol ; équiper {3}", () => {
@@ -3604,7 +3608,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     t = resolve(cast(t, "p1", "Starforged Sword"));
     const sword = idOf(t, "p1", "battlefield", "Starforged Sword");
     expect(t.objects[sword]?.attachedTo).toBeFalsy();
-    t = resolve(activateK8(t, "p1", sword, "Équiper {3}", { targets: { t: [idOf(t, "p1", "battlefield", "Healer's Hawk")] } }));
+    t = resolve(activateK8(t, "p1", sword, "Equip {3}", { targets: { t: [idOf(t, "p1", "battlefield", "Healer's Hawk")] } }));
     expect(t.objects[sword]?.attachedTo).toBe(idOf(t, "p1", "battlefield", "Healer's Hawk"));
   });
 
@@ -3689,7 +3693,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(c.colors).toEqual([]);
     expect(c.keywords).not.toContain("flying");
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
-    s = resolve(activateK8(s, "p2", angel, "+3 PV"));
+    s = resolve(activateK8(s, "p2", angel, "+3 life"));
     expect(s.players.p2?.life).toBe(23);
   });
 
@@ -3697,12 +3701,12 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     let s = addTokens(scenario({ p1: { battlefield: ["Tangle Tumbler", "Bear Cub", ...lands("Forest", 3)] } }), "Food", 2);
     const tumbler = idOf(s, "p1", "battlefield", "Tangle Tumbler");
     expect(chars(s, tumbler).types).not.toContain("Creature");
-    s = resolve(activateK8(s, "p1", tumbler, "Engagez deux jetons"));
+    s = resolve(activateK8(s, "p1", tumbler, "Tap two tokens"));
     expect(chars(s, tumbler).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect(chars(s, tumbler).keywords).toContain("vigilance");
     expect(ptOf(s, tumbler)).toEqual([6, 6]);
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = resolve(activateK8(s, "p1", tumbler, "Marqueur", { targets: { t: [cub] } }));
+    s = resolve(activateK8(s, "p1", tumbler, "counter", { targets: { t: [cub] } }));
     expect(plusOne(s, cub)).toBe(1);
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(chars(s, tumbler).types).not.toContain("Creature");

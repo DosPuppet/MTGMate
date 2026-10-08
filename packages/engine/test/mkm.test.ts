@@ -15,6 +15,7 @@ import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { isLegalTarget, matchesObjectFilter } from "../src/targets";
+import { msg } from "../src/text";
 import { canBlock, requiredBlocks } from "../src/turn";
 import type { ChoiceRequest, ChoiceValue, Decision, GameState } from "../src/types";
 import { projectView } from "../src/view";
@@ -341,7 +342,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   const castDisguisedThenTurnUp = (s: S, name: string): { s: S; id: string } => {
     let cur = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), faceDown: true }));
     const id = faceDownIds(cur)[0] as string;
-    cur = activate(cur, "p1", id, "Retourner face visible");
+    cur = activate(cur, "p1", id, "Turn face up");
     expect(nameOf(cur, id)).toBe(name);
     return { s: cur, id };
   };
@@ -460,7 +461,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", DISGUISED_DETECTIVE.name), faceDown: true }));
       const id = faceDownIds(s)[0] as string;
       expect(s.objects[id]?.counters["+1/+1"] ?? 0).toBe(0);
-      s = settle(activate(s, "p1", id, "Retourner face visible"));
+      s = settle(activate(s, "p1", id, "Turn face up"));
       expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
       expect(pt(s, id)).toEqual([4, 4]);
     });
@@ -685,9 +686,9 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       let s = scenario({ p1: { battlefield: ["Krovod Haunch", "Bear Cub", ...lands("Plains", 4)] } });
       const haunch = idOf(s, "p1", "battlefield", "Krovod Haunch");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", haunch, "Équiper", { t: [bear] }));
+      s = settle(activate(s, "p1", haunch, "Equip", { t: [bear] }));
       expect(pt(s, bear)).toEqual([4, 2]);
-      s = settle(activate(s, "p1", haunch, "3 PV"), (req) => (req.type === "yesNo" ? [0] : undefined));
+      s = settle(activate(s, "p1", haunch, "3 life"), (req) => (req.type === "yesNo" ? [0] : undefined));
       expect(s.players.p1?.life).toBe(23);
       expect(pt(s, bear)).toEqual([2, 2]);
     });
@@ -810,7 +811,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", DISGUISED_DETECTIVE.name), faceDown: true }));
       // Face cachée, ce n'est pas un Détective : rien.
       expect(pt(s, enforcer)).toEqual([1, 1]);
-      s = settle(activate(s, "p1", faceDownIds(s)[0] as string, "Retourner face visible"));
+      s = settle(activate(s, "p1", faceDownIds(s)[0] as string, "Turn face up"));
       expect(pt(s, enforcer)).toEqual([2, 2]);
     });
   });
@@ -889,13 +890,13 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
       expect(chars(s, wrench).subtypes).toEqual(expect.arrayContaining(["Clue", "Equipment"]));
-      s = settle(activate(s, "p1", wrench, "Équiper", { t: [bear] }));
+      s = settle(activate(s, "p1", wrench, "Equip", { t: [bear] }));
       expect(pt(s, bear)).toEqual([3, 3]);
       expect(chars(s, bear).keywords).toContain("vigilance");
-      s = settle(activate(s, "p1", bear, "Engagez", { t: [elves] }));
+      s = settle(activate(s, "p1", bear, "Tap a creature", { t: [elves] }));
       expect(s.objects[elves]?.tapped).toBe(true);
       expect(s.objects[bear]?.tapped).toBe(true);
-      s = settle(activate(s, "p1", wrench, "Piochez"));
+      s = settle(activate(s, "p1", wrench, "Draw a card"));
       expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Opt"]);
       expect(idsOf(s, "p1", "graveyard", "Wrench")).toHaveLength(1);
     });
@@ -940,7 +941,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   const castDisguisedThenFlip = (s: S, name: string, answer: Answer = () => undefined): S => {
     let cur = settle(cast(s, "p1", name, undefined, { faceDown: true }));
     const id = faceDownOf(cur);
-    cur = activate(cur, "p1", id, "Retourner face visible");
+    cur = activate(cur, "p1", id, "Turn face up");
     return settle(cur, answer);
   };
   /** Avance jusqu'à la déclaration des attaquants de p1, puis attaque p2 avec ces créatures. */
@@ -1069,7 +1070,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
         p1: { battlefield: ["Candlestick", "Bear Cub", ...lands("Island", 2)], library: ["Opt", "Opt", "Forest"] },
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Candlestick"), "Équiper", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Candlestick"), "Equip", { targets: { t: [bear] } }));
       expect(chars(s, bear)).toMatchObject({ power: 3, toughness: 3 });
       let asked = 0;
       s = settle(attackWith(s, bear), (req) => {
@@ -1083,7 +1084,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
 
     it("{2}, sacrifiez-la : piochez une carte", () => {
       let s = scenario({ p1: { battlefield: ["Candlestick", ...lands("Island", 2)] } });
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Candlestick"), "Piochez"));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Candlestick"), "Draw a card"));
       expect(idsOf(s, "p1", "graveyard", "Candlestick")).toHaveLength(1);
       expect(s.players.p1?.hand).toHaveLength(1);
     });
@@ -1107,7 +1108,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       t = advanceUntil(t, (x) => solved(x, id));
       expect(t.turn.step).toBe("end");
       const clue = idOf(t, "p1", "battlefield", "Clue");
-      t = settle(activate(t, "p1", id, "Oiseau", { targets: { t: [clue] } }));
+      t = settle(activate(t, "p1", id, "Bird", { targets: { t: [clue] } }));
       expect(idsOf(t, "p1", "graveyard", "Case of the Filched Falcon")).toHaveLength(1);
       expect(chars(t, clue)).toMatchObject({ power: 4, toughness: 4 });
       expect(chars(t, clue).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
@@ -1245,7 +1246,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(s.objects[bear]?.tapped).toBe(true);
       const aura = idOf(s, "p1", "battlefield", "Dramatic Accusation");
       const library = s.players.p2?.library.length ?? 0;
-      s = settle(activate(s, "p1", aura, "Mélangez"));
+      s = settle(activate(s, "p1", aura, "Shuffle"));
       expect(s.battlefield).not.toContain(bear);
       expect(s.players.p2?.library).toHaveLength(library + 1);
       expect(s.players.p2?.library.some((id) => nameOf(s, id) === "Bear Cub")).toBe(true);
@@ -1310,7 +1311,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       s = settle(cast(s, "p1", "Candlestick"));
       expect(clues(s, "p1")).toBe(1);
       // L'Indice coûte {1} au lieu de {2} : une seule Île suffit.
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Clue"), "Piochez"));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Clue"), "Draw a card"));
       expect(clues(s, "p1")).toBe(0);
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Island" && s.objects[id]?.tapped)).toHaveLength(2);
@@ -1322,7 +1323,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       let s = scenario({ p1: { battlefield: ["Furtive Courier", "Candlestick", ...lands("Island", 2)], hand: ["Forest"] } });
       const courier = idOf(s, "p1", "battlefield", "Furtive Courier");
       expect(chars(s, courier).keywords).not.toContain("unblockable");
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Candlestick"), "Piochez"));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Candlestick"), "Draw a card"));
       expect(chars(s, courier).keywords).toContain("unblockable");
       const hand = s.players.p1?.hand.length ?? 0;
       s = settle(attackWith(s, courier));
@@ -1620,7 +1621,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       const o = s0.objects[bear];
       if (o && suspected) o.suspected = true;
       const coroner = idOf(s0, "p1", "battlefield", "Agency Coroner");
-      const s = settle(activate(s0, "p1", coroner, "Piochez", { sacrifice: [bear] }));
+      const s = settle(activate(s0, "p1", coroner, "Draw a card", { sacrifice: [bear] }));
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
       return s.players.p1?.hand.length;
     };
@@ -1640,7 +1641,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Alley Assailant"), faceDown: true }));
       const id = s.battlefield.find((x) => s.objects[x]?.defId === FACE_DOWN_ID) as string;
       expect(chars(s, id).power).toBe(2);
-      s = settle(activate(s, "p1", id, "Retourner face visible"));
+      s = settle(activate(s, "p1", id, "Turn face up"));
       expect(chars(s, id).name).toBe("Alley Assailant");
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([23, 17]);
     });
@@ -1754,7 +1755,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(s.objects[id]?.solved).toBe(true);
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
       const murder = s.players.p1?.library.find((x) => nameOf(s, x) === "Murder") as string;
-      s = settle(activate(s, "p1", id, "Cherchez"), pickIt(murder));
+      s = settle(activate(s, "p1", id, "Search"), pickIt(murder));
       expect(names(s, s.players.p1?.hand)).toContain("Murder");
       expect(idsOf(s, "p1", "graveyard", "Case of the Stashed Skeleton")).toHaveLength(1);
     });
@@ -1913,11 +1914,11 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     const pipe = idOf(s, "p1", "battlefield", "Lead Pipe");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, pipe).subtypes).toEqual(expect.arrayContaining(["Clue", "Equipment"]));
-    s = settle(activate(s, "p1", pipe, "Équiper", { targets: { t: [bear] } }));
+    s = settle(activate(s, "p1", pipe, "Equip", { targets: { t: [bear] } }));
     expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([4, 2]);
     s = settle(cast(s, "p1", "Murder", { t: [bear] }));
     expect(s.players.p2?.life).toBe(19);
-    s = settle(activate(s, "p1", pipe, "Piochez"));
+    s = settle(activate(s, "p1", pipe, "Draw a card"));
     expect(s.players.p1?.hand).toHaveLength(1);
     expect(idsOf(s, "p1", "graveyard", "Lead Pipe")).toHaveLength(1);
   });
@@ -1925,7 +1926,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
   it("Leering Onlooker : depuis le cimetière, exilée, deux Chauves-souris 1/1 volantes engagées", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 4), graveyard: ["Leering Onlooker"] } });
     const card = idOf(s, "p1", "graveyard", "Leering Onlooker");
-    s = settle(activate(s, "p1", card, "Chauves-souris"));
+    s = settle(activate(s, "p1", card, "Bats"));
     const bats = s.battlefield.filter((id) => nameOf(s, id) === "Bat");
     expect(bats).toHaveLength(2);
     expect(bats.every((id) => s.objects[id]?.tapped && chars(s, id).keywords.includes("flying"))).toBe(true);
@@ -2032,10 +2033,10 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
   it("Repeat Offender : la première activation la suspecte, la suivante lui donne un marqueur +1/+1", () => {
     let s = scenario({ p1: { battlefield: ["Repeat Offender", ...lands("Swamp", 6)] } });
     const id = idOf(s, "p1", "battlefield", "Repeat Offender");
-    s = settle(activate(s, "p1", id, "Marqueur"));
+    s = settle(activate(s, "p1", id, "counter"));
     expect(s.objects[id]?.suspected).toBe(true);
     expect(s.objects[id]?.counters["+1/+1"]).toBeUndefined();
-    s = settle(activate(s, "p1", id, "Marqueur"));
+    s = settle(activate(s, "p1", id, "counter"));
     expect(s.objects[id]?.suspected).toBe(true);
     expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
   });
@@ -2310,13 +2311,13 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       const id = faceDownOf(s);
       expect([chars(s, id).power, chars(s, id).toughness]).toEqual([2, 2]);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", id, "Retourner face visible"), pickIt(bear));
+      s = settle(activate(s, "p1", id, "Turn face up"), pickIt(bear));
       expect(chars(s, id).types).not.toContain("Creature");
       expect(s.objects[id]?.attachedTo).toBe(bear);
       expect(chars(s, bear).power).toBe(5);
       // Équiper {1}{R} : lu dans le texte.
       const labels = chars(s, id).abilities.map((a) => (a.kind === "activated" ? a.label : undefined));
-      expect(labels).toContain("Équiper {1}{R}");
+      expect(labels).toContain(msg("Equip {cost}", { cost: "{1}{R}" }));
     });
   });
 
@@ -2333,7 +2334,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(names(s, s.exile).sort()).toEqual(["Island", "Swamp"]);
       s = advanceUntil(s, (x) => x.turn.step === "main2");
       const dots = idOf(s, "p1", "battlefield", "Connecting the Dots");
-      s = settle(activate(s, "p1", dots, "Défaussez votre main"));
+      s = settle(activate(s, "p1", dots, "Discard your hand"));
       if (s.pending?.kind === "discard") s = settle(act(s, "p1", { type: "discard", cards: [...(s.players.p1?.hand ?? [])] }));
       expect(names(s, s.players.p1?.hand).sort()).toEqual(["Island", "Swamp"]);
       expect(names(s, s.players.p1?.graveyard).sort()).toEqual(["Connecting the Dots", "Opt"]);
@@ -2361,7 +2362,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
         o.attachedTo = undefined;
       }
       s.players.p1?.graveyard.push(aura);
-      s = settle(activate(s, "p1", aura, "Revient du cimetière"));
+      s = settle(activate(s, "p1", aura, "Return this card from your graveyard"));
       expect(idsOf(s, "p1", "hand", "Convenient Target")).toHaveLength(1);
     });
   });
@@ -2586,14 +2587,14 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       const knife = idOf(s, "p1", "battlefield", "Knife");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, knife).subtypes).toEqual(expect.arrayContaining(["Clue", "Equipment"]));
-      s = settle(activate(s, "p1", knife, "Équiper", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", knife, "Equip", { targets: { t: [bear] } }));
       expect(chars(s, bear).power).toBe(3);
       expect(chars(s, bear).keywords).toContain("firstStrike");
       const theirs = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(chars(theirs, bear).power).toBe(2);
       expect(chars(theirs, bear).keywords).not.toContain("firstStrike");
       const hand = s.players.p1?.hand.length ?? 0;
-      s = settle(activate(s, "p1", knife, "Piochez"));
+      s = settle(activate(s, "p1", knife, "Draw a card"));
       expect(s.players.p1?.hand).toHaveLength(hand + 1);
       expect(idsOf(s, "p1", "graveyard", "Knife")).toHaveLength(1);
     });
@@ -2607,7 +2608,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       });
       const krenko = idOf(s, "p1", "battlefield", "Krenko, Baron of Tin Street");
       const theirs = idOf(s, "p2", "battlefield", "Krenko, Baron of Tin Street");
-      s = settle(activate(s, "p1", krenko, "marqueur"), (req, player) =>
+      s = settle(activate(s, "p1", krenko, "counter"), (req, player) =>
         req.type === "yesNo" ? [player === "p1" ? 1 : 0] : undefined,
       );
       expect(s.objects[krenko]?.counters["+1/+1"]).toBe(1);
@@ -2676,7 +2677,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Offender at Large"), faceDown: true }), pickIt(bear));
       expect(chars(s, bear).power).toBe(2);
       const id = faceDownOf(s);
-      s = settle(activate(s, "p1", id, "Retourner face visible"), pickIt(bear));
+      s = settle(activate(s, "p1", id, "Turn face up"), pickIt(bear));
       expect(chars(s, bear).power).toBe(4);
       expect(chars(s, id).power).toBe(5);
     });
@@ -2700,7 +2701,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Pyrotechnic Performer"), faceDown: true }));
       const id = faceDownOf(s);
       // Deux Performers : celle qui est retournée et celle déjà face visible se déclenchent chacune.
-      s = settle(activate(s, "p1", id, "Retourner face visible"));
+      s = settle(activate(s, "p1", id, "Turn face up"));
       expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([20, 14, 14]);
     });
 
@@ -2709,7 +2710,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
         p1: { battlefield: [...lands("Mountain", 8), "Pyrotechnic Performer"], hand: ["Offender at Large"] },
       });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Offender at Large"), faceDown: true }));
-      s = settle(activate(s, "p1", faceDownOf(s), "Retourner face visible"));
+      s = settle(activate(s, "p1", faceDownOf(s), "Turn face up"));
       expect(s.players.p2?.life).toBe(15);
     });
   });
@@ -2747,7 +2748,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       const fish = idOf(s, "p1", "battlefield", "Red Herring");
       expect(chars(s, fish).keywords).toEqual(expect.arrayContaining(["haste", "mustAttack"]));
       expect(chars(s, fish).subtypes).toEqual(expect.arrayContaining(["Clue", "Fish"]));
-      s = settle(activate(s, "p1", fish, "Piochez"));
+      s = settle(activate(s, "p1", fish, "Draw a card"));
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(idsOf(s, "p1", "graveyard", "Red Herring")).toHaveLength(1);
     });
@@ -2841,7 +2842,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
     let cur = passBoth(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), faceDown: true }));
     const id = cur.battlefield.find((x) => cur.objects[x]?.defId === FACE_DOWN_ID) as string;
     expect(chars(cur, id)).toMatchObject({ name: "", power: 2, toughness: 2 });
-    cur = activate(cur, "p1", id, "Retourner face visible");
+    cur = activate(cur, "p1", id, "Turn face up");
     expect(nameOf(cur, id)).toBe(name);
     return { s: cur, id };
   };
@@ -3153,7 +3154,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       const clue = idOf(s, "p1", "battlefield", "Clue");
       s = settle(activate(s, "p1", clue));
       expect(pt(s, elephant)).toEqual([3, 3]);
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Rope"), "Piochez"));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Rope"), "Draw a card"));
       expect(pt(s, elephant)).toEqual([4, 4]);
       expect(chars(s, elephant).keywords).toContain("vigilance");
     });
@@ -3251,11 +3252,11 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       const rope = idOf(s, "p1", "battlefield", "Rope");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, rope).subtypes).toEqual(expect.arrayContaining(["Clue", "Equipment"]));
-      s = settle(activate(s, "p1", rope, "Équip", { t: [bear] }));
+      s = settle(activate(s, "p1", rope, "Equip", { t: [bear] }));
       expect(pt(s, bear)).toEqual([3, 4]);
       expect(chars(s, bear).keywords).toContain("reach");
       expect(chars(s, bear).blockRules.some((r) => r.maxBlockers === 1)).toBe(true);
-      s = settle(activate(s, "p1", rope, "Piochez"));
+      s = settle(activate(s, "p1", rope, "Draw a card"));
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(idsOf(s, "p1", "graveyard", "Rope")).toHaveLength(1);
     });
@@ -3450,7 +3451,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       });
       createTokens(s, "p1", CLUE, 1);
       const alquist = idOf(s, "p1", "battlefield", "Alquist Proft, Master Sleuth");
-      s = settle(activate(s, "p1", alquist, "X cartes", { x: 2 }));
+      s = settle(activate(s, "p1", alquist, "X cards", { x: 2 }));
       expect(s.players.p1?.hand).toHaveLength(2);
       expect(s.players.p1?.life).toBe(22);
       expect(clues(s)).toHaveLength(0);
@@ -3605,7 +3606,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       let id = "";
       [s, id] = castFaceDown(s, "Crowd-Control Warden");
       expect(s.objects[id]?.counters["+1/+1"] ?? 0).toBe(0);
-      s = settle(activate(s, "p1", id, "Retourner"));
+      s = settle(activate(s, "p1", id, "Turn face up"));
       expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
       expect(pt(s, id)).toEqual([5, 5]);
     });
@@ -3667,7 +3668,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), ...lands("Plains", 2)], hand: ["Dog Walker"] } });
       let id = "";
       [s, id] = castFaceDown(s, "Dog Walker");
-      s = settle(activate(s, "p1", id, "Retourner"));
+      s = settle(activate(s, "p1", id, "Turn face up"));
       const dogs = idsOf(s, "p1", "battlefield", "Dog");
       expect(dogs).toHaveLength(2);
       expect(dogs.every((d) => s.objects[d]?.tapped)).toBe(true);
@@ -3717,8 +3718,8 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(clues(s)).toHaveLength(2);
       const ezrim = idOf(s, "p1", "battlefield", "Ezrim, Agency Chief");
       // Vigilance ? non ; lien de vie ? oui.
-      s = settle(activate(s, "p1", ezrim, "lien de vie", { sacrifice: [clues(s)[0] as string] }), (req) =>
-        req.intent === "may" ? [req.prompt.includes("lien de vie") ? 1 : 0] : undefined,
+      s = settle(activate(s, "p1", ezrim, "lifelink", { sacrifice: [clues(s)[0] as string] }), (req) =>
+        req.intent === "may" ? [req.prompt.includes("lifelink") ? 1 : 0] : undefined,
       );
       expect(clues(s)).toHaveLength(1);
       expect(chars(s, ezrim).keywords).toContain("lifelink");
@@ -3732,7 +3733,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       const ezrim = idOf(s, "p1", "battlefield", "Ezrim, Agency Chief");
       const boosts = legalActions(s, "p1").filter((x) => x.type === "activate" && x.source === ezrim);
       expect(boosts).toHaveLength(1);
-      s = activate(s, "p1", ezrim, "au choix", { sacrifice: clues(s) });
+      s = activate(s, "p1", ezrim, "your choice", { sacrifice: clues(s) });
       // Aucune question à l'activation : la capacité est sur la pile, sans choix fait.
       expect(s.stack).toHaveLength(1);
       expect(s.pending?.kind).toBe("priority");
@@ -3764,7 +3765,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       let id = "";
       [s, id] = castFaceDown(s, "Faerie Snoop");
       const bear = s.players.p1?.library[1] as string;
-      s = settle(activate(s, "p1", id, "Retourner"), pick(bear));
+      s = settle(activate(s, "p1", id, "Turn face up"), pick(bear));
       expect(names(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
       expect(names(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
     });
@@ -3779,7 +3780,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       let id = "";
       [t, id] = castFaceDown(t, "Gadget Technician");
       expect(idsOf(t, "p1", "battlefield", "Thopter")).toHaveLength(0);
-      t = settle(activate(t, "p1", id, "Retourner"));
+      t = settle(activate(t, "p1", id, "Turn face up"));
       const thopters = idsOf(t, "p1", "battlefield", "Thopter");
       expect(thopters).toHaveLength(1);
       expect(chars(t, thopters[0] as string).keywords).toContain("flying");
@@ -3807,7 +3808,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
         let id = "";
         [s, id] = castFaceDown(s, "Granite Witness");
         const elemental = idOf(s, "p2", "battlefield", "Fire Elemental");
-        s = settle(activate(s, "p1", id, "Retourner"), (req) =>
+        s = settle(activate(s, "p1", id, "Turn face up"), (req) =>
           req.type === "pick" && req.options.includes(elemental) ? [elemental] : undefined,
         );
         expect(s.objects[elemental]?.tapped).toBe(!tappedBefore);
@@ -3826,7 +3827,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       };
       let { s, id, elemental } = setup();
       let asked: ChoiceRequest[] = [];
-      s = activate(s, "p1", id, "Retourner");
+      s = activate(s, "p1", id, "Turn face up");
       // Mise sur la pile : seule la cible est demandée (pas de mode).
       for (let i = 0; i < 20 && !s.stack.some((it) => it.kind === "ability"); i++) {
         const p = s.pending;
@@ -3851,13 +3852,13 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
         asked.push(req);
         return undefined;
       });
-      expect(asked.map((r) => r.prompt).filter((p) => p.includes("Dégager"))).toHaveLength(1);
-      expect(asked.map((r) => r.prompt).filter((p) => p.includes("Engager"))).toHaveLength(0);
+      expect(asked.map((r) => r.prompt).filter((p) => p.includes("Untap"))).toHaveLength(1);
+      expect(asked.map((r) => r.prompt).filter((p) => p.includes("Tap"))).toHaveLength(0);
       expect(s.objects[elemental]?.tapped).toBe(false);
 
       // « Vous pouvez » : refuser ne fait rien.
       ({ s, id, elemental } = setup());
-      s = settle(activate(s, "p1", id, "Retourner"), (req) =>
+      s = settle(activate(s, "p1", id, "Turn face up"), (req) =>
         req.intent === "may" ? [0] : req.type === "pick" && req.options.includes(elemental) ? [elemental] : undefined,
       );
       expect(s.objects[elemental]?.tapped).toBe(false);
@@ -4110,7 +4111,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       let id = "";
       [s, id] = castFaceDown(s, "Sanguine Savior");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", id, "Retourner"), pick(bear));
+      s = settle(activate(s, "p1", id, "Turn face up"), pick(bear));
       expect(chars(s, bear).keywords).toContain("lifelink");
     });
 
@@ -4153,7 +4154,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       });
       let id = "";
       [s, id] = castFaceDown(s, "Dog Walker");
-      s = settle(activate(s, "p1", id, "Retourner"));
+      s = settle(activate(s, "p1", id, "Turn face up"));
       expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
       expect(s.objects[idOf(s, "p1", "battlefield", "Sumala Sentry")]?.counters["+1/+1"]).toBe(1);
     });
@@ -4184,9 +4185,9 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       });
       const trostani = idOf(s, "p1", "battlefield", "Trostani, Three Whispers");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", trostani, "contact mortel", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", trostani, "deathtouch", { targets: { t: [bear] } }));
       s = settle(activate(s, "p1", trostani, "vigilance", { targets: { t: [bear] } }));
-      s = settle(activate(s, "p1", trostani, "double initiative", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", trostani, "double strike", { targets: { t: [bear] } }));
       expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["deathtouch", "vigilance", "doubleStrike"]));
     });
   });
@@ -4447,7 +4448,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
 
     it("{2}, sacrifiez-le : piochez une carte", () => {
       let s = scenario({ p1: { battlefield: ["Scene of the Crime", ...lands("Forest", 2)], library: ["Opt"] } });
-      s = activate(s, "p1", idOf(s, "p1", "battlefield", "Scene of the Crime"), "Piochez");
+      s = activate(s, "p1", idOf(s, "p1", "battlefield", "Scene of the Crime"), "Draw a card");
       s = settle(s);
       expect(idsOf(s, "p1", "graveyard", "Scene of the Crime")).toHaveLength(1);
       expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Opt"]);
@@ -4459,7 +4460,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       let s = scenario({ p1: { battlefield: ["Magnifying Glass", ...lands("Forest", 4)] } });
       const glass = idOf(s, "p1", "battlefield", "Magnifying Glass");
       expect(manaColors(s, "p1", glass)).toEqual(["C"]);
-      s = settle(activate(s, "p1", glass, "Enquêtez"));
+      s = settle(activate(s, "p1", glass, "Investigate"));
       expect(s.objects[glass]?.tapped).toBe(true);
       const clues = s.battlefield.filter((id) => chars(s, id).subtypes.includes("Clue"));
       expect(clues).toHaveLength(1);
@@ -4483,10 +4484,10 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       const cap = idOf(s, "p1", "battlefield", "Thinking Cap");
       const detective = idOf(s, "p1", "battlefield", DETECTIVE_CARD.name);
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-      const option = activation(s, "p1", cap, "Détective");
+      const option = activation(s, "p1", cap, "Detective");
       expect(option?.targets[0]?.id).toBeDefined();
-      expect(() => activate(s, "p1", cap, "Détective", { targets: { t: [cub] } })).toThrow(RulesError);
-      s = settle(activate(s, "p1", cap, "Détective", { targets: { t: [detective] } }));
+      expect(() => activate(s, "p1", cap, "Detective", { targets: { t: [cub] } })).toThrow(RulesError);
+      s = settle(activate(s, "p1", cap, "Detective", { targets: { t: [detective] } }));
       expect(s.objects[cap]?.attachedTo).toBe(detective);
       expect([chars(s, detective).power, chars(s, detective).toughness]).toEqual([3, 4]);
     });
@@ -4495,7 +4496,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       let s = scenario({ p1: { battlefield: ["Thinking Cap", "Bear Cub", ...lands("Plains", 3)] } });
       const cap = idOf(s, "p1", "battlefield", "Thinking Cap");
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", cap, "Équiper {3}", { targets: { t: [cub] } }));
+      s = settle(activate(s, "p1", cap, msg("Equip {cost}", { cost: "{3}" }), { targets: { t: [cub] } }));
       expect(s.objects[cap]?.attachedTo).toBe(cub);
       expect([chars(s, cub).power, chars(s, cub).toughness]).toEqual([3, 4]);
     });
@@ -4518,7 +4519,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
         p1: { battlefield: ["Magnetic Snuffler", "Scene of the Crime", ...lands("Forest", 2)] },
         p2: { battlefield: ["Magnetic Snuffler"] },
       });
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Scene of the Crime"), "Piochez"));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Scene of the Crime"), "Draw a card"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Magnetic Snuffler")]?.counters["+1/+1"]).toBe(1);
       expect(s.objects[idOf(s, "p2", "battlefield", "Magnetic Snuffler")]?.counters["+1/+1"] ?? 0).toBe(0);
     });
@@ -4528,10 +4529,10 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
     it("{1} : un mana de n'importe quelle couleur, une seule fois par tour", () => {
       let s = scenario({ p1: { battlefield: ["Gravestone Strider", ...lands("Forest", 2)] } });
       const strider = idOf(s, "p1", "battlefield", "Gravestone Strider");
-      s = activate(s, "p1", strider, "une fois par tour");
+      s = activate(s, "p1", strider, "once per turn");
       s = settle(s, (req) => (req.intent === "manaColor" ? ["U"] : undefined));
       expect(s.players.p1?.manaPool.U).toBe(1);
-      expect(activation(s, "p1", strider, "une fois par tour")).toBeUndefined();
+      expect(activation(s, "p1", strider, "once per turn")).toBeUndefined();
     });
 
     it("{2}, exilez-la de votre cimetière : exilez une carte ciblée d'un cimetière", () => {
@@ -4541,7 +4542,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       });
       const strider = idOf(s, "p1", "graveyard", "Gravestone Strider");
       const cub = idOf(s, "p2", "graveyard", "Bear Cub");
-      s = settle(activate(s, "p1", strider, "Exilez", { targets: { t: [cub] } }));
+      s = settle(activate(s, "p1", strider, "Exile", { targets: { t: [cub] } }));
       expect(s.players.p2?.graveyard).toHaveLength(0);
       expect(s.exile.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Gravestone Strider"]);
     });
@@ -4562,7 +4563,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(seen(s)).toBeUndefined();
       // p2 garde la priorité après la résolution : il passe, p1 active.
       if (s.pending?.kind === "priority" && s.pending.player === "p2") s = act(s, "p2", { type: "pass" });
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Lumbering Laundry"), "face cachée"));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Lumbering Laundry"), "face-down"));
       expect(seen(s)?.name).toBe("Lumbering Laundry");
       s = advanceUntil(s, (x) => x.turn.active === "p1");
       expect(seen(s)).toBeUndefined();
@@ -4627,12 +4628,12 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     const researcher = idOf(s, "p1", "battlefield", "Forensic Researcher");
     // Opt (1) + Bear Cub (2) = 3.
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
-    s = settle(activateFirst(s, researcher, "engagez", { t: [bear] }) as S);
+    s = settle(activateFirst(s, researcher, "tap a creature", { t: [bear] }) as S);
     expect(s.objects[bear]?.tapped).toBe(true);
     expect(s.players.p1?.graveyard).toHaveLength(0);
     const t = scenario({ p1: { battlefield: ["Forensic Researcher"], graveyard: ["Opt"] }, p2: { battlefield: ["Bear Cub"] } });
     const r2 = idOf(t, "p1", "battlefield", "Forensic Researcher");
-    expect(activateFirst(t, r2, "engagez", { t: [idOf(t, "p2", "battlefield", "Bear Cub")] })).toBeUndefined();
+    expect(activateFirst(t, r2, "tap a creature", { t: [idOf(t, "p2", "battlefield", "Bear Cub")] })).toBeUndefined();
   });
 
   it("Incinerator of the Guilty : blessures de combat à un joueur, réunissez des preuves X : X blessures à ses créatures", () => {
@@ -4735,7 +4736,7 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     const c = s.objects[cryptex];
     if (c) c.counters.unlock = 5;
     const hand = s.players.p1?.hand.length ?? 0;
-    s = settle(activateFirst(s, cryptex, "Sacrifiez") as S);
+    s = settle(activateFirst(s, cryptex, "Sacrifice it") as S);
     expect(s.players.p1?.hand).toHaveLength(hand + 3);
   });
 
@@ -4744,10 +4745,10 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
       p1: { battlefield: ["Tenth District Hero", "Bear Cub", ...lands("Plains", 5)], graveyard: ["Bear Cub", "Shivan Dragon"] },
     });
     const hero = idOf(s, "p1", "battlefield", "Tenth District Hero");
-    s = settle(activateFirst(s, hero, "preuves 2") as S);
+    s = settle(activateFirst(s, hero, "evidence 2") as S);
     expect(chars(s, hero).subtypes).toEqual(expect.arrayContaining(["Human", "Detective"]));
     expect([chars(s, hero).power, chars(s, hero).toughness]).toEqual([4, 4]);
-    s = settle(activateFirst(s, hero, "preuves 4") as S);
+    s = settle(activateFirst(s, hero, "evidence 4") as S);
     expect(chars(s, hero).name).toBe("Mileva, the Stalwart");
     expect(chars(s, hero).supertypes).toContain("Legendary");
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).toContain("indestructible");
@@ -4758,7 +4759,7 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
   const faceDown = (s: S, player: string, name: string) =>
     act(s, player, { type: "cast", card: idOf(s, player, "hand", name), faceDown: true });
   const faceUpAction = (s: S, player: string, id: string) =>
-    legalActions(s, player).find((a) => a.type === "activate" && a.source === id && a.label === "Retourner face visible");
+    legalActions(s, player).find((a) => a.type === "activate" && a.source === id && a.label === "Turn face up");
   const downId = (s: S, player: string) =>
     s.battlefield.find((id) => s.objects[id]?.controller === player && s.objects[id]?.faceDown) as string;
 
@@ -4882,7 +4883,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     });
     const card = idOf(s, "p1", "hand", "Expose the Culprit");
     const opt = legalActions(s, "p1").find((x) => x.type === "cast" && x.card === card);
-    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Exilez vos créatures")) : undefined;
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Exile your face-up creatures")) : undefined;
     s = settle(act(s, "p1", { type: "cast", card, mode: mode?.index }));
     expect(idsOf(s, "p1", "battlefield", "Fugitive Codebreaker")).toHaveLength(0);
     const down = s.battlefield.find((id) => s.objects[id]?.faceDown) as string;
@@ -4892,8 +4893,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     const bear = cloakFromHand(t, "p1", "Bear Cub");
     const card2 = idOf(t, "p1", "hand", "Expose the Culprit");
     const opt2 = legalActions(t, "p1").find((x) => x.type === "cast" && x.card === card2);
-    const mode2 =
-      opt2?.type === "cast" ? opt2.modes.find((m) => m.label === "Retournez face visible une créature face cachée") : undefined;
+    const mode2 = opt2?.type === "cast" ? opt2.modes.find((m) => m.label === "Turn a face-down creature face up") : undefined;
     t = settle(act(t, "p1", { type: "cast", card: card2, mode: mode2?.index, targets: { a: [bear] } }));
     expect(t.objects[bear]?.faceDown).toBeUndefined();
     expect(chars(t, bear).name).toBe("Bear Cub");
@@ -4920,7 +4920,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     });
     const down = cloakFromHand(s, "p1", "Opt");
     const a = legalActions(s, "p1").find(
-      (x) => x.type === "activate" && x.source === down && (x.label ?? "").startsWith("Retournez-la"),
+      (x) => x.type === "activate" && x.source === down && (x.label ?? "").startsWith("Turn it face up"),
     );
     expect(a).toBeDefined();
     const hand = s.players.p1?.hand.length ?? 0;
@@ -5380,7 +5380,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     let s = scenario({ p1: { battlefield: ["Hedge Whisperer", ...lands("Forest", 5)], graveyard: ["Shivan Dragon"] } });
     const whisperer = idOf(s, "p1", "battlefield", "Hedge Whisperer");
     const land = idOf(s, "p1", "battlefield", "Forest");
-    s = settle(activateLabel(s, whisperer, "Sanglier", { targets: { t: [land] } }));
+    s = settle(activateLabel(s, whisperer, "Boar", { targets: { t: [land] } }));
     expect(chars(s, land).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
     expect(chars(s, land).power).toBe(5);
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
@@ -5402,7 +5402,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     const goblin = idOf(s, "p1", "battlefield", "Goblin");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: goblin, defender: "p2" }] });
     s = advanceUntil(s, (x) => x.turn.step === "declareAttackers" && x.pending?.kind === "priority" && x.pending.player === "p1");
-    s = settle(activateLabel(s, killer, "Sacrifiez", { targets: { t: [goblin] } }));
+    s = settle(activateLabel(s, killer, "Sacrifice it", { targets: { t: [goblin] } }));
     expect(s.objects[goblin]?.counters["+1/+1"]).toBe(3);
     expect(chars(s, goblin).keywords).toContain("deathtouch");
   });
@@ -5415,7 +5415,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
       },
     });
     const vehicle = idOf(s, "p1", "battlefield", "Kylox's Voltstrider");
-    s = settle(activateLabel(s, vehicle, "Réunissez des preuves 6"));
+    s = settle(activateLabel(s, vehicle, "Collect evidence 6"));
     expect(chars(s, vehicle).types).toContain("Creature");
     expect(s.objects[vehicle]?.linked).toHaveLength(3);
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -5442,7 +5442,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     const kaya = idOf(s, "p1", "battlefield", "Kaya, Spirits' Justice");
     const spirit = idOf(s, "p1", "battlefield", "Spirit");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = settle(activateLabel(s, kaya, "Exilez une de vos créatures", { targets: { a: [bear], b: [] } }), yes);
+    s = settle(activateLabel(s, kaya, "Exile a creature of yours", { targets: { a: [bear], b: [] } }), yes);
     expect(chars(s, spirit).name).toBe("Bear Cub");
     expect(chars(s, spirit).keywords).toContain("flying");
   });
@@ -5547,7 +5547,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     const minus = (s: S) => {
       const kaya = idOf(s, "p1", "battlefield", "Kaya, Spirits' Justice");
       const a = legalActions(s, "p1").find(
-        (x) => x.type === "activate" && x.source === kaya && /chaque adversaire/.test(x.label ?? ""),
+        (x) => x.type === "activate" && x.source === kaya && /each opponent/.test(x.label ?? ""),
       );
       return { kaya, ability: a?.type === "activate" ? a.ability : -1 };
     };
@@ -5754,7 +5754,7 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(4);
     expect(s.players.p2?.life).toBe(15);
     // Sacrifiez quatre jetons : surveillance 2 (les deux Opt au cimetière), puis piochez deux cartes, et 2 PV.
-    s = settle(activateLabel(s, izoni, "Sacrifiez quatre jetons"), (req) =>
+    s = settle(activateLabel(s, izoni, "Sacrifice four tokens"), (req) =>
       req.intent === "surveilGraveyard" && req.type === "pick" ? req.options : undefined,
     );
     expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(0);
@@ -5789,7 +5789,7 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     expect(chars(s, clue).types).toContain("Artifact");
     // Indice : {2}, sacrifiez-le : piochez une carte.
     const hand = s.players.p1?.hand.length ?? 0;
-    s = settle(activateLabel(s, clue, "Piochez"));
+    s = settle(activateLabel(s, clue, "Draw a card"));
     expect(s.players.p1?.hand).toHaveLength(hand + 1);
     expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(0);
 
@@ -5956,9 +5956,9 @@ describe("vue : la restriction de dégagement est montrée sur le permanent (PLA
     const hw = idOf(s, "p1", "battlefield", "Hedge Whisperer");
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
     const ruleOf = (x: GameState, id: string) => projectView(x, "p1").battlefield.find((o) => o.id === id)?.untapRule;
-    expect([ruleOf(s, hw), ruleOf(s, bear)]).toEqual(["Peut ne pas se dégager", undefined]);
+    expect([ruleOf(s, hw), ruleOf(s, bear)]).toEqual(["May not untap", undefined]);
     s = settle(cast(s, "p1", "Starlight Snare", { enchant: [bear] }));
     expect(s.objects[bear]?.tapped).toBe(true);
-    expect(ruleOf(s, bear)).toBe("Ne se dégage pas lors de l'étape de dégagement");
+    expect(ruleOf(s, bear)).toBe("Doesn't untap during the untap step");
   });
 });

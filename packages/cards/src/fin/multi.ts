@@ -1,4 +1,4 @@
-/** Final Fantasy — cartes multicolores. */
+/** Final Fantasy — multicolored cards. */
 import type { CardScript, TokenSpec } from "@mtgx/engine";
 import { activated, amount, cond, FOOD, fx, ref, target, triggered, when } from "./common";
 
@@ -28,7 +28,7 @@ export const MULTI: Record<string, CardScript> = {
   "Black Waltz No. 3": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.damage(2, ref.eachOpponent)], {
-        label: "2 blessures à chaque adversaire",
+        label: "2 damage to each opponent",
       }),
     ],
   },
@@ -51,26 +51,26 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ anyOf: [{ types: ["Creature"], subtype: "Dwarf" }, { subtype: "Equipment" }], controller: "you" }),
-        fx.may("Défausser une carte pour piocher ?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
-        { label: "Défaussez, piochez" },
+        fx.may("Discard a card to draw?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
+        { label: "Discard, then draw" },
       ),
     ],
   },
   "Gladiolus Amicitia": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Land"] }, { to: "battlefield", tapped: true })], {
-        label: "Cherchez un terrain",
+        label: "Search for a land",
       }),
       triggered(when.landfall, [fx.pump(ref.target(), 2, 2, ["trample"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "+2/+2 et le piétinement",
+        label: "+2/+2 and trample",
       }),
     ],
   },
   "Hope Estheim": {
     abilities: [
       triggered(when.yourEndStep, [fx.mill(amount.lifeGainedThisTurn, ref.eachOpponent)], {
-        label: "Chaque adversaire meule X cartes",
+        label: "Each opponent mills X cards",
       }),
     ],
   },
@@ -79,18 +79,18 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.lookAtTop(6, { filter: { types: ["Land"] }, count: 1, to: { to: "battlefield", tapped: true }, rest: "bottom" })],
-        { label: "Un terrain parmi les six du dessus" },
+        { label: "A land among the top six" },
       ),
       activated({
         mana: "{1}{G}{U}",
         tap: true,
-        targets: [target.cardInGraveyard("t", {}, "any", "carte")],
-        // `exile` ne vise que les permanents : une carte d'un cimetière passe par `exileCard`.
+        targets: [target.cardInGraveyard("t", {}, "any", "card")],
+        // `exile` only handles permanents: a card in a graveyard goes through `exileCard`.
         effects: [
           fx.exileCard(ref.target(), { name: "c", filter: { types: ["Creature"] } }),
           fx.when(cond.v("c"), fx.createTokens(FOOD)),
         ],
-        label: "Exilez une carte d'un cimetière",
+        label: "Exile a card from a graveyard",
       }),
     ],
   },
@@ -102,14 +102,14 @@ export const MULTI: Record<string, CardScript> = {
           fx.addCounters(ref.target(), amount.powerOf(ref.self)),
           fx.modify(ref.target(), { addSubtypes: ["Mutant"] }, "permanent"),
         ],
-        { targets: [target.upTo(1, target.creature("t", { other: true }))], label: "Marqueurs, devient un Mutant" },
+        { targets: [target.upTo(1, target.creature("t", { other: true }))], label: "Counters, becomes a Mutant" },
       ),
       triggered(
         when.dies({ types: ["Creature"], subtype: "Mutant", controller: "you" }),
         [fx.draw(amount.powerOf(ref.eventObject))],
         {
           condition: cond.yourTurn,
-          label: "Piochez autant que sa force",
+          label: "Draw cards equal to its power",
         },
       ),
     ],
@@ -117,11 +117,11 @@ export const MULTI: Record<string, CardScript> = {
   "Judge Magister Gabranth": {
     abilities: [
       triggered(when.dies({ ...CREATURE_OR_ARTIFACT, controller: "you", other: true }), [fx.addCounters(ref.self, 1)], {
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
-  "Locke Cole": { abilities: [triggered(when.combatDamageToPlayer, fx.loot(1), { label: "Piochez, défaussez" })] },
+  "Locke Cole": { abilities: [triggered(when.combatDamageToPlayer, fx.loot(1), { label: "Draw, then discard" })] },
   "Rinoa Heartilly": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(ANGELO)], { label: "Angelo" }),
@@ -134,7 +134,7 @@ export const MULTI: Record<string, CardScript> = {
             amount.count({ types: ["Creature"], controller: "you" }),
           ),
         ],
-        { targets: [target.creature("t", { controller: "you", other: true })], label: "+1/+1 par créature" },
+        { targets: [target.creature("t", { controller: "you", other: true })], label: "+1/+1 for each creature" },
       ),
     ],
   },
@@ -149,11 +149,11 @@ export const MULTI: Record<string, CardScript> = {
   "Tidus, Blitzball Star": {
     abilities: [
       triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.addCounters(ref.self, 1)], {
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
       triggered(when.attacksSelf, [fx.tap(ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagez une créature",
+        label: "Tap a creature",
       }),
     ],
   },

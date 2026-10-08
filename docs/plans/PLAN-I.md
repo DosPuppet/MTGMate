@@ -105,7 +105,7 @@ The engine and the server do not know the reader's language (an online game can 
 
 ### I5 — Tests (L, mechanical, in parallel)
 
-Test names (`describe`/`it`), comments and helper messages of every package's tests (`engine/test` alone has 106 000 lines). No assertion changes except texts already handled in I1 to I3. Test file names in English where they are French (`ai/test/golden/4c-contre-izzet.json` → `4c-vs-izzet.json`…).
+Test names (`describe`/`it`), comments and helper messages of every package's tests (`engine/test` alone has 106 000 lines). No assertion changes except texts already handled in I1 to I3. Test file names in English where they are French (`ai/test/golden/4c-vs-izzet.json` → `4c-vs-izzet.json`…).
 
 ### I6 — Documentation and file names (L)
 
@@ -185,3 +185,17 @@ Keyword actions and mechanics take the English name printed on the cards (Scryfa
 - Pilots: Riot prompt and options (engine, `replacement.ts`), format choice on the home screen (`FormatChoice.tsx`, translated whole); `vite.config.ts` and `tools/bundle-size.ts` translated whole, chunks renamed `cartes` → `cards`, `bibliotheques` → `vendor` (third-party code from `node_modules`).
 - `CLAUDE.md`: "Language" convention in English.
 - Checks: `npm run verify -- --set WOT --ui` green in 363 s (French interface tests unchanged); fuzz fingerprint identical before and after (`--games 300 --pool all --seed 7`: `f07b0933`, 273 685 decisions); one-off Playwright check of the toggle (FR → EN → reload → FR, `<html lang>`, no page error; captures in `test-results/plan-i/`).
+
+### I1, I2, I3, I4 — Code in English, bilingual interface (done 2026-10-08)
+
+Done by parallel agents on disjoint files (engine in 8 groups, client in 4, cards core, server and AI, tools; then card scripts in 14 groups of sets), each writing the French originals into catalog fragments merged with `npx tsx tools/locales.ts --merge`.
+
+- **Catalogs:** engine 552 entries, client 907, server 33, cards core 89 and one catalog per set (about 8,000 entries in all); no conflicting id at merge. Ids that the same English could not keep apart use a more precise English or a `ctx:` prefix (`ctx:zone|Exile`, `ctx:card|Commander`, `ctx:gains|Haste`…).
+- **Engine:** every prompt, label and `RulesError` goes through `msg`; code that compared displayed text now reads data (`ab.equip` for Equip, locked doors for Rooms, `FACE_DOWN_WARD`, `PROWESS_LABEL`); `altCostMode` takes `"Overload" | "Cleave"`; `RULES_VERSION` unchanged.
+- **Client:** interface through `useT()`; engine and server texts through `useLocalize()`/`textIn`; game log as English templates (French output checked word for word against the old log on about 200 events); tutorial lessons as `msg` data; deck names from `DeckList.fr`; local AI and player names localized ("You", "AI n"), online AI seats named by the server with `msg("AI {n} ({level})")` and localized by the client (`withPlayerNames`).
+- **Cards:** labels deduced by `scryfall.ts` (Equip, Crew, cycling, alternative costs…) and every set script in English; precon decks with English names and `fr`; validation messages as `msg`; welcome decks renamed `welcome-{white,blue,black,red,green}` (saved games store card lists, not deck ids: no alias needed); golden games renamed (`4c-vs-izzet`, `four-players-a`…).
+- **Server, AI, tools:** server errors as `msg` (catalog `server/locales/fr.json`); tool output in English (`verify.ts` regexes follow); Playwright smoke tools keep the French labels they click (`allowed`).
+- **Guards:** the debt measure "single-card values" no longer counts player-facing texts (`label`, `prompt`, `text`, `labels`): ceiling 105 → 104. Detector: `fr`/`nameFr`/`frText` data and `// i18n-ignore` lines are skipped.
+- **Values of templates** are translated recursively: a name that equals a catalog id would be translated. Measured: 15 English card or token names are catalog ids (basic lands, Cancel, Food, Treasure…); every such card has a French name, which is what French mode shows, and the tokens show their French type. Kept as is.
+- **Checks:** whole test suite green (155 files, 13,996 tests); `tsc` and Biome clean; fuzz fingerprint identical to the one before PLAN-I (`--games 300 --pool all --seed 7`: `f07b0933`, 273,685 decisions); golden games identical.
+- **French display changes (improvements):** a few prompts now show the French card name where they showed the English one (Agency Outfitter, partner prompts, Room doors); Uldaros Theorix target labels show the French card type.

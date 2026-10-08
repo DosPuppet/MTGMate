@@ -1,4 +1,5 @@
-/** Avatar: The Last Airbender — cartes bleues (lot A). */
+/** Avatar: The Last Airbender: blue cards (lot A). */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -23,14 +24,14 @@ import {
   when,
 } from "./common";
 
-/** Nombre de cartes de Leçon dans votre cimetière. */
+/** Number of Lesson cards in your graveyard. */
 const LESSONS = amount.countIn("graveyard", { subtype: "Lesson" });
-/** « tant qu'il y a trois cartes de Leçon ou plus dans votre cimetière » */
+/** "as long as there are three or more Lesson cards in your graveyard" */
 const THREE_LESSONS = cond.amountAtLeast(LESSONS, 3);
 
 export const BLUE: Record<string, CardScript> = {
   "Boomerang Basics": {
-    // Le contrôleur est lu dans les dernières informations connues du permanent renvoyé.
+    // The controller is read from the last known information of the returned permanent.
     spell: spell(
       [target.nonland()],
       [fx.bounce(ref.target()), ...fx.when(cond.targetMatches("t", { controller: "you" }), fx.draw(1))],
@@ -39,12 +40,12 @@ export const BLUE: Record<string, CardScript> = {
   "Ember Island Production": {
     spell: modal(
       mode(
-        "Copie 4/4 Héros d'une de vos créatures",
+        "4/4 Hero copy of a creature you control",
         [target.creature("t", { controller: "you" })],
         [fx.copyToken(ref.target(), { nonlegendary: true, pt: 4, addSubtypes: ["Hero"] })],
       ),
       mode(
-        "Copie 2/2 Lâche d'une créature adverse",
+        "2/2 Coward copy of a creature an opponent controls",
         [target.creature("u", { controller: "opponent" })],
         [fx.copyToken(ref.target("u"), { nonlegendary: true, pt: 2, addSubtypes: ["Coward"] })],
       ),
@@ -55,7 +56,7 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, toughness: 1 },
-        { condition: cond.amountAtLeast(LESSONS, 1), label: "+1/+1 tant qu'une Leçon est dans votre cimetière" },
+        { condition: cond.amountAtLeast(LESSONS, 1), label: "+1/+1 as long as a Lesson is in your graveyard" },
       ),
     ],
   },
@@ -65,12 +66,12 @@ export const BLUE: Record<string, CardScript> = {
         mana: "{3}",
         waterbend: true,
         effects: [fx.modify(ref.self, { setPower: 5, setToughness: 2 })],
-        label: "Maîtrise de l'eau {3} : F/E de base 5/2 jusqu'à la fin du tour",
+        label: "Waterbend {3}: base power and toughness 5/2 until end of turn",
       }),
     ],
   },
   "Forecasting Fortune Teller": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(CLUE)], { label: "Un Indice" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(CLUE)], { label: "A Clue" })],
   },
   "Geyser Leaper": {
     abilities: [
@@ -78,36 +79,36 @@ export const BLUE: Record<string, CardScript> = {
         mana: "{4}",
         waterbend: true,
         effects: fx.loot(1),
-        label: "Maîtrise de l'eau {4} : piochez une carte, puis défaussez-en une",
+        label: "Waterbend {4}: draw a card, then discard a card",
       }),
     ],
   },
   "Giant Koi": {
-    // Cycle d'Île lu dans le texte.
+    // Islandcycling read from the text.
     abilities: [
       activated({
         mana: "{3}",
         waterbend: true,
         effects: [fx.modify(ref.self, { addKeywords: ["unblockable"] })],
-        label: "Maîtrise de l'eau {3} : imblocable ce tour-ci",
+        label: "Waterbend {3}: can't be blocked this turn",
       }),
     ],
   },
   "Gran-Gran": {
     abilities: [
-      triggered(when.tapsSelf, fx.loot(1), { label: "Piochez une carte, puis défaussez-en une" }),
-      costReducer({ notTypes: ["Creature"] }, 1, "Sorts non-créatures : {1} de moins (trois Leçons au cimetière)", {
+      triggered(when.tapsSelf, fx.loot(1), { label: "Draw a card, then discard a card" }),
+      costReducer({ notTypes: ["Creature"] }, 1, "Noncreature spells: {1} less (three Lessons in the graveyard)", {
         condition: THREE_LESSONS,
       }),
     ],
   },
   "Honest Work": {
-    enchant: { filter: { types: ["Creature"], controller: "opponent" }, label: "créature adverse" },
+    enchant: { filter: { types: ["Creature"], controller: "opponent" }, label: "creature an opponent controls" },
     abilities: [
       triggered(
         when.entersSelf,
         [fx.tap(ref.attached), fx.removeCounters(ref.attached, amount.countersOn(ref.attached, "any"))],
-        { label: "Engagez la créature enchantée et retirez-en tous les marqueurs" },
+        { label: "Tap the enchanted creature and remove all counters from it" },
       ),
       staticAbility(
         "attached",
@@ -119,7 +120,7 @@ export const BLUE: Record<string, CardScript> = {
           setName: "Humble Merchant",
           addAbilities: [manaAbility("C")],
         },
-        { label: "Citoyen 1/1 « {T} : ajoutez {C} » nommé Humble Merchant" },
+        { label: '1/1 Citizen with "{T}: Add {C}" named Humble Merchant' },
       ),
     ],
   },
@@ -127,13 +128,13 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         targets: [target.upTo(1, target.nonland("t", { other: true }))],
-        label: "Renvoie un autre permanent non-terrain",
+        label: "Returns another nonland permanent",
       }),
       exhaust({
         mana: "{3}",
         waterbend: true,
         effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"] }, "permanent"), fx.addCounters(ref.self, 3)],
-        label: "Maîtrise de l'eau {3} : devient une créature-artefact avec trois marqueurs +1/+1",
+        label: "Waterbend {3}: becomes an artifact creature with three +1/+1 counters",
       }),
     ],
   },
@@ -141,58 +142,58 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: cond.sourceMatches({ tapped: true }),
-        label: "Engagée : un marqueur +1/+1",
+        label: "Tapped: a +1/+1 counter",
       }),
-      activated({ mana: "{6}", waterbend: true, effects: [fx.draw(1)], label: "Maîtrise de l'eau {6} : piochez une carte" }),
+      activated({ mana: "{6}", waterbend: true, effects: [fx.draw(1)], label: "Waterbend {6}: draw a card" }),
     ],
   },
   "Knowledge Seeker": {
     abilities: [
-      triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Deuxième carte piochée : un marqueur +1/+1" }),
-      triggered(when.diesSelf, [fx.createTokens(CLUE)], { label: "Un Indice" }),
+      triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Second card drawn: a +1/+1 counter" }),
+      triggered(when.diesSelf, [fx.createTokens(CLUE)], { label: "A Clue" }),
     ],
   },
   "The Legend of Kuruk": {
     abilities: [
-      chapter([1, 2], [fx.scry(2), fx.draw(1)], { label: "Regard 2, puis piochez une carte" }),
+      chapter([1, 2], [fx.scry(2), fx.draw(1)], { label: "Scry 2, then draw a card" }),
       chapter([3], [fx.exileCard(ref.self, { name: "flip" }), fx.toBattlefield(ref.stored("flip"), { transformed: true })], {
-        label: "Revient transformée",
+        label: "Returns transformed",
       }),
     ],
   },
   "Avatar Kuruk": {
     abilities: [
-      triggered(when.castSpell("you"), [fx.createTokens(SPIRIT_KOH)], { label: "Un Esprit 1/1" }),
+      triggered(when.castSpell("you"), [fx.createTokens(SPIRIT_KOH)], { label: "A 1/1 Spirit" }),
       exhaust({
         mana: "{20}",
         waterbend: true,
         effects: [fx.extraTurn],
-        label: "Maîtrise de l'eau {20} : un tour supplémentaire",
+        label: "Waterbend {20}: an extra turn",
       }),
     ],
   },
   "Lost Days": {
-    // Le propriétaire choisit : deuxième depuis le dessus ou au-dessous.
+    // The owner chooses: second from the top or on the bottom.
     spell: spell(
-      [{ id: "t", label: "créature ou enchantement", filter: { objects: { types: ["Creature", "Enchantment"] } } }],
+      [{ id: "t", label: "creature or enchantment", filter: { objects: { types: ["Creature", "Enchantment"] } } }],
       [fx.topOrBottom(ref.target(), undefined, 2), fx.createTokens(CLUE)],
     ),
   },
   "Master Pakku": {
-    // Prouesse lue dans le texte.
+    // Prowess read from the text.
     abilities: [
       triggered(when.tapsSelf, [fx.mill(LESSONS, ref.target())], {
         targets: [target.player()],
-        label: "Le joueur ciblé meule X cartes (Leçons de votre cimetière)",
+        label: "Target player mills X cards (Lessons in your graveyard)",
       }),
     ],
   },
   "The Mechanist, Aerial Artisan": {
     abilities: [
-      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.createTokens(CLUE)], { label: "Un Indice" }),
+      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.createTokens(CLUE)], { label: "A Clue" }),
       activated({
         tap: true,
-        targets: [target.permanent("t", ["Artifact"], { controller: "you", token: true }, "jeton artefact que vous contrôlez")],
+        targets: [target.permanent("t", ["Artifact"], { controller: "you", token: true }, "artifact token you control")],
         effects: [
           fx.modify(ref.target(), {
             addTypes: ["Artifact", "Creature"],
@@ -202,7 +203,7 @@ export const BLUE: Record<string, CardScript> = {
             addKeywords: ["flying"],
           }),
         ],
-        label: "Le jeton devient une Construction 3/1 volante jusqu'à la fin du tour",
+        label: "The token becomes a 3/1 flying Construct until end of turn",
       }),
     ],
   },
@@ -210,11 +211,9 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       activated({
         tap: true,
-        targets: [
-          { id: "t", label: "autre permanent que vous contrôlez", filter: { objects: { controller: "you", other: true } } },
-        ],
+        targets: [{ id: "t", label: "other permanent you control", filter: { objects: { controller: "you", other: true } } }],
         effects: [fx.untap(ref.target())],
-        label: "Dégagez un autre de vos permanents",
+        label: "Untap another permanent you control",
       }),
       activated({
         mana: "{3}",
@@ -222,7 +221,7 @@ export const BLUE: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "opponent" })],
         effects: [fx.tap(ref.target())],
-        label: "Maîtrise de l'eau {3} : engagez une créature adverse",
+        label: "Waterbend {3}: tap a creature an opponent controls",
       }),
     ],
   },
@@ -235,7 +234,7 @@ export const BLUE: Record<string, CardScript> = {
   "Otter-Penguin": {
     abilities: [
       triggered(when.draw(2), [fx.pump(ref.self, 1, 2), fx.modify(ref.self, { addKeywords: ["unblockable"] })], {
-        label: "Deuxième carte piochée : +1/+2 et imblocable ce tour-ci",
+        label: "Second card drawn: +1/+2 and can't be blocked this turn",
       }),
     ],
   },
@@ -243,7 +242,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagez une créature adverse, un marqueur d'étourdissement",
+        label: "Tap a creature an opponent controls, a stun counter",
       }),
     ],
   },
@@ -253,17 +252,17 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Sokka's Haiku": {
     spell: spell(
-      [target.spell("s"), target.permanent("l", ["Land"], {}, "terrain")],
+      [target.spell("s"), target.permanent("l", ["Land"], {}, "land")],
       [fx.counter(ref.target("s")), fx.draw(1), fx.mill(3), fx.untap(ref.target("l"))],
     ),
   },
   "The Spirit Oasis": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(amount.count({ subtype: "Shrine", controller: "you" }))], {
-        label: "Piochez une carte par Sanctuaire",
+        label: "Draw a card for each Shrine",
       }),
       triggered(when.enters({ subtype: "Shrine", controller: "you", other: true }), [fx.draw(1)], {
-        label: "Un autre Sanctuaire : piochez une carte",
+        label: "Another Shrine: draw a card",
       }),
     ],
   },
@@ -279,25 +278,25 @@ export const BLUE: Record<string, CardScript> = {
             fx.reflexive([target.creature("t", { controller: "you" })], [fx.addCounters(ref.target(), 1)]),
           ),
         ],
-        { label: "Piochez puis défaussez ; carte non-terrain : un marqueur +1/+1" },
+        { label: "Draw then discard; nonland card: a +1/+1 counter" },
       ),
     ],
   },
   "Tiger-Seal": {
     abilities: [
-      triggered(when.yourUpkeep, [fx.tap(ref.self)], { label: "Engagez cette créature" }),
-      triggered(when.draw(2), [fx.untap(ref.self)], { label: "Deuxième carte piochée : dégagez cette créature" }),
+      triggered(when.yourUpkeep, [fx.tap(ref.self)], { label: "Tap this creature" }),
+      triggered(when.draw(2), [fx.untap(ref.self)], { label: "Second card drawn: untap this creature" }),
     ],
   },
   "Ty Lee, Chi Blocker": {
-    // Flash et prouesse lus dans le texte.
+    // Flash and prowess read from the text.
     abilities: [
       triggered(
         when.entersSelf,
         [fx.tap(ref.target()), fx.modifyWhileYouControl(ref.target(), { addAbilities: [doesntUntap("self")] })],
         {
           targets: [target.upTo(1, target.creature())],
-          label: "Engagez une créature ; elle ne se dégage plus tant que vous contrôlez Ty Lee",
+          label: "Tap a creature; it doesn't untap as long as you control Ty Lee",
         },
       ),
     ],
@@ -307,14 +306,14 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.combatDamage({ types: ["Creature"], controller: "you" }, true),
         [fx.counters(ref.self, "quest"), ...fx.when(cond.counterAtLeast("quest", 4), fx.draw(1))],
-        { label: "Un marqueur de quête ; à 4 ou plus, piochez une carte" },
+        { label: "A quest counter; at 4 or more, draw a card" },
       ),
       activated({
         mana: "{4}",
         waterbend: true,
         targets: [target.creature()],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Maîtrise de l'eau {4} : une créature est imblocable ce tour-ci",
+        label: "Waterbend {4}: a creature can't be blocked this turn",
       }),
     ],
   },
@@ -325,19 +324,19 @@ export const BLUE: Record<string, CardScript> = {
         tap: true,
         reduction: { generic: amount.count({ subtype: "Island", controller: "you" }) },
         effects: [fx.draw(1)],
-        label: "Piochez une carte ({1} de moins par Île)",
+        label: "Draw a card ({1} less for each Island)",
       }),
     ],
   },
   "Watery Grasp": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       doesntUntap("attached"),
       activated({
         mana: "{5}",
         waterbend: true,
         effects: [fx.moveTo(ref.attached, { to: "libraryTop", shuffle: true })],
-        label: "Maîtrise de l'eau {5} : mélangez la créature enchantée dans la bibliothèque de son propriétaire",
+        label: "Waterbend {5}: shuffle the enchanted creature into its owner's library",
       }),
     ],
   },
@@ -348,15 +347,15 @@ export const BLUE: Record<string, CardScript> = {
         waterbend: true,
         tap: true,
         effects: [fx.castNow(ref.handOf(ref.you, { notTypes: ["Creature", "Land"] }), { free: true })],
-        label: "Maîtrise de l'eau {5} : lancez gratuitement un sort non-créature de votre main",
+        label: "Waterbend {5}: cast a noncreature spell from your hand for free",
       }),
     ],
   },
-  // Maîtrise de l'eau {5} en coût additionnel : lue dans le texte.
+  // Waterbend {5} as an additional cost: read from the text.
   "Benevolent River Spirit": {
-    abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" })],
+    abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" })],
   },
-  // Maîtrise de l'eau {X} en coût additionnel : lue dans le texte.
+  // Waterbend {X} as an additional cost: read from the text.
   "Crashing Wave": {
     spell: spell(
       [{ ...target.creature(), count: 99, optional: true, countX: "upTo" }],
@@ -369,7 +368,7 @@ export const BLUE: Record<string, CardScript> = {
       ],
     ),
   },
-  // « vous pouvez maîtriser l'eau {6} » : un kicker lu dans le texte.
+  // "you may waterbend {6}": a kicker read from the text.
   "Spirit Water Revival": {
     spell: spell(
       [],
@@ -378,8 +377,8 @@ export const BLUE: Record<string, CardScript> = {
           cond.kicked,
           fx.moveTo(ref.graveyardOf(ref.you), { to: "libraryTop", shuffle: true }),
           fx.draw(7),
-          fx.emblem("Spirit Water Revival", "Vous n'avez pas de taille maximale de main.", [
-            playerStatic({ maxHandSize: "none", label: "Pas de taille maximale de main" }),
+          fx.emblem("Spirit Water Revival", msg("You have no maximum hand size."), [
+            playerStatic({ maxHandSize: "none", label: "Without maximum hand size" }),
           ]),
         ),
         ...fx.when(cond.not(cond.kicked), fx.draw(2)),
@@ -387,7 +386,7 @@ export const BLUE: Record<string, CardScript> = {
       ],
     ),
   },
-  // « vous pouvez maîtriser l'eau {10} » : un kicker lu dans le texte.
+  // "you may waterbend {10}": a kicker read from the text.
   "Secret of Bloodbending": {
     spell: spell(
       [target.player("t", "opponent")],
@@ -398,11 +397,11 @@ export const BLUE: Record<string, CardScript> = {
       ],
     ),
   },
-  // Garde — maîtrise de l'eau {4} : lue dans le texte.
+  // Ward—waterbend {4}: read from the text.
   "The Unagi of Kyoshi Island": {
     abilities: [
       triggered(when.draw(2, "opponent"), [fx.draw(2)], {
-        label: "Un adversaire pioche sa deuxième carte du tour : piochez deux cartes",
+        label: "An opponent draws their second card each turn: draw two cards",
       }),
     ],
   },

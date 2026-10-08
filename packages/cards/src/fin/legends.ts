@@ -1,4 +1,4 @@
-/** Final Fantasy — légendaires, Cristaux et cartes uniques (lot D). */
+/** Final Fantasy — legendaries, Crystals and unique cards (lot D). */
 import type { CardScript, TargetSpec } from "@mtgx/engine";
 import {
   activated,
@@ -27,18 +27,18 @@ const YOURS = { types: ["Creature" as const], controller: "you" as const };
 const CREATURE_OR_ARTIFACT = { anyOf: [{ types: ["Creature" as const] }, { types: ["Artifact" as const] }] };
 const ALL_COLORS = ["W", "U", "B", "R", "G"] as const;
 
-/** « Défaussez une carte. Si vous le faites, piochez une carte » (optionnel). */
+/** "Discard a card. If you do, draw a card" (optional). */
 const rummage = () => [
-  fx.may("Défausser une carte pour piocher ?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
+  fx.may("Discard a card to draw?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
 ];
 
 export const LEGENDS: Record<string, CardScript> = {
-  // --- Blanc ------------------------------------------------------------------
+  // --- White ------------------------------------------------------------------
   "Aerith Gainsborough": {
     abilities: [
-      triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
+      triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }),
       triggered(when.diesSelf, [fx.addCountersAll({ ...YOURS, legendary: true }, amount.lkiCounters("+1/+1"))], {
-        label: "Ses marqueurs sur chaque créature légendaire",
+        label: "Its counters on each legendary creature",
       }),
     ],
   },
@@ -49,33 +49,33 @@ export const LEGENDS: Record<string, CardScript> = {
         tap: true,
         targets: [
           target.player("p", "opponent"),
-          targetObj("t", { permanent: true, controller: "you", other: true }, "autre permanent"),
+          targetObj("t", { permanent: true, controller: "you", other: true }, "other permanent"),
         ],
         effects: [fx.giveControl(ref.target("t"), ref.target("p")), fx.draw(1)],
-        label: "Donnez un permanent, piochez",
+        label: "Give a permanent, draw",
       }),
     ],
   },
   "The Wind Crystal": {
     abilities: [
-      costReducer({ colors: ["W"] }, 1, "Sorts blancs : {1} de moins"),
-      eventReplacement({ event: "lifeGain", to: "you", modify: { times: 2 }, label: "Gains de PV doublés" }),
+      costReducer({ colors: ["W"] }, 1, "White spells cost {1} less"),
+      eventReplacement({ event: "lifeGain", to: "you", modify: { times: 2 }, label: "Life gain doubled" }),
       activated({
         mana: "{4}{W}{W}",
         tap: true,
         effects: [fx.pumpAll(YOURS, 0, 0, ["flying", "lifelink"])],
-        label: "Vos créatures : le vol et le lien de vie",
+        label: "Creatures you control: flying and lifelink",
       }),
     ],
   },
 
-  // --- Bleu -------------------------------------------------------------------
+  // --- Blue -------------------------------------------------------------------
   "Edgar, King of Figaro": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(amount.count({ types: ["Artifact"], controller: "you" }))], {
-        label: "Une carte par artefact",
+        label: "A card for each artifact",
       }),
-      playerStatic({ winFirstCoinFlips: true, label: "Pièce à deux faces" }),
+      playerStatic({ winFirstCoinFlips: true, label: "Two-headed coin" }),
     ],
   },
   "Louisoix's Sacrifice": {
@@ -86,7 +86,7 @@ export const LEGENDS: Record<string, CardScript> = {
       [
         {
           id: "t",
-          label: "capacité activée ou déclenchée, ou sort non-créature",
+          label: "activated or triggered ability, or noncreature spell",
           filter: { spells: { notTypes: ["Creature"] }, stackItems: { abilitiesOnly: true } },
         } satisfies TargetSpec,
       ],
@@ -108,34 +108,38 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "The Water Crystal": {
     abilities: [
-      costReducer({ colors: ["U"] }, 1, "Sorts bleus : {1} de moins"),
+      costReducer({ colors: ["U"] }, 1, "Blue spells cost {1} less"),
       eventReplacement({
         event: "mill",
         to: "opponent",
         modify: { add: 4 },
-        label: "Les adversaires meulent quatre cartes de plus",
+        label: "Opponents mill four additional cards",
       }),
       activated({
         mana: "{4}{U}{U}",
         tap: true,
         effects: [fx.mill(amount.cardsIn("hand"), ref.eachOpponent)],
-        label: "Chaque adversaire meule autant que votre main",
+        label: "Each opponent mills as many cards as your hand",
       }),
     ],
   },
   "Stuck in Summoner's Sanctum": {
-    enchant: { filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }, label: "artefact ou créature" },
+    enchant: { filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }, label: "artifact or creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez le permanent" }),
-      staticAbility("attached", { addKeywords: ["noActivatedAbilities"] }, { label: "Capacités activées bloquées" }),
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Tap the permanent" }),
+      staticAbility("attached", { addKeywords: ["noActivatedAbilities"] }, { label: "Activated abilities can't be activated" }),
       doesntUntap("attached"),
     ],
   },
 
-  // --- Noir -------------------------------------------------------------------
+  // --- Black ------------------------------------------------------------------
   "Kain, Traitorous Dragoon": {
     abilities: [
-      staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "Saut : le vol pendant votre tour" }),
+      staticAbility(
+        "self",
+        { addKeywords: ["flying"] },
+        { condition: cond.yourTurn, label: "Jump: has flying during your turn" },
+      ),
       triggered(
         when.combatDamageToPlayer,
         [
@@ -144,7 +148,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.createTappedTokens(TREASURE, amount.eventAmount),
           fx.loseLife(amount.eventAmount),
         ],
-        { label: "Il prend Kain ; piochez, Trésors, perdez des PV" },
+        { label: "They gain control of Kain; draw, Treasures, lose life" },
       ),
     ],
   },
@@ -157,7 +161,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { ...CREATURE_OR_ARTIFACT, other: true }, 1, { optional: true, store: "s" }),
           fx.when(cond.v("s"), fx.grantPlay(ref.stored("r"), { anyMana: true })),
         ],
-        { label: "Exilez sa carte du dessus ; sacrifiez pour la jouer" },
+        { label: "Exile their top card; sacrifice to play it" },
       ),
     ],
   },
@@ -174,7 +178,7 @@ export const LEGENDS: Record<string, CardScript> = {
             ref.self,
             {
               addAbilities: [
-                triggered(when.combatDamageToPlayer, [fx.playerLoses(ref.eventPlayer)], { label: "Ce joueur perd la partie" }),
+                triggered(when.combatDamageToPlayer, [fx.playerLoses(ref.eventPlayer)], { label: "That player loses the game" }),
               ],
             },
             "permanent",
@@ -182,28 +186,28 @@ export const LEGENDS: Record<string, CardScript> = {
         ],
         { label: "Zantetsuken" },
       ),
-      chapter([3], [fx.draw(2), fx.loseLife(2, ref.eachPlayer)], { label: "Salle du chagrin" }),
+      chapter([3], [fx.draw(2), fx.loseLife(2, ref.eachPlayer)], { label: "Hall of Sorrow" }),
     ],
   },
 
-  // --- Rouge ------------------------------------------------------------------
+  // --- Red --------------------------------------------------------------------
   "Barret Wallace": {
     abilities: [
       triggered(when.attacksSelf, [fx.damage(amount.count({ ...YOURS, equipped: true }), ref.eventPlayer)], {
-        label: "Blessures par créature équipée",
+        label: "Damage for each equipped creature",
       }),
     ],
   },
   "The Fire Crystal": {
     abilities: [
-      costReducer({ colors: ["R"] }, 1, "Sorts rouges : {1} de moins"),
-      staticAbility(YOURS, { addKeywords: ["haste"] }, { label: "Vos créatures ont la célérité" }),
+      costReducer({ colors: ["R"] }, 1, "Red spells cost {1} less"),
+      staticAbility(YOURS, { addKeywords: ["haste"] }, { label: "Creatures you control have haste" }),
       activated({
         mana: "{4}{R}{R}",
         tap: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.copyToken(ref.target(), { sacrificeAtEndStep: true })],
-        label: "Copie jusqu'à la fin du tour",
+        label: "Copy until end of turn",
       }),
     ],
   },
@@ -211,7 +215,7 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.attackWith(), [fx.pump(ref.target(), 0, 0, ["menace"])], {
         targets: [target.creature("t", { attacking: true, equipped: true })],
-        label: "Une créature équipée attaquante gagne la menace",
+        label: "An attacking equipped creature gains menace",
       }),
     ],
   },
@@ -236,7 +240,7 @@ export const LEGENDS: Record<string, CardScript> = {
           "graveyard",
           { types: ["Creature"] },
           { to: "battlefield" },
-          { pool: ref.stored("m"), count: 4, store: "c", prompt: "Les cartes de créature meulées" },
+          { pool: ref.stored("m"), count: 4, store: "c", prompt: "The milled creature cards" },
         ),
         fx.pump(ref.stored("c"), 0, 0, ["haste"]),
         fx.delayed([fx.toHand(ref.target("c"))], { c: ref.stored("c") }),
@@ -245,40 +249,40 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Zell Dincht": {
     abilities: [
-      playerStatic({ extraLands: 1, label: "Un terrain supplémentaire" }),
-      staticAbility("self", { power: 1 }, { per: { types: ["Land"], controller: "you" }, label: "+1/+0 par terrain" }),
-      // Le terrain n'est pas ciblé : il est choisi à la résolution.
+      playerStatic({ extraLands: 1, label: "An additional land" }),
+      staticAbility("self", { power: 1 }, { per: { types: ["Land"], controller: "you" }, label: "+1/+0 for each land" }),
+      // The land is not targeted: it is chosen on resolution.
       triggered(
         when.yourEndStep,
         [
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Land"] }), ref.you, "land", {
-            prompt: "Choisissez le terrain à renvoyer en main",
+            prompt: "Choose the land to return to hand",
           }),
           fx.bounce(ref.stored("land")),
         ],
-        { label: "Renvoyez un terrain" },
+        { label: "Return a land" },
       ),
     ],
   },
 
-  // --- Vert -------------------------------------------------------------------
+  // --- Green ------------------------------------------------------------------
   "The Earth Crystal": {
     abilities: [
-      costReducer({ colors: ["G"] }, 1, "Sorts verts : {1} de moins"),
+      costReducer({ colors: ["G"] }, 1, "Green spells cost {1} less"),
       eventReplacement({
         event: "counters",
         to: "yourSide",
         toFilter: YOURS,
         counter: "+1/+1",
         modify: { times: 2 },
-        label: "Marqueurs +1/+1 doublés sur vos créatures",
+        label: "+1/+1 counters on your creatures doubled",
       }),
       activated({
         mana: "{4}{G}{G}",
         tap: true,
         targets: [target.upTo(2, target.creature("t", { controller: "you" }))],
         effects: [fx.countersDivided(2, ref.target())],
-        label: "Répartissez deux marqueurs +1/+1",
+        label: "Distribute two +1/+1 counters",
       }),
     ],
   },
@@ -287,29 +291,29 @@ export const LEGENDS: Record<string, CardScript> = {
       staticAbility(
         { permanent: true, controller: "you", other: true },
         { addAbilities: [manaAbility([...ALL_COLORS])] },
-        { label: "« {T} : un mana de n'importe quelle couleur »" },
+        { label: '"{T}: one mana of any color"' },
       ),
     ],
   },
 
-  // --- Multicolore ------------------------------------------------------------
+  // --- Multicolored -----------------------------------------------------------
   "Cid, Timeless Artificer": {
     abilities: [
       staticAbility(
         { ...YOURS, anyOf: [{ types: ["Artifact"] }, { subtype: "Hero" }] },
         { power: 1, toughness: 1 },
-        { per: { subtype: "Artificer", controller: "you" }, label: "+1/+1 par Artificier" },
+        { per: { subtype: "Artificer", controller: "you" }, label: "+1/+1 for each Artificer" },
       ),
       staticAbility(
         { ...YOURS, anyOf: [{ types: ["Artifact"] }, { subtype: "Hero" }] },
         { power: 1, toughness: 1 },
-        { perGraveyard: { subtype: "Artificer" }, label: "+1/+1 par carte d'Artificier au cimetière" },
+        { perGraveyard: { subtype: "Artificer" }, label: "+1/+1 for each Artificer card in your graveyard" },
       ),
     ],
   },
   "Golbez, Crystal Collector": {
     abilities: [
-      triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.surveil(1)], { label: "Surveil 1" }),
       triggered(
         when.yourEndStep,
         [
@@ -318,22 +322,22 @@ export const LEGENDS: Record<string, CardScript> = {
         ],
         {
           condition: cond.controls({ types: ["Artifact"] }, 4),
-          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature")],
-          label: "Une créature du cimetière en main",
+          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card")],
+          label: "A creature from your graveyard into your hand",
         },
       ),
     ],
   },
   "Rydia, Summoner of Mist": {
     abilities: [
-      triggered(when.landfall, rummage(), { label: "Défaussez, piochez" }),
+      triggered(when.landfall, rummage(), { label: "Discard, then draw" }),
       activated({
         mana: "{X}",
         tap: true,
         sorcerySpeed: true,
-        // Un filtre de cible ne lit pas le X d'une capacité activée (`cmp.manaValue("<=", amount.x)` lit celui du sort qui a créé la
-        // source) : la valeur de mana de la Saga est comparée à X à la résolution.
-        targets: [target.cardInGraveyard("t", { subtype: "Saga" }, "you", "carte de Saga")],
+        // A target filter does not read the X of an activated ability (`cmp.manaValue("<=", amount.x)` reads the one of the
+        // spell that created the source): the Saga's mana value is compared with X on resolution.
+        targets: [target.cardInGraveyard("t", { subtype: "Saga" }, "you", "Saga card")],
         effects: [
           fx.when(
             cond.all(
@@ -344,7 +348,7 @@ export const LEGENDS: Record<string, CardScript> = {
             fx.pump(ref.stored("r"), 0, 0, ["haste"]),
           ),
         ],
-        label: "Invocation : une Saga du cimetière",
+        label: "Summon: a Saga from your graveyard",
       }),
     ],
   },
@@ -356,16 +360,16 @@ export const LEGENDS: Record<string, CardScript> = {
           addKeywords: ["trample", "lifelink"],
           addAbilities: [wardAbility({ mana: { generic: 2, colored: {}, x: 0 } })],
         },
-        { condition: cond.yourTurn, label: "Piétinement, lien de vie et garde {2} pendant votre tour" },
+        { condition: cond.yourTurn, label: "Trample, lifelink and ward {2} during your turn" },
       ),
       triggered(when.yourEndStep, [fx.moveTo(ref.target(), { to: "battlefield", counters: { kind: "finality", n: 1 } })], {
-        targets: [target.upTo(1, target.cardInGraveyard("t", { types: ["Enchantment"] }, "you", "carte d'enchantement"))],
-        label: "Un enchantement du cimetière",
+        targets: [target.upTo(1, target.cardInGraveyard("t", { types: ["Enchantment"] }, "you", "enchantment card"))],
+        label: "An enchantment from your graveyard",
       }),
     ],
   },
 
-  // --- Incolore ---------------------------------------------------------------
+  // --- Colorless --------------------------------------------------------------
   Elixir: {
     abilities: [
       entersWith({ tapped: true }),
@@ -378,7 +382,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.moveAll("graveyard", ref.you, { notTypes: ["Land"] }, { to: "libraryTop" }),
           fx.shuffle(),
         ],
-        label: "Mélangez les cartes non-terrain du cimetière",
+        label: "Shuffle the nonland cards from your graveyard",
       }),
     ],
   },

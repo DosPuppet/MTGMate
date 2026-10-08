@@ -1,4 +1,4 @@
-/** Avatar: The Last Airbender (TLA) : maîtrise de l'eau, de la terre, du feu et de l'air, Leçons, Alliés. */
+/** Avatar: The Last Airbender (TLA): waterbending, earthbending, firebending and airbending, Lessons, Allies. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

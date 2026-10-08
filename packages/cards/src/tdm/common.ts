@@ -1,8 +1,9 @@
 /**
- * Éléments de Tarkir: Dragonstorm (TDM) : jetons, filtres et aides des cycles (Devotees, Dragonstorms, Monuments,
- * terrains). Le DSL et les jetons communs viennent de lci/common.ts.
+ * Building blocks of Tarkir: Dragonstorm (TDM): tokens, filters and helpers of the cycles (Devotees, Dragonstorms,
+ * Monuments, lands). The DSL and the common tokens come from lci/common.ts.
  */
 import type { AbilityDef, dsl, ManaType, ObjectFilter, TargetSpec, TokenSpec } from "@mtgx/engine";
+import { msg } from "@mtgx/engine";
 import { activated, cond, entersWith, fx, manaAbility, ref, target, triggered, when } from "../lci/common";
 
 export * from "../lci/common";
@@ -16,28 +17,28 @@ const creature = (
   extra: Partial<TokenSpec> = {},
 ): TokenSpec => ({ name, colors, types: ["Creature"], subtypes, power, toughness, ...extra });
 
-/** Moine : créature blanche 1/1 avec la prouesse. */
+/** Monk: 1/1 white creature with prowess. */
 export const MONK: TokenSpec = creature("Monk", ["W"], ["Monk"], 1, 1, { keywords: ["prowess"] });
-/** Guerrier : créature rouge 1/1 (mobilisation, Dalkovan Encampment). */
+/** Warrior: 1/1 red creature (mobilize, Dalkovan Encampment). */
 export const WARRIOR_R: TokenSpec = creature("Warrior", ["R"], ["Warrior"], 1, 1);
-/** Esprit : créature blanche 1/1 sans capacité (endurance, Great Arashin City) ; X/X avec `createXXToken`. */
+/** Spirit: 1/1 white creature with no abilities (endure, Great Arashin City); X/X with `createXXToken`. */
 export const SPIRIT_W: TokenSpec = creature("Spirit", ["W"], ["Spirit"], 1, 1);
-/** Soldat : créature blanche 2/2 (Teeming Dragonstorm, Signaling Roar). */
+/** Soldier: 2/2 white creature (Teeming Dragonstorm, Signaling Roar). */
 export const SOLDIER_2: TokenSpec = creature("Soldier", ["W"], ["Soldier"], 2, 2);
-/** Zombie Druide : créature noire 2/2. */
+/** Zombie Druid: 2/2 black creature. */
 export const ZOMBIE_DRUID: TokenSpec = creature("Zombie Druid", ["B"], ["Zombie", "Druid"], 2, 2);
-/** Oiseau : créature blanche 1/1 avec le vol. */
+/** Bird: 1/1 white creature with flying. */
 export const BIRD_W: TokenSpec = creature("Bird", ["W"], ["Bird"], 1, 1, { keywords: ["flying"] });
-/** Éléphant : créature verte 5/5. */
+/** Elephant: 5/5 green creature. */
 export const ELEPHANT_5: TokenSpec = creature("Elephant", ["G"], ["Elephant"], 5, 5);
 
-/** Reliquary Dragon (Dragonbroods' Relic) : Dragon 4/4 de toutes les couleurs, vol, lien de vie, 3 blessures en arrivant. */
+/** Reliquary Dragon (Dragonbroods' Relic): 4/4 Dragon of all colors, flying, lifelink, 3 damage when it enters. */
 export const RELIQUARY_DRAGON: TokenSpec = creature("Reliquary Dragon", ["W", "U", "B", "R", "G"], ["Dragon"], 4, 4, {
   keywords: ["flying", "lifelink"],
   abilities: [
     triggered(when.entersSelf, [fx.damage(3, ref.target())], {
       targets: [target.any()],
-      label: "3 blessures à n'importe quelle cible",
+      label: "3 damage to any target",
     }),
   ],
   text: "Flying, lifelink\nWhen this token enters, it deals 3 damage to any target.",
@@ -46,52 +47,52 @@ export const RELIQUARY_DRAGON: TokenSpec = creature("Reliquary Dragon", ["W", "U
 /** Dragons. */
 export const DRAGON_CARD: ObjectFilter = { subtype: "Dragon" };
 export const DRAGON_YOU: ObjectFilter = { subtype: "Dragon", controller: "you" };
-/** « Une créature avec un marqueur » que vous contrôlez. */
+/** "A creature with a counter on it" you control. */
 export const CREATURE_WITH_COUNTER: ObjectFilter = { types: ["Creature"], controller: "you", withCounter: "any" };
 
-/** Devotees : « {1} : ajoutez [l'une de ces couleurs]. N'activez qu'une fois par tour. » */
+/** Devotees: "{1}: Add [one of these colors]. Activate only once each turn." */
 export function devotee(colors: ManaType[]): AbilityDef {
   return activated({
     mana: "{1}",
     oncePerTurn: true,
     effects: [fx.addManaChoice(1, colors)],
-    label: `{1} : un mana ${colors.map((c) => `{${c}}`).join(", ")} (une fois par tour)`,
+    label: msg("{1}: one mana {colors} (once per turn)", { colors: colors.map((c) => `{${c}}`).join(", ") }),
   });
 }
 
-/** Dragonstorms : « Quand un Dragon que vous contrôlez arrive, renvoyez cet enchantement dans la main de son propriétaire. » */
+/** Dragonstorms: "When a Dragon you control enters, return this enchantment to its owner's hand." */
 export const dragonstorm = (): AbilityDef =>
   triggered(when.enters({ subtype: "Dragon", controller: "you" }), [fx.bounce(ref.self)], {
-    label: "Un Dragon arrive : renvoyez cet enchantement en main",
+    label: "A Dragon enters: return this enchantment to hand",
   });
 
-/** Monuments : « Quand cet artefact arrive, cherchez une carte de [Plaine, Marais ou Forêt] de base ». */
+/** Monuments: "When this artifact enters, search for a basic [Plains, Swamp, or Forest] card". */
 export function monumentSearch(lands: string[]): AbilityDef {
   return triggered(when.entersSelf, [fx.search({ types: ["Land"], basic: true, anySubtype: lands })], {
-    label: `Cherchez une carte de base (${lands.join(", ")})`,
+    label: msg("Search for a basic card ({lands})", { lands: lands.join(", ") }),
   });
 }
 
-/** « Ce terrain arrive engagé à moins que vous ne contrôliez un(e) [type] ou un(e) [type]. » */
+/** "This land enters tapped unless you control a [type] or a [type]." */
 export function entersTappedUnless(lands: string[]): AbilityDef {
   return entersWith({
     tapped: true,
     condition: cond.not(cond.controls({ anySubtype: lands })),
-    label: `Engagé, sauf si vous contrôlez : ${lands.join(" ou ")}`,
+    label: msg("Tapped, unless you control: {lands}", { lands: lands.join(" or ") }),
   });
 }
 
-/** Terrains tricolores : « Ce terrain arrive engagé. {T} : ajoutez [l'une de ces couleurs]. » */
+/** Three-color lands: "This land enters tapped. {T}: Add [one of these colors]." */
 export function triLand(colors: ManaType[]): AbilityDef[] {
-  return [entersWith({ tapped: true, label: "Arrive engagé" }), manaAbility(colors)];
+  return [entersWith({ tapped: true, label: "Enters tapped" }), manaAbility(colors)];
 }
 
-/** Rafale (Flurry) : « chaque fois que vous lancez votre deuxième sort de chaque tour, … ». */
+/** Flurry: "whenever you cast your second spell each turn, …". */
 export function flurry(effects: dsl.Effects, label: string, targets: TargetSpec[] = []): AbilityDef {
-  return triggered(when.castNthSpell(2), effects, { targets, label: `Rafale — ${label}` });
+  return triggered(when.castNthSpell(2), effects, { targets, label: msg("Flurry — {label}", { label }) });
 }
 
-/** Renouveau : « [coût], exilez cette carte de votre cimetière : … N'activez qu'en rituel. » */
+/** Renew: "[cost], Exile this card from your graveyard: … Activate only as a sorcery." */
 export function renew(mana: string, targets: TargetSpec[], effects: dsl.Effects, label: string): AbilityDef {
   return activated({
     mana,
@@ -100,6 +101,6 @@ export function renew(mana: string, targets: TargetSpec[], effects: dsl.Effects,
     sorcerySpeed: true,
     targets,
     effects,
-    label: `Renouveau — ${label}`,
+    label: msg("Renew — {label}", { label }),
   });
 }

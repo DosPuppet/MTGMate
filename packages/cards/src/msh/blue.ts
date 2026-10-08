@@ -1,6 +1,6 @@
 /**
- * Marvel Super Heroes — cartes bleues (lot A). Montée en puissance : `activated({ powerUp: true })` ; Travail d'équipe :
- * lu dans le texte (kicker), lu par `cond.kicked`.
+ * Marvel Super Heroes — blue cards (lot A). Power-up: `activated({ powerUp: true })`; Teamwork: read from the text
+ * (kicker), read by `cond.kicked`.
  */
 import type { TokenSpec } from "@mtgx/engine";
 import {
@@ -28,7 +28,7 @@ import {
   when,
 } from "./common";
 
-/** Léviathan (Atlantis Attacks) : créature bleue 6/5 avec la défense talismanique. */
+/** Leviathan (Atlantis Attacks): 6/5 blue creature with hexproof. */
 const LEVIATHAN: TokenSpec = {
   name: "Leviathan",
   colors: ["U"],
@@ -39,7 +39,7 @@ const LEVIATHAN: TokenSpec = {
   keywords: ["hexproof"],
 };
 
-/** Redwing (Falcon, Winged Wonder) : Oiseau Éclaireur légendaire bleu 1/1 volant qui surveille 1 en attaquant. */
+/** Redwing (Falcon, Winged Wonder): legendary 1/1 blue Bird Scout with flying that surveils 1 when it attacks. */
 const REDWING: TokenSpec = {
   name: "Redwing",
   colors: ["U"],
@@ -49,17 +49,17 @@ const REDWING: TokenSpec = {
   toughness: 1,
   legendary: true,
   keywords: ["flying"],
-  abilities: [triggered(when.attacksSelf, [fx.surveil(1)], { label: "Surveillance 1" })],
+  abilities: [triggered(when.attacksSelf, [fx.surveil(1)], { label: "Surveil 1" })],
   text: "Flying\nWhenever Redwing attacks, surveil 1.",
 };
 
-/** « Exilez [la cible], puis renvoyez-la sur le champ de bataille au début de la prochaine étape de fin. » */
+/** "Exile [the target], then return it to the battlefield at the beginning of the next end step." */
 const FLICKER_UNTIL_END_STEP = [
   fx.exileCard(ref.target(), { name: "k" }),
   fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") }),
 ];
 
-/** Aura ou Équipement : « attachez-le à la créature ciblée que vous contrôlez » en arrivant. */
+/** Aura or Equipment: "attach it to target creature you control" when it enters. */
 const ATTACH_ON_ENTER_TARGET = [target.creature("t", { controller: "you" })];
 
 export const BLUE: Record<string, CardScript> = {
@@ -69,27 +69,23 @@ export const BLUE: Record<string, CardScript> = {
         mana: "{5}{U}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, 3)],
-        label: "Montée en puissance : trois marqueurs +1/+1",
+        label: "Power-up: three +1/+1 counters",
       }),
     ],
   },
   "A.I.M. Scientists": {
-    // Cycle de terrain de base {2} : lu dans le texte.
-    abilities: [triggered(when.entersSelf, [fx.connive(ref.self)], { label: "Complote" })],
+    // Basic landcycling {2}: read from the text.
+    abilities: [triggered(when.entersSelf, [fx.connive(ref.self)], { label: "Connives" })],
   },
   "Atlantean Cavalry": {
-    abilities: [triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Deuxième carte piochée : un marqueur +1/+1" })],
+    abilities: [triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Second card drawn: a +1/+1 counter" })],
   },
   "Atlantis Attacks": {
-    // Travail d'équipe 4 : lu dans le texte. Payé, les deux modes sont choisis (le mode « les deux » l'exige).
+    // Teamwork 4: read from the text. Paid, both modes are chosen (the "both" mode requires it).
     spell: bothIfKicked(
-      mode("Le joueur ciblé crée un Léviathan 6/5", [target.player("p")], [fx.createTokens(LEVIATHAN, 1, ref.target("p"))]),
-      mode(
-        "Renvoie un ou deux permanents non-terrains",
-        [target.between(1, 2, target.nonland("b"))],
-        [fx.bounce(ref.target("b"))],
-      ),
-      "Les deux (travail d'équipe)",
+      mode("Target player creates a 6/5 Leviathan", [target.player("p")], [fx.createTokens(LEVIATHAN, 1, ref.target("p"))]),
+      mode("Return one or two nonland permanents", [target.between(1, 2, target.nonland("b"))], [fx.bounce(ref.target("b"))]),
+      "Both (teamwork)",
     ),
   },
   "Attuma, Atlantean Warlord": {
@@ -97,10 +93,10 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         { subtype: "Merfolk", controller: "you", other: true },
         { power: 1, toughness: 1 },
-        { label: "Les autres Ondins que vous contrôlez ont +1/+1" },
+        { label: "Other Merfolk you control get +1/+1" },
       ),
       triggered(when.attackWith(1, { subtype: "Merfolk", attacking: "opponent" }), [fx.draw(1)], {
-        label: "Des Ondins attaquent un joueur : piochez",
+        label: "Merfolk attack a player: draw",
       }),
     ],
   },
@@ -110,7 +106,7 @@ export const BLUE: Record<string, CardScript> = {
         mana: "{5}{U}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, 1), fx.draw(2)],
-        label: "Montée en puissance : un marqueur +1/+1, piochez deux cartes",
+        label: "Power-up: a +1/+1 counter, draw two cards",
       }),
     ],
   },
@@ -118,8 +114,8 @@ export const BLUE: Record<string, CardScript> = {
   // --- Bruce Banner // The Incredible Hulk -------------------------------------
   "Bruce Banner": {
     abilities: [
-      activated({ mana: "{X}{X}", tap: true, sorcerySpeed: true, effects: [fx.draw(amount.x)], label: "Piochez X cartes" }),
-      activated({ mana: "{2}{R}{R}{G}{G}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-le" }),
+      activated({ mana: "{X}{X}", tap: true, sorcerySpeed: true, effects: [fx.draw(amount.x)], label: "Draw X cards" }),
+      activated({ mana: "{2}{R}{R}{G}{G}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transform him" }),
     ],
   },
   "The Incredible Hulk": {
@@ -127,7 +123,7 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.isDealtDamage,
         [fx.addCounters(ref.self, 1), ...fx.when(cond.sourceMatches({ attacking: true }), fx.untap(ref.self), fx.extraCombat)],
-        { label: "Rage : un marqueur +1/+1 ; s'il attaque, il se dégage et un combat supplémentaire suit" },
+        { label: "Enrage: a +1/+1 counter; if it's attacking, untap it and there's an additional combat" },
       ),
     ],
   },
@@ -144,49 +140,49 @@ export const BLUE: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "capacité activée ou déclenchée que vous contrôlez d'une source créature",
+            label: "activated or triggered ability you control from a creature source",
             filter: { stackItems: { abilitiesOnly: true, controller: "you", source: { types: ["Creature"] } } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],
-        label: "Copiez une capacité que vous contrôlez",
+        label: "Copy an ability you control",
       }),
     ],
   },
   "Falcon, Winged Wonder": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(REDWING)], { label: "Télépathie aviaire : Redwing" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(REDWING)], { label: "Avian Telepathy: Redwing" })],
   },
   "Falcon's Wing Harness": {
-    // Équiper {2}{U} : lu dans le texte.
+    // Equip {2}{U}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: ATTACH_ON_ENTER_TARGET,
-        label: "Attachez-le à une créature que vous contrôlez",
+        label: "Attach it to target creature you control",
       }),
       staticAbility(
         "attached",
         { power: 1, toughness: 1, addKeywords: ["flying"], addAbilities: [wardAbility({ mana: cost("{1}") })] },
-        { label: "+1/+1, vol et garde {1}" },
+        { label: "+1/+1, flying and ward {1}" },
       ),
     ],
   },
   "Frozen in Ice": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature enchantée" }),
-      staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Tap enchanted creature" }),
+      staticAbility("attached", { loseAllAbilities: true }, { label: "Loses all abilities" }),
       eventReplacement({
         event: "untap",
         toFilter: { attached: "host" },
         modify: { prevent: true },
-        label: "La créature enchantée ne peut pas être dégagée",
+        label: "Enchanted creature can't become untapped",
       }),
     ],
   },
   "Futurist Forge": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
-      activated({ mana: "{3}{U}", sacrifice: true, effects: [fx.draw(2)], label: "Piochez deux cartes" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }),
+      activated({ mana: "{3}{U}", sacrifice: true, effects: [fx.draw(2)], label: "Draw two cards" }),
     ],
   },
   "Giant-Sized Flying Ant": {
@@ -194,20 +190,20 @@ export const BLUE: Record<string, CardScript> = {
       triggeredModal(
         when.entersSelf,
         [
-          mode("Engagez un permanent non-terrain", [target.nonland()], [fx.tap(ref.target())]),
-          mode("Dégagez un permanent non-terrain", [target.nonland()], [fx.untap(ref.target())]),
+          mode("Tap a nonland permanent", [target.nonland()], [fx.tap(ref.target())]),
+          mode("Untap a nonland permanent", [target.nonland()], [fx.untap(ref.target())]),
         ],
-        { label: "Engagez ou dégagez un permanent non-terrain" },
+        { label: "Tap or untap a nonland permanent" },
       ),
     ],
   },
   "Hydraulic Helper": {
-    // « Ce mana ne peut pas servir à lancer un sort non-artefact » : sorts d'artefact et capacités.
+    // "This mana can't be spent to cast a nonartifact spell": artifact spells and abilities.
     abilities: [manaAbility("U", 1, { restriction: { spell: { types: ["Artifact"] }, abilityOfSource: {} } })],
   },
   "I Am Iron Man": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+      [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
       [
         fx.modify(ref.target(), { addTypes: ["Artifact", "Creature"], setPower: 4, setToughness: 4, addKeywords: ["flying"] }),
         fx.draw(1),
@@ -216,24 +212,24 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Iron Lad, Diverging Destiny": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Look at the top card" }),
       activated({
         tap: true,
         effects: [fx.when(cond.refMatches(ref.libraryTop(ref.you), { types: ["Artifact"] }), fx.draw(1))],
-        label: "Révélez la carte du dessus : piochez si c'est un artefact",
+        label: "Reveal the top card: draw if it's an artifact",
       }),
     ],
   },
   "Justice, Vance Astrovik": {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
-        targets: [target.upTo(1, target.nonland("t", { token: false }, "permanent non-terrain qui n'est pas un jeton"))],
-        label: "Renvoyez un permanent non-terrain",
+        targets: [target.upTo(1, target.nonland("t", { token: false }, "nontoken nonland permanent"))],
+        label: "Return a nonland permanent",
       }),
       triggered(
         { on: "leaves", who: { notTypes: ["Land"], controller: "you", other: true }, to: "hand" },
         [fx.addCounters(ref.self, 1)],
-        { label: "Un permanent renvoyé en main : un marqueur +1/+1" },
+        { label: "A permanent returned to hand: a +1/+1 counter" },
       ),
     ],
   },
@@ -242,34 +238,34 @@ export const BLUE: Record<string, CardScript> = {
       activated({
         mana: "{5}{U}{U}{U}",
         powerUp: true,
-        // Approximation : la restriction « pendant ce tour, les montées en puissance ne peuvent pas être activées » manque.
+        // Approximation: the restriction "power-up abilities can't be activated during that turn" is missing.
         effects: [fx.addCounters(ref.self, 1), fx.extraTurn],
-        label: "Montée en puissance : un marqueur +1/+1 et un tour supplémentaire",
+        label: "Power-up: a +1/+1 counter and an extra turn",
       }),
     ],
   },
   "Mister Fantastic, Reed Richards": {
     abilities: [
-      triggered(when.enters({ token: true, controller: "you" }), fx.may("Piocher une carte ?", fx.draw(1)), {
+      triggered(when.enters({ token: true, controller: "you" }), fx.may("Draw a card?", fx.draw(1)), {
         batched: true,
-        label: "Des jetons arrivent : vous pouvez piocher",
+        label: "Tokens enter: you may draw",
       }),
     ],
   },
   "Ms. Marvel, Kamala Khan": {
     abilities: [
-      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "No maximum hand size" }),
       triggered(
         when.castSpell("you", undefined, { objects: { types: ["Creature"], controller: "you" } }),
         [
           fx.draw(1),
           fx.modify(ref.self, {
             addAbilities: [
-              staticAbility("self", { setPower: 1 }, { perHand: true, label: "Force de base égale aux cartes en main" }),
+              staticAbility("self", { setPower: 1 }, { perHand: true, label: "Base power equal to the cards in hand" }),
             ],
           }),
         ],
-        { label: "Poing embiggeni : piochez ; force de base égale aux cartes en main" },
+        { label: "Embiggen: draw; base power equal to the cards in hand" },
       ),
     ],
   },
@@ -283,7 +279,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered({ on: "taps", who: { types: ["Creature"], controller: "you" } }, [...fx.loot(1), fx.counters(ref.self, "plan")], {
         batched: true,
-        label: "Piochez, défaussez, un marqueur de plan",
+        label: "Draw, discard, a plan counter",
       }),
       triggered(
         when.countersPut("self", "plan"),
@@ -297,7 +293,7 @@ export const BLUE: Record<string, CardScript> = {
                   "g",
                   { types: ["Instant", "Sorcery"] },
                   "you",
-                  "carte d'éphémère ou de rituel de votre cimetière",
+                  "instant or sorcery card from your graveyard",
                 ),
               ),
             ],
@@ -306,51 +302,51 @@ export const BLUE: Record<string, CardScript> = {
         ],
         {
           condition: cond.counterAtLeast("plan", 4),
-          label: "Quatrième marqueur : sacrifiez-le, reprenez deux éphémères ou rituels",
+          label: "Fourth counter: sacrifice it, return two instants or sorceries",
         },
       ),
     ],
   },
   "Secret Invasion": {
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.upTo(1, target.creature("t", { attached: "notHost" }))],
-        label: "Exilez une autre créature",
+        label: "Exile another creature",
       }),
-      staticAbility("attached", { copyLinkedExile: true }, { label: "Copie de la créature exilée" }),
-      staticAbility("attached", { addAbilities: [wardAbility({ mana: cost("{2}") })] }, { label: "Garde {2}" }),
+      staticAbility("attached", { copyLinkedExile: true }, { label: "Copy of the exiled creature" }),
+      staticAbility("attached", { addAbilities: [wardAbility({ mana: cost("{2}") })] }, { label: "Ward {2}" }),
     ],
   },
   "S.H.I.E.L.D. Deployment Drone": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(SOLDIER)], { label: "Un Soldat 1/1" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(SOLDIER)], { label: "A 1/1 Soldier" })],
   },
   "S.H.I.E.L.D. Flying Car": {
-    // Flash, vol et Équipage 1 : lus dans le texte.
+    // Flash, flying and Crew 1: read from the text.
     abilities: [
       triggered(when.entersSelf, FLICKER_UNTIL_END_STEP, {
         targets: [target.upTo(1, target.creature("t", { controller: "you" }))],
-        label: "Exilez une de vos créatures jusqu'à l'étape de fin",
+        label: "Exile a creature you control until the end step",
       }),
     ],
   },
   "Shuri, Wakandan Inventor": {
     abilities: [
-      costReducer({ types: ["Artifact"] }, 1, "Vos sorts d'artefact coûtent {1} de moins"),
+      costReducer({ types: ["Artifact"] }, 1, "Artifact spells you cast cost {1} less"),
       activated({
         mana: "{1}",
         tap: true,
         sorcerySpeed: true,
         targets: [
-          target.permanent("a", ["Artifact"], { controller: "you" }, "artefact que vous contrôlez"),
-          target.permanent("b", ["Artifact"], { controller: "you" }, "second artefact que vous contrôlez"),
+          target.permanent("a", ["Artifact"], { controller: "you" }, "artifact you control"),
+          target.permanent("b", ["Artifact"], { controller: "you" }, "second artifact you control"),
         ],
-        // « Sauf qu'il n'est pas légendaire » : le surtype est retiré après la copie (couche 4).
+        // "Except it isn't legendary": the supertype is removed after the copy (layer 4).
         effects: [
           fx.becomeCopy(ref.target("a"), ref.target("b"), "endOfTurn"),
           fx.modify(ref.target("a"), { removeSupertypes: ["Legendary"] }),
         ],
-        label: "Un artefact devient une copie d'un autre",
+        label: "An artifact becomes a copy of another",
       }),
     ],
   },
@@ -359,33 +355,33 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["unblockable"] },
-        { condition: cond.sourceMatches({ maxPower: 1 }), label: "Imblocable tant que sa force est de 1 ou moins" },
+        { condition: cond.sourceMatches({ maxPower: 1 }), label: "Can't be blocked as long as its power is 1 or less" },
       ),
       activated({
         mana: "{X}{U}{U}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, amount.x)],
-        label: "Montée en puissance : X marqueurs +1/+1",
+        label: "Power-up: X +1/+1 counters",
       }),
     ],
   },
   "Super Intelligence": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      // « Au début de l'entretien du contrôleur de la créature enchantée » : le joueur actif la contrôle (condition du
-      // déclencheur, sans « si ») ; « ce joueur » pioche.
+      // "At the beginning of the upkeep of enchanted creature's controller": the active player controls it (trigger
+      // condition, without "if"); "that player" draws.
       triggered(when.step("upkeep", "any"), [fx.draw(1, ref.eventPlayer)], {
         triggerCondition: cond.amountAtLeast(amount.refCount(ref.playersWhere(ref.controllerOf(ref.attached), cond.yourTurn)), 1),
-        label: "Son contrôleur pioche une carte",
+        label: "Its controller draws a card",
       }),
     ],
   },
   "Super Suit": {
-    // Flash et Équiper {2} : lus dans le texte.
+    // Flash and Equip {2}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target()), fx.untap(ref.target())], {
         targets: ATTACH_ON_ENTER_TARGET,
-        label: "Attachez-le à une créature que vous contrôlez et dégagez-la",
+        label: "Attach it to target creature you control and untap that creature",
       }),
       staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }),
     ],
@@ -400,11 +396,11 @@ export const BLUE: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         tap: true,
-        // Le reste va au-dessous de la bibliothèque dans un ordre aléatoire.
+        // The rest goes to the bottom of the library in a random order.
         effects: [fx.lookAtTop(4, { filter: { types: ["Artifact"] }, rest: "bottom" })],
-        label: "Regardez quatre cartes : un artefact en main",
+        label: "Look at four cards: an artifact into your hand",
       }),
-      activated({ mana: "{4}{U}{R}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-le" }),
+      activated({ mana: "{4}{U}{R}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transform him" }),
     ],
   },
   "The Invincible Iron Man": {
@@ -416,11 +412,11 @@ export const BLUE: Record<string, CardScript> = {
             "hand",
             { types: ["Artifact"] },
             { to: "battlefield" },
-            { min: 0, store: "a", prompt: "Une carte d'artefact de votre main" },
+            { min: 0, store: "a", prompt: "An artifact card from your hand" },
           ),
           ...fx.when(cond.refMatches(ref.stored("a"), { subtype: "Equipment" }), fx.attach(ref.self, ref.stored("a"))),
         ],
-        { label: "Un artefact de votre main sur le champ de bataille" },
+        { label: "An artifact from your hand onto the battlefield" },
       ),
     ],
   },
@@ -428,28 +424,28 @@ export const BLUE: Record<string, CardScript> = {
   "Wiccan, Rising Magician": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), FLICKER_UNTIL_END_STEP, {
-        targets: [target.nonland("t", { other: true, token: false }, "autre permanent non-terrain qui n'est pas un jeton")],
-        label: "Exilez un autre permanent jusqu'à l'étape de fin",
+        targets: [target.nonland("t", { other: true, token: false }, "other nontoken nonland permanent")],
+        label: "Exile another permanent until the end step",
       }),
     ],
   },
-  // Improvisation et vol : lus dans le texte.
+  // Improvise and flying: read from the text.
   "Ironheart, Clever Champion": {
     abilities: [
       playerStatic({
         spellKeywords: { filter: { notTypes: ["Creature"] }, keywords: ["improvise"] },
-        label: "Vos sorts non-créature ont l'improvisation",
+        label: "Noncreature spells you cast have improvise",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Namor the Sub-Mariner": {
     cdaPower: amount.count({ subtype: "Merfolk", controller: "you" }),
     abilities: [
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [fx.createTokens(MERFOLK_BLUE, amount.manaSymbolsOf(ref.eventObject, "U"))],
-        { label: "Sort non-créature : un Ondin 1/1 par symbole {U} de son coût" },
+        { label: "Noncreature spell: a 1/1 Merfolk for each {U} in its cost" },
       ),
     ],
   },
@@ -458,16 +454,16 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], controller: "you", countersPutByYouThisTurn: "+1/+1" },
         { addKeywords: ["hexproof"] },
-        { label: "Vos créatures sur lesquelles vous avez mis des marqueurs +1/+1 ce tour-ci ont la défense talismanique" },
+        { label: "Creatures you control you put +1/+1 counters on this turn have hexproof" },
       ),
-      triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Deuxième carte piochée : un marqueur +1/+1" }),
+      triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Second card drawn: a +1/+1 counter" }),
     ],
   },
   "Loki, God of Mischief": {
     abilities: [
       triggered({ on: "becomesTarget", who: {}, players: true, abilitiesOnly: true, by: "you" }, [fx.draw(1)], {
         oncePerTurn: true,
-        label: "Un joueur ou un permanent devient la cible d'une de vos capacités : piochez (une fois par tour)",
+        label: "A player or permanent becomes the target of an ability you control: draw (once each turn)",
       }),
     ],
   },
@@ -477,11 +473,11 @@ export const BLUE: Record<string, CardScript> = {
         event: "connive",
         toFilter: { types: ["Creature"], controller: "you" },
         modify: { add: 1 },
-        label: "Une de vos créatures complote : piochez d'abord une carte",
+        label: "A creature you control connives: draw a card first",
       }),
       triggered({ on: "step", step: "beginCombat", whose: "you" }, [fx.connive(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Au début de votre combat, une de vos créatures complote",
+        label: "At the beginning of combat on your turn, a creature you control connives",
       }),
     ],
   },

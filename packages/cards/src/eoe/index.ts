@@ -1,5 +1,5 @@
 /**
- * Comportement des cartes d'Edge of Eternities (EOE), par couleur. Les aides du DSL sont partagées (fdn/common.ts).
+ * Behavior of the Edge of Eternities (EOE) cards, by color. The DSL helpers are shared (fdn/common.ts).
  */
 import type { CardScript } from "@mtgx/engine";
 import { BLACK } from "./black";

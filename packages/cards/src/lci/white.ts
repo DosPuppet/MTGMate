@@ -1,4 +1,4 @@
-/** The Lost Caverns of Ixalan — cartes blanches. */
+/** The Lost Caverns of Ixalan — white cards. */
 import {
   ANGEL_4,
   ARTIFACT_OR_CREATURE,
@@ -34,12 +34,12 @@ export const WHITE: Record<string, CardScript> = {
           "t",
           { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"], notSubtype: "Aura" }] },
           "you",
-          "carte d'artefact ou d'enchantement non-Aura de votre cimetière",
+          "artifact or non-Aura enchantment card from your graveyard",
         ),
       ],
       [
-        // Les X marqueurs, le type Créature Esprit et le vol sont en place à l'arrivée (614.1c : « une créature arrive » la
-        // voit). Approximation : ses F/E de base deviennent 1/1 juste après son arrivée.
+        // The X counters, the Spirit creature type and flying are in place on entering (614.1c: "a creature enters" sees
+        // it). Approximation: its base P/T become 1/1 just after it enters.
         fx.moveTo(
           ref.target(),
           {
@@ -64,11 +64,11 @@ export const WHITE: Record<string, CardScript> = {
         tapOthers: { filter: ARTIFACT_OR_CREATURE, count: 2, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.addCounters(ref.self, 1)],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
-  "Attentive Sunscribe": { abilities: [triggered(when.tapsSelf, [fx.scry(1)], { label: "Regard 1" })] },
+  "Attentive Sunscribe": { abilities: [triggered(when.tapsSelf, [fx.scry(1)], { label: "Scry 1" })] },
   "Cosmium Blast": {
     spell: spell([target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })], [fx.damage(4, ref.target())]),
   },
@@ -84,13 +84,13 @@ export const WHITE: Record<string, CardScript> = {
               mana: "{3}",
               tap: true,
               grantor: "sacrifice",
-              targets: [targetObj("t", { types: ["Artifact", "Enchantment"] }, "artefact ou enchantement")],
+              targets: [targetObj("t", { types: ["Artifact", "Enchantment"] }, "artifact or enchantment")],
               effects: [fx.destroy(ref.target())],
-              label: "Sacrifiez Deconstruction Hammer : détruisez un artefact ou un enchantement",
+              label: "Sacrifice Deconstruction Hammer: destroy an artifact or enchantment",
             }),
           ],
         },
-        { label: "+1/+1 et « {3}, {T}, sacrifiez Deconstruction Hammer : détruisez un artefact ou un enchantement »" },
+        { label: '+1/+1 and "{3}, {T}, Sacrifice Deconstruction Hammer: Destroy target artifact or enchantment"' },
       ),
     ],
   },
@@ -98,23 +98,23 @@ export const WHITE: Record<string, CardScript> = {
     additionalCost: { sacrifice: { filter: ARTIFACT_OR_CREATURE, count: 1 } },
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
-        targets: [targetObj("t", { ...ARTIFACT_OR_CREATURE, controller: "opponent" }, "artefact ou créature adverse")],
-        label: "Exil jusqu'à son départ",
+        targets: [targetObj("t", { ...ARTIFACT_OR_CREATURE, controller: "opponent" }, "opponent's artifact or creature")],
+        label: "Exile until it leaves",
       }),
     ],
   },
   "Envoy of Okinec Ahau": {
-    abilities: [activated({ mana: "{4}{W}", effects: [fx.createTokens(GNOME)], label: "Gnome 1/1" })],
+    abilities: [activated({ mana: "{4}{W}", effects: [fx.createTokens(GNOME)], label: "1/1 Gnome" })],
   },
   "Family Reunion": {
     spell: modal(
       mode("+1/+1", [], [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 1)]),
-      mode("Défense talismanique", [], [fx.pumpAll(CREATURE_YOU_CONTROL, 0, 0, ["hexproof"])]),
+      mode("Hexproof", [], [fx.pumpAll(CREATURE_YOU_CONTROL, 0, 0, ["hexproof"])]),
     ),
   },
   "Get Lost": {
     spell: spell(
-      [targetObj("t", { types: ["Creature", "Enchantment", "Planeswalker"] }, "créature, enchantement ou planeswalker")],
+      [targetObj("t", { types: ["Creature", "Enchantment", "Planeswalker"] }, "creature, enchantment or planeswalker")],
       [fx.createTokens(MAP, 2, ref.controllerOf(ref.target())), fx.destroy(ref.target())],
     ),
   },
@@ -126,7 +126,7 @@ export const WHITE: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { ...ARTIFACT_OR_CREATURE, other: true }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.reflexive([target.upTo(2, target.creature())], [fx.addCounters(ref.target(), 1)])),
         ],
-        { label: "Sacrifiez : marqueurs +1/+1" },
+        { label: "Sacrifice: +1/+1 counters" },
       ),
     ],
   },
@@ -137,7 +137,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Helping Hand": {
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins")],
+      [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "creature card with MV 3 or less")],
       [fx.toBattlefield(ref.target(), { tapped: true })],
     ),
   },
@@ -145,7 +145,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature()],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -157,7 +157,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), 2, 0, ["vigilance"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "+2/+0 et vigilance",
+        label: "+2/+0 and vigilance",
       }),
     ],
   },
@@ -165,7 +165,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.diesSelf, [fx.explore(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une créature explore",
+        label: "A creature explores",
       }),
     ],
   },
@@ -175,24 +175,24 @@ export const WHITE: Record<string, CardScript> = {
         when.entersSelf,
         [
           mode(
-            "Carte d'artefact en main",
-            [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "carte d'artefact de votre cimetière")],
+            "Artifact card into your hand",
+            [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "artifact card from your graveyard")],
             [fx.toHand(ref.target())],
           ),
-          mode("Regard 3", [], [fx.scry(3)]),
+          mode("Scry 3", [], [fx.scry(3)]),
         ],
-        { label: "Archéologues" },
+        { label: "Archaeologists" },
       ),
     ],
   },
-  "Oltec Cloud Guard": { abilities: [triggered(when.entersSelf, [fx.createTokens(GNOME)], { label: "Gnome 1/1" })] },
+  "Oltec Cloud Guard": { abilities: [triggered(when.entersSelf, [fx.createTokens(GNOME)], { label: "1/1 Gnome" })] },
   Petrify: {
-    enchant: { filter: ARTIFACT_OR_CREATURE, label: "artefact ou créature" },
+    enchant: { filter: ARTIFACT_OR_CREATURE, label: "artifact or creature" },
     abilities: [
       staticAbility(
         "attached",
         { addKeywords: ["cantAttack", "cantBlock", "noActivatedAbilities"] },
-        { label: "Ne peut ni attaquer ni bloquer, capacités activées bloquées" },
+        { label: "Can't attack or block, activated abilities blocked" },
       ),
     ],
   },
@@ -204,44 +204,38 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.eachEndStep, [fx.createTokens(ANGEL_4)], {
         condition: cond.lifeGainedAtLeast(5),
-        label: "Ange 4/4",
+        label: "4/4 Angel",
       }),
       activated({
         mana: "{3}{W}{W}{W}",
         effects: [fx.pump(ref.self, 2, 2, ["lifelink"])],
-        label: "+2/+2 et lien de vie",
+        label: "+2/+2 and lifelink",
       }),
     ],
   },
   "Sanguine Evangelist": {
     abilities: [
       triggered(when.attacksSelf, [fx.pumpAll({ types: ["Creature"], attacking: true, other: true }, 1, 0)], {
-        label: "Cri de guerre",
+        label: "Battle cry",
       }),
-      triggered(when.entersSelf, [fx.createTokens(BAT_1)], { label: "Chauve-souris 1/1" }),
-      triggered(when.diesSelf, [fx.createTokens(BAT_1)], { label: "Chauve-souris 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(BAT_1)], { label: "1/1 Bat" }),
+      triggered(when.diesSelf, [fx.createTokens(BAT_1)], { label: "1/1 Bat" }),
     ],
   },
-  "Soaring Sandwing": { abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "+3 PV" })] },
+  "Soaring Sandwing": { abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "+3 life" })] },
   "Thousand Moons Crackshot": {
     abilities: [
       triggered(
         when.attacksSelf,
-        [
-          ...fx.mayPay(
-            "{2}{W}",
-            "Payer {2}{W} pour engager une créature ?",
-            fx.reflexive([target.creature()], [fx.tap(ref.target())]),
-          ),
-        ],
-        { label: "Engagez une créature" },
+        [...fx.mayPay("{2}{W}", "Pay {2}{W} to tap a creature?", fx.reflexive([target.creature()], [fx.tap(ref.target())]))],
+        { label: "Tap a creature" },
       ),
     ],
   },
   "Tinker's Tote": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(GNOME, 2)], { label: "Deux Gnomes 1/1" }),
-      activated({ mana: "{W}", sacrifice: true, effects: [fx.gainLife(3)], label: "+3 PV" }),
+      triggered(when.entersSelf, [fx.createTokens(GNOME, 2)], { label: "Two 1/1 Gnomes" }),
+      activated({ mana: "{W}", sacrifice: true, effects: [fx.gainLife(3)], label: "+3 life" }),
     ],
   },
   "Vanguard of the Rose": {
@@ -259,29 +253,29 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["flying", "vigilance"] },
-        // Trois marqueurs ou plus, de toutes sortes.
-        { condition: cond.amountAtLeast(amount.countersOn(ref.self, "any"), 3), label: "Vol et vigilance (trois marqueurs)" },
+        // Three or more counters, of any kinds.
+        { condition: cond.amountAtLeast(amount.countersOn(ref.self, "any"), 3), label: "Flying and vigilance (three counters)" },
       ),
       activated({
         tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 3, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.addCounters(ref.self, 1), fx.scry(1)],
-        label: "Marqueur +1/+1, regard 1",
+        label: "Put a +1/+1 counter, scry 1",
       }),
     ],
   },
   "Bat Colony": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(BAT_1, amount.caveManaSpent)], {
-        label: "Une Chauve-souris par mana de Caverne",
+        label: "A Bat for each mana from a Cave",
       }),
       triggered(when.enters({ ...CAVE, controller: "you" }), [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
   "Ruin-Lurker Bat": {
-    abilities: [triggered(when.yourEndStep, [fx.scry(1)], { condition: cond.descended, label: "Descente — regard 1" })],
+    abilities: [triggered(when.yourEndStep, [fx.scry(1)], { condition: cond.descended, label: "Descend — scry 1" })],
   },
 };

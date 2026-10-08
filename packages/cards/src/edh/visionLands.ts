@@ -1,7 +1,7 @@
 /**
- * Commander : terrains du deck « Weight of the World » (The Vision). Terrains d'Urza (Mine, Power Plant, Tower, Cave,
- * Workshop, Saga), terrains incolores utilitaires (Buried Ruin, Emergence Zone, Sanctum of Ugin, Scorched Ruins, Shrine of
- * the Forsaken Gods, War Room, Witch's Clinic), copies (Vesuva, The Mycosynth Gardens) et Planar Nexus.
+ * Commander: lands of the "Weight of the World" deck (The Vision). Urza's lands (Mine, Power Plant, Tower, Cave,
+ * Workshop, Saga), colorless utility lands (Buried Ruin, Emergence Zone, Sanctum of Ugin, Scorched Ruins, Shrine of
+ * the Forsaken Gods, War Room, Witch's Clinic), copies (Vesuva, The Mycosynth Gardens) and Planar Nexus.
  */
 import type { CardScript, ObjectFilter, TokenSpec } from "@mtgx/engine";
 import { LAND_TYPES } from "@mtgx/engine";
@@ -9,20 +9,20 @@ import { activated, amount, chapter, cond, fx, manaAbility, ref, staticAbility, 
 
 const ARTIFACTS_YOU: ObjectFilter = { types: ["Artifact"], controller: "you" };
 const HISTORIC: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { legendary: true }, { subtype: "Saga" }] };
-/** Types de terrain non de base (205.3i) : tous les types de terrain sauf les cinq types de base. */
+/** Nonbasic land types (205.3i): every land type except the five basic ones. */
 const NONBASIC_LAND_TYPES = [...LAND_TYPES].filter((t) => !["Plains", "Island", "Swamp", "Mountain", "Forest"].includes(t));
 
-/** « {1}, {T} : ajoutez un mana de n'importe quelle couleur. » */
+/** "{1}, {T}: Add one mana of any color." */
 const anyColorForOne = activated({
   mana: "{1}",
   tap: true,
   effects: [fx.addManaChoice(1)],
-  label: "Un mana de n'importe quelle couleur",
+  label: "One mana of any color",
 });
 
 /**
- * Terrains de Tron : « {T} : ajoutez {C}. Si vous contrôlez [les deux autres], ajoutez N à la place » ; une capacité de
- * mana dont la quantité dépend de la condition, écrite comme deux capacités aux conditions exclusives.
+ * Tron lands: "{T}: Add {C}. If you control [the other two], add N instead"; a mana ability whose amount depends on
+ * the condition, written as two abilities with exclusive conditions.
  */
 const tron = (others: [string, string], amountIf: number): CardScript => {
   const both = cond.all(
@@ -34,7 +34,7 @@ const tron = (others: [string, string], amountIf: number): CardScript => {
   };
 };
 
-/** Construction 0/0 incolore : « ce jeton gagne +1/+1 pour chaque artefact que vous contrôlez » (Urza's Saga). */
+/** 0/0 colorless Construct: "This token gets +1/+1 for each artifact you control." (Urza's Saga). */
 const CONSTRUCT: TokenSpec = {
   name: "Construct",
   colors: [],
@@ -42,7 +42,7 @@ const CONSTRUCT: TokenSpec = {
   subtypes: ["Construct"],
   power: 0,
   toughness: 0,
-  abilities: [staticAbility("self", { power: 1, toughness: 1 }, { per: ARTIFACTS_YOU, label: "+1/+1 par artefact" })],
+  abilities: [staticAbility("self", { power: 1, toughness: 1 }, { per: ARTIFACTS_YOU, label: "+1/+1 for each artifact" })],
   text: "This token gets +1/+1 for each artifact you control.",
 };
 
@@ -55,9 +55,9 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
         mana: "{3}",
         tap: true,
         exileSelf: true,
-        targets: [target.optional(target.cardInGraveyard("t", HISTORIC, "you", "carte historique de votre cimetière"))],
+        targets: [target.optional(target.cardInGraveyard("t", HISTORIC, "you", "historic card in your graveyard"))],
         effects: [fx.toHand(ref.target()), fx.moveAll("graveyard", ref.eachPlayer, {}, { to: "exile" })],
-        label: "Une carte historique revient en main, puis exilez tous les cimetières",
+        label: "A historic card returns to your hand, then exile all graveyards",
       }),
     ],
   },
@@ -68,13 +68,13 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
         mana: "{2}",
         tap: true,
         sacrifice: true,
-        targets: [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "carte d'artefact de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "artifact card in your graveyard")],
         effects: [fx.toHand(ref.target())],
-        label: "Une carte d'artefact de votre cimetière revient en main",
+        label: "An artifact card in your graveyard returns to your hand",
       }),
     ],
   },
-  // Indestructible : lu dans le texte.
+  // Indestructible: read from the text.
   "Darksteel Citadel": { abilities: [manaAbility("C")] },
   "Emergence Zone": {
     abilities: [
@@ -84,13 +84,13 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.thisTurn({ spellKeywords: { filter: {}, keywords: ["flash"] } })],
-        label: "Vous pouvez lancer des sorts comme s'ils avaient le flash ce tour-ci",
+        label: "You may cast spells this turn as though they had flash",
       }),
     ],
   },
   "Planar Nexus": {
     abilities: [
-      staticAbility("self", { addSubtypes: NONBASIC_LAND_TYPES }, { label: "A chaque type de terrain non de base" }),
+      staticAbility("self", { addSubtypes: NONBASIC_LAND_TYPES }, { label: "Has each nonbasic land type" }),
       manaAbility("C"),
       anyColorForOne,
     ],
@@ -101,17 +101,17 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
       triggered(
         when.castSpell("you", { colorCount: 0, minManaValue: 7 }),
         fx.may(
-          "Sacrifier Sanctum of Ugin pour chercher une carte de créature incolore ?",
+          "Sacrifice Sanctum of Ugin to search for a colorless creature card?",
           fx.sacrifice(ref.you, { self: true }, 1, { store: "sanctum" }),
           fx.when(cond.v("sanctum"), fx.search({ types: ["Creature"], colorCount: 0 }, { to: "hand" })),
         ),
-        { label: "Sort incolore de valeur de mana 7 ou plus : sacrifiez ce terrain pour chercher une créature incolore" },
+        { label: "Colorless spell with mana value 7 or greater: sacrifice this land to search for a colorless creature" },
       ),
     ],
   },
-  // « Si ce terrain devait arriver, sacrifiez deux terrains dégagés à la place. Si vous le faites, mettez-le sur le champ
-  // de bataille. Sinon, mettez-le dans le cimetière » : en arrivant (614.1c), comme Mox Diamond ; sans deux terrains
-  // dégagés, rien n'est sacrifié.
+  // "If this land would enter, sacrifice two untapped lands instead. If you do, put this land onto the battlefield.
+  // Otherwise, put it into its owner's graveyard": as it enters (614.1c), like Mox Diamond; without two untapped lands,
+  // nothing is sacrificed.
   "Scorched Ruins": {
     asEnters: [
       ...fx.when(
@@ -133,7 +133,7 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
   },
   "The Grey Havens": {
     abilities: [
-      triggered(when.entersSelf, [fx.scry(1)], { label: "Regard 1" }),
+      triggered(when.entersSelf, [fx.scry(1)], { label: "Scry 1" }),
       manaAbility("C"),
       manaAbility(["W", "U", "B", "R", "G"], 1, {
         colorsOf: { types: ["Creature"], legendary: true },
@@ -148,11 +148,9 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
       activated({
         mana: "{X}",
         tap: true,
-        targets: [
-          target.permanent("t", ["Artifact"], { controller: "you", token: false }, "artefact non-jeton que vous contrôlez"),
-        ],
+        targets: [target.permanent("t", ["Artifact"], { controller: "you", token: false }, "nontoken artifact you control")],
         effects: [fx.becomeCopy(ref.self, ref.target(), "permanent", { ifManaValue: amount.x })],
-        label: "Devient une copie d'un artefact non-jeton de valeur de mana X que vous contrôlez",
+        label: "Becomes a copy of a nontoken artifact you control with mana value X",
       }),
     ],
   },
@@ -164,18 +162,18 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.search({ types: ["Land"] }, { to: "battlefield", tapped: true })],
-        label: "Cherchez une carte de terrain, mise sur le champ de bataille engagée",
+        label: "Search for a land card, put onto the battlefield tapped",
       }),
     ],
   },
   "Urza's Mine": tron(["Power-Plant", "Tower"], 2),
   "Urza's Power Plant": tron(["Mine", "Tower"], 2),
   "Urza's Tower": tron(["Mine", "Power-Plant"], 3),
-  // Saga (lore) : un marqueur en arrivant et après votre étape de pioche ; sacrifiée après le chapitre III.
+  // Saga (lore): a counter as it enters and after your draw step; sacrificed after chapter III.
   "Urza's Saga": {
     abilities: [
       chapter([1], [fx.modify(ref.self, { addAbilities: [manaAbility("C")] }, "permanent")], {
-        label: "Chapitre I — gagne « {T} : ajoutez {C} »",
+        label: 'Chapter I — gains "{T}: Add {C}."',
       }),
       chapter(
         [2],
@@ -188,21 +186,21 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
                   mana: "{2}",
                   tap: true,
                   effects: [fx.createTokens(CONSTRUCT)],
-                  label: "Un jeton de créature-artefact Construction 0/0",
+                  label: "A 0/0 Construct artifact creature token",
                 }),
               ],
             },
             "permanent",
           ),
         ],
-        { label: "Chapitre II — gagne « {2}, {T} : un jeton Construction »" },
+        { label: 'Chapter II — gains "{2}, {T}: a Construct token"' },
       ),
-      // « Une carte d'artefact au coût de mana {0} ou {1} » : une carte sans coût de mana (un terrain-artefact) ou avec {X}
-      // n'en a pas.
+      // "An artifact card with mana cost {0} or {1}": a card without a mana cost (an artifact land) or with {X} has
+      // neither.
       chapter(
         [3],
         [fx.search({ types: ["Artifact"], notTypes: ["Land"], maxManaValue: 1, hasX: false }, { to: "battlefield" })],
-        { label: "Chapitre III — cherchez un artefact au coût de mana {0} ou {1}" },
+        { label: "Chapter III — search for an artifact with mana cost {0} or {1}" },
       ),
     ],
   },
@@ -212,14 +210,14 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
   "Urza's Workshop": {
     abilities: [
       manaAbility("C"),
-      // Métallurgie : trois artefacts ou plus.
+      // Metalcraft: three or more artifacts.
       manaAbility("C", 1, {
         per: { types: ["Land"], subtype: "Urza's", controller: "you" },
         condition: cond.controls({ types: ["Artifact"] }, 3),
       }),
     ],
   },
-  // « Vous pouvez faire arriver ce terrain engagé comme une copie de n'importe quel terrain sur le champ de bataille. »
+  // "You may have this land enter tapped as a copy of any land on the battlefield."
   Vesuva: { asEnters: [fx.chooseCopy({ types: ["Land"] }, { anyController: true, tapped: true })] },
   "War Room": {
     abilities: [
@@ -229,7 +227,7 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
         tap: true,
         payLife: amount.commanderColors,
         effects: [fx.draw(1)],
-        label: "PV égaux au nombre de couleurs de l'identité de vos commandants : piochez une carte",
+        label: "Life equal to the number of colors in your commanders' identity: draw a card",
       }),
     ],
   },
@@ -239,9 +237,9 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
       activated({
         mana: "{2}",
         tap: true,
-        targets: [target.permanent("t", [], { commander: true }, "commandant")],
+        targets: [target.permanent("t", [], { commander: true }, "commander")],
         effects: [fx.pump(ref.target(), 0, 0, ["lifelink"])],
-        label: "Le commandant ciblé gagne le lien de vie jusqu'à la fin du tour",
+        label: "Target commander gains lifelink until end of turn",
       }),
     ],
   },

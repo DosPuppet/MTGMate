@@ -13,6 +13,7 @@ import { manaAbilitiesOf, manaValue } from "../src/mana";
 import { spellCost } from "../src/stack";
 import { bump, chars } from "../src/state";
 import { ALL_CREATURE_TYPES, isLegalTarget, matchesObjectFilter } from "../src/targets";
+import { plainText } from "../src/text";
 import { simultaneously } from "../src/triggers";
 import type { CardDef, ChoiceRequest, ChoiceValue, Color, GameState, ManaCost, TokenSpec } from "../src/types";
 import {
@@ -1112,11 +1113,11 @@ describe("Lorwyn Eclipsed, lot A — bleu", () => {
       const mare = idOf(s, "p1", "battlefield", "Loch Mare");
       expect(s.objects[mare]?.counters["-1/-1"]).toBe(3);
       expect(pt(s, mare)).toEqual([1, 2]);
-      s = settle(activate(s, mare, "Piochez"));
+      s = settle(activate(s, mare, "Draw"));
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(s.objects[mare]?.counters["-1/-1"]).toBe(2);
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      s = settle(activate(s, mare, "Engagez", { targets: { t: [angel] } }));
+      s = settle(activate(s, mare, "Tap a creature", { targets: { t: [angel] } }));
       expect(s.objects[angel]?.tapped).toBe(true);
       expect(s.objects[angel]?.counters.stun).toBe(1);
       expect(s.objects[mare]?.counters["-1/-1"] ?? 0).toBe(0);
@@ -3037,7 +3038,7 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
         });
         const angel = idOf(s, "p2", "battlefield", "Serra Angel");
         setCounters(s, angel, "-1/-1", 1);
-        s = chooseWanted(activate(s, idOf(s, "p1", "battlefield", "High Perfect Morcant"), "trois Elfes"), [angel]);
+        s = chooseWanted(activate(s, idOf(s, "p1", "battlefield", "High Perfect Morcant"), "three Elves"), [angel]);
         return { s, angel };
       };
       // Le paiement automatique engage d'abord les autres Elfes.
@@ -3071,8 +3072,10 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       const willow = idOf(s, "p1", "battlefield", "Reaping Willow");
       expect(pt(s, willow)).toEqual([1, 4]);
       expect(chars(s, willow).keywords).toContain("lifelink");
-      expect(() => activate(s, willow, "Renvoie", { targets: { t: [idOf(s, "p1", "graveyard", "Shivan Dragon")] } })).toThrow();
-      s = settle(activate(s, willow, "Renvoie", { targets: { t: [idOf(s, "p1", "graveyard", "Bear Cub")] } }));
+      expect(() =>
+        activate(s, willow, "Return a creature", { targets: { t: [idOf(s, "p1", "graveyard", "Shivan Dragon")] } }),
+      ).toThrow();
+      s = settle(activate(s, willow, "Return a creature", { targets: { t: [idOf(s, "p1", "graveyard", "Bear Cub")] } }));
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
       expect(pt(s, willow)).toEqual([3, 6]);
     });
@@ -3214,7 +3217,7 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 2), graveyard: ["Stoic Grove-Guide"] } });
       const card = idOf(s, "p1", "graveyard", "Stoic Grove-Guide");
       expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === card)).toBe(true);
-      s = settle(activate(s, card, "Elfe"));
+      s = settle(activate(s, card, "Elf"));
       expect(exiled(s, "Stoic Grove-Guide")).toHaveLength(1);
       const elf = idOf(s, "p1", "battlefield", "Elf");
       expect(pt(s, elf)).toEqual([2, 2]);
@@ -3251,15 +3254,15 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       const fig = idOf(s, "p1", "battlefield", "Figure of Fable");
       s = settle(activate(s, fig, "Avatar"));
       expect(pt(s, fig)).toEqual([1, 1]);
-      s = settle(activate(s, fig, "Éclaireur 2/3"));
+      s = settle(activate(s, fig, "2/3 Kithkin Scout"));
       expect(pt(s, fig)).toEqual([2, 3]);
       expect(chars(s, fig).subtypes).toEqual(["Kithkin", "Scout"]);
-      s = settle(activate(s, fig, "Soldat 4/5"));
+      s = settle(activate(s, fig, "4/5 Kithkin Soldier"));
       expect(pt(s, fig)).toEqual([4, 5]);
       s = settle(activate(s, fig, "Avatar"));
       expect(pt(s, fig)).toEqual([7, 8]);
       expect(chars(s, fig).subtypes).toEqual(["Kithkin", "Avatar"]);
-      expect(chars(s, fig).protections.map((r) => r.label)).toEqual(["Protection contre chacun de vos adversaires"]);
+      expect(chars(s, fig).protections.map((r) => r.label)).toEqual(["Protection from each of your opponents"]);
       // Un sort adverse ne peut pas la cibler ; un sort à vous, si.
       const spec = dsl.target.creatureOrPlaneswalker();
       expect(isLegalTarget(s, "p2", spec, fig, idOf(s, "p2", "hand", "Sear"))).toBe(false);
@@ -3307,7 +3310,7 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       expect(isLegalTarget(s, "p2", spec, tam, sear)).toBe(true);
       // Vous pouvez toujours cibler vos propres créatures.
       expect(isLegalTarget(s, "p1", spec, fire, sear)).toBe(true);
-      s = settle(activate(s, tam, "toutes les couleurs", { targets: { t: [bear] } }));
+      s = settle(activate(s, tam, "all colors", { targets: { t: [bear] } }));
       expect(chars(s, bear).colors).toHaveLength(5);
       expect(isLegalTarget(s, "p2", spec, bear, sear)).toBe(false);
     });
@@ -3393,7 +3396,7 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       s = passAccepting(s, (x) => x.stack.length === 1 && x.stack[0]?.kind === "ability" && x.pending?.kind === "priority");
       const trigger = s.stack[0]?.id as string;
       const kirol = idOf(s, "p1", "battlefield", "Kirol, Attentive First-Year");
-      s = settle(activate(s, kirol, "Copiez", { targets: { t: [trigger] } }));
+      s = settle(activate(s, kirol, "Copy", { targets: { t: [trigger] } }));
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(2);
       expect(s.objects[kirol]?.tapped).toBe(false);
       expect(s.battlefield.filter((id) => chars(s, id).types.includes("Creature") && s.objects[id]?.tapped)).toHaveLength(2);
@@ -3410,7 +3413,7 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       t = act(t, "p2", { type: "pass" });
       expect(t.pending?.kind === "priority" && t.pending.player).toBe("p1");
       const kirol2 = idOf(t, "p1", "battlefield", "Kirol, Attentive First-Year");
-      expect(() => activate(t, kirol2, "Copiez", { targets: { t: [theirs] } })).toThrow();
+      expect(() => activate(t, kirol2, "Copy", { targets: { t: [theirs] } })).toThrow();
     });
   });
 });
@@ -3993,7 +3996,7 @@ describe("Lorwyn Eclipsed, lot B", () => {
     runEffect(s, resolutionOf(s, "p1", oko), dsl.fx.transform());
     const o = s.objects[oko];
     if (o) o.counters.loyalty = 6;
-    const minus6 = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === oko && a.label?.includes("emblème"));
+    const minus6 = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === oko && a.label?.includes("emblem"));
     expect(minus6).toBeDefined();
     const ability = minus6?.type === "activate" ? minus6.ability : -1;
     s = chooseWanted(act(s, "p1", { type: "activate", source: oko, ability }), ["Elf"]);
@@ -4550,7 +4553,7 @@ describe("Lorwyn Eclipsed, lot D (remplacements des familles H et I, R1)", () =>
     const pick = opt?.type === "activate" ? opt.picks?.find((p) => p.slot === "counterKind") : undefined;
     expect([...(pick?.options ?? [])].sort()).toEqual(["-1/-1", "oil"]);
     expect(pick?.suggested).toEqual(["-1/-1"]);
-    expect(pick?.labels?.oil).toBe("Marqueur Huile (1)");
+    expect(plainText(pick?.labels?.oil ?? "")).toBe("Oil counter (1)");
     if (opt?.type !== "activate") throw new Error("capacité non proposée");
     expect(() =>
       act(s, "p1", { type: "activate", source: lamenter, ability: opt.ability, picks: { counterKind: ["stun"] } }),

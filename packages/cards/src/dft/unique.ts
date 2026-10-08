@@ -1,6 +1,6 @@
 /**
- * Aetherdrift, lot C : cartes uniques (contrôle lié, échange de contrôle, copies, nom choisi, planeswalker-Équipement,
- * coûts « X », déclencheurs groupés…).
+ * Aetherdrift, lot C: unique cards (linked control, exchange of control, copies, chosen name, planeswalker Equipment,
+ * "X" costs, batched triggers…).
  */
 import type { CardScript, TargetSpec } from "@mtgx/engine";
 import {
@@ -38,19 +38,19 @@ const AFFINITY_ARTIFACTS = { generic: amount.count({ types: ["Artifact"], contro
 const ARTIFACT_OR_CREATURE_YOU = { ...CREATURE_OR_ARTIFACT, controller: "you" as const };
 const MAX_PLAYERS = 4;
 
-/** « Pour chaque adversaire / joueur, jusqu'à une cible que ce joueur contrôle ». */
+/** "For each opponent / player, up to one target that player controls". */
 const onePerPlayer = (t: TargetSpec): TargetSpec => ({ ...target.upTo(MAX_PLAYERS, t), differentPlayers: true });
 
 export const UNIQUE: Record<string, CardScript> = {
-  // --- Blanc -----------------------------------------------------------------
+  // --- White -----------------------------------------------------------------
   "Skyseer's Chariot": { asEnters: [fx.chooseForSelf("cardName")], chosenNameAbilities: 2 },
 
-  // --- Bleu ------------------------------------------------------------------
+  // --- Blue ------------------------------------------------------------------
   "Possession Engine": {
     abilities: [
       triggered(when.entersSelf, fx.gainControlWhileSource(ref.target(), true), {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Prenez le contrôle d'une créature (tant que vous contrôlez ce Véhicule)",
+        label: "Gain control of a creature (for as long as you control this Vehicle)",
       }),
     ],
   },
@@ -71,42 +71,42 @@ export const UNIQUE: Record<string, CardScript> = {
             amount.plus(1, amount.manaValueOf(ref.costSacrificed)),
           ),
         ],
-        label: "Un artefact de VM 1 + celle de l'artefact sacrifié",
+        label: "An artifact with mana value 1 + the sacrificed artifact's",
       }),
     ],
   },
   "Trade the Helm": {
     spell: spell(
       [
-        target.permanent("a", ["Artifact", "Creature"], { controller: "you" }, "artefact ou créature que vous contrôlez"),
-        target.permanent("b", ["Artifact", "Creature"], { controller: "opponent" }, "artefact ou créature adverse"),
+        target.permanent("a", ["Artifact", "Creature"], { controller: "you" }, "artifact or creature you control"),
+        target.permanent("b", ["Artifact", "Creature"], { controller: "opponent" }, "artifact or creature an opponent controls"),
       ],
       [fx.exchangeControl(ref.target("a"), ref.target("b"))],
     ),
   },
   "Waxen Shapethief": { asEnters: [fx.chooseCopy(ARTIFACT_OR_CREATURE_YOU)] },
 
-  // --- Noir ------------------------------------------------------------------
+  // --- Black -----------------------------------------------------------------
   "Ancient Vendetta": {
     spell: spell([target.player("t", "opponent")], [fx.chooseCardName, fx.exileNamed(ref.target(), 4)]),
   },
   "Cursecloth Wrappings": {
     abilities: [
-      staticAbility({ subtype: "Zombie", controller: "you" }, { power: 1, toughness: 1 }, { label: "Zombies +1/+1" }),
-      // Approximation de l'embaumement accordé : payé tout de suite, en rituel ; le jeton garde ses couleurs.
+      staticAbility({ subtype: "Zombie", controller: "you" }, { power: 1, toughness: 1 }, { label: "Zombies get +1/+1" }),
+      // Approximation of the granted embalm: paid at once, as a sorcery; the token keeps its colors.
       activated({
         tap: true,
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card")],
         effects: [
-          fx.payCostOf(ref.target(), "p", "Payer son coût de mana (embaumement) ?"),
+          fx.payCostOf(ref.target(), "p", "Pay its mana cost (embalm)?"),
           fx.when(
             cond.v("p"),
             fx.exileCard(ref.target(), { name: "e" }),
             fx.copyToken(ref.stored("e"), { addSubtypes: ["Zombie"] }),
           ),
         ],
-        label: "Embaumement",
+        label: "Embalm",
       }),
     ],
   },
@@ -115,23 +115,23 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        // « Si une créature que vous contrôliez a été détruite de cette façon » : la carte mise au cimetière.
+        // "If a creature you controlled was destroyed this way": the card put into the graveyard.
         [
           fx.destroy(ref.target(), "d"),
           fx.when(cond.refMatches(ref.stored("d"), { controller: "you" }), fx.addCounters(ref.self, 2)),
         ],
-        { targets: [onePerPlayer(target.creature("t"))], label: "Une créature par joueur détruite" },
+        { targets: [onePerPlayer(target.creature("t"))], label: "One creature for each player destroyed" },
       ),
     ],
   },
   "Gonti, Night Minister": {
     abilities: [
-      triggered(when.castSpellNotOwned, [fx.createTokens(TREASURE, 1, ref.eventPlayer)], { label: "Trésor" }),
-      // Exilée face cachée (visible pour vous) ; jouable tant qu'elle reste exilée, avec du mana de n'importe quel type.
+      triggered(when.castSpellNotOwned, [fx.createTokens(TREASURE, 1, ref.eventPlayer)], { label: "Treasure" }),
+      // Exiled face down (visible to you); playable for as long as it remains exiled, with mana of any type.
       triggered(
         when.combatDamageToOpponent({ types: ["Creature"] }),
         [fx.exileTop(ref.eventPlayer, 1, "g", "you"), fx.grantPlay(ref.stored("g"), { forever: true, anyMana: true })],
-        { label: "Exilez la carte du dessus de sa bibliothèque, jouable" },
+        { label: "Exile the top card of their library, playable" },
       ),
     ],
   },
@@ -143,18 +143,18 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "The Last Ride": {
     abilities: [
-      staticAbility("self", { power: -1, toughness: -1 }, { perLife: true, label: "-X/-X (vos PV)" }),
-      activated({ mana: "{2}{B}", payLife: 2, effects: [fx.draw(1)], label: "Piochez" }),
+      staticAbility("self", { power: -1, toughness: -1 }, { perLife: true, label: "-X/-X (your life)" }),
+      activated({ mana: "{2}{B}", payLife: 2, effects: [fx.draw(1)], label: "Draw" }),
     ],
   },
   "Wickerfolk Indomitable": { castFromGraveyard: { payLife: 2, sacrifice: CREATURE_OR_ARTIFACT } },
 
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -------------------------------------------------------------------
   "Chandra, Spark Hunter": {
     abilities: [
       triggered(when.step("beginCombat"), [fx.animateVehicle(ref.target()), fx.pump(ref.target(), 0, 0, ["haste"])], {
-        targets: [target.upTo(1, targetObj("t", { subtype: "Vehicle", controller: "you" }, "Véhicule que vous contrôlez"))],
-        label: "Un Véhicule devient une créature avec la célérité",
+        targets: [target.upTo(1, targetObj("t", { subtype: "Vehicle", controller: "you" }, "Vehicle you control"))],
+        label: "A Vehicle becomes a creature with haste",
       }),
       loyalty(2, {
         effects: [
@@ -162,19 +162,19 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.when(cond.not(cond.v("s")), fx.discard(1, ref.you, { optional: true, store: "d" })),
           fx.when(cond.not(cond.all(cond.not(cond.v("s")), cond.not(cond.v("d")))), fx.draw(1)),
         ],
-        label: "Sacrifiez un artefact ou défaussez : piochez",
+        label: "Sacrifice an artifact or discard: draw",
       }),
-      loyalty(0, { effects: [fx.createTokens(VEHICLE)], label: "Véhicule 3/2" }),
+      loyalty(0, { effects: [fx.createTokens(VEHICLE)], label: "3/2 Vehicle" }),
       loyalty(-7, {
         effects: [
           fx.emblem("Chandra", "Whenever an artifact you control enters, this emblem deals 3 damage to any target.", [
             triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.damage(3, ref.target())], {
               targets: [target.any("t")],
-              label: "3 blessures",
+              label: "3 damage",
             }),
           ]),
         ],
-        label: "Emblème",
+        label: "Emblem",
       }),
     ],
   },
@@ -189,8 +189,8 @@ export const UNIQUE: Record<string, CardScript> = {
             fx.when(cond.v("s"), fx.toBattlefield(ref.target())),
           ],
           {
-            targets: [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "carte d'artefact")],
-            label: "Sacrifiez un artefact : renvoyez la carte choisie",
+            targets: [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "artifact card")],
+            label: "Sacrifice an artifact: return the chosen card",
           },
         ),
       ),
@@ -208,7 +208,7 @@ export const UNIQUE: Record<string, CardScript> = {
             triggered(
               when.step("beginCombat"),
               [fx.untap(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"], attackedThisTurn: true }))],
-              { label: "Dégagez les créatures qui ont attaqué" },
+              { label: "Untap the creatures that attacked" },
             ),
           ],
           true,
@@ -218,14 +218,14 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Gastal Thrillroller": {
     abilities: [
-      triggered(when.entersSelf, [fx.animateVehicle()], { label: "Créature-artefact jusqu'à la fin du tour" }),
+      triggered(when.entersSelf, [fx.animateVehicle()], { label: "Artifact creature until end of turn" }),
       activated({
         mana: "{2}{R}",
         discard: 1,
         fromGraveyard: true,
         sorcerySpeed: true,
         effects: [fx.toBattlefield(ref.self, { counters: { kind: "finality", n: 1 } })],
-        label: "Revenir avec un marqueur de finalité",
+        label: "Return with a finality counter",
       }),
     ],
   },
@@ -241,12 +241,12 @@ export const UNIQUE: Record<string, CardScript> = {
     ),
   },
 
-  // --- Vert ------------------------------------------------------------------
+  // --- Green -----------------------------------------------------------------
   "Dredger's Insight": {
     abilities: [
       triggered(when.zoneChange(["graveyard"], { filter: CREATURE_OR_ARTIFACT, whose: "you" }), [fx.gainLife(1)], {
         batched: true,
-        label: "+1 PV",
+        label: "+1 life",
       }),
       triggered(
         when.entersSelf,
@@ -259,11 +259,11 @@ export const UNIQUE: Record<string, CardScript> = {
             {
               min: 0,
               pool: ref.stored("m"),
-              prompt: "Vous pouvez reprendre une carte d'artefact, de créature ou de terrain meulée",
+              prompt: "You may take back a milled artifact, creature or land card",
             },
           ),
         ],
-        { label: "Meulez quatre cartes, reprenez-en une" },
+        { label: "Mill four cards, take back one" },
       ),
     ],
   },
@@ -279,25 +279,25 @@ export const UNIQUE: Record<string, CardScript> = {
             {
               min: 0,
               store: "g",
-              prompt: "Vous pouvez reprendre une carte de créature sans capacité",
+              prompt: "You may take back a creature card with no abilities",
             },
           ),
           fx.when(cond.not(cond.v("g")), fx.search({ types: ["Creature"], noAbilities: true })),
         ],
-        { label: "Une carte de créature sans capacité" },
+        { label: "A creature card with no abilities" },
       ),
     ],
   },
   "March of the World Ooze": {
     abilities: [
-      staticAbility(CREATURE_YOU_CONTROL, { setPower: 6, setToughness: 6, addSubtypes: ["Ooze"] }, { label: "6/6, Limons" }),
-      triggered(when.castSpellOffTurn("opponent"), [fx.createTokens(ELEPHANT)], { label: "Éléphant 3/3" }),
+      staticAbility(CREATURE_YOU_CONTROL, { setPower: 6, setToughness: 6, addSubtypes: ["Ooze"] }, { label: "6/6, Oozes" }),
+      triggered(when.castSpellOffTurn("opponent"), [fx.createTokens(ELEPHANT)], { label: "3/3 Elephant" }),
     ],
   },
   "Oviya, Automech Artisan": {
     abilities: [
-      // « Chaque créature qui attaque l'un de vos adversaires » : de tout contrôleur, et pas un planeswalker.
-      staticAbility({ types: ["Creature"], attacking: "opponent" }, { addKeywords: ["trample"] }, { label: "Piétinement" }),
+      // "Each creature attacking one of your opponents": whoever controls it, and not a planeswalker.
+      staticAbility({ types: ["Creature"], attacking: "opponent" }, { addKeywords: ["trample"] }, { label: "Trample" }),
       activated({
         mana: "{G}",
         tap: true,
@@ -306,27 +306,27 @@ export const UNIQUE: Record<string, CardScript> = {
             "hand",
             CREATURE_OR_VEHICLE,
             { to: "battlefield" },
-            { min: 0, store: "o", prompt: "Créature ou Véhicule" },
+            { min: 0, store: "o", prompt: "Creature or Vehicle" },
           ),
           fx.when(cond.refMatches(ref.stored("o"), { types: ["Artifact"] }), fx.addCounters(ref.stored("o"), 2)),
         ],
-        label: "Une créature ou un Véhicule de votre main",
+        label: "A creature or Vehicle from your hand",
       }),
     ],
   },
   "Rise from the Wreck": {
     spell: spell(
       [
-        target.upTo(1, target.cardInGraveyard("a", { types: ["Creature"] }, "you", "carte de créature")),
-        { ...target.upTo(1, target.cardInGraveyard("b", { subtype: "Mount" }, "you", "carte de Monture")), otherThan: ["a"] },
+        target.upTo(1, target.cardInGraveyard("a", { types: ["Creature"] }, "you", "creature card")),
+        { ...target.upTo(1, target.cardInGraveyard("b", { subtype: "Mount" }, "you", "Mount card")), otherThan: ["a"] },
         {
-          ...target.upTo(1, target.cardInGraveyard("c", { subtype: "Vehicle" }, "you", "carte de Véhicule")),
+          ...target.upTo(1, target.cardInGraveyard("c", { subtype: "Vehicle" }, "you", "Vehicle card")),
           otherThan: ["a", "b"],
         },
         {
           ...target.upTo(
             1,
-            target.cardInGraveyard("d", { types: ["Creature"], noAbilities: true }, "you", "créature sans capacité"),
+            target.cardInGraveyard("d", { types: ["Creature"], noAbilities: true }, "you", "creature with no abilities"),
           ),
           otherThan: ["a", "b", "c"],
         },
@@ -336,12 +336,12 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Thunderous Velocipede": {
     abilities: [
-      entersWith({ counters: 1, affects: { ...CREATURE_OR_VEHICLE, controller: "you", maxManaValue: 4 }, label: "+1 marqueur" }),
-      entersWith({ counters: 3, affects: { ...CREATURE_OR_VEHICLE, controller: "you", minManaValue: 5 }, label: "+3 marqueurs" }),
+      entersWith({ counters: 1, affects: { ...CREATURE_OR_VEHICLE, controller: "you", maxManaValue: 4 }, label: "+1 counter" }),
+      entersWith({ counters: 3, affects: { ...CREATURE_OR_VEHICLE, controller: "you", minManaValue: 5 }, label: "+3 counters" }),
     ],
   },
 
-  // --- Multicolores ----------------------------------------------------------
+  // --- Multicolored ----------------------------------------------------------
   "Captain Howler, Sea Scourge": {
     abilities: [
       triggered(
@@ -349,19 +349,19 @@ export const UNIQUE: Record<string, CardScript> = {
         [
           fx.pump(ref.target(), amount.plus(amount.eventAmount, amount.eventAmount), 0),
           fx.modify(ref.target(), {
-            addAbilities: [triggered(when.combatDamage("self", true), [fx.draw(1)], { label: "Piochez" })],
+            addAbilities: [triggered(when.combatDamage("self", true), [fx.draw(1)], { label: "Draw" })],
           }),
         ],
-        { targets: [target.creature("t")], label: "+2/+0 par carte défaussée" },
+        { targets: [target.creature("t")], label: "+2/+0 for each card discarded" },
       ),
     ],
   },
   "Cloudspire Coordinator": {
     abilities: [
-      triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
+      triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" }),
       activated({
         tap: true,
-        // Journal du tour : celles qui sont reparties comptent aussi (une Monture-Véhicule n'est comptée qu'une fois).
+        // Turn log: those that left again count too (a Mount Vehicle is counted only once).
         effects: [
           fx.createTokens(
             PILOT,
@@ -371,7 +371,7 @@ export const UNIQUE: Record<string, CardScript> = {
             ),
           ),
         ],
-        label: "Un Pilote par Monture ou Véhicule arrivé ce tour-ci",
+        label: "A Pilot for each Mount or Vehicle that entered this turn",
       }),
     ],
   },
@@ -389,8 +389,8 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.delayedAt("yourEndStep", [fx.exile(ref.target("c"))], { c: ref.stored("c") }),
         ],
         {
-          targets: [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 4 }, "any", "carte de créature")],
-          label: "Une créature d'un cimetière, exilée à votre étape de fin",
+          targets: [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 4 }, "any", "creature card")],
+          label: "A creature from a graveyard, exiled at your end step",
         },
       ),
     ],
@@ -403,26 +403,22 @@ export const UNIQUE: Record<string, CardScript> = {
             "t",
             { ...CREATURE_OR_ARTIFACT, compare: [cmp.manaValue("<=", amount.x)] },
             "you",
-            "carte d'artefact ou de créature",
+            "artifact or creature card",
           ),
         ],
-        label: "Renvoyez un artefact ou une créature de VM X ou moins",
+        label: "Return an artifact or creature with mana value X or less",
       }),
     ],
   },
   "Fearless Swashbuckler": {
     abilities: [
-      staticAbility(
-        { subtype: "Vehicle", controller: "you" },
-        { addKeywords: ["haste"] },
-        { label: "Vos Véhicules ont la célérité" },
-      ),
+      staticAbility({ subtype: "Vehicle", controller: "you" }, { addKeywords: ["haste"] }, { label: "Your Vehicles have haste" }),
       triggered(when.attackWith(1), [fx.draw(3), fx.discard(2)], {
         condition: cond.all(
           cond.controls({ subtype: "Pirate", attacking: true }),
           cond.controls({ subtype: "Vehicle", attacking: true }),
         ),
-        label: "Un Pirate et un Véhicule attaquent : piochez trois, défaussez deux",
+        label: "A Pirate and a Vehicle attack: draw three, discard two",
       }),
     ],
   },
@@ -434,7 +430,7 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.search({ types: ["Artifact"] }, { to: "hand" }, 1, undefined, "a"),
           fx.when(cond.refMatches(ref.stored("a"), { maxManaValue: 2 }), fx.toBattlefield(ref.stored("a"))),
         ],
-        { label: "Un artefact (sur le champ de bataille si VM 2 ou moins)" },
+        { label: "An artifact (onto the battlefield if mana value 2 or less)" },
       ),
     ],
   },
@@ -445,19 +441,19 @@ export const UNIQUE: Record<string, CardScript> = {
         { addKeywords: ["cantAttack", "cantBlock"] },
         {
           condition: cond.not(cond.exileAtLeast(7)),
-          label: "Moins de sept cartes en exil : n'attaque ni ne bloque",
+          label: "Fewer than seven cards in exile: can't attack or block",
         },
       ),
       triggered(when.zoneChange(["graveyard", "battlefield"], { to: ["exile"] }), [fx.draw(1), fx.loseLife(1)], {
         condition: cond.yourTurn,
         batched: true,
-        label: "Piochez, perdez 1 PV",
+        label: "Draw, lose 1 life",
       }),
     ],
   },
   "Mimeoplasm, Revered One": {
-    // « En arrivant, exilez jusqu'à X cartes de créature de votre cimetière ; trois marqueurs +1/+1 par carte exilée » :
-    // la forme de dévorer, depuis le cimetière (les cartes exilées sont liées à Mimeoplasm).
+    // "As it enters, exile up to X creature cards from your graveyard; three +1/+1 counters for each card exiled":
+    // the devour form, from the graveyard (the exiled cards are linked to Mimeoplasm).
     asEnters: [fx.devour({ types: ["Creature"] }, 3, { graveyardUpToX: true })],
     abilities: [
       activated({
@@ -465,12 +461,12 @@ export const UNIQUE: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "carte de créature exilée avec elle",
+            label: "creature card exiled with it",
             filter: { exiled: { linked: true, filter: { types: ["Creature"] } } },
           },
         ],
         effects: [fx.becomeCopyKeepAbilities(ref.target())],
-        label: "Devient une copie (0/0)",
+        label: "Becomes a copy (0/0)",
       }),
     ],
   },
@@ -480,14 +476,9 @@ export const UNIQUE: Record<string, CardScript> = {
       exhaust({
         mana: "{10}{R}{G}",
         effects: [
-          fx.pickFromZone(
-            "hand",
-            { permanent: true },
-            { to: "battlefield" },
-            { count: 60, min: 0, prompt: "Cartes de permanent" },
-          ),
+          fx.pickFromZone("hand", { permanent: true }, { to: "battlefield" }, { count: 60, min: 0, prompt: "Permanent cards" }),
         ],
-        label: "des permanents de votre main",
+        label: "permanents from your hand",
       }),
     ],
   },
@@ -495,7 +486,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.moveTo(ref.target(), { to: "libraryTop", fromTop: 3 })], {
         targets: [onePerPlayer(target.nonland("t", { controller: "opponent" }))],
-        label: "Troisième depuis le dessus de la bibliothèque",
+        label: "Third from the top of the library",
       }),
     ],
   },
@@ -506,11 +497,11 @@ export const UNIQUE: Record<string, CardScript> = {
         { addKeywords: ["cantAttack", "cantBlock"] },
         {
           condition: cond.not(cond.evenCounters),
-          label: "Nombre impair de marqueurs : n'attaque ni ne bloque",
+          label: "Odd number of counters: can't attack or block",
         },
       ),
       triggered(when.step("main1"), [fx.addCounters(ref.self, 1), fx.when(cond.not(cond.evenCounters), fx.draw(2))], {
-        label: "Marqueur +1/+1 ; impair : piochez deux cartes",
+        label: "+1/+1 counter; odd: draw two cards",
       }),
     ],
   },
@@ -521,11 +512,11 @@ export const UNIQUE: Record<string, CardScript> = {
         effects: [
           fx.addCounters(ref.self, amount.x),
           ...fx.may(
-            "Les autres créatures prennent la force de Sita Varma ?",
+            "Other creatures take Sita Varma's power?",
             fx.setBasePTAll(OTHER_CREATURE_YOU_CONTROL, amount.powerOf(ref.self)),
           ),
         ],
-        label: "X marqueurs, F/E de base des autres créatures",
+        label: "X counters, base power and toughness of the other creatures",
       }),
     ],
   },
@@ -534,7 +525,7 @@ export const UNIQUE: Record<string, CardScript> = {
       exhaust({
         mana: "{4}",
         effects: [fx.revealUntilN({ types: ["Land"] }, 2, { to: "battlefield", tapped: true }), fx.addCounters(ref.self, 1)],
-        label: "deux terrains, marqueur +1/+1",
+        label: "two lands, +1/+1 counter",
       }),
     ],
   },
@@ -544,7 +535,7 @@ export const UNIQUE: Record<string, CardScript> = {
         { types: ["Artifact"], controller: "you" },
         { addAbilities: [wardAbility({ life: 2 })] },
         {
-          label: "Vos artefacts : garde (2 PV)",
+          label: "Your artifacts: ward (2 life)",
         },
       ),
       exhaust({
@@ -554,38 +545,38 @@ export const UNIQUE: Record<string, CardScript> = {
         effects: [
           fx.pumpAll({ types: ["Creature"], notTypes: ["Artifact"], other: true }, amount.neg(amount.x), amount.neg(amount.x)),
         ],
-        label: "les autres créatures non-artefacts -X/-X",
+        label: "other nonartifact creatures get -X/-X",
       }),
     ],
   },
 
-  // --- Incolores -------------------------------------------------------------
+  // --- Colorless -------------------------------------------------------------
   "The Aetherspark": {
     abilities: [
       triggered(
         when.combatDamage({ types: ["Creature"], attached: "host" }),
         [fx.counters(ref.self, "loyalty", amount.eventAmount)],
-        { condition: cond.yourTurn, label: "Autant de marqueurs de loyauté" },
+        { condition: cond.yourTurn, label: "That many loyalty counters" },
       ),
       loyalty(1, {
         targets: [target.upTo(1, target.creature("t", { controller: "you" }))],
         effects: [fx.attach(ref.target()), fx.addCounters(ref.target(), 1)],
-        label: "Attachez-le, marqueur +1/+1",
+        label: "Attach it, +1/+1 counter",
       }),
-      loyalty(-5, { effects: [fx.draw(2)], label: "Piochez deux cartes" }),
-      loyalty(-10, { effects: [fx.addManaChoice(10)], label: "Dix mana d'une couleur" }),
+      loyalty(-5, { effects: [fx.draw(2)], label: "Draw two cards" }),
+      loyalty(-10, { effects: [fx.addManaChoice(10)], label: "Ten mana of one color" }),
     ],
   },
   "Lifecraft Engine": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      // Approximation : tous vos Véhicules (créatures ou non) ont le type choisi ; un filtre « créature » serait figé
-      // avant l'équipage, plus récent (dépendance 613.8a non gérée pour l'ensemble affecté en couche 4).
+      // Approximation: all your Vehicles (creatures or not) have the chosen type; a "creature" filter would be locked in
+      // before crewing, which is more recent (613.8a dependency not handled for the affected set in layer 4).
       staticAbility(
         { subtype: "Vehicle", controller: "you" },
         { addChosen: "subtype" },
         {
-          label: "Vos Véhicules créatures ont le type choisi",
+          label: "Your Vehicle creatures have the chosen type",
         },
       ),
       staticAbility(
@@ -602,38 +593,38 @@ export const UNIQUE: Record<string, CardScript> = {
       triggeredModal(
         when.discard("you"),
         [
-          mode("Piochez", [], [fx.draw(1)]),
-          mode("Trésor", [], [fx.createTokens(TREASURE)]),
-          mode("Chaque adversaire perd 3 PV", [], [fx.loseLife(3, ref.eachOpponent)]),
+          mode("Draw", [], [fx.draw(1)]),
+          mode("Treasure", [], [fx.createTokens(TREASURE)]),
+          mode("Each opponent loses 3 life", [], [fx.loseLife(3, ref.eachOpponent)]),
         ],
-        { uniqueModes: "turn", label: "Un mode pas encore choisi ce tour-ci" },
+        { uniqueModes: "turn", label: "A mode not chosen yet this turn" },
       ),
     ],
   },
   "Pit Automaton": {
     abilities: [
       manaAbility("C", 2, { restriction: { abilityOfSource: {} } }),
-      activated({ mana: "{2}", tap: true, effects: [fx.copyNextExhaust], label: "Copiez la prochaine capacité d'exhaust" }),
+      activated({ mana: "{2}", tap: true, effects: [fx.copyNextExhaust], label: "Copy the next exhaust ability" }),
     ],
   },
   "Radiant Lotus": {
     abilities: [
-      // « Choisissez une couleur. Le joueur ciblé ajoute trois mana de la couleur choisie par artefact sacrifié » : une
-      // cible, donc pas une capacité de mana (605.1a) ; la couleur est choisie à la résolution.
+      // "Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed": a
+      // target, so not a mana ability (605.1a); the color is chosen on resolution.
       activated({
         tap: true,
         sacrificeX: { types: ["Artifact"] },
         targets: [target.player("p")],
         effects: fx.yourChoice(
-          "Choisissez une couleur",
+          "Choose a color",
           "color",
           (
             [
-              ["W", "Blanc"],
-              ["U", "Bleu"],
-              ["B", "Noir"],
-              ["R", "Rouge"],
-              ["G", "Vert"],
+              ["W", "White"],
+              ["U", "Blue"],
+              ["B", "Black"],
+              ["R", "Red"],
+              ["G", "Green"],
             ] as const
           ).map(([c, label]) => ({
             label,
@@ -642,7 +633,7 @@ export const UNIQUE: Record<string, CardScript> = {
             ],
           })),
         ),
-        label: "Trois mana d'une couleur par artefact sacrifié, pour le joueur ciblé",
+        label: "Three mana of one color for each artifact sacrificed, for target player",
       }),
     ],
   },

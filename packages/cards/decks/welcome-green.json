@@ -1,7 +1,11 @@
 {
-  "id": "bienvenue-vert",
-  "name": "Bienvenue : vert",
-  "description": "Deck de bienvenue (40 cartes, Foundations). Accélération de mana et grosses créatures : les combats forcés dégagent le terrain pour Surrak et ses alliés.",
+  "id": "welcome-green",
+  "name": "Welcome: Green",
+  "description": "Welcome deck (40 cards, Foundations). Mana ramp and big creatures: fight spells clear the board for Surrak and his allies.",
+  "fr": {
+    "name": "Bienvenue : vert",
+    "description": "Deck de bienvenue (40 cartes, Foundations). Accélération de mana et grosses créatures : les combats forcés dégagent le terrain pour Surrak et ses alliés."
+  },
   "colors": [
     "G"
   ],

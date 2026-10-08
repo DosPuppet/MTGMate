@@ -1,6 +1,6 @@
 /**
- * Éléments propres à Outlaws of Thunder Junction (OTJ) et The Big Score (BIG) : jetons, filtre « hors-la-loi ».
- * Le DSL vient de Foundations (fdn/common.ts).
+ * Elements specific to Outlaws of Thunder Junction (OTJ) and The Big Score (BIG): tokens, "outlaw" filter.
+ * The DSL comes from Foundations (fdn/common.ts).
  */
 import { dsl, type ObjectFilter, type TokenSpec } from "@mtgx/engine";
 
@@ -8,11 +8,11 @@ export * from "../dft/common";
 
 const { activated, fx, ref, target } = dsl;
 
-/** Hors-la-loi (Assassin, Mercenaire, Pirate, Voleur, Sorcier). */
+/** Outlaws (Assassin, Mercenary, Pirate, Rogue, Warlock). */
 export const OUTLAW: ObjectFilter = { anySubtype: ["Assassin", "Mercenary", "Pirate", "Rogue", "Warlock"] };
 export const OUTLAW_CREATURE: ObjectFilter = { types: ["Creature"], ...OUTLAW };
 
-/** Mercenaire : créature rouge 1/1 avec « {T} : une créature ciblée que vous contrôlez gagne +1/+0. Rituel. » */
+/** Mercenary: 1/1 red creature with "{T}: Target creature you control gets +1/+0. Sorcery speed." */
 export const MERCENARY: TokenSpec = {
   name: "Mercenary",
   colors: ["R"],

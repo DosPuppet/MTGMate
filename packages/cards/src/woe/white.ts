@@ -1,8 +1,8 @@
 /**
- * Wilds of Eldraine — cartes blanches (lot A). Les Aventures ont une entrée par face (la créature sous son nom, le sort
- * d'Aventure sous le nom de l'Aventure) ; le Marchandage est lu dans le texte (`cond.kicked`).
+ * Wilds of Eldraine — white cards (lot A). Adventures have one entry per face (the creature under its name, the
+ * Adventure spell under the name of the Adventure); Bargain is read from the text (`cond.kicked`).
  */
-import type { ObjectFilter, TargetSpec, TokenSpec, TriggerSpec } from "@mtgx/engine";
+import { msg, type ObjectFilter, type TargetSpec, type TokenSpec, type TriggerSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -33,19 +33,19 @@ import {
 } from "./common";
 
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
-const ENCHANT_CREATURE = { filter: { types: ["Creature" as const] }, label: "créature" };
+const ENCHANT_CREATURE = { filter: { types: ["Creature" as const] }, label: "creature" };
 const YOUR_CREATURE = () => target.creature("t", { controller: "you" });
 const OPP_CREATURE = () => target.creature("t", { controller: "opponent" });
-/** « Chaque fois qu'un enchantement que vous contrôlez est mis dans un cimetière depuis le champ de bataille » */
+/** "Whenever an enchantment you control is put into a graveyard from the battlefield" */
 const YOUR_ENCHANTMENT_TO_GRAVEYARD: TriggerSpec = {
   on: "leaves",
   who: { types: ["Enchantment"], controller: "you" },
   to: "graveyard",
 };
-/** « Chaque fois qu'un enchantement que vous contrôlez arrive » */
+/** "Whenever an enchantment you control enters" */
 const YOUR_ENCHANTMENT_ENTERS = when.enters({ types: ["Enchantment"], controller: "you" });
 
-/** Oiseau : créature blanche 1/1 avec le vol. */
+/** Bird: 1/1 white creature with flying. */
 const BIRD: TokenSpec = {
   name: "Bird",
   colors: ["W"],
@@ -55,12 +55,12 @@ const BIRD: TokenSpec = {
   toughness: 1,
   keywords: ["flying"],
 };
-/** Souris : créature blanche 1/1. */
+/** Mouse: 1/1 white creature. */
 const MOUSE: TokenSpec = { name: "Mouse", colors: ["W"], types: ["Creature"], subtypes: ["Mouse"], power: 1, toughness: 1 };
 
 const TOKEN_YOU_CONTROL: TargetSpec = {
   id: "t",
-  label: "jeton que vous contrôlez",
+  label: "token you control",
   filter: { objects: { token: true, controller: "you" } },
 };
 
@@ -69,25 +69,25 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagez une créature adverse, marqueur d'étourdissement",
+        label: "Tap a creature an opponent controls, stun counter",
       }),
       triggered(
         { on: "taps", who: { types: ["Creature"], controller: "opponent" }, byYou: true },
         [fx.addCounters(ref.target(), 1)],
         {
           targets: [target.creature("t", { controller: "you" })],
-          label: "Vous engagez une créature adverse : un marqueur +1/+1 sur une créature que vous contrôlez",
+          label: "You tap a creature an opponent controls: a +1/+1 counter on a creature you control",
         },
       ),
     ],
   },
-  // Vol lu dans le texte.
+  // Flying read from the text.
   "Archon of the Wild Rose": {
     abilities: [
       staticAbility(
         { types: ["Creature"], controller: "you", other: true, enchanted: "byYou" },
         { setPower: 4, setToughness: 4, addKeywords: ["flying"] },
-        { label: "Vos autres créatures enchantées par vos Auras : 4/4 de base, avec le vol" },
+        { label: "Your other creatures enchanted by your Auras: base 4/4, with flying" },
       ),
     ],
   },
@@ -96,7 +96,7 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], controller: "you", enchanted: true },
         { power: 2, toughness: 2 },
-        { label: "Vos créatures enchantées : +2/+2" },
+        { label: "Your enchanted creatures: +2/+2" },
       ),
     ],
   },
@@ -107,18 +107,18 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   "Armory Mice": {
-    abilities: [staticAbility("self", { toughness: 2 }, { condition: CELEBRATION, label: "Célébration : +0/+2" })],
+    abilities: [staticAbility("self", { toughness: 2 }, { condition: CELEBRATION, label: "Celebration: +0/+2" })],
   },
-  // Aventure : la créature est vanille.
+  // Adventure: the creature is vanilla.
   "Besotted Knight": {},
   "Betroth the Beast": { spell: spell([YOUR_CREATURE()], [...createRole(ROYAL_ROLE)]) },
   "Break the Spell": {
     spell: spell(
-      [target.permanent("t", ["Enchantment"], {}, "enchantement")],
+      [target.permanent("t", ["Enchantment"], {}, "enchantment")],
       [
         fx.destroy(ref.target()),
-        // « Détruit de cette façon » : la cible n'existe plus (`filtered` ne garde que les objets présents) ; ses
-        // dernières informations connues disent si vous la contrôliez ou si c'était un jeton.
+        // "destroyed this way": the target no longer exists (`filtered` keeps only the objects present); its last known
+        // information tells whether you controlled it or it was a token.
         ...fx.when(
           cond.all(
             cond.not(cond.refMatches(ref.filtered(ref.target(), {}), {})),
@@ -133,7 +133,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, createRole(ROYAL_ROLE), {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Un Rôle royal sur une autre de vos créatures",
+        label: "A Royal Role on another of your creatures",
       }),
     ],
   },
@@ -144,7 +144,7 @@ export const WHITE: Record<string, CardScript> = {
       [
         fx.pump(ref.target(), 1, 1),
         fx.modify(ref.target(), {
-          addBlockRules: [block.notBy({ minPower: 3 }, "Imblocable par les créatures de force 3 ou plus")],
+          addBlockRules: [block.notBy({ minPower: 3 }, "Can't be blocked by creatures with power 3 or greater")],
         }),
       ],
     ),
@@ -152,29 +152,29 @@ export const WHITE: Record<string, CardScript> = {
   "Cooped Up": {
     enchant: ENCHANT_CREATURE,
     abilities: [
-      staticAbility("attached", { addKeywords: ["cantAttack", "cantBlock"] }, { label: "Ne peut ni attaquer ni bloquer" }),
-      activated({ mana: "{2}{W}", effects: [fx.exile(ref.attached)], label: "Exilez la créature enchantée" }),
+      staticAbility("attached", { addKeywords: ["cantAttack", "cantBlock"] }, { label: "Can't attack or block" }),
+      activated({ mana: "{2}{W}", effects: [fx.exile(ref.attached)], label: "Exile the enchanted creature" }),
     ],
   },
   "Cursed Courtier": {
-    abilities: [triggered(when.entersSelf, createRole(CURSED_ROLE, ref.self), { label: "Un Rôle maudit sur elle" })],
+    abilities: [triggered(when.entersSelf, createRole(CURSED_ROLE, ref.self), { label: "A Cursed Role on it" })],
   },
   "Discerning Financier": {
     abilities: [
       triggered(when.yourUpkeep, [fx.createTokens(TREASURE)], {
         condition: cond.opponentHasMore("lands"),
-        label: "Un adversaire a plus de terrains : un Trésor",
+        label: "An opponent controls more lands: a Treasure",
       }),
-      // « Choisissez un autre joueur » (sans le cibler) : il gagne le contrôle du Trésor ciblé.
+      // "Choose another player" (without targeting): they gain control of the targeted Treasure.
       activated({
         mana: "{2}{W}",
-        targets: [target.permanent("t", ["Artifact"], { subtype: "Treasure", controller: "you" }, "Trésor que vous contrôlez")],
+        targets: [target.permanent("t", ["Artifact"], { subtype: "Treasure", controller: "you" }, "Treasure you control")],
         effects: [
-          fx.chooseOpponent("p", { prompt: "Choisissez le joueur qui gagne le contrôle du Trésor" }),
+          fx.chooseOpponent("p", { prompt: "Choose the player who gains control of the Treasure" }),
           fx.giveControl(ref.target(), ref.stored("p")),
           fx.draw(1),
         ],
-        label: "Donnez un Trésor, piochez",
+        label: "Give a Treasure, draw",
       }),
     ],
   },
@@ -185,7 +185,7 @@ export const WHITE: Record<string, CardScript> = {
         sacrificeOther: { filter: { types: ["Enchantment"] }, count: 2 },
         fromGraveyard: true,
         effects: [fx.toHand(ref.selfCard)],
-        label: "Revient du cimetière en main",
+        label: "Returns from the graveyard to your hand",
       }),
     ],
   },
@@ -206,11 +206,11 @@ export const WHITE: Record<string, CardScript> = {
       ],
     ),
   },
-  // « Choisissez un nombre entre 0 et 10 » : un mode par nombre (choisi au lancement plutôt qu'à la résolution).
+  // "Choose a number between 0 and 10": one mode per number (chosen on casting rather than on resolution).
   "Expel the Interlopers": {
     spell: modal(
       ...Array.from({ length: 11 }, (_, n) =>
-        mode(`Nombre choisi : ${n}`, [], [fx.destroyAll({ types: ["Creature"], minPower: n })]),
+        mode(msg("Chosen number: {n}", { n }), [], [fx.destroyAll({ types: ["Creature"], minPower: n })]),
       ),
     ),
   },
@@ -221,32 +221,28 @@ export const WHITE: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature()],
         effects: [fx.tap(ref.target())],
-        label: "Engagez une créature",
+        label: "Tap a creature",
       }),
     ],
   },
   "Gallant Pie-Wielder": {
     abilities: [
-      staticAbility(
-        "self",
-        { addKeywords: ["doubleStrike"] },
-        { condition: CELEBRATION, label: "Célébration : double initiative" },
-      ),
+      staticAbility("self", { addKeywords: ["doubleStrike"] }, { condition: CELEBRATION, label: "Celebration: double strike" }),
     ],
   },
   "Glass Casket": {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.creature("t", { controller: "opponent", maxManaValue: 3 })],
-        label: "Exile une créature adverse de VM 3 ou moins",
+        label: "Exiles a creature an opponent controls with MV 3 or less",
       }),
     ],
   },
   "Hopeful Vigil": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(KNIGHT_VIGILANCE)], { label: "Un Chevalier 2/2 avec la vigilance" }),
-      triggered(when.putIntoGraveyardSelf, [fx.scry(2)], { label: "Regard 2" }),
-      activated({ mana: "{2}{W}", effects: [fx.sacrificeIt(ref.self)], label: "Sacrifiez cet enchantement" }),
+      triggered(when.entersSelf, [fx.createTokens(KNIGHT_VIGILANCE)], { label: "A 2/2 Knight with vigilance" }),
+      triggered(when.putIntoGraveyardSelf, [fx.scry(2)], { label: "Scry 2" }),
+      activated({ mana: "{2}{W}", effects: [fx.sacrificeIt(ref.self)], label: "Sacrifice this enchantment" }),
     ],
   },
   "Kellan's Lightblades": {
@@ -256,16 +252,16 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   "Knight of Doves": {
-    abilities: [triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.createTokens(BIRD)], { label: "Un Oiseau 1/1 volant" })],
+    abilities: [triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.createTokens(BIRD)], { label: "A 1/1 flying Bird" })],
   },
   "Moment of Valor": {
     spell: modal(
       mode(
-        "Dégagez une créature : +1/+0 et l'indestructibilité",
+        "Untap a creature: +1/+0 and indestructible",
         [target.creature()],
         [fx.untap(ref.target()), fx.pump(ref.target(), 1, 0, ["indestructible"])],
       ),
-      mode("Détruisez une créature de force 4 ou plus", [target.creature("t", { minPower: 4 })], [fx.destroy(ref.target())]),
+      mode("Destroy a creature with power 4 or greater", [target.creature("t", { minPower: 4 })], [fx.destroy(ref.target())]),
     ),
   },
   "Moonshaker Cavalry": {
@@ -273,7 +269,7 @@ export const WHITE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.pumpAll(YOUR_CREATURES, amount.count(YOUR_CREATURES), amount.count(YOUR_CREATURES), ["flying"])],
-        { label: "Vos créatures : le vol et +X/+X" },
+        { label: "Your creatures: flying and +X/+X" },
       ),
     ],
   },
@@ -284,27 +280,27 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       chapter([1], [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))], {
         targets: [target.upTo(1, target.creature())],
-        label: "Chapitre I — Exilez jusqu'à une créature",
+        label: "Chapter I — Exile up to one creature",
       }),
       chapter([2], [fx.pump(ref.target(), 2, 2, ["flying"])], {
         targets: [YOUR_CREATURE()],
-        label: "Chapitre II — +2/+2 et le vol",
+        label: "Chapter II — +2/+2 and flying",
       }),
-      chapter([3], [fx.toBattlefield(ref.linked)], { label: "Chapitre III — La carte exilée revient" }),
+      chapter([3], [fx.toBattlefield(ref.linked)], { label: "Chapter III — The exiled card returns" }),
     ],
   },
   "Protective Parents": {
     abilities: [
       triggered(when.diesSelf, createRole(YOUNG_HERO_ROLE), {
         targets: [target.upTo(1, target.creature("t", { controller: "you" }))],
-        label: "Un Rôle de jeune héros",
+        label: "A Young Hero Role",
       }),
     ],
   },
   "Regal Bunnicorn": { cdaPT: amount.count({ notTypes: ["Land"], controller: "you" }) },
   "Return Triumphant": {
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins")],
+      [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "creature card with MV 3 or less")],
       [fx.moveTo(ref.target(), { to: "battlefield" }, { name: "r" }), ...createRole(YOUNG_HERO_ROLE, ref.stored("r"))],
     ),
   },
@@ -312,16 +308,16 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(YOUR_ENCHANTMENT_ENTERS, [fx.tap(ref.target())], {
         targets: [OPP_CREATURE()],
-        label: "Engagez une créature adverse",
+        label: "Tap a creature an opponent controls",
       }),
     ],
   },
   "Savior of the Sleeping": {
-    abilities: [triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.addCounters(ref.self, 1)], { label: "Un marqueur +1/+1" })],
+    abilities: [triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.addCounters(ref.self, 1)], { label: "A +1/+1 counter" })],
   },
   "Slumbering Keepguard": {
     abilities: [
-      triggered(YOUR_ENCHANTMENT_ENTERS, [fx.scry(1)], { label: "Regard 1" }),
+      triggered(YOUR_ENCHANTMENT_ENTERS, [fx.scry(1)], { label: "Scry 1" }),
       activated({
         mana: "{2}{W}",
         effects: [
@@ -331,7 +327,7 @@ export const WHITE: Record<string, CardScript> = {
             amount.count({ types: ["Enchantment"], controller: "you" }),
           ),
         ],
-        label: "+1/+1 par enchantement que vous contrôlez",
+        label: "+1/+1 for each enchantment you control",
       }),
     ],
   },
@@ -339,8 +335,8 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.yourCombat,
-        fx.mayPay("{1}", "Payer {1} pour un Rôle de sorcier ?", fx.reflexive([YOUR_CREATURE()], createRole(SORCERER_ROLE))),
-        { label: "{1} : un Rôle de sorcier" },
+        fx.mayPay("{1}", "Pay {1} for a Sorcerer Role?", fx.reflexive([YOUR_CREATURE()], createRole(SORCERER_ROLE))),
+        { label: "{1}: a Sorcerer Role" },
       ),
     ],
   },
@@ -348,23 +344,23 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.when(cond.targetChosen("t"), fx.may("Renvoyer ce permanent dans la main ?", fx.bounce(ref.target()), fx.scry(2))),
+        fx.when(cond.targetChosen("t"), fx.may("Return this permanent to hand?", fx.bounce(ref.target()), fx.scry(2))),
         {
-          targets: [target.optional(target.nonland("t", { controller: "you", other: true }, "autre permanent non-terrain"))],
-          label: "Renvoyez un permanent, regard 2",
+          targets: [target.optional(target.nonland("t", { controller: "you", other: true }, "other nonland permanent"))],
+          label: "Return a permanent, scry 2",
         },
       ),
     ],
   },
   "Three Blind Mice": {
     abilities: [
-      chapter([1], [fx.createTokens(MOUSE)], { label: "Chapitre I — Une Souris 1/1" }),
+      chapter([1], [fx.createTokens(MOUSE)], { label: "Chapter I — A 1/1 Mouse" }),
       chapter([2, 3], [fx.copyToken(ref.target())], {
         targets: [TOKEN_YOU_CONTROL],
-        label: "Chapitres II, III — Copiez un de vos jetons",
+        label: "Chapters II, III — Copy one of your tokens",
       }),
       chapter([4], [fx.pumpAll(YOUR_CREATURES, 1, 1, ["vigilance"])], {
-        label: "Chapitre IV — Vos créatures : +1/+1 et la vigilance",
+        label: "Chapter IV — Your creatures: +1/+1 and vigilance",
       }),
     ],
   },
@@ -373,23 +369,21 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, addKeywords: ["lifelink"] },
-        { condition: CELEBRATION, label: "Célébration : +1/+0 et le lien de vie" },
+        { condition: CELEBRATION, label: "Celebration: +1/+0 and lifelink" },
       ),
     ],
   },
   "Unassuming Sage": {
     abilities: [
-      triggered(
-        when.entersSelf,
-        fx.mayPay("{2}", "Payer {2} pour un Rôle de sorcier ?", ...createRole(SORCERER_ROLE, ref.self)),
-        { label: "{2} : un Rôle de sorcier" },
-      ),
+      triggered(when.entersSelf, fx.mayPay("{2}", "Pay {2} for a Sorcerer Role?", ...createRole(SORCERER_ROLE, ref.self)), {
+        label: "{2}: a Sorcerer Role",
+      }),
     ],
   },
   "Virtue of Loyalty": {
     abilities: [
       triggered(when.yourEndStep, [fx.addCountersAll(YOUR_CREATURES), fx.untapAll(YOUR_CREATURES)], {
-        label: "Un marqueur +1/+1 sur chacune de vos créatures, puis dégagez-les",
+        label: "A +1/+1 counter on each of your creatures, then untap them",
       }),
     ],
   },
@@ -398,16 +392,16 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.upTo(1, target.creature("t", { other: true, notSubtype: "Fox" }))],
-        label: "Exile une autre créature non-Renard",
+        label: "Exiles another non-Fox creature",
       }),
-      activated({ mana: "{1}{W}", sacrifice: true, effects: [fx.gainLife(2)], label: "Gagnez 2 PV" }),
+      activated({ mana: "{1}{W}", sacrifice: true, effects: [fx.gainLife(2)], label: "Gain 2 life" }),
     ],
   },
   "Heartflame Duelist": {
     abilities: [
       playerStatic({
         spellKeywords: { filter: INSTANT_SORCERY, keywords: ["lifelink"] },
-        label: "Vos éphémères et rituels ont le lien de vie",
+        label: "Your instants and sorceries have lifelink",
       }),
     ],
   },
@@ -417,7 +411,7 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], token: true, controller: "you" },
         { power: 1, toughness: 1 },
-        { label: "Vos jetons de créature : +1/+1" },
+        { label: "Your creature tokens: +1/+1" },
       ),
     ],
   },
@@ -431,10 +425,10 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.pump(ref.target(), 2, 2)], { targets: [YOUR_CREATURE()], label: "+2/+2" })],
   },
   "Cleave Shadows": { spell: spell([], [fx.pumpAll({ types: ["Creature"], controller: "opponent" }, -1, -1)]) },
-  "Woodland Acolyte": { abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" })] },
+  "Woodland Acolyte": { abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" })] },
   "Mend the Wilds": {
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true }, "you", "carte de permanent de votre cimetière")],
+      [target.cardInGraveyard("t", { permanent: true }, "you", "permanent card in your graveyard")],
       [fx.moveTo(ref.target(), { to: "libraryTop" })],
     ),
   },
@@ -442,18 +436,18 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target()), fx.createTokens(FOOD)], {
         targets: [OPP_CREATURE()],
-        label: "Exile une créature adverse, une Nourriture",
+        label: "Exiles a creature an opponent controls, a Food",
       }),
     ],
   },
   "Lady of Laughter": {
-    abilities: [triggered(when.yourEndStep, [fx.draw(1)], { condition: CELEBRATION, label: "Célébration : piochez une carte" })],
+    abilities: [triggered(when.yourEndStep, [fx.draw(1)], { condition: CELEBRATION, label: "Celebration: draw a card" })],
   },
   "Pests of Honor": {
     abilities: [
       triggered(when.yourCombat, [fx.addCounters(ref.self, 1)], {
         condition: CELEBRATION,
-        label: "Célébration : un marqueur +1/+1",
+        label: "Celebration: a +1/+1 counter",
       }),
     ],
   },

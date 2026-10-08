@@ -8,6 +8,7 @@ import { addEffect, moveWithSpec } from "../src/effects";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, moveObject } from "../src/state";
+import { plainText } from "../src/text";
 import type { GameState } from "../src/types";
 import {
   type Answer,
@@ -77,7 +78,7 @@ describe("Final Fantasy", () => {
     s = settle(s);
     expect(s.objects[sahagin]?.counters["+1/+1"] ?? 0).toBe(0);
     // Palier {3} : 4 mana dépensés.
-    const mode = castModes(s, b).find((m) => m.label?.includes("4 blessures"));
+    const mode = castModes(s, b).find((m) => m.label?.includes("4 damage"));
     s = act(s, "p1", { type: "cast", card: b, mode: mode?.index, targets: { t: [wurm] } });
     s = settle(s);
     expect(s.objects[sahagin]?.counters["+1/+1"]).toBe(1);
@@ -123,7 +124,7 @@ describe("Final Fantasy", () => {
     const sword = idOf(s, "p1", "battlefield", "Excalibur II");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const equip = (s.defs[s.objects[sword]?.defId ?? ""]?.abilities ?? []).findIndex(
-      (a) => a.kind === "activated" && a.label?.startsWith("Équiper"),
+      (a) => a.kind === "activated" && a.label?.startsWith("Equip"),
     );
     s = act(s, "p1", { type: "activate", source: sword, ability: equip, targets: { t: [bear] } });
     s = passBoth(s);
@@ -142,7 +143,7 @@ describe("Final Fantasy", () => {
     });
     const jill = idOf(s, "p1", "battlefield", "Jill, Shiva's Dominant // Shiva, Warden of Ice");
     const index = (s.defs[s.objects[jill]?.defId ?? ""]?.abilities ?? []).findIndex(
-      (a) => a.kind === "activated" && a.label?.startsWith("Exilez-la"),
+      (a) => a.kind === "activated" && a.label?.startsWith("Exile it"),
     );
     s = act(s, "p1", { type: "activate", source: jill, ability: index });
     s = settle(s);
@@ -353,7 +354,7 @@ describe("Final Fantasy", () => {
     let s = scenario({ p1: { battlefield: ["PuPu UFO", "Adventurer's Inn", "Capital City", ...lands("Island", 3)] } });
     const ufo = idOf(s, "p1", "battlefield", "PuPu UFO");
     const index = (s.defs[s.objects[ufo]?.defId ?? ""]?.abilities ?? []).findIndex(
-      (a) => a.kind === "activated" && a.label?.startsWith("Force de base"),
+      (a) => a.kind === "activated" && a.label?.startsWith("Base power"),
     );
     s = act(s, "p1", { type: "activate", source: ufo, ability: index });
     s = passBoth(s);
@@ -769,7 +770,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
   /** Active la capacité de `source` dont le libellé commence par `label` (la première, sans libellé). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const opt = legalActions(s, player).find(
-      (a) => a.type === "activate" && a.source === source && (!label || a.label?.startsWith(label)),
+      (a) => a.type === "activate" && a.source === source && (!label || plainText(a.label ?? "").startsWith(label)),
     );
     if (opt?.type !== "activate") throw new Error(`capacité « ${label ?? "?"} » introuvable`);
     return act(s, player, { type: "activate", source, ability: opt.ability, ...extra });
@@ -809,7 +810,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const gear = idOf(s, "p1", "battlefield", "Aettir and Priwen");
-      s = resolve(activate(s, "p1", gear, "Équiper", { targets: { t: [bear] } }));
+      s = resolve(activate(s, "p1", gear, "Equip", { targets: { t: [bear] } }));
       expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(5);
       expect(pt(s, bear)).toEqual([14, 14]);
       s.players.p1!.life = 6;
@@ -869,7 +870,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === sword);
       const legal = opt?.type === "activate" ? (opt.targets[0]?.legal ?? []) : [];
       expect(legal).toEqual([cloud]);
-      s = resolve(activate(s, "p1", sword, "Équiper", { targets: { t: [cloud] } }));
+      s = resolve(activate(s, "p1", sword, "Equip", { targets: { t: [cloud] } }));
       expect(s.objects[sword]?.attachedTo).toBe(cloud);
       expect(chars(s, cloud).keywords).toEqual(expect.arrayContaining(["doubleStrike", "indestructible"]));
       const t = scenario({ active: "p2", p1: { battlefield: ["Cloud, Planet's Champion", "Buster Sword"] } });
@@ -1246,16 +1247,16 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       // Deux autres Villes : {3}{G}{U} pour cinq sources de mana.
       let u = scenario({ p1: { battlefield: [BALAMB, "Adventurer's Inn", "Capital City", "Forest", "Island", "Forest"] } });
       const garden = idOf(u, "p1", "battlefield", BALAMB);
-      expect(canUse(u, "p1", garden, "Transformez")).toBe(true);
+      expect(canUse(u, "p1", garden, "Transform")).toBe(true);
       const v = scenario({ p1: { battlefield: [BALAMB, "Forest", "Island", "Forest", "Forest", "Forest"] } });
-      expect(canUse(v, "p1", idOf(v, "p1", "battlefield", BALAMB), "Transformez")).toBe(false);
-      u = resolve(activate(u, "p1", garden, "Transformez"));
+      expect(canUse(v, "p1", idOf(v, "p1", "battlefield", BALAMB), "Transform")).toBe(false);
+      u = resolve(activate(u, "p1", garden, "Transform"));
       expect(chars(u, garden).name).toBe("Balamb Garden, Airborne");
       expect(chars(u, garden).keywords).toContain("flying");
       let w = scenario({ p1: { battlefield: [BALAMB, "Bear Cub"] } });
       const g2 = idOf(w, "p1", "battlefield", BALAMB);
       flip(w, g2);
-      w = resolve(activate(w, "p1", g2, "Équipage", { tap: [idOf(w, "p1", "battlefield", "Bear Cub")] }));
+      w = resolve(activate(w, "p1", g2, "Crew", { tap: [idOf(w, "p1", "battlefield", "Bear Cub")] }));
       w = resolve(attack(w, [g2]));
       expect(hand(w, "p1")).toBe(1);
     });
@@ -1270,7 +1271,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(s, regalia).keywords).toEqual(expect.arrayContaining(["reach", "vigilance"]));
       expect(chars(s, idOf(s, "p2", "battlefield", "The Regalia")).keywords).not.toContain("reach");
       const bf = idOf(s, "p1", "battlefield", "Balthier and Fran");
-      s = resolve(activate(s, "p1", regalia, "Équipage", { tap: [bf] }));
+      s = resolve(activate(s, "p1", regalia, "Crew", { tap: [bf] }));
       s = attack(s, [regalia]);
       s = play(
         s,
@@ -1367,7 +1368,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         s = resolve(s, (req, _p, cur) => pickNamed(cur, req, "Shivan Dragon"));
         expect(exiled(s, "Shivan Dragon")).toHaveLength(1);
         expect(namesIn(s, s.players.p1?.library)[0]).toBe("Opt");
-        s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Clive's Hideaway"), "Jouez"));
+        s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Clive's Hideaway"), "Play"));
         return { s, dragon: exiled(s, "Shivan Dragon")[0] as string };
       };
       const four = run(4);
@@ -1451,7 +1452,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, bear).keywords).not.toContain("haste");
       // Équiper {2} - {2} : gratuit.
-      s = resolve(activate(s, "p1", token, "Équiper", { targets: { t: [bear] } }));
+      s = resolve(activate(s, "p1", token, "Equip", { targets: { t: [bear] } }));
       expect(s.objects[token]?.attachedTo).toBe(bear);
       expect(chars(s, bear).keywords).toContain("haste");
       s = play(
@@ -2274,9 +2275,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p2: { battlefield: ["Bear Cub"] },
       });
       const bear = idOf(t, "p1", "battlefield", "Bear Cub");
-      t = resolve(
-        activate(t, "p1", idOf(t, "p1", "battlefield", "The Earth Crystal"), "Répartissez", { targets: { t: [bear] } }),
-      );
+      t = resolve(activate(t, "p1", idOf(t, "p1", "battlefield", "The Earth Crystal"), "Distribute", { targets: { t: [bear] } }));
       expect(counters(t, bear)).toBe(4);
       // Les créatures adverses : pas doublé.
       let v = scenario({
@@ -2294,7 +2293,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(s, whale).keywords).toContain("flying");
       const top = s.players.p1?.library[0] as string;
       expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === top)).toBe(false);
-      s = resolve(activate(s, "p1", whale, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      s = resolve(activate(s, "p1", whale, "Crew", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
       s = throughCombat(attack(s, [whale]));
       expect(life(s, "p2")).toBe(17);
       expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === top)).toBe(true);
@@ -2304,7 +2303,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       let s = scenario({ p1: { battlefield: ["The Regalia", "Bear Cub"], library: ["Opt", "Bear Cub", "Island", "Forest"] } });
       const regalia = idOf(s, "p1", "battlefield", "The Regalia");
       expect(chars(s, regalia).keywords).toContain("haste");
-      s = resolve(activate(s, "p1", regalia, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      s = resolve(activate(s, "p1", regalia, "Crew", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
       s = resolve(attack(s, [regalia]));
       const island = idOf(s, "p1", "battlefield", "Island");
       expect(s.objects[island]?.tapped).toBe(true);
@@ -2436,7 +2435,9 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(hand(s, "p1")).toBe(1);
       let t = scenario({ p1: { battlefield: [VENAT, ...lands("Plains", 7)] }, p2: { battlefield: ["Serra Angel", "Forest"] } });
       const venat = idOf(t, "p1", "battlefield", VENAT);
-      t = resolve(activate(t, "p1", venat, "Division", { targets: { t: [idOf(t, "p2", "battlefield", "Serra Angel")] } }));
+      t = resolve(
+        activate(t, "p1", venat, "Hero's Sundering", { targets: { t: [idOf(t, "p2", "battlefield", "Serra Angel")] } }),
+      );
       expect(exiled(t, "Serra Angel")).toHaveLength(1);
       expect(chars(t, venat).name).toBe("Hydaelyn, the Mothercrystal");
       expect(chars(t, venat).keywords).toContain("indestructible");
@@ -2526,7 +2527,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
 
   /** Index du mode (ou de la combinaison de modes) dont le libellé est `label`. */
   const modeOf = (s: S, card: string, label: string) => {
-    const mode = castModes(s, card).find((m) => m.label === label);
+    const mode = castModes(s, card).find((m) => plainText(m.label ?? "") === label);
     if (!mode)
       throw new Error(
         `mode « ${label} » introuvable (${castModes(s, card)
@@ -2654,15 +2655,15 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
       });
       const card = idOf(s, "p1", "hand", "Battle Menu");
-      const magic = castModes(s, card).find((m) => m.label?.startsWith("Magie"));
+      const magic = castModes(s, card).find((m) => m.label?.startsWith("Magic"));
       expect(magic?.targets[0]?.legal).toEqual([idOf(s, "p2", "battlefield", "Serra Angel")]);
-      const knight = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Attaque : Chevalier 2/2") }));
+      const knight = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Attack: 2/2 Knight") }));
       expect(idsOf(knight, "p1", "battlefield", "Knight")).toHaveLength(1);
-      const item = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Objet : +4 PV") }));
+      const item = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Item: +4 life") }));
       expect(life(item, "p1")).toBe(24);
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       const ability = resolve(
-        act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Capacité : +0/+4"), targets: { t: [bear] } }),
+        act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Ability: +0/+4"), targets: { t: [bear] } }),
       );
       expect(pt(ability, bear)).toEqual([2, 6]);
     });
@@ -2747,7 +2748,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         act(s, "p1", {
           type: "cast",
           card,
-          mode: modeOf(s, card, "Combat + Ajoutez un marqueur de savoir"),
+          mode: modeOf(s, card, "Fight + Put a lore counter"),
           targets: { a: [dragon], b: [angel], l: [shiva] },
         }),
       );
@@ -2759,9 +2760,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       });
       const c2 = idOf(t, "p1", "hand", "Clash of the Eikons");
       const s2 = idOf(t, "p1", "battlefield", "Summon: Shiva");
-      t = resolve(
-        act(t, "p1", { type: "cast", card: c2, mode: modeOf(t, c2, "Retirez un marqueur de savoir"), targets: { r: [s2] } }),
-      );
+      t = resolve(act(t, "p1", { type: "cast", card: c2, mode: modeOf(t, c2, "Remove a lore counter"), targets: { r: [s2] } }));
       expect(t.objects[s2]?.counters.lore).toBe(1);
     });
 
@@ -2816,7 +2815,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       s.objects[frag]!.attachedTo = bear;
       bump(s);
       expect(pt(s, bear)).toEqual([3, 3]);
-      s = resolve(activate(s, "p1", frag, "Exilez-la"));
+      s = resolve(activate(s, "p1", frag, "Exile it"));
       const alex = idOf(s, "p1", "battlefield", CF);
       expect(chars(s, alex).name).toBe("Summon: Alexander");
       expect(chars(s, alex).keywords).toContain("flying");
@@ -2841,10 +2840,10 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(s, hero).subtypes).toContain("Knight");
       const sword = idOf(s, "p1", "battlefield", "Dark Knight's Greatsword");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = resolve(activate(s, "p1", sword, "Équiper", { targets: { t: [bear] } }));
+      s = resolve(activate(s, "p1", sword, "Equip", { targets: { t: [bear] } }));
       expect(life(s, "p1")).toBe(17);
       expect(pt(s, bear)).toEqual([5, 2]);
-      expect(canUse(s, "p1", sword, "Équiper")).toBe(false);
+      expect(canUse(s, "p1", sword, "Equip")).toBe(false);
     });
 
     it("Delivery Moogle : vol ; cherche dans votre bibliothèque et/ou votre cimetière une carte d'artefact de VM 2 ou moins", () => {
@@ -2871,7 +2870,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       let s = scenario({ p1: { battlefield: ["Demon Wall", ...lands("Swamp", 6)] } });
       const wall = idOf(s, "p1", "battlefield", "Demon Wall");
       expect(chars(s, wall).keywords).toEqual(expect.arrayContaining(["defender", "menace"]));
-      s = resolve(activate(s, "p1", wall, "Deux marqueurs"));
+      s = resolve(activate(s, "p1", wall, "Two +1/+1 counters"));
       expect(pt(s, wall)).toEqual([5, 5]);
       expect(chars(s, wall).keywords).not.toContain("defender");
       s = throughCombat(attack(s, [wall]));
@@ -2933,7 +2932,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       });
       const eden = idOf(s, "p1", "battlefield", "Eden, Seat of the Sanctum");
       let offered: string[] = [];
-      s = resolve(activate(s, "p1", eden, "Meulez"), (req, _p, cur) => {
+      s = resolve(activate(s, "p1", eden, "Mill"), (req, _p, cur) => {
         if (req.type === "yesNo") return [1];
         if (req.type !== "pick") return undefined;
         offered = namesIn(cur, req.options) as string[];
@@ -3037,7 +3036,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       const tSpear = idOf(t, "p1", "battlefield", "Shadowspear");
       const cub = idOf(t, "p1", "battlefield", "Bear Cub");
       const options = legalActions(t, "p1").filter((a) => a.type === "activate" && a.source === tSpear);
-      const equip = options.find((a) => a.type === "activate" && /Équiper/.test(a.label ?? ""));
+      const equip = options.find((a) => a.type === "activate" && /Equip/.test(a.label ?? ""));
       expect(equip?.type).toBe("activate");
       t = settle(
         act(t, "p1", {
@@ -3213,12 +3212,12 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p2: { graveyard: ["Bear Cub", "Opt"] },
       });
       const ignis = idOf(t, "p1", "battlefield", "Ignis Scientia");
-      t = resolve(activate(t, "p1", ignis, "Exilez", { targets: { t: [idOf(t, "p2", "graveyard", "Bear Cub")] } }));
+      t = resolve(activate(t, "p1", ignis, "Exile", { targets: { t: [idOf(t, "p2", "graveyard", "Bear Cub")] } }));
       expect(exiled(t, "Bear Cub")).toHaveLength(1);
       expect(idsOf(t, "p1", "battlefield", "Food")).toHaveLength(1);
       let u = scenario({ p1: { battlefield: ["Ignis Scientia", "Forest", "Forest", "Island"] }, p2: { graveyard: ["Opt"] } });
       u = resolve(
-        activate(u, "p1", idOf(u, "p1", "battlefield", "Ignis Scientia"), "Exilez", {
+        activate(u, "p1", idOf(u, "p1", "battlefield", "Ignis Scientia"), "Exile", {
           targets: { t: [idOf(u, "p2", "graveyard", "Opt")] },
         }),
       );
@@ -3279,7 +3278,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       s = resolve(cast(s, "p1", "Magitek Armor"));
       const hero = idOf(s, "p1", "battlefield", "Hero");
       const armor = idOf(s, "p1", "battlefield", "Magitek Armor");
-      s = resolve(activate(s, "p1", armor, "Équipage", { tap: [hero] }));
+      s = resolve(activate(s, "p1", armor, "Crew", { tap: [hero] }));
       expect(chars(s, armor).types).toContain("Creature");
     });
 
@@ -3307,7 +3306,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         },
       });
       const card = idOf(s, "p1", "hand", "Opera Love Song");
-      let a = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Exilez les deux cartes du dessus, jouables") }));
+      let a = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Exile the top two cards, playable") }));
       const forest = exiled(a, "Forest")[0] as string;
       expect(exiled(a, "Opt")).toHaveLength(1);
       expect(legalActions(a, "p1").some((x) => x.type === "playLand" && x.card === forest)).toBe(true);
@@ -3316,7 +3315,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(legalActions(a, "p1").some((x) => x.type === "playLand" && x.card === forest)).toBe(false);
       const bears = idsOf(s, "p1", "battlefield", "Bear Cub");
       const b = resolve(
-        act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Une ou deux créatures gagnent +2/+0"), targets: { t: bears } }),
+        act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "One or two creatures get +2/+0"), targets: { t: bears } }),
       );
       expect(bears.map((id) => pt(b, id))).toEqual([
         [4, 2],
@@ -3347,19 +3346,17 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
     it("Phoenix Down : {1}{W}, {T}, exil : une créature de VM 4 ou moins revient engagée, ou un Squelette, Esprit ou Zombie est exilé", () => {
       let s = scenario({ p1: { battlefield: ["Phoenix Down", "Plains", "Plains"], graveyard: ["Bear Cub", "Shivan Dragon"] } });
       const down = idOf(s, "p1", "battlefield", "Phoenix Down");
-      const opt = legalActions(s, "p1").find(
-        (a) => a.type === "activate" && a.source === down && a.label?.startsWith("Renvoyez"),
-      );
+      const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === down && a.label?.startsWith("Return"));
       expect(opt?.type === "activate" && opt.targets[0]?.legal).toEqual([idOf(s, "p1", "graveyard", "Bear Cub")]);
-      s = resolve(activate(s, "p1", down, "Renvoyez", { targets: { t: [idOf(s, "p1", "graveyard", "Bear Cub")] } }));
+      s = resolve(activate(s, "p1", down, "Return", { targets: { t: [idOf(s, "p1", "graveyard", "Bear Cub")] } }));
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
       expect(exiled(s, "Phoenix Down")).toHaveLength(1);
       const zombie = customCard({ name: "Zombie", subtypes: ["Zombie"], power: 2, toughness: 2 });
       let t = scenario({ p1: { battlefield: ["Phoenix Down", "Plains", "Plains"] }, p2: { battlefield: [zombie, "Bear Cub"] } });
       const td = idOf(t, "p1", "battlefield", "Phoenix Down");
-      const o2 = legalActions(t, "p1").find((a) => a.type === "activate" && a.source === td && a.label?.startsWith("Exilez"));
+      const o2 = legalActions(t, "p1").find((a) => a.type === "activate" && a.source === td && a.label?.startsWith("Exile"));
       expect(o2?.type === "activate" && o2.targets[0]?.legal).toEqual([idOf(t, "p2", "battlefield", "Zombie")]);
-      t = resolve(activate(t, "p1", td, "Exilez", { targets: { t: [idOf(t, "p2", "battlefield", "Zombie")] } }));
+      t = resolve(activate(t, "p1", td, "Exile", { targets: { t: [idOf(t, "p2", "battlefield", "Zombie")] } }));
       expect(exiled(t, "Zombie")).toHaveLength(1);
     });
 
@@ -3369,7 +3366,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p2: { battlefield: ["Bear Cub"], hand: ["Forest", "Bear Cub", "Buster Sword"] },
       });
       const card = idOf(s, "p1", "hand", "Poison the Waters");
-      const a = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Toutes les créatures -1/-1") }));
+      const a = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "All creatures get -1/-1") }));
       expect(idsOf(a, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
       expect(pt(a, idOf(a, "p2", "battlefield", "Bear Cub"))).toEqual([1, 1]);
       let chooser = "";
@@ -3378,7 +3375,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         act(s, "p1", {
           type: "cast",
           card,
-          mode: modeOf(s, card, "Défausse d'un artefact ou d'une créature"),
+          mode: modeOf(s, card, "Discard an artifact or creature"),
           targets: { t: ["p2"] },
         }),
         (req, p, cur) => {
@@ -3516,7 +3513,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       const s = scenario({ p1: { battlefield: ["Bear Cub", "Plains", "Plains"], hand: ["Restoration Magic"] } });
       const card = idOf(s, "p1", "hand", "Restoration Magic");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      const mode = castModes(s, card).find((m) => m.label?.includes("Extra Soin"));
+      const mode = castModes(s, card).find((m) => m.label?.includes("Cura"));
       const t = resolve(act(s, "p1", { type: "cast", card, mode: mode?.index, targets: { t: [bear] } }));
       expect(chars(t, bear).keywords).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
       expect(life(t, "p1")).toBe(23);
@@ -3558,7 +3555,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(mana.players.p1?.manaPool.C).toBe(2);
       const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ring);
       expect(opt?.type === "activate" && opt.targets[0]?.legal).not.toContain(idOf(s, "p2", "battlefield", "Forest"));
-      s = resolve(activate(s, "p1", ring, "Engagez", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }));
+      s = resolve(activate(s, "p1", ring, "Tap", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }));
       expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.tapped).toBe(true);
       expect(life(s, "p1")).toBe(19);
     });
@@ -3600,7 +3597,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         },
       });
       t = resolve(
-        activate(t, "p1", idOf(t, "p1", "battlefield", "Rydia, Summoner of Mist"), "Invocation", {
+        activate(t, "p1", idOf(t, "p1", "battlefield", "Rydia, Summoner of Mist"), "Summon", {
           x: 2,
           targets: { t: [idOf(t, "p1", "graveyard", "Summon: Brynhildr")] },
         }),
@@ -3613,7 +3610,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p1: { battlefield: ["Rydia, Summoner of Mist", "Mountain", "Mountain"], graveyard: ["Summon: Brynhildr"] },
       });
       u = resolve(
-        activate(u, "p1", idOf(u, "p1", "battlefield", "Rydia, Summoner of Mist"), "Invocation", {
+        activate(u, "p1", idOf(u, "p1", "battlefield", "Rydia, Summoner of Mist"), "Summon", {
           x: 1,
           targets: { t: [idOf(u, "p1", "graveyard", "Summon: Brynhildr")] },
         }),
@@ -3624,7 +3621,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p1: { battlefield: ["Rydia, Summoner of Mist", ...lands("Mountain", 3)], graveyard: ["Summon: Brynhildr"] },
       });
       v = resolve(
-        activate(v, "p1", idOf(v, "p1", "battlefield", "Rydia, Summoner of Mist"), "Invocation", {
+        activate(v, "p1", idOf(v, "p1", "battlefield", "Rydia, Summoner of Mist"), "Summon", {
           x: 3,
           targets: { t: [idOf(v, "p1", "graveyard", "Summon: Brynhildr")] },
         }),
@@ -3642,10 +3639,10 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p2: { battlefield: ["Bear Cub"] },
       });
       const card = idOf(s, "p1", "hand", "Rydia's Return");
-      const a = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Vos créatures gagnent +3/+3") }));
+      const a = resolve(act(s, "p1", { type: "cast", card, mode: modeOf(s, card, "Creatures you control get +3/+3") }));
       expect(pt(a, idOf(a, "p1", "battlefield", "Bear Cub"))).toEqual([5, 5]);
       expect(pt(a, idOf(a, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
-      const mode = castModes(s, card).find((m) => m.label === "Renvoyez jusqu'à deux cartes de permanent");
+      const mode = castModes(s, card).find((m) => m.label === "Return up to two permanent cards");
       expect(mode?.targets[0]?.legal).not.toContain(idOf(s, "p1", "graveyard", "Opt"));
       const targets = [idOf(s, "p1", "graveyard", "Shivan Dragon"), idOf(s, "p1", "graveyard", "Forest")];
       const b = resolve(act(s, "p1", { type: "cast", card, mode: mode?.index, targets: { t: targets } }));
@@ -3754,7 +3751,7 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       let s = scenario({ p1: { battlefield: [SQ, "Bear Cub", "Buster Sword", ...lands("Plains", 3)] } });
       const camp = idOf(s, "p1", "battlefield", SQ);
       flip(s, camp);
-      s = resolve(activate(s, "p1", camp, "Un marqueur", { sacrifice: [idOf(s, "p1", "battlefield", "Buster Sword")] }));
+      s = resolve(activate(s, "p1", camp, "A +1/+1 counter", { sacrifice: [idOf(s, "p1", "battlefield", "Buster Sword")] }));
       expect(idsOf(s, "p1", "graveyard", "Buster Sword")).toHaveLength(1);
       expect(counters(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(1);
     });
@@ -4071,12 +4068,12 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
 
     it("The Gold Saucer : {2}, {T} : pile ou face, un Trésor si vous gagnez (Edgar fait gagner) ; {3}, {T}, sacrifiez deux artefacts : piochez", () => {
       let s = scenario({ p1: { battlefield: ["The Gold Saucer", "Edgar, King of Figaro", "Plains", "Plains"] } });
-      s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "The Gold Saucer"), "Pile ou face"));
+      s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "The Gold Saucer"), "Flip a coin"));
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
       const trinket = customCard({ name: "Babiole", typeLine: "Artifact", types: ["Artifact"] });
       let t = scenario({ p1: { battlefield: ["The Gold Saucer", trinket, trinket, ...lands("Plains", 3)] } });
       t = resolve(
-        activate(t, "p1", idOf(t, "p1", "battlefield", "The Gold Saucer"), "Piochez", {
+        activate(t, "p1", idOf(t, "p1", "battlefield", "The Gold Saucer"), "Draw", {
           sacrifice: idsOf(t, "p1", "battlefield", "Babiole"),
         }),
       );
@@ -4127,9 +4124,9 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       const card = idOf(s, "p1", "hand", "Tifa's Limit Break");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const tier = (label: string) => castModes(s, card).find((m) => m.label?.includes(label))?.index;
-      const a = resolve(act(s, "p1", { type: "cast", card, mode: tier("Saut périlleux"), targets: { t: [bear] } }));
+      const a = resolve(act(s, "p1", { type: "cast", card, mode: tier("Somersault"), targets: { t: [bear] } }));
       expect(pt(a, bear)).toEqual([5, 5]);
-      const b = resolve(act(s, "p1", { type: "cast", card, mode: tier("Frappe météore"), targets: { t: [bear] } }));
+      const b = resolve(act(s, "p1", { type: "cast", card, mode: tier("Meteor Strikes"), targets: { t: [bear] } }));
       expect(pt(b, bear)).toEqual([6, 6]);
     });
 

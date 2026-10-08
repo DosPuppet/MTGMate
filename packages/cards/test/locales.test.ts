@@ -134,6 +134,8 @@ function cardIds(): Map<string, Set<string>> {
  * `src/` for "core", left in the French baseline).
  */
 function translated(owner: string): boolean {
+  // `MTGX_CHECK_SETS=blb,fra`: check these owners now (while their translation is in progress).
+  if (process.env.MTGX_CHECK_SETS?.split(",").includes(owner)) return true;
   const prefix = owner === "core" ? "packages/cards/src/" : `packages/cards/src/${owner}/`;
   return !frenchBaseline.files.some((f) => f.startsWith(prefix) && (owner !== "core" || !f.slice(prefix.length).includes("/")));
 }

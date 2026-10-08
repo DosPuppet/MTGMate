@@ -1,4 +1,4 @@
-/** Final Fantasy — cartes rouges. */
+/** Final Fantasy — red cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -25,14 +25,14 @@ import {
 export const RED: Record<string, CardScript> = {
   "Blazing Bomb": {
     abilities: [
-      triggered(when.castNoncreatureWithMana(4), [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
+      triggered(when.castNoncreatureWithMana(4), [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }),
       activated({
         tap: true,
         sacrifice: true,
         sorcerySpeed: true,
         targets: [target.creature("t")],
         effects: [fx.damage(amount.powerOf(ref.self), ref.target())],
-        label: "Blessures égales à sa force",
+        label: "Damage equal to its power",
       }),
     ],
   },
@@ -45,21 +45,21 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target()), fx.pump(ref.target(), 0, 0, ["firstStrike"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez, initiative",
+        label: "Attach, first strike",
       }),
       staticAbility("attached", { power: 1 }, { label: "+1/+0" }),
     ],
   },
   "Fire Magic": {
     spell: tiered(
-      { cost: "{0}", label: "Feu (1 blessure)", effects: [fx.damageAll(1, { types: ["Creature"] })] },
-      { cost: "{2}", label: "Extra Feu (2 blessures)", effects: [fx.damageAll(2, { types: ["Creature"] })] },
-      { cost: "{5}", label: "Méga Feu (3 blessures)", effects: [fx.damageAll(3, { types: ["Creature"] })] },
+      { cost: "{0}", label: "Fire (1 damage)", effects: [fx.damageAll(1, { types: ["Creature"] })] },
+      { cost: "{2}", label: "Fira (2 damage)", effects: [fx.damageAll(2, { types: ["Creature"] })] },
+      { cost: "{5}", label: "Firaga (3 damage)", effects: [fx.damageAll(3, { types: ["Creature"] })] },
     ),
   },
   "Freya Crescent": {
     abilities: [
-      staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "Saut : vol pendant votre tour" }),
+      staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "Jump: flying during your turn" }),
       manaAbility("R", 1, { restriction: { spell: { subtype: "Equipment" }, ability: ["equip"] } }),
     ],
   },
@@ -68,30 +68,30 @@ export const RED: Record<string, CardScript> = {
   },
   "Laughing Mad": { additionalCost: { discard: 1 }, flashback: "{3}{R}", spell: spell([], [fx.draw(2)]) },
   "Light of Judgment": {
-    // « Détruisez jusqu'à un Équipement attaché à cette créature » : choisi à la résolution, pas ciblé.
+    // "Destroy up to one Equipment attached to that creature": chosen on resolution, not targeted.
     spell: spell(
       [target.creature("c")],
       [
         fx.damage(6, ref.target("c")),
         fx.chooseAmong(ref.filtered(ref.attachmentsOf(ref.target("c")), { subtype: "Equipment" }), ref.you, "e", {
           optional: true,
-          prompt: "Light of Judgment : détruisez jusqu'à un Équipement attaché à la créature",
+          prompt: "Light of Judgment: destroy up to one Equipment attached to the creature",
         }),
         fx.destroy(ref.stored("e")),
       ],
     ),
   },
-  "Mysidian Elder": { abilities: [triggered(when.entersSelf, [wizard()], { label: "Sorcier 0/1" })] },
+  "Mysidian Elder": { abilities: [triggered(when.entersSelf, [wizard()], { label: "0/1 Wizard" })] },
   "Opera Love Song": {
     spell: modal(
-      mode("Exilez les deux cartes du dessus, jouables", [], [fx.impulse(2, "yourNextEndStep")]),
-      mode("Une ou deux créatures gagnent +2/+0", [target.upTo(2, target.creature("t"))], [fx.pump(ref.target(), 2, 0)]),
+      mode("Exile the top two cards, playable", [], [fx.impulse(2, "yourNextEndStep")]),
+      mode("One or two creatures get +2/+0", [target.upTo(2, target.creature("t"))], [fx.pump(ref.target(), 2, 0)]),
     ),
   },
   "Prompto Argentum": {
-    abilities: [triggered(when.castNoncreatureWithMana(4), [fx.createTokens(TREASURE)], { label: "Trésor" })],
+    abilities: [triggered(when.castNoncreatureWithMana(4), [fx.createTokens(TREASURE)], { label: "Treasure" })],
   },
-  "Queen Brahne": { abilities: [triggered(when.attacksSelf, [wizard()], { label: "Sorcier 0/1" })] },
+  "Queen Brahne": { abilities: [triggered(when.attacksSelf, [wizard()], { label: "0/1 Wizard" })] },
   "Red Mage's Rapier": {
     abilities: [
       staticAbility(
@@ -102,12 +102,12 @@ export const RED: Record<string, CardScript> = {
             triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pump(ref.self, 2, 0)], { label: "+2/+0" }),
           ],
         },
-        { label: "Sorcier, +2/+0 par sort non-créature" },
+        { label: "Wizard, +2/+0 for each noncreature spell" },
       ),
     ],
   },
   Sabotender: {
-    abilities: [triggered(when.landfall, [fx.damage(1, ref.eachOpponent)], { label: "1 blessure à chaque adversaire" })],
+    abilities: [triggered(when.landfall, [fx.damage(1, ref.eachOpponent)], { label: "1 damage to each opponent" })],
   },
   "Samurai's Katana": { abilities: jobGear("Samurai", 2, 2, ["trample", "haste"]) },
   Sandworm: {
@@ -118,7 +118,7 @@ export const RED: Record<string, CardScript> = {
           fx.destroy(ref.target()),
           fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.target())),
         ],
-        { targets: [targetObj("t", { types: ["Land"] }, "terrain")], label: "Détruisez un terrain" },
+        { targets: [targetObj("t", { types: ["Land"] }, "land")], label: "Destroy target land" },
       ),
     ],
   },
@@ -133,34 +133,30 @@ export const RED: Record<string, CardScript> = {
   },
   "Sorceress's Schemes": {
     flashback: "{4}{R}",
-    // Approximation : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
+    // Approximation: only an instant or sorcery card from the graveyard (not a card exiled with flashback).
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "carte d'éphémère ou de rituel")],
+      [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "instant or sorcery card")],
       [fx.toHand(ref.target()), fx.addMana("R")],
     ),
   },
   Suplex: {
     spell: modal(
-      mode(
-        "3 blessures, exilée si elle meurt",
-        [target.creature("t")],
-        [fx.exileIfDies(ref.target()), fx.damage(3, ref.target())],
-      ),
-      mode("Exilez un artefact", [targetObj("t", { types: ["Artifact"] }, "artefact")], [fx.exile(ref.target())]),
+      mode("3 damage, exiled if it dies", [target.creature("t")], [fx.exileIfDies(ref.target()), fx.damage(3, ref.target())]),
+      mode("Exile an artifact", [targetObj("t", { types: ["Artifact"] }, "artifact")], [fx.exile(ref.target())]),
     ),
   },
   "Thunder Magic": {
     spell: tiered(
-      { cost: "{0}", label: "Foudre (2 blessures)", targets: [target.creature("t")], effects: [fx.damage(2, ref.target())] },
+      { cost: "{0}", label: "Thunder (2 damage)", targets: [target.creature("t")], effects: [fx.damage(2, ref.target())] },
       {
         cost: "{3}",
-        label: "Extra Foudre (4 blessures)",
+        label: "Thundara (4 damage)",
         targets: [target.creature("t")],
         effects: [fx.damage(4, ref.target())],
       },
       {
         cost: "{5}{R}",
-        label: "Méga Foudre (8 blessures)",
+        label: "Thundaga (8 damage)",
         targets: [target.creature("t")],
         effects: [fx.damage(8, ref.target())],
       },

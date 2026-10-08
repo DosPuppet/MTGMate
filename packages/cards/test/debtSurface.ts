@@ -294,12 +294,12 @@ export const UNION_SURFACES = [
 /** Taille de chaque surface du modèle : champs d'une interface, variantes d'une union, champs de toutes ses variantes. */
 export function measureSurfaces(): Record<string, number> {
   const out: Record<string, number> = {};
-  out["Valeurs propres à une carte"] = singleCardValues(implementedCards());
+  out["Single-card values"] = singleCardValues(implementedCards());
   for (const name of INTERFACE_SURFACES) out[name] = interfaceFields(name).length;
   for (const [name, discriminant] of UNION_SURFACES) {
     const variants = unionVariants(name, discriminant);
     out[name] = variants.size;
-    out[`${name} (champs)`] = [...variants.values()].reduce((n, f) => n + f.length, 0);
+    out[`${name} (fields)`] = [...variants.values()].reduce((n, f) => n + f.length, 0);
   }
   return out;
 }
@@ -313,6 +313,8 @@ function modelLiterals(): Set<string> {
  * Champs dont la valeur est une donnée imprimée ou un nom libre, et non un choix du modèle : types, couleurs, mots-clés,
  * sortes de marqueurs, noms de cartes et de valeurs retenues, discriminants suivis à part (`op`, `kind`, `on`).
  */
+const PLAYER_TEXT = new Set(["label", "prompt", "text"]);
+
 const NOT_MODEL_VALUES = new Set([
   "op",
   "kind",
@@ -368,8 +370,11 @@ export function singleCardValues(cards: readonly { name: string }[]): number {
   const users = new Map<string, Set<string>>();
   const walk = (v: unknown, card: string, key: string): void => {
     if (Array.isArray(v)) for (const x of v) walk(x, card, key);
-    else if (v && typeof v === "object") for (const [k, x] of Object.entries(v as Record<string, unknown>)) walk(x, card, k);
-    else if (typeof v === "string" && !NOT_MODEL_VALUES.has(key) && literals.has(v))
+    else if (v && typeof v === "object") {
+      // Player-facing texts (labels, prompts; English since PLAN-I) are not model values, even when they read like one.
+      if (key === "labels") return;
+      for (const [k, x] of Object.entries(v as Record<string, unknown>)) walk(x, card, k);
+    } else if (typeof v === "string" && !NOT_MODEL_VALUES.has(key) && !PLAYER_TEXT.has(key) && literals.has(v))
       users.set(`${key}=${v}`, (users.get(`${key}=${v}`) ?? new Set()).add(card));
   };
   for (const c of cards) walk(c, c.name, "");

@@ -1,7 +1,7 @@
 /**
- * Comportement des cartes de Reality Fracture (FRA, « Réalité fracturée »), par couleur.
- * Même principe que Foundations : les caractéristiques viennent de Scryfall, on ne décrit ici
- * que ce qui ne se déduit pas des mots-clés. Les aides du DSL sont partagées (fdn/common.ts).
+ * Behavior of the Reality Fracture (FRA) cards, by color.
+ * Same principle as Foundations: the characteristics come from Scryfall, only what can't be
+ * deduced from the keywords is described here. The DSL helpers are shared (fdn/common.ts).
  */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";

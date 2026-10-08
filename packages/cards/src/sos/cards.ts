@@ -1,6 +1,6 @@
 /**
- * Secrets of Strixhaven — cartes des decks du méta (phase 1 du plan P4, lot M1). Les autres cartes de l'extension
- * sont dans les fichiers par couleur.
+ * Secrets of Strixhaven — cards of the meta decks (phase 1 of plan P4, lot M1). The other cards of the set are in the
+ * files by color.
  */
 import {
   activated,
@@ -26,7 +26,7 @@ import {
 } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
-  // --- Terrains --------------------------------------------------------------
+  // --- Lands -----------------------------------------------------------------
   "Great Hall of the Biblioplex": {
     abilities: [
       manaAbility("C"),
@@ -44,30 +44,30 @@ export const CARDS: Record<string, CardScript> = {
               setToughness: 4,
               addAbilities: [
                 triggered(when.castSpell("you", INSTANT_SORCERY), [fx.pump(ref.self, 1, 0)], {
-                  label: "+1/+0 jusqu'à la fin du tour",
+                  label: "+1/+0 until end of turn",
                 }),
               ],
             },
             "permanent",
           ),
         ),
-        label: "Devient une créature Sorcier 2/4",
+        label: "Becomes a 2/4 Wizard creature",
       }),
     ],
   },
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -------------------------------------------------------------------
   "Impractical Joke": {
     spell: spell(
       [target.optional(target.creatureOrPlaneswalker())],
       [fx.thisTurn({ damageUnpreventable: true }), fx.damage(3, ref.target())],
     ),
   },
-  // --- Multicolores ----------------------------------------------------------
+  // --- Multicolor ------------------------------------------------------------
   "Prismari Charm": {
     spell: modal(
-      mode("Surveillance 2, puis piochez une carte", [], [fx.surveil(2), fx.draw(1)]),
-      mode("1 blessure à chacune d'une ou deux cibles", [target.between(1, 2, target.any())], [fx.damage(1, ref.target())]),
-      mode("Renvoyez un permanent non-terrain", [target.nonland()], [fx.bounce(ref.target())]),
+      mode("Surveil 2, then draw a card", [], [fx.surveil(2), fx.draw(1)]),
+      mode("1 damage to each of one or two targets", [target.between(1, 2, target.any())], [fx.damage(1, ref.target())]),
+      mode("Return a nonland permanent", [target.nonland()], [fx.bounce(ref.target())]),
     ),
   },
   "Traumatic Critique": {
@@ -77,32 +77,32 @@ export const CARDS: Record<string, CardScript> = {
   // --- Lot M2 -----------------------------------------------------------------
   "Professor Dellian Fel": {
     abilities: [
-      loyalty(2, { effects: [fx.gainLife(3)], label: "Gagnez 3 PV" }),
-      loyalty(0, { effects: [fx.draw(1), fx.loseLife(1)], label: "Piochez, perdez 1 PV" }),
-      loyalty(-3, { targets: [target.creature()], effects: [fx.destroy(ref.target())], label: "Détruit une créature" }),
+      loyalty(2, { effects: [fx.gainLife(3)], label: "Gain 3 life" }),
+      loyalty(0, { effects: [fx.draw(1), fx.loseLife(1)], label: "Draw, lose 1 life" }),
+      loyalty(-3, { targets: [target.creature()], effects: [fx.destroy(ref.target())], label: "Destroys a creature" }),
       loyalty(-6, {
         effects: [
           fx.emblem("Professor Dellian Fel", "Whenever you gain life, target opponent loses that much life.", [
             triggered(when.gainLife, [fx.loseLife(amount.eventAmount, ref.target())], {
               targets: [target.player("t", "opponent")],
-              label: "Un adversaire perd autant de PV",
+              label: "An opponent loses that much life",
             }),
           ]),
         ],
-        label: "Emblème",
+        label: "Emblem",
       }),
     ],
   },
   "Witherbloom Charm": {
     spell: modal(
       mode(
-        "Sacrifice facultatif : piochez deux cartes",
+        "Optional sacrifice: draw two cards",
         [],
         [fx.sacrifice(ref.you, {}, 1, { optional: true, store: "s" }), ...fx.when(cond.v("s"), fx.draw(2))],
       ),
-      mode("Gagnez 5 PV", [], [fx.gainLife(5)]),
+      mode("Gain 5 life", [], [fx.gainLife(5)]),
       mode(
-        "Détruit un permanent non-terrain de VM 2 ou moins",
+        "Destroys a nonland permanent with mana value 2 or less",
         [target.nonland("t", { maxManaValue: 2 })],
         [fx.destroy(ref.target())],
       ),
@@ -117,19 +117,19 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         fx.may(
-          "Exiler huit cartes de votre cimetière pour préparer cette créature ?",
+          "Exile eight cards from your graveyard to prepare this creature?",
           fx.when(
             cond.amountAtLeast(amount.cardsIn("graveyard"), 8),
             fx.pickFromZone(
               "graveyard",
               {},
               { to: "exile" },
-              { count: 8, min: 8, prompt: "Exilez huit cartes de votre cimetière" },
+              { count: 8, min: 8, prompt: "Exile eight cards from your graveyard" },
             ),
             fx.prepare(ref.self),
           ),
         ),
-        { label: "Exiler huit cartes : devient préparée" },
+        { label: "Exile eight cards: becomes prepared" },
       ),
     ],
   },
@@ -140,16 +140,16 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Petrified Hamlet": {
-    // Le nom est choisi par la capacité déclenchée d'arrivée.
+    // The name is chosen by the enters triggered ability.
     chosenNameAbilities: "forbid",
     abilities: [
-      triggered(when.entersSelf, [fx.chooseForSelf("landName")], { label: "Choisissez un nom de carte de terrain" }),
+      triggered(when.entersSelf, [fx.chooseForSelf("landName")], { label: "Choose a land card name" }),
       manaAbility("C"),
       staticAbility(
         { types: ["Land"], nameChosen: true },
         { addAbilities: [manaAbility("C")] },
         {
-          label: "Les terrains du nom choisi ont « {T} : ajoutez {C} »",
+          label: 'Lands with the chosen name have "{T}: Add {C}"',
         },
       ),
     ],
@@ -158,12 +158,12 @@ export const CARDS: Record<string, CardScript> = {
   // --- Lot M4 -----------------------------------------------------------------
   Flashback: {
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "carte d'éphémère ou de rituel de votre cimetière")],
+      [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "instant or sorcery card from your graveyard")],
       [fx.grantFlashback(ref.target())],
     ),
   },
   "Together as One": {
-    // Convergence : X = couleurs de mana dépensées.
+    // Converge: X = colors of mana spent.
     spell: spell(
       [target.player("p"), target.any("d")],
       [
@@ -176,7 +176,7 @@ export const CARDS: Record<string, CardScript> = {
   "Tablet of Discovery": {
     abilities: [
       triggered(when.entersSelf, [fx.mill(1, ref.you, { name: "m" }), fx.grantPlay(ref.stored("m"))], {
-        label: "Meulez une carte, jouable ce tour-ci",
+        label: "Mill a card, playable this turn",
       }),
       manaAbility("R"),
       manaAbility("R", 2, { restriction: { spell: INSTANT_SORCERY } }),
@@ -187,7 +187,7 @@ export const CARDS: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
-        label: "Engagé, sauf avec deux autres terrains ou plus",
+        label: "Tapped unless you control two or more other lands",
       }),
       manaAbility(["R", "W"]),
     ],
@@ -196,42 +196,42 @@ export const CARDS: Record<string, CardScript> = {
   // --- Lot M5 -----------------------------------------------------------------
   "Hardened Academic": {
     abilities: [
-      activated({ discard: 1, effects: [fx.modify(ref.self, { addKeywords: ["lifelink"] })], label: "Lien de vie" }),
+      activated({ discard: 1, effects: [fx.modify(ref.self, { addKeywords: ["lifelink"] })], label: "Lifelink" }),
       triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.addCounters(ref.target(), 1)], {
         batched: true,
         targets: [target.creature("t", { controller: "you" })],
-        label: "Des cartes quittent votre cimetière : un marqueur +1/+1",
+        label: "Cards leave your graveyard: a +1/+1 counter",
       }),
     ],
   },
   "Moseo, Vein's New Dean": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(PEST)], { label: "Un Nuisible 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(PEST)], { label: "A 1/1 Pest" }),
       triggered(when.yourEndStep, [fx.toBattlefield(ref.target())], {
         condition: cond.lifeGainedAtLeast(1),
         targets: [
           {
             ...target.optional(
-              target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de valeur de mana X ou moins"),
+              target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card with mana value X or less"),
             ),
-            // X : les points de vie gagnés ce tour-ci, au ciblage puis à la résolution.
+            // X: the life gained this turn, on targeting then on resolution.
             maxManaValueAmount: amount.lifeGainedThisTurn,
           },
         ],
-        label: "Infusion : renvoie une créature de VM X ou moins (PV gagnés)",
+        label: "Infusion: returns a creature with mana value X or less (life gained)",
       }),
     ],
   },
   "Practiced Offense": {
     flashback: "{1}{W}",
-    // « Au choix » : choisi à la résolution (608.2d), ce n'est pas un sort modal.
+    // "Your choice of": chosen on resolution (608.2d), it is not a modal spell.
     spell: spell(
       [target.player("p"), target.creature("c")],
       [
         fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1),
-        ...fx.yourChoice("la créature ciblée gagne…", "k", [
-          { label: "La double initiative", effects: [fx.modify(ref.target("c"), { addKeywords: ["doubleStrike"] })] },
-          { label: "Le lien de vie", effects: [fx.modify(ref.target("c"), { addKeywords: ["lifelink"] })] },
+        ...fx.yourChoice("the target creature gains…", "k", [
+          { label: "double strike", effects: [fx.modify(ref.target("c"), { addKeywords: ["doubleStrike"] })] },
+          { label: "lifelink", effects: [fx.modify(ref.target("c"), { addKeywords: ["lifelink"] })] },
         ]),
       ],
     ),
@@ -241,13 +241,13 @@ export const CARDS: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
-        label: "Engagé, sauf avec deux autres terrains ou plus",
+        label: "Tapped unless you control two or more other lands",
       }),
       manaAbility(["W", "B"]),
     ],
   },
   "Decorum Dissertation": {
-    // Paradigme : lu dans le texte.
+    // Paradigm: read from the text.
     spell: spell([target.player()], [fx.draw(2, ref.target()), fx.loseLife(2, ref.target())]),
   },
 
@@ -264,7 +264,7 @@ export const CARDS: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
-        label: "Engagé, sauf avec deux autres terrains ou plus",
+        label: "Tapped unless you control two or more other lands",
       }),
       manaAbility(["B", "G"]),
     ],
@@ -274,7 +274,7 @@ export const CARDS: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
-        label: "Engagé, sauf avec deux autres terrains ou plus",
+        label: "Tapped unless you control two or more other lands",
       }),
       manaAbility(["U", "R"]),
     ],
@@ -290,7 +290,7 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.castSpell("you", INSTANT_SORCERY),
         [fx.pump(ref.self, 1, 1), ...fx.when(cond.amountAtLeast(amount.eventManaSpent, 5), fx.copyToken(ref.self))],
-        { label: "Opus : +1/+1 ; cinq mana ou plus : un jeton copie" },
+        { label: "Opus: +1/+1; five or more mana: a token copy" },
       ),
     ],
   },
@@ -301,7 +301,7 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Vicious Rivalry": {
-    // « Payez X points de vie » en coût additionnel : lu dans le texte.
+    // "Pay X life" as an additional cost: read from the text.
     spell: spell(
       [],
       [fx.destroyAll({ anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], compare: [cmp.manaValue("<=", amount.x)] })],
@@ -309,18 +309,18 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Ral Zarek, Guest Lecturer": {
     abilities: [
-      loyalty(1, { effects: [fx.surveil(2)], label: "Surveillance 2" }),
+      loyalty(1, { effects: [fx.surveil(2)], label: "Surveil 2" }),
       loyalty(-1, {
         targets: [target.upTo(8, target.player("t"))],
         effects: [fx.discard(1, ref.target())],
-        label: "Chaque joueur ciblé défausse une carte",
+        label: "Each target player discards a card",
       }),
       loyalty(-2, {
         targets: [
-          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins"),
+          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "creature card with mana value 3 or less"),
         ],
         effects: [fx.toBattlefield(ref.target())],
-        label: "Renvoie une créature de VM 3 ou moins",
+        label: "Returns a creature with mana value 3 or less",
       }),
       loyalty(-7, {
         targets: [target.player("t", "opponent")],
@@ -336,7 +336,7 @@ export const CARDS: Record<string, CardScript> = {
             ref.target(),
           ),
         ],
-        label: "Cinq pièces : l'adversaire passe X tours",
+        label: "Five coins: the opponent skips X turns",
       }),
     ],
   },

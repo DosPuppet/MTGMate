@@ -1,7 +1,8 @@
 /**
- * Duskmourn, lot B : Imminence (Overlords), Enduring, coûts additionnels (choisis par le joueur, avec une
- * suggestion), Équipements qui manifestent l'effroi, portes à déverrouiller ou à verrouiller.
+ * Duskmourn, lot B: Impending (Overlords), Enduring, additional costs (chosen by the player, with a
+ * suggestion), Equipment that manifests dread, doors to unlock or lock.
  */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -26,31 +27,31 @@ import {
 type Abilities = NonNullable<CardScript["abilities"]>;
 type Opts = Parameters<typeof triggered>[2];
 
-/** « Chaque fois que ce permanent arrive ou attaque, … » */
+/** "Whenever this permanent enters or attacks, …" */
 const entersOrAttacks = (effects: Parameters<typeof triggered>[1], opts: Opts = {}): Abilities => [
   triggered(when.entersSelf, effects, opts),
   triggered(when.attacksSelf, effects, opts),
 ];
 
-/** Enduring : « Quand [elle] meurt, si c'était une créature, renvoyez-la ; c'est un enchantement (pas une créature). » */
+/** Enduring: "When [it] dies, if it was a creature, return it; it's an enchantment (not a creature)." */
 const enduring = triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { setTypes: ["Enchantment"], setSubtypes: [] })], {
-  label: "Revient : c'est un enchantement",
+  label: "Returns: it's an enchantment",
 });
 
-/** « Quand cet Équipement arrive, manifestez l'effroi, puis attachez-le à cette créature. » */
+/** "When this Equipment enters, manifest dread, then attach this Equipment to that creature." */
 const manifestAttach = triggered(when.entersSelf, [fx.manifestDreadBy({ store: "m" }), fx.attach(ref.stored("m"))], {
-  label: "Manifestation effroyable, attachez-le",
+  label: "Manifest dread, attach it",
 });
 
-const ROOM_YOU_CONTROL = target.permanent("r", ["Enchantment"], { ...ROOM, controller: "you" }, "Salle que vous contrôlez");
+const ROOM_YOU_CONTROL = target.permanent("r", ["Enchantment"], { ...ROOM, controller: "you" }, "Room you control");
 
 export const SPECIAL: Record<string, CardScript> = {
-  // Imminence (le coût et les marqueurs de temps sont lus dans le texte).
+  // Impending (the cost and the time counters are read from the text).
   "Overlord of the Mistmoors": {
-    abilities: entersOrAttacks([fx.createTokens(INSECT_2_1, 2)], { label: "Deux Insectes 2/1 volants" }),
+    abilities: entersOrAttacks([fx.createTokens(INSECT_2_1, 2)], { label: "Two 2/1 flying Insects" }),
   },
   "Overlord of the Floodpits": {
-    abilities: entersOrAttacks([fx.draw(2), fx.discard(1)], { label: "Piochez deux cartes, défaussez-en une" }),
+    abilities: entersOrAttacks([fx.draw(2), fx.discard(1)], { label: "Draw two cards, discard one" }),
   },
   "Overlord of the Balemurk": {
     abilities: entersOrAttacks(
@@ -60,17 +61,17 @@ export const SPECIAL: Record<string, CardScript> = {
           "graveyard",
           { anyOf: [{ types: ["Creature"], notSubtype: "Avatar" }, { types: ["Planeswalker"] }] },
           { to: "hand" },
-          { min: 0, prompt: "Une créature non-Avatar ou un planeswalker" },
+          { min: 0, prompt: "A non-Avatar creature or a planeswalker" },
         ),
       ],
-      { label: "Meulez 4, une créature en main" },
+      { label: "Mill 4, a creature into your hand" },
     ),
   },
   "Overlord of the Boilerbilges": {
-    abilities: entersOrAttacks([fx.damage(4, ref.target())], { targets: [target.any()], label: "4 blessures" }),
+    abilities: entersOrAttacks([fx.damage(4, ref.target())], { targets: [target.any()], label: "4 damage" }),
   },
   "Overlord of the Hauntwoods": {
-    abilities: entersOrAttacks([fx.createTappedTokens(EVERYWHERE)], { label: "Terrain Everywhere engagé" }),
+    abilities: entersOrAttacks([fx.createTappedTokens(EVERYWHERE)], { label: "Tapped Everywhere land" }),
   },
 
   // Enduring
@@ -79,19 +80,19 @@ export const SPECIAL: Record<string, CardScript> = {
       triggered(when.enters({ ...CREATURE_YOU_CONTROL, other: true, maxPower: 2 }), [fx.draw(1)], {
         oncePerTurn: true,
         batched: true,
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
       enduring,
     ],
   },
   "Enduring Curiosity": {
-    abilities: [triggered(when.combatDamage(CREATURE_YOU_CONTROL, true), [fx.draw(1)], { label: "Piochez une carte" }), enduring],
+    abilities: [triggered(when.combatDamage(CREATURE_YOU_CONTROL, true), [fx.draw(1)], { label: "Draw a card" }), enduring],
   },
   "Enduring Tenacity": {
     abilities: [
       triggered(when.gainLife, [fx.loseLife(amount.eventAmount, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Un adversaire perd autant de PV",
+        label: "An opponent loses that much life",
       }),
       enduring,
     ],
@@ -99,7 +100,7 @@ export const SPECIAL: Record<string, CardScript> = {
   "Enduring Courage": {
     abilities: [
       triggered(when.enters({ ...CREATURE_YOU_CONTROL, other: true }), [fx.pump(ref.eventObject, 2, 0, ["haste"])], {
-        label: "+2/+0 et la célérité",
+        label: "+2/+0 and haste",
       }),
       enduring,
     ],
@@ -109,36 +110,42 @@ export const SPECIAL: Record<string, CardScript> = {
       staticAbility(
         CREATURE_YOU_CONTROL,
         { addAbilities: [manaAbility(["W", "U", "B", "R", "G"])] },
-        { label: "Vos créatures : « {T} : un mana de n'importe quelle couleur »" },
+        { label: 'Your creatures: "{T}: one mana of any color"' },
       ),
       enduring,
     ],
   },
 
-  // Coûts additionnels (choisis par le joueur, avec une suggestion)
+  // Additional costs (chosen by the player, with a suggestion)
   "Fear of Abduction": {
     additionalCost: { exile: { filter: { types: ["Creature"] }, count: 1 } },
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Exilez une créature adverse",
+        label: "Exile a creature an opponent controls",
       }),
-      triggered(when.leavesSelf, [fx.toHand(ref.linked)], { label: "Les cartes exilées reviennent en main" }),
+      triggered(when.leavesSelf, [fx.toHand(ref.linked)], { label: "The exiled cards return to hand" }),
     ],
   },
   "Abhorrent Oculus": {
     additionalCost: { exileGraveyard: 6 },
-    abilities: [triggered(when.step("upkeep", "opponent"), [fx.manifestDread], { label: "Manifestation effroyable" })],
+    abilities: [triggered(when.step("upkeep", "opponent"), [fx.manifestDread], { label: "Manifest dread" })],
   },
   "Fear of Isolation": { additionalCost: { bounce: { filter: {}, count: 1 } } },
   "Fear of Exposure": { additionalCost: { tap: { filter: { types: ["Creature", "Land"] }, count: 2 } } },
 
-  // Équipements qui manifestent l'effroi
+  // Equipment that manifests dread
   "Cursed Windbreaker": {
-    abilities: [manifestAttach, staticAbility("attached", { addKeywords: ["flying"] }, { label: "Le vol" })],
+    abilities: [
+      manifestAttach,
+      staticAbility("attached", { addKeywords: ["flying"] }, { label: "Equipped creature has flying" }),
+    ],
   },
   "Killer's Mask": {
-    abilities: [manifestAttach, staticAbility("attached", { addKeywords: ["menace"] }, { label: "La menace" })],
+    abilities: [
+      manifestAttach,
+      staticAbility("attached", { addKeywords: ["menace"] }, { label: "Equipped creature has menace" }),
+    ],
   },
   "Conductive Machete": {
     abilities: [manifestAttach, staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" })],
@@ -150,64 +157,63 @@ export const SPECIAL: Record<string, CardScript> = {
         "attached",
         { power: 2, toughness: 2, addKeywords: ["deathtouch", "lifelink"] },
         {
-          label: "+2/+2, contact mortel et lien de vie",
+          label: "+2/+2, deathtouch and lifelink",
         },
       ),
-      equipAbility({ sacrificeOther: { filter: { types: ["Creature"] } }, label: "Équiper — sacrifiez une créature" }),
+      equipAbility({ sacrificeOther: { filter: { types: ["Creature"] } }, label: "Equip—Sacrifice a creature" }),
     ],
   },
 
-  // Salles dont une porte manifeste l'effroi
+  // Rooms with a door that manifests dread
   "Underwater Tunnel": {
-    abilities: [triggered(when.unlockThisDoor, [fx.surveil(2)], { label: "Surveillance 2" })],
+    abilities: [triggered(when.unlockThisDoor, [fx.surveil(2)], { label: "Surveil 2" })],
   },
   "Slimy Aquarium": {
     abilities: [
       triggered(when.unlockThisDoor, [fx.manifestDreadBy({ store: "m" }), fx.addCounters(ref.stored("m"), 1)], {
-        label: "Manifestation effroyable, marqueur +1/+1",
+        label: "Manifest dread, +1/+1 counter",
       }),
     ],
   },
   "Moldering Gym": {
     abilities: [
       triggered(when.unlockThisDoor, [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })], {
-        label: "Un terrain de base engagé",
+        label: "A tapped basic land",
       }),
     ],
   },
   "Weight Room": {
     abilities: [
       triggered(when.unlockThisDoor, [fx.manifestDreadBy({ store: "m" }), fx.addCounters(ref.stored("m"), 3)], {
-        label: "Manifestation effroyable, trois marqueurs +1/+1",
+        label: "Manifest dread, three +1/+1 counters",
       }),
     ],
   },
 
-  // Portes
+  // Doors
   "Ghostly Dancers": {
     abilities: [
-      // « … ou … » : choisi à la résolution (608.2d), pas un mode.
+      // "… or …": chosen on resolution (608.2d), not a mode.
       triggered(
         when.entersSelf,
         fx.yourChoice("Ghostly Dancers…", "k", [
           {
-            label: "Un enchantement de votre cimetière en main",
-            effects: [
-              fx.pickFromZone("graveyard", { types: ["Enchantment"] }, { to: "hand" }, { prompt: "Carte d'enchantement" }),
-            ],
+            // Option labels (an array) are not walked by the catalog test: `msg` marks them.
+            label: msg("An enchantment from your graveyard into your hand"),
+            effects: [fx.pickFromZone("graveyard", { types: ["Enchantment"] }, { to: "hand" }, { prompt: "Enchantment card" })],
           },
-          { label: "Déverrouillez une porte", effects: [fx.door(ref.permanentsOf(ref.you, ROOM))] },
+          { label: msg("Unlock a door"), effects: [fx.door(ref.permanentsOf(ref.you, ROOM))] },
         ]),
-        { label: "Enchantement en main, ou porte déverrouillée" },
+        { label: "Enchantment into your hand, or door unlocked" },
       ),
-      eerie([fx.createTokens(SPIRIT_3_1)], { label: "Esprit 3/1 volant" }),
+      eerie([fx.createTokens(SPIRIT_3_1)], { label: "3/1 flying Spirit" }),
     ],
   },
   "Ghostly Keybearer": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.door(ref.target("r"))], {
         targets: [target.upTo(1, ROOM_YOU_CONTROL)],
-        label: "Déverrouillez une porte",
+        label: "Unlock a door",
       }),
     ],
   },
@@ -218,7 +224,7 @@ export const SPECIAL: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.search(BASIC_LAND)],
-        label: "Cherchez un terrain de base",
+        label: "Search for a basic land",
       }),
       activated({
         mana: "{3}",
@@ -227,21 +233,21 @@ export const SPECIAL: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [ROOM_YOU_CONTROL],
         effects: [fx.door(ref.target("r"), "toggle")],
-        label: "Verrouillez ou déverrouillez une porte",
+        label: "Lock or unlock a door",
       }),
     ],
   },
   "Marina Vendrell": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(7, { filter: { types: ["Enchantment"] }, count: 7, rest: "bottom" })], {
-        label: "Les enchantements parmi les sept du dessus en main",
+        label: "The enchantments among the top seven into your hand",
       }),
       activated({
         tap: true,
         sorcerySpeed: true,
         targets: [ROOM_YOU_CONTROL],
         effects: [fx.door(ref.target("r"), "toggle")],
-        label: "Verrouillez ou déverrouillez une porte",
+        label: "Lock or unlock a door",
       }),
     ],
   },

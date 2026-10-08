@@ -1,4 +1,4 @@
-/** Final Fantasy — légendaires et cartes uniques (lot D2). */
+/** Final Fantasy — legendaries and unique cards (lot D2). */
 import type { CardScript, TokenSpec } from "@mtgx/engine";
 import {
   activated,
@@ -40,21 +40,21 @@ export const LEGENDS2: Record<string, CardScript> = {
     abilities: [
       chapter([1, 2], [fx.destroy(ref.target())], {
         targets: [target.upTo(1, target.nonland("t"))],
-        label: "Détruisez jusqu'à un permanent non-terrain",
+        label: "Destroy up to one nonland permanent",
       }),
-      chapter([3], [fx.draw(2)], { label: "Piochez deux cartes" }),
+      chapter([3], [fx.draw(2)], { label: "Draw two cards" }),
       chapter([4], [fx.damage(amount.totalManaValue({ permanent: true, controller: "you", other: true }), ref.eachOpponent)], {
-        label: "Mégaflare",
+        label: "Megaflare",
       }),
     ],
   },
   "Cloud, Midgar Mercenary": {
     abilities: [
-      triggered(when.entersSelf, [fx.search({ subtype: "Equipment" })], { label: "Cherchez un Équipement" }),
+      triggered(when.entersSelf, [fx.search({ subtype: "Equipment" })], { label: "Search for an Equipment" }),
       playerStatic({
         triggerMod: { effect: "again", sources: { anyOf: [{ self: true }, { attached: "toSource" }] } },
         condition: cond.sourceMatches({ equipped: true }),
-        label: "Équipée : ses déclencheurs et ceux de ses Équipements, une fois de plus",
+        label: "Equipped: its triggers and those of its Equipment trigger an additional time",
       }),
     ],
   },
@@ -63,15 +63,15 @@ export const LEGENDS2: Record<string, CardScript> = {
       playerStatic({
         playFrom: { zone: "libraryTop" },
         condition: cond.sourceMatches({ attackedThisTurn: true }),
-        label: "Jouez la carte du dessus (a attaqué ce tour-ci)",
+        label: "Play the top card (attacked this turn)",
       }),
     ],
   },
   "Quistis Trepe": {
     abilities: [
       triggered(when.entersSelf, [fx.castNow(ref.target(), { anyMana: true, after: "exile" })], {
-        targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "any", "carte d'éphémère ou de rituel")],
-        label: "Magie bleue : lancez un sort d'un cimetière",
+        targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "any", "instant or sorcery card")],
+        label: "Blue Magic: cast a spell from a graveyard",
       }),
     ],
   },
@@ -80,7 +80,7 @@ export const LEGENDS2: Record<string, CardScript> = {
       staticAbility(
         { ...YOURS, subtype: "Demon" },
         { addKeywords: ["menace", "lifelink", "haste"] },
-        { label: "Vos Démons : menace, lien de vie, célérité" },
+        { label: "Your Demons: menace, lifelink, haste" },
       ),
       triggered(
         when.yourCombat,
@@ -89,8 +89,8 @@ export const LEGENDS2: Record<string, CardScript> = {
           fx.copyToken(ref.stored("a"), { pt: 5, setColors: ["B"], setSubtypes: ["Demon"] }),
         ],
         {
-          targets: [target.upTo(1, target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature"))],
-          label: "Fléau stellaire",
+          targets: [target.upTo(1, target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card"))],
+          label: "Starscourge",
         },
       ),
     ],
@@ -98,10 +98,10 @@ export const LEGENDS2: Record<string, CardScript> = {
   "Zodiark, Umbral God": {
     abilities: [
       triggered(when.entersSelf, [fx.sacrifice(ref.eachPlayer, { types: ["Creature"], notSubtype: "God" }, 1, { half: true })], {
-        label: "Chaque joueur sacrifie la moitié de ses créatures",
+        label: "Each player sacrifices half of their creatures",
       }),
       triggered(when.sacrifice({ types: ["Creature"], other: true }, true), [fx.addCounters(ref.self, 1)], {
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -131,22 +131,22 @@ export const LEGENDS2: Record<string, CardScript> = {
   "Seifer Almasy": {
     abilities: [
       triggered(when.attacksAlone(YOURS), [fx.pump(ref.eventObject, 0, 0, ["doubleStrike"])], {
-        label: "Attaque seule : double initiative",
+        label: "Attacks alone: double strike",
       }),
       triggered(when.combatDamageToPlayer, [fx.castNow(ref.target(), { free: true, after: "exile" })], {
-        targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"], maxManaValue: 3 }, "you", "éphémère ou rituel")],
-        label: "Croix de feu",
+        targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"], maxManaValue: 3 }, "you", "instant or sorcery")],
+        label: "Fire Cross",
       }),
     ],
   },
   "Squall, SeeD Mercenary": {
     abilities: [
       triggered(when.attacksAlone(YOURS), [fx.pump(ref.eventObject, 0, 0, ["doubleStrike"])], {
-        label: "Attaque seule : double initiative",
+        label: "Attacks alone: double strike",
       }),
       triggered(when.combatDamageToPlayer, [fx.toBattlefield(ref.target())], {
-        targets: [target.cardInGraveyard("t", { ...PERMANENT_CARD, maxManaValue: 3 }, "you", "carte de permanent")],
-        label: "Une carte de permanent de VM 3 ou moins",
+        targets: [target.cardInGraveyard("t", { ...PERMANENT_CARD, maxManaValue: 3 }, "you", "permanent card")],
+        label: "A permanent card with mana value 3 or less",
       }),
     ],
   },
@@ -155,22 +155,22 @@ export const LEGENDS2: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.eachDealsDamage({ ...YOURS, subtype: "Bird", other: true }, ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Chaque autre Oiseau inflige sa force",
+        label: "Each other Bird deals damage equal to its power",
       }),
     ],
   },
   "Diamond Weapon": {
     costReduction: { generic: amount.countIn("graveyard", PERMANENT_CARD) },
-    abilities: [prevention({ self: true }, { combatOnly: true, label: "Immunité — blessures de combat prévenues" })],
+    abilities: [prevention({ self: true }, { combatOnly: true, label: "Immune — combat damage prevented" })],
   },
   "Quina, Qu Gourmet": {
     abilities: [
-      eventReplacement({ event: "tokens", to: "you", plus: FROG, modify: {}, label: "Une Grenouille 1/1 en plus de vos jetons" }),
+      eventReplacement({ event: "tokens", to: "you", plus: FROG, modify: {}, label: "A 1/1 Frog in addition to your tokens" }),
       activated({
         mana: "{2}",
         sacrificeOther: { filter: { subtype: "Frog" } },
         effects: [fx.addCounters(ref.self, 1)],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -179,12 +179,12 @@ export const LEGENDS2: Record<string, CardScript> = {
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pump(ref.self, amount.eventManaSpent, 0)], {
         label: "+X/+0",
       }),
-      triggered(when.castNoncreatureWithMana(4), [fx.draw(1)], { label: "Piochez (X ≥ 4)" }),
+      triggered(when.castNoncreatureWithMana(4), [fx.draw(1)], { label: "Draw (X ≥ 4)" }),
     ],
   },
   "Tellah, Great Sage": {
     abilities: [
-      // Un seul déclenchement : Héros, puis pioche (quatre mana ou plus), puis sacrifice et blessures (huit ou plus).
+      // A single trigger: Hero, then draw (four mana or more), then sacrifice and damage (eight or more).
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [
@@ -196,16 +196,16 @@ export const LEGENDS2: Record<string, CardScript> = {
             fx.damage(amount.eventManaSpent, ref.eachOpponent),
           ),
         ],
-        { label: "Héros 1/1 ; quatre mana : piochez deux cartes ; huit : sacrifiez Tellah, blessures" },
+        { label: "1/1 Hero; four mana: draw two cards; eight: sacrifice Tellah, damage" },
       ),
     ],
   },
   "The Wandering Minstrel": {
     abilities: [
-      playerStatic({ landsEnterUntapped: true, label: "Vos terrains arrivent dégagés" }),
+      playerStatic({ landsEnterUntapped: true, label: "Your lands enter untapped" }),
       triggered(when.yourCombat, [fx.createTokens(ALL_COLORS_ELEMENTAL)], {
         condition: cond.controls({ ...TOWN }, 5),
-        label: "Élémental 2/2 de toutes les couleurs",
+        label: "2/2 Elemental of all colors",
       }),
       activated({
         mana: "{3}{W}{U}{B}{R}{G}",
@@ -216,7 +216,7 @@ export const LEGENDS2: Record<string, CardScript> = {
             amount.count({ ...TOWN, controller: "you" }),
           ),
         ],
-        label: "+X/+X (Villes)",
+        label: "+X/+X (Towns)",
       }),
     ],
   },
@@ -229,7 +229,7 @@ export const LEGENDS2: Record<string, CardScript> = {
           fx.toBattlefield(ref.stored("y")),
           fx.when(cond.firstEndStep, fx.extraEndStep),
         ],
-        { targets: [target.creature("t", { controller: "you" })], label: "Clignotement, étape de fin supplémentaire" },
+        { targets: [target.creature("t", { controller: "you" })], label: "Blink, additional end step" },
       ),
     ],
   },
@@ -240,7 +240,7 @@ export const LEGENDS2: Record<string, CardScript> = {
         mana: "{8}",
         fromGraveyard: true,
         effects: [fx.toBattlefield(ref.self, { tapped: true, counters: { kind: "finality", n: 1 } })],
-        label: "Revient du cimetière",
+        label: "Returns from the graveyard",
       }),
     ],
   },
@@ -260,10 +260,14 @@ export const LEGENDS2: Record<string, CardScript> = {
             fx.when(
               cond.v("e"),
               fx.may(
-                "Attacher l'un de ces Équipements à un Samouraï ?",
+                "Attach one of these Equipment to a Samurai?",
                 fx.reflexive(
                   [
-                    targetObj("e", { subtype: "Equipment", controller: "you", enteredThisTurn: true }, "Équipement mis en jeu"),
+                    targetObj(
+                      "e",
+                      { subtype: "Equipment", controller: "you", enteredThisTurn: true },
+                      "Equipment put onto the battlefield",
+                    ),
                     target.creature("c", { controller: "you", subtype: "Samurai" }),
                   ],
                   [fx.attach(ref.target("c"), ref.target("e"))],
@@ -271,7 +275,7 @@ export const LEGENDS2: Record<string, CardScript> = {
               ),
             ),
           ],
-          { label: "Équipements parmi les six du dessus" },
+          { label: "Equipment among the top six" },
         ),
       ),
     ],

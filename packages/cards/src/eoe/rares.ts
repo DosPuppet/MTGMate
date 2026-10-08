@@ -1,6 +1,6 @@
 /**
- * Edge of Eternities, lot C : rares, mythiques et cartes uniques (mana dépensé, coûts d'activation réduits,
- * statiques de joueur, cartes exilées jouables, garde accordée).
+ * Edge of Eternities, lot C: rares, mythics and unique cards (mana spent, reduced activation costs,
+ * player statics, playable exiled cards, granted ward).
  */
 import type { Amount, CardScript, ObjectFilter } from "@mtgx/engine";
 import {
@@ -35,12 +35,12 @@ import {
 } from "./common";
 
 const FIVE_COLORS = ["W", "U", "B", "R", "G"] as const;
-/** Cartes que vous possédez en exil (Cosmogoyf). */
+/** Cards you own in exile (Cosmogoyf). */
 const OWNED_IN_EXILE: Amount = { kind: "count", filter: {}, zone: "exile" };
 const KAVU_YOU: ObjectFilter = { subtype: "Kavu", controller: "you" };
 
 export const RARES: Record<string, CardScript> = {
-  // --- Blanc -----------------------------------------------------------------
+  // --- White -----------------------------------------------------------------
   "Starport Security": {
     abilities: [
       activated({
@@ -49,7 +49,7 @@ export const RARES: Record<string, CardScript> = {
         targets: [target.creature("t", { other: true })],
         effects: [fx.tap(ref.target())],
         reduction: { generic: 2, condition: cond.controls(WITH_P1P1) },
-        label: "Engagez une autre créature",
+        label: "Tap another creature",
       }),
     ],
   },
@@ -58,14 +58,14 @@ export const RARES: Record<string, CardScript> = {
       triggered(when.yourEndStep, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you" })],
         condition: TWO_TAPPED,
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
       activated({
         mana: "{2}",
         removeCounterFrom: { filter: CREATURE_YOU_CONTROL, kind: "+1/+1" },
-        targets: [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+        targets: [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
         effects: [fx.tap(ref.target())],
-        label: "Engagez un artefact ou une créature",
+        label: "Tap an artifact or creature",
       }),
     ],
   },
@@ -77,21 +77,21 @@ export const RARES: Record<string, CardScript> = {
             "t",
             { permanent: true, notTypes: ["Creature", "Land"], compare: [cmp.manaValue("<=", amount.sourceManaSpent)] },
             "you",
-            "carte de permanent non-créature non-terrain",
+            "noncreature, nonland permanent card",
           ),
         ],
-        label: "Renvoyez un permanent (VM ≤ mana dépensé)",
+        label: "Return a permanent (mana value ≤ mana spent)",
       }),
     ],
   },
   "Hardlight Containment": {
-    enchant: { filter: { types: ["Artifact"], controller: "you" }, label: "artefact que vous contrôlez" },
+    enchant: { filter: { types: ["Artifact"], controller: "you" }, label: "artifact you control" },
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Exilez une créature adverse",
+        label: "Exile an opponent's creature",
       }),
-      staticAbility("attached", { addAbilities: [wardAbility({ mana: cost("{1}") })] }, { label: "Garde {1}" }),
+      staticAbility("attached", { addAbilities: [wardAbility({ mana: cost("{1}") })] }, { label: "Ward {1}" }),
     ],
   },
   "Lightstall Inquisitor": {
@@ -102,12 +102,12 @@ export const RARES: Record<string, CardScript> = {
           fx.exileFromOwnHand(ref.eachOpponent, "h"),
           fx.grantPlay(ref.stored("h"), { forever: true, for: "owner", extraCost: 1, tapped: true }),
         ],
-        { label: "Chaque adversaire exile une carte de sa main" },
+        { label: "Each opponent exiles a card from their hand" },
       ),
     ],
   },
 
-  // --- Bleu ------------------------------------------------------------------
+  // --- Blue ------------------------------------------------------------------
   Unravel: {
     spell: spell(
       [target.spell("t")],
@@ -121,30 +121,30 @@ export const RARES: Record<string, CardScript> = {
         { power: 1 },
         {
           perAmount: amount.maxManaValue({ types: ["Artifact"], controller: "you", other: true }),
-          label: "+X/+0 (plus grande VM parmi vos autres artefacts)",
+          label: "+X/+0 (greatest mana value among your other artifacts)",
         },
       ),
     ],
   },
   "Uthros Psionicist": {
     abilities: [
-      costReducer({}, 2, "Le deuxième sort de chaque tour coûte {2} de moins", {
+      costReducer({}, 2, "The second spell each turn costs {2} less", {
         condition: cond.castThisTurn(1, false, true),
       }),
     ],
   },
   "Starfield Vocalist": {
-    abilities: [playerStatic({ triggerMod: { effect: "again", on: "enter" }, label: "Déclencheurs d'arrivée doublés" })],
+    abilities: [playerStatic({ triggerMod: { effect: "again", on: "enter" }, label: "Enter triggers doubled" })],
   },
   "Quantum Riddler": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw" }),
       eventReplacement({
         event: "draw",
         to: "you",
         modify: { add: 1 },
         condition: cond.not(cond.amountAtLeast(amount.cardsIn("hand"), 2)),
-        label: "Une carte de plus avec une main de 1 carte ou moins",
+        label: "One more card with a hand of 1 card or fewer",
       }),
     ],
   },
@@ -152,12 +152,12 @@ export const RARES: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { types: ["Artifact"] }, what: "spells" },
-        label: "Sorts d'artefact du dessus de la bibliothèque",
+        label: "Artifact spells from the top of your library",
       }),
       staticAbility(
         { types: ["Artifact"], controller: "you" },
         { addAbilities: [manaAbility("U", 1, { restriction: { spellNotFromHand: true } })] },
-        { label: "Vos artefacts : « {T} : {U} » (sorts hors de la main)" },
+        { label: 'Your artifacts: "{T}: {U}" (spells from outside your hand)' },
       ),
     ],
   },
@@ -177,18 +177,18 @@ export const RARES: Record<string, CardScript> = {
           fx.shuffle(),
           fx.draw(7),
         ],
-        { condition: cond.wasCast, label: "Main et cimetière mélangés, piochez sept cartes" },
+        { condition: cond.wasCast, label: "Hand and graveyard shuffled in, draw seven cards" },
       ),
-      playerStatic({ firstSpellFree: true, label: "Premier sort de chaque tour gratuit" }),
+      playerStatic({ firstSpellFree: true, label: "First spell each turn free" }),
     ],
   },
 
-  // --- Noir ------------------------------------------------------------------
+  // --- Black -----------------------------------------------------------------
   "Alpharael, Stonechosen": {
     abilities: [
       triggered(when.attacksSelf, [fx.loseLife(amount.halfLife(ref.defendingPlayer), ref.defendingPlayer)], {
         condition: cond.void,
-        label: "Vide : le défenseur perd la moitié de ses PV",
+        label: "Void: the defending player loses half their life",
       }),
     ],
   },
@@ -202,30 +202,30 @@ export const RARES: Record<string, CardScript> = {
           fx.modify(ref.target(), {
             addAbilities: [
               triggered(when.isDealtDamage, [fx.draw(amount.eventAmount), fx.loseLife(amount.eventAmount)], {
-                label: "Blessée : piochez autant, perdez autant de PV",
+                label: "Dealt damage: draw that many, lose that much life",
               }),
             ],
           }),
-          fx.mayFor(ref.controllerOf(ref.target()), "1 blessure à la créature ?", fx.damage(1, ref.target())),
+          fx.mayFor(ref.controllerOf(ref.target()), "1 damage to the creature?", fx.damage(1, ref.target())),
         ],
-        label: "Blessures = pioche",
+        label: "Damage = draw",
       }),
     ],
   },
   "Blade of the Swarm": {
     abilities: [
       triggeredModal(when.entersSelf, [
-        mode("Deux marqueurs +1/+1", [], [fx.addCounters(ref.self, 2)]),
+        mode("Two +1/+1 counters", [], [fx.addCounters(ref.self, 2)]),
         mode(
-          "Une carte exilée avec la distorsion au-dessous de la bibliothèque",
-          [{ id: "t", label: "carte exilée avec la distorsion", filter: { exiled: { withWarp: true } } }],
+          "A card exiled with warp on the bottom of its owner's library",
+          [{ id: "t", label: "card exiled with warp", filter: { exiled: { withWarp: true } } }],
           [fx.moveTo(ref.target(), { to: "libraryBottom" })],
         ),
       ]),
     ],
   },
 
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -------------------------------------------------------------------
   "Kav Landseeker": {
     abilities: [
       triggered(
@@ -234,7 +234,7 @@ export const RARES: Record<string, CardScript> = {
           fx.createTokens(LANDER, 1, undefined, "l"),
           fx.delayedAt("yourNextEndStep", [fx.sacrificeIt(ref.target("l"))], { l: ref.stored("l") }),
         ],
-        { label: "Lander (sacrifié à votre prochain tour)" },
+        { label: "Lander (sacrificed on your next turn)" },
       ),
     ],
   },
@@ -244,11 +244,11 @@ export const RARES: Record<string, CardScript> = {
         when.attacksSelf,
         fx.mayPay(
           "{2}",
-          "Payer {2} pour un Robot attaquant ?",
+          "Pay {2} for an attacking Robot?",
           fx.createTappedTokens(ROBOT, 1, { attacking: true, store: "r" }),
           fx.delayedAt("endOfCombat", [fx.sacrificeIt(ref.target("r"))], { r: ref.stored("r") }),
         ),
-        { label: "{2} : Robot 2/2 attaquant" },
+        { label: "{2}: attacking 2/2 Robot" },
       ),
     ],
   },
@@ -257,10 +257,10 @@ export const RARES: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.mayForStore(ref.target(), "Laisser l'adversaire créer deux Landers ?", "l", lander(2)),
+          fx.mayForStore(ref.target(), "Let the opponent create two Landers?", "l", lander(2)),
           fx.when(cond.not(cond.v("l")), fx.addCounters(ref.self, 2)),
         ],
-        { targets: [target.player("t", "opponent")], label: "Deux Landers ou deux marqueurs +1/+1" },
+        { targets: [target.player("t", "opponent")], label: "Two Landers or two +1/+1 counters" },
       ),
     ],
   },
@@ -273,7 +273,7 @@ export const RARES: Record<string, CardScript> = {
           fx.exileTop(ref.you, amount.plus(1, amount.manaValueOf(ref.costSacrificed)), "v"),
           fx.grantPlay(ref.stored("v")),
         ],
-        label: "Exilez 1 + VM cartes, jouables ce tour-ci",
+        label: "Exile 1 + mana value cards, playable this turn",
       }),
     ],
   },
@@ -283,11 +283,11 @@ export const RARES: Record<string, CardScript> = {
         targets: [
           target.upTo(
             1,
-            target.cardInGraveyard("t", { types: ["Instant", "Sorcery"], maxManaValue: 2 }, "you", "éphémère ou rituel"),
+            target.cardInGraveyard("t", { types: ["Instant", "Sorcery"], maxManaValue: 2 }, "you", "instant or sorcery"),
           ),
         ],
         condition: cond.void,
-        label: "Vide : copiez un éphémère ou rituel",
+        label: "Void: copy an instant or sorcery",
       }),
     ],
   },
@@ -296,35 +296,35 @@ export const RARES: Record<string, CardScript> = {
       triggered(
         when.enters({ anyOf: [{ self: true }, { ...KAVU_YOU, other: true }] }),
         [fx.exileTop(ref.you, 1, "p"), fx.grantPlay(ref.stored("p"), { forever: true, condition: cond.controls(KAVU_YOU) })],
-        { label: "Exilez la carte du dessus (jouable avec un Kavu)" },
+        { label: "Exile the top card (playable with a Kavu)" },
       ),
     ],
   },
   "Territorial Bruntar": {
     abilities: [
       triggered(when.landfall, [fx.exileUntil({ notTypes: ["Land"] }, "b"), fx.grantPlay(ref.stored("b"))], {
-        label: "Exilez jusqu'à une carte non-terrain, lançable ce tour-ci",
+        label: "Exile up to one nonland card, castable this turn",
       }),
     ],
   },
   "Tannuk, Steadfast Second": {
     abilities: [
-      staticAbility(OTHER_CREATURE_YOU_CONTROL, { addKeywords: ["haste"] }, { label: "Célérité" }),
+      staticAbility(OTHER_CREATURE_YOU_CONTROL, { addKeywords: ["haste"] }, { label: "Haste" }),
       playerStatic({
         grantWarp: { filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"], colors: ["R"] }] }, cost: cost("{2}{R}") },
-        label: "Distorsion {2}{R}",
+        label: "Warp {2}{R}",
       }),
     ],
   },
 
-  // --- Vert ------------------------------------------------------------------
+  // --- Green -----------------------------------------------------------------
   "Bioengineered Future": {
     abilities: [
       triggered(when.entersSelf, [lander()], { label: "Lander" }),
       entersWith({
         counters: amount.landsEnteredThisTurn,
         affects: CREATURE_YOU_CONTROL,
-        label: "Un marqueur +1/+1 par terrain arrivé ce tour-ci",
+        label: "A +1/+1 counter for each land that entered this turn",
       }),
     ],
   },
@@ -334,7 +334,7 @@ export const RARES: Record<string, CardScript> = {
       playerStatic({
         uncounterable: { filter: { types: ["Creature"] } },
         damageUnpreventable: "combat",
-        label: "Sorts de créature incontrecarrables, blessures de combat imprévenables",
+        label: "Creature spells can't be countered, combat damage can't be prevented",
       }),
     ],
   },
@@ -344,15 +344,15 @@ export const RARES: Record<string, CardScript> = {
       playerStatic({
         extraLands: 1,
         playFrom: { zone: "graveyard", what: "lands" },
-        label: "Terrain supplémentaire, depuis le cimetière",
+        label: "Additional land, from the graveyard",
       }),
-      triggered(when.landfall, [fx.mill(1)], { label: "Meulez une carte" }),
+      triggered(when.landfall, [fx.mill(1)], { label: "Mill a card" }),
     ],
   },
   Skystinger: {
     abilities: [
       triggered(when.blocks("self", { keyword: "flying" }), [fx.pump(ref.self, 5, 0)], {
-        label: "Bloque une créature volante : +5/+0",
+        label: "Blocks a creature with flying: +5/+0",
       }),
     ],
   },
@@ -360,18 +360,18 @@ export const RARES: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.youPutCounters(CREATURE_YOU_CONTROL, "+1/+1"),
-        // « Faites ceci une seule fois par tour » : un refus ne compte pas.
-        fx.may("Piocher autant de cartes ?", fx.draw(amount.eventAmount), fx.doneOncePerTurn),
-        { oncePerTurn: "ifDone", label: "Piochez autant de cartes (une fois par tour)" },
+        // "Do this only once each turn": a refusal doesn't count.
+        fx.may("Draw that many cards?", fx.draw(amount.eventAmount), fx.doneOncePerTurn),
+        { oncePerTurn: "ifDone", label: "Draw that many cards (once each turn)" },
       ),
     ],
   },
   Cosmogoyf: { cdaPower: OWNED_IN_EXILE, cdaToughness: amount.plus(OWNED_IN_EXILE, 1) },
 
-  // --- Multicolores ----------------------------------------------------------
+  // --- Multicolor ------------------------------------------------------------
   "Sami, Wildcat Captain": {
     abilities: [
-      costReducer({}, 0, "Affinité pour les artefacts", {
+      costReducer({}, 0, "Affinity for artifacts", {
         genericAmount: amount.count({ types: ["Artifact"], controller: "you" }),
       }),
     ],
@@ -379,11 +379,11 @@ export const RARES: Record<string, CardScript> = {
   "Syr Vondam, Sunstar Exemplar": {
     abilities: [
       triggered(when.diesOrExiled(OTHER_CREATURE_YOU_CONTROL), [fx.addCounters(ref.self, 1), fx.gainLife(1)], {
-        label: "Marqueur +1/+1, +1 PV",
+        label: "+1/+1 counter, +1 life",
       }),
       triggered(when.diesOrExiled("self", 4), [fx.destroy(ref.target())], {
         targets: [target.upTo(1, target.nonland("t"))],
-        label: "Détruisez un permanent non-terrain",
+        label: "Destroy a nonland permanent",
       }),
     ],
   },
@@ -396,12 +396,12 @@ export const RARES: Record<string, CardScript> = {
           fx.countResolution("n"),
           fx.when(cond.all(cond.v("n", 2), cond.not(cond.v("n", 3))), fx.draw(1)),
         ],
-        { label: "1 blessure à chaque adversaire (2e fois : piochez)" },
+        { label: "1 damage to each opponent (2nd time: draw)" },
       ),
     ],
   },
 
-  // --- Incolores et terrains -------------------------------------------------
+  // --- Colorless and lands ---------------------------------------------------
   "Survey Mechan": {
     abilities: [
       activated({
@@ -410,7 +410,7 @@ export const RARES: Record<string, CardScript> = {
         targets: [target.any("a"), target.player("p")],
         effects: [fx.damage(3, ref.target("a")), fx.draw(3, ref.target("p")), fx.gainLife(3, ref.target("p"))],
         reduction: { generic: amount.distinctNames({ types: ["Land"], controller: "you" }) },
-        label: "3 blessures, piochez trois cartes, +3 PV",
+        label: "3 damage, draw three cards, +3 life",
       }),
     ],
   },
@@ -423,7 +423,7 @@ export const RARES: Record<string, CardScript> = {
         targets: [target.nonland("t")],
         effects: [fx.destroy(ref.target())],
         reduction: { generic: 3, condition: cond.attackedWith("Spacecraft") },
-        label: "Détruisez un permanent non-terrain",
+        label: "Destroy a nonland permanent",
       }),
     ],
   },
@@ -433,18 +433,18 @@ export const RARES: Record<string, CardScript> = {
       staticAbility(
         { subtype: "Sliver", controller: "you" },
         { addKeywords: ["doubleStrike", "haste"] },
-        { label: "Double initiative et célérité" },
+        { label: "Double strike and haste" },
       ),
-      triggered(when.yourUpkeep, [fx.createTokens(SLIVER, 2)], { label: "Deux Slivers 1/1" }),
+      triggered(when.yourUpkeep, [fx.createTokens(SLIVER, 2)], { label: "Two 1/1 Slivers" }),
     ],
   },
   "The Endstone": {
     abilities: [
-      triggered(when.playLand, [fx.draw(1)], { label: "Piochez" }),
-      triggered(when.castSpell("you"), [fx.draw(1)], { label: "Piochez" }),
-      // « la moitié de vos points de vie de départ, arrondie à l'unité supérieure » (10 en duel, 20 en Commander).
+      triggered(when.playLand, [fx.draw(1)], { label: "Draw" }),
+      triggered(when.castSpell("you"), [fx.draw(1)], { label: "Draw" }),
+      // "half your starting life total, rounded up" (10 in a duel, 20 in Commander).
       triggered(when.yourEndStep, [fx.setLife({ kind: "div", of: amount.startingLife, by: 2, up: true })], {
-        label: "Vos PV deviennent la moitié de vos PV de départ",
+        label: "Your life total becomes half your starting life total",
       }),
     ],
   },
@@ -460,17 +460,17 @@ export const RARES: Record<string, CardScript> = {
         effects: [fx.pump(ref.target(), amount.x, 0)],
         label: "+X/+0",
       }),
-      activated({ mana: "{5}", tap: true, effects: [fx.createTokens(ROBOT)], label: "Robot 2/2" }),
+      activated({ mana: "{5}", tap: true, effects: [fx.createTokens(ROBOT)], label: "2/2 Robot" }),
     ],
   },
   "Command Bridge": {
     abilities: [
       entersWith({ tapped: true }),
-      // « Sacrifiez-le à moins d'engager un permanent dégagé que vous contrôlez » (lui compris, s'il est dégagé).
+      // "Sacrifice it unless you tap an untapped permanent you control" (itself included, if untapped).
       triggered(
         when.entersSelf,
         [fx.tapChosen({}, "bridge", { exactly: 1 }), ...fx.when(cond.not(cond.v("bridge")), fx.sacrificeIt(ref.self))],
-        { label: "Engagez un permanent ou sacrifiez-le" },
+        { label: "Tap a permanent or sacrifice it" },
       ),
       manaAbility([...FIVE_COLORS]),
     ],

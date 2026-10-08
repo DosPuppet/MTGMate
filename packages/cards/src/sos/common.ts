@@ -1,6 +1,6 @@
 /**
- * Éléments de Secrets of Strixhaven (SOS) : jetons de l'extension et aides des mécaniques (Repartee, Infusion, Opus,
- * Increment). Le DSL et les jetons communs viennent de lci/common.ts.
+ * Secrets of Strixhaven (SOS) building blocks: the set's tokens and the mechanic helpers (Repartee, Infusion, Opus,
+ * Increment). The DSL and the common tokens come from lci/common.ts.
  */
 import type { Condition, dsl, Effect, TokenSpec, TriggeredAbilityDef, TriggerSpec } from "@mtgx/engine";
 import { amount, cond, fx, INSTANT_SORCERY, ref, triggered, when } from "../lci/common";
@@ -15,43 +15,43 @@ const creature = (
   extra: Partial<TokenSpec> = {},
 ): TokenSpec => ({ name, colors, types: ["Creature"], subtypes: [name], power, toughness, ...extra });
 
-/** Nuisible : créature noire et verte 1/1 avec « chaque fois que ce jeton attaque, vous gagnez 1 point de vie ». */
+/** Pest: 1/1 black and green creature with "Whenever this token attacks, you gain 1 life." */
 export const PEST: TokenSpec = creature("Pest", ["B", "G"], 1, 1, {
-  abilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "Gagnez 1 PV" })],
+  abilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "Gain 1 life" })],
   text: "Whenever this token attacks, you gain 1 life.",
 });
-/** Inkling : créature blanche et noire 1/1 avec le vol. */
+/** Inkling: 1/1 white and black creature with flying. */
 export const INKLING: TokenSpec = creature("Inkling", ["W", "B"], 1, 1, { keywords: ["flying"] });
-/** Esprit : créature rouge et blanche 2/2. */
+/** Spirit: 2/2 red and white creature. */
 export const SPIRIT_RW: TokenSpec = creature("Spirit", ["R", "W"], 2, 2);
-/** Fractale : créature verte et bleue 0/0 (elle reçoit des marqueurs +1/+1 en arrivant). */
+/** Fractal: 0/0 green and blue creature (it gets +1/+1 counters as it enters). */
 export const FRACTAL: TokenSpec = creature("Fractal", ["G", "U"], 0, 0);
-/** Élémental : créature bleue et rouge 3/3 avec le vol. */
+/** Elemental: 3/3 blue and red creature with flying. */
 export const ELEMENTAL_UR: TokenSpec = creature("Elemental", ["U", "R"], 3, 3, { keywords: ["flying"] });
 
-/** Repartee : « chaque fois que vous lancez un sort d'éphémère ou de rituel qui cible une créature ». */
+/** Repartee: "Whenever you cast an instant or sorcery spell that targets a creature". */
 export const REPARTEE: TriggerSpec = when.castSpell("you", INSTANT_SORCERY, { objects: { types: ["Creature"] } });
 
-/** Infusion : « si vous avez gagné des points de vie ce tour-ci ». */
+/** Infusion: "if you gained life this turn". */
 export const INFUSION: Condition = cond.lifeGainedAtLeast(1);
 
-/** Opus : « chaque fois que vous lancez un sort d'éphémère ou de rituel » ; `OPUS_BIG` : cinq mana ou plus dépensés. */
+/** Opus: "Whenever you cast an instant or sorcery spell"; `OPUS_BIG`: five or more mana spent. */
 export const OPUS: TriggerSpec = when.castSpell("you", INSTANT_SORCERY);
 export const OPUS_BIG: Condition = cond.amountAtLeast(amount.eventManaSpent, 5);
 
 /**
- * Increment : « chaque fois que vous lancez un sort, si le mana dépensé pour le lancer est supérieur à la force ou à
- * l'endurance de cette créature, mettez un marqueur +1/+1 sur elle ».
+ * Increment: "Whenever you cast a spell, if the amount of mana you spent is greater than this creature's power or
+ * toughness, put a +1/+1 counter on this creature."
  */
 export const INCREMENT: TriggeredAbilityDef = triggered(when.castSpell("you"), [fx.addCounters(ref.self, 1)], {
   condition: cond.any(
     cond.amountAtLeast(amount.plus(amount.eventManaSpent, amount.neg(amount.powerOf(ref.self))), 1),
     cond.amountAtLeast(amount.plus(amount.eventManaSpent, amount.neg(amount.toughnessOf(ref.self))), 1),
   ),
-  label: "Increment : un marqueur +1/+1",
+  label: "Increment: a +1/+1 counter",
 });
 
-/** Opus « …. Si cinq mana ou plus ont été dépensés pour lancer ce sort, … à la place » : l'un ou l'autre effet. */
+/** Opus "…. If five or more mana was spent to cast that spell, … instead": one effect or the other. */
 export function opusInstead(normal: dsl.Effects, big: dsl.Effects): Effect[] {
   return [...fx.when(cond.not(OPUS_BIG), ...normal), ...fx.when(OPUS_BIG, ...big)];
 }

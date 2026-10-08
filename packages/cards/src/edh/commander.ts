@@ -1,7 +1,7 @@
 /**
- * Commander (PLAN-E, E6) : cartes qui citent le commandant ou les adversaires du format multijoueur. Mana de l'identité
- * du commandant (903.4), « si vous contrôlez un commandant », éminence (113.6), mana des terrains adverses, « deux
- * adversaires ou plus ».
+ * Commander (PLAN-E, E6): cards that mention the commander or the opponents of the multiplayer format. Mana of the
+ * commander's identity (903.4), "if you control a commander", eminence (113.6), mana of opponents' lands, "two or more
+ * opponents".
  */
 import type { CardScript, ManaType } from "@mtgx/engine";
 import {
@@ -20,20 +20,20 @@ import {
   when,
 } from "./common";
 
-/** « Si vous contrôlez un commandant, vous pouvez lancer ce sort sans payer son coût de mana. » */
+/** "If you control a commander, you may cast this spell without paying its mana cost." */
 const freeWithCommander = {
   mana: "{0}",
   condition: cond.controls({ commander: true }),
-  label: "Sans payer son coût de mana (vous contrôlez un commandant)",
+  label: "Without paying its mana cost (you control a commander)",
 };
 
-/** « Arrive engagé, sauf si vous avez deux adversaires ou plus » (Battlebond, Commander Legends). */
+/** "Enters tapped unless you have two or more opponents" (Battlebond, Commander Legends). */
 const twoOpponentsLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     entersWith({
       tapped: true,
       condition: cond.not(cond.amountAtLeast(amount.refCount(ref.eachOpponent), 2)),
-      label: "Engagé, sauf avec deux adversaires ou plus",
+      label: "Tapped unless you have two or more opponents",
     }),
     manaAbility([a, b]),
   ],
@@ -47,8 +47,8 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
       entersWith({ tapped: true }),
       manaAbility(ANY_COLOR, 1, {
         commanderIdentity: true,
-        // « Quand ce mana est dépensé pour lancer un sort de créature qui partage un type de créature avec votre
-        // commandant, regard 1. »
+        // "When that mana is spent to cast a creature spell that shares a creature type with your commander,
+        // scry 1."
         rider: { spell: { types: ["Creature"], sharesCreatureTypeWith: ref.commanders() }, effects: [fx.scry(1)] },
       }),
     ],
@@ -70,13 +70,13 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.moveTo(ref.zone("command", ref.you, { commander: true }), { to: "hand" })],
-        label: "Mettez votre commandant dans votre main depuis la zone de commandement",
+        label: "Put your commander into your hand from the command zone",
       }),
     ],
   },
   "Fierce Guardianship": {
     altCost: freeWithCommander,
-    spell: spell([target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")], [fx.counter(ref.target())]),
+    spell: spell([target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")], [fx.counter(ref.target())]),
   },
   "Deadly Rollick": {
     altCost: freeWithCommander,
@@ -86,15 +86,15 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
     altCost: freeWithCommander,
     spell: spell([], [fx.pumpAll({ controller: "you" }, 0, 0, ["indestructible"])]),
   },
-  // Éminence : la première capacité fonctionne aussi depuis la zone de commandement.
+  // Eminence: the first ability also works from the command zone.
   "Edgar Markov": {
     abilities: [
       triggered(when.castSpell("you", { subtype: "Vampire", other: true }), [fx.createTokens(VAMPIRE_BLACK)], {
         fromCommand: true,
-        label: "Éminence : jeton Vampire",
+        label: "Eminence: Vampire token",
       }),
       triggered(when.attacksSelf, [fx.addCountersAll({ subtype: "Vampire", controller: "you", types: ["Creature"] })], {
-        label: "+1/+1 sur chaque Vampire",
+        label: "+1/+1 on each Vampire",
       }),
     ],
   },

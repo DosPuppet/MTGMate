@@ -1,4 +1,4 @@
-/** Marvel Super Heroes — cartes incolores et terrains. */
+/** Marvel Super Heroes — colorless cards and lands. */
 import type { ManaType } from "@mtgx/engine";
 import {
   activated,
@@ -22,16 +22,16 @@ import {
 
 const ANY_COLOR: ManaType[] = ["W", "U", "B", "R", "G"];
 
-/** Terrains bicolores « arrive engagé ; en arrivant, vous gagnez 1 PV ». */
+/** Two-color lands "enters tapped; when it enters, you gain 1 life". */
 const gainLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     entersWith({ tapped: true }),
-    triggered(when.entersSelf, [fx.gainLife(1)], { label: "Vous gagnez 1 PV" }),
+    triggered(when.entersSelf, [fx.gainLife(1)], { label: "You gain 1 life" }),
     manaAbility([a, b]),
   ],
 });
 
-/** « {T} : ajoutez {C}. {T} : ajoutez {X} ou {Y}, seulement s'il est arrivé ce tour-ci ou si vous contrôlez un terrain de base. » */
+/** "{T}: Add {C}. {T}: Add {X} or {Y}. Activate only if it entered this turn or if you control a basic land." */
 const fastLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     manaAbility("C"),
@@ -41,33 +41,33 @@ const fastLand = (a: ManaType, b: ManaType): CardScript => ({
   ],
 });
 
-/** Mana de n'importe quelle couleur, seulement pour un sort ou une capacité d'une source du sous-type. */
+/** Mana of any color, only for a spell or an ability of a source of the subtype. */
 const tribalMana = (subtype: string) =>
   manaAbility(ANY_COLOR, 1, { restriction: { spell: { subtype }, abilityOfSource: { subtype } } });
 
 export const ARTIFACTS: Record<string, CardScript> = {
-  // --- Artefacts ---------------------------------------------------------------
+  // --- Artifacts ---------------------------------------------------------------
   "A.I.M. Synthoids": {
-    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })],
+    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })],
   },
   "Captain America's Shield": {
-    // Indestructible et Équiper {2} : lus dans le texte.
+    // Indestructible and Equip {2}: read from the text.
     abilities: [
-      staticAbility("attached", { toughness: 8, addKeywords: ["vigilance"] }, { label: "+0/+8 et la vigilance" }),
+      staticAbility("attached", { toughness: 8, addKeywords: ["vigilance"] }, { label: "+0/+8 and vigilance" }),
       triggered(when.attacks({ types: ["Creature"], attached: "host" }), [fx.tap(ref.target())], {
-        targets: [target.of(ref.defendingPlayer, target.creature("t"), "créature du joueur défenseur")],
-        label: "Engagez une créature du joueur défenseur",
+        targets: [target.of(ref.defendingPlayer, target.creature("t"), "creature defending player controls")],
+        label: "Tap a creature defending player controls",
       }),
     ],
   },
   "Cosmic Cube": {
-    // Garde {2} : lue dans le texte.
+    // Ward {2}: read from the text.
     abilities: [
       triggered(
         when.attackWith(1),
         [
-          // On choisit parmi les six cartes du dessus celle à lancer, le reste va au-dessous. Approximation : la carte
-          // choisie est exilée le temps de la lancer (elle est donc vue de tous, même si vous renoncez à la lancer).
+          // The card to cast is chosen among the top six, the rest goes to the bottom. Approximation: the chosen card
+          // is exiled while it is cast (so everyone sees it, even if you decline to cast it).
           fx.lookAtTop(6, {
             filter: { notTypes: ["Land"] },
             maxManaValue: amount.maxPower({ types: ["Creature"], controller: "you", attacking: true }),
@@ -76,15 +76,15 @@ export const ARTIFACTS: Record<string, CardScript> = {
             store: "c",
           }),
           fx.castNow(ref.stored("c"), { free: true, storeRest: "r" }),
-          // Sort refusé : la carte va au-dessous de la bibliothèque, sous les autres.
+          // Spell declined: the card goes to the bottom of the library, under the others.
           fx.moveTo(ref.stored("r"), { to: "libraryBottom" }),
         ],
-        { label: "Lancez gratuitement un sort parmi les six cartes du dessus" },
+        { label: "Cast a spell from among the top six cards for free" },
       ),
     ],
   },
   "Dependable Quinjet": {
-    // Vol et équipage 4 : lus dans le texte.
+    // Flying and crew 4: read from the text.
     abilities: [manaAbility(ANY_COLOR)],
   },
   "H.E.R.B.I.E. Scout Unit": {
@@ -100,11 +100,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
             {
               count: 1,
               min: 0,
-              prompt: "Vous pouvez mettre une carte de terrain de votre main sur le champ de bataille engagée",
+              prompt: "You may put a land card from your hand onto the battlefield tapped",
             },
           ),
         ],
-        { label: "Piochez, puis vous pouvez mettre un terrain engagé" },
+        { label: "Draw, then you may put a land onto the battlefield tapped" },
       ),
     ],
   },
@@ -112,9 +112,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-la à une de vos créatures",
+        label: "Attach it to a creature you control",
       }),
-      staticAbility("attached", { power: 2, toughness: 1, addKeywords: ["flying"] }, { label: "+2/+1 et le vol" }),
+      staticAbility("attached", { power: 2, toughness: 1, addKeywords: ["flying"] }, { label: "+2/+1 and flying" }),
       activated({
         mana: "{2}",
         effects: fx.when(
@@ -129,25 +129,25 @@ export const ARTIFACTS: Record<string, CardScript> = {
               staticAbility(
                 "self",
                 { power: 1, toughness: 1 },
-                { per: { types: ["Artifact"], controller: "you" }, label: "+1/+1 par artefact que vous contrôlez" },
+                { per: { types: ["Artifact"], controller: "you" }, label: "+1/+1 for each artifact you control" },
               ),
             ],
           }),
         ),
-        label: "Devient une créature-artefact Construction Héros 0/0 volante",
+        label: "Becomes a 0/0 Construct Hero artifact creature with flying",
       }),
     ],
   },
   "S.H.I.E.L.D. Helicarrier": {
-    // Vol et équipage 6 : lus dans le texte.
-    abilities: [triggered(when.entersSelf, [fx.createTokens(SOLDIER, 2)], { label: "Deux Soldats 1/1" })],
+    // Flying and crew 6: read from the text.
+    abilities: [triggered(when.entersSelf, [fx.createTokens(SOLDIER, 2)], { label: "Two 1/1 Soldiers" })],
   },
   "The Ten Rings": {
     abilities: [
-      playerStatic({ maxHandSize: 10, label: "Taille de main maximale : dix" }),
+      playerStatic({ maxHandSize: 10, label: "Maximum hand size: ten" }),
       triggered(when.yourEndStep, [fx.draw(amount.plus(10, amount.neg(amount.cardsIn("hand"))))], {
         condition: cond.handAtMost(ref.you, 9),
-        label: "Piochez jusqu'à dix cartes en main",
+        label: "Draw up to ten cards in hand",
       }),
     ],
   },
@@ -157,7 +157,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         when.enters({ types: ["Artifact"], controller: "you", token: false, other: true }),
         fx.mayPay(
           "{2}",
-          "Payer {2} pour créer un jeton copie de cet artefact ?",
+          "Pay {2} to create a token that's a copy of this artifact?",
           fx.copyToken(ref.eventObject, { store: "tok" }),
           fx.when(
             cond.not(cond.refMatches(ref.stored("tok"), { types: ["Creature"] })),
@@ -168,7 +168,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
             ),
           ),
         ),
-        { label: "Payez {2} : un jeton copie de l'artefact (créature Robot Méchant 2/2 au besoin)" },
+        { label: "Pay {2}: a token copy of the artifact (a 2/2 Robot Villain creature if needed)" },
       ),
     ],
   },
@@ -178,44 +178,44 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{6}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, 2), fx.createTokens(ROBOT_VILLAIN)],
-        label: "Montée en puissance : deux marqueurs +1/+1 et un Robot Méchant 2/2",
+        label: "Power-up: two +1/+1 counters and a 2/2 Robot Villain",
       }),
     ],
   },
   "Vibranium Energy Daggers": {
-    // Indestructible et Équiper {3} : lus dans le texte.
+    // Indestructible and Equip {3}: read from the text.
     abilities: [staticAbility("attached", { power: 2, toughness: 2 }, { label: "+2/+2" })],
   },
   "The Vision": {
-    // Vol et vigilance : lus dans le texte.
+    // Flying and vigilance: read from the text.
     abilities: [
       triggeredModal(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [
-          mode("Rayon solaire : double initiative", [], [fx.pump(ref.self, 0, 0, ["doubleStrike"])]),
-          mode("Contrôle de densité : indestructible", [], [fx.pump(ref.self, 0, 0, ["indestructible"])]),
-          mode("Technopathie : piochez une carte", [], [fx.draw(1)]),
+          mode("Solar Beam: double strike", [], [fx.pump(ref.self, 0, 0, ["doubleStrike"])]),
+          mode("Density Control: indestructible", [], [fx.pump(ref.self, 0, 0, ["indestructible"])]),
+          mode("Technopathy: draw a card", [], [fx.draw(1)]),
         ],
-        { uniqueModes: "turn", label: "Un mode pas encore choisi ce tour-ci" },
+        { uniqueModes: "turn", label: "A mode not chosen yet this turn" },
       ),
     ],
   },
   "Viv Vision, Teen Synthezoid": {
-    // Vol : lu dans le texte.
+    // Flying: read from the text.
     abilities: [
       triggered(when.attacksSelf, fx.when(cond.sourceMatches({ minPower: 4 }), fx.draw(1)), {
-        label: "Sens cybernétiques : piochez si sa force est d'au moins 4",
+        label: "Cybernetic Senses: draw if its power is 4 or greater",
       }),
       activated({
         mana: "{7}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, 2)],
-        label: "Montée en puissance : deux marqueurs +1/+1",
+        label: "Power-up: two +1/+1 counters",
       }),
     ],
   },
 
-  // --- Terrains ----------------------------------------------------------------
+  // --- Lands -------------------------------------------------------------------
   "A.I.M. Labs": gainLand("U", "B"),
   "Asgardian Citadel": gainLand("R", "W"),
   "Avengers Hangar": gainLand("W", "U"),
@@ -226,9 +226,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({
         mana: "{4}",
         tap: true,
-        // « Dans l'ordre de votre choix » : le reste va au-dessous dans un ordre aléatoire.
+        // "In any order": the rest goes to the bottom in a random order.
         effects: [fx.lookAtTop(3, { filter: { subtype: "Hero" }, rest: "bottom" })],
-        label: "Regardez les trois cartes du dessus : une carte de Héros en main",
+        label: "Look at the top three cards: a Hero card into your hand",
       }),
     ],
   },
@@ -238,16 +238,16 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({
         mana: "{4}",
         tap: true,
-        // « Quatre mana en n'importe quelle combinaison de couleurs » : une couleur choisie pour chaque mana.
+        // "Four mana in any combination of colors": a color chosen for each mana.
         effects: [1, 2, 3, 4].map(() => fx.addManaChoice(1)),
-        label: "Quatre mana de n'importe quelles couleurs",
+        label: "Four mana in any combination of colors",
       }),
       activated({
         mana: "{4}",
         tap: true,
         activationCondition: cond.controls({ types: ["Creature"], minToughness: 4 }),
         effects: [fx.draw(1)],
-        label: "Piochez une carte (créature d'endurance 4 ou plus)",
+        label: "Draw a card (creature with toughness 4 or greater)",
       }),
     ],
   },
@@ -262,9 +262,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Subterranean Cavern": gainLand("B", "G"),
   "Surveillance Room": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }),
       manaAbility("C"),
-      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
+      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "One mana of any color" }),
     ],
   },
   "Training Compound": fastLand("R", "G"),
@@ -278,11 +278,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you", subtype: "Villain" })],
         effects: [fx.connive(ref.target())],
-        label: "Un de vos Méchants complote",
+        label: "A Villain you control connives",
       }),
     ],
   },
-  // Improvisation : lue dans le texte.
+  // Improvise: read from the text.
   "Arc Reactor": {
     abilities: [entersWith({ tapped: true }), manaAbility("C", 3)],
   },
@@ -313,7 +313,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         ),
         {
           targets: [target.creature("t", { other: true })],
-          label: "Un marqueur de chaque capacité de la créature ciblée qu'il n'a pas",
+          label: "A counter of each ability of the target creature that it doesn't have",
         },
       ),
     ),

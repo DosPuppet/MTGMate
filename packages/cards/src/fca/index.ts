@@ -1,6 +1,6 @@
 /**
- * Through the Ages (FCA) : rééditions sorties avec Final Fantasy.
- * Hors Standard, jouables en « Sans limite » (PLAN-G) ; scripts ajoutés lot par lot.
+ * Through the Ages (FCA): reprints released with Final Fantasy.
+ * Not Standard-legal, playable in "Unlimited" (PLAN-G); scripts added lot by lot.
  */
 import type { CardScript } from "@mtgx/engine";
 import { CARDS } from "./cards";

@@ -1,4 +1,4 @@
-/** Reality Fracture — cartes multicolores. */
+/** Reality Fracture — multicolored cards. */
 import {
   activated,
   amount,
@@ -35,14 +35,14 @@ import {
   when,
 } from "./common";
 
-/** « Renvoyez cette carte du cimetière sur le champ de bataille avec un marqueur de finalité. » */
+/** "Return this card from your graveyard to the battlefield with a finality counter." */
 const returnWithFinality = (mana: string, activationCondition: Parameters<typeof activated>[0]["activationCondition"]) =>
   activated({
     mana,
     fromGraveyard: true,
     activationCondition,
     effects: [fx.toBattlefield(ref.self, { counters: { kind: "finality", n: 1 } })],
-    label: "Revenir avec un marqueur de finalité",
+    label: "Return with a finality counter",
   });
 
 export const MULTI: Record<string, CardScript> = {
@@ -53,29 +53,29 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         mana: "{6}",
         effects: [fx.createTokens(HEARTWOOD), fx.pump(ref.self, amount.count({ types: ["Artifact"], controller: "you" }), 0)],
-        label: "Heartwood, puis +X/+0",
+        label: "Heartwood, then +X/+0",
       }),
     ],
   },
   "Blessed Ghoul": {
-    abilities: [activated({ mana: "{2}{W/B}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Revenir en main" })],
+    abilities: [activated({ mana: "{2}{W/B}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Return to hand" })],
   },
   Bloombrute: {
     abilities: [
-      triggered(when.gainLife, [fx.draw(1)], { oncePerTurn: true, label: "piochez une carte" }),
+      triggered(when.gainLife, [fx.draw(1)], { oncePerTurn: true, label: "draw a card" }),
       activated({
         mana: "{4}{G}{W}",
         targets: [target.creature("t")],
         effects: [fx.modify(ref.target(), { addKeywords: ["trample", "lifelink"] })],
-        label: "Piétinement et lien de vie",
+        label: "Trample and lifelink",
       }),
     ],
   },
   "Charge the Sanctum": {
     spell: modal(
-      mode("Vos créatures +2/+0", [], [fx.pumpAll(CREATURE_YOU_CONTROL, 2, 0)]),
+      mode("Your creatures +2/+0", [], [fx.pumpAll(CREATURE_YOU_CONTROL, 2, 0)]),
       mode(
-        "+2/+0, initiative et marqueur +1/+1",
+        "+2/+0, first strike and +1/+1 counter",
         [target.creature("t")],
         [fx.pump(ref.target(), 2, 0, ["firstStrike"]), fx.addCounters(ref.target(), 1)],
       ),
@@ -84,7 +84,7 @@ export const MULTI: Record<string, CardScript> = {
   "Denzilore Fatehold": {
     abilities: [
       triggered(when.scryOrSurveil, [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)], {
-        label: "regard/surveillance : marqueur sur chaque créature",
+        label: "scry/surveil: counter on each creature",
       }),
     ],
   },
@@ -96,47 +96,47 @@ export const MULTI: Record<string, CardScript> = {
           ...fx.when(cond.scried, fx.addCounters(ref.target(), 1)),
           ...fx.when(cond.not(cond.scried), fx.pump(ref.target(), 1, 1)),
         ],
-        { targets: [target.creature("t", { controller: "you", other: true })], label: "+1/+1 (ou marqueur)" },
+        { targets: [target.creature("t", { controller: "you", other: true })], label: "+1/+1 (or counter)" },
       ),
     ],
   },
   "Ferocity of the Hunt": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      staticAbility("attached", { power: 1, addKeywords: ["deathtouch"] }, { label: "+1/+0 et contact mortel" }),
+      staticAbility("attached", { power: 1, addKeywords: ["deathtouch"] }, { label: "+1/+0 with deathtouch" }),
       triggered(when.dies({ attached: "host" }), [fx.toBattlefield(ref.eventObject, { tapped: true })], {
-        label: "revient engagée",
+        label: "returns tapped",
       }),
     ],
   },
   "Frostbite Pyromental": {
     abilities: [
-      triggered(when.combatDamageToPlayer, [fx.draw(2)], { label: "piochez deux cartes" }),
-      triggered(when.eachEndStep, [fx.sacrificeIt(ref.self)], { label: "sacrifiée" }),
+      triggered(when.combatDamageToPlayer, [fx.draw(2)], { label: "draw two cards" }),
+      triggered(when.eachEndStep, [fx.sacrificeIt(ref.self)], { label: "sacrificed" }),
     ],
   },
   "Grim Repriser": { abilities: [returnWithFinality("{B}{R}", cond.opponentDealtNoncombatDamage)] },
   "Ingris Stingerquill": {
     abilities: [
       triggered(when.attacks({ types: ["Creature"], controller: "you" }), [fx.damage(1, ref.eachOpponent, ref.eventObject)], {
-        label: "l'attaquant inflige 1 blessure",
+        label: "the attacker deals 1 damage",
       }),
       activated({
         mana: "{4}",
         effects: [fx.createTokens(CADET), fx.pumpAll(CREATURE_YOU_CONTROL, 0, 0, ["haste"])],
-        label: "Cadet, puis célérité",
+        label: "Cadet, then haste",
       }),
     ],
   },
   "Konstrari Charm": {
     spell: modal(
-      mode("6 blessures à une créature volante", [target.creature("t", { keyword: "flying" })], [fx.damage(6, ref.target())]),
+      mode("6 damage to a flying creature", [target.creature("t", { keyword: "flying" })], [fx.damage(6, ref.target())]),
       mode(
-        "Deux marqueurs +1/+1 et piétinement",
+        "Two +1/+1 counters, trample",
         [target.creature("t")],
         [fx.addCounters(ref.target(), 2), fx.modify(ref.target(), { addKeywords: ["trample"] })],
       ),
-      mode("Ajoutez {C}{C}{C}", [], [fx.addMana("C", "C", "C")]),
+      mode("Add {C}{C}{C}", [], [fx.addMana("C", "C", "C")]),
     ),
   },
   "Kwia Vigorbloom": {
@@ -149,30 +149,34 @@ export const MULTI: Record<string, CardScript> = {
         [
           fx.mill(4),
           fx.reflexive(
-            [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain de votre cimetière")],
+            [target.cardInGraveyard("t", { types: ["Land"] }, "you", "land card in your graveyard")],
             [fx.toBattlefield(ref.target(), { tapped: true })],
           ),
         ],
-        { label: "meule 4, puis un terrain revient" },
+        { label: "mills 4, then a land returns" },
       ),
     ],
   },
   "Proctor of Potential": {
     abilities: [
-      triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.surveil(1)], { label: "surveillance 1" }),
+      triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.surveil(1)], { label: "surveil 1" }),
       returnWithFinality("{W}{U}", cond.scried),
     ],
   },
   "Solarium Sentry": {
-    abilities: [triggered(when.castSpell("opponent", { maxManaValue: 2 }), [fx.gainLife(2)], { label: "+2 PV" })],
+    abilities: [triggered(when.castSpell("opponent", { maxManaValue: 2 }), [fx.gainLife(2)], { label: "+2 life" })],
   },
   "Solitary Cell": {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [
-          target.nonland("t", { controller: "opponent", maxManaValue: 3 }, "permanent non-terrain adverse (VM 3 ou moins)"),
+          target.nonland(
+            "t",
+            { controller: "opponent", maxManaValue: 3 },
+            "nonland permanent an opponent controls (mana value 3 or less)",
+          ),
         ],
-        label: "exile jusqu'à son départ",
+        label: "exiles until it leaves",
       }),
       activated({
         mana: "{1}",
@@ -180,20 +184,20 @@ export const MULTI: Record<string, CardScript> = {
         discard: 1,
         discardFilter: { legendary: true },
         effects: [fx.draw(1)],
-        label: "Défausser une carte légendaire : piochez",
+        label: "Discard a legendary card: draw",
       }),
     ],
   },
   "Stingerquill Charm": {
     spell: modal(
-      mode("3 blessures", [target.any()], [fx.damage(3, ref.target())]),
+      mode("3 damage", [target.any()], [fx.damage(3, ref.target())]),
       mode(
-        "Initiative et contact mortel",
+        "First strike and deathtouch",
         [target.creature("t")],
         [fx.modify(ref.target(), { addKeywords: ["firstStrike", "deathtouch"] })],
       ),
       mode(
-        "Cadet avec célérité",
+        "Cadet with haste",
         [],
         [fx.createTokens(CADET, 1, undefined, "cadet"), fx.modify(ref.stored("cadet"), { addKeywords: ["haste"] })],
       ),
@@ -213,36 +217,36 @@ export const MULTI: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Land"] }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.createTokens({ ...HEARTWOOD, tapped: true }, 2)),
         ],
-        { label: "sacrifier un terrain : deux Heartwood" },
+        { label: "sacrifice a land: two Heartwoods" },
       ),
       activated({
         tapOthers: { filter: { types: ["Artifact"], controller: "you" }, count: 2 },
         effects: [fx.addCounters(ref.self, 2)],
-        label: "Deux marqueurs +1/+1",
+        label: "Two +1/+1 counters",
       }),
     ],
   },
   "Theorix Charm": {
     spell: modal(
       mode(
-        "Contrecarrer un sort non-créature, sauf {2}",
-        [target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")],
+        "Counter a noncreature spell unless its controller pays {2}",
+        [target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")],
         fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{2}" }, fx.counter(ref.target())),
       ),
       mode("-2/-2", [target.creature("t")], [fx.pump(ref.target(), -2, -2)]),
-      mode("Meule 3, puis piochez", [], [fx.mill(3), fx.draw(1)]),
+      mode("Mill 3, then draw", [], [fx.mill(3), fx.draw(1)]),
     ),
   },
   "Vigorbloom Charm": {
     spell: modal(
       mode(
-        "Défense talismanique et indestructible",
-        [targetObj("t", { permanent: true, controller: "you" }, "permanent que vous contrôlez")],
+        "Hexproof and indestructible",
+        [targetObj("t", { permanent: true, controller: "you" }, "permanent you control")],
         [fx.modify(ref.target(), { addKeywords: ["hexproof", "indestructible"] })],
       ),
-      mode("Piochez une carte, +3 PV", [], [fx.draw(1), fx.gainLife(3)]),
+      mode("Draw a card, +3 life", [], [fx.draw(1), fx.gainLife(3)]),
       mode(
-        "Marqueur +1/+1, puis combat",
+        "+1/+1 counter, then fight",
         [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
         [fx.addCounters(ref.target("a"), 1), fx.fight(ref.target("a"), ref.target("b"))],
       ),
@@ -252,13 +256,13 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { enteredThisTurn: true })],
-        label: "marqueur sur une créature arrivée ce tour-ci",
+        label: "counter on a creature that entered this turn",
       }),
     ],
   },
   "Saheeli, Jewel of Avishkar": {
     abilities: [
-      staticAbility({ subtype: "Thopter", controller: "you" }, { addKeywords: ["haste"] }, { label: "Célérité (Thopters)" }),
+      staticAbility({ subtype: "Thopter", controller: "you" }, { addKeywords: ["haste"] }, { label: "Haste (Thopters)" }),
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.createTokens(THOPTER)], { label: "Thopter" }),
     ],
   },
@@ -268,20 +272,20 @@ export const MULTI: Record<string, CardScript> = {
         { types: ["Artifact"], controller: "you", anyOf: [{ types: ["Creature"] }] },
         { addKeywords: ["vigilance"] },
         {
-          label: "Vigilance (créatures-artefacts)",
+          label: "Vigilance (artifact creatures)",
         },
       ),
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.createTokens(SCULPTURE_TREASURE)], {
-        label: "Sculpture Trésor",
+        label: "Sculpture Treasure",
       }),
     ],
   },
   "Vraska, the Cutting Glare": {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target()), fx.createTokens(TREASURE, 1, ref.controllerOf(ref.target()))], {
-        targets: [targetObj("t", { permanent: true, controller: "opponent" }, "permanent adverse")],
+        targets: [targetObj("t", { permanent: true, controller: "opponent" }, "permanent an opponent controls")],
         condition: cond.controls({ types: ["Land"] }, 6),
-        label: "six terrains : détruire un permanent",
+        label: "six lands: destroy a permanent",
       }),
     ],
   },
@@ -291,12 +295,12 @@ export const MULTI: Record<string, CardScript> = {
   "Paradox Shaper": {
     prepareSpell: OMIT_VARIABLES,
     abilities: [
-      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "devient préparée" }),
+      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "becomes prepared" }),
       activated({
         mana: "{2}",
         targets: [target.cardInGraveyard("t", {}, "you")],
         effects: [fx.moveTo(ref.target(), { to: "libraryBottom" })],
-        label: "Carte du cimetière au-dessous de la bibliothèque",
+        label: "Card from your graveyard on the bottom of your library",
       }),
     ],
   },
@@ -306,21 +310,25 @@ export const MULTI: Record<string, CardScript> = {
       entersWith({ prepared: true }),
       triggered(when.scryOrSurveil, [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0)], {
         oncePerTurn: true,
-        label: "vos créatures +1/+0",
+        label: "your creatures +1/+0",
       }),
     ],
   },
   "Stingerquill Voxmancer": {
     prepareSpell: VICIOUS_VERSE,
     abilities: [
-      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "devient préparée" }),
+      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "becomes prepared" }),
     ],
   },
   "Theorix Metamage": {
     prepareSpell: OMIT_VARIABLES,
     abilities: [
       entersWith({ prepared: true }),
-      staticAbility("self", { power: 1, addKeywords: ["flying"] }, { condition: cond.threshold, label: "Seuil : +1/+0 et vol" }),
+      staticAbility(
+        "self",
+        { power: 1, addKeywords: ["flying"] },
+        { condition: cond.threshold, label: "Threshold: +1/+0 and flying" },
+      ),
     ],
   },
   "Vigorbloom Vanguard": {
@@ -331,7 +339,7 @@ export const MULTI: Record<string, CardScript> = {
         { types: ["Creature"], controller: "you", withCounter: "+1/+1" },
         { addKeywords: ["vigilance"] },
         {
-          label: "Vigilance (avec un marqueur +1/+1)",
+          label: "Vigilance (with a +1/+1 counter)",
         },
       ),
     ],
@@ -345,7 +353,7 @@ export const MULTI: Record<string, CardScript> = {
         { addKeywords: ["flying", "haste"] },
         {
           condition: cond.opponentDealtNoncombatDamage,
-          label: "Vol et célérité (blessures non de combat)",
+          label: "Flying and haste (noncombat damage)",
         },
       ),
     ],
@@ -353,19 +361,19 @@ export const MULTI: Record<string, CardScript> = {
   "Woodwork Prodigy": {
     prepareSpell: SOUL_TETHER,
     abilities: [
-      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "devient préparée" }),
+      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "becomes prepared" }),
     ],
   },
   "Avatar of Burgeoning Echoes": {
     abilities: [
-      triggered(when.landfall, [empower(2)], { label: "Landfall : renforcez Jace 2" }),
+      triggered(when.landfall, [empower(2)], { label: "Landfall: empower Jace 2" }),
       walkersHave(
         loyalty(-10, {
           targets: [target.creature("t")],
           effects: [fx.addCounters(ref.target(), amount.count({ types: ["Land"], controller: "you" }))],
-          label: "Un marqueur par terrain",
+          label: "A counter for each land",
         }),
-        "Planeswalkers : [−10]",
+        "Planeswalkers: [−10]",
       ),
     ],
   },
@@ -376,12 +384,12 @@ export const MULTI: Record<string, CardScript> = {
         { addKeywords: ["vigilance"] },
         {
           condition: cond.controls({ types: ["Planeswalker"], subtype: "Jace" }),
-          label: "Vigilance (avec un Jace)",
+          label: "Vigilance (with a Jace)",
         },
       ),
       triggered(when.entersSelf, [fx.fight(ref.self, ref.target())], {
         targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
-        label: "combat",
+        label: "fight",
       }),
     ],
   },
@@ -392,16 +400,12 @@ export const MULTI: Record<string, CardScript> = {
     ),
   },
   "Craftwork Crusher": {
-    // « Choisissez deux — » : les trois paires possibles.
+    // "Choose two —": the three possible pairs.
     abilities: [
       triggeredModal(when.entersSelf, [
-        mode(
-          "4 blessures et un Cadet",
-          [target.creatureOrPlaneswalker("t")],
-          [fx.damage(4, ref.target()), fx.createTokens(CADET)],
-        ),
-        mode("4 blessures et piochez", [target.creatureOrPlaneswalker("t")], [fx.damage(4, ref.target()), fx.draw(1)]),
-        mode("Un Cadet et piochez", [], [fx.createTokens(CADET), fx.draw(1)]),
+        mode("4 damage and a Cadet", [target.creatureOrPlaneswalker("t")], [fx.damage(4, ref.target()), fx.createTokens(CADET)]),
+        mode("4 damage and draw", [target.creatureOrPlaneswalker("t")], [fx.damage(4, ref.target()), fx.draw(1)]),
+        mode("A Cadet and draw", [], [fx.createTokens(CADET), fx.draw(1)]),
       ]),
     ],
   },
@@ -432,7 +436,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.dies({ ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "you", other: true }),
         [fx.gainLife(1)],
-        { label: "+1 PV" },
+        { label: "+1 life" },
       ),
       activated({
         mana: "{2}",
@@ -440,7 +444,7 @@ export const MULTI: Record<string, CardScript> = {
           filter: { ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "you", other: true },
         },
         effects: [fx.addCounters(ref.self, 1), fx.modify(ref.self, { addKeywords: ["menace"] })],
-        label: "Marqueur +1/+1 et menace",
+        label: "+1/+1 counter and menace",
       }),
     ],
   },
@@ -449,22 +453,22 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.attackWith(), [fx.untap(ref.target()), fx.modify(ref.target(), { addKeywords: ["unblockable"] })], {
         targets: [target.creature("t", { attacking: true })],
         condition: cond.activatedLoyalty,
-        label: "dégage un attaquant, imblocable",
+        label: "untaps an attacker, unblockable",
       }),
       walkersHave(
-        loyalty(-8, { effects: [fx.createTokens(LEVIATHAN)], label: "Léviathan 8/8" }),
-        "Planeswalkers : [−8] Léviathan",
+        loyalty(-8, { effects: [fx.createTokens(LEVIATHAN)], label: "8/8 Leviathan" }),
+        "Planeswalkers: [−8] Leviathan",
       ),
     ],
   },
   "Tam, the Possibility": {
     abilities: [
-      costReducer({ types: ["Planeswalker"] }, 1, "Planeswalkers : {1} de moins"),
+      costReducer({ types: ["Planeswalker"] }, 1, "Planeswalkers: {1} less"),
       activated({
         mana: "{W}{U}{B}{R}{G}",
         tap: true,
         effects: [fx.proliferate(amount.distinctSubtypes({ types: ["Planeswalker"], controller: "you" }))],
-        label: "Proliférez X fois",
+        label: "Proliferate X times",
       }),
     ],
   },

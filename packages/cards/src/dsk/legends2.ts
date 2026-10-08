@@ -1,6 +1,6 @@
 /**
- * Duskmourn, lot D : les 18 dernières cartes (Aura de joueur, Valgavoth, ninjutsu de Kaito, Leylines, doublement des
- * blessures sous délire, cibles en nombre variable, Marvin…).
+ * Duskmourn, lot D: the last 18 cards (player Aura, Valgavoth, Kaito's ninjutsu, Leylines, damage doubling under
+ * delirium, variable number of targets, Marvin…).
  */
 import {
   activated,
@@ -29,11 +29,11 @@ const ANY_COLOR = ["W", "U", "B", "R", "G"] as const;
 
 export const LEGENDS2: Record<string, CardScript> = {
   "Grievous Wound": {
-    enchant: { filter: {}, label: "joueur", player: true },
+    enchant: { filter: {}, label: "player", player: true },
     abilities: [
-      playerStatic({ cantGainLife: true, affects: "enchanted", label: "Le joueur enchanté ne peut pas gagner de points de vie" }),
+      playerStatic({ cantGainLife: true, affects: "enchanted", label: "Enchanted player can't gain life" }),
       triggered(when.attachedPlayerDamaged, [fx.loseLife(amount.halfLife(ref.attached), ref.attached)], {
-        label: "Il perd la moitié de ses PV",
+        label: "They lose half their life",
       }),
     ],
   },
@@ -48,7 +48,7 @@ export const LEGENDS2: Record<string, CardScript> = {
             fx.reflexive([{ ...target.upTo(1, target.creature()), countAmount: amount.v("d") }], [fx.pump(ref.target(), -2, -2)]),
           ),
         ],
-        { label: "Défaussez des cartes : autant de créatures -2/-2" },
+        { label: "Discard cards: that many creatures -2/-2" },
       ),
     ],
   },
@@ -59,19 +59,17 @@ export const LEGENDS2: Record<string, CardScript> = {
         notControlledByYou: true,
         filter: { token: false },
         link: "object",
-        label: "Les cartes adverses sont exilées",
+        label: "Opponents' cards are exiled",
       }),
       playerStatic({
         playFrom: { zone: "linked", payLifeManaValue: true },
         condition: cond.yourTurn,
-        label: "Les cartes adverses sont exilées ; jouables pendant votre tour contre des PV",
+        label: "Opponents' cards are exiled; playable during your turn for life",
       }),
     ],
   },
   "Warped Space": {
-    abilities: [
-      playerStatic({ freeFromExileOncePerTurn: true, label: "Une fois par tour, {0} pour un sort lancé depuis l'exil" }),
-    ],
+    abilities: [playerStatic({ freeFromExileOncePerTurn: true, label: "Once each turn, {0} for a spell cast from exile" })],
   },
   "Norin, Swift Survivalist": {
     keywords: ["cantBlock"],
@@ -80,12 +78,12 @@ export const LEGENDS2: Record<string, CardScript> = {
         when.becomesBlocked(CREATURE_YOU_CONTROL),
         [
           ...fx.may(
-            "Exiler cette créature (jouable ce tour-ci) ?",
+            "Exile that creature (playable this turn)?",
             fx.exileCard(ref.eventObject, { name: "x" }),
             fx.grantPlay(ref.stored("x")),
           ),
         ],
-        { label: "Exilez la créature bloquée, jouable ce tour-ci" },
+        { label: "Exile the blocked creature, playable this turn" },
       ),
     ],
   },
@@ -97,11 +95,11 @@ export const LEGENDS2: Record<string, CardScript> = {
         combat: false,
         modify: { times: 2 },
         condition: cond.delirium,
-        label: "Délire — blessures non de combat doublées",
+        label: "Delirium — noncombat damage doubled",
       }),
       triggered(when.entersSelf, [fx.damage(amount.sourceX, ref.target())], {
         targets: [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
-        label: "X blessures à chacune de jusqu'à X créatures",
+        label: "X damage to each of up to X creatures",
       }),
     ],
   },
@@ -120,18 +118,21 @@ export const LEGENDS2: Record<string, CardScript> = {
       [target.creature()],
       [
         fx.pump(ref.target(), 3, 0),
-        fx.whenThisTurn(when.dies({}), ref.target(), [fx.manifestDread], { label: "Manifestation effroyable" }),
+        fx.whenThisTurn(when.dies({}), ref.target(), [fx.manifestDread], { label: "Manifest dread" }),
       ],
     ),
   },
   "Leyline of Mutation": {
     leyline: true,
     abilities: [
-      playerStatic({ altCostAll: { mana: cost("{W}{U}{B}{R}{G}") }, label: "Vos sorts : {W}{U}{B}{R}{G} au lieu de leur coût" }),
+      playerStatic({
+        altCostAll: { mana: cost("{W}{U}{B}{R}{G}") },
+        label: "Your spells: {W}{U}{B}{R}{G} rather than their cost",
+      }),
     ],
   },
   "Monstrous Emergence": {
-    // Coût additionnel : contempler une créature (choisie par le joueur), dont la force est lue à la résolution.
+    // Additional cost: behold a creature (chosen by the player), whose power is read on resolution.
     additionalCost: { behold: { filter: { types: ["Creature"] }, required: true } },
     spell: spell([target.creature()], [fx.damage(amount.powerOf(ref.cost("beheld")), ref.target())]),
   },
@@ -143,7 +144,7 @@ export const LEGENDS2: Record<string, CardScript> = {
         sacrifice: true,
         sorcerySpeed: true,
         effects: [fx.createTokens(SPIDER, amount.lkiCounters("any"))],
-        label: "Une Araignée 2/2 par marqueur",
+        label: "A 2/2 Spider for each counter",
       }),
     ],
   },
@@ -153,14 +154,14 @@ export const LEGENDS2: Record<string, CardScript> = {
         mana: "{1}{U}{B}",
         fromHand: true,
         returnUnblockedAttacker: true,
-        // 702.49c : il attaque ce qu'attaquait la créature renvoyée.
+        // 702.49c: it attacks what the returned creature was attacking.
         effects: [fx.toBattlefield(ref.self, { tapped: true, attacking: ref.cost("defender") })],
         label: "Ninjutsu {1}{U}{B}",
       }),
       staticAbility(
         "self",
         { addTypes: ["Creature"], addSubtypes: ["Ninja"], setPower: 3, setToughness: 4, addKeywords: ["hexproof"] },
-        { condition: cond.all(cond.yourTurn, cond.counterAtLeast("loyalty", 1)), label: "Pendant votre tour : Ninja 3/4" },
+        { condition: cond.all(cond.yourTurn, cond.counterAtLeast("loyalty", 1)), label: "During your turn: 3/4 Ninja" },
       ),
       loyalty(1, {
         effects: [
@@ -168,36 +169,38 @@ export const LEGENDS2: Record<string, CardScript> = {
             staticAbility({ types: ["Creature"], subtype: "Ninja", controller: "you" }, { power: 1, toughness: 1 }),
           ]),
         ],
-        label: "Emblème : vos Ninjas +1/+1",
+        label: "Emblem: your Ninjas +1/+1",
       }),
-      loyalty(0, { effects: [fx.surveil(2), fx.draw(amount.opponentsLostLife)], label: "Surveillance 2, piochez" }),
+      loyalty(0, { effects: [fx.surveil(2), fx.draw(amount.opponentsLostLife)], label: "Surveil 2, draw" }),
       loyalty(-2, {
         targets: [target.creature()],
         effects: [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 2)],
-        label: "Engagez une créature, deux marqueurs d'étourdissement",
+        label: "Tap a creature, two stun counters",
       }),
     ],
   },
   "Smoky Lounge": {
     abilities: [
-      // {R}{R} ajouté au début de votre première phase principale (mana restreint de la réserve).
+      // {R}{R} added at the beginning of your first main phase (restricted mana in the pool).
       triggered(when.step("main1", "you"), [fx.addManaChoice(2, ["R"], { spell: { subtype: "Room" }, ability: ["unlock"] })], {
-        label: "Ajoutez {R}{R}, pour des sorts de Salle et déverrouiller des portes",
+        label: "Add {R}{R}, for Room spells and unlocking doors",
       }),
     ],
   },
   "Undead Sprinter": {
     castFromGraveyard: { condition: cond.creatureDiedMatching({ types: ["Creature"], notSubtype: "Zombie" }) },
-    abilities: [entersWith({ counters: 1, condition: cond.castFromGraveyard, label: "Marqueur +1/+1 (lancée du cimetière)" })],
+    abilities: [
+      entersWith({ counters: 1, condition: cond.castFromGraveyard, label: "+1/+1 counter (cast from your graveyard)" }),
+    ],
   },
   "Winter, Misanthropic Guide": {
     abilities: [
-      triggered(when.yourUpkeep, [fx.draw(2, ref.eachPlayer)], { label: "Chaque joueur pioche deux cartes" }),
+      triggered(when.yourUpkeep, [fx.draw(2, ref.eachPlayer)], { label: "Each player draws two cards" }),
       playerStatic({
         maxHandSize: amount.plus(7, amount.neg(amount.cardTypesInGraveyard)),
         affects: "opponents",
         condition: cond.delirium,
-        label: "Délire — main maximale adverse : 7 moins les types",
+        label: "Delirium — opponents' maximum hand size: 7 minus the types",
       }),
     ],
   },
@@ -207,7 +210,7 @@ export const LEGENDS2: Record<string, CardScript> = {
         tap: true,
         targets: [target.cardInGraveyard("t", {}, "any")],
         effects: [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))],
-        label: "Exilez une carte d'un cimetière",
+        label: "Exile a card from a graveyard",
       }),
       activated({
         mana: "{6}",
@@ -222,7 +225,7 @@ export const LEGENDS2: Record<string, CardScript> = {
           ),
           fx.modify(ref.stored("s"), { setPower: 1, setToughness: 1 }, "permanent"),
         ],
-        label: "Les créatures exilées reviennent en Esprits 1/1 volants",
+        label: "The exiled creatures return as 1/1 flying Spirits",
       }),
     ],
   },
@@ -237,7 +240,7 @@ export const LEGENDS2: Record<string, CardScript> = {
           fx.addCounters(ref.self, 7),
           fx.modify(ref.self, { addTypes: ["Creature"], addSubtypes: ["Spirit"], setPower: 0, setToughness: 0 }, "permanent"),
         ],
-        label: "Sept marqueurs +1/+1 : devient un Esprit 0/0",
+        label: "Seven +1/+1 counters: becomes a 0/0 Spirit",
       }),
     ],
   },
@@ -247,7 +250,7 @@ export const LEGENDS2: Record<string, CardScript> = {
         "self",
         { gainActivatedFrom: { types: ["Creature"], controller: "you" } },
         {
-          label: "A les capacités activées de vos autres créatures",
+          label: "Has the activated abilities of your other creatures",
         },
       ),
     ],

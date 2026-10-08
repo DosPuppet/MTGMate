@@ -1,4 +1,4 @@
-/** Secrets of Strixhaven — cartes bleues. */
+/** Secrets of Strixhaven — blue cards. */
 import {
   activated,
   amount,
@@ -22,7 +22,7 @@ import {
   when,
 } from "./common";
 
-/** Restriction du mana : « dépensez ce mana uniquement pour lancer un sort d'éphémère ou de rituel ». */
+/** Mana restriction: "Spend this mana only to cast an instant or sorcery spell." */
 const INSTANT_SORCERY_ONLY = { spell: INSTANT_SORCERY };
 
 export const BLUE: Record<string, CardScript> = {
@@ -30,7 +30,7 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell([target.nonland()], [fx.bounce(ref.target()), fx.surveil(1)]),
   },
   "Campus Composer": {
-    // Parade {2} : lue dans le texte.
+    // Ward {2}: read from the text.
     prepareSpell: spell([], [fx.createTokens(ELEMENTAL_UR)]),
     abilities: [entersWith({ prepared: true })],
   },
@@ -41,10 +41,10 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagez une créature adverse, un marqueur d'étourdissement",
+        label: "Tap an opponent's creature, a stun counter",
       }),
       triggered(OPUS, opusInstead([fx.pump(ref.self, 1, 1)], [fx.pump(ref.self, 2, 2)]), {
-        label: "Opus : +1/+1 (+2/+2 si cinq mana ou plus)",
+        label: "Opus: +1/+1 (+2/+2 if five or more mana)",
       }),
     ],
   },
@@ -53,10 +53,7 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell(
       [
         {
-          ...target.upTo(
-            99,
-            target.cardInGraveyard("t", INSTANT_SORCERY, "you", "carte d'éphémère ou de rituel de votre cimetière"),
-          ),
+          ...target.upTo(99, target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery card from your graveyard")),
           countX: "upTo",
         },
       ],
@@ -64,7 +61,7 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Echocasting Symposium": {
-    // Paradigme : lu dans le texte. Le joueur ciblé crée le jeton (il en est le propriétaire et le contrôleur).
+    // Paradigm: read from the text. The target player creates the token (they are its owner and controller).
     spell: spell(
       [target.player("p"), target.creature("c", { controller: "you" })],
       [fx.copyToken(ref.target("c"), { for: ref.target("p") })],
@@ -72,13 +69,13 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Encouraging Aviator": {
     prepareSpell: spell([target.creature()], [fx.modify(ref.target(), { addKeywords: ["flying"] })]),
-    abilities: [triggered(when.attacksSelf, [fx.prepare(ref.self)], { label: "Devient préparée" })],
+    abilities: [triggered(when.attacksSelf, [fx.prepare(ref.self)], { label: "Becomes prepared" })],
   },
   "Exhibition Tidecaller": {
     abilities: [
       triggered(OPUS, opusInstead([fx.mill(3, ref.target())], [fx.mill(10, ref.target())]), {
         targets: [target.player()],
-        label: "Opus : le joueur ciblé meule trois cartes (dix si cinq mana ou plus)",
+        label: "Opus: target player mills three cards (ten if five or more mana)",
       }),
     ],
   },
@@ -123,7 +120,7 @@ export const BLUE: Record<string, CardScript> = {
           "hand",
           {},
           { to: "libraryTop" },
-          { count: 2, min: 2, prompt: "Mettez deux cartes de votre main au-dessus de votre bibliothèque" },
+          { count: 2, min: 2, prompt: "Put two cards from your hand on top of your library" },
         ),
       ],
     ),
@@ -132,7 +129,7 @@ export const BLUE: Record<string, CardScript> = {
         tap: true,
         tapOthers: { filter: { types: ["Creature"], controller: "you" }, count: 2 },
         effects: [fx.prepare(ref.self)],
-        label: "Engagez deux créatures : devient préparée",
+        label: "Tap two creatures: becomes prepared",
       }),
     ],
   },
@@ -149,7 +146,7 @@ export const BLUE: Record<string, CardScript> = {
         mana: "{1}",
         tap: true,
         effects: [fx.addManaChoice(1, undefined, INSTANT_SORCERY_ONLY)],
-        label: "Un mana de n'importe quelle couleur (éphémères et rituels)",
+        label: "One mana of any color (instants and sorceries)",
       }),
     ],
   },
@@ -160,7 +157,7 @@ export const BLUE: Record<string, CardScript> = {
     ),
     abilities: [
       entersWith({ prepared: true }),
-      triggered(when.entersSelf, fx.loot(2), { label: "Piochez deux cartes, puis défaussez-en deux" }),
+      triggered(when.entersSelf, fx.loot(2), { label: "Draw two cards, then discard two" }),
     ],
   },
   "Landscape Painter": {
@@ -171,10 +168,10 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         targets: [target.upTo(1, target.creature("t", { other: true }))],
-        label: "Renvoyez jusqu'à une autre créature dans la main de son propriétaire",
+        label: "Return up to one other creature to its owner's hand",
       }),
       triggered(when.castSpell("you", { hasX: true }), [fx.modify(ref.self, { addKeywords: ["unblockable"] })], {
-        label: "Sort avec {X} : ne peut pas être bloquée ce tour-ci",
+        label: "Spell with {X}: can't be blocked this turn",
       }),
     ],
   },
@@ -184,7 +181,7 @@ export const BLUE: Record<string, CardScript> = {
   "Muse Seeker": {
     abilities: [
       triggered(OPUS, [fx.draw(1), ...fx.when(cond.not(OPUS_BIG), fx.discard(1))], {
-        label: "Opus : piochez, puis défaussez sauf si cinq mana ou plus",
+        label: "Opus: draw, then discard unless five or more mana",
       }),
     ],
   },
@@ -196,13 +193,10 @@ export const BLUE: Record<string, CardScript> = {
       generic: 3,
       condition: cond.amountAtLeast(amount.totalToughness({ types: ["Creature"], controller: "you" }), 10),
     },
-    abilities: [triggered(when.entersSelf, [fx.draw(2)], { label: "Piochez deux cartes" })],
+    abilities: [triggered(when.entersSelf, [fx.draw(2)], { label: "Draw two cards" })],
   },
   "Pensive Professor": {
-    abilities: [
-      INCREMENT,
-      triggered(when.countersPut("self", "+1/+1"), [fx.draw(1)], { label: "Des marqueurs +1/+1 : piochez une carte" }),
-    ],
+    abilities: [INCREMENT, triggered(when.countersPut("self", "+1/+1"), [fx.draw(1)], { label: "+1/+1 counters: draw a card" })],
   },
   Procrastinate: {
     spell: spell([target.creature()], [fx.tap(ref.target()), fx.counters(ref.target(), "stun", amount.plus(amount.x, amount.x))]),
@@ -212,7 +206,7 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.topOrBottom(ref.target())]),
   },
   "Skycoach Conductor": {
-    // Flash, vol et vigilance : lus dans le texte.
+    // Flash, flying and vigilance: read from the text.
     prepareSpell: spell(
       [target.creature("t", { controller: "you", notSubtype: "Pilot" })],
       [fx.exileCard(ref.target(), { name: "a" }), fx.toBattlefield(ref.stored("a"))],
@@ -229,7 +223,7 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.yourCombat,
         [
-          fx.payX("payer X pour déplacer X marqueurs +1/+1 ?", "x"),
+          fx.payX("pay X to move X +1/+1 counters?", "x"),
           ...fx.when(
             cond.v("x"),
             fx.reflexive(
@@ -240,12 +234,12 @@ export const BLUE: Record<string, CardScript> = {
             ),
           ),
         ],
-        { label: "Payez {X} : déplacez X marqueurs +1/+1 sur une autre créature" },
+        { label: "Pay {X}: move X +1/+1 counters onto another creature" },
       ),
     ],
   },
   "Textbook Tabulator": {
-    abilities: [INCREMENT, triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })],
+    abilities: [INCREMENT, triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })],
   },
   "Wisdom of Ages": {
     exileOnResolve: true,
@@ -254,7 +248,7 @@ export const BLUE: Record<string, CardScript> = {
       [
         fx.moveAll("graveyard", ref.you, INSTANT_SORCERY, { to: "hand" }),
         fx.emblem("Wisdom of Ages", "You have no maximum hand size.", [
-          playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
+          playerStatic({ maxHandSize: "none", label: "No maximum hand size" }),
         ]),
       ],
     ),

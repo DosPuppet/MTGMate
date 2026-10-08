@@ -1,4 +1,4 @@
-/** Final Fantasy — cartes noires. */
+/** Final Fantasy — black cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -23,12 +23,12 @@ import {
 
 const CREATURE_OR_ARTIFACT = { anyOf: [{ types: ["Creature" as const] }, { types: ["Artifact" as const] }] };
 
-/** Vincent's Limit Break : « quand cette créature meurt, renvoyez-la engagée » et une F/E de base choisie. */
+/** Vincent's Limit Break: "when this creature dies, return it tapped" and a chosen base power and toughness. */
 const limitBreak = (power: number, toughness: number) => [
   fx.modify(ref.target(), {
     setPower: power,
     setToughness: toughness,
-    addAbilities: [triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true })], { label: "Revient engagée" })],
+    addAbilities: [triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true })], { label: "Returns tapped" })],
   }),
 ];
 
@@ -39,7 +39,7 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{3}",
         sacrificeOther: { filter: { ...CREATURE_OR_ARTIFACT, other: true } },
         effects: [fx.draw(1)],
-        label: "Piochez",
+        label: "Draw",
       }),
     ],
   },
@@ -60,11 +60,11 @@ export const BLACK: Record<string, CardScript> = {
           addSubtypes: ["Wizard"],
           addAbilities: [
             triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.damage(1, ref.eachOpponent)], {
-              label: "1 blessure à chaque adversaire",
+              label: "1 damage to each opponent",
             }),
           ],
         },
-        { label: "+1/+0, Sorcier" },
+        { label: "+1/+0, Wizard" },
       ),
     ],
   },
@@ -87,30 +87,30 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.yourUpkeep,
         [fx.moveTo(ref.libraryTop(ref.you), { to: "hand" }, { name: "c" }), fx.loseLife(amount.manaValueOf(ref.stored("c")))],
-        { label: "Carte du dessus en main, perdez sa VM en PV" },
+        { label: "Top card into hand, lose life equal to its mana value" },
       ),
     ],
   },
   "Demon Wall": {
     abilities: [
-      // « Tant qu'elle a un marqueur » : n'importe quel type de marqueur.
+      // "As long as it has a counter on it": any kind of counter.
       staticAbility(
         "self",
         { removeKeywords: ["defender"] },
-        { condition: cond.sourceMatches({ withCounter: "any" }), label: "Peut attaquer (marqueur)" },
+        { condition: cond.sourceMatches({ withCounter: "any" }), label: "Can attack (counter)" },
       ),
-      activated({ mana: "{5}{B}", effects: [fx.addCounters(ref.self, 2)], label: "Deux marqueurs +1/+1" }),
+      activated({ mana: "{5}{B}", effects: [fx.addCounters(ref.self, 2)], label: "Two +1/+1 counters" }),
     ],
   },
   "Evil Reawakened": {
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature")],
+      [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card")],
       [fx.toBattlefield(ref.target(), { counters: { kind: "+1/+1", n: 2 } })],
     ),
   },
   "Fight On!": {
     spell: spell(
-      [target.upTo(2, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature"))],
+      [target.upTo(2, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card"))],
       [fx.toHand(ref.target())],
     ),
   },
@@ -130,43 +130,43 @@ export const BLACK: Record<string, CardScript> = {
         when.entersSelf,
         [
           mode(
-            "Chaque joueur sacrifie un jeton de créature",
+            "Each player sacrifices a creature token",
             [],
             [fx.sacrifice(ref.eachPlayer, { types: ["Creature"], token: true })],
           ),
           mode(
-            "Chaque joueur sacrifie une créature non-jeton",
+            "Each player sacrifices a nontoken creature",
             [],
             [fx.sacrifice(ref.eachPlayer, { types: ["Creature"], token: false })],
           ),
-          mode("Chaque joueur sacrifie un enchantement", [], [fx.sacrifice(ref.eachPlayer, { types: ["Enchantment"] })]),
+          mode("Each player sacrifices an enchantment", [], [fx.sacrifice(ref.eachPlayer, { types: ["Enchantment"] })]),
         ],
-        { label: "Chaque joueur sacrifie" },
+        { label: "Each player sacrifices" },
       ),
     ],
   },
   Hecteyes: {
-    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Chaque adversaire défausse" })],
+    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Each opponent discards" })],
   },
   Malboro: {
     abilities: [
       triggered(
         when.entersSelf,
         [fx.discard(1, ref.eachOpponent), fx.loseLife(2, ref.eachOpponent), fx.exileTop(ref.eachOpponent, 3, "m")],
-        { label: "Mauvaise haleine" },
+        { label: "Bad Breath" },
       ),
     ],
   },
   "Namazu Trader": {
     abilities: [
-      triggered(when.entersSelf, [fx.loseLife(1), fx.createTokens(TREASURE)], { label: "Perdez 1 PV, Trésor" }),
+      triggered(when.entersSelf, [fx.loseLife(1), fx.createTokens(TREASURE)], { label: "Lose 1 life, Treasure" }),
       triggered(
         when.attacksSelf,
         [
           fx.sacrifice(ref.you, { ...CREATURE_OR_ARTIFACT, other: true }, 1, { optional: true, store: "s" }),
           fx.when(cond.v("s"), fx.surveil(2)),
         ],
-        { label: "Sacrifiez, surveillance 2" },
+        { label: "Sacrifice, surveil 2" },
       ),
     ],
   },
@@ -176,15 +176,15 @@ export const BLACK: Record<string, CardScript> = {
       activated({
         sacrificeOther: { filter: { ...CREATURE_OR_ARTIFACT, other: true } },
         effects: [fx.addCounters(ref.self, 1), fx.animateVehicle(), fx.modify(ref.self, { addSubtypes: ["Spirit"] })],
-        label: "Marqueur +1/+1, devient une créature Esprit",
+        label: "+1/+1 counter, becomes a Spirit creature",
       }),
     ],
   },
   "Poison the Waters": {
     spell: modal(
-      mode("Toutes les créatures -1/-1", [], [fx.pumpAll({ types: ["Creature"] }, -1, -1)]),
+      mode("All creatures get -1/-1", [], [fx.pumpAll({ types: ["Creature"] }, -1, -1)]),
       mode(
-        "Défausse d'un artefact ou d'une créature",
+        "Discard an artifact or creature",
         [target.player("t")],
         [fx.discard(1, ref.target(), { filter: CREATURE_OR_ARTIFACT, chooser: "controller" })],
       ),
@@ -196,17 +196,17 @@ export const BLACK: Record<string, CardScript> = {
         when.entersSelf,
         [
           mode(
-            "Détruisez une créature blessée ce tour-ci",
+            "Destroy a creature dealt damage this turn",
             [target.creature("t", { damaged: true })],
             [fx.destroy(ref.target())],
           ),
           mode(
-            "Exilez jusqu'à deux cartes d'un cimetière",
-            [{ ...target.upTo(2, target.cardInGraveyard("t", {}, "any", "carte")), samePlayer: true }],
+            "Exile up to two cards from a graveyard",
+            [{ ...target.upTo(2, target.cardInGraveyard("t", {}, "any", "card")), samePlayer: true }],
             [fx.exileCard(ref.target())],
           ),
         ],
-        { label: "Choisissez un" },
+        { label: "Choose one" },
       ),
     ],
   },
@@ -217,25 +217,21 @@ export const BLACK: Record<string, CardScript> = {
       entersWith({ tapped: true }),
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
-        fx.mayPay("{B}", "Payer {B} pour le renvoyer en main ?", fx.toHand(ref.self)),
-        { fromGraveyard: true, label: "Revient en main" },
+        fx.mayPay("{B}", "Pay {B} to return it to your hand?", fx.toHand(ref.self)),
+        { fromGraveyard: true, label: "Returns to hand" },
       ),
     ],
   },
   "Shinra Reinforcements": {
-    abilities: [triggered(when.entersSelf, [fx.mill(3), fx.gainLife(3)], { label: "Meulez 3, +3 PV" })],
+    abilities: [triggered(when.entersSelf, [fx.mill(3), fx.gainLife(3)], { label: "Mill 3, +3 life" })],
   },
   Tonberry: {
     abilities: [
       entersWith({ tapped: true, counters: 1, counterKind: "stun" }),
-      staticAbility(
-        "self",
-        { addKeywords: ["firstStrike", "deathtouch"] },
-        { condition: cond.yourTurn, label: "Couteau du chef" },
-      ),
+      staticAbility("self", { addKeywords: ["firstStrike", "deathtouch"] }, { condition: cond.yourTurn, label: "Chef's Knife" }),
     ],
   },
-  "Undercity Dire Rat": { abilities: [triggered(when.diesSelf, [fx.createTokens(TREASURE)], { label: "Trésor" })] },
+  "Undercity Dire Rat": { abilities: [triggered(when.diesSelf, [fx.createTokens(TREASURE)], { label: "Treasure" })] },
   "Vincent's Limit Break": {
     spell: tiered(
       {

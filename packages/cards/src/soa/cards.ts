@@ -1,5 +1,5 @@
-/** Mystical Archive (SOA) : scripts des cartes (PLAN-G). */
-import type { Effect, TokenSpec } from "@mtgx/engine";
+/** Mystical Archive (SOA): card scripts (PLAN-G). */
+import { type Effect, msg, type TokenSpec } from "@mtgx/engine";
 import {
   altCostMode,
   amount,
@@ -31,14 +31,14 @@ const FOREST_DRYAD: TokenSpec = {
   toughness: 1,
 };
 const YOUR_CREATURES = { types: ["Creature" as const], controller: "you" as const };
-/** Couleurs de mana dépensées pour lancer ce sort (convergence). */
+/** Colors of mana spent to cast this spell (converge). */
 const COLORS_SPENT = amount.colorsSpent;
 
-const NOT_YOURS_NONLAND = target.nonland("t", { controller: "opponent" }, "permanent non-terrain que vous ne contrôlez pas");
+const NOT_YOURS_NONLAND = target.nonland("t", { controller: "opponent" }, "nonland permanent you don't control");
 
 /**
- * Ad Nauseam : « révélez la carte du dessus, mettez-la dans votre main, perdez autant de PV que sa valeur de mana ; vous
- * pouvez recommencer autant de fois que vous le voulez » (au plus N fois, docs/approximations.md).
+ * Ad Nauseam: "reveal the top card, put it into your hand, lose life equal to its mana value; you may repeat this
+ * process any number of times" (at most N times, docs/approximations.md).
  */
 function adNauseam(n: number): Effect[] {
   const step = (i: number): Effect[] => [
@@ -46,16 +46,16 @@ function adNauseam(n: number): Effect[] {
     fx.loseLife(amount.manaValueOf(ref.stored(`a${i}`)), ref.you),
   ];
   let tail: Effect[] = [];
-  for (let i = n - 1; i >= 1; i--) tail = fx.may("Recommencer (révéler la carte suivante) ?", ...step(i), ...tail);
+  for (let i = n - 1; i >= 1; i--) tail = fx.may("Repeat (reveal the next card)?", ...step(i), ...tail);
   return [...step(0), ...tail];
 }
 
 export const CARDS: Record<string, CardScript> = {
-  // Déluge : lu dans le texte (Brain Freeze, Empty the Warrens, Flusterstorm).
+  // Storm: read from the text (Brain Freeze, Empty the Warrens, Flusterstorm).
   "Brain Freeze": { spell: spell([target.player()], [fx.mill(3, ref.target())]) },
   "Cyclonic Rift": {
     spell: altCostMode(
-      "Surcharge",
+      "Overload",
       "{6}{U}",
       { targets: [NOT_YOURS_NONLAND], effects: [fx.bounce(ref.target())] },
       { effects: [fx.bounce(ref.permanentsOf(ref.eachOpponent, { notTypes: ["Land"] }))] },
@@ -64,15 +64,15 @@ export const CARDS: Record<string, CardScript> = {
   "Empty the Warrens": { spell: spell([], [fx.createTokens(GOBLIN, 2)]) },
   Flusterstorm: {
     spell: spell(
-      [target.spell("t", { types: ["Instant", "Sorcery"] }, "sort d'éphémère ou de rituel")],
+      [target.spell("t", { types: ["Instant", "Sorcery"] }, "instant or sorcery spell")],
       [fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{1}" }, fx.counter(ref.target()))],
     ),
   },
   "Winds of Abandon": {
-    // Le contrôleur de chaque créature exilée (son dernier contrôleur connu) cherche autant de terrains de base que de ses
-    // créatures exilées (le nombre est lu du point de vue de celui qui cherche).
+    // The controller of each exiled creature (its last known controller) searches for as many basic lands as their
+    // exiled creatures (the number is read from the point of view of the searching player).
     spell: altCostMode(
-      "Surcharge",
+      "Overload",
       "{4}{W}{W}",
       {
         targets: [target.creature("t", { controller: "opponent" })],
@@ -108,12 +108,17 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   Reprieve: { spell: spell([target.spell()], [fx.bounce(ref.target()), fx.draw(1)]) },
-  // Convocation : lue dans le texte.
+  // Convoke: read from the text.
   "Return to the Ranks": {
     spell: spell(
       [
         {
-          ...target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 2 }, "you", "carte de créature de VM 2 ou moins"),
+          ...target.cardInGraveyard(
+            "t",
+            { types: ["Creature"], maxManaValue: 2 },
+            "you",
+            "creature card with mana value 2 or less",
+          ),
           countX: true,
         },
       ],
@@ -131,7 +136,7 @@ export const CARDS: Record<string, CardScript> = {
     additionalCost: { sacrifice: { filter: { types: ["Creature"] }, count: 1 } },
     spell: spell([], [fx.addMana("B", "B", "B", "B")]),
   },
-  // Suspension 3 — {2}{B}{B} : lue dans le texte.
+  // Suspend 3—{2}{B}{B}: read from the text.
   "Living End": {
     spell: spell(
       [],
@@ -144,8 +149,8 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Sheoldred's Edict": {
     spell: modal(
-      mode("Créature non-jeton", [], [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false })]),
-      mode("Jeton de créature", [], [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: true })]),
+      mode("Nontoken creature", [], [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false })]),
+      mode("Creature token", [], [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: true })]),
       mode("Planeswalker", [], [fx.sacrifice(ref.eachOpponent, { types: ["Planeswalker"] })]),
     ),
   },
@@ -167,8 +172,8 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Brotherhood's End": {
     spell: modal(
-      mode("3 blessures à chaque créature et planeswalker", [], [fx.damageAll(3, { types: ["Creature", "Planeswalker"] })]),
-      mode("Détruisez les artefacts de VM 3 ou moins", [], [fx.destroyAll({ types: ["Artifact"], maxManaValue: 3 })]),
+      mode("3 damage to each creature and planeswalker", [], [fx.damageAll(3, { types: ["Creature", "Planeswalker"] })]),
+      mode("Destroy artifacts with mana value 3 or less", [], [fx.destroyAll({ types: ["Artifact"], maxManaValue: 3 })]),
     ),
   },
   "Pyretic Ritual": { spell: spell([], [fx.addMana("R", "R", "R")]) },
@@ -184,7 +189,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Awaken the Woods": { spell: spell([], [fx.createTokens(FOREST_DRYAD, amount.x)]) },
   Berserk: {
-    // « Ne lancez ce sort qu'avant l'étape des blessures de combat. »
+    // "Cast this spell only before the combat damage step."
     castCondition: cond.not(
       cond.any(cond.step("combatDamage"), cond.step("endCombat"), cond.step("main2"), cond.step("end"), cond.step("cleanup")),
     ),
@@ -208,8 +213,8 @@ export const CARDS: Record<string, CardScript> = {
       [
         fx.emblem(
           "Glimpse of Nature",
-          "Chaque fois que vous lancez un sort de créature ce tour-ci, piochez une carte.",
-          [triggered(when.castSpell("you", { types: ["Creature"] }), [fx.draw(1)], { label: "Sort de créature : piochez" })],
+          msg("Whenever you cast a creature spell this turn, draw a card."),
+          [triggered(when.castSpell("you", { types: ["Creature"] }), [fx.draw(1)], { label: "Creature spell: draw" })],
           undefined,
           true,
         ),
@@ -264,17 +269,17 @@ export const CARDS: Record<string, CardScript> = {
   },
   Fracture: {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Enchantment", "Planeswalker"], {}, "artefact, enchantement ou planeswalker")],
+      [target.permanent("t", ["Artifact", "Enchantment", "Planeswalker"], {}, "artifact, enchantment or planeswalker")],
       [fx.destroy(ref.target())],
     ),
   },
-  // — G4e : sous-lot difficile —
+  // — G4e: hard sub-lot —
   Dismember: { spell: spell([target.creature()], [fx.pump(ref.target(), -5, -5)]) },
   "Force of Will": {
     altCost: {
       mana: "{0}",
       condition: cond.all(),
-      label: "Force of Will — 1 PV et une carte bleue de votre main exilée",
+      label: "Force of Will — 1 life and a blue card exiled from your hand",
       pay: { life: 1, exileFromHand: { filter: { colors: ["U"] }, count: 1 } },
     },
     spell: spell([target.spell()], [fx.counter(ref.target())]),
@@ -283,7 +288,7 @@ export const CARDS: Record<string, CardScript> = {
     altCost: {
       mana: "{0}",
       condition: cond.all(),
-      label: "Daze — renvoyez une Île que vous contrôlez",
+      label: "Daze — return an Island you control",
       pay: { bounce: { types: ["Land"], subtype: "Island" } },
     },
     spell: spell([target.spell()], [fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{1}" }, fx.counter(ref.target()))]),
@@ -298,7 +303,7 @@ export const CARDS: Record<string, CardScript> = {
         ...fx.when(cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "opponent", colors: ["U", "B"] }), 1), fx.draw(1)),
         fx.thisTurn({ uncounterable: {}, hexproof: { colors: ["U", "B"] } }),
         fx.modify(ref.permanentsOf(ref.you, {}), {
-          addProtections: [protection.hexproofFrom({ colors: ["U", "B"] }, "Défense talismanique contre le bleu et le noir")],
+          addProtections: [protection.hexproofFrom({ colors: ["U", "B"] }, "Hexproof from blue and from black")],
         }),
       ],
     ),

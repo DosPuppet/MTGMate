@@ -1,7 +1,11 @@
 {
   "id": "fin-cloud",
-  "name": "Cloud, champion de la planète",
-  "description": "Starter Kit Final Fantasy. Rouge-blanc Équipements : armez Cloud et vos héros, qui gagnent double initiative et indestructible, jusqu'à l'Ultima Weapon.",
+  "name": "Cloud, Planet's Champion",
+  "description": "Final Fantasy Starter Kit. Red-white Equipment: arm Cloud and your heroes, who gain double strike and indestructible, up to the Ultima Weapon.",
+  "fr": {
+    "name": "Cloud, champion de la planète",
+    "description": "Starter Kit Final Fantasy. Rouge-blanc Équipements : armez Cloud et vos héros, qui gagnent double initiative et indestructible, jusqu'à l'Ultima Weapon."
+  },
   "colors": [
     "R",
     "W"

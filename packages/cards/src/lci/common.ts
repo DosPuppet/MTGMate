@@ -1,6 +1,6 @@
 /**
- * Éléments propres à The Lost Caverns of Ixalan (LCI) : jetons Gnome, Champignon, Dinosaure, Vampire, Golem…,
- * filtres des Cavernes. Le DSL et les jetons génériques viennent de Bloomburrow (via blb/common.ts).
+ * The Lost Caverns of Ixalan (LCI) specifics: Gnome, Fungus, Dinosaur, Vampire, Golem… tokens, Cave filters. The DSL
+ * and the generic tokens come from Bloomburrow (via blb/common.ts).
  */
 import type { Amount, Condition, ObjectFilter, TokenSpec } from "@mtgx/engine";
 import { amount, cond } from "../blb/common";
@@ -16,9 +16,9 @@ const creature = (
   extra: Partial<TokenSpec> = {},
 ): TokenSpec => ({ name, colors, types: ["Creature"], subtypes, power, toughness, ...extra });
 
-/** Gnome : créature-artefact incolore 1/1. */
+/** Gnome: 1/1 colorless artifact creature. */
 export const GNOME: TokenSpec = { ...creature("Gnome", [], ["Gnome"], 1, 1), types: ["Artifact", "Creature"] };
-/** Champignon : créature noire 1/1 avec « ce jeton ne peut pas bloquer ». */
+/** Fungus: 1/1 black creature with "this token can't block". */
 export const FUNGUS: TokenSpec = creature("Fungus", ["B"], ["Fungus"], 1, 1, {
   keywords: ["cantBlock"],
   text: "This token can't block.",
@@ -34,14 +34,14 @@ export const VAMPIRE_DEMON: TokenSpec = creature("Vampire Demon", ["W", "B"], ["
 });
 export const GOLEM_4: TokenSpec = { ...creature("Golem", ["W", "U"], ["Golem"], 4, 4), types: ["Artifact", "Creature"] };
 export const SPIRIT_3_2: TokenSpec = creature("Spirit", ["R", "W"], ["Spirit"], 3, 2);
-/** Fungus Dinosaur (The Skullspore Nexus) : créature verte X/X. */
+/** Fungus Dinosaur (The Skullspore Nexus): X/X green creature. */
 export const FUNGUS_DINOSAUR: TokenSpec = creature("Fungus Dinosaur", ["G"], ["Fungus", "Dinosaur"], 0, 0);
 
 const ARTIFACT_OR_CREATURE_YOU: ObjectFilter = {
   anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }],
   controller: "you",
 };
-/** Gnome Soldier (Thousand Moons Smithy) : F/E égales au nombre d'artefacts et/ou de créatures que vous contrôlez. */
+/** Gnome Soldier (Thousand Moons Smithy): P/T equal to the number of artifacts and/or creatures you control. */
 export const GNOME_SOLDIER: TokenSpec = {
   name: "Gnome Soldier",
   colors: ["W"],
@@ -51,24 +51,24 @@ export const GNOME_SOLDIER: TokenSpec = {
   text: "This token's power and toughness are each equal to the number of artifacts and/or creatures you control.",
 };
 
-/** « artefact ou créature » (et « artefacts et/ou créatures que vous contrôlez »). */
+/** "artifact or creature" (and "artifacts and/or creatures you control"). */
 export const ARTIFACT_OR_CREATURE: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] };
 export const ARTIFACT_OR_CREATURE_YOURS: ObjectFilter = ARTIFACT_OR_CREATURE_YOU;
 export const OTHER_ARTIFACT_OR_CREATURE_YOURS: ObjectFilter = { ...ARTIFACT_OR_CREATURE_YOU, other: true };
 export const DINOSAUR_YOU: ObjectFilter = { types: ["Creature"], subtype: "Dinosaur", controller: "you" };
 export const CAVE: ObjectFilter = { types: ["Land"], subtype: "Cave" };
 
-/** « le nombre de Cavernes que vous contrôlez plus le nombre de cartes de Caverne dans votre cimetière » */
+/** "the number of Caves you control plus the number of Cave cards in your graveyard" */
 export const CAVES: Amount = amount.plus(
   amount.count({ ...CAVE, controller: "you" }),
   amount.countIn("graveyard", { subtype: "Cave" }),
 );
 
-/** Carte de permanent (Descente) : artefact, bataille, créature, enchantement, terrain ou planeswalker. */
+/** Permanent card (descend): artifact, battle, creature, enchantment, land or planeswalker. */
 export const PERMANENT_CARD: ObjectFilter = { permanent: true };
-/** Descente profonde (fathomless descent) : le nombre de cartes de permanent dans votre cimetière. */
+/** Fathomless descent: the number of permanent cards in your graveyard. */
 export const PERMANENT_CARDS: Amount = amount.countIn("graveyard", PERMANENT_CARD);
-/** Descente N : « s'il y a N cartes de permanent ou plus dans votre cimetière ». */
+/** Descend N: "if there are N or more permanent cards in your graveyard". */
 export const descend = (n: 4 | 8): Condition => cond.amountAtLeast(PERMANENT_CARDS, n);
-/** « si un artefact est arrivé sur le champ de bataille sous votre contrôle ce tour-ci » */
+/** "if an artifact entered the battlefield under your control this turn" */
 export const ARTIFACT_ENTERED = cond.controls({ types: ["Artifact"], controller: "you", enteredThisTurn: true });

@@ -1,5 +1,5 @@
 /**
- * Comportement des cartes d'Outlaws of Thunder Junction (OTJ). Les aides du DSL sont partagées (fdn/common.ts).
+ * Behavior of the Outlaws of Thunder Junction (OTJ) cards. The DSL helpers are shared (fdn/common.ts).
  */
 import type { CardScript } from "@mtgx/engine";
 import { BLACK } from "./black";

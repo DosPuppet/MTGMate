@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { chapter, cond, fx, ref, triggered, when } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
+import { msg } from "../src/text";
 import type { GameState } from "../src/types";
 import { act, advanceUntil, idOf, idsOf, passBoth, scenario } from "./helpers";
 
@@ -103,7 +104,7 @@ describe("Classes (716)", () => {
     const cls = idOf(s, "p1", "battlefield", CLASS.name);
     const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
     const levelUps = () => legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === cls);
-    expect(levelUps().map((a) => (a.type === "activate" ? a.label : ""))).toEqual(["Niveau 2"]);
+    expect(levelUps().map((a) => (a.type === "activate" ? a.label : ""))).toEqual([msg("Level {n}", { n: 2 })]);
     const hand = s.players.p1?.hand.length ?? 0;
     const up2 = levelUps()[0];
     s = act(s, "p1", { type: "activate", source: cls, ability: up2?.type === "activate" ? up2.ability : -1 });
@@ -112,7 +113,7 @@ describe("Classes (716)", () => {
     expect(s.players.p1?.hand.length).toBe(hand + 1);
     expect(chars(s, lions).power).toBe(2);
     const up3 = levelUps()[0];
-    expect(up3?.type === "activate" && up3.label).toBe("Niveau 3");
+    expect(up3?.type === "activate" && up3.label).toBe(msg("Level {n}", { n: 3 }));
     s = act(s, "p1", { type: "activate", source: cls, ability: up3?.type === "activate" ? up3.ability : -1 });
     s = passBoth(s);
     expect(chars(s, lions).power).toBe(3);

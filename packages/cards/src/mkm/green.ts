@@ -1,7 +1,7 @@
 /**
- * Murders at Karlov Manor — cartes vertes (lot A). Le déguisement, la garde, l'Équipement, réunir des preuves (coût
- * additionnel facultatif, lu comme un kicker : `cond.kicked`) et les mots-clés sont lus dans le texte ; « enquêtez »
- * crée un Indice (`investigate`).
+ * Murders at Karlov Manor — green cards (lot A). Disguise, ward, Equipment, collect evidence (optional additional
+ * cost, read as a kicker: `cond.kicked`) and keywords are read from the text; "investigate" creates a Clue
+ * (`investigate`).
  */
 import type { ObjectFilter, TokenSpec } from "@mtgx/engine";
 import { BASIC_LAND_TYPES } from "@mtgx/engine";
@@ -33,19 +33,19 @@ import {
 } from "./common";
 
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
-/** « une carte de créature ou de terrain ». */
+/** "a creature or land card". */
 const CREATURE_OR_LAND: ObjectFilter = { anyOf: [{ types: ["Creature"] }, { types: ["Land"] }] };
-/** « une carte de terrain avec un type de terrain de base ». */
+/** "a land card with a basic land type". */
 const LAND_WITH_BASIC_TYPE: ObjectFilter = {
   types: ["Land"],
   anySubtype: [...BASIC_LAND_TYPES],
 };
-/** Slime Against Humanity : « des Limons ou des cartes nommées Slime Against Humanity ». */
+/** Slime Against Humanity: "Oozes or cards named Slime Against Humanity". */
 const OOZE_OR_SLIME: ObjectFilter = { anyOf: [{ subtype: "Ooze" }, { name: "Slime Against Humanity" }] };
 
-/** Plante : créature verte 0/1. */
+/** Plant: 0/1 green creature. */
 const PLANT: TokenSpec = { name: "Plant", colors: ["G"], types: ["Creature"], subtypes: ["Plant"], power: 0, toughness: 1 };
-/** Limon : créature verte 0/0 avec le piétinement. */
+/** Ooze: 0/0 green creature with trample. */
 const OOZE: TokenSpec = {
   name: "Ooze",
   colors: ["G"],
@@ -59,17 +59,17 @@ const OOZE: TokenSpec = {
 export const GREEN: Record<string, CardScript> = {
   "Aftermath Analyst": {
     abilities: [
-      triggered(when.entersSelf, [fx.mill(3)], { label: "Meulez trois cartes" }),
+      triggered(when.entersSelf, [fx.mill(3)], { label: "Mill three cards" }),
       activated({
         mana: "{3}{G}",
         sacrifice: true,
         effects: [fx.moveAll("graveyard", ref.you, { types: ["Land"] }, { to: "battlefield", tapped: true })],
-        label: "Renvoyez toutes les cartes de terrain de votre cimetière sur le champ de bataille, engagées",
+        label: "Return all land cards from your graveyard to the battlefield tapped",
       }),
     ],
   },
   "Analyze the Pollen": {
-    // Réunir des preuves 8 (coût additionnel facultatif) : lu dans le texte.
+    // Collect evidence 8 (optional additional cost): read from the text.
     spell: spell(
       [],
       [...fx.when(cond.not(cond.kicked), fx.search(BASIC_LAND)), ...fx.when(cond.kicked, fx.search(CREATURE_OR_LAND))],
@@ -78,22 +78,22 @@ export const GREEN: Record<string, CardScript> = {
   "Archdruid's Charm": {
     spell: modal(
       mode(
-        "Cherchez une carte de créature ou de terrain",
+        "Search for a creature or land card",
         [],
         [
-          // La carte trouvée passe par la main ; un terrain va ensuite sur le champ de bataille engagé.
+          // The card found goes through the hand; a land then goes onto the battlefield tapped.
           fx.search(CREATURE_OR_LAND, { to: "hand" }, 1, undefined, "found"),
           fx.pickFromZone("hand", { types: ["Land"] }, { to: "battlefield", tapped: true }, { pool: ref.stored("found") }),
         ],
       ),
       mode(
-        "Un marqueur +1/+1, puis elle blesse une créature adverse",
+        "A +1/+1 counter, then it deals damage to an opponent's creature",
         [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
         [fx.addCounters(ref.target("a"), 1), fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))],
       ),
       mode(
-        "Exilez un artefact ou un enchantement",
-        [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+        "Exile an artifact or enchantment",
+        [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
         [fx.exile(ref.target())],
       ),
     ),
@@ -105,7 +105,7 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Bite Down on Crime": {
-    // Réunir des preuves 6 (coût additionnel facultatif) : lu dans le texte ; il coûte alors {2} de moins.
+    // Collect evidence 6 (optional additional cost): read from the text; it then costs {2} less.
     costReduction: { generic: 2, condition: cond.kicked },
     spell: spell(
       [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
@@ -113,13 +113,13 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Case of the Locked Hothouse": {
-    abilities: [playerStatic({ extraLands: 1, label: "Un terrain supplémentaire à chacun de vos tours" })],
+    abilities: [playerStatic({ extraLands: 1, label: "An additional land on each of your turns" })],
     caseToSolve: cond.controls({ types: ["Land"] }, 7),
     caseSolved: [
-      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Look at the top card" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { anyOf: [{ types: ["Land"] }, { types: ["Creature", "Enchantment"] }] } },
-        label: "Terrains, sorts de créature et d'enchantement du dessus de votre bibliothèque",
+        label: "Lands, creature and enchantment spells from the top of your library",
       }),
     ],
   },
@@ -127,14 +127,14 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.countersDivided(2, ref.target())], {
         targets: [target.between(1, 2, target.creature("t", { controller: "you" }))],
-        label: "Répartissez deux marqueurs +1/+1",
+        label: "Distribute two +1/+1 counters",
       }),
     ],
     caseToSolve: cond.amountAtLeast(amount.totalPower(YOUR_CREATURES), 8),
     caseSolved: [
       triggered(when.attackWith(1), [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["trample"] })], {
         targets: [target.creature("t", { attacking: true })],
-        label: "Un marqueur +1/+1 et le piétinement pour un attaquant",
+        label: "A +1/+1 counter and trample for an attacker",
       }),
     ],
   },
@@ -143,7 +143,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.zoneChange(["graveyard"], { filter: { types: ["Creature"] }, whose: "you" }),
         [fx.createTokens(DETECTIVE), investigate()],
-        { batched: true, label: "Un Détective 2/2, puis enquêtez" },
+        { batched: true, label: "A 2/2 Detective, then investigate" },
       ),
     ],
   },
@@ -155,21 +155,21 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, toughness: 1 },
-        { per: { subtype: "Forest", controller: "you" }, label: "+1/+1 par Forêt" },
+        { per: { subtype: "Forest", controller: "you" }, label: "+1/+1 for each Forest" },
       ),
       triggered(
         when.turnedFaceUp,
         [
-          // Les Forêts trouvées passent par la main ; l'une d'elles va ensuite sur le champ de bataille engagée.
+          // The Forests found go through the hand; one of them then goes onto the battlefield tapped.
           fx.search({ types: ["Land"], subtype: "Forest" }, { to: "hand" }, 2, undefined, "forests"),
           fx.pickFromZone(
             "hand",
             { subtype: "Forest" },
             { to: "battlefield", tapped: true },
-            { pool: ref.stored("forests"), prompt: "La Forêt à mettre sur le champ de bataille engagée" },
+            { pool: ref.stored("forests"), prompt: "The Forest to put onto the battlefield tapped" },
           ),
         ],
-        { label: "Cherchez deux Forêts : l'une sur le champ de bataille, l'autre en main" },
+        { label: "Search for two Forests: one onto the battlefield, the other into your hand" },
       ),
     ],
   },
@@ -183,7 +183,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.countersDivided(3, ref.target()), fx.gainLife(amount.maxToughness(YOUR_CREATURES))], {
         targets: [target.between(1, 3, target.creature())],
-        label: "Répartissez trois marqueurs +1/+1, puis gagnez des PV",
+        label: "Distribute three +1/+1 counters, then gain life",
       }),
     ],
   },
@@ -192,7 +192,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.turnedFaceUp,
         [fx.addCountersAll(YOUR_CREATURES, 1), fx.modifyAll(YOUR_CREATURES, { addKeywords: ["trample"] })],
-        { label: "Un marqueur +1/+1 sur chacune de vos créatures, qui gagnent le piétinement" },
+        { label: "A +1/+1 counter on each of your creatures, which gain trample" },
       ),
     ],
   },
@@ -213,25 +213,25 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Loxodon Eavesdropper": {
     abilities: [
-      triggered(when.entersSelf, [investigate()], { label: "Enquêtez" }),
+      triggered(when.entersSelf, [investigate()], { label: "Investigate" }),
       triggered(when.draw(2), [fx.pump(ref.self, 1, 1, ["vigilance"])], {
-        label: "Deuxième carte piochée : +1/+1 et la vigilance",
+        label: "Second card drawn: +1/+1 and vigilance",
       }),
     ],
   },
   "Nervous Gardener": {
     abilities: [
       triggered(when.turnedFaceUp, [fx.search(LAND_WITH_BASIC_TYPE)], {
-        label: "Cherchez une carte de terrain avec un type de terrain de base",
+        label: "Search for a land card with a basic land type",
       }),
     ],
   },
   "Pick Your Poison": {
     spell: modal(
-      mode("Chaque adversaire sacrifie un artefact", [], [fx.sacrifice(ref.eachOpponent, { types: ["Artifact"] })]),
-      mode("Chaque adversaire sacrifie un enchantement", [], [fx.sacrifice(ref.eachOpponent, { types: ["Enchantment"] })]),
+      mode("Each opponent sacrifices an artifact", [], [fx.sacrifice(ref.eachOpponent, { types: ["Artifact"] })]),
+      mode("Each opponent sacrifices an enchantment", [], [fx.sacrifice(ref.eachOpponent, { types: ["Enchantment"] })]),
       mode(
-        "Chaque adversaire sacrifie une créature avec le vol",
+        "Each opponent sacrifices a creature with flying",
         [],
         [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], keyword: "flying" })],
       ),
@@ -239,13 +239,9 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Pompous Gadabout": {
     abilities: [
-      staticAbility(
-        "self",
-        { addKeywords: ["hexproof"] },
-        { condition: cond.yourTurn, label: "Défense talismanique pendant votre tour" },
-      ),
-      // Seules les créatures face cachée n'ont pas de nom.
-      blockAbility(block.notBy({ faceDown: true }, "Imblocable par les créatures sans nom")),
+      staticAbility("self", { addKeywords: ["hexproof"] }, { condition: cond.yourTurn, label: "Hexproof during your turn" }),
+      // Only face-down creatures have no name.
+      blockAbility(block.notBy({ faceDown: true }, "Can't be blocked by creatures with no name")),
     ],
   },
   "The Pride of Hull Clade": {
@@ -260,12 +256,12 @@ export const GREEN: Record<string, CardScript> = {
             addKeywords: ["attacksDespiteDefender"],
             addAbilities: [
               triggered(when.combatDamageToPlayer, [fx.draw(amount.toughnessOf(ref.self))], {
-                label: "Piochez autant de cartes que son endurance",
+                label: "Draw cards equal to its toughness",
               }),
             ],
           }),
         ],
-        label: "+1/+0, pioche en blessant un joueur, attaque malgré le défenseur",
+        label: "+1/+0, draws when dealing damage to a player, attacks despite defender",
       }),
     ],
   },
@@ -274,14 +270,14 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         "attached",
         { power: 1, toughness: 2, addKeywords: ["reach"], addBlockRules: [block.atMost(1)] },
-        { label: "+1/+2, la portée, bloquée par une seule créature au plus" },
+        { label: "+1/+2, reach, can't be blocked by more than one creature" },
       ),
-      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
+      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Draw a card" }),
     ],
   },
   "Rubblebelt Maverick": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" }),
+      triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" }),
       activated({
         mana: "{G}",
         exileSelf: true,
@@ -289,7 +285,7 @@ export const GREEN: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Depuis le cimetière : un marqueur +1/+1",
+        label: "From the graveyard: a +1/+1 counter",
       }),
     ],
   },
@@ -300,7 +296,7 @@ export const GREEN: Record<string, CardScript> = {
           cond.amountAtLeast(amount.plus(amount.powerOf(ref.eventObject), amount.neg(amount.powerOf(ref.self))), 1),
           cond.amountAtLeast(amount.plus(amount.toughnessOf(ref.eventObject), amount.neg(amount.toughnessOf(ref.self))), 1),
         ),
-        label: "Plus forte ou plus endurante : un marqueur +1/+1, puis enquêtez",
+        label: "Greater power or toughness: a +1/+1 counter, then investigate",
       }),
     ],
   },
@@ -323,7 +319,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourUpkeep, [fx.toBattlefield(ref.target(), { tapped: true })], {
         targets: [target.cardInGraveyard("t", { types: ["Land"] })],
-        label: "Renvoyez une carte de terrain de votre cimetière, engagée",
+        label: "Return a land card from your graveyard tapped",
       }),
     ],
   },
@@ -331,19 +327,24 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.turnedFaceUp, [fx.destroy(ref.target())], {
         targets: [
-          target.permanent("t", ["Artifact", "Enchantment"], { controller: "opponent" }, "artefact ou enchantement adverse"),
+          target.permanent(
+            "t",
+            ["Artifact", "Enchantment"],
+            { controller: "opponent" },
+            "artifact or enchantment an opponent controls",
+          ),
         ],
-        label: "Détruisez un artefact ou un enchantement adverse",
+        label: "Destroy an artifact or enchantment an opponent controls",
       }),
     ],
   },
   "Vitu-Ghazi Inspector": {
-    // Réunir des preuves 6 (coût additionnel facultatif) et portée : lus dans le texte.
+    // Collect evidence 6 (optional additional cost) and reach: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1), fx.gainLife(2)], {
         condition: cond.kicked,
         targets: [target.creature()],
-        label: "Preuves réunies : un marqueur +1/+1 et 2 PV",
+        label: "Evidence collected: a +1/+1 counter and 2 life",
       }),
     ],
   },
@@ -356,7 +357,7 @@ export const GREEN: Record<string, CardScript> = {
           {},
           fx.reflexive([target.creature("c", { controller: "you" })], [fx.addCounters(ref.target("c"), 1)]),
         ),
-        { label: "Vous pouvez réunir des preuves 3 : un marqueur +1/+1" },
+        { label: "You may collect evidence 3: a +1/+1 counter" },
       ),
     ],
   },
@@ -367,41 +368,37 @@ export const GREEN: Record<string, CardScript> = {
           amount.turnEvents({ event: "zone", to: "battlefield", who: "you", faceDown: true, types: ["Creature"] }),
           1,
         ),
-        label: "Une créature face cachée est arrivée sous votre contrôle : un marqueur +1/+1",
+        label: "A face-down creature entered under your control: a +1/+1 counter",
       }),
       manaAbility("G"),
     ],
   },
   "Airtight Alibi": {
-    // Flash : lu dans le texte.
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    // Flash: read from the text.
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       triggered(
         when.entersSelf,
         [fx.untap(ref.attached), fx.pump(ref.attached, 0, 0, ["hexproof"]), fx.suspect(ref.attached, false)],
-        { label: "Dégagez-la ; défense talismanique ; elle n'est plus suspecte" },
+        { label: "Untap it; hexproof; it's no longer suspected" },
       ),
       staticAbility(
         "attached",
         { power: 2, toughness: 2, addKeywords: ["cantBeSuspected"] },
         {
-          label: "+2/+2, ne peut pas devenir suspecte",
+          label: "+2/+2, can't become suspected",
         },
       ),
     ],
   },
   "Culvert Ambusher": {
-    // Déguisement {4}{G} : lu dans le texte.
+    // Disguise {4}{G}: read from the text.
     abilities: [
       ...[when.entersSelf, when.turnedFaceUp].map((w) =>
-        triggered(
-          w,
-          [fx.modify(ref.target(), { addBlockRules: [{ mustBlock: true, label: "Bloque si possible" }] }, "endOfTurn")],
-          {
-            targets: [target.creature()],
-            label: "La créature ciblée bloque ce tour-ci si possible",
-          },
-        ),
+        triggered(w, [fx.modify(ref.target(), { addBlockRules: [{ mustBlock: true, label: "Blocks if able" }] }, "endOfTurn")], {
+          targets: [target.creature()],
+          label: "The target creature blocks this turn if able",
+        }),
       ),
     ],
   },
@@ -413,7 +410,7 @@ export const GREEN: Record<string, CardScript> = {
         tap: true,
         collectEvidence: 4,
         sorcerySpeed: true,
-        targets: [target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez")],
+        targets: [target.permanent("t", ["Land"], { controller: "you" }, "land you control")],
         effects: [
           fx.modifyWhileTapped(ref.target(), {
             addTypes: ["Creature"],
@@ -424,7 +421,7 @@ export const GREEN: Record<string, CardScript> = {
             addKeywords: ["haste"],
           }),
         ],
-        label: "Un terrain devient un Sanglier Plante 5/5 avec la célérité tant qu'elle reste engagée",
+        label: "A land becomes a 5/5 Plant Boar with haste for as long as this creature stays tapped",
       }),
     ],
   },
@@ -438,14 +435,14 @@ export const GREEN: Record<string, CardScript> = {
           fx.createTokens(GOBLIN),
           fx.chooseForSelf("creatureType", { options: ["Human", "Merfolk", "Goblin"], secret: true }),
         ],
-        { label: "Un Humain, un Ondin et un Gobelin ; choisissez secrètement l'un de ces types" },
+        { label: "A Human, a Merfolk and a Goblin; secretly choose one of those types" },
       ),
       activated({
         sacrifice: true,
         targets: [
           {
             id: "t",
-            label: "jeton de créature attaquant",
+            label: "attacking creature token",
             filter: { objects: { types: ["Creature"], token: true, attacking: true } },
           },
         ],
@@ -454,7 +451,7 @@ export const GREEN: Record<string, CardScript> = {
           fx.addCounters(ref.target(), 3),
           fx.pump(ref.target(), 0, 0, ["deathtouch"]),
         ),
-        label: "Sacrifiez-le, révélez le type : trois marqueurs +1/+1 et le contact mortel s'il est de ce type",
+        label: "Sacrifice it, reveal the type: three +1/+1 counters and deathtouch if it has that type",
       }),
     ],
   },

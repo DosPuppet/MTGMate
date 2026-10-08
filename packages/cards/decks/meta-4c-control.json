@@ -1,7 +1,10 @@
 {
   "id": "meta-4c-control",
   "name": "4c Control",
-  "description": "Méta Standard (6,4 %). Contrôle quatre couleurs : contresorts, retrait, balayage (Deadly Cover-Up) et grosses cartes de fin de partie (Jeskai Revelation, Together as One).",
+  "description": "Standard metagame (6.4%). Four-color control: counterspells, removal, a sweeper (Deadly Cover-Up) and big late-game cards (Jeskai Revelation, Together as One).",
+  "fr": {
+    "description": "Méta Standard (6,4 %). Contrôle quatre couleurs : contresorts, retrait, balayage (Deadly Cover-Up) et grosses cartes de fin de partie (Jeskai Revelation, Together as One)."
+  },
   "colors": [
     "W",
     "U",

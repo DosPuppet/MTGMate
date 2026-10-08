@@ -1,4 +1,4 @@
-/** The Lost Caverns of Ixalan — cartes à fabriquer (Craft with …) et leurs versos. Scripts par nom de face. */
+/** The Lost Caverns of Ixalan — craft cards (Craft with …) and their back faces. Scripts by face name. */
 import {
   ARTIFACT_ENTERED,
   ARTIFACT_OR_CREATURE,
@@ -24,41 +24,41 @@ import {
 
 const ARTIFACT = { filter: { types: ["Artifact" as const] }, count: 1 };
 const CREATURE = { filter: { types: ["Creature" as const] }, count: 1 };
-const ARTIFACT_OR_CREATURE_TARGET = targetObj("t", ARTIFACT_OR_CREATURE, "artefact ou créature");
-const mayMillTwo = [...fx.may("Meuler deux cartes ?", fx.mill(2))];
+const ARTIFACT_OR_CREATURE_TARGET = targetObj("t", ARTIFACT_OR_CREATURE, "artifact or creature");
+const mayMillTwo = [...fx.may("Mill two cards?", fx.mill(2))];
 
 export const CRAFT: Record<string, CardScript> = {
-  // --- Blanc ------------------------------------------------------------------
+  // --- White ------------------------------------------------------------------
   "Clay-Fired Bricks": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Land"], basic: true, subtype: "Plains" }), fx.gainLife(2)], {
-        label: "Plaine de base en main, +2 PV",
+        label: "Basic Plains into your hand, +2 life",
       }),
       craft("{5}{W}{W}", ARTIFACT),
     ],
   },
   "Cosmium Kiln": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(GNOME, 2)], { label: "Deux Gnomes 1/1" }),
-      staticAbility(CREATURE_YOU_CONTROL, { power: 1, toughness: 1 }, { label: "Vos créatures +1/+1" }),
+      triggered(when.entersSelf, [fx.createTokens(GNOME, 2)], { label: "Two 1/1 Gnomes" }),
+      staticAbility(CREATURE_YOU_CONTROL, { power: 1, toughness: 1 }, { label: "Your creatures +1/+1" }),
     ],
   },
   "Market Gnome": {
     abilities: [
-      triggered(when.diesSelf, [fx.gainLife(1), fx.draw(1)], { label: "+1 PV, piochez" }),
+      triggered(when.diesSelf, [fx.gainLife(1), fx.draw(1)], { label: "+1 life, draw" }),
       triggered({ on: "leaves", who: "self", to: "exile", whileCrafting: true }, [fx.gainLife(1), fx.draw(1)], {
-        label: "Exilé pour une fabrication : +1 PV, piochez",
+        label: "Exiled for a craft: +1 life, draw",
       }),
     ],
   },
   "Oteclan Landmark": {
-    abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }), craft("{2}{W}", ARTIFACT)],
+    abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" }), craft("{2}{W}", ARTIFACT)],
   },
   "Oteclan Levitator": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), 0, 0, ["flying"])], {
         targets: [target.creature("t", { attacking: true, not: { keyword: "flying" } })],
-        label: "Vol",
+        label: "Flying",
       }),
     ],
   },
@@ -66,7 +66,7 @@ export const CRAFT: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(5, ref.target())], {
         targets: [target.creature("t", { tapped: true, controller: "opponent" })],
-        label: "5 blessures",
+        label: "5 damage",
       }),
       craft("{3}{W}", ARTIFACT),
     ],
@@ -76,20 +76,20 @@ export const CRAFT: Record<string, CardScript> = {
       activated({
         tapOthers: { filter: { types: ["Artifact"] }, count: 2 },
         effects: [fx.animateVehicle()],
-        label: "Engagez deux artefacts : devient une créature",
+        label: "Tap two artifacts: becomes a creature",
       }),
     ],
   },
-  // --- Bleu -------------------------------------------------------------------
+  // --- Blue -------------------------------------------------------------------
   "Braided Net": {
     abilities: [
-      entersWith({ counters: 3, counterKind: "net", label: "Arrive avec trois marqueurs de filet" }),
+      entersWith({ counters: 3, counterKind: "net", label: "Enters with three net counters" }),
       activated({
         tap: true,
         removeCounters: { kind: "net", n: 1 },
         targets: [target.nonland("t", { other: true })],
         effects: [fx.tap(ref.target()), fx.modifyWhileAffectedTapped(ref.target(), { addKeywords: ["noActivatedAbilities"] })],
-        label: "Engagez un permanent non-terrain",
+        label: "Tap a nonland permanent",
       }),
       craft("{1}{U}", ARTIFACT),
     ],
@@ -103,32 +103,32 @@ export const CRAFT: Record<string, CardScript> = {
           fx.draw(amount.count({ types: ["Artifact"], controller: "you" })),
           fx.moveTo(ref.self, { to: "libraryTop", fromTop: 3 }),
         ],
-        label: "Une carte par artefact, puis troisième depuis le dessus",
+        label: "A card for each artifact, then third from the top",
       }),
     ],
   },
   "Inverted Iceberg": {
     abilities: [
-      triggered(when.entersSelf, [fx.mill(1), fx.draw(1)], { label: "Meulez une carte, piochez-en une" }),
+      triggered(when.entersSelf, [fx.mill(1), fx.draw(1)], { label: "Mill a card, draw one" }),
       craft("{4}{U}{U}", ARTIFACT),
     ],
   },
   "Iceberg Titan": {
     abilities: [
-      // « Vous pouvez engager ou dégager » : la cible au déclenchement, l'action à la résolution (comme Granite Witness).
+      // "You may tap or untap": the target on triggering, the action on resolution (like Granite Witness).
       triggered(
         when.attacksSelf,
         [
           ...fx.when(
             cond.refMatches(ref.target(), { tapped: false }),
-            fx.mayForStore(ref.you, "Engager la cible ?", "e", fx.tap(ref.target())),
+            fx.mayForStore(ref.you, "Tap the target?", "e", fx.tap(ref.target())),
           ),
           ...fx.when(
             cond.all(cond.not(cond.v("e")), cond.refMatches(ref.target(), { tapped: true })),
-            fx.may("Dégager la cible ?", fx.untap(ref.target())),
+            fx.may("Untap the target?", fx.untap(ref.target())),
           ),
         ],
-        { targets: [ARTIFACT_OR_CREATURE_TARGET], label: "Vous pouvez engager ou dégager un artefact ou une créature" },
+        { targets: [ARTIFACT_OR_CREATURE_TARGET], label: "You may tap or untap an artifact or creature" },
       ),
     ],
   },
@@ -136,7 +136,7 @@ export const CRAFT: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 2)], {
         targets: [target.optional(ARTIFACT_OR_CREATURE_TARGET)],
-        label: "Engagez-le, deux marqueurs d'étourdissement",
+        label: "Tap it, two stun counters",
       }),
       craft("{2}{U}", ARTIFACT),
     ],
@@ -149,26 +149,26 @@ export const CRAFT: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.explore(ref.target())],
-        label: "Une créature explore",
+        label: "A creature explores",
       }),
     ],
   },
   "Waterlogged Hulk": {
     abilities: [
-      activated({ tap: true, effects: [fx.mill(1)], label: "Meulez une carte" }),
+      activated({ tap: true, effects: [fx.mill(1)], label: "Mill a card" }),
       craft("{3}{U}", { filter: { subtype: "Island" }, count: 1 }),
     ],
   },
   "Watertight Gondola": {
     abilities: [
-      staticAbility("self", { addKeywords: ["unblockable"] }, { condition: descend(8), label: "Descente 8 — imblocable" }),
+      staticAbility("self", { addKeywords: ["unblockable"] }, { condition: descend(8), label: "Descend 8 — can't be blocked" }),
     ],
   },
-  // --- Noir -------------------------------------------------------------------
+  // --- Black ------------------------------------------------------------------
   "Tithing Blade": {
     abilities: [
       triggered(when.entersSelf, [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] })], {
-        label: "Chaque adversaire sacrifie une créature",
+        label: "Each opponent sacrifices a creature",
       }),
       craft("{4}{B}", CREATURE),
     ],
@@ -178,15 +178,15 @@ export const CRAFT: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.target(), { filter: ARTIFACT_OR_CREATURE, chooser: "controller" })], {
         targets: [target.player("t", "opponent")],
-        label: "Défausse d'un artefact ou d'une créature",
+        label: "Discard an artifact or creature",
       }),
       craft("{5}{B}", { filter: { types: ["Creature"] }, count: 2 }),
     ],
   },
   "Dread Osseosaur": {
-    abilities: [when.entersSelf, when.attacksSelf].map((t) => triggered(t, mayMillTwo, { label: "Meulez deux cartes" })),
+    abilities: [when.entersSelf, when.attacksSelf].map((t) => triggered(t, mayMillTwo, { label: "Mill two cards" })),
   },
-  // --- Rouge ------------------------------------------------------------------
+  // --- Red --------------------------------------------------------------------
   "Dire Flail": {
     abilities: [staticAbility("attached", { power: 2 }, { label: "+2/+0" }), craft("{3}{R}{R}", ARTIFACT)],
   },
@@ -204,13 +204,13 @@ export const CRAFT: Record<string, CardScript> = {
             }),
           ),
         ],
-        { label: "Sacrifiez un artefact : blessures égales à sa force" },
+        { label: "Sacrifice an artifact: damage equal to its power" },
       ),
     ],
   },
   "Idol of the Deep King": {
     abilities: [
-      triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any()], label: "2 blessures" }),
+      triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any()], label: "2 damage" }),
       craft("{2}{R}", ARTIFACT),
     ],
   },
@@ -218,7 +218,7 @@ export const CRAFT: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-le",
+        label: "Attach it",
       }),
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
     ],
@@ -226,18 +226,18 @@ export const CRAFT: Record<string, CardScript> = {
   "Saheeli's Lattice": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(2))], {
-        label: "Défaussez : piochez deux cartes",
+        label: "Discard: draw two cards",
       }),
       craft("{4}{R}", { filter: { subtype: "Dinosaur" }, count: 1, orMore: true }),
     ],
   },
   "Mastercraft Raptor": { cdaPower: amount.linkedTotalPower },
-  // --- Vert -------------------------------------------------------------------
+  // --- Green ------------------------------------------------------------------
   "Jade Seedstones": {
     abilities: [
       triggered(when.entersSelf, [fx.countersDivided(3, ref.target())], {
         targets: [target.between(1, 3, target.creature("t", { controller: "you" }))],
-        label: "Répartissez trois marqueurs +1/+1",
+        label: "Distribute three +1/+1 counters",
       }),
       craft("{5}{G}{G}", { ...CREATURE, preferHighManaValue: true }),
     ],
@@ -245,7 +245,7 @@ export const CRAFT: Record<string, CardScript> = {
   "Jadeheart Attendant": {
     abilities: [
       triggered(when.entersSelf, [fx.gainLife(amount.manaValueOf(ref.linked))], {
-        label: "PV égaux à la valeur de mana de la carte exilée",
+        label: "Life equal to the exiled card's mana value",
       }),
     ],
   },
@@ -254,14 +254,14 @@ export const CRAFT: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.lookAtTop(6, { filter: { types: ["Land"] }, count: 1, to: { to: "battlefield", tapped: true }, rest: "bottom" })],
-        { label: "Un terrain engagé parmi les six cartes du dessus" },
+        { label: "A tapped land from the top six cards" },
       ),
       craft("{5}{G}", { filter: { subtype: "Cave" }, count: 1 }),
     ],
   },
-  // --- Multicolore et incolore ----------------------------------------------------
+  // --- Multicolored and colorless -------------------------------------------------
   "Master's Guide-Mural": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(GOLEM_4)], { label: "Golem 4/4" }), craft("{4}{W}{W}{U}", ARTIFACT)],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(GOLEM_4)], { label: "4/4 Golem" }), craft("{4}{W}{W}{U}", ARTIFACT)],
   },
   "Master's Manufactory": {
     abilities: [
@@ -269,7 +269,7 @@ export const CRAFT: Record<string, CardScript> = {
         tap: true,
         activationCondition: ARTIFACT_ENTERED,
         effects: [fx.createTokens(GOLEM_4)],
-        label: "Golem 4/4",
+        label: "4/4 Golem",
       }),
     ],
   },
@@ -282,13 +282,13 @@ export const CRAFT: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [{ op: "addManaColorsAmong", filter: {}, linked: true }],
-        label: "Un mana de chaque couleur des cartes exilées",
+        label: "One mana of each color among the exiled cards",
       }),
     ],
   },
   "Throne of the Grim Captain": {
     abilities: [
-      activated({ tap: true, effects: [fx.mill(2)], label: "Meulez deux cartes" }),
+      activated({ tap: true, effects: [fx.mill(2)], label: "Mill two cards" }),
       craft("{4}", {
         count: 4,
         each: [{ subtype: "Dinosaur" }, { subtype: "Merfolk" }, { subtype: "Pirate" }, { subtype: "Vampire" }],
@@ -305,10 +305,10 @@ export const CRAFT: Record<string, CardScript> = {
             "graveyard",
             { types: ["Creature"] },
             { to: "battlefield", tapped: true, attacking: true, underYourControl: true },
-            { count: 1, min: 0, pool: ref.linked, prompt: "Carte de créature exilée à mettre en jeu attaquante" },
+            { count: 1, min: 0, pool: ref.linked, prompt: "Exiled creature card to put onto the battlefield attacking" },
           ),
         ],
-        { label: "Sacrifice adverse ; une créature exilée attaque" },
+        { label: "Opponent sacrifices; an exiled creature attacks" },
       ),
     ],
   },

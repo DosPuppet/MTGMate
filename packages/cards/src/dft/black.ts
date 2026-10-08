@@ -1,4 +1,4 @@
-/** Aetherdrift — cartes noires. */
+/** Aetherdrift — black cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -24,17 +24,17 @@ import {
 export const BLACK: Record<string, CardScript> = {
   "Back on Track": {
     spell: spell(
-      [target.cardInGraveyard("t", CREATURE_OR_VEHICLE, "you", "carte de créature ou de Véhicule")],
+      [target.cardInGraveyard("t", CREATURE_OR_VEHICLE, "you", "creature or Vehicle card")],
       [fx.toBattlefield(ref.target()), pilot()],
     ),
   },
   Bloodghast: {
     abilities: [
-      staticAbility("self", { addKeywords: ["cantBlock"] }, { label: "Ne peut pas bloquer" }),
-      staticAbility("self", { addKeywords: ["haste"] }, { condition: cond.opponentLifeAtMost(10), label: "Célérité" }),
-      triggered(when.landfall, fx.may("Renvoyer Bloodghast sur le champ de bataille ?", fx.toBattlefield(ref.self)), {
+      staticAbility("self", { addKeywords: ["cantBlock"] }, { label: "Can't block" }),
+      staticAbility("self", { addKeywords: ["haste"] }, { condition: cond.opponentLifeAtMost(10), label: "Haste" }),
+      triggered(when.landfall, fx.may("Return Bloodghast to the battlefield?", fx.toBattlefield(ref.self)), {
         fromGraveyard: true,
-        label: "Landfall : revient du cimetière",
+        label: "Landfall: returns from the graveyard",
       }),
     ],
   },
@@ -44,31 +44,26 @@ export const BLACK: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.mill(2),
-          fx.pickFromZone(
-            "graveyard",
-            CREATURE_OR_VEHICLE,
-            { to: "hand" },
-            { prompt: "Reprenez une carte de créature ou de Véhicule" },
-          ),
+          fx.pickFromZone("graveyard", CREATURE_OR_VEHICLE, { to: "hand" }, { prompt: "Take back a creature or Vehicle card" }),
         ],
-        { label: "Meulez deux cartes, reprenez une créature ou un Véhicule" },
+        { label: "Mill two cards, take back a creature or Vehicle" },
       ),
     ],
   },
   "Chitin Gravestalker": { costReduction: { generic: amount.countIn("graveyard", CREATURE_OR_ARTIFACT) } },
   "Cryptcaller Chariot": {
     abilities: [
-      triggered(when.discardBatch(), [fx.createTappedTokens(ZOMBIE, amount.eventAmount)], { label: "Autant de Zombies engagés" }),
+      triggered(when.discardBatch(), [fx.createTappedTokens(ZOMBIE, amount.eventAmount)], { label: "That many tapped Zombies" }),
     ],
   },
   "Deathless Pilot": {
     abilities: [
       powerRuleAbility(powerFor.pilot),
-      activated({ mana: "{3}{B}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Revenir en main" }),
+      activated({ mana: "{3}{B}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Return to hand" }),
     ],
   },
   "Engine Rat": {
-    abilities: [activated({ mana: "{5}{B}", effects: [fx.loseLife(2, ref.eachOpponent)], label: "Chaque adversaire perd 2 PV" })],
+    abilities: [activated({ mana: "{5}{B}", effects: [fx.loseLife(2, ref.eachOpponent)], label: "Each opponent loses 2 life" })],
   },
   "Grim Bauble": {
     abilities: [
@@ -76,7 +71,7 @@ export const BLACK: Record<string, CardScript> = {
         targets: [target.creature("t", { controller: "opponent" })],
         label: "-2/-2",
       }),
-      activated({ mana: "{2}{B}", tap: true, sacrifice: true, effects: [fx.surveil(2)], label: "Surveillance 2" }),
+      activated({ mana: "{2}{B}", tap: true, sacrifice: true, effects: [fx.surveil(2)], label: "Surveil 2" }),
     ],
   },
   "Grim Javelineer": {
@@ -85,7 +80,7 @@ export const BLACK: Record<string, CardScript> = {
         when.attackWith(1),
         [
           fx.modify(ref.target(), { power: 1 }),
-          fx.whenThisTurn(when.dies({}), ref.target(), [fx.surveil(1)], { label: "Surveillance 1" }),
+          fx.whenThisTurn(when.dies({}), ref.target(), [fx.surveil(1)], { label: "Surveil 1" }),
         ],
         { targets: [target.creature("t", { attacking: true })], label: "+1/+0" },
       ),
@@ -114,7 +109,7 @@ export const BLACK: Record<string, CardScript> = {
         targetObj(
           "t",
           { anyOf: [{ types: ["Creature", "Planeswalker"] }, { subtype: "Vehicle" }] },
-          "créature, planeswalker ou Véhicule",
+          "creature, planeswalker or Vehicle",
         ),
       ],
       [
@@ -127,20 +122,20 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Ripclaw Wrangler": {
-    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Chaque adversaire défausse" })],
+    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Each opponent discards" })],
   },
   "Risky Shortcut": { spell: spell([], [fx.draw(2), fx.loseLife(2, ref.eachPlayer)]) },
   "Shefet Archfiend": {
     abilities: [
       triggered(when.entersSelf, [fx.pumpAll({ types: ["Creature"], other: true }, -2, -2)], {
-        label: "Les autres créatures -2/-2",
+        label: "Other creatures get -2/-2",
       }),
     ],
   },
   "Spin Out": { spell: spell([targetCreatureOrVehicle()], [fx.destroy(ref.target())]) },
   "Syphon Fuel": { spell: spell([target.creature("t")], [fx.pump(ref.target(), -6, -6), fx.gainLife(2)]) },
-  "Wreckage Wickerfolk": { abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })] },
+  "Wreckage Wickerfolk": { abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })] },
   "Wretched Doll": {
-    abilities: [activated({ mana: "{B}", tap: true, effects: [fx.surveil(1)], label: "Surveillance 1" })],
+    abilities: [activated({ mana: "{B}", tap: true, effects: [fx.surveil(1)], label: "Surveil 1" })],
   },
 };

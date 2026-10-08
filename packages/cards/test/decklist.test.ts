@@ -1,3 +1,4 @@
+import { plainText } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import {
   CARDS,
@@ -88,7 +89,7 @@ Sideboard
 });
 
 describe("export des decklists", () => {
-  const deck = DECKS.find((d) => d.id === "bienvenue-vert")!;
+  const deck = DECKS.find((d) => d.id === "welcome-green")!;
 
   it("aller-retour MTGA : relire l'export redonne le même deck", () => {
     const text = serializeDeckList({ ...deck, sideboard: [[2, "Broken Wings"]] }, CARDS);
@@ -129,7 +130,7 @@ describe("règles de construction", () => {
         expect(v, d.id).toMatchObject({ legal: true, playable: commanderPlayable.includes(d.id), mainCount: 100 });
         continue;
       }
-      const welcome = d.id.startsWith("bienvenue-");
+      const welcome = d.id.startsWith("welcome-");
       const v = validateDeck(d, CARDS);
       expect(v, d.id).toMatchObject({ legal: true, playable: true, welcome });
       // 40 cartes pour un deck de bienvenue ; 60 au moins sinon (4c Control du méta en a 61).
@@ -139,7 +140,7 @@ describe("règles de construction", () => {
   });
 
   it("un deck de bienvenue (40 cartes) se joue tel quel, pas une copie modifiée", () => {
-    const d = DECKS.find((x) => x.id === "bienvenue-rouge")!;
+    const d = DECKS.find((x) => x.id === "welcome-red")!;
     // Même liste, dans un autre ordre et découpée autrement : reconnue.
     const [first, ...rest] = d.main;
     const split: DeckEntries = [...rest.reverse(), [first![0] - 1, first![1]], [1, first![1]]];
@@ -147,7 +148,7 @@ describe("règles de construction", () => {
     // Une carte changée : les 60 cartes minimum s'appliquent.
     const changed: [number, string][] = d.main.map(([n, name]) => [n, name === "Shivan Dragon" ? "Serra Angel" : name]);
     expect(validateDeck({ main: changed }, CARDS)).toMatchObject({ legal: false, welcome: false, minMain: 60 });
-    expect(validateDeck({ main: changed }, CARDS).errors).toContain("Le deck contient 40 cartes (minimum 60)");
+    expect(validateDeck({ main: changed }, CARDS).errors.map(plainText)).toContain("The deck has 40 cards (minimum 60)");
   });
 
   it("60 cartes minimum, 4 exemplaires maximum sauf terrains de base, réserve de 15", () => {
@@ -162,10 +163,10 @@ describe("règles de construction", () => {
       CARDS,
     );
     expect(v.legal).toBe(false);
-    expect(v.errors).toEqual([
-      "Le deck contient 35 cartes (minimum 60)",
-      "La réserve contient 16 cartes (maximum 15)",
-      "Llanowar Elves : 5 exemplaires (maximum 4)",
+    expect(v.errors.map(plainText)).toEqual([
+      "The deck has 35 cards (minimum 60)",
+      "The sideboard has 16 cards (maximum 15)",
+      "Llanowar Elves: 5 copies (maximum 4)",
     ]);
   });
 
@@ -180,7 +181,7 @@ describe("règles de construction", () => {
       },
       CARDS,
     );
-    expect(v.errors).toEqual(["Giant Growth : 5 exemplaires (maximum 4)"]);
+    expect(v.errors.map(plainText)).toEqual(["Giant Growth: 5 copies (maximum 4)"]);
   });
 
   it("une carte pas encore gérée rend le deck non jouable, sans le rendre illégal", () => {
@@ -207,7 +208,7 @@ describe("réserve", () => {
       { ...CARDS, [unimplemented.name]: unimplemented },
     );
     expect(v).toMatchObject({ legal: true, playable: true });
-    expect(v.warnings[0]).toContain("(réserve)");
+    expect(v.warnings[0]).toContain("(sideboard)");
   });
 });
 
@@ -268,7 +269,7 @@ describe("légalité en Standard", () => {
     for (const where of ["main", "side"] as const) {
       const v = validateDeck(deck(where), cards);
       expect(v).toMatchObject({ format: "standard", legal: false, playable: false });
-      expect(v.errors).toEqual(["Carte fictive est bannie en Standard"]);
+      expect(v.errors.map(plainText)).toEqual(["Carte fictive is banned in Standard"]);
     }
   });
 
@@ -290,7 +291,7 @@ describe("légalité en Standard", () => {
       withCard(undefined),
       "unlimited",
     );
-    expect(five.errors).toEqual(["Carte fictive : 5 exemplaires (maximum 4)"]);
+    expect(five.errors.map(plainText)).toEqual(["Carte fictive: 5 copies (maximum 4)"]);
     // Une carte assemblée ne se met toujours pas dans un deck.
     const meld = Object.values(CARDS).find((c) => c.meldResult);
     if (meld)
@@ -308,8 +309,8 @@ describe("légalité en Standard", () => {
       ).toBe(false);
     // L'échange de réserve d'un match sans limite garde la carte bannie.
     expect(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" }), "unlimited")).toBeNull();
-    expect(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" }))).toBe(
-      "Carte fictive est bannie en Standard",
+    expect(plainText(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" })) ?? "")).toBe(
+      "Carte fictive is banned in Standard",
     );
   });
 
@@ -326,17 +327,21 @@ describe("légalité en Standard", () => {
   });
 
   it("une carte hors Standard ou sans légalité connue rend le deck illégal", () => {
-    expect(validateDeck(deck("main"), withCard({ standard: "not_legal" })).errors).toEqual([
-      "Carte fictive n'est pas légale en Standard",
+    expect(validateDeck(deck("main"), withCard({ standard: "not_legal" })).errors.map(plainText)).toEqual([
+      "Carte fictive is not legal in Standard",
     ]);
-    expect(validateDeck(deck("main"), withCard(undefined)).errors).toEqual(["Carte fictive : légalité en Standard inconnue"]);
+    expect(validateDeck(deck("main"), withCard(undefined)).errors.map(plainText)).toEqual([
+      "Carte fictive: legality in Standard unknown",
+    ]);
   });
 
   it("l'import signale les cartes illégales", () => {
     const cards = withCard({ standard: "banned" });
     const d = parseDeckList("1 Carte fictive\n59 Forest", new CardIndex(cards));
     expect(d.main).toHaveLength(2);
-    expect(d.issues.map((i) => [i.line, i.kind, i.message])).toEqual([[1, "illegal", "Carte fictive est bannie en Standard"]]);
+    expect(d.issues.map((i) => [i.line, i.kind, plainText(i.message)])).toEqual([
+      [1, "illegal", "Carte fictive is banned in Standard"],
+    ]);
   });
 });
 

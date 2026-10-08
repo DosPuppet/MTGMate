@@ -1,4 +1,4 @@
-/** Final Fantasy — artefacts incolores. */
+/** Final Fantasy — colorless artifacts. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -16,41 +16,41 @@ import {
 } from "./common";
 
 export const ARTIFACTS: Record<string, CardScript> = {
-  "Adventurer's Airship": { abilities: [triggered(when.attacksSelf, fx.loot(1), { label: "Piochez, défaussez" })] },
+  "Adventurer's Airship": { abilities: [triggered(when.attacksSelf, fx.loot(1), { label: "Draw, then discard" })] },
   "Instant Ramen": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez" }),
-      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 PV" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw" }),
+      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 life" }),
     ],
   },
   "Lion Heart": {
     abilities: [
-      triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 blessures" }),
+      triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 damage" }),
       staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
     ],
   },
   "Lunatic Pandora": {
     abilities: [
-      activated({ mana: "{2}", tap: true, effects: [fx.surveil(1)], label: "Surveillance 1" }),
+      activated({ mana: "{2}", tap: true, effects: [fx.surveil(1)], label: "Surveil 1" }),
       activated({
         mana: "{6}",
         tap: true,
         sacrifice: true,
         targets: [target.nonland("t")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruisez un permanent non-terrain",
+        label: "Destroy a nonland permanent",
       }),
     ],
   },
   "Magic Pot": {
     abilities: [
-      triggered(when.diesSelf, [fx.createTokens(TREASURE)], { label: "Trésor" }),
+      triggered(when.diesSelf, [fx.createTokens(TREASURE)], { label: "Treasure" }),
       activated({
         mana: "{2}",
         tap: true,
-        targets: [target.cardInGraveyard("t", {}, "any", "carte")],
+        targets: [target.cardInGraveyard("t", {}, "any", "card")],
         effects: [fx.exileCard(ref.target())],
-        label: "Exilez une carte d'un cimetière",
+        label: "Exile a card from a graveyard",
       }),
     ],
   },
@@ -60,21 +60,26 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [
-          fx.pickFromZone("hand", { types: ["Land"] }, { to: "battlefield" }, { min: 0, prompt: "Mettez un terrain en jeu" }),
+          fx.pickFromZone(
+            "hand",
+            { types: ["Land"] },
+            { to: "battlefield" },
+            { min: 0, prompt: "Put a land onto the battlefield" },
+          ),
         ],
-        label: "Un terrain de votre main",
+        label: "A land from your hand",
       }),
       activated({
         mana: "{3}",
         effects: [fx.setBasePTAll({ self: true }, amount.count({ ...TOWN, controller: "you" }), true)],
-        label: "Force de base = nombre de Villes",
+        label: "Base power = number of Towns",
       }),
     ],
   },
   "The Regalia": {
     abilities: [
       triggered(when.attacksSelf, [fx.revealUntil({ types: ["Land"] }, { to: "battlefield", tapped: true })], {
-        label: "Révélez jusqu'à un terrain",
+        label: "Reveal until a land",
       }),
     ],
   },
@@ -87,7 +92,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         payLife: 1,
         targets: [target.nonland("t")],
         effects: [fx.tap(ref.target())],
-        label: "Engagez un permanent non-terrain",
+        label: "Tap a nonland permanent",
       }),
     ],
   },
@@ -98,14 +103,14 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.search({ types: ["Land"], basic: true })],
-        label: "Cherchez un terrain de base",
+        label: "Search for a basic land",
       }),
       activated({
         mana: "{3}",
         tap: true,
         sacrifice: true,
         effects: [fx.search({ types: ["Land"] })],
-        label: "Cherchez un terrain",
+        label: "Search for a land",
       }),
     ],
   },

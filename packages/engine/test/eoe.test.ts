@@ -327,7 +327,7 @@ describe("Edge of Eternities, lot C", () => {
     s = cast(s, "p1", "Hardlight Containment", { targets: { enchant: [torpedo] } });
     s = passAccepting(s, (x) => x.stack.length === 0 && !x.battlefield.some((id) => x.objects[id]?.controller === "p2"));
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
-    expect(chars(s, torpedo).abilities.some((a) => a.kind === "triggered" && a.label === "Garde")).toBe(true);
+    expect(chars(s, torpedo).abilities.some((a) => a.kind === "triggered" && a.label === "Ward")).toBe(true);
   });
 
   it("Syr Vondam, Sunstar Exemplar : grandit quand une autre créature meurt ; détruit en mourant avec 4 de force", () => {
@@ -416,8 +416,8 @@ describe("Edge of Eternities, lot D", () => {
     s.objects[bracelet]!.attachedTo = angel;
     s.version += 1;
     // La capacité est celle de la créature équipée (« Equipped creature … has "{15}, Exile The Dominion Bracelet: …" »).
-    expect(chars(s, bracelet).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Exilez"))).toBe(false);
-    const ab = chars(s, angel).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Exilez"));
+    expect(chars(s, bracelet).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Exile"))).toBe(false);
+    const ab = chars(s, angel).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Exile"));
     expect(ab).toBeGreaterThanOrEqual(0);
     s = act(s, "p1", { type: "activate", source: angel, ability: ab, targets: { t: ["p2"] } });
     // {15} − 5 (force de l'Ange équipé) = {10} ; le Bracelet est exilé pour payer.
@@ -457,7 +457,7 @@ describe("Edge of Eternities, lot D", () => {
     });
     s = cast(s, "p1", "Famished Worldsire");
     s = passBoth(s);
-    expect(s.pending?.kind === "choice" && s.pending.request.type === "pick" && s.pending.request.prompt).toMatch(/dévorer/);
+    expect(s.pending?.kind === "choice" && s.pending.request.type === "pick" && s.pending.request.prompt).toMatch(/devour/);
     s = act(s, "p1", { type: "choose", values: idsOf(s, "p1", "battlefield", "Forest").slice(0, 2) });
     const w = idOf(s, "p1", "battlefield", "Famished Worldsire");
     expect(s.objects[w]?.counters["+1/+1"]).toBe(6);
@@ -941,15 +941,15 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
         p2: { battlefield: ["Memorial Vault"] },
       });
     const low = setup(11);
-    expect(hasActivation(low, idOf(low, "p1", "battlefield", "Adagia, Windswept Bastion"), "Copie")).toBe(false);
+    expect(hasActivation(low, idOf(low, "p1", "battlefield", "Adagia, Windswept Bastion"), "Legendary copy")).toBe(false);
     let s = setup(12);
     const adagia = idOf(s, "p1", "battlefield", "Adagia, Windswept Bastion");
     const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
     // L'artefact adverse n'est pas une cible légale.
     expect(() =>
-      activateNamed(s, adagia, "Copie", { targets: { t: [idOf(s, "p2", "battlefield", "Memorial Vault")] } }),
+      activateNamed(s, adagia, "Legendary copy", { targets: { t: [idOf(s, "p2", "battlefield", "Memorial Vault")] } }),
     ).toThrow();
-    s = settle(activateNamed(s, adagia, "Copie", { targets: { t: [torpedo] } }));
+    s = settle(activateNamed(s, adagia, "Legendary copy", { targets: { t: [torpedo] } }));
     const copies = tokensOf(s, "p1", "Thaumaton Torpedo");
     expect(copies).toHaveLength(1);
     expect(chars(s, copies[0] as string).supertypes).toContain("Legendary");
@@ -966,9 +966,9 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
         hand: ["Opt"],
       },
     });
-    expect(hasActivation(busy, idOf(busy, "p1", "battlefield", "Adagia, Windswept Bastion"), "Copie")).toBe(true);
+    expect(hasActivation(busy, idOf(busy, "p1", "battlefield", "Adagia, Windswept Bastion"), "Legendary copy")).toBe(true);
     busy = cast(busy, "p1", "Opt");
-    expect(hasActivation(busy, idOf(busy, "p1", "battlefield", "Adagia, Windswept Bastion"), "Copie")).toBe(false);
+    expect(hasActivation(busy, idOf(busy, "p1", "battlefield", "Adagia, Windswept Bastion"), "Legendary copy")).toBe(false);
   });
 
   it("Alpharael, Stonechosen : vide, en attaquant, le défenseur perd la moitié de ses PV arrondie au supérieur ; sinon rien", () => {
@@ -1063,9 +1063,9 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
         p1: { battlefield: [{ name: "Evendo, Waking Haven", counters: { charge } }, "Forest", "Bear Cub", "Llanowar Elves"] },
         p2: { battlefield: ["Serra Angel"] },
       });
-    expect(hasActivation(setup(11), idOf(setup(11), "p1", "battlefield", "Evendo, Waking Haven"), "{G} par")).toBe(false);
+    expect(hasActivation(setup(11), idOf(setup(11), "p1", "battlefield", "Evendo, Waking Haven"), "{G} for each")).toBe(false);
     let s = setup(12);
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Evendo, Waking Haven"), "{G} par"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Evendo, Waking Haven"), "{G} for each"));
     expect(s.players.p1?.manaPool.G).toBe(2);
   });
 
@@ -1185,7 +1185,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
       },
     });
     const altar = idOf(s, "p1", "battlefield", "Susur Secundi, Void Altar");
-    s = settle(activateNamed(s, altar, "Piochez"), (req, _p, cur) => pickNamed(cur, req, "Serra Angel"));
+    s = settle(activateNamed(s, altar, "Draw"), (req, _p, cur) => pickNamed(cur, req, "Serra Angel"));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(lifeOf(s, "p1")).toBe(18);
     expect(handSize(s, "p1")).toBe(4);
@@ -1227,11 +1227,11 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(s.objects[tez]?.counters.loyalty).toBe(5);
     const harvester = idOf(s, "p1", "battlefield", "Rust Harvester");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    const t = settle(activateNamed(s, tez, "Dégagez", { targets: { t: [cub] } }));
+    const t = settle(activateNamed(s, tez, "Untap", { targets: { t: [cub] } }));
     expect(t.objects[cub]?.tapped).toBe(false);
     expect(t.objects[cub]?.counters["+1/+1"] ?? 0).toBe(0);
     expect(t.objects[tez]?.counters.loyalty).toBe(5);
-    const u = settle(activateNamed(s, tez, "Dégagez", { targets: { t: [harvester] } }));
+    const u = settle(activateNamed(s, tez, "Untap", { targets: { t: [harvester] } }));
     expect(u.objects[harvester]?.tapped).toBe(false);
     expect(u.objects[harvester]?.counters["+1/+1"]).toBe(1);
   });
@@ -1245,7 +1245,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     });
     const tez = idOf(s, "p1", "battlefield", "Tezzeret, Cruel Captain");
     let offered: string[] = [];
-    s = settle(activateNamed(s, tez, "Cherchez"), (req, _p, cur) => {
+    s = settle(activateNamed(s, tez, "Search"), (req, _p, cur) => {
       if (req.type === "pick") offered = req.options.map((id) => nameOf(cur, String(id)) ?? "");
       return undefined;
     });
@@ -1254,7 +1254,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     let e = scenario({
       p1: { battlefield: [{ name: "Tezzeret, Cruel Captain", counters: { loyalty: 7 } }, "Thaumaton Torpedo"] },
     });
-    e = settle(activateNamed(e, idOf(e, "p1", "battlefield", "Tezzeret, Cruel Captain"), "Emblème"));
+    e = settle(activateNamed(e, idOf(e, "p1", "battlefield", "Tezzeret, Cruel Captain"), "Emblem"));
     expect(idsOf(e, "p1", "battlefield", "Tezzeret, Cruel Captain")).toHaveLength(0);
     const torpedo = idOf(e, "p1", "battlefield", "Thaumaton Torpedo");
     // Le combat de ce tour-ci.
@@ -1302,7 +1302,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
         ],
       },
     });
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Uthros, Titanic Godcore"), "{U} par"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Uthros, Titanic Godcore"), "{U} for each"));
     expect(s.players.p1?.manaPool.U).toBe(3);
   });
 });
@@ -1648,9 +1648,9 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     const ragost = idOf(s, "p1", "battlefield", "Ragost, Deft Gastronaut");
     const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
     expect(chars(s, torpedo).subtypes).toContain("Food");
-    s = settle(activateNamed(s, torpedo, "+3 PV"));
+    s = settle(activateNamed(s, torpedo, "+3 life"));
     expect(lifeOf(s, "p1")).toBe(23);
-    s = settle(activateNamed(s, ragost, "3 blessures", { sacrifice: [idOf(s, "p1", "battlefield", "Memorial Vault")] }));
+    s = settle(activateNamed(s, ragost, "3 damage", { sacrifice: [idOf(s, "p1", "battlefield", "Memorial Vault")] }));
     expect(lifeOf(s, "p2")).toBe(17);
     expect(s.objects[ragost]?.tapped).toBe(true);
     // Vous avez gagné des PV ce tour-ci : dégagé à l'étape de fin.
@@ -1658,7 +1658,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(s.objects[ragost]?.tapped).toBe(false);
     let t = scenario({ p1: { battlefield: ["Ragost, Deft Gastronaut", "Memorial Vault", "Plains"] } });
     const r2 = idOf(t, "p1", "battlefield", "Ragost, Deft Gastronaut");
-    t = settle(activateNamed(t, r2, "3 blessures", { sacrifice: [idOf(t, "p1", "battlefield", "Memorial Vault")] }));
+    t = settle(activateNamed(t, r2, "3 damage", { sacrifice: [idOf(t, "p1", "battlefield", "Memorial Vault")] }));
     t = advanceUntil(t, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(t.objects[r2]?.tapped).toBe(true);
   });
@@ -1670,7 +1670,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     });
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     s = settle(
-      activateNamed(s, idOf(s, "p1", "battlefield", "Requiem Monolith"), "Blessures", { targets: { t: [angel] } }),
+      activateNamed(s, idOf(s, "p1", "battlefield", "Requiem Monolith"), "Damage =", { targets: { t: [angel] } }),
       answering({ yes: true }),
     );
     expect(s.objects[angel]?.damage).toBe(1);
@@ -1684,7 +1684,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     let o = scenario({ p1: { battlefield: ["Requiem Monolith"] }, p2: { battlefield: ["Serra Angel"] } });
     let asked: PlayerId | undefined;
     o = settle(
-      activateNamed(o, idOf(o, "p1", "battlefield", "Requiem Monolith"), "Blessures", {
+      activateNamed(o, idOf(o, "p1", "battlefield", "Requiem Monolith"), "Damage =", {
         targets: { t: [idOf(o, "p2", "battlefield", "Serra Angel")] },
       }),
       (req, player) => {
@@ -1703,12 +1703,12 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     });
     const rust = idOf(s, "p1", "battlefield", "Rust Harvester");
     expect(chars(s, rust).keywords).toContain("menace");
-    s = settle(activateNamed(s, rust, "Marqueur", { targets: { t: ["p2"] } }));
+    s = settle(activateNamed(s, rust, "+1/+1 counter", { targets: { t: ["p2"] } }));
     expect(s.objects[rust]?.counters["+1/+1"]).toBe(1);
     expect(lifeOf(s, "p2")).toBe(18);
     expect(exiled(s, "Thaumaton Torpedo")).toHaveLength(1);
     const t = scenario({ p1: { battlefield: ["Rust Harvester", ...lands("Mountain", 2)], graveyard: ["Bear Cub"] } });
-    expect(hasActivation(t, idOf(t, "p1", "battlefield", "Rust Harvester"), "Marqueur")).toBe(false);
+    expect(hasActivation(t, idOf(t, "p1", "battlefield", "Rust Harvester"), "+1/+1 counter")).toBe(false);
   });
 
   it("Singularity Rupture : détruit toutes les créatures, puis les joueurs ciblés meulent la moitié de leur bibliothèque (arrondie à l'inférieur)", () => {
@@ -1806,14 +1806,14 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
       p2: { battlefield: ["Serra Angel"] },
     });
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Sunstar Chaplain"), "Engagez", { targets: { t: [angel] } }));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Sunstar Chaplain"), "Tap", { targets: { t: [angel] } }));
     expect(s.objects[angel]?.tapped).toBe(true);
     expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
     const none = scenario({
       p1: { battlefield: ["Sunstar Chaplain", "Bear Cub", ...lands("Plains", 2)] },
       p2: { battlefield: ["Serra Angel"] },
     });
-    expect(hasActivation(none, idOf(none, "p1", "battlefield", "Sunstar Chaplain"), "Engagez")).toBe(false);
+    expect(hasActivation(none, idOf(none, "p1", "battlefield", "Sunstar Chaplain"), "Tap")).toBe(false);
   });
 
   it("Synthesizer Labship : à 2+, au début de votre combat, un autre de vos artefacts devient une créature 2/2 volante", () => {
@@ -1922,8 +1922,8 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
       p2: { graveyard: ["Bear Cub"] },
     });
     const xu = idOf(s, "p1", "battlefield", "Xu-Ifit, Osteoharmonist");
-    expect(() => activateNamed(s, xu, "Renvoyez", { targets: { t: [idOf(s, "p2", "graveyard", "Bear Cub")] } })).toThrow();
-    s = settle(activateNamed(s, xu, "Renvoyez", { targets: { t: [idOf(s, "p1", "graveyard", "Serra Angel")] } }));
+    expect(() => activateNamed(s, xu, "Return", { targets: { t: [idOf(s, "p2", "graveyard", "Bear Cub")] } })).toThrow();
+    s = settle(activateNamed(s, xu, "Return", { targets: { t: [idOf(s, "p1", "graveyard", "Serra Angel")] } }));
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     expect(chars(s, angel).subtypes).toEqual(expect.arrayContaining(["Angel", "Skeleton"]));
     expect(chars(s, angel).keywords).not.toContain("flying");
@@ -1939,7 +1939,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     const scroll = idOf(s, "p1", "battlefield", "All-Fates Scroll");
     const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === scroll ? a.colors : []));
     expect(colors.sort()).toEqual(["B", "G", "R", "U", "W"]);
-    s = settle(activateNamed(s, scroll, "Une carte"));
+    s = settle(activateNamed(s, scroll, "A card"));
     expect(handSize(s, "p1")).toBe(3);
     expect(idsOf(s, "p1", "battlefield", "All-Fates Scroll")).toHaveLength(0);
   });
@@ -2001,7 +2001,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
       p2: { battlefield: ["Bear Cub"] },
     });
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Atomic Microsizer"), "Équip", { targets: { t: [angel] } }));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Atomic Microsizer"), "Equip", { targets: { t: [angel] } }));
     expect(chars(s, angel).power).toBe(5);
     s = attack(s, [angel]);
     s = settle(s, picking([angel]));
@@ -2015,7 +2015,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     let s = scenario({ p1: { battlefield: [...lands("Island", 9), "Forest"], hand: ["Biomechan Engineer"] } });
     s = settle(cast(s, "p1", "Biomechan Engineer"));
     expect(tokensOf(s, "p1", "Lander")).toHaveLength(1);
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Biomechan Engineer"), "Piochez"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Biomechan Engineer"), "Draw"));
     expect(handSize(s, "p1")).toBe(2);
     expect(tokensOf(s, "p1", "Robot")).toHaveLength(1);
   });
@@ -2178,7 +2178,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     });
     const adepts = idOf(s, "p1", "battlefield", "Dual-Sun Adepts");
     expect(chars(s, adepts).keywords).toContain("doubleStrike");
-    s = settle(activateNamed(s, adepts, "Vos créatures"));
+    s = settle(activateNamed(s, adepts, "Your creatures"));
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(3);
     expect(chars(s, adepts).toughness).toBe(3);
     expect(chars(s, idOf(s, "p2", "battlefield", "Serra Angel")).power).toBe(4);
@@ -2215,9 +2215,9 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(chars(t, angel).power).toBe(1);
     const food = idOf(t, "p1", "battlefield", "Dubious Delicacy");
     t = act(t, "p2", { type: "pass" });
-    const gain = settle(activateNamed(t, food, "+3 PV"));
+    const gain = settle(activateNamed(t, food, "+3 life"));
     expect(lifeOf(gain, "p1")).toBe(23);
-    const drain = settle(activateNamed(t, food, "Un adversaire", { targets: { t: ["p2"] } }));
+    const drain = settle(activateNamed(t, food, "An opponent", { targets: { t: ["p2"] } }));
     expect(lifeOf(drain, "p2")).toBe(17);
     expect(lifeOf(drain, "p1")).toBe(20);
   });
@@ -2362,7 +2362,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     });
     const g = idOf(s, "p1", "battlefield", "Harmonious Grovestrider");
     expect([chars(s, g).power, chars(s, g).toughness]).toEqual([4, 4]);
-    expect(chars(s, g).abilities.some((a) => a.kind === "triggered" && a.label?.startsWith("Garde"))).toBe(true);
+    expect(chars(s, g).abilities.some((a) => a.kind === "triggered" && a.label?.startsWith("Ward"))).toBe(true);
   });
 
   it("Hemosymbic Mite : engagée, une autre de vos créatures ciblée gagne +X/+X (X = sa force)", () => {
@@ -2384,7 +2384,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     s = settle(cast(s, "p1", "Honored Knight-Captain"));
     expect(tokensOf(s, "p1", "Human Soldier")).toHaveLength(1);
     let offered: string[] = [];
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Honored Knight-Captain"), "Cherchez"), (req, _p, cur) => {
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Honored Knight-Captain"), "Search"), (req, _p, cur) => {
       if (req.type === "pick") offered = req.options.map((id) => nameOf(cur, String(id)) ?? "");
       return undefined;
     });
@@ -2636,7 +2636,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     s = settle(cast(s, "p1", "Mouth of the Storm"));
     const mouth = idOf(s, "p1", "battlefield", "Mouth of the Storm");
     expect(chars(s, mouth).keywords).toContain("flying");
-    expect(chars(s, mouth).abilities.some((a) => a.kind === "triggered" && a.label?.startsWith("Garde"))).toBe(true);
+    expect(chars(s, mouth).abilities.some((a) => a.kind === "triggered" && a.label?.startsWith("Ward"))).toBe(true);
     expect(chars(s, angel).power).toBe(1);
     expect(chars(s, mouth).power).toBe(6);
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
@@ -2864,8 +2864,8 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     s = settle(cast(s, "p1", "Seedship Broodtender"));
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Island", "Opt", "Serra Angel"]);
     const brood = idOf(s, "p1", "battlefield", "Seedship Broodtender");
-    expect(() => activateNamed(s, brood, "Renvoyez", { targets: { t: [idOf(s, "p1", "graveyard", "Opt")] } })).toThrow();
-    s = settle(activateNamed(s, brood, "Renvoyez", { targets: { t: [idOf(s, "p1", "graveyard", "Serra Angel")] } }));
+    expect(() => activateNamed(s, brood, "Return", { targets: { t: [idOf(s, "p1", "graveyard", "Opt")] } })).toThrow();
+    s = settle(activateNamed(s, brood, "Return", { targets: { t: [idOf(s, "p1", "graveyard", "Serra Angel")] } }));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Seedship Broodtender")).toHaveLength(0);
   });
@@ -2915,7 +2915,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     const t = scenario({ p1: { battlefield: ["Steelswarm Operator", "Memorial Vault"] } });
     createTokens(t, "p1", LANDER_SPEC, 1);
     t.version += 1;
-    expect(hasActivation(t, tokensOf(t, "p1", "Lander")[0] as string, "Terrain")).toBe(true);
+    expect(hasActivation(t, tokensOf(t, "p1", "Lander")[0] as string, "Basic land")).toBe(true);
   });
 
   it("Sunstar Expansionist : un Lander si un adversaire a plus de terrains ; landfall, +1/+0", () => {
@@ -2958,12 +2958,12 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     let s = scenario({ p1: { battlefield: ["Survey Mechan", ...five] } });
     const mech = idOf(s, "p1", "battlefield", "Survey Mechan");
     expect(chars(s, mech).keywords).toEqual(expect.arrayContaining(["flying", "hexproof"]));
-    s = settle(activateNamed(s, mech, "3 blessures", { targets: { a: ["p2"], p: ["p1"] } }));
+    s = settle(activateNamed(s, mech, "3 damage", { targets: { a: ["p2"], p: ["p1"] } }));
     expect(lifeOf(s, "p2")).toBe(17);
     expect(lifeOf(s, "p1")).toBe(23);
     expect(handSize(s, "p1")).toBe(3);
     const t = scenario({ p1: { battlefield: ["Survey Mechan", ...lands("Plains", 8)] } });
-    expect(hasActivation(t, idOf(t, "p1", "battlefield", "Survey Mechan"), "3 blessures")).toBe(false);
+    expect(hasActivation(t, idOf(t, "p1", "battlefield", "Survey Mechan"), "3 damage")).toBe(false);
   });
 
   it("Susurian Dirgecraft : chaque adversaire sacrifie une créature non-jeton ; créature volante à 7+", () => {
@@ -3051,7 +3051,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") }));
     expect(lifeOf(s, "p2")).toBe(19);
     expect(handSize(s, "p1")).toBe(0);
-    s = settle(activateNamed(s, tokensOf(s, "p1", "Lander")[0] as string, "Terrain"));
+    s = settle(activateNamed(s, tokensOf(s, "p1", "Lander")[0] as string, "Basic land"));
     expect(lifeOf(s, "p2")).toBe(18);
     expect(handSize(s, "p1")).toBe(1);
   });

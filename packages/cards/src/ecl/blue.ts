@@ -1,4 +1,5 @@
-/** Lorwyn Eclipsed — cartes bleues. */
+/** Lorwyn Eclipsed: blue cards. */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -26,62 +27,62 @@ import {
   when,
 } from "./common";
 
-const CREATURE = { filter: { types: ["Creature" as const] }, label: "créature" };
+const CREATURE = { filter: { types: ["Creature" as const] }, label: "creature" };
 
-/** « Chaque fois que vous lancez un sort de valeur de mana 4 ou plus » (Kulrath Mystic, Tanufel Rimespeaker). */
+/** "Whenever you cast a spell with mana value 4 or greater" (Kulrath Mystic, Tanufel Rimespeaker). */
 const CAST_MV4 = when.castSpell("you", { minManaValue: 4 });
 
-/** « Retirez un marqueur (deux marqueurs) de cette créature » : de n'importe quelle sorte. */
+/** "Remove a counter (two counters) from this creature": of any kind. */
 const removeMinus = (n: number) => ({ kind: "any", n });
 
-/** « Jusqu'à la fin du tour, [la créature ciblée] a “chaque fois qu'elle inflige des blessures de combat à un joueur ou un planeswalker, piochez une carte” ». */
+/** "Until end of turn, [target creature] gains 'Whenever this creature deals combat damage to a player or planeswalker, draw a card'". */
 const grantCombatDraw = fx.modify(ref.target(), {
   addAbilities: [
     triggered(when.combatDamage("self", TO_PLAYER_OR_PLANESWALKER), [fx.draw(1)], {
-      label: "Blessures de combat à un joueur ou un planeswalker : piochez une carte",
+      label: "Combat damage to a player or planeswalker: draw a card",
     }),
   ],
 });
 
-/** « … gagne la protection contre chaque couleur jusqu'à votre prochain tour ». */
+/** "… gains protection from each color until your next turn". */
 const protectionFromColors = fx.modify(
   ref.target(),
   {
-    addProtections: [protection.from({ colors: ["W", "U", "B", "R", "G"] }, "Protection contre chaque couleur")],
+    addProtections: [protection.from({ colors: ["W", "U", "B", "R", "G"] }, "Protection from each color")],
   },
   "untilYourNextTurn",
 );
 
-/** « un Ondin que vous contrôlez » */
+/** "a Merfolk you control" */
 const MERFOLK_YOU = { subtype: "Merfolk", controller: "you" as const };
 
 export const BLUE: Record<string, CardScript> = {
   Blossombind: {
     enchant: CREATURE,
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature enchantée" }),
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Tap the enchanted creature" }),
       eventReplacement({
         event: "untap",
         toFilter: { attached: "host" },
         modify: { prevent: true },
-        label: "La créature enchantée ne peut pas être dégagée",
+        label: "The enchanted creature can't become untapped",
       }),
       eventReplacement({
         event: "counters",
         toFilter: { attached: "host" },
         modify: { prevent: true },
-        label: "On ne peut pas mettre de marqueurs sur la créature enchantée",
+        label: "Counters can't be put on the enchanted creature",
       }),
     ],
   },
   "Swat Away": {
-    // « Coûte {2} de moins si une créature vous attaque » : vous, pas un de vos planeswalkers.
+    // "Costs {2} less if a creature is attacking you": you, not one of your planeswalkers.
     costReduction: {
       generic: 2,
       condition: cond.amountAtLeast(amount.count({ types: ["Creature"], attacking: "you" }), 1),
     },
     spell: spell(
-      [{ id: "t", label: "sort ou créature", filter: { spells: {}, objects: { types: ["Creature"] } } }],
+      [{ id: "t", label: "spell or creature", filter: { spells: {}, objects: { types: ["Creature"] } } }],
       [fx.topOrBottom(ref.target())],
     ),
   },
@@ -89,7 +90,7 @@ export const BLUE: Record<string, CardScript> = {
     cantBeCountered: true,
     spell: spell([], [fx.counter(ref.stackItemsOf(ref.eachOpponent), "n"), fx.createTokens(FAERIE_UB, amount.v("n"))]),
   },
-  // Convocation lue dans le texte.
+  // Convoke read from the text.
   "Harmonized Crescendo": {
     spell: spell(
       [],
@@ -100,47 +101,47 @@ export const BLUE: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       triggered(when.enters({ permanent: true, controller: "you", subtypeChosen: true }), [fx.counters(ref.self, "charge")], {
-        label: "Un permanent du type choisi arrive : marqueur de charge",
+        label: "A permanent of the chosen type enters: charge counter",
       }),
       activated({
         tap: true,
         removeCounters: { kind: "charge", n: 3 },
         effects: [fx.copyNextSpell],
-        label: "Copiez le prochain éphémère ou rituel que vous lancez ce tour-ci",
+        label: "Copy the next instant or sorcery spell you cast this turn",
       }),
     ],
   },
-  // --- Oko (planeswalker recto-verso) -------------------------------------------
+  // --- Oko (double-faced planeswalker) ------------------------------------------
   "Oko, Lorwyn Liege": {
     abilities: [
-      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Payer {G} pour transformer Oko ?", fx.transform()), {
-        label: "Vous pouvez payer {G} : transformez Oko",
+      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Pay {G} to transform Oko?", fx.transform()), {
+        label: "You may pay {G}: transform Oko",
       }),
       loyalty(2, {
         targets: [target.upTo(1, target.creature())],
         effects: [fx.modify(ref.target(), { allCreatureTypes: true }, "permanent")],
-        label: "Une créature gagne tous les types de créature",
+        label: "A creature gains all creature types",
       }),
       loyalty(1, {
         targets: [target.creature()],
         effects: [fx.modify(ref.target(), { power: -2 }, "untilYourNextTurn")],
-        label: "-2/-0 jusqu'à votre prochain tour",
+        label: "-2/-0 until your next turn",
       }),
     ],
   },
   "Oko, Shadowmoor Scion": {
     abilities: [
-      triggered(when.step("main1", "you"), fx.mayPay("{U}", "Payer {U} pour transformer Oko ?", fx.transform()), {
-        label: "Vous pouvez payer {U} : transformez Oko",
+      triggered(when.step("main1", "you"), fx.mayPay("{U}", "Pay {U} to transform Oko?", fx.transform()), {
+        label: "You may pay {U}: transform Oko",
       }),
       loyalty(-1, {
         effects: [
           fx.mill(3, ref.you, { name: "m" }),
           fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { pool: ref.stored("m"), min: 0 }),
         ],
-        label: "Meulez trois cartes ; une carte de permanent parmi elles en main",
+        label: "Mill three cards; a permanent card among them into your hand",
       }),
-      loyalty(-3, { effects: [fx.createTokens(ELK, 2)], label: "Deux Élans 3/3" }),
+      loyalty(-3, { effects: [fx.createTokens(ELK, 2)], label: "Two 3/3 Elks" }),
       loyalty(-6, {
         effects: [
           fx.chooseForSelf("creatureType"),
@@ -151,34 +152,34 @@ export const BLUE: Record<string, CardScript> = {
               staticAbility(
                 { types: ["Creature"], controller: "you", subtypeChosen: true },
                 { power: 3, toughness: 3, addKeywords: ["vigilance", "hexproof"] },
-                { label: "Vos créatures du type choisi : +3/+3, vigilance et défense talismanique" },
+                { label: "Your creatures of the chosen type: +3/+3, vigilance and hexproof" },
               ),
             ],
           ),
         ],
-        label: "Choisissez un type : emblème +3/+3, vigilance et défense talismanique",
+        label: "Choose a type: emblem +3/+3, vigilance and hexproof",
       }),
     ],
   },
-  // « En coût additionnel, flétrissez 2 ou payez {1} » : lu dans le texte (`kickerOrPay`).
+  // "As an additional cost, blight 2 or pay {1}": read from the text (`kickerOrPay`).
   "Wild Unraveling": { spell: spell([target.spell()], [fx.counter(ref.target())]) },
   // --- Auras -------------------------------------------------------------------
   "Aquitect's Defenses": {
-    // Flash lu dans le texte.
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    // Flash read from the text.
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
       triggered(when.entersSelf, [fx.modify(ref.attached, { addKeywords: ["hexproof"] })], {
-        label: "La créature enchantée gagne la défense talismanique jusqu'à la fin du tour",
+        label: "The enchanted creature gains hexproof until end of turn",
       }),
       staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }),
     ],
   },
   "Lofty Dreams": {
-    // Convocation lue dans le texte.
+    // Convoke read from the text.
     enchant: CREATURE,
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
-      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["flying"] }, { label: "+2/+2 et le vol" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }),
+      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["flying"] }, { label: "+2/+2 and flying" }),
     ],
   },
   "Noggle the Mind": {
@@ -187,51 +188,51 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         "attached",
         { loseAllAbilities: true, setColors: [], setSubtypes: ["Noggle"], setPower: 1, setToughness: 1 },
-        { label: "Perd toutes ses capacités ; Noggle incolore 1/1" },
+        { label: "Loses all abilities; 1/1 colorless Noggle" },
       ),
     ],
   },
 
-  // --- Créatures ---------------------------------------------------------------
+  // --- Creatures ---------------------------------------------------------------
   "Champions of the Shoal": champion(
     "Merfolk",
     [when.entersSelf, when.tapsSelf].map((trigger) =>
       triggered(trigger, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
         targets: [target.upTo(1, target.creature())],
-        label: "Engagez jusqu'à une créature ; marqueur d'étourdissement",
+        label: "Tap up to one creature; stun counter",
       }),
     ),
   ),
   "Disruptor of Currents": {
-    // Flash et convocation lus dans le texte.
+    // Flash and convoke read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
-        targets: [target.upTo(1, target.nonland("t", { other: true }, "autre permanent non-terrain"))],
-        label: "Renvoie jusqu'à un autre permanent non-terrain",
+        targets: [target.upTo(1, target.nonland("t", { other: true }, "other nonland permanent"))],
+        label: "Return up to one other nonland permanent",
       }),
     ],
   },
   "Flitterwing Nuisance": {
     abilities: [
-      entersWith({ counters: 1, counterKind: "-1/-1", label: "Arrive avec un marqueur -1/-1" }),
+      entersWith({ counters: 1, counterKind: "-1/-1", label: "Enters with a -1/-1 counter" }),
       activated({
         mana: "{2}{U}",
         removeCounters: removeMinus(1),
         effects: [
-          // Capacité déclenchée retardée « ce tour-ci » : un emblème qui disparaît à la fin du tour.
+          // Delayed triggered ability "this turn": an emblem that disappears at end of turn.
           fx.emblem(
             "Flitterwing Nuisance",
-            "Ce tour-ci, chaque fois qu'une créature que vous contrôlez inflige des blessures de combat à un joueur ou un planeswalker, piochez une carte.",
+            msg("This turn, whenever a creature you control deals combat damage to a player or planeswalker, draw a card."),
             [
               triggered(when.combatDamage({ types: ["Creature"], controller: "you" }, TO_PLAYER_OR_PLANESWALKER), [fx.draw(1)], {
-                label: "Blessures de combat à un joueur ou un planeswalker : piochez une carte",
+                label: "Combat damage to a player or planeswalker: draw a card",
               }),
             ],
             false,
             true,
           ),
         ],
-        label: "Ce tour-ci, vos créatures qui blessent un joueur vous font piocher",
+        label: "This turn, your creatures that deal damage to a player make you draw",
       }),
     ],
   },
@@ -239,7 +240,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.modify(ref.target(), { setPower: 4, setToughness: 4, allCreatureTypes: true })], {
         targets: [target.upTo(1, target.creature("t", { other: true }))],
-        label: "Une autre créature devient 4/4 de base et a tous les types de créature",
+        label: "Another creature has base power and toughness 4/4 and all creature types",
       }),
     ],
   },
@@ -248,22 +249,22 @@ export const BLUE: Record<string, CardScript> = {
       triggeredModal(
         when.entersSelf,
         [
-          mode("Engagez une créature", [target.creature()], [fx.tap(ref.target())]),
-          mode("Dégagez une créature", [target.creature()], [fx.untap(ref.target())]),
+          mode("Tap a creature", [target.creature()], [fx.tap(ref.target())]),
+          mode("Untap a creature", [target.creature()], [fx.untap(ref.target())]),
         ],
-        { label: "Engagez ou dégagez une créature" },
+        { label: "Tap or untap a creature" },
       ),
     ],
   },
   "Glen Elendra Guardian": {
     abilities: [
-      entersWith({ counters: 1, counterKind: "-1/-1", label: "Arrive avec un marqueur -1/-1" }),
+      entersWith({ counters: 1, counterKind: "-1/-1", label: "Enters with a -1/-1 counter" }),
       activated({
         mana: "{1}{U}",
         removeCounters: removeMinus(1),
-        targets: [target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")],
+        targets: [target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")],
         effects: [fx.counter(ref.target()), fx.draw(1, ref.controllerOf(ref.target()))],
-        label: "Contrecarrez un sort non-créature ; son contrôleur pioche",
+        label: "Counter a noncreature spell; its controller draws",
       }),
     ],
   },
@@ -273,7 +274,7 @@ export const BLUE: Record<string, CardScript> = {
         when.attacksSelf,
         [
           ...fx.may(
-            "engager une autre créature dégagée que vous contrôlez pour que cette créature ne puisse pas être bloquée ?",
+            "tap another untapped creature you control so this creature can't be blocked?",
             fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], other: true, tapped: false }), ref.you, "tapped"),
             fx.tap(ref.stored("tapped")),
             ...fx.when(
@@ -282,7 +283,7 @@ export const BLUE: Record<string, CardScript> = {
             ),
           ),
         ],
-        { label: "Engagez une autre créature : imblocable ce tour-ci" },
+        { label: "Tap another creature: can't be blocked this turn" },
       ),
     ],
   },
@@ -292,78 +293,80 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["hexproof"] },
-        { condition: cond.sourceMatches({ tapped: false }), label: "Défense talismanique tant qu'elle est dégagée" },
+        { condition: cond.sourceMatches({ tapped: false }), label: "Hexproof as long as it's untapped" },
       ),
     ],
   },
   "Kulrath Mystic": {
     abilities: [
       triggered(CAST_MV4, [fx.pump(ref.self, 2, 0, ["vigilance"])], {
-        label: "Sort de VM 4 ou plus : +2/+0 et la vigilance",
+        label: "Spell with MV 4 or greater: +2/+0 and vigilance",
       }),
     ],
   },
   "Loch Mare": {
     abilities: [
-      entersWith({ counters: 3, counterKind: "-1/-1", label: "Arrive avec trois marqueurs -1/-1" }),
-      activated({ mana: "{1}{U}", removeCounters: removeMinus(1), effects: [fx.draw(1)], label: "Piochez une carte" }),
+      entersWith({ counters: 3, counterKind: "-1/-1", label: "Enters with three -1/-1 counters" }),
+      activated({ mana: "{1}{U}", removeCounters: removeMinus(1), effects: [fx.draw(1)], label: "Draw a card" }),
       activated({
         mana: "{2}{U}",
         removeCounters: removeMinus(2),
         targets: [target.creature()],
         effects: [fx.tap(ref.target()), fx.counters(ref.target(), "stun")],
-        label: "Engagez une créature ; marqueur d'étourdissement",
+        label: "Tap a creature; stun counter",
       }),
     ],
   },
   "Omni-Changeling": {
-    // Changelin et convocation lus dans le texte.
+    // Changeling and convoke read from the text.
     asEnters: [fx.chooseCopy({ types: ["Creature"] }, { anyController: true, except: { addKeywords: ["changeling"] } })],
   },
   "Pestered Wellguard": {
-    abilities: [triggered(when.tapsSelf, [fx.createTokens(FAERIE_UB)], { label: "Engagée : jeton Faerie 1/1 avec le vol" })],
+    abilities: [
+      triggered(when.tapsSelf, [fx.createTokens(FAERIE_UB)], { label: "Becomes tapped: 1/1 Faerie token with flying" }),
+    ],
   },
   "Rimekin Recluse": {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         targets: [target.upTo(1, target.creature("t", { other: true }))],
-        label: "Renvoie jusqu'à une autre créature",
+        label: "Return up to one other creature",
       }),
     ],
   },
   Shinestriker: {
     abilities: [
       triggered(when.entersSelf, [fx.draw(amount.colorsAmong())], {
-        label: "Vivid — piochez une carte par couleur parmi vos permanents",
+        label: "Vivid — draw a card for each color among your permanents",
       }),
     ],
   },
   "Silvergill Mentor": {
     additionalCost: beholdOrPay("Merfolk", 2),
-    abilities: [triggered(when.entersSelf, [fx.createTokens(MERFOLK_WU)], { label: "Jeton Ondin 1/1" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(MERFOLK_WU)], { label: "1/1 Merfolk token" })],
   },
   "Silvergill Peddler": {
-    abilities: [triggered(when.tapsSelf, fx.loot(1), { label: "Engagée : piochez une carte, puis défaussez-en une" })],
+    abilities: [triggered(when.tapsSelf, fx.loot(1), { label: "Becomes tapped: draw a card, then discard a card" })],
   },
   Stratosoarer: {
-    // Recyclage de terrain de base lu dans le texte.
+    // Basic landcycling read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.modify(ref.target(), { addKeywords: ["flying"] })], {
         targets: [target.creature()],
-        label: "Une créature gagne le vol jusqu'à la fin du tour",
+        label: "A creature gains flying until end of turn",
       }),
     ],
   },
   "Summit Sentinel": {
-    abilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Draw a card" })],
   },
   "Tanufel Rimespeaker": {
-    abilities: [triggered(CAST_MV4, [fx.draw(1)], { label: "Sort de VM 4 ou plus : piochez une carte" })],
+    abilities: [triggered(CAST_MV4, [fx.draw(1)], { label: "Spell with MV 4 or greater: draw a card" })],
   },
   "Unwelcome Sprite": {
     abilities: [
       triggered(when.castSpellOffTurn("you"), [fx.surveil(2)], {
-        label: "Sort pendant le tour d'un adversaire : surveillance 2",
+        label: "Spell during an opponent's turn: surveil 2",
       }),
     ],
   },
@@ -371,24 +374,24 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.tapsSelf, [fx.pump(ref.target(), -3, 0)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagée : une créature adverse gagne -3/-0",
+        label: "Becomes tapped: an opposing creature gets -3/-0",
       }),
     ],
   },
 
-  // --- Sygg (recto-verso) ----------------------------------------------------
-  // « Chaque fois que cette créature arrive ou se transforme en [cette face] » : `when.transformsSelf` sur la face visée.
+  // --- Sygg (double-faced) ---------------------------------------------------
+  // "Whenever this creature enters or transforms into [this face]": `when.transformsSelf` on that face.
   "Sygg, Wanderwine Wisdom": {
     keywords: ["unblockable"],
     abilities: [
       ...[when.entersSelf, when.transformsSelf].map((w) =>
         triggered(w, [grantCombatDraw], {
           targets: [target.creature()],
-          label: "Une créature fait piocher quand elle blesse un joueur",
+          label: "A creature makes you draw when it deals damage to a player",
         }),
       ),
-      triggered(when.step("main1", "you"), fx.mayPay("{W}", "payer {W} pour transformer Sygg ?", fx.transform()), {
-        label: "Payez {W} : transformez Sygg",
+      triggered(when.step("main1", "you"), fx.mayPay("{W}", "pay {W} to transform Sygg?", fx.transform()), {
+        label: "Pay {W}: transform Sygg",
       }),
     ],
   },
@@ -397,28 +400,28 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.transformsSelf, [protectionFromColors], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une créature que vous contrôlez gagne la protection contre chaque couleur",
+        label: "A creature you control gains protection from each color",
       }),
-      triggered(when.step("main1", "you"), fx.mayPay("{U}", "payer {U} pour transformer Sygg ?", fx.transform()), {
-        label: "Payez {U} : transformez Sygg",
+      triggered(when.step("main1", "you"), fx.mayPay("{U}", "pay {U} to transform Sygg?", fx.transform()), {
+        label: "Pay {U}: transform Sygg",
       }),
     ],
   },
 
-  // --- Éphémères et rituels ----------------------------------------------------
+  // --- Instants and sorceries --------------------------------------------------
   Mirrorform: {
     spell: spell(
-      [targetObj("t", { permanent: true, notSubtype: "Aura" }, "permanent non-Aura")],
+      [targetObj("t", { permanent: true, notSubtype: "Aura" }, "non-Aura permanent")],
       [fx.becomeCopy(ref.permanentsOf(ref.you, { notTypes: ["Land"] }), ref.target(), "permanent")],
     ),
   },
   "Rime Chill": {
-    // Vivid : {1} de moins par couleur parmi vos permanents.
+    // Vivid: {1} less for each color among your permanents.
     costReduction: { generic: amount.colorsAmong() },
     spell: spell([target.upTo(2, target.creature())], [fx.tap(ref.target()), fx.counters(ref.target(), "stun"), fx.draw(1)]),
   },
   "Temporal Cleansing": {
-    // Convocation lue dans le texte. Le propriétaire choisit : deuxième depuis le dessus ou au-dessous.
+    // Convoke read from the text. The owner chooses: second from the top or on the bottom.
     spell: spell([target.nonland()], [fx.topOrBottom(ref.target(), undefined, 2)]),
   },
   "Thirst for Identity": {
@@ -426,9 +429,9 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Unexpected Assistance": { spell: spell([], [fx.draw(3), fx.discard(1)]) },
   "Wanderwine Farewell": {
-    // Convocation lue dans le texte.
+    // Convoke read from the text.
     spell: spell(
-      [target.between(1, 2, target.nonland("t", {}, "permanent non-terrain"))],
+      [target.between(1, 2, target.nonland("t", {}, "nonland permanent"))],
       [
         fx.moveTo(ref.target(), { to: "hand" }, { name: "returned" }),
         ...fx.when(cond.controls(MERFOLK_YOU), fx.createTokens(MERFOLK_WU, amount.v("returned"))),

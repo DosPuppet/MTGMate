@@ -172,7 +172,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(
         playLand(s, "p1", "Island"),
-        (req) => modeNamed("Vous pouvez engager ou dégager la créature ciblée")(req) ?? picking([bear])(req),
+        (req) => modeNamed("You may tap or untap target creature")(req) ?? picking([bear])(req),
       );
       expect(s.objects[bear]?.tapped).toBe(false);
       // Regard 1 : la carte du dessus va au-dessous.
@@ -180,20 +180,20 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       s.turn.landsPlayed = 0;
       s = settle(
         act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Plains") }),
-        (req) => modeNamed("Regard 1")(req) ?? (req.type === "pick" && req.intent === "scryBottom" ? req.options : undefined),
+        (req) => modeNamed("Scry 1")(req) ?? (req.type === "pick" && req.intent === "scryBottom" ? req.options : undefined),
       );
       expect(s.players.p1?.library.at(-1)).toBe(top);
     });
 
     it("Retreat to Hagra : chaque adversaire perd 1 PV et vous en gagnez 1 ; ou +1/+0 et le contact mortel", () => {
       let s = scenario({ players: 3, p1: { battlefield: ["Retreat to Hagra", "Bear Cub"], hand: ["Swamp", "Plains"] } });
-      s = settle(playLand(s, "p1", "Swamp"), modeNamed("Chaque adversaire perd 1 PV et vous gagnez 1 PV"));
+      s = settle(playLand(s, "p1", "Swamp"), modeNamed("Each opponent loses 1 life; you gain 1 life"));
       expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([21, 19, 19]);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s.turn.landsPlayed = 0;
       s = settle(
         playLand(s, "p1", "Plains"),
-        (req) => modeNamed("La créature ciblée gagne +1/+0 et le contact mortel")(req) ?? picking([bear])(req),
+        (req) => modeNamed("Target creature gets +1/+0 and gains deathtouch")(req) ?? picking([bear])(req),
       );
       expect([chars(s, bear).power, chars(s, bear).keywords.includes("deathtouch")]).toEqual([3, true]);
     });
@@ -369,11 +369,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       s = act(s, "p2", { type: "pass" } as never);
       const theirs = s.stack[0]?.id ?? "";
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } } as never);
-      s = settle(
-        s,
-        (req) =>
-          modeNamed("Renvoyez un sort que vous ne contrôlez pas dans la main de son propriétaire")(req) ?? picking([theirs])(req),
-      );
+      s = settle(s, (req) => modeNamed("Return a spell you don't control to its owner's hand")(req) ?? picking([theirs])(req));
       expect(handNames(s, "p2")).toEqual(["Shock"]);
       expect(s.players.p1?.life).toBe(20);
       expect(s.players.p2?.life).toBe(18);
@@ -386,10 +382,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       });
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } } as never);
-      s = settle(
-        s,
-        (req) => modeNamed("Renvoyez un permanent non-terrain dans la main de son propriétaire")(req) ?? picking([bear])(req),
-      );
+      s = settle(s, (req) => modeNamed("Return a nonland permanent to its owner's hand")(req) ?? picking([bear])(req));
       expect(handNames(s, "p2")).toEqual(["Bear Cub"]);
     });
 

@@ -1,6 +1,6 @@
 /**
- * Commander : deck Rakdos, Lord of Riots (« Rakdos, Lord of Big Free Stuff », Moxfield). Faire perdre des points de vie
- * aux adversaires (blessures à chaque joueur, drains, dévotion), puis lancer à bas prix les gros sorts : Eldrazi, Démons,
+ * Commander: Rakdos, Lord of Riots deck ("Rakdos, Lord of Big Free Stuff", Moxfield). Make opponents lose life (damage
+ * to each player, drains, devotion), then cast the big spells cheaply: Eldrazi, Demons,
  * Blightsteel Colossus.
  */
 import type { Amount, CardScript, Effect, ObjectFilter, Ref, TokenSpec } from "@mtgx/engine";
@@ -27,14 +27,14 @@ import {
 } from "./common";
 
 const CREATURE_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
-/** Points de vie perdus par vos adversaires ce tour-ci (somme). */
+/** Life lost by your opponents this turn (sum). */
 const OPPONENTS_LOST: Amount = amount.turnEvents({ event: "lifeLoss", who: "opponent", sum: true });
-/** Chaque créature et chaque joueur. */
+/** Each creature and each player. */
 const EACH_CREATURE_AND_PLAYER: Ref = ref.union(ref.eachPlayer, ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }));
-/** « Quand vous lancez ce sort » (Eldrazi). */
+/** "When you cast this spell" (Eldrazi). */
 const CAST_SELF = when.castSelf;
-/** « Quand [cette carte] est mise dans un cimetière depuis n'importe où, son propriétaire mélange son cimetière dans sa
- * bibliothèque » (Kozilek, Butcher of Truth ; Ulamog, the Infinite Gyre). */
+/** "When [this card] is put into a graveyard from anywhere, its owner shuffles their graveyard into their library"
+ * (Kozilek, Butcher of Truth; Ulamog, the Infinite Gyre). */
 const shuffleGraveyardBack = () =>
   triggered(
     {
@@ -45,10 +45,10 @@ const shuffleGraveyardBack = () =>
       whose: "any",
     },
     [fx.moveAll("graveyard", ref.ownerOf(ref.selfCard), {}, { to: "libraryTop" }), fx.shuffle(ref.ownerOf(ref.selfCard))],
-    { fromGraveyard: true, label: "Mise au cimetière : son propriétaire mélange son cimetière dans sa bibliothèque" },
+    { fromGraveyard: true, label: "Put into a graveyard: its owner shuffles their graveyard into their library" },
   );
 
-/** Diable rouge 1/1 : « quand ce jeton meurt, il inflige 1 blessure à n'importe quelle cible » (Ob Nixilis). */
+/** 1/1 red Devil: "When this token dies, it deals 1 damage to any target." (Ob Nixilis). */
 const DEVIL: TokenSpec = {
   name: "Devil",
   colors: ["R"],
@@ -59,18 +59,18 @@ const DEVIL: TokenSpec = {
   abilities: [
     triggered(when.diesSelf, [fx.damage(1, ref.target())], {
       targets: [target.any()],
-      label: "Il meurt : 1 blessure à n'importe quelle cible",
+      label: "It dies: 1 damage to any target",
     }),
   ],
   text: "When this token dies, it deals 1 damage to any target.",
 };
 
 export const EDH_RAKDOS: Record<string, CardScript> = {
-  // --- Commandant ---------------------------------------------------------------------------------------------------
+  // --- Commander ----------------------------------------------------------------------------------------------------
   "Rakdos, Lord of Riots": {
     castCondition: cond.opponentLostLife,
     abilities: [
-      costReducer({ types: ["Creature"] }, 0, "Vos sorts de créature coûtent {1} de moins par PV perdu par vos adversaires", {
+      costReducer({ types: ["Creature"] }, 0, "Creature spells you cast cost {1} less for each 1 life your opponents have lost", {
         genericAmount: OPPONENTS_LOST,
       }),
     ],
@@ -81,7 +81,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
     abilities: [activated({ mana: "{1}", tap: true, effects: [fx.addMana("B", "R")], label: "{B}{R}" })],
   },
   "Priest of Gix": {
-    abilities: [triggered(when.entersSelf, [fx.addMana("B", "B", "B")], { label: "Ajoutez {B}{B}{B}" })],
+    abilities: [triggered(when.entersSelf, [fx.addMana("B", "B", "B")], { label: "Add {B}{B}{B}" })],
   },
   "Cryptolith Fragment": {
     abilities: [
@@ -89,31 +89,26 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [fx.addManaChoice(1), fx.loseLife(1, ref.eachPlayer)],
-        label: "Un mana de n'importe quelle couleur ; chaque joueur perd 1 PV",
+        label: "One mana of any color; each player loses 1 life",
       }),
       triggered(when.yourUpkeep, [fx.transform(ref.self)], {
         condition: cond.not(cond.amountAtLeast(amount.refCount(ref.playersWhere(ref.eachPlayer, cond.lifeAtLeast(11))), 1)),
-        label: "Chaque joueur a 10 PV ou moins : transformez-le",
+        label: "Each player has 10 or less life: transform it",
       }),
     ],
   },
   "Aurora of Emrakul": {
-    abilities: [triggered(when.attacksSelf, [fx.loseLife(3, ref.eachOpponent)], { label: "Chaque adversaire perd 3 PV" })],
+    abilities: [triggered(when.attacksSelf, [fx.loseLife(3, ref.eachOpponent)], { label: "Each opponent loses 3 life" })],
   },
 
-  // --- Cartes modales (verso terrain) ----------------------------------------------------------------------------------
+  // --- Modal cards (land back face) -------------------------------------------------------------------------------------
   "Agadeem's Awakening": {
     spell: spell(
       [
         {
           ...target.upTo(
             99,
-            target.cardInGraveyard(
-              "t",
-              { types: ["Creature"] },
-              "you",
-              "cartes de créature de valeurs de mana différentes, X ou moins",
-            ),
+            target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature cards with different mana values, X or less"),
           ),
           distinct: "manaValue",
           maxManaValueAmount: amount.x,
@@ -122,7 +117,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       [fx.toBattlefield(ref.target())],
     ),
   },
-  // Versos : « vous pouvez payer 3 PV ; sinon, il arrive engagé » est lu dans le texte.
+  // Back faces: "you may pay 3 life; if you don't, it enters tapped" is read from the text.
   "Agadeem, the Undercrypt": { abilities: [manaAbility("B")] },
   "Shatterskull Smashing": {
     spell: spell(
@@ -142,7 +137,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
           "hand",
           {},
           { to: "libraryBottom" },
-          { count: amount.cardsIn("hand"), min: 0, store: "va", prompt: "Cartes à mettre au-dessous de votre bibliothèque" },
+          { count: amount.cardsIn("hand"), min: 0, store: "va", prompt: "Cards to put on the bottom of your library" },
         ),
         fx.draw(amount.plus(amount.v("va"), 1)),
       ],
@@ -158,18 +153,18 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
   },
   "Sanguine Morass": { abilities: [entersWith({ tapped: true }), manaAbility(["B", "R"])] },
 
-  // --- Blessures et pertes de PV ----------------------------------------------------------------------------------------
+  // --- Damage and life loss ------------------------------------------------------------------------------------------
   "Creeping Bloodsucker": {
     abilities: [
       triggered(when.yourUpkeep, [fx.damage(1, ref.eachOpponent), fx.gainLife(amount.refCount(ref.eachOpponent))], {
-        label: "1 blessure à chaque adversaire ; vous gagnez autant de PV",
+        label: "1 damage to each opponent; you gain that much life",
       }),
     ],
   },
   "Fanatic of Mogis": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(amount.devotion("R"), ref.eachOpponent)], {
-        label: "Blessures à chaque adversaire égales à votre dévotion au rouge",
+        label: "Damage to each opponent equal to your devotion to red",
       }),
     ],
   },
@@ -184,28 +179,28 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
             fx.gainLife(amount.devotion("B")),
           ),
         ),
-        { label: "Chaque adversaire perd X PV (dévotion au noir), vous gagnez autant" },
+        { label: "Each opponent loses X life (devotion to black), you gain that much" },
       ),
     ],
   },
   "Plague Spitter": {
     abilities: [
       triggered(when.yourUpkeep, [fx.damage(1, EACH_CREATURE_AND_PLAYER)], {
-        label: "1 blessure à chaque créature et à chaque joueur",
+        label: "1 damage to each creature and each player",
       }),
       triggered(when.diesSelf, [fx.damage(1, EACH_CREATURE_AND_PLAYER)], {
-        label: "Il meurt : 1 blessure à chaque créature et à chaque joueur",
+        label: "It dies: 1 damage to each creature and each player",
       }),
     ],
   },
   "Spear Spewer": {
-    abilities: [activated({ tap: true, effects: [fx.damage(1, ref.eachPlayer)], label: "1 blessure à chaque joueur" })],
+    abilities: [activated({ tap: true, effects: [fx.damage(1, ref.eachPlayer)], label: "1 damage to each player" })],
   },
   "Thermo-Alchemist": {
     abilities: [
-      activated({ tap: true, effects: [fx.damage(1, ref.eachOpponent)], label: "1 blessure à chaque adversaire" }),
+      activated({ tap: true, effects: [fx.damage(1, ref.eachOpponent)], label: "1 damage to each opponent" }),
       triggered(when.castSpell("you", { types: ["Instant", "Sorcery"] }), [fx.untap(ref.self)], {
-        label: "Éphémère ou rituel : dégagez-le",
+        label: "Instant or sorcery: untap it",
       }),
     ],
   },
@@ -214,14 +209,14 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [fx.loseLife(amount.count({ subtype: "Zombie" }), ref.eachPlayer)],
-        label: "Chaque joueur perd 1 PV par Zombie sur le champ de bataille",
+        label: "Each player loses 1 life for each Zombie on the battlefield",
       }),
     ],
   },
   "Stormfist Crusader": {
     abilities: [
       triggered(when.yourUpkeep, [fx.draw(1, ref.eachPlayer), fx.loseLife(1, ref.eachPlayer)], {
-        label: "Chaque joueur pioche une carte et perd 1 PV",
+        label: "Each player draws a card and loses 1 life",
       }),
     ],
   },
@@ -233,7 +228,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
           fx.loseLife(amount.count({ subtype: "Shrine", controller: "you" }), ref.eachOpponent),
           fx.gainLife(amount.count({ subtype: "Shrine", controller: "you" })),
         ],
-        { label: "Chaque adversaire perd X PV, vous en gagnez X (X : vos Sanctuaires)" },
+        { label: "Each opponent loses X life and you gain X life (X: your Shrines)" },
       ),
     ],
   },
@@ -242,7 +237,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       triggered(
         when.yourUpkeep,
         fx.forEachPlayer(ref.eachPlayer, (p) => fx.unlessPays(p, { mana: "{B}", orMana: "{3}" }, fx.damage(1, p))),
-        { label: "1 blessure à chaque joueur qui ne paie pas {B} ou {3}" },
+        { label: "1 damage to each player who doesn't pay {B} or {3}" },
       ),
     ],
   },
@@ -255,7 +250,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
           fx.createTokens(TREASURE, amount.countersOn(ref.self, "descent"), ref.eachPlayer),
           fx.damage(amount.countersOn(ref.self, "descent"), ref.eachPlayer),
         ],
-        { label: "Deux marqueurs de descente ; chaque joueur crée X Trésors et subit X blessures" },
+        { label: "Two descent counters; each player creates X Treasures and is dealt X damage" },
       ),
     ],
   },
@@ -271,7 +266,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
         ],
         {
           targets: [target.player("t", "opponent")],
-          label: "Vous et un adversaire révélez la carte du dessus : chacun perd la valeur de mana de l'autre, puis la prend",
+          label: "You and an opponent reveal the top card: each loses the other's mana value, then takes it",
         },
       ),
     ],
@@ -294,21 +289,21 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
             fx.when(cond.v(`racket${n}`), fx.exileCard(ref.libraryTop(ref.you))),
           ),
         ),
-        { label: "Pour chaque adversaire : votre carte du dessus, exilée s'il paie sa valeur de mana en PV, sinon en main" },
+        { label: "For each opponent: your top card, exiled if they pay its mana value in life, otherwise into your hand" },
       ),
     ],
   },
   Pandemonium: {
-    // Approximation : la cible est choisie par le contrôleur de Pandemonium (docs/approximations.md).
+    // Approximation: the target is chosen by the controller of Pandemonium (docs/approximations.md).
     abilities: [
       triggered(
         when.enters({ types: ["Creature"] }),
         fx.mayFor(
           ref.controllerOf(ref.eventObject),
-          "Lui faire infliger des blessures égales à sa force ?",
+          "Have it deal damage equal to its power?",
           fx.damage(amount.powerOf(ref.eventObject), ref.target(), ref.eventObject),
         ),
-        { targets: [target.any()], label: "Une créature arrive : elle peut infliger des blessures égales à sa force" },
+        { targets: [target.any()], label: "A creature enters: it may deal damage equal to its power" },
       ),
     ],
   },
@@ -316,7 +311,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
     abilities: [
       triggered(when.castSpell("you", { types: ["Creature"], minManaValue: 5 }), [fx.damage(5, ref.target())], {
         targets: [target.any()],
-        label: "Sort de créature de valeur de mana 5 ou plus : 5 blessures à n'importe quelle cible",
+        label: "Creature spell with mana value 5 or greater: 5 damage to any target",
       }),
     ],
   },
@@ -325,24 +320,24 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       costReducer(
         { anySubtype: ["Demon", "Horror", "Nightmare"] },
         1,
-        "Vos sorts de Démon, d'Horreur et de Cauchemar coûtent {1} de moins",
+        "Demon, Horror, and Nightmare spells you cast cost {1} less",
       ),
       triggered(
         when.castSpell("you", { manaSpentBelowValue: true }),
         [fx.loseLife(amount.plus(amount.manaValueOf(ref.eventObject), amount.neg(amount.eventManaSpent)), ref.target())],
         {
           targets: [target.player("t", "opponent")],
-          label: "Sort lancé pour moins que sa valeur de mana : un adversaire perd la différence",
+          label: "Spell cast for less than its mana value: an opponent loses the difference",
         },
       ),
     ],
   },
   Exocrine: {
     abilities: [
-      // Vorace : arrive avec X marqueurs +1/+1 ; si X vaut 5 ou plus, piochez une carte en arrivant.
-      entersWith({ counters: amount.x, label: "Vorace" }),
+      // Ravenous: enters with X +1/+1 counters; if X is 5 or more, draw a card when it enters.
+      entersWith({ counters: amount.x, label: "Ravenous" }),
       triggered(when.entersSelf, fx.when(cond.amountAtLeast(amount.sourceX, 5), fx.draw(1)), {
-        label: "Vorace : si X vaut 5 ou plus, piochez une carte",
+        label: "Ravenous: if X is 5 or more, draw a card",
       }),
       triggered(
         when.entersSelf,
@@ -352,7 +347,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
             ref.union(ref.eachPlayer, ref.except(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }), ref.self)),
           ),
         ],
-        { label: "Barrage bioplasmique : X blessures à chaque joueur et à chaque autre créature" },
+        { label: "Bioplasmic Barrage: X damage to each player and each other creature" },
       ),
     ],
   },
@@ -361,11 +356,11 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         fx.may(
-          "Défausser votre main et piocher autant de cartes que de blessures infligées à cet adversaire ce tour-ci ?",
+          "Discard your hand and draw cards equal to the damage dealt to that opponent this turn?",
           fx.discard(99, ref.you),
           fx.draw({ kind: "turnEvents", query: { event: "damage", toPlayer: true, sum: true }, of: ref.target() }),
         ),
-        { targets: [target.player("t", "opponent")], label: "Vous pouvez défausser votre main et piocher" },
+        { targets: [target.player("t", "opponent")], label: "You may discard your hand and draw" },
       ),
     ],
   },
@@ -377,7 +372,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
           fx.lookAtTop(OPPONENTS_LOST, { count: 1, exact: true, to: { to: "exile" }, rest: "bottom", store: "fl" }),
           fx.grantPlay(ref.stored("fl"), {}),
         ],
-        { label: "Regardez X cartes (PV perdus par vos adversaires) : exilez-en une, jouable ce tour-ci" },
+        { label: "Look at X cards (life your opponents lost): exile one, playable this turn" },
       ),
     ],
   },
@@ -391,23 +386,23 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
             amount.plus(amount.maxOverPlayers(ref.stored("o"), amount.cardsIn("hand")), amount.neg(amount.cardsIn("hand"))),
           ),
         ],
-        { label: "Choisissez un adversaire : piochez la différence s'il a plus de cartes en main que vous" },
+        { label: "Choose an opponent: draw the difference if they have more cards in hand than you" },
       ),
     ],
   },
 
-  // --- Créatures et artefacts -----------------------------------------------------------------------------------------
+  // --- Creatures and artifacts -----------------------------------------------------------------------------------------
   "Imperial Recruiter": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Creature"], maxPower: 2 })], {
-        label: "Cherchez une carte de créature de force 2 ou moins",
+        label: "Search for a creature card with power 2 or less",
       }),
     ],
   },
   "Grim Servant": {
     abilities: [
       triggered(when.entersSelf, [{ ...fx.search({}), maxManaValue: amount.devotion("B") } as Effect, fx.loseLife(3)], {
-        label: "Cherchez une carte de valeur de mana au plus égale à votre dévotion au noir ; vous perdez 3 PV",
+        label: "Search for a card with mana value at most your devotion to black; you lose 3 life",
       }),
     ],
   },
@@ -417,44 +412,44 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
         payLife: 2,
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         effects: [fx.search({})],
-        label: "Cherchez une carte",
+        label: "Search for a card",
       }),
     ],
   },
   "Tuktuk Rubblefort": {
-    abilities: [staticAbility(CREATURE_YOU, { addKeywords: ["haste"] }, { label: "Vos créatures ont la célérité" })],
+    abilities: [staticAbility(CREATURE_YOU, { addKeywords: ["haste"] }, { label: "Creatures you control have haste" })],
   },
   "Shivan Devastator": { abilities: [entersWith({ counters: amount.x })] },
   "Walking Ballista": {
     abilities: [
       entersWith({ counters: amount.x }),
-      activated({ mana: "{4}", effects: [fx.addCounters(ref.self, 1)], label: "Un marqueur +1/+1" }),
+      activated({ mana: "{4}", effects: [fx.addCounters(ref.self, 1)], label: "A +1/+1 counter" }),
       activated({
         removeCounters: { kind: "+1/+1", n: 1 },
         targets: [target.any()],
         effects: [fx.damage(1, ref.target())],
-        label: "Retirez un marqueur : 1 blessure à n'importe quelle cible",
+        label: "Remove a counter: 1 damage to any target",
       }),
     ],
   },
   "Lightning Greaves": {
-    // Équiper {0} : lu dans le texte.
-    abilities: [staticAbility("attached", { addKeywords: ["haste", "shroud"] }, { label: "Célérité et défense totale" })],
+    // Equip {0}: read from the text.
+    abilities: [staticAbility("attached", { addKeywords: ["haste", "shroud"] }, { label: "Haste and shroud" })],
   },
   "Phyrexian Reclamation": {
     abilities: [
       activated({
         mana: "{1}{B}",
         payLife: 2,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
         effects: [fx.toHand(ref.target())],
-        label: "Renvoyez une carte de créature de votre cimetière dans votre main",
+        label: "Return a creature card from your graveyard to your hand",
       }),
     ],
   },
   "Blightsteel Colossus": { shuffleIntoLibrary: true },
   "Cityscape Leveler": {
-    // Exhumation {8} : lue dans le texte.
+    // Unearth {8}: read from the text.
     abilities: [
       ...[CAST_SELF, when.attacksSelf].map((w) =>
         triggered(
@@ -465,28 +460,28 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
           ],
           {
             targets: [target.upTo(1, target.nonland("t"))],
-            label: "Détruisez jusqu'à un permanent non-terrain ; son contrôleur crée un Powerstone engagé",
+            label: "Destroy up to one nonland permanent; its controller creates a tapped Powerstone",
           },
         ),
       ),
     ],
   },
 
-  // --- Sorts ----------------------------------------------------------------------------------------------------------
+  // --- Spells ----------------------------------------------------------------------------------------------------------
   "Rakdos Charm": {
     spell: modal(
       {
-        label: "Exilez le cimetière du joueur ciblé",
+        label: "Exile target player's graveyard",
         targets: [target.player("p")],
         effects: [fx.exile(ref.zone("graveyard", ref.target("p")))],
       },
       {
-        label: "Détruisez l'artefact ciblé",
-        targets: [target.permanent("a", ["Artifact"], {}, "artefact")],
+        label: "Destroy the target artifact",
+        targets: [target.permanent("a", ["Artifact"], {}, "artifact")],
         effects: [fx.destroy(ref.target("a"))],
       },
       {
-        label: "Chaque créature inflige 1 blessure à son contrôleur",
+        label: "Each creature deals 1 damage to its controller",
         targets: [],
         effects: fx.forEachPlayer(ref.eachPlayer, (p) => [
           {
@@ -501,8 +496,8 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
     ),
   },
   "Deflecting Swat": {
-    altCost: { mana: "{0}", condition: cond.controls({ commander: true }), label: "Gratuit si vous contrôlez un commandant" },
-    spell: spell([{ id: "t", label: "sort ou capacité", filter: { stackItems: {} } }], [fx.changeTarget(ref.target())]),
+    altCost: { mana: "{0}", condition: cond.controls({ commander: true }), label: "Free if you control a commander" },
+    spell: spell([{ id: "t", label: "spell or ability", filter: { stackItems: {} } }], [fx.changeTarget(ref.target())]),
   },
   "Wheel of Misfortune": {
     spell: spell(
@@ -517,8 +512,8 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
   },
   "Ob Nixilis, the Adversary": {
     abilities: [
-      // Victime X : sacrifiez une créature de force X en le lançant ; la copie (un jeton) n'est pas légendaire et a X loyauté
-      // (la force de la créature au moment du sacrifice, modifications comprises : dernières informations connues).
+      // Casualty X: sacrifice a creature with power X as you cast it; the copy (a token) isn't legendary and has X loyalty
+      // (the power of the creature when sacrificed, modifications included: last known information).
       triggered(
         CAST_SELF,
         [
@@ -528,7 +523,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
             fx.copySpell(ref.eventObject, 1, { nonlegendary: true, loyalty: amount.powerOf(ref.stored("casualty")) }),
           ),
         ],
-        { label: "Victime X : sacrifiez une créature de force X pour copier ce sort" },
+        { label: "Casualty X: sacrifice a creature with power X to copy this spell" },
       ),
       loyalty(1, {
         effects: [
@@ -541,28 +536,28 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
           ),
           ...fx.when(cond.controls({ anySubtype: ["Demon", "Devil"] }), fx.gainLife(2)),
         ],
-        label: "Chaque adversaire perd 2 PV sauf s'il défausse une carte ; Démon ou Diable : vous gagnez 2 PV",
+        label: "Each opponent loses 2 life unless they discard a card; Demon or Devil: you gain 2 life",
       }),
-      loyalty(-2, { effects: [fx.createTokens(DEVIL)], label: "Diable rouge 1/1" }),
+      loyalty(-2, { effects: [fx.createTokens(DEVIL)], label: "1/1 red Devil" }),
       loyalty(-7, {
         targets: [target.player("t")],
         effects: [fx.draw(7, ref.target()), fx.loseLife(7, ref.target())],
-        label: "Le joueur ciblé pioche sept cartes et perd 7 PV",
+        label: "Target player draws seven cards and loses 7 life",
       }),
     ],
   },
 
   // --- Eldrazi --------------------------------------------------------------------------------------------------------
   "It That Betrays": {
-    // Annihilateur 2 : lu dans le texte.
+    // Annihilator 2: read from the text.
     abilities: [
       triggered(when.sacrifice({ token: false }, false, true), [fx.toBattlefield(ref.eventObject, { underYourControl: true })], {
-        label: "Un adversaire sacrifie un permanent non-jeton : il arrive sous votre contrôle",
+        label: "An opponent sacrifices a nontoken permanent: it enters under your control",
       }),
     ],
   },
   "Kozilek, Butcher of Truth": {
-    abilities: [triggered(CAST_SELF, [fx.draw(4)], { label: "Piochez quatre cartes" }), shuffleGraveyardBack()],
+    abilities: [triggered(CAST_SELF, [fx.draw(4)], { label: "Draw four cards" }), shuffleGraveyardBack()],
   },
   "Kozilek, the Broken Reality": {
     abilities: [
@@ -574,14 +569,14 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
         ]),
         {
           targets: [target.upTo(2, target.player("t"))],
-          label: "Jusqu'à deux joueurs ciblés manifestent deux cartes de leur main ; vous piochez une carte par carte manifestée",
+          label: "Up to two target players manifest two cards from their hand; you draw a card for each card manifested",
         },
       ),
       staticAbility(
         { ...CREATURE_YOU, other: true, colorCount: 0 },
         { power: 3, toughness: 2 },
         {
-          label: "Vos autres créatures incolores gagnent +3/+2",
+          label: "Other colorless creatures you control get +3/+2",
         },
       ),
     ],
@@ -590,15 +585,15 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
     abilities: [
       triggered(CAST_SELF, [fx.exile(ref.target())], {
         targets: [{ id: "t", label: "permanent", filter: { objects: { permanent: true } }, count: 2 }],
-        label: "Exilez deux permanents ciblés",
+        label: "Exile two target permanents",
       }),
       triggered(when.attacksSelf, [fx.exileTop(ref.defendingPlayer, 20, "ulamog")], {
-        label: "Le joueur défenseur exile les vingt cartes du dessus de sa bibliothèque",
+        label: "Defending player exiles the top twenty cards of their library",
       }),
     ],
   },
   "Ulamog, the Defiler": {
-    // Garde — sacrifiez deux permanents : lue dans le texte.
+    // Ward—Sacrifice two permanents: read from the text.
     abilities: [
       triggered(
         CAST_SELF,
@@ -609,23 +604,23 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
             "defiler",
           ),
         ],
-        { targets: [target.player("t", "opponent")], label: "L'adversaire ciblé exile la moitié de sa bibliothèque" },
+        { targets: [target.player("t", "opponent")], label: "Target opponent exiles half their library" },
       ),
       entersWith({
         counters: { kind: "aggregate", fn: "max", property: "manaValue", zone: "exile", whose: "all" } as Amount,
-        label: "Arrive avec autant de marqueurs que la plus grande valeur de mana en exil",
+        label: "Enters with as many counters as the greatest mana value in exile",
       }),
       triggered(when.attacksSelf, [fx.sacrifice(ref.defendingPlayer, { permanent: true }, amount.countersOn(ref.self))], {
-        label: "Annihilateur X (ses marqueurs +1/+1)",
+        label: "Annihilator X (its +1/+1 counters)",
       }),
     ],
   },
   "Ulamog, the Infinite Gyre": {
-    // Annihilateur 4 : lu dans le texte.
+    // Annihilator 4: read from the text.
     abilities: [
       triggered(CAST_SELF, [fx.destroy(ref.target())], {
         targets: [{ id: "t", label: "permanent", filter: { objects: { permanent: true } } }],
-        label: "Détruisez le permanent ciblé",
+        label: "Destroy target permanent",
       }),
       shuffleGraveyardBack(),
     ],
@@ -635,26 +630,24 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
     abilities: [
       triggered(CAST_SELF, [fx.controlNextTurn(ref.target(), false, true)], {
         targets: [target.player("t", "opponent")],
-        label: "Vous contrôlez le prochain tour de l'adversaire ciblé ; puis il prend un tour supplémentaire",
+        label: "You control target opponent's next turn; then that player takes an extra turn",
       }),
     ],
   },
   "Emrakul, the World Anew": {
-    // Folie — payez six {C} : lue dans le texte.
+    // Madness—Pay six {C}: read from the text.
     abilities: [
       triggered(CAST_SELF, [fx.gainControl(ref.permanentsOf(ref.target(), { types: ["Creature"] }))], {
         targets: [target.player("t")],
-        label: "Gagnez le contrôle de toutes les créatures du joueur ciblé",
+        label: "Gain control of all creatures target player controls",
       }),
-      // Approximation : « contre les sorts » se lit contre les éphémères et les rituels (docs/approximations.md).
+      // Approximation: "from spells" reads as from instants and sorceries (docs/approximations.md).
+      protectionAbility(protection.from({ anyOf: [{ types: ["Instant"] }, { types: ["Sorcery"] }] }, "Protection from spells")),
       protectionAbility(
-        protection.from({ anyOf: [{ types: ["Instant"] }, { types: ["Sorcery"] }] }, "Protection contre les sorts"),
-      ),
-      protectionAbility(
-        protection.from({ cast: true, enteredThisTurn: true }, "Protection contre les permanents lancés ce tour-ci"),
+        protection.from({ cast: true, enteredThisTurn: true }, "Protection from permanents that were cast this turn"),
       ),
       triggered(when.leavesSelf, [fx.sacrificeIt(ref.permanentsOf(ref.you, { types: ["Creature"] }))], {
-        label: "Elle quitte le champ de bataille : sacrifiez toutes vos créatures",
+        label: "It leaves the battlefield: sacrifice all creatures you control",
       }),
     ],
   },

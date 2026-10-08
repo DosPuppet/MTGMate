@@ -11,6 +11,7 @@ import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars, counterCount, onBattlefield } from "../src/state";
+import { plainText } from "../src/text";
 import { canBlock } from "../src/turn";
 import type { ChoiceRequest, GameEvent, GameState } from "../src/types";
 import {
@@ -404,7 +405,7 @@ describe("Foundations : Auras et Équipements", () => {
     const boots = idOf(s, "p1", "battlefield", "Swiftfoot Boots");
     const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
     const equip = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === boots);
-    expect(equip?.type === "activate" && equip.label).toBe("Équiper {1}");
+    expect(equip?.type === "activate" && plainText(equip.label ?? "")).toBe("Equip {1}");
     if (equip?.type !== "activate") return;
     s = act(s, "p1", { type: "activate", source: boots, ability: equip.ability, targets: { t: [elf] } });
     s = passBoth(s);
@@ -472,7 +473,7 @@ describe("Foundations : Auras et Équipements", () => {
     (s.objects[pole] as { attachedTo?: string }).attachedTo = elf;
     s.version += 1;
     // « Equipped creature has "{1}, {T}, Tap Fishing Pole: …" » : la capacité est celle de l'Elfe, pas de l'Équipement.
-    const bait = chars(s, elf).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Engagez Fishing"));
+    const bait = chars(s, elf).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Tap Fishing"));
     expect(bait).toBeGreaterThanOrEqual(0);
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === pole && a.ability === 0)).toBe(false);
     // Fishing Pole engagée : le coût « engagez Fishing Pole » ne peut pas être payé.
@@ -517,7 +518,9 @@ describe("Foundations : planeswalkers", () => {
   const walker = (s: S, name: string, p = "p1") => idOf(s, p, "battlefield", name);
   const loyaltyOf = (s: S, id: string) => s.objects[id]?.counters.loyalty ?? 0;
   const activate = (s: S, source: string, label: string, targets?: Record<string, string[]>) => {
-    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && x.label?.startsWith(label));
+    const a = legalActions(s, "p1").find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").startsWith(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité ${label} indisponible`);
     return act(s, "p1", { type: "activate", source, ability: a.ability, targets });
   };
@@ -529,7 +532,7 @@ describe("Foundations : planeswalkers", () => {
     const ajani = walker(s, "Ajani, Caller of the Pride");
     expect(loyaltyOf(s, ajani)).toBe(4);
     const labels = legalActions(s, "p1").flatMap((a) => (a.type === "activate" && a.source === ajani ? [a.label] : []));
-    expect(labels.map((l) => l?.split(" ")[0])).toEqual(["+1", "−3"]); // −8 : pas assez de loyauté
+    expect(labels.map((l) => plainText(l ?? "").split(":")[0])).toEqual(["+1", "−3"]); // −8 : pas assez de loyauté
     s = activate(s, ajani, "+1", { t: [] });
     expect(loyaltyOf(s, ajani)).toBe(5);
     s = passBoth(s);
@@ -724,7 +727,7 @@ describe("Foundations : cartes du méta Standard", () => {
   /** Active la capacité de `source` dont l'intitulé commence par `label` (ou la première, sans intitulé). */
   const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, player).find(
-      (x) => x.type === "activate" && x.source === source && (!label || x.label?.startsWith(label)),
+      (x) => x.type === "activate" && x.source === source && (!label || plainText(x.label ?? "").startsWith(label)),
     );
     if (a?.type !== "activate") throw new Error(`capacité ${label ?? ""} indisponible`);
     return act(s, player, { type: "activate", source, ability: a.ability, targets });
@@ -807,8 +810,8 @@ describe("Foundations : cartes du méta Standard", () => {
     expect(manaAbilitiesOf(s, field).map((m) => m.produce)).toEqual([["C"]]);
     // Seul le terrain non de base adverse est une cible.
     const pool = idOf(s, "p2", "battlefield", "Breeding Pool");
-    expect(() => activate(s, "p1", field, "Détruire", { t: [idOf(s, "p2", "battlefield", "Forest")] })).toThrow();
-    s = activate(s, "p1", field, "Détruire", { t: [pool] });
+    expect(() => activate(s, "p1", field, "Destroy", { t: [idOf(s, "p2", "battlefield", "Forest")] })).toThrow();
+    s = activate(s, "p1", field, "Destroy", { t: [pool] });
     expect(idsOf(s, "p1", "graveyard", "Demolition Field")).toHaveLength(1);
     s = settle(s);
     expect(idsOf(s, "p2", "graveyard", "Breeding Pool")).toHaveLength(1);
@@ -827,7 +830,7 @@ describe("Foundations : cartes du méta Standard", () => {
     expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
     expect(s.players.p2?.graveyard).toHaveLength(2);
     const lantern = idOf(s, "p1", "battlefield", "Soul-Guide Lantern");
-    s = settle(activate(s, "p1", lantern, "Exiler"));
+    s = settle(activate(s, "p1", lantern, "Exile"));
     expect(s.players.p2?.graveyard).toHaveLength(0);
     expect(s.exile).toHaveLength(3);
     // Votre propre cimetière n'est pas touché ; la Lanterne sacrifiée y est allée.
@@ -837,7 +840,7 @@ describe("Foundations : cartes du méta Standard", () => {
   it("Soul-Guide Lantern : {1}, {T}, sacrifice : piochez une carte", () => {
     let s = scenario({ p1: { battlefield: ["Soul-Guide Lantern", "Forest"] } });
     const hand = s.players.p1?.hand.length ?? 0;
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Soul-Guide Lantern"), "Piochez"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Soul-Guide Lantern"), "Draw"));
     expect(s.players.p1?.hand).toHaveLength(hand + 1);
     expect(idsOf(s, "p1", "graveyard", "Soul-Guide Lantern")).toHaveLength(1);
   });
@@ -3554,7 +3557,7 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
     const gear = idOf(s, "p1", "battlefield", "Fireshrieker");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     // Une créature adverse n'est pas une cible légale.
-    expect(() => activate(s, "p1", gear, { t: [idOf(s, "p2", "battlefield", "Llanowar Elves")] })).toThrow(/Cible illégale/);
+    expect(() => activate(s, "p1", gear, { t: [idOf(s, "p2", "battlefield", "Llanowar Elves")] })).toThrow(/Illegal target/);
     expect(chars(s, bear).keywords).not.toContain("doubleStrike");
     s = settle(activate(s, "p1", gear, { t: [bear] }));
     expect(s.objects[gear]?.attachedTo).toBe(bear);
@@ -3774,7 +3777,7 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
     s = settle(cast(s, "p1", "Opt"));
     expect(chars(s, imm).power).toBe(3);
     // Un joueur n'est pas une cible légale.
-    expect(() => activate(s, "p1", imm, { t: ["p2"] })).toThrow(/Cible illégale/);
+    expect(() => activate(s, "p1", imm, { t: ["p2"] })).toThrow(/Illegal target/);
     s = activate(s, "p1", imm, { t: [wurm] });
     expect(idsOf(s, "p1", "graveyard", "Heartfire Immolator")).toHaveLength(1);
     s = settle(s);
@@ -3804,7 +3807,7 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
     });
     for (const n of ["Swiftfoot Boots", "Forest"])
       expect(() => cast(s, "p1", "Hero's Downfall", { targets: { t: [idOf(s, "p2", "battlefield", n)] } })).toThrow(
-        /Cible illégale/,
+        /Illegal target/,
       );
     s = settle(cast(s, "p1", "Hero's Downfall", { targets: { t: [idOf(s, "p2", "battlefield", "Vivien Reid")] } }));
     expect(idsOf(s, "p2", "graveyard", "Vivien Reid")).toHaveLength(1);
@@ -3869,8 +3872,8 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = declareAttack(s, [leonin, lions, bear]);
     // Ni lui-même ni une créature qui n'attaque pas.
-    expect(() => activate(s, "p1", leonin, { t: [leonin] })).toThrow(/Cible illégale/);
-    expect(() => activate(s, "p1", leonin, { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] })).toThrow(/Cible illégale/);
+    expect(() => activate(s, "p1", leonin, { t: [leonin] })).toThrow(/Illegal target/);
+    expect(() => activate(s, "p1", leonin, { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] })).toThrow(/Illegal target/);
     s = settle(activate(s, "p1", leonin, { t: [lions] }));
     expect(counterCount(s.objects[lions] as never, "+1/+1")).toBe(1);
     expect(chars(s, lions).keywords).toContain("firstStrike");
@@ -3939,7 +3942,7 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
     s = passAccepting(s, (x) => x.pending?.player === "p1" && x.pending.kind === "priority");
     // Une créature hors combat n'est pas une cible.
     expect(() => cast(s, "p1", "Joust Through", { targets: { t: [idOf(s, "p2", "battlefield", "Llanowar Elves")] } })).toThrow(
-      /Cible illégale/,
+      /Illegal target/,
     );
     s = settle(cast(s, "p1", "Joust Through", { targets: { t: [angel] } }));
     expect(s.objects[angel]?.damage).toBe(3);
@@ -3956,7 +3959,7 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
     expect(chars(s, knight).power).toBe(2);
     // Un sort blanc adverse ne peut pas le cibler ; le vôtre, si.
     s = act(s, "p1", { type: "pass" });
-    expect(() => cast(s, "p2", "Fleeting Flight", { targets: { t: [knight] } })).toThrow(/Cible illégale/);
+    expect(() => cast(s, "p2", "Fleeting Flight", { targets: { t: [knight] } })).toThrow(/Illegal target/);
     s = scenario({
       p1: { battlefield: ["Knight of Malice", "Plains"], hand: ["Fleeting Flight"] },
       p2: { battlefield: ["Savannah Lions"] },
@@ -4068,7 +4071,7 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
     expect(s.players.p1?.life).toBe(27);
     const snack = idOf(s, "p1", "battlefield", "Midnight Snack");
     // Un adversaire seulement.
-    expect(() => activate(s, "p1", snack, { t: ["p1"] })).toThrow(/Cible illégale/);
+    expect(() => activate(s, "p1", snack, { t: ["p1"] })).toThrow(/Illegal target/);
     s = settle(activate(s, "p1", snack, { t: ["p2"] }));
     expect(s.players.p2?.life).toBe(13);
     expect(idsOf(s, "p1", "graveyard", "Midnight Snack")).toHaveLength(1);
@@ -4156,7 +4159,7 @@ describe("Foundations, lot K8 : peu communes (2)", () => {
       p2: { battlefield: ["Banishing Light", "Bear Cub", "Swiftfoot Boots", "Forest"] },
     });
     for (const n of ["Swiftfoot Boots", "Forest"])
-      expect(() => cast(s, "p1", "Mortify", { targets: { t: [idOf(s, "p2", "battlefield", n)] } })).toThrow(/Cible illégale/);
+      expect(() => cast(s, "p1", "Mortify", { targets: { t: [idOf(s, "p2", "battlefield", n)] } })).toThrow(/Illegal target/);
     const t = settle(cast(s, "p1", "Mortify", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
     expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     s = settle(cast(s, "p1", "Mortify", { targets: { t: [idOf(s, "p2", "battlefield", "Banishing Light")] } }));
@@ -4952,7 +4955,7 @@ describe("Foundations, PLAN-A A4a", () => {
     s.objects[pole]!.attachedTo = elf;
     s.version += 1;
     const bait = (x: GameState) =>
-      legalActions(x, "p1").some((a) => a.type === "activate" && a.label?.startsWith("Engagez Fishing Pole"));
+      legalActions(x, "p1").some((a) => a.type === "activate" && a.label?.startsWith("Tap Fishing Pole"));
     expect(bait(s)).toBe(true);
     addEffect(s, [elf], { loseAllAbilities: true }, "endOfTurn");
     expect(bait(s)).toBe(false);

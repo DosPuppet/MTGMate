@@ -1,4 +1,5 @@
-/** The Lost Caverns of Ixalan — cartes multicolores (légendaires compris). */
+/** The Lost Caverns of Ixalan — multicolored cards (legendaries included). */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -28,26 +29,30 @@ import {
   when,
 } from "./common";
 
-/** Wail of the Forgotten : les trois modes, et toutes leurs combinaisons sous Descente 8. */
+/** Wail of the Forgotten: the three modes, and all their combinations under descend 8. */
 const WAIL_MODES = [
   {
-    label: "Renvoyez un permanent non-terrain",
+    label: "Return a nonland permanent",
     targets: [target.nonland("a")],
     effects: [fx.bounce(ref.target("a"))],
   },
   {
-    label: "Un adversaire défausse une carte",
+    label: "An opponent discards a card",
     targets: [target.player("b", "opponent")],
     effects: [fx.discard(1, ref.target("b"))],
   },
-  { label: "Une carte en main, le reste au cimetière", targets: [], effects: [fx.lookAtTop(3, { count: 1, rest: "graveyard" })] },
+  {
+    label: "One card into your hand, the rest into the graveyard",
+    targets: [],
+    effects: [fx.lookAtTop(3, { count: 1, rest: "graveyard" })],
+  },
 ];
 const wailModes = () => {
   const out = [];
   for (let mask = 1; mask < 8; mask++) {
     const chosen = WAIL_MODES.filter((_, i) => mask & (1 << i));
     const m = mode(
-      chosen.map((c) => c.label).join(" + "),
+      chosen.map((c) => c.label).reduce((a, b) => msg("{a} + {b}", { a, b })),
       chosen.flatMap((c) => c.targets),
       chosen.flatMap((c) => c.effects),
     );
@@ -61,12 +66,12 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       activated({
         mana: "{1}{W}{U}",
-        targets: [targetObj("t", { ...OTHER_ARTIFACT_OR_CREATURE_YOURS }, "autre créature ou artefact que vous contrôlez")],
+        targets: [targetObj("t", { ...OTHER_ARTIFACT_OR_CREATURE_YOURS }, "other creature or artifact you control")],
         effects: [
           fx.exileCard(ref.target(), { name: "k" }),
           fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") }),
         ],
-        label: "Exilez-le jusqu'à l'étape de fin",
+        label: "Exile it until the end step",
       }),
     ],
   },
@@ -77,7 +82,7 @@ export const MULTI: Record<string, CardScript> = {
         { power: 2, toughness: 2, addKeywords: ["trample"] },
         {
           condition: descend(4),
-          label: "Descente 4 — +2/+2 et piétinement",
+          label: "Descend 4 — +2/+2 and trample",
         },
       ),
       staticAbility(
@@ -85,7 +90,7 @@ export const MULTI: Record<string, CardScript> = {
         { power: 2, toughness: 2, addBlockRules: [block.atMost(1)] },
         {
           condition: descend(8),
-          label: "Descente 8 — +2/+2, un seul bloqueur",
+          label: "Descend 8 — +2/+2, a single blocker",
         },
       ),
     ],
@@ -104,7 +109,7 @@ export const MULTI: Record<string, CardScript> = {
             fx.destroyAll({ types: ["Creature"], other: true }),
           ),
         ],
-        { label: "Explore ; force 20 : détruisez les autres créatures" },
+        { label: "Explore; power 20: destroy the other creatures" },
       ),
     ],
   },
@@ -115,7 +120,7 @@ export const MULTI: Record<string, CardScript> = {
         { addKeywords: ["cantAttack", "cantBlock"] },
         {
           condition: cond.not(descend(8)),
-          label: "Descente 8 — ne peut ni attaquer ni bloquer sinon",
+          label: "Descend 8 — otherwise can't attack or block",
         },
       ),
       activated({
@@ -125,7 +130,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.discard(1, ref.you, { store: "d" }),
           fx.reflexive([target.player()], [fx.mill(amount.manaValueOf(ref.target("d")), ref.target())], { d: ref.stored("d") }),
         ],
-        label: "Pillage ; un joueur meule",
+        label: "Loot; a player mills",
       }),
     ],
   },
@@ -134,7 +139,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.attackWith(1, { types: ["Creature"], controller: "you", notSubtype: "Gnome" }),
         [fx.addCounters(ref.self, 1), fx.createTappedTokens(GNOME, amount.countersOn(ref.self), { attacking: true })],
-        { label: "Marqueur +1/+1, Gnomes attaquants" },
+        { label: "+1/+1 counter, attacking Gnomes" },
       ),
     ],
   },
@@ -143,7 +148,7 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         sacrificeOther: { filter: OTHER_ARTIFACT_OR_CREATURE_YOURS },
         effects: [fx.addCounters(ref.self, 1)],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -151,7 +156,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you", subtype: "Pirate" })],
-        label: "Marqueur +1/+1 sur un Pirate",
+        label: "+1/+1 counter on a Pirate",
       }),
     ],
   },
@@ -161,14 +166,14 @@ export const MULTI: Record<string, CardScript> = {
         when.yourCombat,
         [
           fx.explore(),
-          // La créature à copier est choisie après l'exploration, sans cibler.
+          // The creature to copy is chosen after exploring, without targeting.
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], other: true }), ref.you, "c", {
             optional: true,
-            prompt: "Devenir jusqu'à la fin du tour une copie de l'une de vos autres créatures ?",
+            prompt: "Become a copy of one of your other creatures until end of turn?",
           }),
           fx.becomeCopy(ref.self, ref.stored("c")),
         ],
-        { label: "Explore, puis copie" },
+        { label: "Explore, then copy" },
       ),
     ],
   },
@@ -184,7 +189,7 @@ export const MULTI: Record<string, CardScript> = {
             rest: "bottom",
           }),
         ],
-        { label: "Dinosaures révélés sur le champ de bataille" },
+        { label: "Revealed Dinosaurs onto the battlefield" },
       ),
     ],
   },
@@ -195,14 +200,14 @@ export const MULTI: Record<string, CardScript> = {
         [
           ...fx.mayPay(
             "{2}",
-            "Payer {2} ?",
+            "Pay {2}?",
             fx.reflexive(
               [target.creature("a", DINOSAUR_YOU), { ...target.creature("b"), otherThan: ["a"] }],
               [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))],
             ),
           ),
         ],
-        { label: "Un Dinosaure inflige ses blessures" },
+        { label: "A Dinosaur deals its damage" },
       ),
     ],
   },
@@ -211,21 +216,21 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [
-          // Une carte de créature de VM 3 ou moins va en main ; sinon, elle peut aller au cimetière.
+          // A creature card with MV 3 or less goes to the hand; otherwise, it may go to the graveyard.
           fx.lookAtTop(1, { filter: { types: ["Creature"], maxManaValue: 3 }, count: 1, exact: true, rest: "top", store: "k" }),
           ...fx.when(
             cond.all(cond.not(cond.v("k")), cond.amountAtLeast(amount.refCount(ref.libraryTop(ref.you)), 1)),
-            ...fx.may("Mettre la carte révélée dans votre cimetière ?", fx.moveTo(ref.libraryTop(ref.you), { to: "graveyard" })),
+            ...fx.may("Put the revealed card into your graveyard?", fx.moveTo(ref.libraryTop(ref.you), { to: "graveyard" })),
           ),
         ],
-        { label: "Créature de VM 3 ou moins en main" },
+        { label: "Creature with MV 3 or less into your hand" },
       ),
     ],
   },
   "Journey On": {
     spell: spell(
       [],
-      // X : un plus le nombre d'adversaires qui contrôlent un artefact.
+      // X: one plus the number of opponents who control an artifact.
       [
         fx.createTokens(
           MAP,
@@ -239,20 +244,20 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.explores({ types: ["Creature"], controller: "you" }, true),
         [fx.pickFromZone("hand", { types: ["Land"] }, { to: "battlefield", tapped: true }, { count: 1, min: 0 })],
-        { label: "Terrain de votre main, engagé" },
+        { label: "Land from your hand, tapped" },
       ),
       triggered(when.explores({ types: ["Creature"], controller: "you" }, false), [fx.addCounters(ref.self, 1)], {
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
   "Palani's Hatcher": {
     abilities: [
-      staticAbility({ ...DINOSAUR_YOU, other: true }, { addKeywords: ["haste"] }, { label: "Autres Dinosaures : célérité" }),
-      triggered(when.entersSelf, [fx.createTokens(DINOSAUR_EGG, 2)], { label: "Deux Œufs 0/1" }),
+      staticAbility({ ...DINOSAUR_YOU, other: true }, { addKeywords: ["haste"] }, { label: "Other Dinosaurs: haste" }),
+      triggered(when.entersSelf, [fx.createTokens(DINOSAUR_EGG, 2)], { label: "Two 0/1 Eggs" }),
       triggered(when.yourCombat, [fx.sacrifice(ref.you, { subtype: "Egg" }), fx.createTokens(DINOSAUR_3_3)], {
         condition: cond.controls({ subtype: "Egg" }),
-        label: "Sacrifiez un Œuf : Dinosaure 3/3",
+        label: "Sacrifice an Egg: 3/3 Dinosaur",
       }),
     ],
   },
@@ -261,15 +266,15 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         mana: "{U}{R}",
         tap: true,
-        targets: [targetObj("t", { ...OTHER_ARTIFACT_OR_CREATURE_YOURS }, "autre créature ou artefact que vous contrôlez")],
+        targets: [targetObj("t", { ...OTHER_ARTIFACT_OR_CREATURE_YOURS }, "other creature or artifact you control")],
         effects: [fx.copyToken(ref.target(), { addTypes: ["Artifact"], addKeywords: ["haste"], sacrificeAtEndStep: true })],
-        label: "Copie-jeton (artefact, célérité)",
+        label: "Token copy (artifact, haste)",
       }),
     ],
   },
   "Squirming Emergence": {
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "carte de permanent non-terrain")],
+      [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "nonland permanent card")],
       [
         ...fx.when(
           cond.amountAtLeast(amount.plus(PERMANENT_CARDS, amount.neg(amount.manaValueOf(ref.target()))), 0),
@@ -286,7 +291,7 @@ export const MULTI: Record<string, CardScript> = {
         sorcerySpeed: true,
         activationCondition: descend(8),
         effects: [fx.toBattlefield(ref.selfCard, { counters: { kind: "finality", n: 1 } })],
-        label: "Descente 8 — revient (finalité)",
+        label: "Descend 8 — returns (finality)",
       }),
     ],
   },
@@ -300,7 +305,7 @@ export const MULTI: Record<string, CardScript> = {
           ...fx.when(cond.all(cond.v("n", 2), cond.not(cond.v("n", 3))), fx.loseLife(2, ref.eachOpponent)),
           ...fx.when(cond.all(cond.v("n", 3), cond.not(cond.v("n", 4))), fx.createTokens(VAMPIRE_DEMON)),
         ],
-        { label: "Sacrifice : PV, perte de PV, Vampire Démon" },
+        { label: "Sacrifice: life, life loss, Vampire Demon" },
       ),
     ],
   },
@@ -311,39 +316,39 @@ export const MULTI: Record<string, CardScript> = {
         when.attacksSelf,
         [
           ...fx.may(
-            "Engager deux artefacts et/ou créatures pour découvrir 3 ?",
+            "Tap two artifacts and/or creatures to discover 3?",
             fx.tapChosen({ anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }, "c"),
             ...fx.when(cond.v("c", 2), fx.discover(3)),
           ),
         ],
-        { label: "Engagez deux permanents : découverte 3" },
+        { label: "Tap two permanents: discover 3" },
       ),
     ],
   },
   "Molten Collapse": {
     spell: {
       modes: [
-        mode("Détruisez une créature ou un planeswalker", [target.creatureOrPlaneswalker("a")], [fx.destroy(ref.target("a"))]),
+        mode("Destroy a creature or planeswalker", [target.creatureOrPlaneswalker("a")], [fx.destroy(ref.target("a"))]),
         mode(
-          "Détruisez un permanent non-créature non-terrain de VM 1 ou moins",
+          "Destroy a noncreature, nonland permanent with MV 1 or less",
           [
             targetObj(
               "b",
               { notTypes: ["Land", "Creature"], maxManaValue: 1 },
-              "permanent non-créature non-terrain de VM 1 ou moins",
+              "noncreature, nonland permanent with MV 1 or less",
             ),
           ],
           [fx.destroy(ref.target("b"))],
         ),
         {
           ...mode(
-            "Les deux (descente)",
+            "Both (descend)",
             [
               target.creatureOrPlaneswalker("a"),
               targetObj(
                 "b",
                 { notTypes: ["Land", "Creature"], maxManaValue: 1 },
-                "permanent non-créature non-terrain de VM 1 ou moins",
+                "noncreature, nonland permanent with MV 1 or less",
               ),
             ],
             [fx.destroy(ref.target("a")), fx.destroy(ref.target("b"))],
@@ -357,17 +362,17 @@ export const MULTI: Record<string, CardScript> = {
     cdaPT: amount.count({ types: ["Creature"], controller: "you", anySubtype: ["Fungus", "Saproling"] }),
     abilities: [
       triggered(when.yourEndStep, [fx.createTokens(FUNGUS, amount.descendedThisTurn)], {
-        label: "Un Champignon par descente",
+        label: "A Fungus for each descent",
       }),
     ],
   },
   "Quintorius Kand": {
     abilities: [
       triggered({ on: "castSpell", by: "you", fromExile: true }, [fx.damage(2, ref.eachOpponent), fx.gainLife(2)], {
-        label: "Sort lancé depuis l'exil : 2 blessures, +2 PV",
+        label: "Spell cast from exile: 2 damage, +2 life",
       }),
-      loyalty(1, { effects: [fx.createTokens(SPIRIT_3_2)], label: "Esprit 3/2" }),
-      loyalty(-3, { effects: [fx.discover(4)], label: "Découverte 4" }),
+      loyalty(1, { effects: [fx.createTokens(SPIRIT_3_2)], label: "3/2 Spirit" }),
+      loyalty(-3, { effects: [fx.discover(4)], label: "Discover 4" }),
       loyalty(-6, {
         targets: [target.upTo(40, target.cardInGraveyard("t", {}, "you"))],
         effects: [
@@ -375,7 +380,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.addManaTimes(amount.refCount(ref.stored("q")), "R"),
           fx.grantPlay(ref.stored("q")),
         ],
-        label: "Exilez des cartes de votre cimetière : {R} chacune, jouables ce tour-ci",
+        label: "Exile cards from your graveyard: {R} each, playable this turn",
       }),
     ],
   },
@@ -383,7 +388,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.punisher(ref.eachOpponent, 0, { discard: true, sacrifice: {}, damage: 3 })], {
         condition: cond.descended,
-        label: "Descente — défausse, sacrifice ou 3 blessures",
+        label: "Descend — discard, sacrifice or 3 damage",
       }),
     ],
   },

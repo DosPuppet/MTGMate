@@ -128,7 +128,7 @@ describe("multijoueur", () => {
       players: ["p1", "p2", "p3"].map((id, i) => ({
         id,
         name: id,
-        deck: buildDeck(deckById(i % 2 ? "bienvenue-rouge" : "bienvenue-vert")),
+        deck: buildDeck(deckById(i % 2 ? "welcome-red" : "welcome-green")),
       })),
     });
     for (const p of ["p1", "p2", "p3"]) s = act(s, p, { type: "keep" });

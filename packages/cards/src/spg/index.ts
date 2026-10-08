@@ -1,6 +1,6 @@
 /**
- * Special Guests (SPG) : rééditions sorties avec les extensions de l'appli.
- * Hors Standard, jouables en « Sans limite » (PLAN-G) ; scripts ajoutés lot par lot.
+ * Special Guests (SPG): reprints released with the sets of the app.
+ * Outside Standard, playable in "Unlimited" (PLAN-G); scripts added lot by lot.
  */
 import type { CardScript } from "@mtgx/engine";
 import { CARDS } from "./cards";

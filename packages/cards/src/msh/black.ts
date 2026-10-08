@@ -1,6 +1,6 @@
 /**
- * Marvel Super Heroes — cartes noires (lot A). Le vol, le contact mortel, la menace, le lien de vie, le flash, le
- * faufilement, le travail d'équipe, l'équipement et le cycle de terrain de base sont lus dans le texte.
+ * Marvel Super Heroes — black cards (lot A). Flying, deathtouch, menace, lifelink, flash, sneak, teamwork, equip and
+ * basic landcycling are read from the text.
  */
 import {
   activated,
@@ -25,15 +25,15 @@ import {
   when,
 } from "./common";
 
-/** « Chaque fois qu'un autre Méchant que vous contrôlez arrive ». */
+/** "Whenever another Villain you control enters". */
 const ANOTHER_VILLAIN_ENTERS = when.enters({ subtype: "Villain", controller: "you", other: true });
-/** « deux cartes de créature ou plus dans votre cimetière ». */
+/** "two or more creature cards in your graveyard". */
 const TWO_CREATURE_CARDS = cond.amountAtLeast(amount.countIn("graveyard", { types: ["Creature"] }), 2);
-const CREATURE_CARD = target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière");
+const CREATURE_CARD = target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card from your graveyard");
 
 export const BLACK: Record<string, CardScript> = {
   "Agents of HYDRA": {
-    abilities: [triggered(when.diesSelf, [fx.createTokens(VILLAIN)], { label: "Un Méchant 2/1 avec la menace" })],
+    abilities: [triggered(when.diesSelf, [fx.createTokens(VILLAIN)], { label: "A 2/1 Villain with menace" })],
   },
   "Arnim Zola, Bio-Fanatic": {
     abilities: [
@@ -42,24 +42,24 @@ export const BLACK: Record<string, CardScript> = {
         tap: true,
         activationCondition: TWO_CREATURE_CARDS,
         effects: [fx.createTappedTokens(VILLAIN)],
-        label: "Un Méchant 2/1 engagé (deux cartes de créature au cimetière)",
+        label: "A tapped 2/1 Villain (two creature cards in graveyard)",
       }),
     ],
   },
   "Baron Strucker, HYDRA Overlord": {
     abilities: [
-      costReducer({ subtype: "Villain" }, 1, "Sorts de Méchant : {1} de moins"),
-      // « Faites ceci une seule fois par tour » : seule une connivence acceptée compte.
-      triggered(ANOTHER_VILLAIN_ENTERS, fx.may("Faire comploter ce Méchant ?", fx.doneOncePerTurn, fx.connive(ref.eventObject)), {
+      costReducer({ subtype: "Villain" }, 1, "Villain spells cost {1} less"),
+      // "Do this only once each turn": only an accepted connive counts.
+      triggered(ANOTHER_VILLAIN_ENTERS, fx.may("Have this Villain connive?", fx.doneOncePerTurn, fx.connive(ref.eventObject)), {
         oncePerTurn: "ifDone",
-        label: "Le Méchant arrivé peut comploter (une fois par tour)",
+        label: "The Villain that entered may connive (once each turn)",
       }),
     ],
   },
   "Construct a Cosmic Cube": {
     abilities: [
       triggered(when.draw(2), [fx.createTokens(VILLAIN), fx.counters(ref.self, "plan")], {
-        label: "Deuxième carte piochée : un Méchant 2/1 et un marqueur de plan",
+        label: "Second card drawn: a 2/1 Villain and a plan counter",
       }),
       triggered(
         when.countersPut("self", "plan"),
@@ -69,7 +69,7 @@ export const BLACK: Record<string, CardScript> = {
         ],
         {
           condition: cond.counterAtLeast("plan", 7),
-          label: "Septième marqueur : sacrifiez-le ; vous contrôlez un adversaire pendant son prochain tour",
+          label: "Seventh counter: sacrifice it; you control an opponent during their next turn",
         },
       ),
     ],
@@ -78,12 +78,12 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(ANOTHER_VILLAIN_ENTERS, [fx.addCounters(ref.self, 1), fx.damage(2, ref.eachOpponent)], {
         oncePerTurn: true,
-        label: "Un marqueur +1/+1, 2 blessures à chaque adversaire (une fois par tour)",
+        label: "A +1/+1 counter, 2 damage to each opponent (once each turn)",
       }),
     ],
   },
   "Cruel Alliance": {
-    // Travail d'équipe payé : la cible peut être n'importe quelle créature, et vous gagnez 3 PV.
+    // Teamwork paid: the target can be any creature, and you gain 3 life.
     spell: spell(
       [{ ...target.creature("t", { maxManaValue: 3 }), kickedFilter: { objects: { types: ["Creature"] } } }],
       [fx.exile(ref.target()), ...fx.when(cond.kicked, fx.gainLife(3))],
@@ -91,23 +91,23 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Dark Deed": { spell: spell([target.creature()], [fx.pump(ref.target(), -4, -4)]) },
   "Decoy Ploy": {
-    // « Choisissez l'un ou les deux. »
+    // "Choose one or both."
     spell: modal(
       mode(
-        "Un Méchant de votre cimetière en main",
-        [target.cardInGraveyard("v", { subtype: "Villain" }, "you", "carte de Méchant de votre cimetière")],
+        "A Villain from your graveyard to your hand",
+        [target.cardInGraveyard("v", { subtype: "Villain" }, "you", "Villain card from your graveyard")],
         [fx.toHand(ref.target("v"))],
       ),
       mode(
-        "Un Héros de votre cimetière en main",
-        [target.cardInGraveyard("h", { subtype: "Hero" }, "you", "carte de Héros de votre cimetière")],
+        "A Hero from your graveyard to your hand",
+        [target.cardInGraveyard("h", { subtype: "Hero" }, "you", "Hero card from your graveyard")],
         [fx.toHand(ref.target("h"))],
       ),
       mode(
-        "Les deux",
+        "Both",
         [
-          target.cardInGraveyard("v", { subtype: "Villain" }, "you", "carte de Méchant de votre cimetière"),
-          target.cardInGraveyard("h", { subtype: "Hero" }, "you", "carte de Héros de votre cimetière"),
+          target.cardInGraveyard("v", { subtype: "Villain" }, "you", "Villain card from your graveyard"),
+          target.cardInGraveyard("h", { subtype: "Hero" }, "you", "Hero card from your graveyard"),
         ],
         [fx.toHand(ref.target("v")), fx.toHand(ref.target("h"))],
       ),
@@ -116,7 +116,7 @@ export const BLACK: Record<string, CardScript> = {
   "Doom Reigns Supreme": {
     abilities: [
       triggered(when.enters({ subtype: "Villain", controller: "you" }), [...fx.drain(1), fx.counters(ref.self, "plan")], {
-        label: "Chaque adversaire perd 1 PV, vous gagnez 1 PV ; un marqueur de plan",
+        label: "Each opponent loses 1 life, you gain 1 life; a plan counter",
       }),
       triggered(
         when.countersPut("self", "plan"),
@@ -128,7 +128,7 @@ export const BLACK: Record<string, CardScript> = {
               [target.player("o", "opponent")],
               [
                 fx.exileTop(ref.target("o"), 5, "d"),
-                // « Jusqu'à deux sorts » : un premier, puis un second parmi les cartes restantes.
+                // "Up to two spells": a first one, then a second one among the remaining cards.
                 fx.castNow(ref.stored("d"), { free: true, storeRest: "r" }),
                 fx.castNow(ref.stored("r"), { free: true }),
               ],
@@ -137,7 +137,7 @@ export const BLACK: Record<string, CardScript> = {
         ],
         {
           condition: cond.counterAtLeast("plan", 5),
-          label: "Cinquième marqueur : sacrifiez-le ; un adversaire exile cinq cartes, lancez-en jusqu'à deux gratuitement",
+          label: "Fifth counter: sacrifice it; an opponent exiles five cards, cast up to two of them for free",
         },
       ),
     ],
@@ -146,7 +146,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
         targets: [target.creature("t", { controller: "opponent", maxPower: 3 })],
-        label: "Détruit une créature adverse de force 3 ou moins",
+        label: "Destroy a creature an opponent controls with power 3 or less",
       }),
     ],
   },
@@ -156,7 +156,7 @@ export const BLACK: Record<string, CardScript> = {
         when.attacksSelf,
         fx.mayPay(
           "{3}{B}",
-          "Payer {3}{B} pour renvoyer une créature de votre cimetière ?",
+          "Pay {3}{B} to return a creature from your graveyard?",
           fx.reflexive(
             [CREATURE_CARD],
             [
@@ -168,7 +168,7 @@ export const BLACK: Record<string, CardScript> = {
             ],
           ),
         ),
-        { label: "Payez {3}{B} : une créature du cimetière revient engagée et attaquante (marqueur de finalité)" },
+        { label: "Pay {3}{B}: a creature from the graveyard returns tapped and attacking (finality counter)" },
       ),
     ],
   },
@@ -177,12 +177,12 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.discard(2, ref.target("o"))], {
         targets: [target.player("o", "opponent")],
-        label: "Un adversaire défausse deux cartes",
+        label: "An opponent discards two cards",
       }),
       triggered(
         when.attacksAlone({ types: ["Creature"], controller: "you" }),
         [fx.loseLife(1, ref.target("o")), fx.gainLife(1)],
-        { targets: [target.player("o", "opponent")], label: "Attaque seule : un adversaire perd 1 PV, vous gagnez 1 PV" },
+        { targets: [target.player("o", "opponent")], label: "Attacks alone: an opponent loses 1 life, you gain 1 life" },
       ),
     ],
   },
@@ -191,7 +191,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [...fx.when(TWO_CREATURE_CARDS, fx.createTappedTokens(VILLAIN)), ...fx.when(cond.not(TWO_CREATURE_CARDS), fx.mill(2))],
-        { label: "Un Méchant engagé (deux cartes de créature au cimetière), sinon meulez deux cartes" },
+        { label: "A tapped Villain (two creature cards in graveyard), otherwise mill two cards" },
       ),
     ],
   },
@@ -201,14 +201,14 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{2}{B}",
         sacrificeOther: { filter: { types: ["Artifact", "Creature"] } },
         effects: [fx.draw(1)],
-        label: "Sacrifiez un artefact ou une créature : piochez",
+        label: "Sacrifice an artifact or creature: draw",
       }),
     ],
   },
   "Madame Masque": {
     abilities: [
-      triggered(when.entersSelf, [fx.connive(ref.self)], { label: "Complote" }),
-      triggered(when.draw(2), [fx.createTokens(VILLAIN)], { label: "Deuxième carte piochée : un Méchant 2/1" }),
+      triggered(when.entersSelf, [fx.connive(ref.self)], { label: "Connives" }),
+      triggered(when.draw(2), [fx.createTokens(VILLAIN)], { label: "Second card drawn: a 2/1 Villain" }),
     ],
   },
   "The Masters of Evil": {
@@ -217,7 +217,7 @@ export const BLACK: Record<string, CardScript> = {
         { subtype: "Villain", controller: "you", other: true },
         { power: 2, toughness: 1 },
         {
-          label: "Les autres Méchants que vous contrôlez ont +2/+1",
+          label: "Other Villains you control get +2/+1",
         },
       ),
       activated({
@@ -225,7 +225,7 @@ export const BLACK: Record<string, CardScript> = {
         fromHand: true,
         discardSelf: true,
         effects: [fx.search({ subtype: "Plan" })],
-        label: "Défaussez-la : cherchez une carte de Plan",
+        label: "Discard it: search for a Plan card",
       }),
     ],
   },
@@ -234,11 +234,11 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.discard("you"),
         fx.may(
-          "Exiler la carte défaussée (jouable jusqu'à la fin de votre prochain tour) ?",
+          "Exile the discarded card (playable until the end of your next turn)?",
           fx.exileCard(ref.eventObject, { name: "m" }),
           fx.grantPlay(ref.stored("m"), { untilYourNextTurn: true }),
         ),
-        { label: "Exile la carte défaussée : jouable jusqu'à la fin de votre prochain tour" },
+        { label: "Exile the discarded card: playable until the end of your next turn" },
       ),
     ],
   },
@@ -248,7 +248,7 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{4}{B}",
         powerUp: true,
         effects: [fx.discard(1, ref.eachOpponent), fx.addCounters(ref.self, 1)],
-        label: "Montée en puissance : chaque adversaire défausse, un marqueur +1/+1",
+        label: "Power-up: each opponent discards, a +1/+1 counter",
       }),
     ],
   },
@@ -258,12 +258,12 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{2}{B}",
         fromGraveyard: true,
         effects: [fx.toHand(ref.selfCard)],
-        label: "Revient du cimetière en main",
+        label: "Returns from the graveyard to your hand",
       }),
     ],
   },
   "Red Room Recruit": {
-    abilities: [triggered(when.entersSelf, [fx.connive(ref.self)], { label: "Complote" })],
+    abilities: [triggered(when.entersSelf, [fx.connive(ref.self)], { label: "Connives" })],
   },
   "Robot Domination": {
     abilities: [
@@ -275,15 +275,15 @@ export const BLACK: Record<string, CardScript> = {
         }),
         [fx.draw(1), fx.loseLife(1), fx.counters(ref.self, "plan")],
         {
-          // « cartes de créature » : un jeton mis au cimetière ne compte pas.
+          // "creature cards": a token put into the graveyard does not count.
           condition: cond.eventObjectMatches({ token: false }),
           batched: true,
-          label: "Piochez, perdez 1 PV, un marqueur de plan",
+          label: "Draw, lose 1 life, a plan counter",
         },
       ),
       triggered(when.countersPut("self", "plan"), [fx.sacrificeIt(ref.self), fx.createTokens(ROBOT_VILLAIN, 3)], {
         condition: cond.counterAtLeast("plan", 3),
-        label: "Troisième marqueur : sacrifiez-le, trois Robots Méchants 2/2",
+        label: "Third counter: sacrifice it, three 2/2 Robot Villains",
       }),
     ],
   },
@@ -301,7 +301,7 @@ export const BLACK: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), -4, -4)],
-        label: "Sacrifiez un Équipement attaché : −4/−4",
+        label: "Sacrifice an attached Equipment: −4/−4",
       }),
     ],
   },
@@ -309,7 +309,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.draw(2), [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature()],
-        label: "Deuxième carte piochée : un marqueur +1/+1",
+        label: "Second card drawn: a +1/+1 counter",
       }),
     ],
   },
@@ -317,26 +317,26 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target()), fx.pump(ref.target(), 0, 0, ["indestructible"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "S'attache à une de vos créatures, qui gagne l'indestructible",
+        label: "Attaches to a creature you control, which gains indestructible",
       }),
       staticAbility("attached", { power: 1 }, { label: "+1/+0" }),
     ],
   },
   "Super-Skrull": {
     abilities: [
-      activated({ mana: "{2}{W}", effects: [fx.createTokens(WALL_C)], label: "Un Mur 0/4 avec le défenseur" }),
+      activated({ mana: "{2}{W}", effects: [fx.createTokens(WALL_C)], label: "A 0/4 Wall with defender" }),
       activated({ mana: "{3}{G}", effects: [fx.pump(ref.self, 4, 4)], label: "+4/+4" }),
       activated({
         mana: "{4}{R}",
         targets: [target.creature()],
         effects: [fx.damage(4, ref.target())],
-        label: "4 blessures à une créature",
+        label: "4 damage to a creature",
       }),
       activated({
         mana: "{5}{U}",
         targets: [target.player()],
         effects: [fx.draw(4, ref.target())],
-        label: "Un joueur pioche quatre cartes",
+        label: "A player draws four cards",
       }),
     ],
   },
@@ -344,13 +344,13 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(ANOTHER_VILLAIN_ENTERS, [fx.attach(ref.target("c"), ref.target("e"))], {
         targets: [
-          target.upTo(1, target.permanent("e", ["Artifact"], { subtype: "Equipment", controller: "you" }, "Équipement")),
+          target.upTo(1, target.permanent("e", ["Artifact"], { subtype: "Equipment", controller: "you" }, "Equipment")),
           target.creature("c", { controller: "you" }),
         ],
-        label: "Attache un Équipement à une de vos créatures",
+        label: "Attach an Equipment to a creature you control",
       }),
       triggered(when.attacks({ types: ["Creature"], controller: "you", equipped: true }), [fx.connive(ref.eventObject)], {
-        label: "La créature équipée qui attaque complote",
+        label: "The attacking equipped creature connives",
       }),
     ],
   },
@@ -359,16 +359,21 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.dies({ subtype: "Villain", controller: "you" }),
         [fx.toBattlefield(ref.eventObject, { counters: { kind: "finality", n: 1 }, addSubtypes: ["Hero"] })],
-        { label: "Le Méchant revient avec un marqueur de finalité ; c'est aussi un Héros" },
+        { label: "The Villain returns with a finality counter; it's also a Hero" },
       ),
     ],
   },
   "Too Evil to Stay Dead": {
-    // Travail d'équipe payé : n'importe quelle carte de créature de votre cimetière.
+    // Teamwork paid: any creature card from your graveyard.
     spell: spell(
       [
         {
-          ...target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 4 }, "you", "carte de créature de VM 4 ou moins"),
+          ...target.cardInGraveyard(
+            "t",
+            { types: ["Creature"], maxManaValue: 4 },
+            "you",
+            "creature card with mana value 4 or less",
+          ),
           kickedFilter: { cards: { filter: { types: ["Creature"] }, whose: "you" } },
         },
       ],
@@ -382,7 +387,7 @@ export const BLACK: Record<string, CardScript> = {
         powerUp: true,
         targets: [target.upTo(1, CREATURE_CARD)],
         effects: [fx.toHand(ref.target()), fx.addCounters(ref.self, 2)],
-        label: "Montée en puissance : une créature du cimetière en main, deux marqueurs +1/+1",
+        label: "Power-up: a creature from the graveyard to your hand, two +1/+1 counters",
       }),
     ],
   },
@@ -392,53 +397,53 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Whiplash, Vengeful Engineer": {
     abilities: [
-      entersWith({ tapped: true, label: "Arrive engagé" }),
+      entersWith({ tapped: true, label: "Enters tapped" }),
       triggered(when.attacksSelf, fx.drain(amount.count({ subtype: "Equipment", attached: "toSource" })), {
         condition: cond.sourceMatches({ equipped: true }),
-        label: "Équipé : chaque adversaire perd X PV, vous gagnez X PV (X : Équipements attachés)",
+        label: "Equipped: each opponent loses X life, you gain X life (X: attached Equipment)",
       }),
     ],
   },
   "Widow's Bite": {
-    // Travail d'équipe 3 (lu dans le texte) : payé, les deux modes ; sinon, un seul.
+    // Teamwork 3 (read from the text): paid, both modes; otherwise, only one.
     spell: bothIfKicked(
-      mode("Contact mortel", [target.creature("a")], [fx.pump(ref.target("a"), 0, 0, ["deathtouch"])]),
+      mode("Deathtouch", [target.creature("a")], [fx.pump(ref.target("a"), 0, 0, ["deathtouch"])]),
       mode("−2/−2", [target.creature("b")], [fx.pump(ref.target("b"), -2, -2)]),
-      "Les deux (travail d'équipe)",
+      "Both (teamwork)",
     ),
   },
   "Yellowjacket, Heartless Marauder": {
     abilities: [
       triggered(ANOTHER_VILLAIN_ENTERS, [fx.pump(ref.self, 1, 0, ["lifelink"])], {
-        label: "+1/+0 et le lien de vie",
+        label: "+1/+0 and lifelink",
       }),
     ],
   },
   "Baron Helmut Zemo": {
     abilities: [
       triggered({ on: "castSpell", by: "you", filter: { colors: ["B"] }, fromHand: true }, [fx.connive(ref.self)], {
-        label: "Vous lancez un sort noir depuis votre main : il complote",
+        label: "You cast a black spell from your hand: it connives",
       }),
       activated({
         exileGraveyardSymbols: { color: "B", n: 15 },
         oncePerTurn: true,
         activationCondition: cond.sourceMatches({ attackedThisTurn: true }),
         effects: [fx.castCopiesFree([ref.costExiled], 99, { maxCount: 3 })],
-        label: "Vantardise : exilez des cartes noires (15 symboles {B}), lancez jusqu'à trois copies gratuitement",
+        label: "Boast: exile black cards (15 {B} symbols), cast up to three copies for free",
       }),
     ],
   },
-  // Menace : lue dans le texte.
+  // Menace: read from the text.
   "Black Widow, Super Spy": {
     abilities: [
       triggered(
         when.combatDamageToPlayer,
         [
           { op: "exileUntil", filter: { notTypes: ["Land"] }, store: "w", who: ref.eventPlayer },
-          ...fx.mayForStore(ref.you, "Mettre un marqueur +1/+1 sur Black Widow ?", "bw", fx.addCounters(ref.self, 1)),
+          ...fx.mayForStore(ref.you, "Put a +1/+1 counter on Black Widow?", "bw", fx.addCounters(ref.self, 1)),
           ...fx.when(cond.not(cond.v("bw")), fx.grantPlay(ref.stored("w"), { anyMana: true })),
         ],
-        { label: "Blessures de combat : le joueur exile jusqu'à une carte non-terrain ; un marqueur, ou vous pouvez la lancer" },
+        { label: "Combat damage: the player exiles up to one nonland card; a counter, or you may cast it" },
       ),
     ],
   },
@@ -454,7 +459,7 @@ export const BLACK: Record<string, CardScript> = {
         ],
         {
           targets: [target.player("t")],
-          label: "Le joueur révèle 1 + vos cartes de créature au cimetière ; vous choisissez celle qu'il défausse",
+          label: "The player reveals 1 + your creature cards in graveyard; you choose the one they discard",
         },
       ),
     ],

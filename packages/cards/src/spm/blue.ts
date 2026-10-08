@@ -1,6 +1,6 @@
 /**
- * Marvel's Spider-Man — cartes bleues (lot A). Flash, vol, vigilance et chaos (Mayhem) sont lus dans le texte ; le kicker
- * est écrit dans le script.
+ * Marvel's Spider-Man — blue cards (lot A). Flash, flying, vigilance and Mayhem are read from the text; kicker is
+ * written in the script.
  */
 import {
   activated,
@@ -21,7 +21,7 @@ import {
   when,
 } from "./common";
 
-/** « Jusqu'à la fin du tour, la créature ciblée que vous contrôlez devient un [type] de base F/E … et gagne … » (Secret Identity). */
+/** "Until end of turn, target creature you control becomes a [type] with base power and toughness … and gains …" (Secret Identity). */
 const becomes = (subtype: string, power: number, toughness: number, keywords: ("hexproof" | "flying" | "vigilance")[]) => [
   fx.modify(
     ref.target(),
@@ -32,12 +32,12 @@ const becomes = (subtype: string, power: number, toughness: number, keywords: ("
 
 export const BLUE: Record<string, CardScript> = {
   "Amazing Acrobatics": {
-    // « Choisissez l'un ou les deux. »
+    // "Choose one or both."
     spell: modal(
-      mode("Contrecarrez un sort", [target.spell("s")], [fx.counter(ref.target("s"))]),
-      mode("Engagez une ou deux créatures", [target.between(1, 2, target.creature("c"))], [fx.tap(ref.target("c"))]),
+      mode("Counter a spell", [target.spell("s")], [fx.counter(ref.target("s"))]),
+      mode("Tap one or two creatures", [target.between(1, 2, target.creature("c"))], [fx.tap(ref.target("c"))]),
       mode(
-        "Les deux",
+        "Both",
         [target.spell("s"), target.between(1, 2, target.creature("c"))],
         [fx.counter(ref.target("s")), fx.tap(ref.target("c"))],
       ),
@@ -52,7 +52,7 @@ export const BLUE: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), 1), fx.pump(ref.target(), 0, 0, ["flying"])],
-        label: "Exilez-le de votre cimetière : marqueur +1/+1 et vol jusqu'à la fin du tour",
+        label: "Exile it from your graveyard: +1/+1 counter and flying until end of turn",
       }),
     ],
   },
@@ -61,23 +61,23 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { setPower: 8, setToughness: 8 },
-        { condition: cond.amountAtLeast(amount.cardsIn("graveyard"), 8), label: "8/8 de base avec huit cartes au cimetière" },
+        { condition: cond.amountAtLeast(amount.cardsIn("graveyard"), 8), label: "Base 8/8 with eight cards in your graveyard" },
       ),
       staticAbility(
         "self",
         { addKeywords: ["hexproof"] },
-        { condition: cond.controls({ subtype: "Villain", other: true }), label: "Défense talismanique avec un autre Méchant" },
+        { condition: cond.controls({ subtype: "Villain", other: true }), label: "Hexproof with another Villain" },
       ),
     ],
   },
   "Doc Ock's Henchmen": {
-    abilities: [triggered(when.attacksSelf, [fx.connive(ref.self)], { label: "Complote en attaquant" })],
+    abilities: [triggered(when.attacksSelf, [fx.connive(ref.self)], { label: "Connives when attacking" })],
   },
   "Flying Octobot": {
     abilities: [
       triggered(when.enters({ subtype: "Villain", controller: "you", other: true }), [fx.addCounters(ref.self, 1)], {
         oncePerTurn: true,
-        label: "Un autre Méchant arrive : un marqueur +1/+1 (une fois par tour)",
+        label: "Another Villain enters: a +1/+1 counter (once each turn)",
       }),
     ],
   },
@@ -86,7 +86,7 @@ export const BLUE: Record<string, CardScript> = {
       [
         {
           id: "t",
-          label: "artefact ou créature",
+          label: "artifact or creature",
           filter: { objects: { types: ["Artifact", "Creature"] } },
           count: 99,
           countX: true,
@@ -94,7 +94,7 @@ export const BLUE: Record<string, CardScript> = {
       ],
       [
         fx.exileCard(ref.target(), { name: "k" }),
-        // Les cartes reviennent sous le contrôle de leur propriétaire (les jetons exilés cessent d'exister).
+        // The cards return under their owner's control (exiled tokens cease to exist).
         fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") }),
       ],
     ),
@@ -104,32 +104,32 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.combatDamage({ types: ["Creature"], controller: "you", token: false }, true),
         [fx.copyToken(ref.eventObject, { nonlegendary: true })],
-        { label: "Créez un jeton copie non légendaire de la créature" },
+        { label: "Create a nonlegendary token copy of the creature" },
       ),
     ],
   },
   "Lady Octopus, Inspired Inventor": {
     abilities: [
-      triggered(when.draw(1), [fx.counters(ref.self, "ingenuity")], { label: "Première carte piochée : marqueur d'ingéniosité" }),
-      triggered(when.draw(2), [fx.counters(ref.self, "ingenuity")], { label: "Deuxième carte piochée : marqueur d'ingéniosité" }),
+      triggered(when.draw(1), [fx.counters(ref.self, "ingenuity")], { label: "First card drawn: ingenuity counter" }),
+      triggered(when.draw(2), [fx.counters(ref.self, "ingenuity")], { label: "Second card drawn: ingenuity counter" }),
       activated({
         tap: true,
         effects: [
           fx.castNow(ref.handOf(ref.you, { types: ["Artifact"] }, amount.countersOn(ref.self, "ingenuity")), { free: true }),
         ],
-        label: "Lancez gratuitement un sort d'artefact de VM au plus égale aux marqueurs d'ingéniosité",
+        label: "Cast an artifact spell with mana value up to its ingenuity counters for free",
       }),
     ],
   },
   "Madame Web, Clairvoyant": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "You may look at the top card of your library" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { anyOf: [{ subtype: "Spider" }, { notTypes: ["Creature"] }] }, what: "spells" },
-        label: "Lancez des sorts d'Araignée et des sorts non-créature depuis le dessus de votre bibliothèque",
+        label: "Cast Spider spells and noncreature spells from the top of your library",
       }),
-      triggered(when.attackWith(), [...fx.may("Meuler une carte ?", fx.mill(1))], {
-        label: "Vous attaquez : vous pouvez meuler une carte",
+      triggered(when.attackWith(), [...fx.may("Mill a card?", fx.mill(1))], {
+        label: "You attack: you may mill a card",
       }),
     ],
   },
@@ -146,43 +146,39 @@ export const BLUE: Record<string, CardScript> = {
           ),
           fx.link(ref.stored("illusions")),
         ],
-        { label: "Un jeton Illusion Méchant 3/3 par Méchant non-jeton que vous contrôlez" },
+        { label: "A 3/3 Illusion Villain token for each nontoken Villain you control" },
       ),
-      triggered(when.leavesSelf, [fx.exile(ref.linked)], { label: "Exilez ces jetons" }),
+      triggered(when.leavesSelf, [fx.exile(ref.linked)], { label: "Exile those tokens" }),
     ],
   },
   "Mysterio's Phantasm": {
-    abilities: [triggered(when.attacksSelf, [fx.mill(1)], { label: "Meulez une carte" })],
+    abilities: [triggered(when.attacksSelf, [fx.mill(1)], { label: "Mill a card" })],
   },
   "Oscorp Research Team": {
-    abilities: [activated({ mana: "{6}{U}", effects: [fx.draw(2)], label: "Piochez deux cartes" })],
+    abilities: [activated({ mana: "{6}{U}", effects: [fx.draw(2)], label: "Draw two cards" })],
   },
   "Robotics Mastery": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(ROBOT_FLYER, 2)], { label: "Deux jetons Robot 1/1 volants" }),
+      triggered(when.entersSelf, [fx.createTokens(ROBOT_FLYER, 2)], { label: "Two 1/1 flying Robot tokens" }),
       staticAbility("attached", { power: 2, toughness: 2 }, { label: "+2/+2" }),
     ],
   },
   "School Daze": {
     spell: modal(
-      mode("Devoirs — Piochez trois cartes", [], [fx.draw(3)]),
-      mode(
-        "Combattre le crime — Contrecarrez un sort, piochez une carte",
-        [target.spell()],
-        [fx.counter(ref.target()), fx.draw(1)],
-      ),
+      mode("Do Homework — Draw three cards", [], [fx.draw(3)]),
+      mode("Fight Crime — Counter a spell, draw a card", [target.spell()], [fx.counter(ref.target()), fx.draw(1)]),
     ),
   },
   "Secret Identity": {
     spell: modal(
       mode(
-        "Dissimuler — Citoyen 1/1 de base avec la défense talismanique",
+        "Conceal — base 1/1 Citizen with hexproof",
         [target.creature("t", { controller: "you" })],
         becomes("Citizen", 1, 1, ["hexproof"]),
       ),
       mode(
-        "Révéler — Héros 3/4 de base avec le vol et la vigilance",
+        "Reveal — base 3/4 Hero with flying and vigilance",
         [target.creature("t", { controller: "you" })],
         becomes("Hero", 3, 4, ["flying", "vigilance"]),
       ),
@@ -192,12 +188,12 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         targets: [target.upTo(1, target.nonland())],
-        label: "Renvoyez jusqu'à un permanent non-terrain en main",
+        label: "Return up to one nonland permanent to its owner's hand",
       }),
     ],
   },
   "Spider-Man No More": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility(
         "attached",
@@ -208,7 +204,7 @@ export const BLUE: Record<string, CardScript> = {
           loseAllAbilities: true,
           addKeywords: ["defender"],
         },
-        { label: "Citoyen 1/1 de base avec le défenseur, sans ses autres capacités" },
+        { label: "Base 1/1 Citizen with defender, without its other abilities" },
       ),
     ],
   },

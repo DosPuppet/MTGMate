@@ -1,10 +1,9 @@
 /**
- * Marvel Super Heroes — cartes multicolores (lot A). Le vol, le piétinement, la vigilance, la portée, la menace, le
- * contact mortel, le lien de vie, la double initiative, le flash et la célérité sont lus dans le texte ; « ne peut pas
- * être bloquée » et « attaque à chaque combat si possible » sont écrits ici (restrictions). L'extorsion (Extort) est
- * écrite ici comme une capacité déclenchée.
+ * Marvel Super Heroes — multicolored cards (lot A). Flying, trample, vigilance, reach, menace, deathtouch, lifelink,
+ * double strike, flash and haste are read from the text; "can't be blocked" and "attacks each combat if able" are
+ * written here (restrictions). Extort is written here as a triggered ability.
  */
-import type { Effect, ModeDef, ObjectFilter, TokenSpec } from "@mtgx/engine";
+import { type Effect, type ModeDef, msg, type ObjectFilter, type TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -35,11 +34,11 @@ import {
 
 const ARTIFACT: ObjectFilter = { types: ["Artifact"] };
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
-/** Carte de créature-artefact (les deux types). */
+/** Artifact creature card (both types). */
 const ARTIFACT_CREATURE: ObjectFilter = { types: ["Artifact"], anyOf: [{ types: ["Creature"] }] };
 const NONLAND_CARD: ObjectFilter = { notTypes: ["Land"] };
 
-/** Alien (Alien Invasion) : créature rouge 1/1 avec la célérité, qui attaque à chaque combat si possible. */
+/** Alien (Alien Invasion): 1/1 red creature with haste, which attacks each combat if able. */
 const ALIEN: TokenSpec = {
   name: "Alien",
   colors: ["R"],
@@ -51,7 +50,7 @@ const ALIEN: TokenSpec = {
   text: "Haste\nThis token attacks each combat if able.",
 };
 
-/** Galactus (The Coming of Galactus) : créature légendaire noire 16/16 Ancien Alien, vol, piétinement. */
+/** Galactus (The Coming of Galactus): legendary 16/16 black Elder Alien creature, flying, trample. */
 const GALACTUS: TokenSpec = {
   name: "Galactus",
   colors: ["B"],
@@ -63,14 +62,14 @@ const GALACTUS: TokenSpec = {
   keywords: ["flying", "trample"],
   abilities: [
     triggered(when.attacksSelf, [fx.destroy(ref.target())], {
-      targets: [target.permanent("t", ["Land"], {}, "terrain")],
-      label: "Détruit un terrain",
+      targets: [target.permanent("t", ["Land"], {}, "land")],
+      label: "Destroy a land",
     }),
   ],
   text: "Flying, trample\nWhenever Galactus attacks, destroy target land.",
 };
 
-/** Sturdy Shield (U.S.Agent) : Équipement incolore, « la créature équipée gagne +1/+2 », équiper {2}. */
+/** Sturdy Shield (U.S.Agent): colorless Equipment, "equipped creature gets +1/+2", equip {2}. */
 const STURDY_SHIELD: TokenSpec = {
   name: "Sturdy Shield",
   colors: [],
@@ -78,15 +77,15 @@ const STURDY_SHIELD: TokenSpec = {
   subtypes: ["Equipment"],
   abilities: [
     staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }),
-    equipAbility({ mana: "{2}", label: "Équiper {2}" }),
+    equipAbility({ mana: "{2}", label: msg("Equip {cost}", { cost: "{2}" }) }),
   ],
   text: "Equipped creature gets +1/+2.\nEquip {2}",
 };
 
-/** « Choisissez pair ou impair » à la résolution (Thanos) : le choix est gardé sur la source (`parityChosen`). */
+/** "Choose odd or even" on resolution (Thanos): the choice is kept on the source (`parityChosen`). */
 const CHOOSE_PARITY: Effect = { op: "chooseOnEnter", kind: "parity" };
 
-/** « Vous pouvez sacrifier un artefact ou défausser une carte non-terrain. » : `s` ou `d` vaut 1 si c'est fait. */
+/** "You may sacrifice an artifact or discard a nonland card.": `s` or `d` is 1 if it is done. */
 const SACRIFICE_ARTIFACT_OR_DISCARD = [
   fx.sacrifice(ref.you, ARTIFACT, 1, { optional: true, store: "s" }),
   ...fx.when(cond.not(cond.v("s")), fx.discard(1, ref.you, { filter: NONLAND_CARD, optional: true, store: "d" })),
@@ -100,7 +99,7 @@ export const MULTI: Record<string, CardScript> = {
         powerUp: true,
         targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
         effects: [fx.addCounters(ref.self, 1), fx.fight(ref.self, ref.target())],
-        label: "Montée en puissance : un marqueur +1/+1, se bat contre une créature adverse",
+        label: "Power-up: a +1/+1 counter, fights a creature an opponent controls",
       }),
     ],
   },
@@ -113,7 +112,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.addCounters(ref.stored("a"), amount.countersOn(ref.self, "invasion")),
           fx.counters(ref.self, "invasion"),
         ],
-        { label: "Un Alien 1/1, un marqueur +1/+1 par marqueur d'invasion, puis un marqueur d'invasion" },
+        { label: "A 1/1 Alien, a +1/+1 counter for each invasion counter, then an invasion counter" },
       ),
     ],
   },
@@ -123,14 +122,14 @@ export const MULTI: Record<string, CardScript> = {
         when.attacksSelf,
         fx.mayPay(
           "{1}",
-          "Payer {1} pour mettre un marqueur +1/+1 sur une créature ?",
+          "Pay {1} to put a +1/+1 counter on a creature?",
           fx.reflexive([target.creature()], [fx.addCounters(ref.target(), 1)]),
         ),
-        { label: "Payez {1} : un marqueur +1/+1 sur une créature" },
+        { label: "Pay {1}: a +1/+1 counter on a creature" },
       ),
       triggered(when.youPutCounters({ types: ["Creature"] }, "+1/+1"), [fx.createTokens(INSECT_G)], {
         oncePerTurn: true,
-        label: "Un Insecte 1/1 (une fois par tour)",
+        label: "A 1/1 Insect (once each turn)",
       }),
     ],
   },
@@ -141,30 +140,30 @@ export const MULTI: Record<string, CardScript> = {
         fx.when(
           cond.controls(ARTIFACT),
           fx.may(
-            "Piocher une carte par artefact que vous contrôlez (chaque adversaire pioche une carte) ?",
+            "Draw a card for each artifact you control (each opponent draws a card)?",
             fx.draw(amount.count({ ...ARTIFACT, controller: "you" })),
             fx.draw(1, ref.eachOpponent),
           ),
         ),
-        { label: "Chapitre I — Une carte par artefact ; chaque adversaire pioche" },
+        { label: "Chapter I — A card for each artifact; each opponent draws" },
       ),
       chapter([2], [fx.thisTurn({ spellCost: { filter: ARTIFACT, reduce: 1 } })], {
-        label: "Chapitre II — Vos sorts d'artefact coûtent {1} de moins ce tour-ci",
+        label: "Chapter II — Artifact spells you cast cost {1} less this turn",
       }),
       chapter([3], [fx.damage(amount.maxManaValue({ ...ARTIFACT, controller: "you" }), ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Chapitre III — X blessures à un adversaire (plus grande valeur de mana de vos artefacts)",
+        label: "Chapter III — X damage to an opponent (greatest mana value among your artifacts)",
       }),
     ],
   },
   "Avengers: Under Siege": {
     abilities: [
-      chapter([1], [fx.createTokens(VILLAIN, 2)], { label: "Chapitre I — Deux Méchants 2/1 avec la menace" }),
+      chapter([1], [fx.createTokens(VILLAIN, 2)], { label: "Chapter I — Two 2/1 Villains with menace" }),
       chapter([2], [fx.damageAll(2, { types: ["Creature"], notSubtype: "Villain" }, ref.eachOpponent)], {
-        label: "Chapitre II — 2 blessures à chaque créature non-Méchant et à chaque adversaire",
+        label: "Chapter II — 2 damage to each non-Villain creature and each opponent",
       }),
       chapter([3], [fx.createTokens(TREASURE, amount.count({ subtype: "Villain", controller: "you" }))], {
-        label: "Chapitre III — Un Trésor par Méchant que vous contrôlez",
+        label: "Chapter III — A Treasure for each Villain you control",
       }),
     ],
   },
@@ -175,10 +174,10 @@ export const MULTI: Record<string, CardScript> = {
         { addKeywords: ["flying"] },
         {
           condition: cond.sourceMatches({ countersPutByYouThisTurn: "+1/+1" }),
-          label: "Vole si vous avez mis des marqueurs +1/+1 sur lui ce tour-ci",
+          label: "Has flying if you put +1/+1 counters on it this turn",
         },
       ),
-      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Piochez une carte" }),
+      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Draw a card" }),
     ],
   },
   "Black Panther, Vanguard": {
@@ -186,17 +185,17 @@ export const MULTI: Record<string, CardScript> = {
       triggeredModal(
         when.enters({ subtype: "Hero", token: false, controller: "you", other: true }),
         [
-          mode("Un Soldat 1/1", [], [fx.createTokens(SOLDIER)]),
-          mode("Vos créatures gagnent +1/+1", [], [fx.pumpAll(YOUR_CREATURES, 1, 1)]),
+          mode("A 1/1 Soldier", [], [fx.createTokens(SOLDIER)]),
+          mode("Creatures you control get +1/+1", [], [fx.pumpAll(YOUR_CREATURES, 1, 1)]),
         ],
-        { label: "Un autre Héros non-jeton arrive" },
+        { label: "Another nontoken Hero enters" },
       ),
     ],
   },
   "Black Widow, Double Agent": {
     abilities: [
       triggered(when.attacksAlone(YOUR_CREATURES), [fx.pump(ref.eventObject, 0, 0, ["firstStrike", "menace"])], {
-        label: "Attaque seule : initiative et menace",
+        label: "Attacks alone: first strike and menace",
       }),
     ],
   },
@@ -208,16 +207,16 @@ export const MULTI: Record<string, CardScript> = {
           ...SACRIFICE_ARTIFACT_OR_DISCARD,
           ...fx.when(cond.any(cond.v("s"), cond.v("d")), fx.reflexive([target.any()], [fx.damage(2, ref.target())])),
         ],
-        { label: "Sacrifiez un artefact ou défaussez une carte non-terrain : 2 blessures" },
+        { label: "Sacrifice an artifact or discard a nonland card: 2 damage" },
       ),
-      // Coût « sacrifiez un artefact ou défaussez une carte non-terrain » : une capacité par branche du coût.
+      // Cost "sacrifice an artifact or discard a nonland card": one ability per branch of the cost.
       activated({
         mana: "{3}",
         tap: true,
         sacrificeOther: { filter: ARTIFACT },
         targets: [target.any()],
         effects: [fx.damage(2, ref.target())],
-        label: "2 blessures (sacrifiez un artefact)",
+        label: "2 damage (sacrifice an artifact)",
       }),
       activated({
         mana: "{3}",
@@ -226,7 +225,7 @@ export const MULTI: Record<string, CardScript> = {
         discardFilter: NONLAND_CARD,
         targets: [target.any()],
         effects: [fx.damage(2, ref.target())],
-        label: "2 blessures (défaussez une carte non-terrain)",
+        label: "2 damage (discard a nonland card)",
       }),
     ],
   },
@@ -235,24 +234,24 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          // Une carte non-terrain de sa main, sinon la créature choisie, jusqu'à ce que Cloak and Dagger partent.
+          // A nonland card from their hand, otherwise the chosen creature, until Cloak and Dagger leaves.
           fx.exileFromHandLinked(ref.target("p"), NONLAND_CARD, true),
           ...fx.when(
             cond.not(cond.amountAtLeast(amount.refCount(ref.exiledWith), 1)),
-            fx.may("Exiler la créature choisie ?", fx.exileUntilLeaves(ref.target("c"))),
+            fx.may("Exile the chosen creature?", fx.exileUntilLeaves(ref.target("c"))),
           ),
         ],
         {
           targets: [
             target.player("p", "opponent"),
-            // « Que ce joueur contrôle » n'est vérifié qu'au ciblage ; le filtre « adversaire » est revérifié à la résolution.
+            // "That player controls" is only checked on targeting; the "opponent" filter is checked again on resolution.
             target.of(
               ref.target("p"),
               target.upTo(1, target.creature("c", { controller: "opponent" })),
-              "créature que contrôle cet adversaire",
+              "creature that opponent controls",
             ),
           ],
-          label: "Exile une carte non-terrain de sa main ou la créature choisie",
+          label: "Exile a nonland card from their hand or the chosen creature",
         },
       ),
     ],
@@ -261,24 +260,24 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       chapter([1], [fx.destroy(ref.target())], {
         targets: [target.upTo(1, target.nonland())],
-        label: "Chapitre I — Détruit jusqu'à un permanent non-terrain",
+        label: "Chapter I — Destroy up to one nonland permanent",
       }),
-      chapter([2, 3], [fx.loseLife(2, ref.eachOpponent)], { label: "Chapitres II, III — Chaque adversaire perd 2 PV" }),
-      chapter([4], [fx.createTokens(GALACTUS)], { label: "Chapitre IV — Galactus 16/16" }),
+      chapter([2, 3], [fx.loseLife(2, ref.eachOpponent)], { label: "Chapters II, III — Each opponent loses 2 life" }),
+      chapter([4], [fx.createTokens(GALACTUS)], { label: "Chapter IV — 16/16 Galactus" }),
     ],
   },
   "Daredevil, Man Without Fear": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Sens radar — Vous pouvez regarder le dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "Radar Sense — You may look at the top card of your library" }),
       triggered(
         when.attackWith(),
         fx.may(
-          "Exiler la carte du dessus de votre bibliothèque ?",
+          "Exile the top card of your library?",
           fx.exileTop(ref.you, 1, "d"),
           fx.when(cond.refMatches(ref.stored("d"), { subtype: "Hero" }), fx.pump(ref.self, 2, 1)),
           fx.grantPlay(ref.stored("d")),
         ),
-        { label: "Exile le dessus : jouable ce tour-ci (+2/+1 si c'est un Héros)" },
+        { label: "Exile the top card: playable this turn (+2/+1 if it's a Hero)" },
       ),
     ],
   },
@@ -288,21 +287,21 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1 },
-        { per: { ...ARTIFACT, controller: "you", other: true }, label: "+1/+0 par autre artefact que vous contrôlez" },
+        { per: { ...ARTIFACT, controller: "you", other: true }, label: "+1/+0 for each other artifact you control" },
       ),
       triggered(when.attacksSelf, [fx.draw(1)], {
         condition: cond.amountAtLeast(
           amount.turnEvents({ event: "zone", to: "battlefield", types: ["Artifact"], who: "you" }),
           1,
         ),
-        label: "Piochez si un artefact est arrivé sous votre contrôle ce tour-ci",
+        label: "Draw if an artifact entered under your control this turn",
       }),
     ],
   },
   "Kang, Temporal Tyrant": {
     abilities: [
-      triggered(when.attacksSelf, [fx.connive(ref.self)], { label: "Complote" }),
-      triggered(when.draw(2), fx.drain(1), { label: "Deuxième carte piochée : drain 1" }),
+      triggered(when.attacksSelf, [fx.connive(ref.self)], { label: "Connives" }),
+      triggered(when.draw(2), fx.drain(1), { label: "Second card drawn: drain 1" }),
     ],
   },
   "Killmonger, Scourge of Wakanda": {
@@ -313,22 +312,22 @@ export const MULTI: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.reflexive([target.nonland("t", { controller: "opponent" })], [fx.destroy(ref.target())])),
         ],
-        { label: "Sacrifiez une autre créature : détruit un permanent non-terrain adverse" },
+        { label: "Sacrifice another creature: destroy a nonland permanent an opponent controls" },
       ),
       staticAbility(
         "self",
         { power: 2, toughness: 1 },
         {
           condition: cond.amountAtLeast(amount.countIn("graveyard", { types: ["Creature"] }), 2),
-          label: "+2/+1 avec deux cartes de créature ou plus dans votre cimetière",
+          label: "+2/+1 with two or more creature cards in your graveyard",
         },
       ),
     ],
   },
   "King T'Challa": {
     abilities: [
-      triggered(when.draw(2, "any"), [fx.draw(1)], { label: "Un joueur pioche sa deuxième carte : piochez" }),
-      activated({ mana: "{4}{W}{U}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-le" }),
+      triggered(when.draw(2, "any"), [fx.draw(1)], { label: "A player draws their second card: draw" }),
+      activated({ mana: "{4}{W}{U}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transform him" }),
     ],
   },
   "Black Panther, Hope Enduring": {
@@ -337,30 +336,30 @@ export const MULTI: Record<string, CardScript> = {
         event: "damage",
         toFilter: { self: true },
         modify: { prevent: true },
-        label: "Prévenez toutes les blessures qui lui seraient infligées",
+        label: "Prevent all damage that would be dealt to it",
       }),
-      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Piochez une carte" }),
+      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Draw a card" }),
     ],
   },
   "The Kingpin of Crime": {
-    // Extorsion (702.101) : lue dans le texte.
+    // Extort (702.101): read from the text.
     abilities: [
-      // Les créatures arrivées après la résolution ne sont pas concernées (voir docs/approximations.md).
+      // Creatures that enter after the resolution are not affected (see docs/approximations.md).
       triggered(
         when.attackWith(),
         fx.mayPayLife(
           2,
-          "Payer 2 PV : vos créatures blessent selon leur endurance si elle est plus grande ?",
+          "Pay 2 life: creatures you control deal damage equal to their toughness if it's greater?",
           fx.modifyAll(YOUR_CREATURES, { addPowerRules: [powerFor.combatToughness] }),
         ),
-        { label: "Payez 2 PV : blessures de combat selon l'endurance" },
+        { label: "Pay 2 life: combat damage according to toughness" },
       ),
     ],
   },
   "Madame Hydra": {
     abilities: [
       triggered(when.castSpell("you", { subtype: "Villain" }), [fx.createTokens(VILLAIN)], {
-        label: "Sort de Méchant : un Méchant 2/1 avec la menace",
+        label: "Villain spell: a 2/1 Villain with menace",
       }),
     ],
   },
@@ -371,24 +370,24 @@ export const MULTI: Record<string, CardScript> = {
         [fx.exileCard(ref.target(), { name: "f" }), fx.toBattlefield(ref.stored("f"), { tapped: true })],
         {
           targets: [
-            target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { token: false }, "artefact ou créature non-jeton")),
+            target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { token: false }, "nontoken artifact or creature")),
           ],
-          label: "Exile puis renvoie engagé un artefact ou une créature",
+          label: "Exile, then return tapped an artifact or creature",
         },
       ),
       triggered(when.enters({ subtype: "Equipment", controller: "you" }), [fx.draw(1)], {
-        label: "Un Équipement arrive : piochez",
+        label: "An Equipment enters: draw",
       }),
     ],
   },
   "Moon Girl and Devil Dinosaur": {
     abilities: [
       triggered(when.draw(2), [fx.modify(ref.self, { setPower: 6, setToughness: 6, addKeywords: ["trample"] })], {
-        label: "Deuxième carte piochée : 6/6 et piétinement",
+        label: "Second card drawn: 6/6 and trample",
       }),
       triggered(when.enters({ ...ARTIFACT, controller: "you" }), [fx.draw(1)], {
         oncePerTurn: true,
-        label: "Un artefact arrive : piochez (une fois par tour)",
+        label: "An artifact enters: draw (once each turn)",
       }),
     ],
   },
@@ -397,7 +396,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.castSpell("any", undefined, { objects: { self: true } }),
         [fx.pump(ref.self, 2, 2), fx.changeTarget(ref.eventObject)],
-        { label: "Ciblé par un sort : +2/+2, vous pouvez changer la cible" },
+        { label: "Targeted by a spell: +2/+2, you may change the target" },
       ),
     ],
   },
@@ -408,7 +407,7 @@ export const MULTI: Record<string, CardScript> = {
         fx.when(
           cond.sourceMatches({ tapped: false }),
           fx.may(
-            "Engager Spider-Man pour rendre une autre créature indestructible ?",
+            "Tap Spider-Man to make another creature indestructible?",
             fx.tap(ref.self),
             fx.reflexive(
               [target.creature("t", { controller: "you", other: true, attacking: false })],
@@ -416,7 +415,7 @@ export const MULTI: Record<string, CardScript> = {
             ),
           ),
         ),
-        { label: "Personne ne meurt ! — Engagez-le : une autre créature indestructible" },
+        { label: "No One Dies! — Tap him: another creature gains indestructible" },
       ),
     ],
   },
@@ -432,14 +431,14 @@ export const MULTI: Record<string, CardScript> = {
                 event: "untap",
                 toFilter: { self: true },
                 modify: { prevent: true },
-                label: "Ne peut pas être dégagée",
+                label: "Can't become untapped",
               }),
             ],
           }),
         ],
         {
           targets: [target.creature("t", { controller: "opponent" })],
-          label: "Engage une créature adverse, qui ne peut plus être dégagée",
+          label: "Tap a creature an opponent controls; it can't become untapped",
         },
       ),
     ],
@@ -448,17 +447,17 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       chapter([1], fx.gainControlWhileSource(ref.target()), {
         targets: [{ ...target.upTo(2, target.creature()), maxTotalManaValue: 6 }],
-        label: "Chapitre I — Contrôle de jusqu'à deux créatures de valeur de mana totale 6 ou moins",
+        label: "Chapter I — Control of up to two creatures with total mana value 6 or less",
       }),
       chapter([2], [fx.pumpAll(YOUR_CREATURES, 1, 1, ["vigilance"])], {
-        label: "Chapitre II — Vos créatures gagnent +1/+1 et la vigilance",
+        label: "Chapter II — Creatures you control get +1/+1 and gain vigilance",
       }),
       chapter([3], [fx.fight(ref.target("a"), ref.target("b"))], {
         targets: [
           target.creature("a", { controller: "you" }),
-          { ...target.upTo(1, target.creature("b")), otherThan: ["a"], label: "autre créature" },
+          { ...target.upTo(1, target.creature("b")), otherThan: ["a"], label: "other creature" },
         ],
-        label: "Chapitre III — Une de vos créatures se bat contre une autre créature",
+        label: "Chapter III — A creature you control fights another creature",
       }),
     ],
   },
@@ -472,19 +471,19 @@ export const MULTI: Record<string, CardScript> = {
           CHOOSE_PARITY,
           fx.destroyAll({ types: ["Creature"], other: true, parityChosen: true }),
         ],
-        label: "Montée en puissance : deux marqueurs +1/+1, détruit les créatures de la parité choisie",
+        label: "Power-up: two +1/+1 counters, destroy the creatures of the chosen parity",
       }),
     ],
   },
   "U.S.Agent, John Walker": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(STURDY_SHIELD, 1, undefined, undefined, ref.self)], {
-        label: "Sturdy Shield, attaché à lui",
+        label: "Sturdy Shield, attached to him",
       }),
     ],
   },
   "Vision Quest": {
-    // Cimetière d'abord, sinon bibliothèque (une seule carte en tout) ; les X marqueurs sont posés à l'arrivée (614.1c).
+    // Graveyard first, otherwise library (a single card in all); the X counters are put on as it enters (614.1c).
     spell: spell(
       [],
       [
@@ -496,7 +495,7 @@ export const MULTI: Record<string, CardScript> = {
             min: 0,
             maxManaValue: amount.x,
             store: "v",
-            prompt: "Vous pouvez choisir une carte de créature-artefact de votre cimetière (sinon, de votre bibliothèque)",
+            prompt: "You may choose an artifact creature card from your graveyard (otherwise, from your library)",
           },
         ),
         ...fx.when(
@@ -517,7 +516,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), amount.powerOf(ref.self), 0)], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Une autre créature gagne +X/+0 (X : sa force)",
+        label: "Another creature gets +X/+0 (X: its power)",
       }),
     ],
   },
@@ -526,7 +525,7 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 2 },
-        { per: { subtype: "Equipment", attached: "toSource" }, label: "+2/+0 par Équipement attaché" },
+        { per: { subtype: "Equipment", attached: "toSource" }, label: "+2/+0 for each attached Equipment" },
       ),
       activated({
         mana: "{3}{W}{B}",
@@ -536,38 +535,38 @@ export const MULTI: Record<string, CardScript> = {
           ...fx.when(
             cond.controls({ subtype: "Equipment" }),
             fx.may(
-              "Attacher un Équipement que vous contrôlez à Winter Soldier ?",
+              "Attach an Equipment you control to Winter Soldier?",
               fx.chooseAmong(ref.permanentsOf(ref.you, { subtype: "Equipment" }), ref.you, "e"),
               fx.attach(ref.stored("w"), ref.stored("e")),
             ),
           ),
         ],
-        label: "Revient du cimetière avec un marqueur de finalité",
+        label: "Returns from the graveyard with a finality counter",
       }),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Captain America, Living Legend": {
     abilities: [
       triggered(
         { on: "taps", who: { types: ["Creature"], controller: "you" }, firstThisTurn: true },
         [fx.untap(ref.eventObject)],
-        { condition: cond.yourTurn, label: "Une de vos créatures engagée pour la première fois de votre tour : dégagez-la" },
+        { condition: cond.yourTurn, label: "A creature you control becomes tapped for the first time on your turn: untap it" },
       ),
     ],
   },
-  // Portée et piétinement : lus dans le texte.
+  // Reach and trample: read from the text.
   "Hulk, Gamma Goliath": {
     abilities: [
       playerStatic({
         abilityCost: { ability: "powerUp", notSelf: true, reduce: 3, source: { types: ["Creature"] } },
-        label: "Les montées en puissance de vos autres créatures coûtent {3} de moins",
+        label: "Power-up abilities of other creatures you control cost {3} less",
       }),
       activated({
         mana: "{6}{R}{G}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, 5)],
-        label: "Montée en puissance : cinq marqueurs +1/+1",
+        label: "Power-up: five +1/+1 counters",
       }),
     ],
   },
@@ -575,23 +574,23 @@ export const MULTI: Record<string, CardScript> = {
     keywords: ["mustAttack"],
     abilities: [
       triggered(when.dies({ types: ["Creature"], controller: "you", attacking: true }), [fx.toHand(ref.eventObject)], {
-        label: "Une de vos créatures attaquantes meurt : elle revient dans la main de son propriétaire",
+        label: "An attacking creature you control dies: it returns to its owner's hand",
       }),
     ],
   },
   "The Astonishing Ant-Man": {
     abilities: [
-      triggered(when.draw(), [fx.addCounters(ref.self, 1)], { label: "Vous piochez : un marqueur +1/+1" }),
+      triggered(when.draw(), [fx.addCounters(ref.self, 1)], { label: "You draw: a +1/+1 counter" }),
       activated({
         mana: "{2}{G}",
         tap: true,
         removeCountersX: "+1/+1",
         effects: [fx.createTokens(INSECT_G, amount.x)],
-        label: "Retirez X marqueurs +1/+1 : X Insectes 1/1",
+        label: "Remove X +1/+1 counters: X 1/1 Insects",
       }),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Absorbing Man": {
     abilities: [
       triggered(
@@ -613,7 +612,7 @@ export const MULTI: Record<string, CardScript> = {
           targets: [
             target.upTo(1, {
               id: "t",
-              label: "artefact, enchantement non-Aura ou terrain",
+              label: "artifact, non-Aura enchantment or land",
               filter: {
                 objects: {
                   anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"], notSubtype: "Aura" }, { types: ["Land"] }],
@@ -621,7 +620,7 @@ export const MULTI: Record<string, CardScript> = {
               },
             }),
           ],
-          label: "Jusqu'à votre prochain tour, il devient une copie d'un artefact, enchantement non-Aura ou terrain",
+          label: "Until your next turn, it becomes a copy of an artifact, non-Aura enchantment or land",
         },
       ),
     ],
@@ -644,11 +643,11 @@ export const MULTI: Record<string, CardScript> = {
           targets: [
             target.upTo(1, {
               id: "t",
-              label: "créature, ou carte de créature d'un cimetière",
+              label: "creature, or creature card from a graveyard",
               filter: { objects: { types: ["Creature"], other: true }, cards: { filter: { types: ["Creature"] }, whose: "any" } },
             }),
           ],
-          label: "Jusqu'à votre prochain tour, il devient une copie d'une créature ou d'une carte de créature",
+          label: "Until your next turn, it becomes a copy of a creature or creature card",
         },
       ),
     ],
@@ -662,55 +661,60 @@ export const MULTI: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "capacité que vous contrôlez d'une source artefact",
+            label: "ability you control from an artifact source",
             filter: { stackItems: { abilitiesOnly: true, controller: "you", source: { types: ["Artifact"] } } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],
-        label: "Payez 2 PV : copiez une capacité d'artefact que vous contrôlez",
+        label: "Pay 2 life: copy an artifact ability you control",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Storm, Windrider": {
     abilities: [
       staticAbility(
         { types: ["Creature"], keyword: "flying", controller: "opponent" },
-        { addBlockRules: [{ cantAttackPlayer: "you", label: "Ne peut pas attaquer le contrôleur de Storm" }] },
-        { label: "Les créatures avec le vol ne peuvent pas vous attaquer" },
+        { addBlockRules: [{ cantAttackPlayer: "you", label: "Can't attack Storm's controller" }] },
+        { label: "Creatures with flying can't attack you" },
       ),
       staticAbility(
         { types: ["Creature"], controller: "you" },
-        { addBlockRules: [block.notBy({ keyword: "flying" }, "Ne peut pas être bloquée par des créatures avec le vol")] },
-        { label: "Les créatures avec le vol ne peuvent pas bloquer vos créatures" },
+        { addBlockRules: [block.notBy({ keyword: "flying" }, "Can't be blocked by creatures with flying")] },
+        { label: "Creatures with flying can't block creatures you control" },
       ),
       triggered(
         when.castSpell("you", {}, { objects: { types: ["Creature"] } }),
         [fx.modify(ref.filtered(ref.targetsOfEventObject, { types: ["Creature"] }), { addKeywords: ["flying"] }, "endOfTurn")],
-        { label: "Un sort qui cible des créatures : elles gagnent le vol" },
+        { label: "A spell that targets creatures: they gain flying" },
       ),
     ],
   },
   "The Ruinous Wrecking Crew": {
     abilities: [
-      entersWith({ counters: amount.x, label: "Arrive avec X marqueurs +1/+1" }),
+      entersWith({ counters: amount.x, label: "Enters with X +1/+1 counters" }),
       triggeredModal(
         when.entersSelf,
-        // « Choisissez jusqu'à X » : chaque combinaison de modes, sous la condition X ≥ son nombre de modes.
+        // "Choose up to X": each combination of modes, under the condition X ≥ its number of modes.
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
           .map((bits): ModeDef => {
             const has = (k: number) => (bits & (1 << k)) !== 0;
             const n = [0, 1, 2, 3].filter(has).length;
-            const labels = ["défausse et pioche", "un adversaire perd 2 PV", "détruire un jeton", "chacun sacrifie une créature"];
+            const labels = [
+              "discard and draw",
+              "an opponent loses 2 life",
+              "destroy a token",
+              "each player sacrifices a creature",
+            ];
             return {
               ...mode(
                 [0, 1, 2, 3]
                   .filter(has)
-                  .map((k) => labels[k])
-                  .join(" + "),
+                  .map((k) => labels[k] as string)
+                  .reduce((a, b) => msg("{a} + {b}", { a, b })),
                 [
                   ...(has(1) ? [target.player("p", "opponent")] : []),
-                  ...(has(2) ? [{ id: "k", label: "jeton", filter: { objects: { token: true } } }] : []),
+                  ...(has(2) ? [{ id: "k", label: "token", filter: { objects: { token: true } } }] : []),
                 ],
                 [
                   ...(has(0) ? [fx.discard(1), fx.draw(1)] : []),
@@ -722,22 +726,22 @@ export const MULTI: Record<string, CardScript> = {
               condition: cond.amountAtLeast(amount.sourceX, n),
             };
           })
-          .concat([mode("Aucun", [], [])]),
-        { label: "Jusqu'à X modes" },
+          .concat([mode("None", [], [])]),
+        { label: "Up to X modes" },
       ),
     ],
   },
-  // Contact mortel et garde (recevez cinq marqueurs poison) : lus dans le texte.
+  // Deathtouch and ward (get five poison counters): read from the text.
   "The Serpent Society": {
     abilities: [
       triggered(
         when.dies({ types: ["Creature"], controller: "you", other: true, keyword: "deathtouch" }),
         [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false })],
-        { label: "Une autre de vos créatures avec le contact mortel meurt : chaque adversaire sacrifie une créature non-jeton" },
+        { label: "Another creature you control with deathtouch dies: each opponent sacrifices a nontoken creature" },
       ),
     ],
   },
-  // « Défaussez une carte ou payez {2} » (coût additionnel) et la garde du même nom : la garde est lue dans le texte.
+  // "Discard a card or pay {2}" (additional cost) and the ward of the same name: the ward is read from the text.
   "Titania, Rugged Rumbler": {
     additionalCost: { discard: 1, discardOr: { mana: { generic: 2, colored: {}, x: 0 } } },
   },
@@ -754,7 +758,7 @@ export const MULTI: Record<string, CardScript> = {
             count: 99,
             min: 0,
             who: ref.eachPlayer,
-            prompt: "Mettez des cartes de créature de votre main sur le champ de bataille",
+            prompt: "Put creature cards from your hand onto the battlefield",
           },
         ),
         fx.toHand(ref.stored("w")),

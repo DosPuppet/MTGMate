@@ -1,6 +1,6 @@
 /**
- * Extensions couvertes : données Scryfall (data/<set>.json) et scripts des cartes.
- * L'ordre compte : une réimpression (même nom) garde la définition de la première extension.
+ * Covered sets: Scryfall data (data/<set>.json) and card scripts.
+ * Order matters: a reprint (same name) keeps the definition of the first set.
  */
 import type { CardDef, CardScript } from "@mtgx/engine";
 import bigData from "../data/big.json";
@@ -141,7 +141,7 @@ export const SETS: CardSet[] = SET_INFO.map((info) => ({
 
 export const SET_BY_CODE: Record<string, CardSet> = Object.fromEntries(SETS.map((s) => [s.code, s]));
 
-/** Carte du set principal de son extension (numéro de collection jusqu'à `mainMax`, terrains de base compris). */
+/** Card of the main set of its expansion (collector number up to `mainMax`, basic lands included). */
 export function isMainSet(c: CardDef): boolean {
   const set = c.set ? SET_BY_CODE[c.set] : undefined;
   return !c.isToken && !!set && Number.parseInt(c.number ?? "999", 10) <= set.mainMax;

@@ -1,4 +1,5 @@
-/** Foundations — planeswalkers (loyauté de départ lue dans les données Scryfall). */
+/** Foundations — planeswalkers (starting loyalty read from the Scryfall data). */
+import { msg } from "@mtgx/engine";
 import {
   ART_ENCH_OR_FLYER,
   amount,
@@ -22,63 +23,63 @@ export const PLANESWALKERS: Record<string, CardScript> = {
       loyalty(1, {
         targets: [target.optional(target.creature())],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "marqueur +1/+1 sur jusqu'à une créature",
+        label: "+1/+1 counter on up to one creature",
       }),
       loyalty(-3, {
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), 0, 0, ["flying", "doubleStrike"])],
-        label: "vol et double initiative",
+        label: "flying and double strike",
       }),
-      loyalty(-8, { effects: [fx.createTokens(CAT_2, amount.lifeTotal)], label: "X Chats 2/2 (X = votre vie)" }),
+      loyalty(-8, { effects: [fx.createTokens(CAT_2, amount.lifeTotal)], label: "X 2/2 Cats (X = your life total)" }),
     ],
   },
   "Kaito, Cunning Infiltrator": {
     abilities: [
       triggered(when.combatDamage(CREATURE_YOU_CONTROL, true), [fx.counters(ref.self, "loyalty", 1)], {
-        label: "marqueur de loyauté",
+        label: "loyalty counter",
       }),
       loyalty(1, {
         targets: [target.optional(target.creature("t", { controller: "you" }))],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] }), ...fx.loot(1)],
-        label: "imblocable, piochez puis défaussez",
+        label: "unblockable, draw then discard",
       }),
       loyalty(-2, { effects: [fx.createTokens(NINJA)], label: "Ninja 2/1" }),
       loyalty(-9, {
         effects: [
-          fx.emblem("Emblème de Kaito", "À chaque fois qu'un joueur lance un sort, vous créez un jeton Ninja 2/1 bleu.", [
+          fx.emblem(msg("Kaito's emblem"), msg("Whenever a player casts a spell, you create a 2/1 blue Ninja creature token."), [
             triggered(when.castSpell("any"), [fx.createTokens(NINJA)], { label: "Ninja 2/1" }),
           ]),
         ],
-        label: "emblème",
+        label: "emblem",
       }),
     ],
   },
   "Chandra, Flameshaper": {
     abilities: [
-      loyalty(2, { effects: [fx.addMana("R", "R", "R"), fx.impulse(3)], label: "{R}{R}{R}, exil de 3 cartes, jouez-en une" }),
+      loyalty(2, { effects: [fx.addMana("R", "R", "R"), fx.impulse(3)], label: "{R}{R}{R}, exile 3 cards, play one of them" }),
       loyalty(1, {
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.copyToken(ref.target(), { addKeywords: ["haste"], sacrificeAtEndStep: true })],
-        label: "copie avec célérité",
+        label: "copy with haste",
       }),
       loyalty(-4, {
-        targets: [target.upTo(8, targetObj("t", { types: ["Creature", "Planeswalker"] }, "créatures et/ou planeswalkers"))],
+        targets: [target.upTo(8, targetObj("t", { types: ["Creature", "Planeswalker"] }, "creatures and/or planeswalkers"))],
         effects: [fx.damageDivided(8, ref.target())],
-        label: "8 blessures réparties",
+        label: "8 damage divided",
       }),
     ],
   },
   "Liliana, Dreadhorde General": {
     abilities: [
-      triggered(when.dies(CREATURE_YOU_CONTROL), [fx.draw(1)], { label: "piochez une carte" }),
+      triggered(when.dies(CREATURE_YOU_CONTROL), [fx.draw(1)], { label: "draw a card" }),
       loyalty(1, { effects: [fx.createTokens(ZOMBIE)], label: "Zombie 2/2" }),
       loyalty(-4, {
         effects: [fx.sacrifice(ref.eachPlayer, { types: ["Creature"] }, 2)],
-        label: "chaque joueur sacrifie 2 créatures",
+        label: "each player sacrifices 2 creatures",
       }),
       loyalty(-9, {
         effects: [fx.keep(ref.eachOpponent, "onePerType", {})],
-        label: "chaque adversaire garde un permanent de chaque type",
+        label: "each opponent keeps one permanent of each type",
       }),
     ],
   },
@@ -86,18 +87,18 @@ export const PLANESWALKERS: Record<string, CardScript> = {
     abilities: [
       loyalty(1, {
         effects: [fx.lookAtTop(4, { filter: { anyOf: [{ types: ["Creature"] }, { types: ["Land"] }] } })],
-        label: "regardez 4 cartes, prenez une créature ou un terrain",
+        label: "look at 4 cards, take a creature or a land",
       }),
       loyalty(-3, {
-        targets: [targetObj("t", ART_ENCH_OR_FLYER, "artefact, enchantement ou créature volante")],
+        targets: [targetObj("t", ART_ENCH_OR_FLYER, "artifact, enchantment or flying creature")],
         effects: [fx.destroy(ref.target())],
-        label: "détruit",
+        label: "destroys",
       }),
       loyalty(-8, {
         effects: [
           fx.emblem(
-            "Emblème de Vivien",
-            "Les créatures que vous contrôlez gagnent +2/+2 et ont la vigilance, le piétinement et l'indestructible.",
+            msg("Vivien's emblem"),
+            msg("Creatures you control get +2/+2 and have vigilance, trample, and indestructible."),
             [
               {
                 kind: "static",
@@ -107,7 +108,7 @@ export const PLANESWALKERS: Record<string, CardScript> = {
             ],
           ),
         ],
-        label: "emblème",
+        label: "emblem",
       }),
     ],
   },

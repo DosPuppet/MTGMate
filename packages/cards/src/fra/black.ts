@@ -1,4 +1,4 @@
-/** Reality Fracture — cartes noires. */
+/** Reality Fracture — black cards. */
 import {
   activated,
   amount,
@@ -33,7 +33,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.yourCombat, [fx.toBattlefield(ref.self)], {
         condition: cond.creaturesDied(2),
         fromGraveyard: true,
-        label: "Deux créatures mortes : revient du cimetière",
+        label: "Two creatures died: returns from the graveyard",
       }),
     ],
   },
@@ -45,25 +45,25 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 2, 2, ["deathtouch"])], {
         targets: [target.creature("t")],
-        label: "+2/+2 et contact mortel",
+        label: "+2/+2 and deathtouch",
       }),
     ],
   },
   "Rank Rat": {
-    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "chaque adversaire défausse" })],
+    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "each opponent discards" })],
   },
   "Rise of the Deathbringer": {
     spell: modal(
       mode(
-        "Piocher selon la plus grande force, perdre autant de PV",
+        "Draw equal to the greatest power, lose that much life",
         [],
         [fx.draw(amount.maxPower(CREATURE_YOU_CONTROL)), fx.loseLife(amount.maxPower(CREATURE_YOU_CONTROL))],
       ),
-      mode("Toutes les créatures -3/-3", [], [fx.pumpAll({ types: ["Creature"] }, -3, -3)]),
+      mode("All creatures -3/-3", [], [fx.pumpAll({ types: ["Creature"] }, -3, -3)]),
     ),
   },
   "Screeching Soulbreaker": {
-    abilities: [triggered(when.attacksSelf, [fx.damage(1, ref.eachOpponent), fx.gainLife(1)], { label: "1 blessure, +1 PV" })],
+    abilities: [triggered(when.attacksSelf, [fx.damage(1, ref.eachOpponent), fx.gainLife(1)], { label: "1 damage, +1 life" })],
   },
   "Theoretical Necromancer": {
     abilities: [
@@ -71,22 +71,22 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{3}{B}",
         fromGraveyard: true,
         exileSelf: true,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"], other: true }, "you", "autre carte de créature")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"], other: true }, "you", "other creature card")],
         effects: [fx.toHand(ref.target())],
-        label: "Récupérer une créature",
+        label: "Return a creature card",
       }),
     ],
   },
   "Tinybones, Pocket Nuisance": {
     abilities: [
-      triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "chaque adversaire défausse" }),
-      triggered(when.discardBatch("any"), [fx.damage(1, ref.eachOpponent)], { label: "défausse : 1 blessure" }),
+      triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "each opponent discards" }),
+      triggered(when.discardBatch("any"), [fx.damage(1, ref.eachOpponent)], { label: "discard: 1 damage" }),
     ],
   },
   "Apex Witchstalker": {
     abilities: [
-      triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 PV" }),
-      triggered(when.diesSelf, [fx.gainLife(2)], { label: "+2 PV" }),
+      triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 life" }),
+      triggered(when.diesSelf, [fx.gainLife(2)], { label: "+2 life" }),
     ],
   },
   "Proft, Sinister Mastermind": {
@@ -98,7 +98,7 @@ export const BLACK: Record<string, CardScript> = {
         discardSelf: true,
         targets: [target.creature("t")],
         effects: [fx.pump(ref.target(), -3, -1)],
-        label: "Défaussez : -3/-1",
+        label: "Discard: -3/-1",
       }),
     ],
   },
@@ -107,7 +107,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.enters({ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }], controller: "you", other: true }),
         [fx.mill(2)],
-        { label: "meule 2" },
+        { label: "mills 2" },
       ),
       exhaust({
         mana: "{5}{B}",
@@ -117,11 +117,11 @@ export const BLACK: Record<string, CardScript> = {
             "t",
             { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] },
             "you",
-            "carte de créature ou de planeswalker de votre cimetière",
+            "creature or planeswalker card in your graveyard",
           ),
         ],
         effects: [fx.toBattlefield(ref.target()), fx.addCounters(ref.self, 1)],
-        label: "réanimer, marqueur +1/+1",
+        label: "reanimate, +1/+1 counter",
       }),
     ],
   },
@@ -130,7 +130,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.eachEndStep, [fx.prepare(ref.self)], {
         condition: cond.creaturesDied(3),
-        label: "trois créatures mortes : préparée",
+        label: "three creatures died: prepared",
       }),
     ],
   },
@@ -138,11 +138,11 @@ export const BLACK: Record<string, CardScript> = {
     prepareSpell: OMIT_VARIABLES,
     abilities: [
       entersWith({ prepared: true }),
-      staticAbility("self", { power: 1, toughness: 1 }, { condition: cond.threshold, label: "Seuil : +1/+1" }),
+      staticAbility("self", { power: 1, toughness: 1 }, { condition: cond.threshold, label: "Threshold: +1/+1" }),
     ],
   },
   "Overwrite the Multiverse": {
-    // X est compté avant l'exil (même nombre : l'exil ne peut pas échouer).
+    // X is counted before the exile (same number: the exile can't fail).
     spell: spell(
       [],
       [
@@ -158,7 +158,7 @@ export const BLACK: Record<string, CardScript> = {
           "t",
           { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }], maxManaValue: 6 },
           "you",
-          "carte de créature ou de planeswalker (VM 6 ou moins)",
+          "creature or planeswalker card (mana value 6 or less)",
         ),
       ],
       [fx.toBattlefield(ref.target()), empower(2)],
@@ -166,11 +166,11 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Sanctum Lurker": {
     abilities: [
-      triggered(when.entersSelf, [empower(1)], { label: "Renforcez Jace 1" }),
-      playerStatic({ walkersSurviveZeroLoyalty: true, label: "Vos planeswalkers survivent à 0 loyauté" }),
+      triggered(when.entersSelf, [empower(1)], { label: "Empower Jace 1" }),
+      playerStatic({ walkersSurviveZeroLoyalty: true, label: "Your planeswalkers survive at 0 loyalty" }),
       walkersHave(
-        loyalty(2, { effects: [fx.damage(1, ref.eachOpponent), fx.gainLife(1)], label: "1 blessure à chaque adversaire, +1 PV" }),
-        "Planeswalkers : [+2]",
+        loyalty(2, { effects: [fx.damage(1, ref.eachOpponent), fx.gainLife(1)], label: "1 damage to each opponent, +1 life" }),
+        "Planeswalkers: [+2]",
       ),
     ],
   },
@@ -183,36 +183,36 @@ export const BLACK: Record<string, CardScript> = {
   "Vraska's Final Mercy": {
     spell: modal(
       mode(
-        "Perdez 2 PV, détruisez une créature ou un planeswalker",
+        "Lose 2 life, destroy a creature or planeswalker",
         [target.creatureOrPlaneswalker("t")],
         [fx.loseLife(2), fx.destroy(ref.target())],
       ),
-      mode("Perdez 2 PV, renforcez Jace 6", [], [fx.loseLife(2), empower(6)]),
+      mode("Lose 2 life, empower Jace 6", [], [fx.loseLife(2), empower(6)]),
     ),
   },
   "Way of the Deathbringer": {
     abilities: [
-      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      triggered(when.entersSelf, [empower(5)], { label: "Empower Jace 5" }),
       walkersHave(
         loyalty(-2, {
           effects: [
             fx.sacrifice(ref.you, { types: ["Creature"] }, 1, { optional: true, store: "s" }),
             ...fx.when(cond.v("s"), fx.createTokens(BEAST_TRAMPLE)),
           ],
-          label: "Sacrifier une créature : Bête 4/4",
+          label: "Sacrifice a creature: 4/4 Beast",
         }),
-        "Planeswalkers : [−2] Bête",
+        "Planeswalkers: [−2] Beast",
       ),
     ],
   },
   "Way of the Necromancer": {
     abilities: [
-      triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" }),
+      triggered(when.entersSelf, [empower(2)], { label: "Empower Jace 2" }),
       triggered(
         when.dies(CREATURE_YOU_CONTROL),
         [fx.addCountersAll({ types: ["Planeswalker"], controller: "you" }, 1, "loyalty")],
         {
-          label: "loyauté sur chaque planeswalker",
+          label: "loyalty on each planeswalker",
         },
       ),
     ],
@@ -227,13 +227,13 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.mayPay("{2}", "Payer {2} pour détruire une créature ou un planeswalker adverse ?", [
+        fx.mayPay("{2}", "Pay {2} to destroy a creature or planeswalker an opponent controls?", [
           fx.reflexive(
             [target.upTo(1, target.creatureOrPlaneswalker("t", { controller: "opponent" }))],
             [fx.destroy(ref.target())],
           ),
         ]),
-        { label: "payer {2} : détruire" },
+        { label: "pay {2}: destroy" },
       ),
       staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
     ],
@@ -251,7 +251,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.removeCounters(ref.target(), 3)], {
         targets: [target.creatureOrPlaneswalker("t", { other: true })],
-        label: "retire jusqu'à trois marqueurs",
+        label: "removes up to three counters",
       }),
     ],
   },
@@ -262,11 +262,11 @@ export const BLACK: Record<string, CardScript> = {
         [fx.damage(1, ref.target()), fx.gainLife(1)],
         {
           targets: [target.player("t", "opponent")],
-          label: "1 blessure, +1 PV",
+          label: "1 damage, +1 life",
         },
       ),
-      // Blessures non de combat infligées à un adversaire par toute source.
-      triggered(when.playerDealtDamage("opponent", false), [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+      // Noncombat damage dealt to an opponent by any source.
+      triggered(when.playerDealtDamage("opponent", false), [fx.addCounters(ref.self, 1)], { label: "put a +1/+1 counter" }),
     ],
   },
   "Teyo, Diamondblade Mage": {
@@ -279,8 +279,8 @@ export const BLACK: Record<string, CardScript> = {
           ...fx.when(cond.refMatches(ref.target(), { types: ["Planeswalker"] }), fx.counters(ref.target(), "loyalty", 1)),
         ],
         {
-          targets: [targetObj("t", { permanent: true, controller: "you" }, "permanent que vous contrôlez")],
-          label: "contact mortel",
+          targets: [targetObj("t", { permanent: true, controller: "you" }, "permanent you control")],
+          label: "deathtouch",
         },
       ),
     ],
@@ -296,25 +296,25 @@ export const BLACK: Record<string, CardScript> = {
           }),
           ...fx.when(cond.v("s"), fx.sacrifice(ref.eachOpponent, { types: ["Creature"] })),
         ],
-        { label: "sacrifier : chaque adversaire sacrifie une créature" },
+        { label: "sacrifice: each opponent sacrifices a creature" },
       ),
       staticAbility(
         "self",
         { power: 1 },
         {
           perGraveyard: { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] },
-          label: "+1/+0 par créature ou planeswalker au cimetière",
+          label: "+1/+0 for each creature or planeswalker in your graveyard",
         },
       ),
     ],
   },
   "Dark Matter Manipulator": {
     abilities: [
-      triggered(when.entersSelf, [fx.mill(3)], { label: "meule 3" }),
+      triggered(when.entersSelf, [fx.mill(3)], { label: "mills 3" }),
       staticAbility(
         "self",
         { power: 2 },
-        { perGraveyard: {}, perDivisor: 7, label: "+2/+0 par tranche de sept cartes au cimetière" },
+        { perGraveyard: {}, perDivisor: 7, label: "+2/+0 for every seven cards in your graveyard" },
       ),
     ],
   },

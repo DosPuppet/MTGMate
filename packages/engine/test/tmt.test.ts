@@ -49,7 +49,7 @@ describe("Teenage Mutant Ninja Turtles", () => {
     it("{T}, sacrifice : un terrain de base de la bibliothèque arrive engagé", () => {
       let s = scenario({ p1: { battlefield: ["Escape Tunnel"], library: ["Opt", "Island", "Opt"] } });
       const tunnel = idOf(s, "p1", "battlefield", "Escape Tunnel");
-      s = settle(activate(s, "p1", tunnel, "terrain de base"), (req, _player, cur) => pickNamed(cur, req, "Island"));
+      s = settle(activate(s, "p1", tunnel, "basic land"), (req, _player, cur) => pickNamed(cur, req, "Island"));
       const island = idOf(s, "p1", "battlefield", "Island");
       expect(s.objects[island]?.tapped).toBe(true);
       expect(idsOf(s, "p1", "graveyard", "Escape Tunnel")).toHaveLength(1);
@@ -65,8 +65,8 @@ describe("Teenage Mutant Ninja Turtles", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const fire = idOf(s, "p1", "battlefield", "Fire Elemental");
       // Fire Elemental a une force de 5 : cible illégale.
-      expect(() => activate(s, "p1", tunnel, "force 2", { targets: { t: [fire] } })).toThrow();
-      s = settle(activate(s, "p1", tunnel, "force 2", { targets: { t: [bear] } }));
+      expect(() => activate(s, "p1", tunnel, "power 2", { targets: { t: [fire] } })).toThrow();
+      s = settle(activate(s, "p1", tunnel, "power 2", { targets: { t: [bear] } }));
       expect(idsOf(s, "p1", "graveyard", "Escape Tunnel")).toHaveLength(1);
       expect(chars(s, bear).keywords).toContain("unblockable");
       // L'Ange ne peut pas bloquer : l'étape des bloqueurs n'attend aucune décision de p2.
@@ -400,7 +400,7 @@ describe("lot A, blanc", () => {
         p2: { battlefield: ["Serra Angel"] },
       });
       const crew = idOf(s, "p1", "hand", "Action News Crew");
-      s = settle(activate(s, "p1", crew, "Canalisation"));
+      s = settle(activate(s, "p1", crew, "Channel"));
       expect(idsOf(s, "p1", "graveyard", "Action News Crew")).toHaveLength(1);
       expect(counters(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(1);
       expect(counters(s, idOf(s, "p1", "battlefield", "Llanowar Elves"))).toBe(1);
@@ -1434,10 +1434,10 @@ describe("lot A, bleu", () => {
       s = settle(cast(s, "p1", "Sewer-veillance Cam"), answer);
       expect(s.objects[angel]?.tapped).toBe(true);
       expect(asked).not.toContain("triggerMode");
-      expect(asked.some((p) => p.includes("Engager la créature ciblée ?"))).toBe(true);
+      expect(asked.some((p) => p.includes("Tap target creature?"))).toBe(true);
       const cam = idOf(s, "p1", "battlefield", "Sewer-veillance Cam");
       s = settle(activate(s, "p1", cam), answer);
-      expect(asked.some((p) => p.includes("Dégager la créature ciblée ?"))).toBe(true);
+      expect(asked.some((p) => p.includes("Untap target creature?"))).toBe(true);
       expect(idsOf(s, "p1", "graveyard", "Sewer-veillance Cam")).toHaveLength(1);
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Swamp", "Swamp"]);
       expect(s.objects[angel]?.tapped).toBe(false);
@@ -1666,8 +1666,8 @@ describe("lot A, noir", () => {
       const dregg = idOf(s, "p1", "battlefield", "Lord Dregg, Insect Invader");
       const hand = s.players.p1?.hand.length ?? 0;
       // Lord Dregg n'est pas un jeton : il ne peut pas payer ce coût.
-      expect(() => activate(s, "p1", dregg, "jeton", { sacrifice: [dregg] })).toThrow();
-      s = settle(activate(s, "p1", dregg, "jeton", { sacrifice: [insect] }));
+      expect(() => activate(s, "p1", dregg, "token", { sacrifice: [dregg] })).toThrow();
+      s = settle(activate(s, "p1", dregg, "token", { sacrifice: [insect] }));
       expect(idsOf(s, "p1", "battlefield", "Insect Warrior")).toHaveLength(0);
       expect(s.players.p1?.hand).toHaveLength(hand + 1);
       // Sans jeton, plus d'activation possible.
@@ -1864,14 +1864,14 @@ describe("lot A, noir", () => {
         const [elf1, elf2] = idsOf(s, "p1", "battlefield", "Llanowar Elves") as [string, string];
         // Un terrain ne paie pas ce coût.
         expect(() =>
-          activate(s, "p1", armor, "Équiper", { targets: { t: [bear] }, sacrifice: [idOf(s, "p1", "battlefield", "Swamp")] }),
+          activate(s, "p1", armor, "Equip", { targets: { t: [bear] }, sacrifice: [idOf(s, "p1", "battlefield", "Swamp")] }),
         ).toThrow();
-        s = settle(activate(s, "p1", armor, "Équiper", { targets: { t: [bear] }, sacrifice: [elf1] }));
+        s = settle(activate(s, "p1", armor, "Equip", { targets: { t: [bear] }, sacrifice: [elf1] }));
         expect(s.objects[armor]?.attachedTo).toBe(bear);
         expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
         expect(pt(s, bear)).toEqual([4, 3]);
         // Une seule fois par tour, même avec un autre Elfe à sacrifier.
-        expect(() => activate(s, "p1", armor, "Équiper", { targets: { t: [elf2] }, sacrifice: [elf2] })).toThrow();
+        expect(() => activate(s, "p1", armor, "Equip", { targets: { t: [elf2] }, sacrifice: [elf2] })).toThrow();
       });
     });
 
@@ -2133,7 +2133,7 @@ describe("lot A, rouge", () => {
       const jitte = idOf(s, "p1", "battlefield", "Hard-Won Jitte");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, bear).keywords).not.toContain("doubleStrike");
-      s = settle(activate(s, "p1", jitte, "Équiper", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", jitte, "Equip", { targets: { t: [bear] } }));
       expect(s.objects[jitte]?.attachedTo).toBe(bear);
       expect(chars(s, bear).keywords).toContain("doubleStrike");
       s = settle(attack(s, [bear]));
@@ -2145,11 +2145,11 @@ describe("lot A, rouge", () => {
       let s = scenario({ p1: { battlefield: ["Improvised Arsenal", "Fishing Pole", "Bear Cub", ...lands("Mountain", 6)] } });
       const arsenal = idOf(s, "p1", "battlefield", "Improvised Arsenal");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activate(s, "p1", arsenal, "Équiper", { targets: { t: [bear] } }));
+      s = settle(activate(s, "p1", arsenal, "Equip ⟨", { targets: { t: [bear] } }));
       expect(s.objects[arsenal]?.attachedTo).toBe(bear);
       // Deux artefacts : l'Arsenal et la Canne à pêche.
       expect(pt(s, bear)).toEqual([4, 2]);
-      s = settle(activate(s, "p1", arsenal, "copie"));
+      s = settle(activate(s, "p1", arsenal, "copy"));
       const copies = idsOf(s, "p1", "battlefield", "Improvised Arsenal");
       expect(copies).toHaveLength(2);
       expect(copies.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
@@ -2308,7 +2308,7 @@ describe("lot A, rouge", () => {
       // Une capacité activée : équiper la Canne à pêche ({2}).
       const t = scenario({ p1: { battlefield: ["Purple Dragon Punks", "Purple Dragon Punks", "Fishing Pole", "Bear Cub"] } });
       const pole = idOf(t, "p1", "battlefield", "Fishing Pole");
-      const after = settle(activate(t, "p1", pole, "Équiper", { targets: { t: [idOf(t, "p1", "battlefield", "Bear Cub")] } }));
+      const after = settle(activate(t, "p1", pole, "Equip", { targets: { t: [idOf(t, "p1", "battlefield", "Bear Cub")] } }));
       expect(after.objects[pole]?.attachedTo).toBe(idOf(t, "p1", "battlefield", "Bear Cub"));
     });
 
@@ -2499,7 +2499,7 @@ describe("lot A, rouge", () => {
       s = settle(cast(s, "p1", "Llanowar Elves"), (req) => {
         if (req.type !== "pick" || !req.labels) return undefined;
         asked = req.intent !== "triggerMode";
-        return Object.keys(req.labels).filter((k) => req.labels?.[k] === "La célérité");
+        return Object.keys(req.labels).filter((k) => req.labels?.[k] === "ctx:gains|Haste");
       });
       expect(asked).toBe(true);
       expect(chars(s, wingnut).keywords).toContain("haste");
@@ -2631,7 +2631,7 @@ describe("lot A, vert", () => {
       const frog = idOf(s, "p1", "battlefield", "Frog Butler");
       expect(chars(s, frog).keywords).toContain("deathtouch");
       expect(chars(s, frog).keywords).not.toContain("reach");
-      s = settle(activate(s, "p1", frog, "portée"));
+      s = settle(activate(s, "p1", frog, "reach"));
       expect(chars(s, frog).keywords).toContain("reach");
       s = tapFor(s, "p1", frog, "U");
       expect(s.players.p1?.manaPool.U).toBe(1);
@@ -2657,7 +2657,7 @@ describe("lot A, vert", () => {
       const pizza = idOf(s, "p1", "battlefield", "Guac & Marshmallow Pizza");
       expect(chars(s, pizza).subtypes).toContain("Food");
       // Il ne reste que deux Forêts : la capacité de Nourriture.
-      s = settle(activate(s, "p1", pizza, "PV"));
+      s = settle(activate(s, "p1", pizza, "life"));
       expect(s.players.p1?.life).toBe(23);
       expect(idsOf(s, "p1", "graveyard", "Guac & Marshmallow Pizza")).toHaveLength(1);
     });
@@ -2668,7 +2668,7 @@ describe("lot A, vert", () => {
           p1: { battlefield: ["Michelangelo, Game Master", "Guac & Marshmallow Pizza", ...lands("Forest", 2)] },
         });
         const mikey = idOf(s, "p1", "battlefield", "Michelangelo, Game Master");
-        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Guac & Marshmallow Pizza"), "PV"));
+        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Guac & Marshmallow Pizza"), "life"));
         s = toNextTurn(s);
         expect(plusOnes(s, mikey)).toBe(1);
         expect(pt(s, mikey)).toEqual([4, 4]);
@@ -3330,15 +3330,15 @@ describe("lot A, multicolores", () => {
           p1: { battlefield: ["Ice Cream Kitty", "Bear Cub", ...lands("Forest", 2)], library: ["Opt", "Island"] },
         });
         const kitty = idOf(s, "p1", "battlefield", "Ice Cream Kitty");
-        expect(() => activate(s, "p1", kitty, "piochez", { sacrifice: [kitty] })).toThrow();
-        s = settle(activate(s, "p1", kitty, "piochez", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+        expect(() => activate(s, "p1", kitty, "draw", { sacrifice: [kitty] })).toThrow();
+        s = settle(activate(s, "p1", kitty, "draw", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
         expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
         expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
       });
 
       it("{2}, {T}, sacrifiez-le : vous gagnez 3 PV", () => {
         let s = scenario({ p1: { battlefield: ["Ice Cream Kitty", ...lands("Forest", 2)] } });
-        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Ice Cream Kitty"), "3 PV"));
+        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Ice Cream Kitty"), "3 life"));
         expect(s.players.p1?.life).toBe(23);
         expect(idsOf(s, "p1", "graveyard", "Ice Cream Kitty")).toHaveLength(1);
       });
@@ -3625,7 +3625,7 @@ describe("lot A, multicolores", () => {
 
       it("{10}, {T}, sacrifiez-la : vous gagnez 15 PV", () => {
         let s = scenario({ p1: { battlefield: ["Pizza Face, Gastromancer", ...lands("Swamp", 10)] } });
-        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Pizza Face, Gastromancer"), "15 PV"));
+        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Pizza Face, Gastromancer"), "15 life"));
         expect(s.players.p1?.life).toBe(35);
       });
     });
@@ -3742,8 +3742,8 @@ describe("lot A, incolores et terrains", () => {
         const dome = idOf(s, "p1", "battlefield", "Chrome Dome");
         const blimp = idOf(s, "p1", "battlefield", "Turtle Blimp");
         // « Un autre artefact » : pas lui-même.
-        expect(() => activate(s, "p1", dome, "jeton copie", { targets: { t: [dome] } })).toThrow();
-        s = settle(activate(s, "p1", dome, "jeton copie", { targets: { t: [blimp] } }));
+        expect(() => activate(s, "p1", dome, "token copy", { targets: { t: [dome] } })).toThrow();
+        s = settle(activate(s, "p1", dome, "token copy", { targets: { t: [blimp] } }));
         const copies = idsOf(s, "p1", "battlefield", "Turtle Blimp");
         expect(copies).toHaveLength(2);
         const token = copies.find((id) => id !== blimp) as string;
@@ -3777,7 +3777,7 @@ describe("lot A, incolores et terrains", () => {
         });
         const pizza = idOf(s, "p1", "battlefield", "Everything Pizza");
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-        s = settle(activate(s, "p1", pizza, "défausse", { targets: { p: ["p1"], d: ["p2"], c: [bear] } }));
+        s = settle(activate(s, "p1", pizza, "discard", { targets: { p: ["p1"], d: ["p2"], c: [bear] } }));
         expect(s.players.p1?.life).toBe(23);
         expect(s.players.p1?.hand).toHaveLength(1);
         expect(s.players.p2?.hand).toHaveLength(0);
@@ -3832,7 +3832,7 @@ describe("lot A, incolores et terrains", () => {
         s = settle(cast(s, "p1", "Omni-Cheese Pizza"));
         expect(s.players.p1?.hand).toHaveLength(1);
         const pizza = idOf(s, "p1", "battlefield", "Omni-Cheese Pizza");
-        s = settle(activate(s, "p1", pizza, "3 PV"));
+        s = settle(activate(s, "p1", pizza, "3 life"));
         expect(s.players.p1?.life).toBe(23);
         expect(idsOf(s, "p1", "graveyard", "Omni-Cheese Pizza")).toHaveLength(1);
       });
@@ -3840,7 +3840,7 @@ describe("lot A, incolores et terrains", () => {
       it("{1}, {T}, sacrifice : un mana de n'importe quelle couleur, sans passer par la pile", () => {
         let s = scenario({ p1: { battlefield: ["Omni-Cheese Pizza", "Island"] } });
         const pizza = idOf(s, "p1", "battlefield", "Omni-Cheese Pizza");
-        s = activate(s, "p1", pizza, "n'importe quelle couleur");
+        s = activate(s, "p1", pizza, "any color");
         expect(s.stack).toHaveLength(0);
         if (s.pending?.kind === "choice") s = act(s, "p1", { type: "choose", values: ["R"] });
         expect(s.players.p1?.manaPool.R).toBe(1);
@@ -3866,13 +3866,13 @@ describe("lot A, incolores et terrains", () => {
       it("{T}, sacrifiez un autre artefact : piochez une carte et un marqueur +1/+1", () => {
         let s = scenario({ p1: { battlefield: ["Technodrome", "Omni-Cheese Pizza"], library: ["Opt", "Opt"] } });
         const drome = idOf(s, "p1", "battlefield", "Technodrome");
-        s = settle(activate(s, "p1", drome, "Piochez", { sacrifice: [idOf(s, "p1", "battlefield", "Omni-Cheese Pizza")] }));
+        s = settle(activate(s, "p1", drome, "Draw a card", { sacrifice: [idOf(s, "p1", "battlefield", "Omni-Cheese Pizza")] }));
         expect(s.players.p1?.hand).toHaveLength(1);
         expect(s.objects[drome]?.counters["+1/+1"]).toBe(1);
         expect(idsOf(s, "p1", "graveyard", "Omni-Cheese Pizza")).toHaveLength(1);
         // Sans autre artefact : la capacité ne s'active pas (il ne peut pas se sacrifier lui-même).
         const t = scenario({ p1: { battlefield: ["Technodrome"] } });
-        expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Technodrome"), "Piochez")).toBe(false);
+        expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Technodrome"), "Draw a card")).toBe(false);
       });
     });
 
@@ -3890,7 +3890,7 @@ describe("lot A, incolores et terrains", () => {
     describe("Turtle Van", () => {
       const crewAndAttack = (s: S, crew: string) => {
         const van = idOf(s, "p1", "battlefield", "Turtle Van");
-        let cur = settle(activate(s, "p1", van, "Équipage", { tap: [crew] }));
+        let cur = settle(activate(s, "p1", van, "Crew", { tap: [crew] }));
         expect(chars(cur, van).types).toContain("Creature");
         cur = attack(cur, [van]);
         return settle(cur);
@@ -3918,7 +3918,7 @@ describe("lot A, incolores et terrains", () => {
         const van = idOf(s, "p1", "battlefield", "Turtle Van");
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
         const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
-        s = settle(activate(s, "p1", van, "Équipage", { tap: [bear, elves] }));
+        s = settle(activate(s, "p1", van, "Crew", { tap: [bear, elves] }));
         s = attack(s, [van]);
         let asked: ChoiceRequest | undefined;
         for (let i = 0; i < 20 && !s.stack.some((x) => x.kind === "ability"); i++) {
@@ -3951,7 +3951,7 @@ describe("lot A, incolores et terrains", () => {
       it("{T}, retirez deux marqueurs charge : {C}{C} ; pas sans les marqueurs", () => {
         let s = scenario({ p1: { battlefield: [{ name: "Weather Maker", counters: { charge: 2 } }] } });
         const maker = idOf(s, "p1", "battlefield", "Weather Maker");
-        expect(canActivate(s, "p1", maker, "3 blessures")).toBe(false);
+        expect(canActivate(s, "p1", maker, "3 damage")).toBe(false);
         s = activate(s, "p1", maker, "{C}{C}");
         expect(s.stack).toHaveLength(0);
         expect(s.players.p1?.manaPool.C).toBe(2);
@@ -3961,7 +3961,7 @@ describe("lot A, incolores et terrains", () => {
       it("{T}, retirez trois marqueurs charge : 3 blessures sur n'importe quelle cible", () => {
         let s = scenario({ p1: { battlefield: [{ name: "Weather Maker", counters: { charge: 3 } }] } });
         const maker = idOf(s, "p1", "battlefield", "Weather Maker");
-        s = settle(activate(s, "p1", maker, "3 blessures", { targets: { t: ["p2"] } }));
+        s = settle(activate(s, "p1", maker, "3 damage", { targets: { t: ["p2"] } }));
         expect(s.players.p2?.life).toBe(17);
         expect(s.objects[maker]?.counters.charge ?? 0).toBe(0);
       });
@@ -3993,8 +3993,8 @@ describe("lot A, incolores et terrains", () => {
         const farm = idOf(s, "p1", "battlefield", "Northampton Farm");
         expect(manaColors(s, farm)).toEqual(["C"]);
         const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-        expect(() => activate(s, "p1", farm, "Exilez", { targets: { t: [angel] } })).toThrow();
-        const after = settle(activate(s, "p1", farm, "Exilez", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
+        expect(() => activate(s, "p1", farm, "Exile", { targets: { t: [angel] } })).toThrow();
+        const after = settle(activate(s, "p1", farm, "Exile", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
         expect(inExile(after, "Bear Cub")).toHaveLength(1);
       });
 
@@ -4009,22 +4009,22 @@ describe("lot A, incolores et terrains", () => {
         const angel = idOf(s, "p3", "battlefield", "Serra Angel");
         steal(s, bear, "p3");
         steal(s, angel, "p2");
-        expect(() => activate(s, "p1", farm, "Exilez", { targets: { t: [angel] } })).toThrow();
-        const after = settle(activate(s, "p1", farm, "Exilez", { targets: { t: [bear] } }));
+        expect(() => activate(s, "p1", farm, "Exile", { targets: { t: [angel] } })).toThrow();
+        const after = settle(activate(s, "p1", farm, "Exile", { targets: { t: [bear] } }));
         expect(inExile(after, "Bear Cub")).toHaveLength(1);
       });
 
       it("{2}, {T}, sacrifice : une créature exilée revient sous votre contrôle, les autres cartes en main", () => {
         let s = scenario({ p1: { battlefield: ["Northampton Farm", ...lands("Wastes", 4), "Bear Cub", "Llanowar Elves"] } });
         const farm = idOf(s, "p1", "battlefield", "Northampton Farm");
-        s = settle(activate(s, "p1", farm, "Exilez", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
+        s = settle(activate(s, "p1", farm, "Exile", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
         // Le terrain se dégage au tour suivant de p1.
         s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
-        s = settle(activate(s, "p1", farm, "Exilez", { targets: { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] } }));
+        s = settle(activate(s, "p1", farm, "Exile", { targets: { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] } }));
         expect(inExile(s, "Bear Cub")).toHaveLength(1);
         expect(inExile(s, "Llanowar Elves")).toHaveLength(1);
         s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 5);
-        s = settle(activate(s, "p1", farm, "revient"), (req, _player, cur) => pickNamed(cur, req, "Llanowar Elves"));
+        s = settle(activate(s, "p1", farm, "returns"), (req, _player, cur) => pickNamed(cur, req, "Llanowar Elves"));
         expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
         expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
         expect(inExile(s, "Bear Cub")).toHaveLength(0);
@@ -4044,8 +4044,10 @@ describe("lot A, incolores et terrains", () => {
         let s = scenario({ p1: { battlefield: ["Turtle Lair", ...lands("Wastes", 3), TURTLE, "Bear Cub"] } });
         const lair = idOf(s, "p1", "battlefield", "Turtle Lair");
         const turtle = idOf(s, "p1", "battlefield", "Test Turtle");
-        expect(() => activate(s, "p1", lair, "bloqué", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } })).toThrow();
-        s = settle(activate(s, "p1", lair, "bloqué", { targets: { t: [turtle] } }));
+        expect(() =>
+          activate(s, "p1", lair, "blocked", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }),
+        ).toThrow();
+        s = settle(activate(s, "p1", lair, "blocked", { targets: { t: [turtle] } }));
         expect(chars(s, turtle).keywords).toContain("unblockable");
       });
     });

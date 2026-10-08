@@ -1,4 +1,4 @@
-/** The Lost Caverns of Ixalan — cartes rouges. */
+/** The Lost Caverns of Ixalan — red cards. */
 import {
   ARTIFACT_OR_CREATURE_YOURS,
   activated,
@@ -44,7 +44,7 @@ export const RED: Record<string, CardScript> = {
             fx.createTokens(TREASURE),
           ),
         ],
-        { label: "Exilez deux cartes, jouables ce tour-ci" },
+        { label: "Exile two cards, playable this turn" },
       ),
     ],
   },
@@ -61,17 +61,17 @@ export const RED: Record<string, CardScript> = {
       triggeredModal(
         when.attacks({ types: ["Creature"], subtype: "Pirate", controller: "you" }),
         [
-          mode("Trésor", [], [fx.createTokens(TREASURE)]),
-          mode("Une créature ne peut pas bloquer", [target.creature()], [fx.pump(ref.target(), 0, 0, ["cantBlock"])]),
-          mode("Exilez la carte du dessus, jouable ce tour-ci", [], [fx.impulse(1)]),
+          mode("Treasure", [], [fx.createTokens(TREASURE)]),
+          mode("A creature can't block", [target.creature()], [fx.pump(ref.target(), 0, 0, ["cantBlock"])]),
+          mode("Exile the top card, playable this turn", [], [fx.impulse(1)]),
         ],
-        { uniqueModes: "turn", label: "Un Pirate attaque" },
+        { uniqueModes: "turn", label: "A Pirate attacks" },
       ),
     ],
   },
   "Burning Sun Cavalry": {
     abilities: [when.attacksSelf, when.blocks("self")].map((t) =>
-      triggered(t, [fx.pump(ref.self, 1, 1)], { condition: cond.controls(DINOSAUR_YOU), label: "+1/+1 (Dinosaure)" }),
+      triggered(t, [fx.pump(ref.self, 1, 1)], { condition: cond.controls(DINOSAUR_YOU), label: "+1/+1 (Dinosaur)" }),
     ),
   },
   "Calamitous Cave-In": {
@@ -84,9 +84,9 @@ export const RED: Record<string, CardScript> = {
         {
           power: 1,
           toughness: 1,
-          addAbilities: [triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "Trésor" })],
+          addAbilities: [triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "Treasure" })],
         },
-        { label: "+1/+1 et un Trésor en attaquant" },
+        { label: "+1/+1 and a Treasure when attacking" },
       ),
     ],
   },
@@ -105,7 +105,7 @@ export const RED: Record<string, CardScript> = {
         [fx.pump(ref.target(), 1, 0, ["haste"]), ...fx.when(cond.controls({ types: ["Artifact"] }, 4), fx.transform())],
         {
           targets: [target.optional(target.creature("t", { controller: "you" }))],
-          label: "+1/+0 et célérité ; transformation (quatre artefacts)",
+          label: "+1/+0 and haste; transform (four artifacts)",
         },
       ),
     ],
@@ -119,7 +119,7 @@ export const RED: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), amount.count(ARTIFACT_YOU), 0, ["haste"])],
-        label: "+X/+0 et célérité",
+        label: "+X/+0 and haste",
       }),
     ],
   },
@@ -133,8 +133,8 @@ export const RED: Record<string, CardScript> = {
           addKeywords: ["trample"],
           addAbilities: [
             triggered(when.combatDamageToPlayer, [fx.destroy(ref.target("a"))], {
-              targets: [target.of(ref.eventPlayer, targetObj("a", { types: ["Artifact"] }, "artefact de ce joueur"))],
-              label: "Détruisez un artefact",
+              targets: [target.of(ref.eventPlayer, targetObj("a", { types: ["Artifact"] }, "artifact that player controls"))],
+              label: "Destroy target artifact",
             }),
           ],
         }),
@@ -146,7 +146,7 @@ export const RED: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, addKeywords: ["haste"] },
-        { condition: cond.controls({ types: ["Artifact"] }), label: "+1/+0 et célérité (artefact)" },
+        { condition: cond.controls({ types: ["Artifact"] }), label: "+1/+0 and haste (artifact)" },
       ),
     ],
   },
@@ -167,7 +167,7 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { other: true })],
         effects: [fx.pump(ref.target(), 0, 0, ["haste"])],
-        label: "Célérité",
+        label: "Haste",
       }),
     ],
   },
@@ -185,35 +185,35 @@ export const RED: Record<string, CardScript> = {
             ),
           ),
         ],
-        { label: "Défaussez : marqueur +1/+1 et piétinement" },
+        { label: "Discard: +1/+1 counter and trample" },
       ),
-      triggered(when.discardBatch("you"), [fx.impulse(1, "yourNextTurn")], { label: "Exilez la carte du dessus" }),
+      triggered(when.discardBatch("you"), [fx.impulse(1, "yourNextTurn")], { label: "Exile the top card" }),
     ],
   },
   "Magmatic Galleon": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(5, ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "5 blessures",
+        label: "5 damage",
       }),
       triggered(when.excessDamage({ types: ["Creature"], controller: "opponent" }, true), [fx.createTokens(TREASURE)], {
         batched: true,
-        label: "Blessures en excès : un Trésor",
+        label: "Excess damage: a Treasure",
       }),
     ],
   },
   "Panicked Altisaur": {
-    abilities: [activated({ tap: true, effects: [fx.damage(2, ref.eachOpponent)], label: "2 blessures à chaque adversaire" })],
+    abilities: [activated({ tap: true, effects: [fx.damage(2, ref.eachOpponent)], label: "2 damage to each opponent" })],
   },
-  "Plundering Pirate": { abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Trésor" })] },
+  "Plundering Pirate": { abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Treasure" })] },
   "Poetic Ingenuity": {
     abilities: [
       triggered(when.attackWith(1, DINOSAUR_YOU), [fx.createTokens(TREASURE, amount.eventAmount)], {
-        label: "Un Trésor par Dinosaure attaquant",
+        label: "A Treasure for each attacking Dinosaur",
       }),
       triggered(when.castSpell("you", { types: ["Artifact"] }), [fx.createTokens(DINOSAUR_3_1)], {
         oncePerTurn: true,
-        label: "Dinosaure 3/1",
+        label: "3/1 Dinosaur",
       }),
     ],
   },
@@ -221,7 +221,7 @@ export const RED: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.damage(amount.count({ types: ["Land"], controller: "you" }), ref.target())]),
   },
   "Scytheclaw Raptor": {
-    abilities: [triggered(when.castSpellOffTurn("any"), [fx.damage(4, ref.eventPlayer)], { label: "4 blessures" })],
+    abilities: [triggered(when.castSpellOffTurn("any"), [fx.damage(4, ref.eventPlayer)], { label: "4 damage" })],
   },
   "Seismic Monstrosaur": {
     abilities: [
@@ -229,7 +229,7 @@ export const RED: Record<string, CardScript> = {
         mana: "{2}{R}",
         sacrificeOther: { filter: { types: ["Land"] } },
         effects: [fx.draw(1)],
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
     ],
   },
@@ -240,13 +240,13 @@ export const RED: Record<string, CardScript> = {
         when.attacks({ attached: "host" }),
         [
           ...fx.may(
-            "Sacrifier Sunfire Torch ?",
+            "Sacrifice Sunfire Torch?",
             fx.sacrificeIt(ref.self),
-            // La créature attaquante, liée à la capacité réflexive (l'objet de l'événement n'y est plus connu).
+            // The attacking creature, linked to the reflexive ability (the object of the event is no longer known there).
             fx.reflexive([target.any()], [fx.damage(2, ref.target(), ref.target("a"))], { a: ref.eventObject }),
           ),
         ],
-        { label: "Sacrifiez-la : 2 blessures" },
+        { label: "Sacrifice it: 2 damage" },
       ),
     ],
   },
@@ -256,7 +256,7 @@ export const RED: Record<string, CardScript> = {
         tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 2, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.damage(1, ref.eachOpponent)],
-        label: "1 blessure à chaque adversaire",
+        label: "1 damage to each opponent",
       }),
     ],
   },
@@ -269,7 +269,7 @@ export const RED: Record<string, CardScript> = {
   "Volatile Wanderglyph": {
     abilities: [
       triggered(when.tapsSelf, [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))], {
-        label: "Défaussez, puis piochez",
+        label: "Discard, then draw a card",
       }),
     ],
   },
@@ -277,9 +277,9 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        // « défaussez autant de cartes que vous voulez » : de zéro à toute votre main.
+        // "discard any number of cards": from zero to your whole hand.
         [fx.discard(amount.cardsIn("hand"), ref.you, { optional: true, store: "d" }), fx.draw(amount.plus(amount.v("d"), 1))],
-        { label: "Défaussez autant de cartes que voulu, piochez-en autant plus une" },
+        { label: "Discard any number of cards, draw that many plus one" },
       ),
       triggered(
         when.yourEndStep,
@@ -287,7 +287,7 @@ export const RED: Record<string, CardScript> = {
           fx.counters(ref.self, "bore", 1),
           ...fx.when(cond.counterAtLeast("bore", 3), fx.removeCounters(ref.self, 3, "bore"), fx.transform()),
         ],
-        { condition: cond.descended, label: "Descente — marqueur de forage" },
+        { condition: cond.descended, label: "Descend — bore counter" },
       ),
     ],
   },
@@ -297,7 +297,7 @@ export const RED: Record<string, CardScript> = {
       triggered(
         { on: "castSpell", by: "you", filter: { permanent: true }, usingManaFromSelf: true },
         [fx.discover(amount.manaValueOf(ref.eventObject))],
-        { label: "Découverte X" },
+        { label: "Discover X" },
       ),
     ],
   },
@@ -305,32 +305,30 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: cond.descended,
-        label: "Descente — marqueur +1/+1",
+        label: "Descend — +1/+1 counter",
       }),
     ],
   },
   "Curator of Sun's Creation": {
-    abilities: [
-      triggered(when.discover, [fx.discover(amount.eventAmount)], { oncePerTurn: true, label: "Découvrez de nouveau" }),
-    ],
+    abilities: [triggered(when.discover, [fx.discover(amount.eventAmount)], { oncePerTurn: true, label: "Discover again" })],
   },
   "Daring Discovery": {
     spell: spell([target.upTo(3, target.creature())], [fx.pump(ref.target(), 0, 0, ["cantBlock"]), fx.discover(4)]),
   },
   "Enterprising Scallywag": {
     abilities: [
-      triggered(when.yourEndStep, [fx.createTokens(TREASURE)], { condition: cond.descended, label: "Descente — Trésor" }),
+      triggered(when.yourEndStep, [fx.createTokens(TREASURE)], { condition: cond.descended, label: "Descend — Treasure" }),
     ],
   },
   "Etali's Favor": {
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
-      triggered(when.entersSelf, [fx.discover(3)], { label: "Découverte 3" }),
-      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["trample"] }, { label: "+1/+1 et piétinement" }),
+      triggered(when.entersSelf, [fx.discover(3)], { label: "Discover 3" }),
+      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["trample"] }, { label: "+1/+1 and trample" }),
     ],
   },
   "Geological Appraiser": {
-    abilities: [triggered(when.entersSelf, [fx.discover(3)], { condition: cond.wasCast, label: "Découverte 3" })],
+    abilities: [triggered(when.entersSelf, [fx.discover(3)], { condition: cond.wasCast, label: "Discover 3" })],
   },
   "Hit the Mother Lode": {
     spell: spell(
@@ -346,14 +344,14 @@ export const RED: Record<string, CardScript> = {
   },
   "Trumpeting Carnosaur": {
     abilities: [
-      triggered(when.entersSelf, [fx.discover(5)], { label: "Découverte 5" }),
+      triggered(when.entersSelf, [fx.discover(5)], { label: "Discover 5" }),
       activated({
         mana: "{2}{R}",
         discardSelf: true,
         fromHand: true,
         targets: [target.creatureOrPlaneswalker()],
         effects: [fx.damage(3, ref.target())],
-        label: "Défaussez-la : 3 blessures",
+        label: "Discard it: 3 damage",
       }),
     ],
   },
@@ -363,12 +361,12 @@ export const RED: Record<string, CardScript> = {
         targetObj(
           "t",
           { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], minManaValue: 1 },
-          "artefact ou créature de VM 1 ou plus",
+          "artifact or creature with MV 1 or greater",
         ),
       ],
       [
         fx.moveTo(ref.target(), { to: "libraryTop", shuffle: true }, { name: "z" }),
-        // Le propriétaire de la carte mélangée découvre (fixé au premier passage de la découverte).
+        // The owner of the shuffled card discovers (fixed on the first pass of the discover).
         fx.discover(amount.manaValueOf(ref.stored("z")), { who: ref.ownerOf(ref.stored("z")) }),
       ],
     ),

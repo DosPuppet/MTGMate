@@ -1,15 +1,17 @@
 /**
- * Conversion des données Scryfall (data/*.json) en définitions de cartes du moteur.
+ * Conversion of the Scryfall data (data/*.json) into engine card definitions.
  */
 import {
   type CardDef,
   type CardScript,
   type CardType,
   type Color,
+  cardRef,
   dsl,
   type Effect,
   type Keyword,
   type ManaCost,
+  msg,
   type ObjectFilter,
   parseManaCost,
   type SpellDef,
@@ -33,7 +35,7 @@ export interface RawCard {
   image: string;
   artCrop: string;
   legalities?: CardDef["legalities"];
-  /** Disposition « prepare » : le sort attaché à la créature. */
+  /** "prepare" layout: the spell attached to the creature. */
   prepare?: {
     name: string;
     manaCost: string;
@@ -42,15 +44,15 @@ export interface RawCard {
     fr?: { name?: string; typeLine?: string; text?: string };
   };
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
-  /** Assemblage : les deux parties et la carte assemblée. */
+  /** Meld: the two parts and the melded card. */
   meld?: { parts: string[]; result?: string };
-  /** Disposition Scryfall quand elle n'est pas « normal » (saga, class, case, adventure, transform…). */
+  /** Scryfall layout when it is not "normal" (saga, class, case, adventure, transform…). */
   layout?: string;
-  /** Cartes à plusieurs faces (aventure, scindée, recto-verso, assemblage) : toutes les faces. */
+  /** Multi-faced cards (adventure, split, double-faced, meld): every face. */
   faces?: RawFace[];
-  /** Pseudo-ensemble importé par nom (PLAN-E) : ensemble Scryfall de l'impression retenue (`CardDef.origin`). */
+  /** Pseudo-set imported by name (PLAN-E): Scryfall set of the chosen printing (`CardDef.origin`). */
   origin?: string;
-  /** Pseudo-ensemble importé par nom : identité de couleur selon Scryfall, comparée à l'identité calculée (test). */
+  /** Pseudo-set imported by name: color identity according to Scryfall, compared with the computed identity (test). */
   colorIdentity?: string[];
 }
 
@@ -125,35 +127,35 @@ function stripReminder(text: string): string {
   return text.replace(/\([^)]*\)/g, "").trim();
 }
 
-/** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
+/** Ward: "Ward {2}", "Ward—Pay 7 life." or "Ward—{3}, Pay 3 life." */
 const WARD =
   /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (an?|two|three|four) (nonland permanents?|permanents?|creatures?)\.?|—collect evidence (\d+)\.?|—waterbend ((?:\{[^}]+\})+)\.?)/i;
 
-/** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
-/** « Equip {2} » ou, avec un nom de capacité, « Gae Bolg — Equip {4} ». */
+/** "Equip {3}{W}" (702.6): activated ability at sorcery speed, targets a creature you control. */
+/** "Equip {2}" or, with an ability name, "Gae Bolg — Equip {4}". */
 export function parseEquip(text: string): string | undefined {
   return /^(?:[^\n—]+ — )?Equip (?:worthy )?((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1];
 }
 
 /**
- * Variantes d'Équiper lues dans le texte : « Equip worthy {1} » (Marvel Super Heroes : créature légendaire non-Méchant
- * rouge et/ou blanche) ; « coûte {1} de moins par couleur de la créature ciblée » (Dragonfire Blade).
+ * Equip variants read from the text: "Equip worthy {1}" (Marvel Super Heroes: red and/or white legendary non-Villain
+ * creature); "costs {1} less to activate for each color of the creature it targets" (Dragonfire Blade).
  */
 function equipVariant(text: string): EquipVariant {
   return {
     worthy: /^Equip worthy /m.test(text) || undefined,
-    // « Equip commander {2} » (Commander) : une capacité d'Équiper de plus, qui ne cible qu'un commandant.
+    // "Equip commander {2}" (Commander): one more equip ability, which targets only a commander.
     commander: /^Equip commander ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1],
-    // « Equip legendary creature {1} » (Brotherhood Regalia, Excalibur) : qui ne cible qu'une créature légendaire.
+    // "Equip legendary creature {1}" (Brotherhood Regalia, Excalibur): which targets only a legendary creature.
     legendary: /^Equip legendary creature ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1],
     byColors: /costs \{1\} less to activate for each color of the creature it targets/.test(text) || undefined,
   };
 }
 
-/** Variantes d'Équiper : « worthy », coût réduit par couleur, et capacités restreintes (commandant, créature légendaire). */
+/** Equip variants: "worthy", cost reduced per color, and restricted abilities (commander, legendary creature). */
 type EquipVariant = { worthy?: boolean; byColors?: boolean; commander?: string; legendary?: string };
 
-/** « Digne » (worthy) : créature légendaire que vous contrôlez, non-Méchant, rouge et/ou blanche. */
+/** "Worthy": legendary creature you control, non-Villain, red and/or white. */
 const WORTHY: ObjectFilter = {
   types: ["Creature"],
   controller: "you",
@@ -162,10 +164,10 @@ const WORTHY: ObjectFilter = {
   colors: ["R", "W"],
 };
 
-/** Héros : créature incolore 1/1 (Job select). */
+/** Hero: 1/1 colorless creature (Job select). */
 const HERO_TOKEN = { name: "Hero", colors: [], types: ["Creature" as const], subtypes: ["Hero"], power: 1, toughness: 1 };
 
-/** Job select : « quand cet Équipement arrive, créez un jeton Héros 1/1, puis attachez-lui cet Équipement ». */
+/** Job select: "when this Equipment enters, create a 1/1 Hero token, then attach this Equipment to it". */
 function jobSelectAbility(keywords: string[]): CardDef["abilities"] {
   if (!keywords.some((k) => k.toLowerCase() === "job select")) return [];
   return [
@@ -177,13 +179,13 @@ function jobSelectAbility(keywords: string[]): CardDef["abilities"] {
         { op: "createTokens", token: HERO_TOKEN, count: 1, store: "hero" },
         { op: "attach", what: { kind: "self" }, to: { kind: "stored", name: "hero" } },
       ],
-      label: "Job select : Héros 1/1 équipé",
+      label: msg("Job select: equipped 1/1 Hero"),
     },
   ];
 }
 
 export function parseWard(text: string): CardDef["ward"] {
-  // « Ward—Discard a card or pay {2}. » (Titania) ; « Ward—Get five poison counters. » (The Serpent Society).
+  // "Ward—Discard a card or pay {2}." (Titania); "Ward—Get five poison counters." (The Serpent Society).
   const orPay = /\bward—discard a card or pay ((?:\{[^}]+\})+)/i.exec(stripReminder(text));
   if (orPay) return { discard: true, orMana: parseManaCost(orPay[1] as string) };
   const poison = /\bward—get (one|two|three|four|five|\d+) poison counters?/i.exec(stripReminder(text));
@@ -194,9 +196,9 @@ export function parseWard(text: string): CardDef["ward"] {
   const m = WARD.exec(stripReminder(text));
   if (!m) return undefined;
   if (m[1]) return { mana: parseManaCost(m[1]) };
-  // « Ward—Sacrifice three permanents. » (Emrakul, the Exigent Doom)
-  // « Ward—Sacrifice three nonland permanents. » (Valgavoth, Terror Eater)
-  // « Ward—Sacrifice a creature. » (Vein Ripper)
+  // "Ward—Sacrifice three permanents." (Emrakul, the Exigent Doom)
+  // "Ward—Sacrifice three nonland permanents." (Valgavoth, Terror Eater)
+  // "Ward—Sacrifice a creature." (Vein Ripper)
   if (m[5]) {
     const n = ({ a: 1, an: 1, two: 2, three: 3, four: 4 } as Record<string, number>)[m[5].toLowerCase()];
     const kind = (m[6] ?? "").toLowerCase();
@@ -207,22 +209,22 @@ export function parseWard(text: string): CardDef["ward"] {
         : undefined;
     return { sacrifice: n, ...(filter ? { sacrificeFilter: filter } : {}) };
   }
-  // « Ward—Collect evidence 4. » (Axebane Ferox)
+  // "Ward—Collect evidence 4." (Axebane Ferox)
   if (m[7]) return { collectEvidence: Number(m[7]) };
-  // « Ward—Waterbend {4}. » (The Unagi of Kyoshi Island)
+  // "Ward—Waterbend {4}." (The Unagi of Kyoshi Island)
   if (m[8]) return { mana: parseManaCost(m[8]), waterbend: true };
-  // « Ward—Discard a card [at random]. » (Gideon the Oathless, Alpharael, Stonechosen)
+  // "Ward—Discard a card [at random]." (Gideon the Oathless, Alpharael, Stonechosen)
   if (!m[3]) return m[4] ? { discard: true, discardRandom: true } : { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
 }
 
-/** Plot (702.170) : « Plot {1}{W} ». */
+/** Plot (702.170): "Plot {1}{W}". */
 export function parsePlot(text: string): ManaCost | undefined {
   const m = /^Plot ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
   return m ? parseManaCost(m[1] as string) : undefined;
 }
 
-/** Action spéciale de plot : depuis la main, au moment d'un rituel, la carte est exilée et devient complotée. */
+/** Plot special action: from hand, at sorcery speed, the card is exiled and becomes plotted. */
 function plotAbility(text: string): CardDef["abilities"] {
   const cost = parsePlot(text);
   if (!cost) return [];
@@ -235,18 +237,18 @@ function plotAbility(text: string): CardDef["abilities"] {
       fromHand: true,
       sorcerySpeed: true,
       specialAction: true,
-      label: "Complot",
+      label: msg("Plot"),
     },
   ];
 }
 
-/** Présage (702.143) : « Foretell {2}{R} ». */
+/** Foretell (702.143): "Foretell {2}{R}". */
 export function parseForetell(text: string): ManaCost | undefined {
   const m = /^Foretell ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
   return m ? parseManaCost(m[1] as string) : undefined;
 }
 
-/** Action spéciale de présage : pendant votre tour, payez {2} et exilez la carte de votre main. */
+/** Foretell special action: during your turn, pay {2} and exile the card from your hand. */
 function foretellAbility(text: string): CardDef["abilities"] {
   if (!parseForetell(text)) return [];
   return [
@@ -258,20 +260,23 @@ function foretellAbility(text: string): CardDef["abilities"] {
       fromHand: true,
       specialAction: true,
       activationCondition: dsl.cond.yourTurn,
-      label: "Présage",
+      label: msg("Foretell"),
     },
   ];
 }
 
-/** Entretien cumulatif (702.24) : « Cumulative upkeep {1} », « Cumulative upkeep—Pay 1 life. » */
+/** Cumulative upkeep (702.24): "Cumulative upkeep {1}", "Cumulative upkeep—Pay 1 life." */
 function cumulativeUpkeep(text: string): CardDef["abilities"] {
   const m = /^Cumulative upkeep(?: ((?:\{[^}]+\})+)|—Pay (\d+) life\.?)[ \t]*$/m.exec(stripReminder(text));
   if (!m) return [];
   const cost = m[1] ? { mana: parseManaCost(m[1]) } : { life: Number(m[2]) };
-  return [dsl.cumulativeUpkeepAbility(cost, `Entretien cumulatif ${m[1] ?? `— ${m[2]} PV`}`)];
+  const label = m[1]
+    ? msg("Cumulative upkeep {cost}", { cost: m[1] })
+    : msg("Cumulative upkeep—pay {n} life", { n: Number(m[2]) });
+  return [dsl.cumulativeUpkeepAbility(cost, label)];
 }
 
-/** Dévorer (702.82) : « Devour 2 », « Devour land 3 », « Devour artifact 1 ». */
+/** Devour (702.82): "Devour 2", "Devour land 3", "Devour artifact 1". */
 export function parseDevour(text: string): Effect | undefined {
   const m = /^Devour(?: (land|artifact))? (\d+)/m.exec(stripReminder(text));
   if (!m) return undefined;
@@ -279,14 +284,14 @@ export function parseDevour(text: string): Effect | undefined {
   return dsl.fx.devour({ types: [type] }, Number(m[2]));
 }
 
-/** « En arrivant » (614.1c, 614.12) : les effets du script, et le dévorer lu dans le texte (sauf s'il est écrit). */
+/** "As it enters" (614.1c, 614.12): the script's effects, and the devour read from the text (unless it is scripted). */
 function asEntersOf(script: Effect[] | undefined, text: string): Effect[] | undefined {
   const devour = script?.some((e) => e.op === "devour") ? undefined : parseDevour(text);
   const out = [...(devour ? [devour] : []), ...(script ?? [])];
   return out.length ? out : undefined;
 }
 
-/** Distorsion (702.185) : « Warp {1}{W} » ou « Warp—{B}, Pay 2 life. » ; « …depuis votre cimetière avec sa distorsion ». */
+/** Warp (702.185): "Warp {1}{W}" or "Warp—{B}, Pay 2 life."; "…from your graveyard using its warp ability". */
 export function parseWarp(text: string): CardDef["warp"] {
   const t = stripReminder(text);
   const m = /^Warp(?: |—)((?:\{[^}]+\})+)(?:, [Pp]ay (\d+) life)?/m.exec(t);
@@ -298,8 +303,8 @@ export function parseWarp(text: string): CardDef["warp"] {
   };
 }
 
-/** Déguisement (702.168) : « Disguise {1}{W} ». */
-/** Imminence N—[coût] (702.176) : nombre de marqueurs de temps et coût alternatif. */
+/** Disguise (702.168): "Disguise {1}{W}". */
+/** Impending N—[cost] (702.176): number of time counters and alternative cost. */
 export function parseImpending(text: string): { n: number; cost: string } | undefined {
   const m = /Impending (\d+)—((?:\{[^}]+\})+)/.exec(text);
   return m ? { n: Number(m[1]), cost: m[2] as string } : undefined;
@@ -308,11 +313,15 @@ export function parseImpending(text: string): { n: number; cost: string } | unde
 function impendingAltCost(text: string): CardDef["altCost"] {
   const imp = parseImpending(text);
   return imp
-    ? { mana: parseManaCost(imp.cost), condition: { kind: "all", of: [] }, label: `Imminence ${imp.n} — ${imp.cost}` }
+    ? {
+        mana: parseManaCost(imp.cost),
+        condition: { kind: "all", of: [] },
+        label: msg("Impending {n} — {cost}", { n: imp.n, cost: imp.cost }),
+      }
     : undefined;
 }
 
-/** « Au début de votre étape de fin, s'il a un marqueur de temps, retirez-en un » (imminence). */
+/** "At the beginning of your end step, if it has a time counter on it, remove one" (impending). */
 function impendingAbilities(text: string): CardDef["abilities"] {
   if (!parseImpending(text)) return [];
   return [
@@ -322,18 +331,18 @@ function impendingAbilities(text: string): CardDef["abilities"] {
       condition: { kind: "counterAtLeast", counter: "time", n: 1 },
       targets: [],
       effects: [{ op: "removeCounters", what: { kind: "self" }, n: 1, kind: "time" }],
-      label: "Imminence : retirez un marqueur de temps",
+      label: msg("Impending: remove a time counter"),
     },
   ];
 }
 
-/** Coût d'un mot-clé en début de ligne (« Madness {B}{R} »). */
+/** Cost of a keyword at the start of a line ("Madness {B}{R}"). */
 export function parseKeywordCost(text: string, keyword: string): ManaCost | undefined {
   const m = new RegExp(`^${keyword} ((?:\\{[^}]+\\})+)`, "m").exec(stripReminder(text));
   return m ? parseManaCost(m[1] as string) : undefined;
 }
 
-/** Folie écrite en toutes lettres : « Madness—Pay six {C} » (Emrakul, the World Anew). */
+/** Madness spelled out: "Madness—Pay six {C}" (Emrakul, the World Anew). */
 const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
 function parseMadnessPay(text: string): ManaCost | undefined {
   const m = /^Madness—Pay (\w+) (\{[^}]+\})/m.exec(stripReminder(text));
@@ -341,20 +350,20 @@ function parseMadnessPay(text: string): ManaCost | undefined {
   return m && n > 0 ? parseManaCost((m[2] as string).repeat(n)) : undefined;
 }
 
-/** Déguisement (702.168) ou mue (702.37, Grim Haruspex) : le coût pour retourner la carte face visible. */
+/** Disguise (702.168) or morph (702.37, Grim Haruspex): the cost to turn the card face up. */
 export function parseDisguise(text: string): CardDef["disguise"] {
   const m = /^(?:Disguise|Morph) ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
   return m ? parseManaCost(m[1] as string) : undefined;
 }
 
-/** Monture (702.171) : « Saddle N ». */
+/** Saddle (702.171): "Saddle N". */
 export function parseSaddle(text: string): number | undefined {
   const m = /^Saddle (\d+)/m.exec(stripReminder(text));
   return m ? Number(m[1]) : undefined;
 }
 
-/** Équipage N (Véhicules). */
-/** « Crew 1. Activate only once each turn. » (Luxurious Locomotive) */
+/** Crew N (Vehicles). */
+/** "Crew 1. Activate only once each turn." (Luxurious Locomotive) */
 export function crewOncePerTurn(text: string): boolean {
   return /^Crew \d+\. Activate only once each turn\./m.test(stripReminder(text));
 }
@@ -364,13 +373,28 @@ export function parseCrew(text: string): number | undefined {
   return m ? Number(m[1]) : undefined;
 }
 
-/** Le texte ne contient-il que des mots-clés gérés par le moteur (créature « vanilla » ou « french vanilla ») ? */
-/** Cycle (702.29) : « Cycling {2} », « Basic landcycling {2} », « Islandcycling {2} », « Wizardcycling {1} »… */
+/** Does the text contain only keywords handled by the engine ("vanilla" or "french vanilla" creature)? */
+/** Cycling (702.29): "Cycling {2}", "Basic landcycling {2}", "Islandcycling {2}", "Wizardcycling {1}"… */
 const CYCLING = /^(Basic land|[A-Z][a-z]+)?cycling ((?:\{[^}]+\})+)/im;
 
 /**
- * Capacité de cycle lue dans le texte : « [coût], défaussez cette carte : piochez une carte » ou, pour un
- * cycle de type, « cherchez une carte [du type], révélez-la, mettez-la dans votre main ».
+ * Labels of typecycling, by type (the type stays in English in both languages); another type falls back to a
+ * template.
+ */
+const TYPECYCLING: Record<string, string> = {
+  "Basic land": msg("Basic landcycling"),
+  Land: msg("Landcycling"),
+  Forest: msg("Forestcycling"),
+  Halfling: msg("Halflingcycling"),
+  Island: msg("Islandcycling"),
+  Mountain: msg("Mountaincycling"),
+  Plains: msg("Plainscycling"),
+  Swamp: msg("Swampcycling"),
+};
+
+/**
+ * Cycling ability read from the text: "[cost], discard this card: draw a card" or, for typecycling, "search for a
+ * card [of the type], reveal it, put it into your hand".
  */
 export function parseCycling(text: string): CardDef["abilities"][number] | undefined {
   const m = CYCLING.exec(stripReminder(text));
@@ -393,7 +417,7 @@ export function parseCycling(text: string): CardDef["abilities"][number] | undef
       : [{ op: "draw", who: { kind: "you" }, amount: 1 }],
     fromHand: true,
     cycling: true,
-    label: kind ? `Cycle de ${kind === "Basic land" ? "terrain de base" : kind === "Land" ? "terrain" : kind}` : "Cycle",
+    label: kind ? (TYPECYCLING[kind] ?? msg("{type}cycling", { type: kind })) : msg("Cycling"),
   };
 }
 
@@ -412,7 +436,7 @@ function parseInt0(v: string | undefined): number | undefined | null {
   return /^-?\d+$/.test(v) ? Number(v) : null;
 }
 
-/** Mobilisation (702.181) : jetons Guerrier rouges 1/1, engagés et attaquants, sacrifiés à la prochaine étape de fin. */
+/** Mobilize (702.181): red 1/1 Warrior tokens, tapped and attacking, sacrificed at the next end step. */
 const MOBILIZE_WARRIOR = {
   name: "Warrior",
   colors: ["R" as const],
@@ -422,10 +446,10 @@ const MOBILIZE_WARRIOR = {
   toughness: 1,
 };
 
-/** Marchandage (702.166) : « sacrifiez un artefact, un enchantement ou un jeton » en lançant le sort. */
+/** Bargain (702.166): "sacrifice an artifact, enchantment, or token" as the spell is cast. */
 const BARGAIN_FILTER: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }, { token: true }] };
 
-/** Progéniture (702.175) : « Offspring {2} » — un kicker, et « quand elle arrive, créez un jeton 1/1 copie d'elle ». */
+/** Offspring (702.175): "Offspring {2}" — a kicker, and "when it enters, create a 1/1 token copy of it". */
 export function parseOffspring(text: string): string | undefined {
   return /^Offspring ((?:\{[^}]+\})+)/m.exec(text)?.[1];
 }
@@ -437,7 +461,7 @@ const GIFTS: Record<string, NonNullable<CardDef["gift"]>> = {
   Treasure: "treasure",
 };
 
-/** Cadeau (702.174) : « Gift a card », « Gift a Food », « Gift a tapped Fish », « Gift a Treasure ». */
+/** Gift (702.174): "Gift a card", "Gift a Food", "Gift a tapped Fish", "Gift a Treasure". */
 export function parseGift(text: string): CardDef["gift"] {
   const m = /^Gift an? (card|Food|tapped Fish|Treasure)\b/m.exec(text);
   return m ? GIFTS[m[1] as string] : undefined;
@@ -445,7 +469,7 @@ export function parseGift(text: string): CardDef["gift"] {
 
 const GIFT_TOKENS = { food: FOOD, fish: FISH, treasure: TREASURE } as const;
 
-/** L'effet du cadeau promis (702.174b : l'adversaire le reçoit avant les autres effets du sort). */
+/** The effect of the promised gift (702.174b: the opponent gets it before the spell's other effects). */
 function giftEffects(kind: NonNullable<CardDef["gift"]>): Effect[] {
   const token = kind === "card" ? undefined : GIFT_TOKENS[kind];
   return [
@@ -454,7 +478,7 @@ function giftEffects(kind: NonNullable<CardDef["gift"]>): Effect[] {
   ];
 }
 
-/** Capacités déclenchées portées par un mot-clé (702.108 prouesse, 702.21 garde). */
+/** Triggered abilities carried by a keyword (702.108 prowess, 702.21 ward). */
 function intrinsicAbilities(
   keywords: Set<Keyword>,
   ward: CardDef["ward"],
@@ -467,14 +491,14 @@ function intrinsicAbilities(
   prowessCount = 1,
 ): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
-  // 702.108b : chaque prouesse se déclenche séparément (Thor Odinson : « prowess, prowess »).
+  // 702.108b: each instance of prowess triggers separately (Thor Odinson: "prowess, prowess").
   for (let i = 0; keywords.has("prowess") && i < prowessCount; i++) {
     out.push({
       kind: "triggered",
       trigger: { on: "castSpell", by: "you", filter: { notTypes: ["Creature"] } },
       targets: [],
       effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
-      label: "Prouesse",
+      label: msg("Prowess"),
     });
   }
   if (saddle !== undefined) out.push(dsl.saddleAbility(saddle));
@@ -485,21 +509,26 @@ function intrinsicAbilities(
       cost: { mana: parseManaCost(equip) },
       targets: [
         equipKind.worthy
-          ? { id: "t", label: "créature digne que vous contrôlez", filter: { objects: WORTHY } }
-          : { id: "t", label: "créature que vous contrôlez", filter: { objects: { types: ["Creature"], controller: "you" } } },
+          ? { id: "t", label: msg("worthy creature you control"), filter: { objects: WORTHY } }
+          : { id: "t", label: msg("creature you control"), filter: { objects: { types: ["Creature"], controller: "you" } } },
       ],
       effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
       sorcerySpeed: true,
       reduceByTargetCounters: equipReduced || undefined,
       reduceByTargetColors: equipKind.byColors,
       equip: true,
-      label: `Équiper ${equipKind.worthy ? "(digne) " : ""}${equip}`,
+      label: equipKind.worthy ? msg("Equip worthy {cost}", { cost: equip }) : msg("Equip {cost}", { cost: equip }),
     });
   }
-  // Capacités d'Équiper restreintes : « Equip commander », « Equip legendary creature ».
-  const restricted: [string | undefined, ObjectFilter, string, string][] = [
-    [equipKind.commander, { commander: true }, "commandant que vous contrôlez", "Équiper un commandant"],
-    [equipKind.legendary, { legendary: true }, "créature légendaire que vous contrôlez", "Équiper une créature légendaire"],
+  // Restricted equip abilities: "Equip commander", "Equip legendary creature".
+  const restricted: [string | undefined, ObjectFilter, string, (cost: string) => string][] = [
+    [equipKind.commander, { commander: true }, msg("commander you control"), (cost) => msg("Equip commander {cost}", { cost })],
+    [
+      equipKind.legendary,
+      { legendary: true },
+      msg("legendary creature you control"),
+      (cost) => msg("Equip legendary creature {cost}", { cost }),
+    ],
   ];
   for (const [cost, extra, targetLabel, label] of restricted) {
     if (!cost) continue;
@@ -510,14 +539,14 @@ function intrinsicAbilities(
       effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
       sorcerySpeed: true,
       equip: true,
-      label: `${label} ${cost}`,
+      label: label(cost),
     });
   }
   if (ward) out.push(dsl.wardAbility(ward));
   return out;
 }
 
-/** Définition du sort préparé d'une carte « à préparer » (copiée en exil quand la créature devient préparée). */
+/** Definition of the prepared spell of a "prepare" card (copied into exile when the creature becomes prepared). */
 function prepareSpellDef(raw: RawCard, spell: NonNullable<CardScript["prepareSpell"]>, set: string): CardDef {
   const p = raw.prepare as NonNullable<RawCard["prepare"]>;
   const types =
@@ -552,13 +581,13 @@ function prepareSpellDef(raw: RawCard, spell: NonNullable<CardScript["prepareSpe
   };
 }
 
-/** Dispositions à plusieurs faces que le moteur sait jouer (complété lot par lot : aventures, recto-verso…). */
+/** Multi-faced layouts the engine can play (completed lot by lot: adventures, double-faced cards…). */
 export const HANDLED_LAYOUTS = new Set<string>(["adventure", "transform", "modal_dfc", "meld", "split"]);
 
 /**
- * Définition d'une carte. Pour une carte à plusieurs faces, chaque face a sa propre définition (script cherché par
- * le nom de la face dans `scripts`), et la carte porte les caractéristiques hors du jeu : le recto, ou la réunion
- * des deux moitiés d'une carte scindée.
+ * Definition of a card. For a multi-faced card, each face has its own definition (script looked up by the face name in
+ * `scripts`), and the card carries the characteristics outside the game: the front face, or the union of the two
+ * halves of a split card.
  */
 export function toCardDef(
   raw: RawCard,
@@ -568,7 +597,7 @@ export function toCardDef(
 ): CardDef {
   if (!raw.faces?.length) {
     const d = singleDef(raw, script, set);
-    // Assemblage (meld) : chaque carte est importée seule ; jouable quand le moteur gère la disposition.
+    // Meld: each card is imported on its own; playable when the engine handles the layout.
     if (raw.layout === "meld" && !HANDLED_LAYOUTS.has("meld")) d.implemented = false;
     if (raw.meld) {
       d.layout = "meld";
@@ -582,10 +611,10 @@ export function toCardDef(
     id: `${slug(raw.name)}__${i}`,
   }));
   const front = faceDefs[0] as CardDef;
-  // 712.8e : la valeur de mana du verso d'une carte transformable est celle de son recto.
+  // 712.8e: the mana value of the back face of a transforming card is that of its front face.
   const back = faceDefs[1];
   if (raw.layout === "transform" && back && !back.manaCost) back.manaCost = front.manaCost;
-  // La carte hors du jeu a les caractéristiques et le comportement de son recto (script du recto).
+  // Outside the game, the card has the characteristics and behavior of its front face (front face script).
   const base = singleDef(
     { ...faceRaw(raw, raw.faces[0] as RawFace), name: raw.name, image: raw.image, fr: raw.fr },
     script ?? scripts[raw.faces[0]?.name ?? ""],
@@ -598,13 +627,13 @@ export function toCardDef(
     name: raw.name,
     layout,
     faceDefs,
-    // Le texte de la carte est celui du recto ; les autres faces sont affichées à part (aperçu).
+    // The card's text is that of the front face; the other faces are shown separately (preview).
     text: layout === "split" ? "" : front.text,
     legalities: raw.legalities,
     implemented: !!layout && HANDLED_LAYOUTS.has(layout) && faceDefs.every((f) => f.implemented),
   };
   if (layout === "split") {
-    // 709.4 : hors de la pile, une carte scindée a les caractéristiques combinées de ses deux moitiés.
+    // 709.4: outside the stack, a split card has the combined characteristics of its two halves.
     const halves = faceDefs.slice(0, 2);
     const costs = halves.map((h) => h.manaCost).filter((c): c is NonNullable<typeof c> => !!c);
     card.manaCost = costs.length ? costs.reduce((a, b) => addManaCosts(a, b)) : front.manaCost;
@@ -614,16 +643,16 @@ export function toCardDef(
     card.typeLine = halves.map((h) => h.typeLine).join(" // ");
     card.subtypes = [...new Set(halves.flatMap((h) => h.subtypes))];
     card.keywords = [];
-    // Salle (709.5) : la carte n'a que les actions spéciales « déverrouiller » ; chaque porte garde ses capacités,
-    // et « quand vous déverrouillez cette porte » vise sa propre porte.
+    // Room (709.5): the card has only the "unlock" special actions; each door keeps its abilities, and "when you
+    // unlock this door" refers to its own door.
     const room = halves.every((h) => h.subtypes.includes("Room"));
     halves.forEach((h, door) => {
       h.abilities = h.abilities.map((ab) =>
         ab.kind === "triggered" && ab.trigger.on === "unlockDoor" ? { ...ab, trigger: { on: "unlockDoor", door } } : ab,
       );
     });
-    // Fusion (702.102) : une troisième face, les deux moitiés lancées ensemble depuis la main (coût total, cibles et
-    // effets de la gauche puis de la droite ; les mots « cible » des deux moitiés ont des noms différents).
+    // Fuse (702.102): a third face, both halves cast together from the hand (total cost, targets and effects of the
+    // left half then the right one; the "target" words of the two halves have different names).
     const [left, right] = halves;
     const fuse = /^Fuse\b/m.test(raw.faces[0]?.oracleText ?? "");
     if (fuse && left?.spell && right?.spell) {
@@ -667,7 +696,7 @@ export function toCardDef(
           sorcerySpeed: true,
           specialAction: true,
           activationCondition: { kind: "doorLocked" as const, door },
-          label: `Déverrouiller ${h.name}`,
+          label: msg("Unlock {door}", { door: cardRef(h.id) }),
         }))
       : [];
   }
@@ -677,16 +706,16 @@ export function toCardDef(
 const ROMAN: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
 
 /**
- * Saga (714) : dernier chapitre lu dans le texte. Classe (716) : coûts des niveaux lus dans le texte (« {W}: Level 2 »),
- * capacités de niveau prises dans le script, et capacités « Niveau N » générées (rituel, depuis le niveau N−1).
- * Affaire (719) : déclencheur « au début de votre étape de fin, si [condition], elle est résolue » généré.
+ * Saga (714): last chapter read from the text. Class (716): level costs read from the text ("{W}: Level 2"), level
+ * abilities taken from the script, and generated "Level N" abilities (sorcery speed, from level N−1).
+ * Case (719): generated trigger "at the beginning of your end step, if [condition], it becomes solved".
  */
 function sagaClassCase(
   raw: RawCard,
   script: CardScript | undefined,
 ): Partial<CardDef> & { extraAbilities?: CardDef["abilities"] } {
   const text = stripReminder(raw.oracleText);
-  // Saga au verso d'une carte transformable (Summons de FIN) : la face n'a pas la disposition « saga ».
+  // Saga on the back face of a transforming card (FIN Summons): the face does not have the "saga" layout.
   if (raw.layout === "saga" || (!raw.faces?.length && /\bSaga\b/.test(raw.typeLine))) {
     const chapters = [...text.matchAll(/^([IVX]+(?:, [IVX]+)*) —/gm)].flatMap((m) =>
       (m[1] ?? "").split(", ").map((r) => ROMAN[r] ?? 0),
@@ -707,7 +736,7 @@ function sagaClassCase(
       effects: [{ op: "setClassLevel", level: c.level }],
       sorcerySpeed: true,
       activationCondition: { kind: "classLevel", level: c.level - 1 },
-      label: `Niveau ${c.level}`,
+      label: msg("Level {n}", { n: c.level }),
     }));
     return { layout: "class", classLevels: levels, extraAbilities: levelUps };
   }
@@ -722,7 +751,7 @@ function sagaClassCase(
         kind: "all",
         of: [{ kind: "not", cond: { kind: "solved" } }, script?.caseToSolve ?? { kind: "not", cond: { kind: "yourTurn" } }],
       },
-      label: "Pour résoudre",
+      label: msg("To solve"),
     };
     return {
       layout: "case",
@@ -734,9 +763,9 @@ function sagaClassCase(
 }
 
 /**
- * Station (702.184) : « Station (…) » puis des paliers « N+ | … » (les lignes suivantes appartiennent au dernier palier).
- * Les mots-clés d'un palier sont lus ; ses autres capacités viennent du script (`stationAbilities[N]`), sans quoi la
- * carte reste non gérée. La capacité « Station » (engager une autre créature, en rituel) est générée.
+ * Station (702.184): "Station (…)" then thresholds "N+ | …" (the following lines belong to the last threshold). The
+ * keywords of a threshold are read; its other abilities come from the script (`stationAbilities[N]`), otherwise the
+ * card stays unhandled. The "Station" ability (tap another creature, at sorcery speed) is generated.
  */
 function parseStation(
   raw: RawCard,
@@ -772,12 +801,12 @@ function parseStation(
     targets: [],
     effects: [{ op: "station" }],
     sorcerySpeed: true,
-    label: "Station",
+    label: msg("Station"),
   };
   return { station, extraAbilities: [stationAbility], stationIncomplete: incomplete };
 }
 
-/** Somme de deux coûts de mana (valeur de mana d'une carte scindée). */
+/** Sum of two mana costs (mana value of a split card). */
 function addManaCosts(
   a: NonNullable<CardDef["manaCost"]>,
   b: NonNullable<CardDef["manaCost"]>,
@@ -794,15 +823,15 @@ function addManaCosts(
   };
 }
 
-/** Données brutes d'une face, au format d'une carte simple. */
+/** Raw data of a face, in the format of a single card. */
 /**
- * Mot-clé imprimé : en début de ligne, ou dans une liste de mots-clés (« Flying, vigilance », « Ward {2} »), et non cité
- * dans une phrase (« Dion et les autres Chevaliers ont le vol », « un jeton Araignée avec la portée », « Goddric est un
- * Dragon 4/4 avec le vol »). Scryfall liste aussi ces mots cités, et ceux de toutes les faces de la carte.
+ * Printed keyword: at the start of a line, or in a keyword list ("Flying, vigilance", "Ward {2}"), and not quoted in a
+ * sentence ("Dion and other Knights have flying", "a Spider token with reach", "Goddric is a 4/4 Dragon with
+ * flying"). Scryfall also lists these quoted words, and those of every face of the card.
  */
 function printedKeyword(text: string, keyword: string): boolean {
   const k = keyword.toLowerCase();
-  // Un élément de liste qui n'est qu'un mot-clé (avec son coût, son nombre ou son rappel) : la liste continue.
+  // A list item that is only a keyword (with its cost, its number or its reminder): the list goes on.
   const bare = /^[a-z][a-z' -]*?( \{[^}]*\}(\{[^}]*\})*| \d+| x)?( \(.*\))?$/;
   return text
     .toLowerCase()
@@ -828,7 +857,7 @@ function faceRaw(raw: RawCard, f: RawFace): RawCard {
     power: f.power,
     toughness: f.toughness,
     loyalty: f.loyalty,
-    // Couleurs : celles de la face (recto-verso), sinon celles de son coût (aventure, moitié de carte scindée).
+    // Colors: those of the face (double-faced card), otherwise those of its cost (adventure, half of a split card).
     colors: f.colors ?? (["W", "U", "B", "R", "G"] as const).filter((c) => f.manaCost.includes(c)),
     keywords: raw.keywords.filter((k) => text.includes(k.toLowerCase())),
     image: f.image ?? raw.image,
@@ -846,7 +875,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const subtypes = right.split(" ").filter(Boolean);
 
   let implemented = !!script || onlyKeywords(raw.oracleText);
-  // Cartes « à préparer » : jouables seulement si le script décrit leur sort.
+  // "Prepare" cards: playable only if the script describes their spell.
   if (raw.prepare && !script?.prepareSpell) implemented = false;
   let manaCost = null;
   try {
@@ -856,7 +885,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   }
   const power = parseInt0(raw.power);
   const toughness = parseInt0(raw.toughness);
-  // F/E variables (*) : seulement si le script les définit (capacité de définition de caractéristiques).
+  // Variable P/T (*): only if the script defines them (characteristic-defining ability).
   if (
     (power === null || toughness === null) &&
     script?.cdaPT === undefined &&
@@ -866,14 +895,14 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     implemented = false;
 
   const keywords = new Set<Keyword>();
-  // « Hexproof from X » n'est pas la défense talismanique complète (Scryfall liste aussi « Hexproof »).
+  // "Hexproof from X" is not full hexproof (Scryfall also lists "Hexproof").
   const partialHexproof = raw.keywords.includes("Hexproof from");
   for (const k of raw.keywords) {
     const kw = KEYWORD_NAMES[k.toLowerCase()];
     if (kw && !(kw === "hexproof" && partialHexproof) && printedKeyword(raw.oracleText, k)) keywords.add(kw);
   }
   for (const k of script?.keywords ?? []) keywords.add(k);
-  // « Enchanted permanent has ward {1} » (Hardlight Containment) : garde accordée, pas celle de la carte.
+  // "Enchanted permanent has ward {1}" (Hardlight Containment): granted ward, not the card's own.
   const ward = raw.keywords.some((k) => k.toLowerCase() === "ward") ? parseWard(raw.oracleText) : undefined;
   if (ward) keywords.add("ward");
 
@@ -882,84 +911,84 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     stationIncomplete,
     ...levelFields
   } = sagaClassCase(raw, script) as ReturnType<typeof sagaClassCase> & { stationIncomplete?: boolean };
-  // Bloomburrow : Progéniture et Cadeau sont des coûts optionnels, comme un kicker.
+  // Bloomburrow: Offspring and Gift are optional costs, like a kicker.
   const offspring = parseOffspring(raw.oracleText);
   const gift = parseGift(raw.oracleText);
-  // Les friches d'Eldraine : Marchandage (702.166), un kicker « sacrifiez un artefact, un enchantement ou un jeton ».
+  // Wilds of Eldraine: Bargain (702.166), a kicker "sacrifice an artifact, enchantment, or token".
   const bargain = raw.keywords.includes("Bargain");
-  // Lorwyn Eclipsed : « en coût additionnel, vous pouvez flétrir N » ; Marvel Super Heroes : Travail d'équipe N.
-  // Meurtres au manoir Karlov : « en coût additionnel, vous pouvez réunir des preuves N ».
+  // Lorwyn Eclipsed: "as an additional cost, you may blight N"; Marvel Super Heroes: Teamwork N.
+  // Murders at Karlov Manor: "as an additional cost, you may collect evidence N".
   const evidence = Number(
     /As an additional cost to cast this spell, you may collect evidence (\d+)/.exec(raw.oracleText)?.[1] ?? 0,
   );
-  // Évocation (702.74) et Mobilisation (702.181, Tarkir: Dragonstorm).
+  // Evoke (702.74) and Mobilize (702.181, Tarkir: Dragonstorm).
   const evoke = /^Evoke ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const mobilize = Number(/^Mobilize (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
-  // Maîtrise du feu N (Avatar) : « chaque fois que cette créature attaque, ajoutez N {R} » (jusqu'à la fin du combat), seule
-  // sur sa ligne ou parmi d'autres mots-clés (« Flying, firebending 2 », « Trample, firebending 4, haste »).
+  // Firebending N (Avatar): "whenever this creature attacks, add N {R}" (until end of combat), alone on its line or
+  // among other keywords ("Flying, firebending 2", "Trample, firebending 4, haste").
   const firebending = Number(/^(?:[A-Z][a-z]+(?: [a-z]+)?, )*[Ff]irebending (\d+)(?:,| \(|$)/m.exec(raw.oracleText)?.[1] ?? 0);
-  // Le Hobbit : Storied ; Tortues Ninja : Faufilement ; Spider-Man : Chaos ; Strixhaven : Paradigme.
+  // The Hobbit: Storied; Teenage Mutant Ninja Turtles: Sneak; Spider-Man: Mayhem; Strixhaven: Paradigm.
   const storied = /^Storied\b/m.test(raw.oracleText);
   const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  // Ruée (702.109) et spectacle (702.137) : coûts alternatifs.
+  // Dash (702.109) and spectacle (702.137): alternative costs.
   const dash = /^Dash ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  // Émerger (702.119) : en sacrifiant une créature, coût réduit de sa valeur de mana ; « Emerge from artifact » (702.119a,
-  // Crabomination) : en sacrifiant un artefact.
+  // Emerge (702.119): by sacrificing a creature, cost reduced by its mana value; "Emerge from artifact" (702.119a,
+  // Crabomination): by sacrificing an artifact.
   const emergeMatch = /^Emerge (?:from (artifact) )?((?:\{[^}]+\})+)/m.exec(raw.oracleText);
   const emerge = emergeMatch?.[2];
   const emergeFrom: CardType = emergeMatch?.[1] ? "Artifact" : "Creature";
   const spectacle = /^Spectacle ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  // Exaltation (702.83), affinité pour les artefacts (702.41), modulaire (702.43), greffe (702.58), extorsion (702.101).
+  // Exalted (702.83), affinity for artifacts (702.41), modular (702.43), graft (702.58), extort (702.101).
   const exalted = /^Exalted\b/m.test(raw.oracleText);
   const myriad = /^Myriad\b/m.test(raw.oracleText);
-  // « As this land enters, you may pay N life » ; un terrain légendaire se nomme (« As The Black Gate enters »).
+  // "As this land enters, you may pay N life"; a legendary land names itself ("As The Black Gate enters").
   const selfName = raw.name.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
   const shockLand = Number(
     new RegExp(
       `(?:As (?:this land|${selfName}) enters, |Then )you may pay (\\d+) life\\. If you don't, it enters tapped\\.`,
     ).exec(raw.oracleText)?.[1] ?? 0,
   );
-  // Annihilateur N (702.86) ; exhumation (702.84).
+  // Annihilator N (702.86); unearth (702.84).
   const annihilator = Number(/^Annihilator (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const unearth = /^Unearth ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const affinityArtifacts = /^Affinity for artifacts\b/m.test(raw.oracleText);
   const modular = Number(/^Modular (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const graft = Number(/^Graft (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const extort = /^Extort\b/m.test(raw.oracleText);
-  // Déluge (702.40) : une copie pour chaque sort lancé avant lui ce tour-ci (compté au lancement, tous joueurs).
+  // Storm (702.40): a copy for each spell cast before it this turn (counted on cast, all players).
   const storm = /^Storm\b/m.test(raw.oracleText);
-  // Réplique (702.56) : le coût de réplique est payé X fois (kicker de sorte « replicate ») ; le sort est copié X fois.
+  // Replicate (702.56): the replicate cost is paid X times (kicker of kind "replicate"); the spell is copied X times.
   const replicate = /^Replicate ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  // Escouade (702.157) : le coût d'escouade est payé X fois (kicker de sorte « squad ») ; autant de copies en arrivant.
+  // Squad (702.157): the squad cost is paid X times (kicker of kind "squad"); as many copies when it enters.
   const squad = /^Squad ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  // Multikicker (702.33c) : payé X fois, comme la réplique ; le script lit X (`amount.x`).
+  // Multikicker (702.33c): paid X times, like replicate; the script reads X (`amount.x`).
   const multikicker = /^Multikicker ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  // Suspension (702.62) : action spéciale depuis la main, la carte exilée avec N marqueurs de temps.
+  // Suspend (702.62): special action from the hand, the card exiled with N time counters.
   const suspend = /^Suspend (\d+)—((?:\{[^}]+\})+)/m.exec(raw.oracleText);
-  // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
+  // A land has mayhem without a cost (Oscorp Industries: "you may play this card from your graveyard").
   const mayhem =
     /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1] ?? (/^Mayhem \(You may play/m.test(raw.oracleText) ? "{0}" : undefined);
   const paradigm = /^Paradigm\b/m.test(raw.oracleText);
-  // Spider-Man : Web-slinging ; Strixhaven : « en coût additionnel, payez X points de vie ».
+  // Spider-Man: Web-slinging; Strixhaven: "as an additional cost, pay X life".
   const webSlinging = /^Web-slinging ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const payLifeX = /As an additional cost to cast this spell, pay X life\./.test(raw.oracleText);
-  // Lorwyn Eclipsed : « you may blight N » (kicker), « blight N or pay {M} » (kicker ou mana), « blight X ».
+  // Lorwyn Eclipsed: "you may blight N" (kicker), "blight N or pay {M}" (kicker or mana), "blight X".
   const blightCost = /As an additional cost to cast this spell, (you may )?blight (\d+)(?: or pay ((?:\{[^}]+\})+))?/.exec(
     raw.oracleText,
   );
   const blight = blightCost && (blightCost[1] || blightCost[3]) ? Number(blightCost[2]) : 0;
   const blightOrPay = blight ? blightCost?.[3] : undefined;
   const blightX = /As an additional cost to cast this spell, blight X\./.test(raw.oracleText);
-  // Strixhaven : « exilez N cartes de votre cimetière ou payez {M} » (kicker ou mana).
+  // Strixhaven: "exile N cards from your graveyard or pay {M}" (kicker or mana).
   const exileOrPay =
     /As an additional cost to cast this spell, exile (one|two|three|four|five) cards? from your graveyard or pay ((?:\{[^}]+\})+)\./.exec(
       raw.oracleText,
     );
   const exileGraveyard = exileOrPay ? ["one", "two", "three", "four", "five"].indexOf(exileOrPay[1] as string) + 1 : 0;
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
-  // « payez N points de vie ou payez {M} » (Redirect Lightning) : le kicker paie les PV, sinon le mana s'ajoute.
+  // "pay N life or pay {M}" (Redirect Lightning): the kicker pays the life, otherwise the mana is added.
   const lifeOrPay = /As an additional cost to cast this spell, pay (\d+) life or pay ((?:\{[^}]+\})+)\./.exec(raw.oracleText);
-  // Avatar : maîtrise de l'eau en coût additionnel, « waterbend {N} », « waterbend {X} » ou « you may waterbend {N} » (kicker).
+  // Avatar: waterbending as an additional cost, "waterbend {N}", "waterbend {X}" or "you may waterbend {N}" (kicker).
   const waterbendCost = /As an additional cost to cast this spell, (you may )?waterbend \{(\d+|X)\}/.exec(raw.oracleText);
   const waterbendKicker = waterbendCost?.[1] ? `{${waterbendCost[2]}}` : undefined;
   const waterbendX = !!waterbendCost && !waterbendCost[1] && waterbendCost[2] === "X";
@@ -971,23 +1000,23 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.entersSelf, [dsl.fx.sacrificeIt(dsl.ref.self)], {
         condition: dsl.cond.evoked,
-        label: "Évoquée : sacrifiez-la",
+        label: msg("Evoked: sacrifice it"),
       }),
     );
   }
   if (firebending) {
     bloomburrowAbilities.push(dsl.firebending(firebending));
   }
-  // Annihilateur N (702.86a) : quand elle attaque, le joueur défenseur sacrifie N permanents.
+  // Annihilator N (702.86a): whenever it attacks, the defending player sacrifices N permanents.
   if (annihilator) {
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.attacksSelf, [dsl.fx.sacrifice(dsl.ref.defendingPlayer, { permanent: true }, annihilator)], {
-        label: `Annihilateur ${annihilator} : le joueur défenseur sacrifie ${annihilator} permanent(s)`,
+        label: msg("Annihilator {n}: defending player sacrifices {n} permanent(s)", { n: annihilator }),
       }),
     );
   }
-  // Exhumation (702.84a) : depuis le cimetière, en rituel ; elle revient avec la célérité, est exilée au début de la
-  // prochaine étape de fin, et le serait à la place si elle devait quitter le champ de bataille.
+  // Unearth (702.84a): from the graveyard, at sorcery speed; it returns with haste, is exiled at the beginning of the
+  // next end step, and would be exiled instead if it would leave the battlefield.
   if (unearth) {
     bloomburrowAbilities.push(
       dsl.activated({
@@ -998,64 +1027,64 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
           dsl.fx.moveTo(dsl.ref.self, { to: "battlefield", addKeywords: ["haste"], exileIfLeaves: true }, { name: "unearth" }),
           dsl.fx.delayed([dsl.fx.exile(dsl.ref.target("unearth"))], { unearth: dsl.ref.stored("unearth") }),
         ],
-        label: `Exhumation ${unearth}`,
+        label: msg("Unearth {cost}", { cost: unearth }),
       }),
     );
   }
-  // Myriade (702.116) : quand elle attaque, pour chaque adversaire autre que le joueur défenseur, vous pouvez créer une
-  // copie engagée qui attaque ce joueur ou un planeswalker qu'il contrôle, exilée à la fin du combat.
+  // Myriad (702.116): whenever it attacks, for each opponent other than the defending player, you may create a tapped
+  // copy attacking that player or a planeswalker they control, exiled at end of combat.
   if (myriad) bloomburrowAbilities.push(dsl.myriadAbility());
   if (exalted) {
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.attacksAlone({ types: ["Creature"], controller: "you" }), [dsl.fx.pump(dsl.ref.eventObject, 1, 1)], {
-        label: "Exaltation : la créature qui attaque seule gagne +1/+1",
+        label: msg("Exalted: the creature attacking alone gets +1/+1"),
       }),
     );
   }
-  // Modulaire N : arrive avec N marqueurs +1/+1 ; mis au cimetière depuis le champ de bataille (702.43a : « ce
-  // permanent », une créature ou non, comme Power Depot), ses marqueurs +1/+1 peuvent aller sur une créature-artefact.
+  // Modular N: enters with N +1/+1 counters; when put into a graveyard from the battlefield (702.43a: "this
+  // permanent", a creature or not, like Power Depot), its +1/+1 counters can go onto an artifact creature.
   if (modular) {
     bloomburrowAbilities.push(
-      dsl.entersWith({ counters: modular, label: `Modulaire ${modular}` }),
+      dsl.entersWith({ counters: modular, label: msg("Modular {n}", { n: modular }) }),
       dsl.triggered(dsl.when.putIntoGraveyardSelf, [dsl.fx.addCounters(dsl.ref.target(), dsl.amount.countersOn(dsl.ref.self))], {
         targets: [
           dsl.target.optional({
             id: "t",
-            label: "créature-artefact",
+            label: msg("artifact creature"),
             filter: { objects: { types: ["Artifact"], anyOf: [{ types: ["Creature"] }] } },
           }),
         ],
-        label: "Modulaire : ses marqueurs +1/+1 sur une créature-artefact",
+        label: msg("Modular: its +1/+1 counters onto an artifact creature"),
       }),
     );
   }
-  // Greffe N : arrive avec N marqueurs +1/+1 ; quand une autre créature arrive, un marqueur peut y être déplacé.
+  // Graft N: enters with N +1/+1 counters; when another creature enters, a counter can be moved onto it.
   if (graft) {
     bloomburrowAbilities.push(
-      dsl.entersWith({ counters: graft, label: `Greffe ${graft}` }),
+      dsl.entersWith({ counters: graft, label: msg("Graft {n}", { n: graft }) }),
       dsl.triggered(
         dsl.when.enters({ types: ["Creature"], other: true }),
         dsl.fx.may(
-          "déplacer un marqueur +1/+1 sur la créature qui arrive",
+          msg("move a +1/+1 counter onto the entering creature"),
           dsl.fx.removeCounters(dsl.ref.self, 1, "+1/+1", "g"),
           dsl.fx.addCounters(dsl.ref.eventObject, dsl.amount.v("g")),
         ),
-        { condition: dsl.cond.amountAtLeast(dsl.amount.countersOn(dsl.ref.self), 1), label: "Greffe" },
+        { condition: dsl.cond.amountAtLeast(dsl.amount.countersOn(dsl.ref.self), 1), label: msg("Graft") },
       ),
     );
   }
-  // Extorsion : à chaque sort lancé, payer {W/B} : chaque adversaire perd 1 PV et vous gagnez autant.
+  // Extort: with each spell cast, pay {W/B}: each opponent loses 1 life and you gain that much life.
   if (extort) {
     bloomburrowAbilities.push(
       dsl.triggered(
         dsl.when.castSpell("you"),
         dsl.fx.mayPay(
           "{W/B}",
-          "payer {W/B} (extorsion)",
+          msg("pay {W/B} (extort)"),
           dsl.fx.loseLife(1, dsl.ref.eachOpponent, "e"),
           dsl.fx.gainLife(dsl.amount.v("e")),
         ),
-        { label: "Extorsion" },
+        { label: msg("Extort") },
       ),
     );
   }
@@ -1067,7 +1096,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         mana: suspend[2],
         sorcerySpeed: !types.includes("Instant") && !raw.keywords.includes("Flash"),
         effects: [dsl.fx.suspend(dsl.ref.self, n)],
-        label: `Suspension ${n} — ${suspend[2]}`,
+        label: msg("Suspend {n} — {cost}", { n, cost: suspend[2] as string }),
       }),
       specialAction: true,
     });
@@ -1075,7 +1104,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   if (replicate) {
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.castSelf, [dsl.fx.copySpell(dsl.ref.self, dsl.amount.sourceX)], {
-        label: "Réplique : copiez-le pour chaque coût de réplique payé",
+        label: msg("Replicate: copy it for each time its replicate cost was paid"),
       }),
     );
   }
@@ -1083,23 +1112,23 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.entersSelf, [dsl.fx.copyToken(dsl.ref.self, { count: dsl.amount.sourceX })], {
         condition: dsl.cond.amountAtLeast(dsl.amount.sourceX, 1),
-        label: "Escouade : une copie pour chaque coût d'escouade payé",
+        label: msg("Squad: a copy for each time its squad cost was paid"),
       }),
     );
   }
   if (storm) {
     bloomburrowAbilities.push(
-      dsl.triggered(dsl.when.castSelf, [dsl.fx.copySpell(dsl.ref.self, dsl.amount.eventAmount)], { label: "Déluge" }),
+      dsl.triggered(dsl.when.castSelf, [dsl.fx.copySpell(dsl.ref.self, dsl.amount.eventAmount)], { label: msg("Storm") }),
     );
   }
-  // Ruée : la créature a la célérité et revient dans la main de son propriétaire au début de la prochaine étape de fin.
+  // Dash: the creature has haste and returns to its owner's hand at the beginning of the next end step.
   if (dash) {
     const dashed = dsl.cond.castVia("dash");
     bloomburrowAbilities.push(
-      dsl.staticAbility("self", { addKeywords: ["haste"] }, { condition: dashed, label: "Ruée : célérité" }),
+      dsl.staticAbility("self", { addKeywords: ["haste"] }, { condition: dashed, label: msg("Dash: haste") }),
       dsl.triggered(dsl.when.entersSelf, [dsl.fx.delayed([dsl.fx.toHand(dsl.ref.target("d"))], { d: dsl.ref.self })], {
         condition: dashed,
-        label: "Ruée : revient en main à la prochaine étape de fin",
+        label: msg("Dash: returns to hand at the next end step"),
       }),
     );
   }
@@ -1111,7 +1140,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
           dsl.fx.createTappedTokens(MOBILIZE_WARRIOR, mobilize, { attacking: true, store: "mob" }),
           dsl.fx.delayed([dsl.fx.sacrificeIt(dsl.ref.target("m"))], { m: dsl.ref.stored("mob") }),
         ],
-        { label: `Mobilisation ${mobilize}` },
+        { label: msg("Mobilize {n}", { n: mobilize }) },
       ),
     );
   }
@@ -1119,20 +1148,20 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.entersSelf, [dsl.fx.copyToken(dsl.ref.self, { pt: 1 })], {
         condition: dsl.cond.kicked,
-        label: "Progéniture — jeton 1/1 copie",
+        label: msg("Offspring: 1/1 token copy"),
       }),
     );
   }
   if (gift && !isSpell) {
     bloomburrowAbilities.push(
-      dsl.triggered(dsl.when.entersSelf, giftEffects(gift).slice(1), { condition: dsl.cond.kicked, label: "Cadeau promis" }),
+      dsl.triggered(dsl.when.entersSelf, giftEffects(gift).slice(1), { condition: dsl.cond.kicked, label: msg("Gift promised") }),
     );
   }
   const spell: SpellDef | undefined =
     gift && isSpell && script?.spell
       ? { modes: script.spell.modes.map((m) => ({ ...m, effects: [...giftEffects(gift), ...m.effects] })) }
       : script?.spell;
-  // Station : un palier dont les capacités (autres que des mots-clés) ne sont pas scriptées rend la carte non gérée.
+  // Station: a threshold whose abilities (other than keywords) are not scripted makes the card unhandled.
   if (stationIncomplete) implemented = false;
   return {
     id: slug(raw.name),
@@ -1188,27 +1217,44 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
           ...(script.altCost.pay ? { pay: script.altCost.pay } : {}),
         }
       : script?.forageOrPay && manaCost
-        ? { mana: manaCost, condition: dsl.cond.canForage, label: `Fourrager — ${raw.manaCost}`, forage: true }
+        ? {
+            mana: manaCost,
+            condition: dsl.cond.canForage,
+            label: msg("Forage — {cost}", { cost: raw.manaCost }),
+            forage: true,
+          }
         : evoke
-          ? { mana: parseManaCost(evoke), condition: dsl.cond.all(), label: `Évocation — ${evoke}` }
+          ? { mana: parseManaCost(evoke), condition: dsl.cond.all(), label: msg("Evoke — {cost}", { cost: evoke }) }
           : sneak
-            ? { mana: parseManaCost(sneak), condition: dsl.cond.sneakWindow, label: `Faufilement — ${sneak}` }
+            ? { mana: parseManaCost(sneak), condition: dsl.cond.sneakWindow, label: msg("Sneak — {cost}", { cost: sneak }) }
             : dash
-              ? { mana: parseManaCost(dash), condition: dsl.cond.all(), label: `Ruée — ${dash}`, via: "dash" as const }
+              ? {
+                  mana: parseManaCost(dash),
+                  condition: dsl.cond.all(),
+                  label: msg("Dash — {cost}", { cost: dash }),
+                  via: "dash" as const,
+                }
               : emerge
                 ? {
                     mana: parseManaCost(emerge),
                     condition: dsl.cond.controls({ types: [emergeFrom] }),
-                    label: emergeFrom === "Artifact" ? `Émerger d'un artefact — ${emerge}` : `Émerger — ${emerge}`,
+                    label:
+                      emergeFrom === "Artifact"
+                        ? msg("Emerge from artifact — {cost}", { cost: emerge })
+                        : msg("Emerge — {cost}", { cost: emerge }),
                     pay: { sacrificeReduce: { types: [emergeFrom] } },
                   }
                 : spectacle
-                  ? { mana: parseManaCost(spectacle), condition: dsl.cond.opponentLostLife, label: `Spectacle — ${spectacle}` }
+                  ? {
+                      mana: parseManaCost(spectacle),
+                      condition: dsl.cond.opponentLostLife,
+                      label: msg("Spectacle — {cost}", { cost: spectacle }),
+                    }
                   : webSlinging
                     ? {
                         mana: parseManaCost(webSlinging),
                         condition: dsl.cond.controls({ types: ["Creature"], tapped: true }),
-                        label: `Web-slinging — ${webSlinging}`,
+                        label: msg("Web-slinging — {cost}", { cost: webSlinging }),
                       }
                     : impendingAltCost(raw.oracleText),
     forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
@@ -1216,7 +1262,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     cdaPT: script?.cdaPT,
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
-    // Retrace (702.81) : depuis le cimetière, en défaussant une carte de terrain en plus.
+    // Retrace (702.81): from the graveyard, by discarding a land card in addition.
     castFromGraveyard:
       script?.castFromGraveyard ??
       (/^Retrace\b/m.test(raw.oracleText) ? { discard: 1, discardFilter: { types: ["Land"] } } : undefined),
@@ -1280,7 +1326,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
                 : lifeOrPay
                   ? { life: Number(lifeOrPay[1]) }
                   : undefined),
-    // Harmonie (702.180) : lancée depuis le cimetière comme un flashback, pour son coût d'harmonie.
+    // Harmonize (702.180): cast from the graveyard like flashback, for its harmonize cost.
     flashback: script?.flashback ? parseManaCost(script.flashback) : harmonize ? parseManaCost(harmonize) : undefined,
     harmonize: harmonize ? true : undefined,
     flashbackCost: script?.flashbackCost,

@@ -1,4 +1,4 @@
-/** Avatar: The Last Airbender — cartes rouges. */
+/** Avatar: The Last Airbender: red cards. */
 import {
   ALLY,
   activated,
@@ -24,32 +24,32 @@ import {
   when,
 } from "./common";
 
-const LAND_YOU_CONTROL = target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez");
+const LAND_YOU_CONTROL = target.permanent("t", ["Land"], { controller: "you" }, "land you control");
 const LESSON_IN_GRAVEYARD = cond.amountAtLeast(amount.countIn("graveyard", { subtype: "Lesson" }), 1);
 
 export const RED: Record<string, CardScript> = {
   "Boar-q-pine": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.addCounters(ref.self, 1)], {
-        label: "Un marqueur +1/+1",
+        label: "A +1/+1 counter",
       }),
     ],
   },
   "Bumi Bash": {
     spell: modal(
       mode(
-        "Blessures égales au nombre de vos terrains",
+        "Damage equal to the number of lands you control",
         [target.creature()],
         [fx.damage(amount.count({ types: ["Land"], controller: "you" }), ref.target())],
       ),
       mode(
-        "Détruit une créature-terrain ou un terrain non de base",
+        "Destroys a land creature or a nonbasic land",
         [
           target.permanent(
             "u",
             ["Land"],
             { anyOf: [{ types: ["Creature"] }, { basic: false }] },
-            "créature-terrain ou terrain non de base",
+            "land creature or nonbasic land",
           ),
         ],
         [fx.destroy(ref.target("u"))],
@@ -58,9 +58,9 @@ export const RED: Record<string, CardScript> = {
   },
   "The Cave of Two Lovers": {
     abilities: [
-      chapter([1], [fx.createTokens(ALLY, 2)], { label: "Deux Alliés 1/1" }),
-      chapter([2], [fx.search({ anySubtype: ["Mountain", "Cave"] })], { label: "Une carte de Montagne ou de Caverne" }),
-      chapter([3], fx.earthbend(ref.target(), 3), { targets: [LAND_YOU_CONTROL], label: "Maîtrise de la terre 3" }),
+      chapter([1], [fx.createTokens(ALLY, 2)], { label: "Two 1/1 Allies" }),
+      chapter([2], [fx.search({ anySubtype: ["Mountain", "Cave"] })], { label: "A Mountain or Cave card" }),
+      chapter([3], fx.earthbend(ref.target(), 3), { targets: [LAND_YOU_CONTROL], label: "Earthbend 3" }),
     ],
   },
   "Combustion Man": {
@@ -70,7 +70,7 @@ export const RED: Record<string, CardScript> = {
         [
           ...fx.mayForStore(
             ref.controllerOf(ref.target()),
-            "Subir des blessures égales à la force de Combustion Man pour sauver ce permanent ?",
+            "Take damage equal to Combustion Man's power to save this permanent?",
             "hurt",
             fx.damage(amount.powerOf(ref.self), ref.controllerOf(ref.target())),
           ),
@@ -78,7 +78,7 @@ export const RED: Record<string, CardScript> = {
         ],
         {
           targets: [{ id: "t", label: "permanent", filter: { objects: { permanent: true } } }],
-          label: "Détruit le permanent, sauf si son contrôleur subit des blessures",
+          label: "Destroys the permanent unless its controller takes damage",
         },
       ),
     ],
@@ -86,10 +86,10 @@ export const RED: Record<string, CardScript> = {
   "Crescent Island Temple": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(MONK_R, amount.count({ subtype: "Shrine", controller: "you" }))], {
-        label: "Un Moine 1/1 par Sanctuaire",
+        label: "A 1/1 Monk for each Shrine",
       }),
       triggered(when.enters({ subtype: "Shrine", controller: "you", other: true }), [fx.createTokens(MONK_R)], {
-        label: "Un Moine 1/1",
+        label: "A 1/1 Monk",
       }),
     ],
   },
@@ -102,7 +102,7 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "you", other: true, maxPower: 2 })],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Une autre de vos créatures de force 2 ou moins est imblocable",
+        label: "Another creature you control with power 2 or less can't be blocked",
       }),
     ],
   },
@@ -115,20 +115,20 @@ export const RED: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addAbilities: [firebending(2)] },
-        { condition: LESSON_IN_GRAVEYARD, label: "Maîtrise du feu 2 avec une Leçon dans votre cimetière" },
+        { condition: LESSON_IN_GRAVEYARD, label: "Firebending 2 with a Lesson in your graveyard" },
       ),
-      activated({ mana: "{2}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0 jusqu'à la fin du tour" }),
+      activated({ mana: "{2}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0 until end of turn" }),
     ],
   },
   "Fire Nation Raider": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(CLUE)], { condition: cond.raid, label: "Raid : un Indice" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(CLUE)], { condition: cond.raid, label: "Raid: a Clue" })],
   },
   "Fire Sages": {
-    // Maîtrise du feu 1 : lue dans le texte.
-    abilities: [activated({ mana: "{1}{R}{R}", effects: [fx.addCounters(ref.self, 1)], label: "Un marqueur +1/+1" })],
+    // Firebending 1: read from the text.
+    abilities: [activated({ mana: "{1}{R}{R}", effects: [fx.addCounters(ref.self, 1)], label: "A +1/+1 counter" })],
   },
   "Firebending Student": {
-    // Prouesse : lue dans le texte ; « maîtrise du feu X, X étant sa force » : écrite ici.
+    // Prowess: read from the text; "firebending X, where X is its power": written here.
     abilities: [firebending(amount.powerOf(ref.self))],
   },
   "How to Start a Riot": {
@@ -141,7 +141,7 @@ export const RED: Record<string, CardScript> = {
     ),
   },
   "Jeong Jeong, the Deserter": {
-    // Maîtrise du feu 1 : lue dans le texte.
+    // Firebending 1: read from the text.
     abilities: [
       exhaust({
         mana: "{3}",
@@ -149,7 +149,7 @@ export const RED: Record<string, CardScript> = {
           fx.addCounters(ref.self, 1),
           { op: "playerEffect", ability: { nextSpell: { filter: { subtype: "Lesson" }, copy: true } }, once: true },
         ],
-        label: "Un marqueur +1/+1 ; votre prochain sort de Leçon de ce tour-ci est copié",
+        label: "A +1/+1 counter; your next Lesson spell this turn is copied",
       }),
     ],
   },
@@ -170,44 +170,42 @@ export const RED: Record<string, CardScript> = {
     ),
   },
   "Mai, Jaded Edge": {
-    // Prouesse : lue dans le texte.
-    abilities: [
-      exhaust({ mana: "{3}", effects: [fx.counters(ref.self, "doubleStrike")], label: "Un marqueur double initiative" }),
-    ],
+    // Prowess: read from the text.
+    abilities: [exhaust({ mana: "{3}", effects: [fx.counters(ref.self, "doubleStrike")], label: "A double strike counter" })],
   },
   "Mongoose Lizard": {
-    // Menace et cycle de Montagne : lus dans le texte.
+    // Menace and mountaincycling: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.damage(1, ref.target())], {
         targets: [target.any()],
-        label: "1 blessure à n'importe quelle cible",
+        label: "1 damage to any target",
       }),
     ],
   },
   "Ran and Shaw": {
-    // Vol et maîtrise du feu 2 : lus dans le texte.
+    // Flying and firebending 2: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.copyToken(ref.self, { nonlegendary: true })], {
         condition: cond.all(
           cond.wasCast,
           cond.amountAtLeast(amount.countIn("graveyard", { anyOf: [{ subtype: "Dragon" }, { subtype: "Lesson" }] }), 3),
         ),
-        label: "Un jeton copie non légendaire",
+        label: "A nonlegendary token copy",
       }),
       activated({
         mana: "{3}{R}",
         effects: [fx.pumpAll({ types: ["Creature"], subtype: "Dragon", controller: "you" }, 2, 0)],
-        label: "Vos Dragons gagnent +2/+0",
+        label: "Dragons you control get +2/+0",
       }),
     ],
   },
   "Rough Rhino Cavalry": {
-    // Maîtrise du feu 2 : lue dans le texte.
+    // Firebending 2: read from the text.
     abilities: [
       exhaust({
         mana: "{8}",
         effects: [fx.addCounters(ref.self, 2), fx.modify(ref.self, { addKeywords: ["trample"] })],
-        label: "Deux marqueurs +1/+1 et le piétinement",
+        label: "Two +1/+1 counters and trample",
       }),
     ],
   },
@@ -217,7 +215,7 @@ export const RED: Record<string, CardScript> = {
       [],
       [
         fx.exileUntil({ notTypes: ["Land"] }, "x"),
-        // Lancée sans payer si sa VM est inférieure au nombre de vos Montagnes ; sinon (ou si vous refusez), en main.
+        // Cast without paying if its mana value is less than the number of Mountains you control; otherwise (or if you decline), to hand.
         fx.castNow(ref.stored("x"), {
           free: true,
           maxManaValue: amount.plus(amount.count({ subtype: "Mountain", controller: "you" }), -1),
@@ -233,101 +231,101 @@ export const RED: Record<string, CardScript> = {
         { addKeywords: ["cantAttack", "cantBlock"] },
         {
           condition: cond.not(cond.controls({ types: ["Creature"], minPower: 4, other: true })),
-          label: "Ni attaque ni blocage sans une autre créature de force 4 ou plus",
+          label: "Can't attack or block without another creature with power 4 or greater",
         },
       ),
     ],
   },
   "Treetop Freedom Fighters": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(ALLY)], { label: "Un Allié 1/1" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(ALLY)], { label: "A 1/1 Ally" })],
   },
   "Twin Blades": {
-    // Flash et équipement {2} : lus dans le texte.
+    // Flash and equip {2}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target()), fx.modify(ref.target(), { addKeywords: ["doubleStrike"] })], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "S'attache à une de vos créatures, qui gagne la double initiative",
+        label: "Attaches to a creature you control, which gains double strike",
       }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
     ],
   },
   "Ty Lee, Artful Acrobat": {
-    // Prouesse : lue dans le texte.
+    // Prowess: read from the text.
     abilities: [
       triggered(
         when.attacksSelf,
         [
           ...fx.mayPay(
             "{1}",
-            "Payer {1} pour qu'une créature ne puisse pas bloquer ?",
+            "Pay {1} so that a creature can't block?",
             fx.reflexive([target.creature()], [fx.modify(ref.target(), { addKeywords: ["cantBlock"] })]),
           ),
         ],
-        { label: "Payez {1} : une créature ne peut pas bloquer ce tour-ci" },
+        { label: "Pay {1}: a creature can't block this turn" },
       ),
     ],
   },
   "War Balloon": {
-    // Vol et équipage 3 : lus dans le texte.
+    // Flying and crew 3: read from the text.
     abilities: [
-      activated({ mana: "{1}", effects: [fx.counters(ref.self, "fire")], label: "Un marqueur de feu" }),
+      activated({ mana: "{1}", effects: [fx.counters(ref.self, "fire")], label: "A fire counter" }),
       staticAbility(
         "self",
         { addTypes: ["Artifact", "Creature"] },
-        { condition: cond.counterAtLeast("fire", 3), label: "Créature-artefact avec trois marqueurs de feu ou plus" },
+        { condition: cond.counterAtLeast("fire", 3), label: "Artifact creature with three or more fire counters" },
       ),
     ],
   },
   "Wartime Protestors": {
-    // Célérité : lue dans le texte.
+    // Haste: read from the text.
     abilities: [
       triggered(
         when.enters({ subtype: "Ally", controller: "you", other: true }),
         [fx.addCounters(ref.eventObject, 1), fx.modify(ref.eventObject, { addKeywords: ["haste"] })],
-        { label: "Un marqueur +1/+1 et la célérité à l'Allié" },
+        { label: "A +1/+1 counter and haste for the Ally" },
       ),
     ],
   },
   "Yuyan Archers": {
-    // Portée : lue dans le texte.
+    // Reach: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))], {
-        label: "Vous pouvez défausser une carte pour en piocher une",
+        label: "You may discard a card to draw a card",
       }),
     ],
   },
   "Zhao, the Moon Slayer": {
-    // Menace : lue dans le texte.
+    // Menace: read from the text.
     abilities: [
       entersWith({
         tapped: true,
         affects: { types: ["Land"], basic: false },
-        label: "Les terrains non de base arrivent engagés",
+        label: "Nonbasic lands enter tapped",
       }),
-      activated({ mana: "{7}", effects: [fx.counters(ref.self, "conqueror")], label: "Un marqueur de conquérant" }),
-      // Le type Montagne donne « {T} : ajoutez {R} » (305.6).
+      activated({ mana: "{7}", effects: [fx.counters(ref.self, "conqueror")], label: "A conqueror counter" }),
+      // The Mountain type gives "{T}: Add {R}" (305.6).
       staticAbility(
         { types: ["Land"], basic: false },
         { setSubtypes: ["Mountain"], loseAllAbilities: true },
-        { condition: cond.counterAtLeast("conqueror", 1), label: "Les terrains non de base sont des Montagnes" },
+        { condition: cond.counterAtLeast("conqueror", 1), label: "Nonbasic lands are Mountains" },
       ),
     ],
   },
   "Zuko, Exiled Prince": {
-    // Maîtrise du feu 3 : lue dans le texte.
+    // Firebending 3: read from the text.
     abilities: [
       activated({
         mana: "{3}",
         effects: [fx.exileTop(ref.you, 1, "z"), fx.grantPlay(ref.stored("z"))],
-        label: "Exilez la carte du dessus, jouable ce tour-ci",
+        label: "Exile the top card, playable this turn",
       }),
     ],
   },
-  // « Payez 5 points de vie ou payez {2} » : lu dans le texte.
+  // "Pay 5 life or pay {2}": read from the text.
   "Redirect Lightning": {
     spell: spell([target.stackItemSingleTarget()], [fx.changeTarget(ref.target())]),
   },
-  // Présage {2}{R} : lu dans le texte.
+  // Foretell {2}{R}: read from the text.
   "Sozin's Comet": {
     spell: spell([], [fx.modifyAll({ types: ["Creature"], controller: "you" }, { addAbilities: [firebending(5)] })]),
   },
@@ -337,36 +335,36 @@ export const RED: Record<string, CardScript> = {
       [
         fx.fight(ref.target("a"), ref.target("b"), "excess"),
         { op: "addManaUntilEndOfTurn", mana: ["R"], times: amount.v("excess") },
-        fx.thisTurn({ keepUnspentMana: { types: ["R"] }, label: "Vous ne perdez pas votre mana rouge non dépensé" }),
+        fx.thisTurn({ keepUnspentMana: { types: ["R"] }, label: "You don't lose unspent red mana" }),
       ],
     ),
   },
-  // Flash : lu dans le texte.
+  // Flash: read from the text.
   "Fated Firepower": {
     abilities: [
-      entersWith({ counters: amount.x, counterKind: "fire", label: "Arrive avec X marqueurs de feu" }),
+      entersWith({ counters: amount.x, counterKind: "fire", label: "Enters with X fire counters" }),
       eventReplacement({
         event: "damage",
         source: { controller: "you" },
         to: "opponentSide",
         modify: { add: amount.countersOn(ref.self, "fire") },
-        label: "Vos sources infligent autant de blessures en plus que de marqueurs de feu",
+        label: "Your sources deal additional damage equal to the number of fire counters",
       }),
     ],
   },
   "Firebender Ascension": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(SOLDIER_FIRE)], { label: "Un Soldat 2/2 avec la maîtrise du feu 1" }),
+      triggered(when.entersSelf, [fx.createTokens(SOLDIER_FIRE)], { label: "A 2/2 Soldier with firebending 1" }),
       triggered(
         when.attackAbilityTriggered,
         [
           fx.counters(ref.self, "quest"),
           ...fx.when(
             cond.counterAtLeast("quest", 4),
-            fx.may("Copier cette capacité ?", fx.copySpell(ref.abilitiesFromEventObject, 1)),
+            fx.may("Copy this ability?", fx.copySpell(ref.abilitiesFromEventObject, 1)),
           ),
         ],
-        { label: "Un marqueur de quête ; à 4 ou plus, vous pouvez copier la capacité" },
+        { label: "A quest counter; at 4 or more, you may copy the ability" },
       ),
     ],
   },

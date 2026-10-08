@@ -1,7 +1,11 @@
 {
   "id": "cmd-multiverse-reforged",
-  "name": "Multiverse Reforged — Jace, architecte du multivers",
-  "description": "Préconstruit Commander officiel de Réalité fracturée (Reality Fracture), en blanc, bleu, noir et rouge. Jace remet sur le champ de bataille planeswalkers et grandes créatures ; des jetons à foison, le monarque, et de quoi tout balayer.",
+  "name": "Multiverse Reforged — Jace, Multiverse Architect",
+  "description": "Official Reality Fracture Commander precon, in white, blue, black and red. Jace returns planeswalkers and big creatures to the battlefield; tokens galore, the monarch, and ways to sweep everything away.",
+  "fr": {
+    "name": "Multiverse Reforged — Jace, architecte du multivers",
+    "description": "Préconstruit Commander officiel de Réalité fracturée (Reality Fracture), en blanc, bleu, noir et rouge. Jace remet sur le champ de bataille planeswalkers et grandes créatures ; des jetons à foison, le monarque, et de quoi tout balayer."
+  },
   "colors": [
     "W",
     "U",

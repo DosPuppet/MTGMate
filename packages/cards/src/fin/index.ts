@@ -1,6 +1,6 @@
 /**
- * Final Fantasy (FIN) : 305 cartes (job select, tiered, Villes, Équipements, créatures-Sagas « Summon »).
- * Les aides et jetons communs viennent d'Outlaws of Thunder Junction et de Foundations (fin/common.ts).
+ * Final Fantasy (FIN): 305 cards (job select, tiered, Towns, Equipment, "Summon" Saga creatures).
+ * Shared helpers and tokens come from Outlaws of Thunder Junction and Foundations (fin/common.ts).
  */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";

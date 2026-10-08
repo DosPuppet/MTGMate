@@ -1,4 +1,4 @@
-/** The Hobbit (HOB) : Storied, amasser, Landfall, Férocité, Équipements. */
+/** The Hobbit (HOB): Storied, amass, Landfall, Ferocious, Equipment. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

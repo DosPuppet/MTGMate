@@ -1,4 +1,4 @@
-/** Marvel's Spider-Man — cartes incolores et terrains (lot A). */
+/** Marvel's Spider-Man — colorless cards and lands (lot A). */
 import type { ManaType } from "@mtgx/engine";
 import {
   activated,
@@ -19,17 +19,17 @@ import {
   when,
 } from "./common";
 
-/** Terrains bicolores « arrive engagé ; {T} : ajoutez {X} ou {Y} ; {4}, {T} : surveillance 1 ». */
+/** Two-color lands "enters tapped; {T}: add {X} or {Y}; {4}, {T}: surveil 1". */
 const surveilLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     entersWith({ tapped: true }),
     manaAbility([a, b]),
-    activated({ mana: "{4}", tap: true, effects: [fx.surveil(1)], label: "Surveillance 1" }),
+    activated({ mana: "{4}", tap: true, effects: [fx.surveil(1)], label: "Surveil 1" }),
   ],
 });
 
 export const ARTIFACTS: Record<string, CardScript> = {
-  // --- Artefacts ---------------------------------------------------------------
+  // --- Artifacts ---------------------------------------------------------------
   "Bagel and Schmear": {
     abilities: [
       activated({
@@ -39,31 +39,31 @@ export const ARTIFACTS: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.upTo(1, target.creature("t"))],
         effects: [fx.addCounters(ref.target(), 1), fx.draw(1)],
-        label: "Partage : un marqueur +1/+1 sur jusqu'à une créature, piochez une carte",
+        label: "Share: a +1/+1 counter on up to one creature, draw a card",
       }),
       activated({
         mana: "{2}",
         tap: true,
         sacrifice: true,
         effects: [fx.gainLife(3), fx.draw(1)],
-        label: "Grignotage : vous gagnez 3 PV et piochez une carte",
+        label: "Nosh: you gain 3 life and draw a card",
       }),
     ],
   },
   "Doc Ock's Tentacles": {
-    // Équiper {5} : lu dans le texte.
+    // Equip {5}: read from the text.
     abilities: [
       triggered(
         when.enters({ types: ["Creature"], controller: "you", minManaValue: 5 }),
-        fx.may("Attacher Doc Ock's Tentacles à cette créature ?", fx.attach(ref.eventObject)),
-        { label: "Vous pouvez l'attacher à la créature de VM 5 ou plus" },
+        fx.may("Attach Doc Ock's Tentacles to that creature?", fx.attach(ref.eventObject)),
+        { label: "You may attach it to the creature with mana value 5 or greater" },
       ),
       staticAbility("attached", { power: 4, toughness: 4 }, { label: "+4/+4" }),
     ],
   },
   "Eerie Gravestone": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }),
       activated({
         mana: "{1}{B}",
         sacrifice: true,
@@ -73,16 +73,16 @@ export const ARTIFACTS: Record<string, CardScript> = {
             "graveyard",
             { types: ["Creature"] },
             { to: "hand" },
-            { count: 1, min: 0, pool: ref.stored("m"), prompt: "Vous pouvez mettre en main une carte de créature meulée" },
+            { count: 1, min: 0, pool: ref.stored("m"), prompt: "You may put a milled creature card into your hand" },
           ),
         ],
-        label: "Meulez quatre cartes, une carte de créature en main",
+        label: "Mill four cards, a creature card to your hand",
       }),
     ],
   },
   "Hot Dog Cart": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food token" }),
       manaAbility(["W", "U", "B", "R", "G"]),
     ],
   },
@@ -93,9 +93,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
         [fx.modify(ref.target(), { addTypes: ["Artifact", "Creature"], setPower: 3, setToughness: 3 }), fx.untap(ref.target())],
         {
           targets: [
-            target.permanent("t", ["Artifact"], { controller: "you", notSubtype: "Equipment" }, "artefact non-Équipement"),
+            target.permanent("t", ["Artifact"], { controller: "you", notSubtype: "Equipment" }, "non-Equipment artifact"),
           ],
-          label: "Un de vos artefacts non-Équipement devient une créature 3/3 et se dégage",
+          label: "A non-Equipment artifact you control becomes a 3/3 creature and untaps",
         },
       ),
     ],
@@ -104,34 +104,34 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target("g")), fx.connive(ref.target("c"))], {
         targets: [target.upTo(1, target.cardInGraveyard("g", {}, "any")), target.creature("c", { controller: "you" })],
-        label: "Exile jusqu'à une carte d'un cimetière ; une de vos créatures complote",
+        label: "Exiles up to one card from a graveyard; a creature you control connives",
       }),
     ],
   },
   "News Helicopter": {
-    // Vol : lu dans le texte.
-    abilities: [triggered(when.entersSelf, [fx.createTokens(HUMAN_CITIZEN)], { label: "Un Citoyen humain 1/1" })],
+    // Flying: read from the text.
+    abilities: [triggered(when.entersSelf, [fx.createTokens(HUMAN_CITIZEN)], { label: "A 1/1 Human Citizen token" })],
   },
   "Passenger Ferry": {
-    // Équipage 2 : lu dans le texte.
+    // Crew 2: read from the text.
     abilities: [
       triggered(
         when.attacksSelf,
         fx.mayPay(
           "{U}",
-          "Payer {U} pour qu'une autre créature attaquante ciblée ne puisse pas être bloquée ce tour-ci ?",
+          "Pay {U} so that another target attacking creature can't be blocked this turn?",
           fx.reflexive(
-            [{ ...target.creature("t", { attacking: true, other: true }), label: "autre créature attaquante" }],
+            [{ ...target.creature("t", { attacking: true, other: true }), label: "other attacking creature" }],
             [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
           ),
         ),
-        { label: "Payez {U} : une autre créature attaquante ne peut pas être bloquée" },
+        { label: "Pay {U}: another attacking creature can't be blocked" },
       ),
     ],
   },
   "Peter Parker's Camera": {
     abilities: [
-      entersWith({ counters: 3, counterKind: "film", label: "Arrive avec trois marqueurs de pellicule" }),
+      entersWith({ counters: 3, counterKind: "film", label: "Enters with three film counters" }),
       activated({
         mana: "{2}",
         tap: true,
@@ -139,38 +139,38 @@ export const ARTIFACTS: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "capacité activée ou déclenchée que vous contrôlez",
+            label: "activated or triggered ability you control",
             filter: { stackItems: { abilitiesOnly: true, controller: "you" } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],
-        label: "Copiez une capacité activée ou déclenchée que vous contrôlez",
+        label: "Copy an activated or triggered ability you control",
       }),
     ],
   },
   "Rocket-Powered Goblin Glider": {
-    // Équiper {2} et chaos {2} : lus dans le texte.
+    // Equip {2} and Mayhem {2}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         condition: cond.castFromGraveyard,
         targets: [target.creature("t", { controller: "you" })],
-        label: "Lancé depuis le cimetière : attachez-le à une de vos créatures",
+        label: "Cast from the graveyard: attach it to a creature you control",
       }),
-      staticAbility("attached", { power: 2, addKeywords: ["flying", "haste"] }, { label: "+2/+0, le vol et la célérité" }),
+      staticAbility("attached", { power: 2, addKeywords: ["flying", "haste"] }, { label: "+2/+0, flying and haste" }),
     ],
   },
   "Spider-Bot": {
-    // Portée : lue dans le texte.
+    // Reach: read from the text.
     abilities: [
       triggered(
         when.entersSelf,
-        fx.may("Chercher une carte de terrain de base à mettre au-dessus ?", fx.search(BASIC_LAND, { to: "libraryTop" })),
-        { label: "Vous pouvez mettre un terrain de base au-dessus de votre bibliothèque" },
+        fx.may("Search for a basic land card to put on top?", fx.search(BASIC_LAND, { to: "libraryTop" })),
+        { label: "You may put a basic land on top of your library" },
       ),
     ],
   },
   "Spider-Mobile": {
-    // Piétinement et équipage 2 : lus dans le texte.
+    // Trample and crew 2: read from the text.
     abilities: [when.attacksSelf, when.blocks("self")].map((w) =>
       triggered(
         w,
@@ -181,35 +181,35 @@ export const ARTIFACTS: Record<string, CardScript> = {
             amount.count({ subtype: "Spider", controller: "you" }),
           ),
         ],
-        { label: "+1/+1 par Araignée que vous contrôlez" },
+        { label: "+1/+1 for each Spider you control" },
       ),
     ),
   },
   "Spider-Slayer, Hatred Honed": {
     abilities: [
-      // Approximation : se déclenche quand une Araignée qu'il a déjà blessée ce tour-ci subit des blessures (le
-      // déclencheur « inflige des blessures » ne désigne pas l'objet blessé).
+      // Approximation: triggers when a Spider it has already damaged this turn is dealt damage (the "deals damage"
+      // trigger does not designate the damaged object).
       triggered(
         when.dealtDamage({ types: ["Creature"], subtype: "Spider", damagedBySource: true }),
         [fx.destroy(ref.eventObject)],
-        { label: "Détruit l'Araignée qu'il a blessée" },
+        { label: "Destroys the Spider it damaged" },
       ),
       activated({
         mana: "{6}",
         fromGraveyard: true,
         exileSelf: true,
         effects: [fx.createTappedTokens(ROBOT_FLYER, 2)],
-        label: "Deux Robots volants 1/1 engagés",
+        label: "Two tapped 1/1 flying Robots",
       }),
     ],
   },
   "Spider-Suit": {
-    // Équiper {3} : lu dans le texte.
+    // Equip {3}: read from the text.
     abilities: [
       staticAbility(
         "attached",
         { power: 2, toughness: 2, addSubtypes: ["Spider", "Hero"] },
-        { label: "+2/+2, Araignée Héros en plus de ses autres types" },
+        { label: "+2/+2, Spider Hero in addition to its other types" },
       ),
     ],
   },
@@ -217,41 +217,39 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(5, ref.target())], {
         targets: [target.creature("t")],
-        label: "5 blessures à une créature",
+        label: "5 damage to a creature",
       }),
       activated({
         mana: "{1}{R}",
         fromHand: true,
         discardSelf: true,
-        targets: [target.permanent("t", ["Artifact"], {}, "artefact")],
+        targets: [target.permanent("t", ["Artifact"], {}, "artifact")],
         effects: [fx.destroy(ref.target())],
-        label: "Défaussez-la : détruisez un artefact",
+        label: "Discard it: destroy an artifact",
       }),
     ],
   },
   "Subway Train": {
-    // Équipage 2 : lu dans le texte.
+    // Crew 2: read from the text.
     abilities: [
-      triggered(
-        when.entersSelf,
-        fx.mayPay("{G}", "Payer {G} pour chercher une carte de terrain de base ?", fx.search(BASIC_LAND)),
-        { label: "Payez {G} : un terrain de base en main" },
-      ),
+      triggered(when.entersSelf, fx.mayPay("{G}", "Pay {G} to search for a basic land card?", fx.search(BASIC_LAND)), {
+        label: "Pay {G}: a basic land to your hand",
+      }),
     ],
   },
 
-  // --- Terrains ----------------------------------------------------------------
+  // --- Lands -------------------------------------------------------------------
   "Daily Bugle Building": {
     abilities: [
       manaAbility("C"),
-      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
+      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "One mana of any color" }),
       activated({
         mana: "{1}",
         tap: true,
         sorcerySpeed: true,
-        targets: [{ ...target.creature("t", { legendary: true }), label: "créature légendaire" }],
+        targets: [{ ...target.creature("t", { legendary: true }), label: "legendary creature" }],
         effects: [fx.modify(ref.target(), { addKeywords: ["menace"] })],
-        label: "Campagne de dénigrement : une créature légendaire gagne la menace",
+        label: "Smear Campaign: a legendary creature gains menace",
       }),
     ],
   },
@@ -266,7 +264,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })],
-        label: "Cherchez un terrain de base",
+        label: "Search for a basic land",
       }),
     ],
   },

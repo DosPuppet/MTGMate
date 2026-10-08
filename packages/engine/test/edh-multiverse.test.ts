@@ -72,7 +72,7 @@ describe("Multiverse Reforged (EDH)", () => {
       s.monarch = "p1";
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
       const item = projectView(s, "p2").stack[0];
-      expect([item?.name, item?.fr?.name, item?.effect]).toEqual(["Monarch", "Monarque", "Monarque : piochez une carte"]);
+      expect([item?.name, item?.fr?.name, item?.effect]).toEqual(["Monarch", "Monarque", "Monarch: draw a card"]);
       const [h1, h2] = [hand(s, "p1"), hand(s, "p2")];
       s.monarch = "p2";
       s = passBoth(s);
@@ -105,7 +105,7 @@ describe("Multiverse Reforged (EDH)", () => {
       ]);
       expect(s.monarch).toBe("p1");
       const item = projectView(s, "p2").stack[0];
-      expect([item?.fr?.name, item?.effect]).toEqual(["Monarque", "Monarque : le contrôleur de la créature devient le monarque"]);
+      expect([item?.fr?.name, item?.effect]).toEqual(["Monarque", "Monarch: the creature's controller becomes the monarch"]);
       s = passBoth(s);
       expect(s.monarch).toBe("p2");
     });

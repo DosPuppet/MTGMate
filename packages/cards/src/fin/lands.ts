@@ -1,4 +1,4 @@
-/** Final Fantasy — terrains (Villes), dont les Villes à aventure. */
+/** Final Fantasy — lands (Towns), Adventure Towns included. */
 import type { CardScript, ManaType } from "@mtgx/engine";
 import {
   activated,
@@ -17,16 +17,16 @@ import {
   wizard,
 } from "./common";
 
-/** Ville bicolore engagée. */
+/** Two-color Town that enters tapped. */
 const tappedTown = (...colors: ManaType[]): CardScript => ({ abilities: [entersWith({ tapped: true }), manaAbility(colors)] });
 
 export const LANDS: Record<string, CardScript> = {
-  "Adventurer's Inn": { abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 PV" }), manaAbility("C")] },
+  "Adventurer's Inn": { abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 life" }), manaAbility("C")] },
   "Baron, Airship Kingdom": tappedTown("U", "R"),
   "Capital City": {
     abilities: [
       manaAbility("C"),
-      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
+      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "One mana of any color" }),
     ],
   },
   "Crossroads Village": {
@@ -42,16 +42,16 @@ export const LANDS: Record<string, CardScript> = {
         effects: [
           fx.mill(2),
           fx.may(
-            "Sacrifier ce terrain pour renvoyer une carte de permanent ?",
+            "Sacrifice this land to return a permanent card?",
             fx.sacrificeIt(ref.self),
             fx.reflexive(
-              // « une autre carte » : pas Eden elle-même, sacrifiée juste avant.
-              [target.cardInGraveyard("t", { permanent: true, other: true }, "you", "autre carte de permanent")],
+              // "another card": not Eden itself, sacrificed just before.
+              [target.cardInGraveyard("t", { permanent: true, other: true }, "you", "other permanent card")],
               [fx.toHand(ref.target())],
             ),
           ),
         ],
-        label: "Meulez deux cartes",
+        label: "Mill two cards",
       }),
     ],
   },
@@ -63,14 +63,14 @@ export const LANDS: Record<string, CardScript> = {
         mana: "{2}",
         tap: true,
         effects: [fx.coinFlip("won"), fx.when(cond.v("won"), fx.createTokens(TREASURE))],
-        label: "Pile ou face : Trésor",
+        label: "Flip a coin: Treasure",
       }),
       activated({
         mana: "{3}",
         tap: true,
         sacrificeOther: { filter: { types: ["Artifact"] }, count: 2 },
         effects: [fx.draw(1)],
-        label: "Piochez",
+        label: "Draw",
       }),
     ],
   },
@@ -87,14 +87,14 @@ export const LANDS: Record<string, CardScript> = {
         tap: true,
         payLife: 1,
         effects: [fx.addManaChoice(1)],
-        label: "Payez 1 PV : un mana de n'importe quelle couleur",
+        label: "Pay 1 life: one mana of any color",
       }),
     ],
   },
   "Treno, Dark City": tappedTown("U", "B"),
   "Vector, Imperial Capital": tappedTown("B", "R"),
   "Windurst, Federation Center": tappedTown("G", "W"),
-  // Villes à aventure : la face terrain et la face Aventure.
+  // Adventure Towns: the land face and the Adventure face.
   "Ishgard, the Holy See": tappedTown("W"),
   "Faith & Grief": {
     spell: spell(
@@ -105,7 +105,7 @@ export const LANDS: Record<string, CardScript> = {
             "t",
             { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] },
             "you",
-            "carte d'artefact ou d'enchantement",
+            "artifact or enchantment card",
           ),
         ),
       ],

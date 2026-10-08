@@ -1,4 +1,4 @@
-/** Reality Fracture — artefacts et cartes incolores. */
+/** Reality Fracture — artifacts and colorless cards. */
 import {
   activated,
   type CardScript,
@@ -20,10 +20,10 @@ import {
 export const ARTIFACTS: Record<string, CardScript> = {
   "Afterthought Sentry": {
     abilities: [
-      activated({ mana: "{2}", effects: [fx.modify(ref.self, { addKeywords: ["flying"] })], label: "Vol" }),
+      activated({ mana: "{2}", effects: [fx.modify(ref.self, { addKeywords: ["flying"] })], label: "Flying" }),
       triggered(when.attacksSelf, [fx.exileCard(ref.target())], {
         targets: [target.upTo(1, target.cardInGraveyard("t", {}, "any"))],
-        label: "exile une carte d'un cimetière",
+        label: "exiles a card from a graveyard",
       }),
     ],
   },
@@ -31,24 +31,24 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       triggeredModal(when.entersSelf, [
         mode(
-          "Détruire un permanent non-créature non-terrain",
-          [targetObj("t", { permanent: true, notTypes: ["Creature", "Land"] }, "permanent non-créature, non-terrain")],
+          "Destroy a noncreature, nonland permanent",
+          [targetObj("t", { permanent: true, notTypes: ["Creature", "Land"] }, "noncreature, nonland permanent")],
           [fx.destroy(ref.target())],
         ),
-        mode("Vous gagnez 4 PV", [], [fx.gainLife(4)]),
+        mode("You gain 4 life", [], [fx.gainLife(4)]),
       ]),
     ],
   },
   "The Echoverse Fulcrum": {
     abilities: [
-      triggered(when.entersSelf, fx.loot(1), { label: "piochez puis défaussez" }),
+      triggered(when.entersSelf, fx.loot(1), { label: "draw, then discard" }),
       activated({
         mana: "{5}",
         tap: true,
         exileSelf: true,
         sorcerySpeed: true,
         effects: [fx.destroyAll({ types: ["Creature"] })],
-        label: "Détruire toutes les créatures",
+        label: "Destroy every creature",
       }),
     ],
   },
@@ -57,7 +57,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       triggered(
         when.yourUpkeep,
         [fx.surveil(1), ...fx.when(cond.threshold, fx.sacrificeIt(ref.self), fx.damage(2, ref.eachOpponent), fx.gainLife(2))],
-        { label: "surveillance 1" },
+        { label: "surveil 1" },
       ),
     ],
   },
@@ -68,40 +68,40 @@ export const ARTIFACTS: Record<string, CardScript> = {
         {
           power: 1,
           addKeywords: ["flying"],
-          addAbilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "+1 PV" })],
+          addAbilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "+1 life" })],
         },
-        { label: "+1/+0, vol, +1 PV en attaquant" },
+        { label: "+1/+0, flying, +1 life when attacking" },
       ),
     ],
   },
   "Murmuring Volume": {
     abilities: [
       manaAbility(["W", "U", "B", "R", "G"]),
-      activated({ mana: "{2}", tap: true, discard: 1, effects: [fx.draw(1)], label: "Défaussez une carte : piochez" }),
+      activated({ mana: "{2}", tap: true, discard: 1, effects: [fx.draw(1)], label: "Discard a card: draw" }),
     ],
   },
   "Traxos, Scourge Eternal": {
     abilities: [
       triggered(when.castSpell("you", { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }), [fx.untap(ref.self)], {
-        label: "se dégage",
+        label: "untaps",
       }),
-      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
+      doesntUntap("self", { label: "Doesn't untap during your untap step" }),
     ],
   },
   "Codie, Ravenous Codex": {
     abilities: [
       triggered(when.castSpell("you", { preparedSpell: true }), [fx.copySpell(ref.eventObject, 1)], {
-        label: "copie le sort préparé",
+        label: "copies the prepared spell",
       }),
       activated({
         mana: "{W}{U}{B}{R}{G}",
         tap: true,
         effects: [fx.prepareAll({ types: ["Creature"], controller: "you" })],
-        label: "Vos créatures deviennent préparées",
+        label: "Your creatures become prepared",
       }),
     ],
   },
-  "Keeper of the Quiet Hour": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" })] },
+  "Keeper of the Quiet Hour": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Empower Jace 2" })] },
   "Living Library": {
     abilities: [
       activated({
@@ -109,7 +109,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         sacrifice: true,
         targets: [target.creatureOrPlaneswalker("t", { controller: "opponent" })],
         effects: [fx.moveTo(ref.target(), { to: "libraryTop" }), fx.shuffle(ref.eachOpponent)],
-        label: "Mélanger dans la bibliothèque",
+        label: "Shuffle into the library",
       }),
     ],
   },

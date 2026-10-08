@@ -1,6 +1,6 @@
 /**
- * The Hobbit — cartes bleues (lot A). Recrutement : « piochez une carte, puis défaussez une carte ; si vous avez défaussé
- * une carte non-terrain, créez un jeton Humain Soldat 1/1 blanc » (`recruit`, dans hob/common.ts).
+ * The Hobbit — blue cards (lot A). Recruit: "Draw a card, then discard a card. If you discarded a nonland card, create
+ * a 1/1 white Human Soldier token" (`recruit`, in hob/common.ts).
  */
 import type { CardType, ModeDef, ObjectFilter } from "@mtgx/engine";
 import {
@@ -28,30 +28,30 @@ import {
 
 const INSTANT_SORCERY: ObjectFilter = { types: ["Instant", "Sorcery"] };
 
-/** Recrutement : piochez, défaussez ; une carte non-terrain défaussée donne un Humain Soldat 1/1. */
-/** « Exilez [la cible] ; si vous le faites, renvoyez-la au début de la prochaine étape de fin. » */
+/** Recruit: draw, discard; a discarded nonland card gives a 1/1 Human Soldier. */
+/** "Exile [the target]. If you do, return it at the beginning of the next end step." */
 const FLICKER_UNTIL_END_STEP = [
   fx.exileCard(ref.target(), { name: "k" }),
   fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") }),
 ];
 
 /**
- * Burglar's Plot : « deux permanents non-terrains ciblés qui partagent un type de carte ». Un mode par type de carte
- * (approximation : la contrainte « partagent un type de carte » n'existe pas sur les cibles).
+ * Burglar's Plot: "two target nonland permanents that share a card type". One mode per card type (approximation: the
+ * "share a card type" constraint does not exist on targets).
  */
-const SHARED_TYPES: [CardType, string][] = [
-  ["Artifact", "artefacts"],
-  ["Creature", "créatures"],
-  ["Enchantment", "enchantements"],
-  ["Planeswalker", "planeswalkers"],
-  ["Battle", "batailles"],
+const SHARED_TYPES: [CardType, string, string][] = [
+  ["Artifact", "Exchange control of two artifacts", "nonland artifacts"],
+  ["Creature", "Exchange control of two creatures", "nonland creatures"],
+  ["Enchantment", "Exchange control of two enchantments", "nonland enchantments"],
+  ["Planeswalker", "Exchange control of two planeswalkers", "nonland planeswalkers"],
+  ["Battle", "Exchange control of two battles", "nonland battles"],
 ];
-const exchangeModes: ModeDef[] = SHARED_TYPES.map(([type, label]) =>
+const exchangeModes: ModeDef[] = SHARED_TYPES.map(([type, label, targetLabel]) =>
   mode(
-    `Échangez le contrôle de deux ${label}`,
+    label,
     [
-      target.permanent("a", [type], { notTypes: ["Land"] }, `${label} non-terrain`),
-      { ...target.permanent("b", [type], { notTypes: ["Land"] }, `${label} non-terrain`), otherThan: ["a"] },
+      target.permanent("a", [type], { notTypes: ["Land"] }, targetLabel),
+      { ...target.permanent("b", [type], { notTypes: ["Land"] }, targetLabel), otherThan: ["a"] },
     ],
     [fx.exchangeControl(ref.target("a"), ref.target("b"))],
   ),
@@ -61,19 +61,19 @@ export const BLUE: Record<string, CardScript> = {
   // --- Bilbo, Luckwearer // Burglar's Plot ----------------------------------
   "Bilbo, Luckwearer": {
     keywords: ["unblockable"],
-    abilities: [triggered(when.combatDamageToPlayer, fx.loot(1), { label: "Piochez une carte, puis défaussez une carte" })],
+    abilities: [triggered(when.combatDamageToPlayer, fx.loot(1), { label: "Loot: draw a card, then discard a card" })],
   },
   "Burglar's Plot": { spell: modal(...exchangeModes) },
 
   "Bilbo, Thief in the Night": {
     abilities: [
       {
-        // Approximation : les sorts lancés depuis le cimetière ou l'exil (pas depuis le dessus de la bibliothèque).
+        // Approximation: spells cast from the graveyard or exile (not from the top of the library).
         kind: "costReduction",
         filter: {},
         generic: 1,
         fromZones: ["graveyard", "exile"],
-        label: "Sorts lancés d'ailleurs que votre main : {1} de moins",
+        label: "Spells cast from anywhere other than your hand: {1} less",
       },
       triggered(
         when.attacksSelf,
@@ -82,25 +82,25 @@ export const BLUE: Record<string, CardScript> = {
             after: "exile",
           }),
         ],
-        { label: "Lancez un artefact, un éphémère ou un rituel de votre cimetière" },
+        { label: "Cast an artifact, instant or sorcery from your graveyard" },
       ),
     ],
   },
 
   // --- Bilbo Baggins, Burglar // Take a Glance ------------------------------
   "Bilbo Baggins, Burglar": {
-    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" })],
   },
   "Take a Glance": { spell: spell([], [fx.scry(2)]) },
 
   "Confusticate and Bebother": {
     spell: modal(
       mode(
-        "Contrecarrez un sort à moins que son contrôleur ne paie {4}",
+        "Counter a spell unless its controller pays {4}",
         [target.spell()],
         fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{4}" }, fx.counter(ref.target())),
       ),
-      mode("Piochez deux cartes, puis défaussez une carte", [], [fx.draw(2), fx.discard(1)]),
+      mode("Draw two cards, then discard a card", [], [fx.draw(2), fx.discard(1)]),
     ),
   },
   "Elven Raft-Steerer": {
@@ -108,14 +108,10 @@ export const BLUE: Record<string, CardScript> = {
       triggeredModal(
         when.landfall,
         [
-          mode("Engagez une créature adverse", [target.creature("t", { controller: "opponent" })], [fx.tap(ref.target())]),
-          mode(
-            "Dégagez une créature que vous contrôlez",
-            [target.creature("t", { controller: "you" })],
-            [fx.untap(ref.target())],
-          ),
+          mode("Tap an opponent's creature", [target.creature("t", { controller: "opponent" })], [fx.tap(ref.target())]),
+          mode("Untap a creature you control", [target.creature("t", { controller: "you" })], [fx.untap(ref.target())]),
         ],
-        { label: "Atterrissage : engagez une créature adverse ou dégagez une des vôtres" },
+        { label: "Landfall: tap an opponent's creature or untap one of yours" },
       ),
     ],
   },
@@ -125,45 +121,45 @@ export const BLUE: Record<string, CardScript> = {
         mana: "{4}{U}",
         targets: [target.creature()],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Une créature ne peut pas être bloquée ce tour-ci",
+        label: "A creature can't be blocked this turn",
       }),
     ],
   },
   "Enchanted River's Grasp": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       triggered(
         when.entersSelf,
         [fx.tap(ref.attached), fx.removeCounters(ref.attached, amount.countersOn(ref.attached, "any"))],
-        { label: "Engagez la créature enchantée et retirez-en tous les marqueurs" },
+        { label: "Tap the enchanted creature and remove all counters from it" },
       ),
-      staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
+      staticAbility("attached", { loseAllAbilities: true }, { label: "Loses all abilities" }),
       doesntUntap("attached"),
     ],
   },
   "Fateful Discovery": {
-    abilities: [triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.draw(1)], { label: "Draw a card" })],
   },
   "Gandalf, Wandering Wizard": {
-    // Garde {3} : lue dans le texte.
+    // Ward {3}: read from the text.
     abilities: [
       activated({
         mana: "{6}",
         effects: [
           fx.moveTo(ref.self, { to: "libraryTop", shuffle: true }),
-          // Son propriétaire pioche, même si Gandalf n'est plus sur le champ de bataille.
+          // Its owner draws, even if Gandalf is no longer on the battlefield.
           fx.draw(3, ref.ownerOf(ref.selfCard)),
         ],
-        label: "Son propriétaire le mélange dans sa bibliothèque et pioche trois cartes",
+        label: "Its owner shuffles it into their library and draws three cards",
       }),
     ],
   },
   "Great Gilded Boat": {
-    // Équipage 2 : lu dans le texte.
-    abilities: [triggered(when.attackWith(), recruit(), { label: "Recrutement" })],
+    // Crew 2: read from the text.
+    abilities: [triggered(when.attackWith(), recruit(), { label: "Recruitment" })],
   },
   "Lakeshore Apothecary": {
-    abilities: [triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Deuxième carte piochée : un marqueur +1/+1" })],
+    abilities: [triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Second card drawn: a +1/+1 counter" })],
   },
 
   // --- Lake-town Mariners // Gone Fishing -----------------------------------
@@ -173,7 +169,7 @@ export const BLUE: Record<string, CardScript> = {
       [
         target.exactly(
           2,
-          target.permanent("t", ["Creature", "Land"], { controller: "you" }, "créatures et/ou terrains que vous contrôlez"),
+          target.permanent("t", ["Creature", "Land"], { controller: "you" }, "creatures and/or lands you control"),
         ),
       ],
       [fx.exileCard(ref.target(), { name: "k" }), fx.toBattlefield(ref.stored("k"))],
@@ -181,7 +177,7 @@ export const BLUE: Record<string, CardScript> = {
   },
 
   "Long Lake Nuisance": {
-    abilities: [triggered(when.entersSelf, recruit(), { label: "Recrutement" })],
+    abilities: [triggered(when.entersSelf, recruit(), { label: "Recruitment" })],
   },
   "The Lord of the Eagles": {
     costReduction: {
@@ -192,27 +188,22 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.landfall,
-        fx.may("Sa force et son endurance de base deviennent 4/2 ?", fx.modify(ref.self, { setPower: 4, setToughness: 2 })),
-        { label: "Atterrissage : F/E de base 4/2 jusqu'à la fin du tour" },
+        fx.may("Its base power and toughness become 4/2?", fx.modify(ref.self, { setPower: 4, setToughness: 2 })),
+        { label: "Landfall: base P/T 4/2 until end of turn" },
       ),
     ],
   },
 
   // --- Most Decrepit Old Bird // Speak Secrets ------------------------------
   "Most Decrepit Old Bird": {
-    abilities: [staticAbility("self", { power: 1, toughness: 1 }, { condition: cond.threshold, label: "Seuil : +1/+1" })],
+    abilities: [staticAbility("self", { power: 1, toughness: 1 }, { condition: cond.threshold, label: "Threshold: +1/+1" })],
   },
   "Speak Secrets": {
     spell: spell(
       [],
       [
         fx.mill(4, ref.you, { name: "m" }),
-        fx.pickFromZone(
-          "graveyard",
-          INSTANT_SORCERY,
-          { to: "hand" },
-          { pool: ref.stored("m"), prompt: "Un éphémère ou un rituel" },
-        ),
+        fx.pickFromZone("graveyard", INSTANT_SORCERY, { to: "hand" }, { pool: ref.stored("m"), prompt: "An instant or sorcery" }),
       ],
     ),
   },
@@ -221,9 +212,9 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       chapter([1], [fx.modifyWhileSource(ref.target(), { addKeywords: ["hexproof"] })], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Chapitre I — Une de vos créatures a la défense talismanique tant que la Saga reste",
+        label: "Chapter I — One of your creatures has hexproof while the Saga remains",
       }),
-      // Approximation : la prévention est accordée à la créature comme une capacité (elle cesse si elle perd ses capacités).
+      // Approximation: the prevention is granted to the creature as an ability (it stops if the creature loses its abilities).
       chapter(
         [2],
         [
@@ -233,17 +224,17 @@ export const BLUE: Record<string, CardScript> = {
                 event: "damage",
                 source: { self: true },
                 modify: { prevent: true },
-                label: "Prévenez toutes les blessures qu'elle infligerait",
+                label: "Prevent all damage it would deal",
               }),
             ],
           }),
         ],
         {
           targets: [target.upTo(1, target.creature())],
-          label: "Chapitre II — Prévenez les blessures de jusqu'à une créature tant que la Saga reste",
+          label: "Chapter II — Prevent the damage of up to one creature while the Saga remains",
         },
       ),
-      chapter([3, 4], [fx.draw(1)], { label: "Chapitres III, IV — Piochez une carte" }),
+      chapter([3, 4], [fx.draw(1)], { label: "Chapters III, IV — Draw a card" }),
     ],
   },
   "Plunder the Trollshaws": {
@@ -254,19 +245,16 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Ravenhill Flock": {
-    abilities: [triggered(when.draw(), [fx.addCounters(ref.self, 1)], { label: "Un marqueur +1/+1" })],
+    abilities: [triggered(when.draw(), [fx.addCounters(ref.self, 1)], { label: "A +1/+1 counter" })],
   },
   "Riddles in the Dark": { spell: spell([], [fx.piles(4)]) },
   "Roll-Roll-Roll-Roll": {
     abilities: [
       chapter([1, 2, 3, 4], FLICKER_UNTIL_END_STEP, {
         targets: [
-          target.upTo(
-            1,
-            target.permanent("t", ["Creature", "Land"], { controller: "you" }, "créature ou terrain que vous contrôlez"),
-          ),
+          target.upTo(1, target.permanent("t", ["Creature", "Land"], { controller: "you" }, "creature or land you control")),
         ],
-        label: "Exilez jusqu'à une de vos créatures ou un de vos terrains ; il revient à la prochaine étape de fin",
+        label: "Exile up to one of your creatures or lands; it returns at the next end step",
       }),
     ],
   },
@@ -280,8 +268,8 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
-        fx.may("Piocher X cartes (le mana dépensé), puis en défausser deux ?", fx.draw(amount.eventManaSpent), fx.discard(2)),
-        { label: "Sort non-créature : piochez X cartes, puis défaussez-en deux" },
+        fx.may("Draw X cards (the mana spent), then discard two?", fx.draw(amount.eventManaSpent), fx.discard(2)),
+        { label: "Noncreature spell: draw X cards, then discard two" },
       ),
     ],
   },
@@ -290,14 +278,14 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.topOrBottom(ref.target())]),
   },
   "Wizard's Staff": {
-    // Équiper {3} : lu dans le texte.
+    // Equip {3}: read from the text.
     abilities: [
-      staticAbility("attached", { addKeywords: ["prowess"] }, { label: "La créature équipée a la prouesse" }),
+      staticAbility("attached", { addKeywords: ["prowess"] }, { label: "Equipped creature has prowess" }),
       playerStatic({
         triggerMod: { effect: "again", sources: { attached: "host" } },
-        label: "Les capacités déclenchées de la créature équipée se déclenchent une fois de plus",
+        label: "Triggered abilities of the equipped creature trigger an additional time",
       }),
-      equipAbility({ mana: "{1}", filter: { subtype: "Wizard" }, label: "Équiper Sorcier {1}" }),
+      equipAbility({ mana: "{1}", filter: { subtype: "Wizard" }, label: "Equip Wizard {1}" }),
     ],
   },
 };

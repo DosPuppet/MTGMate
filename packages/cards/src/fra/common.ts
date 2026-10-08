@@ -1,6 +1,6 @@
 /**
- * Éléments propres à Reality Fracture : jetons (Cadet, Heartwood, Lotus…) et filtres.
- * Le DSL et les filtres génériques viennent de Foundations (fdn/common.ts).
+ * Reality Fracture specifics: tokens (Cadet, Heartwood, Lotus…) and filters.
+ * The DSL and the generic filters come from Foundations (fdn/common.ts).
  */
 import { type Amount, dsl, type Effect, type TokenSpec } from "@mtgx/engine";
 import { manaAbility } from "../fdn/common";
@@ -16,10 +16,10 @@ const creature = (
   extra: Partial<TokenSpec> = {},
 ): TokenSpec => ({ name, colors, types: ["Creature"], subtypes, power, toughness, ...extra });
 
-/** « jeton de créature Sorcier Soldat incolore 2/2 appelé Cadet » */
+/** "2/2 colorless Wizard Soldier creature token named Cadet" */
 export const CADET = creature("Cadet", [], ["Wizard", "Soldier"], 2, 2);
 
-/** « jeton Heartwood : artefact rouge et vert avec "{T} : ajoutez {R} ou {G}." » */
+/** "Heartwood token": red and green artifact with "{T}: Add {R} or {G}." */
 export const HEARTWOOD: TokenSpec = {
   name: "Heartwood",
   colors: ["R", "G"],
@@ -29,7 +29,7 @@ export const HEARTWOOD: TokenSpec = {
   text: "{T}: Add {R} or {G}.",
 };
 
-/** « jeton d'artefact incolore appelé Lotus avec "{T}, sacrifiez ce jeton : ajoutez trois manas d'une même couleur." » */
+/** "colorless artifact token named Lotus with '{T}, Sacrifice this token: Add three mana of any one color.'" */
 export const LOTUS: TokenSpec = {
   name: "Lotus",
   colors: [],
@@ -39,7 +39,7 @@ export const LOTUS: TokenSpec = {
   text: "{T}, Sacrifice this token: Add three mana of any one color.",
 };
 
-/** « jeton de créature-terrain Forêt Tentacule verte 3/3 » (avec « {T} : ajoutez {G} »). */
+/** "3/3 green Forest Tentacle land creature token" (with "{T}: Add {G}"). */
 export const FOREST_TENTACLE: TokenSpec = {
   name: "Forest Tentacle",
   colors: ["G"],
@@ -47,7 +47,7 @@ export const FOREST_TENTACLE: TokenSpec = {
   subtypes: ["Forest", "Tentacle"],
   power: 3,
   toughness: 3,
-  // « {T} : ajoutez {G} » vient du type Forêt (305.6).
+  // "{T}: Add {G}" comes from the Forest type (305.6).
   text: "{T}: Add {G}.",
 };
 
@@ -61,7 +61,7 @@ export const THOPTER: TokenSpec = {
   keywords: ["flying"],
 };
 
-/** Vraska, Soul of Stone : créature-artefact Sculpture Trésor 1/1 avec la capacité de mana du Trésor. */
+/** Vraska, Soul of Stone: 1/1 Sculpture Treasure artifact creature with the Treasure's mana ability. */
 export const SCULPTURE_TREASURE: TokenSpec = {
   name: "Sculpture Treasure",
   colors: [],
@@ -78,42 +78,42 @@ export const ANGEL_3 = creature("Angel", ["U"], ["Angel"], 3, 3, { keywords: ["f
 export const MOWU = creature("Mowu", ["G"], ["Dog"], 3, 3, { legendary: true });
 export const ILLUSION = creature("Illusion", ["U"], ["Illusion"], 1, 1);
 export const LEVIATHAN = creature("Leviathan", ["U"], ["Leviathan"], 8, 8, { keywords: ["hexproof"] });
-/** Ajani's Pridemate : Chat Soldat blanc 2/2 avec « chaque fois que vous gagnez des PV, marqueur +1/+1 ». */
+/** Ajani's Pridemate: 2/2 white Cat Soldier with "whenever you gain life, +1/+1 counter". */
 export const AJANIS_PRIDEMATE = creature("Ajani's Pridemate", ["W"], ["Cat", "Soldier"], 2, 2, {
-  abilities: [dsl.triggered(dsl.when.gainLife, [dsl.fx.addCounters(dsl.ref.self, 1)], { label: "marqueur +1/+1" })],
+  abilities: [dsl.triggered(dsl.when.gainLife, [dsl.fx.addCounters(dsl.ref.self, 1)], { label: "put a +1/+1 counter" })],
   text: "Whenever you gain life, put a +1/+1 counter on this token.",
 });
 
 // ---------------------------------------------------------------------------
-// Sorts préparés partagés (plusieurs créatures ont le même sort)
+// Shared prepared spells (several creatures have the same spell)
 // ---------------------------------------------------------------------------
 
 const { spell: spellOf, fx: fxs, ref: refs, target: targets } = dsl;
 
-/** Seed Suture : « Mettez un marqueur +1/+1 sur une créature ciblée. Vous gagnez 1 point de vie. » */
+/** Seed Suture: "Put a +1/+1 counter on target creature. You gain 1 life." */
 export const SEED_SUTURE = spellOf([targets.creature("t")], [fxs.addCounters(refs.target(), 1), fxs.gainLife(1)]);
-/** Peer Review : « Créez un jeton Cadet. Surveillez 1. » */
+/** Peer Review: "Create a Cadet token. Surveil 1." */
 export const PEER_REVIEW = spellOf([], [fxs.createTokens(CADET), fxs.surveil(1)]);
-/** Omit Variables : « Meulez trois cartes. » */
+/** Omit Variables: "Mill three cards." */
 export const OMIT_VARIABLES = spellOf([], [fxs.mill(3)]);
-/** Vicious Verse : « 1 blessure à un adversaire ciblé. » */
+/** Vicious Verse: "1 damage to target opponent." */
 export const VICIOUS_VERSE = spellOf([targets.player("t", "opponent")], [fxs.damage(1, refs.target())]);
-/** Soul Tether : « Créez un jeton Heartwood. » */
+/** Soul Tether: "Create a Heartwood token." */
 export const SOUL_TETHER = spellOf([], [fxs.createTokens(HEARTWOOD)]);
 
 // ---------------------------------------------------------------------------
 // Empower Jace
 // ---------------------------------------------------------------------------
 
-/** « jeton de planeswalker Jace bleu avec "[−1] : Surveillez 1." et "[−3] : Piochez une carte." » */
+/** "blue Jace planeswalker token with '[−1]: Surveil 1.' and '[−3]: Draw a card.'" */
 export const JACE_TOKEN: TokenSpec = {
   name: "Jace",
   colors: ["U"],
   types: ["Planeswalker"],
   subtypes: ["Jace"],
   abilities: [
-    dsl.loyalty(-1, { effects: [fxs.surveil(1)], label: "Surveillance 1" }),
-    dsl.loyalty(-3, { effects: [fxs.draw(1)], label: "Piochez une carte" }),
+    dsl.loyalty(-1, { effects: [fxs.surveil(1)], label: "Surveil 1" }),
+    dsl.loyalty(-3, { effects: [fxs.draw(1)], label: "Draw a card" }),
   ],
   text: "[−1]: Surveil 1.\n[−3]: Draw a card.",
 };
@@ -121,17 +121,17 @@ export const JACE_TOKEN: TokenSpec = {
 const JACE_TOKEN_YOURS = { types: ["Planeswalker" as const], subtype: "Jace", token: true, controller: "you" as const };
 
 /**
- * « Renforcez Jace N » : N marqueurs de loyauté sur un jeton Jace que vous contrôlez, créé d'abord s'il n'y en a pas.
- * Avec plusieurs jetons Jace, le joueur choisit lequel à la résolution (choix non ciblé).
+ * "Empower Jace N": N loyalty counters on a Jace token you control, created first if there is none.
+ * With several Jace tokens, the player chooses which one on resolution (untargeted choice).
  */
 export const empower = (n: Amount): Effect[] => [
   { op: "counterOnOrCreate", who: refs.you, find: JACE_TOKEN_YOURS, token: JACE_TOKEN, kind: "loyalty", amount: 0 },
   fxs.chooseAmong(refs.permanentsOf(refs.you, JACE_TOKEN_YOURS), refs.you, "empowered", {
-    prompt: "Choisissez le jeton Jace qui reçoit les marqueurs",
+    prompt: "Choose the Jace token that gets the counters",
   }),
   fxs.counters(refs.stored("empowered"), "loyalty", n),
 ];
 
-/** « Les planeswalkers que vous contrôlez ont "[capacité de loyauté]". » */
+/** "Planeswalkers you control have '[loyalty ability]'." */
 export const walkersHave = (ability: ReturnType<typeof dsl.loyalty>, label: string) =>
   dsl.staticAbility({ types: ["Planeswalker"], controller: "you" }, { addAbilities: [ability] }, { label });

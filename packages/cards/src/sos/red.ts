@@ -1,7 +1,7 @@
 /**
- * Secrets of Strixhaven — cartes rouges (lot A). La préparation (« arrive préparée ») passe par `entersWith` et
- * `prepareSpell` ; l'Opus par `OPUS` et `opusInstead` (common.ts) ; garde (« payez N points de vie »),
- * célérité, menace et autres mots-clés sont lus dans le texte.
+ * Secrets of Strixhaven — red cards (lot A). Prepare ("enters prepared") goes through `entersWith` and
+ * `prepareSpell`; Opus through `OPUS` and `opusInstead` (common.ts); ward ("pay N life"), haste, menace and other
+ * keywords are read from the text.
  */
 import {
   activated,
@@ -27,12 +27,12 @@ import {
   when,
 } from "./common";
 
-/** « Vous pouvez défausser une carte. Si vous le faites, piochez une carte. » */
+/** "You may discard a card. If you do, draw a card." */
 const mayRummage = [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))];
 
-/** Steal the Show, premier mode : le joueur ciblé défausse autant de cartes qu'il veut, puis en pioche autant. */
+/** Steal the Show, first mode: target player discards any number of cards, then draws that many. */
 const wheelSome = [fx.discard(60, ref.target("p"), { optional: true, store: "d" }), fx.draw(amount.v("d"), ref.target("p"))];
-/** Steal the Show, second mode : autant de blessures que de cartes d'éphémère et de rituel dans votre cimetière. */
+/** Steal the Show, second mode: damage equal to the number of instant and sorcery cards in your graveyard. */
 const spellsInGraveyard = [fx.damage(amount.countIn("graveyard", INSTANT_SORCERY), ref.target("c"))];
 
 export const RED: Record<string, CardScript> = {
@@ -45,7 +45,7 @@ export const RED: Record<string, CardScript> = {
       ],
     ),
   },
-  // Convergence : X = couleurs de mana dépensées ; les cartes exilées se jouent jusqu'à la fin de votre prochain tour.
+  // Converge: X = colors of mana spent; the exiled cards can be played until the end of your next turn.
   "Archaic's Agony": {
     spell: spell(
       [target.creature()],
@@ -58,54 +58,50 @@ export const RED: Record<string, CardScript> = {
   },
   "Artistic Process": {
     spell: modal(
-      mode("6 blessures à une créature", [target.creature()], [fx.damage(6, ref.target())]),
+      mode("6 damage to a creature", [target.creature()], [fx.damage(6, ref.target())]),
+      mode("2 damage to each creature you don't control", [], [fx.damageAll(2, { types: ["Creature"], controller: "opponent" })]),
       mode(
-        "2 blessures à chaque créature que vous ne contrôlez pas",
-        [],
-        [fx.damageAll(2, { types: ["Creature"], controller: "opponent" })],
-      ),
-      mode(
-        "Un Élémental 3/3 volant, avec la célérité ce tour-ci",
+        "A 3/3 flying Elemental, with haste this turn",
         [],
         [fx.createTokens(ELEMENTAL_UR, 1, undefined, "e"), fx.pump(ref.stored("e"), 0, 0, ["haste"])],
       ),
     ),
   },
-  // Sort préparé : Seething Song.
+  // Prepared spell: Seething Song.
   "Blazing Firesinger": {
     prepareSpell: spell([], [fx.addManaTimes(5, "R")]),
     abilities: [entersWith({ prepared: true })],
   },
-  // Célérité lue dans le texte.
+  // Haste read from the text.
   "Charging Strifeknight": {
-    abilities: [activated({ tap: true, discard: 1, effects: [fx.draw(1)], label: "Défaussez une carte : piochez une carte" })],
+    abilities: [activated({ tap: true, discard: 1, effects: [fx.draw(1)], label: "Discard a card: draw a card" })],
   },
   "Duel Tactics": {
     flashback: "{1}{R}",
     spell: spell([target.creature()], [fx.damage(1, ref.target()), fx.pump(ref.target(), 0, 0, ["cantBlock"])]),
   },
-  // Initiative lue dans le texte ; sort préparé : Lightning Bolt.
+  // First strike read from the text; prepared spell: Lightning Bolt.
   "Emeritus of Conflict": {
     prepareSpell: spell([target.any()], [fx.damage(3, ref.target())]),
-    abilities: [triggered(when.castNthSpell(3), [fx.prepare(ref.self)], { label: "Troisième sort du tour : devient préparée" })],
+    abilities: [triggered(when.castNthSpell(3), [fx.prepare(ref.self)], { label: "Third spell of the turn: becomes prepared" })],
   },
   "Expressive Firedancer": {
     abilities: [
       triggered(OPUS, [fx.pump(ref.self, 1, 1), ...fx.when(OPUS_BIG, fx.pump(ref.self, 0, 0, ["doubleStrike"]))], {
-        label: "Opus : +1/+1 ; cinq mana ou plus : double initiative",
+        label: "Opus: +1/+1; five or more mana: double strike",
       }),
     ],
   },
-  // Menace lue dans le texte.
+  // Menace read from the text.
   "Garrison Excavator": {
     abilities: [
       triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.createTokens(SPIRIT_RW)], {
         batched: true,
-        label: "Des cartes quittent votre cimetière : un Esprit 2/2",
+        label: "Cards leave your graveyard: a 2/2 Spirit",
       }),
     ],
   },
-  // Sort préparé : Craft with Pride.
+  // Prepared spell: Craft with Pride.
   "Goblin Glasswright": {
     prepareSpell: spell([], [fx.createTokens(TREASURE)]),
     abilities: [entersWith({ prepared: true })],
@@ -119,32 +115,32 @@ export const RED: Record<string, CardScript> = {
           "graveyard",
           {},
           { to: "exile" },
-          { count: 1, min: 0, store: "g", prompt: "Vous pouvez exiler une carte de votre cimetière" },
+          { count: 1, min: 0, store: "g", prompt: "You may exile a card from your graveyard" },
         ),
         ...fx.when(cond.v("g"), fx.damage(2, ref.controllerOf(ref.target()))),
       ],
     ),
   },
-  // Paradigme lu dans le texte.
+  // Paradigm read from the text.
   "Improvisation Capstone": {
     spell: spell([], [fx.exileUntilTotalManaValue(ref.you, 4, "x"), fx.castNow(ref.stored("x"), { free: true, many: true })]),
   },
   "Living History": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(SPIRIT_RW)], { label: "Un Esprit 2/2" }),
+      triggered(when.entersSelf, [fx.createTokens(SPIRIT_RW)], { label: "A 2/2 Spirit" }),
       triggered(when.attackWith(1), [fx.pump(ref.target(), 2, 0)], {
         condition: cond.amountAtLeast(amount.cardsLeftGraveyardThisTurn, 1),
         targets: [target.creature("t", { attacking: true })],
-        label: "Une carte a quitté votre cimetière : +2/+0 à une créature attaquante",
+        label: "A card left your graveyard: +2/+0 to an attacking creature",
       }),
     ],
   },
-  // Célérité lue dans le texte ; sort préparé : Rocket Volley.
+  // Haste read from the text; prepared spell: Rocket Volley.
   "Maelstrom Artisan": {
-    prepareSpell: spell([target.permanent("t", ["Land"], { basic: false }, "terrain non-base")], [fx.destroy(ref.target())]),
+    prepareSpell: spell([target.permanent("t", ["Land"], { basic: false }, "nonbasic land")], [fx.destroy(ref.target())]),
     abilities: [entersWith({ prepared: true })],
   },
-  // Garde (payez 3 points de vie) lue dans le texte.
+  // Ward (pay 3 life) read from the text.
   "Mica, Reader of Ruins": {
     abilities: [
       triggered(
@@ -153,60 +149,60 @@ export const RED: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Artifact"] }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.copySpell(ref.eventObject, 1)),
         ],
-        { label: "Sacrifiez un artefact : copiez le sort" },
+        { label: "Sacrifice an artifact: copy the spell" },
       ),
     ],
   },
-  // Menace lue dans le texte.
+  // Menace read from the text.
   "Molten-Core Maestro": {
     abilities: [
       triggered(OPUS, [fx.addCounters(ref.self, 1), ...fx.when(OPUS_BIG, fx.addManaTimes(amount.powerOf(ref.self), "R"))], {
-        label: "Opus : un marqueur +1/+1 ; cinq mana ou plus : {R} autant que sa force",
+        label: "Opus: a +1/+1 counter; five or more mana: {R} equal to its power",
       }),
     ],
   },
-  // Vol lu dans le texte ; sort préparé : Striking Palette.
+  // Flying read from the text; prepared spell: Striking Palette.
   "Pigment Wrangler": {
     prepareSpell: spell([], [fx.copyNextSpell]),
     abilities: [entersWith({ prepared: true })],
   },
   "Rubble Rouser": {
     abilities: [
-      triggered(when.entersSelf, mayRummage, { label: "Défaussez une carte pour en piocher une" }),
-      // Capacité de mana (605.1a) : la capacité réflexive « quand vous le faites » se déclenche ensuite.
+      triggered(when.entersSelf, mayRummage, { label: "Discard a card to draw one" }),
+      // Mana ability (605.1a): the reflexive "when you do" ability triggers afterwards.
       activated({
         tap: true,
         exileFromGraveyard: { filter: {} },
         effects: [fx.addMana("R"), fx.reflexive([], [fx.damage(1, ref.eachOpponent)])],
-        label: "Exilez une carte de votre cimetière : ajoutez {R}, 1 blessure à chaque adversaire",
+        label: "Exile a card from your graveyard: add {R}, 1 damage to each opponent",
       }),
     ],
   },
   "Steal the Show": {
     spell: modal(
-      mode("Le joueur défausse des cartes, puis en pioche autant", [target.player("p")], wheelSome),
-      mode("Blessures à une créature ou un planeswalker", [target.creatureOrPlaneswalker("c")], spellsInGraveyard),
-      mode("Les deux", [target.player("p"), target.creatureOrPlaneswalker("c")], [...wheelSome, ...spellsInGraveyard]),
+      mode("The player discards cards, then draws that many", [target.player("p")], wheelSome),
+      mode("Damage to a creature or planeswalker", [target.creatureOrPlaneswalker("c")], spellsInGraveyard),
+      mode("Both", [target.player("p"), target.creatureOrPlaneswalker("c")], [...wheelSome, ...spellsInGraveyard]),
     ),
   },
-  // Garde (payez 2 points de vie) lue dans le texte ; sort préparé : Awaken the Ages.
+  // Ward (pay 2 life) read from the text; prepared spell: Awaken the Ages.
   "Strife Scholar": {
     prepareSpell: spell([], [fx.createTokens(SPIRIT_RW, 2)]),
     abilities: [entersWith({ prepared: true })],
   },
-  // Piétinement lu dans le texte.
+  // Trample read from the text.
   "Tackle Artist": {
     abilities: [
       triggered(OPUS, opusInstead([fx.addCounters(ref.self, 1)], [fx.addCounters(ref.self, 2)]), {
-        label: "Opus : un marqueur +1/+1 (deux si cinq mana ou plus)",
+        label: "Opus: a +1/+1 counter (two if five or more mana)",
       }),
     ],
   },
-  // Portée lue dans le texte.
+  // Reach read from the text.
   "Thunderdrum Soloist": {
     abilities: [
       triggered(OPUS, opusInstead([fx.damage(1, ref.eachOpponent)], [fx.damage(3, ref.eachOpponent)]), {
-        label: "Opus : 1 blessure à chaque adversaire (3 si cinq mana ou plus)",
+        label: "Opus: 1 damage to each opponent (3 if five or more mana)",
       }),
     ],
   },
@@ -220,36 +216,34 @@ export const RED: Record<string, CardScript> = {
   "Zealous Lorecaster": {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {
-        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "carte d'éphémère ou de rituel de votre cimetière")],
-        label: "Renvoie un éphémère ou un rituel du cimetière en main",
+        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery card from your graveyard")],
+        label: "Returns an instant or sorcery from the graveyard to hand",
       }),
     ],
   },
   "Magmablood Archaic": {
     abilities: [
-      entersWith({ counters: amount.colorsSpent, label: "Convergence : un marqueur +1/+1 par couleur de mana dépensée" }),
+      entersWith({ counters: amount.colorsSpent, label: "Converge: a +1/+1 counter for each color of mana spent" }),
       triggered(
         when.castSpell("you", INSTANT_SORCERY),
         [fx.pumpAll({ types: ["Creature"], controller: "you" }, amount.eventColorsSpent, 0)],
-        { label: "Éphémère ou rituel : vos créatures +1/+0 par couleur de mana dépensée pour le lancer" },
+        { label: "Instant or sorcery: your creatures get +1/+0 for each color of mana spent to cast it" },
       ),
     ],
   },
   "Choreographed Sparks": {
-    // « Ce sort ne peut pas être copié » : lu dans le texte. « Un ou les deux » : deux modes sans coût en plus.
+    // "This spell can't be copied": read from the text. "Choose one or both": two modes with no extra cost.
     spell: spree(
       {
         cost: "{0}",
-        label: "Copiez un sort d'éphémère ou de rituel que vous contrôlez",
-        targets: [
-          target.spell("a", { ...INSTANT_SORCERY, controller: "you" }, "sort d'éphémère ou de rituel que vous contrôlez"),
-        ],
+        label: "Copy an instant or sorcery spell you control",
+        targets: [target.spell("a", { ...INSTANT_SORCERY, controller: "you" }, "instant or sorcery spell that you control")],
         effects: [fx.copySpell(ref.target("a"), 1)],
       },
       {
         cost: "{0}",
-        label: "Copiez un sort de créature que vous contrôlez (célérité, sacrifiée en fin de tour)",
-        targets: [target.spell("b", { types: ["Creature"], controller: "you" }, "sort de créature que vous contrôlez")],
+        label: "Copy a creature spell you control (haste, sacrificed at end of turn)",
+        targets: [target.spell("b", { types: ["Creature"], controller: "you" }, "creature spell you control")],
         effects: [fx.copySpell(ref.target("b"), 1, { haste: true, sacrificeAtEndStep: true })],
       },
     ),

@@ -1,4 +1,4 @@
-/** Marvel Super Heroes (MSH) : montée en puissance, travail d'équipe, exploiter, Héros et Méchants. */
+/** Marvel Super Heroes (MSH): power-up, teamwork, harness, Heroes and Villains. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

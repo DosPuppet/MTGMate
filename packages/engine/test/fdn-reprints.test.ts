@@ -63,7 +63,7 @@ describe("Réimpressions : combat", () => {
     s = passBoth(s);
     s = attackWith(s, ["Llanowar Elves"]);
     s = advance(s, (x) => x.pending?.kind === "declareBlockers");
-    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [] })).toThrow(/bloquée/);
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [] })).toThrow(/must be blocked/);
     const blocker = idOf(s, "p2", "battlefield", "Prideful Parent");
     s = act(s, "p2", {
       type: "declareBlockers",
@@ -83,7 +83,7 @@ describe("Réimpressions : combat", () => {
   it("Équipage : Cultivator's Caravan devient une créature en engageant de quoi faire 3 de force", () => {
     let s = scenario({ p1: { battlefield: ["Cultivator's Caravan", "Shivan Dragon"] } });
     const caravan = idOf(s, "p1", "battlefield", "Cultivator's Caravan");
-    const crew = activation(s, "p1", caravan, "Équipage");
+    const crew = activation(s, "p1", caravan, "Crew");
     expect(crew).toBeDefined();
     s = act(s, "p1", { type: "activate", source: caravan, ability: crew!.ability });
     s = passBoth(s);
@@ -96,7 +96,7 @@ describe("Réimpressions : combat", () => {
       p1: { battlefield: ["Cultivator's Caravan", "Shivan Dragon", "Llanowar Elves", "Llanowar Elves", "Llanowar Elves"] },
     });
     const caravan = idOf(s, "p1", "battlefield", "Cultivator's Caravan");
-    const crew = activation(s, "p1", caravan, "Équipage");
+    const crew = activation(s, "p1", caravan, "Crew");
     const spec = crew?.type === "activate" ? crew.additional?.tap : undefined;
     // L'option expose la force requise, les forces et le choix par défaut (les plus faibles d'abord : trois Elfes).
     expect(spec?.minPower).toBe(3);
@@ -105,7 +105,7 @@ describe("Réimpressions : combat", () => {
     const elves = idsOf(s, "p1", "battlefield", "Llanowar Elves");
     // Deux Elfes (force 2) : insuffisant.
     expect(() => act(s, "p1", { type: "activate", source: caravan, ability: crew!.ability, tap: elves.slice(0, 2) })).toThrow(
-      /Force totale insuffisante/,
+      /Not enough total power/,
     );
     const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
     s = act(s, "p1", { type: "activate", source: caravan, ability: crew!.ability, tap: [dragon] });
@@ -304,7 +304,7 @@ describe("Réimpressions : cartes à mémoire", () => {
       p1: { battlefield: ["Maze's End", ...gates, ...lands("Forest", 3)], library: ["Simic Guildgate", "Forest"] },
     });
     const maze = idOf(s, "p1", "battlefield", "Maze's End");
-    s = act(s, "p1", { type: "activate", source: maze, ability: activation(s, "p1", maze, "Chercher")!.ability });
+    s = act(s, "p1", { type: "activate", source: maze, ability: activation(s, "p1", maze, "Search")!.ability });
     s = advance(s, (x) => x.over || x.stack.length === 0);
     expect(s.over).toBe(true);
     expect(s.winner).toBe("p1");
@@ -350,7 +350,7 @@ describe("Réimpressions : cartes à mémoire", () => {
     s = attackWith(s, ["Steel Hellkite"]);
     s = advance(s, (x) => x.turn.step === "main2" && x.pending?.kind === "priority");
     const hk = idOf(s, "p1", "battlefield", "Steel Hellkite");
-    s = act(s, "p1", { type: "activate", source: hk, ability: activation(s, "p1", hk, "Détruire")!.ability, x: 1 });
+    s = act(s, "p1", { type: "activate", source: hk, ability: activation(s, "p1", hk, "Destroy")!.ability, x: 1 });
     s = passBoth(s);
     expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(0);
     expect(idsOf(s, "p2", "battlefield", "Prideful Parent")).toHaveLength(1);

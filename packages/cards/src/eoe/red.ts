@@ -1,4 +1,4 @@
-/** Edge of Eternities — cartes rouges. */
+/** Edge of Eternities — red cards. */
 import {
   activated,
   amount,
@@ -28,7 +28,7 @@ export const RED: Record<string, CardScript> = {
     spell: spell(
       [target.creature("t")],
       [
-        // La créature s'inflige elle-même les blessures (deux fois plus si elle a le vol).
+        // The creature deals the damage to itself (twice as much if it has flying).
         fx.when(
           cond.targetMatches("t", { keyword: "flying" }),
           fx.damage(amount.plus(amount.powerOf(ref.target()), amount.powerOf(ref.target())), ref.target(), ref.target()),
@@ -42,12 +42,12 @@ export const RED: Record<string, CardScript> = {
   },
   "Devastating Onslaught": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artefact ou créature que vous contrôlez")],
+      [target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artifact or creature you control")],
       [fx.copyToken(ref.target(), { count: amount.x, addKeywords: ["haste"], sacrificeAtEndStep: true })],
     ),
   },
   "Frontline War-Rager": {
-    abilities: [triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: TWO_TAPPED, label: "Marqueur +1/+1" })],
+    abilities: [triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: TWO_TAPPED, label: "+1/+1 counter" })],
   },
   "Full Bore": {
     spell: spell(
@@ -69,7 +69,7 @@ export const RED: Record<string, CardScript> = {
   },
   "Kavaron Skywarden": {
     abilities: [
-      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: cond.void, label: "Vide : marqueur +1/+1" }),
+      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: cond.void, label: "Void: +1/+1 counter" }),
     ],
   },
   "Kavaron Turbodrone": {
@@ -79,7 +79,7 @@ export const RED: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.pump(ref.target(), 1, 1, ["haste"])],
-        label: "+1/+1 et la célérité",
+        label: "+1/+1 and haste",
       }),
     ],
   },
@@ -96,32 +96,32 @@ export const RED: Record<string, CardScript> = {
   "Melded Moxite": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.you, { optional: true, store: "d" }), fx.when(cond.v("d"), fx.draw(2))], {
-        label: "Défaussez : piochez deux cartes",
+        label: "Discard: draw two cards",
       }),
-      activated({ mana: "{3}", sacrifice: true, effects: [fx.createTappedTokens(ROBOT)], label: "Robot 2/2 engagé" }),
+      activated({ mana: "{3}", sacrifice: true, effects: [fx.createTappedTokens(ROBOT)], label: "Tapped 2/2 Robot" }),
     ],
   },
   "Memorial Team Leader": {
     abilities: [
-      staticAbility(OTHER_CREATURE_YOU_CONTROL, { power: 1 }, { condition: cond.yourTurn, label: "Pendant votre tour : +1/+0" }),
+      staticAbility(OTHER_CREATURE_YOU_CONTROL, { power: 1 }, { condition: cond.yourTurn, label: "During your turn: +1/+0" }),
     ],
   },
   "Molecular Modifier": {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), 1, 0, ["firstStrike"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "+1/+0 et l'initiative",
+        label: "+1/+0 and first strike",
       }),
     ],
   },
   "Nebula Dragon": {
-    abilities: [triggered(when.entersSelf, [fx.damage(3, ref.target())], { targets: [target.any()], label: "3 blessures" })],
+    abilities: [triggered(when.entersSelf, [fx.damage(3, ref.target())], { targets: [target.any()], label: "3 damage" })],
   },
   "Nova Hellkite": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(1, ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "1 blessure",
+        label: "1 damage",
       }),
     ],
   },
@@ -132,26 +132,26 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ types: ["Artifact"], controller: "you", other: true }),
-        fx.mayPay("{1}", "payer {1} pour un marqueur +1/+1 ?", fx.addCounters(ref.self, 1)),
-        { label: "Payez {1} : marqueur +1/+1" },
+        fx.mayPay("{1}", "pay {1} for a +1/+1 counter?", fx.addCounters(ref.self, 1)),
+        { label: "Pay {1}: +1/+1 counter" },
       ),
     ],
   },
   "Pain for All": {
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
       triggered(when.entersSelf, [fx.damage(amount.powerOf(ref.attached), ref.target(), ref.attached)], {
-        // « N'importe quelle autre cible » : pas la créature enchantée.
+        // "Any other target": not the enchanted creature.
         targets: [
           {
             ...target.any(),
             filter: { players: "any", objects: { types: ["Creature", "Planeswalker", "Battle"], attached: "notHost" } },
           },
         ],
-        label: "Blessures égales à sa force",
+        label: "Damage equal to its power",
       }),
       triggered(when.attachedIsDealtDamage, [fx.damage(amount.eventAmount, ref.eachOpponent, ref.attached)], {
-        label: "Autant de blessures à chaque adversaire",
+        label: "That much damage to each opponent",
       }),
     ],
   },
@@ -163,16 +163,16 @@ export const RED: Record<string, CardScript> = {
   },
   "Red Tiger Mechan": {},
   "Remnant Elemental": {
-    abilities: [triggered(when.landfall, [fx.pump(ref.self, 2, 0)], { label: "Landfall : +2/+0" })],
+    abilities: [triggered(when.landfall, [fx.pump(ref.self, 2, 0)], { label: "Landfall: +2/+0" })],
   },
   "Rig for War": {
     spell: spell([target.creature("t")], [fx.pump(ref.target(), 3, 0, ["reach", "firstStrike"])]),
   },
   "Ruinous Rampage": {
     spell: modal(
-      mode("3 blessures à chaque adversaire", [], [fx.damage(3, ref.eachOpponent)]),
+      mode("3 damage to each opponent", [], [fx.damage(3, ref.eachOpponent)]),
       mode(
-        "Exilez les artefacts de valeur de mana 3 ou moins",
+        "Exile the artifacts with mana value 3 or less",
         [],
         [fx.moveAll("battlefield", ref.eachPlayer, { types: ["Artifact"], maxManaValue: 3 }, { to: "exile" })],
       ),
@@ -186,7 +186,7 @@ export const RED: Record<string, CardScript> = {
         exileFromGraveyard: { filter: { types: ["Artifact"] } },
         targets: [target.any()],
         effects: [fx.addCounters(ref.self, 1), fx.damage(amount.powerOf(ref.self), ref.target())],
-        label: "Marqueur +1/+1, blessures égales à sa force",
+        label: "+1/+1 counter, damage equal to its power",
       }),
     ],
   },
@@ -197,7 +197,7 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { types: ["Artifact", "Land"], other: true } },
         effects: [fx.draw(1)],
-        label: "Piochez",
+        label: "Draw",
       }),
     ],
   },
@@ -205,22 +205,22 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.yourEndStep,
-        fx.may("défausser votre main et piocher deux cartes ?", fx.discard(amount.cardsIn("hand")), fx.draw(2)),
-        { condition: TWO_TAPPED, label: "Défaussez votre main, piochez deux cartes" },
+        fx.may("discard your hand and draw two cards?", fx.discard(amount.cardsIn("hand")), fx.draw(2)),
+        { condition: TWO_TAPPED, label: "Discard your hand, draw two cards" },
       ),
     ],
   },
   "Weapons Manufacturing": {
     abilities: [
       triggered(when.enters({ types: ["Artifact"], controller: "you", token: false }), [fx.createTokens(MUNITIONS)], {
-        label: "Jeton Munitions",
+        label: "Munitions token",
       }),
     ],
   },
   "Weftstalker Ardent": {
     abilities: [
       triggered(when.enters({ ...CREATURE_OR_ARTIFACT, controller: "you", other: true }), [fx.damage(1, ref.eachOpponent)], {
-        label: "1 blessure à chaque adversaire",
+        label: "1 damage to each opponent",
       }),
     ],
   },

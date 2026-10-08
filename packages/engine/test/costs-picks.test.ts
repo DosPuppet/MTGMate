@@ -22,7 +22,7 @@ describe("objets payés en coût, au choix du joueur", () => {
     let s = scenario({ p1: base });
     const dissident = idOf(s, "p1", "battlefield", "Dawnhand Dissident");
     const [petit, gros] = [idOf(s, "p1", "battlefield", "Petit"), idOf(s, "p1", "battlefield", "Gros")];
-    const option = activation(s, dissident, "surveillance");
+    const option = activation(s, dissident, "surveil");
     const pick = option?.picks?.find((p) => p.slot === "blight");
     expect(pick?.options).toEqual(expect.arrayContaining([petit, gros]));
     // Suggestion : une créature qui survit (la plus résistante).
@@ -39,7 +39,7 @@ describe("objets payés en coût, au choix du joueur", () => {
     // Sans choix : la suggestion.
     let t = scenario({ p1: base });
     const d2 = idOf(t, "p1", "battlefield", "Dawnhand Dissident");
-    t = act(t, "p1", { type: "activate", source: d2, ability: activation(t, d2, "surveillance")?.ability ?? -1, targets: {} });
+    t = act(t, "p1", { type: "activate", source: d2, ability: activation(t, d2, "surveil")?.ability ?? -1, targets: {} });
     expect(t.objects[idOf(t, "p1", "battlefield", "Gros")]?.counters["-1/-1"]).toBe(1);
   });
 
@@ -65,7 +65,7 @@ describe("objets payés en coût, au choix du joueur", () => {
       p1: { battlefield: ["Polygraph Orb", ...lands("Island", 2)], graveyard: ["Opt", "Opt", "Opt", "Lightning Strike"] },
     });
     const orb = idOf(s, "p1", "battlefield", "Polygraph Orb");
-    const option = activation(s, orb, "perd 3 PV");
+    const option = activation(s, orb, "loses 3 life");
     const pick = option?.picks?.find((p) => p.slot === "evidence");
     expect(pick?.minTotal?.n).toBe(3);
     const opts = s.players.p1?.graveyard.filter((id) => s.objects[id]?.defId === "opt") ?? [];

@@ -1,4 +1,4 @@
-/** Tarkir: Dragonstorm — cartes vertes. */
+/** Tarkir: Dragonstorm — green cards. */
 import {
   activated,
   amount,
@@ -39,7 +39,7 @@ export const GREEN: Record<string, CardScript> = {
           ),
           ...fx.when(cond.not(cond.v("p")), fx.addCounters(ref.self, 1)),
         ],
-        { label: "Meulez trois cartes : un terrain en main, sinon un marqueur +1/+1" },
+        { label: "Mill three cards: a land to hand, otherwise a +1/+1 counter" },
       ),
     ],
   },
@@ -48,7 +48,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.addCounters(ref.self, 1)], {
         condition: cond.yourTurn,
         batched: true,
-        label: "Des cartes quittent votre cimetière pendant votre tour : marqueur +1/+1",
+        label: "Cards leave your graveyard during your turn: +1/+1 counter",
       }),
     ],
   },
@@ -57,7 +57,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.pumpAll(CREATURE_YOU_CONTROL, amount.count(CREATURE_YOU_CONTROL), amount.count(CREATURE_YOU_CONTROL), ["trample"])],
-        { label: "Vos créatures gagnent le piétinement et +X/+X" },
+        { label: "Your creatures gain trample and +X/+X" },
       ),
     ],
   },
@@ -69,14 +69,14 @@ export const GREEN: Record<string, CardScript> = {
         sacrifice: true,
         sorcerySpeed: true,
         effects: [fx.createTokens(RELIQUARY_DRAGON)],
-        label: "Reliquary Dragon, Dragon 4/4 de toutes les couleurs",
+        label: "Reliquary Dragon, a 4/4 Dragon of all colors",
       }),
     ],
   },
   "Encroaching Dragonstorm": {
     abilities: [
       triggered(when.entersSelf, [fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2)], {
-        label: "Cherchez deux terrains de base, mis engagés",
+        label: "Search for two basic lands, put onto the battlefield tapped",
       }),
       dragonstorm(),
     ],
@@ -90,10 +90,10 @@ export const GREEN: Record<string, CardScript> = {
         effects: [
           fx.modify(ref.target(), {
             addKeywords: ["trample"],
-            addAbilities: [triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Blesse un joueur : piochez" })],
+            addAbilities: [triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Damages a player: draw" })],
           }),
         ],
-        label: "Piétinement et « blesse un joueur : piochez »",
+        label: 'Trample and "damages a player: draw"',
       }),
     ],
   },
@@ -108,7 +108,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{2}{G}",
         effects: [fx.modify(ref.self, { addKeywords: ["attacksDespiteDefender"] })],
-        label: "Peut attaquer ce tour-ci malgré le défenseur",
+        label: "Can attack this turn despite defender",
       }),
     ],
   },
@@ -116,7 +116,7 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell([], [fx.search({ types: ["Creature"], compare: [cmp.manaValue("<=", amount.x)] }, { to: "battlefield" })]),
   },
   "Piercing Exhale": {
-    // « En coût additionnel, vous pouvez contempler un Dragon » : fait au lancement, retenu par le sort.
+    // "As an additional cost to cast this spell, you may behold a Dragon": done on casting, remembered by the spell.
     additionalCost: { behold: { filter: DRAGON_CARD } },
     spell: spell(
       [target.creature("a", { controller: "you" }), target.creatureOrPlaneswalker("b")],
@@ -125,17 +125,20 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Rainveil Rejuvenator": {
     abilities: [
-      triggered(when.entersSelf, fx.may("meuler trois cartes ?", fx.mill(3)), { label: "Vous pouvez meuler trois cartes" }),
+      triggered(when.entersSelf, fx.may("mill three cards?", fx.mill(3)), { label: "You may mill three cards" }),
       manaAbility("G", 1, { selfPower: true }),
     ],
   },
   "Rite of Renewal": {
-    // Les cartes mélangées viennent du cimetière du joueur ciblé, qui les mélange dans sa bibliothèque.
+    // The shuffled cards come from the target player's graveyard, who shuffles them into their library.
     spell: spell(
       [
-        target.upTo(2, target.cardInGraveyard("p", { permanent: true }, "you", "carte de permanent de votre cimetière")),
+        target.upTo(2, target.cardInGraveyard("p", { permanent: true }, "you", "permanent card in your graveyard")),
         target.player("pl"),
-        target.of(ref.target("pl"), target.upTo(4, target.cardInGraveyard("c", {}, "any", "carte du cimetière du joueur ciblé"))),
+        target.of(
+          ref.target("pl"),
+          target.upTo(4, target.cardInGraveyard("c", {}, "any", "card in the target player's graveyard")),
+        ),
       ],
       [fx.toHand(ref.target("p")), fx.moveTo(ref.target("c"), { to: "libraryTop", shuffle: true }), fx.exileOnResolve],
     ),
@@ -144,7 +147,7 @@ export const GREEN: Record<string, CardScript> = {
   "Sarkhan's Resolve": {
     spell: modal(
       mode("+3/+3", [target.creature()], [fx.pump(ref.target(), 3, 3)]),
-      mode("Détruisez une créature avec le vol", [target.creature("d", { keyword: "flying" })], [fx.destroy(ref.target("d"))]),
+      mode("Destroy a creature with flying", [target.creature("d", { keyword: "flying" })], [fx.destroy(ref.target("d"))]),
     ),
   },
   "Sultai Devotee": { abilities: [devotee(["B", "G", "U"])] },
@@ -162,7 +165,7 @@ export const GREEN: Record<string, CardScript> = {
           ...fx.when(cond.controls(CREATURE_WITH_COUNTER), fx.draw(1)),
           ...fx.when(cond.not(cond.controls(CREATURE_WITH_COUNTER)), fx.addCounters(ref.self, 1)),
         ],
-        { label: "Une créature à marqueur : piochez ; sinon marqueur +1/+1" },
+        { label: "A creature with a counter: draw; otherwise a +1/+1 counter" },
       ),
     ],
   },
@@ -174,7 +177,7 @@ export const GREEN: Record<string, CardScript> = {
           fx.lookAtTop(1, { filter: { types: ["Land"] }, count: 1, to: { to: "hand" }, rest: "top", store: "h" }),
           ...fx.when(cond.not(cond.v("h")), fx.lookAtTop(1, { count: 1, to: { to: "graveyard" }, rest: "top" })),
         ],
-        { label: "Regardez la carte du dessus : un terrain en main, sinon au cimetière si vous voulez" },
+        { label: "Look at the top card: a land to hand, otherwise into the graveyard if you want" },
       ),
     ],
   },
@@ -183,31 +186,31 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         sacrifice: true,
-        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruisez un artefact ou un enchantement",
+        label: "Destroy an artifact or an enchantment",
       }),
     ],
   },
 
-  // --- Lot B ------------------------------------------------------------------
+  // --- Batch B ----------------------------------------------------------------
   "Bloomvine Regent": {
     abilities: [
       triggered(when.enters({ subtype: "Dragon", controller: "you" }), [fx.gainLife(3)], {
-        label: "Lui ou un autre de vos Dragons arrive : gagnez 3 PV",
+        label: "It or another Dragon of yours enters: gain 3 life",
       }),
     ],
   },
   "Claim Territory": {
-    // « Jusqu'à deux cartes de Forêt de base, révélées : mettez-en une sur le champ de bataille engagée et l'autre dans
-    // votre main » : une seule recherche (les cartes trouvées vont en main), puis le choix de celle qui arrive en jeu.
+    // "Up to two basic Forest cards, reveal them: put one onto the battlefield tapped and the other into your hand":
+    // a single search (the cards found go to hand), then the choice of the one that enters the battlefield.
     spell: spell(
       [],
       [
         fx.search({ types: ["Land"], basic: true, subtype: "Forest" }, { to: "hand" }, 2, undefined, "f"),
         fx.chooseAmong(ref.stored("f"), ref.you, "bf", {
           anyZone: true,
-          prompt: "Forêt à mettre sur le champ de bataille engagée",
+          prompt: "Forest to put onto the battlefield tapped",
         }),
         fx.moveTo(ref.stored("bf"), { to: "battlefield", tapped: true }),
       ],
@@ -219,32 +222,29 @@ export const GREEN: Record<string, CardScript> = {
         "{1}{G}",
         [target.creature()],
         [fx.addCounters(ref.target(), 1), fx.counters(ref.target(), "trample")],
-        "marqueur +1/+1 et marqueur de piétinement",
+        "+1/+1 counter and trample counter",
       ),
     ],
   },
-  "Dusyut Earthcarver": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 3)], { label: "Endurance 3" })] },
+  "Dusyut Earthcarver": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 3)], { label: "Endure 3" })] },
   "Inspirited Vanguard": {
     abilities: [
-      triggered(when.entersSelf, [fx.endure(ref.self, 2)], { label: "Endurance 2" }),
-      triggered(when.attacksSelf, [fx.endure(ref.self, 2)], { label: "Endurance 2" }),
+      triggered(when.entersSelf, [fx.endure(ref.self, 2)], { label: "Endure 2" }),
+      triggered(when.attacksSelf, [fx.endure(ref.self, 2)], { label: "Endure 2" }),
     ],
   },
   "Lasyd Prowler": {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.may(
-          "meuler autant de cartes que vous contrôlez de terrains ?",
-          fx.mill(amount.count({ types: ["Land"], controller: "you" })),
-        ),
-        { label: "Vous pouvez meuler autant de cartes que de terrains" },
+        fx.may("mill as many cards as lands you control?", fx.mill(amount.count({ types: ["Land"], controller: "you" }))),
+        { label: "You may mill as many cards as lands" },
       ),
       renew(
         "{1}{G}",
         [target.creature()],
         [fx.addCounters(ref.target(), amount.countIn("graveyard", { types: ["Land"] }))],
-        "X marqueurs +1/+1 (cartes de terrain de votre cimetière)",
+        "X +1/+1 counters (land cards in your graveyard)",
       ),
     ],
   },
@@ -252,13 +252,13 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature()],
-        label: "Marqueur +1/+1 sur une créature",
+        label: "+1/+1 counter on target creature",
       }),
       renew(
         "{3}{G}",
         [target.creature()],
         [fx.addCounters(ref.target(), 1), fx.doubleCounters(ref.target())],
-        "marqueur +1/+1, puis doublez ses marqueurs +1/+1",
+        "+1/+1 counter, then double its +1/+1 counters",
       ),
     ],
   },
@@ -268,27 +268,27 @@ export const GREEN: Record<string, CardScript> = {
         "{4}{G}",
         [target.creature()],
         [fx.addCounters(ref.target(), 2), fx.counters(ref.target(), "reach")],
-        "deux marqueurs +1/+1 et un marqueur de portée",
+        "two +1/+1 counters and a reach counter",
       ),
     ],
   },
-  "Sagu Wildling": { abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "Gagnez 3 PV" })] },
+  "Sagu Wildling": { abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "Gain 3 life" })] },
   "Roost Seek": { spell: spell([], [fx.search(BASIC_LAND)]) },
   "Warden of the Grove": {
     abilities: [
-      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
+      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }),
       triggered(
         when.enters({ types: ["Creature"], controller: "you", token: false, other: true }),
         [fx.endure(ref.eventObject, amount.countersOn(ref.self, "any"))],
-        { label: "Une autre de vos créatures non-jeton arrive : elle endure X (marqueurs sur Warden)" },
+        { label: "Another nontoken creature of yours enters: it endures X (counters on Warden)" },
       ),
     ],
   },
   "Disruptive Stormbrood": {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
-        targets: [target.optional(target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement"))],
-        label: "Détruisez jusqu'à un artefact ou un enchantement",
+        targets: [target.optional(target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment"))],
+        label: "Destroy up to one artifact or one enchantment",
       }),
     ],
   },

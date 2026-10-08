@@ -1,4 +1,4 @@
-/** Final Fantasy — cartes des decks de démarrage (numéros hors du set principal). */
+/** Final Fantasy — starter deck cards (numbers outside the main set). */
 import type { CardScript } from "@mtgx/engine";
 import { amount, cond, fx, ref, spell, staticAbility, target, triggered, when } from "./common";
 
@@ -7,17 +7,17 @@ const EQUIPMENT_YOU = { subtype: "Equipment", controller: "you" as const };
 export const STARTER: Record<string, CardScript> = {
   "Beatrix, Loyal General": {
     abilities: [
-      // « Un nombre quelconque d'Équipements » : choisis à la résolution, aucun si vous le voulez.
+      // "Any number of Equipment": chosen on resolution, none if you wish.
       triggered(
         when.yourCombat,
         [
           fx.chooseAmong(ref.permanentsOf(ref.you, EQUIPMENT_YOU), ref.you, "eq", {
             anyNumber: true,
-            prompt: "Choisissez les Équipements à attacher",
+            prompt: "Choose the Equipment to attach",
           }),
           fx.attach(ref.target(), ref.stored("eq")),
         ],
-        { targets: [target.creature("t", { controller: "you" })], label: "Attachez vos Équipements" },
+        { targets: [target.creature("t", { controller: "you" })], label: "Attach your Equipment" },
       ),
     ],
   },
@@ -25,25 +25,23 @@ export const STARTER: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.addCounters(ref.target(), 1), fx.pump(ref.target(), 0, 0, ["lifelink"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Marqueur +1/+1 et le lien de vie",
+        label: "+1/+1 counter and lifelink",
       }),
     ],
   },
   "Ultimecia, Temporal Threat": {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }))], {
-        label: "Engagez les créatures adverses",
+        label: "Tap creatures your opponents control",
       }),
-      triggered(when.combatDamage({ types: ["Creature"], controller: "you" }, true), [fx.draw(1)], { label: "Piochez" }),
+      triggered(when.combatDamage({ types: ["Creature"], controller: "you" }, true), [fx.draw(1)], { label: "Draw" }),
     ],
   },
   "Seymour Flux": {
     abilities: [
-      triggered(
-        when.yourUpkeep,
-        fx.mayPayLife(1, "Payer 1 point de vie pour piocher ?", fx.draw(1), fx.addCounters(ref.self, 1)),
-        { label: "Payez 1 PV : piochez, marqueur +1/+1" },
-      ),
+      triggered(when.yourUpkeep, fx.mayPayLife(1, "Pay 1 life to draw?", fx.draw(1), fx.addCounters(ref.self, 1)), {
+        label: "Pay 1 life: draw, +1/+1 counter",
+      }),
     ],
   },
   "Lightning, Security Sergeant": {
@@ -52,20 +50,20 @@ export const STARTER: Record<string, CardScript> = {
         when.combatDamageToPlayer,
         [
           fx.exileTop(ref.you, 1, "l"),
-          // « Tant que vous contrôlez Lightning » : cet objet-là (une autre Lightning ne compte pas).
+          // "For as long as you control Lightning": that object (another Lightning does not count).
           fx.grantPlay(ref.stored("l"), { forever: true, condition: cond.controls({ self: true }) }),
         ],
-        { label: "Exilez la carte du dessus, jouable" },
+        { label: "Exile the top card, playable" },
       ),
     ],
   },
   "Sephiroth, Planet's Heir": {
     abilities: [
       triggered(when.entersSelf, [fx.pumpAll({ types: ["Creature"], controller: "opponent" }, -2, -2)], {
-        label: "Créatures adverses -2/-2",
+        label: "Creatures your opponents control get -2/-2",
       }),
       triggered(when.dies({ types: ["Creature"], controller: "opponent" }), [fx.addCounters(ref.self, 1)], {
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -74,7 +72,7 @@ export const STARTER: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, toughness: 1 },
-        { perGraveyard: { notTypes: ["Creature", "Land"] }, label: "+1/+1 par carte non-créature non-terrain au cimetière" },
+        { perGraveyard: { notTypes: ["Creature", "Land"] }, label: "+1/+1 for each noncreature, nonland card in your graveyard" },
       ),
     ],
   },
@@ -96,12 +94,12 @@ export const STARTER: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.may(
-            "Attacher cet Équipement à la créature ?",
+            "Attach this Equipment to the creature?",
             fx.attach(ref.target()),
             fx.pump(ref.target(), 0, 0, ["firstStrike", "mustBeBlocked"]),
           ),
         ],
-        { targets: [target.creature("t", { controller: "you" })], label: "Un test de vos réflexes !" },
+        { targets: [target.creature("t", { controller: "you" })], label: "A Test of Your Reflexes!" },
       ),
       staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
     ],
@@ -110,7 +108,7 @@ export const STARTER: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacks({ attached: "host" }), [fx.destroy(ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Détruisez une créature adverse",
+        label: "Destroy a creature an opponent controls",
       }),
       staticAbility("attached", { power: 7, toughness: 7 }, { label: "+7/+7" }),
     ],

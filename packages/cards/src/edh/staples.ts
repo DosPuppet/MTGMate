@@ -1,6 +1,6 @@
 /**
- * Commander (PLAN-E, E9) : sorts communs et moteurs des decks Commander. Tuteurs, contresorts, destructions de masse,
- * protection du joueur (Teferi's Protection, The One Ring), doublement de jetons, moteurs de pioche et de drain.
+ * Commander (PLAN-E, E9): common spells and engines of the Commander decks. Tutors, counterspells, board wipes, player
+ * protection (Teferi's Protection, The One Ring), token doubling, draw and drain engines.
  */
 import type { CardScript, EventReplacement, TargetSpec, TokenSpec } from "@mtgx/engine";
 import {
@@ -24,7 +24,7 @@ import {
   when,
 } from "./common";
 
-/** Créature Changelin incolore 3/2 avec le changelin (Black Market Connections). */
+/** Colorless 3/2 Shapeshifter creature with changeling (Black Market Connections). */
 const SHAPESHIFTER_3_2: TokenSpec = {
   name: "Shapeshifter",
   colors: [],
@@ -35,15 +35,15 @@ const SHAPESHIFTER_3_2: TokenSpec = {
   keywords: ["changeling"],
 };
 
-/** « Votre total de points de vie ne peut pas changer » : ni gain ni perte (119.7, 119.8 : ni paiement de PV). */
+/** "Your life total can't change": neither gain nor loss (119.7, 119.8: no paying life either). */
 const lifeCantChange = (["lifeGain", "lifeLoss"] as const).map((event) =>
   fx.untilYourNextTurn({ replacement: { event, to: "you", modify: { prevent: true } } satisfies EventReplacement }),
 );
 
-/** « Sort ou permanent non-terrain qu'un adversaire contrôle. » */
+/** "Spell or nonland permanent an opponent controls." */
 const OPPONENT_SPELL_OR_NONLAND: TargetSpec = {
   id: "t",
-  label: "sort ou permanent non-terrain d'un adversaire",
+  label: "spell or nonland permanent an opponent controls",
   filter: { spells: { controller: "opponent" }, objects: { permanent: true, notTypes: ["Land"], controller: "opponent" } },
 };
 
@@ -59,56 +59,56 @@ export const EDH_STAPLES: Record<string, CardScript> = {
     ),
   },
   "The One Ring": {
-    // Indestructible : lu dans le texte.
+    // Indestructible: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.untilYourNextTurn({ protection: "everything" })], {
         condition: cond.wasCast,
-        label: "Lancé : protection contre tout jusqu'à votre prochain tour",
+        label: "Cast: protection from everything until your next turn",
       }),
       triggered(when.yourUpkeep, [fx.loseLife(amount.countersOn(ref.self, "burden"))], {
-        label: "Vous perdez 1 PV par marqueur de fardeau",
+        label: "You lose 1 life per burden counter",
       }),
       activated({
         tap: true,
         effects: [fx.counters(ref.self, "burden"), fx.draw(amount.countersOn(ref.self, "burden"))],
-        label: "Un marqueur de fardeau, puis piochez une carte par marqueur",
+        label: "A burden counter, then draw a card per counter",
       }),
     ],
   },
 
-  // --- Tuteurs ---
+  // --- Tutors ---
   "Demonic Tutor": { spell: spell([], [fx.search({}, { to: "hand" })]) },
-  // Approximation : la carte cherchée n'est pas révélée.
+  // Approximation: the card searched for is not revealed.
   "Enlightened Tutor": {
     spell: spell([], [fx.search({ anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] }, { to: "libraryTop" })]),
   },
 
-  // --- Contresorts ---
+  // --- Counterspells ---
   "Force of Negation": {
     altCost: {
       mana: "{0}",
       condition: cond.not(cond.yourTurn),
-      label: "Force of Negation — exilez une carte bleue de votre main (hors de votre tour)",
+      label: "Force of Negation — exile a blue card from your hand (not on your turn)",
       pay: { exileFromHand: { filter: { colors: ["U"] }, count: 1 } },
     },
-    spell: spell([target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")], [fx.counterExile(ref.target())]),
+    spell: spell([target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")], [fx.counterExile(ref.target())]),
   },
   Rewind: {
     spell: spell([target.spell()], [fx.counter(ref.target()), fx.untapUpTo({ types: ["Land"] }, 4)]),
   },
   Unwind: {
     spell: spell(
-      [target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")],
+      [target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")],
       [fx.counter(ref.target()), fx.untapUpTo({ types: ["Land"] }, 3)],
     ),
   },
 
-  // --- Destructions ---
+  // --- Removal ---
   "Snuff Out": {
     altCost: {
       mana: "{0}",
       condition: cond.controls({ subtype: "Swamp" }),
-      label: "Snuff Out — payez 4 PV (vous contrôlez un Marais)",
+      label: "Snuff Out — pay 4 life (you control a Swamp)",
       pay: { life: 4 },
     },
     spell: spell([target.creature("t", { not: { colors: ["B"] } })], [{ op: "destroy", what: ref.target(), noRegenerate: true }]),
@@ -118,34 +118,34 @@ export const EDH_STAPLES: Record<string, CardScript> = {
   },
   Damn: {
     spell: altCostMode(
-      "Surcharge",
+      "Overload",
       "{2}{W}{W}",
       { targets: [target.creature()], effects: [{ op: "destroy", what: ref.target(), noRegenerate: true }] },
       { effects: [fx.destroyAll({ types: ["Creature"] }, undefined, true)] },
     ),
   },
-  // « Payez X points de vie » en coût additionnel : lu dans le texte.
+  // "Pay X life" as an additional cost: read from the text.
   "Toxic Deluge": {
     spell: spell([], [fx.pumpAll({ types: ["Creature"] }, amount.neg(amount.x), amount.neg(amount.x))]),
   },
   Farewell: {
     spell: modal(
       ...oneOrMore(
-        { label: "Exilez tous les artefacts", effects: [fx.exile(ref.permanentsOf(ref.eachPlayer, { types: ["Artifact"] }))] },
-        { label: "Exilez toutes les créatures", effects: [fx.exile(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }))] },
+        { label: "Exile all artifacts", effects: [fx.exile(ref.permanentsOf(ref.eachPlayer, { types: ["Artifact"] }))] },
+        { label: "Exile all creatures", effects: [fx.exile(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }))] },
         {
-          label: "Exilez tous les enchantements",
+          label: "Exile all enchantments",
           effects: [fx.exile(ref.permanentsOf(ref.eachPlayer, { types: ["Enchantment"] }))],
         },
         {
-          label: "Exilez tous les cimetières",
+          label: "Exile all graveyards",
           effects: [fx.moveAll("graveyard", ref.eachPlayer, {}, { to: "exile" })],
         },
       ),
     ),
   },
 
-  // --- Pioche et tempo ---
+  // --- Card draw and tempo ---
   "Frantic Search": {
     spell: spell([], [fx.draw(2), fx.discard(2), fx.untapUpTo({ types: ["Land"] }, 3)]),
   },
@@ -154,29 +154,29 @@ export const EDH_STAPLES: Record<string, CardScript> = {
     spell: spell([], [fx.draw(2)]),
   },
   "Sink into Stupor": { spell: spell([OPPONENT_SPELL_OR_NONLAND], [fx.bounce(ref.target())]) },
-  // Verso : « vous pouvez payer 3 PV ; sinon, il arrive engagé » est lu dans le texte.
+  // Back face: "you may pay 3 life; if you don't, it enters tapped" is read from the text.
   "Soporific Springs": { abilities: [manaAbility("U")] },
   "Black Market Connections": {
     abilities: [
       triggeredModal(
         { on: "step", step: "main", whose: "you", nth: 1 },
         oneOrMore(
-          { label: "Trésor, 1 PV", effects: [fx.createTokens(TREASURE), fx.loseLife(1)] },
-          { label: "Piochez, 2 PV", effects: [fx.draw(1), fx.loseLife(2)] },
-          { label: "Changelin 3/2, 3 PV", effects: [fx.createTokens(SHAPESHIFTER_3_2), fx.loseLife(3)] },
+          { label: "Treasure, 1 life", effects: [fx.createTokens(TREASURE), fx.loseLife(1)] },
+          { label: "Draw, 2 life", effects: [fx.draw(1), fx.loseLife(2)] },
+          { label: "3/2 Shapeshifter, 3 life", effects: [fx.createTokens(SHAPESHIFTER_3_2), fx.loseLife(3)] },
         ),
-        { label: "Première phase principale : choisissez un ou plusieurs" },
+        { label: "First main phase: choose one or more" },
       ),
     ],
   },
 
-  // --- Artefacts et enchantements ---
+  // --- Artifacts and enchantments ---
   Skullclamp: {
-    // Équiper {1} : lu dans le texte.
+    // Equip {1}: read from the text.
     abilities: [
       staticAbility("attached", { power: 1, toughness: -1 }, { label: "+1/-1" }),
       triggered(when.dies({ attached: "host" }), [fx.draw(2)], {
-        label: "La créature équipée meurt : piochez deux cartes",
+        label: "Equipped creature dies: draw two cards",
       }),
     ],
   },
@@ -185,16 +185,16 @@ export const EDH_STAPLES: Record<string, CardScript> = {
       activated({
         sacrificeOther: { filter: { types: ["Creature"] } },
         effects: [fx.addManaChoice(1)],
-        label: "Sacrifiez une créature : un mana de n'importe quelle couleur",
+        label: "Sacrifice a creature: one mana of any color",
       }),
     ],
   },
   "Herald's Horn": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      costReducer(CREATURE_OF_CHOSEN_TYPE, 1, "Vos sorts de créature du type choisi coûtent {1} de moins"),
+      costReducer(CREATURE_OF_CHOSEN_TYPE, 1, "Your creature spells of the chosen type cost {1} less"),
       triggered(when.yourUpkeep, [fx.lookAtTop(1, { filter: CREATURE_OF_CHOSEN_TYPE, rest: "top" })], {
-        label: "Regardez la carte du dessus : une créature du type choisi peut aller dans votre main",
+        label: "Look at the top card: a creature of the chosen type may go to your hand",
       }),
     ],
   },
@@ -205,11 +205,11 @@ export const EDH_STAPLES: Record<string, CardScript> = {
         { ...CREATURE_OF_CHOSEN_TYPE, controller: "you" },
         { power: 1, toughness: 1 },
         {
-          label: "Vos créatures du type choisi : +1/+1",
+          label: "Your creatures of the chosen type: +1/+1",
         },
       ),
       triggered(when.castSpell("you", CREATURE_OF_CHOSEN_TYPE), [fx.draw(1)], {
-        label: "Sort de créature du type choisi : piochez une carte",
+        label: "Creature spell of the chosen type: draw a card",
       }),
     ],
   },
@@ -219,19 +219,19 @@ export const EDH_STAPLES: Record<string, CardScript> = {
         event: "tokens",
         to: "you",
         modify: { times: 2 },
-        label: "Deux fois plus de jetons sous votre contrôle",
+        label: "Twice that many tokens under your control",
       }),
     ],
   },
   "Exquisite Blood": {
     abilities: [
       triggered(when.loseLife("opponent"), [fx.gainLife(amount.eventAmount)], {
-        label: "Un adversaire perd des PV : vous en gagnez autant",
+        label: "An opponent loses life: you gain that much",
       }),
     ],
   },
   "Blade of the Bloodchief": {
-    // Équiper {1} : lu dans le texte.
+    // Equip {1}: read from the text.
     abilities: [
       triggered(
         when.dies({ types: ["Creature"] }),
@@ -239,7 +239,7 @@ export const EDH_STAPLES: Record<string, CardScript> = {
           ...fx.when(cond.refMatches(ref.attached, { subtype: "Vampire" }), fx.counters(ref.attached, "+1/+1", 2)),
           ...fx.when(cond.not(cond.refMatches(ref.attached, { subtype: "Vampire" })), fx.counters(ref.attached, "+1/+1", 1)),
         ],
-        { label: "Une créature meurt : un marqueur +1/+1 sur la créature équipée (deux si c'est un Vampire)" },
+        { label: "A creature dies: a +1/+1 counter on the equipped creature (two if it's a Vampire)" },
       ),
     ],
   },

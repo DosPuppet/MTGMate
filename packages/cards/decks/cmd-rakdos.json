@@ -1,7 +1,11 @@
 {
   "id": "cmd-rakdos",
-  "name": "Rakdos, Lord of Riots — gros sorts gratuits",
-  "description": "Commander, noir et rouge, d'après la liste « Rakdos, Lord of Big Free Stuff » (Moxfield). Faire perdre des points de vie à tous les adversaires (blessures à chaque joueur, drains, dévotion) pour que Rakdos et ses créatures ne coûtent presque rien, puis lancer les Eldrazi, les grands Démons et Blightsteel Colossus.",
+  "name": "Rakdos, Lord of Riots — big free spells",
+  "description": "Commander, black and red, based on the list \"Rakdos, Lord of Big Free Stuff\" (Moxfield). Make every opponent lose life (damage to each player, drains, devotion) so that Rakdos and his creatures cost almost nothing, then cast the Eldrazi, the big Demons and Blightsteel Colossus.",
+  "fr": {
+    "name": "Rakdos, Lord of Riots — gros sorts gratuits",
+    "description": "Commander, noir et rouge, d'après la liste « Rakdos, Lord of Big Free Stuff » (Moxfield). Faire perdre des points de vie à tous les adversaires (blessures à chaque joueur, drains, dévotion) pour que Rakdos et ses créatures ne coûtent presque rien, puis lancer les Eldrazi, les grands Démons et Blightsteel Colossus."
+  },
   "colors": [
     "B",
     "R"

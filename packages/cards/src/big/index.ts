@@ -1,6 +1,6 @@
 /**
- * The Big Score (BIG) : 30 cartes (hideaway, copies d'artefacts, Rest in Peace, Grand Abolisher…).
- * Les aides et jetons viennent d'Outlaws of Thunder Junction (otj/common.ts).
+ * The Big Score (BIG): 30 cards (hideaway, artifact copies, Rest in Peace, Grand Abolisher…).
+ * The helpers and tokens come from Outlaws of Thunder Junction (otj/common.ts).
  */
 import type { CardScript, TokenSpec } from "@mtgx/engine";
 import {
@@ -56,12 +56,12 @@ const CONSTRUCT = artifactCreature("Construct", ["Construct"], 0, 0, {
     staticAbility(
       "self",
       { power: 1, toughness: 1 },
-      { per: { types: ["Artifact"], controller: "you" }, label: "+1/+1 par artefact" },
+      { per: { types: ["Artifact"], controller: "you" }, label: "+1/+1 for each artifact" },
     ),
   ],
   text: "This token gets +1/+1 for each artifact you control.",
 });
-/** Sang : « {1}, {T}, défaussez une carte, sacrifiez ce jeton : piochez une carte » (défausse à la résolution). */
+/** Blood: "{1}, {T}, Discard a card, Sacrifice this token: Draw a card" (discard on resolution). */
 const BLOOD: TokenSpec = {
   name: "Blood",
   colors: [],
@@ -74,17 +74,17 @@ const BLOOD: TokenSpec = {
       sacrifice: true,
       activationCondition: cond.amountAtLeast(amount.cardsIn("hand"), 1),
       effects: [fx.discard(1), fx.draw(1)],
-      label: "Défaussez, piochez",
+      label: "Discard, draw",
     }),
   ],
   text: "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.",
 };
 
 export const BIG_SCRIPTS: Record<string, CardScript> = {
-  // --- Blanc -----------------------------------------------------------------
+  // --- White -----------------------------------------------------------------
   "Collector's Cage": {
     abilities: [
-      // Hideaway 5 : la carte est exilée face cachée (vous seul la voyez).
+      // Hideaway 5: the card is exiled face down (only you see it).
       triggered(
         when.entersSelf,
         [
@@ -104,7 +104,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
             fx.grantPlay(ref.linked, { free: true, anyTime: true }),
           ),
         ],
-        label: "Marqueur +1/+1 (trois forces différentes : jouez la carte cachée)",
+        label: "+1/+1 counter (three different powers: play the hidden card)",
       }),
     ],
   },
@@ -113,17 +113,17 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       playerStatic({
         castLimit: { who: "opponents", during: "yourTurn", abilities: "artifactsCreaturesEnchantments" },
         condition: cond.yourTurn,
-        label: "Pendant votre tour, vos adversaires sont bloqués",
+        label: "During your turn, your opponents are locked out",
       }),
     ],
   },
   "Oltec Matterweaver": {
     abilities: [
       triggeredModal(when.castSpell("you", { types: ["Creature"] }), [
-        mode("Gnome 1/1", [], [fx.createTokens(GNOME)]),
+        mode("1/1 Gnome", [], [fx.createTokens(GNOME)]),
         mode(
-          "Copie d'un jeton d'artefact",
-          [targetObj("t", { types: ["Artifact"], token: true, controller: "you" }, "jeton d'artefact que vous contrôlez")],
+          "Copy of an artifact token",
+          [targetObj("t", { types: ["Artifact"], token: true, controller: "you" }, "ctx:big|artifact token you control")],
           [fx.copyToken(ref.target())],
         ),
       ]),
@@ -132,35 +132,35 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   "Rest in Peace": {
     abilities: [
       triggered(when.entersSelf, [fx.moveAll("graveyard", ref.eachPlayer, {}, { to: "exile" })], {
-        label: "Exilez tous les cimetières",
+        label: "Exile all graveyards",
       }),
-      graveyardReplacement({ label: "Ce qui irait au cimetière est exilé" }),
+      graveyardReplacement({ label: "Whatever would go to a graveyard is exiled" }),
     ],
   },
 
-  // --- Bleu ------------------------------------------------------------------
+  // --- Blue ------------------------------------------------------------------
   "Esoteric Duplicator": {
     abilities: [
       triggered(
         when.sacrifice({ types: ["Artifact"] }),
         fx.mayPay(
           "{2}",
-          "Payer {2} pour copier l'artefact à l'étape de fin ?",
+          "Pay {2} to copy the artifact at the end step?",
           fx.delayed([fx.copyToken(ref.target("a"))], { a: ref.eventObject }),
         ),
-        { label: "Copie de l'artefact sacrifié" },
+        { label: "Copy of the sacrificed artifact" },
       ),
-      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez" }),
+      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Draw" }),
     ],
   },
   "Simulacrum Synthesizer": {
     abilities: [
-      triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
+      triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" }),
       triggered(
         when.enters({ types: ["Artifact"], controller: "you", other: true, minManaValue: 3 }),
         [fx.createTokens(CONSTRUCT)],
         {
-          label: "Assemblage 0/0",
+          label: "0/0 Construct",
         },
       ),
     ],
@@ -173,36 +173,36 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
         toFilter: { types: ["Artifact"], not: { name: "Map" } },
         plus: MAP,
         modify: {},
-        label: "Un jeton Carte en plus de vos jetons d'artefact",
+        label: "A Map token in addition to your artifact tokens",
       }),
       activated({
         mana: "{1}{U}",
         tap: true,
-        targets: [targetObj("t", { types: ["Artifact"], token: true, controller: "you" }, "jeton d'artefact que vous contrôlez")],
+        targets: [targetObj("t", { types: ["Artifact"], token: true, controller: "you" }, "ctx:big|artifact token you control")],
         effects: [fx.copyToken(ref.target())],
-        label: "Copiez un jeton d'artefact",
+        label: "Copy an artifact token",
       }),
     ],
   },
 
-  // --- Noir ------------------------------------------------------------------
+  // --- Black -----------------------------------------------------------------
   "Greed's Gambit": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(3), fx.gainLife(6), fx.createTokens(BAT, 3)], {
-        label: "Piochez 3, +6 PV, trois Chauves-souris",
+        label: "Draw 3, +6 life, three Bats",
       }),
       triggered(when.yourEndStep, [fx.discard(1), fx.loseLife(2), fx.sacrifice(ref.you, { types: ["Creature"] })], {
-        label: "Défaussez, perdez 2 PV, sacrifiez une créature",
+        label: "Discard, lose 2 life, sacrifice a creature",
       }),
       triggered(when.leavesSelf, [fx.discard(3), fx.loseLife(6), fx.sacrifice(ref.you, { types: ["Creature"] }, 3)], {
-        label: "Défaussez 3, perdez 6 PV, sacrifiez 3 créatures",
+        label: "Discard 3, lose 6 life, sacrifice 3 creatures",
       }),
     ],
   },
   "Harvester of Misery": {
     abilities: [
       triggered(when.entersSelf, [fx.pumpAll({ types: ["Creature"], other: true }, -2, -2)], {
-        label: "Les autres créatures -2/-2",
+        label: "Other creatures -2/-2",
       }),
       activated({
         mana: "{1}{B}",
@@ -218,61 +218,61 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Il défausse",
+        label: "They discard",
       }),
-      triggered(when.discardBatch("any"), [investigate()], { oncePerTurn: true, label: "Enquêtez" }),
+      triggered(when.discardBatch("any"), [investigate()], { oncePerTurn: true, label: "Investigate" }),
     ],
   },
 
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -------------------------------------------------------------------
   "Generous Plunderer": {
     abilities: [
       triggered(
         when.yourUpkeep,
         fx.may(
-          "Créer un Trésor ?",
+          "Create a Treasure?",
           fx.createTokens(TREASURE),
           fx.reflexive(
             [target.player("t", "opponent")],
             [{ op: "createTokens", token: TREASURE, count: 1, for: ref.target(), tapped: true }],
           ),
         ),
-        { label: "Trésor (un adversaire en crée un engagé)" },
+        { label: "Treasure (an opponent creates a tapped one)" },
       ),
       triggered(
         when.attacksSelf,
         [fx.damage(amount.refCount(ref.permanentsOf(ref.defendingPlayer, { types: ["Artifact"] })), ref.defendingPlayer)],
-        { label: "Blessures égales à ses artefacts" },
+        { label: "Damage equal to their artifacts" },
       ),
     ],
   },
   "Legion Extruder": {
     abilities: [
-      triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 blessures" }),
+      triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 damage" }),
       activated({
         mana: "{2}",
         tap: true,
         sacrificeOther: { filter: { types: ["Artifact"], other: true } },
         effects: [fx.createTokens(GOLEM)],
-        label: "Golem 3/3",
+        label: "3/3 Golem",
       }),
     ],
   },
   "Memory Vessel": {
     abilities: [
-      // Approximation : on ne peut pas interdire de jouer les cartes de la main.
+      // Approximation: playing the cards from the hand can't be forbidden.
       activated({
         tap: true,
         exileSelf: true,
         sorcerySpeed: true,
         effects: [fx.exileTop(ref.eachPlayer, 7, "m"), fx.grantPlay(ref.stored("m"), { for: "owner", untilYourNextTurn: true })],
-        label: "Chaque joueur exile sept cartes, jouables",
+        label: "Each player exiles seven cards, playable",
       }),
     ],
   },
   "Molten Duplication": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artefact ou créature que vous contrôlez")],
+      [target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artifact or creature you control")],
       [fx.copyToken(ref.target(), { addTypes: ["Artifact"], addKeywords: ["haste"], sacrificeAtEndStep: true })],
     ),
   },
@@ -280,29 +280,29 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target(), { name: "f" }), fx.link(ref.stored("f"))], {
         condition: cond.wasCast,
-        targets: [target.permanent("t", ["Artifact", "Land"], {}, "artefact ou terrain")],
-        label: "Exilez un artefact ou un terrain",
+        targets: [target.permanent("t", ["Artifact", "Land"], {}, "artifact or land")],
+        label: "Exile an artifact or land",
       }),
-      staticAbility("self", { gainLinkedActivated: true }, { label: "Capacités activées de la carte exilée" }),
+      staticAbility("self", { gainLinkedActivated: true }, { label: "Activated abilities of the exiled card" }),
     ],
   },
 
-  // --- Vert ------------------------------------------------------------------
+  // --- Green -----------------------------------------------------------------
   "Ancient Cornucopia": {
     abilities: [
       triggered(
         when.castSpell("you", {
           anyOf: [{ colors: ["W"] }, { colors: ["U"] }, { colors: ["B"] }, { colors: ["R"] }, { colors: ["G"] }],
         }),
-        fx.may("Gagner 1 PV par couleur du sort ?", fx.gainLife(amount.colorsOf(ref.eventObject))),
-        { oncePerTurn: true, label: "+1 PV par couleur" },
+        fx.may("Gain 1 life for each color of the spell?", fx.gainLife(amount.colorsOf(ref.eventObject))),
+        { oncePerTurn: true, label: "+1 life for each color" },
       ),
       manaAbility([...ALL_COLORS]),
     ],
   },
   "Bristlebud Farmer": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD, 2)], { label: "Deux Nourritures" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD, 2)], { label: "Two Foods" }),
       triggered(
         when.attacksSelf,
         [
@@ -313,25 +313,25 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
             fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { pool: ref.stored("m"), min: 0 }),
           ),
         ],
-        { label: "Sacrifiez une Nourriture : meulez trois cartes, reprenez un permanent" },
+        { label: "Sacrifice a Food: mill three cards, get back a permanent" },
       ),
     ],
   },
   "Omenpath Journey": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Land"] }, { to: "exile" }, 5, undefined, "o"), fx.link(ref.stored("o"))], {
-        label: "Exilez jusqu'à cinq terrains",
+        label: "Exile up to five lands",
       }),
       triggered(
         when.yourEndStep,
         [fx.pickFromZone("graveyard", {}, { to: "battlefield", tapped: true }, { pool: ref.linked, random: true })],
-        { label: "Un terrain exilé au hasard, engagé" },
+        { label: "A random exiled land, tapped" },
       ),
     ],
   },
   "Sandstorm Salvager": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(GOLEM)], { label: "Golem 3/3" }),
+      triggered(when.entersSelf, [fx.createTokens(GOLEM)], { label: "3/3 Golem" }),
       activated({
         mana: "{2}",
         tap: true,
@@ -339,7 +339,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
           fx.addCountersAll({ ...CREATURE_YOU_CONTROL, token: true }, 1),
           fx.pumpAll({ ...CREATURE_YOU_CONTROL, token: true }, 0, 0, ["trample"]),
         ],
-        label: "Vos jetons de créature : marqueur et piétinement",
+        label: "Your creature tokens: counter and trample",
       }),
     ],
   },
@@ -348,16 +348,16 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       triggered(
         when.enters({ anyOf: [{ self: true }, { types: ["Creature"], controller: "you", minPower: 4, other: true }] }),
         [fx.gainLife(3), fx.draw(1)],
-        { label: "+3 PV, piochez" },
+        { label: "+3 life, draw" },
       ),
       triggered(when.diesSelf, [fx.copyToken(ref.eventObject, { addTypes: ["Artifact"] })], {
         condition: cond.not(cond.sourceMatches({ token: true })),
-        label: "Copie artefact",
+        label: "Artifact copy",
       }),
     ],
   },
 
-  // --- Multicolores et incolores ---------------------------------------------
+  // --- Multicolored and colorless -------------------------------------------
   "Loot, the Key to Everything": {
     abilities: [
       triggered(
@@ -366,7 +366,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
           fx.exileTop(ref.you, amount.cardTypesAmong({ controller: "you", notTypes: ["Land"], other: true }), "l"),
           fx.grantPlay(ref.stored("l")),
         ],
-        { label: "Exilez X cartes, jouables ce tour-ci" },
+        { label: "Exile X cards, playable this turn" },
       ),
     ],
   },
@@ -374,25 +374,25 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   "Lost Jitte": {
     abilities: [
       triggered(when.combatDamage({ types: ["Creature"], attached: "host" }), [fx.counters(ref.self, "charge", 1)], {
-        label: "Marqueur de charge",
+        label: "Charge counter",
       }),
       activated({
         removeCounters: { kind: "charge", n: 1 },
         targets: [target.permanent("t", ["Land"])],
         effects: [fx.untap(ref.target())],
-        label: "Dégagez un terrain",
+        label: "Untap a land",
       }),
       activated({
         removeCounters: { kind: "charge", n: 1 },
         targets: [target.creature("t")],
         effects: [fx.pump(ref.target(), 0, 0, ["cantBlock"])],
-        label: "Ne peut pas bloquer",
+        label: "Can't block",
       }),
       activated({
         removeCounters: { kind: "charge", n: 1 },
         activationCondition: cond.controls({ types: ["Creature"], attached: "host" }),
         effects: [fx.addCounters(ref.attached, 1)],
-        label: "Marqueur +1/+1 sur la créature équipée",
+        label: "+1/+1 counter on the equipped creature",
       }),
     ],
   },
@@ -406,7 +406,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
           addKeywords: ["vigilance"],
           addAbilities: [manaAbility([...ALL_COLORS], 3, { sacrifice: true })],
         },
-        { label: "+3/+3, vigilance, « {T}, sacrifiez : trois mana »" },
+        { label: '+3/+3, vigilance, "{T}, Sacrifice: three mana"' },
       ),
     ],
   },
@@ -420,11 +420,11 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
             "hand",
             { types: ["Artifact", "Creature"] },
             { to: "exile" },
-            { min: 0, store: "n", prompt: "Vous pouvez exiler un artefact ou une créature" },
+            { min: 0, store: "n", prompt: "You may exile an artifact or creature" },
           ),
           fx.copyToken(ref.stored("n"), { addTypes: ["Artifact", "Creature"], addSubtypes: ["Golem"], pt: 3 }),
         ],
-        { label: "Piochez, copie Golem 3/3" },
+        { label: "Draw, 3/3 Golem copy" },
       ),
     ],
   },
@@ -435,7 +435,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
         {
           power: 2,
           toughness: 2,
-          addProtections: [protection.from({ types: ["Instant", "Sorcery"] }, "Protection contre les éphémères et les rituels")],
+          addProtections: [protection.from({ types: ["Instant", "Sorcery"] }, "Protection from instants and sorceries")],
         },
         { label: "+2/+2, protection" },
       ),
@@ -443,7 +443,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
         when.combatDamage({ types: ["Creature"], attached: "host" }, true),
         [fx.createTokens(TREASURE), fx.copyNextSpell],
         {
-          label: "Trésor, prochain éphémère ou rituel copié",
+          label: "Treasure, next instant or sorcery copied",
         },
       ),
     ],
@@ -452,27 +452,27 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         triggerMod: { effect: "none", on: "enter", entering: { types: ["Creature"] }, everyone: true },
-        label: "L'arrivée de créatures ne déclenche rien",
+        label: "Creatures entering don't cause abilities to trigger",
       }),
     ],
   },
   "Transmutation Font": {
     abilities: [
-      activated({ tap: true, effects: [fx.createTokens(BLOOD)], label: "Jeton Sang" }),
-      activated({ tap: true, effects: [fx.createTokens(CLUE)], label: "Jeton Indice" }),
-      activated({ tap: true, effects: [fx.createTokens(FOOD)], label: "Jeton Nourriture" }),
+      activated({ tap: true, effects: [fx.createTokens(BLOOD)], label: "Blood token" }),
+      activated({ tap: true, effects: [fx.createTokens(CLUE)], label: "Clue token" }),
+      activated({ tap: true, effects: [fx.createTokens(FOOD)], label: "Food token" }),
       activated({
         mana: "{3}",
         tap: true,
         sorcerySpeed: true,
         sacrificeOther: { filter: { types: ["Artifact"], token: true }, count: 3, differentNames: true },
         effects: [fx.search({ types: ["Artifact"] }, { to: "battlefield" })],
-        label: "Un artefact de la bibliothèque",
+        label: "An artifact from your library",
       }),
     ],
   },
 
-  // --- Terrains --------------------------------------------------------------
+  // --- Lands -----------------------------------------------------------------
   "Fomori Vault": {
     abilities: [
       manaAbility("C"),
@@ -484,7 +484,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
           fx.discard(1),
           fx.lookAtTop(amount.count({ types: ["Artifact"], controller: "you" }), { count: 1, rest: "bottom" }),
         ],
-        label: "Défaussez, une carte parmi X",
+        label: "Discard, one card among X",
       }),
     ],
   },
@@ -497,7 +497,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
         mana: "{1}",
         tap: true,
         effects: [fx.addManaColorsAmong({ controller: "you", permanent: true, multicolored: false })],
-        label: "Un mana de chaque couleur de vos permanents monocolores",
+        label: "One mana of each color among your monocolored permanents",
       }),
     ],
   },

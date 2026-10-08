@@ -1,29 +1,28 @@
 /**
- * Table des impressions (`data/printings.json`, `tools/import-printings.ts`) : les autres apparences de chaque carte sur
- * Scryfall, que le deck peut choisir pour son illustration. Hors du paquet principal (`@mtgx/cards/printings`) :
- * l'interface ne la charge qu'à la demande (éditeur de deck, import d'une decklist) ; le serveur s'en sert pour vérifier
- * l'impression d'une ligne de deck.
+ * Printings table (`data/printings.json`, `tools/import-printings.ts`): the other appearances of each card on Scryfall,
+ * which a deck can choose for its art. Outside the main package (`@mtgx/cards/printings`): the interface loads it only
+ * on demand (deck builder, decklist import); the server uses it to check the printing of a deck line.
  */
 import { type CardDef, CUSTOM_PRINTING, keyedPrinting, printingKey } from "@mtgx/engine";
 import data from "../data/printings.json";
 
-/** Une impression proposée pour une carte. */
+/** A printing offered for a card. */
 export interface PrintingOption {
-  /** Clé de la ligne de deck (`DeckEntry[2]`) ; absente : l'impression de la carte elle-même. */
+  /** Key of the deck line (`DeckEntry[2]`); absent: the card's own printing. */
   key?: string;
   set: string;
   number: string;
-  /** Nom de l'ensemble (anglais) et année de l'impression, quand la table les connaît. */
+  /** Set name (English) and year of the printing, when the table knows them. */
   setName?: string;
   year?: number;
-  /** Langue d'une carte imprimée dans une seule langue autre que l'anglais (« ja » : Archives mystiques japonaises). */
+  /** Language of a card printed in a single language other than English ("ja": Japanese Mystical Archive). */
   lang?: string;
 }
 
 const TABLE = data as { sets: Record<string, string>; cards: Record<string, string> };
 const parsed = new Map<string, PrintingOption[]>();
 
-/** Les impressions de la table pour une carte (du plus récent au plus ancien). */
+/** The table's printings for a card (from the most recent to the oldest). */
 function tableOptions(name: string): PrintingOption[] {
   let out = parsed.get(name);
   if (!out) {
@@ -44,7 +43,7 @@ function tableOptions(name: string): PrintingOption[] {
   return out;
 }
 
-/** Toutes les impressions proposées pour une carte : la sienne, celles des rééditions du catalogue, puis la table. */
+/** Every printing offered for a card: its own, those of the catalog's reprint sets, then the table. */
 export function printingOptions(c: CardDef): PrintingOption[] {
   return [
     { set: c.origin ?? c.set ?? "", number: c.number ?? "" },
@@ -53,15 +52,15 @@ export function printingOptions(c: CardDef): PrintingOption[] {
   ];
 }
 
-/** La clé est-elle une impression connue de la carte ? */
+/** Is the key a known printing of the card? */
 export function hasPrinting(c: CardDef, key: string): boolean {
-  // Impression personnelle : toujours admise (l'interface garde l'image de la carte s'il n'y en a pas).
+  // Custom printing: always accepted (the interface keeps the card's image if there is none).
   if (key === CUSTOM_PRINTING) return true;
   if (c.printings?.some((p) => p.key === key)) return true;
   return !!keyedPrinting(key) && tableOptions(c.name).some((p) => p.key === key);
 }
 
-/** L'impression d'une carte d'après son ensemble et son numéro (« (STA) 42 » d'une decklist). */
+/** The printing of a card from its set and number ("(STA) 42" of a decklist). */
 export function findPrinting(c: CardDef, set: string, number: string): string | undefined {
   const up = set.toUpperCase();
   return printingOptions(c).find((p) => p.key && p.set === up && p.number === number)?.key;

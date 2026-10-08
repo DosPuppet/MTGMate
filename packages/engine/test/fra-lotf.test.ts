@@ -222,7 +222,7 @@ describe("Reality Fracture, lot F", () => {
   it("Chandra, Chill of Compliance −X : X marqueurs d'étourdissement", () => {
     let s = scenario({ p1: { battlefield: ["Chandra, Chill of Compliance"] }, p2: { battlefield: ["Serra Angel"] } });
     const chandra = idOf(s, "p1", "battlefield", "Chandra, Chill of Compliance");
-    const index = walkerAbility(s, chandra, "étourdissement");
+    const index = walkerAbility(s, chandra, "stun");
     const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === chandra && a.ability === index);
     expect(opt?.type === "activate" && opt.xMax).toBe(3);
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");

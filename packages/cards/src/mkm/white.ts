@@ -1,6 +1,6 @@
 /**
- * Murders at Karlov Manor — cartes blanches (lot A). Le déguisement, la garde, l'Équipement et les mots-clés sont lus
- * dans le texte ; « enquêtez » crée un Indice (`investigate`).
+ * Murders at Karlov Manor — white cards (lot A). Disguise, ward, Equipment and keywords are read from the text;
+ * "investigate" creates a Clue (`investigate`).
  */
 import type { ObjectFilter, Ref } from "@mtgx/engine";
 import {
@@ -26,31 +26,31 @@ import {
 } from "./common";
 
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
-/** « une autre créature que vous contrôlez de force 2 ou moins ». */
+/** "another creature you control with power 2 or less". */
 const ANOTHER_SMALL: ObjectFilter = { ...YOUR_CREATURES, other: true, maxPower: 2 };
 const YOUR_DETECTIVES: ObjectFilter = { subtype: "Detective", controller: "you" };
 
-/** « Chaque joueur désigné enquête » : un Indice pour chacun, sous son contrôle. */
+/** "Each chosen player investigates": a Clue for each of them, under their control. */
 const investigateFor = (who: Ref) => fx.createTokens(CLUE, 1, who);
 
 export const WHITE: Record<string, CardScript> = {
   "Absolving Lammasu": {
     abilities: [
       triggered(when.entersSelf, [fx.suspect(ref.permanentsOf(ref.eachPlayer, SUSPECTED), false)], {
-        label: "Les créatures suspectes ne le sont plus",
+        label: "Suspected creatures are no longer suspected",
       }),
       triggered(when.diesSelf, [fx.gainLife(3), fx.suspect(ref.target())], {
         targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
-        label: "Gagnez 3 PV et suspectez une créature adverse",
+        label: "Gain 3 life and suspect an opponent's creature",
       }),
     ],
   },
   "Assemble the Players": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Look at the top card" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: { types: ["Creature"], maxPower: 2 }, what: "spells", oncePerTurn: true },
-        label: "Une fois par tour, lancez une créature de force 2 ou moins du dessus de votre bibliothèque",
+        label: "Once each turn, cast a creature spell with power 2 or less from the top of your library",
       }),
     ],
   },
@@ -66,15 +66,15 @@ export const WHITE: Record<string, CardScript> = {
   "Case of the Pilfered Proof": {
     abilities: [
       triggered(when.enters(YOUR_DETECTIVES), [fx.addCounters(ref.eventObject, 1)], {
-        label: "Un marqueur +1/+1 sur le Détective",
+        label: "A +1/+1 counter on the Detective",
       }),
       triggered(when.permanentTurnedFaceUp(YOUR_DETECTIVES), [fx.addCounters(ref.eventObject, 1)], {
-        label: "Un marqueur +1/+1 sur le Détective retourné",
+        label: "A +1/+1 counter on the turned-up Detective",
       }),
     ],
     caseToSolve: cond.controls(YOUR_DETECTIVES, 3),
     caseSolved: [
-      eventReplacement({ event: "tokens", to: "you", plus: CLUE, modify: {}, label: "Un Indice en plus de vos jetons" }),
+      eventReplacement({ event: "tokens", to: "you", plus: CLUE, modify: {}, label: "A Clue in addition to your tokens" }),
     ],
   },
   "Defenestrated Phantom": {},
@@ -82,12 +82,12 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         { ...YOUR_CREATURES, maxPower: 2 },
-        { addBlockRules: [block.notBy({ minPower: 3 }, "Imblocable par les créatures de force 3 ou plus")] },
-        { label: "Vos créatures de force 2 ou moins : imblocables par les créatures de force 3 ou plus" },
+        { addBlockRules: [block.notBy({ minPower: 3 }, "Can't be blocked by creatures with power 3 or greater")] },
+        { label: "Your creatures with power 2 or less can't be blocked by creatures with power 3 or greater" },
       ),
       playerStatic({
         triggerMod: { effect: "again", sources: { ...YOUR_CREATURES, maxPower: 2 } },
-        label: "Les capacités de vos créatures de force 2 ou moins se déclenchent une fois de plus",
+        label: "Abilities of your creatures with power 2 or less trigger an additional time",
       }),
     ],
   },
@@ -95,34 +95,32 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         triggerMod: { effect: "none", on: "enter", entering: { types: ["Artifact", "Creature"] }, everyone: true },
-        label: "L'arrivée d'artefacts et de créatures ne déclenche rien",
+        label: "Artifacts and creatures entering don't cause abilities to trigger",
       }),
     ],
   },
   "Due Diligence": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 2, 2, ["vigilance"])], {
         targets: [target.creature("t", { controller: "you", attached: "notHost" })],
-        label: "Une autre de vos créatures gagne +2/+2 et la vigilance",
+        label: "Another creature of yours gets +2/+2 and gains vigilance",
       }),
-      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["vigilance"] }, { label: "+2/+2 et vigilance" }),
+      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["vigilance"] }, { label: "+2/+2 and vigilance" }),
     ],
   },
   "Essence of Antiquity": {
     abilities: [
       triggered(when.turnedFaceUp, [fx.modifyAll(YOUR_CREATURES, { addKeywords: ["hexproof"] }), fx.untapAll(YOUR_CREATURES)], {
-        label: "Vos créatures gagnent la défense talismanique ; dégagez-les",
+        label: "Your creatures gain hexproof; untap them",
       }),
     ],
   },
   "Forum Familiar": {
     abilities: [
       triggered(when.turnedFaceUp, [fx.bounce(ref.target()), fx.addCounters(ref.self, 1)], {
-        targets: [
-          { id: "t", label: "autre permanent que vous contrôlez", filter: { objects: { controller: "you", other: true } } },
-        ],
-        label: "Renvoyez un autre de vos permanents ; un marqueur +1/+1",
+        targets: [{ id: "t", label: "another permanent you control", filter: { objects: { controller: "you", other: true } } }],
+        label: "Return another permanent of yours; a +1/+1 counter",
       }),
     ],
   },
@@ -130,7 +128,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target())], {
         targets: [{ ...target.upTo(2, target.cardInGraveyard("t", {}, "any")), samePlayer: true }],
-        label: "Exilez jusqu'à deux cartes d'un même cimetière",
+        label: "Exile up to two cards from a single graveyard",
       }),
     ],
   },
@@ -138,59 +136,55 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [when.entersSelf, when.attacksSelf].map((trigger) =>
       triggered(trigger, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you", maxPower: 2 })],
-        label: "Un marqueur +1/+1 sur une de vos créatures de force 2 ou moins",
+        label: "A +1/+1 counter on a creature of yours with power 2 or less",
       }),
     ),
   },
   "Inside Source": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(DETECTIVE)], { label: "Un Détective 2/2" }),
+      triggered(when.entersSelf, [fx.createTokens(DETECTIVE)], { label: "A 2/2 Detective" }),
       activated({
         mana: "{3}",
         tap: true,
         sorcerySpeed: true,
         targets: [target.creature("t", YOUR_DETECTIVES)],
         effects: [fx.pump(ref.target(), 2, 0, ["vigilance"])],
-        label: "Un de vos Détectives gagne +2/+0 et la vigilance",
+        label: "A Detective of yours gets +2/+0 and gains vigilance",
       }),
     ],
   },
   "Krovod Haunch": {
     abilities: [
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
-      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "Gagnez 3 PV" }),
-      triggered(
-        when.putIntoGraveyardSelf,
-        [fx.mayPay("{1}{W}", "Payer {1}{W} pour deux Chiens 1/1 ?", fx.createTokens(DOG, 2))],
-        {
-          label: "Payez {1}{W} : deux Chiens 1/1",
-        },
-      ),
+      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "Gain 3 life" }),
+      triggered(when.putIntoGraveyardSelf, [fx.mayPay("{1}{W}", "Pay {1}{W} for two 1/1 Dogs?", fx.createTokens(DOG, 2))], {
+        label: "Pay {1}{W}: two 1/1 Dogs",
+      }),
     ],
   },
   "Makeshift Binding": {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target()), fx.gainLife(2)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Exilez une créature adverse ; gagnez 2 PV",
+        label: "Exile an opponent's creature; gain 2 life",
       }),
     ],
   },
   "Marketwatch Phantom": {
     abilities: [
       triggered(when.enters(ANOTHER_SMALL), [fx.modify(ref.self, { addKeywords: ["flying"] })], {
-        label: "Gagne le vol jusqu'à la fin du tour",
+        label: "Gains flying until end of turn",
       }),
     ],
   },
   "Museum Nightwatch": {
-    abilities: [triggered(when.diesSelf, [fx.createTokens(DETECTIVE)], { label: "Un Détective 2/2" })],
+    abilities: [triggered(when.diesSelf, [fx.createTokens(DETECTIVE)], { label: "A 2/2 Detective" })],
   },
   "Neighborhood Guardian": {
     abilities: [
       triggered(when.enters(ANOTHER_SMALL), [fx.pump(ref.target(), 1, 1)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une de vos créatures gagne +1/+1",
+        label: "A creature of yours gets +1/+1",
       }),
     ],
   },
@@ -198,7 +192,7 @@ export const WHITE: Record<string, CardScript> = {
     spell: spell([target.creature("t", { attacking: true })], [fx.exile(ref.target())]),
   },
   "Novice Inspector": {
-    abilities: [triggered(when.entersSelf, [investigate()], { label: "Enquêtez" })],
+    abilities: [triggered(when.entersSelf, [investigate()], { label: "Investigate" })],
   },
   "On the Job": {
     spell: spell([], [fx.pumpAll(YOUR_CREATURES, 2, 1), investigate()]),
@@ -218,12 +212,12 @@ export const WHITE: Record<string, CardScript> = {
         effects: [
           fx.tap(ref.target()),
           ...fx.may(
-            "Mettre un marqueur d'étourdissement sur elle et sur ce Mur ?",
+            "Put a stun counter on it and on this Wall?",
             fx.counters(ref.target(), "stun"),
             fx.counters(ref.self, "stun"),
           ),
         ],
-        label: "Engagez une créature",
+        label: "Tap a creature",
       }),
     ],
   },
@@ -236,7 +230,7 @@ export const WHITE: Record<string, CardScript> = {
         when.turnedFaceUp,
         [
           fx.exileCard(ref.target(), { name: "gate" }),
-          // La condition lit les dernières informations connues de la cible exilée.
+          // The condition reads the last known information of the exiled target.
           ...fx.when(cond.targetMatches("t", { controller: "you" }), fx.toBattlefield(ref.stored("gate"), { tapped: true })),
           ...fx.when(
             cond.not(cond.targetMatches("t", { controller: "you" })),
@@ -245,7 +239,7 @@ export const WHITE: Record<string, CardScript> = {
         ],
         {
           targets: [target.nonland("t", { other: true })],
-          label: "Exilez un autre permanent non-terrain",
+          label: "Exile another nonland permanent",
         },
       ),
     ],
@@ -264,13 +258,13 @@ export const WHITE: Record<string, CardScript> = {
               tap: true,
               targets: [target.creature()],
               effects: [fx.tap(ref.target())],
-              label: "Engagez une créature",
+              label: "Tap a creature",
             }),
           ],
         },
-        { label: "+1/+1, vigilance et « {3}, {T} : engagez une créature »" },
+        { label: '+1/+1, vigilance and "{3}, {T}: Tap target creature"' },
       ),
-      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
+      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Draw a card" }),
     ],
   },
   "Tenth District Hero": {
@@ -279,7 +273,7 @@ export const WHITE: Record<string, CardScript> = {
         mana: "{1}{W}",
         collectEvidence: 2,
         effects: [fx.modify(ref.self, { setSubtypes: ["Human", "Detective"], addKeywords: ["vigilance"] }, "permanent", 4)],
-        label: "Réunissez des preuves 2 : Humain Détective 4/4 avec la vigilance",
+        label: "Collect evidence 2: 4/4 Human Detective with vigilance",
       }),
       activated({
         mana: "{2}{W}",
@@ -295,7 +289,7 @@ export const WHITE: Record<string, CardScript> = {
                 staticAbility(
                   { types: ["Creature"], controller: "you", other: true },
                   { addKeywords: ["indestructible"] },
-                  { label: "Vos autres créatures ont l'indestructible" },
+                  { label: "Your other creatures have indestructible" },
                 ),
               ],
             },
@@ -303,18 +297,18 @@ export const WHITE: Record<string, CardScript> = {
             5,
           ),
         ),
-        label: "Réunissez des preuves 4 : devient Mileva, the Stalwart (5/5, vos autres créatures indestructibles)",
+        label: "Collect evidence 4: becomes Mileva, the Stalwart (5/5, your other creatures indestructible)",
       }),
     ],
   },
   "Aurelia's Vindicator": {
     abilities: [
-      // « jusqu'à X cibles » : X est celui du coût de déguisement payé (`amount.sourceX`), évalué au ciblage.
+      // "up to X targets": X is the one of the disguise cost paid (`amount.sourceX`), evaluated when targeting.
       triggered(when.turnedFaceUp, [fx.exileUntilLeaves(ref.target(), true)], {
         targets: [
           {
             id: "t",
-            label: "autre créature ou carte de créature d'un cimetière",
+            label: "another creature or creature card in a graveyard",
             filter: {
               objects: { types: ["Creature"], other: true },
               cards: { filter: { types: ["Creature"] }, whose: "any" },
@@ -324,7 +318,7 @@ export const WHITE: Record<string, CardScript> = {
             countAmount: amount.sourceX,
           },
         ],
-        label: "Exilez jusqu'à X autres créatures ou cartes de créature (retour en main à son départ)",
+        label: "Exile up to X other creatures or creature cards (returned to hand when it leaves)",
       }),
     ],
   },
@@ -332,10 +326,10 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         castLimit: { who: "opponents", during: "yourTurn", faceUp: true },
-        label: "Pendant votre tour, les permanents adverses ne peuvent pas être retournés face visible",
+        label: "During your turn, your opponents' permanents can't be turned face up",
       }),
       triggered(when.attackWith(3), [fx.pumpAll({ types: ["Creature"], controller: "you" }, 1, 1)], {
-        label: "Vous attaquez avec trois créatures ou plus : vos créatures +1/+1",
+        label: "You attack with three or more creatures: your creatures +1/+1",
       }),
     ],
   },
@@ -343,12 +337,12 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       ...[when.entersSelf, when.caseSolved].map((w) =>
         triggered(w, [fx.lookAtTop(6, { filter: { types: ["Enchantment"] }, count: 1, rest: "bottom" })], {
-          label: "Regardez six cartes : un enchantement en main",
+          label: "Look at six cards: an enchantment into your hand",
         }),
       ),
       playerStatic({
         spellCost: { filter: { subtype: "Case" }, anyMana: true },
-        label: "Mana de n'importe quelle couleur pour les sorts d'Affaire",
+        label: "Mana of any color for Case spells",
       }),
     ],
   },
@@ -356,11 +350,11 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.eachDealsDamage({ types: ["Creature"], controller: "you" }, ref.target(), 1)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Chacune de vos créatures inflige 1 blessure à la créature ciblée",
+        label: "Each creature of yours deals 1 damage to the target creature",
       }),
     ],
     caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "attack", distinct: "object" }), 3),
-    caseSolved: [staticAbility({ types: ["Creature"], controller: "you" }, { power: 1 }, { label: "Vos créatures +1/+0" })],
+    caseSolved: [staticAbility({ types: ["Creature"], controller: "you" }, { power: 1 }, { label: "Your creatures +1/+0" })],
   },
   "No Witnesses": {
     spell: spell([], [investigateFor(ref.playersWithMost({ types: ["Creature"] })), fx.destroyAll({ types: ["Creature"] })]),
@@ -368,7 +362,7 @@ export const WHITE: Record<string, CardScript> = {
   "Wojek Investigator": {
     abilities: [
       triggered(when.yourUpkeep, [investigate(amount.opponentsWithMoreInHand)], {
-        label: "Enquêtez une fois par adversaire qui a plus de cartes en main que vous",
+        label: "Investigate once for each opponent who has more cards in hand than you",
       }),
     ],
   },

@@ -1,8 +1,8 @@
 /**
- * Marvel Super Heroes — cartes vertes (lot A). La montée en puissance (Power-up) s'écrit `activated({ powerUp: true })` ;
- * le travail d'équipe (Teamwork) est lu dans le texte (kicker), et `cond.kicked` / `amount.kicked` lisent s'il a été payé.
+ * Marvel Super Heroes — green cards (lot A). Power-up is written `activated({ powerUp: true })`; Teamwork is read from
+ * the text (kicker), and `cond.kicked` / `amount.kicked` read whether it was paid.
  */
-import type { ModeDef, ObjectFilter, TokenSpec } from "@mtgx/engine";
+import { type ModeDef, msg, type ObjectFilter, type TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -39,12 +39,12 @@ const CREATURES_YOU_CONTROL: ObjectFilter = { types: ["Creature"], controller: "
 const YOUR_CREATURE = (id = "t") => target.creature(id, { controller: "you" });
 const OPPONENT_CREATURE = (id = "t") => ({
   ...target.creature(id, { controller: "opponent" }),
-  label: "créature qu'un adversaire contrôle",
+  label: "creature controlled by an opponent",
 });
-/** Deux cartes de créature ou plus dans votre cimetière. */
+/** Two or more creature cards in your graveyard. */
 const TWO_CREATURE_CARDS = cond.amountAtLeast(amount.countIn("graveyard", { types: ["Creature"] }), 2);
 
-/** Zabu (Ka-Zar) : Chat 2/2 vert légendaire, « Landfall — un marqueur +1/+1 sur Zabu ». */
+/** Zabu (Ka-Zar): legendary 2/2 green Cat, "Landfall — put a +1/+1 counter on Zabu". */
 const ZABU: TokenSpec = {
   name: "Zabu",
   colors: ["G"],
@@ -53,11 +53,11 @@ const ZABU: TokenSpec = {
   power: 2,
   toughness: 2,
   legendary: true,
-  abilities: [triggered(when.landfall, [fx.addCounters(ref.self, 1)], { label: "Landfall — un marqueur +1/+1 sur Zabu" })],
+  abilities: [triggered(when.landfall, [fx.addCounters(ref.self, 1)], { label: "Landfall — a +1/+1 counter on Zabu" })],
   text: "Landfall — Whenever a land you control enters, put a +1/+1 counter on Zabu.",
 };
 
-/** Moloïde (Mole Man) : Sbire 1/1 vert, « quand ce jeton attaque, vous pouvez meuler une carte ». */
+/** Moloid (Mole Man): 1/1 green Minion, "whenever this token attacks, you may mill a card". */
 const MOLOID: TokenSpec = {
   name: "Moloid",
   colors: ["G"],
@@ -65,13 +65,11 @@ const MOLOID: TokenSpec = {
   subtypes: ["Minion"],
   power: 1,
   toughness: 1,
-  abilities: [
-    triggered(when.attacksSelf, [...fx.may("Meuler une carte ?", fx.mill(1))], { label: "Vous pouvez meuler une carte" }),
-  ],
+  abilities: [triggered(when.attacksSelf, [...fx.may("Mill a card?", fx.mill(1))], { label: "You may mill a card" })],
   text: "Whenever this token attacks, you may mill a card.",
 };
 
-/** The Tiger God (White Tiger) : Chat Dieu 4/4 vert légendaire, bloqué par une seule créature au plus. */
+/** The Tiger God (White Tiger): legendary 4/4 green Cat God, blocked by at most one creature. */
 const TIGER_GOD: TokenSpec = {
   name: "The Tiger God",
   colors: ["G"],
@@ -84,13 +82,13 @@ const TIGER_GOD: TokenSpec = {
   text: "The Tiger God can't be blocked by more than one creature.",
 };
 
-/** « Choisissez jusqu'à deux » : chaque mode seul, puis chaque paire (identifiants de cibles distincts d'un mode à l'autre). */
+/** "Choose up to two": each mode alone, then each pair (target ids distinct from one mode to another). */
 function upToTwo(...modes: ModeDef[]): ModeDef[] {
   const pairs: ModeDef[] = [];
   modes.forEach((a, i) => {
     for (const b of modes.slice(i + 1))
       pairs.push({
-        label: `${a.label} + ${b.label}`,
+        label: msg("{a} + {b}", { a: a.label ?? "", b: b.label ?? "" }),
         targets: [...a.targets, ...b.targets],
         effects: [...a.effects, ...b.effects],
       });
@@ -98,17 +96,17 @@ function upToTwo(...modes: ModeDef[]): ModeDef[] {
   return [...modes, ...pairs];
 }
 
-/** Montée en puissance : « mettez N marqueurs +1/+1 sur [cette créature] » et d'autres effets. */
+/** Power-up: "put N +1/+1 counters on [this creature]" and other effects. */
 const powerUp = (mana: string, label: string, effects: Parameters<typeof activated>[0]["effects"], extra = {}) =>
-  activated({ mana, powerUp: true, effects, label: `Montée en puissance : ${label}`, ...extra });
+  activated({ mana, powerUp: true, effects, label: msg("Power-up: {effect}", { effect: label }), ...extra });
 
 export const GREEN: Record<string, CardScript> = {
   "Ant-Man's Army": {
     abilities: [
       triggeredModal(
         when.entersSelf,
-        [mode("Un jeton Nourriture", [], [fx.createTokens(FOOD)]), mode("Un jeton Trésor", [], [fx.createTokens(TREASURE)])],
-        { label: "Une Nourriture ou un Trésor" },
+        [mode("A Food token", [], [fx.createTokens(FOOD)]), mode("A Treasure token", [], [fx.createTokens(TREASURE)])],
+        { label: "A Food or a Treasure" },
       ),
     ],
   },
@@ -116,23 +114,23 @@ export const GREEN: Record<string, CardScript> = {
     spell: modal(
       ...upToTwo(
         mode(
-          "Une carte d'artefact",
-          [target.cardInGraveyard("a", { types: ["Artifact"] }, "you", "carte d'artefact de votre cimetière")],
+          "An artifact card",
+          [target.cardInGraveyard("a", { types: ["Artifact"] }, "you", "artifact card from your graveyard")],
           [fx.toHand(ref.target("a"))],
         ),
         mode(
-          "Une carte de créature",
-          [target.cardInGraveyard("c", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+          "A creature card",
+          [target.cardInGraveyard("c", { types: ["Creature"] }, "you", "creature card from your graveyard")],
           [fx.toHand(ref.target("c"))],
         ),
         mode(
-          "Une carte d'enchantement",
-          [target.cardInGraveyard("e", { types: ["Enchantment"] }, "you", "carte d'enchantement de votre cimetière")],
+          "An enchantment card",
+          [target.cardInGraveyard("e", { types: ["Enchantment"] }, "you", "enchantment card from your graveyard")],
           [fx.toHand(ref.target("e"))],
         ),
         mode(
-          "Une carte de terrain",
-          [target.cardInGraveyard("l", { types: ["Land"] }, "you", "carte de terrain de votre cimetière")],
+          "A land card",
+          [target.cardInGraveyard("l", { types: ["Land"] }, "you", "land card from your graveyard")],
           [fx.toHand(ref.target("l"))],
         ),
       ),
@@ -142,14 +140,14 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.landfall, [fx.addCounters(ref.target(), 1), fx.counters(ref.self, "plan")], {
         targets: [YOUR_CREATURE()],
-        label: "Landfall — un marqueur +1/+1 sur une de vos créatures et un marqueur de plan",
+        label: "Landfall — a +1/+1 counter on a creature you control and a plan counter",
       }),
       triggered(
         when.countersPut("self", "plan"),
         [fx.sacrificeIt(ref.self), fx.reflexive([YOUR_CREATURE("u")], [fx.counters(ref.target("u"), "indestructible")])],
         {
           condition: cond.counterAtLeast("plan", 4),
-          label: "Quatrième marqueur : sacrifiez-le, un marqueur d'indestructible sur une de vos créatures",
+          label: "Fourth counter: sacrifice it, an indestructible counter on a creature you control",
         },
       ),
     ],
@@ -161,13 +159,13 @@ export const GREEN: Record<string, CardScript> = {
         to: "yourSide",
         toFilter: { permanent: true, controller: "you" },
         modify: { add: 1 },
-        label: "Un marqueur de plus de chaque sorte sur vos permanents",
+        label: "One more counter of each kind on your permanents",
       }),
       manaAbility([...ANY_COLOR], 1, { selfPower: true }),
     ],
   },
   "Earth's Mightiest Heroes": {
-    // Travail d'équipe 5 : lu dans le texte ; payé, n'importe quel nombre de cartes de créature.
+    // Teamwork 5: read from the text; paid, any number of creature cards.
     spell: spell(
       [],
       [
@@ -182,21 +180,21 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Epic Fight": {
     spell: modal(
-      mode("Double la force et l'endurance", [target.creature("t")], [fx.doublePT(ref.target("t"))]),
-      mode("Combat", [YOUR_CREATURE("a"), OPPONENT_CREATURE("b")], [fx.fight(ref.target("a"), ref.target("b"))]),
+      mode("Double power and toughness", [target.creature("t")], [fx.doublePT(ref.target("t"))]),
+      mode("Fight", [YOUR_CREATURE("a"), OPPONENT_CREATURE("b")], [fx.fight(ref.target("a"), ref.target("b"))]),
       mode(
-        "Les deux",
+        "Both",
         [target.creature("t"), YOUR_CREATURE("a"), OPPONENT_CREATURE("b")],
         [fx.doublePT(ref.target("t")), fx.fight(ref.target("a"), ref.target("b"))],
       ),
     ),
   },
   "Go Nuts!": {
-    // Travail d'équipe 3 : lu dans le texte ; payé, on choisit les deux modes.
+    // Teamwork 3: read from the text; paid, both modes are chosen.
     spell: bothIfKicked(
-      mode("Un marqueur +1/+1", [target.creature("t")], [fx.addCounters(ref.target("t"), 1)]),
-      mode("Combat", [YOUR_CREATURE("a"), OPPONENT_CREATURE("b")], [fx.fight(ref.target("a"), ref.target("b"))]),
-      "Les deux (travail d'équipe payé)",
+      mode("A +1/+1 counter", [target.creature("t")], [fx.addCounters(ref.target("t"), 1)]),
+      mode("Fight", [YOUR_CREATURE("a"), OPPONENT_CREATURE("b")], [fx.fight(ref.target("a"), ref.target("b"))]),
+      "Both (teamwork paid)",
     ),
   },
   "Guerrilla Gorilla": {
@@ -209,11 +207,11 @@ export const GREEN: Record<string, CardScript> = {
             "t",
             ["Artifact", "Enchantment"],
             { notTypes: ["Creature"] },
-            "artefact non-créature ou enchantement non-créature",
+            "noncreature artifact or noncreature enchantment",
           ),
         ],
         effects: [fx.destroy(ref.target())],
-        label: "Sacrifiez-le : détruit un artefact ou un enchantement non-créature",
+        label: "Sacrifice it: destroy a noncreature artifact or enchantment",
       }),
     ],
   },
@@ -225,13 +223,13 @@ export const GREEN: Record<string, CardScript> = {
           fx.moveTo(ref.selfCard, { to: "battlefield", counters: { kind: "+1/+1", n: 1 } }, { name: "h" }),
           fx.modify(ref.stored("h"), { loseAllAbilities: true, addKeywords: ["haste"] }, "permanent"),
         ],
-        { label: "Revient avec un marqueur +1/+1, sans capacités mais avec la célérité" },
+        { label: "Returns with a +1/+1 counter, with no abilities but with haste" },
       ),
     ],
   },
   "Hercules, Prince of Power": {
     abilities: [
-      powerUp("{4}{G}", "un marqueur +1/+1, vigilance, indestructible et célérité", [
+      powerUp("{4}{G}", "a +1/+1 counter, vigilance, indestructible and haste", [
         fx.addCounters(ref.self, 1),
         fx.modify(ref.self, { addKeywords: ["vigilance", "indestructible", "haste"] }),
       ]),
@@ -239,10 +237,10 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Heroic Feast": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food token" }),
       triggered(when.gainLife, [fx.addCounters(ref.target(), 1)], {
         targets: [{ ...target.upTo(1, YOUR_CREATURE()), countAmount: amount.eventAmount }],
-        label: "Un marqueur +1/+1 sur jusqu'à autant de vos créatures que de PV gagnés",
+        label: "A +1/+1 counter on up to that many creatures you control as life gained",
       }),
     ],
   },
@@ -253,22 +251,22 @@ export const GREEN: Record<string, CardScript> = {
           cond.amountAtLeast(amount.plus(amount.powerOf(ref.eventObject), amount.neg(amount.powerOf(ref.self))), 1),
           cond.amountAtLeast(amount.plus(amount.toughnessOf(ref.eventObject), amount.neg(amount.toughnessOf(ref.self))), 1),
         ),
-        label: "Une créature plus forte ou plus endurante arrive : un marqueur +1/+1",
+        label: "A creature with greater power or toughness enters: a +1/+1 counter",
       }),
     ],
   },
   "Ka-Zar of the Savage Land": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus" }),
-      playerStatic({ playFrom: { zone: "libraryTop", what: "lands" }, label: "Jouez des terrains depuis le dessus" }),
-      triggered(when.entersSelf, [fx.createTokens(ZABU)], { label: "Zabu, Chat 2/2 légendaire" }),
+      playerStatic({ lookAt: "libraryTop", label: "You may look at the top card" }),
+      playerStatic({ playFrom: { zone: "libraryTop", what: "lands" }, label: "Play lands from the top" }),
+      triggered(when.entersSelf, [fx.createTokens(ZABU)], { label: "Zabu, legendary 2/2 Cat" }),
     ],
   },
   "Knight of Wundagore": {
     abilities: [
       triggered(when.youPutCounters({ types: ["Creature"], other: true }, "+1/+1"), [fx.addCounters(ref.self, 1)], {
         oncePerTurn: true,
-        label: "Un marqueur +1/+1 sur une autre créature : un sur celle-ci (une fois par tour)",
+        label: "A +1/+1 counter on another creature: one on this one (once each turn)",
       }),
     ],
   },
@@ -277,9 +275,9 @@ export const GREEN: Record<string, CardScript> = {
       triggeredModal(
         when.yourUpkeep,
         [
-          mode("Un marqueur +1/+1 sur Mister Hyde", [], [fx.addCounters(ref.self, 1)]),
+          mode("A +1/+1 counter on Mister Hyde", [], [fx.addCounters(ref.self, 1)]),
           mode(
-            "Retirez un marqueur d'une de vos créatures : piochez",
+            "Remove a counter from a creature you control: draw",
             [],
             [
               fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], withCounter: "any" }), ref.you, "c"),
@@ -288,18 +286,18 @@ export const GREEN: Record<string, CardScript> = {
             ],
           ),
         ],
-        { label: "Un marqueur +1/+1, ou retirez un marqueur pour piocher" },
+        { label: "A +1/+1 counter, or remove a counter to draw" },
       ),
     ],
   },
   "Mole Man, Moloid Master": {
     abilities: [
-      playerStatic({ playFrom: { zone: "graveyard", what: "lands" }, label: "Jouez des terrains depuis votre cimetière" }),
-      triggered(when.landfall, [fx.createTokens(MOLOID)], { label: "Landfall — un Moloïde 1/1" }),
+      playerStatic({ playFrom: { zone: "graveyard", what: "lands" }, label: "Play lands from your graveyard" }),
+      triggered(when.landfall, [fx.createTokens(MOLOID)], { label: "Landfall — a 1/1 Moloid" }),
     ],
   },
   "Pet Avengers": {
-    abilities: [powerUp("{6}{G}", "un marqueur +1/+1 et un Héros 3/2", [fx.addCounters(ref.self, 1), fx.createTokens(HERO)])],
+    abilities: [powerUp("{6}{G}", "a +1/+1 counter and a 3/2 Hero", [fx.addCounters(ref.self, 1), fx.createTokens(HERO)])],
   },
   "Punishing Punch": {
     costReduction: { generic: 2, condition: TWO_CREATURE_CARDS },
@@ -323,7 +321,7 @@ export const GREEN: Record<string, CardScript> = {
           "graveyard",
           { permanent: true },
           { to: "hand" },
-          { count: 1, min: 0, pool: ref.stored("m"), prompt: "Vous pouvez prendre une carte de permanent meulée" },
+          { count: 1, min: 0, pool: ref.stored("m"), prompt: "You may take a milled permanent card" },
         ),
         fx.gainLife(2),
       ],
@@ -341,14 +339,14 @@ export const GREEN: Record<string, CardScript> = {
             addKeywords: ["reach", "vigilance"],
           }),
         ],
-        label: "Brontosaure — Dinosaure Héros 3/5 avec la portée et la vigilance",
+        label: "Brontosaurus — 3/5 Dinosaur Hero with reach and vigilance",
       }),
       activated({
         mana: "{6}",
         effects: [
           fx.modify(ref.self, { setSubtypes: ["Dinosaur", "Hero"], setPower: 6, setToughness: 6, addKeywords: ["trample"] }),
         ],
-        label: "Tyrannosaure — Dinosaure Héros 6/6 avec le piétinement",
+        label: "Tyrannosaurus — 6/6 Dinosaur Hero with trample",
       }),
     ],
   },
@@ -377,34 +375,34 @@ export const GREEN: Record<string, CardScript> = {
               count: 1,
               min: 0,
               pool: ref.stored("m"),
-              prompt: "Vous pouvez prendre une carte de Héros ou d'enchantement meulée",
+              prompt: "You may take a milled Hero or enchantment card",
             },
           ),
         ],
-        label: "Meulez quatre cartes, un Héros ou un enchantement en main",
+        label: "Mill four cards, a Hero or an enchantment into your hand",
       }),
     ],
   },
   "Serpent Specialist": {
-    abilities: [powerUp("{3}{G}", "deux marqueurs +1/+1", [fx.addCounters(ref.self, 2)])],
+    abilities: [powerUp("{3}{G}", "two +1/+1 counters", [fx.addCounters(ref.self, 2)])],
   },
   "She-Hulk, Jade Defender": {
     abilities: [
       powerUp(
         "{4}{G}{G}",
-        "détruit un artefact ou un enchantement, un marqueur +1/+1",
+        "destroy an artifact or enchantment, a +1/+1 counter",
         [fx.destroy(ref.target()), fx.addCounters(ref.self, 1)],
-        { targets: [target.upTo(1, target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement"))] },
+        { targets: [target.upTo(1, target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment"))] },
       ),
     ],
   },
   "Super Strength": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility(
         "attached",
         { power: 4, toughness: 4, addKeywords: ["trample", "ward"], addAbilities: [wardAbility({ mana: cost("{1}") })] },
-        { label: "+4/+4, piétinement et garde {1}" },
+        { label: "+4/+4, trample and ward {1}" },
       ),
     ],
   },
@@ -415,35 +413,35 @@ export const GREEN: Record<string, CardScript> = {
         [fx.addCounters(ref.self, 2)],
         {
           batched: true,
-          label: "Des Héros blessent un joueur : deux marqueurs +1/+1",
+          label: "Heroes deal damage to a player: two +1/+1 counters",
         },
       ),
     ],
   },
   "Tigra, Feline Fury": {
-    abilities: [triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "Vous gagnez des PV : un marqueur +1/+1" })],
+    abilities: [triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "You gain life: a +1/+1 counter" })],
   },
   "Training Regimen": {
     abilities: [
       staticAbility(
         { ...CREATURES_YOU_CONTROL, withCounter: "+1/+1" },
         { addKeywords: ["trample"] },
-        { label: "Vos créatures avec un marqueur +1/+1 ont le piétinement" },
+        { label: "Creatures you control with a +1/+1 counter have trample" },
       ),
       triggered(when.yourCombat, [fx.addCounters(ref.target(), 1)], {
         targets: [YOUR_CREATURE()],
-        label: "Un marqueur +1/+1 sur une de vos créatures",
+        label: "A +1/+1 counter on a creature you control",
       }),
     ],
   },
   "The Unbeatable Squirrel Girl": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(SQUIRREL)], { label: "Un Écureuil 1/1" }),
-      triggered(when.attacksSelf, [fx.createTokens(SQUIRREL)], { label: "Un Écureuil 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(SQUIRREL)], { label: "A 1/1 Squirrel" }),
+      triggered(when.attacksSelf, [fx.createTokens(SQUIRREL)], { label: "A 1/1 Squirrel" }),
       activated({
         mana: "{1}{G}{G}{G}",
         effects: [fx.createTokens(SQUIRREL, amount.count({ subtype: "Squirrel", controller: "you" }))],
-        label: "Autant d'Écureuils 1/1 que d'Écureuils que vous contrôlez",
+        label: "As many 1/1 Squirrels as Squirrels you control",
       }),
     ],
   },
@@ -452,7 +450,7 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 2, toughness: 2, allCreatureTypes: true },
-        { condition: TWO_CREATURE_CARDS, label: "+2/+2 et tous les types de créature (deux cartes de créature au cimetière)" },
+        { condition: TWO_CREATURE_CARDS, label: "+2/+2 and all creature types (two creature cards in graveyard)" },
       ),
       manaAbility([...ANY_COLOR]),
     ],
@@ -465,13 +463,13 @@ export const GREEN: Record<string, CardScript> = {
           ...fx.when(cond.targetMatches("t", { subtype: "Hero", other: true }), fx.addCounters(ref.target(), 2)),
           ...fx.when(cond.not(cond.targetMatches("t", { subtype: "Hero", other: true })), fx.addCounters(ref.target(), 1)),
         ],
-        { targets: [target.creature()], label: "Un marqueur +1/+1 (deux sur un autre Héros)" },
+        { targets: [target.creature()], label: "A +1/+1 counter (two on another Hero)" },
       ),
     ],
   },
   "White Tiger, Ava Ayala": {
     abilities: [
-      powerUp("{5}{G}", "un marqueur +1/+1 et The Tiger God, Chat Dieu 4/4", [
+      powerUp("{5}{G}", "a +1/+1 counter and The Tiger God, a 4/4 Cat God", [
         fx.addCounters(ref.self, 1),
         fx.createTokens(TIGER_GOD),
       ]),
@@ -479,17 +477,17 @@ export const GREEN: Record<string, CardScript> = {
   },
   "World War Hulk": {
     abilities: [
-      // De toute zone ; le prochain sort de créature rouge ou vert consomme l'effet, qu'il soit payé ou non.
+      // From any zone; the next red or green creature spell uses up the effect, whether it is paid or not.
       chapter([1], [fx.nextCreatureSpell({ free: true }, { types: ["Creature"], colors: ["R", "G"] })], {
-        label: "Le prochain sort de créature rouge ou vert sans payer son coût",
+        label: "The next red or green creature spell without paying its cost",
       }),
       chapter([2], [fx.addCounters(ref.target(), 3)], {
         targets: [YOUR_CREATURE()],
-        label: "Trois marqueurs +1/+1 sur une de vos créatures",
+        label: "Three +1/+1 counters on a creature you control",
       }),
       chapter([3], [fx.doublePT(ref.target(), ["trample"])], {
         targets: [YOUR_CREATURE()],
-        label: "Double la force et l'endurance d'une de vos créatures, qui gagne le piétinement",
+        label: "Double the power and toughness of a creature you control, which gains trample",
       }),
     ],
   },
@@ -497,7 +495,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         activateAsThoughHaste: { types: ["Creature"], controller: "you" },
-        label: "Vous activez les capacités de vos créatures comme si elles avaient la célérité",
+        label: "You activate abilities of creatures you control as though they had haste",
       }),
       manaAbility([...ANY_COLOR], 2, { restriction: { abilityOfCreature: {} } }),
     ],
@@ -507,9 +505,9 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         tap: true,
         sorcerySpeed: true,
-        targets: [{ id: "t", label: "permanent ou joueur", filter: { objects: { permanent: true }, players: "any" } }],
+        targets: [{ id: "t", label: "permanent or player", filter: { objects: { permanent: true }, players: "any" } }],
         effects: [fx.proliferate(1, ref.target())],
-        label: "Un marqueur de plus de chaque sorte sur le permanent ou joueur ciblé",
+        label: "One more counter of each kind on the target permanent or player",
       }),
     ],
   },

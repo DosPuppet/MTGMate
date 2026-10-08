@@ -1,4 +1,4 @@
-/** Bloomburrow — artefacts, terrains et cartes spéciales (n° 262 et au-delà). */
+/** Bloomburrow — artifacts, lands and special cards (no. 262 and beyond). */
 import type { ManaAbilityDef } from "@mtgx/engine";
 import {
   activated,
@@ -25,13 +25,13 @@ import {
 
 const ANY: ("W" | "U" | "B" | "R" | "G")[] = ["W", "U", "B", "R", "G"];
 
-/** « {T} : ajoutez {C}. » et « {T} : ajoutez [couleur]. Ne dépensez ce mana que pour lancer un sort de créature. » */
+/** "{T}: Add {C}." and "{T}: Add [color]. Spend this mana only to cast a creature spell." */
 const village = (color: "W" | "U" | "B" | "R" | "G") => [
   manaAbility("C"),
   manaAbility(color, 1, { restriction: { spell: { types: ["Creature"] } } }),
 ];
 
-/** Capacité de mana avec un coût de mana en plus de {T} (Hidden Grotto, Three Tree City). */
+/** Mana ability with a mana cost in addition to {T} (Hidden Grotto, Three Tree City). */
 const paidMana = (mana: string, opts: Partial<ManaAbilityDef> = {}): ManaAbilityDef => ({
   ...manaAbility(ANY),
   cost: { tap: true, mana: cost(mana) },
@@ -43,15 +43,15 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       activated({
         mana: "{2}",
-        targets: [target.cardInGraveyard("t", {}, "you", "carte de votre cimetière")],
+        targets: [target.cardInGraveyard("t", {}, "you", "card in your graveyard")],
         effects: [fx.moveTo(ref.target(), { to: "libraryBottom" })],
-        label: "Met une carte du cimetière sous la bibliothèque",
+        label: "Puts a card from the graveyard on the bottom of the library",
       }),
     ],
   },
   "Bumbleflower's Sharepot": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Food" }),
       activated({
         mana: "{5}",
         tap: true,
@@ -59,20 +59,16 @@ export const ARTIFACTS: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.nonland("t")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruit un permanent non-terrain",
+        label: "Destroys a nonland permanent",
       }),
     ],
   },
   "Fountainport Bell": {
     abilities: [
-      triggered(
-        when.entersSelf,
-        fx.may("Chercher un terrain de base (mis au-dessus) ?", fx.search(BASIC_LAND, { to: "libraryTop" })),
-        {
-          label: "Terrain de base au-dessus de la bibliothèque",
-        },
-      ),
-      activated({ mana: "{1}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
+      triggered(when.entersSelf, fx.may("Search for a basic land (put on top)?", fx.search(BASIC_LAND, { to: "libraryTop" })), {
+        label: "Basic land on top of the library",
+      }),
+      activated({ mana: "{1}", sacrifice: true, effects: [fx.draw(1)], label: "Draw a card" }),
     ],
   },
   "Heirloom Epic": {
@@ -81,9 +77,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{4}",
         tap: true,
         sorcerySpeed: true,
-        // Approximation : les créatures ne peuvent pas aider à payer ce coût.
+        // Approximation: creatures can't help pay this cost.
         effects: [fx.draw(1)],
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
     ],
   },
@@ -103,7 +99,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       staticAbility(
         "attached",
         { power: 1, toughness: 1, addKeywords: ["reach", "vigilance"] },
-        { label: "+1/+1, portée, vigilance" },
+        { label: "+1/+1, reach, vigilance" },
       ),
     ],
   },
@@ -112,9 +108,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         condition: cond.gift,
         targets: [target.creature("t", { controller: "you" })],
-        label: "S'attache à une créature",
+        label: "Attaches to a creature",
       }),
-      staticAbility("attached", { power: 3, toughness: 3, removeKeywords: ["flying"] }, { label: "+3/+3, perd le vol" }),
+      staticAbility("attached", { power: 3, toughness: 3, removeKeywords: ["flying"] }, { label: "+3/+3, loses flying" }),
     ],
   },
   "Tangle Tumbler": {
@@ -124,12 +120,12 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
       activated({
         tapOthers: { filter: { token: true }, count: 2 },
         effects: [fx.animateVehicle()],
-        label: "Engagez deux jetons : devient une créature",
+        label: "Tap two tokens: becomes a creature",
       }),
     ],
   },
@@ -142,7 +138,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
           fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 1, undefined, "p"),
           ...fx.when(cond.controls({ types: ["Land"] }, 4), fx.untap(ref.stored("p"))),
         ],
-        label: "Cherche un terrain de base",
+        label: "Searches for a basic land",
       }),
     ],
   },
@@ -154,14 +150,14 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { token: true } },
         effects: [fx.draw(1)],
-        label: "Sacrifiez un jeton : piochez",
+        label: "Sacrifice a token: draw",
       }),
-      activated({ mana: "{3}", tap: true, payLife: 1, effects: [fx.createTokens(FISH)], label: "Poisson 1/1" }),
-      activated({ mana: "{4}", tap: true, effects: [fx.createTokens(TREASURE)], label: "Trésor" }),
+      activated({ mana: "{3}", tap: true, payLife: 1, effects: [fx.createTokens(FISH)], label: "1/1 Fish" }),
+      activated({ mana: "{4}", tap: true, effects: [fx.createTokens(TREASURE)], label: "Treasure" }),
     ],
   },
   "Hidden Grotto": {
-    abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }), manaAbility("C"), paidMana("{1}")],
+    abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }), manaAbility("C"), paidMana("{1}")],
   },
   "Lilypad Village": {
     abilities: [
@@ -171,7 +167,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         activationCondition: cond.controls(kin(["Bird", "Frog", "Otter", "Rat"], { enteredThisTurn: true })),
         effects: [fx.surveil(2)],
-        label: "Surveillance 2",
+        label: "Surveil 2",
       }),
     ],
   },
@@ -183,7 +179,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.lookAtTop(6, { filter: { types: ["Creature"], anySubtype: ["Bat", "Bird", "Mouse", "Rabbit"] } })],
-        label: "Regarde six cartes : Chauve-souris, Oiseau, Souris ou Lapin",
+        label: "Looks at six cards: Bat, Bird, Mouse or Rabbit",
       }),
     ],
   },
@@ -199,11 +195,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
             "t",
             { types: ["Creature"], anySubtype: ["Bat", "Lizard", "Rat", "Squirrel"] },
             "you",
-            "Chauve-souris, Lézard, Rat ou Écureuil",
+            "Bat, Lizard, Rat or Squirrel",
           ),
         ],
         effects: [fx.toHand(ref.target())],
-        label: "Récupère une carte",
+        label: "Gets back a card",
       }),
     ],
   },
@@ -214,7 +210,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{G}",
         tap: true,
         effects: [fx.addCountersAll(kin(["Frog", "Rabbit", "Raccoon", "Squirrel"], { enteredThisTurn: true }), 1)],
-        label: "Marqueurs +1/+1 sur les nouveaux venus",
+        label: "+1/+1 counters on the newcomers",
       }),
     ],
   },
@@ -225,9 +221,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{R}",
         tap: true,
         sorcerySpeed: true,
-        targets: [targetObj("t", kin(["Lizard", "Mouse", "Otter", "Raccoon"]), "Lézard, Souris, Loutre ou Raton laveur")],
+        targets: [targetObj("t", kin(["Lizard", "Mouse", "Otter", "Raccoon"]), "Lizard, Mouse, Otter or Raccoon")],
         effects: [fx.pump(ref.target(), 1, 0, ["haste"])],
-        label: "+1/+0 et célérité",
+        label: "+1/+0, haste",
       }),
     ],
   },
@@ -238,31 +234,29 @@ export const ARTIFACTS: Record<string, CardScript> = {
       paidMana("{2}", { amountPer: { types: ["Creature"], controller: "you", subtypeChosen: true } }),
     ],
   },
-  // Cartes spéciales (hors du set principal).
+  // Special cards (outside the main set).
   "Serra Redeemer": {
     abilities: [
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true, maxPower: 2 }),
         [fx.addCounters(ref.eventObject, 2)],
-        { label: "Deux marqueurs +1/+1" },
+        { label: "Two +1/+1 counters" },
       ),
     ],
   },
   "Charmed Sleep": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
-    abilities: [triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature" }), doesntUntap("attached")],
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
+    abilities: [triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Taps the creature" }), doesntUntap("attached")],
   },
   "Mind Spring": { spell: spell([], [fx.draw(amount.x)]) },
   "Thieving Otter": {
-    abilities: [
-      triggered(when.dealsDamage("self", { to: { players: "opponent" } }), [fx.draw(1)], { label: "Piochez une carte" }),
-    ],
+    abilities: [triggered(when.dealsDamage("self", { to: { players: "opponent" } }), [fx.draw(1)], { label: "Draw a card" })],
   },
   "Flame Lash": { spell: spell([target.any()], [fx.damage(4, ref.target())]) },
   Colossification: {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature" }),
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Taps the creature" }),
       staticAbility("attached", { power: 20, toughness: 20 }, { label: "+20/+20" }),
     ],
   },
@@ -270,7 +264,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     spell: spell(
       [
         target.creature("t", { controller: "you" }),
-        targetObj("u", { types: ["Creature"], controller: "opponent" }, "créature que vous ne contrôlez pas"),
+        targetObj("u", { types: ["Creature"], controller: "opponent" }, "creature you don't control"),
       ],
       [fx.damage(amount.powerOf(ref.target()), ref.target("u"), ref.target())],
     ),
@@ -280,7 +274,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       staticAbility(
         "attached",
         { power: 2, addKeywords: ["firstStrike", "vigilance", "trample", "haste"] },
-        { label: "+2/+0, initiative, vigilance, piétinement, célérité" },
+        { label: "+2/+0, first strike, vigilance, trample, haste" },
       ),
     ],
   },

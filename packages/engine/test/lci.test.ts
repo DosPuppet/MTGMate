@@ -12,6 +12,7 @@ import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { bump, chars, untapObject } from "../src/state";
 import { playerStatic } from "../src/statics";
+import { plainText } from "../src/text";
 import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import {
@@ -330,7 +331,7 @@ describe("The Lost Caverns of Ixalan", () => {
       const stomperPower = s.defs[s.objects[stomper]?.defId ?? ""]?.power;
       const elves = idOf(s, "p1", "graveyard", "Llanowar Elves");
       expect(() => act(s, "p1", { type: "activate", source: lattice, ability: a.ability, materials: [elves] })).toThrow(
-        /Matériaux de fabrication invalides/,
+        /Invalid craft materials/,
       );
       s = settle(act(s, "p1", { type: "activate", source: lattice, ability: a.ability, materials: [stomper] }));
       const raptor = byName(s, "Mastercraft Raptor") as string;
@@ -569,7 +570,9 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     };
   /** Active la capacité de `source` dont le libellé contient `label`. */
   const activateLabel = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
@@ -673,7 +676,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
 
     let t = scenario({ p1: { battlefield: ["Restless Anchorage", "Plains", "Island", "Island"] } });
     const anchorage = idOf(t, "p1", "battlefield", "Restless Anchorage");
-    t = resolve(activateLabel(t, "p1", anchorage, "créature"));
+    t = resolve(activateLabel(t, "p1", anchorage, "creature"));
     expect(pt(t, anchorage)).toEqual([2, 3]);
     expect(chars(t, anchorage).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
     expect(chars(t, anchorage).keywords).toContain("flying");
@@ -712,7 +715,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     s = act(s, "p1", { type: "pass" });
     expect(canActivate(s, "p2", curator)).toBe(true);
     s = act(s, "p2", { type: "pass" });
-    s = resolve(activateLabel(s, "p1", net, "Engagez", { targets: { t: [curator] } }));
+    s = resolve(activateLabel(s, "p1", net, "Tap", { targets: { t: [curator] } }));
     expect(s.objects[net]?.counters.net).toBe(2);
     expect(s.objects[curator]?.tapped).toBe(true);
     s = act(s, "p1", { type: "pass" });
@@ -832,7 +835,9 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       return picked.length > 0 ? picked : undefined;
     };
   const activateLabel = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
@@ -938,7 +943,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
 
       let t = scenario({ p1: { battlefield: ["Huatli, Poet of Unity // Roar of the Fifth People", ...lands("Mountain", 5)] } });
       t = resolve(
-        activateLabel(t, "p1", idOf(t, "p1", "battlefield", "Huatli, Poet of Unity // Roar of the Fifth People"), "transformée"),
+        activateLabel(t, "p1", idOf(t, "p1", "battlefield", "Huatli, Poet of Unity // Roar of the Fifth People"), "transformed"),
       );
       const saga = t.battlefield.find((id) => chars(t, id).name === "Roar of the Fifth People") as string;
       expect(saga).toBeDefined();
@@ -1136,13 +1141,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     it("Quintorius Kand : +1 crée un Esprit 3/2 ; −3 découverte 4, et le sort lancé depuis l'exil inflige 2 blessures et vous fait gagner 2 PV", () => {
       let s = scenario({ p1: { battlefield: ["Quintorius Kand"], library: ["Forest", "Llanowar Elves", "Island"] } });
       const q = idOf(s, "p1", "battlefield", "Quintorius Kand");
-      let t = resolve(activateLabel(s, "p1", q, "Esprit"));
+      let t = resolve(activateLabel(s, "p1", q, "Spirit"));
       const spirit = tokens(t, "p1", "Spirit")[0] as string;
       expect(pt(t, spirit)).toEqual([3, 2]);
       expect(chars(t, spirit).colors.sort()).toEqual(["R", "W"]);
       expect(t.objects[q]?.counters.loyalty).toBe(5);
 
-      s = untilCastNow(activateLabel(s, "p1", q, "Découverte"));
+      s = untilCastNow(activateLabel(s, "p1", q, "Discover"));
       const elves = castNowOf(s)?.cards[0] as string;
       s = resolve(act(s, "p1", { type: "cast", card: elves }));
       expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
@@ -1162,7 +1167,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const q = idOf(s, "p1", "battlefield", "Quintorius Kand");
       const cards = [...(s.players.p1?.graveyard ?? [])];
-      s = resolve(activateLabel(s, "p1", q, "Exilez", { targets: { t: cards } }));
+      s = resolve(activateLabel(s, "p1", q, "Exile", { targets: { t: cards } }));
       expect(s.players.p1?.manaPool.R).toBe(2);
       const forest = exiled(s, "Forest")[0];
       const chomp = exiled(s, "Triumphant Chomp")[0];
@@ -1174,7 +1179,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     it("Resplendent Angel : +2/+2 et lien de vie ; 5 PV gagnés ce tour-ci → un Ange 4/4 volant et vigilant à l'étape de fin, 4 PV → rien", () => {
       let s = scenario({ p1: { battlefield: ["Resplendent Angel", ...lands("Plains", 6)] } });
       const angel = idOf(s, "p1", "battlefield", "Resplendent Angel");
-      s = resolve(activateLabel(s, "p1", angel, "lien de vie"));
+      s = resolve(activateLabel(s, "p1", angel, "lifelink"));
       expect(pt(s, angel)).toEqual([5, 5]);
       s = throughCombat(attack(s, [angel]));
       expect(s.players.p1?.life).toBe(25);
@@ -1196,7 +1201,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       // « autre » : Saheeli ne peut pas se cibler.
       const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === saheeli);
       expect(opt?.type === "activate" && opt.targets?.[0]?.legal).not.toContain(saheeli);
-      s = resolve(activateLabel(s, "p1", saheeli, "Copie", { targets: { t: [bear] } }));
+      s = resolve(activateLabel(s, "p1", saheeli, "Token copy", { targets: { t: [bear] } }));
       const copy = idsOf(s, "p1", "battlefield", "Bear Cub").find((id) => id !== bear) as string;
       expect(chars(s, copy).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
       expect(chars(s, copy).keywords).toContain("haste");
@@ -1228,7 +1233,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         p1: { battlefield: ["The Ancient One", "Island", "Island", "Swamp", "Swamp"], hand: ["Shivan Dragon"], library: ["Opt"] },
         p2: { library: lands("Forest", 8) },
       });
-      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "The Ancient One"), "Pillage"), (req, _p, cur) => {
+      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "The Ancient One"), "Loot"), (req, _p, cur) => {
         if (req.type !== "pick") return undefined;
         if (req.options.includes("p2")) return ["p2"];
         return pickNamed(cur, req, "Shivan Dragon");
@@ -1266,14 +1271,14 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       s = toMyMain(s);
       const cal = idOf(s, "p1", "battlefield", "The Millennium Calendar");
       expect(s.objects[cal]?.counters.time).toBe(2);
-      s = resolve(activateLabel(s, "p1", cal, "Doublez"));
+      s = resolve(activateLabel(s, "p1", cal, "Double"));
       expect(s.objects[cal]?.counters.time).toBe(4);
       expect(s.players.p2?.life).toBe(20);
 
       let t = scenario({
         p1: { battlefield: [{ name: "The Millennium Calendar", counters: { time: 500 } }, "Forest", "Forest"] },
       });
-      t = resolve(activateLabel(t, "p1", idOf(t, "p1", "battlefield", "The Millennium Calendar"), "Doublez"));
+      t = resolve(activateLabel(t, "p1", idOf(t, "p1", "battlefield", "The Millennium Calendar"), "Double"));
       expect(idsOf(t, "p1", "battlefield", "The Millennium Calendar")).toHaveLength(0);
       expect(t.players.p2?.life).toBe(-980);
     });
@@ -1295,7 +1300,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(s, "p1", "Fungus Dinosaur")).toHaveLength(0);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = resolve(
-        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "The Skullspore Nexus"), "Doublez", { targets: { t: [bear] } }),
+        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "The Skullspore Nexus"), "Double", { targets: { t: [bear] } }),
       );
       expect(pt(s, bear)).toEqual([4, 2]);
     });
@@ -1329,7 +1334,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         },
       });
       const bart = idOf(s, "p1", "battlefield", "Bartolomé del Presidio");
-      const sac = (cur: S, victim: string) => resolve(activateLabel(cur, "p1", bart, "Marqueur", { sacrifice: [victim] }));
+      const sac = (cur: S, victim: string) => resolve(activateLabel(cur, "p1", bart, "counter", { sacrifice: [victim] }));
       s = sac(s, idOf(s, "p1", "battlefield", "Treasure Map // Treasure Cove"));
       expect(s.objects[bart]?.counters["+1/+1"]).toBe(1);
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([22, 20]);
@@ -1351,7 +1356,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, abuelo).keywords).toEqual(expect.arrayContaining(["flying", "ward"]));
       const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === abuelo);
       expect(opt?.type === "activate" && opt.targets?.[0]?.legal).not.toContain(abuelo);
-      s = resolve(activateLabel(s, "p1", abuelo, "Exilez", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
+      s = resolve(activateLabel(s, "p1", abuelo, "Exile", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
       expect(exiled(s, "Bear Cub")).toHaveLength(1);
       s = advanceUntil(
         s,
@@ -1553,7 +1558,9 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const opt = legalActions(s, "p1").find((a) => a.type === "cast" && nameOf(s, a.card) === "Cosmium Confluence");
       const modes = opt?.type === "cast" ? (opt.modes ?? []) : [];
-      const all3 = modes.find((m) => m.label?.split(" + ").length === 3 && new Set(m.label.split(" + ")).size === 3);
+      const all3 = modes.find(
+        (m) => plainText(m.label ?? "").split(" + ").length === 3 && new Set(plainText(m.label ?? "").split(" + ")).size === 3,
+      );
       const maw = idOf(s, "p1", "battlefield", "Cavernous Maw");
       const weight = idOf(s, "p2", "battlefield", "Deeproot Pilgrimage");
       // La Caverne qui reçoit les marqueurs est choisie à la résolution, après la recherche (ordre des modes).
@@ -1581,7 +1588,8 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       // Le même mode trois fois, sur la même Caverne : neuf marqueurs.
       const thrice = modes.find(
         (m) =>
-          m.label === "Caverne 0/0 avec trois marqueurs + Caverne 0/0 avec trois marqueurs + Caverne 0/0 avec trois marqueurs",
+          plainText(m.label ?? "") ===
+          "0/0 Cave with three counters + 0/0 Cave with three counters + 0/0 Cave with three counters",
       );
       let t = scenario({ p1: { battlefield: [...lands("Forest", 5), "Cavernous Maw"], hand: ["Cosmium Confluence"] } });
       t = resolve(castCard(t, "p1", "Cosmium Confluence", { mode: thrice?.index }));
@@ -1630,7 +1638,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       let s = scenario({ p1: { battlefield: ["Dire Flail // Dire Blunderbuss", "Bear Cub", "Mountain"] } });
       const flail = idOf(s, "p1", "battlefield", "Dire Flail // Dire Blunderbuss");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = resolve(activateLabel(s, "p1", flail, "Équiper", { targets: { t: [bear] } }));
+      s = resolve(activateLabel(s, "p1", flail, "Equip", { targets: { t: [bear] } }));
       expect(pt(s, bear)).toEqual([4, 2]);
 
       let t = scenario({
@@ -1640,7 +1648,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const gun = idOf(t, "p1", "battlefield", "Dire Flail // Dire Blunderbuss");
       flip(t, gun);
       const cub = idOf(t, "p1", "battlefield", "Bear Cub");
-      t = resolve(activateLabel(t, "p1", gun, "Équiper", { targets: { t: [cub] } }));
+      t = resolve(activateLabel(t, "p1", gun, "Equip", { targets: { t: [cub] } }));
       expect(pt(t, cub)).toEqual([5, 2]);
       const angel = idOf(t, "p2", "battlefield", "Serra Angel");
       t = resolve(attack(t, [cub]), choosing([idOf(t, "p1", "battlefield", "Nutrient Block"), angel]));
@@ -1721,7 +1729,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const foundry = idOf(s, "p1", "battlefield", "Fabrication Foundry");
       const flail = idOf(s, "p1", "graveyard", "Dire Flail // Dire Blunderbuss");
-      s = resolve(activateLabel(s, "p1", foundry, "Exilez", { targets: { t: [flail] } }));
+      s = resolve(activateLabel(s, "p1", foundry, "Exile", { targets: { t: [flail] } }));
       expect(exiled(s, "Digsite Conservator")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Dire Flail // Dire Blunderbuss")).toHaveLength(1);
       const theirs = scenario({
@@ -1790,7 +1798,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         ["p1", "Bear Cub"],
         ["p2", "Colossadactyl"],
       ] as const)
-        s = resolve(activateLabel(s, "p1", paleo, "Exilez", { targets: { t: [idOf(s, p, "graveyard", name)] } }));
+        s = resolve(activateLabel(s, "p1", paleo, "Exile", { targets: { t: [idOf(s, p, "graveyard", name)] } }));
       const raptor = exiled(s, "Hulking Raptor")[0] as string;
       expect(castable(s, "p1", raptor)).toBe(true);
       // Pas un Dinosaure ; ou une carte d'un adversaire (« que vous possédez ») : non.
@@ -1946,9 +1954,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
           p1: { battlefield: [{ name: "Matzalantli, the Great Door // The Core" }, ...lands("Island", 4)], graveyard },
         });
         const door = idOf(s, "p1", "battlefield", "Matzalantli, the Great Door // The Core");
-        return legalActions(s, "p1").some(
-          (a) => a.type === "activate" && a.source === door && a.label?.includes("Transformation"),
-        );
+        return legalActions(s, "p1").some((a) => a.type === "activate" && a.source === door && a.label?.includes("Transform"));
       };
       expect(can(["Forest", "Bear Cub", "Nutrient Block", "Dead Weight"])).toBe(true);
       expect(can(["Forest", "Bear Cub", "Nutrient Block", "Opt"])).toBe(false);
@@ -2073,7 +2079,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     it("Restless Prairie : Lama 3/3 vert et blanc ; en attaquant, vos autres créatures +1/+1", () => {
       let s = scenario({ p1: { battlefield: ["Restless Prairie", "Bear Cub", "Forest", "Forest", "Plains", "Plains"] } });
       const prairie = idOf(s, "p1", "battlefield", "Restless Prairie");
-      s = resolve(activateLabel(s, "p1", prairie, "créature"));
+      s = resolve(activateLabel(s, "p1", prairie, "creature"));
       expect(pt(s, prairie)).toEqual([3, 3]);
       expect(chars(s, prairie).subtypes).toContain("Llama");
       expect([...chars(s, prairie).colors].sort()).toEqual(["G", "W"]);
@@ -2086,7 +2092,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       let s = scenario({ p1: { battlefield: ["Restless Ridgeline", "Bear Cub", "Forest", "Forest", "Mountain", "Mountain"] } });
       const ridge = idOf(s, "p1", "battlefield", "Restless Ridgeline");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = resolve(activateLabel(s, "p1", ridge, "créature"));
+      s = resolve(activateLabel(s, "p1", ridge, "creature"));
       expect(pt(s, ridge)).toEqual([3, 4]);
       expect(chars(s, ridge).subtypes).toContain("Dinosaur");
       s = resolve(attack(s, [ridge, bear]), choosing([bear]));
@@ -2099,7 +2105,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         p1: { battlefield: ["Restless Vents", "Swamp", "Mountain", "Mountain"], hand: ["Opt"], library: ["Forest"] },
       });
       const vents = idOf(s, "p1", "battlefield", "Restless Vents");
-      s = resolve(activateLabel(s, "p1", vents, "créature"));
+      s = resolve(activateLabel(s, "p1", vents, "creature"));
       expect(pt(s, vents)).toEqual([2, 3]);
       expect(chars(s, vents).keywords).toContain("menace");
       s = resolve(attack(s, [vents]), choosing([idOf(s, "p1", "hand", "Opt")]));
@@ -2215,7 +2221,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       let s = scenario({ p1: { battlefield: ["Subterranean Schooner", "Bear Cub"], library: ["Opt", "Forest"] } });
       const boat = idOf(s, "p1", "battlefield", "Subterranean Schooner");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = resolve(activateLabel(s, "p1", boat, "Équipage", { tap: [bear] }));
+      s = resolve(activateLabel(s, "p1", boat, "Crew", { tap: [bear] }));
       s = resolve(attack(s, [boat]));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
@@ -2226,7 +2232,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const boat = idOf(s, "p1", "battlefield", "Subterranean Schooner");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = resolve(activateLabel(s, "p1", boat, "Équipage", { tap: [bear] }));
+      s = resolve(activateLabel(s, "p1", boat, "Crew", { tap: [bear] }));
       s = passAccepting(attack(s, [boat]), (x) => x.stack.length > 0);
       expect(s.stack.at(-1)?.targets.t).toEqual([bear]);
       destroy(s, bear);
@@ -2260,14 +2266,14 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     it("Tarrian's Journal : {T}, sacrifiez un autre artefact ou une créature : piochez (rituel) ; {2}, {T}, défaussez votre main : transformation", () => {
       let s = scenario({ p1: { battlefield: ["Tarrian's Journal // The Tomb of Aclazotz", "Bear Cub"], library: ["Opt"] } });
       const journal = idOf(s, "p1", "battlefield", "Tarrian's Journal // The Tomb of Aclazotz");
-      s = resolve(activateLabel(s, "p1", journal, "Piochez", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      s = resolve(activateLabel(s, "p1", journal, "Draw", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
       let t = scenario({
         p1: { battlefield: ["Tarrian's Journal // The Tomb of Aclazotz", "Swamp", "Swamp"], hand: ["Opt", "Forest"] },
       });
       const j = idOf(t, "p1", "battlefield", "Tarrian's Journal // The Tomb of Aclazotz");
-      t = resolve(activateLabel(t, "p1", j, "transformation"));
+      t = resolve(activateLabel(t, "p1", j, "transform"));
       expect(t.players.p1?.hand).toHaveLength(0);
       expect(t.players.p1?.graveyard).toHaveLength(2);
       expect(chars(t, j).name).toBe("The Tomb of Aclazotz");
@@ -2284,7 +2290,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       flip(s, tomb);
       const bear = idOf(s, "p1", "graveyard", "Bear Cub");
       expect(castable(s, "p1", bear)).toBe(false);
-      s = resolve(activateLabel(s, "p1", tomb, "cimetière"));
+      s = resolve(activateLabel(s, "p1", tomb, "graveyard"));
       expect(castable(s, "p1", bear)).toBe(true);
       s = resolve(act(s, "p1", { type: "cast", card: bear }));
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2299,7 +2305,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = resolve(
-        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Tarrian's Soulcleaver"), "Équiper", { targets: { t: [bear] } }),
+        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Tarrian's Soulcleaver"), "Equip", { targets: { t: [bear] } }),
       );
       expect(chars(s, bear).keywords).toContain("vigilance");
       destroy(s, idOf(s, "p2", "battlefield", "Serra Angel"));
@@ -2310,7 +2316,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     it("The Belligerent : équipage 3 ; en attaquant, un Trésor, et vous jouez la carte du dessus de votre bibliothèque ce tour-ci", () => {
       let s = scenario({ p1: { battlefield: ["The Belligerent", "Serra Angel"], library: ["Forest", "Island"] } });
       const ship = idOf(s, "p1", "battlefield", "The Belligerent");
-      s = resolve(activateLabel(s, "p1", ship, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
+      s = resolve(activateLabel(s, "p1", ship, "Crew", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
       s = throughCombat(attack(s, [ship]));
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
       const top = s.players.p1?.library[0] as string;
@@ -2417,7 +2423,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         p1: { battlefield: [{ name: "Threefold Thunderhulk", counters: { "+1/+1": 3 } }, "Nutrient Block", "Plains", "Plains"] },
       });
       const h = idOf(t, "p1", "battlefield", "Threefold Thunderhulk");
-      t = resolve(activateLabel(t, "p1", h, "Marqueur", { sacrifice: [idOf(t, "p1", "battlefield", "Nutrient Block")] }));
+      t = resolve(activateLabel(t, "p1", h, "counter", { sacrifice: [idOf(t, "p1", "battlefield", "Nutrient Block")] }));
       expect(pt(t, h)).toEqual([4, 4]);
       t = resolve(attack(t, [h]));
       expect(tokens(t, "p1", "Gnome")).toHaveLength(4);
@@ -2461,9 +2467,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         p2: { battlefield: ["Serra Angel"] },
       });
       const angel = idOf(t, "p2", "battlefield", "Serra Angel");
-      t = resolve(
-        activateLabel(t, "p1", idOf(t, "p1", "hand", "Trumpeting Carnosaur"), "3 blessures", { targets: { t: [angel] } }),
-      );
+      t = resolve(activateLabel(t, "p1", idOf(t, "p1", "hand", "Trumpeting Carnosaur"), "3 damage", { targets: { t: [angel] } }));
       expect(idsOf(t, "p1", "graveyard", "Trumpeting Carnosaur")).toHaveLength(1);
       expect(t.objects[angel]?.damage).toBe(3);
     });
@@ -2556,9 +2560,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       // Sans mana : seul l'Équiper par défausse est possible.
       expect(legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === flail)).toHaveLength(1);
-      s = resolve(
-        activateLabel(s, "p1", flail, "défaussez", { targets: { t: [bear] }, discard: [idOf(s, "p1", "hand", "Opt")] }),
-      );
+      s = resolve(activateLabel(s, "p1", flail, "discard", { targets: { t: [bear] }, discard: [idOf(s, "p1", "hand", "Opt")] }));
       expect(pt(s, bear)).toEqual([4, 3]);
       expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     });
@@ -2570,7 +2572,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const goblin = idOf(s, "p1", "battlefield", "Swab Goblin");
       const options = legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === hat);
       // Équiper {2} demande un mana de plus ; seul le Pirate peut être équipé pour {1}.
-      expect(options.map((a) => (a.type === "activate" ? a.label : ""))).toEqual(["Équiper un Pirate {1}"]);
+      expect(options.map((a) => (a.type === "activate" ? a.label : ""))).toEqual(["Equip Pirate {1}"]);
       s = resolve(activateLabel(s, "p1", hat, "Pirate", { targets: { t: [goblin] } }));
       expect(s.objects[hat]?.attachedTo).toBe(goblin);
       expect(s.objects[idOf(s, "p1", "battlefield", "Freya Crescent")]?.tapped).toBe(true);
@@ -2645,7 +2647,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     it("Careening Mine Cart : équipage 1 ; un Trésor en attaquant", () => {
       let s = scenario({ p1: { battlefield: ["Careening Mine Cart", "Llanowar Elves"] } });
       const cart = idOf(s, "p1", "battlefield", "Careening Mine Cart");
-      s = resolve(activateLabel(s, "p1", cart, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Llanowar Elves")] }));
+      s = resolve(activateLabel(s, "p1", cart, "Crew", { tap: [idOf(s, "p1", "battlefield", "Llanowar Elves")] }));
       s = resolve(attack(s, [cart]));
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
     });
@@ -2745,7 +2747,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
           library: ["Opt", "Forest"],
         },
       });
-      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Contested Game Ball"), "Piochez"));
+      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Contested Game Ball"), "Draw"));
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Contested Game Ball")).toHaveLength(0);
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
@@ -2804,7 +2806,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         p2: { battlefield: ["Treasure Map // Treasure Cove", "Hoverstone Pilgrim"] },
       });
       // X = 2 : Treasure Map et Digsite Conservator (VM 2, le vôtre aussi) ; Hoverstone Pilgrim (VM 5) reste.
-      t = resolve(activateLabel(t, "p1", idOf(t, "p1", "battlefield", "Dauntless Dismantler"), "Détruisez", { x: 2 }));
+      t = resolve(activateLabel(t, "p1", idOf(t, "p1", "battlefield", "Dauntless Dismantler"), "Destroy", { x: 2 }));
       expect(idsOf(t, "p2", "graveyard", "Treasure Map // Treasure Cove")).toHaveLength(1);
       expect(idsOf(t, "p2", "battlefield", "Hoverstone Pilgrim")).toHaveLength(1);
       expect(idsOf(t, "p1", "graveyard", "Digsite Conservator")).toHaveLength(1);
@@ -2831,7 +2833,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const axe = idOf(s, "p1", "battlefield", "Diamond Pick-Axe");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, axe).keywords).toContain("indestructible");
-      s = resolve(activateLabel(s, "p1", axe, "Équiper", { targets: { t: [bear] } }));
+      s = resolve(activateLabel(s, "p1", axe, "Equip", { targets: { t: [bear] } }));
       expect(pt(s, bear)).toEqual([3, 3]);
       s = resolve(attack(s, [bear]));
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
@@ -2932,9 +2934,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.objects[c]?.counters["+1/+1"]).toBe(3);
       let m = scenario({ p1: { battlefield: [{ name: "Explorer's Cache", counters: { "+1/+1": 2 } }, "Bear Cub"] } });
       const bear = idOf(m, "p1", "battlefield", "Bear Cub");
-      m = resolve(
-        activateLabel(m, "p1", idOf(m, "p1", "battlefield", "Explorer's Cache"), "Déplacez", { targets: { t: [bear] } }),
-      );
+      m = resolve(activateLabel(m, "p1", idOf(m, "p1", "battlefield", "Explorer's Cache"), "Move", { targets: { t: [bear] } }));
       expect(m.objects[bear]?.counters["+1/+1"]).toBe(1);
       expect(m.objects[idOf(m, "p1", "battlefield", "Explorer's Cache")]?.counters["+1/+1"]).toBe(1);
     });
@@ -2987,7 +2987,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       // Non attachée, la Lanterne ne donne rien (PLAN-D, D8) ; attachée, la créature équipée a « vous pouvez regarder ».
       expect(playerStatic(s, "p1", "lookAt")).toBe(false);
-      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Glowcap Lantern"), "Équiper", { targets: { t: [bear] } }));
+      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Glowcap Lantern"), "Equip", { targets: { t: [bear] } }));
       expect(playerStatic(s, "p1", "lookAt")).toBe(true);
       s = resolve(attack(s, [bear]));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
@@ -3015,7 +3015,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const lair = idOf(s, "p1", "battlefield", "Grasping Shadows // Shadows' Lair");
       flip(s, lair);
-      s = resolve(activateLabel(s, "p1", lair, "Piochez"));
+      s = resolve(activateLabel(s, "p1", lair, "Draw"));
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(s.players.p1?.life).toBe(19);
       expect(canActivate(s, "p1", lair)).toBe(false);
@@ -3072,7 +3072,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const pilgrim = idOf(s, "p1", "battlefield", "Hoverstone Pilgrim");
       expect(chars(s, pilgrim).keywords).toEqual(expect.arrayContaining(["flying", "ward"]));
-      s = resolve(activateLabel(s, "p1", pilgrim, "sous", { targets: { t: [idOf(s, "p2", "graveyard", "Shivan Dragon")] } }));
+      s = resolve(activateLabel(s, "p1", pilgrim, "bottom", { targets: { t: [idOf(s, "p2", "graveyard", "Shivan Dragon")] } }));
       expect(libraryNames(s, "p2")).toEqual(["Forest", "Shivan Dragon"]);
     });
 
@@ -3147,7 +3147,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         p1: { battlefield: [...lands("Forest", 7), "Jade Seedstones // Jadeheart Attendant"], graveyard: ["Shivan Dragon"] },
       });
       const stones = idOf(t, "p1", "battlefield", "Jade Seedstones // Jadeheart Attendant");
-      t = resolve(activateLabel(t, "p1", stones, "Fabrication", { materials: [idOf(t, "p1", "graveyard", "Shivan Dragon")] }));
+      t = resolve(activateLabel(t, "p1", stones, "Craft", { materials: [idOf(t, "p1", "graveyard", "Shivan Dragon")] }));
       const attendant = t.battlefield.find((id) => chars(t, id).name === "Jadeheart Attendant") as string;
       expect(pt(t, attendant)).toEqual([7, 7]);
       expect(t.players.p1?.life).toBe(26);
@@ -3328,7 +3328,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     it("Soulcoil Viper : {B}, {T}, sacrifice (rituel) : une carte de créature de votre cimetière revient avec un marqueur de finalité", () => {
       let s = scenario({ p1: { battlefield: ["Soulcoil Viper", "Swamp"], graveyard: ["Shivan Dragon"] } });
       s = resolve(
-        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Soulcoil Viper"), "finalité", {
+        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Soulcoil Viper"), "finality", {
           targets: { t: [idOf(s, "p1", "graveyard", "Shivan Dragon")] },
         }),
       );
@@ -3379,7 +3379,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const std = idOf(s, "p1", "battlefield", "Sunbird Standard // Sunbird Effigy");
       s = resolve(
-        activateLabel(s, "p1", std, "Fabrication", {
+        activateLabel(s, "p1", std, "Craft", {
           materials: [idOf(s, "p1", "graveyard", "Bear Cub"), idOf(s, "p1", "graveyard", "Opt")],
         }),
       );
@@ -3397,11 +3397,11 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = resolve(
-        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Swashbuckler's Whip"), "Équiper", { targets: { t: [bear] } }),
+        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Swashbuckler's Whip"), "Equip", { targets: { t: [bear] } }),
       );
       expect(chars(s, bear).keywords).toContain("reach");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      s = resolve(activateLabel(s, "p1", bear, "Engagez", { targets: { t: [angel] } }));
+      s = resolve(activateLabel(s, "p1", bear, "Tap", { targets: { t: [angel] } }));
       expect(s.objects[angel]?.tapped).toBe(true);
       expect(s.objects[bear]?.tapped).toBe(true);
     });
@@ -3419,7 +3419,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       let s = scenario({ p1: { battlefield: ["Tendril of the Mycotyrant", ...lands("Forest", 8)] } });
       const forest = idOf(s, "p1", "battlefield", "Forest");
       s = resolve(
-        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Tendril of the Mycotyrant"), "Champignon", {
+        activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Tendril of the Mycotyrant"), "Fungus", {
           targets: { t: [forest] },
         }),
       );
@@ -3469,7 +3469,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       const maze = idOf(s, "p1", "battlefield", "Twists and Turns // Mycoid Maze");
       flip(s, maze);
-      s = resolve(activateLabel(s, "p1", maze, "créature"));
+      s = resolve(activateLabel(s, "p1", maze, "Creature card"));
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
       expect(libraryNames(s)[0]).toBe("Swamp");
     });
@@ -3492,7 +3492,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
           graveyard: ["Uchbenbak, the Great Mistake", ...lands("Forest", 7)],
         },
       });
-      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "graveyard", "Uchbenbak, the Great Mistake"), "revient"));
+      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "graveyard", "Uchbenbak, the Great Mistake"), "returns"));
       const u = idOf(s, "p1", "battlefield", "Uchbenbak, the Great Mistake");
       expect(s.objects[u]?.counters.finality).toBe(1);
       expect(chars(s, u).keywords).toEqual(expect.arrayContaining(["vigilance", "menace"]));
@@ -3535,7 +3535,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
 
     it("Waterlogged Hulk : {T} : meulez une carte ; Watertight Gondola : vigilance, imblocable avec descente 8", () => {
       let s = scenario({ p1: { battlefield: ["Waterlogged Hulk // Watertight Gondola"], library: ["Opt", "Forest"] } });
-      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Waterlogged Hulk // Watertight Gondola"), "Meulez"));
+      s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Waterlogged Hulk // Watertight Gondola"), "Mill"));
       expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
       const at = (n: number) => {
         const t = scenario({ p1: { battlefield: ["Waterlogged Hulk // Watertight Gondola"], graveyard: lands("Forest", n) } });
@@ -3755,9 +3755,9 @@ describe("The Lost Caverns of Ixalan, PLAN-A A4a", () => {
     const pole = idOf(s, "p2", "battlefield", "Fishing Pole");
     s.objects[hammer]!.attachedTo = bear;
     bump(s);
-    const index = chars(s, bear).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Sacrifiez"));
+    const index = chars(s, bear).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Sacrifice"));
     expect(index).toBeGreaterThanOrEqual(0);
-    expect(chars(s, hammer).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Sacrifiez"))).toBe(false);
+    expect(chars(s, hammer).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Sacrifice"))).toBe(false);
     s = settle(act(s, "p1", { type: "activate", source: bear, ability: index, targets: { t: [pole] } }));
     expect(idsOf(s, "p1", "graveyard", "Deconstruction Hammer")).toHaveLength(1);
     expect(idsOf(s, "p2", "graveyard", "Fishing Pole")).toHaveLength(1);

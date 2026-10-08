@@ -1,38 +1,37 @@
 /**
- * Registre des extensions couvertes (PLAN-C, C19) : code, noms et dernier numéro du set principal, sans les données.
- * Seule liste des extensions : `sets.ts` y joint données et scripts ; les outils d'import (`tools/import-scryfall.ts`,
- * `tools/import-tokens.ts`) la lisent sans charger les cartes. L'ordre compte : une réimpression (même nom) garde la
- * définition de la première extension.
+ * Registry of the covered sets (PLAN-C, C19): code, names and last number of the main set, without the data. The only
+ * list of sets: `sets.ts` adds data and scripts to it; the import tools (`tools/import-scryfall.ts`,
+ * `tools/import-tokens.ts`) read it without loading the cards. Order matters: a reprint (same name) keeps the
+ * definition of the first set.
  */
 export interface SetInfo {
   code: string;
   name: string;
   nameFr: string;
-  /** Dernier numéro de collection du set principal (au-delà : réimpressions, cartes spéciales). */
+  /** Last collector number of the main set (beyond: reprints, special cards). */
   mainMax: number;
   /**
-   * Ensemble de rééditions sorti avec des extensions du Standard (PLAN-G : Special Guests, feuilles bonus) : hors
-   * Standard, jouable en « Sans limite ». `of` : les extensions avec lesquelles il est sorti.
+   * Reprint set released with Standard sets (PLAN-G: Special Guests, bonus sheets): outside Standard, playable in
+   * "Unlimited". `of`: the sets it was released with.
    */
   reprint?: {
     of: string[];
-    /** Numéros de collection importés (Special Guests : la plage de chaque extension de l'appli). */
+    /** Imported collector numbers (Special Guests: the range of each set of the app). */
     numbers?: [number, number][];
   };
   /**
-   * Pseudo-ensemble importé par nom (PLAN-E, Commander) : les cartes des decklists de `decks` (dossier relatif à la
-   * racine du dépôt) absentes du catalogue, chacune avec l'impression choisie par l'import (`origin`). Hors Standard.
+   * Pseudo-set imported by name (PLAN-E, Commander): the cards of the decklists in `decks` (folder relative to the
+   * repository root) missing from the catalog, each with the printing chosen by the import (`origin`). Outside Standard.
    */
   byName?: { decks: string };
 }
 
 /**
- * Cartes des ensembles de rééditions laissées de côté, quel que soit l'ensemble, avec la raison (PLAN-G) : une partie de
- * la carte ne fonctionne qu'en Commander (partenaire, éminence, ninjutsu de commandant, zone de commandement, identité de
- * couleur du commandant, « si vous contrôlez un commandant »). Le pseudo-ensemble EDH (PLAN-E) peut les définir quand un
- * deck Commander les demande.
+ * Cards of the reprint sets left out, whatever the set, with the reason (PLAN-G): part of the card only works in
+ * Commander (partner, eminence, commander ninjutsu, command zone, commander's color identity, "if you control a
+ * commander"). The EDH pseudo-set (PLAN-E) can define them when a Commander deck asks for them.
  */
-const COMMANDER_ONLY = "mécanique propre au Commander (à reprendre avec Commander)";
+const COMMANDER_ONLY = "mechanic specific to Commander (to revisit with Commander)";
 export const EXCLUDED_REPRINTS: Readonly<Record<string, string>> = {
   "Akroma's Will": COMMANDER_ONLY,
   "Breeches, Brazen Plunderer": COMMANDER_ONLY,
@@ -72,7 +71,7 @@ export const SET_INFO: readonly SetInfo[] = [
   { code: "DSK", name: "Duskmourn: House of Horror", nameFr: "Mornebrune : la Maison de l'horreur", mainMax: 301 },
   { code: "LCI", name: "The Lost Caverns of Ixalan", nameFr: "Les cavernes oubliées d'Ixalan", mainMax: 291 },
   { code: "FIN", name: "Final Fantasy", nameFr: "Final Fantasy", mainMax: 309 },
-  // Rééditions (PLAN-G), après les extensions : une carte déjà présente garde sa définition et son image.
+  // Reprint sets (PLAN-G), after the sets: a card already present keeps its definition and its image.
   {
     code: "SPG",
     name: "Special Guests",
@@ -80,7 +79,7 @@ export const SET_INFO: readonly SetInfo[] = [
     mainMax: 0,
     reprint: {
       of: ["LCI", "MKM", "OTJ", "BLB", "DSK", "FDN", "DFT", "TDM", "EOE", "ECL", "SOS", "FRA"],
-      // Une plage par extension de l'appli (39–53 : Modern Horizons 3, absente de l'appli).
+      // One range per set of the app (39–53: Modern Horizons 3, absent from the app).
       numbers: [
         [1, 38],
         [54, 168],
@@ -132,10 +131,10 @@ export const SET_INFO: readonly SetInfo[] = [
     mainMax: 0,
     reprint: { of: ["LCI"] },
   },
-  // Commander (PLAN-E) : cartes des decks Commander absentes des extensions ci-dessus, importées par nom
-  // (`npm run import-cards -- edh`). Le code n'est pas celui d'un ensemble Scryfall (CMD : Commander 2011).
+  // Commander (PLAN-E): cards of the Commander decks missing from the sets above, imported by name
+  // (`npm run import-cards -- edh`). The code is not that of a Scryfall set (CMD: Commander 2011).
   { code: "EDH", name: "Commander", nameFr: "Commander", mainMax: 0, byName: { decks: "docs/commander/decks" } },
 ];
 
-/** Extensions du Standard (sans les ensembles de rééditions ni le pseudo-ensemble Commander). */
+/** Standard sets (without the reprint sets or the Commander pseudo-set). */
 export const STANDARD_SETS: readonly SetInfo[] = SET_INFO.filter((s) => !s.reprint && !s.byName);

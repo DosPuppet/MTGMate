@@ -1,7 +1,11 @@
 {
-  "id": "bienvenue-noir",
-  "name": "Bienvenue : noir",
-  "description": "Deck de bienvenue (40 cartes, Foundations). Vampires qui drainent l'adversaire, gagnent des points de vie et détruisent les bloqueurs.",
+  "id": "welcome-black",
+  "name": "Welcome: Black",
+  "description": "Welcome deck (40 cards, Foundations). Vampires that drain the opponent, gain life and destroy blockers.",
+  "fr": {
+    "name": "Bienvenue : noir",
+    "description": "Deck de bienvenue (40 cartes, Foundations). Vampires qui drainent l'adversaire, gagnent des points de vie et détruisent les bloqueurs."
+  },
   "colors": [
     "B"
   ],

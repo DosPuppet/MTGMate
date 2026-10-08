@@ -1,5 +1,5 @@
-/** The Lost Caverns of Ixalan — légendaires et cartes uniques (lot D). Scripts par nom de face. */
-import type { Effect, ModeDef, TargetSpec } from "@mtgx/engine";
+/** The Lost Caverns of Ixalan — legendaries and unique cards (lot D). Scripts by face name. */
+import { type Effect, type ModeDef, msg, type TargetSpec } from "@mtgx/engine";
 import {
   ARTIFACT_OR_CREATURE,
   ARTIFACT_OR_CREATURE_YOURS,
@@ -41,12 +41,12 @@ import {
 const ANY = ["W", "U", "B", "R", "G"] as const;
 const CREATURE = { types: ["Creature" as const] };
 
-/** Dieux d'Ixalan : « Quand [il] meurt, renvoyez-le sur le champ de bataille engagé et transformé » (Temple). */
+/** Gods of Ixalan: "When [it] dies, return it to the battlefield tapped and transformed" (Temple). */
 const returnsAsTemple = (counters?: { kind: string; n: number }) =>
   triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true, transformed: true, counters })], {
-    label: "Revient en Temple, engagé",
+    label: "Returns as a Temple, tapped",
   });
-/** Temples : « {T} : ajoutez [couleur] » et « {2}{C}, {T} : transformez ce terrain. N'activez que si … et qu'en rituel. » */
+/** Temples: "{T}: Add [color]" and "{2}{C}, {T}: Transform this land. Activate only if … and only as a sorcery." */
 const temple = (c: "W" | "U" | "B" | "R" | "G", condition: Parameters<typeof cond.not>[0], extra = {}): CardScript => ({
   abilities: [
     manaAbility(c, 1, extra),
@@ -56,27 +56,27 @@ const temple = (c: "W" | "U" | "B" | "R" | "G", condition: Parameters<typeof con
       sorcerySpeed: true,
       activationCondition: condition,
       effects: [fx.transform()],
-      label: "Transformez ce terrain",
+      label: "Transform this land",
     }),
   ],
 });
 
-/** Cosmium Confluence : « choisissez trois ; le même mode peut être choisi plusieurs fois » (toutes les combinaisons). */
+/** Cosmium Confluence: "choose three; you may choose the same mode more than once" (all combinations). */
 const confluence = (): ModeDef[] => {
-  /** « sur une Caverne que vous contrôlez » : choisie à la résolution, sans cibler (le même mode peut viser la même). */
+  /** "on a Cave you control": chosen on resolution, without targeting (the same mode can pick the same one). */
   const cave = (i: number) =>
     fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Land"], subtype: "Cave" }), ref.you, `c${i}`, {
-      prompt: "Caverne qui reçoit trois marqueurs +1/+1",
+      prompt: "Cave that gets three +1/+1 counters",
     });
-  const ench = (i: number) => targetObj(`e${i}`, { types: ["Enchantment"] }, "enchantement");
+  const ench = (i: number) => targetObj(`e${i}`, { types: ["Enchantment"] }, "enchantment");
   const modes: { label: string; targets: (i: number) => TargetSpec[]; effects: (i: number) => Effect[] }[] = [
     {
-      label: "Caverne engagée",
+      label: "Tapped Cave",
       targets: () => [],
       effects: () => [fx.search({ subtype: "Cave" }, { to: "battlefield", tapped: true })],
     },
     {
-      label: "Caverne 0/0 avec trois marqueurs",
+      label: "0/0 Cave with three counters",
       targets: () => [],
       effects: (i) => [
         cave(i),
@@ -88,7 +88,7 @@ const confluence = (): ModeDef[] => {
         ),
       ],
     },
-    { label: "Détruisez un enchantement", targets: (i) => [ench(i)], effects: (i) => [fx.destroy(ref.target(`e${i}`))] },
+    { label: "Destroy an enchantment", targets: (i) => [ench(i)], effects: (i) => [fx.destroy(ref.target(`e${i}`))] },
   ];
   const out: ModeDef[] = [];
   for (let a = 0; a <= 3; a++)
@@ -97,7 +97,7 @@ const confluence = (): ModeDef[] => {
       const picks = counts.flatMap((n, k) => Array.from({ length: n }, (_, i) => ({ m: modes[k] as (typeof modes)[number], i })));
       out.push(
         mode(
-          picks.map((p) => p.m.label).join(" + "),
+          picks.map((p) => p.m.label).reduce((a, b) => msg("{a} + {b}", { a, b })),
           picks.flatMap((p) => p.m.targets(p.i)),
           picks.flatMap((p) => p.m.effects(p.i)),
         ),
@@ -107,19 +107,19 @@ const confluence = (): ModeDef[] => {
 };
 
 export const LEGENDS: Record<string, CardScript> = {
-  // --- Blanc ------------------------------------------------------------------
+  // --- White ------------------------------------------------------------------
   "Dauntless Dismantler": {
     abilities: [
       entersWith({
         tapped: true,
         affects: { types: ["Artifact"], controller: "opponent" },
-        label: "Les artefacts adverses arrivent engagés",
+        label: "Opponents' artifacts enter tapped",
       }),
       activated({
         mana: "{X}{X}{W}",
         sacrifice: true,
         effects: [fx.destroyAll({ types: ["Artifact"], compare: [cmp.manaValue("=", amount.x)] })],
-        label: "Détruisez chaque artefact de valeur de mana X",
+        label: "Destroy each artifact with mana value X",
       }),
     ],
   },
@@ -130,7 +130,7 @@ export const LEGENDS: Record<string, CardScript> = {
         mana: "{2}{W}",
         tap: true,
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "carte d'artefact de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "artifact card from your graveyard")],
         effects: [
           {
             op: "exileForManaValue",
@@ -140,7 +140,7 @@ export const LEGENDS: Record<string, CardScript> = {
           },
           ...fx.when(cond.v("ok"), fx.toBattlefield(ref.target())),
         ],
-        label: "Exilez des artefacts : un artefact du cimetière revient",
+        label: "Exile artifacts: an artifact returns from the graveyard",
       }),
     ],
   },
@@ -150,7 +150,7 @@ export const LEGENDS: Record<string, CardScript> = {
         when.entersSelf,
         [
           mode(
-            "Marqueurs (créatures parties ce tour-ci)",
+            "Counters (creatures that left this turn)",
             [],
             [
               fx.addCounters(
@@ -159,14 +159,10 @@ export const LEGENDS: Record<string, CardScript> = {
               ),
             ],
           ),
-          mode("+2 PV et regard 2", [], [fx.gainLife(2), fx.scry(2)]),
-          mode(
-            "Exilez le cimetière d'un joueur",
-            [target.player()],
-            [fx.moveAll("graveyard", ref.target(), {}, { to: "exile" })],
-          ),
+          mode("+2 life and scry 2", [], [fx.gainLife(2), fx.scry(2)]),
+          mode("Exile a player's graveyard", [target.player()], [fx.moveAll("graveyard", ref.target(), {}, { to: "exile" })]),
         ],
-        { label: "Flanc-garde" },
+        { label: "Flanking" },
       ),
     ],
   },
@@ -177,28 +173,30 @@ export const LEGENDS: Record<string, CardScript> = {
         to: "you",
         toFilter: { types: ["Creature"] },
         modify: { times: 3 },
-        label: "Trois fois plus de jetons de créature",
+        label: "Three times as many creature tokens",
       }),
       returnsAsTemple(),
     ],
   },
   "Temple of Civilization": temple("W", cond.amountAtLeast(amount.attackersThisTurn, 3)),
   "Thousand Moons Infantry": {
-    abilities: [triggered(when.step("upkeep", "opponent"), [fx.untap(ref.self)], { label: "Se dégage pendant le tour adverse" })],
+    abilities: [
+      triggered(when.step("upkeep", "opponent"), [fx.untap(ref.self)], { label: "Untaps during each opponent's turn" }),
+    ],
   },
   "Thousand Moons Smithy": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(GNOME_SOLDIER)], { label: "Gnome Soldat" }),
+      triggered(when.entersSelf, [fx.createTokens(GNOME_SOLDIER)], { label: "Gnome Soldier" }),
       triggered(
         when.step("main1"),
         [
           ...fx.may(
-            "Engager cinq artefacts et/ou créatures pour la transformer ?",
+            "Tap five artifacts and/or creatures to transform it?",
             fx.tapChosen(ARTIFACT_OR_CREATURE, "c", { exactly: 5 }),
             ...fx.when(cond.v("c", 5), fx.transform()),
           ),
         ],
-        { condition: cond.controls({ ...ARTIFACT_OR_CREATURE_YOURS, tapped: false }, 5), label: "Engagez cinq permanents" },
+        { condition: cond.controls({ ...ARTIFACT_OR_CREATURE_YOURS, tapped: false }, 5), label: "Tap five permanents" },
       ),
     ],
   },
@@ -208,7 +206,7 @@ export const LEGENDS: Record<string, CardScript> = {
       triggered(
         { on: "castSpell", by: "you", filter: ARTIFACT_OR_CREATURE, usingManaFromSelf: true },
         [fx.createTokens(GNOME_SOLDIER)],
-        { label: "Gnome Soldat" },
+        { label: "Gnome Soldier" },
       ),
     ],
   },
@@ -226,7 +224,7 @@ export const LEGENDS: Record<string, CardScript> = {
         ],
         {
           condition: cond.wasCast,
-          label: "Une créature de force 2 ou moins épargnée par joueur",
+          label: "One creature with power 2 or less spared per player",
         },
       ),
       craft("{3}{W}{W}", { filter: { types: ["Artifact"] }, count: 1 }),
@@ -235,28 +233,28 @@ export const LEGENDS: Record<string, CardScript> = {
   "Sandswirl Wanderglyph": {
     abilities: [
       triggered(when.castSpell("opponent"), [fx.thisTurn({ cantAttack: { of: "you" } }, ref.eventPlayer)], {
-        // « pendant son tour » : le lanceur est le joueur actif.
+        // "during their turn": the caster is the active player.
         condition: cond.amountAtLeast(amount.refCount(ref.playersWhere(ref.eventPlayer, cond.yourTurn)), 1),
-        label: "Il ne peut pas vous attaquer ce tour-ci",
+        label: "It can't attack you this turn",
       }),
       playerStatic({
         castLimit: { who: "opponents", attackedYou: true },
-        label: "Qui vous a attaqué ne peut pas lancer de sorts",
+        label: "Whoever attacked you can't cast spells",
       }),
     ],
   },
-  // --- Bleu -------------------------------------------------------------------
+  // --- Blue -------------------------------------------------------------------
   "The Enigma Jewel": {
     abilities: [
-      entersWith({ tapped: true, label: "Arrive engagé" }),
+      entersWith({ tapped: true, label: "Enters tapped" }),
       manaAbility("C", 2, { restriction: { abilityOfSource: {} } }),
       craft("{8}{U}", { filter: { notTypes: ["Land"], withActivatedAbility: true }, count: 4 }),
     ],
   },
   "Locus of Enlightenment": {
     abilities: [
-      staticAbility("self", { gainLinkedActivated: true }, { label: "Capacités activées des cartes exilées" }),
-      triggered({ on: "activateAbility" }, [fx.copySpell(ref.eventObject, 1)], { label: "Copiez la capacité" }),
+      staticAbility("self", { gainLinkedActivated: true }, { label: "Activated abilities of the exiled cards" }),
+      triggered({ on: "activateAbility" }, [fx.copySpell(ref.eventObject, 1)], { label: "Copy the ability" }),
     ],
   },
   "Kitesail Larcenist": {
@@ -274,12 +272,12 @@ export const LEGENDS: Record<string, CardScript> = {
         {
           targets: [
             {
-              // « pour chaque joueur, jusqu'à un … que ce joueur contrôle » (quatre joueurs au plus).
-              ...target.upTo(4, targetObj("t", { ...ARTIFACT_OR_CREATURE, other: true }, "autre artefact ou créature")),
+              // "for each player, up to one … that player controls" (four players at most).
+              ...target.upTo(4, targetObj("t", { ...ARTIFACT_OR_CREATURE, other: true }, "other artifact or creature")),
               differentPlayers: true,
             },
           ],
-          label: "Deviennent des Trésors",
+          label: "Become Treasures",
         },
       ),
     ],
@@ -294,7 +292,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.discard(1, ref.you, { store: "d" }),
           ...fx.when(cond.counterAtLeast("chorus", 4), fx.castNow(ref.stored("d"), { free: true })),
         ],
-        { label: "Marqueur de chœur, pillage" },
+        { label: "Singing counter, loot" },
       ),
     ],
   },
@@ -303,7 +301,7 @@ export const LEGENDS: Record<string, CardScript> = {
       triggered(
         { on: "castSpell", by: "you", filter: { types: ["Instant"] }, fromHand: true },
         [fx.grantRebound(ref.eventObject)],
-        { label: "Rebond" },
+        { label: "Rebound" },
       ),
       returnsAsTemple({ kind: "time", n: 3 }),
     ],
@@ -315,28 +313,28 @@ export const LEGENDS: Record<string, CardScript> = {
         targets: [
           target.optional({
             id: "t",
-            label: "capacité activée ou déclenchée",
+            label: "activated or triggered ability",
             filter: { stackItems: { abilitiesOnly: true } },
           }),
         ],
-        label: "Contrecarrez une capacité",
+        label: "Counter an ability",
       }),
     ],
   },
-  // --- Noir -------------------------------------------------------------------
+  // --- Black ------------------------------------------------------------------
   "Aclazotz, Deepest Betrayal": {
     abilities: [
       triggered(when.attacksSelf, [fx.draw(amount.opponentsWithHandAtMost(0)), fx.discard(1, ref.eachOpponent)], {
-        label: "Chaque adversaire défausse une carte",
+        label: "Each opponent discards a card",
       }),
       triggered(when.discard("opponent"), [fx.createTokens(BAT_1)], {
         condition: cond.eventObjectMatches({ types: ["Land"] }),
-        label: "Chauve-souris 1/1",
+        label: "1/1 Bat",
       }),
       returnsAsTemple(),
     ],
   },
-  // « Activez seulement si un joueur a une carte ou moins en main ».
+  // "Activate only if a player has one or fewer cards in hand".
   "Temple of the Dead": temple("B", cond.handAtMost(ref.eachPlayer, 1)),
   "Bitter Triumph": {
     additionalCost: { discard: 1, discardOr: { life: 3 } },
@@ -349,7 +347,7 @@ export const LEGENDS: Record<string, CardScript> = {
         to: "opponent",
         modify: { times: 2 },
         condition: cond.yourTurn,
-        label: "Pendant votre tour, perte de PV adverse doublée",
+        label: "During your turn, opponents' life loss doubled",
       }),
     ],
   },
@@ -363,10 +361,10 @@ export const LEGENDS: Record<string, CardScript> = {
             "graveyard",
             CREATURE,
             { to: "battlefield" },
-            { count: 1000, pool: ref.allGraveyards, excludeStored: "x", prompt: "Cartes de créature qui reviennent" },
+            { count: 1000, pool: ref.allGraveyards, excludeStored: "x", prompt: "Creature cards that return" },
           ),
         ],
-        { condition: cond.wasCast, label: "Sacrifices, puis retour des créatures" },
+        { condition: cond.wasCast, label: "Sacrifices, then the creatures return" },
       ),
     ],
   },
@@ -374,7 +372,7 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { notTypes: ["Land"] }, true)], {
         targets: [target.player("t", "opponent")],
-        label: "Exilez une carte non-terrain de sa main",
+        label: "Exile a nonland card from their hand",
       }),
     ],
   },
@@ -383,11 +381,11 @@ export const LEGENDS: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [...fx.when({ kind: "mostLife", ref: ref.defendingPlayer }, fx.createTokens(VAMPIRE_LIFELINK))],
-        { label: "Attaque le joueur qui a le plus de PV : Vampire 1/1" },
+        { label: "Attacks the player with the most life: 1/1 Vampire" },
       ),
       triggered(when.attacksSelf, [fx.draw(1), fx.loseLife(1)], {
         condition: { kind: "mostLife" },
-        label: "Vous avez le plus de PV : piochez, perdez 1 PV",
+        label: "You have the most life: draw, lose 1 life",
       }),
     ],
   },
@@ -405,12 +403,12 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.draw(amount.v("k")),
           fx.loseLife(amount.plus(amount.v("k"), amount.v("k"), amount.v("k"))),
         ],
-        { label: "Surveillance 2 ; piochez pour chaque carte laissée" },
+        { label: "Surveil 2; draw for each card left" },
       ),
       triggered(when.draw(), [fx.loseLife(1, ref.target()), fx.gainLife(1)], {
         targets: [target.player("t", "opponent")],
         condition: descend(8),
-        label: "Descente 8 — drain 1",
+        label: "Descend 8 — drain 1",
       }),
     ],
   },
@@ -421,14 +419,14 @@ export const LEGENDS: Record<string, CardScript> = {
         sacrificeOther: { filter: OTHER_ARTIFACT_OR_CREATURE_YOURS },
         sorcerySpeed: true,
         effects: [fx.draw(1)],
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
       activated({
         mana: "{2}",
         tap: true,
         discardHand: true,
         effects: [fx.transform()],
-        label: "Défaussez votre main : transformation",
+        label: "Discard your hand: transform",
       }),
     ],
   },
@@ -437,7 +435,7 @@ export const LEGENDS: Record<string, CardScript> = {
       manaAbility("B"),
       activated({
         tap: true,
-        // Un sort de créature depuis votre cimetière, une fois ce tour-ci ; finalité et Vampire en plus.
+        // A creature spell from your graveyard, once this turn; finality and Vampire in addition.
         effects: [
           {
             op: "playerEffect",
@@ -453,17 +451,17 @@ export const LEGENDS: Record<string, CardScript> = {
             once: true,
           },
         ],
-        label: "Un sort de créature depuis votre cimetière",
+        label: "A creature spell from your graveyard",
       }),
     ],
   },
-  // --- Rouge ------------------------------------------------------------------
+  // --- Red --------------------------------------------------------------------
   "Belligerent Yearling": {
     abilities: [
       triggered(
         when.enters({ ...DINOSAUR_YOU, other: true }),
-        [...fx.may("Prendre sa force de base ?", fx.setBasePTAll({ self: true }, amount.powerOf(ref.eventObject), true))],
-        { label: "Force de base égale à celle du Dinosaure" },
+        [...fx.may("Take its base power?", fx.setBasePTAll({ self: true }, amount.powerOf(ref.eventObject), true))],
+        { label: "Base power equal to the Dinosaur's" },
       ),
     ],
   },
@@ -475,7 +473,7 @@ export const LEGENDS: Record<string, CardScript> = {
         to: "opponent",
         combat: false,
         modify: { atLeast: amount.powerOf(ref.self) },
-        label: "Sources rouges : au moins sa force en blessures",
+        label: "Red sources: at least its power in damage",
       }),
       returnsAsTemple(),
     ],
@@ -488,7 +486,7 @@ export const LEGENDS: Record<string, CardScript> = {
     ),
   ),
   "Rampaging Ceratops": { abilities: [blockAbility(block.atLeast(3))] },
-  // --- Vert -------------------------------------------------------------------
+  // --- Green ------------------------------------------------------------------
   "Cosmium Confluence": { spell: { modes: confluence() } },
   "Intrepid Paleontologist": {
     abilities: [
@@ -497,7 +495,7 @@ export const LEGENDS: Record<string, CardScript> = {
         mana: "{2}",
         targets: [target.cardInGraveyard("t", {}, "any")],
         effects: [fx.exileCard(ref.target(), { name: "p" }), fx.link(ref.stored("p"))],
-        label: "Exilez une carte d'un cimetière",
+        label: "Exile a card from a graveyard",
       }),
       playerStatic({
         playFrom: {
@@ -506,7 +504,7 @@ export const LEGENDS: Record<string, CardScript> = {
           filter: { types: ["Creature"], subtype: "Dinosaur", owner: "you" },
           finality: true,
         },
-        label: "Dinosaures exilés : lançables (finalité)",
+        label: "Exiled Dinosaurs: castable (finality)",
       }),
     ],
   },
@@ -514,8 +512,8 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.combatDamageToPlayer,
-        // « une carte de créature et/ou une carte de terrain » : la créature d'abord (les cartes restent au-dessus), puis le
-        // terrain parmi les autres. Approximation (timing) : la créature arrive juste avant le terrain.
+        // "a creature card and/or a land card": the creature first (the cards stay on top), then the land among the
+        // others. Approximation (timing): the creature enters just before the land.
         [
           fx.lookAtTop(amount.eventAmount, { filter: CREATURE, count: 1, to: { to: "battlefield" }, rest: "top", store: "c" }),
           fx.lookAtTop(amount.plus(amount.eventAmount, amount.neg(amount.v("c"))), {
@@ -525,7 +523,7 @@ export const LEGENDS: Record<string, CardScript> = {
             rest: "bottom",
           }),
         ],
-        { label: "Une créature et/ou un terrain sur le champ de bataille" },
+        { label: "A creature and/or a land onto the battlefield" },
       ),
       returnsAsTemple(),
     ],
@@ -534,31 +532,31 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Skullspore Nexus": {
     costReduction: { generic: amount.maxPower(CREATURE_YOU_CONTROL) },
     abilities: [
-      // « Une ou plusieurs … meurent » : un seul jeton, de la force totale de ces créatures (dernières informations).
+      // "One or more … die": a single token, with the total power of those creatures (last known information).
       triggered(
         when.dies({ ...CREATURE_YOU_CONTROL, token: false }),
         [fx.createXXToken(FUNGUS_DINOSAUR, amount.totalPowerOf(ref.eventObjects))],
-        { batched: true, label: "Champignon Dinosaure" },
+        { batched: true, label: "Fungus Dinosaur" },
       ),
       activated({
         mana: "{2}",
         tap: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), amount.powerOf(ref.target()), 0)],
-        label: "Doublez la force d'une créature",
+        label: "Double a creature's power",
       }),
     ],
   },
   "Twists and Turns": {
     abilities: [
-      playerStatic({ scryBeforeExplore: true, label: "Regard 1 avant d'explorer" }),
+      playerStatic({ scryBeforeExplore: true, label: "Scry 1 before exploring" }),
       triggered(when.entersSelf, [fx.explore(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une créature explore",
+        label: "A creature explores",
       }),
       triggered(when.enters({ types: ["Land"], controller: "you" }), [fx.transform()], {
         condition: cond.controls({ types: ["Land"] }, 7),
-        label: "Transformation (sept terrains)",
+        label: "Transform (seven lands)",
       }),
     ],
   },
@@ -569,11 +567,11 @@ export const LEGENDS: Record<string, CardScript> = {
         mana: "{3}{G}",
         tap: true,
         effects: [fx.lookAtTop(4, { filter: CREATURE, count: 1, rest: "bottom" })],
-        label: "Carte de créature en main",
+        label: "Creature card into your hand",
       }),
     ],
   },
-  // --- Multicolore ----------------------------------------------------------------
+  // --- Multicolored ---------------------------------------------------------------
   "The Belligerent": {
     abilities: [
       triggered(
@@ -588,33 +586,33 @@ export const LEGENDS: Record<string, CardScript> = {
             true,
           ),
         ],
-        { label: "Trésor ; jouez depuis le dessus ce tour-ci" },
+        { label: "Treasure; play from the top this turn" },
       ),
     ],
   },
   "Kutzil, Malamet Exemplar": {
     abilities: [
-      playerStatic({ castLimit: { who: "opponents", during: "yourTurn" }, label: "Pas de sorts adverses pendant votre tour" }),
+      playerStatic({ castLimit: { who: "opponents", during: "yourTurn" }, label: "No opponent spells during your turn" }),
       triggered(when.combatDamageBatch({ ...CREATURE_YOU_CONTROL, compare: [cmp.power(">", "basePower")] }), [fx.draw(1)], {
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
     ],
   },
   "Sovereign Okinec Ahau": {
     abilities: [
       triggered(when.attacksSelf, [fx.countersAboveBase(CREATURE_YOU_CONTROL)], {
-        label: "Marqueurs selon l'écart avec la force de base",
+        label: "Counters equal to the difference with base power",
       }),
     ],
   },
-  // --- Incolore -------------------------------------------------------------------
+  // --- Colorless ------------------------------------------------------------------
   "Contested Game Ball": {
     abilities: [
-      // « Chaque fois que vous subissez des blessures de combat » : l'objet de l'événement est une créature attaquante.
+      // "Whenever you're dealt combat damage": the object of the event is an attacking creature.
       triggered(
         when.playerDealtDamage("you", true),
         [fx.giveControl(ref.self, ref.controllerOf(ref.eventObject)), fx.untap(ref.self)],
-        { batched: true, label: "Le joueur attaquant en prend le contrôle" },
+        { batched: true, label: "The attacking player gains control of it" },
       ),
       activated({
         mana: "{2}",
@@ -624,19 +622,19 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.counters(ref.self, "point", 1),
           ...fx.when(cond.counterAtLeast("point", 5), fx.sacrificeIt(ref.self), fx.createTokens(TREASURE)),
         ],
-        label: "Piochez, marqueur de point",
+        label: "Draw, point counter",
       }),
     ],
   },
   "Matzalantli, the Great Door": {
     abilities: [
-      activated({ tap: true, effects: [...fx.loot()], label: "Piochez, puis défaussez" }),
+      activated({ tap: true, effects: [...fx.loot()], label: "Draw, and then discard" }),
       activated({
         mana: "{4}",
         tap: true,
         activationCondition: cond.amountAtLeast(amount.permanentTypesInGraveyard, 4),
         effects: [fx.transform()],
-        label: "Transformation (quatre types de permanent au cimetière)",
+        label: "Transform (four permanent types in the graveyard)",
       }),
     ],
   },
@@ -644,31 +642,31 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Millennium Calendar": {
     abilities: [
       triggered(when.yourUpkeep, [fx.counters(ref.self, "time", { kind: "untappedInUntapStep" })], {
-        label: "Un marqueur de temps par permanent dégagé",
+        label: "A time counter for each untapped permanent",
       }),
       activated({
         mana: "{2}",
         tap: true,
         effects: [fx.counters(ref.self, "time", amount.countersOn(ref.self, "time"))],
-        label: "Doublez les marqueurs de temps",
+        label: "Double the time counters",
       }),
       triggered(when.countersPut("self", "time"), [fx.sacrificeIt(ref.self), fx.loseLife(1000, ref.eachOpponent)], {
         condition: cond.counterAtLeast("time", 1000),
-        label: "1 000 marqueurs : chaque adversaire perd 1 000 PV",
+        label: "1,000 counters: each opponent loses 1,000 life",
       }),
     ],
   },
   "Roaming Throne": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      staticAbility("self", { addChosen: "subtype" }, { label: "Du type choisi" }),
+      staticAbility("self", { addChosen: "subtype" }, { label: "Of the chosen type" }),
       playerStatic({
         triggerMod: { effect: "again", sources: { types: ["Creature"], subtypeChosen: true, other: true } },
-        label: "Déclencheurs du type choisi doublés",
+        label: "Triggers of the chosen type doubled",
       }),
     ],
   },
-  // --- Terrains -------------------------------------------------------------------
+  // --- Lands ----------------------------------------------------------------------
   "Cavern of Souls": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
@@ -680,17 +678,17 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Echoing Deeps": {
-    // « … arriver engagé comme une copie de n'importe quelle carte de terrain d'un cimetière, sauf que c'est une Caverne
-    // en plus de ses autres types. »
+    // "… enter tapped as a copy of any land card in a graveyard, except it's a Cave in addition to its other
+    // types."
     asEnters: [fx.chooseCopy({ types: ["Land"] }, { fromGraveyards: true, tapped: true, except: { addSubtypes: ["Cave"] } })],
     abilities: [manaAbility("C")],
   },
   "Pit of Offerings": {
     abilities: [
-      entersWith({ tapped: true, label: "Arrive engagé" }),
+      entersWith({ tapped: true, label: "Enters tapped" }),
       triggered(when.entersSelf, [fx.exileCard(ref.target(), { name: "p" }), fx.link(ref.stored("p"))], {
         targets: [target.upTo(3, target.cardInGraveyard("t", {}, "any"))],
-        label: "Exilez jusqu'à trois cartes de cimetières",
+        label: "Exile up to three cards from graveyards",
       }),
       manaAbility("C"),
       manaAbility([], 1, { linkedColors: true }),
@@ -699,7 +697,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Sunken Citadel": {
     asEnters: [fx.chooseForSelf("color")],
     abilities: [
-      entersWith({ tapped: true, label: "Arrive engagé" }),
+      entersWith({ tapped: true, label: "Enters tapped" }),
       manaAbility([...ANY], 1, { produceChosen: true }),
       manaAbility([...ANY], 2, { produceChosen: true, restriction: { abilityOfSource: { types: ["Land"] } } }),
     ],

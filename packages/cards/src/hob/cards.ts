@@ -1,6 +1,6 @@
 /**
- * The Hobbit — cartes des decks du méta (phase 1 du plan P4, lot M1) : contempler (`cond.behold`). Les autres cartes
- * de l'extension sont dans les fichiers par couleur.
+ * The Hobbit — cards of the meta decks (phase 1 of plan P4, lot M1): behold (`cond.behold`). The other cards of the
+ * set are in the files by color.
  */
 import {
   activated,
@@ -28,7 +28,7 @@ import {
 } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
-  // --- Terrains --------------------------------------------------------------
+  // --- Lands -----------------------------------------------------------------
   "Elven Passage": {
     abilities: [
       activated({
@@ -37,10 +37,10 @@ export const CARDS: Record<string, CardScript> = {
         sacrifice: true,
         effects: [
           fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 1, undefined, "land"),
-          // « Vous pouvez contempler un Elfe. Si vous le faites, dégagez ce terrain. »
+          // "You may behold an Elf. If you do, untap this land."
           ...fx.mayBehold({ subtype: "Elf" }, fx.untap(ref.stored("land"))),
         ],
-        label: "Chercher un terrain de base (dégagé en contemplant un Elfe)",
+        label: "Search for a basic land card (untapped by beholding an Elf)",
       }),
     ],
   },
@@ -53,12 +53,12 @@ export const CARDS: Record<string, CardScript> = {
         [
           fx.destroy(ref.target()),
           fx.amass(ref.controllerOf(ref.target()), "Goblin", amount.powerOf(ref.target())),
-          // « Si vous contrôliez cette créature » : ses dernières informations connues si elle a été détruite.
+          // "If you controlled that creature": its last known information if it was destroyed.
           ...fx.when(cond.targetMatches("t", { controller: "you" }), fx.draw(1)),
         ],
         {
           targets: [target.upTo(1, target.creature("t", { other: true }))],
-          label: "Détruit une créature ; son contrôleur amasse des Gobelins",
+          label: "Destroys a creature; its controller amasses Goblins",
         },
       ),
     ],
@@ -74,11 +74,11 @@ export const CARDS: Record<string, CardScript> = {
           }),
           ...fx.when(cond.v("s"), fx.draw(1), fx.createTokens(TREASURE)),
         ],
-        { label: "Sacrifice facultatif : piochez, un Trésor" },
+        { label: "Optional sacrifice: draw, a Treasure" },
       ),
       triggered(when.sacrifice({ token: true }), [fx.loseLife(1, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Un adversaire perd 1 PV",
+        label: "An opponent loses 1 life",
       }),
     ],
   },
@@ -88,26 +88,26 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.damage(amount.count({ subtype: "Treasure", controller: "you" }), ref.target())], {
         targets: [target.any()],
-        label: "Blessures égales au nombre de vos Trésors",
+        label: "Damage equal to the number of your Treasures",
       }),
-      triggered(when.yourUpkeep, [fx.createTokens(TREASURE)], { label: "Un Trésor" }),
+      triggered(when.yourUpkeep, [fx.createTokens(TREASURE)], { label: "A Treasure" }),
     ],
   },
 
   // --- Lot M5 -----------------------------------------------------------------
   "Thorin Oakenshield": {
-    // Storied : lu dans le texte.
+    // Storied: read from the text.
     abilities: [
       staticAbility(
         { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], controller: "you" },
         { addAbilities: [wardAbility({ mana: cost("{1}") })] },
-        { condition: cond.enduringStory, label: "Récit durable : vos artefacts et créatures ont la garde {1}" },
+        { condition: cond.enduringStory, label: "Enduring story: your artifacts and creatures have ward {1}" },
       ),
     ],
   },
   "Concerted Care": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artefact ou créature que vous contrôlez")],
+      [target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artifact or creature you control")],
       [fx.modify(ref.target(), { addKeywords: ["hexproof", "indestructible"] })],
     ),
   },
@@ -116,7 +116,7 @@ export const CARDS: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.controls({ subtype: "Equipment" })),
-        label: "Engagé, sauf si vous contrôlez un Équipement",
+        label: "Tapped unless you control an Equipment",
       }),
       activated({
         mana: "{4}{R}",
@@ -124,7 +124,7 @@ export const CARDS: Record<string, CardScript> = {
         sorcerySpeed: true,
         reduction: { generic: amount.count({ subtype: "Equipment", controller: "you" }) },
         effects: [fx.createTokens(DWARF)],
-        label: "Un Nain 2/2",
+        label: "A 2/2 Dwarf",
       }),
     ],
   },
@@ -134,7 +134,7 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          // 701.3b : seuls comptent les Équipements qui deviennent attachés (pas celui qui l'était déjà).
+          // 701.3b: only the Equipment that become attached count (not one that already was).
           fx.attach(ref.target("c"), ref.target("e"), "attached"),
           ...fx.when(
             cond.v("attached"),
@@ -152,14 +152,14 @@ export const CARDS: Record<string, CardScript> = {
                 "e",
                 ["Artifact"],
                 { subtype: "Equipment", controller: "you" },
-                "Équipements que vous contrôlez",
+                "any number of Equipment you control",
               ),
               count: 20,
               optional: true,
             },
             target.creature("c", { controller: "you" }),
           ],
-          label: "Attache vos Équipements ; la créature blesse une créature",
+          label: "Attaches your Equipment; the creature deals damage to a creature",
         },
       ),
     ],
@@ -169,7 +169,7 @@ export const CARDS: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["lifelink"] },
-        { condition: cond.controls({ subtype: "Dwarf", other: true }), label: "Lien de vie avec un autre Nain" },
+        { condition: cond.controls({ subtype: "Dwarf", other: true }), label: "Lifelink with another Dwarf" },
       ),
       triggered(
         when.entersSelf,
@@ -181,7 +181,7 @@ export const CARDS: Record<string, CardScript> = {
             rest: "bottom",
           }),
         ],
-        { label: "Un Nain ou un Équipement parmi les quatre du dessus" },
+        { label: "A Dwarf or an Equipment among the top four" },
       ),
     ],
   },
@@ -190,20 +190,20 @@ export const CARDS: Record<string, CardScript> = {
       playerStatic({
         abilityCost: { ability: "equip", firstThisTurnFree: true },
         condition: cond.enduringStory,
-        label: "Récit durable : premier Équiper du tour pour {0}",
+        label: "Enduring story: first equip of the turn for {0}",
       }),
       triggered(
         when.enters({ anyOf: [{ subtype: "Dwarf" }, { subtype: "Equipment" }], controller: "you", other: true }),
         [fx.draw(1)],
         {
           oncePerTurn: true,
-          label: "Piochez une carte",
+          label: "Draw a card",
         },
       ),
     ],
   },
   "Bilbo's Gambit": {
-    // Cadeau d'un Trésor : lu dans le texte.
+    // Gift a Treasure: read from the text.
     spell: spell(
       [target.spell()],
       [fx.bounce(ref.target()), ...fx.when(cond.gift, fx.thisTurn({ castLimit: { who: "you" } }, ref.eachPlayer))],
@@ -222,7 +222,7 @@ export const CARDS: Record<string, CardScript> = {
             fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1),
           ),
         ],
-        { label: "1re fois : 1 PV ; 2e : piochez ; 3e : +1/+1 sur vos créatures" },
+        { label: "1st time: 1 life; 2nd: draw; 3rd: +1/+1 on your creatures" },
       ),
     ],
   },
@@ -235,10 +235,10 @@ export const CARDS: Record<string, CardScript> = {
         { addKeywords: ["cantAttack"] },
         {
           condition: cond.not(cond.controls({ subtype: "Wolf", other: true }, 2)),
-          label: "N'attaque qu'avec deux autres Loups",
+          label: "Attacks only with two other Wolves",
         },
       ),
-      triggered(when.yourUpkeep, [fx.createTokens(WOLF)], { label: "Un Loup 2/2" }),
+      triggered(when.yourUpkeep, [fx.createTokens(WOLF)], { label: "A 2/2 Wolf" }),
     ],
   },
   "Head of the Hunt": {
@@ -247,12 +247,12 @@ export const CARDS: Record<string, CardScript> = {
         filter: { types: ["Creature"], controller: "opponent" },
         fromBattlefield: true,
         createToken: WOLF,
-        label: "Les créatures adverses qui meurent sont exilées ; un Loup 2/2",
+        label: "Opponents' creatures that die are exiled; a 2/2 Wolf",
       }),
     ],
   },
   "Nighthowl Pursuer": {
-    abilities: [triggered(when.attacksSelf, [fx.pump(ref.self, 2, 2)], { condition: cond.ferocious, label: "Férocité : +2/+2" })],
+    abilities: [triggered(when.attacksSelf, [fx.pump(ref.self, 2, 2)], { condition: cond.ferocious, label: "Ferocious: +2/+2" })],
   },
   "Desolation Prowler": {
     abilities: [activated({ payLife: 2, oncePerTurn: true, effects: [fx.pump(ref.self, 2, 2)], label: "+2/+2" })],
@@ -263,11 +263,11 @@ export const CARDS: Record<string, CardScript> = {
       triggeredModal(
         when.castSpell("opponent", { parityChosen: true }),
         [
-          mode("Un marqueur +1/+1 sur Gollum", [], [fx.addCounters(ref.self, 1)]),
+          mode("A +1/+1 counter on Gollum", [], [fx.addCounters(ref.self, 1)]),
           mode("Drain 2", [], fx.drain(2)),
-          mode("Piochez une carte", [], [fx.draw(1)]),
+          mode("Draw a card", [], [fx.draw(1)]),
         ],
-        { uniqueModes: true, label: "Sort adverse de la parité choisie : un mode pas encore choisi" },
+        { uniqueModes: true, label: "Opponent's spell of the chosen parity: a mode not chosen yet" },
       ),
     ],
   },

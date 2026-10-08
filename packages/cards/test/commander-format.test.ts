@@ -2,7 +2,7 @@
  * Format Commander (PLAN-E, E1) : identité de couleur (903.4) comparée à Scryfall, règles de construction (903.5 :
  * 100 cartes dont le commandant, singleton, identité, bannissements), Game Changers et tranche estimée, deck de partie.
  */
-import { colorIdentity } from "@mtgx/engine";
+import { colorIdentity, plainText } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import edhData from "../data/edh.json";
 import { buildGameDeck, CARDS, canBeCommander, DECKS, type DeckEntries, legalityIssue, validateDeck } from "../src";
@@ -114,7 +114,7 @@ describe("règles de construction du Commander (903.5)", () => {
     main.map(([n, name]) => [n, name === from ? to : name]);
 
   it("commandant manquant, deux commandants, commandant non légendaire", () => {
-    expect(validateDeck({ main: base().main }, CARDS, "commander").errors).toContain("Choisissez un commandant");
+    expect(validateDeck({ main: base().main }, CARDS, "commander").errors).toContain("Choose a commander");
     const two = {
       ...base(),
       commander: [
@@ -122,10 +122,10 @@ describe("règles de construction du Commander (903.5)", () => {
         [1, "Elenda, the Dusk Rose"],
       ] as DeckEntries,
     };
-    expect(validateDeck(two, CARDS, "commander").errors[0]).toMatch(/Paire de commandants/);
+    expect(validateDeck(two, CARDS, "commander").errors[0]).toMatch(/Commander pairs/);
     const notLegend = { commander: [[1, "Blood Artist"]] as DeckEntries, main: replace(base().main, "Blood Artist", "Swamp") };
-    expect(validateDeck(notLegend, CARDS, "commander").errors).toContain(
-      "Blood Artist ne peut pas être votre commandant (créature légendaire attendue)",
+    expect(validateDeck(notLegend, CARDS, "commander").errors.map(plainText)).toContain(
+      "Blood Artist can't be your commander (legendary creature expected)",
     );
     expect(canBeCommander(CARDS["Y'shtola, Night's Blessed"]!)).toBe(true);
     expect(canBeCommander(CARDS["Sorin, Imperious Bloodlord"]!)).toBe(false);
@@ -133,29 +133,33 @@ describe("règles de construction du Commander (903.5)", () => {
 
   it("exactement 100 cartes ; un seul exemplaire sauf les terrains de base ; pas de réserve", () => {
     const short = { ...base(), main: base().main.filter(([, n]) => n !== "Blood Artist") };
-    expect(validateDeck(short, CARDS, "commander").errors).toContain(
-      "Le deck contient 99 cartes, commandant compris (il en faut exactement 100)",
+    expect(validateDeck(short, CARDS, "commander").errors.map(plainText)).toContain(
+      "The deck has 99 cards, commander included (exactly 100 are needed)",
     );
     const twice = { ...base(), main: replace(base().main, "Viscera Seer", "Blood Artist") };
-    expect(validateDeck(twice, CARDS, "commander").errors).toContain("Blood Artist : 2 exemplaires (un seul en Commander)");
+    expect(validateDeck(twice, CARDS, "commander").errors.map(plainText)).toContain(
+      "Blood Artist: 2 copies (only one in Commander)",
+    );
     // Six Marais : des terrains de base, permis.
     expect(validateDeck(base(), CARDS, "commander").errors).toEqual([]);
     const side = { ...base(), sideboard: [[1, "Shivan Dragon"]] as DeckEntries };
-    expect(validateDeck(side, CARDS, "commander").errors).toContain("Pas de réserve en Commander");
+    expect(validateDeck(side, CARDS, "commander").errors).toContain("No sideboard in Commander");
   });
 
   it("identité de couleur du commandant ; bannissements de commander.json", () => {
     const blue = { ...base(), main: replace(base().main, "Blood Artist", "Counterspell") };
-    expect(validateDeck(blue, CARDS, "commander").errors).toContain(
-      "Counterspell est hors de l'identité de couleur du commandant",
+    expect(validateDeck(blue, CARDS, "commander").errors.map(plainText)).toContain(
+      "Counterspell is outside the commander's color identity",
     );
     // Un terrain de base hors identité aussi (Island).
     const island = { ...base(), main: replace(base().main, "Blood Artist", "Island") };
-    expect(validateDeck(island, CARDS, "commander").errors).toContain("Island est hors de l'identité de couleur du commandant");
-    expect(legalityIssue(CARDS["Mana Crypt"]!, "commander")).toBe("Mana Crypt est bannie en Commander");
+    expect(validateDeck(island, CARDS, "commander").errors.map(plainText)).toContain(
+      "Island is outside the commander's color identity",
+    );
+    expect(plainText(legalityIssue(CARDS["Mana Crypt"]!, "commander") ?? "")).toBe("Mana Crypt is banned in Commander");
     expect(legalityIssue(CARDS["Sol Ring"]!, "commander")).toBeUndefined();
     const banned = { ...base(), main: replace(base().main, "Sol Ring", "Mana Crypt") };
-    expect(validateDeck(banned, CARDS, "commander").errors).toContain("Mana Crypt est bannie en Commander");
+    expect(validateDeck(banned, CARDS, "commander").errors.map(plainText)).toContain("Mana Crypt is banned in Commander");
   });
 
   it("deck de partie : le commandant d'abord, son indice, puis les 99 autres cartes", () => {

@@ -1,33 +1,35 @@
 /**
- * Decklists : lecture (formats MTGA et MTGO, noms anglais ou français), export et validation
- * des règles de construction (60 cartes minimum, 4 exemplaires maximum, réserve de 15 ; en Commander, 100 cartes dont
- * le commandant, singleton, identité de couleur) et de la légalité dans le format.
+ * Decklists: reading (MTGA and MTGO formats, English or French names), export and validation of the deck construction
+ * rules (60 cards minimum, 4 copies maximum, sideboard of 15; in Commander, 100 cards including the commander,
+ * singleton, color identity) and of the legality in the format.
+ *
+ * Validation messages are player-facing texts (`msg`): the interface translates them.
  */
-import { type CardDef, type Color, colorIdentity, type Format, keyedPrinting, withinIdentity } from "@mtgx/engine";
+import { type CardDef, type Color, colorIdentity, type Format, keyedPrinting, msg, withinIdentity } from "@mtgx/engine";
 import commanderData from "../data/commander.json";
 import { preconFor } from "./decks";
 
 /**
- * Lignes d'un deck : [nombre, nom anglais, impression ?]. Une ligne par nom ; l'impression (« SPG-13 » d'une réédition,
- * PLAN-G, ou « STA-42@<id> » de la table des impressions, `printings.ts`) choisit l'illustration de tous ses
- * exemplaires, sans rien changer aux règles ni à la légalité.
+ * Lines of a deck: [count, English name, printing?]. One line per name; the printing ("SPG-13" of a reprint, PLAN-G,
+ * or "STA-42@<id>" of the printings table, `printings.ts`) chooses the art of all its copies, without changing
+ * anything in the rules or the legality.
  */
 export type DeckEntries = DeckEntry[];
 export type DeckEntry = [number, string, string?];
 
 export interface DeckIssue {
-  /** Numéro de ligne (1 = première ligne). */
+  /** Line number (1 = first line). */
   line: number;
   text: string;
   kind: "unknown" | "syntax" | "ignored" | "unimplemented" | "illegal";
   message: string;
-  /** Nom anglais proposé pour une carte inconnue. */
+  /** English name suggested for an unknown card. */
   suggestion?: string;
 }
 
 export interface ParsedDeck {
   name?: string;
-  /** Section « Commander » (ou marque `*CMDR*` de Moxfield) : le ou les commandants (PLAN-E). */
+  /** "Commander" section (or Moxfield's `*CMDR*` mark): the commander(s) (PLAN-E). */
   commander?: DeckEntries;
   main: DeckEntries;
   sideboard: DeckEntries;
@@ -36,24 +38,24 @@ export interface ParsedDeck {
 
 export interface DeckValidation {
   format: Format;
-  /** Commander : le ou les commandants retenus (noms). */
+  /** Commander: the chosen commander(s) (names). */
   commanders?: string[];
-  /** Commander : identité de couleur du deck (celle du ou des commandants), dans l'ordre WUBRG. */
+  /** Commander: color identity of the deck (that of the commander(s)), in WUBRG order. */
   identity?: Color[];
   /**
-   * Commander : cartes de la liste des Game Changers, et tranche estimée (0 → « 1–2 », jusqu'à 3 → « 3 », au-delà →
-   * « 4+ ») ; indicatives seulement, jamais une erreur.
+   * Commander: cards of the Game Changers list, and estimated bracket (0 → "1–2", up to 3 → "3", beyond → "4+");
+   * informative only, never an error.
    */
   gameChangers?: string[];
   bracket?: "1–2" | "3" | "4+";
-  /** Respecte les règles de construction et la légalité des cartes dans le format. */
+  /** Follows the deck construction rules and the legality of the cards in the format. */
   legal: boolean;
-  /** Toutes les cartes sont gérées par le moteur. */
+  /** Every card is handled by the engine. */
   playable: boolean;
   mainCount: number;
-  /** Taille minimale du deck principal : 60, ou moins pour un deck de bienvenue préconstruit. */
+  /** Minimum size of the main deck: 60, or less for a precon Welcome deck. */
   minMain: number;
-  /** Deck de bienvenue (préconstruit de 40 cartes, joué tel quel). */
+  /** Welcome deck (40-card precon, played as is). */
   welcome: boolean;
   sideCount: number;
   errors: string[];
@@ -63,17 +65,17 @@ export interface DeckValidation {
 export const DECK_RULES = { minMain: 60, maxSide: 15, maxCopies: 4 } as const;
 
 export const FORMAT_LABELS: Record<Format, string> = {
-  standard: "Standard",
-  unlimited: "Sans limite",
-  commander: "Commander",
+  standard: msg("Standard"),
+  unlimited: msg("Unlimited"),
+  commander: msg("Commander"),
 };
 
-/** Formats proposés, dans l'ordre d'affichage. */
+/** Offered formats, in display order. */
 export const FORMATS: readonly Format[] = ["standard", "unlimited", "commander"];
-/** Formats des parties en ligne (tous, depuis les salons de 2 à 4 joueurs, PLAN-E E13). */
+/** Formats of online games (all of them, since the 2- to 4-player rooms, PLAN-E E13). */
 export const ONLINE_FORMATS: readonly Format[] = FORMATS;
 
-/** Commander (PLAN-E) : taille exacte du deck, commandant compris. */
+/** Commander (PLAN-E): exact deck size, commander included. */
 export const COMMANDER_DECK_SIZE = 100;
 const COMMANDER = commanderData as { banned: string[]; notLegal: string[]; gameChangers: string[] };
 const COMMANDER_BANNED = new Set(COMMANDER.banned);
@@ -81,7 +83,7 @@ const COMMANDER_NOT_LEGAL = new Set(COMMANDER.notLegal);
 const GAME_CHANGERS = new Set(COMMANDER.gameChangers);
 const frontName = (name: string) => name.split(" // ")[0] as string;
 
-/** La carte est-elle sur la liste des Game Changers (`cards/data/commander.json`) ? */
+/** Is the card on the Game Changers list (`cards/data/commander.json`)? */
 export function isGameChanger(c: CardDef): boolean {
   return GAME_CHANGERS.has(frontName(c.name));
 }
@@ -92,32 +94,33 @@ export function isFormat(v: unknown): v is Format {
   return typeof v === "string" && (FORMATS as readonly string[]).includes(v);
 }
 
-/** Problème de légalité d'une carte dans un format, ou undefined si elle y est légale. */
+/** Legality problem of a card in a format, or undefined if it is legal there. */
 export function legalityIssue(c: CardDef, format: Format = DEFAULT_FORMAT): string | undefined {
   const label = FORMAT_LABELS[format];
-  // Carte assemblée (verso commun de deux cartes à assemblage) : elle n'existe pas seule.
-  if (c.meldResult) return `${c.name} est une carte assemblée : elle ne se met pas dans un deck`;
-  // Sans limite : toute carte du catalogue, quelle que soit sa légalité.
+  // Melded card (shared back face of two meld cards): it does not exist on its own.
+  if (c.meldResult) return msg("{card} is a melded card: it can't be put in a deck", { card: c.name });
+  // Unlimited: any card of the catalog, whatever its legality.
   if (format === "unlimited") return undefined;
-  // Commander : la liste de bannissement et les cartes non légales de `commander.json` (Scryfall).
+  // Commander: the ban list and the cards not legal of `commander.json` (Scryfall).
   if (format === "commander") {
-    if (COMMANDER_BANNED.has(frontName(c.name))) return `${c.name} est bannie en ${label}`;
-    if (COMMANDER_NOT_LEGAL.has(frontName(c.name))) return `${c.name} n'est pas légale en ${label}`;
+    if (COMMANDER_BANNED.has(frontName(c.name))) return msg("{card} is banned in {format}", { card: c.name, format: label });
+    if (COMMANDER_NOT_LEGAL.has(frontName(c.name)))
+      return msg("{card} is not legal in {format}", { card: c.name, format: label });
     return undefined;
   }
   switch (c.legalities?.standard) {
     case "legal":
       return undefined;
     case "banned":
-      return `${c.name} est bannie en ${label}`;
+      return msg("{card} is banned in {format}", { card: c.name, format: label });
     case undefined:
-      return `${c.name} : légalité en ${label} inconnue`;
+      return msg("{card}: legality in {format} unknown", { card: c.name, format: label });
     default:
-      return `${c.name} n'est pas légale en ${label}`;
+      return msg("{card} is not legal in {format}", { card: c.name, format: label });
   }
 }
 
-/** Forme comparable d'un nom : minuscules, sans accents ni ponctuation. */
+/** Comparable form of a name: lower case, without accents or punctuation. */
 export function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -144,7 +147,7 @@ function distance(a: string, b: string): number {
   return prev[b.length] as number;
 }
 
-/** Index des noms (anglais et français) vers le nom anglais canonique. */
+/** Index of the names (English and French) to the canonical English name. */
 export class CardIndex {
   private readonly byName = new Map<string, string>();
 
@@ -153,11 +156,11 @@ export class CardIndex {
       if (c.isToken) continue;
       this.byName.set(normalizeName(c.name), c.name);
       if (c.fr?.name) this.byName.set(normalizeName(c.fr.name), c.name);
-      // Carte « à préparer » : certains exports écrivent « Créature // Sort ».
+      // "Prepare" card: some exports write "Creature // Spell".
       if (c.prepareFace) this.byName.set(normalizeName(`${c.name} // ${c.prepareFace.name}`), c.name);
     }
-    // Cartes à plusieurs faces : le recto seul (MTGA), « A/B » (MTGO) et le nom français du recto,
-    // sans écraser le nom d'une autre carte.
+    // Multi-faced cards: the front face alone (MTGA), "A/B" (MTGO) and the French name of the front face,
+    // without overwriting the name of another card.
     for (const c of Object.values(cards)) {
       const [front, back] = c.faceDefs ?? [];
       if (c.isToken || !front) continue;
@@ -176,7 +179,7 @@ export class CardIndex {
     return this.byName.get(normalizeName(name));
   }
 
-  /** Nom anglais le plus proche (au plus 2 fautes, 3 pour les noms longs). */
+  /** Closest English name (at most 2 typos, 3 for long names). */
   suggest(name: string): string | undefined {
     const n = normalizeName(name);
     let best: string | undefined;
@@ -192,6 +195,7 @@ export class CardIndex {
   }
 }
 
+/** Section headers, in English and in French (French decklists are read too). */
 const HEADERS: Record<string, "main" | "side" | "commander" | "ignore" | "about"> = {
   deck: "main",
   main: "main",
@@ -199,20 +203,20 @@ const HEADERS: Record<string, "main" | "side" | "commander" | "ignore" | "about"
   "main deck": "main",
   sideboard: "side",
   reserve: "side",
-  réserve: "side",
+  réserve: "side", // i18n-ignore: French decklist header
   commander: "commander",
-  commandant: "commander",
+  commandant: "commander", // i18n-ignore: French decklist header
   companion: "ignore",
-  compagnon: "ignore",
+  compagnon: "ignore", // i18n-ignore: French decklist header
   about: "about",
 };
 
 const LINE = /^(?:(SB):\s*)?(\d+)\s*[xX]?\s+(.+?)\s*$/;
 const SET_SUFFIX = /\s+\(([A-Za-z0-9]{2,6})\)(?:\s+([\w-]+))?(?:\s+\*[A-Z]\*)?(?:\s+\*CMDR\*)?$/;
-/** Marque d'un commandant dans une liste Moxfield (`1 Edgar Markov (C17) 36 *CMDR*`). */
+/** Mark of a commander in a Moxfield list (`1 Edgar Markov (C17) 36 *CMDR*`). */
 const CMDR_MARK = /\s+\*CMDR\*$/;
 
-/** Ajoute des exemplaires ; la première impression citée pour un nom vaut pour tous ses exemplaires. */
+/** Adds copies; the first printing cited for a name applies to all its copies. */
 function add(entries: DeckEntries, n: number, name: string, printing?: string): void {
   const existing = entries.find((e) => e[1] === name);
   if (!existing) entries.push(printing ? [n, name, printing] : [n, name]);
@@ -223,15 +227,15 @@ function add(entries: DeckEntries, n: number, name: string, printing?: string): 
 }
 
 /**
- * Lit une decklist texte :
- * - MTGA : `4 Llanowar Elves (FDN) 227`, sections `Deck` / `Sideboard`, `About` + `Name …` ;
- * - MTGO : `4 Llanowar Elves`, `4x …`, préfixe `SB:`, réserve après une ligne vide ;
- * - noms anglais ou français, commentaires `//` et `#`.
+ * Reads a text decklist:
+ * - MTGA: `4 Llanowar Elves (FDN) 227`, sections `Deck` / `Sideboard`, `About` + `Name …`;
+ * - MTGO: `4 Llanowar Elves`, `4x …`, `SB:` prefix, sideboard after a blank line;
+ * - English or French names, `//` and `#` comments.
  */
 export function parseDeckList(
   text: string,
   index: CardIndex,
-  /** Impression d'une carte d'après « (SET) numéro » au-delà de ses rééditions (`findPrinting` de la table). */
+  /** Printing of a card from "(SET) number" beyond its reprints (`findPrinting` of the table). */
   findPrinting?: (c: CardDef, set: string, number: string) => string | undefined,
 ): ParsedDeck {
   const out: ParsedDeck = { main: [], sideboard: [], issues: [] };
@@ -251,7 +255,8 @@ export function parseDeckList(
     if (header) {
       sawHeader = true;
       section = header;
-      if (header === "ignore") out.issues.push({ line: n, text: line, kind: "ignored", message: `Section « ${line} » ignorée` });
+      if (header === "ignore")
+        out.issues.push({ line: n, text: line, kind: "ignored", message: msg('Section "{name}" ignored', { name: line }) });
       return;
     }
     if (section === "about") {
@@ -261,7 +266,7 @@ export function parseDeckList(
     }
     const m = LINE.exec(line);
     if (!m) {
-      out.issues.push({ line: n, text: line, kind: "syntax", message: "Ligne non reconnue (attendu : « 4 Nom de la carte »)" });
+      out.issues.push({ line: n, text: line, kind: "syntax", message: msg('Unrecognized line (expected: "4 Card name")') });
       return;
     }
     if (section === "ignore") return;
@@ -276,14 +281,16 @@ export function parseDeckList(
         line: n,
         text: line,
         kind: "unknown",
-        message: `Carte inconnue : « ${cardText} »${suggestion ? ` — vouliez-vous dire « ${suggestion} » ?` : ""}`,
+        message: suggestion
+          ? msg('Unknown card: "{name}" — did you mean "{suggestion}"?', { name: cardText, suggestion })
+          : msg('Unknown card: "{name}"', { name: cardText }),
         suggestion,
       });
       return;
     }
     const toSide = m[1] === "SB" || section === "side" || (!sawHeader && sawBlankAfterCards);
     const c = index.cards[name];
-    // « (SPG) 13 » : une impression de la carte (réédition, ou de la table), retenue pour son illustration.
+    // "(SPG) 13": a printing of the card (reprint, or from the table), kept for its art.
     const key = suffix?.[2] ? `${suffix[1]?.toUpperCase()}-${suffix[2]}` : undefined;
     const printing =
       key && c?.printings?.some((p) => p.key === key)
@@ -298,16 +305,16 @@ export function parseDeckList(
     const illegal = c && legalityIssue(c);
     if (illegal) out.issues.push({ line: n, text: line, kind: "illegal", message: illegal });
     if (!c?.implemented) {
-      out.issues.push({ line: n, text: line, kind: "unimplemented", message: `${name} n'est pas encore jouable` });
+      out.issues.push({ line: n, text: line, kind: "unimplemented", message: msg("{card} is not playable yet", { card: name }) });
     }
   });
   return out;
 }
 
 /**
- * Exporte une decklist.
- * - "mtga" : sections `Deck` / `Sideboard`, noms anglais avec code de set et numéro (importable dans MTG Arena) ;
- * - "plain" : `4 Nom`, réserve après une ligne vide (format MTGO), éventuellement avec les noms français.
+ * Exports a decklist.
+ * - "mtga": `Deck` / `Sideboard` sections, English names with set code and number (importable into MTG Arena);
+ * - "plain": `4 Name`, sideboard after a blank line (MTGO format), possibly with the French names.
  */
 export function serializeDeckList(
   deck: { name?: string; commander?: DeckEntries; main: DeckEntries; sideboard?: DeckEntries },
@@ -338,26 +345,26 @@ export function serializeDeckList(
   return `${[...commander, ...deck.main.map(line), ...(side.length ? ["", ...side.map(line)] : [])].join("\n")}\n`;
 }
 
-/** Nom exporté : le nom complet « A // B » pour une carte scindée, le recto seul pour les autres cartes à plusieurs faces. */
+/** Exported name: the full name "A // B" for a split card, the front face alone for the other multi-faced cards. */
 function exportName(c: CardDef | undefined, name: string): string {
   if (!c?.faceDefs?.length || c.layout === "split") return name;
   return c.faceDefs[0]?.name ?? name;
 }
 
-/** « Un deck peut contenir n'importe quel nombre de cartes appelées … » (Hare Apparent, Relentless Rats…). */
+/** "A deck can have any number of cards named …" (Hare Apparent, Relentless Rats…). */
 const ANY_NUMBER = /A deck can have any number of cards named/;
-/** « Un deck peut contenir jusqu'à N cartes appelées … » (Seven Dwarves, Nazgûl) : N exemplaires, même en Commander. */
+/** "A deck can have up to N cards named …" (Seven Dwarves, Nazgûl): N copies, even in Commander. */
 const UP_TO = /A deck can have up to (\w+) cards named/;
 const NUMBER_WORDS: Record<string, number> = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
 
-/** Exemplaires permis d'une carte : `max` par défaut, tous pour un terrain de base ou « n'importe quel nombre ». */
+/** Copies allowed of a card: `max` by default, all for a basic land or "any number". */
 function copiesAllowed(c: CardDef, max: number): number {
   if (c.supertypes.includes("Basic") || ANY_NUMBER.test(c.text ?? "")) return Number.POSITIVE_INFINITY;
   const upTo = UP_TO.exec(c.text ?? "");
   return upTo ? (NUMBER_WORDS[upTo[1] as string] ?? max) : max;
 }
 
-/** Peut-elle être un commandant (903.3) : créature légendaire, ou « peut être votre commandant » ? */
+/** Can it be a commander (903.3): legendary creature, or "can be your commander"? */
 export function canBeCommander(c: CardDef): boolean {
   return (c.supertypes.includes("Legendary") && c.types.includes("Creature")) || /can be your commander/.test(c.text ?? "");
 }
@@ -365,9 +372,9 @@ export function canBeCommander(c: CardDef): boolean {
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 
 /**
- * Règles de construction : 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base), réserve de 15,
- * cartes légales dans le format (réserve comprise), d'après les légalités Scryfall importées.
- * Exception : un deck identique à un deck de bienvenue préconstruit (40 cartes) se joue tel quel.
+ * Deck construction rules: 60 cards minimum, 4 copies maximum (except basic lands), sideboard of 15, cards legal in
+ * the format (sideboard included), according to the imported Scryfall legalities.
+ * Exception: a deck identical to a precon Welcome deck (40 cards) is played as is.
  */
 export function validateDeck(
   deck: { commander?: DeckEntries; main: DeckEntries; sideboard?: DeckEntries },
@@ -383,8 +390,9 @@ export function validateDeck(
   const precon = preconFor(deck.main);
   const welcome = !!precon && mainCount < DECK_RULES.minMain;
   const minMain = welcome ? mainCount : DECK_RULES.minMain;
-  if (mainCount < minMain) errors.push(`Le deck contient ${mainCount} cartes (minimum ${minMain})`);
-  if (sideCount > DECK_RULES.maxSide) errors.push(`La réserve contient ${sideCount} cartes (maximum ${DECK_RULES.maxSide})`);
+  if (mainCount < minMain) errors.push(msg("The deck has {n} cards (minimum {min})", { n: mainCount, min: minMain }));
+  if (sideCount > DECK_RULES.maxSide)
+    errors.push(msg("The sideboard has {n} cards (maximum {max})", { n: sideCount, max: DECK_RULES.maxSide }));
   const totals = new Map<string, number>();
   for (const [n, name] of [...deck.main, ...side]) totals.set(name, (totals.get(name) ?? 0) + n);
   let playable = true;
@@ -392,19 +400,23 @@ export function validateDeck(
   for (const [name, n] of totals) {
     const c = cards[name];
     if (!c) {
-      errors.push(`Carte inconnue : ${name}`);
+      errors.push(msg("Unknown card: {card}", { card: name }));
       playable = false;
       continue;
     }
     if (n > copiesAllowed(c, DECK_RULES.maxCopies)) {
-      errors.push(`${name} : ${n} exemplaires (maximum ${DECK_RULES.maxCopies})`);
+      errors.push(msg("{card}: {n} copies (maximum {max})", { card: name, n, max: DECK_RULES.maxCopies }));
     }
     const illegal = legalityIssue(c, format);
     if (illegal) errors.push(illegal);
     if (!c.implemented) {
-      // Seul le deck principal est joué : une carte non gérée en réserve n'empêche pas de jouer.
+      // Only the main deck is played: an unhandled card in the sideboard does not prevent playing.
       if (inMain.has(name)) playable = false;
-      warnings.push(`${name} n'est pas encore jouable${inMain.has(name) ? "" : " (réserve)"}`);
+      warnings.push(
+        inMain.has(name)
+          ? msg("{card} is not playable yet", { card: name })
+          : msg("{card} is not playable yet (sideboard)", { card: name }),
+      );
     }
   }
   return {
@@ -421,11 +433,10 @@ export function validateDeck(
 }
 
 /**
- * Commander (903.5, PLAN-E) : un commandant (créature légendaire ou « peut être votre commandant » ; les paires,
- * partenaire ou historique, attendent un deck qui en a), exactement 100 cartes commandant compris, un exemplaire de
- * chaque carte sauf les terrains de base (et « n'importe quel nombre », « jusqu'à N »), toutes dans l'identité de couleur
- * du commandant, aucune bannie ni non légale (`commander.json`), pas de réserve. Les Game Changers et la tranche estimée
- * sont donnés à titre indicatif.
+ * Commander (903.5, PLAN-E): one commander (legendary creature or "can be your commander"; pairs, partner or
+ * background, wait for a deck that has one), exactly 100 cards commander included, one copy of each card except basic
+ * lands (and "any number", "up to N"), all within the commander's color identity, none banned or not legal
+ * (`commander.json`), no sideboard. The Game Changers and the estimated bracket are given for information.
  */
 function validateCommanderDeck(
   deck: { commander?: DeckEntries; main: DeckEntries; sideboard?: DeckEntries },
@@ -437,17 +448,22 @@ function validateCommanderDeck(
   const commanders = commanderEntries.map(([, name]) => name);
   const sideCount = count(deck.sideboard ?? []);
   const mainCount = count(deck.main) + count(commanderEntries);
-  if (commanders.length === 0) errors.push("Choisissez un commandant");
+  if (commanders.length === 0) errors.push(msg("Choose a commander"));
   else if (commanders.length > 1 || count(commanderEntries) > 1)
-    errors.push("Paire de commandants (partenaire, historique…) pas encore gérée : un seul commandant");
+    errors.push(msg("Commander pairs (partner, background…) not supported yet: a single commander"));
   if (mainCount !== COMMANDER_DECK_SIZE)
-    errors.push(`Le deck contient ${mainCount} cartes, commandant compris (il en faut exactement ${COMMANDER_DECK_SIZE})`);
-  if (sideCount > 0) errors.push("Pas de réserve en Commander");
+    errors.push(
+      msg("The deck has {n} cards, commander included (exactly {size} are needed)", {
+        n: mainCount,
+        size: COMMANDER_DECK_SIZE,
+      }),
+    );
+  if (sideCount > 0) errors.push(msg("No sideboard in Commander"));
   const identity = new Set<Color>();
   for (const name of commanders) {
     const c = cards[name];
     if (!c) continue;
-    if (!canBeCommander(c)) errors.push(`${name} ne peut pas être votre commandant (créature légendaire attendue)`);
+    if (!canBeCommander(c)) errors.push(msg("{card} can't be your commander (legendary creature expected)", { card: name }));
     for (const color of colorIdentity(c)) identity.add(color);
   }
   const deckIdentity = (["W", "U", "B", "R", "G"] as Color[]).filter((x) => identity.has(x));
@@ -458,19 +474,19 @@ function validateCommanderDeck(
   for (const [name, n] of totals) {
     const c = cards[name];
     if (!c) {
-      errors.push(`Carte inconnue : ${name}`);
+      errors.push(msg("Unknown card: {card}", { card: name }));
       playable = false;
       continue;
     }
-    if (n > copiesAllowed(c, 1)) errors.push(`${name} : ${n} exemplaires (un seul en Commander)`);
+    if (n > copiesAllowed(c, 1)) errors.push(msg("{card}: {n} copies (only one in Commander)", { card: name, n }));
     if (commanders.length && !withinIdentity(colorIdentity(c), deckIdentity))
-      errors.push(`${name} est hors de l'identité de couleur du commandant`);
+      errors.push(msg("{card} is outside the commander's color identity", { card: name }));
     const illegal = legalityIssue(c, "commander");
     if (illegal) errors.push(illegal);
     if (isGameChanger(c)) gameChangers.push(name);
     if (!c.implemented) {
       playable = false;
-      warnings.push(`${name} n'est pas encore jouable`);
+      warnings.push(msg("{card} is not playable yet", { card: name }));
     }
   }
   return {
@@ -490,7 +506,7 @@ function validateCommanderDeck(
   };
 }
 
-/** Couleurs d'un deck (d'après ses sorts). */
+/** Colors of a deck (from its spells). */
 export function deckColors(main: DeckEntries, cards: Record<string, CardDef>): string[] {
   const set = new Set<string>();
   for (const [, name] of main) for (const c of cards[name]?.colors ?? []) set.add(c);
@@ -498,8 +514,8 @@ export function deckColors(main: DeckEntries, cards: Record<string, CardDef>): s
 }
 
 /**
- * Réserve entre deux manches (BO3) : le nouveau deck doit contenir exactement les mêmes cartes, deck et réserve réunis,
- * et rester légal et jouable. Renvoie le problème, ou null si l'échange est valable.
+ * Sideboarding between two games (BO3): the new deck must contain exactly the same cards, deck and sideboard together,
+ * and stay legal and playable. Returns the problem, or null if the swap is valid.
  */
 export function sideboardSwapError(
   original: { main: DeckEntries; sideboard?: DeckEntries },
@@ -515,9 +531,9 @@ export function sideboardSwapError(
   const a = totals(original);
   const b = totals(next);
   if (a.size !== b.size || [...a].some(([name, n]) => b.get(name) !== n))
-    return "Le deck et la réserve doivent contenir les mêmes cartes qu'au début du match.";
+    return msg("The deck and the sideboard must contain the same cards as at the start of the match.");
   const v = validateDeck(next, cards, format);
-  if (!v.legal) return v.errors[0] ?? "Deck illégal.";
-  if (!v.playable) return "Le deck contient des cartes pas encore jouables.";
+  if (!v.legal) return v.errors[0] ?? msg("Illegal deck.");
+  if (!v.playable) return msg("The deck contains cards that are not playable yet.");
   return null;
 }

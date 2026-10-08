@@ -1,6 +1,6 @@
 /**
- * Marvel's Spider-Man — cartes vertes (lot A). Le web-slinging, la convocation, la portée et les autres mots-clés sont
- * lus dans le texte.
+ * Marvel's Spider-Man — green cards (lot A). Web-slinging, convoke, reach and the other keywords are read from the
+ * text.
  */
 import type { ObjectFilter } from "@mtgx/engine";
 import {
@@ -31,14 +31,14 @@ const SPIDERS_YOU_CONTROL: ObjectFilter = { types: ["Creature"], subtype: "Spide
 const YOUR_CREATURE = (id = "t") => target.creature(id, { controller: "you" });
 const OPPONENT_CREATURE = (id = "t") => ({
   ...target.creature(id, { controller: "opponent" }),
-  label: "créature qu'un adversaire contrôle",
+  label: "creature controlled by an opponent",
 });
 const YOUR_SPIDER = (id = "t") => ({
   ...target.creature(id, { subtype: "Spider", controller: "you" }),
-  label: "Araignée que vous contrôlez",
+  label: "Spider you control",
 });
 
-/** Spider-Ham : les types de créature qui reçoivent +1/+1 (« Animal May-Ham »). */
+/** Spider-Ham: the creature types that get +1/+1 ("Animal May-Ham"). */
 const MAY_HAM_TYPES = [
   "Spider",
   "Boar",
@@ -67,17 +67,17 @@ export const GREEN: Record<string, CardScript> = {
         when.entersSelf,
         [
           mode(
-            "Réparation : une carte de VM 4 ou plus de votre cimetière en main",
-            [target.cardInGraveyard("c", { minManaValue: 4 }, "you", "carte de VM 4 ou plus de votre cimetière")],
+            "Repair: a card with mana value 4 or greater from your graveyard to your hand",
+            [target.cardInGraveyard("c", { minManaValue: 4 }, "you", "card with mana value 4 or greater in your graveyard")],
             [fx.toHand(ref.target("c"))],
           ),
           mode(
-            "Fourrière : exile un artefact ou un enchantement",
-            [target.permanent("p", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+            "Impound: exiles an artifact or an enchantment",
+            [target.permanent("p", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
             [fx.exile(ref.target("p"))],
           ),
         ],
-        { label: "Réparation ou fourrière" },
+        { label: "Repair or impound" },
       ),
     ],
   },
@@ -85,7 +85,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), 2, 2)], {
         targets: [YOUR_SPIDER()],
-        label: "Une de vos Araignées gagne +2/+2",
+        label: "A Spider you control gets +2/+2",
       }),
     ],
   },
@@ -100,9 +100,9 @@ export const GREEN: Record<string, CardScript> = {
         mana: "{2}{G}",
         tap: true,
         sorcerySpeed: true,
-        targets: [{ ...target.creature("t", { subtype: "Spider" }), label: "Araignée" }],
+        targets: [{ ...target.creature("t", { subtype: "Spider" }), label: "Spider" }],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Soutien en ligne : un marqueur +1/+1 sur une Araignée",
+        label: "Web Support: a +1/+1 counter on a Spider",
       }),
     ],
   },
@@ -114,7 +114,7 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Kraven's Cats": {
     abilities: [
-      activated({ mana: "{2}{G}", oncePerTurn: true, effects: [fx.pump(ref.self, 2, 2)], label: "+2/+2 (une fois par tour)" }),
+      activated({ mana: "{2}{G}", oncePerTurn: true, effects: [fx.pump(ref.self, 2, 2)], label: "+2/+2 (once each turn)" }),
     ],
   },
   "Lizard, Connors's Curse": {
@@ -129,8 +129,8 @@ export const GREEN: Record<string, CardScript> = {
           ),
         ],
         {
-          targets: [target.upTo(1, { ...target.creature("t", { other: true }), label: "autre créature" })],
-          label: "Formule du Lézard : une autre créature devient un Lézard vert 4/4 sans capacités",
+          targets: [target.upTo(1, { ...target.creature("t", { other: true }), label: "other creature" })],
+          label: "Lizard Formula: another creature becomes a green 4/4 Lizard with no abilities",
         },
       ),
     ],
@@ -138,7 +138,7 @@ export const GREEN: Record<string, CardScript> = {
   "Lurking Lizards": {
     abilities: [
       triggered(when.castSpell("you", { minManaValue: 4 }), [fx.addCounters(ref.self, 1)], {
-        label: "Sort de VM 4 ou plus : un marqueur +1/+1",
+        label: "Spell with mana value 4 or greater: a +1/+1 counter",
       }),
     ],
   },
@@ -148,9 +148,9 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.upTo(2, target.creature())],
-        label: "Un marqueur +1/+1 sur chacune de jusqu'à deux créatures",
+        label: "A +1/+1 counter on each of up to two creatures",
       }),
-      activated({ mana: "{3}{R}{G}{W}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-le" }),
+      activated({ mana: "{3}{R}{G}{W}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transform it" }),
     ],
   },
   "Ultimate Spider-Man": {
@@ -158,7 +158,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{2}",
         effects: [fx.addCounters(ref.self, 1), fx.modify(ref.self, { addKeywords: ["hexproof"], setColors: [] })],
-        label: "Camouflage : un marqueur +1/+1, défense talismanique et incolore jusqu'à la fin du tour",
+        label: "Camouflage: a +1/+1 counter, hexproof and colorless until end of turn",
       }),
       triggered(
         when.attackWith(1),
@@ -167,7 +167,7 @@ export const GREEN: Record<string, CardScript> = {
             ref.permanentsOf(ref.you, { types: ["Creature"], anyOf: [{ subtype: "Spider" }, { legendary: true }] }),
           ),
         ],
-        { label: "Doublez les marqueurs de vos Araignées et créatures légendaires" },
+        { label: "Double the counters on your Spiders and legendary creatures" },
       ),
     ],
   },
@@ -175,20 +175,20 @@ export const GREEN: Record<string, CardScript> = {
   "Pictures of Spider-Man": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(5, { filter: { types: ["Creature"] }, count: 2 })], {
-        label: "Regardez les cinq cartes du dessus : jusqu'à deux cartes de créature en main",
+        label: "Look at the top five cards: up to two creature cards to your hand",
       }),
       activated({
         mana: "{1}",
         tap: true,
         sacrifice: true,
         effects: [fx.createTokens(TREASURE)],
-        label: "Sacrifiez-le : un jeton Trésor",
+        label: "Sacrifice it: a Treasure token",
       }),
     ],
   },
   "Professional Wrestler": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Un jeton Trésor" }),
+      triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "A Treasure token" }),
       blockAbility(block.atMost(1)),
     ],
   },
@@ -199,14 +199,14 @@ export const GREEN: Record<string, CardScript> = {
         sacrifice: true,
         sorcerySpeed: true,
         effects: [fx.search({ subtype: "Spider", anySubtype: ["Hero"] })],
-        label: "Morsure fatidique : cherchez une carte d'Araignée Héros",
+        label: "Fateful Bite: search for a Spider Hero card",
       }),
     ],
   },
   "Scout the City": {
     spell: modal(
       mode(
-        "Coup d'œil : meulez trois cartes, une carte de permanent en main, gagnez 3 PV",
+        "Look Around: mill three cards, a permanent card to your hand, gain 3 life",
         [],
         [
           fx.mill(3, ref.you, { name: "m" }),
@@ -214,33 +214,33 @@ export const GREEN: Record<string, CardScript> = {
             "graveyard",
             { permanent: true },
             { to: "hand" },
-            { count: 1, min: 0, pool: ref.stored("m"), prompt: "Vous pouvez prendre une carte de permanent meulée" },
+            { count: 1, min: 0, pool: ref.stored("m"), prompt: "You may take a milled permanent card" },
           ),
           fx.gainLife(3),
         ],
       ),
       mode(
-        "Abattre : détruit une créature avec le vol",
-        [{ ...target.creature("t", { keyword: "flying" }), label: "créature avec le vol" }],
+        "Bring Down: destroys a creature with flying",
+        [{ ...target.creature("t", { keyword: "flying" }), label: "creature with flying" }],
         [fx.destroy(ref.target("t"))],
       ),
     ),
   },
   "Spider-Ham, Peter Porker": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food token" }),
       staticAbility(
         { types: ["Creature"], anySubtype: MAY_HAM_TYPES, controller: "you", other: true },
         { power: 1, toughness: 1 },
-        { label: "Animal May-Ham : vos autres animaux gagnent +1/+1" },
+        { label: "Animal May-Ham: your other animals get +1/+1" },
       ),
     ],
   },
   "Spider-Man, Brooklyn Visionary": {
-    // Web-slinging {2}{G} : lu dans le texte.
+    // Web-slinging {2}{G}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })], {
-        label: "Un terrain de base engagé",
+        label: "A tapped basic land",
       }),
     ],
   },
@@ -252,7 +252,7 @@ export const GREEN: Record<string, CardScript> = {
           addKeywords: ["indestructible"],
           addAbilities: [
             triggered(when.isDealtDamage, [fx.addCounters(ref.self, amount.eventAmount)], {
-              label: "Blessée : autant de marqueurs +1/+1",
+              label: "Damaged: that many +1/+1 counters",
             }),
           ],
         }),
@@ -264,7 +264,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         tapOthers: { filter: { types: ["Creature"] }, count: 2, includeSelf: true },
         effects: [fx.addManaChoice(1)],
-        label: "Engagez deux créatures : un mana de n'importe quelle couleur",
+        label: "Tap two creatures: one mana of any color",
       }),
     ],
   },
@@ -280,26 +280,26 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.createTokens(SPIDER_21), fx.gainLife(amount.count({ subtype: "Spider", controller: "you" }))],
-        { label: "Une Araignée 2/1, puis 1 PV par Araignée que vous contrôlez" },
+        { label: "A 2/1 Spider, then 1 life for each Spider you control" },
       ),
       staticAbility(
         SPIDERS_YOU_CONTROL,
         {
           power: 1,
           toughness: 1,
-          addBlockRules: [block.notBy({ keyword: "defender" }, "Imblocable par les créatures avec le défenseur")],
+          addBlockRules: [block.notBy({ keyword: "defender" }, "Can't be blocked by creatures with defender")],
         },
-        { label: "Vos Araignées gagnent +1/+1 et ne peuvent pas être bloquées par les défenseurs" },
+        { label: "Your Spiders get +1/+1 and can't be blocked by defenders" },
       ),
     ],
   },
   "Web of Life and Destiny": {
-    // Convocation : lue dans le texte.
+    // Convoke: read from the text.
     abilities: [
       triggered(
         when.yourCombat,
         [fx.lookAtTop(5, { filter: { types: ["Creature"] }, to: { to: "battlefield" }, rest: "bottom" })],
-        { label: "Regardez les cinq cartes du dessus : une carte de créature sur le champ de bataille" },
+        { label: "Look at the top five cards: a creature card onto the battlefield" },
       ),
     ],
   },

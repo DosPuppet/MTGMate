@@ -1,4 +1,4 @@
-/** Secrets of Strixhaven — cartes noires. */
+/** Secrets of Strixhaven — black cards. */
 import type { ObjectFilter } from "@mtgx/engine";
 import {
   activated,
@@ -29,7 +29,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [entersWith({ prepared: true })],
   },
   "Arcane Omens": {
-    // Convergence : X = couleurs de mana dépensées.
+    // Converge: X = colors of mana spent.
     spell: spell([target.player()], [fx.discard(amount.colorsSpent, ref.target())]),
   },
   "Arnyn, Deathbloom Botanist": {
@@ -39,18 +39,18 @@ export const BLACK: Record<string, CardScript> = {
         [fx.loseLife(2, ref.target()), fx.gainLife(2)],
         {
           targets: [target.player("t", "opponent")],
-          label: "Une petite créature meurt : un adversaire perd 2 PV, vous gagnez 2 PV",
+          label: "A small creature dies: an opponent loses 2 life, you gain 2 life",
         },
       ),
     ],
   },
   "Burrog Banemaker": {
-    abilities: [activated({ mana: "{1}{B}", effects: [fx.pump(ref.self, 1, 1)], label: "+1/+1 jusqu'à la fin du tour" })],
+    abilities: [activated({ mana: "{1}{B}", effects: [fx.pump(ref.self, 1, 1)], label: "+1/+1 until end of turn" })],
   },
   "Cheerful Osteomancer": {
     // Raise Dead.
     prepareSpell: spell(
-      [target.cardInGraveyard("t", CREATURE, "you", "carte de créature de votre cimetière")],
+      [target.cardInGraveyard("t", CREATURE, "you", "creature card from your graveyard")],
       [fx.toHand(ref.target())],
     ),
     abilities: [entersWith({ prepared: true })],
@@ -68,12 +68,12 @@ export const BLACK: Record<string, CardScript> = {
       entersWith({ prepared: true }),
       triggered(when.yourEndStep, [fx.prepare(ref.self)], {
         condition: cond.creaturesDied(2),
-        label: "Deux créatures mortes ce tour-ci : devient préparée",
+        label: "Two creatures died this turn: becomes prepared",
       }),
     ],
   },
   "End of the Hunt": {
-    // L'adversaire choisit parmi ses créatures et planeswalkers de plus grande valeur de mana, et l'exile.
+    // The opponent chooses among their creatures and planeswalkers with the greatest mana value, and exiles it.
     spell: spell(
       [target.player("t", "opponent")],
       [fx.sacrifice(ref.target(), { types: ["Creature", "Planeswalker"] }, 1, { greatestManaValue: true, to: "exile" })],
@@ -86,50 +86,50 @@ export const BLACK: Record<string, CardScript> = {
         fromGraveyard: true,
         exileSelf: true,
         effects: [fx.createTokens(INKLING, 2)],
-        label: "Deux Inklings 1/1 volants",
+        label: "Two 1/1 flying Inklings",
       }),
     ],
   },
   "Foolish Fate": {
-    // La perte de PV est appliquée avant la destruction : rien ne s'intercale pendant la résolution, et le contrôleur
-    // est ainsi lu sur le champ de bataille (il perd les PV même si la créature n'est pas détruite, comme le dit l'Oracle).
+    // The life loss is applied before the destruction: nothing happens in between during resolution, and the
+    // controller is thus read on the battlefield (they lose the life even if the creature isn't destroyed, as the Oracle says).
     spell: spell(
       [target.creature()],
       [...fx.when(INFUSION, fx.loseLife(3, ref.controllerOf(ref.target()))), fx.destroy(ref.target())],
     ),
   },
   "Forum Necroscribe": {
-    // Garde (défausser une carte) : lue dans le texte.
+    // Ward (discard a card): read from the text.
     abilities: [
       triggered(REPARTEE, [fx.toBattlefield(ref.target())], {
-        targets: [target.cardInGraveyard("t", CREATURE, "you", "carte de créature de votre cimetière")],
-        label: "Repartee : renvoie une créature de votre cimetière sur le champ de bataille",
+        targets: [target.cardInGraveyard("t", CREATURE, "you", "creature card from your graveyard")],
+        label: "Repartee: returns a creature from your graveyard to the battlefield",
       }),
     ],
   },
   "Grave Researcher": {
-    // Reanimate : la perte de PV est lue avant le déplacement (la carte devient un nouvel objet en arrivant).
+    // Reanimate: the life loss is read before the move (the card becomes a new object as it enters).
     prepareSpell: spell(
-      [target.cardInGraveyard("t", CREATURE, "any", "carte de créature d'un cimetière")],
+      [target.cardInGraveyard("t", CREATURE, "any", "creature card from a graveyard")],
       [fx.loseLife(amount.manaValueOf(ref.target())), fx.toBattlefield(ref.target(), { underYourControl: true })],
     ),
     abilities: [
       triggered(
         when.yourUpkeep,
         [fx.surveil(1), ...fx.when(cond.amountAtLeast(amount.countIn("graveyard", CREATURE), 3), fx.prepare(ref.self))],
-        { label: "Surveillance 1 ; trois cartes de créature au cimetière : devient préparée" },
+        { label: "Surveil 1; three creature cards in the graveyard: becomes prepared" },
       ),
     ],
   },
   "Lecturing Scornmage": {
-    abilities: [triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee : un marqueur +1/+1" })],
+    abilities: [triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee: a +1/+1 counter" })],
   },
   "Leech Collector": {
     // Bloodletting.
     prepareSpell: spell([], [fx.loseLife(2, ref.eachOpponent)]),
     abilities: [
       triggered(when.gainLifeFirst, [fx.prepare(ref.self)], {
-        label: "Premiers PV gagnés ce tour-ci : devient préparée",
+        label: "First life gained this turn: becomes prepared",
       }),
     ],
   },
@@ -137,32 +137,32 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell([target.creature("t", { controller: "you" })], [fx.pump(ref.target(), 1, 0, ["indestructible"])]),
   },
   "Melancholic Poet": {
-    abilities: [triggered(REPARTEE, fx.drain(1), { label: "Repartee : chaque adversaire perd 1 PV, vous gagnez 1 PV" })],
+    abilities: [triggered(REPARTEE, fx.drain(1), { label: "Repartee: each opponent loses 1 life, you gain 1 life" })],
   },
   "Poisoner's Apprentice": {
     abilities: [
       triggered(when.entersSelf, fx.when(INFUSION, fx.pump(ref.target(), -4, -4)), {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Infusion : une créature adverse prend -4/-4",
+        label: "Infusion: an opponent's creature gets -4/-4",
       }),
     ],
   },
   "Postmortem Professor": {
     keywords: ["cantBlock"],
     abilities: [
-      triggered(when.attacksSelf, fx.drain(1), { label: "Chaque adversaire perd 1 PV, vous gagnez 1 PV" }),
+      triggered(when.attacksSelf, fx.drain(1), { label: "Each opponent loses 1 life, you gain 1 life" }),
       activated({
         mana: "{1}{B}",
         fromGraveyard: true,
         exileFromGraveyard: { filter: INSTANT_SORCERY },
         effects: [fx.toBattlefield(ref.self)],
-        label: "Revient du cimetière sur le champ de bataille",
+        label: "Returns from the graveyard to the battlefield",
       }),
     ],
   },
   "Pull from the Grave": {
     spell: spell(
-      [target.upTo(2, target.cardInGraveyard("t", CREATURE, "you", "carte de créature de votre cimetière"))],
+      [target.upTo(2, target.cardInGraveyard("t", CREATURE, "you", "creature card from your graveyard"))],
       [fx.toHand(ref.target()), fx.gainLife(2)],
     ),
   },
@@ -172,7 +172,7 @@ export const BLACK: Record<string, CardScript> = {
       [
         fx.modify(ref.target(), {
           power: 1,
-          addAbilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Piochez une carte" })],
+          addAbilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Draw a card" })],
         }),
       ],
     ),
@@ -182,7 +182,7 @@ export const BLACK: Record<string, CardScript> = {
     prepareSpell: spell([target.creature("t", { controller: "you" })], [fx.pump(ref.target(), 2, 0, ["deathtouch"])]),
     abilities: [
       triggered(when.step("main1", "you"), [fx.prepare(ref.self)], {
-        label: "Première phase principale : devient préparée",
+        label: "First main phase: becomes prepared",
       }),
     ],
   },
@@ -192,7 +192,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.secondMain, [fx.prepare(ref.self)], {
         condition: cond.lifeGainedAtLeast(2),
-        label: "Deux PV gagnés ou plus ce tour-ci : devient préparée",
+        label: "Two or more life gained this turn: becomes prepared",
       }),
     ],
   },
@@ -200,18 +200,18 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell([], [fx.discard(1, ref.eachOpponent), fx.createTokens(PEST)]),
   },
   "Sneering Shadewriter": {
-    abilities: [triggered(when.entersSelf, fx.drain(2), { label: "Chaque adversaire perd 2 PV, vous gagnez 2 PV" })],
+    abilities: [triggered(when.entersSelf, fx.drain(2), { label: "Each opponent loses 2 life, you gain 2 life" })],
   },
   "Tragedy Feaster": {
-    // Garde (défausser une carte) : lue dans le texte.
+    // Ward (discard a card): read from the text.
     abilities: [
       triggered(when.yourEndStep, fx.when(cond.not(INFUSION), fx.sacrifice(ref.you, {}, 1)), {
-        label: "Infusion : sacrifiez un permanent, sauf si vous avez gagné des PV",
+        label: "Infusion: sacrifice a permanent unless you gained life",
       }),
     ],
   },
   "Ulna Alley Shopkeep": {
-    abilities: [staticAbility("self", { power: 2 }, { condition: INFUSION, label: "Infusion : +2/+0" })],
+    abilities: [staticAbility("self", { power: 2 }, { condition: INFUSION, label: "Infusion: +2/+0" })],
   },
   "Wander Off": {
     spell: spell([target.creature()], [fx.exile(ref.target())]),

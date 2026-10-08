@@ -1,8 +1,9 @@
 /**
- * Avatar: The Last Airbender — cartes noires (lot A). La maîtrise du feu, le vol, le contact mortel, la menace,
- * l'équipage et le cycle de terrain sont lus dans le texte.
+ * Avatar: The Last Airbender: black cards (lot A). Firebending, flying, deathtouch, menace, crew and landcycling are
+ * read from the text.
  */
 import type { TargetSpec, TokenSpec } from "@mtgx/engine";
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -24,10 +25,10 @@ import {
   when,
 } from "./common";
 
-const LAND_YOU_CONTROL = target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez");
+const LAND_YOU_CONTROL = target.permanent("t", ["Land"], { controller: "you" }, "land you control");
 const ARTIFACT_OR_CREATURE = { anyOf: [{ types: ["Artifact" as const] }, { types: ["Creature" as const] }] };
 
-/** Jeton de Fire Navy Trebuchet : « Ballistic Boulder », créature-artefact Assemblage 2/1 incolore volante. */
+/** Token of Fire Navy Trebuchet: "Ballistic Boulder", 2/1 colorless Construct artifact creature with flying. */
 const BALLISTIC_BOULDER: TokenSpec = {
   name: "Ballistic Boulder",
   colors: [],
@@ -39,14 +40,14 @@ const BALLISTIC_BOULDER: TokenSpec = {
   text: "Flying",
 };
 
-/** « une autre créature ou un Véhicule ciblé que vous contrôlez » (Fire Nation Engineer). */
+/** "another target creature or Vehicle you control" (Fire Nation Engineer). */
 const CREATURE_OR_VEHICLE_YOU: TargetSpec = {
   id: "t",
-  label: "autre créature ou Véhicule que vous contrôlez",
+  label: "other creature or Vehicle you control",
   filter: { objects: { controller: "you", other: true, anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }] } },
 };
 
-/** Boiling Rock Rioter : « exilez une carte ciblée d'un cimetière », liée à la créature. */
+/** Boiling Rock Rioter: "exile target card from a graveyard", linked to the creature. */
 const rioterExile = {
   targets: [target.cardInGraveyard("t", {}, "any")],
   effects: [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))],
@@ -54,19 +55,19 @@ const rioterExile = {
 
 export const BLACK: Record<string, CardScript> = {
   "Azula Always Lies": {
-    // « Choisissez l'un ou les deux. »
+    // "Choose one or both."
     spell: modal(
-      mode("−1/−1 jusqu'à la fin du tour", [target.creature("a")], [fx.pump(ref.target("a"), -1, -1)]),
-      mode("Un marqueur +1/+1", [target.creature("b")], [fx.addCounters(ref.target("b"), 1)]),
+      mode("−1/−1 until end of turn", [target.creature("a")], [fx.pump(ref.target("a"), -1, -1)]),
+      mode("A +1/+1 counter", [target.creature("b")], [fx.addCounters(ref.target("b"), 1)]),
       mode(
-        "Les deux",
+        "Both",
         [target.creature("a"), target.creature("b")],
         [fx.pump(ref.target("a"), -1, -1), fx.addCounters(ref.target("b"), 1)],
       ),
     ),
   },
   "Azula, On the Hunt": {
-    abilities: [triggered(when.attacksSelf, [fx.loseLife(1), fx.createTokens(CLUE)], { label: "Perdez 1 PV, un Indice" })],
+    abilities: [triggered(when.attacksSelf, [fx.loseLife(1), fx.createTokens(CLUE)], { label: "Lose 1 life, a Clue" })],
   },
   "Beetle-Headed Merchants": {
     abilities: [
@@ -76,7 +77,7 @@ export const BLACK: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { ...ARTIFACT_OR_CREATURE, other: true }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.draw(1), fx.addCounters(ref.self, 1)),
         ],
-        { label: "Vous pouvez sacrifier une autre créature ou un artefact : piochez, marqueur +1/+1" },
+        { label: "You may sacrifice another creature or an artifact: draw, +1/+1 counter" },
       ),
     ],
   },
@@ -85,10 +86,10 @@ export const BLACK: Record<string, CardScript> = {
       activated({
         tapOthers: { filter: { subtype: "Ally" }, count: 1, includeSelf: true },
         ...rioterExile,
-        label: "Engagez un Allié : exilez une carte d'un cimetière",
+        label: "Tap an Ally: exile a card from a graveyard",
       }),
       triggered(when.attacksSelf, [fx.castNow(ref.filtered(ref.linked, { subtype: "Ally", owner: "you" }))], {
-        label: "Vous pouvez lancer un sort d'Allié exilé avec lui",
+        label: "You may cast an Ally spell exiled with it",
       }),
     ],
   },
@@ -97,24 +98,24 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.sacrifice(ref.you, ARTIFACT_OR_CREATURE, 1, { optional: true, store: "s" }), ...fx.when(cond.v("s"), fx.draw(1))],
-        { label: "Vous pouvez sacrifier un artefact ou une créature : piochez" },
+        { label: "You may sacrifice an artifact or a creature: draw" },
       ),
-      // « s'il avait des marqueurs » : dans le filtre (dernières informations connues).
+      // "if it had counters on it": in the filter (last known information).
       triggered(
         when.dies({ types: ["Creature"], controller: "you", other: true, withCounter: "any" }),
         [fx.lkiCountersTo(ref.self)],
-        { label: "Ses marqueurs vont sur la colonie" },
+        { label: "Its counters go onto the colony" },
       ),
     ],
   },
   "Canyon Crawler": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Une Nourriture" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food" })],
   },
   "Cat-Gator": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(amount.count({ subtype: "Swamp", controller: "you" }), ref.target())], {
         targets: [target.any()],
-        label: "Blessures égales au nombre de vos Marais",
+        label: "Damage equal to the number of Swamps you control",
       }),
     ],
   },
@@ -122,18 +123,18 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "L'adversaire défausse une carte",
+        label: "The opponent discards a card",
       }),
     ],
   },
   "Dai Li Indoctrination": {
     spell: modal(
       mode(
-        "Main révélée : défausse d'une carte de permanent non-terrain",
+        "Hand revealed: discard of a nonland permanent card",
         [target.player("p", "opponent")],
         [fx.discard(1, ref.target("p"), { filter: { permanent: true, notTypes: ["Land"] }, chooser: "controller" })],
       ),
-      mode("Maîtrise de la terre 2", [LAND_YOU_CONTROL], fx.earthbend(ref.target(), 2)),
+      mode("Earthbend 2", [LAND_YOU_CONTROL], fx.earthbend(ref.target(), 2)),
     ),
   },
   "Epic Downfall": {
@@ -145,7 +146,7 @@ export const BLACK: Record<string, CardScript> = {
       [
         fx.whenThisTurn(when.dies({}), ref.target(), fx.earthbend(ref.target(), 4), {
           targets: [LAND_YOU_CONTROL],
-          label: "Maîtrise de la terre 4",
+          label: "Earthbend 4",
         }),
       ],
     ),
@@ -157,12 +158,12 @@ export const BLACK: Record<string, CardScript> = {
         fx.when(
           cond.not(cond.sourceMatches({ tapped: true })),
           fx.may(
-            "Engager The Fire Nation Drill pour détruire une créature de force 4 ou moins ?",
+            "Tap The Fire Nation Drill to destroy a creature with power 4 or less?",
             fx.tap(ref.self),
             fx.reflexive([target.creature("t", { maxPower: 4 })], [fx.destroy(ref.target())]),
           ),
         ),
-        { label: "Vous pouvez l'engager : détruisez une créature de force 4 ou moins" },
+        { label: "You may tap it: destroy a creature with power 4 or less" },
       ),
       activated({
         mana: "{1}",
@@ -173,7 +174,7 @@ export const BLACK: Record<string, CardScript> = {
             "endOfTurn",
           ),
         ],
-        label: "Les permanents adverses perdent la défense talismanique et l'indestructibilité",
+        label: "Permanents your opponents control lose hexproof and indestructible",
       }),
     ],
   },
@@ -182,7 +183,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.yourEndStep, [fx.addCounters(ref.target(), 1)], {
         condition: cond.raid,
         targets: [CREATURE_OR_VEHICLE_YOU],
-        label: "Raid — un marqueur +1/+1 sur une autre créature ou un Véhicule",
+        label: "Raid — a +1/+1 counter on another creature or a Vehicle",
       }),
     ],
   },
@@ -194,7 +195,7 @@ export const BLACK: Record<string, CardScript> = {
           fx.createTappedTokens(BALLISTIC_BOULDER, 1, { attacking: true, store: "b" }),
           fx.delayed([fx.sacrificeIt(ref.target("b"))], { b: ref.stored("b") }),
         ],
-        { label: "Un Ballistic Boulder 2/1 volant, engagé et attaquant" },
+        { label: "A 2/1 flying Ballistic Boulder, tapped and attacking" },
       ),
     ],
   },
@@ -203,7 +204,7 @@ export const BLACK: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["lifelink", "menace"] },
-        { condition: cond.drewAtLeast(2), label: "Lien de vie et menace (deux cartes piochées ce tour-ci)" },
+        { condition: cond.drewAtLeast(2), label: "Lifelink and menace (two cards drawn this turn)" },
       ),
     ],
   },
@@ -211,9 +212,9 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.modify(ref.target(), { addKeywords: ["menace"] })], {
         targets: [target.creature("t", { controller: "you", withCounter: "+1/+1" })],
-        label: "Une de vos créatures avec un marqueur +1/+1 gagne la menace",
+        label: "A creature you control with a +1/+1 counter gains menace",
       }),
-      exhaust({ mana: "{5}", effects: [fx.addCounters(ref.self, 2)], label: "{5} : deux marqueurs +1/+1" }),
+      exhaust({ mana: "{5}", effects: [fx.addCounters(ref.self, 2)], label: "{5}: two +1/+1 counters" }),
     ],
   },
   "Joo Dee, One of Many": {
@@ -223,7 +224,7 @@ export const BLACK: Record<string, CardScript> = {
         tap: true,
         sorcerySpeed: true,
         effects: [fx.surveil(1), fx.copyToken(ref.self), fx.sacrifice(ref.you, ARTIFACT_OR_CREATURE)],
-        label: "Surveillance 1, un jeton copie, puis sacrifiez un artefact ou une créature",
+        label: "Surveil 1, a token copy, then sacrifice an artifact or a creature",
       }),
     ],
   },
@@ -232,21 +233,21 @@ export const BLACK: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["unblockable"] },
-        { condition: cond.drewAtLeast(2), label: "Imblocable (deux cartes piochées ce tour-ci)" },
+        { condition: cond.drewAtLeast(2), label: "Can't be blocked (two cards drawn this turn)" },
       ),
       activated({
         mana: "{1}",
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         activationCondition: cond.yourTurn,
         effects: [fx.createTokens(CLUE)],
-        label: "Sacrifiez une autre créature : un Indice",
+        label: "Sacrifice another creature: a Clue",
       }),
     ],
   },
   "Mai, Scornful Striker": {
     abilities: [
       triggered(when.castSpell("any", { notTypes: ["Creature"] }), [fx.loseLife(2, ref.eventPlayer)], {
-        label: "Le lanceur d'un sort non-créature perd 2 PV",
+        label: "The caster of a noncreature spell loses 2 life",
       }),
     ],
   },
@@ -256,17 +257,17 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{2}{B}",
         fromGraveyard: true,
         effects: [fx.toHand(ref.selfCard)],
-        label: "Revient du cimetière en main",
+        label: "Returns from the graveyard to hand",
       }),
     ],
   },
   "Northern Air Temple": {
     abilities: [
       triggered(when.entersSelf, fx.drain(amount.count({ subtype: "Shrine", controller: "you" })), {
-        label: "Chaque adversaire perd X PV, vous gagnez X PV (X : vos Sanctuaires)",
+        label: "Each opponent loses X life, you gain X life (X: your Shrines)",
       }),
       triggered(when.enters({ subtype: "Shrine", controller: "you", other: true }), fx.drain(1), {
-        label: "Chaque adversaire perd 1 PV, vous gagnez 1 PV",
+        label: "Each opponent loses 1 life, you gain 1 life",
       }),
     ],
   },
@@ -277,14 +278,14 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.copyToken(ref.self)], {
         condition: cond.sacrificedThisTurn,
-        label: "Un jeton copie (permanent sacrifié ce tour-ci)",
+        label: "A token copy (permanent sacrificed this turn)",
       }),
       staticAbility(
         "self",
         { addTypes: ["Artifact", "Creature"] },
         {
           condition: cond.controls({ name: "Phoenix Fleet Airship" }, 8),
-          label: "Créature-artefact (huit Phoenix Fleet Airship ou plus)",
+          label: "Artifact creature (eight or more Phoenix Fleet Airships)",
         },
       ),
     ],
@@ -292,7 +293,7 @@ export const BLACK: Record<string, CardScript> = {
   "Pirate Peddlers": {
     abilities: [
       triggered(when.sacrifice({ other: true }), [fx.addCounters(ref.self, 1)], {
-        label: "Un autre permanent sacrifié : un marqueur +1/+1",
+        label: "Another permanent sacrificed: a +1/+1 counter",
       }),
     ],
   },
@@ -303,7 +304,7 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Swampsnare Trap": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     costReduction: { generic: 1, condition: cond.targetMatches("enchant", { keyword: "flying" }) },
     abilities: [staticAbility("attached", { power: -5, toughness: -3 }, { label: "−5/−3" })],
   },
@@ -311,7 +312,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.modify(ref.target(), { addKeywords: ["indestructible"] })], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une de vos créatures gagne l'indestructibilité",
+        label: "A creature you control gains indestructible",
       }),
     ],
   },
@@ -321,29 +322,29 @@ export const BLACK: Record<string, CardScript> = {
         when.draw(2),
         fx.mayPay(
           "{B}",
-          "Payer {B} pour renvoyer Wolfbat sur le champ de bataille ?",
+          "Pay {B} to return Wolfbat to the battlefield?",
           fx.toBattlefield(ref.self, { counters: { kind: "finality", n: 1 } }),
         ),
-        { fromGraveyard: true, label: "Revient du cimetière avec un marqueur de finalité" },
+        { fromGraveyard: true, label: "Returns from the graveyard with a finality counter" },
       ),
     ],
   },
   "Zuko's Conviction": {
     kicker: "{4}",
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+      [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card from your graveyard")],
       [
         ...fx.when(cond.not(cond.kicked), fx.toHand(ref.target())),
         ...fx.when(cond.kicked, fx.toBattlefield(ref.target(), { tapped: true })),
       ],
     ),
   },
-  // Maîtrise de l'eau {X} en coût additionnel : lue dans le texte.
+  // Waterbend {X} as an additional cost: read from the text.
   "Foggy Swamp Visions": {
     spell: spell(
       [
         {
-          ...target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière"),
+          ...target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card from a graveyard"),
           count: 99,
           countX: true,
         },
@@ -351,7 +352,7 @@ export const BLACK: Record<string, CardScript> = {
       [fx.exileCard(ref.target(), { name: "v" }), fx.copyToken(ref.stored("v"), { sacrificeAtEndStep: true })],
     ),
   },
-  // « vous pouvez maîtriser l'eau {4} » : un kicker lu dans le texte.
+  // "you may waterbend {4}": a kicker read from the text.
   "Ruinous Waterbending": {
     spell: spell(
       [],
@@ -361,8 +362,8 @@ export const BLACK: Record<string, CardScript> = {
           cond.kicked,
           fx.emblem(
             "Ruinous Waterbending",
-            "Chaque fois qu'une créature meurt ce tour-ci, vous gagnez 1 point de vie.",
-            [triggered(when.dies({ types: ["Creature"] }), [fx.gainLife(1)], { label: "Une créature meurt : gagnez 1 PV" })],
+            msg("Whenever a creature dies this turn, you gain 1 life."),
+            [triggered(when.dies({ types: ["Creature"] }), [fx.gainLife(1)], { label: "A creature dies: gain 1 life" })],
             false,
             true,
           ),
@@ -373,16 +374,16 @@ export const BLACK: Record<string, CardScript> = {
   "Lo and Li, Twin Tutors": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ anyOf: [{ subtype: "Lesson" }, { subtype: "Noble" }] }, { to: "hand" })], {
-        label: "Cherchez une carte de Leçon ou de Noble",
+        label: "Search for a Lesson or Noble card",
       }),
       staticAbility(
         { types: ["Creature"], subtype: "Noble", controller: "you" },
         { addKeywords: ["lifelink"] },
-        { label: "Vos créatures Nobles ont le lien de vie" },
+        { label: "Noble creatures you control have lifelink" },
       ),
       playerStatic({
         spellKeywords: { filter: { subtype: "Lesson" }, keywords: ["lifelink"] },
-        label: "Vos sorts de Leçon ont le lien de vie",
+        label: "Lesson spells you control have lifelink",
       }),
     ],
   },
@@ -390,50 +391,50 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target(), { name: "k" }), fx.link(ref.stored("k"))], {
         targets: [target.upTo(1, target.creature("t", { other: true }))],
-        label: "Exilez jusqu'à une autre créature",
+        label: "Exile up to one other creature",
       }),
       triggered(
         when.dies({ types: ["Creature"], other: true, token: false }),
-        [fx.may("Exiler cette carte avec Koh ?", fx.exileCard(ref.eventObject, { name: "d" }), fx.link(ref.stored("d")))],
-        { label: "Une autre créature meurt : vous pouvez l'exiler" },
+        [fx.may("Exile this card with Koh?", fx.exileCard(ref.eventObject, { name: "d" }), fx.link(ref.stored("d")))],
+        { label: "Another creature dies: you may exile it" },
       ),
       activated({
         payLife: 1,
         effects: [fx.chooseForSelf("cardName", { optionsFrom: ref.filtered(ref.linked, { types: ["Creature"] }) })],
-        label: "Payez 1 PV : choisissez une carte de créature exilée avec Koh",
+        label: "Pay 1 life: choose a creature card exiled with Koh",
       }),
       staticAbility(
         "self",
         { gainLinkedActivated: { triggered: true, chosenName: true } },
-        { label: "A les capacités activées et déclenchées de la dernière carte choisie" },
+        { label: "Has the activated and triggered abilities of the last chosen card" },
       ),
     ],
   },
   "The Rise of Sozin": {
     abilities: [
-      chapter([1], [fx.destroyAll({ types: ["Creature"] })], { label: "Détruisez toutes les créatures" }),
+      chapter([1], [fx.destroyAll({ types: ["Creature"] })], { label: "Destroy all creatures" }),
       chapter([2], [fx.chooseCardName, fx.exileNamed(ref.target(), 4)], {
         targets: [target.player("t", "opponent")],
-        label: "Choisissez un nom ; exilez jusqu'à quatre cartes de ce nom de l'adversaire",
+        label: "Choose a name; exile up to four cards with that name of the opponent",
       }),
       chapter([3], [fx.exileCard(ref.self, { name: "flip" }), fx.toBattlefield(ref.stored("flip"), { transformed: true })], {
-        label: "Revient transformée",
+        label: "Returns transformed",
       }),
     ],
   },
-  // Menace et maîtrise du feu 3 : lues dans le texte.
+  // Menace and firebending 3: read from the text.
   "Fire Lord Sozin": {
     abilities: [
       triggered(
         when.combatDamageToPlayer,
         [
-          fx.payX("Payer {X} pour ramener des créatures de valeur de mana totale X ?", "x"),
+          fx.payX("Pay {X} to return creatures with total mana value X?", "x"),
           fx.reflexive(
             [
               {
                 ...target.of(
                   ref.eventPlayer,
-                  target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature de son cimetière"),
+                  target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card from their graveyard"),
                 ),
                 count: 99,
                 optional: true,
@@ -443,7 +444,7 @@ export const BLACK: Record<string, CardScript> = {
             [fx.toBattlefield(ref.target(), { underYourControl: true })],
           ),
         ],
-        { label: "Blessures de combat à un joueur : payez X, ramenez des créatures de son cimetière" },
+        { label: "Combat damage to a player: pay X, return creatures from their graveyard" },
       ),
     ],
   },

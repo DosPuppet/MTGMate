@@ -1,5 +1,5 @@
 import type { Effect } from "@mtgx/engine";
-/** Reality Fracture — cartes vertes. */
+/** Reality Fracture — green cards. */
 import {
   activated,
   amount,
@@ -29,13 +29,13 @@ import {
   when,
 } from "./common";
 
-/** « {1}, sacrifiez un autre artefact : marqueur +1/+1, gagne [capacité] » (un choix par capacité activée). */
+/** "{1}, Sacrifice another artifact: +1/+1 counter, gains [ability]" (one choice per activated ability). */
 const puppetbeastBoost = (kw: "trample" | "hexproof" | "haste", label: string) =>
   activated({
     mana: "{1}",
     sacrificeOther: { filter: { types: ["Artifact"], controller: "you", other: true } },
     effects: [fx.addCounters(ref.self, 1), fx.modify(ref.self, { addKeywords: [kw] })],
-    label: `Marqueur +1/+1 et ${label}`,
+    label,
   });
 
 export const GREEN: Record<string, CardScript> = {
@@ -45,27 +45,27 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         sacrifice: true,
         sorcerySpeed: true,
-        targets: [targetObj("t", { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] }, "artefact ou enchantement")],
+        targets: [targetObj("t", { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] }, "artifact or enchantment")],
         effects: [
           ...fx.when(cond.refMatches(ref.target(), { types: ["Enchantment"], legendary: true }), fx.draw(1)),
           fx.destroy(ref.target()),
         ],
-        label: "Détruire un artefact ou un enchantement",
+        label: "Sacrifice it: destroy an artifact or enchantment",
       }),
     ],
   },
   "Greenhouse Propagator": {
     abilities: [
-      triggered(when.enters({ types: ["Creature"], controller: "you", other: true }), [fx.gainLife(1)], { label: "+1 PV" }),
+      triggered(when.enters({ types: ["Creature"], controller: "you", other: true }), [fx.gainLife(1)], { label: "+1 life" }),
       manaAbility("G"),
     ],
   },
   "Hungering Puppetbeast": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(HEARTWOOD)], { label: "Heartwood" }),
-      puppetbeastBoost("trample", "piétinement"),
-      puppetbeastBoost("hexproof", "défense talismanique"),
-      puppetbeastBoost("haste", "célérité"),
+      puppetbeastBoost("trample", "+1/+1 counter and trample"),
+      puppetbeastBoost("hexproof", "+1/+1 counter and hexproof"),
+      puppetbeastBoost("haste", "+1/+1 counter and haste"),
     ],
   },
   "Hunter's Axe": {
@@ -75,51 +75,49 @@ export const GREEN: Record<string, CardScript> = {
         {
           power: 2,
           addAbilities: [
-            // « Au choix, piétinement ou contact mortel » : une question oui/non (une capacité accordée n'a pas de modes).
+            // "Your choice of trample or deathtouch": a yes/no question (a granted ability has no modes).
             triggered(
               when.attacksSelf,
               [
-                ...fx.mayForStore(ref.you, "Piétinement (sinon contact mortel) ?", "trample", [
+                ...fx.mayForStore(ref.you, "Trample (otherwise deathtouch)?", "trample", [
                   fx.modify(ref.self, { addKeywords: ["trample"] }),
                 ]),
                 ...fx.when(cond.not(cond.v("trample")), fx.modify(ref.self, { addKeywords: ["deathtouch"] })),
               ],
-              { label: "Piétinement ou contact mortel" },
+              { label: "Trample or deathtouch" },
             ),
           ],
         },
-        { label: "+2/+0, piétinement ou contact mortel en attaquant" },
+        { label: "+2/+0, trample or deathtouch when attacking" },
       ),
     ],
   },
   "Puppet Crafting": {
     enchant: {
       filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"], notSubtype: "Aura" }] },
-      label: "artefact ou enchantement non-Aura",
+      label: "artifact or non-Aura enchantment",
     },
     abilities: [
       staticAbility(
         "attached",
         { addTypes: ["Creature"], addSubtypes: ["Construct"], setPower: 5, setToughness: 5 },
-        { label: "Créature Construct 5/5" },
+        { label: "5/5 Construct creature" },
       ),
-      activated({ mana: "{4}{G}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Revenir en main" }),
+      activated({ mana: "{4}{G}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Return to hand" }),
     ],
   },
   "Restore with Empathy": {
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true }, "you", "carte de permanent de votre cimetière")],
+      [target.cardInGraveyard("t", { permanent: true }, "you", "permanent card in your graveyard")],
       [fx.toHand(ref.target()), fx.gainLife(4)],
     ),
   },
   "Simulacrum Shaper": {
     abilities: [
-      triggered(
-        when.entersSelf,
-        fx.may("Chercher un terrain de base ?", fx.search(BASIC_LAND, { to: "battlefield", tapped: true })),
-        { label: "terrain de base engagé" },
-      ),
-      triggered(when.diesSelf, [fx.draw(1)], { label: "piochez une carte" }),
+      triggered(when.entersSelf, fx.may("Search for a basic land?", fx.search(BASIC_LAND, { to: "battlefield", tapped: true })), {
+        label: "tapped basic land",
+      }),
+      triggered(when.diesSelf, [fx.draw(1)], { label: "draw a card" }),
     ],
   },
   "Something Worth Saving": {
@@ -131,7 +129,7 @@ export const GREEN: Record<string, CardScript> = {
           "graveyard",
           { permanent: true },
           { to: "hand" },
-          { min: 0, pool: ref.stored("m"), prompt: "Vous pouvez reprendre une carte de permanent meulée" },
+          { min: 0, pool: ref.stored("m"), prompt: "You may take back a milled permanent card" },
         ),
         fx.gainLife(1),
       ],
@@ -141,48 +139,44 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell([target.creature("t")], [fx.pump(ref.target(), 2, 2, ["reach"]), fx.untap(ref.target())]),
   },
   "Verdant Kraken": {
-    abilities: [triggered(when.step("upkeep", "any"), [fx.createTokens(FOREST_TENTACLE)], { label: "Forêt Tentacule" })],
+    abilities: [triggered(when.step("upkeep", "any"), [fx.createTokens(FOREST_TENTACLE)], { label: "Forest Tentacle" })],
   },
   "Wrecking Gecko": {
-    abilities: [activated({ mana: "{6}{G}{G}", effects: [fx.pump(ref.self, 4, 4, ["trample"])], label: "+4/+4 et piétinement" })],
+    abilities: [activated({ mana: "{6}{G}{G}", effects: [fx.pump(ref.self, 4, 4, ["trample"])], label: "+4/+4 and trample" })],
   },
   "Edgar, Moonlit Sovereign": {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 2)], {
         condition: cond.not(cond.castThisTurn(1)),
-        label: "Aucun sort ce tour-ci : deux marqueurs",
+        label: "No spell this turn: two counters",
       }),
       activated({
         mana: "{4}{G}",
         effects: [fx.addCountersAll({ types: ["Creature"], controller: "you", withCounter: "+1/+1" }, 1)],
-        label: "Marqueur sur chaque créature qui en a déjà",
+        label: "A counter on each creature that already has one",
       }),
     ],
   },
   "Ghalta the Unstoppable": {
     costReduction: { generic: amount.maxPower(CREATURE_YOU_CONTROL) },
     abilities: [
-      staticAbility(
-        { types: ["Creature"], controller: "you", other: true },
-        { addKeywords: ["trample"] },
-        { label: "Piétinement" },
-      ),
+      staticAbility({ types: ["Creature"], controller: "you", other: true }, { addKeywords: ["trample"] }, { label: "Trample" }),
     ],
   },
   "Jiang Yanggu, Never Alone": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(MOWU)], { label: "Mowu" }),
-      triggered(when.yourEndStep, [fx.untapUpTo({ token: true, controller: "you" }, 99)], { label: "dégage vos jetons" }),
+      triggered(when.yourEndStep, [fx.untapUpTo({ token: true, controller: "you" }, 99)], { label: "untaps your tokens" }),
     ],
   },
   "Marwyn, the Preserver": {
     abilities: [
-      staticAbility({ types: ["Land"], controller: "you" }, { addKeywords: ["hexproof"] }, { label: "Défense talismanique" }),
+      staticAbility({ types: ["Land"], controller: "you" }, { addKeywords: ["hexproof"] }, { label: "Hexproof" }),
       activated({
         mana: "{2}",
-        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "land card in your graveyard")],
         effects: [fx.toHand(ref.target())],
-        label: "Récupérer un terrain",
+        label: "Return a land card",
       }),
     ],
   },
@@ -191,7 +185,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.search({ types: ["Enchantment"] }))],
-        { label: "défausser : chercher un enchantement" },
+        { label: "discard: search for an enchantment" },
       ),
     ],
   },
@@ -202,13 +196,13 @@ export const GREEN: Record<string, CardScript> = {
           target.creature("a", { controller: "you", other: true }),
           target.upTo(1, target.creature("b", { controller: "opponent" })),
         ],
-        label: "combat",
+        label: "fight",
       }),
       activated({
         mana: "{6}",
         targets: [target.creature("t", { legendary: false })],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Marqueur sur une créature non légendaire",
+        label: "Counter on a nonlegendary creature",
       }),
     ],
   },
@@ -216,7 +210,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 3)], {
         targets: [target.creature("t")],
-        label: "trois marqueurs",
+        label: "three counters",
       }),
     ],
   },
@@ -228,7 +222,7 @@ export const GREEN: Record<string, CardScript> = {
         discardSelf: true,
         targets: [target.creature("t", { keyword: "flying" })],
         effects: [fx.destroy(ref.target())],
-        label: "Défaussez : détruire une créature volante",
+        label: "Discard: destroy a creature with flying",
       }),
     ],
   },
@@ -236,14 +230,14 @@ export const GREEN: Record<string, CardScript> = {
     cdaPower: amount.basicLandTypes,
     abilities: [
       triggered(when.entersSelf, [{ ...fx.search(BASIC_LAND, { to: "hand" }, amount.sourceX), distinctNames: true } as Effect], {
-        label: "jusqu'à X terrains de base de noms différents",
+        label: "up to X basic lands with different names",
       }),
     ],
   },
   "Titanbones, Towering Heart": {
     abilities: [
-      triggered(when.gainLife, [fx.addCounters(ref.self, 2)], { label: "deux marqueurs +1/+1" }),
-      triggered(when.discardSelf, [fx.gainLife(3)], { fromGraveyard: true, label: "défaussée : +3 PV" }),
+      triggered(when.gainLife, [fx.addCounters(ref.self, 2)], { label: "two +1/+1 counters" }),
+      triggered(when.discardSelf, [fx.gainLife(3)], { fromGraveyard: true, label: "discarded: +3 life" }),
     ],
   },
   "Carnivorous Cultivator": {
@@ -251,8 +245,8 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       entersWith({ prepared: true }),
       triggered(when.combatDamageToPlayer, [fx.toHand(ref.target())], {
-        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain de votre cimetière")],
-        label: "récupère un terrain",
+        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "land card in your graveyard")],
+        label: "returns a land card",
       }),
     ],
   },
@@ -260,38 +254,38 @@ export const GREEN: Record<string, CardScript> = {
     prepareSpell: SOUL_TETHER,
     abilities: [entersWith({ prepared: true }), manaAbility("C", 1, { restriction: { notSpellFromHand: true } })],
   },
-  "Arcane Amphisbaena": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" })] },
+  "Arcane Amphisbaena": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Empower Jace 2" })] },
   "Inspired Tethermage": {
     abilities: [
       triggered(when.youPutCounters({ types: ["Planeswalker"] }, "loyalty"), [fx.addCounters(ref.self, 1)], {
-        label: "marqueur +1/+1",
+        label: "put a +1/+1 counter",
       }),
-      activated({ mana: "{6}", effects: [empower(2)], label: "Renforcez Jace 2" }),
+      activated({ mana: "{6}", effects: [empower(2)], label: "Empower Jace 2" }),
     ],
   },
   "Way of the Paradox": {
     abilities: [
-      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
-      triggered(when.loyaltyActivated(), [fx.gainLife(1), fx.extraLandThisTurn], { label: "+1 PV, terrain supplémentaire" }),
+      triggered(when.entersSelf, [empower(5)], { label: "Empower Jace 5" }),
+      triggered(when.loyaltyActivated(), [fx.gainLife(1), fx.extraLandThisTurn], { label: "+1 life, additional land" }),
     ],
   },
   "Way of the Wildspeaker": {
     abilities: [
-      triggered(when.entersSelf, [empower(7)], { label: "Renforcez Jace 7" }),
-      walkersHave(loyalty(-4, { effects: [fx.createTokens(BEAST_TRAMPLE)], label: "Bête 4/4" }), "Planeswalkers : [−4] Bête"),
+      triggered(when.entersSelf, [empower(7)], { label: "Empower Jace 7" }),
+      walkersHave(loyalty(-4, { effects: [fx.createTokens(BEAST_TRAMPLE)], label: "4/4 Beast" }), "Planeswalkers: [−4] Beast"),
     ],
   },
   "Compel Brutality": {
     spell: modal(
       mode(
-        "Votre créature inflige des blessures égales à sa force",
+        "Your creature deals damage equal to its power",
         [target.creature("a", { controller: "you" }), target.creatureOrPlaneswalker("b", { controller: "opponent" })],
         [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))],
       ),
       mode(
-        "Votre planeswalker inflige des blessures égales à sa loyauté",
+        "Your planeswalker deals damage equal to its loyalty",
         [
-          targetObj("a", { types: ["Planeswalker"], controller: "you" }, "planeswalker que vous contrôlez"),
+          targetObj("a", { types: ["Planeswalker"], controller: "you" }, "planeswalker you control"),
           target.creatureOrPlaneswalker("b", { controller: "opponent" }),
         ],
         [fx.damage(amount.countersOn(ref.target("a"), "loyalty"), ref.target("b"), ref.target("a"))],

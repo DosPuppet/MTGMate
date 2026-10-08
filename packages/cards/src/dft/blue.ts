@@ -1,4 +1,4 @@
-/** Aetherdrift — cartes bleues. */
+/** Aetherdrift — blue cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -20,7 +20,7 @@ import {
   whenCycled,
 } from "./common";
 
-/** Affinité pour les artefacts (702.41) : {1} de moins par artefact que vous contrôlez. */
+/** Affinity for artifacts (702.41): {1} less for each artifact you control. */
 const AFFINITY_ARTIFACTS = { generic: amount.count({ types: ["Artifact"], controller: "you" }) };
 
 export const BLUE: Record<string, CardScript> = {
@@ -30,24 +30,24 @@ export const BLUE: Record<string, CardScript> = {
       activated({
         mana: "{U}",
         sacrifice: true,
-        targets: [target.spell("t", { types: ["Instant", "Sorcery"] }, "éphémère ou rituel")],
+        targets: [target.spell("t", { types: ["Instant", "Sorcery"] }, "instant or sorcery")],
         effects: fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{3}" }, fx.counter(ref.target())),
-        label: "Contrecarrez un éphémère ou un rituel",
+        label: "Counter an instant or sorcery",
       }),
     ],
   },
   "Flood the Engine": {
-    enchant: { filter: CREATURE_OR_VEHICLE, label: "créature ou Véhicule" },
+    enchant: { filter: CREATURE_OR_VEHICLE, label: "creature or Vehicle" },
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez le permanent enchanté" }),
-      staticAbility("attached", { loseAllAbilities: true }, { label: "Perd toutes ses capacités" }),
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Tap the enchanted permanent" }),
+      staticAbility("attached", { loseAllAbilities: true }, { label: "Loses all abilities" }),
       doesntUntap("attached"),
     ],
   },
   "Gearseeker Serpent": {
     costReduction: AFFINITY_ARTIFACTS,
     abilities: [
-      activated({ mana: "{5}{U}", effects: [fx.pump(ref.self, 0, 0, ["unblockable"])], label: "Imblocable ce tour-ci" }),
+      activated({ mana: "{5}{U}", effects: [fx.pump(ref.self, 0, 0, ["unblockable"])], label: "Unblockable this turn" }),
     ],
   },
   "Guidelight Optimizer": {
@@ -61,45 +61,49 @@ export const BLUE: Record<string, CardScript> = {
       }),
     ],
   },
-  Hulldrifter: { abilities: [triggered(when.entersSelf, [fx.draw(2)], { label: "Piochez deux cartes" })] },
+  Hulldrifter: { abilities: [triggered(when.entersSelf, [fx.draw(2)], { label: "Draw two cards" })] },
   "Memory Guardian": { costReduction: AFFINITY_ARTIFACTS },
   "Midnight Mangler": {
     abilities: [
       staticAbility(
         "self",
         { addTypes: ["Artifact", "Creature"] },
-        { condition: cond.opponentsTurn, label: "Créature pendant les autres tours" },
+        { condition: cond.opponentsTurn, label: "Creature during other turns" },
       ),
     ],
   },
   "Mu Yanling, Wind Rider": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(VEHICLE)], { label: "Véhicule 3/2" }),
-      staticAbility({ subtype: "Vehicle", controller: "you" }, { addKeywords: ["flying"] }, { label: "Vos Véhicules volent" }),
+      triggered(when.entersSelf, [fx.createTokens(VEHICLE)], { label: "3/2 Vehicle" }),
+      staticAbility(
+        { subtype: "Vehicle", controller: "you" },
+        { addKeywords: ["flying"] },
+        { label: "Your Vehicles have flying" },
+      ),
       triggered(when.combatDamageBatch({ types: ["Creature"], controller: "you", keyword: "flying" }), [fx.draw(1)], {
-        label: "Piochez",
+        label: "Draw",
       }),
     ],
   },
-  "Nimble Thopterist": { abilities: [triggered(when.entersSelf, [fx.createTokens(THOPTER)], { label: "Thopter 1/1" })] },
+  "Nimble Thopterist": { abilities: [triggered(when.entersSelf, [fx.createTokens(THOPTER)], { label: "1/1 Thopter" })] },
   "Roadside Blowout": {
     costReduction: { generic: 2, condition: cond.targetMatches("t", { manaValue: 1 }) },
     spell: spell([targetCreatureOrVehicle("t", { controller: "opponent" })], [fx.bounce(ref.target()), fx.draw(1)]),
   },
   "Scrounging Skyray": {
     abilities: [
-      triggered(when.discardBatch(), [fx.addCounters(ref.self, amount.eventAmount)], { label: "Autant de marqueurs +1/+1" }),
+      triggered(when.discardBatch(), [fx.addCounters(ref.self, amount.eventAmount)], { label: "That many +1/+1 counters" }),
     ],
   },
   "Spectral Interference": {
     spell: spell(
-      [target.spell("t", { types: ["Artifact", "Creature"] }, "sort d'artefact ou de créature")],
+      [target.spell("t", { types: ["Artifact", "Creature"] }, "artifact or creature spell")],
       fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{4}" }, fx.counter(ref.target())),
     ),
   },
   "Spell Pierce": {
     spell: spell(
-      [target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")],
+      [target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")],
       fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{2}" }, fx.counter(ref.target())),
     ),
   },
@@ -108,17 +112,17 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Stock Up": { spell: spell([], [fx.lookAtTop(5, { count: 2, rest: "bottom" })]) },
   "Thopter Fabricator": {
-    abilities: [triggered(when.draw(2), [fx.createTokens(THOPTER)], { label: "Deuxième carte piochée : Thopter 1/1" })],
+    abilities: [triggered(when.draw(2), [fx.createTokens(THOPTER)], { label: "Second card drawn: 1/1 Thopter" })],
   },
   "Transit Mage": {
     abilities: [
       triggered(
         when.entersSelf,
         fx.may(
-          "Chercher un artefact de VM 4 ou 5 ?",
+          "Search for an artifact with mana value 4 or 5?",
           fx.search({ types: ["Artifact"], anyOf: [{ manaValue: 4 }, { manaValue: 5 }] }),
         ),
-        { label: "Artefact de VM 4 ou 5" },
+        { label: "Artifact with mana value 4 or 5" },
       ),
     ],
   },
@@ -126,7 +130,7 @@ export const BLUE: Record<string, CardScript> = {
   "Unstoppable Plan": {
     abilities: [
       triggered(when.yourEndStep, [fx.untap(ref.permanentsOf(ref.you, { notTypes: ["Land"] }))], {
-        label: "Dégagez vos permanents non-terrain",
+        label: "Untap your nonland permanents",
       }),
     ],
   },

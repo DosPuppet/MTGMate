@@ -1,7 +1,11 @@
 {
   "id": "cmd-vision",
-  "name": "The Vision — artefacts incolores",
-  "description": "Commander, incolore, d'après la liste « Weight of the World » (TappedOut), celle du jeu de proxys Nier: Automata (bracket 3). The Vision pioche et gagne la double initiative ou l'indestructible à chaque sort non-créature ; les terrains d'Urza, Mishra's Workshop, Mana Vault et les clés font beaucoup de mana incolore, les Épées, Excalibur et Commander's Plate en font une menace, et All Is Dust, Ugin et Nevinyrral's Disk vident la table.",
+  "name": "The Vision — colorless artifacts",
+  "description": "Commander, colorless, based on the list \"Weight of the World\" (TappedOut), the one of the Nier: Automata proxy deck (bracket 3). The Vision draws and gains double strike or indestructible with each noncreature spell; the Urza lands, Mishra's Workshop, Mana Vault and the keys make lots of colorless mana, the Swords, Excalibur and Commander's Plate turn it into a threat, and All Is Dust, Ugin and Nevinyrral's Disk clear the table.",
+  "fr": {
+    "name": "The Vision — artefacts incolores",
+    "description": "Commander, incolore, d'après la liste « Weight of the World » (TappedOut), celle du jeu de proxys Nier: Automata (bracket 3). The Vision pioche et gagne la double initiative ou l'indestructible à chaque sort non-créature ; les terrains d'Urza, Mishra's Workshop, Mana Vault et les clés font beaucoup de mana incolore, les Épées, Excalibur et Commander's Plate en font une menace, et All Is Dust, Ugin et Nevinyrral's Disk vident la table."
+  },
   "colors": [],
   "bracket": 3,
   "art": "custom",

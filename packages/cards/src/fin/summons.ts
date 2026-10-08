@@ -1,4 +1,4 @@
-/** Final Fantasy — créatures-Sagas « Summon » (lot B). */
+/** Final Fantasy — "Summon" Saga creatures (lot B). */
 import type { CardScript } from "@mtgx/engine";
 import { amount, chapter, chocobo, cond, fx, KNIGHT_2, ref, target, triggered, when } from "./common";
 
@@ -7,29 +7,29 @@ const OTHERS = { ...YOURS, other: true };
 const SEA = ["Kraken", "Leviathan", "Merfolk", "Octopus", "Serpent"];
 
 export const SUMMONS: Record<string, CardScript> = {
-  "Summon: Choco/Mog": { abilities: [chapter([1, 2, 3, 4], [fx.pumpAll(OTHERS, 1, 0)], { label: "Débandade ! +1/+0" })] },
+  "Summon: Choco/Mog": { abilities: [chapter([1, 2, 3, 4], [fx.pumpAll(OTHERS, 1, 0)], { label: "Stampede! +1/+0" })] },
   "Summon: Knights of Round": {
     abilities: [
-      chapter([1, 2, 3, 4], [fx.createTokens(KNIGHT_2, 3)], { label: "Trois Chevaliers 2/2" }),
-      chapter([5], [fx.pumpAll(OTHERS, 2, 2), fx.addCountersAll(OTHERS, 1, "indestructible")], { label: "Ultime fin" }),
+      chapter([1, 2, 3, 4], [fx.createTokens(KNIGHT_2, 3)], { label: "Three 2/2 Knights" }),
+      chapter([5], [fx.pumpAll(OTHERS, 2, 2), fx.addCountersAll(OTHERS, 1, "indestructible")], { label: "Ultimate End" }),
     ],
   },
   "Summon: Primal Garuda": {
     abilities: [
       chapter([1], [fx.damage(4, ref.target())], {
         targets: [target.creature("t", { controller: "opponent", tapped: true })],
-        label: "Rafale aérienne : 4 blessures",
+        label: "Aerial Blast: 4 damage",
       }),
       chapter([2, 3], [fx.pump(ref.target(), 1, 0, ["flying"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Sillage : +1/+0 et le vol",
+        label: "Slipstream: +1/+0 and flying",
       }),
     ],
   },
   "Summon: Leviathan": {
     abilities: [
       chapter([1], [fx.moveAll("battlefield", ref.eachPlayer, { types: ["Creature"], noneOfSubtypes: SEA }, { to: "hand" })], {
-        label: "Renvoyez les créatures non marines",
+        label: "Return non-sea creatures",
       }),
       chapter(
         [2, 3],
@@ -39,14 +39,14 @@ export const SUMMONS: Record<string, CardScript> = {
             "Until end of turn, whenever a Kraken, Leviathan, Merfolk, Octopus, or Serpent attacks, draw a card.",
             [
               triggered(when.attacks({ types: ["Creature"], anyOf: SEA.map((subtype) => ({ subtype })) }), [fx.draw(1)], {
-                label: "Piochez",
+                label: "Draw",
               }),
             ],
             false,
             true,
           ),
         ],
-        { label: "Créature marine attaquante : piochez" },
+        { label: "Sea creature attacks: draw" },
       ),
     ],
   },
@@ -54,18 +54,18 @@ export const SUMMONS: Record<string, CardScript> = {
     abilities: [
       chapter([1, 2], [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Frappe céleste",
+        label: "Heavenly Strike",
       }),
       chapter([3], [fx.draw(amount.count({ types: ["Creature"], controller: "opponent", tapped: true }))], {
-        label: "Poussière de diamant",
+        label: "Diamond Dust",
       }),
     ],
   },
   "Summon: Anima": {
     abilities: [
-      chapter([1, 2, 3], [fx.draw(1), fx.loseLife(1)], { label: "Douleur" }),
+      chapter([1, 2, 3], [fx.draw(1), fx.loseLife(1)], { label: "Pain" }),
       chapter([4], [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] }), fx.loseLife(3, ref.eachOpponent)], {
-        label: "Oubli",
+        label: "Oblivion",
       }),
     ],
   },
@@ -73,39 +73,39 @@ export const SUMMONS: Record<string, CardScript> = {
     abilities: [
       chapter([1], [fx.damage(amount.countIn("graveyard", { notTypes: ["Creature", "Land"] }), ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Foudre du jugement",
+        label: "Judgment Bolt",
       }),
-      chapter([2, 3], [fx.pumpAll({ ...YOURS, subtype: "Wizard" }, 1, 0)], { label: "Sorciers +1/+0" }),
+      chapter([2, 3], [fx.pumpAll({ ...YOURS, subtype: "Wizard" }, 1, 0)], { label: "Wizards get +1/+0" }),
     ],
   },
   "Summon: G.F. Cerberus": {
     abilities: [
-      chapter([1], [fx.surveil(1)], { label: "Surveillance 1" }),
-      chapter([2], [fx.copyNextSpell], { label: "Double : copiez le prochain éphémère ou rituel" }),
-      chapter([3], [fx.copyNextSpell, fx.copyNextSpell], { label: "Triple : copiez-le deux fois" }),
+      chapter([1], [fx.surveil(1)], { label: "Surveil 1" }),
+      chapter([2], [fx.copyNextSpell], { label: "Double: copy the next instant or sorcery" }),
+      chapter([3], [fx.copyNextSpell, fx.copyNextSpell], { label: "Triple: copy it twice" }),
     ],
   },
   "Summon: G.F. Ifrit": {
     abilities: [
       chapter(
         [1, 2],
-        [fx.may("Défausser une carte pour piocher ?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1)))],
-        { label: "Défaussez, piochez" },
+        [fx.may("Discard a card to draw?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1)))],
+        { label: "Discard, then draw" },
       ),
-      chapter([3, 4], [fx.addMana("R")], { label: "Ajoutez {R}" }),
+      chapter([3, 4], [fx.addMana("R")], { label: "Add {R}" }),
     ],
   },
   "Summon: Fat Chocobo": {
     abilities: [
-      chapter([1], [chocobo()], { label: "Wark : Chocobo 2/2" }),
-      chapter([2, 3, 4], [fx.pumpAll(YOURS, 0, 0, ["trample"])], { label: "Plouf : le piétinement" }),
+      chapter([1], [chocobo()], { label: "Wark: 2/2 Chocobo" }),
+      chapter([2, 3, 4], [fx.pumpAll(YOURS, 0, 0, ["trample"])], { label: "Kerplunk: trample" }),
     ],
   },
   "Summon: Titan": {
     abilities: [
-      chapter([1], [fx.mill(5)], { label: "Meulez cinq cartes" }),
+      chapter([1], [fx.mill(5)], { label: "Mill five cards" }),
       chapter([2], [fx.moveAll("graveyard", ref.you, { types: ["Land"] }, { to: "battlefield", tapped: true })], {
-        label: "Les terrains du cimetière reviennent",
+        label: "Lands return from your graveyard",
       }),
       chapter(
         [3],
@@ -117,7 +117,7 @@ export const SUMMONS: Record<string, CardScript> = {
             ["trample"],
           ),
         ],
-        { targets: [target.creature("t", { controller: "you", other: true })], label: "+X/+X et le piétinement" },
+        { targets: [target.creature("t", { controller: "you", other: true })], label: "+X/+X and trample" },
       ),
     ],
   },

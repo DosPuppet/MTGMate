@@ -7,6 +7,7 @@ import { manaAbilitiesOf } from "../src/mana";
 import { suspendCard } from "../src/stack";
 import { chars } from "../src/state";
 import { isLegalTarget } from "../src/targets";
+import { plainText } from "../src/text";
 import { stateBasedActions } from "../src/turn";
 import { logTurnEvent } from "../src/turnlog";
 import {
@@ -54,9 +55,9 @@ describe("Mystical Archive", () => {
       const rift = idOf(s, "p1", "hand", "Cyclonic Rift");
       // Deux options : le coût normal (gratuité et coûts alternatifs possibles), et la surcharge à part.
       const opts = legalActions(s, "p1").filter((a) => a.type === "cast" && a.card === rift);
-      expect(opts.map((o) => o.type === "cast" && o.modes.map((m) => m.label))).toEqual([
-        ["Coût normal"],
-        ["Surcharge — {6}{U}"],
+      expect(opts.map((o) => o.type === "cast" && o.modes.map((m) => plainText(m.label ?? "")))).toEqual([
+        ["Normal cost"],
+        ["Overload — {6}{U}"],
       ]);
       s = settle(act(s, "p1", { type: "cast", card: rift, mode: 1 }));
       expect(s.players.p2?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Llanowar Elves"]);

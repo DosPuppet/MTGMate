@@ -1,4 +1,4 @@
-/** Lorwyn Eclipsed — cartes vertes. */
+/** Lorwyn Eclipsed: green cards. */
 import type { Condition, Effect, ObjectFilter, TargetSpec } from "@mtgx/engine";
 import {
   activated,
@@ -31,45 +31,45 @@ import {
   when,
 } from "./common";
 
-/** Éclatant (Vivid) : le nombre de couleurs parmi les permanents que vous contrôlez. */
+/** Vivid: the number of colors among permanents you control. */
 const VIVID = amount.colorsAmong();
 const ELF_CARD: ObjectFilter = { subtype: "Elf" };
-/** « s'il y a une carte d'Elfe dans votre cimetière » */
+/** "if there is an Elf card in your graveyard" */
 const ELF_IN_GRAVEYARD: Condition = cond.amountAtLeast(amount.countIn("graveyard", ELF_CARD), 1);
 const ANOTHER_CREATURE_YOU_CONTROL: ObjectFilter = { ...CREATURE_YOU_CONTROL, other: true };
 const ELF_YOU_CONTROL: ObjectFilter = { ...CREATURE_YOU_CONTROL, subtype: "Elf" };
 
-/** Créatures arrivées sous votre contrôle ce tour-ci (journal du tour, jetons et créatures parties depuis compris). */
+/** Creatures that entered under your control this turn (turn log, including tokens and creatures that have left since). */
 const CREATURES_ENTERED = amount.turnEvents({ event: "zone", to: "battlefield", types: ["Creature"], who: "you" });
-/** « si une créature est arrivée sur le champ de bataille sous votre contrôle ce tour-ci » */
+/** "if a creature entered the battlefield under your control this turn" */
 const CREATURE_ENTERED: Condition = cond.amountAtLeast(CREATURES_ENTERED, 1);
-/** « tant qu'une autre créature est arrivée sur le champ de bataille sous votre contrôle ce tour-ci » */
+/** "as long as another creature entered the battlefield under your control this turn" */
 const ANOTHER_CREATURE_ENTERED: Condition = cond.any(
   cond.amountAtLeast(CREATURES_ENTERED, 2),
   cond.all(cond.not(cond.sourceMatches({ enteredThisTurn: true })), cond.amountAtLeast(CREATURES_ENTERED, 1)),
 );
 
-/** « un autre permanent ciblé » */
-const ANOTHER_PERMANENT: TargetSpec = targetObj("t", { other: true }, "autre permanent");
+/** "another target permanent" */
+const ANOTHER_PERMANENT: TargetSpec = targetObj("t", { other: true }, "other permanent");
 
-/** Aurora Awakener : « révélez des cartes jusqu'à révéler X cartes de permanent » (toutes vont sur le champ de bataille). */
+/** Aurora Awakener: "reveal cards until you reveal X permanent cards" (all of them go onto the battlefield). */
 const AURORA_REVEAL: Effect[] = [fx.revealUntilN({ permanent: true }, VIVID, { to: "battlefield" })];
 
-/** Trystan, Callous Cultivator : « meulez trois cartes ; puis s'il y a une carte d'Elfe dans votre cimetière, 2 PV ». */
+/** Trystan, Callous Cultivator: "mill three cards; then if there is an Elf card in your graveyard, 2 life". */
 const TRYSTAN_CULTIVATOR: Effect[] = [fx.mill(3), ...fx.when(ELF_IN_GRAVEYARD, fx.gainLife(2))];
-/** Trystan, Penitent Culler : « meulez trois cartes, puis vous pouvez exiler une carte d'Elfe de votre cimetière ; … ». */
+/** Trystan, Penitent Culler: "mill three cards, then you may exile an Elf card from your graveyard; …". */
 const TRYSTAN_CULLER: Effect[] = [
   fx.mill(3),
   fx.pickFromZone(
     "graveyard",
     ELF_CARD,
     { to: "exile" },
-    { count: 1, min: 0, store: "x", prompt: "Vous pouvez exiler une carte d'Elfe de votre cimetière" },
+    { count: 1, min: 0, store: "x", prompt: "You may exile an Elf card from your graveyard" },
   ),
   ...fx.when(cond.v("x"), fx.loseLife(2, ref.eachOpponent)),
 ];
 
-/** Spry and Mighty : X est la différence entre les forces des deux créatures choisies. */
+/** Spry and Mighty: X is the difference between the powers of the two chosen creatures. */
 const SPRY_X = amount.max(
   amount.plus(amount.powerOf(ref.stored("a")), amount.neg(amount.powerOf(ref.stored("b")))),
   amount.plus(amount.powerOf(ref.stored("b")), amount.neg(amount.powerOf(ref.stored("a")))),
@@ -77,22 +77,22 @@ const SPRY_X = amount.max(
 
 export const GREEN: Record<string, CardScript> = {
   "Shimmerwilds Growth": {
-    enchant: { filter: { types: ["Land"] }, label: "terrain" },
+    enchant: { filter: { types: ["Land"] }, label: "land" },
     asEnters: [fx.chooseForSelf("color")],
     abilities: [
-      staticAbility("attached", { setColorsChosen: true }, { label: "Le terrain enchanté est de la couleur choisie" }),
+      staticAbility("attached", { setColorsChosen: true }, { label: "The enchanted land is the chosen color" }),
       eventReplacement({
         event: "mana",
         source: { attached: "host" },
         extraMana: "chosen",
         modify: { add: 1 },
-        label: "Le terrain enchanté engagé pour du mana : un mana de plus de la couleur choisie",
+        label: "Enchanted land tapped for mana: one additional mana of the chosen color",
       }),
     ],
   },
   "Celestial Reunion": {
-    // Le coût additionnel facultatif (choisir un type, contempler deux créatures de ce type) est vérifié à la résolution,
-    // pour un type de la carte trouvée (approximation : le joueur paie toujours ce coût quand il le peut).
+    // The optional additional cost (choose a type, behold two creatures of that type) is checked on resolution, for a
+    // type of the card found (approximation: the player always pays this cost when they can).
     spell: spell(
       [],
       [
@@ -101,7 +101,7 @@ export const GREEN: Record<string, CardScript> = {
       ],
     ),
   },
-  // Flash et convocation lus dans le texte.
+  // Flash and convoke read from the text.
   "Selfless Safewright": {
     abilities: [
       triggered(
@@ -113,12 +113,12 @@ export const GREEN: Record<string, CardScript> = {
             { addKeywords: ["hexproof", "indestructible"] },
           ),
         ],
-        { label: "Choisissez un type : vos autres permanents de ce type gagnent la défense talismanique et l'indestructible" },
+        { label: "Choose a type: your other permanents of that type gain hexproof and indestructible" },
       ),
     ],
   },
   "Champions of the Perfect": champion("Elf", [
-    triggered(when.castSpell("you", { types: ["Creature"] }), [fx.draw(1)], { label: "Piochez une carte" }),
+    triggered(when.castSpell("you", { types: ["Creature"] }), [fx.draw(1)], { label: "Draw a card" }),
   ]),
   "Assert Perfection": {
     spell: spell(
@@ -129,7 +129,7 @@ export const GREEN: Record<string, CardScript> = {
   "Aurora Awakener": {
     abilities: [
       triggered(when.entersSelf, AURORA_REVEAL, {
-        label: "Éclatant — révélez jusqu'à X cartes de permanent et mettez-les sur le champ de bataille",
+        label: "Vivid — reveal up to X permanent cards and put them onto the battlefield",
       }),
     ],
   },
@@ -138,7 +138,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [fx.addManaColorsAmong({ permanent: true, controller: "you" })],
-        label: "Éclatant — un mana de chaque couleur parmi vos permanents",
+        label: "Vivid — one mana of each color among your permanents",
       }),
     ],
   },
@@ -147,10 +147,10 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Bristlebane Battler": {
     abilities: [
-      entersWith({ counters: 5, counterKind: "-1/-1", label: "Arrive avec cinq marqueurs -1/-1" }),
+      entersWith({ counters: 5, counterKind: "-1/-1", label: "Enters with five -1/-1 counters" }),
       triggered(when.enters(ANOTHER_CREATURE_YOU_CONTROL), [fx.removeCounters(ref.self, 1, "-1/-1")], {
         condition: cond.counterAtLeast("-1/-1", 1),
-        label: "Une autre créature arrive : retirez un marqueur -1/-1",
+        label: "Another creature enters: remove a -1/-1 counter",
       }),
     ],
   },
@@ -160,22 +160,22 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 2 },
-        { condition: ANOTHER_CREATURE_ENTERED, label: "+2/+0 si une autre créature est arrivée sous votre contrôle ce tour-ci" },
+        { condition: ANOTHER_CREATURE_ENTERED, label: "+2/+0 if another creature entered under your control this turn" },
       ),
     ],
   },
   "Chomping Changeling": {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
-        targets: [target.upTo(1, target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement"))],
-        label: "Détruisez jusqu'à un artefact ou enchantement",
+        targets: [target.upTo(1, target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment"))],
+        label: "Destroy up to one artifact or enchantment",
       }),
     ],
   },
   "Crossroads Watcher": {
     abilities: [
       triggered(when.enters(ANOTHER_CREATURE_YOU_CONTROL), [fx.pump(ref.self, 1, 0)], {
-        label: "Une autre créature arrive : +1/+0",
+        label: "Another creature enters: +1/+0",
       }),
     ],
   },
@@ -183,8 +183,8 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {
         condition: cond.controls(CREATURE_YOU_CONTROL, 3),
-        targets: [target.cardInGraveyard("t", { permanent: true }, "you", "carte de permanent de votre cimetière")],
-        label: "Trois créatures ou plus : une carte de permanent revient en main",
+        targets: [target.cardInGraveyard("t", { permanent: true }, "you", "permanent card in your graveyard")],
+        label: "Three or more creatures: a permanent card returns to your hand",
       }),
     ],
   },
@@ -193,29 +193,29 @@ export const GREEN: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.search({ types: ["Creature"] }))],
-        { label: "Vous pouvez défausser une carte : cherchez une carte de créature" },
+        { label: "You may discard a card: search for a creature card" },
       ),
       activated({
         mana: "{1}",
         tap: true,
         targets: [ANOTHER_PERMANENT],
         effects: [fx.untap(ref.target())],
-        label: "Dégagez un autre permanent",
+        label: "Untap another permanent",
       }),
     ],
   },
   "Gilt-Leaf's Embrace": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       triggered(when.entersSelf, [fx.modify(ref.attached, { addKeywords: ["trample", "indestructible"] })], {
-        label: "Piétinement et indestructible jusqu'à la fin du tour",
+        label: "Trample and indestructible until end of turn",
       }),
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
     ],
   },
   "Great Forest Druid": { abilities: [manaAbility(["W", "U", "B", "R", "G"])] },
   Luminollusk: {
-    abilities: [triggered(when.entersSelf, [fx.gainLife(VIVID)], { label: "Éclatant — gagnez X points de vie" })],
+    abilities: [triggered(when.entersSelf, [fx.gainLife(VIVID)], { label: "Vivid — gain X life" })],
   },
   "Lys Alana Dignitary": {
     additionalCost: beholdOrPay("Elf", 2),
@@ -223,8 +223,8 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Lys Alana Informant": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
-      triggered(when.diesSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }),
+      triggered(when.diesSelf, [fx.surveil(1)], { label: "Surveil 1" }),
     ],
   },
   "Midnight Tilling": {
@@ -236,71 +236,71 @@ export const GREEN: Record<string, CardScript> = {
           "graveyard",
           { permanent: true },
           { to: "hand" },
-          { count: 1, min: 0, pool: ref.stored("m"), prompt: "Vous pouvez reprendre une carte de permanent meulée" },
+          { count: 1, min: 0, pool: ref.stored("m"), prompt: "You may take back a milled permanent card" },
         ),
       ],
     ),
   },
   "Mistmeadow Council": {
     costReduction: { generic: 1, condition: cond.controls({ subtype: "Kithkin" }) },
-    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" })],
   },
   "Moon-Vigil Adherents": {
     abilities: [
-      staticAbility("self", { power: 1, toughness: 1 }, { per: CREATURE_YOU_CONTROL, label: "+1/+1 par créature" }),
+      staticAbility("self", { power: 1, toughness: 1 }, { per: CREATURE_YOU_CONTROL, label: "+1/+1 for each creature" }),
       staticAbility(
         "self",
         { power: 1, toughness: 1 },
-        { perGraveyard: { types: ["Creature"] }, label: "+1/+1 par carte de créature de votre cimetière" },
+        { perGraveyard: { types: ["Creature"] }, label: "+1/+1 for each creature card in your graveyard" },
       ),
     ],
   },
   "Morcant's Eyes": {
     abilities: [
-      triggered(when.yourUpkeep, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.yourUpkeep, [fx.surveil(1)], { label: "Surveil 1" }),
       activated({
         mana: "{4}{G}{G}",
         sacrifice: true,
         sorcerySpeed: true,
         effects: [fx.createTokens(ELF_BG, amount.countIn("graveyard", ELF_CARD))],
-        label: "Un Elfe 2/2 par carte d'Elfe de votre cimetière",
+        label: "A 2/2 Elf for each Elf card in your graveyard",
       }),
     ],
   },
   "Mutable Explorer": {
-    abilities: [triggered(when.entersSelf, [fx.createTappedTokens(MUTAVAULT)], { label: "Jeton Mutavault engagé" })],
+    abilities: [triggered(when.entersSelf, [fx.createTappedTokens(MUTAVAULT)], { label: "Tapped Mutavault token" })],
   },
   "Pitiless Fists": {
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
       triggered(when.entersSelf, [fx.fight(ref.attached, ref.target())], {
         targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
-        label: "La créature enchantée se bat contre une créature adverse",
+        label: "The enchanted creature fights an opposing creature",
       }),
       staticAbility("attached", { power: 2, toughness: 2 }, { label: "+2/+2" }),
     ],
   },
   Prismabasher: {
     abilities: [
-      // « jusqu'à X créatures ciblées » : X est évalué au ciblage (`countAmount`).
+      // "up to X target creatures": X is evaluated on targeting (`countAmount`).
       triggered(when.entersSelf, [fx.pump(ref.target(), VIVID, VIVID)], {
         targets: [{ ...target.upTo(1, target.creature("t", { controller: "you" })), countAmount: VIVID }],
-        label: "Éclatant — jusqu'à X créatures gagnent +X/+X",
+        label: "Vivid — up to X creatures get +X/+X",
       }),
     ],
   },
   "Prismatic Undercurrents": {
     abilities: [
       triggered(when.entersSelf, [fx.search(BASIC_LAND, { to: "hand" }, VIVID)], {
-        label: "Éclatant — jusqu'à X cartes de terrain de base en main",
+        label: "Vivid — up to X basic land cards into your hand",
       }),
-      playerStatic({ extraLands: 1, label: "Un terrain supplémentaire à chacun de vos tours" }),
+      playerStatic({ extraLands: 1, label: "An additional land on each of your turns" }),
     ],
   },
   "Pummeler for Hire": {
     abilities: [
       triggered(when.entersSelf, [fx.gainLife(amount.maxPower({ types: ["Creature"], subtype: "Giant", controller: "you" }))], {
-        label: "Gagnez X points de vie (plus grande force parmi vos Géants)",
+        label: "Gain X life (greatest power among your Giants)",
       }),
     ],
   },
@@ -311,7 +311,7 @@ export const GREEN: Record<string, CardScript> = {
         mana: "{5}",
         targets: [target.creature("t", { subtype: "Elf", controller: "you" })],
         effects: [fx.pump(ref.target(), 2, 2)],
-        label: "Un Elfe que vous contrôlez gagne +2/+2",
+        label: "An Elf you control gets +2/+2",
       }),
     ],
   },
@@ -336,7 +336,7 @@ export const GREEN: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.pump(ref.target(), 1, 1, ["vigilance"])],
-        label: "+1/+1 et vigilance",
+        label: "+1/+1 and vigilance",
       }),
     ],
   },
@@ -352,33 +352,33 @@ export const GREEN: Record<string, CardScript> = {
   "Thoughtweft Charge": {
     spell: spell([target.creature()], [fx.pump(ref.target(), 3, 3), ...fx.when(CREATURE_ENTERED, fx.draw(1))]),
   },
-  // Recto-verso : le déclencheur « quand elle se transforme en [l'autre face] » est résolu avec la capacité qui la
-  // transforme (seule façon de la transformer), sans passer par la pile.
+  // Double-faced: the trigger "when it transforms into [the other face]" is resolved with the ability that transforms
+  // it (the only way to transform it), without using the stack.
   "Trystan, Callous Cultivator": {
     abilities: [
       ...[when.entersSelf, when.transformsSelf].map((w) =>
-        triggered(w, TRYSTAN_CULTIVATOR, { label: "Meulez trois cartes ; Elfe au cimetière : 2 PV" }),
+        triggered(w, TRYSTAN_CULTIVATOR, { label: "Mill three cards; Elf in graveyard: 2 life" }),
       ),
-      triggered(when.step("main1", "you"), fx.mayPay("{B}", "Payer {B} pour transformer Trystan ?", fx.transform()), {
-        label: "Vous pouvez payer {B} : transformez Trystan",
+      triggered(when.step("main1", "you"), fx.mayPay("{B}", "Pay {B} to transform Trystan?", fx.transform()), {
+        label: "You may pay {B}: transform Trystan",
       }),
     ],
   },
   "Trystan, Penitent Culler": {
     abilities: [
       triggered(when.transformsSelf, TRYSTAN_CULLER, {
-        label: "Meulez trois cartes ; exilez un Elfe de votre cimetière : chaque adversaire perd 2 PV",
+        label: "Mill three cards; exile an Elf from your graveyard: each opponent loses 2 life",
       }),
-      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Payer {G} pour transformer Trystan ?", fx.transform()), {
-        label: "Vous pouvez payer {G} : transformez Trystan",
+      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Pay {G} to transform Trystan?", fx.transform()), {
+        label: "You may pay {G}: transform Trystan",
       }),
     ],
   },
   "Unforgiving Aim": {
     spell: modal(
-      mode("Détruisez une créature avec le vol", [target.creature("t", { keyword: "flying" })], [fx.destroy(ref.target())]),
-      mode("Détruisez un enchantement", [target.permanent("t", ["Enchantment"], {}, "enchantement")], [fx.destroy(ref.target())]),
-      mode("Créez un jeton Elfe 2/2", [], [fx.createTokens(ELF_BG)]),
+      mode("Destroy a creature with flying", [target.creature("t", { keyword: "flying" })], [fx.destroy(ref.target())]),
+      mode("Destroy an enchantment", [target.permanent("t", ["Enchantment"], {}, "enchantment")], [fx.destroy(ref.target())]),
+      mode("Create a 2/2 Elf token", [], [fx.createTokens(ELF_BG)]),
     ),
   },
   "Vinebred Brawler": {
@@ -386,19 +386,19 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), 2, 1)], {
         targets: [target.creature("t", { ...ELF_YOU_CONTROL, other: true })],
-        label: "Un autre Elfe gagne +2/+1",
+        label: "Another Elf gets +2/+1",
       }),
     ],
   },
   "Virulent Emissary": {
     abilities: [
       triggered(when.enters(ANOTHER_CREATURE_YOU_CONTROL), [fx.gainLife(1)], {
-        label: "Une autre créature arrive : 1 point de vie",
+        label: "Another creature enters: 1 life",
       }),
     ],
   },
   "Wildvine Pummeler": {
-    // Éclatant : {1} de moins par couleur parmi vos permanents.
+    // Vivid: {1} less for each color among your permanents.
     costReduction: { generic: VIVID },
   },
 };

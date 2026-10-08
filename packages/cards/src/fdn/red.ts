@@ -1,4 +1,4 @@
-/** Foundations — cartes rouges. */
+/** Foundations — red cards. */
 import {
   activated,
   amount,
@@ -38,7 +38,7 @@ export const RED: Record<string, CardScript> = {
         sacrifice: true,
         targets: [target.any()],
         effects: [fx.damage(1, ref.target(), ref.self)],
-        label: "1 blessure",
+        label: "1 damage",
       }),
     ],
   },
@@ -47,8 +47,12 @@ export const RED: Record<string, CardScript> = {
   Boltwave: { spell: spell([], [fx.damage(3, ref.eachOpponent)]) },
   Abrade: {
     spell: modal(
-      mode("3 blessures à une créature", [target.creature()], [fx.damage(3, ref.target())]),
-      mode("Détruire un artefact", [target.permanent("t", ["Artifact"], {}, "artefact")], [fx.destroy(ref.target())]),
+      mode("3 damage to a creature", [target.creature()], [fx.damage(3, ref.target())]),
+      mode(
+        "ctx:infinitive|Destroy an artifact",
+        [target.permanent("t", ["Artifact"], {}, "artifact")],
+        [fx.destroy(ref.target())],
+      ),
     ),
   },
   "Sure Strike": { spell: spell([target.creature()], [fx.pump(ref.target(), 3, 0, ["firstStrike"])]) },
@@ -60,28 +64,28 @@ export const RED: Record<string, CardScript> = {
     flashback: "{4}{R}{R}",
     spell: spell([target.creature()], [fx.pump(ref.target(), amount.powerOf(ref.target()), 0)]),
   },
-  "Dragonlord's Servant": { abilities: [costReducer({ subtype: "Dragon" }, 1, "Dragons : {1} de moins")] },
-  "Rapacious Dragon": { abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE, 2)], { label: "deux Trésors" })] },
+  "Dragonlord's Servant": { abilities: [costReducer({ subtype: "Dragon" }, 1, "Dragons: {1} less")] },
+  "Rapacious Dragon": { abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE, 2)], { label: "two Treasures" })] },
   "Brass's Bounty": { spell: spell([], [fx.createTokens(TREASURE, amount.count({ types: ["Land"], controller: "you" }))]) },
   "Obliterating Bolt": {
     spell: spell(
-      [target.permanent("t", ["Creature", "Planeswalker"], {}, "créature ou planeswalker")],
+      [target.permanent("t", ["Creature", "Planeswalker"], {}, "creature or planeswalker")],
       [fx.exileIfDies(ref.target()), fx.damage(4, ref.target())],
     ),
   },
   "Scorching Dragonfire": {
     spell: spell(
-      [target.permanent("t", ["Creature", "Planeswalker"], {}, "créature ou planeswalker")],
+      [target.permanent("t", ["Creature", "Planeswalker"], {}, "creature or planeswalker")],
       [fx.exileIfDies(ref.target()), fx.damage(3, ref.target())],
     ),
   },
-  "Goblin Boarders": { abilities: [entersWith({ counters: 1, condition: cond.raid, label: "Raid : arrive avec un marqueur" })] },
+  "Goblin Boarders": { abilities: [entersWith({ counters: 1, condition: cond.raid, label: "Raid: enters with a counter" })] },
   "Kargan Dragonrider": {
     abilities: [
       staticAbility(
         "self",
         { addKeywords: ["flying"] },
-        { condition: cond.controls({ subtype: "Dragon" }), label: "Vol avec un Dragon" },
+        { condition: cond.controls({ subtype: "Dragon" }), label: "Flying with a Dragon" },
       ),
     ],
   },
@@ -92,48 +96,46 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(2, ref.target(), ref.self)], {
         targets: [target.player()],
-        label: "2 blessures au joueur ciblé",
+        label: "2 damage to the target player",
       }),
     ],
   },
-  "Dragon Trainer": { abilities: [triggered(when.entersSelf, [fx.createTokens(DRAGON)], { label: "Dragon 4/4" })] },
+  "Dragon Trainer": { abilities: [triggered(when.entersSelf, [fx.createTokens(DRAGON)], { label: "4/4 Dragon" })] },
   "Gorehorn Raider": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(2, ref.target(), ref.self)], {
         targets: [target.any()],
         condition: cond.raid,
-        label: "Raid : 2 blessures",
+        label: "Raid: 2 damage",
       }),
     ],
   },
   "Searslicer Goblin": {
-    abilities: [triggered(when.yourEndStep, [fx.createTokens(GOBLIN)], { condition: cond.raid, label: "Raid : Gobelin" })],
+    abilities: [triggered(when.yourEndStep, [fx.createTokens(GOBLIN)], { condition: cond.raid, label: "Raid: Goblin" })],
   },
   "Firebrand Archer": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.damage(1, ref.eachOpponent, ref.self)], {
-        label: "1 blessure à chaque adversaire",
+        label: "1 damage to each opponent",
       }),
     ],
   },
   Guttersnipe: {
     abilities: [
       triggered(when.castSpell("you", { types: ["Instant", "Sorcery"] }), [fx.damage(2, ref.eachOpponent, ref.self)], {
-        label: "2 blessures à chaque adversaire",
+        label: "2 damage to each opponent",
       }),
     ],
   },
   "Impact Tremors": {
     abilities: [
       triggered(when.enters(CREATURE_YOU_CONTROL), [fx.damage(1, ref.eachOpponent, ref.self)], {
-        label: "1 blessure à chaque adversaire",
+        label: "1 damage to each opponent",
       }),
     ],
   },
   "Spitfire Lagac": {
-    abilities: [
-      triggered(when.landfall, [fx.damage(1, ref.eachOpponent, ref.self)], { label: "1 blessure à chaque adversaire" }),
-    ],
+    abilities: [triggered(when.landfall, [fx.damage(1, ref.eachOpponent, ref.self)], { label: "1 damage to each opponent" })],
   },
   "Crackling Cyclops": {
     abilities: [triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pump(ref.self, 3, 0)], { label: "+3/+0" })],
@@ -142,7 +144,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), 2, 0)], {
         targets: [target.optional(target.creature())],
-        label: "+2/+0 à une créature",
+        label: "+2/+0 to a creature",
       }),
     ],
   },
@@ -150,13 +152,13 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.attackWith(1), [fx.pump(ref.target(), 1, 0, ["menace"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "+1/+0 et menace",
+        label: "+1/+0, menace",
       }),
     ],
   },
   "Courageous Goblin": {
     abilities: [
-      triggered(when.attacksSelf, [fx.pump(ref.self, 1, 0, ["menace"])], { condition: cond.ferocious, label: "+1/+0 et menace" }),
+      triggered(when.attacksSelf, [fx.pump(ref.self, 1, 0, ["menace"])], { condition: cond.ferocious, label: "+1/+0, menace" }),
     ],
   },
   Electroduplicate: {
@@ -171,7 +173,7 @@ export const RED: Record<string, CardScript> = {
       [
         target.creature(),
         {
-          ...target.optional(targetObj("e", { subtype: "Equipment" }, "Équipement attaché à cette créature")),
+          ...target.optional(targetObj("e", { subtype: "Equipment" }, "Equipment attached to that creature")),
           attachedToTarget: "t",
         },
       ],
@@ -191,12 +193,12 @@ export const RED: Record<string, CardScript> = {
     ),
   },
   "Rite of the Dragoncaller": {
-    abilities: [triggered(when.castSpell("you", INSTANT_SORCERY), [fx.createTokens(DRAGON_5)], { label: "Dragon 5/5 volant" })],
+    abilities: [triggered(when.castSpell("you", INSTANT_SORCERY), [fx.createTokens(DRAGON_5)], { label: "5/5 flying Dragon" })],
   },
   "Slumbering Cerberus": {
     abilities: [
-      triggered(when.eachEndStep, [fx.untap(ref.self)], { condition: cond.morbid, label: "Morbide : se dégage" }),
-      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
+      triggered(when.eachEndStep, [fx.untap(ref.self)], { condition: cond.morbid, label: "Morbid: untaps" }),
+      doesntUntap("self", { label: "Doesn't untap during your untap step" }),
     ],
   },
   "Sower of Chaos": {
@@ -205,7 +207,7 @@ export const RED: Record<string, CardScript> = {
         mana: "{2}{R}",
         targets: [target.creature()],
         effects: [fx.modify(ref.target(), { addKeywords: ["cantBlock"] })],
-        label: "Une créature ne peut pas bloquer",
+        label: "A creature can't block",
       }),
     ],
   },
@@ -215,15 +217,15 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), 0, 0, ["haste"])],
-        label: "Célérité",
+        label: "Haste",
       }),
     ],
   },
   "Drakuseth, Maw of Flames": {
     abilities: [
       triggered(when.attacksSelf, [fx.damage(4, ref.target("a"), ref.self), fx.damage(3, ref.target("b"), ref.self)], {
-        targets: [target.any("a"), { ...target.upTo(2, target.any("b")), otherThan: ["a"], label: "jusqu'à deux autres cibles" }],
-        label: "4 blessures, puis 3 et 3",
+        targets: [target.any("a"), { ...target.upTo(2, target.any("b")), otherThan: ["a"], label: "up to two other targets" }],
+        label: "4 damage, then 3 and 3",
       }),
     ],
   },
@@ -232,7 +234,7 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.castSpell("you", { anyOf: [{ notTypes: ["Creature"] }, { subtype: "Dragon" }] }),
         [fx.damage(1, ref.eachOpponent, ref.self)],
-        { label: "1 blessure à chaque adversaire" },
+        { label: "1 damage to each opponent" },
       ),
     ],
   },
@@ -240,22 +242,18 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.attacksSelf,
-        fx.mayPay(
-          "{R}",
-          "Payer {R} : la créature ne peut pas bloquer ?",
-          fx.modify(ref.target(), { addKeywords: ["cantBlock"] }),
-        ),
+        fx.mayPay("{R}", "Pay {R}: the creature can't block?", fx.modify(ref.target(), { addKeywords: ["cantBlock"] })),
         {
           targets: [target.creature()],
-          label: "{R} : ne peut pas bloquer",
+          label: "{R}: can't block",
         },
       ),
     ],
   },
   "Goblin Surprise": {
     spell: modal(
-      mode("Vos créatures +2/+0", [], [fx.pumpAll({ controller: "you" }, 2, 0)]),
-      mode("Deux Gobelins 1/1", [], [fx.createTokens(GOBLIN, 2)]),
+      mode("Your creatures +2/+0", [], [fx.pumpAll({ controller: "you" }, 2, 0)]),
+      mode("Two 1/1 Goblins", [], [fx.createTokens(GOBLIN, 2)]),
     ),
   },
   "Heartfire Immolator": {
@@ -265,7 +263,7 @@ export const RED: Record<string, CardScript> = {
         sacrifice: true,
         targets: [target.creatureOrPlaneswalker()],
         effects: [fx.damage(amount.powerOf(ref.self), ref.target(), ref.self)],
-        label: "Blessures égales à sa force",
+        label: "Damage equal to its power",
       }),
     ],
   },
@@ -277,15 +275,15 @@ export const RED: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [fx.createTokens(GOBLIN, amount.count({ subtype: "Goblin", controller: "you" }))],
-        label: "Un Gobelin par Gobelin",
+        label: "A Goblin for each Goblin",
       }),
     ],
   },
   "Seismic Rupture": { spell: spell([], [fx.damageAll(2, { not: { keyword: "flying" } })]) },
   Slagstorm: {
     spell: modal(
-      mode("3 blessures à chaque créature", [], [fx.damageAll(3, {})]),
-      mode("3 blessures à chaque joueur", [], [fx.damageAll(3, undefined, ref.eachPlayer)]),
+      mode("3 damage to each creature", [], [fx.damageAll(3, {})]),
+      mode("3 damage to each player", [], [fx.damageAll(3, undefined, ref.eachPlayer)]),
     ),
   },
   "Kellan, Planar Trailblazer": {
@@ -301,7 +299,7 @@ export const RED: Record<string, CardScript> = {
                 setSubtypes: ["Human", "Faerie", "Detective"],
                 addAbilities: [
                   triggered(when.combatDamageToPlayer, [fx.impulse(1)], {
-                    label: "exile la carte du dessus, jouable ce tour-ci",
+                    label: "exiles the top card, playable this turn",
                   }),
                 ],
               },
@@ -309,7 +307,7 @@ export const RED: Record<string, CardScript> = {
             ),
           ),
         ],
-        label: "Devient Détective",
+        label: "Becomes a Detective",
       }),
       activated({
         mana: "{2}{R}",
@@ -323,7 +321,7 @@ export const RED: Record<string, CardScript> = {
             ),
           ),
         ],
-        label: "Devient Voleur 3/2 double initiative",
+        label: "Becomes a 3/2 Rogue with double strike",
       }),
     ],
   },
@@ -331,7 +329,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.impulse(2, "yourNextTurn")], {
         condition: cond.raid,
-        label: "Raid : exile 2 cartes, jouez-en une",
+        label: "Raid: exiles 2 cards, play one of them",
       }),
     ],
   },
@@ -342,7 +340,7 @@ export const RED: Record<string, CardScript> = {
         source: { controller: "you" },
         to: "opponentSide",
         modify: { times: 2 },
-        label: "Blessures aux adversaires doublées",
+        label: "Damage to opponents doubled",
       }),
     ],
   },
@@ -351,17 +349,17 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [fx.exileTop(ref.eachPlayer, 1, "etali"), fx.castNow(ref.stored("etali"), { free: true, many: true })],
-        { label: "exile le dessus de chaque bibliothèque, lancez gratuitement" },
+        { label: "exiles the top of each library, cast for free" },
       ),
     ],
   },
   "Flamewake Phoenix": {
     keywords: ["mustAttack"],
     abilities: [
-      triggered(when.yourCombat, fx.mayPay("{R}", "Payer {R} pour revenir du cimetière ?", fx.toBattlefield(ref.self)), {
+      triggered(when.yourCombat, fx.mayPay("{R}", "Pay {R} to return from the graveyard?", fx.toBattlefield(ref.self)), {
         condition: cond.ferocious,
         fromGraveyard: true,
-        label: "Férocité : revient du cimetière",
+        label: "Ferocious: returns from the graveyard",
       }),
     ],
   },
@@ -372,9 +370,9 @@ export const RED: Record<string, CardScript> = {
     ),
   },
 
-  // --- Réimpressions ---
+  // --- Reprints ---
   "Ball Lightning": {
-    abilities: [triggered(when.eachEndStep, [fx.sacrificeIt(ref.self)], { label: "se sacrifie" })],
+    abilities: [triggered(when.eachEndStep, [fx.sacrificeIt(ref.self)], { label: "sacrifices itself" })],
   },
   "Bolt Bend": {
     costReduction: { generic: 3, condition: cond.ferocious },
@@ -389,7 +387,7 @@ export const RED: Record<string, CardScript> = {
   "Dragon Mage": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.discard(99, ref.eachPlayer), fx.draw(7, ref.eachPlayer)], {
-        label: "chaque joueur défausse sa main et pioche sept cartes",
+        label: "each player discards their hand and draws seven cards",
       }),
     ],
   },
@@ -397,7 +395,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourUpkeep, [fx.createTokens(DRAGON_5)], {
         condition: cond.controls({ types: ["Land"] }, 6),
-        label: "Dragon 5/5 volant",
+        label: "5/5 flying Dragon",
       }),
     ],
   },
@@ -407,7 +405,7 @@ export const RED: Record<string, CardScript> = {
         { types: ["Creature"], subtype: "Goblin", controller: "you", other: true },
         { power: 1, toughness: 1 },
         {
-          label: "Autres Gobelins +1/+1",
+          label: "Other Goblins +1/+1",
         },
       ),
       activated({
@@ -416,10 +414,10 @@ export const RED: Record<string, CardScript> = {
         effects: [
           fx.modify(ref.target(), {
             addKeywords: ["flying"],
-            addAbilities: [triggered(when.combatDamage("self"), [fx.sacrificeIt(ref.self)], { label: "se sacrifie" })],
+            addAbilities: [triggered(when.combatDamage("self"), [fx.sacrificeIt(ref.self)], { label: "sacrifices itself" })],
           }),
         ],
-        label: "Un Gobelin vole (puis se sacrifie)",
+        label: "A Goblin flies (then sacrifices itself)",
       }),
     ],
   },
@@ -430,15 +428,13 @@ export const RED: Record<string, CardScript> = {
         { power: 1, addKeywords: ["haste"] },
         {
           condition: cond.amountAtLeast(amount.countIn("graveyard", INSTANT_SORCERY), 2),
-          label: "+1/+0 et célérité",
+          label: "+1/+0, haste",
         },
       ),
     ],
   },
   "Giant Cindermaw": {
-    abilities: [
-      eventReplacement({ event: "lifeGain", modify: { prevent: true }, label: "Les joueurs ne peuvent pas gagner de PV" }),
-    ],
+    abilities: [eventReplacement({ event: "lifeGain", modify: { prevent: true }, label: "No player can gain life" })],
   },
   "Goblin Smuggler": {
     abilities: [
@@ -446,7 +442,7 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { maxPower: 2, other: true })],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Une créature de force 2 ou moins est imblocable",
+        label: "A creature with power 2 or less is unblockable",
       }),
     ],
   },
@@ -456,13 +452,13 @@ export const RED: Record<string, CardScript> = {
         event: "damage",
         source: { types: ["Creature"], controller: "you" },
         modify: { times: 2 },
-        label: "Blessures de vos créatures doublées",
+        label: "Damage from your creatures doubled",
       }),
     ],
   },
   "Harmless Offering": {
     spell: spell(
-      [target.player("a", "opponent"), targetObj("b", { controller: "you" }, "permanent que vous contrôlez")],
+      [target.player("a", "opponent"), targetObj("b", { controller: "you" }, "permanent you control")],
       [fx.giveControl(ref.target("b"), ref.target("a"))],
     ),
   },
@@ -471,14 +467,14 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         fx.may(
-          "Chercher un artefact et l'exiler ?",
+          "Search for an artifact and exile it?",
           fx.search({ types: ["Artifact"] }, { to: "exile" }, 1, undefined, "art"),
           fx.link(ref.stored("art")),
         ),
-        { label: "exile un artefact" },
+        { label: "exiles an artifact" },
       ),
-      triggered(when.diesSelf, fx.may("Mettre l'artefact exilé dans votre main ?", fx.toHand(ref.linked)), {
-        label: "récupère l'artefact exilé",
+      triggered(when.diesSelf, fx.may("Put the exiled artifact into your hand?", fx.toHand(ref.linked)), {
+        label: "gets back the exiled artifact",
       }),
     ],
   },
@@ -488,7 +484,7 @@ export const RED: Record<string, CardScript> = {
         when.enters({ types: ["Creature"], subtype: "Dragon", controller: "you", token: false, other: true }),
         [fx.createTokens(DRAGON_5)],
         {
-          label: "Dragon 5/5 volant",
+          label: "5/5 flying Dragon",
         },
       ),
       activated({
@@ -503,44 +499,44 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.castSpell("opponent", { types: ["Instant", "Sorcery"], colors: ["W", "U"] }),
         [fx.damage(2, ref.eventPlayer, ref.self)],
-        { label: "2 blessures" },
+        { label: "2 damage" },
       ),
     ],
   },
   "Ravenous Giant": {
-    abilities: [triggered(when.yourUpkeep, [fx.damage(1, ref.you, ref.self)], { label: "1 blessure à vous" })],
+    abilities: [triggered(when.yourUpkeep, [fx.damage(1, ref.you, ref.self)], { label: "1 damage to you" })],
   },
   "Redcap Gutter-Dweller": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(RAT_NO_BLOCK, 2)], { label: "deux Rats 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(RAT_NO_BLOCK, 2)], { label: "two 1/1 Rats" }),
       triggered(
         when.yourUpkeep,
         [
           fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "sac" }),
           ...fx.when(cond.v("sac"), fx.addCounters(ref.self, 1), fx.impulse(1)),
         ],
-        { label: "sacrifice possible : marqueur, exil jouable" },
+        { label: "optional sacrifice: counter, playable exile" },
       ),
     ],
   },
   "Stromkirk Noble": {
     abilities: [
-      blockAbility(block.notBy({ subtype: "Human" }, "Imblocable par les Humains")),
-      triggered(when.combatDamageToPlayer, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+      blockAbility(block.notBy({ subtype: "Human" }, "Can't be blocked by Humans")),
+      triggered(when.combatDamageToPlayer, [fx.addCounters(ref.self, 1)], { label: "a +1/+1 counter" }),
     ],
   },
   "Taurean Mauler": {
     keywords: ["changeling"],
     abilities: [
-      triggered(when.castSpell("opponent"), fx.may("Mettre un marqueur +1/+1 ?", fx.addCounters(ref.self, 1)), {
-        label: "marqueur +1/+1",
+      triggered(when.castSpell("opponent"), fx.may("Put a +1/+1 counter?", fx.addCounters(ref.self, 1)), {
+        label: "a +1/+1 counter",
       }),
     ],
   },
   "Terror of Mount Velus": {
     abilities: [
       triggered(when.entersSelf, [fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["doubleStrike"] })], {
-        label: "double initiative",
+        label: "double strike",
       }),
     ],
   },
@@ -548,7 +544,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(amount.count({ subtype: "Goblin", controller: "you" }), ref.target(), ref.self)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "blessures égales au nombre de Gobelins",
+        label: "damage equal to the number of Goblins",
       }),
     ],
   },

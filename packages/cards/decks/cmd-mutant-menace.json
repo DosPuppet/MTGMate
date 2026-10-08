@@ -1,7 +1,11 @@
 {
   "id": "cmd-mutant-menace",
-  "name": "Mutant Menace — Homme-phalène sage",
-  "description": "Préconstruit Commander officiel de Fallout, en bleu, noir et vert. L'Homme-phalène irradie la table : les marqueurs de radiation font meuler et perdre des points de vie, et les Mutants grandissent à chaque carte meulée.",
+  "name": "Mutant Menace — The Wise Mothman",
+  "description": "Official Fallout Commander precon, in blue, black and green. The Mothman irradiates the table: rad counters make players mill and lose life, and the Mutants grow with each milled card.",
+  "fr": {
+    "name": "Mutant Menace — Homme-phalène sage",
+    "description": "Préconstruit Commander officiel de Fallout, en bleu, noir et vert. L'Homme-phalène irradie la table : les marqueurs de radiation font meuler et perdre des points de vie, et les Mutants grandissent à chaque carte meulée."
+  },
   "colors": [
     "U",
     "B",

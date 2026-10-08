@@ -60,7 +60,7 @@ describe("déguisement (702.168)", () => {
     expect(mine?.faceDownCard?.name).toBe(DISGUISED.name);
     // Retourner face visible : action spéciale ({1}{W}), puis « quand elle est retournée face visible ».
     const up = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === id);
-    expect(up?.type === "activate" && up.label).toBe("Retourner face visible");
+    expect(up?.type === "activate" && up.label).toBe("Turn face up");
     s = act(s, "p1", { type: "activate", source: id, ability: up?.type === "activate" ? up.ability : -1 });
     expect(chars(s, id).name).toBe(DISGUISED.name);
     expect(chars(s, id).power).toBe(3);

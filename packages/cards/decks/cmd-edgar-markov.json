@@ -1,7 +1,10 @@
 {
   "id": "cmd-edgar-markov",
   "name": "Edgar Markov — Vampires",
-  "description": "Commander, Mardu (blanc, noir, rouge), d'après la liste moyenne d'EDHREC en bracket 4. Une nuée de vampires : Edgar crée un jeton à chaque Vampire lancé, même depuis la zone de commandement, des seigneurs les renforcent et les morts drainent les adversaires.",
+  "description": "Commander, Mardu (white, black, red), based on EDHREC's average list at bracket 4. A swarm of vampires: Edgar creates a token for each Vampire cast, even from the command zone, lords pump them and deaths drain the opponents.",
+  "fr": {
+    "description": "Commander, Mardu (blanc, noir, rouge), d'après la liste moyenne d'EDHREC en bracket 4. Une nuée de vampires : Edgar crée un jeton à chaque Vampire lancé, même depuis la zone de commandement, des seigneurs les renforcent et les morts drainent les adversaires."
+  },
   "colors": [
     "W",
     "B",

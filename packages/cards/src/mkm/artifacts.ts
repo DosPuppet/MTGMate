@@ -1,4 +1,4 @@
-/** Murders at Karlov Manor — cartes incolores et terrains. */
+/** Murders at Karlov Manor — colorless cards and lands. */
 import {
   activated,
   amount,
@@ -19,28 +19,28 @@ import {
 
 const FIVE_COLORS = ["W", "U", "B", "R", "G"] as const;
 
-/** Terrains à surveillance : arrivent engagés, surveillance 1 ; le mana vient de leurs types de terrain de base. */
+/** Surveil lands: enter tapped, surveil 1; their mana comes from their basic land types. */
 const surveilLand: CardScript = {
-  abilities: [entersWith({ tapped: true }), triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" })],
+  abilities: [entersWith({ tapped: true }), triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" })],
 };
 
-/** « Équiper [Détective] {1} » : comme Équiper, mais seulement sur un Détective que vous contrôlez. */
+/** "Equip Detective {1}": like Equip, but only onto a Detective you control. */
 const EQUIP_DETECTIVE = equipAbility({
   mana: "{1}",
   filter: { subtype: "Detective" },
-  targetLabel: "Détective que vous contrôlez",
-  label: "Équiper Détective {1}",
+  targetLabel: "Detective you control",
+  label: "Equip Detective {1}",
 });
 
 export const ARTIFACTS: Record<string, CardScript> = {
-  // --- Incolores ---------------------------------------------------------------
+  // --- Colorless ---------------------------------------------------------------
   "Case of the Shattered Pact": {
-    abilities: [triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Cherchez une carte de terrain de base" })],
+    abilities: [triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Search for a basic land card" })],
     caseToSolve: cond.amountAtLeast(amount.colorsAmong(), 5),
     caseSolved: [
       triggered(when.yourCombat, [fx.pump(ref.target(), 0, 0, ["flying", "doubleStrike", "vigilance"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Le vol, la double initiative et la vigilance",
+        label: "Flying, double strike and vigilance",
       }),
     ],
   },
@@ -50,7 +50,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{1}",
         oncePerTurn: true,
         effects: [fx.addManaChoice(1)],
-        label: "Un mana de n'importe quelle couleur (une fois par tour)",
+        label: "One mana of any color (once per turn)",
       }),
       activated({
         mana: "{2}",
@@ -58,7 +58,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         exileSelf: true,
         targets: [target.cardInGraveyard("t", {}, "any")],
         effects: [fx.exileCard(ref.target())],
-        label: "Exilez une carte d'un cimetière",
+        label: "Exile a card from a graveyard",
       }),
     ],
   },
@@ -67,7 +67,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({
         mana: "{2}",
         effects: [fx.thisTurn({ lookAt: "faceDown" })],
-        label: "Ce tour-ci, vous voyez les créatures face cachée adverses",
+        label: "This turn, you can look at face-down creatures your opponents control",
       }),
     ],
   },
@@ -77,25 +77,25 @@ export const ARTIFACTS: Record<string, CardScript> = {
         when.entersSelf,
         [fx.moveTo(ref.target(), { to: "battlefield" }, { name: "eq" }), fx.attach(ref.self, ref.stored("eq"))],
         {
-          targets: [target.cardInGraveyard("t", { subtype: "Equipment" }, "you", "carte d'Équipement de votre cimetière")],
-          label: "Renvoyez un Équipement attaché à cette créature",
+          targets: [target.cardInGraveyard("t", { subtype: "Equipment" }, "you", "Equipment card in your graveyard")],
+          label: "Return an Equipment attached to this creature",
         },
       ),
-      triggered(when.sacrifice({ types: ["Artifact"] }), [fx.addCounters(ref.self, 1)], { label: "Un marqueur +1/+1" }),
+      triggered(when.sacrifice({ types: ["Artifact"] }), [fx.addCounters(ref.self, 1)], { label: "A +1/+1 counter" }),
     ],
   },
   "Magnifying Glass": {
-    abilities: [manaAbility("C"), activated({ mana: "{4}", tap: true, effects: [investigate(1)], label: "Enquêtez" })],
+    abilities: [manaAbility("C"), activated({ mana: "{4}", tap: true, effects: [investigate(1)], label: "Investigate" })],
   },
   "Sanitation Automaton": {
-    abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" })],
+    abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" })],
   },
   "Thinking Cap": {
-    // « Équiper {3} » est lu dans le texte.
+    // "Equip {3}" is read from the text.
     abilities: [staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }), EQUIP_DETECTIVE],
   },
 
-  // --- Terrains ----------------------------------------------------------------
+  // --- Lands -------------------------------------------------------------------
   "Commercial District": surveilLand,
   "Elegant Parlor": surveilLand,
   "Hedge Maze": surveilLand,
@@ -112,7 +112,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
           fx.tapChosen({ anyOf: [{ types: ["Artifact"] }, { types: ["Land"] }] }, "tapped", { exactly: 1 }),
           ...fx.when(cond.not(cond.v("tapped")), fx.sacrificeIt(ref.self)),
         ],
-        { label: "Engagez un artefact ou un terrain dégagé, sinon sacrifiez-le" },
+        { label: "Tap an untapped artifact or land, or sacrifice it" },
       ),
       manaAbility([...FIVE_COLORS]),
     ],
@@ -122,7 +122,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       entersWith({ tapped: true }),
       manaAbility("C"),
       manaAbility([...FIVE_COLORS], 1, { tapAnother: "creature" }),
-      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
+      activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Draw a card" }),
     ],
   },
   Cryptex: {
@@ -132,16 +132,16 @@ export const ARTIFACTS: Record<string, CardScript> = {
         sacrifice: true,
         activationCondition: cond.counterAtLeast("unlock", 5),
         effects: [fx.surveil(3), fx.draw(3)],
-        label: "Sacrifiez-le : surveillance 3, puis piochez trois cartes",
+        label: "Sacrifice it: surveil 3, then draw three cards",
       }),
     ],
   },
   "Branch of Vitu-Ghazi": {
-    // Déguisement {3} : lu dans le texte ; la carte de terrain se lance face cachée.
+    // Disguise {3}: read from the text; the land card is cast face down.
     abilities: [
       manaAbility("C"),
       triggered(when.turnedFaceUp, [fx.addManaChoice(2, undefined, undefined, true)], {
-        label: "Deux mana d'une couleur, gardés jusqu'à la fin du tour",
+        label: "Two mana of one color, kept until end of turn",
       }),
     ],
   },

@@ -1,4 +1,4 @@
-/** Secrets of Strixhaven — cartes vertes. */
+/** Secrets of Strixhaven — green cards. */
 import {
   activated,
   amount,
@@ -23,35 +23,35 @@ import {
   when,
 } from "./common";
 
-/** Une créature ou une carte de terrain. */
+/** A creature or land card. */
 const CREATURE_OR_LAND = { anyOf: [{ types: ["Creature" as const] }, { types: ["Land" as const] }] };
 
 export const GREEN: Record<string, CardScript> = {
   "Aberrant Manawurm": {
     abilities: [
       triggered(OPUS, [fx.pump(ref.self, amount.eventManaSpent, 0)], {
-        label: "Opus : +X/+0, X étant le mana dépensé pour ce sort",
+        label: "Opus: +X/+0, where X is the mana spent on that spell",
       }),
     ],
   },
   "Additive Evolution": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.addCounters(ref.stored("f"), 3)], {
-        label: "Une Fractale avec trois marqueurs +1/+1",
+        label: "A Fractal with three +1/+1 counters",
       }),
       triggered(when.yourCombat, [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["vigilance"] })], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Un marqueur +1/+1 et la vigilance",
+        label: "A +1/+1 counter and vigilance",
       }),
     ],
   },
   "Ambitious Augmenter": {
     abilities: [
       INCREMENT,
-      // « s'il avait un ou plusieurs marqueurs » : ses dernières informations connues.
+      // "if it had one or more counters on it": its last known information.
       triggered(when.diesSelf, [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.lkiCountersTo(ref.stored("f"))], {
         condition: cond.eventObjectMatches({ withCounter: "any" }),
-        label: "Une Fractale qui reçoit ses marqueurs",
+        label: "A Fractal that gets its counters",
       }),
     ],
   },
@@ -59,7 +59,7 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell(
       [target.creature("a", { controller: "you" }), target.upTo(1, target.creature("b", { controller: "opponent" }))],
       [
-        // « un autre sort d'éphémère ou de rituel » : celui-ci compte déjà parmi les sorts lancés ce tour-ci.
+        // "another instant or sorcery spell": this one already counts among the spells cast this turn.
         ...fx.when(cond.amountAtLeast(amount.instantSorceryCast, 2), fx.pump(ref.target("a"), 1, 0)),
         fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a")),
       ],
@@ -73,11 +73,11 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Comforting Counsel": {
     abilities: [
-      triggered(when.gainLife, [fx.counters(ref.self, "growth")], { label: "Un marqueur de croissance" }),
+      triggered(when.gainLife, [fx.counters(ref.self, "growth")], { label: "A growth counter" }),
       staticAbility(
         { types: ["Creature"], controller: "you" },
         { power: 3, toughness: 3 },
-        { condition: cond.counterAtLeast("growth", 5), label: "Cinq marqueurs de croissance : vos créatures ont +3/+3" },
+        { condition: cond.counterAtLeast("growth", 5), label: "Five growth counters: your creatures get +3/+3" },
       ),
     ],
   },
@@ -91,13 +91,13 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Emeritus of Abundance": {
-    // Regrowth : renvoie une carte ciblée de votre cimetière dans votre main.
+    // Regrowth: returns target card from your graveyard to your hand.
     prepareSpell: spell([target.cardInGraveyard("t", {}, "you")], [fx.toHand(ref.target())]),
     abilities: [
       entersWith({ prepared: true }),
       triggered(when.attacksSelf, [fx.prepare(ref.self)], {
         condition: cond.controls({ types: ["Land"] }, 8),
-        label: "Huit terrains ou plus : devient préparée",
+        label: "Eight or more lands: becomes prepared",
       }),
     ],
   },
@@ -106,7 +106,7 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], controller: "you", withCounter: "+1/+1" },
         { addKeywords: ["trample"] },
-        { label: "Vos créatures avec des marqueurs +1/+1 ont le piétinement" },
+        { label: "Your creatures with +1/+1 counters have trample" },
       ),
       activated({
         mana: "{4}{G}",
@@ -115,14 +115,14 @@ export const GREEN: Record<string, CardScript> = {
           fx.createTokens(FRACTAL, 1, undefined, "f"),
           fx.addCounters(ref.stored("f"), amount.distinctNames({ types: ["Land"], controller: "you" })),
         ],
-        label: "Une Fractale avec un marqueur +1/+1 par nom de terrain différent",
+        label: "A Fractal with a +1/+1 counter for each differently named land",
       }),
     ],
   },
   "Environmental Scientist": {
     abilities: [
-      triggered(when.entersSelf, fx.may("Chercher une carte de terrain de base ?", fx.search(BASIC_LAND, { to: "hand" })), {
-        label: "Cherchez un terrain de base",
+      triggered(when.entersSelf, fx.may("Search for a basic land card?", fx.search(BASIC_LAND, { to: "hand" })), {
+        label: "Search for a basic land",
       }),
     ],
   },
@@ -136,15 +136,15 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Germination Practicum": {
-    // Paradigme : lu dans le texte.
+    // Paradigm: read from the text.
     spell: spell([], [fx.addCountersAll({ types: ["Creature"], controller: "you" }, 2)]),
   },
   "Glorious Decay": {
     spell: modal(
-      mode("Détruit un artefact", [target.permanent("t", ["Artifact"], {}, "artefact")], [fx.destroy(ref.target())]),
-      mode("4 blessures à une créature avec le vol", [target.creature("t", { keyword: "flying" })], [fx.damage(4, ref.target())]),
+      mode("Destroys an artifact", [target.permanent("t", ["Artifact"], {}, "artifact")], [fx.destroy(ref.target())]),
+      mode("4 damage to a creature with flying", [target.creature("t", { keyword: "flying" })], [fx.damage(4, ref.target())]),
       mode(
-        "Exile une carte d'un cimetière, piochez une carte",
+        "Exiles a card from a graveyard, draw a card",
         [target.cardInGraveyard("t", {}, "any")],
         [fx.exileCard(ref.target()), fx.draw(1)],
       ),
@@ -152,7 +152,7 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Hungry Graffalon": { abilities: [INCREMENT] },
   "Infirmary Healer": {
-    // Stream of Life : un joueur ciblé gagne X PV.
+    // Stream of Life: target player gains X life.
     prepareSpell: spell([target.player()], [fx.gainLife(amount.x, ref.target())]),
     abilities: [entersWith({ prepared: true })],
   },
@@ -160,15 +160,15 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.castSelf, [fx.copySpell(ref.self, 1)], {
         condition: INFUSION,
-        label: "Infusion : copiez ce sort",
+        label: "Infusion: copy this spell",
       }),
     ],
     spell: spell([target.creature()], [fx.pump(ref.target(), 2, 4)]),
   },
   "Mindful Biomancer": {
     abilities: [
-      triggered(when.entersSelf, [fx.gainLife(1)], { label: "Gagnez 1 PV" }),
-      activated({ mana: "{2}{G}", oncePerTurn: true, effects: [fx.pump(ref.self, 2, 2)], label: "+2/+2 jusqu'à la fin du tour" }),
+      triggered(when.entersSelf, [fx.gainLife(1)], { label: "Gain 1 life" }),
+      activated({ mana: "{2}{G}", oncePerTurn: true, effects: [fx.pump(ref.self, 2, 2)], label: "+2/+2 until end of turn" }),
     ],
   },
   "Noxious Newt": { abilities: [manaAbility("G")] },
@@ -176,7 +176,7 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell([target.creature("t", { controller: "you" })], [fx.pump(ref.target(), 1, 1), fx.draw(1), fx.gainLife(1)]),
   },
   "Pestbrood Sloth": {
-    abilities: [triggered(when.diesSelf, [fx.createTokens(PEST, 2)], { label: "Deux Nuisibles 1/1" })],
+    abilities: [triggered(when.diesSelf, [fx.createTokens(PEST, 2)], { label: "Two 1/1 Pests" })],
   },
   "Planar Engineering": {
     spell: spell(
@@ -185,20 +185,20 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Shopkeeper's Bane": {
-    abilities: [triggered(when.attacksSelf, [fx.gainLife(2)], { label: "Gagnez 2 PV" })],
+    abilities: [triggered(when.attacksSelf, [fx.gainLife(2)], { label: "Gain 2 life" })],
   },
   "Slumbering Trudge": {
     abilities: [
       entersWith({
         counters: amount.max(0, amount.plus(3, amount.neg(amount.x))),
         counterKind: "stun",
-        label: "Trois marqueurs d'étourdissement moins X",
+        label: "Three stun counters minus X",
       }),
-      entersWith({ tapped: true, condition: cond.not(cond.xAtLeast(3)), label: "X ≤ 2 : arrive engagée" }),
+      entersWith({ tapped: true, condition: cond.not(cond.xAtLeast(3)), label: "X ≤ 2: enters tapped" }),
     ],
   },
   "Snarl Song": {
-    // Convergence : X = couleurs de mana dépensées.
+    // Converge: X = colors of mana spent.
     spell: spell(
       [],
       [
@@ -209,16 +209,16 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Studious First-Year": {
-    // Rampant Growth : un terrain de base sur le champ de bataille engagé.
+    // Rampant Growth: a basic land onto the battlefield tapped.
     prepareSpell: spell([], [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })]),
     abilities: [entersWith({ prepared: true })],
   },
   "Tenured Concocter": {
     abilities: [
-      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, fx.may("Piocher une carte ?", fx.draw(1)), {
-        label: "Ciblée par un adversaire : vous pouvez piocher",
+      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, fx.may("Draw a card?", fx.draw(1)), {
+        label: "Targeted by an opponent: you may draw",
       }),
-      staticAbility("self", { power: 2 }, { condition: INFUSION, label: "Infusion : +2/+0" }),
+      staticAbility("self", { power: 2 }, { condition: INFUSION, label: "Infusion: +2/+0" }),
     ],
   },
   "Thornfist Striker": {
@@ -226,7 +226,7 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], controller: "you" },
         { power: 1, addKeywords: ["trample"] },
-        { condition: INFUSION, label: "Infusion : vos créatures ont +1/+0 et le piétinement" },
+        { condition: INFUSION, label: "Infusion: your creatures get +1/+0 and have trample" },
       ),
     ],
   },
@@ -234,7 +234,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [INCREMENT, manaAbility("G", 1, { selfPower: true })],
   },
   "Vastlands Scavenger": {
-    // Bind to Life : meulez sept cartes, puis une carte de créature meulée arrive sur le champ de bataille.
+    // Bind to Life: mill seven cards, then a milled creature card enters the battlefield.
     prepareSpell: spell(
       [],
       [
@@ -243,7 +243,7 @@ export const GREEN: Record<string, CardScript> = {
           "graveyard",
           { types: ["Creature"] },
           { to: "battlefield" },
-          { count: 1, pool: ref.stored("m"), prompt: "Une carte de créature meulée arrive sur le champ de bataille" },
+          { count: 1, pool: ref.stored("m"), prompt: "A milled creature card enters the battlefield" },
         ),
       ],
     ),
@@ -253,8 +253,8 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell([], [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.addCounters(ref.stored("f"), amount.x), fx.surveil(2)]),
   },
   "Zimone's Experiment": {
-    // Les cartes révélées restent sur le dessus de la bibliothèque (le reste va dessous dans un ordre aléatoire), puis
-    // les terrains arrivent engagés et les créatures vont en main (comme Break Out).
+    // The revealed cards stay on top of the library (the rest goes to the bottom in a random order), then the lands
+    // enter tapped and the creatures go to hand (like Break Out).
     spell: spell(
       [],
       [
@@ -266,11 +266,11 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Wildgrowth Archaic": {
     abilities: [
-      entersWith({ counters: amount.colorsSpent, label: "Convergence : un marqueur +1/+1 par couleur de mana dépensée" }),
+      entersWith({ counters: amount.colorsSpent, label: "Converge: a +1/+1 counter for each color of mana spent" }),
       triggered(
         when.castSpell("you", { types: ["Creature"] }),
         [fx.spellArrivalCounters(ref.eventObject, amount.eventColorsSpent)],
-        { label: "Sort de créature : il arrive avec un marqueur +1/+1 par couleur de mana dépensée" },
+        { label: "Creature spell: it enters with a +1/+1 counter for each color of mana spent" },
       ),
     ],
   },

@@ -1,6 +1,6 @@
 /**
- * Duskmourn: House of Horror (DSK) : Salles, manifestation effroyable, Sinistre, Survie, Délire, Imminence.
- * Les aides et jetons communs viennent de Final Fantasy, Outlaws of Thunder Junction et Foundations (dsk/common.ts).
+ * Duskmourn: House of Horror (DSK): Rooms, manifest dread, Eerie, Survival, Delirium, Impending.
+ * The common helpers and tokens come from Final Fantasy, Outlaws of Thunder Junction and Foundations (dsk/common.ts).
  */
 import type { CardScript } from "@mtgx/engine";
 import { BLACK } from "./black";

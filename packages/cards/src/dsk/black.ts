@@ -1,4 +1,4 @@
-/** Duskmourn — cartes noires. */
+/** Duskmourn — black cards. */
 import {
   activated,
   amount,
@@ -20,48 +20,47 @@ import {
   when,
 } from "./common";
 
-const creatureCard = (id = "t") =>
-  target.cardInGraveyard(id, { types: ["Creature"] }, "you", "carte de créature de votre cimetière");
+const creatureCard = (id = "t") => target.cardInGraveyard(id, { types: ["Creature"] }, "you", "creature card in your graveyard");
 
 export const BLACK: Record<string, CardScript> = {
   "Appendage Amalgam": {
-    abilities: [triggered(when.attacksSelf, [fx.surveil(1)], { label: "Surveillance 1" })],
+    abilities: [triggered(when.attacksSelf, [fx.surveil(1)], { label: "Surveil 1" })],
   },
   "Balemurk Leech": {
-    abilities: [eerie([fx.loseLife(1, ref.eachOpponent)], { label: "Chaque adversaire perd 1 PV" })],
+    abilities: [eerie([fx.loseLife(1, ref.eachOpponent)], { label: "Each opponent loses 1 life" })],
   },
   "Cackling Slasher": {
-    abilities: [entersWith({ counters: 1, condition: cond.morbid, label: "Marqueur +1/+1 (une créature est morte)" })],
+    abilities: [entersWith({ counters: 1, condition: cond.morbid, label: "+1/+1 counter (a creature died)" })],
   },
   "Commune with Evil": {
     spell: spell([], [fx.lookAtTop(4, { count: 1, rest: "graveyard" }), fx.gainLife(3)]),
   },
   "Cracked Skull": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       triggered(
         when.entersSelf,
         [fx.discard(1, ref.target(), { chooser: "controller", filter: { notTypes: ["Land"] }, optional: true })],
-        { targets: [target.player()], label: "Regardez sa main, il défausse une carte non-terrain" },
+        { targets: [target.player()], label: "Look at their hand, they discard a nonland card" },
       ),
-      triggered(when.attachedIsDealtDamage, [fx.destroy(ref.attached)], { label: "Détruisez la créature enchantée" }),
+      triggered(when.attachedIsDealtDamage, [fx.destroy(ref.attached)], { label: "Destroy the enchanted creature" }),
     ],
   },
   "Dashing Bloodsucker": {
-    abilities: [eerie([fx.pump(ref.self, 2, 0, ["lifelink"])], { label: "+2/+0 et le lien de vie" })],
+    abilities: [eerie([fx.pump(ref.self, 2, 0, ["lifelink"])], { label: "+2/+0 and lifelink" })],
   },
   "Defiled Crypt": {
     abilities: [
       triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.createTokens(HORROR_ENCHANTMENT)], {
         oncePerTurn: true,
         batched: true,
-        label: "Jeton Horreur 2/2",
+        label: "2/2 Horror token",
       }),
     ],
   },
   "Cadaver Lab": {
     abilities: [
-      triggered(when.unlockThisDoor, [fx.toHand(ref.target())], { targets: [creatureCard()], label: "Créature en main" }),
+      triggered(when.unlockThisDoor, [fx.toHand(ref.target())], { targets: [creatureCard()], label: "Creature into your hand" }),
     ],
   },
   "Demonic Counsel": {
@@ -71,12 +70,12 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Derelict Attic": {
-    abilities: [triggered(when.unlockThisDoor, [fx.draw(2), fx.loseLife(2)], { label: "Piochez deux cartes, perdez 2 PV" })],
+    abilities: [triggered(when.unlockThisDoor, [fx.draw(2), fx.loseLife(2)], { label: "Draw two cards, lose 2 life" })],
   },
   "Widow's Walk": {
     abilities: [
       triggered(when.attacksAlone({ types: ["Creature"], controller: "you" }), [fx.pump(ref.eventObject, 1, 0, ["deathtouch"])], {
-        label: "+1/+0 et le contact mortel",
+        label: "+1/+0 and deathtouch",
       }),
     ],
   },
@@ -85,7 +84,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.discard(1, ref.eachOpponent), fx.discard(1, ref.you, { store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
-        { label: "Chaque joueur défausse une carte" },
+        { label: "Each player discards a card" },
       ),
     ],
   },
@@ -93,7 +92,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.diesSelf, [fx.damage(1, ref.target()), fx.gainLife(1)], {
         targets: [target.any()],
-        label: "1 blessure, +1 PV",
+        label: "1 damage, +1 life",
       }),
     ],
   },
@@ -101,7 +100,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.self, 0, 0, ["menace", "deathtouch"])], {
         condition: cond.not(cond.amountAtLeast(amount.refCount(ref.permanentsOf(ref.defendingPlayer, GLIMMER_CREATURE)), 1)),
-        label: "La menace et le contact mortel",
+        label: "Menace and deathtouch",
       }),
     ],
   },
@@ -112,14 +111,14 @@ export const BLACK: Record<string, CardScript> = {
   "Funeral Room": {
     abilities: [
       triggered(when.dies({ types: ["Creature"], controller: "you" }), fx.drain(1), {
-        label: "Chaque adversaire perd 1 PV, vous gagnez 1 PV",
+        label: "Each opponent loses 1 life, you gain 1 life",
       }),
     ],
   },
   "Awakening Hall": {
     abilities: [
       triggered(when.unlockThisDoor, [fx.moveAll("graveyard", ref.you, { types: ["Creature"] }, { to: "battlefield" })], {
-        label: "Toutes vos créatures du cimetière reviennent",
+        label: "All creatures from your graveyard return",
       }),
     ],
   },
@@ -127,12 +126,12 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.pump(ref.target(), 2, 2, ["lifelink"])]),
   },
   "Innocuous Rat": {
-    abilities: [triggered(when.diesSelf, [fx.manifestDread], { label: "Manifestation effroyable" })],
+    abilities: [triggered(when.diesSelf, [fx.manifestDread], { label: "Manifest dread" })],
   },
   "Live or Die": {
     spell: modal(
-      mode("Renvoyez une créature sur le champ de bataille", [creatureCard()], [fx.toBattlefield(ref.target())]),
-      mode("Détruisez une créature", [target.creature("d")], [fx.destroy(ref.target("d"))]),
+      mode("Return a creature to the battlefield", [creatureCard()], [fx.toBattlefield(ref.target())]),
+      mode("Destroy a creature", [target.creature("d")], [fx.destroy(ref.target("d"))]),
     ),
   },
   "Popular Egotist": {
@@ -141,11 +140,11 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{1}{B}",
         sacrificeOther: { filter: { ...CREATURE_OR_ENCHANTMENT, other: true } },
         effects: [fx.pump(ref.self, 0, 0, ["indestructible"]), fx.tap(ref.self)],
-        label: "Indestructible, engagez-la",
+        label: "Indestructible, tap it",
       }),
       triggered(when.sacrifice({}), [fx.loseLife(1, ref.target()), fx.gainLife(1)], {
         targets: [target.player("t", "opponent")],
-        label: "Un adversaire perd 1 PV, vous gagnez 1 PV",
+        label: "An opponent loses 1 life, you gain 1 life",
       }),
     ],
   },
@@ -157,7 +156,7 @@ export const BLACK: Record<string, CardScript> = {
         sorcerySpeed: true,
         activationCondition: cond.delirium,
         effects: [fx.toBattlefield(ref.self, { counters: { kind: "finality", n: 1 } })],
-        label: "Délire — Revient avec un marqueur de finalité",
+        label: "Delirium — Returns with a finality counter",
       }),
     ],
   },
@@ -170,21 +169,21 @@ export const BLACK: Record<string, CardScript> = {
           ...fx.when(cond.controls({ subtype: "Demon" }), fx.drain(2)),
           ...fx.when(cond.not(cond.controls({ subtype: "Demon" })), fx.loseLife(2)),
         ],
-        { label: "Piochez ; drain de 2 avec un Démon, sinon perdez 2 PV" },
+        { label: "Draw; drain 2 with a Demon, otherwise lose 2 life" },
       ),
     ],
   },
   "Ritual Chamber": {
-    abilities: [triggered(when.unlockThisDoor, [fx.createTokens(DEMON_6)], { label: "Jeton Démon 6/6 volant" })],
+    abilities: [triggered(when.unlockThisDoor, [fx.createTokens(DEMON_6)], { label: "6/6 flying Demon token" })],
   },
   "Unstoppable Slasher": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.loseLife(amount.halfLife(ref.eventPlayer), ref.eventPlayer)], {
-        label: "Il perd la moitié de ses PV",
+        label: "They lose half their life",
       }),
       triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true, counters: { kind: "stun", n: 2 } })], {
         condition: cond.not(cond.amountAtLeast(amount.lkiCounters("any"), 1)),
-        label: "Revient engagée avec deux marqueurs d'étourdissement",
+        label: "Returns tapped with two stun counters",
       }),
     ],
   },
@@ -196,7 +195,7 @@ export const BLACK: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [creatureCard()],
         effects: [fx.toBattlefield(ref.target())],
-        label: "Créature de votre cimetière sur le champ de bataille",
+        label: "Creature from your graveyard onto the battlefield",
       }),
     ],
   },
@@ -209,7 +208,7 @@ export const BLACK: Record<string, CardScript> = {
           fx.sacrifice(ref.eachOpponent, { types: ["Enchantment"], token: false }),
           fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false }),
         ],
-        { label: "Chaque adversaire sacrifie un enchantement et une créature" },
+        { label: "Each opponent sacrifices an enchantment and a creature" },
       ),
     ],
   },
@@ -218,7 +217,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Withering Torment": {
     spell: spell(
-      [target.permanent("t", ["Creature", "Enchantment"], {}, "créature ou enchantement")],
+      [target.permanent("t", ["Creature", "Enchantment"], {}, "creature or enchantment")],
       [fx.destroy(ref.target()), fx.loseLife(2)],
     ),
   },

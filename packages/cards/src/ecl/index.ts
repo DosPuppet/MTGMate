@@ -1,4 +1,4 @@
-/** Lorwyn Eclipsed (ECL) : flétrir, Vivid, changelins, convocation, tribus de Lorwyn. */
+/** Lorwyn Eclipsed (ECL): blight, Vivid, changelings, convoke, the tribes of Lorwyn. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

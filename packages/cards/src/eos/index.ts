@@ -1,6 +1,6 @@
 /**
- * Stellar Sights (EOS) : terrains réédités avec Edge of Eternities.
- * Hors Standard, jouables en « Sans limite » (PLAN-G) ; scripts ajoutés lot par lot.
+ * Stellar Sights (EOS): lands reprinted with Edge of Eternities.
+ * Not Standard-legal, playable in "Unlimited" (PLAN-G); scripts added lot by lot.
  */
 import type { CardScript } from "@mtgx/engine";
 import { CARDS } from "./cards";

@@ -1,7 +1,11 @@
 {
   "id": "cmd-yshtola",
-  "name": "Y'shtola — Drain et contrôle",
-  "description": "Commander, Esper (blanc, bleu, noir), d'après la liste moyenne d'EDHREC en bracket 4. Chaque sort non-créature coûteux draine les adversaires ; contresorts gratuits, pioche et tuteurs gardent la main jusqu'à l'épuisement des points de vie.",
+  "name": "Y'shtola — Drain and control",
+  "description": "Commander, Esper (white, blue, black), based on EDHREC's average list at bracket 4. Each expensive noncreature spell drains the opponents; free counterspells, card draw and tutors keep control until their life runs out.",
+  "fr": {
+    "name": "Y'shtola — Drain et contrôle",
+    "description": "Commander, Esper (blanc, bleu, noir), d'après la liste moyenne d'EDHREC en bracket 4. Chaque sort non-créature coûteux draine les adversaires ; contresorts gratuits, pioche et tuteurs gardent la main jusqu'à l'épuisement des points de vie."
+  },
   "colors": [
     "W",
     "U",

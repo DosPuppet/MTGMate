@@ -1,4 +1,4 @@
-/** Bloomburrow — cartes bleues. */
+/** Bloomburrow — blue cards. */
 import {
   activated,
   amount,
@@ -35,7 +35,7 @@ import {
 
 const BIRD_FROG_OTTER_RAT = ["Bird", "Frog", "Otter", "Rat"];
 
-/** « Exilez-la, puis renvoyez-la sur le champ de bataille sous le contrôle de son propriétaire. » */
+/** "Exile it, then return it to the battlefield under its owner's control." */
 const blink = (what: ReturnType<typeof ref.target>, counters?: { kind: string; n: number }) => [
   fx.exileCard(what, { name: "b" }),
   fx.toBattlefield(ref.stored("b"), counters ? { counters } : {}),
@@ -44,7 +44,7 @@ const blink = (what: ReturnType<typeof ref.target>, counters?: { kind: string; n
 export const BLUE: Record<string, CardScript> = {
   "Azure Beastbinder": {
     abilities: [
-      blockAbility(block.notBy({ minPower: 2 }, "Imblocable par les créatures de force 2 ou plus")),
+      blockAbility(block.notBy({ minPower: 2 }, "Can't be blocked by creatures with power 2 or greater")),
       triggered(
         when.attacksSelf,
         [fx.modify(ref.target(), { loseAllAbilities: true, setPower: 2, setToughness: 2 }, "untilYourNextTurn")],
@@ -56,23 +56,23 @@ export const BLUE: Record<string, CardScript> = {
                 "t",
                 ["Artifact", "Creature", "Planeswalker"],
                 { controller: "opponent" },
-                "artefact, créature ou planeswalker adverse",
+                "artifact, creature or planeswalker an opponent controls",
               ),
             ),
           ],
-          label: "Perd ses capacités, F/E de base 2/2",
+          label: "Loses its abilities, base P/T 2/2",
         },
       ),
     ],
   },
   "Bellowing Crier": {
-    abilities: [triggered(when.entersSelf, fx.loot(1), { label: "Piochez, puis défaussez" })],
+    abilities: [triggered(when.entersSelf, fx.loot(1), { label: "Draw, and then discard" })],
   },
   "Calamitous Tide": {
     spell: spell([target.upTo(2, target.creature())], [fx.bounce(ref.target()), fx.draw(2), fx.discard(1)]),
   },
   "Daring Waverider": {
-    // Lancé pendant la résolution (608.2g), exilé au lieu d'aller au cimetière.
+    // Cast during resolution (608.2g), exiled instead of going to the graveyard.
     abilities: [
       triggered(when.entersSelf, [fx.castNow(ref.target(), { free: true, after: "exile" })], {
         targets: [
@@ -80,10 +80,10 @@ export const BLUE: Record<string, CardScript> = {
             "t",
             { types: ["Instant", "Sorcery"], maxManaValue: 4 },
             "you",
-            "éphémère ou rituel de VM 4 ou moins",
+            "instant or sorcery with MV 4 or less",
           ),
         ],
-        label: "Lance gratuitement un éphémère ou un rituel",
+        label: "Casts an instant or sorcery for free",
       }),
     ],
   },
@@ -110,24 +110,24 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.leavesWithoutDying({ types: ["Creature"], controller: "you", other: true }), [fx.draw(1)], {
         batched: true,
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
       activated({
         mana: "{1}{U}",
         tap: true,
         targets: [target.creature("t", { controller: "you", other: true })],
         effects: [fx.bounce(ref.target())],
-        label: "Renvoie une créature",
+        label: "Returns a creature",
       }),
     ],
   },
   "Eddymurk Crab": {
     costReduction: { generic: amount.countIn("graveyard", INSTANT_SORCERY) },
     abilities: [
-      entersWith({ tapped: true, condition: cond.not(cond.yourTurn), label: "Engagé hors de votre tour" }),
+      entersWith({ tapped: true, condition: cond.not(cond.yourTurn), label: "Tapped outside your turn" }),
       triggered(when.entersSelf, [fx.tap(ref.target())], {
         targets: [target.upTo(2, target.creature())],
-        label: "Engage jusqu'à deux créatures",
+        label: "Taps up to two creatures",
       }),
     ],
   },
@@ -139,13 +139,13 @@ export const BLUE: Record<string, CardScript> = {
           w,
           [fx.counters(ref.target(), "flood", 1), fx.modifyWhileCounter(ref.target(), { addSubtypes: ["Island"] }, "flood")],
           {
-            targets: [target.permanent("t", ["Land"], {}, "terrain")],
-            label: "Marqueur d'inondation (Île)",
+            targets: [target.permanent("t", ["Land"], {}, "land")],
+            label: "Flood counter (Island)",
           },
         ),
       ),
-      // Approximation : la réduction est générique.
-      costReducer(INSTANT_SORCERY, 0, "Premier éphémère ou rituel moins cher", {
+      // Approximation: the reduction is generic.
+      costReducer(INSTANT_SORCERY, 0, "First instant or sorcery costs less", {
         genericAmount: amount.count({ types: ["Land"], controller: "you", withCounter: "flood" }),
         condition: cond.not(cond.amountAtLeast(amount.instantSorceryCast, 1)),
       }),
@@ -155,12 +155,12 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 0, 0, ["flying"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Vol",
+        label: "Flying",
       }),
     ],
   },
   "Gossip's Talent": {
-    abilities: [triggered(when.enters(CREATURE_YOU_CONTROL), [fx.surveil(1)], { label: "Surveillance 1" })],
+    abilities: [triggered(when.enters(CREATURE_YOU_CONTROL), [fx.surveil(1)], { label: "Surveil 1" })],
     classLevels: [
       [
         triggered(when.attackWith(1), [fx.pump(ref.target(), 0, 0, ["unblockable"])], {
@@ -168,17 +168,17 @@ export const BLUE: Record<string, CardScript> = {
             targetObj(
               "t",
               { types: ["Creature"], attacking: true, controller: "you", maxPower: 3 },
-              "créature attaquante de force 3 ou moins",
+              "attacking creature with power 3 or less",
             ),
           ],
-          label: "Ne peut pas être bloquée",
+          label: "Can't be blocked",
         }),
       ],
       [
         triggered(
           when.combatDamage(CREATURE_YOU_CONTROL, true),
-          fx.may("Exiler cette créature et la renvoyer ?", ...blink(ref.eventObject)),
-          { label: "Exile et renvoie la créature" },
+          fx.may("Exile this creature and return it?", ...blink(ref.eventObject)),
+          { label: "Exiles and returns the creature" },
         ),
       ],
     ],
@@ -195,35 +195,33 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   Kitnap: {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     controlsEnchanted: true,
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature" }),
-      // « Si le cadeau n'a pas été promis » : lu sur l'Aura (le cadeau d'un permanent n'est pas connu de ses effets).
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Taps the creature" }),
+      // "If the gift wasn't promised": read on the Aura (the gift of a permanent is not known to its effects).
       triggered(when.entersSelf, [fx.counters(ref.attached, "stun", 3)], {
         condition: cond.not(cond.gift),
-        label: "Trois marqueurs d'étourdissement (sans cadeau)",
+        label: "Three stun counters (no gift)",
       }),
     ],
   },
   "Kitsa, Otterball Elite": {
     abilities: [
-      activated({ tap: true, effects: fx.loot(1), label: "Piochez, puis défaussez" }),
+      activated({ tap: true, effects: fx.loot(1), label: "Draw, and then discard" }),
       activated({
         mana: "{2}",
         tap: true,
-        targets: [
-          target.spell("t", { types: ["Instant", "Sorcery"], controller: "you" }, "éphémère ou rituel que vous contrôlez"),
-        ],
+        targets: [target.spell("t", { types: ["Instant", "Sorcery"], controller: "you" }, "instant or sorcery you control")],
         effects: [fx.copySpell(ref.target(), 1)],
         activationCondition: cond.sourceMatches({ minPower: 3 }),
-        label: "Copie un éphémère ou un rituel",
+        label: "Copies an instant or sorcery",
       }),
     ],
   },
   Knightfisher: {
     abilities: [
-      triggered(when.enters(kin(["Bird"], { other: true, token: false })), [fx.createTokens(FISH)], { label: "Poisson 1/1" }),
+      triggered(when.enters(kin(["Bird"], { other: true, token: false })), [fx.createTokens(FISH)], { label: "1/1 Fish" }),
     ],
   },
   "Long River Lurker": {
@@ -231,7 +229,7 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         kin(["Frog"], { other: true }),
         { addKeywords: ["ward"], addAbilities: [wardAbility({ mana: cost("{1}") })] },
-        { label: "Garde {1}" },
+        { label: "Ward {1}" },
       ),
       triggered(
         when.entersSelf,
@@ -242,22 +240,22 @@ export const BLUE: Record<string, CardScript> = {
               triggered(
                 when.combatDamage("self"),
                 fx.may(
-                  "Exiler cette créature et la renvoyer ?",
+                  "Exile this creature and return it?",
                   fx.exileCard(ref.self, { name: "b" }),
                   fx.toBattlefield(ref.stored("b")),
                 ),
-                { label: "Exile et renvoie la créature" },
+                { label: "Exiles and returns the creature" },
               ),
             ],
           }),
         ],
-        { targets: [target.creature("t", { controller: "you" })], label: "Ne peut pas être bloquée" },
+        { targets: [target.creature("t", { controller: "you" })], label: "Can't be blocked" },
       ),
     ],
   },
   "Long River's Pull": {
     spell: spell(
-      [{ ...target.spell("t", { types: ["Creature"] }, "sort de créature"), kickedFilter: { spells: {} } }],
+      [{ ...target.spell("t", { types: ["Creature"] }, "creature spell"), kickedFilter: { spells: {} } }],
       [fx.counter(ref.target())],
     ),
   },
@@ -269,11 +267,11 @@ export const BLUE: Record<string, CardScript> = {
   },
   Mindwhisker: {
     abilities: [
-      triggered(when.yourUpkeep, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.yourUpkeep, [fx.surveil(1)], { label: "Surveil 1" }),
       staticAbility(
         { types: ["Creature"], controller: "opponent" },
         { power: -1 },
-        { condition: THRESHOLD, label: "Seuil : -1/-0" },
+        { condition: THRESHOLD, label: "Threshold: -1/-0" },
       ),
     ],
   },
@@ -290,7 +288,7 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 1, addKeywords: ["unblockable"] },
-        { condition: THRESHOLD, label: "Seuil : +1/+0, imblocable" },
+        { condition: THRESHOLD, label: "Threshold: +1/+0, can't be blocked" },
       ),
     ],
   },
@@ -312,31 +310,31 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 0, 0, ["hexproof"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Défense talismanique",
+        label: "Hexproof",
       }),
     ],
   },
   "Portent of Calamity": {
-    // Approximation : les cartes exilées sont choisies automatiquement (une par type).
+    // Approximation: the exiled cards are chosen automatically (one per type).
     spell: spell([], [fx.portent, fx.castNow(ref.stored("free"), { free: true }), fx.toHand(ref.stored("rest"))]),
   },
   "Season of Weaving": {
     spell: pawprint(
-      { pips: 1, label: "Piochez une carte", effects: [fx.draw(1)] },
+      { pips: 1, label: "Draw a card", effects: [fx.draw(1)] },
       {
         pips: 2,
-        label: "Copie d'un artefact ou d'une créature",
-        // « Choisissez un artefact ou une créature que vous contrôlez » : choix non ciblé, à la résolution.
+        label: "Copy of an artifact or creature",
+        // "Choose an artifact or creature you control": untargeted choice, on resolution.
         effects: [
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Artifact", "Creature"] }), ref.you, "w", {
-            prompt: "Choisissez l'artefact ou la créature à copier",
+            prompt: "Choose the artifact or creature to copy",
           }),
           fx.copyToken(ref.stored("w")),
         ],
       },
       {
         pips: 3,
-        label: "Renvoie chaque permanent non-terrain non-jeton",
+        label: "Returns each nonland, nontoken permanent",
         effects: [fx.moveAll("battlefield", ref.eachPlayer, { notTypes: ["Land"], token: false }, { to: "hand" })],
       },
     ),
@@ -351,7 +349,7 @@ export const BLUE: Record<string, CardScript> = {
     keywords: ["unblockable"],
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.draw(1), ...fx.when(cond.not(THRESHOLD), fx.discard(1))], {
-        label: "Seuil — Piochez (défaussez sans seuil)",
+        label: "Threshold — Draw (discard without threshold)",
       }),
     ],
   },
@@ -362,22 +360,22 @@ export const BLUE: Record<string, CardScript> = {
         [fx.exileCard(ref.target(), { name: "k" }), fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") })],
         {
           targets: [target.upTo(1, target.creature("t", { controller: "you", other: true }))],
-          label: "Exile une créature (elle revient à l'étape de fin)",
+          label: "Exiles a creature (it returns at the end step)",
         },
       ),
     ],
   },
   Spellgyre: {
     spell: modal(
-      mode("Contrecarrez un sort", [target.spell()], [fx.counter(ref.target())]),
-      mode("Surveillance 2, puis piochez deux cartes", [], [fx.surveil(2), fx.draw(2)]),
+      mode("Counter a spell", [target.spell()], [fx.counter(ref.target())]),
+      mode("Surveil 2, then draw two cards", [], [fx.surveil(2), fx.draw(2)]),
     ),
   },
   "Splash Lasher": {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
         targets: [target.upTo(1, target.creature())],
-        label: "Engage une créature (marqueur d'étourdissement)",
+        label: "Taps a creature (stun counter)",
       }),
     ],
   },
@@ -388,24 +386,24 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Stormchaser's Talent": {
-    abilities: [triggered(when.entersSelf, [otter()], { label: "Loutre 1/1 avec la prouesse" })],
+    abilities: [triggered(when.entersSelf, [otter()], { label: "1/1 Otter with prowess" })],
     classLevels: [
       [
         triggered(when.classLevel(2), [fx.toHand(ref.target())], {
-          targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "éphémère ou rituel de votre cimetière")],
-          label: "Récupère un éphémère ou un rituel",
+          targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery in your graveyard")],
+          label: "Gets back an instant or sorcery",
         }),
       ],
-      [triggered(when.castSpell("you", INSTANT_SORCERY), [otter()], { label: "Loutre 1/1 avec la prouesse" })],
+      [triggered(when.castSpell("you", INSTANT_SORCERY), [otter()], { label: "1/1 Otter with prowess" })],
     ],
   },
   "Sugar Coat": {
-    enchant: { filter: { anyOf: [{ types: ["Creature"] }, { subtype: "Food" }] }, label: "créature ou Nourriture" },
+    enchant: { filter: { anyOf: [{ types: ["Creature"] }, { subtype: "Food" }] }, label: "creature or Food" },
     abilities: [
       staticAbility(
         "attached",
         { setTypes: ["Artifact"], setSubtypes: ["Food"], setColors: [], loseAllAbilities: true, addAbilities: [FOOD_ABILITY] },
-        { label: "Nourriture incolore" },
+        { label: "Colorless Food" },
       ),
     ],
   },
@@ -416,14 +414,14 @@ export const BLUE: Record<string, CardScript> = {
         once: true,
         activationCondition: THRESHOLD,
         effects: [fx.addCounters(ref.self, 1), fx.draw(1)],
-        label: "Seuil — Marqueur +1/+1, piochez",
+        label: "Threshold — +1/+1 counter, draw",
       }),
     ],
   },
   "Thundertrap Trainer": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(4, { filter: { notTypes: ["Creature", "Land"] } })], {
-        label: "Regarde 4 cartes : un sort non-créature",
+        label: "Looks at 4 cards: a noncreature spell",
       }),
     ],
   },
@@ -431,12 +429,12 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         spellKeywords: { filter: { notTypes: ["Creature"] }, keywords: ["flash"] },
-        label: "Sorts non-créature avec le flash",
+        label: "Noncreature spells have flash",
       }),
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [fx.pumpAll(kin(BIRD_FROG_OTTER_RAT), 1, 1), fx.untapAll(kin(BIRD_FROG_OTTER_RAT))],
-        { label: "Oiseaux, Grenouilles, Loutres et Rats +1/+1, dégagés" },
+        { label: "Birds, Frogs, Otters and Rats +1/+1, untapped" },
       ),
     ],
   },
@@ -444,7 +442,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.self, 0, 0, ["flying"])], {
         condition: cond.controls({ types: ["Creature"], enteredThisTurn: true, other: true }),
-        label: "Vol",
+        label: "Flying",
       }),
     ],
   },
@@ -458,14 +456,14 @@ export const BLUE: Record<string, CardScript> = {
           fx.reflexive(
             [
               {
-                ...target.cardInGraveyard("t", INSTANT_SORCERY, "you", "éphémère ou rituel de VM égale aux marqueurs"),
+                ...target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery with MV equal to the counters"),
                 manaValueAmount: amount.countersOn(ref.self, "coin"),
               },
             ],
             [fx.castNow(ref.target(), { free: true, after: "exile" })],
           ),
         ],
-        label: "Marqueur de pièce, lance un sort du cimetière",
+        label: "Coin counter, casts a spell from the graveyard",
       }),
     ],
   },

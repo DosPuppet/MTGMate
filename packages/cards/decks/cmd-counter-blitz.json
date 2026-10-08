@@ -1,7 +1,11 @@
 {
   "id": "cmd-counter-blitz",
-  "name": "Counter Blitz — Tidus, gardien de Yuna",
-  "description": "Préconstruit Commander officiel de Final Fantasy X, en vert, blanc et bleu. Tidus et les gardiens de Yuna déplacent, multiplient et prolifèrent les marqueurs ; les invocations entrent en jeu sous forme de Sagas créatures.",
+  "name": "Counter Blitz — Tidus, Yuna's Guardian",
+  "description": "Official Final Fantasy X Commander precon, in green, white and blue. Tidus and Yuna's guardians move, multiply and proliferate counters; the summons enter the battlefield as Saga creatures.",
+  "fr": {
+    "name": "Counter Blitz — Tidus, gardien de Yuna",
+    "description": "Préconstruit Commander officiel de Final Fantasy X, en vert, blanc et bleu. Tidus et les gardiens de Yuna déplacent, multiplient et prolifèrent les marqueurs ; les invocations entrent en jeu sous forme de Sagas créatures."
+  },
   "colors": [
     "W",
     "U",

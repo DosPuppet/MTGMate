@@ -1,9 +1,9 @@
-/** Éléments communs de Marvel's Spider-Man (SPM) : le DSL et les jetons viennent des extensions précédentes (via lci/common.ts). */
+/** Common elements of Marvel's Spider-Man (SPM): the DSL and the tokens come from the previous sets (via lci/common.ts). */
 export * from "../lci/common";
 
 import type { TokenSpec } from "@mtgx/engine";
 
-/** Citoyen humain : créature verte et blanche 1/1. */
+/** Human Citizen: 1/1 green and white creature. */
 export const HUMAN_CITIZEN: TokenSpec = {
   name: "Human Citizen",
   colors: ["G", "W"],
@@ -13,7 +13,7 @@ export const HUMAN_CITIZEN: TokenSpec = {
   toughness: 1,
 };
 
-/** Araignée : créature verte 2/1 avec la portée. */
+/** Spider: 2/1 green creature with reach. */
 export const SPIDER_21: TokenSpec = {
   name: "Spider",
   colors: ["G"],
@@ -24,7 +24,7 @@ export const SPIDER_21: TokenSpec = {
   keywords: ["reach"],
 };
 
-/** Robot : créature-artefact incolore 1/1 avec le vol. */
+/** Robot: 1/1 colorless artifact creature with flying. */
 export const ROBOT_FLYER: TokenSpec = {
   name: "Robot",
   colors: [],
@@ -35,7 +35,7 @@ export const ROBOT_FLYER: TokenSpec = {
   keywords: ["flying"],
 };
 
-/** Illusion Méchant : créature bleue 3/3. */
+/** Illusion Villain: 3/3 blue creature. */
 export const ILLUSION_VILLAIN: TokenSpec = {
   name: "Illusion Villain",
   colors: ["U"],

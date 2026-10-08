@@ -44,7 +44,7 @@ describe("Méta, lot M1", () => {
     it("sans créature engagée, le coût d'harmonie {4}{U} est payé en entier", () => {
       const s = setup();
       const card = idOf(s, "p1", "graveyard", "Winternight Stories");
-      expect(() => act(s, "p1", { type: "cast", card, tap: [] })).toThrow(/Mana/);
+      expect(() => act(s, "p1", { type: "cast", card, tap: [] })).toThrow(/Not enough mana/);
       // Sans `tap`, le choix par défaut (la créature suggérée) s'applique.
       const after = settle(act(s, "p1", { type: "cast", card }));
       expect(after.objects[idOf(s, "p1", "battlefield", "Fire Elemental")]?.tapped).toBe(true);
@@ -56,7 +56,7 @@ describe("Méta, lot M1", () => {
       });
       const card = idOf(s, "p1", "hand", "Winternight Stories");
       const fire = idOf(s, "p1", "battlefield", "Fire Elemental");
-      expect(() => act(s, "p1", { type: "cast", card, tap: [fire] })).toThrow(/engager/);
+      expect(() => act(s, "p1", { type: "cast", card, tap: [fire] })).toThrow(/No creature to tap/);
     });
   });
 
@@ -104,7 +104,7 @@ describe("Méta, lot M1", () => {
       const fire = idOf(s, "p2", "battlefield", "Fire Elemental");
       const mountain = idOf(s, "p1", "battlefield", "Mountain");
       expect(() => act(s, "p1", { type: "cast", card, targets: { t: [fire] }, kicked: true, sacrifice: [mountain] })).toThrow(
-        /Permanent invalide/,
+        /Invalid permanent/,
       );
     });
   });
@@ -191,7 +191,7 @@ describe("Méta, lot M1", () => {
     const s = setup();
     const card = idOf(s, "p1", "hand", "Prismari Charm");
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
-    expect(() => act(s, "p1", { type: "cast", card, mode: 1, targets: { t: [] } })).toThrow(/Cible manquante/);
+    expect(() => act(s, "p1", { type: "cast", card, mode: 1, targets: { t: [] } })).toThrow(/Missing target/);
     const one = settle(act(s, "p1", { type: "cast", card, mode: 1, targets: { t: ["p2"] } }));
     expect(one.players.p2?.life).toBe(19);
     const two = settle(act(setup(), "p1", { type: "cast", card, mode: 1, targets: { t: ["p2", bear] } }));
@@ -289,7 +289,7 @@ describe("Méta, lot M1", () => {
     });
     const hall = idOf(s, "p1", "battlefield", "Great Hall of the Biblioplex");
     const opts = legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === hall);
-    const animate = opts.find((a) => a.type === "activate" && a.label?.includes("Sorcier"));
+    const animate = opts.find((a) => a.type === "activate" && a.label?.includes("Wizard"));
     s = settle(act(s, "p1", { type: "activate", source: hall, ability: animate?.type === "activate" ? animate.ability : -1 }));
     expect([chars(s, hall).power, chars(s, hall).toughness]).toEqual([2, 4]);
     expect(chars(s, hall).subtypes).toContain("Wizard");
@@ -516,7 +516,7 @@ describe("Méta, lot M3", () => {
     expect(idsOf(b, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(idsOf(b, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
     // Une couleur que l'hybride ne permet pas est refusée.
-    expect(() => run(setup(), "G")).toThrow(/hybride/);
+    expect(() => run(setup(), "G")).toThrow(/hybrid mana/);
   });
 
   it("Captain Marvel : la montée en puissance coûte {2} le tour de son arrivée, une seule fois", () => {
@@ -776,7 +776,7 @@ describe("Méta, lot M5", () => {
     const s = setup();
     const card = idOf(s, "p1", "hand", "Pyrrhic Strike");
     const targets = { a: [idOf(s, "p2", "battlefield", "Fishing Pole")], c: [idOf(s, "p2", "battlefield", "Shivan Dragon")] };
-    expect(() => act(s, "p1", { type: "cast", card, mode: 2, targets })).toThrow(/coût additionnel/);
+    expect(() => act(s, "p1", { type: "cast", card, mode: 2, targets })).toThrow(/additional cost/);
     const t = settle(act(setup(), "p1", { type: "cast", card, mode: 2, targets, kicked: true }));
     expect(idsOf(t, "p2", "graveyard", "Fishing Pole")).toHaveLength(1);
     expect(idsOf(t, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
@@ -930,7 +930,7 @@ describe("Méta, lot M6", () => {
     const dragon = lib.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Shivan Dragon") as string;
     const angel = lib.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Serra Angel") as string;
     const elves = lib.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Llanowar Elves") as string;
-    expect(() => act(s, "p1", { type: "choose", values: [dragon, angel] })).toThrow(/totale/);
+    expect(() => act(s, "p1", { type: "choose", values: [dragon, angel] })).toThrow(/Total mana value/);
     s = settle(act(s, "p1", { type: "choose", values: [angel, elves] }));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
@@ -964,7 +964,7 @@ describe("Méta, lot M6", () => {
     let s = scenario({ p1: { battlefield: [{ name: "Ral Zarek, Guest Lecturer" }] } });
     const ral = idOf(s, "p1", "battlefield", "Ral Zarek, Guest Lecturer");
     (s.objects[ral] as { counters: Record<string, number> }).counters.loyalty = 7;
-    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ral && a.label?.includes("Cinq"));
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ral && a.label?.includes("Five"));
     s = settle(
       act(s, "p1", {
         type: "activate",

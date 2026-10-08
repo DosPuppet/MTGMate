@@ -1,7 +1,11 @@
 {
-  "id": "bienvenue-rouge",
-  "name": "Bienvenue : rouge",
-  "description": "Deck de bienvenue (40 cartes, Foundations). Dragons et sorts de dégâts directs : brûlez les bloqueurs, puis Drakuseth et Shivan Dragon finissent le travail.",
+  "id": "welcome-red",
+  "name": "Welcome: Red",
+  "description": "Welcome deck (40 cards, Foundations). Dragons and direct damage spells: burn away the blockers, then Drakuseth and Shivan Dragon finish the job.",
+  "fr": {
+    "name": "Bienvenue : rouge",
+    "description": "Deck de bienvenue (40 cartes, Foundations). Dragons et sorts de dégâts directs : brûlez les bloqueurs, puis Drakuseth et Shivan Dragon finissent le travail."
+  },
   "colors": [
     "R"
   ],

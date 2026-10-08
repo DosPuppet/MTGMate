@@ -1,4 +1,5 @@
-/** Bloomburrow — cartes blanches. */
+/** Bloomburrow — white cards. */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -44,7 +45,7 @@ export const WHITE: Record<string, CardScript> = {
           ...fx.when(cond.opponentHasMore("creatures"), fx.createTokens(FISH, 2)),
           ...fx.when(cond.opponentHasMore("hand"), fx.draw(1)),
         ],
-        { label: "Rattrapage : Trésor, 4 PV, Poissons, carte" },
+        { label: "Catch-up: Treasure, 4 life, Fish, card" },
       ),
     ],
   },
@@ -61,13 +62,13 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Builder's Talent": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(WALL)], { label: "Mur 0/4 avec le défenseur" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(WALL)], { label: "0/4 Wall with defender" })],
     classLevels: [
       [
         triggered(when.enters({ controller: "you", notTypes: ["Creature", "Land"] }), [fx.addCounters(ref.target(), 1)], {
           targets: [target.creature("t", { controller: "you" })],
           batched: true,
-          label: "Marqueur +1/+1",
+          label: "+1/+1 counter",
         }),
       ],
       [
@@ -77,30 +78,28 @@ export const WHITE: Record<string, CardScript> = {
               "t",
               { permanent: true, notTypes: ["Creature", "Land"] },
               "you",
-              "carte de permanent non-créature non-terrain",
+              "noncreature, nonland permanent card",
             ),
           ],
-          label: "Renvoie un permanent non-créature",
+          label: "Returns a noncreature permanent",
         }),
       ],
     ],
   },
   "Caretaker's Talent": {
-    abilities: [
-      triggered(when.enters(TOKEN_YOU), [fx.draw(1)], { batched: true, oncePerTurn: true, label: "Piochez une carte" }),
-    ],
+    abilities: [triggered(when.enters(TOKEN_YOU), [fx.draw(1)], { batched: true, oncePerTurn: true, label: "Draw a card" })],
     classLevels: [
       [
         triggered(when.classLevel(2), [fx.copyToken(ref.target())], {
-          targets: [targetObj("t", TOKEN_YOU, "jeton que vous contrôlez")],
-          label: "Copie d'un jeton",
+          targets: [targetObj("t", TOKEN_YOU, "token you control")],
+          label: "Copy of a token",
         }),
       ],
       [staticAbility({ types: ["Creature"], token: true, controller: "you" }, { power: 2, toughness: 2 }, { label: "+2/+2" })],
     ],
   },
   "Carrot Cake": {
-    abilities: [...entersAndSacrificed([fx.createTokens(RABBIT), fx.scry(1)], "Lapin 1/1, regard 1"), FOOD_ABILITY],
+    abilities: [...entersAndSacrificed([fx.createTokens(RABBIT), fx.scry(1)], "1/1 Rabbit, scry 1"), FOOD_ABILITY],
   },
   "Crumb and Get It": {
     spell: spell(
@@ -112,13 +111,7 @@ export const WHITE: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.emblem(
-          "Dawn's Truce",
-          "Vous avez la défense talismanique jusqu'à la fin du tour.",
-          [playerStatic({ hexproof: true })],
-          false,
-          true,
-        ),
+        fx.emblem("Dawn's Truce", msg("You have hexproof until end of turn."), [playerStatic({ hexproof: true })], false, true),
         fx.modifyAll({ controller: "you" }, { addKeywords: ["hexproof"] }),
         ...fx.when(cond.gift, fx.modifyAll({ controller: "you" }, { addKeywords: ["indestructible"] })),
       ],
@@ -130,7 +123,12 @@ export const WHITE: Record<string, CardScript> = {
         {
           ...target.upTo(
             2,
-            target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 2 }, "you", "carte de créature de VM 2 ou moins"),
+            target.cardInGraveyard(
+              "t",
+              { types: ["Creature"], maxManaValue: 2 },
+              "you",
+              "creature card with mana value 2 or less",
+            ),
           ),
           kickedCount: 3,
         },
@@ -146,29 +144,33 @@ export const WHITE: Record<string, CardScript> = {
           ...fx.when(cond.refMatches(ref.target(), { maxPower: 2 }), fx.addCounters(ref.self, 1)),
           fx.exileUntilLeaves(ref.target()),
         ],
-        { targets: [target.creature("t", { controller: "opponent" })], label: "Exile une créature adverse" },
+        { targets: [target.creature("t", { controller: "opponent" })], label: "Exiles a creature an opponent controls" },
       ),
     ],
   },
   "Essence Channeler": {
     abilities: [
-      staticAbility("self", { addKeywords: ["flying", "vigilance"] }, { condition: cond.lostLife, label: "Vol et vigilance" }),
-      triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
+      staticAbility(
+        "self",
+        { addKeywords: ["flying", "vigilance"] },
+        { condition: cond.lostLife, label: "Flying and vigilance" },
+      ),
+      triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }),
       triggered(when.diesSelf, [fx.lkiCountersTo(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Ses marqueurs sur une créature",
+        label: "Its counters onto a creature",
       }),
     ],
   },
   "Feather of Flight": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
-      staticAbility("attached", { power: 1, addKeywords: ["flying"] }, { label: "+1/+0 et vol" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }),
+      staticAbility("attached", { power: 1, addKeywords: ["flying"] }, { label: "+1/+0 and gains flying" }),
     ],
   },
   "Flowerfoot Swordmaster": {
-    abilities: [valiant([fx.pumpAll(kin(["Mouse"]), 1, 0)], { label: "Souris +1/+0" })],
+    abilities: [valiant([fx.pumpAll(kin(["Mouse"]), 1, 0)], { label: "Mouse +1/+0" })],
   },
   "Harvestrite Host": {
     abilities: [
@@ -179,7 +181,7 @@ export const WHITE: Record<string, CardScript> = {
           fx.countResolution("n"),
           ...fx.when(cond.all(cond.v("n", 2), cond.not(cond.v("n", 3))), fx.draw(1)),
         ],
-        { targets: [target.creature("t", { controller: "you" })], label: "+1/+0 (carte à la deuxième fois)" },
+        { targets: [target.creature("t", { controller: "you" })], label: "+1/+0 (a card the second time)" },
       ),
     ],
   },
@@ -197,27 +199,22 @@ export const WHITE: Record<string, CardScript> = {
       triggered(when.dies(FLYER_YOU), [fx.toBattlefield(ref.target())], {
         targets: [
           {
-            ...target.cardInGraveyard(
-              "t",
-              { types: ["Creature"] },
-              "you",
-              "autre carte de créature de valeur de mana inférieure",
-            ),
-            // « Inférieure » à celle de la créature morte (qui ne peut donc pas être choisie), au ciblage puis à la
-            // résolution (608.2b).
+            ...target.cardInGraveyard("t", { types: ["Creature"] }, "you", "other creature card with lesser mana value"),
+            // "Lesser" than that of the creature that died (which therefore can't be chosen), on targeting then on
+            // resolution (608.2b).
             maxManaValueAmount: amount.plus(amount.manaValueOf(ref.eventObject), -1),
           },
         ],
-        label: "Renvoie une créature de VM inférieure",
+        label: "Returns a creature with lesser MV",
       }),
     ],
   },
   "Jolly Gerbils": {
-    abilities: [triggered(when.giveGift, [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.giveGift, [fx.draw(1)], { label: "Draw a card" })],
   },
   "Lifecreed Duo": {
     abilities: [
-      triggered(when.enters({ types: ["Creature"], controller: "you", other: true }), [fx.gainLife(1)], { label: "+1 PV" }),
+      triggered(when.enters({ types: ["Creature"], controller: "you", other: true }), [fx.gainLife(1)], { label: "+1 life" }),
     ],
   },
   "Mabel's Mettle": {
@@ -230,7 +227,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       valiant([fx.tap(ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engage une créature",
+        label: "Taps a creature",
       }),
     ],
   },
@@ -240,9 +237,9 @@ export const WHITE: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         sacrifice: true,
-        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruit un artefact ou un enchantement",
+        label: "Destroy an artifact or enchantment",
       }),
     ],
   },
@@ -261,8 +258,8 @@ export const WHITE: Record<string, CardScript> = {
   "Pileated Provisioner": {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
-        targets: [targetObj("t", NONFLYER_YOU, "créature sans le vol que vous contrôlez")],
-        label: "Marqueur +1/+1",
+        targets: [targetObj("t", NONFLYER_YOU, "creature without flying you control")],
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -278,7 +275,7 @@ export const WHITE: Record<string, CardScript> = {
         targetObj(
           "t",
           { types: ["Creature"], anyOf: [{ minPower: 4 }, { minToughness: 4 }] },
-          "créature de force ou d'endurance 4 ou plus",
+          "creature with power or toughness 4 or greater",
         ),
       ],
       [fx.destroy(ref.target())],
@@ -293,27 +290,25 @@ export const WHITE: Record<string, CardScript> = {
           fx.delayed([fx.toBattlefield(ref.target("k"), { counters: { kind: "flying", n: 1 } })], { k: ref.stored("k") }),
         ],
         {
-          targets: [target.upTo(1, targetObj("t", NONFLYER_YOU, "créature sans le vol que vous contrôlez"))],
-          label: "Exile une créature (elle revient avec un marqueur de vol)",
+          targets: [target.upTo(1, targetObj("t", NONFLYER_YOU, "creature without flying you control"))],
+          label: "Exiles a creature (it returns with a flying counter)",
         },
       ),
     ],
   },
   "Season of the Burrow": {
     spell: pawprint(
-      { pips: 1, label: "Lapin 1/1", effects: [fx.createTokens(RABBIT)] },
+      { pips: 1, label: "1/1 Rabbit", effects: [fx.createTokens(RABBIT)] },
       {
         pips: 2,
-        label: "Exile un permanent non-terrain (son contrôleur pioche)",
+        label: "Exiles a nonland permanent (its controller draws)",
         targets: [target.nonland("t")],
         effects: [fx.draw(1, ref.controllerOf(ref.target())), fx.exile(ref.target())],
       },
       {
         pips: 3,
-        label: "Renvoie un permanent de VM 3 ou moins (marqueur d'indestructible)",
-        targets: [
-          target.cardInGraveyard("t", { permanent: true, maxManaValue: 3 }, "you", "carte de permanent de VM 3 ou moins"),
-        ],
+        label: "Returns a permanent with MV 3 or less (indestructible counter)",
+        targets: [target.cardInGraveyard("t", { permanent: true, maxManaValue: 3 }, "you", "permanent card with MV 3 or less")],
         effects: [fx.toBattlefield(ref.target(), { counters: { kind: "indestructible", n: 1 } })],
       },
     ),
@@ -322,7 +317,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.self, 2, 0)], {
         condition: cond.controls({ token: true }),
-        label: "+2/+0 (vous contrôlez un jeton)",
+        label: "+2/+0 (you control a token)",
       }),
     ],
   },
@@ -332,7 +327,7 @@ export const WHITE: Record<string, CardScript> = {
         targetObj(
           "t",
           { types: ["Creature"], anyOf: [{ attacking: true }, { blocking: true }, { tapped: true }] },
-          "créature attaquante, bloqueuse ou engagée",
+          "attacking, blocking or tapped creature",
         ),
       ],
       [fx.damage(4, ref.target()), ...fx.when(cond.controls({ types: ["Creature"], subtype: "Bat" }), fx.gainLife(3))],
@@ -342,7 +337,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.lookAtTop(4, { filter: { types: ["Creature"], maxPower: 3 } })], {
         condition: GAINED_OR_LOST,
-        label: "Regarde 4 cartes : une créature de force 3 ou moins",
+        label: "Looks at 4 cards: a creature with power 3 or less",
       }),
     ],
   },
@@ -357,7 +352,7 @@ export const WHITE: Record<string, CardScript> = {
             "graveyard",
             { types: ["Creature"] },
             { to: "battlefield", underYourControl: true },
-            { pool: ref.stored("d"), prompt: "Créature à renvoyer" },
+            { pool: ref.stored("d"), prompt: "Creature to return" },
           ),
         ),
       ],
@@ -367,24 +362,24 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.untap(ref.target())], {
         targets: [target.nonland("t")],
-        label: "Dégage un permanent non-terrain",
+        label: "Untaps a nonland permanent",
       }),
     ],
   },
   "Valley Questcaller": {
     abilities: [
-      triggered(when.enters(kin(RABBIT_BAT_BIRD_MOUSE, { other: true })), [fx.scry(1)], { batched: true, label: "Regard 1" }),
+      triggered(when.enters(kin(RABBIT_BAT_BIRD_MOUSE, { other: true })), [fx.scry(1)], { batched: true, label: "Scry 1" }),
       staticAbility(kin(RABBIT_BAT_BIRD_MOUSE, { other: true }), { power: 1, toughness: 1 }, { label: "+1/+1" }),
     ],
   },
   "Warren Elder": {
-    abilities: [activated({ mana: "{3}{W}", effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 1)], label: "Vos créatures +1/+1" })],
+    abilities: [activated({ mana: "{3}{W}", effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 1)], label: "Your creatures +1/+1" })],
   },
   "Warren Warleader": {
     abilities: [
       triggeredModal(when.attackWith(1), [
-        mode("Lapin engagé et attaquant", [], [fx.createTappedTokens(RABBIT, 1, { attacking: true })]),
-        mode("Attaquants +1/+1", [], [fx.pumpAll({ types: ["Creature"], controller: "you", attacking: true }, 1, 1)]),
+        mode("Rabbit tapped and attacking", [], [fx.createTappedTokens(RABBIT, 1, { attacking: true })]),
+        mode("Attackers +1/+1", [], [fx.pumpAll({ types: ["Creature"], controller: "you", attacking: true }, 1, 1)]),
       ]),
     ],
   },
@@ -392,8 +387,8 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [triggered(when.lifeChange, [fx.pump(ref.self, 1, 0)], { condition: cond.yourTurn, label: "+1/+0" })],
   },
   "Whiskervale Forerunner": {
-    // La carte choisie reste au-dessus de la bibliothèque (le reste dessous) ; pendant votre tour, vous pouvez la mettre
-    // sur le champ de bataille ; sinon, elle va dans votre main.
+    // The chosen card stays on top of the library (the rest on the bottom); during your turn, you may put it onto the
+    // battlefield; otherwise, it goes into your hand.
     abilities: [
       valiant(
         [
@@ -405,11 +400,11 @@ export const WHITE: Record<string, CardScript> = {
           }),
           ...fx.when(
             cond.all(cond.yourTurn, cond.v("w")),
-            fx.mayForStore(ref.you, "Mettre la créature sur le champ de bataille ?", "bf", fx.toBattlefield(ref.stored("w"))),
+            fx.mayForStore(ref.you, "Put the creature onto the battlefield?", "bf", fx.toBattlefield(ref.stored("w"))),
           ),
           ...fx.when(cond.not(cond.v("bf")), fx.toHand(ref.stored("w"))),
         ],
-        { label: "Regarde 5 cartes : une créature de VM 3 ou moins" },
+        { label: "Looks at 5 cards: a creature with MV 3 or less" },
       ),
     ],
   },

@@ -1,6 +1,6 @@
 /**
- * Éléments communs de Murders at Karlov Manor (MKM) : jetons de l'extension et aides du suspect (701.60). Le DSL et les
- * jetons communs (Indice, Thopter, Chien…) viennent des extensions précédentes (via lci/common.ts).
+ * Shared pieces of Murders at Karlov Manor (MKM): the set's tokens and the suspect helpers (701.60). The DSL and the
+ * common tokens (Clue, Thopter, Dog…) come from the earlier sets (through lci/common.ts).
  */
 import type { ObjectFilter, TokenSpec } from "@mtgx/engine";
 import { fx, ref, triggered, when } from "../lci/common";
@@ -15,21 +15,21 @@ const creature = (
   extra: Partial<TokenSpec> = {},
 ): TokenSpec => ({ name, colors, types: ["Creature"], subtypes: [name], power, toughness, ...extra });
 
-/** Détective : créature blanche et bleue 2/2. */
+/** Detective: 2/2 white and blue creature. */
 export const DETECTIVE: TokenSpec = creature("Detective", ["W", "U"], 2, 2);
-/** Squelette : créature noire 2/1. */
+/** Skeleton: 2/1 black creature. */
 export const SKELETON_B: TokenSpec = creature("Skeleton", ["B"], 2, 1);
-/** Esprit : créature blanche et noire 1/1 avec le vol. */
+/** Spirit: 1/1 white and black creature with flying. */
 export const SPIRIT_WB: TokenSpec = creature("Spirit", ["W", "B"], 1, 1, { keywords: ["flying"] });
-/** Araignée : créature noire et verte 2/1 avec la portée et la menace. */
+/** Spider: 2/1 black and green creature with reach and menace. */
 export const SPIDER_BG: TokenSpec = creature("Spider", ["B", "G"], 2, 1, { keywords: ["reach", "menace"] });
-/** Diablotin : créature rouge 2/2 avec « quand ce jeton meurt, il inflige 2 blessures à chaque adversaire ». */
+/** Imp: 2/2 red creature with "When this token dies, it deals 2 damage to each opponent." */
 export const IMP: TokenSpec = creature("Imp", ["R"], 2, 2, {
-  abilities: [triggered(when.diesSelf, [fx.damage(2, ref.eachOpponent)], { label: "2 blessures à chaque adversaire" })],
+  abilities: [triggered(when.diesSelf, [fx.damage(2, ref.eachOpponent)], { label: "2 damage to each opponent" })],
   text: "When this token dies, it deals 2 damage to each opponent.",
 });
-/** Merfolk : créature bleue 1/1. */
+/** Merfolk: 1/1 blue creature. */
 export const MERFOLK_U: TokenSpec = creature("Merfolk", ["U"], 1, 1);
 
-/** « créature suspecte » (701.60). */
+/** "suspected creature" (701.60). */
 export const SUSPECTED: ObjectFilter = { types: ["Creature"], suspected: true };

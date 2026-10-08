@@ -1,7 +1,10 @@
 {
   "id": "cmd-ur-dragon",
   "name": "The Ur-Dragon — Dragons",
-  "description": "Commander, cinq couleurs, d'après la liste « How to Train Ur-Dragon [Primer!] » (Moxfield, bracket 4). Une montée en puissance par le mana (créatures et artefacts de mana, Trésors) jusqu'aux grands Dragons : The Ur-Dragon les rend moins chers depuis la zone de commandement, pioche à chaque attaque et met un permanent de votre main sur le champ de bataille.",
+  "description": "Commander, five colors, based on the list \"How to Train Ur-Dragon [Primer!]\" (Moxfield, bracket 4). Ramp up through mana (mana creatures and artifacts, Treasures) to the big Dragons: The Ur-Dragon makes them cheaper from the command zone, draws on each attack and puts a permanent from your hand onto the battlefield.",
+  "fr": {
+    "description": "Commander, cinq couleurs, d'après la liste « How to Train Ur-Dragon [Primer!] » (Moxfield, bracket 4). Une montée en puissance par le mana (créatures et artefacts de mana, Trésors) jusqu'aux grands Dragons : The Ur-Dragon les rend moins chers depuis la zone de commandement, pioche à chaque attaque et met un permanent de votre main sur le champ de bataille."
+  },
   "colors": [
     "W",
     "U",

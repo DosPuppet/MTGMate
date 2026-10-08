@@ -4,7 +4,7 @@
  *
  * A line is French when it has two French function words, or one with an accented French word or a verb in "-ez"; a
  * lone accented word counts too, unless it belongs to an English card name (Séance Board, Éowyn…). Data that is French
- * on purpose (catalogs, Scryfall data, `french-overrides.json`, `fr` and `nameFr` fields) is out of scope.
+ * on purpose (catalogs, Scryfall data, `french-overrides.json`, `fr`, `nameFr` and `frText` fields) is out of scope.
  */
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -19,7 +19,9 @@ const STOPWORDS = new Set(
   ).split(" "),
 );
 const ACCENTED = /[éèêàùçœÉÈÊÀ]/;
-const FRENCH_DATA = /\b(fr|nameFr)\s*:\s*[{"'`]/;
+const FRENCH_DATA = /\b(fr|nameFr|frText)\s*:\s*[{"'`]/;
+/** A `fr:` / `frText:` key whose value the formatter put on the next line. */
+const FRENCH_DATA_KEY = /\b(fr|nameFr|frText)\s*:\s*$/;
 
 /** Files in scope: tracked sources, styles, scripts, documents, and the data files written by hand. */
 const SCOPE = /\.(ts|tsx|js|mjs|cjs|css|html|md|ya?ml|sh|txt)$/;
@@ -73,17 +75,25 @@ export function frenchLines(file: string): { line: number; text: string }[] {
   } catch {
     return []; // deleted in the working tree
   }
-  // French data on purpose: the `fr` fields of a JSON file (deck names), `fr:` and `nameFr:` properties in code.
+  // French data on purpose: the `fr` fields of a JSON file (deck names), `fr:`, `nameFr:` and `frText:` in code.
   if (file.endsWith(".json"))
     text = JSON.stringify(
       JSON.parse(text, (k, v) => (k === "fr" ? undefined : v)),
       null,
       2,
     );
-  return text
-    .split("\n")
-    .map((t, i) => ({ line: i + 1, text: t }))
-    .filter((l) => !FRENCH_DATA.test(l.text) && isFrenchLine(l.text));
+  // A data value can sit on the lines after its key, joined by "+".
+  const lines = text.split("\n");
+  const out: { line: number; text: string }[] = [];
+  let data = false;
+  for (const [i, t] of lines.entries()) {
+    const previous = lines[i - 1] ?? "";
+    data = FRENCH_DATA.test(t) || FRENCH_DATA_KEY.test(t) || FRENCH_DATA_KEY.test(previous) || (data && /\+\s*$/.test(previous));
+    // `i18n-ignore` in a comment: French kept on purpose on this line (or the next one, for a comment on its own line).
+    const ignored = t.includes("i18n-ignore") || /^\s*\/\/.*i18n-ignore/.test(previous);
+    if (!data && !ignored && isFrenchLine(t)) out.push({ line: i + 1, text: t });
+  }
+  return out;
 }
 
 /** Files that still contain French, with their number of French lines. */

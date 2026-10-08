@@ -255,7 +255,7 @@ describe("Counter Blitz (EDH)", () => {
       const card = idOf(s, "p1", "hand", "Collective Effort");
       const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
       const modes = opt?.type === "cast" ? opt.modes : [];
-      const both = modes.find((m) => m.label?.includes("force 4") && m.label.includes("joueur ciblé"));
+      const both = modes.find((m) => m.label?.includes("power 4") && m.label.includes("target player"));
       expect(both).toBeDefined();
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = settle(castIt(s, "p1", "Collective Effort", { mode: both?.index, targets: { c: [angel], p: ["p1"] } }));

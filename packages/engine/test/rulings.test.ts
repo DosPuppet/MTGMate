@@ -1068,7 +1068,7 @@ describe("« Gardez les permanents choisis » : les choix dans l'ordre APNAP, pu
       p3: { battlefield: ["Forest", "Island", "Bear Cub"] },
     });
     const lili = idOf(s, "p1", "battlefield", "Liliana, Dreadhorde General");
-    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === lili && x.label?.includes("chaque type"));
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === lili && x.label?.includes("each type"));
     if (a?.type !== "activate") throw new Error("capacité −9 indisponible");
     s = act(s, "p1", { type: "activate", source: lili, ability: a.ability });
     const field = s.battlefield.length;
@@ -1502,7 +1502,7 @@ describe("Deck Dark Leo & Shredder : rulings", () => {
     const will = idOf(s, "p1", "hand", "Akroma's Will");
     const both = legalActions(s, "p1")
       .flatMap((a) => (a.type === "cast" && a.card === will ? a.modes : []))
-      .find((m) => m.label?.startsWith("Les deux"));
+      .find((m) => m.label?.startsWith("Both"));
     expect(both).toBeDefined();
     s = act(s, "p1", { type: "cast", card: will, mode: both?.index } as never);
     // En réponse, le commandant meurt.

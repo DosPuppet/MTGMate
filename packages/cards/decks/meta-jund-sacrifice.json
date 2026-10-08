@@ -1,7 +1,10 @@
 {
   "id": "meta-jund-sacrifice",
   "name": "Jund Sacrifice",
-  "description": "Méta Standard (6,5 %). Noir-vert-rouge : jetons et petites créatures sacrifiés pour piocher et drainer (The Sackville-Bagginses, Obsessive Pursuit, Callous Inspector).",
+  "description": "Standard metagame (6.5%). Black-green-red: tokens and small creatures sacrificed to draw and drain (The Sackville-Bagginses, Obsessive Pursuit, Callous Inspector).",
+  "fr": {
+    "description": "Méta Standard (6,5 %). Noir-vert-rouge : jetons et petites créatures sacrifiés pour piocher et drainer (The Sackville-Bagginses, Obsessive Pursuit, Callous Inspector)."
+  },
   "colors": [
     "B",
     "R",

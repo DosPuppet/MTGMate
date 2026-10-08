@@ -7,6 +7,7 @@ import { createTokens } from "../src/actions";
 import { cond, fx, triggered, when } from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
+import { plainText } from "../src/text";
 import { objectDidThisTurn } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import { act, idOf, idsOf, passBoth, scenario } from "./helpers";
@@ -81,7 +82,7 @@ describe("monture (702.171)", () => {
     let s = scenario({ p1: { battlefield: [MOUNT, "Bear Cub"] } });
     const mount = idOf(s, "p1", "battlefield", MOUNT.name);
     const saddle = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === mount);
-    expect(saddle?.type === "activate" && saddle.label).toBe("Monture 2");
+    expect(saddle?.type === "activate" && plainText(saddle.label ?? "")).toBe("Saddle 2");
     s = act(s, "p1", { type: "activate", source: mount, ability: saddle?.type === "activate" ? saddle.ability : -1 });
     expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
     s = passBoth(s);

@@ -142,7 +142,7 @@ describe("Stellar Sights", () => {
       const animate = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === f);
       s = settle(act(s, "p1", { type: "activate", source: f, ability: animate?.type === "activate" ? animate.ability : 0 }));
       expect([chars(s, f).power, chars(s, f).toughness]).toEqual([1, 4]);
-      const swap = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === f && a.label?.startsWith("Échangez"));
+      const swap = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === f && a.label?.startsWith("Switch"));
       s = settle(act(s, "p1", { type: "activate", source: f, ability: swap?.type === "activate" ? swap.ability : 0 }));
       expect([chars(s, f).power, chars(s, f).toughness]).toEqual([4, 1]);
     });
@@ -249,9 +249,9 @@ describe("Stellar Sights", () => {
       );
       expect(nameOf(s, stage)).toBe("Thespian's Stage");
       expect(chars(s, stage).name).toBe("Ancient Tomb");
-      expect(
-        chars(s, stage).abilities.some((a) => a.kind === "activated" && a.label === "Devient une copie du terrain ciblé"),
-      ).toBe(true);
+      expect(chars(s, stage).abilities.some((a) => a.kind === "activated" && a.label === "Becomes a copy of target land")).toBe(
+        true,
+      );
     });
   });
 

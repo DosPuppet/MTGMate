@@ -1,4 +1,4 @@
-/** Murders at Karlov Manor (MKM) : suspect, déguisement, cape, Affaires, réunir des preuves, Indices. */
+/** Murders at Karlov Manor (MKM): suspect, disguise, cloak, Cases, collect evidence, Clues. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

@@ -13,6 +13,7 @@ import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
+import { msg } from "../src/text";
 import type { ChoiceRequest, GameState, PlayerId, TokenSpec } from "../src/types";
 import {
   act,
@@ -483,14 +484,14 @@ describe("The Big Score, lot K8 : mythiques", () => {
       },
     });
     const vault = idOf(s, "p1", "battlefield", "Fomori Vault");
-    s = activateBy(s, "p1", vault, "Défaussez");
+    s = activateBy(s, "p1", vault, "Discard");
     s = settle(s, (req, _p, cur) => pickNamed(cur, req, "Bear Cub"));
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Forest", "Swamp", "Island"]);
     // Sans carte en main, la capacité ne s'active pas.
     const t = scenario({ p1: { battlefield: ["Fomori Vault", "Ancient Cornucopia", ...lands("Plains", 3)] } });
-    expect(hasActivate(t, "p1", idOf(t, "p1", "battlefield", "Fomori Vault"), "Défaussez")).toBe(false);
+    expect(hasActivate(t, "p1", idOf(t, "p1", "battlefield", "Fomori Vault"), "Discard")).toBe(false);
   });
 
   it("Loot, the Key to Everything : à votre entretien, exile autant de cartes que de types parmi vos autres permanents non-terrains, jouables ce tour-ci", () => {
@@ -536,15 +537,15 @@ describe("The Big Score, lot K8 : mythiques", () => {
       const forest = idOf(s, "p1", "battlefield", "Forest");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       // Sans créature équipée, pas de marqueur +1/+1.
-      expect(hasActivate(s, "p1", jitte, "Marqueur +1/+1")).toBe(false);
+      expect(hasActivate(s, "p1", jitte, "+1/+1 counter")).toBe(false);
       equip(s, jitte, bear);
-      s = settle(activateBy(s, "p1", jitte, "Marqueur +1/+1"));
+      s = settle(activateBy(s, "p1", jitte, "+1/+1 counter"));
       expect(chars(s, bear)).toMatchObject({ power: 3, toughness: 3 });
-      s = settle(activateBy(s, "p1", jitte, "Dégagez", { targets: { t: [forest] } }));
+      s = settle(activateBy(s, "p1", jitte, "Untap", { targets: { t: [forest] } }));
       expect(s.objects[forest]?.tapped).toBe(false);
-      s = settle(activateBy(s, "p1", jitte, "Ne peut pas bloquer", { targets: { t: [angel] } }));
+      s = settle(activateBy(s, "p1", jitte, "Can't block", { targets: { t: [angel] } }));
       expect(s.objects[jitte]?.counters.charge ?? 0).toBe(0);
-      expect(hasActivate(s, "p1", jitte, "Dégagez")).toBe(false);
+      expect(hasActivate(s, "p1", jitte, "Untap")).toBe(false);
       s = attack(s, [bear]);
       s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
       expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: angel, attacker: bear }] })).toThrow();
@@ -556,7 +557,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     const ring = idOf(s, "p1", "battlefield", "Lotus Ring");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, ring).keywords).toContain("indestructible");
-    expect(hasActivate(s, "p1", ring, "Équiper {3}")).toBe(false);
+    expect(hasActivate(s, "p1", ring, msg("Equip {cost}", { cost: "{3}" }))).toBe(false);
     equip(s, ring, bear);
     expect(chars(s, bear)).toMatchObject({ power: 5, toughness: 5 });
     expect(chars(s, bear).keywords).toContain("vigilance");
@@ -574,7 +575,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
       p2: { library: lands("Swamp", 9) },
     });
     const vessel = idOf(s, "p1", "battlefield", "Memory Vessel");
-    s = settle(activateBy(s, "p1", vessel, "Chaque joueur"));
+    s = settle(activateBy(s, "p1", vessel, "Each player"));
     expect(exiled(s, "Memory Vessel")).toHaveLength(1);
     expect(exiled(s, "Mountain")).toHaveLength(7);
     expect(exiled(s, "Swamp")).toHaveLength(7);
@@ -658,7 +659,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     const salvager = idOf(s, "p1", "battlefield", "Sandstorm Salvager");
     const obj = s.objects[salvager];
     if (obj) obj.controlledSince = 0;
-    s = settle(activateBy(s, "p1", salvager, "Vos jetons"));
+    s = settle(activateBy(s, "p1", salvager, "Your creature tokens"));
     expect(chars(s, golem)).toMatchObject({ power: 4, toughness: 4 });
     expect(chars(s, golem).keywords).toContain("trample");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -705,7 +706,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     bump(s);
     const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === vista ? a.colors : []));
     expect(colors).toEqual(["U"]);
-    s = activateBy(s, "p1", vista, "Un mana de chaque");
+    s = activateBy(s, "p1", vista, "One mana of each");
     s = settle(s);
     // Rouge (Gobelin) et vert (Bear Cub) ; ni l'Ours bicolore ni le Golem incolore.
     expect(s.players.p1?.manaPool).toMatchObject({ R: 1, G: 1, W: 0, U: 0, B: 0 });
@@ -729,15 +730,15 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(offered).not.toContain("Bear Cub");
     expect(exiled(s, "Transmutation Font")).toHaveLength(1);
     const forge = idOf(s, "p1", "battlefield", "Territory Forge");
-    s = settle(activateBy(s, "p1", forge, "Jeton Indice"));
+    s = settle(activateBy(s, "p1", forge, "Clue token"));
     expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
   });
 
   it("Transmutation Font : {T} : un jeton Sang, Indice ou Nourriture ; {3}, {T}, sacrifiez trois jetons d'artefact : un artefact de la bibliothèque sur le champ de bataille (un Territory Forge non lancé n'exile rien)", () => {
     let s = scenario({ p1: { battlefield: ["Transmutation Font"] } });
     const font = idOf(s, "p1", "battlefield", "Transmutation Font");
-    for (const label of ["Jeton Sang", "Jeton Indice", "Jeton Nourriture"]) expect(hasActivate(s, "p1", font, label)).toBe(true);
-    s = settle(activateBy(s, "p1", font, "Jeton Sang"));
+    for (const label of ["Blood token", "Clue token", "Food token"]) expect(hasActivate(s, "p1", font, label)).toBe(true);
+    s = settle(activateBy(s, "p1", font, "Blood token"));
     expect(idsOf(s, "p1", "battlefield", "Blood")).toHaveLength(1);
     expect(s.objects[font]?.tapped).toBe(true);
     let t = scenario({
@@ -751,8 +752,8 @@ describe("The Big Score, lot K8 : mythiques", () => {
     const font2 = idOf(t, "p1", "battlefield", "Transmutation Font");
     // Vitesse de rituel seulement.
     const inCombat = passUntil(t, (x) => x.turn.step === "beginCombat");
-    expect(hasActivate(inCombat, "p1", font2, "Un artefact")).toBe(false);
-    t = activateBy(t, "p1", font2, "Un artefact");
+    expect(hasActivate(inCombat, "p1", font2, "An artifact")).toBe(false);
+    t = activateBy(t, "p1", font2, "An artifact");
     t = settle(t, (req, _p, cur) => pickNamed(cur, req, "Territory Forge"));
     expect(idsOf(t, "p1", "battlefield", "Territory Forge")).toHaveLength(1);
     for (const n of ["Clue", "Food", "Treasure"]) expect(idsOf(t, "p1", "battlefield", n)).toHaveLength(0);
@@ -766,13 +767,13 @@ describe("The Big Score, lot K8 : mythiques", () => {
     for (const name of ["Clue", "Clue", "Food"]) createTokens(s, "p1", TOKEN_SPECS[name] as TokenSpec, 1);
     const font = idOf(s, "p1", "battlefield", "Transmutation Font");
     // Deux noms seulement : la capacité n'est pas proposée.
-    expect(hasActivate(s, "p1", font, "Un artefact")).toBe(false);
+    expect(hasActivate(s, "p1", font, "An artifact")).toBe(false);
     createTokens(s, "p1", TOKEN_SPECS.Treasure as TokenSpec, 1);
     const clues = idsOf(s, "p1", "battlefield", "Clue");
     const food = idOf(s, "p1", "battlefield", "Food");
     const treasure = idOf(s, "p1", "battlefield", "Treasure");
     const ability = legalActions(s, "p1").find(
-      (x) => x.type === "activate" && x.source === font && x.label?.startsWith("Un artefact"),
+      (x) => x.type === "activate" && x.source === font && x.label?.startsWith("An artifact"),
     );
     if (ability?.type !== "activate") throw new Error("capacité introuvable");
     // Deux Indices : refusé.

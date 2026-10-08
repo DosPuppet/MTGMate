@@ -1,4 +1,4 @@
-/** The Lost Caverns of Ixalan — cartes bleues. */
+/** The Lost Caverns of Ixalan — blue cards. */
 import {
   ARTIFACT_ENTERED,
   ARTIFACT_OR_CREATURE,
@@ -28,14 +28,14 @@ import {
 const ARTIFACT_MANA = manaAbility("U", 1, {
   restriction: { spell: { types: ["Artifact"] }, abilityOfSource: { types: ["Artifact"] } },
 });
-const mapOnEnter = triggered(when.entersSelf, [fx.createTokens(MAP)], { label: "Jeton Carte" });
+const mapOnEnter = triggered(when.entersSelf, [fx.createTokens(MAP)], { label: "Map token" });
 
 export const BLUE: Record<string, CardScript> = {
   "Akal Pakal, First Among Equals": {
     abilities: [
       triggered(when.eachEndStep, [fx.lookAtTop(2, { count: 1, rest: "graveyard" })], {
         condition: ARTIFACT_ENTERED,
-        label: "Une carte en main, l'autre au cimetière",
+        label: "One card into your hand, the other into the graveyard",
       }),
     ],
   },
@@ -56,9 +56,9 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Confounding Riddle": {
     spell: modal(
-      mode("Une des quatre cartes du dessus en main", [], [fx.lookAtTop(4, { count: 1, rest: "graveyard" })]),
+      mode("One of the top four cards into your hand", [], [fx.lookAtTop(4, { count: 1, rest: "graveyard" })]),
       mode(
-        "Contrecarrez un sort à moins que {4} ne soit payé",
+        "Counter a spell unless {4} is paid",
         [target.spell()],
         [...fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{4}" }, fx.counter(ref.target()))],
       ),
@@ -69,7 +69,7 @@ export const BLUE: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         targets: [target.optional(target.nonland("t", { other: true }))],
         condition: descend(4),
-        label: "Descente 4 — renvoyez un permanent non-terrain",
+        label: "Descend 4 — return a nonland permanent",
       }),
     ],
   },
@@ -78,18 +78,18 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         { on: "taps", who: { types: ["Creature"], subtype: "Merfolk", token: false, controller: "you" } },
         [fx.createTokens(MERFOLK_HEXPROOF)],
-        { batched: true, label: "Ondin 1/1 avec la défense talismanique" },
+        { batched: true, label: "1/1 Merfolk with hexproof" },
       ),
     ],
   },
   "Didact Echo": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
-      staticAbility("self", { addKeywords: ["flying"] }, { condition: descend(4), label: "Descente 4 — vol" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }),
+      staticAbility("self", { addKeywords: ["flying"] }, { condition: descend(4), label: "Descend 4 — flying" }),
     ],
   },
   "Frilled Cave-Wurm": {
-    abilities: [staticAbility("self", { power: 2 }, { condition: descend(4), label: "Descente 4 — +2/+0" })],
+    abilities: [staticAbility("self", { power: 2 }, { condition: descend(4), label: "Descend 4 — +2/+0" })],
   },
   "Hermitic Nautilus": {
     abilities: [activated({ mana: "{1}{U}", effects: [fx.pump(ref.self, 3, -3)], label: "+3/−3" })],
@@ -97,7 +97,7 @@ export const BLUE: Record<string, CardScript> = {
   "Merfolk Cave-Diver": {
     abilities: [
       triggered(when.explores({ types: ["Creature"], controller: "you" }), [fx.pump(ref.self, 1, 0, ["unblockable"])], {
-        label: "+1/+0 et imblocable",
+        label: "+1/+0 and can't be blocked",
       }),
     ],
   },
@@ -109,7 +109,7 @@ export const BLUE: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.lookAtTop(2, { count: 1, rest: "graveyard" })],
-        label: "Une carte en main, l'autre au cimetière",
+        label: "One card into your hand, the other into the graveyard",
       }),
     ],
   },
@@ -124,16 +124,16 @@ export const BLUE: Record<string, CardScript> = {
         {
           power: 1,
           toughness: 1,
-          addAbilities: [triggered(when.attacksSelf, [...fx.loot()], { label: "Piochez, puis défaussez" })],
+          addAbilities: [triggered(when.attacksSelf, [...fx.loot()], { label: "Draw, and then discard" })],
         },
-        { label: "+1/+1 et pillage en attaquant" },
+        { label: "+1/+1 and loots when attacking" },
       ),
-      equipAbility({ mana: "{1}", filter: { subtype: "Pirate" }, label: "Équiper un Pirate {1}" }),
+      equipAbility({ mana: "{1}", filter: { subtype: "Pirate" }, label: "Equip Pirate {1}" }),
     ],
   },
   "Relic's Roar": {
     spell: spell(
-      [targetObj("t", ARTIFACT_OR_CREATURE, "artefact ou créature")],
+      [targetObj("t", ARTIFACT_OR_CREATURE, "artifact or creature")],
       [
         fx.modify(ref.target(), {
           addTypes: ["Artifact", "Creature"],
@@ -148,7 +148,7 @@ export const BLUE: Record<string, CardScript> = {
   "Sage of Days": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(3, { count: 1, to: { to: "libraryTop" }, rest: "graveyard" })], {
-        label: "Une carte sur le dessus, le reste au cimetière",
+        label: "One card on top, the rest into the graveyard",
       }),
     ],
   },
@@ -157,25 +157,25 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["attacksDespiteDefender"] },
-        { condition: ARTIFACT_ENTERED, label: "Peut attaquer (un artefact est arrivé)" },
+        { condition: ARTIFACT_ENTERED, label: "Can attack (an artifact entered)" },
       ),
     ],
   },
   "Sinuous Benthisaur": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(CAVES, { count: 2, rest: "bottom" })], {
-        label: "Deux cartes en main parmi X (Cavernes)",
+        label: "Two cards into your hand out of X (Caves)",
       }),
     ],
   },
   "Song of Stupefaction": {
     enchant: {
       filter: { anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }] },
-      label: "créature ou Véhicule",
+      label: "creature or Vehicle",
     },
     abilities: [
-      triggered(when.entersSelf, [...fx.may("Meuler deux cartes ?", fx.mill(2))], { label: "Meulez deux cartes" }),
-      staticAbility("attached", { power: -1 }, { perGraveyard: PERMANENT_CARD, label: "Descente profonde — −X/−0" }),
+      triggered(when.entersSelf, [...fx.may("Mill two cards?", fx.mill(2))], { label: "Mill two cards" }),
+      staticAbility("attached", { power: -1 }, { perGraveyard: PERMANENT_CARD, label: "Fathomless descent — −X/−0" }),
     ],
   },
   "Spyglass Siren": { abilities: [mapOnEnter] },
@@ -184,52 +184,52 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.lookAtTop(4, { filter: { anyOf: [{ types: ["Artifact"] }, { subtype: "Pirate" }] }, count: 1, rest: "bottom" })],
-        { label: "Artefact ou Pirate en main" },
+        { label: "Artifact or Pirate into your hand" },
       ),
     ],
   },
   "Subterranean Schooner": {
     abilities: [
       triggered(when.attacksSelf, [fx.explore(ref.target())], {
-        targets: [{ ...target.creature("t", { crew: "source" }), label: "créature qui l'a piloté ce tour-ci" }],
-        label: "Son équipage explore",
+        targets: [{ ...target.creature("t", { crew: "source" }), label: "creature that crewed it this turn" }],
+        label: "Its crew explores",
       }),
     ],
   },
   "Unlucky Drop": {
-    spell: spell([targetObj("t", ARTIFACT_OR_CREATURE, "artefact ou créature")], [fx.topOrBottom(ref.target())]),
+    spell: spell([targetObj("t", ARTIFACT_OR_CREATURE, "artifact or creature")], [fx.topOrBottom(ref.target())]),
   },
   "Waterwind Scout": { abilities: [mapOnEnter] },
   "Waylaying Pirates": {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
-        targets: [targetObj("t", { ...ARTIFACT_OR_CREATURE, controller: "opponent" }, "artefact ou créature adverse")],
+        targets: [targetObj("t", { ...ARTIFACT_OR_CREATURE, controller: "opponent" }, "opponent's artifact or creature")],
         condition: cond.controls({ types: ["Artifact"] }),
-        label: "Engagez-le, marqueur d'étourdissement",
+        label: "Tap it, stun counter",
       }),
     ],
   },
   "Hurl into History": {
     spell: spell(
-      [target.spell("t", { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }, "sort d'artefact ou de créature")],
+      [target.spell("t", { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }, "artifact or creature spell")],
       [fx.counter(ref.target()), fx.discover(amount.manaValueOf(ref.target()))],
     ),
   },
   "Zoetic Glyph": {
-    enchant: { filter: { types: ["Artifact"] }, label: "artefact" },
+    enchant: { filter: { types: ["Artifact"] }, label: "artifact" },
     abilities: [
       staticAbility(
         "attached",
         { addTypes: ["Creature"], addSubtypes: ["Golem"], setPower: 5, setToughness: 4 },
-        { label: "Golem 5/4" },
+        { label: "5/4 Golem" },
       ),
-      triggered(when.putIntoGraveyardSelf, [fx.discover(3)], { label: "Découverte 3" }),
+      triggered(when.putIntoGraveyardSelf, [fx.discover(3)], { label: "Discover 3" }),
     ],
   },
   "The Everflowing Well": {
     abilities: [
-      triggered(when.entersSelf, [fx.mill(2), fx.draw(2)], { label: "Meulez deux cartes, piochez-en deux" }),
-      triggered(when.yourUpkeep, [fx.transform()], { condition: descend(8), label: "Descente 8 — transformation" }),
+      triggered(when.entersSelf, [fx.mill(2), fx.draw(2)], { label: "Mill two cards, draw two" }),
+      triggered(when.yourUpkeep, [fx.transform()], { condition: descend(8), label: "Descend 8 — transform" }),
     ],
   },
   "The Myriad Pools": {
@@ -239,8 +239,8 @@ export const BLUE: Record<string, CardScript> = {
         { on: "castSpell", by: "you", filter: { permanent: true }, usingManaFromSelf: true },
         [fx.becomeCopy(ref.target(), ref.eventObject)],
         {
-          targets: [target.optional(targetObj("t", { controller: "you", other: true }, "autre permanent que vous contrôlez"))],
-          label: "Un permanent devient une copie du sort",
+          targets: [target.optional(targetObj("t", { controller: "you", other: true }, "other permanent you control"))],
+          label: "A permanent becomes a copy of the spell",
         },
       ),
     ],

@@ -1,6 +1,6 @@
 /**
- * Bloomburrow (BLB) : Progéniture, Cadeau, Fourrager, Dépense, Vaillance, Saisons (modes « patte »), Classes, Seuil.
- * Les aides et jetons communs viennent de Duskmourn, Final Fantasy et Foundations (blb/common.ts).
+ * Bloomburrow (BLB): offspring, gift, forage, expend, valiant, Seasons ("paw" modes), Classes, threshold.
+ * The shared helpers and tokens come from Duskmourn, Final Fantasy and Foundations (blb/common.ts).
  */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";

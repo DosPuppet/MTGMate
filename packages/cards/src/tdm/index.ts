@@ -1,4 +1,4 @@
-/** Tarkir: Dragonstorm (TDM) : endurance, rafale, renouveau, contempler, mobilisation, harmonie, présages, Sièges. */
+/** Tarkir: Dragonstorm (TDM): endure, flurry, renew, behold, mobilize, harmonize, omens, Sieges. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

@@ -16,6 +16,7 @@ import { chooseReplacementOrder } from "../src/modifiers";
 import { spellCost } from "../src/stack";
 import { changeCounters, chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { legalTargets } from "../src/targets";
+import { plainText } from "../src/text";
 import { simultaneously } from "../src/triggers";
 import { canBlock, eliminate, forcedAttacks } from "../src/turn";
 import type { CardDef, Effect, GameEvent, GameState, TokenSpec } from "../src/types";
@@ -161,7 +162,7 @@ describe("#3 : une obligation d'attaquer n'impose pas de payer une taxe d'attaqu
   it("sans taxe, Juggernaut doit toujours attaquer", () => {
     let s = scenario({ p1: { battlefield: ["Juggernaut"] } });
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
-    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [] })).toThrow(/doit attaquer/);
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [] })).toThrow(/must attack/);
     expect(forcedAttacks(s, "p1")).toEqual([{ id: idOf(s, "p1", "battlefield", "Juggernaut"), defender: "p2" }]);
   });
 });
@@ -639,7 +640,9 @@ describe("#15 : répartition annoncée à la mise sur la pile ; la part d'une ci
     (s.objects[chandra] as { counters: Record<string, number> }).counters.loyalty = 6;
     const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
     const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
-    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === chandra && x.label?.startsWith("−4"));
+    const a = legalActions(s, "p1").find(
+      (x) => x.type === "activate" && x.source === chandra && plainText(x.label ?? "").startsWith("−4"),
+    );
     if (a?.type !== "activate") throw new Error("capacité −4 indisponible");
     s = act(s, "p1", { type: "activate", source: chandra, ability: a.ability, targets: { t: [wurm, elves] } });
     expect(s.pending?.kind === "choice" && s.pending.request.type).toBe("divide");

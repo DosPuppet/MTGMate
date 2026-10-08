@@ -1,4 +1,4 @@
-/** Tarkir: Dragonstorm — légendaires et cartes uniques (lot C). */
+/** Tarkir: Dragonstorm — legendaries and unique cards (batch C). */
 import {
   activated,
   amount,
@@ -33,77 +33,77 @@ import {
   ZOMBIE_DRUID,
 } from "./common";
 
-/** « Permanent d'une ou plusieurs couleurs » (Ugin). */
-const COLORED_PERMANENT = targetObj("t", { not: { colorCount: 0 } }, "permanent d'une ou plusieurs couleurs");
+/** "Permanent that's one or more colors" (Ugin). */
+const COLORED_PERMANENT = targetObj("t", { not: { colorCount: 0 } }, "permanent that's one or more colors");
 const TOTAL_TOUGHNESS = amount.totalToughness(CREATURE_YOU_CONTROL);
 const COLORS = ["W", "U", "B", "R", "G"] as const;
 
-/** Felothar : « vous pouvez sacrifier un permanent non-terrain ; quand vous le faites, un marqueur +1/+1 sur chacune de vos créatures ». */
+/** Felothar: "you may sacrifice a nonland permanent; when you do, a +1/+1 counter on each creature you control". */
 const FELOTHAR = [
   fx.sacrifice(ref.you, { notTypes: ["Land"] }, 1, { optional: true, store: "s" }),
   ...fx.when(cond.v("s"), fx.reflexive([], [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)])),
 ];
 
 export const LEGENDS: Record<string, CardScript> = {
-  // --- Incolore -----------------------------------------------------------------
+  // --- Colorless ----------------------------------------------------------------
   "Ugin, Eye of the Storms": {
     abilities: [
       triggered(when.castSelf, [fx.exile(ref.target())], {
         targets: [target.optional(COLORED_PERMANENT)],
-        label: "Exilez jusqu'à un permanent coloré",
+        label: "Exile up to one colored permanent",
       }),
       triggered(when.castSpell("you", { colorCount: 0 }), [fx.exile(ref.target())], {
         targets: [target.optional(COLORED_PERMANENT)],
-        label: "Sort incolore : exilez jusqu'à un permanent coloré",
+        label: "Colorless spell: exile up to one colored permanent",
       }),
-      loyalty(2, { effects: [fx.gainLife(3), fx.draw(1)], label: "Gagnez 3 PV, piochez une carte" }),
-      loyalty(0, { effects: [fx.addMana("C", "C", "C")], label: "Ajoutez {C}{C}{C}" }),
+      loyalty(2, { effects: [fx.gainLife(3), fx.draw(1)], label: "Gain 3 life, draw a card" }),
+      loyalty(0, { effects: [fx.addMana("C", "C", "C")], label: "Add {C}{C}{C}" }),
       loyalty(-11, {
         effects: [
           fx.search({ colorCount: 0, notTypes: ["Land"] }, { to: "exile" }, 99, undefined, "u"),
           fx.grantPlay(ref.stored("u"), { free: true }),
         ],
-        label: "Exilez des cartes incolores non-terrain : lancez-les gratuitement ce tour-ci",
+        label: "Exile colorless nonland cards: cast them for free this turn",
       }),
     ],
   },
 
-  // --- Blanc -------------------------------------------------------------------
+  // --- White -------------------------------------------------------------------
   "Elspeth, Storm Slayer": {
     abilities: [
       eventReplacement({
         event: "tokens",
         to: "you",
         modify: { times: 2 },
-        label: "Les jetons créés sous votre contrôle : le double",
+        label: "Tokens created under your control: twice that many",
       }),
-      loyalty(1, { effects: [fx.createTokens(SOLDIER)], label: "Un Soldat 1/1" }),
+      loyalty(1, { effects: [fx.createTokens(SOLDIER)], label: "A 1/1 Soldier" }),
       loyalty(0, {
         effects: [
           fx.addCountersAll(CREATURE_YOU_CONTROL, 1),
           fx.modifyAll(CREATURE_YOU_CONTROL, { addKeywords: ["flying"] }, "untilYourNextTurn"),
         ],
-        label: "Un marqueur +1/+1 et le vol jusqu'à votre prochain tour pour vos créatures",
+        label: "A +1/+1 counter and flying until your next turn for your creatures",
       }),
       loyalty(-3, {
         targets: [target.creature("t", { controller: "opponent", minManaValue: 3 })],
         effects: [fx.destroy(ref.target())],
-        label: "Détruisez une créature adverse de VM 3 ou plus",
+        label: "Destroy an opponent's creature with MV 3 or greater",
       }),
     ],
   },
 
-  // --- Bleu --------------------------------------------------------------------
+  // --- Blue --------------------------------------------------------------------
   "Taigam, Master Opportunist": {
     abilities: [
       flurry(
         [fx.copySpell(ref.eventObject, 1), fx.suspend(ref.eventObject, 4)],
-        "copiez ce sort, puis exilez-le suspendu avec quatre marqueurs de temps",
+        "copy that spell, then exile it suspended with four time counters",
       ),
     ],
   },
 
-  // --- Noir --------------------------------------------------------------------
+  // --- Black -------------------------------------------------------------------
   "Hundred-Battle Veteran": {
     castFromGraveyard: { finality: true },
     abilities: [
@@ -112,7 +112,7 @@ export const LEGENDS: Record<string, CardScript> = {
         { power: 2, toughness: 4 },
         {
           condition: cond.amountAtLeast(amount.counterKindsAmong(CREATURE_YOU_CONTROL), 3),
-          label: "Trois sortes de marqueurs parmi vos créatures : +2/+4",
+          label: "Three kinds of counters among your creatures: +2/+4",
         },
       ),
     ],
@@ -125,7 +125,7 @@ export const LEGENDS: Record<string, CardScript> = {
         payLifeX: true,
         sorcerySpeed: true,
         effects: [fx.endure(ref.self, amount.x)],
-        label: "Payez X PV : endurance X",
+        label: "Pay X life: endure X",
       }),
     ],
   },
@@ -135,22 +135,22 @@ export const LEGENDS: Record<string, CardScript> = {
         "{X}{B}{B}",
         [{ ...target.upTo(99, target.creature()), countX: true }],
         [fx.counters(ref.target(), "decayed")],
-        "un marqueur de décomposition sur chacune de X créatures",
+        "a decayed counter on each of X creatures",
       ),
     ],
   },
   "The Sibsig Ceremony": {
     abilities: [
-      costReducer({ types: ["Creature"] }, 2, "Vos sorts de créature coûtent {2} de moins"),
+      costReducer({ types: ["Creature"] }, 2, "Your creature spells cost {2} less"),
       triggered(
         when.enters({ types: ["Creature"], controller: "you", cast: true }),
         [fx.destroy(ref.eventObject), fx.createTokens(ZOMBIE_DRUID)],
-        { label: "Une de vos créatures lancées arrive : détruisez-la, un Zombie Druide 2/2" },
+        { label: "A creature of yours that was cast enters: destroy it, a 2/2 Zombie Druid" },
       ),
     ],
   },
   "Sidisi, Regent of the Mire": {
-    // La cible (VM X + 1) est choisie quand le coût est payé : capacité réflexive (timing).
+    // The target (MV X + 1) is chosen when the cost is paid: reflexive ability (timing).
     abilities: [
       activated({
         tap: true,
@@ -160,51 +160,51 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.reflexive(
             [
               {
-                ...target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de VM X + 1"),
+                ...target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card with MV X + 1"),
                 manaValueAmount: amount.plus(amount.manaValueOf(ref.costSacrificed), 1),
               },
             ],
             [fx.toBattlefield(ref.target())],
           ),
         ],
-        label: "Sacrifiez une créature de VM X : une créature de VM X + 1 revient",
+        label: "Sacrifice a creature with MV X: a creature with MV X + 1 returns",
       }),
     ],
   },
 
-  // --- Rouge -------------------------------------------------------------------
+  // --- Red ---------------------------------------------------------------------
   Dracogenesis: {
     abilities: [
       castPermission({
         freeFrom: "any",
         freeFilter: { subtype: "Dragon" },
-        label: "Sorts de Dragon sans payer leur coût de mana",
+        label: "Dragon spells without paying their mana cost",
       }),
     ],
   },
 
-  // --- Vert --------------------------------------------------------------------
+  // --- Green -------------------------------------------------------------------
   "Formation Breaker": {
     abilities: [
       blockAbility(
-        block.notBy({ compare: [cmp.power("<", amount.sourcePower)] }, "Imblocable par les créatures de force inférieure"),
+        block.notBy({ compare: [cmp.power("<", amount.sourcePower)] }, "Can't be blocked by creatures with lesser power"),
       ),
       staticAbility(
         "self",
         { power: 1, toughness: 2 },
-        { condition: cond.controls(CREATURE_WITH_COUNTER), label: "Une de vos créatures a un marqueur : +1/+2" },
+        { condition: cond.controls(CREATURE_WITH_COUNTER), label: "One of your creatures has a counter: +1/+2" },
       ),
     ],
   },
 
-  // --- Multicolore ---------------------------------------------------------------
+  // --- Multicolor ----------------------------------------------------------------
   "All-Out Assault": {
     abilities: [
       staticAbility(
         CREATURE_YOU_CONTROL,
         { power: 1, toughness: 1, addKeywords: ["deathtouch"] },
         {
-          label: "Vos créatures : +1/+1 et le contact mortel",
+          label: "Your creatures: +1/+1 and deathtouch",
         },
       ),
       triggered(
@@ -217,7 +217,7 @@ export const LEGENDS: Record<string, CardScript> = {
             [
               triggered(when.attackWith(1), [fx.untapAll({ types: ["Creature"] })], {
                 oncePerTurn: true,
-                label: "Dégagez chaque créature que vous contrôlez",
+                label: "Untap each creature you control",
               }),
             ],
             false,
@@ -226,7 +226,7 @@ export const LEGENDS: Record<string, CardScript> = {
         ],
         {
           condition: cond.all(cond.yourTurn, cond.any(cond.step("main1"), cond.step("main2"))),
-          label: "Pendant votre phase principale : un combat et une phase principale supplémentaires",
+          label: "During your main phase: an additional combat and main phase",
         },
       ),
     ],
@@ -238,7 +238,7 @@ export const LEGENDS: Record<string, CardScript> = {
         [
           fx.draw(1),
           ...fx.when(cond.amountAtLeast(TOTAL_TOUGHNESS, 20), fx.untapAll({ types: ["Creature"] })),
-          // « chaque adversaire perd la moitié de ses points de vie » : chacun d'après les siens.
+          // "each opponent loses half their life": each based on their own.
           ...fx.when(
             cond.amountAtLeast(TOTAL_TOUGHNESS, 40),
             fx.forEachPlayer(ref.eachOpponent, (p) => [fx.loseLife(amount.halfLife(p), p)]),
@@ -246,7 +246,7 @@ export const LEGENDS: Record<string, CardScript> = {
         ],
         {
           condition: cond.amountAtLeast(TOTAL_TOUGHNESS, 10),
-          label: "Endurance totale 10 : piochez ; 20 : dégagez ; 40 : chaque adversaire perd la moitié de ses PV",
+          label: "Total toughness 10: draw; 20: untap; 40: each opponent loses half their life",
         },
       ),
     ],
@@ -257,7 +257,7 @@ export const LEGENDS: Record<string, CardScript> = {
         { subtype: "Dragon", controller: "you" },
         { addKeywords: ["indestructible"] },
         {
-          label: "Vos Dragons sont indestructibles",
+          label: "Your Dragons are indestructible",
         },
       ),
       triggered(
@@ -269,7 +269,7 @@ export const LEGENDS: Record<string, CardScript> = {
           ]),
           ...fx.when(cond.amountAtLeast(amount.refCount(ref.union(...COLORS.map((c) => ref.stored(`d${c}`)))), 5), fx.winGame),
         ],
-        { label: "Pour chaque couleur, un marqueur +1/+1 sur un de vos Dragons ; cinq Dragons : vous gagnez" },
+        { label: "For each color, a +1/+1 counter on one of your Dragons; five Dragons: you win" },
       ),
     ],
   },
@@ -280,15 +280,15 @@ export const LEGENDS: Record<string, CardScript> = {
           cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", types: ["Creature"] }), 1),
           cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", notTypes: ["Creature"] }), 1),
         ),
-        label: "Un sort de créature et un sort non-créature ce tour-ci : piochez, deux marqueurs +1/+1",
+        label: "A creature spell and a noncreature spell this turn: draw, two +1/+1 counters",
       }),
     ],
   },
   "Felothar, Dawn of the Abzan": {
     abilities: [
-      triggered(when.entersSelf, FELOTHAR, { label: "Sacrifiez un permanent non-terrain : un marqueur +1/+1 sur vos créatures" }),
+      triggered(when.entersSelf, FELOTHAR, { label: "Sacrifice a nonland permanent: a +1/+1 counter on your creatures" }),
       triggered(when.attacksSelf, FELOTHAR, {
-        label: "Sacrifiez un permanent non-terrain : un marqueur +1/+1 sur vos créatures",
+        label: "Sacrifice a nonland permanent: a +1/+1 counter on your creatures",
       }),
     ],
   },
@@ -300,7 +300,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.exileTop(ref.eventPlayer, amount.eventAmount, "x"),
           fx.castNow(ref.stored("x"), { free: true, many: true, maxManaValue: amount.eventAmount }),
         ],
-        { label: "Exilez X cartes de sa bibliothèque : lancez gratuitement celles de VM X ou moins" },
+        { label: "Exile X cards from their library: cast those with MV X or less for free" },
       ),
     ],
   },
@@ -308,12 +308,12 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.optional(target.creature("t", { controller: "you", other: true }))],
-        label: "Exilez une autre de vos créatures tant qu'il reste",
+        label: "Exile another creature of yours for as long as it remains",
       }),
       triggered(
         when.attacksSelf,
         [fx.copyToken(ref.exiledWith, { tapped: true, attackEach: ref.eachOpponent, sacrificeAtEndStep: true })],
-        { label: "Pour chaque adversaire, un jeton copie de la carte exilée, engagé et l'attaquant" },
+        { label: "For each opponent, a token copy of the exiled card, tapped and attacking them" },
       ),
     ],
   },
@@ -322,86 +322,84 @@ export const LEGENDS: Record<string, CardScript> = {
       triggered(
         when.yourEndStep,
         fx.may(
-          "défausser votre main pour piocher autant de cartes que de sorts lancés ce tour-ci ?",
+          "discard your hand to draw as many cards as spells cast this turn?",
           fx.discard(amount.cardsIn("hand")),
           fx.draw(amount.spellsCastThisTurn),
         ),
-        { label: "Défaussez votre main : piochez une carte par sort lancé ce tour-ci" },
+        { label: "Discard your hand: draw a card for each spell cast this turn" },
       ),
     ],
   },
   "Roar of Endless Song": {
     abilities: [
-      chapter([1, 2], [fx.createTokens(ELEPHANT_5)], { label: "Un Éléphant 5/5" }),
+      chapter([1, 2], [fx.createTokens(ELEPHANT_5)], { label: "A 5/5 Elephant" }),
       chapter([3], [fx.doublePT(ref.permanentsOf(ref.you, { types: ["Creature"] }))], {
-        label: "Doublez la force et l'endurance de vos créatures",
+        label: "Double the power and toughness of your creatures",
       }),
     ],
   },
   "Shiko, Paragon of the Way": {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target(), { name: "x" }), fx.castCopiesFree([ref.stored("x")], 3)], {
-        targets: [
-          target.cardInGraveyard("t", { notTypes: ["Land"], maxManaValue: 3 }, "you", "carte non-terrain de VM 3 ou moins"),
-        ],
-        label: "Exilez une carte de VM 3 ou moins : lancez-en une copie gratuitement",
+        targets: [target.cardInGraveyard("t", { notTypes: ["Land"], maxManaValue: 3 }, "you", "nonland card with MV 3 or less")],
+        label: "Exile a card with MV 3 or less: cast a copy of it for free",
       }),
     ],
   },
   "Songcrafter Mage": {
     abilities: [
       triggered(when.entersSelf, [fx.grantHarmonize(ref.target())], {
-        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "carte d'éphémère ou de rituel")],
-        label: "Un éphémère ou un rituel de votre cimetière gagne l'harmonie",
+        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery card")],
+        label: "An instant or sorcery in your graveyard gains harmonize",
       }),
     ],
   },
   "Stalwart Successor": {
     abilities: [
       triggered(when.countersPut(CREATURE_YOU_CONTROL, undefined, true), [fx.addCounters(ref.eventObject, 1)], {
-        label: "Premiers marqueurs du tour sur une de vos créatures : un marqueur +1/+1 de plus",
+        label: "First counters of the turn on one of your creatures: one more +1/+1 counter",
       }),
     ],
   },
   "Teval, Arbiter of Virtue": {
     abilities: [
-      playerStatic({ spellKeywords: { filter: {}, keywords: ["delve"] }, label: "Les sorts que vous lancez ont la cave" }),
+      playerStatic({ spellKeywords: { filter: {}, keywords: ["delve"] }, label: "Spells you cast have delve" }),
       triggered(when.castSpell("you"), [fx.loseLife(amount.manaValueOf(ref.eventObject))], {
-        label: "Vous perdez autant de PV que la valeur de mana du sort",
+        label: "You lose life equal to the spell's mana value",
       }),
     ],
   },
   "Ureni, the Song Unending": {
     abilities: [
-      protectionAbility(protection.from({ colors: ["W", "B"] }, "Protection contre le blanc et contre le noir")),
+      protectionAbility(protection.from({ colors: ["W", "B"] }, "Protection from white and from black")),
       triggered(when.entersSelf, [fx.damageDivided(amount.count({ types: ["Land"], controller: "you" }), ref.target())], {
         targets: [target.upTo(99, target.creatureOrPlaneswalker("t", { controller: "opponent" }))],
-        label: "X blessures réparties entre les créatures et planeswalkers adverses (X : vos terrains)",
+        label: "X damage divided among opponents' creatures and planeswalkers (X: your lands)",
       }),
     ],
   },
   "Zurgo, Thunder's Decree": {
-    // Mobilisation 2 : lue dans le texte.
+    // Mobilize 2: read from the text.
     abilities: [
       staticAbility(
         { subtype: "Warrior", token: true, controller: "you" },
         { addKeywords: ["cantBeSacrificed"] },
         {
           condition: cond.all(cond.yourTurn, cond.step("end")),
-          label: "Pendant votre étape de fin, vos jetons Guerrier ne peuvent pas être sacrifiés",
+          label: "During your end step, your Warrior tokens can't be sacrificed",
         },
       ),
     ],
   },
 
-  // --- Lot D : remplacements de blessures (R1) ------------------------------------
+  // --- Batch D: damage replacements (R1) -------------------------------------------
   "Neriv, Heart of the Storm": {
     abilities: [
       eventReplacement({
         event: "damage",
         source: { types: ["Creature"], controller: "you", enteredThisTurn: true },
         modify: { times: 2 },
-        label: "Vos créatures arrivées ce tour-ci infligent le double de blessures",
+        label: "Your creatures that entered this turn deal double damage",
       }),
     ],
   },

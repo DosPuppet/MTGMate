@@ -1,5 +1,5 @@
 /**
- * Jetons courants, sans les données des cartes : module léger, importable par le worker de partie.
+ * Common tokens, without the card data: a light module, importable by the game worker.
  */
 import type { TokenSpec } from "@mtgx/engine";
 import { DINOSAUR_DRAGON, ELEPHANT, PILOT, SERVO, VEHICLE } from "./dft/common";
@@ -8,7 +8,7 @@ import { DRONE, LANDER, MUNITIONS, ROBOT } from "./eoe/common";
 import { CAT, CLUE, DOG, FOOD, GOBLIN, MAP, RABBIT, SOLDIER, SPIRIT, TREASURE } from "./fdn/common";
 import { THOPTER } from "./fra/common";
 
-/** Jetons courants, par nom : bac à sable de l'interface (mode dev) et tests. */
+/** Common tokens, by name: interface sandbox (dev mode) and tests. */
 export const TOKEN_SPECS: Record<string, TokenSpec> = {
   Cat: CAT,
   Dog: DOG,

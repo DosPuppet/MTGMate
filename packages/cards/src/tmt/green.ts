@@ -1,6 +1,6 @@
 /**
- * Teenage Mutant Ninja Turtles — cartes vertes (lot A). Faufilement (Sneak) et cycle de type (Forestcycling) sont lus
- * dans le texte ; Disparition (Disappear) est une condition sur le journal du tour.
+ * Teenage Mutant Ninja Turtles — green cards (lot A). Sneak and typecycling (Forestcycling) are read from the text;
+ * Disappear is a condition on the turn log.
  */
 import type { ObjectFilter, TargetSpec, TriggerSpec } from "@mtgx/engine";
 import {
@@ -29,17 +29,17 @@ const ANY_COLOR = ["W", "U", "B", "R", "G"] as const;
 const YOUR_CREATURE = (id = "t") => target.creature(id, { controller: "you" });
 const OPPONENT_CREATURE = (id = "t"): TargetSpec => ({
   ...target.creature(id, { controller: "opponent" }),
-  label: "créature qu'un adversaire contrôle",
+  label: "creature controlled by an opponent",
 });
-/** Disparition : un permanent a quitté le champ de bataille sous votre contrôle ce tour-ci. */
+/** Disappear: a permanent left the battlefield under your control this turn. */
 const DISAPPEAR = cond.amountAtLeast(amount.turnEvents({ event: "zone", from: "battlefield", who: "you" }), 1);
-/** « Chaque fois qu'un artefact qu'un adversaire contrôle est mis dans un cimetière depuis le champ de bataille. » */
+/** "Whenever an artifact an opponent controls is put into a graveyard from the battlefield." */
 const OPPONENT_ARTIFACT_TO_GRAVEYARD: TriggerSpec = {
   on: "leaves",
   who: { types: ["Artifact"], controller: "opponent" },
   to: "graveyard",
 };
-const MUTAGEN_LABEL = "Un jeton Mutagène";
+const MUTAGEN_LABEL = "A Mutagen token";
 
 export const GREEN: Record<string, CardScript> = {
   "Courier of Comestibles": {
@@ -48,12 +48,12 @@ export const GREEN: Record<string, CardScript> = {
         when.entersSelf,
         [
           ...fx.may(
-            "Chercher une carte de Nourriture dans votre bibliothèque ?",
+            "Search your library for a Food card?",
             fx.search({ subtype: "Food" }, { to: "hand" }, 1, undefined, "found"),
           ),
           ...fx.when(cond.not(cond.amountAtLeast(amount.refCount(ref.stored("found")), 1)), fx.createTokens(FOOD)),
         ],
-        { label: "Cherchez une Nourriture ; sinon, créez un jeton Nourriture" },
+        { label: "Search for a Food; otherwise, create a Food token" },
       ),
     ],
   },
@@ -68,37 +68,37 @@ export const GREEN: Record<string, CardScript> = {
       ],
     ),
   },
-  // Contact mortel : lu dans le texte.
+  // Deathtouch: read from the text.
   "Frog Butler": {
     abilities: [
       manaAbility([...ANY_COLOR]),
       activated({
         mana: "{2}",
         effects: [fx.pump(ref.self, 0, 0, ["reach"])],
-        label: "Gagne la portée jusqu'à la fin du tour",
+        label: "Gains reach until end of turn",
       }),
     ],
   },
-  // Piétinement : lu dans le texte.
+  // Trample: read from the text.
   "Groundchuck & Dirtbag": {
     abilities: [
-      // Capacité de mana déclenchée (605.1b) : un remplacement de mana (R1, famille I), comme Badgermole Cub.
+      // Triggered mana ability (605.1b): a mana replacement (R1, family I), like Badgermole Cub.
       eventReplacement({
         event: "mana",
         source: { types: ["Land"] },
         to: "you",
         extraMana: "G",
         modify: { add: 1 },
-        label: "Un terrain engagé pour du mana : {G} de plus",
+        label: "A land tapped for mana: an additional {G}",
       }),
     ],
   },
-  // Flash : lu dans le texte.
+  // Flash: read from the text.
   "Guac & Marshmallow Pizza": {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 2, 2), fx.untap(ref.target())], {
         targets: [target.creature()],
-        label: "+2/+2 jusqu'à la fin du tour, puis dégagez-la",
+        label: "+2/+2 until end of turn, then untap it",
       }),
       FOOD_ABILITY,
     ],
@@ -107,11 +107,11 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: DISAPPEAR,
-        label: "Disparition — un marqueur +1/+1 sur Michelangelo",
+        label: "Disappear — a +1/+1 counter on Michelangelo",
       }),
     ],
   },
-  // Faufilement {2}{G}{G} : lu dans le texte.
+  // Sneak {2}{G}{G}: read from the text.
   "Michelangelo, Improviser": {
     abilities: [
       triggered(
@@ -121,16 +121,16 @@ export const GREEN: Record<string, CardScript> = {
             "hand",
             { types: ["Creature"] },
             { to: "battlefield" },
-            { min: 0, prompt: "Vous pouvez mettre une carte de créature de votre main sur le champ de bataille" },
+            { min: 0, prompt: "You may put a creature card from your hand onto the battlefield" },
           ),
           fx.pickFromZone(
             "hand",
             { types: ["Land"] },
             { to: "battlefield" },
-            { min: 0, prompt: "Vous pouvez mettre une carte de terrain de votre main sur le champ de bataille" },
+            { min: 0, prompt: "You may put a land card from your hand onto the battlefield" },
           ),
         ],
-        { label: "Une créature et/ou un terrain de votre main sur le champ de bataille" },
+        { label: "A creature and/or a land from your hand onto the battlefield" },
       ),
     ],
   },
@@ -139,7 +139,7 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], controller: "you", withCounter: "any" },
         { addBlockRules: [block.atMost(1)] },
-        { label: "Vos créatures avec un marqueur ne peuvent pas être bloquées par plus d'une créature" },
+        { label: "Creatures you control with a counter can't be blocked by more than one creature" },
       ),
       triggered(when.entersSelf, [fx.createTokens(MUTAGEN)], { label: MUTAGEN_LABEL }),
       triggered(when.attacksSelf, [fx.createTokens(MUTAGEN)], { label: MUTAGEN_LABEL }),
@@ -154,11 +154,11 @@ export const GREEN: Record<string, CardScript> = {
         toFilter: { types: ["Creature"] },
         counter: "+1/+1",
         modify: { add: 1 },
-        label: "Un marqueur +1/+1 de plus sur vos créatures",
+        label: "An additional +1/+1 counter on your creatures",
       }),
     ],
   },
-  // Portée : lue dans le texte.
+  // Reach: read from the text.
   "Mona Lisa, Science Geek": {
     abilities: [manaAbility([...ANY_COLOR], 1, { selfPower: true })],
   },
@@ -167,7 +167,7 @@ export const GREEN: Record<string, CardScript> = {
       [
         target.upTo(1, {
           id: "t",
-          label: "artefact, enchantement ou créature avec le vol",
+          label: "artifact, enchantment or creature with flying",
           filter: {
             objects: { anyOf: [{ types: ["Artifact", "Enchantment"] }, { types: ["Creature"], keyword: "flying" }] },
           },
@@ -176,11 +176,11 @@ export const GREEN: Record<string, CardScript> = {
       [fx.destroy(ref.target()), fx.createTokens(MUTAGEN)],
     ),
   },
-  // Faufilement {2}{G} : lu dans le texte.
+  // Sneak {2}{G}: read from the text.
   "New Generation's Technique": {
     spell: spell([], [fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2)]),
   },
-  // Équiper {3} : lu dans le texte.
+  // Equip {3}: read from the text.
   "Novel Nunchaku": {
     abilities: [
       triggered(
@@ -194,41 +194,41 @@ export const GREEN: Record<string, CardScript> = {
         ],
         {
           targets: [YOUR_CREATURE("c")],
-          label: "S'attache à une de vos créatures, qui se bat contre une créature adverse",
+          label: "Attaches to a creature you control, which fights a creature an opponent controls",
         },
       ),
-      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["trample"] }, { label: "+1/+1 et piétinement" }),
+      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["trample"] }, { label: "+1/+1 and trample" }),
     ],
   },
   "Party Dude": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(FOOD, 1, ref.eachPlayer)], {
-        label: "Chaque joueur crée un jeton Nourriture",
+        label: "Each player creates a Food token",
       }),
     ],
     classLevels: [
       [
         triggered(OPPONENT_ARTIFACT_TO_GRAVEYARD, [fx.draw(1)], {
-          label: "Un artefact adverse va au cimetière : piochez",
+          label: "An opponent's artifact goes to the graveyard: draw",
         }),
       ],
       [
-        // « Chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » : par n'importe quel joueur, et un joueur
-        // (pas un planeswalker).
+        // "Whenever one or more of your opponents are attacked": by any player, and a player
+        // (not a planeswalker).
         triggered(
           when.attackWith(1, { attacking: "opponent" }, true),
           [fx.pump(ref.target(), amount.cardsIn("hand"), amount.cardsIn("hand"))],
           {
             targets: [target.upTo(1, target.creature("t", { attacking: true }))],
-            label: "Une créature attaquante gagne +X/+X (cartes en main)",
+            label: "An attacking creature gets +X/+X (cards in hand)",
           },
         ),
       ],
     ],
   },
-  // Portée, piétinement : lus dans le texte.
+  // Reach, trample: read from the text.
   "Primordial Pachyderm": {
-    abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "Gagnez 2 PV" })],
+    abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "Gain 2 life" })],
   },
   "Ragamuffin Raptor": {
     abilities: [
@@ -240,22 +240,22 @@ export const GREEN: Record<string, CardScript> = {
               "t",
               { anyOf: [{ types: ["Creature"] }, { subtype: "Food" }] },
               "you",
-              "carte de créature ou de Nourriture de votre cimetière",
+              "creature or Food card in your graveyard",
             ),
           ),
         ],
-        label: "Renvoie une carte de créature ou de Nourriture de votre cimetière en main",
+        label: "Returns a creature or Food card from your graveyard to your hand",
       }),
     ],
   },
-  // Cycle de Forêt {2} : lu dans le texte.
+  // Forestcycling {2}: read from the text.
   "Rocksteady, Crash Courser": {
     abilities: [
       blockAbility(block.atMost(1)),
       staticAbility(
         { types: ["Creature"], subtype: "Boar", controller: "you" } satisfies ObjectFilter,
         { addBlockRules: [block.atMost(1)] },
-        { label: "Vos Sangliers ne peuvent pas être bloqués par plus d'une créature" },
+        { label: "Your Boars can't be blocked by more than one creature" },
       ),
     ],
   },
@@ -272,18 +272,18 @@ export const GREEN: Record<string, CardScript> = {
       [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))],
     ),
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Transdimensional Bovine": {
     abilities: [manaAbility([...ANY_COLOR], 2)],
   },
-  // Flash : lu dans le texte.
+  // Flash: read from the text.
   "Turtle Power!": {
     abilities: [
       staticAbility(
         { types: ["Creature"], subtype: "Turtle", controller: "you" },
         { power: 2, toughness: 2 },
         {
-          label: "Vos Tortues gagnent +2/+2",
+          label: "Your Turtles get +2/+2",
         },
       ),
     ],
@@ -291,16 +291,16 @@ export const GREEN: Record<string, CardScript> = {
   "Venus, Torn Between Worlds": {
     abilities: [
       triggered(when.isDealtDamage, [fx.addCounters(ref.self, amount.eventAmount)], {
-        label: "Autant de marqueurs +1/+1 que de blessures subies",
+        label: "As many +1/+1 counters as damage dealt to it",
       }),
       triggered(
         when.combatDamage({ types: ["Creature"], controller: "you", withCounter: "any" }, true),
-        fx.mayPay("{U}", "Payer {U} pour piocher une carte ?", fx.draw(1)),
-        { label: "Une de vos créatures avec un marqueur blesse un joueur : payez {U}, piochez" },
+        fx.mayPay("{U}", "Pay {U} to draw a card?", fx.draw(1)),
+        { label: "A creature you control with a counter deals damage to a player: pay {U}, draw" },
       ),
     ],
   },
-  // Piétinement : lu dans le texte.
+  // Trample: read from the text.
   "West Wind Avatar": {
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((trigger) =>
@@ -310,10 +310,10 @@ export const GREEN: Record<string, CardScript> = {
             fx.sacrifice(ref.you, { anyOf: [{ token: true }, { types: ["Land"] }] }, 1, { optional: true, store: "s" }),
             ...fx.when(cond.v("s"), fx.gainLife(3)),
           ],
-          { label: "Vous pouvez sacrifier un jeton ou un terrain : gagnez 3 PV" },
+          { label: "You may sacrifice a token or a land: gain 3 life" },
         ),
       ),
-      triggered(when.yourEndStep, [fx.draw(1)], { condition: DISAPPEAR, label: "Disparition — piochez une carte" }),
+      triggered(when.yourEndStep, [fx.draw(1)], { condition: DISAPPEAR, label: "Disappear — draw a card" }),
     ],
   },
   "Zoo Escapees": {

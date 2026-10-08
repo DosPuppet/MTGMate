@@ -1,7 +1,11 @@
 {
   "id": "fin-sephiroth",
-  "name": "Séphiroth, héritier de la planète",
-  "description": "Starter Kit Final Fantasy. Bleu-noir contrôle : éliminez les créatures adverses, faites grandir Séphiroth à chaque mort et récupérez vos sorts du cimetière.",
+  "name": "Sephiroth, Planet's Heir",
+  "description": "Final Fantasy Starter Kit. Blue-black control: remove opposing creatures, grow Sephiroth with each death and get your spells back from the graveyard.",
+  "fr": {
+    "name": "Séphiroth, héritier de la planète",
+    "description": "Starter Kit Final Fantasy. Bleu-noir contrôle : éliminez les créatures adverses, faites grandir Séphiroth à chaque mort et récupérez vos sorts du cimetière."
+  },
   "colors": [
     "U",
     "B"

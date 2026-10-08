@@ -1,4 +1,5 @@
-/** Bloomburrow — cartes noires. */
+/** Bloomburrow — black cards. */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -24,21 +25,21 @@ import {
   when,
 } from "./common";
 
-const creatureCard = (id = "t", label = "carte de créature de votre cimetière") =>
+const creatureCard = (id = "t", label = "creature card from your graveyard") =>
   target.cardInGraveyard(id, { types: ["Creature"] }, "you", label);
 
 export const BLACK: Record<string, CardScript> = {
   "Agate-Blade Assassin": {
     abilities: [
       triggered(when.attacksSelf, [fx.loseLife(1, ref.defendingPlayer), fx.gainLife(1)], {
-        label: "Le joueur défenseur perd 1 PV, vous gagnez 1 PV",
+        label: "Defending player loses 1 life, you gain 1 life",
       }),
     ],
   },
   "Bandit's Talent": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(2, ref.eachOpponent, { unlessFilter: { notTypes: ["Land"] } })], {
-        label: "Chaque adversaire défausse deux cartes (ou une non-terrain)",
+        label: "Each opponent discards two cards (or a nonland one)",
       }),
     ],
     classLevels: [
@@ -46,12 +47,12 @@ export const BLACK: Record<string, CardScript> = {
         triggered(
           when.step("upkeep", "opponent"),
           fx.when(cond.handAtMost(ref.eventPlayer, 1), fx.loseLife(2, ref.eventPlayer)),
-          { label: "Main de 1 carte ou moins : perd 2 PV" },
+          { label: "Hand of 1 card or fewer: loses 2 life" },
         ),
       ],
       [
         triggered(when.step("draw", "you"), [fx.draw(amount.opponentsWithHandAtMost(1))], {
-          label: "Pioche supplémentaire par adversaire à court de cartes",
+          label: "Extra draw for each opponent out of cards",
         }),
       ],
     ],
@@ -62,9 +63,9 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{3}{B}",
         exileSelf: true,
         fromGraveyard: true,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"], other: true }, "you", "autre carte de créature")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"], other: true }, "you", "other creature card")],
         effects: [fx.toHand(ref.target())],
-        label: "Récupère une autre créature",
+        label: "Gets back another creature",
       }),
     ],
   },
@@ -75,7 +76,7 @@ export const BLACK: Record<string, CardScript> = {
         payLife: 1,
         activationCondition: cond.any(cond.amountAtLeast(amount.cardsLeftGraveyardThisTurn, 3), cond.sacrificedFood),
         effects: [fx.draw(1)],
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
     ],
   },
@@ -110,14 +111,14 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Daggerfang Duo": {
-    abilities: [triggered(when.entersSelf, fx.may("Meuler deux cartes ?", fx.mill(2)), { label: "Meule 2" })],
+    abilities: [triggered(when.entersSelf, fx.may("Mill two cards?", fx.mill(2)), { label: "Mill 2" })],
   },
   "Darkstar Augur": {
     abilities: [
       triggered(
         when.yourUpkeep,
         [fx.moveTo(ref.libraryTop(ref.you), { to: "hand" }, { name: "a" }), fx.loseLife(amount.manaValueOf(ref.stored("a")))],
-        { label: "Carte du dessus en main, perdez sa VM en PV" },
+        { label: "Top card into hand, lose life equal to its mana value" },
       ),
     ],
   },
@@ -125,9 +126,13 @@ export const BLACK: Record<string, CardScript> = {
   "Downwind Ambusher": {
     abilities: [
       triggeredModal(when.entersSelf, [
-        mode("-1/-1 à une créature adverse", [target.creature("t", { controller: "opponent" })], [fx.pump(ref.target(), -1, -1)]),
         mode(
-          "Détruit une créature adverse blessée ce tour-ci",
+          "-1/-1 to a creature an opponent controls",
+          [target.creature("t", { controller: "opponent" })],
+          [fx.pump(ref.target(), -1, -1)],
+        ),
+        mode(
+          "Destroys a creature an opponent controls that was dealt damage this turn",
           [target.creature("t", { controller: "opponent", damaged: true })],
           [fx.destroy(ref.target())],
         ),
@@ -136,9 +141,9 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Early Winter": {
     spell: modal(
-      mode("Exile une créature", [target.creature()], [fx.exile(ref.target())]),
+      mode("Exiles a creature", [target.creature()], [fx.exile(ref.target())]),
       mode(
-        "Un adversaire exile un enchantement",
+        "An opponent exiles an enchantment",
         [target.player("p", "opponent")],
         [fx.sacrifice(ref.target("p"), { types: ["Enchantment"] }, 1, { to: "exile" })],
       ),
@@ -150,7 +155,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   Fell: { spell: spell([target.creature()], [fx.destroy(ref.target())]) },
   "Glidedive Duo": {
-    abilities: [triggered(when.entersSelf, fx.drain(2), { label: "Chaque adversaire perd 2 PV, vous en gagnez 2" })],
+    abilities: [triggered(when.entersSelf, fx.drain(2), { label: "Each opponent loses 2 life, you gain 2" })],
   },
   "Hazel's Nocturne": {
     spell: spell([target.upTo(2, creatureCard())], [fx.toHand(ref.target()), ...fx.drain(2)]),
@@ -164,13 +169,13 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.landfall, [fx.damage(1, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Landfall — 1 blessure à un adversaire",
+        label: "Landfall — 1 damage to an opponent",
       }),
     ],
   },
   "Maha, Its Feathers Night": {
     abilities: [
-      staticAbility({ types: ["Creature"], controller: "opponent" }, { setToughness: 1 }, { label: "Endurance de base 1" }),
+      staticAbility({ types: ["Creature"], controller: "opponent" }, { setToughness: 1 }, { label: "Base toughness 1" }),
     ],
   },
   "Moonstone Harbinger": {
@@ -178,7 +183,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.lifeChange, [fx.pumpAll(kin(["Bat"]), 1, 0, ["deathtouch"])], {
         condition: cond.yourTurn,
         oncePerTurn: true,
-        label: "Chauves-souris +1/+0 et contact mortel",
+        label: "Bats +1/+0 and deathtouch",
       }),
     ],
   },
@@ -192,7 +197,9 @@ export const BLACK: Record<string, CardScript> = {
         effects: [
           fx.emblem(
             "Osteomancer Adept",
-            "Jusqu'à la fin du tour, vous pouvez lancer des sorts de créature depuis votre cimetière en fourrageant ; ils arrivent avec un marqueur de finalité.",
+            msg(
+              "Until end of turn, you may cast creature spells from your graveyard by foraging; they enter with a finality counter.",
+            ),
             [
               playerStatic({
                 playFrom: { zone: "graveyard", filter: { types: ["Creature"] }, what: "spells", forage: true, finality: true },
@@ -202,21 +209,21 @@ export const BLACK: Record<string, CardScript> = {
             true,
           ),
         ],
-        label: "Créatures lançables depuis le cimetière (fourrager)",
+        label: "Creatures castable from the graveyard (forage)",
       }),
     ],
   },
   "Persistent Marshstalker": {
     abilities: [
-      staticAbility("self", { power: 1 }, { per: kin(["Rat"], { other: true }), label: "+1/+0 par autre Rat" }),
+      staticAbility("self", { power: 1 }, { per: kin(["Rat"], { other: true }), label: "+1/+0 for each other Rat" }),
       triggered(
         when.attackWith(1, { subtype: "Rat" }),
         fx.mayPay(
           "{2}{B}",
-          "Payer {2}{B} pour la renvoyer attaquante ?",
+          "Pay {2}{B} to return it attacking?",
           fx.toBattlefield(ref.selfCard, { tapped: true, attacking: true }),
         ),
-        { fromGraveyard: true, condition: THRESHOLD, label: "Seuil — revient engagée et attaquante" },
+        { fromGraveyard: true, condition: THRESHOLD, label: "Threshold — returns tapped and attacking" },
       ),
     ],
   },
@@ -230,7 +237,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [activated({ mana: "{1}{B}", effects: [fx.pump(ref.self, 1, 1)], label: "+1/+1" })],
   },
   "Rottenmouth Viper": {
-    // Coût additionnel facultatif : chaque permanent non-terrain sacrifié réduit le coût de {1} (au choix du joueur).
+    // Optional additional cost: each nonland permanent sacrificed reduces the cost by {1} (the player's choice).
     additionalCost: { sacrificeToPay: { notTypes: ["Land"] } },
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((w) =>
@@ -244,7 +251,7 @@ export const BLACK: Record<string, CardScript> = {
               times: amount.countersOn(ref.self, "blight"),
             }),
           ],
-          { label: "Marqueur de fléau ; 4 PV par marqueur" },
+          { label: "Blight counter; 4 life per counter" },
         ),
       ),
     ],
@@ -266,14 +273,14 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.dies(CREATURE_YOU_CONTROL), [fx.createTokens(FOOD)], {
         batched: true,
         oncePerTurn: true,
-        label: "Nourriture",
+        label: "Food",
       }),
     ],
     classLevels: [
       [
         triggered(when.sacrifice({}), [fx.mill(2, ref.target())], {
           targets: [target.player()],
-          label: "Un joueur meule deux cartes",
+          label: "A player mills two cards",
         }),
       ],
       [
@@ -286,7 +293,7 @@ export const BLACK: Record<string, CardScript> = {
               fx.pickFromZone("graveyard", { types: ["Creature"] }, { to: "battlefield", counters: { kind: "finality", n: 1 } }),
             ),
           ],
-          { label: "Sacrifiez trois permanents : réanimation" },
+          { label: "Sacrifice three permanents: reanimation" },
         ),
       ],
     ],
@@ -295,31 +302,31 @@ export const BLACK: Record<string, CardScript> = {
     spell: pawprint(
       {
         pips: 1,
-        label: "Chaque joueur sacrifie une créature",
+        label: "Each player sacrifices a creature",
         effects: [fx.sacrifice(ref.eachPlayer, { types: ["Creature"] })],
       },
       {
         pips: 2,
-        label: "Piochez par créature morte sous votre contrôle",
+        label: "Draw for each creature that died under your control",
         effects: [fx.draw(amount.yourCreaturesDiedThisTurn)],
       },
       {
         pips: 3,
-        label: "Chaque adversaire perd X PV (créatures du cimetière)",
+        label: "Each opponent loses X life (creatures in the graveyard)",
         effects: [fx.loseLife(amount.countIn("graveyard", { types: ["Creature"] }), ref.eachOpponent)],
       },
     ),
   },
   "Sinister Monolith": {
     abilities: [
-      triggered(when.yourCombat, fx.drain(1), { label: "Chaque adversaire perd 1 PV, vous en gagnez 1" }),
+      triggered(when.yourCombat, fx.drain(1), { label: "Each opponent loses 1 life and you gain 1 life" }),
       activated({
         tap: true,
         payLife: 2,
         sacrifice: true,
         sorcerySpeed: true,
         effects: [fx.draw(2)],
-        label: "Piochez deux cartes",
+        label: "Draw two cards",
       }),
     ],
   },
@@ -330,17 +337,17 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Starlit Soothsayer": {
-    abilities: [triggered(when.yourEndStep, [fx.surveil(1)], { condition: GAINED_OR_LOST, label: "Surveillance 1" })],
+    abilities: [triggered(when.yourEndStep, [fx.surveil(1)], { condition: GAINED_OR_LOST, label: "Surveil 1" })],
   },
   "Starscape Cleric": {
     keywords: ["cantBlock"],
-    abilities: [triggered(when.gainLife, [fx.loseLife(1, ref.eachOpponent)], { label: "Chaque adversaire perd 1 PV" })],
+    abilities: [triggered(when.gainLife, [fx.loseLife(1, ref.eachOpponent)], { label: "Each opponent loses 1 life" })],
   },
   "Thornplate Intimidator": {
     abilities: [
       triggered(when.entersSelf, [fx.punisher(ref.target(), 3, { discard: true, sacrifice: { notTypes: ["Land"] } })], {
         targets: [target.player("t", "opponent")],
-        label: "Perd 3 PV sauf sacrifice ou défausse",
+        label: "Loses 3 life unless sacrifice or discard",
       }),
     ],
   },
@@ -355,14 +362,14 @@ export const BLACK: Record<string, CardScript> = {
           ),
           ...fx.when(cond.not(cond.refLostLife(ref.target())), fx.discard(1, ref.target())),
         ],
-        { targets: [target.player("t", "opponent")], label: "Défausse" },
+        { targets: [target.player("t", "opponent")], label: "Discard" },
       ),
     ],
   },
   "Valley Rotcaller": {
     abilities: [
       triggered(when.attacksSelf, fx.drain(amount.count(kin(["Squirrel", "Bat", "Lizard", "Rat"], { other: true }))), {
-        label: "Drain par Écureuil, Chauve-souris, Lézard et Rat",
+        label: "Drain for each Squirrel, Bat, Lizard and Rat",
       }),
     ],
   },
@@ -371,24 +378,24 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.enters(kin(["Rat"])),
         [
-          // « Un Escargot que vous contrôlez » : choix non ciblé, à la résolution. Le marqueur d'abord, sans quoi le
-          // jeton tout juste créé rendrait vraie la condition du marqueur.
+          // "A Snail you control": untargeted choice, on resolution. The counter first, otherwise the token just
+          // created would make the counter's condition true.
           ...fx.when(
             cond.controls({ subtype: "Snail" }),
             fx.chooseAmong(ref.permanentsOf(ref.you, { subtype: "Snail" }), ref.you, "s", {
-              prompt: "Choisissez l'Escargot qui reçoit le marqueur",
+              prompt: "Choose the Snail that gets the counter",
             }),
             fx.addCounters(ref.stored("s"), 1),
           ),
           ...fx.when(cond.not(cond.controls({ subtype: "Snail" })), fx.createTokens(SNAIL)),
         ],
-        { label: "Escargot 1/1, ou un marqueur +1/+1 sur un Escargot" },
+        { label: "1/1 Snail, or a +1/+1 counter on a Snail" },
       ),
       activated({
         mana: "{U}{B}{R}",
         sacrificeOther: { filter: { types: ["Creature"], subtype: "Snail" } },
         effects: [fx.damage(amount.powerOf(ref.costSacrificed), ref.eachOpponent), fx.draw(amount.powerOf(ref.costSacrificed))],
-        label: "Blessures et pioche selon la force de l'Escargot",
+        label: "Damage and draw equal to the Snail's power",
       }),
     ],
   },
@@ -403,7 +410,7 @@ export const BLACK: Record<string, CardScript> = {
             [fx.pump(ref.target(), amount.neg(amount.maxManaValueInGraveyard), amount.neg(amount.maxManaValueInGraveyard))],
           ),
         ],
-        { label: "Meule 3, puis -X/-X" },
+        { label: "Mill 3, then -X/-X" },
       ),
     ],
   },

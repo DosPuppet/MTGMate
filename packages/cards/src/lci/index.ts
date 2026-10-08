@@ -1,6 +1,6 @@
 /**
- * The Lost Caverns of Ixalan (LCI) : Découverte, Descente, Fabrication, Cavernes, explorer, jetons Carte.
- * Les aides et jetons communs viennent de Bloomburrow et des extensions précédentes (lci/common.ts).
+ * The Lost Caverns of Ixalan (LCI): discover, descend, craft, Caves, explore, Map tokens.
+ * The shared helpers and tokens come from Bloomburrow and the earlier sets (lci/common.ts).
  */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";

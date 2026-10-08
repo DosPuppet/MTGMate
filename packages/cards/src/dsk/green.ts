@@ -1,4 +1,4 @@
-/** Duskmourn — cartes vertes. */
+/** Duskmourn — green cards. */
 import {
   activated,
   BASIC_LAND,
@@ -20,14 +20,14 @@ import {
 export const GREEN: Record<string, CardScript> = {
   "Altanak, the Thrice-Called": {
     abilities: [
-      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, [fx.draw(1)], { label: "Piochez une carte" }),
+      triggered({ on: "becomesTarget", who: "self", by: "opponent" }, [fx.draw(1)], { label: "Draw a card" }),
       activated({
         mana: "{1}{G}",
         fromHand: true,
         discardSelf: true,
-        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "land card in your graveyard")],
         effects: [fx.toBattlefield(ref.target(), { tapped: true })],
-        label: "Défaussez-la : un terrain de votre cimetière revient engagé",
+        label: "Discard it: a land from your graveyard returns tapped",
       }),
     ],
   },
@@ -40,45 +40,43 @@ export const GREEN: Record<string, CardScript> = {
         sorcerySpeed: true,
         activationCondition: cond.delirium,
         effects: [fx.toBattlefield(ref.self, { counters: { kind: "finality", n: 1 } })],
-        label: "Délire — Revient avec un marqueur de finalité",
+        label: "Delirium — Returns with a finality counter",
       }),
     ],
   },
   "Bashful Beastie": {
-    abilities: [triggered(when.diesSelf, [fx.manifestDread], { label: "Manifestation effroyable" })],
+    abilities: [triggered(when.diesSelf, [fx.manifestDread], { label: "Manifest dread" })],
   },
   "Break Down the Door": {
     spell: modal(
-      mode("Exilez un artefact", [target.permanent("a", ["Artifact"], {}, "artefact")], [fx.exile(ref.target("a"))]),
-      mode("Exilez un enchantement", [target.permanent("e", ["Enchantment"], {}, "enchantement")], [fx.exile(ref.target("e"))]),
-      mode("Manifestation effroyable", [], [fx.manifestDread]),
+      mode("Exile an artifact", [target.permanent("a", ["Artifact"], {}, "artifact")], [fx.exile(ref.target("a"))]),
+      mode("Exile an enchantment", [target.permanent("e", ["Enchantment"], {}, "enchantment")], [fx.exile(ref.target("e"))]),
+      mode("Manifest dread", [], [fx.manifestDread]),
     ),
   },
-  "Cautious Survivor": { abilities: [survival([fx.gainLife(2)], { label: "+2 PV" })] },
-  "Defiant Survivor": { abilities: [survival([fx.manifestDread], { label: "Manifestation effroyable" })] },
+  "Cautious Survivor": { abilities: [survival([fx.gainLife(2)], { label: "+2 life" })] },
+  "Defiant Survivor": { abilities: [survival([fx.manifestDread], { label: "Manifest dread" })] },
   "Flesh Burrower": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), 0, 0, ["deathtouch"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Contact mortel",
+        label: "Deathtouch",
       }),
     ],
   },
   "Frantic Strength": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
-    abilities: [
-      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["trample"] }, { label: "+2/+2 et le piétinement" }),
-    ],
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
+    abilities: [staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["trample"] }, { label: "+2/+2 and trample" })],
   },
   "Grasping Longneck": {
-    abilities: [triggered(when.diesSelf, [fx.gainLife(2)], { label: "+2 PV" })],
+    abilities: [triggered(when.diesSelf, [fx.gainLife(2)], { label: "+2 life" })],
   },
   Greenhouse: {
     abilities: [
       staticAbility(
         { types: ["Land"], controller: "you" },
         { addAbilities: [manaAbility(["W", "U", "B", "R", "G"])] },
-        { label: "Vos terrains : « {T} : un mana de n'importe quelle couleur »" },
+        { label: 'Your lands: "{T}: one mana of any color"' },
       ),
     ],
   },
@@ -90,7 +88,7 @@ export const GREEN: Record<string, CardScript> = {
           fx.mill(4, ref.you, { name: "m" }),
           fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { count: 2, min: 0, pool: ref.stored("m") }),
         ],
-        { label: "Meulez 4, jusqu'à deux cartes de permanent en main" },
+        { label: "Mill 4, up to two permanent cards into your hand" },
       ),
     ],
   },
@@ -98,14 +96,14 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.pump(ref.target(), 0, 0, ["deathtouch", "indestructible"])]),
   },
   "House Cartographer": {
-    abilities: [survival([fx.revealUntil({ types: ["Land"] })], { label: "Révélez jusqu'à un terrain" })],
+    abilities: [survival([fx.revealUntil({ types: ["Land"] })], { label: "Reveal until a land" })],
   },
   "Kona, Rescue Beastie": {
     abilities: [
       survival(
-        [fx.pickFromZone("hand", { permanent: true }, { to: "battlefield" }, { min: 0, prompt: "Un permanent de votre main" })],
+        [fx.pickFromZone("hand", { permanent: true }, { to: "battlefield" }, { min: 0, prompt: "A permanent from your hand" })],
         {
-          label: "Mettez un permanent de votre main en jeu",
+          label: "Put a permanent from your hand onto the battlefield",
         },
       ),
     ],
@@ -118,21 +116,21 @@ export const GREEN: Record<string, CardScript> = {
         { addKeywords: ["cantAttack", "cantBlock"] },
         {
           condition: cond.not(cond.delirium),
-          label: "Délire — ne peut ni attaquer ni bloquer sans délire",
+          label: "Delirium — can't attack or block without delirium",
         },
       ),
-      triggered(when.yourUpkeep, [...fx.may("Meuler une carte ?", fx.mill(1))], { label: "Meulez une carte" }),
+      triggered(when.yourUpkeep, [...fx.may("Mill a card?", fx.mill(1))], { label: "Mill a card" }),
     ],
   },
   "Spineseeker Centipede": {
     abilities: [
-      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Cherchez un terrain de base" }),
+      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Search for a basic land" }),
       staticAbility(
         "self",
         { power: 1, toughness: 2, addKeywords: ["vigilance"] },
         {
           condition: cond.delirium,
-          label: "Délire — +1/+2 et la vigilance",
+          label: "Delirium — +1/+2 and vigilance",
         },
       ),
     ],
@@ -142,21 +140,21 @@ export const GREEN: Record<string, CardScript> = {
       [],
       [
         fx.manifestDread,
-        fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { min: 0, prompt: "Une carte de permanent" }),
+        fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { min: 0, prompt: "A permanent card" }),
       ],
     ),
   },
   "Wary Watchdog": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
-      triggered(when.diesSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }),
+      triggered(when.diesSelf, [fx.surveil(1)], { label: "Surveil 1" }),
     ],
   },
   "Wickerfolk Thresher": {
     abilities: [
       triggered(when.attacksSelf, [fx.lookAtTop(1, { filter: { types: ["Land"] }, to: { to: "battlefield" }, rest: "hand" })], {
         condition: cond.delirium,
-        label: "Délire — un terrain du dessus en jeu, sinon en main",
+        label: "Delirium — a land from the top onto the battlefield, otherwise into your hand",
       }),
     ],
   },

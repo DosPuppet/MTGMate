@@ -9,6 +9,7 @@ import { legalActions } from "../src/legal";
 import { manaValue } from "../src/mana";
 import { bump, chars, moveObject } from "../src/state";
 import { playerStatic } from "../src/statics";
+import { plainText } from "../src/text";
 import { stateBasedActions } from "../src/turn";
 import { objectDidThisTurn } from "../src/turnlog";
 import type { CardDef, ChoiceRequest, GameState, TokenSpec } from "../src/types";
@@ -42,13 +43,13 @@ import {
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
 const abilityIndex = (s: S, id: string, label: string) =>
-  chars(s, id).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith(label));
+  chars(s, id).abilities.findIndex((a) => a.kind === "activated" && plainText(a.label ?? "").startsWith(label));
 
 describe("Aetherdrift : Véhicules et Montures", () => {
   it("un pilote équipe comme si sa force était supérieure de 2 (Équipage 3 avec une créature 1/1)", () => {
     const s = scenario({ p1: { battlefield: ["Hulldrifter"] } });
     const hull = idOf(s, "p1", "battlefield", "Hulldrifter");
-    const crew = abilityIndex(s, hull, "Équipage");
+    const crew = abilityIndex(s, hull, "Crew");
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === hull && a.ability === crew)).toBe(false);
     createTokens(s, "p1", TOKEN_SPECS.Pilot as TokenSpec, 1);
     s.version += 1;
@@ -58,14 +59,14 @@ describe("Aetherdrift : Véhicules et Montures", () => {
   it("Interface Ace équipe avec son endurance ; Reckless Velocitaur donne +2/+0 au Véhicule équipé", () => {
     let s = scenario({ p1: { battlefield: ["Hulldrifter", "Interface Ace"] } });
     const hull = idOf(s, "p1", "battlefield", "Hulldrifter");
-    s = act(s, "p1", { type: "activate", source: hull, ability: abilityIndex(s, hull, "Équipage") });
+    s = act(s, "p1", { type: "activate", source: hull, ability: abilityIndex(s, hull, "Crew") });
     s = passAccepting(s, (x) => x.stack.length === 0);
     expect(chars(s, hull).types).toContain("Creature");
     // « Chaque fois qu'elle devient engagée pendant votre tour, dégagez-la » : l'Ace s'est dégagée.
     expect(s.objects[idOf(s, "p1", "battlefield", "Interface Ace")]?.tapped).toBe(false);
     let t = scenario({ p1: { battlefield: ["Hulldrifter", "Reckless Velocitaur"] } });
     const h2 = idOf(t, "p1", "battlefield", "Hulldrifter");
-    t = act(t, "p1", { type: "activate", source: h2, ability: abilityIndex(t, h2, "Équipage") });
+    t = act(t, "p1", { type: "activate", source: h2, ability: abilityIndex(t, h2, "Crew") });
     t = passAccepting(t, (x) => x.stack.length === 0);
     expect(chars(t, h2).power).toBe(5);
     expect(chars(t, h2).keywords).toContain("trample");
@@ -74,7 +75,7 @@ describe("Aetherdrift : Véhicules et Montures", () => {
   it("« attaque en étant montée » (Gilded Ghoda : Trésor) seulement si elle est montée", () => {
     let s = scenario({ p1: { battlefield: ["Gilded Ghoda", "Llanowar Elves"] }, step: "main1" });
     const ghoda = idOf(s, "p1", "battlefield", "Gilded Ghoda");
-    s = act(s, "p1", { type: "activate", source: ghoda, ability: abilityIndex(s, ghoda, "Monture") });
+    s = act(s, "p1", { type: "activate", source: ghoda, ability: abilityIndex(s, ghoda, "Saddle") });
     s = passBoth(s);
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: ghoda, defender: "p2" }] });
@@ -85,7 +86,7 @@ describe("Aetherdrift : Véhicules et Montures", () => {
   it("cycle avec X : Valor's Flagship crée X Pilotes", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 6), hand: ["Valor's Flagship"] } });
     const ship = idOf(s, "p1", "hand", "Valor's Flagship");
-    s = act(s, "p1", { type: "activate", source: ship, ability: abilityIndex(s, ship, "Cycle"), x: 3 });
+    s = act(s, "p1", { type: "activate", source: ship, ability: abilityIndex(s, ship, "Cycling"), x: 3 });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     expect(idsOf(s, "p1", "battlefield", "Pilot")).toHaveLength(3);
   });
@@ -94,7 +95,7 @@ describe("Aetherdrift : Véhicules et Montures", () => {
     let s = scenario({ p1: { battlefield: ["Marauding Mako", ...lands("Plains", 2)], hand: ["Lightshield Parry"] } });
     const mako = idOf(s, "p1", "battlefield", "Marauding Mako");
     const parry = idOf(s, "p1", "hand", "Lightshield Parry");
-    s = act(s, "p1", { type: "activate", source: parry, ability: abilityIndex(s, parry, "Cycle") });
+    s = act(s, "p1", { type: "activate", source: parry, ability: abilityIndex(s, parry, "Cycling") });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     expect(s.objects[mako]?.counters["+1/+1"]).toBe(1);
     expect(s.players.p1?.hand).toHaveLength(1);
@@ -123,7 +124,7 @@ describe("Aetherdrift : Véhicules et Montures", () => {
   it("épuiser : Basri ne se dégage pas lors de la prochaine étape de dégagement", () => {
     let s = scenario({ p1: { battlefield: ["Basri, Tomorrow's Champion", "Plains"] } });
     const basri = idOf(s, "p1", "battlefield", "Basri, Tomorrow's Champion");
-    s = act(s, "p1", { type: "activate", source: basri, ability: abilityIndex(s, basri, "Chat") });
+    s = act(s, "p1", { type: "activate", source: basri, ability: abilityIndex(s, basri, "1/1 Cat") });
     s = passBoth(s);
     expect(idsOf(s, "p1", "battlefield", "Cat")).toHaveLength(1);
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
@@ -345,7 +346,7 @@ describe("Aetherdrift, lot C", () => {
     });
     const spark = idOf(s, "p1", "battlefield", "The Aetherspark");
     s.objects[spark]!.counters.loyalty = 4;
-    const plus = chars(s, spark).abilities.findIndex((a) => a.kind === "activated" && a.label?.includes("Attachez"));
+    const plus = chars(s, spark).abilities.findIndex((a) => a.kind === "activated" && a.label?.includes("Attach"));
     s = act(s, "p1", {
       type: "activate",
       source: spark,
@@ -370,7 +371,9 @@ describe("Aetherdrift : cartes des decks du méta (PLAN-C, lot C13)", () => {
     };
   /** Active la capacité de `source` dont le libellé contient `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
@@ -458,7 +461,7 @@ describe("Aetherdrift : cartes des decks du méta (PLAN-C, lot C13)", () => {
     t.players.p1!.speed = 4;
     t.version += 1;
     const cub = idOf(t, "p1", "battlefield", "Bear Cub");
-    t = settle(activate(t, "p1", trap, "Vitesse max", { targets: { t: [cub] } }));
+    t = settle(activate(t, "p1", trap, "Max speed", { targets: { t: [cub] } }));
     expect(t.objects[cub]?.counters["+1/+1"]).toBe(1);
   });
 
@@ -507,7 +510,7 @@ describe("Aetherdrift : cartes des decks du méta (PLAN-C, lot C13)", () => {
     });
     const bay = idOf(s, "p1", "battlefield", "Repurposing Bay");
     let offered: (string | undefined)[] = [];
-    s = settle(activate(s, "p1", bay, "VM"), (req, _p, cur) => {
+    s = settle(activate(s, "p1", bay, "mana value 1"), (req, _p, cur) => {
       if (req.type === "pick" && req.intent === "search") offered = namesIn(cur, req.options);
       return undefined;
     });
@@ -519,7 +522,7 @@ describe("Aetherdrift : cartes des decks du méta (PLAN-C, lot C13)", () => {
   it("Chandra, Spark Hunter : 0 crée un Véhicule 3/2 ; au début du combat il devient une créature avec la célérité", () => {
     let s = scenario({ p1: { battlefield: ["Chandra, Spark Hunter"] } });
     const chandra = idOf(s, "p1", "battlefield", "Chandra, Spark Hunter");
-    s = settle(activate(s, "p1", chandra, "0 :"));
+    s = settle(activate(s, "p1", chandra, "0:"));
     const vehicle = idOf(s, "p1", "battlefield", "Vehicle");
     expect(chars(s, vehicle).types).not.toContain("Creature");
     expect([chars(s, vehicle).power, chars(s, vehicle).toughness]).toEqual([3, 2]);
@@ -550,18 +553,18 @@ describe("Aetherdrift : cartes des decks du méta (PLAN-C, lot C13)", () => {
     const modesSeen: string[][] = [];
     const cycle = (cur: S, pickLabel: string) => {
       const card = idsOf(cur, "p1", "hand", "Intimidation Tactics")[0] as string;
-      return settle(activate(cur, "p1", card, "Cycle"), (req) => {
+      return settle(activate(cur, "p1", card, "Cycling"), (req) => {
         if (req.type !== "pick" || !req.labels) return undefined;
         modesSeen.push(req.options.map((o) => req.labels?.[o] ?? String(o)));
         const want = req.options.find((o) => req.labels?.[o]?.includes(pickLabel));
         return want === undefined ? undefined : [want];
       });
     };
-    s = cycle(s, "perd 3 PV");
+    s = cycle(s, "loses 3 life");
     expect(s.players.p2?.life).toBe(17);
-    s = cycle(s, "Trésor");
+    s = cycle(s, "Treasure");
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
-    expect(modesSeen[1]?.some((l) => l.includes("perd 3 PV"))).toBe(false);
+    expect(modesSeen[1]?.some((l) => l.includes("loses 3 life"))).toBe(false);
   });
 
   it("Intimidation Tactics : exile une carte d'artefact ou de créature de la main de l'adversaire", () => {
@@ -619,7 +622,9 @@ describe("Aetherdrift : cartes des decks du méta (PLAN-C, lot C13)", () => {
 describe("Aetherdrift, lot K8 : mythiques", () => {
   /** L'option « activer » de `source` dont le libellé contient `label`. */
   const option = (s: S, player: string, source: string, label: string) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     return a?.type === "activate" ? a : undefined;
   };
   /** Active la capacité de `source` dont le libellé contient `label`. */
@@ -693,10 +698,10 @@ describe("Aetherdrift, lot K8 : mythiques", () => {
     expect(chars(s, hazoret).keywords).toEqual(expect.arrayContaining(["indestructible", "haste", "cantAttack", "cantBlock"]));
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
-    const legal = option(s, "p1", hazoret, "Imblocable")?.targets[0]?.legal ?? [];
+    const legal = option(s, "p1", hazoret, "Unblockable")?.targets[0]?.legal ?? [];
     expect(legal).toContain(cub);
     expect(legal).not.toContain(angel);
-    s = settle(activate(s, "p1", hazoret, "Imblocable", { targets: { t: [cub] } }));
+    s = settle(activate(s, "p1", hazoret, "Unblockable", { targets: { t: [cub] } }));
     expect(chars(s, cub).keywords).toContain("unblockable");
     expect(s.objects[hazoret]?.tapped).toBe(true);
     const max = scenario({ p1: { battlefield: ["Hazoret, Godseeker"] } });
@@ -709,20 +714,20 @@ describe("Aetherdrift, lot K8 : mythiques", () => {
     let s = scenario({ p1: { battlefield: ["Loot, the Pathfinder", ...lands("Island", 2), "Mountain"] } });
     const loot = idOf(s, "p1", "battlefield", "Loot, the Pathfinder");
     expect(chars(s, loot).keywords).toEqual(expect.arrayContaining(["doubleStrike", "vigilance", "haste"]));
-    s = settle(activate(s, "p1", loot, "piochez trois"));
+    s = settle(activate(s, "p1", loot, "draw three"));
     expect(s.players.p1?.hand).toHaveLength(3);
     expect(s.objects[loot]?.tapped).toBe(true);
     s.objects[loot]!.tapped = false;
     s.version += 1;
-    expect(option(s, "p1", loot, "piochez trois")).toBeUndefined();
-    s = settle(activate(s, "p1", loot, "3 blessures", { targets: { t: ["p2"] } }));
+    expect(option(s, "p1", loot, "draw three")).toBeUndefined();
+    s = settle(activate(s, "p1", loot, "3 damage", { targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(17);
   });
 
   it("Loot, the Pathfinder : exhaust — {G}, {T} : trois mana d'une même couleur", () => {
     let s = scenario({ p1: { battlefield: ["Loot, the Pathfinder", "Forest"] } });
     const loot = idOf(s, "p1", "battlefield", "Loot, the Pathfinder");
-    s = settle(activate(s, "p1", loot, "trois mana"), (req) => (req.type === "pick" ? ["R"] : undefined));
+    s = settle(activate(s, "p1", loot, "three mana"), (req) => (req.type === "pick" ? ["R"] : undefined));
     expect(s.players.p1?.manaPool.R).toBe(3);
   });
 
@@ -773,14 +778,14 @@ describe("Aetherdrift, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Bear Cub", "Opt"]);
     const exAngel = exiled(s, "Serra Angel")[0] as string;
     const exDragon = exiled(s, "Shivan Dragon")[0] as string;
-    expect(option(s, "p1", mimeo, "copie")?.targets[0]?.legal.sort()).toEqual([exAngel, exDragon].sort());
-    s = settle(activate(s, "p1", mimeo, "copie", { targets: { t: [exAngel] } }));
+    expect(option(s, "p1", mimeo, "copy")?.targets[0]?.legal.sort()).toEqual([exAngel, exDragon].sort());
+    s = settle(activate(s, "p1", mimeo, "copy", { targets: { t: [exAngel] } }));
     const c = chars(s, mimeo);
     expect(c.name).toBe("Serra Angel");
     expect([c.power, c.toughness]).toEqual([6, 6]);
     expect(c.keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
     // La copie garde la capacité : elle peut devenir le Dragon.
-    expect(option(s, "p1", mimeo, "copie")?.targets[0]?.legal).toContain(exDragon);
+    expect(option(s, "p1", mimeo, "copy")?.targets[0]?.legal).toContain(exDragon);
   });
 
   it("Mu Yanling, Wind Rider : Véhicule 3/2 incolore avec équipage 1 ; vos Véhicules volent", () => {
@@ -795,7 +800,7 @@ describe("Aetherdrift, lot K8 : mythiques", () => {
     expect(c.subtypes).toContain("Vehicle");
     expect(c.types).not.toContain("Creature");
     expect(c.keywords).toContain("flying");
-    expect(c.abilities.some((a) => a.kind === "activated" && a.label?.includes("Équipage 1"))).toBe(true);
+    expect(c.abilities.some((a) => a.kind === "activated" && plainText(a.label ?? "").includes("Crew 1"))).toBe(true);
     // Un Véhicule adverse ne vole pas.
     expect(chars(s, idOf(s, "p2", "battlefield", "Salvation Engine")).keywords).not.toContain("flying");
   });
@@ -906,7 +911,7 @@ describe("Aetherdrift, lot K8 : mythiques", () => {
       p1: { battlefield: ["Salvation Engine", "Serra Angel", "Bear Cub"], graveyard: [relic, "Opt"] },
     });
     const engine = idOf(t, "p1", "battlefield", "Salvation Engine");
-    t = settle(activate(t, "p1", engine, "Équipage 6"));
+    t = settle(activate(t, "p1", engine, "Crew 6"));
     expect(chars(t, engine).types).toContain("Creature");
     t = attack(t, [engine]);
     t = settleNoBlocks(t);
@@ -918,7 +923,7 @@ describe("Aetherdrift, lot K8 : mythiques", () => {
     let s = scenario({ p1: { life: 5, battlefield: ["The Last Ride", ...lands("Swamp", 3)] } });
     const ride = idOf(s, "p1", "battlefield", "The Last Ride");
     expect(pt(s, ride)).toEqual([8, 8]);
-    s = settle(activate(s, "p1", ride, "Piochez"));
+    s = settle(activate(s, "p1", ride, "Draw"));
     expect(s.players.p1?.life).toBe(3);
     expect(s.players.p1?.hand).toHaveLength(1);
     expect(pt(s, ride)).toEqual([10, 10]);
@@ -994,18 +999,18 @@ describe("Aetherdrift, lot K8 : rares (1)", () => {
   const creature = (name: string, subtypes: string[], power = 1, toughness = 1): CardDef =>
     customCard({ name, typeLine: `Creature — ${subtypes.join(" ")}`, subtypes, power, toughness });
   /** Monte la Monture `mount` (Monture N) avec les autres créatures disponibles. */
-  const saddle = (s: S, mount: string) => settle(activate(s, "p1", mount, "Monture"));
+  const saddle = (s: S, mount: string) => settle(activate(s, "p1", mount, "Saddle"));
   /** Équipage 2 : une créature de force 1 ne suffit pas, une de force 2 anime le Véhicule. */
   const expectCrew2 = (vehicle: string) => {
     const weak = scenario({ p1: { battlefield: [vehicle, "Llanowar Elves"] } });
     const w = idOf(weak, "p1", "battlefield", vehicle);
-    const crew = abilityIndex(weak, w, "Équipage");
+    const crew = abilityIndex(weak, w, "Crew");
     expect(crew).toBeGreaterThanOrEqual(0);
     expect(legalActions(weak, "p1").some((a) => a.type === "activate" && a.source === w && a.ability === crew)).toBe(false);
     let s = scenario({ p1: { battlefield: [vehicle, "Bear Cub"] } });
     const v = idOf(s, "p1", "battlefield", vehicle);
     expect(chars(s, v).types).not.toContain("Creature");
-    s = settle(activate(s, "p1", v, "Équipage"));
+    s = settle(activate(s, "p1", v, "Crew"));
     expect(chars(s, v).types).toContain("Creature");
   };
 
@@ -1069,7 +1074,7 @@ describe("Aetherdrift, lot K8 : rares (1)", () => {
     const rex = idOf(s, "p1", "hand", "Agonasaur Rex");
     expect(chars(s, rex).keywords).toContain("trample");
     const beetle = idOf(s, "p1", "battlefield", "Debris Beetle");
-    s = settle(activate(s, "p1", rex, "Cycle"), choosing([beetle]));
+    s = settle(activate(s, "p1", rex, "Cycling"), choosing([beetle]));
     expect(idsOf(s, "p1", "graveyard", "Agonasaur Rex")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Plains"]);
     // Le Véhicule (non animé) reçoit les marqueurs et les capacités.
@@ -1085,7 +1090,7 @@ describe("Aetherdrift, lot K8 : rares (1)", () => {
     const boom = idOf(s, "p1", "battlefield", "Boommobile");
     // Plus aucun terrain dégagé : le mana de la Boommobile ne paie pas un sort.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Shock"))).toBe(false);
-    const ex = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === boom && a.label?.includes("blessures"));
+    const ex = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === boom && a.label?.includes("damage"));
     expect(ex?.type === "activate" && ex.xMax).toBe(1);
     s = settle(activate(s, "p1", boom, "Exhaust", { x: 1, targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(19);
@@ -1112,7 +1117,7 @@ describe("Aetherdrift, lot K8 : rares (1)", () => {
       p1: { battlefield: ["Bulwark Ox", { name: "Bear Cub", counters: { "+1/+1": 1 } }, "Llanowar Elves"] },
       p2: { battlefield: [{ name: "Serra Angel", counters: { "+1/+1": 1 } }] },
     });
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Bulwark Ox"), "Vos créatures"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Bulwark Ox"), "Your creatures"));
     expect(idsOf(s, "p1", "graveyard", "Bulwark Ox")).toHaveLength(1);
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
@@ -1286,7 +1291,7 @@ describe("Aetherdrift, lot K8 : rares (1)", () => {
     const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === wraps);
     expect(opt?.type === "activate" && namesIn(s, opt.targets[0]?.legal)).toEqual(["Bear Cub"]);
     const cub = idOf(s, "p1", "graveyard", "Bear Cub");
-    s = settle(activate(s, "p1", wraps, "Embaumement", { targets: { t: [cub] } }), choosing());
+    s = settle(activate(s, "p1", wraps, "Embalm", { targets: { t: [cub] } }), choosing());
     expect(s.exile.map((id) => nameOf(s, id))).toContain("Bear Cub");
     const token = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, token).subtypes).toEqual(expect.arrayContaining(["Bear", "Zombie"]));
@@ -1415,7 +1420,7 @@ describe("Aetherdrift, lot K8 : rares (1)", () => {
     const m2 = idOf(t, "p1", "battlefield", "District Mascot");
     const opt = legalActions(t, "p1").find((a) => a.type === "activate" && a.source === m2);
     expect(opt?.type === "activate" && namesIn(t, opt.targets[0]?.legal)).toEqual(["Rouage"]);
-    t = settle(activate(t, "p1", m2, "Détruisez", { targets: { t: [idOf(t, "p2", "battlefield", "Rouage")] } }));
+    t = settle(activate(t, "p1", m2, "Destroy", { targets: { t: [idOf(t, "p2", "battlefield", "Rouage")] } }));
     expect(idsOf(t, "p2", "graveyard", "Rouage")).toHaveLength(1);
     // Plus de marqueurs : la Mascotte 0/0 meurt.
     expect(idsOf(t, "p1", "graveyard", "District Mascot")).toHaveLength(1);
@@ -1452,12 +1457,12 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     });
     const eng = idOf(s, "p1", "battlefield", "Draconautics Engineer");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = settle(activate(s, eng, "Exhaust — célérité"));
+    s = settle(activate(s, eng, "Exhaust — haste"));
     expect(chars(s, cub).keywords).toContain("haste");
     expect(chars(s, eng).keywords).not.toContain("haste");
     expect(chars(s, idOf(s, "p2", "battlefield", "Llanowar Elves")).keywords).not.toContain("haste");
     expect(s.objects[eng]?.counters["+1/+1"]).toBe(1);
-    s = settle(activate(s, eng, "Exhaust — Dinosaure"));
+    s = settle(activate(s, eng, "Exhaust — 4/4 Dinosaur"));
     const token = idOf(s, "p1", "battlefield", "Dinosaur Dragon");
     expect(chars(s, token)).toMatchObject({ power: 4, toughness: 4, colors: ["R"] });
     expect(chars(s, token).subtypes).toEqual(expect.arrayContaining(["Dinosaur", "Dragon"]));
@@ -1545,7 +1550,7 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     const ship = idOf(s, "p1", "battlefield", "Air Response Unit");
     const fish = idOf(s, "p1", "battlefield", "Fearless Swashbuckler");
     expect(chars(s, ship).keywords).toContain("haste");
-    s = settle(activate(s, ship, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+    s = settle(activate(s, ship, "Crew", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
     s = attack(s, [fish, ship]);
     s = settleNoBlocks(s);
     expect(handSize(s)).toBe(3);
@@ -1616,7 +1621,7 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
       idOf(t, "p1", "battlefield", "Air Response Unit"),
     ]);
     const hand = handSize(t);
-    t = settle(activate(t, guzzler, "Vitesse max", { sacrifice: [idOf(t, "p1", "battlefield", "Air Response Unit")] }));
+    t = settle(activate(t, guzzler, "Max speed", { sacrifice: [idOf(t, "p1", "battlefield", "Air Response Unit")] }));
     expect(handSize(t)).toBe(hand + 1);
     expect(idsOf(t, "p1", "graveyard", "Air Response Unit")).toHaveLength(1);
   });
@@ -1638,7 +1643,7 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     expect(canActivate(empty, "p1", idOf(empty, "p1", "graveyard", "Gastal Thrillroller"))).toBe(false);
     let t = scenario({ p1: { battlefield: lands("Mountain", 3), graveyard: ["Gastal Thrillroller"], hand: ["Opt"] } });
     const gy = idOf(t, "p1", "graveyard", "Gastal Thrillroller");
-    t = settle(activate(t, gy, "Revenir", { discard: [idOf(t, "p1", "hand", "Opt")] }));
+    t = settle(activate(t, gy, "Return with", { discard: [idOf(t, "p1", "hand", "Opt")] }));
     const back = idOf(t, "p1", "battlefield", "Gastal Thrillroller");
     expect(t.objects[back]?.counters.finality).toBe(1);
     expect(idsOf(t, "p1", "graveyard", "Opt")).toHaveLength(1);
@@ -1684,7 +1689,7 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     let s = scenario({ p1: { battlefield: ["Guardian Sunmare", "Serra Angel"], library } });
     const mare = idOf(s, "p1", "battlefield", "Guardian Sunmare");
     expect(chars(s, mare).keywords).toContain("ward");
-    s = settle(activate(s, mare, "Monture", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
+    s = settle(activate(s, mare, "Saddle", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
     s = attack(s, [mare]);
     let offered: (string | undefined)[] = [];
     s = settleNoBlocks(s, (req, _p, cur) => {
@@ -1780,11 +1785,11 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     expect(chars(s, idOf(s, "p2", "battlefield", "Llanowar Elves"))).toMatchObject({ power: 1, toughness: 1 });
     // Un Véhicule équipé devient un Elfe et reçoit +1/+1.
     const aru = idOf(s, "p1", "battlefield", "Air Response Unit");
-    s = settle(activate(s, aru, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+    s = settle(activate(s, aru, "Crew", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
     expect(chars(s, aru).subtypes).toContain("Elf");
     expect(chars(s, aru)).toMatchObject({ power: 4, toughness: 4 });
     // Le Lifecraft Engine équipé est un Elfe, sans +1/+1.
-    s = settle(activate(s, engine, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
+    s = settle(activate(s, engine, "Crew", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
     expect(chars(s, engine).subtypes).toContain("Elf");
     expect(chars(s, engine)).toMatchObject({ power: 4, toughness: 4 });
   });
@@ -1794,7 +1799,7 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     s = settle(cast(s, "p1", "Marketback Walker", { x: 2 }));
     const walker = idOf(s, "p1", "battlefield", "Marketback Walker");
     expect(chars(s, walker)).toMatchObject({ power: 2, toughness: 2 });
-    s = settle(activate(s, walker, "Marqueur"));
+    s = settle(activate(s, walker, "+1/+1 counter"));
     expect(s.objects[walker]?.counters["+1/+1"]).toBe(3);
     const hand = handSize(s);
     destroy(s, walker);
@@ -1864,13 +1869,15 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
 describe("Aetherdrift, lot K8 : rares (3)", () => {
   /** Active la capacité de `source` dont le libellé contient `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
   /** La capacité de `source` dont le libellé contient `label` est-elle proposée ? */
   const offered = (s: S, player: string, source: string, label: string) =>
-    legalActions(s, player).some((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    legalActions(s, player).some((x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label));
   const manaColors = (s: S, source: string) =>
     legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === source ? a.colors : []));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
@@ -1906,7 +1913,7 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
     const oviya = idOf(s, "p1", "battlefield", "Oviya, Automech Artisan");
     const hull = idOf(s, "p1", "hand", "Hulldrifter");
     let options: (string | undefined)[] = [];
-    s = settle(activate(s, "p1", oviya, "Une créature"), (req, _p, cur) => {
+    s = settle(activate(s, "p1", oviya, "A creature"), (req, _p, cur) => {
       if (req.type === "pick") options = namesIn(cur, req.options as string[]);
       return picking([hull])(req);
     });
@@ -1917,7 +1924,7 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
 
     let t = setup();
     const cub = idOf(t, "p1", "hand", "Bear Cub");
-    t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Oviya, Automech Artisan"), "Une créature"), picking([cub]));
+    t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Oviya, Automech Artisan"), "A creature"), picking([cub]));
     expect(t.objects[idOf(t, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
@@ -1964,7 +1971,7 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
     expect(chars(s, red).keywords).toContain("vigilance");
     // Ni Shock (un sort) ; mais la capacité {1} du Monument, oui.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Shock"))).toBe(false);
-    expect(offered(s, "p1", idOf(s, "p1", "battlefield", "Riverchurn Monument"), "Les joueurs ciblés")).toBe(true);
+    expect(offered(s, "p1", idOf(s, "p1", "battlefield", "Riverchurn Monument"), "Target players")).toBe(true);
     s = act(s, "p1", { type: "tapForMana", source: red, ability: 0, color: "R" });
     expect(s.players.p1?.restrictedMana?.filter((m) => m.type === "R")).toHaveLength(3);
     expect(s.players.p1?.manaPool.R).toBe(0);
@@ -2016,7 +2023,7 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
   it("Riverchurn Monument : {1}, {T} — chaque joueur ciblé meule deux cartes", () => {
     let s = scenario({ p1: { battlefield: ["Riverchurn Monument", "Island"] } });
     const monument = idOf(s, "p1", "battlefield", "Riverchurn Monument");
-    s = settle(activate(s, "p1", monument, "Les joueurs ciblés", { targets: { t: ["p1", "p2"] } }));
+    s = settle(activate(s, "p1", monument, "Target players", { targets: { t: ["p1", "p2"] } }));
     expect(s.players.p1?.graveyard).toHaveLength(2);
     expect(s.players.p2?.graveyard).toHaveLength(2);
     expect(s.objects[monument]?.tapped).toBe(true);
@@ -2088,7 +2095,7 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
   it("Spectacular Pileup : cycle {2}, piochez une carte", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Spectacular Pileup"], library: lands("Island", 3) } });
     const pileup = idOf(s, "p1", "hand", "Spectacular Pileup");
-    s = settle(activate(s, "p1", pileup, "Cycle"));
+    s = settle(activate(s, "p1", pileup, "Cycling"));
     expect(idsOf(s, "p1", "graveyard", "Spectacular Pileup")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island"]);
   });
@@ -2103,7 +2110,7 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
     });
     const fab = idOf(s, "p1", "battlefield", "Thopter Fabricator");
     expect(chars(s, fab).keywords).toContain("flying");
-    expect(abilityIndex(s, fab, "Équipage")).toBeGreaterThanOrEqual(0);
+    expect(abilityIndex(s, fab, "Crew")).toBeGreaterThanOrEqual(0);
     s = settle(cast(s, "p1", "Opt"));
     expect(idsOf(s, "p1", "battlefield", "Thopter")).toHaveLength(0);
     s = settle(cast(s, "p1", "Opt"));
@@ -2163,12 +2170,12 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
       p1: { battlefield: ["Voyager Glidecar", "Bear Cub", "Bear Cub", { name: "Llanowar Elves", tapped: true }] },
     });
     const car = idOf(s, "p1", "battlefield", "Voyager Glidecar");
-    expect(abilityIndex(s, car, "Équipage")).toBeGreaterThanOrEqual(0);
+    expect(abilityIndex(s, car, "Crew")).toBeGreaterThanOrEqual(0);
     // Deux créatures dégagées seulement : impossible.
-    expect(offered(s, "p1", car, "Devient")).toBe(false);
+    expect(offered(s, "p1", car, "Becomes")).toBe(false);
     s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]!.tapped = false;
     s.version += 1;
-    s = settle(activate(s, "p1", car, "Devient"));
+    s = settle(activate(s, "p1", car, "Becomes"));
     expect(chars(s, car).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect(chars(s, car).keywords).toContain("flying");
     expect(s.objects[car]?.counters["+1/+1"]).toBe(1);
@@ -2205,7 +2212,7 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
     const elite = idOf(s, "p1", "hand", "Webstrike Elite");
     expect(chars(s, elite).keywords).toContain("reach");
     const cog = idOf(s, "p2", "battlefield", "Rouage");
-    s = settle(activate(s, "p1", elite, "Cycle", { x: 3 }), picking([cog]));
+    s = settle(activate(s, "p1", elite, "Cycling", { x: 3 }), picking([cog]));
     expect(idsOf(s, "p2", "graveyard", "Rouage")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island"]);
     expect(idsOf(s, "p1", "graveyard", "Webstrike Elite")).toHaveLength(1);
@@ -2269,11 +2276,11 @@ describe("Aetherdrift, lot K8 : rares (3)", () => {
     let s = scenario({ p1: { battlefield: ["Zahur, Glory's Past", "Bear Cub", "Llanowar Elves"], library: ["Opt", "Forest"] } });
     const zahur = idOf(s, "p1", "battlefield", "Zahur, Glory's Past");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = settle(activate(s, "p1", zahur, "Surveillance", { sacrifice: [cub] }), (req) =>
+    s = settle(activate(s, "p1", zahur, "Surveil", { sacrifice: [cub] }), (req) =>
       req.type === "pick" && req.intent === "surveilGraveyard" ? req.options : undefined,
     );
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Bear Cub", "Opt"]);
-    expect(offered(s, "p1", zahur, "Surveillance")).toBe(false);
+    expect(offered(s, "p1", zahur, "Surveil")).toBe(false);
     // Vitesse 1 : pas de Zombie.
     expect(idsOf(s, "p1", "battlefield", "Zombie")).toHaveLength(0);
   });
@@ -2341,7 +2348,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
       s.players.p1!.speed = speed;
       s.version += 1;
       const syphon = idOf(s, "p1", "battlefield", "Aether Syphon");
-      s = settle(activate(s, "p1", syphon, "Piochez"));
+      s = settle(activate(s, "p1", syphon, "Draw"));
       expect(s.objects[syphon]?.tapped).toBe(true);
       return s;
     };
@@ -2361,7 +2368,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     const unit = idOf(s, "p1", "battlefield", "Air Response Unit");
     const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
     expect(chars(s, unit).types).not.toContain("Creature");
-    s = settle(activate(s, "p1", unit, "Équipage", { tap: [elf] }));
+    s = settle(activate(s, "p1", unit, "Crew", { tap: [elf] }));
     const c = chars(s, unit);
     expect(c.types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect([c.power, c.toughness]).toEqual([3, 3]);
@@ -2409,10 +2416,10 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === raceway && a.colors.includes("C"))).toBe(
       true,
     );
-    expect(option(s, "p1", raceway, "Vitesse max")).toBeUndefined();
+    expect(option(s, "p1", raceway, "Max speed")).toBeUndefined();
     s.players.p1!.speed = 4;
     s.version += 1;
-    s = settle(activate(s, "p1", raceway, "Vitesse max", { targets: { t: [cub] } }));
+    s = settle(activate(s, "p1", raceway, "Max speed", { targets: { t: [cub] } }));
     expect(chars(s, cub).keywords).toContain("haste");
     s = attack(s, [cub]);
     expect(s.combat?.attackers.map((a) => a.id)).toContain(cub);
@@ -2426,16 +2433,16 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     const runner = idOf(s, "p1", "battlefield", "Apocalypse Runner");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
-    const legal = option(s, "p1", runner, "Lien de vie")?.targets[0]?.legal ?? [];
+    const legal = option(s, "p1", runner, "Lifelink")?.targets[0]?.legal ?? [];
     expect(legal).toContain(cub);
     expect(legal).not.toContain(angel);
     expect(legal).not.toContain(idOf(s, "p2", "battlefield", "Llanowar Elves"));
-    s = settle(activate(s, "p1", runner, "Lien de vie", { targets: { t: [cub] } }));
+    s = settle(activate(s, "p1", runner, "Lifelink", { targets: { t: [cub] } }));
     expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["lifelink", "unblockable"]));
     expect(s.objects[runner]?.tapped).toBe(true);
     // Équipage 3 : l'Ourson (force 2) ne suffit pas seul.
     const t = scenario({ p1: { battlefield: ["Apocalypse Runner", "Bear Cub"] } });
-    expect(option(t, "p1", idOf(t, "p1", "battlefield", "Apocalypse Runner"), "Équipage")).toBeUndefined();
+    expect(option(t, "p1", idOf(t, "p1", "battlefield", "Apocalypse Runner"), "Crew")).toBeUndefined();
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(chars(s, cub).keywords).not.toContain("lifelink");
   });
@@ -2452,14 +2459,14 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
       let t = scenario({ p1: { battlefield: ["Autarch Mammoth", "Serra Angel", "Llanowar Elves"] } });
       const mammoth = idOf(t, "p1", "battlefield", "Autarch Mammoth");
       const riders = [idOf(t, "p1", "battlefield", "Serra Angel"), idOf(t, "p1", "battlefield", "Llanowar Elves")];
-      if (saddle) t = settle(activate(t, "p1", mammoth, "Monture", { tap: riders }));
+      if (saddle) t = settle(activate(t, "p1", mammoth, "Saddle", { tap: riders }));
       return settleNoBlocks(attack(t, [mammoth]));
     };
     expect(idsOf(ride(true), "p1", "battlefield", "Elephant")).toHaveLength(1);
     expect(idsOf(ride(false), "p1", "battlefield", "Elephant")).toHaveLength(0);
     // Monture 5 : l'Ange (force 4) seul ne suffit pas.
     const u = scenario({ p1: { battlefield: ["Autarch Mammoth", "Serra Angel"] } });
-    expect(option(u, "p1", idOf(u, "p1", "battlefield", "Autarch Mammoth"), "Monture")).toBeUndefined();
+    expect(option(u, "p1", idOf(u, "p1", "battlefield", "Autarch Mammoth"), "Saddle")).toBeUndefined();
   });
 
   it("Back on Track : renvoie une carte de créature ou de Véhicule de votre cimetière sur le champ de bataille et crée un Pilote", () => {
@@ -2478,7 +2485,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     expect([chars(s, pilots[0] as string).power, chars(s, pilots[0] as string).toughness]).toEqual([1, 1]);
     // Le Pilote équipe comme si sa force était supérieure de 2 : Équipage 3 à lui seul.
     const h = idOf(s, "p1", "battlefield", "Hulldrifter");
-    expect(option(s, "p1", h, "Équipage")).toBeDefined();
+    expect(option(s, "p1", h, "Crew")).toBeDefined();
   });
 
   it("Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent {2} de moins, pas la sienne", () => {
@@ -2546,8 +2553,8 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     });
     const engine = idOf(s, "p1", "battlefield", "Broodheart Engine");
     const angel = idOf(s, "p1", "graveyard", "Serra Angel");
-    expect(option(s, "p1", engine, "Renvoyez")?.targets[0]?.legal).toEqual([angel]);
-    s = settle(activate(s, "p1", engine, "Renvoyez", { targets: { t: [angel] } }));
+    expect(option(s, "p1", engine, "Return")?.targets[0]?.legal).toEqual([angel]);
+    s = settle(activate(s, "p1", engine, "Return", { targets: { t: [angel] } }));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p1", "graveyard", "Broodheart Engine")).toHaveLength(1);
     // Pas pendant le tour adverse.
@@ -2571,22 +2578,22 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     let s = scenario({ p1: { battlefield: ["Canyon Vaulter", "Apocalypse Runner"] } });
     const vaulter = idOf(s, "p1", "battlefield", "Canyon Vaulter");
     const runner = idOf(s, "p1", "battlefield", "Apocalypse Runner");
-    s = settle(activate(s, "p1", runner, "Équipage", { tap: [vaulter] }));
+    s = settle(activate(s, "p1", runner, "Crew", { tap: [vaulter] }));
     expect(chars(s, runner).keywords).toContain("flying");
     let t = scenario({ p1: { battlefield: ["Canyon Vaulter", "Gilded Ghoda"] } });
     const ghoda = idOf(t, "p1", "battlefield", "Gilded Ghoda");
-    t = settle(activate(t, "p1", ghoda, "Monture", { tap: [idOf(t, "p1", "battlefield", "Canyon Vaulter")] }));
+    t = settle(activate(t, "p1", ghoda, "Saddle", { tap: [idOf(t, "p1", "battlefield", "Canyon Vaulter")] }));
     expect(chars(t, ghoda).keywords).toContain("flying");
     // Hors de la phase principale (début du combat) : pas de vol.
     let u = scenario({ p1: { battlefield: ["Canyon Vaulter", "Apocalypse Runner"] }, step: "beginCombat" });
     const r2 = idOf(u, "p1", "battlefield", "Apocalypse Runner");
-    u = settle(activate(u, "p1", r2, "Équipage", { tap: [idOf(u, "p1", "battlefield", "Canyon Vaulter")] }));
+    u = settle(activate(u, "p1", r2, "Crew", { tap: [idOf(u, "p1", "battlefield", "Canyon Vaulter")] }));
     expect(chars(u, r2).types).toContain("Creature");
     expect(chars(u, r2).keywords).not.toContain("flying");
     // Équipé par une autre créature : pas de vol.
     let w = scenario({ p1: { battlefield: ["Canyon Vaulter", "Apocalypse Runner", "Serra Angel"] } });
     const r3 = idOf(w, "p1", "battlefield", "Apocalypse Runner");
-    w = settle(activate(w, "p1", r3, "Équipage", { tap: [idOf(w, "p1", "battlefield", "Serra Angel")] }));
+    w = settle(activate(w, "p1", r3, "Crew", { tap: [idOf(w, "p1", "battlefield", "Serra Angel")] }));
     expect(chars(w, r3).keywords).not.toContain("flying");
   });
 
@@ -2604,7 +2611,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Hulldrifter"]);
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Bear Cub", "Opt"]);
     const cruiser = idOf(s, "p1", "battlefield", "Carrion Cruiser");
-    expect(abilityIndex(s, cruiser, "Équipage 1")).toBeGreaterThanOrEqual(0);
+    expect(abilityIndex(s, cruiser, "Crew 1")).toBeGreaterThanOrEqual(0);
   });
 
   it("Cloudspire Captain : vos Montures et Véhicules ont +1/+1 ; il équipe et monte comme si sa force était supérieure de 2", () => {
@@ -2620,12 +2627,12 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     const theirs = chars(s, idOf(s, "p2", "battlefield", "Hulldrifter"));
     expect([theirs.power, theirs.toughness]).toEqual([3, 2]);
     // Force 2 + 2 : Équipage 3 à lui seul.
-    s = settle(activate(s, "p1", hull, "Équipage", { tap: [captain] }));
+    s = settle(activate(s, "p1", hull, "Crew", { tap: [captain] }));
     expect(chars(s, hull).types).toContain("Creature");
     expect([chars(s, hull).power, chars(s, hull).toughness]).toEqual([4, 3]);
     let t = scenario({ p1: { battlefield: ["Cloudspire Captain", "Dracosaur Auxiliary"] } });
     const draco = idOf(t, "p1", "battlefield", "Dracosaur Auxiliary");
-    t = settle(activate(t, "p1", draco, "Monture", { tap: [idOf(t, "p1", "battlefield", "Cloudspire Captain")] }));
+    t = settle(activate(t, "p1", draco, "Saddle", { tap: [idOf(t, "p1", "battlefield", "Cloudspire Captain")] }));
     expect(objectDidThisTurn(t, draco, "saddled")).toBe(true);
   });
 
@@ -2651,13 +2658,13 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     // Le Véhicule reparti compte quand même : il est arrivé ce tour-ci.
     moveObject(s, idOf(s, "p1", "battlefield", "Apocalypse Runner"), "graveyard");
     s = settle(s);
-    s = settle(activate(s, "p1", coord, "Un Pilote"));
+    s = settle(activate(s, "p1", coord, "A Pilot"));
     const pilots = idsOf(s, "p1", "battlefield", "Pilot");
     expect(pilots).toHaveLength(2);
     expect([chars(s, pilots[0] as string).power, chars(s, pilots[0] as string).colors]).toEqual([1, []]);
     // Les Pilotes équipent comme si leur force était supérieure de 2 : Équipage 3 à un seul.
     const hull = idOf(s, "p1", "battlefield", "Hulldrifter");
-    s = settle(activate(s, "p1", hull, "Équipage", { tap: [pilots[0] as string] }));
+    s = settle(activate(s, "p1", hull, "Crew", { tap: [pilots[0] as string] }));
     expect(chars(s, hull).types).toContain("Creature");
   });
 
@@ -2687,7 +2694,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     expect(two.s.objects[idOf(two.s, "p1", "battlefield", "Hulldrifter")]?.counters["+1/+1"]).toBe(1);
     const cycle = chars(two.s, idOf(two.s, "p1", "battlefield", "Cloudspire Skycycle"));
     expect(cycle.keywords).toContain("flying");
-    expect(cycle.abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Équipage 1"))).toBe(true);
+    expect(cycle.abilities.some((a) => a.kind === "activated" && plainText(a.label ?? "").startsWith("Crew 1"))).toBe(true);
   });
 
   it("Country Roads : arrive engagé sauf si vous contrôlez une Monture ou un Véhicule ; {T} : {W}", () => {
@@ -2704,11 +2711,11 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
   it("Country Roads : {1}{W}, {T}, sacrifice : un Pilote 1/1, en rituel seulement", () => {
     let s = scenario({ p1: { battlefield: ["Country Roads", ...lands("Plains", 2)] } });
     const roads = idOf(s, "p1", "battlefield", "Country Roads");
-    s = settle(activate(s, "p1", roads, "Pilote"));
+    s = settle(activate(s, "p1", roads, "1/1 Pilot"));
     expect(idsOf(s, "p1", "battlefield", "Pilot")).toHaveLength(1);
     expect(idsOf(s, "p1", "graveyard", "Country Roads")).toHaveLength(1);
     const t = scenario({ active: "p2", p1: { battlefield: ["Country Roads", ...lands("Plains", 2)] } });
-    expect(option(t, "p1", idOf(t, "p1", "battlefield", "Country Roads"), "Pilote")).toBeUndefined();
+    expect(option(t, "p1", idOf(t, "p1", "battlefield", "Country Roads"), "1/1 Pilot")).toBeUndefined();
   });
 
   it("Defend the Rider : votre permanent ciblé gagne la défense talismanique et l'indestructible, ou un Pilote 1/1", () => {
@@ -2751,14 +2758,14 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
   it("Detention Chariot : cycle {W} (défaussez-le, piochez une carte) ; Équipage 3", () => {
     let s = scenario({ p1: { battlefield: ["Plains"], hand: ["Detention Chariot"], library: lands("Island", 3) } });
     const chariot = idOf(s, "p1", "hand", "Detention Chariot");
-    s = settle(activate(s, "p1", chariot, "Cycle"));
+    s = settle(activate(s, "p1", chariot, "Cycling"));
     expect(idsOf(s, "p1", "graveyard", "Detention Chariot")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island"]);
     const t = scenario({ p1: { battlefield: ["Detention Chariot", "Bear Cub", "Llanowar Elves"] } });
     const c = idOf(t, "p1", "battlefield", "Detention Chariot");
-    expect(option(t, "p1", c, "Équipage 3")).toBeDefined();
+    expect(option(t, "p1", c, "Crew 3")).toBeDefined();
     const u = scenario({ p1: { battlefield: ["Detention Chariot", "Bear Cub"] } });
-    expect(option(u, "p1", idOf(u, "p1", "battlefield", "Detention Chariot"), "Équipage 3")).toBeUndefined();
+    expect(option(u, "p1", idOf(u, "p1", "battlefield", "Detention Chariot"), "Crew 3")).toBeUndefined();
   });
 
   describe("Diversion Unit", () => {
@@ -2772,7 +2779,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
       s = act(s, "p1", { type: "pass" });
       const unit = idOf(s, "p2", "battlefield", "Diversion Unit");
       expect(chars(s, unit).keywords).toContain("flying");
-      return activate(s, "p2", unit, "Contrecarrez", { targets: { t: [s.stack[0]?.id as string] } });
+      return activate(s, "p2", unit, "Counter", { targets: { t: [s.stack[0]?.id as string] } });
     };
 
     it("contrecarre l'éphémère ou le rituel si son contrôleur ne paie pas {3} ; l'Unité est sacrifiée", () => {
@@ -2806,7 +2813,7 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
       });
       const draco = idOf(s, "p1", "battlefield", "Dracosaur Auxiliary");
       expect(chars(s, draco).keywords).toEqual(expect.arrayContaining(["flying", "haste"]));
-      if (saddle) s = settle(activate(s, "p1", draco, "Monture", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
+      if (saddle) s = settle(activate(s, "p1", draco, "Saddle", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
       return settleNoBlocks(attack(s, [draco]), picking([idOf(s, "p2", "battlefield", "Bear Cub")]));
     };
     const ridden = run(true);
@@ -2816,14 +2823,16 @@ describe("Aetherdrift, lot K8 : peu communes (1)", () => {
     expect(alone.players.p2?.life).toBe(20);
     // Monture 3 : l'Ourson (force 2) ne suffit pas.
     const t = scenario({ p1: { battlefield: ["Dracosaur Auxiliary", "Bear Cub"] } });
-    expect(option(t, "p1", idOf(t, "p1", "battlefield", "Dracosaur Auxiliary"), "Monture")).toBeUndefined();
+    expect(option(t, "p1", idOf(t, "p1", "battlefield", "Dracosaur Auxiliary"), "Saddle")).toBeUndefined();
   });
 });
 
 describe("Aetherdrift, lot K8 : peu communes (2)", () => {
   /** Active la capacité de `source` dont le libellé contient `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
@@ -2887,7 +2896,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
     const drifter = idOf(s, "p1", "battlefield", "Dune Drifter");
     expect(chars(s, drifter).types).not.toContain("Creature");
-    s = settle(act(s, "p1", { type: "activate", source: drifter, ability: abilityIndex(s, drifter, "Équipage"), tap: [cub] }));
+    s = settle(act(s, "p1", { type: "activate", source: drifter, ability: abilityIndex(s, drifter, "Crew"), tap: [cub] }));
     expect(chars(s, drifter).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect(pt(s, drifter)).toEqual([3, 3]);
   });
@@ -2899,7 +2908,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     const rumbler = idOf(s, "p1", "battlefield", "Earthrumbler");
     const cub = idOf(s, "p1", "graveyard", "Bear Cub");
     expect(chars(s, rumbler).types).not.toContain("Creature");
-    s = settle(activate(s, "p1", rumbler, "Devient", { picks: { graveyardExile: [cub] } }));
+    s = settle(activate(s, "p1", rumbler, "Becomes", { picks: { graveyardExile: [cub] } }));
     expect(namesIn(s, s.exile)).toEqual(["Bear Cub"]);
     expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     const c = chars(s, rumbler);
@@ -3011,7 +3020,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
 
     let t = scenario({ p1: { battlefield: ["Foul Roads", "Swamp", "Swamp"] } });
     const road = idOf(t, "p1", "battlefield", "Foul Roads");
-    t = settle(activate(t, "p1", road, "Pilote"));
+    t = settle(activate(t, "p1", road, "1/1 Pilot"));
     const pilot = idOf(t, "p1", "battlefield", "Pilot");
     expect(pt(t, pilot)).toEqual([1, 1]);
     expect(chars(t, pilot).colors).toEqual([]);
@@ -3034,7 +3043,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([20, 20]);
 
     let t = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Fuel the Flames"], library: lands("Island", 3) } });
-    t = settle(activate(t, "p1", idOf(t, "p1", "hand", "Fuel the Flames"), "Cycle"));
+    t = settle(activate(t, "p1", idOf(t, "p1", "hand", "Fuel the Flames"), "Cycling"));
     expect(namesIn(t, t.players.p1?.hand)).toEqual(["Island"]);
     expect(idsOf(t, "p1", "graveyard", "Fuel the Flames")).toHaveLength(1);
   });
@@ -3052,7 +3061,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
 
     let t = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Gallant Strike"], library: lands("Island", 3) } });
-    t = settle(activate(t, "p1", idOf(t, "p1", "hand", "Gallant Strike"), "Cycle"));
+    t = settle(activate(t, "p1", idOf(t, "p1", "hand", "Gallant Strike"), "Cycling"));
     expect(namesIn(t, t.players.p1?.hand)).toEqual(["Island"]);
   });
 
@@ -3124,7 +3133,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
         s = act(s, "p1", {
           type: "activate",
           source: lynx,
-          ability: abilityIndex(s, lynx, "Monture"),
+          ability: abilityIndex(s, lynx, "Saddle"),
           tap: [idOf(s, "p1", "battlefield", "Bear Cub")],
         });
         s = passBoth(s);
@@ -3147,7 +3156,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     });
     const guardian = idOf(s, "p1", "battlefield", "Greenbelt Guardian");
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-    s = settle(activate(s, "p1", guardian, "Piétinement", { targets: { t: [angel] } }));
+    s = settle(activate(s, "p1", guardian, "Trample", { targets: { t: [angel] } }));
     expect(chars(s, angel).keywords).toContain("trample");
     const exhaust = abilityIndex(s, guardian, "Exhaust");
     s = settle(act(s, "p1", { type: "activate", source: guardian, ability: exhaust }));
@@ -3219,7 +3228,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
     const ride = idOf(s, "p1", "battlefield", "Haunted Hellride");
-    s = settle(act(s, "p1", { type: "activate", source: ride, ability: abilityIndex(s, ride, "Équipage"), tap: [elves] }));
+    s = settle(act(s, "p1", { type: "activate", source: ride, ability: abilityIndex(s, ride, "Crew"), tap: [elves] }));
     expect(pt(s, ride)).toEqual([3, 3]);
     const seen: string[][] = [];
     s = settle(attack(s, [cub]), recording(seen, "Bear Cub"));
@@ -3270,7 +3279,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     expect(canActivate(s, "p1", hour)).toBe(false);
     s.players.p1!.speed = 4;
     s.version += 1;
-    s = settle(activate(s, "p1", hour, "Vitesse max"), recording([], "Opt"));
+    s = settle(activate(s, "p1", hour, "Max speed"), recording([], "Opt"));
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
     expect(idsOf(s, "p1", "graveyard", "Hour of Victory")).toHaveLength(1);
     expect(s.players.p1?.library).toHaveLength(2);
@@ -3305,7 +3314,7 @@ describe("Aetherdrift, lot K8 : peu communes (2)", () => {
     s = act(s, "p1", {
       type: "activate",
       source: lagorin,
-      ability: abilityIndex(s, lagorin, "Monture"),
+      ability: abilityIndex(s, lagorin, "Saddle"),
       tap: [idOf(s, "p1", "battlefield", "Bear Cub")],
     });
     s = passBoth(s);
@@ -3340,12 +3349,14 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     };
   /** Active la capacité de `source` dont le libellé contient `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
   const hasAbility = (s: S, player: string, source: string, label: string) =>
-    legalActions(s, player).some((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    legalActions(s, player).some((x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   /** Cibles légales proposées pour le sort `card` (mode `mode`, cible `slot`). */
   const legalTargets = (s: S, card: string, slot = 0, mode = 0) => {
@@ -3369,7 +3380,7 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
   it("Locust Spray : cycle {B} — défaussez-la, piochez une carte", () => {
     let s = scenario({ p1: { battlefield: ["Swamp"], hand: ["Locust Spray"], library: lands("Plains", 3) } });
     const spray = idOf(s, "p1", "hand", "Locust Spray");
-    s = settle(activate(s, "p1", spray, "Cycle"));
+    s = settle(activate(s, "p1", spray, "Cycling"));
     expect(idsOf(s, "p1", "graveyard", "Locust Spray")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Plains"]);
   });
@@ -3428,15 +3439,15 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     let s = scenario({ p1: { battlefield: ["Molt Tender"], library: ["Opt", "Island"] } });
     const tender = idOf(s, "p1", "battlefield", "Molt Tender");
     // Cimetière vide : la capacité de mana ne peut pas être activée.
-    expect(hasAbility(s, "p1", tender, "Un mana")).toBe(false);
-    s = settle(activate(s, "p1", tender, "Meulez"));
+    expect(hasAbility(s, "p1", tender, "One mana")).toBe(false);
+    s = settle(activate(s, "p1", tender, "Mill"));
     expect(s.players.p1?.graveyard).toHaveLength(1);
     expect(s.players.p1?.library).toHaveLength(1);
     expect(s.objects[tender]?.tapped).toBe(true);
 
     let t = scenario({ p1: { battlefield: ["Molt Tender"], graveyard: ["Opt"] } });
     const t2 = idOf(t, "p1", "battlefield", "Molt Tender");
-    t = activate(t, "p1", t2, "Un mana");
+    t = activate(t, "p1", t2, "One mana");
     if (t.pending?.kind === "choice") t = act(t, "p1", { type: "choose", values: ["B"] });
     expect(t.players.p1?.manaPool.B).toBe(1);
     expect(t.players.p1?.graveyard).toHaveLength(0);
@@ -3482,7 +3493,7 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     let s = scenario({ p1: { battlefield: ["Momentum Breaker", ...lands("Swamp", 2)] } });
     s.players.p1!.speed = 3;
     s.version += 1;
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Momentum Breaker"), "PV"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Momentum Breaker"), "Life"));
     expect(s.players.p1?.life).toBe(23);
     expect(idsOf(s, "p1", "graveyard", "Momentum Breaker")).toHaveLength(1);
   });
@@ -3537,13 +3548,13 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     let s = scenario({ p1: { battlefield: ["Outpace Oblivion", ...lands("Mountain", 2)] } });
     s.players.p1!.speed = 4;
     s.version += 1;
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Outpace Oblivion"), "2 blessures"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Outpace Oblivion"), "2 damage"));
     expect(s.players.p1?.life).toBe(20);
     expect(s.players.p2?.life).toBe(18);
     let t = scenario({ p1: { battlefield: ["Outpace Oblivion", ...lands("Mountain", 2)] } });
     t.players.p1!.speed = 3;
     t.version += 1;
-    t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Outpace Oblivion"), "2 blessures"));
+    t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Outpace Oblivion"), "2 damage"));
     expect([t.players.p1?.life, t.players.p2?.life]).toEqual([18, 18]);
   });
 
@@ -3566,12 +3577,12 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     // Le mana des deux Automates ne paie pas un sort à {2}…
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Pit Automaton"))).toBe(false);
     // … mais il paie le {2} de la capacité de l'autre.
-    expect(hasAbility(s, "p1", b, "Copiez")).toBe(true);
+    expect(hasAbility(s, "p1", b, "Copy")).toBe(true);
   });
 
   it("Pit Automaton : la prochaine capacité d'exhaust de ce tour est copiée", () => {
     let s = scenario({ p1: { battlefield: ["Pit Automaton", "Prowcatcher Specialist", ...lands("Mountain", 6)] } });
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Pit Automaton"), "Copiez"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Pit Automaton"), "Copy"));
     const pro = idOf(s, "p1", "battlefield", "Prowcatcher Specialist");
     s = settle(activate(s, "p1", pro, "Exhaust"));
     expect(s.objects[pro]?.counters["+1/+1"]).toBe(4);
@@ -3610,7 +3621,7 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     });
     s.players.p1!.speed = 2;
     s.version += 1;
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Point the Way"), "terrains"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Point the Way"), "basic lands"));
     const fetched = s.battlefield.filter((id) => ["Plains", "Island", "Swamp"].includes(chars(s, id).name));
     expect(fetched).toHaveLength(2);
     expect(fetched.every((id) => s.objects[id]?.tapped)).toBe(true);
@@ -3701,11 +3712,11 @@ describe("Aetherdrift, lot K8 : peu communes (3)", () => {
     let s = scenario({ p1: { battlefield: ["Reef Roads", "Island", "Island"] } });
     const roads = idOf(s, "p1", "battlefield", "Reef Roads");
     expect(legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === roads ? a.colors : []))).toEqual(["U"]);
-    s = settle(activate(s, "p1", roads, "Pilote"));
+    s = settle(activate(s, "p1", roads, "1/1 Pilot"));
     expect(idsOf(s, "p1", "battlefield", "Pilot")).toHaveLength(1);
     expect(idsOf(s, "p1", "graveyard", "Reef Roads")).toHaveLength(1);
     const t = scenario({ p1: { battlefield: ["Reef Roads", "Island", "Island"] }, active: "p2" });
-    expect(hasAbility(t, "p1", idOf(t, "p1", "battlefield", "Reef Roads"), "Pilote")).toBe(false);
+    expect(hasAbility(t, "p1", idOf(t, "p1", "battlefield", "Reef Roads"), "1/1 Pilot")).toBe(false);
   });
 
   it("Reef Roads : arrive engagé sauf si vous contrôlez une Monture ou un Véhicule", () => {
@@ -3836,7 +3847,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     let s = scenario({ p1: { battlefield: ["Rocketeer Boostbuggy", "Llanowar Elves"] } });
     const bug = idOf(s, "p1", "battlefield", "Rocketeer Boostbuggy");
     expect(chars(s, bug).types).not.toContain("Creature");
-    s = settle(activate(s, "p1", bug, "Équipage"));
+    s = settle(activate(s, "p1", bug, "Crew"));
     expect(chars(s, bug).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect(pt(s, bug)).toEqual([3, 2]);
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
@@ -3865,12 +3876,12 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     const blades = idOf(s, "p1", "battlefield", "Rover Blades");
     const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
     expect(chars(s, blades).types).not.toContain("Creature");
-    s = settle(activate(s, "p1", blades, "Équiper", { targets: { t: [elf] } }));
+    s = settle(activate(s, "p1", blades, "Equip", { targets: { t: [elf] } }));
     expect(s.objects[blades]?.attachedTo).toBe(elf);
     expect(chars(s, elf).keywords).toContain("doubleStrike");
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("doubleStrike");
     // Équipage 2 avec l'Ourson (force 2) : une créature ne peut pas être attachée, l'Équipement se détache.
-    s = settle(activate(s, "p1", blades, "Équipage", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+    s = settle(activate(s, "p1", blades, "Crew", { tap: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
     expect(chars(s, blades).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect(pt(s, blades)).toEqual([2, 2]);
     expect(chars(s, blades).keywords).toContain("doubleStrike");
@@ -3912,11 +3923,11 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     const ray2 = idOf(s, "p1", "battlefield", "Scrounging Skyray");
     expect(chars(s, ray2).keywords).toContain("flying");
     // Cycle : une carte défaussée, un marqueur.
-    s = settle(activate(s, "p1", idOf(s, "p1", "hand", "Skycrash"), "Cycle"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "hand", "Skycrash"), "Cycling"));
     expect(s.objects[ray2]?.counters["+1/+1"]).toBe(1);
     // L'adversaire cycle : pas de marqueur.
     s = act(s, "p1", { type: "pass" });
-    s = settle(activate(s, "p2", idOf(s, "p2", "hand", "Skycrash"), "Cycle"));
+    s = settle(activate(s, "p2", idOf(s, "p2", "hand", "Skycrash"), "Cycling"));
     expect(s.objects[ray2]?.counters["+1/+1"]).toBe(1);
   });
 
@@ -3965,7 +3976,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     expect(idsOf(s, "p2", "graveyard", "Hulldrifter")).toHaveLength(1);
 
     let t = scenario({ p1: { battlefield: ["Mountain"], hand: ["Skycrash"], library: ["Opt"] } });
-    t = settle(activate(t, "p1", idOf(t, "p1", "hand", "Skycrash"), "Cycle"));
+    t = settle(activate(t, "p1", idOf(t, "p1", "hand", "Skycrash"), "Cycling"));
     expect(idsOf(t, "p1", "graveyard", "Skycrash")).toHaveLength(1);
     expect(namesIn(t, t.players.p1?.hand)).toEqual(["Opt"]);
   });
@@ -4004,7 +4015,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     s.players.p1!.speed = 4;
     s.version += 1;
     expect(canActivate(s, "p1", imitator)).toBe(true);
-    s = settle(activate(s, "p1", imitator, "Vitesse max", { targets: { t: [s.stack[0]?.id as string] } }));
+    s = settle(activate(s, "p1", imitator, "Max speed", { targets: { t: [s.stack[0]?.id as string] } }));
     expect(s.players.p2?.life).toBe(16);
     expect(idsOf(s, "p1", "graveyard", "Slick Imitator")).toHaveLength(1);
 
@@ -4085,7 +4096,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     const wagon = idOf(s, "p1", "battlefield", "Thundering Broodwagon");
     expect(chars(s, wagon).keywords).toEqual(expect.arrayContaining(["reach", "menace"]));
     expect(chars(s, wagon).types).not.toContain("Creature");
-    expect(abilityIndex(s, wagon, "Équipage 3")).toBeGreaterThanOrEqual(0);
+    expect(abilityIndex(s, wagon, "Crew 3")).toBeGreaterThanOrEqual(0);
   });
 
   it("Transit Mage : vous pouvez chercher un artefact de valeur de mana 4 ou 5 ; refuser ne cherche rien", () => {
@@ -4136,7 +4147,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     const sloth = idOf(s, "p1", "battlefield", "Unswerving Sloth");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = settle(activate(s, "p1", sloth, "Monture", { tap: [angel] }));
+    s = settle(activate(s, "p1", sloth, "Saddle", { tap: [angel] }));
     expect(s.objects[angel]?.tapped).toBe(true);
     s = settleNoBlocks(attack(s, [sloth]));
     expect(chars(s, sloth).keywords).toContain("indestructible");
@@ -4160,7 +4171,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     });
     const mine = idOf(s, "p1", "battlefield", "Bear Cub");
     const theirs = idOf(s, "p2", "battlefield", "Bear Cub");
-    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Veteran Beastrider"), "Vos créatures"));
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Veteran Beastrider"), "Your creatures"));
     expect(pt(s, mine)).toEqual([3, 3]);
     expect(pt(s, idOf(s, "p1", "battlefield", "Veteran Beastrider"))).toEqual([4, 5]);
     expect(pt(s, theirs)).toEqual([2, 2]);
@@ -4229,7 +4240,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     const roads = idOf(t, "p1", "battlefield", "Wild Roads");
     const manaColors = legalActions(t, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === roads ? a.colors : []));
     expect(manaColors).toEqual(["G"]);
-    t = settle(activate(t, "p1", roads, "Pilote"));
+    t = settle(activate(t, "p1", roads, "1/1 Pilot"));
     expect(idsOf(t, "p1", "graveyard", "Wild Roads")).toHaveLength(1);
     const pilot = idOf(t, "p1", "battlefield", "Pilot");
     expect(pt(t, pilot)).toEqual([1, 1]);
@@ -4246,7 +4257,7 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     const doll = idOf(s, "p1", "battlefield", "Wretched Doll");
     expect(pt(s, doll)).toEqual([3, 1]);
     let seen: string[] = [];
-    s = settle(activate(s, "p1", doll, "Surveillance"), (req, _p, cur) => {
+    s = settle(activate(s, "p1", doll, "Surveil"), (req, _p, cur) => {
       if (req.type !== "pick" || !req.intent.startsWith("surveil")) return undefined;
       seen = namesIn(cur, req.options as string[]) as string[];
       return req.options;
@@ -4281,7 +4292,9 @@ describe("Wreck Remover (lot K8)", () => {
 
 describe("Aetherdrift : approximations levées (lot A1)", () => {
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
-    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
+    );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
@@ -4303,7 +4316,7 @@ describe("Aetherdrift : approximations levées (lot A1)", () => {
     const cog = idOf(s, "p2", "battlefield", "Rouage");
     const gear = idOf(s, "p2", "battlefield", "Engrenage");
     let offered: string[] = [];
-    s = settle(activate(s, "p1", elite, "Cycle", { x: 2 }), (req) => {
+    s = settle(activate(s, "p1", elite, "Cycling", { x: 2 }), (req) => {
       if (req.type !== "pick" || !req.options.includes(gear)) return undefined;
       offered = req.options.map(String);
       return [gear];

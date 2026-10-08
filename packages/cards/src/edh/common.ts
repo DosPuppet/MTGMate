@@ -1,8 +1,9 @@
 /**
- * Éléments partagés par les scripts du pseudo-ensemble Commander (EDH, PLAN-E) : le DSL et les jetons des autres
- * extensions (par Tarkir: Dragonstorm), plus ceux des decks Commander.
+ * Shared pieces of the scripts of the Commander pseudo-set (EDH, PLAN-E): the DSL and the tokens of the other sets
+ * (through Tarkir: Dragonstorm), plus those of the Commander decks.
  */
 import type { AbilityDef, ManaType, TokenSpec } from "@mtgx/engine";
+import { msg } from "@mtgx/engine";
 import { activated, amount, cond, fx, manaAbility, ref, triggered, when } from "../tdm/common";
 
 export * from "../tdm/common";
@@ -16,13 +17,13 @@ const creature = (
   extra: Partial<TokenSpec> = {},
 ): TokenSpec => ({ name, colors, types: ["Creature"], subtypes, power, toughness, ...extra });
 
-/** Vampire noir 1/1 (Edgar Markov). */
+/** 1/1 black Vampire (Edgar Markov). */
 export const VAMPIRE_BLACK: TokenSpec = creature("Vampire", ["B"], ["Vampire"], 1, 1);
-/** Vampire noir 2/2 avec le vol (Bloodline Keeper). */
+/** 2/2 black Vampire with flying (Bloodline Keeper). */
 export const VAMPIRE_FLYING: TokenSpec = creature("Vampire", ["B"], ["Vampire"], 2, 2, { keywords: ["flying"] });
-/** Vampire blanc et noir 1/1 avec le lien de vie (Edgar Markov's Coffin). */
+/** 1/1 white and black Vampire with lifelink (Edgar Markov's Coffin). */
 export const VAMPIRE_WB_LIFELINK: TokenSpec = creature("Vampire", ["W", "B"], ["Vampire"], 1, 1, { keywords: ["lifelink"] });
-/** Powerstone : artefact « {T} : ajoutez {C}. Ce mana ne peut pas servir à lancer un sort non-artefact ». */
+/** Powerstone: artifact "{T}: Add {C}. This mana can't be spent to cast a nonartifact spell". */
 export const POWERSTONE: TokenSpec = {
   name: "Powerstone",
   colors: [],
@@ -31,12 +32,12 @@ export const POWERSTONE: TokenSpec = {
   abilities: [manaAbility("C", 1, { restriction: { spell: { types: ["Artifact"] }, abilityOfSource: {} } })],
   text: "{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.",
 };
-/** Les cinq couleurs, pour « un mana de n'importe quelle couleur ». */
+/** The five colors, for "one mana of any color". */
 export const ANY_COLOR: ManaType[] = ["W", "U", "B", "R", "G"];
 
 /**
- * Évolution (702.100) : « chaque fois qu'une créature arrive sous votre contrôle, si elle a une force ou une endurance plus
- * grande que celle-ci, mettez un marqueur +1/+1 sur celle-ci » (vérifiée au déclenchement et à la résolution).
+ * Evolve (702.100): "whenever a creature you control enters, if that creature has greater power or toughness than
+ * this creature, put a +1/+1 counter on this creature" (checked on trigger and on resolution).
  */
 export const evolve = triggered(
   when.enters({ types: ["Creature"], controller: "you", other: true }),
@@ -46,13 +47,13 @@ export const evolve = triggered(
       cond.amountGreater(amount.powerOf(ref.eventObject), amount.powerOf(ref.self)),
       cond.amountGreater(amount.toughnessOf(ref.eventObject), amount.toughnessOf(ref.self)),
     ),
-    label: "Évolution",
+    label: "Evolve",
   },
 );
 
 /**
- * Ninjutsu (702.49) : « [coût], renvoyez en main un attaquant non bloqué que vous contrôlez : mettez cette carte sur le
- * champ de bataille depuis votre main, engagée et attaquante » ; elle attaque ce qu'attaquait la créature renvoyée (702.49c).
+ * Ninjutsu (702.49): "[cost], return an unblocked attacker you control to hand: put this card onto the battlefield from
+ * your hand tapped and attacking"; it attacks what the returned creature was attacking (702.49c).
  */
 export const ninjutsu = (cost: string): AbilityDef =>
   activated({
@@ -60,5 +61,5 @@ export const ninjutsu = (cost: string): AbilityDef =>
     fromHand: true,
     returnUnblockedAttacker: true,
     effects: [fx.toBattlefield(ref.self, { tapped: true, attacking: ref.cost("defender") })],
-    label: `Ninjutsu ${cost}`,
+    label: msg("Ninjutsu {cost}", { cost }),
   });

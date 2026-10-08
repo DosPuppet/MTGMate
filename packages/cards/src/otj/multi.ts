@@ -1,4 +1,4 @@
-/** Outlaws of Thunder Junction — cartes multicolores, incolores et terrains. */
+/** Outlaws of Thunder Junction — multicolor and colorless cards, lands. */
 import type { CardScript, ManaType } from "@mtgx/engine";
 import {
   ANGEL_3,
@@ -32,21 +32,21 @@ const NO_HAND_SPELL = cond.not(cond.handSpellThisTurn);
 const LEGENDARY_CREATURE_YOU = { types: ["Creature" as const], controller: "you" as const, legendary: true };
 const ALL_COLORS: ManaType[] = ["W", "U", "B", "R", "G"];
 
-/** Désert bicolore : arrive engagé, 1 blessure à un adversaire ciblé. */
+/** Dual Desert: enters tapped, 1 damage to target opponent. */
 const desertDual = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     entersWith({ tapped: true }),
-    triggered(when.entersSelf, [fx.damage(1, ref.target())], { targets: [target.player("t", "opponent")], label: "1 blessure" }),
+    triggered(when.entersSelf, [fx.damage(1, ref.target())], { targets: [target.player("t", "opponent")], label: "1 damage" }),
     manaAbility([a, b]),
   ],
 });
-/** Terrain rapide : arrive engagé sauf si vous contrôlez deux autres terrains ou moins. */
+/** Fast land: enters tapped unless you control two or fewer other lands. */
 const fastland = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [entersWith({ tapped: true, condition: cond.controls({ types: ["Land"], other: true }, 3) }), manaAbility([a, b])],
 });
 
 export const MULTI: Record<string, CardScript> = {
-  // --- Multicolores ----------------------------------------------------------
+  // --- Multicolor ------------------------------------------------------------
   "Akul the Unrepentant": {
     abilities: [
       activated({
@@ -58,10 +58,10 @@ export const MULTI: Record<string, CardScript> = {
             "hand",
             { types: ["Creature"] },
             { to: "battlefield" },
-            { min: 0, prompt: "Une créature de votre main" },
+            { min: 0, prompt: "A creature from your hand" },
           ),
         ],
-        label: "Une créature de votre main",
+        label: "A creature from your hand",
       }),
     ],
   },
@@ -69,11 +69,11 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.toBattlefield(ref.target(), { tapped: true })], {
         condition: cond.wasCast,
-        targets: [target.cardInGraveyard("t", { permanent: true, maxManaValue: 3 }, "you", "carte de permanent")],
-        label: "Un permanent de VM 3 ou moins revient engagé",
+        targets: [target.cardInGraveyard("t", { permanent: true, maxManaValue: 3 }, "you", "permanent card")],
+        label: "A permanent with mana value 3 or less returns tapped",
       }),
       triggered(when.tapsSelf, [fx.exileTop(ref.you, 2, "a"), fx.grantPlay(ref.stored("a"))], {
-        label: "Exilez deux cartes, jouables ce tour-ci",
+        label: "Exile two cards, playable this turn",
       }),
     ],
   },
@@ -82,16 +82,16 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         { ...OUTLAW_CREATURE, controller: "you" },
         { addKeywords: ["firstStrike"] },
-        { condition: cond.yourTurn, label: "Initiative" },
+        { condition: cond.yourTurn, label: "First strike" },
       ),
-      triggered(when.crime, [mercenary()], { oncePerTurn: true, label: "Mercenaire 1/1" }),
+      triggered(when.crime, [mercenary()], { oncePerTurn: true, label: "1/1 Mercenary" }),
     ],
   },
   "Badlands Revival": {
     spell: spell(
       [
-        target.upTo(1, target.cardInGraveyard("c", { types: ["Creature"] }, "you", "carte de créature")),
-        { ...target.upTo(1, target.cardInGraveyard("p", { permanent: true }, "you", "carte de permanent")), otherThan: ["c"] },
+        target.upTo(1, target.cardInGraveyard("c", { types: ["Creature"] }, "you", "creature card")),
+        { ...target.upTo(1, target.cardInGraveyard("p", { permanent: true }, "you", "permanent card")), otherThan: ["c"] },
       ],
       [fx.toBattlefield(ref.target("c")), fx.toHand(ref.target("p"))],
     ),
@@ -100,13 +100,13 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.enters({ token: true, controller: "you" }), [fx.createTokens(VAMPIRE_ROGUE)], {
         oncePerTurn: true,
-        label: "Vampire Voleur 1/1",
+        label: "1/1 Vampire Rogue",
       }),
       activated({
         mana: "{1}{B}",
         sacrificeOther: { filter: { types: ["Creature", "Artifact"], other: true } },
         effects: [fx.draw(1)],
-        label: "Piochez",
+        label: "Draw",
       }),
     ],
   },
@@ -115,7 +115,7 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         { subtype: "Ox", controller: "you" },
         { addKeywords: ["doubleStrike"] },
-        { label: "Vos Bœufs : double initiative" },
+        { label: "Your Oxen: double strike" },
       ),
       ...(["entersSelf", "attacksSelf"] as const).map((w) =>
         triggered(
@@ -128,7 +128,7 @@ export const MULTI: Record<string, CardScript> = {
               fx.grantPlay(ref.stored("b"), { untilYourNextTurn: true }),
             ),
           ],
-          { label: "Exilez la carte du dessus : Bœuf, ou lançable" },
+          { label: "Exile the top card: Ox, or castable" },
         ),
       ),
     ],
@@ -139,7 +139,7 @@ export const MULTI: Record<string, CardScript> = {
         when.step("beginCombat"),
         [fx.pumpAll({ ...OTHER_CREATURE_YOU_CONTROL, minPower: 4 }, 0, 0, ["trample", "haste"])],
         {
-          label: "Piétinement et célérité (force 4)",
+          label: "Trample and haste (power 4)",
         },
       ),
     ],
@@ -154,7 +154,7 @@ export const MULTI: Record<string, CardScript> = {
             amount.count({ subtype: "Mount", controller: "you" }),
           ),
         ],
-        { label: "+X/+X (vos Montures)" },
+        { label: "+X/+X (your Mounts)" },
       ),
     ],
   },
@@ -162,33 +162,35 @@ export const MULTI: Record<string, CardScript> = {
   "Honest Rutstein": {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature")],
-        label: "Reprenez une créature",
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card")],
+        label: "Return a creature",
       }),
-      { kind: "costReduction", filter: { types: ["Creature"] }, generic: 1, label: "Sorts de créature : {1} de moins" },
+      { kind: "costReduction", filter: { types: ["Creature"] }, generic: 1, label: "Creature spells: cost {1} less" },
     ],
   },
   "Intimidation Campaign": {
     abilities: [
-      triggered(when.entersSelf, [...fx.drain(1), fx.draw(1)], { label: "Drain 1, piochez" }),
-      triggered(when.crime, fx.may("Renvoyer cet enchantement en main ?", fx.bounce(ref.self)), { label: "Renvoyez-le en main" }),
+      triggered(when.entersSelf, [...fx.drain(1), fx.draw(1)], { label: "Drain 1, draw" }),
+      triggered(when.crime, fx.may("Return this enchantment to its owner's hand?", fx.bounce(ref.self)), {
+        label: "Return it to hand",
+      }),
     ],
   },
   "Jem Lightfoote, Sky Explorer": {
-    abilities: [triggered(when.yourEndStep, [fx.draw(1)], { condition: NO_HAND_SPELL, label: "Piochez" })],
+    abilities: [triggered(when.yourEndStep, [fx.draw(1)], { condition: NO_HAND_SPELL, label: "Draw" })],
   },
   "Jolene, Plundering Pugilist": {
     abilities: [
       triggered(when.attackWith(1), [fx.createTokens(TREASURE)], {
         condition: cond.controls({ types: ["Creature"], attacking: true, minPower: 4 }),
-        label: "Trésor",
+        label: "Treasure",
       }),
       activated({
         mana: "{1}{R}",
         sacrificeOther: { filter: { subtype: "Treasure" } },
         targets: [target.any("t")],
         effects: [fx.damage(1, ref.target())],
-        label: "1 blessure",
+        label: "1 damage",
       }),
     ],
   },
@@ -201,25 +203,25 @@ export const MULTI: Record<string, CardScript> = {
             "hand",
             { notTypes: ["Land"], maxManaValue: 3 },
             { to: "exile" },
-            { min: 0, store: "k", prompt: "Vous pouvez comploter une carte" },
+            { min: 0, store: "k", prompt: "You may plot a card" },
           ),
           fx.plot(ref.stored("k")),
         ],
-        { label: "Complotez une carte de votre main" },
+        { label: "Plot a card from your hand" },
       ),
       triggered(when.enters(LEGENDARY_CREATURE_YOU), [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)], {
-        label: "Un marqueur +1/+1 sur chaque créature",
+        label: "A +1/+1 counter on each creature",
       }),
     ],
   },
   "Kraum, Violent Cacophony": {
-    abilities: [triggered(when.castNthSpell(2), [fx.addCounters(ref.self, 1), fx.draw(1)], { label: "Marqueur +1/+1, piochez" })],
+    abilities: [triggered(when.castNthSpell(2), [fx.addCounters(ref.self, 1), fx.draw(1)], { label: "+1/+1 counter, draw" })],
   },
-  "Malcolm, the Eyes": { abilities: [triggered(when.castNthSpell(2), [investigate()], { label: "Enquêtez" })] },
+  "Malcolm, the Eyes": { abilities: [triggered(when.castNthSpell(2), [investigate()], { label: "Investigate" })] },
   "Marchesa, Dealer of Death": {
     abilities: [
-      triggered(when.crime, fx.mayPay("{1}", "Payer {1} ?", fx.lookAtTop(2, { count: 1, rest: "graveyard", exact: true })), {
-        label: "Une des deux cartes du dessus en main",
+      triggered(when.crime, fx.mayPay("{1}", "Pay {1}?", fx.lookAtTop(2, { count: 1, rest: "graveyard", exact: true })), {
+        label: "One of the top two cards into your hand",
       }),
     ],
   },
@@ -228,10 +230,10 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         { ...MOUNT_OR_VEHICLE, controller: "you" },
         { addKeywords: ["hexproof"] },
-        { condition: cond.yourTurn, label: "Défense talismanique" },
+        { condition: cond.yourTurn, label: "Hexproof" },
       ),
       triggered(when.attacks({ ...MOUNT_OR_VEHICLE, controller: "you" }), [fx.addCounters(ref.eventObject, 1)], {
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -249,12 +251,12 @@ export const MULTI: Record<string, CardScript> = {
   "Rakdos Joins Up": {
     abilities: [
       triggered(when.entersSelf, [fx.toBattlefield(ref.target(), { counters: { kind: "+1/+1", n: 2 } })], {
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature")],
-        label: "Une créature revient avec deux marqueurs",
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card")],
+        label: "A creature returns with two counters",
       }),
       triggered(when.dies(LEGENDARY_CREATURE_YOU), [fx.damage(amount.powerOf(ref.eventObject), ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Blessures égales à sa force",
+        label: "Damage equal to its power",
       }),
     ],
   },
@@ -266,17 +268,17 @@ export const MULTI: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "s" }),
           fx.when(cond.v("s"), fx.reflexive([target.nonland("t")], [fx.destroy(ref.target())])),
         ],
-        { label: "Sacrifiez une créature : détruisez un permanent non-terrain" },
+        { label: "Sacrifice a creature: destroy a nonland permanent" },
       ),
     ],
   },
   "Selvala, Eager Trailblazer": {
     abilities: [
-      triggered(when.castSpell("you", { types: ["Creature"] }), [mercenary()], { label: "Mercenaire 1/1" }),
+      triggered(when.castSpell("you", { types: ["Creature"] }), [mercenary()], { label: "1/1 Mercenary" }),
       manaAbility(ALL_COLORS, 1, { distinctPowers: true }),
     ],
   },
-  "Seraphic Steed": { abilities: [whileSaddled([fx.createTokens(ANGEL_3)], { label: "Ange 3/3 volant" })] },
+  "Seraphic Steed": { abilities: [whileSaddled([fx.createTokens(ANGEL_3)], { label: "3/3 flying Angel" })] },
   "Slick Sequence": {
     spell: spell([target.any("t")], [fx.damage(2, ref.target()), fx.when(cond.castThisTurn(2), fx.draw(1))]),
   },
@@ -284,33 +286,33 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.enters({ ...OUTLAW_CREATURE, controller: "you", other: true }), [fx.damage(1, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "1 blessure",
+        label: "1 damage",
       }),
     ],
   },
   "Vraska Joins Up": {
     abilities: [
       triggered(when.entersSelf, [fx.addCountersAll(CREATURE_YOU_CONTROL, 1, "deathtouch")], {
-        label: "Marqueur contact mortel",
+        label: "Deathtouch counter",
       }),
-      triggered(when.combatDamage(LEGENDARY_CREATURE_YOU, true), [fx.draw(1)], { label: "Piochez" }),
+      triggered(when.combatDamage(LEGENDARY_CREATURE_YOU, true), [fx.draw(1)], { label: "Draw" }),
     ],
   },
   "Wrangler of the Damned": {
     abilities: [
-      triggered(when.yourEndStep, [fx.createTokens(SPIRIT_2)], { condition: NO_HAND_SPELL, label: "Esprit 2/2 volant" }),
+      triggered(when.yourEndStep, [fx.createTokens(SPIRIT_2)], { condition: NO_HAND_SPELL, label: "2/2 flying Spirit" }),
     ],
   },
   "Wylie Duke, Atiin Hero": {
-    abilities: [triggered(when.tapsSelf, [fx.gainLife(1), fx.draw(1)], { label: "+1 PV, piochez" })],
+    abilities: [triggered(when.tapsSelf, [fx.gainLife(1), fx.draw(1)], { label: "+1 life, draw" })],
   },
 
-  // --- Incolores -------------------------------------------------------------
+  // --- Colorless -------------------------------------------------------------
   "Bandit's Haul": {
     abilities: [
-      triggered(when.crime, [fx.counters(ref.self, "loot", 1)], { oncePerTurn: true, label: "Marqueur de butin" }),
+      triggered(when.crime, [fx.counters(ref.self, "loot", 1)], { oncePerTurn: true, label: "Loot counter" }),
       manaAbility(ALL_COLORS),
-      activated({ mana: "{2}", tap: true, removeCounters: { kind: "loot", n: 2 }, effects: [fx.draw(1)], label: "Piochez" }),
+      activated({ mana: "{2}", tap: true, removeCounters: { kind: "loot", n: 2 }, effects: [fx.draw(1)], label: "Draw" }),
     ],
   },
   "Boom Box": {
@@ -325,13 +327,13 @@ export const MULTI: Record<string, CardScript> = {
           target.upTo(1, target.permanent("l", ["Land"])),
         ],
         effects: [fx.destroy(ref.target("a")), fx.destroy(ref.target("c")), fx.destroy(ref.target("l"))],
-        label: "Détruisez un artefact, une créature et un terrain",
+        label: "Destroy an artifact, a creature and a land",
       }),
     ],
   },
   "Gold Pan": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Trésor" }),
+      triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Treasure" }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
     ],
   },
@@ -341,7 +343,7 @@ export const MULTI: Record<string, CardScript> = {
         "attached",
         { power: 1, addKeywords: ["haste"], addAbilities: [wardAbility({ mana: { generic: 1, colored: {}, x: 0 } })] },
         {
-          label: "+1/+0, célérité et garde {1}",
+          label: "+1/+0, haste and ward {1}",
         },
       ),
     ],
@@ -351,17 +353,17 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["haste"] },
-        { condition: cond.controls({ subtype: "Mount" }), label: "Célérité (Monture)" },
+        { condition: cond.controls({ subtype: "Mount" }), label: "Haste (Mount)" },
       ),
       triggered(
         when.attacksSelf,
         [fx.lookAtTop(1, { filter: { types: ["Land"] }, count: 1, to: { to: "battlefield", tapped: true }, rest: "top" })],
-        { label: "Un terrain du dessus, engagé" },
+        { label: "A land from the top, tapped" },
       ),
     ],
   },
   "Oasis Gardener": {
-    abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 PV" }), manaAbility(ALL_COLORS)],
+    abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 life" }), manaAbility(ALL_COLORS)],
   },
   "Redrock Sentinel": {
     abilities: [
@@ -370,7 +372,7 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { types: ["Land"] } },
         effects: [fx.draw(1), fx.createTokens(TREASURE)],
-        label: "Piochez, Trésor",
+        label: "Draw, Treasure",
       }),
     ],
   },
@@ -379,10 +381,10 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         fx.may(
-          "Chercher un terrain de base ou un Désert ?",
+          "Search for a basic land or a Desert?",
           fx.search({ types: ["Land"], anyOf: [{ basic: true }, { subtype: "Desert" }] }, { to: "libraryTop" }),
         ),
-        { label: "Terrain au-dessus de la bibliothèque" },
+        { label: "Land on top of your library" },
       ),
       activated({
         tap: true,
@@ -393,19 +395,19 @@ export const MULTI: Record<string, CardScript> = {
       }),
     ],
   },
-  "Sterling Hound": { abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })] },
+  "Sterling Hound": { abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })] },
   "Tomb Trawler": {
     abilities: [
       activated({
         mana: "{2}",
-        targets: [target.cardInGraveyard("t", {}, "you", "carte")],
+        targets: [target.cardInGraveyard("t", {}, "you", "card")],
         effects: [fx.moveTo(ref.target(), { to: "libraryBottom" })],
-        label: "Une carte au-dessous de la bibliothèque",
+        label: "A card on the bottom of your library",
       }),
     ],
   },
 
-  // --- Terrains --------------------------------------------------------------
+  // --- Lands -----------------------------------------------------------------
   "Abraded Bluffs": desertDual("R", "W"),
   "Bristling Backwoods": desertDual("R", "G"),
   "Creosote Heath": desertDual("G", "W"),
@@ -419,26 +421,26 @@ export const MULTI: Record<string, CardScript> = {
   "Arid Archway": {
     abilities: [
       entersWith({ tapped: true }),
-      // Le terrain n'est pas ciblé (choisi à la résolution) et peut être celui-ci ; un autre Désert renvoyé : surveillance 1.
+      // The land is not targeted (chosen on resolution) and can be this one; another Desert returned: surveil 1.
       triggered(
         when.entersSelf,
         [
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Land"] }), ref.you, "land", {
-            prompt: "Choisissez le terrain à renvoyer en main",
+            prompt: "Choose the land to return to hand",
           }),
           fx.bounce(ref.stored("land")),
           fx.when(cond.refMatches(ref.stored("land"), { subtype: "Desert", other: true }), fx.surveil(1)),
         ],
-        { label: "Renvoyez un terrain" },
+        { label: "Return a land" },
       ),
       manaAbility("C", 2),
     ],
   },
   "Conduit Pylons": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }),
       manaAbility("C"),
-      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
+      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "One mana of any color" }),
     ],
   },
   "Mirage Mesa": {
@@ -454,7 +456,7 @@ export const MULTI: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t")],
         effects: [fx.pump(ref.target(), 0, 0, ["cantBlock"])],
-        label: "Ne peut pas bloquer",
+        label: "Can't block",
       }),
     ],
   },
@@ -465,17 +467,17 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         mana: "{3}",
         tap: true,
-        // « Si vous ne la mettez pas dans votre main, vous pouvez la mettre au-dessous de votre bibliothèque. »
+        // "If you don't put it into your hand, you may put it on the bottom of your library."
         effects: [
           fx.lookAtTop(1, { filter: { subtype: "Mount" }, count: 1, rest: "top", store: "m" }),
           fx.when(
             cond.not(cond.v("m")),
-            fx.may("Mettre la carte du dessus au-dessous de votre bibliothèque ?", [
+            fx.may("Put the top card on the bottom of your library?", [
               fx.moveTo(ref.libraryTop(ref.you), { to: "libraryBottom" }),
             ]),
           ),
         ],
-        label: "Une Monture du dessus en main",
+        label: "A Mount from the top into your hand",
       }),
     ],
   },

@@ -1,4 +1,4 @@
-/** Edge of Eternities — cartes bleues. */
+/** Edge of Eternities — blue cards. */
 import {
   activated,
   amount,
@@ -20,12 +20,12 @@ import {
 } from "./common";
 
 const ARTIFACT_OR_CREATURE = (id = "t", extra = {}) =>
-  target.permanent(id, ["Artifact", "Creature"], extra, "artefact ou créature");
+  target.permanent(id, ["Artifact", "Creature"], extra, "artifact or creature");
 
 export const BLUE: Record<string, CardScript> = {
   Annul: {
     spell: spell(
-      [target.spell("t", { types: ["Artifact", "Enchantment"] }, "sort d'artefact ou d'enchantement")],
+      [target.spell("t", { types: ["Artifact", "Enchantment"] }, "artifact or enchantment spell")],
       [fx.counter(ref.target())],
     ),
   },
@@ -35,7 +35,7 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.attacks({ attached: "host" }),
         [fx.modify(ref.target(), { addKeywords: ["unblockable"], setPower: 1, setToughness: 1 })],
-        { targets: [target.upTo(1, target.creature("t"))], label: "Imblocable, 1/1 de base" },
+        { targets: [target.upTo(1, target.creature("t"))], label: "Unblockable, base 1/1" },
       ),
     ],
   },
@@ -44,13 +44,13 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Cloudsculpt Technician": {
     abilities: [
-      staticAbility("self", { power: 1 }, { condition: cond.controls({ types: ["Artifact"] }), label: "+1/+0 avec un artefact" }),
+      staticAbility("self", { power: 1 }, { condition: cond.controls({ types: ["Artifact"] }), label: "+1/+0 with an artifact" }),
     ],
   },
   "Codecracker Hound": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(2, { count: 1, rest: "graveyard" })], {
-        label: "Une carte en main, l'autre au cimetière",
+        label: "One card into your hand, the other into your graveyard",
       }),
     ],
   },
@@ -63,23 +63,23 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Cryogen Relic": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez" }),
-      triggered(when.leavesSelf, [fx.draw(1)], { label: "Piochez" }),
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw" }),
+      triggered(when.leavesSelf, [fx.draw(1)], { label: "Draw" }),
       activated({
         mana: "{1}{U}",
         sacrifice: true,
         targets: [target.upTo(1, target.creature("t", { tapped: true }))],
         effects: [fx.counters(ref.target(), "stun", 1)],
-        label: "Étourdissez une créature engagée",
+        label: "Stun a tapped creature",
       }),
     ],
   },
   Cryoshatter: {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility("attached", { power: -5 }, { label: "-5/-0" }),
-      triggered({ on: "taps", who: { attached: "host" } }, [fx.destroy(ref.attached)], { label: "Engagée : détruite" }),
-      triggered(when.attachedIsDealtDamage, [fx.destroy(ref.attached)], { label: "Blessée : détruite" }),
+      triggered({ on: "taps", who: { attached: "host" } }, [fx.destroy(ref.attached)], { label: "Tapped: destroyed" }),
+      triggered(when.attachedIsDealtDamage, [fx.destroy(ref.attached)], { label: "Damaged: destroyed" }),
     ],
   },
   "Desculpting Blast": {
@@ -99,29 +99,29 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Gigastorm Titan": { costReduction: { generic: 3, condition: cond.castThisTurn(1) } },
   "Illvoi Galeblade": {
-    abilities: [activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez" })],
+    abilities: [activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Draw" })],
   },
   "Illvoi Infiltrator": {
     abilities: [
       staticAbility(
         "self",
         { addKeywords: ["unblockable"] },
-        { condition: cond.castThisTurn(2), label: "Imblocable (deux sorts)" },
+        { condition: cond.castThisTurn(2), label: "Unblockable (two spells)" },
       ),
-      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Piochez" }),
+      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Draw" }),
     ],
   },
   "Illvoi Light Jammer": {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target()), fx.pump(ref.target(), 0, 0, ["hexproof"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-le, défense talismanique",
+        label: "Attach it, hexproof",
       }),
       staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }),
     ],
   },
   "Illvoi Operative": {
-    abilities: [triggered(when.castNthSpell(2), [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" })],
+    abilities: [triggered(when.castNthSpell(2), [fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" })],
   },
   "Lost in Space": {
     spell: spell([ARTIFACT_OR_CREATURE()], [fx.topOrBottom(ref.target()), fx.surveil(1)]),
@@ -130,12 +130,12 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.enters({ types: ["Artifact"], controller: "you", other: true }), [fx.createTokens(ROBOT)], {
         oncePerTurn: true,
-        label: "Robot 2/2",
+        label: "2/2 Robot",
       }),
     ],
   },
   "Mechan Navigator": {
-    abilities: [triggered(when.tapsSelf, fx.loot(1), { label: "Piochez, défaussez" })],
+    abilities: [triggered(when.tapsSelf, fx.loot(1), { label: "Draw, then discard" })],
   },
   "Mechan Shieldmate": {
     abilities: [
@@ -144,7 +144,7 @@ export const BLUE: Record<string, CardScript> = {
         { addKeywords: ["attacksDespiteDefender"] },
         {
           condition: cond.controls({ types: ["Artifact"], enteredThisTurn: true }),
-          label: "Attaque (artefact arrivé ce tour-ci)",
+          label: "Attacks (an artifact entered this turn)",
         },
       ),
     ],
@@ -153,7 +153,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
         targets: [ARTIFACT_OR_CREATURE("t", { controller: "opponent" })],
-        label: "Engagez, étourdissez",
+        label: "Tap, stun",
       }),
     ],
   },
@@ -166,25 +166,25 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.modify(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }), { power: -3 }, "untilYourNextTurn")],
-        { label: "Créatures adverses -3/-0 jusqu'à votre prochain tour" },
+        { label: "Opponents' creatures -3/-0 until your next turn" },
       ),
     ],
   },
   "Nanoform Sentinel": {
     abilities: [
       triggered(when.tapsSelf, [fx.untap(ref.target())], {
-        targets: [{ id: "t", label: "autre permanent", filter: { objects: { other: true } } }],
+        targets: [{ id: "t", label: "other permanent", filter: { objects: { other: true } } }],
         oncePerTurn: true,
-        label: "Dégagez un autre permanent",
+        label: "Untap another permanent",
       }),
     ],
   },
   "Scour for Scrap": {
     spell: modal(
-      mode("Cherchez un artefact", [], [fx.search({ types: ["Artifact"] })]),
-      mode("Reprenez un artefact", [target.cardInGraveyard("g", { types: ["Artifact"] })], [fx.toHand(ref.target("g"))]),
+      mode("Search for an artifact", [], [fx.search({ types: ["Artifact"] })]),
+      mode("Return an artifact", [target.cardInGraveyard("g", { types: ["Artifact"] })], [fx.toHand(ref.target("g"))]),
       mode(
-        "Les deux",
+        "Both",
         [target.cardInGraveyard("g", { types: ["Artifact"] })],
         [fx.search({ types: ["Artifact"] }), fx.toHand(ref.target("g"))],
       ),
@@ -198,7 +198,7 @@ export const BLUE: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Artifact"] }, 1, { optional: true, store: "s" }),
           fx.when(cond.v("s"), fx.reflexive([target.creature("t")], [fx.addCounters(ref.target(), 1), fx.draw(1)])),
         ],
-        { label: "Sacrifiez un artefact : marqueur et pioche" },
+        { label: "Sacrifice an artifact: counter and draw" },
       ),
     ],
   },
@@ -211,20 +211,20 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Starbreach Whale": {
-    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })],
+    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })],
   },
   Starwinder: {
     abilities: [
       triggered(
         when.combatDamage({ types: ["Creature"], controller: "you" }, true),
-        fx.may("piocher autant de cartes ?", fx.draw(amount.eventAmount)),
-        { label: "Piochez autant de cartes" },
+        fx.may("draw that many cards?", fx.draw(amount.eventAmount)),
+        { label: "Draw that many cards" },
       ),
     ],
   },
   "Tractor Beam": {
-    enchant: { filter: { anyOf: [{ types: ["Creature"] }, { subtype: "Spacecraft" }] }, label: "créature ou Vaisseau" },
+    enchant: { filter: { anyOf: [{ types: ["Creature"] }, { subtype: "Spacecraft" }] }, label: "creature or Spacecraft" },
     controlsEnchanted: true,
-    abilities: [triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez-le" }), doesntUntap("attached")],
+    abilities: [triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Tap it" }), doesntUntap("attached")],
   },
 };

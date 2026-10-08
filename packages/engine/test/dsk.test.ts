@@ -10,6 +10,7 @@ import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars, moveObject, rulesEvent } from "../src/state";
+import { plainText } from "../src/text";
 import type { GameState } from "../src/types";
 import { projectView } from "../src/view";
 import {
@@ -122,7 +123,7 @@ describe("Duskmourn", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Overlord of the Mistmoors"] } });
     const card = idOf(s, "p1", "hand", "Overlord of the Mistmoors");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
-    expect(opt?.type === "cast" && opt.altLabel).toBe("Imminence 4 — {2}{W}{W}");
+    expect(opt?.type === "cast" && plainText(opt.altLabel ?? "")).toBe("Impending 4 — {2}{W}{W}");
     s = act(s, "p1", { type: "cast", card, alternative: true });
     s = settle(s);
     const overlord = idOf(s, "p1", "battlefield", "Overlord of the Mistmoors");
@@ -163,7 +164,7 @@ describe("Duskmourn", () => {
     s = settle(s);
     const room = idOf(s, "p1", "battlefield", ROOM);
     const keys = idOf(s, "p1", "battlefield", "Keys to the House");
-    const toggle = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === keys && a.label?.includes("porte"));
+    const toggle = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === keys && a.label?.includes("door"));
     s = act(s, "p1", {
       type: "activate",
       source: keys,
@@ -306,7 +307,7 @@ describe("Duskmourn", () => {
     });
     const dragon = idOf(s, "p1", "hand", "Shivan Dragon");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === dragon);
-    expect(opt?.type === "cast" && opt.altLabel).toBe("Leyline of Mutation — {W}{U}{B}{R}{G}");
+    expect(opt?.type === "cast" && plainText(opt.altLabel ?? "")).toBe("Leyline of Mutation — {W}{U}{B}{R}{G}");
     s = act(s, "p1", { type: "cast", card: dragon, alternative: true });
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
@@ -336,7 +337,7 @@ describe("Duskmourn", () => {
     const labels = chars(s, idOf(s, "p1", "battlefield", "Marvin, Murderous Mimic")).abilities.map((ab) =>
       "label" in ab ? ab.label : undefined,
     );
-    expect(labels).toContain("Une créature de force 2 ou moins ne peut pas être bloquée");
+    expect(labels).toContain("A creature with power 2 or less can't be blocked");
   });
 
   it("Found Footage : vous voyez les créatures face cachée de vos adversaires", () => {

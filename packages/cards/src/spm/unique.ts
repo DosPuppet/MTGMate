@@ -1,4 +1,4 @@
-/** Marvel's Spider-Man — Web-slinging, chaos et cartes uniques (lots B et C). */
+/** Marvel's Spider-Man — Web-slinging, Mayhem and unique cards (lots B and C). */
 import { parseManaCost } from "@mtgx/engine";
 import {
   activated,
@@ -22,28 +22,28 @@ import {
 } from "./common";
 
 export const UNIQUE: Record<string, CardScript> = {
-  // --- Lot B1 : Web-slinging et chaos ---------------------------------------
+  // --- Lot B1: Web-slinging and Mayhem ---------------------------------------
   "Spiders-Man, Heroic Horde": {
-    // Web-slinging {4}{G}{G} : lu dans le texte.
+    // Web-slinging {4}{G}{G}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.gainLife(3), fx.createTokens(SPIDER_21, 2)], {
         condition: cond.castVia("webSlinging"),
-        label: "Lancés par Web-slinging : vous gagnez 3 PV et créez deux Araignées 2/1",
+        label: "Cast using Web-slinging: you gain 3 life and create two 2/1 Spiders",
       }),
     ],
   },
   "Scarlet Spider, Ben Reilly": {
-    // Web-slinging {R}{G} et piétinement : lus dans le texte.
+    // Web-slinging {R}{G} and trample: read from the text.
     abilities: [
       entersWith({
         counters: amount.manaValueOf(ref.costBounced),
         condition: cond.castVia("webSlinging"),
-        label: "Sauvetage sensationnel — Lancé par Web-slinging : X marqueurs +1/+1 (VM de la créature renvoyée)",
+        label: "Sensational Save — Cast using Web-slinging: X +1/+1 counters (mana value of the returned creature)",
       }),
     ],
   },
   "Sandman's Quicksand": {
-    // Chaos {3}{B} : lu dans le texte.
+    // Mayhem {3}{B}: read from the text.
     spell: spell(
       [],
       [
@@ -53,57 +53,57 @@ export const UNIQUE: Record<string, CardScript> = {
     ),
   },
   "Alien Symbiosis": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     castFromGraveyard: { discard: 1 },
     abilities: [
       staticAbility(
         "attached",
         { power: 1, toughness: 1, addKeywords: ["menace"], addSubtypes: ["Symbiote"] },
-        { label: "+1/+1, la menace, et c'est un Symbiote" },
+        { label: "+1/+1, menace, and it's a Symbiote" },
       ),
     ],
   },
   "Oscorp Industries": {
-    // Chaos (sans coût pour un terrain) : lu dans le texte.
+    // Mayhem (no cost for a land): read from the text.
     abilities: [
       entersWith({ tapped: true }),
       manaAbility(["U", "B", "R"]),
       triggered({ on: "enters", who: "self", fromZone: "graveyard" }, [fx.loseLife(2, ref.you)], {
-        label: "Arrivé depuis un cimetière : vous perdez 2 PV",
+        label: "Entered from a graveyard: you lose 2 life",
       }),
     ],
   },
   "Norman Osborn": {
     keywords: ["unblockable"],
     abilities: [
-      triggered(when.combatDamageToPlayer, [fx.connive(ref.self)], { label: "Il complote" }),
-      activated({ mana: "{1}{U}{B}{R}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-le" }),
+      triggered(when.combatDamageToPlayer, [fx.connive(ref.self)], { label: "He connives" }),
+      activated({ mana: "{1}{U}{B}{R}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transform it" }),
     ],
   },
   "Green Goblin": {
-    // Vol et menace : lus dans le texte.
+    // Flying and menace: read from the text.
     abilities: [
       {
         kind: "costReduction",
         filter: {},
         generic: 2,
         fromZones: ["graveyard"],
-        label: "Sorts lancés depuis votre cimetière : {2} de moins",
+        label: "Spells cast from your graveyard cost {2} less",
       },
       playerStatic({
         playFrom: { zone: "graveyard", filter: { notTypes: ["Land"], discardedThisTurn: true }, what: "spells", mayhem: true },
-        label: "Formule du Gobelin — Chaque carte non-terrain de votre cimetière a le chaos (son coût de mana)",
+        label: "Goblin Formula — Each nonland card in your graveyard has mayhem (its mana cost)",
       }),
     ],
   },
   "Peter Parker": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(SPIDER_21)], { label: "Créez une Araignée 2/1 avec la portée" }),
-      activated({ mana: "{1}{G}{W}{U}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-le" }),
+      triggered(when.entersSelf, [fx.createTokens(SPIDER_21)], { label: "Create a 2/1 Spider with reach" }),
+      activated({ mana: "{1}{G}{W}{U}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transform it" }),
     ],
   },
   "Amazing Spider-Man": {
-    // Vigilance et portée : lues dans le texte.
+    // Vigilance and reach: read from the text.
     abilities: [
       playerStatic({
         altCostAll: {
@@ -111,7 +111,7 @@ export const UNIQUE: Record<string, CardScript> = {
           filter: { legendary: true, colors: ["W", "U", "B", "R", "G"] },
           webSlinging: true,
         },
-        label: "Vos sorts légendaires de couleur ont le Web-slinging {G}{W}{U}",
+        label: "Your colored legendary spells have Web-slinging {G}{W}{U}",
       }),
     ],
   },
@@ -125,21 +125,21 @@ export const UNIQUE: Record<string, CardScript> = {
         fromHand: true,
         sorcerySpeed: true,
         effects: [fx.toBattlefield(ref.selfCard)],
-        label: "Renvoyez une créature engagée : mettez ce terrain de votre main sur le champ de bataille",
+        label: "Return a tapped creature: put this land from your hand onto the battlefield",
       }),
     ],
   },
 
-  // --- Lot C1 : copies et légendes ---------------------------------------------
+  // --- Lot C1: copies and legends ---------------------------------------------
   "Chameleon, Master of Disguise": {
-    // Chaos {2}{U} : lu dans le texte.
+    // Mayhem {2}{U}: read from the text.
     asEnters: [
       fx.chooseCopy({ types: ["Creature"], controller: "you" }, { except: { setName: "Chameleon, Master of Disguise" } }),
     ],
   },
   "The Clone Saga": {
     abilities: [
-      chapter([1], [fx.surveil(3)], { label: "I — Surveillance 3" }),
+      chapter([1], [fx.surveil(3)], { label: "I — Surveil 3" }),
       chapter(
         [2],
         [
@@ -149,7 +149,7 @@ export const UNIQUE: Record<string, CardScript> = {
             once: true,
           },
         ],
-        { label: "II — Votre prochain sort de créature ce tour-ci est copié (copie non légendaire)" },
+        { label: "II — Your next creature spell this turn is copied (nonlegendary copy)" },
       ),
       chapter(
         [3],
@@ -160,34 +160,34 @@ export const UNIQUE: Record<string, CardScript> = {
             "Whenever a creature with the chosen name deals combat damage to a player this turn, draw a card.",
             [
               triggered(when.combatDamage({ types: ["Creature"], nameChosen: true }, true), [fx.draw(1)], {
-                label: "Une créature du nom choisi blesse un joueur : piochez une carte",
+                label: "A creature with the chosen name deals damage to a player: draw a card",
               }),
             ],
             false,
             true,
           ),
         ],
-        { label: "III — Choisissez un nom : ses créatures qui blessent un joueur ce tour-ci vous font piocher" },
+        { label: "III — Choose a name: its creatures that deal damage to a player this turn make you draw" },
       ),
     ],
   },
   "Jackal, Genius Geneticist": {
-    // Piétinement : lu dans le texte.
+    // Trample: read from the text.
     abilities: [
       triggered(
         when.castSpell("you", { types: ["Creature"], compare: [cmp.manaValue("=", amount.sourcePower)] }),
         [fx.copySpell(ref.eventObject, 1, { nonlegendary: true }), fx.addCounters(ref.self, 1)],
-        { label: "Sort de créature de VM égale à sa force : copiez-le (non légendaire), puis un marqueur +1/+1" },
+        { label: "Creature spell with mana value equal to its power: copy it (nonlegendary), then a +1/+1 counter" },
       ),
     ],
   },
   "Spider-Verse": {
     abilities: [
-      playerStatic({ noLegendRule: { subtype: "Spider" }, label: "La règle des légendes ne s'applique pas à vos Araignées" }),
+      playerStatic({ noLegendRule: { subtype: "Spider" }, label: "The legend rule doesn't apply to your Spiders" }),
       triggered(
         { on: "castSpell", by: "you", notFromHand: true },
-        fx.may("Copier ce sort ?", fx.copySpell(ref.eventObject, 1, { haste: true }), fx.doneOncePerTurn),
-        { oncePerTurn: "ifDone", label: "Sort lancé d'ailleurs que de votre main : vous pouvez le copier (une fois par tour)" },
+        fx.may("Copy this spell?", fx.copySpell(ref.eventObject, 1, { haste: true }), fx.doneOncePerTurn),
+        { oncePerTurn: "ifDone", label: "Spell cast from anywhere other than your hand: you may copy it (once each turn)" },
       ),
     ],
   },
@@ -195,7 +195,7 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spell(
       [
         {
-          ...target.upTo(6, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")),
+          ...target.upTo(6, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")),
           distinct: "name",
         },
       ],
@@ -203,9 +203,9 @@ export const UNIQUE: Record<string, CardScript> = {
     ),
   },
 
-  // --- Lot C2 : coûts, montants et joueurs --------------------------------------
+  // --- Lot C2: costs, amounts and players --------------------------------------
   "The Soul Stone": {
-    // Indestructible : lu dans le texte.
+    // Indestructible: read from the text.
     abilities: [
       manaAbility("B"),
       activated({
@@ -213,17 +213,17 @@ export const UNIQUE: Record<string, CardScript> = {
         tap: true,
         exileOther: { types: ["Creature"] },
         effects: [fx.harness],
-        label: "Exilez une créature : exploiter la Gemme de l'Âme",
+        label: "Exile a creature: harness The Soul Stone",
       }),
       triggered(when.yourUpkeep, [fx.toBattlefield(ref.target())], {
         condition: cond.harnessed,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
-        label: "∞ — Une carte de créature de votre cimetière revient sur le champ de bataille",
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
+        label: "∞ — A creature card from your graveyard returns to the battlefield",
       }),
     ],
   },
   "Iron Spider, Stark Upgrade": {
-    // Vigilance : lue dans le texte.
+    // Vigilance: read from the text.
     abilities: [
       activated({
         tap: true,
@@ -233,13 +233,13 @@ export const UNIQUE: Record<string, CardScript> = {
             anyOf: [{ types: ["Artifact"], anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }] }],
           }),
         ],
-        label: "Un marqueur +1/+1 sur chacun de vos artefacts-créatures et Véhicules",
+        label: "A +1/+1 counter on each artifact creature and Vehicle you control",
       }),
       activated({
         mana: "{2}",
         removeCounterFrom: { filter: { types: ["Artifact"] }, kind: "+1/+1", n: 2 },
         effects: [fx.draw(1)],
-        label: "Retirez deux marqueurs +1/+1 de vos artefacts : piochez une carte",
+        label: "Remove two +1/+1 counters from your artifacts: draw a card",
       }),
     ],
   },
@@ -247,39 +247,39 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.step("main1", "any"),
-        fx.mayFor(ref.eventPlayer, "Mettre un marqueur +1/+1 sur Cheering Crowd ?", fx.addCounters(ref.self, 1), {
+        fx.mayFor(ref.eventPlayer, "Put a +1/+1 counter on Cheering Crowd?", fx.addCounters(ref.self, 1), {
           op: "addMana",
           mana: ["C"],
           times: amount.countersOn(ref.self),
           who: ref.eventPlayer,
         }),
-        { label: "Ce joueur peut y mettre un marqueur +1/+1 ; il ajoute alors {C} par marqueur" },
+        { label: "That player may put a +1/+1 counter on it; they then add {C} for each counter" },
       ),
     ],
   },
   "Mister Negative": {
-    // Vigilance et lien de vie : lus dans le texte.
+    // Vigilance and lifelink: read from the text.
     abilities: [
       triggered(
         when.entersSelf,
         fx.may(
-          "Échanger vos points de vie avec l'adversaire ciblé ?",
+          "Exchange life totals with target opponent?",
           fx.exchangeLife(ref.you, ref.target(), "lost"),
           fx.draw(amount.v("lost")),
         ),
         {
           targets: [target.player("t", "opponent")],
-          label: "Inversion de la Force noire — Échangez vos PV avec un adversaire ; piochez autant que vous en avez perdu",
+          label: "Darkforce Inversion — Exchange life totals with an opponent; draw as many cards as you lost life",
         },
       ),
     ],
   },
   "Rhino, Barreling Brute": {
-    // Vigilance, piétinement et célérité : lus dans le texte.
+    // Vigilance, trample and haste: read from the text.
     abilities: [
       triggered(when.attacksSelf, [fx.draw(1)], {
         condition: cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", minManaValue: 4 }), 1),
-        label: "Si vous avez lancé un sort de VM 4 ou plus ce tour-ci : piochez une carte",
+        label: "If you cast a spell with mana value 4 or greater this turn: draw a card",
       }),
     ],
   },
@@ -291,31 +291,31 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.mill(5),
           fx.reflexive([target.creature()], [fx.damage(amount.maxPower({ types: ["Creature"] }, "graveyard"), ref.target())]),
         ],
-        { label: "I — Meulez cinq cartes ; blessures égales à la plus grande force de votre cimetière à une créature" },
+        { label: "I — Mill five cards; damage equal to the greatest power in your graveyard to a creature" },
       ),
       chapter([2], [fx.pump(ref.target(), 2, 2)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "II — +2/+2 jusqu'à la fin du tour",
+        label: "II — +2/+2 until end of turn",
       }),
       chapter([3], [fx.moveTo(ref.target(), { to: "hand" })], {
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
-        label: "III — Une carte de créature de votre cimetière en main",
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
+        label: "III — A creature card from your graveyard to your hand",
       }),
     ],
   },
   "Kraven the Hunter": {
-    // Piétinement : lu dans le texte.
+    // Trample: read from the text.
     abilities: [
       triggered(when.dies({ types: ["Creature"], controller: "opponent" }), [fx.draw(1), fx.addCounters(ref.self, 1)], {
         condition: cond.eventObjectGreatestPower,
-        label: "La plus grande créature d'un adversaire meurt : piochez une carte et un marqueur +1/+1",
+        label: "An opponent's greatest creature dies: draw a card and a +1/+1 counter",
       }),
     ],
   },
 
-  // --- Lot C3 : cartes uniques --------------------------------------------------
+  // --- Lot C3: unique cards --------------------------------------------------
   "Arachne, Psionic Weaver": {
-    // Web-slinging {W} : lu dans le texte. Le type de carte est choisi comme un mode d'arrivée.
+    // Web-slinging {W}: read from the text. The card type is chosen like an entry mode.
     asEnters: [
       fx.chooseForSelf("mode", {
         options: ["Artifact", "Battle", "Enchantment", "Instant", "Kindred", "Planeswalker", "Sorcery"],
@@ -327,19 +327,19 @@ export const UNIQUE: Record<string, CardScript> = {
         filter: { typeChosen: true },
         generic: -1,
         everyone: true,
-        label: "Les sorts du type choisi coûtent {1} de plus",
+        label: "Spells of the chosen type cost {1} more",
       },
     ],
   },
   "With Great Power . . .": {
-    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "creature you control" },
     abilities: [
       staticAbility(
         "attached",
         { power: 2, toughness: 2 },
         {
           per: { anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }], attached: "toHost" },
-          label: "+2/+2 pour chaque Aura et Équipement attachés à elle",
+          label: "+2/+2 for each Aura and Equipment attached to it",
         },
       ),
       eventReplacement({
@@ -347,38 +347,38 @@ export const UNIQUE: Record<string, CardScript> = {
         to: "you",
         modify: {},
         redirectToAttached: true,
-        label: "Les blessures qui vous seraient infligées sont infligées à la créature enchantée à la place",
+        label: "Damage that would be dealt to you is dealt to the enchanted creature instead",
       }),
     ],
   },
   "Spider-Punk": {
-    // Émeute : lue dans le texte.
+    // Riot: read from the text.
     abilities: [
       staticAbility(
         { subtype: "Spider", controller: "you", other: true },
         { addKeywords: ["riot"] },
         {
-          label: "Vos autres Araignées ont l'émeute",
+          label: "Your other Spiders have riot",
         },
       ),
       playerStatic({
         uncounterable: { abilities: true, everyone: true },
-        label: "Les sorts et les capacités ne peuvent pas être contrecarrés",
+        label: "Spells and abilities can't be countered",
       }),
-      playerStatic({ damageUnpreventable: true, label: "Les blessures ne peuvent pas être prévenues" }),
+      playerStatic({ damageUnpreventable: true, label: "Damage can't be prevented" }),
     ],
   },
   "Superior Foes of Spider-Man": {
-    // Piétinement : lu dans le texte.
+    // Trample: read from the text.
     abilities: [
       triggered(
         when.castSpell("you", { minManaValue: 4 }),
         fx.may(
-          "Exiler la carte du dessus de votre bibliothèque ?",
+          "Exile the top card of your library?",
           fx.exileTop(ref.you, 1, "e"),
           fx.grantPlay(ref.stored("e"), { forever: true, replacePrevious: true }),
         ),
-        { label: "Sort de VM 4 ou plus : exilez la carte du dessus, jouable jusqu'à la prochaine exilée ainsi" },
+        { label: "Spell with mana value 4 or greater: exile the top card, playable until the next one exiled this way" },
       ),
     ],
   },
@@ -399,16 +399,16 @@ export const UNIQUE: Record<string, CardScript> = {
         ],
         {
           targets: [target.player("t", "opponent")],
-          label: "Regardez les neuf cartes du dessus d'un adversaire : exilez-en deux, jouables (mana de n'importe quel type)",
+          label: "Look at the top nine cards of an opponent's library: exile two, playable (mana of any type)",
         },
       ),
     ],
   },
   "Gwenom, Remorseless": {
-    // Contact mortel et lien de vie : lus dans le texte.
+    // Deathtouch and lifelink: read from the text.
     abilities: [
       triggered(when.attacksSelf, [fx.thisTurn({ playFrom: { zone: "libraryTop", payLifeManaValue: true } })], {
-        label: "Jusqu'à la fin du tour, jouez les cartes du dessus de votre bibliothèque (sorts : des PV égaux à leur VM)",
+        label: "Until end of turn, play the top cards of your library (spells: life equal to their mana value)",
       }),
     ],
   },

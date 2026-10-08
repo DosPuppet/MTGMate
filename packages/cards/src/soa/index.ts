@@ -1,6 +1,6 @@
 /**
- * Mystical Archive (SOA) : rééditions sorties avec Secrets of Strixhaven.
- * Hors Standard, jouables en « Sans limite » (PLAN-G) ; scripts ajoutés lot par lot.
+ * Mystical Archive (SOA): reprints released with Secrets of Strixhaven.
+ * Not Standard-legal, playable in "Unlimited" (PLAN-G); scripts added lot by lot.
  */
 import type { CardScript } from "@mtgx/engine";
 import { CARDS } from "./cards";

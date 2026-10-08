@@ -7,7 +7,7 @@ import { solvePayment } from "../src/mana";
 import { chars } from "../src/state";
 import { act, cast, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
-const [green, red] = [deckById("bienvenue-vert"), deckById("bienvenue-rouge")];
+const [green, red] = [deckById("welcome-green"), deckById("welcome-red")];
 
 describe("début de partie", () => {
   it("distribue 7 cartes et demande le mulligan au premier joueur", () => {
@@ -106,7 +106,7 @@ describe("terrains, sorts et paiement automatique", () => {
 
   it("refuse un sort sans assez de mana (l'état ne change pas)", () => {
     const s = scenario({ p1: { battlefield: ["Forest"], hand: ["Bear Cub"] } });
-    expect(() => act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") })).toThrow(/Mana/);
+    expect(() => act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") })).toThrow(/Not enough mana/);
     expect(legalActions(s, "p1").some((a) => a.type === "cast")).toBe(false);
   });
 
@@ -269,7 +269,7 @@ describe("combat", () => {
     const p = s.pending;
     expect(p?.kind === "choice" && p.request.type === "divide" && p.request.suggested).toEqual([2, 3]);
     // Illégal : blesser le joueur sans blessures mortelles au bloqueur.
-    expect(() => act(s, "p1", { type: "choose", values: [1, 4] })).toThrow(/Piétinement/);
+    expect(() => act(s, "p1", { type: "choose", values: [1, 4] })).toThrow(/Trample/);
     s = act(s, "p1", { type: "choose", values: [2, 3] });
     s = passUntil(s, (x) => x.turn.step === "main2");
     expect(s.players.p2?.life).toBe(17);

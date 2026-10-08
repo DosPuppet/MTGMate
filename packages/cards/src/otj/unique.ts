@@ -1,6 +1,6 @@
 /**
- * Outlaws of Thunder Junction, lot B : légendaires, rares et cartes uniques (taxes d'attaque, copies de sorts et de
- * capacités, créatures qui ont monté la Monture, pile ou face, cimetières adverses…).
+ * Outlaws of Thunder Junction, lot B: legendaries, rares and unique cards (attack taxes, copies of spells and
+ * abilities, creatures that saddled the Mount, coin flips, opponents' graveyards…).
  */
 import type { CardScript, Effect, TokenSpec } from "@mtgx/engine";
 import {
@@ -39,7 +39,7 @@ const ALL_COLORS = ["W", "U", "B", "R", "G"] as const;
 const LEGENDARY_CREATURE_YOU = { types: ["Creature" as const], controller: "you" as const, legendary: true };
 const PLAYERS = (id = "t") => target.upTo(4, target.player(id));
 
-/** Beau : Bœuf bleu légendaire, F/E égales au nombre de terrains que vous contrôlez. */
+/** Beau: legendary blue Ox, power and toughness equal to the number of lands you control. */
 const BEAU: TokenSpec = {
   name: "Beau",
   colors: ["U"],
@@ -52,14 +52,14 @@ const BEAU: TokenSpec = {
   text: "Beau's power and toughness are each equal to the number of lands you control.",
 };
 
-/** Météorite : artefact incolore, « quand il arrive, 2 blessures » et « {T} : un mana de n'importe quelle couleur ». */
+/** Meteorite: colorless artifact, "when it enters, 2 damage" and "{T}: one mana of any color". */
 const METEORITE: TokenSpec = {
   name: "Meteorite",
   colors: [],
   types: ["Artifact"],
   subtypes: [],
   abilities: [
-    triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 blessures" }),
+    triggered(when.entersSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 damage" }),
     manaAbility([...ALL_COLORS]),
   ],
   text: "When this token enters, it deals 2 damage to any target. {T}: Add one mana of any color.",
@@ -68,7 +68,7 @@ const METEORITE: TokenSpec = {
 const freeFlashback = (what: ReturnType<typeof ref.target>): Effect => ({ op: "grantPlay", what, flashback: true, free: true });
 
 export const UNIQUE: Record<string, CardScript> = {
-  // --- Blanc -----------------------------------------------------------------
+  // --- White -----------------------------------------------------------------
   "Another Round": {
     spell: spell([], [fx.flickerChosen({ types: ["Creature"] }, amount.plus(amount.x, 1))]),
   },
@@ -77,16 +77,16 @@ export const UNIQUE: Record<string, CardScript> = {
       playerStatic({
         attackTax: { amount: 1, defending: "youOrYourPlaneswalkers" },
         condition: cond.sourceMatches({ tapped: false }),
-        label: "Vous attaquer ou attaquer vos planeswalkers : {1} par créature",
+        label: "Attacking you or your planeswalkers: {1} per creature",
       }),
-      playerStatic({ blockTax: 1, condition: cond.sourceMatches({ attacking: true }), label: "Bloquer : {1} par créature" }),
+      playerStatic({ blockTax: 1, condition: cond.sourceMatches({ attacking: true }), label: "Blocking: {1} per creature" }),
     ],
   },
   "Aven Interrupter": {
     abilities: [
       triggered(when.entersSelf, [fx.plot(ref.target())], {
         targets: [target.spell("t")],
-        label: "Exilez un sort, il devient comploté",
+        label: "Exile a spell, it becomes plotted",
       }),
       {
         kind: "costReduction",
@@ -94,13 +94,13 @@ export const UNIQUE: Record<string, CardScript> = {
         generic: -2,
         opponents: true,
         fromZones: ["graveyard", "exile"],
-        label: "Sorts adverses depuis un cimetière ou l'exil : {2} de plus",
+        label: "Opponents' spells from a graveyard or exile: cost {2} more",
       },
     ],
   },
   "Fortune, Loyal Steed": {
     abilities: [
-      triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
+      triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" }),
       whileSaddled(
         [
           fx.delayedAt(
@@ -108,7 +108,7 @@ export const UNIQUE: Record<string, CardScript> = {
             [
               fx.chooseAmong(ref.target("c"), ref.you, "c1", {
                 optional: true,
-                prompt: "Exilez aussi jusqu'à une créature qui l'a montée ce tour-ci",
+                prompt: "Also exile up to one creature that saddled it this turn",
               }),
               fx.exileCard(ref.target("f"), { name: "x" }),
               fx.exileCard(ref.stored("c1"), { name: "y" }),
@@ -118,19 +118,19 @@ export const UNIQUE: Record<string, CardScript> = {
             { f: ref.self, c: ref.crewedBy },
           ),
         ],
-        { label: "Fin du combat : exilez-la avec jusqu'à une créature qui l'a montée, puis renvoyez-les" },
+        { label: "End of combat: exile it with up to one creature that saddled it, then return them" },
       ),
     ],
   },
   "High Noon": {
     abilities: [
-      playerStatic({ castLimit: { who: "each", maxSpells: 1 }, label: "Un seul sort par joueur et par tour" }),
+      playerStatic({ castLimit: { who: "each", maxSpells: 1 }, label: "Each player can cast only one spell each turn" }),
       activated({
         mana: "{4}{R}",
         sacrifice: true,
         targets: [target.any("t")],
         effects: [fx.damage(5, ref.target())],
-        label: "5 blessures",
+        label: "5 damage",
       }),
     ],
   },
@@ -138,7 +138,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: cond.not(cond.handSpellThisTurn),
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
       activated({
         mana: "{4}{W}",
@@ -159,43 +159,41 @@ export const UNIQUE: Record<string, CardScript> = {
             true,
           ),
         ],
-        label: "Un marqueur +1/+1 de plus ce tour-ci",
+        label: "One more +1/+1 counter this turn",
       }),
     ],
   },
 
-  // --- Bleu ------------------------------------------------------------------
+  // --- Blue ------------------------------------------------------------------
   "Archmage's Newt": {
     abilities: [
       triggered(
         when.combatDamage("self", true),
         [fx.when(cond.saddled, freeFlashback(ref.target())), fx.when(cond.not(cond.saddled), fx.grantFlashback(ref.target()))],
         {
-          targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "éphémère ou rituel")],
-          label: "Flashback accordé ({0} si montée)",
+          targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "instant or sorcery")],
+          label: "Flashback granted ({0} if saddled)",
         },
       ),
     ],
   },
   "Double Down": {
-    abilities: [
-      triggered(when.castSpell("you", OUTLAW), [fx.copySpell(ref.eventObject, 1)], { label: "Copiez le sort de hors-la-loi" }),
-    ],
+    abilities: [triggered(when.castSpell("you", OUTLAW), [fx.copySpell(ref.eventObject, 1)], { label: "Copy the outlaw spell" })],
   },
   "Fblthp, Lost on the Range": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Vous regardez la carte du dessus" }),
-      // Approximation : une capacité (qui passe par la pile) paie le coût de mana de la carte du dessus pour la comploter.
+      playerStatic({ lookAt: "libraryTop", label: "You may look at the top card" }),
+      // Approximation: an ability (which uses the stack) pays the mana cost of the top card to plot it.
       activated({
         sorcerySpeed: true,
         effects: [
           fx.when(
             cond.refMatches(ref.libraryTop(ref.you), { notTypes: ["Land"] }),
-            fx.payCostOf(ref.libraryTop(ref.you), "p", "Payer le coût de mana de la carte du dessus pour la comploter ?"),
+            fx.payCostOf(ref.libraryTop(ref.you), "p", "Pay the mana cost of the top card to plot it?"),
             fx.when(cond.v("p"), fx.plot(ref.libraryTop(ref.you))),
           ),
         ],
-        label: "Complotez la carte du dessus",
+        label: "Plot the top card",
       }),
     ],
   },
@@ -213,7 +211,7 @@ export const UNIQUE: Record<string, CardScript> = {
           }),
           fx.castNow(ref.stored("k"), { free: true }),
         ],
-        { label: "Exilez une carte non-terrain, lancez-la gratuitement" },
+        { label: "Exile a nonland card, cast it for free" },
       ),
     ],
   },
@@ -224,35 +222,35 @@ export const UNIQUE: Record<string, CardScript> = {
   "Jace Reawakened": {
     castCondition: cond.turnsTakenAtLeast(4),
     abilities: [
-      loyalty(1, { effects: fx.loot(1), label: "Piochez, défaussez" }),
+      loyalty(1, { effects: fx.loot(1), label: "Draw, then discard" }),
       loyalty(1, {
         effects: [
           fx.pickFromZone(
             "hand",
             { notTypes: ["Land"], maxManaValue: 3 },
             { to: "exile" },
-            { min: 0, store: "j", prompt: "Vous pouvez comploter une carte" },
+            { min: 0, store: "j", prompt: "You may plot a card" },
           ),
           fx.plot(ref.stored("j")),
         ],
-        label: "Complotez une carte de votre main",
+        label: "Plot a card from your hand",
       }),
       loyalty(-6, {
         effects: [
           fx.emblem(
             "Jace Reawakened",
             "Until end of turn, whenever you cast a spell, copy it.",
-            [triggered(when.castSpell("you"), [fx.copySpell(ref.eventObject, 1)], { label: "Copiez le sort" })],
+            [triggered(when.castSpell("you"), [fx.copySpell(ref.eventObject, 1)], { label: "Copy the spell" })],
             false,
             true,
           ),
         ],
-        label: "Emblème : copiez vos sorts ce tour-ci",
+        label: "Emblem: copy your spells this turn",
       }),
     ],
   },
 
-  // --- Noir ------------------------------------------------------------------
+  // --- Black -----------------------------------------------------------------
   "Binding Negotiation": {
     spell: spell(
       [target.player("t", "opponent")],
@@ -267,7 +265,7 @@ export const UNIQUE: Record<string, CardScript> = {
             {
               pool: ref.exiledCardsOf(ref.target()),
               min: 0,
-              prompt: "Vous pouvez mettre une de ses cartes exilées dans son cimetière",
+              prompt: "You may put one of their exiled cards into their graveyard",
             },
           ),
         ),
@@ -283,7 +281,7 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.when(cond.saddled, fx.loseLife(amount.manaValueOf(ref.stored("c")), ref.eachOpponent)),
           fx.when(cond.not(cond.saddled), fx.loseLife(amount.manaValueOf(ref.stored("c")))),
         ],
-        { label: "Carte du dessus en main, perte de PV" },
+        { label: "Top card into your hand, life loss" },
       ),
     ],
   },
@@ -297,18 +295,18 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.when(cond.v("kc"), fx.loseLife(2)),
         ],
         {
-          targets: [target.upTo(1, target.cardInGraveyard("t", { colors: ["B"] }, "you", "carte noire"))],
-          label: "Copiez une carte noire de votre cimetière",
+          targets: [target.upTo(1, target.cardInGraveyard("t", { colors: ["B"] }, "you", "black card"))],
+          label: "Copy a black card from your graveyard",
         },
       ),
     ],
   },
   "Tinybones Joins Up": {
     abilities: [
-      triggered(when.entersSelf, [fx.discard(1, ref.target())], { targets: [PLAYERS()], label: "Chaque joueur ciblé défausse" }),
+      triggered(when.entersSelf, [fx.discard(1, ref.target())], { targets: [PLAYERS()], label: "Each targeted player discards" }),
       triggered(when.enters(LEGENDARY_CREATURE_YOU), [fx.mill(1, ref.target()), fx.loseLife(1, ref.target())], {
         targets: [PLAYERS()],
-        label: "Meulez une carte, perdez 1 PV",
+        label: "Mill a card, lose 1 life",
       }),
     ],
   },
@@ -318,27 +316,27 @@ export const UNIQUE: Record<string, CardScript> = {
         targets: [
           target.of(
             ref.eventPlayer,
-            target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "any", "carte de permanent non-terrain"),
-            "carte de permanent non-terrain du cimetière de ce joueur",
+            target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "any", "nonland permanent card"),
+            "nonland permanent card from that player's graveyard",
           ),
         ],
-        label: "Lancez une carte de son cimetière",
+        label: "Cast a card from their graveyard",
       }),
     ],
   },
 
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -------------------------------------------------------------------
   "Calamity, Galloping Inferno": {
     abilities: [
-      // Deux fois : une créature non légendaire qui l'a montée, au choix, et une copie engagée et attaquante.
+      // Twice: a nonlegendary creature that saddled it, chosen, and a tapped and attacking copy.
       whileSaddled(
         ["a", "b"].flatMap((k) => [
           fx.chooseAmong(ref.filtered(ref.crewedBy, { types: ["Creature"], legendary: false }), ref.you, k, {
-            prompt: "Choisissez une créature non légendaire qui l'a montée",
+            prompt: "Choose a nonlegendary creature that saddled it",
           }),
           fx.copyToken(ref.stored(k), { tapped: true, attacking: true, sacrificeAtEndStep: true }),
         ]),
-        { label: "Deux copies attaquantes d'une créature qui l'a montée" },
+        { label: "Two attacking copies of a creature that saddled it" },
       ),
     ],
   },
@@ -346,8 +344,8 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{2}{R}",
-        label: "Dégagez vos créatures, combat supplémentaire",
-        // « Si c'est votre phase de combat, il y a une phase de combat supplémentaire après celle-ci. »
+        label: "Untap your creatures, additional combat",
+        // "If it's your combat phase, there is an additional combat phase after this phase."
         effects: [
           fx.untap(ref.permanentsOf(ref.you, { types: ["Creature"] })),
           ...fx.when(
@@ -366,10 +364,10 @@ export const UNIQUE: Record<string, CardScript> = {
           ),
         ],
       },
-      { cost: "{2}", label: "+1/+0 et l'initiative", effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["firstStrike"])] },
+      { cost: "{2}", label: "+1/+0 and first strike", effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["firstStrike"])] },
       {
         cost: "{R}",
-        label: "Blessures de combat : Trésors",
+        label: "Combat damage: Treasures",
         targets: [target.player("p", "opponent")],
         effects: [
           fx.emblem(
@@ -377,7 +375,7 @@ export const UNIQUE: Record<string, CardScript> = {
             "Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token.",
             [
               triggered(when.combatDamageToOpponent(CREATURE_YOU_CONTROL), [fx.createTappedTokens(TREASURE)], {
-                label: "Trésor engagé",
+                label: "Tapped Treasure",
               }),
             ],
             false,
@@ -393,24 +391,22 @@ export const UNIQUE: Record<string, CardScript> = {
         when.castSpell("any", { notTypes: ["Creature"] }),
         [fx.damage(amount.noncreatureCastBy(ref.eventPlayer), ref.eventPlayer)],
         {
-          label: "Blessures au lanceur",
+          label: "Damage to the caster",
         },
       ),
     ],
   },
   "Resilient Roadrunner": {
     abilities: [
-      protectionAbility(protection.from({ subtype: "Coyote" }, "Protection contre les Coyotes")),
+      protectionAbility(protection.from({ subtype: "Coyote" }, "Protection from Coyotes")),
       activated({
         mana: "{3}",
         effects: [
           fx.modify(ref.self, {
-            addBlockRules: [
-              block.notBy({ not: { keyword: "haste" } }, "Ne peut être bloquée que par des créatures avec la célérité"),
-            ],
+            addBlockRules: [block.notBy({ not: { keyword: "haste" } }, "Can't be blocked except by creatures with haste")],
           }),
         ],
-        label: "Bloquée seulement par la célérité",
+        label: "Blocked only by haste",
       }),
     ],
   },
@@ -418,13 +414,13 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{1}",
-        label: "Copiez un sort ou une capacité",
-        targets: [{ id: "c", label: "sort ou capacité", filter: { stackItems: {} } }],
+        label: "Copy a spell or ability",
+        targets: [{ id: "c", label: "spell or ability", filter: { stackItems: {} } }],
         effects: [fx.copySpell(ref.target("c"), 1)],
       },
       {
         cost: "{1}",
-        label: "Changez la cible",
+        label: "Change the target",
         targets: [target.stackItemSingleTarget("b")],
         effects: [fx.changeTarget(ref.target("b"))],
       },
@@ -432,28 +428,28 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Terror of the Peaks": {
     abilities: [
-      playerStatic({ targetLifeTax: 3, label: "Sorts adverses qui la ciblent : 3 PV de plus" }),
+      playerStatic({ targetLifeTax: 3, label: "Opponents' spells that target it: cost 3 life more" }),
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true }),
         [fx.damage(amount.powerOf(ref.eventObject), ref.target())],
         {
           targets: [target.any("t")],
-          label: "Blessures égales à sa force",
+          label: "Damage equal to its power",
         },
       ),
     ],
   },
 
-  // --- Multicolores ----------------------------------------------------------
+  // --- Multicolor ------------------------------------------------------------
   "Annie Joins Up": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(5, ref.target())], {
         targets: [target.creatureOrPlaneswalker("t", { controller: "opponent" })],
-        label: "5 blessures",
+        label: "5 damage",
       }),
       playerStatic({
         triggerMod: { effect: "again", sources: { types: ["Creature"], legendary: true } },
-        label: "Déclencheurs de vos légendaires doublés",
+        label: "Triggers of your legendaries doubled",
       }),
     ],
   },
@@ -461,9 +457,9 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.upTo(1, target.creature("t"))],
-        label: "Exilez une créature",
+        label: "Exile a creature",
       }),
-      staticAbility("attached", { copyLinkedExile: true }, { label: "Copie de la créature exilée" }),
+      staticAbility("attached", { copyLinkedExile: true }, { label: "Copy of the exiled creature" }),
     ],
   },
   "Bonny Pall, Clearcutter": {
@@ -477,7 +473,7 @@ export const UNIQUE: Record<string, CardScript> = {
             "hand",
             { types: ["Land"] },
             { to: "battlefield" },
-            { min: 0, store: "h", prompt: "Un terrain de votre main" },
+            { min: 0, store: "h", prompt: "A land from your hand" },
           ),
           fx.when(
             cond.not(cond.v("h")),
@@ -485,11 +481,11 @@ export const UNIQUE: Record<string, CardScript> = {
               "graveyard",
               { types: ["Land"] },
               { to: "battlefield" },
-              { min: 0, prompt: "Un terrain de votre cimetière" },
+              { min: 0, prompt: "A land from your graveyard" },
             ),
           ),
         ],
-        { label: "Piochez, puis un terrain" },
+        { label: "Draw, then a land" },
       ),
     ],
   },
@@ -503,7 +499,7 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.when(cond.all(cond.v("s"), cond.v("w")), fx.copySpell(ref.eventObject, 1)),
           fx.when(cond.all(cond.v("s"), cond.not(cond.v("w"))), fx.damage(amount.manaValueOf(ref.eventObject), ref.target())),
         ],
-        { targets: [target.any("t")], label: "Sacrifiez un artefact : pile ou face" },
+        { targets: [target.any("t")], label: "Sacrifice an artifact: flip a coin" },
       ),
     ],
   },
@@ -514,18 +510,18 @@ export const UNIQUE: Record<string, CardScript> = {
         filter: {},
         generic: 2,
         fromZones: ["graveyard", "exile"],
-        label: "Sorts depuis un cimetière ou l'exil : {2} de moins",
+        label: "Spells from a graveyard or exile: cost {2} less",
       },
-      playerStatic({ abilityCost: { ability: "plot", reduce: 2 }, label: "Comploter coûte {2} de moins" }),
+      playerStatic({ abilityCost: { ability: "plot", reduce: 2 }, label: "Plotting costs {2} less" }),
     ],
   },
   "Eriette, the Beguiler": {
-    abilities: [playerStatic({ auraStealsCheaper: true, label: "Vos Auras volent les permanents moins chers" })],
+    abilities: [playerStatic({ auraStealsCheaper: true, label: "Your Auras steal cheaper permanents" })],
   },
   "Ertha Jo, Frontier Mentor": {
     abilities: [
-      triggered(when.entersSelf, [mercenary()], { label: "Mercenaire 1/1" }),
-      triggered(when.activateTargeting, [fx.copySpell(ref.eventObject, 1)], { label: "Copiez la capacité" }),
+      triggered(when.entersSelf, [mercenary()], { label: "1/1 Mercenary" }),
+      triggered(when.activateTargeting, [fx.copySpell(ref.eventObject, 1)], { label: "Copy the ability" }),
     ],
   },
   "Ghired, Mirror of the Wilds": {
@@ -536,26 +532,28 @@ export const UNIQUE: Record<string, CardScript> = {
           addAbilities: [
             activated({
               tap: true,
-              targets: [targetObj("t", { token: true, controller: "you", enteredThisTurn: true }, "jeton arrivé ce tour-ci")],
+              targets: [
+                targetObj("t", { token: true, controller: "you", enteredThisTurn: true }, "token that entered this turn"),
+              ],
               effects: [fx.copyToken(ref.target())],
-              label: "Copiez un jeton arrivé ce tour-ci",
+              label: "Copy a token that entered this turn",
             }),
           ],
         },
-        { label: "« {T} : copiez un jeton » " },
+        { label: '"{T}: copy a token"' },
       ),
     ],
   },
   "The Gitrog, Ravenous Ride": {
     abilities: [
-      // « Vous pouvez sacrifier une créature qui l'a montée ce tour-ci. Si vous le faites, piochez X cartes » : X est la
-      // force de la créature sacrifiée (dernières informations connues).
+      // "You may sacrifice a creature that saddled it this turn. If you do, draw X cards": X is the
+      // power of the sacrificed creature (last known information).
       triggered(
         when.combatDamage("self", true),
         [
           fx.chooseAmong(ref.crewedBy, ref.you, "g", {
             optional: true,
-            prompt: "Vous pouvez sacrifier une créature qui l'a montée ce tour-ci",
+            prompt: "You may sacrifice a creature that saddled it this turn",
           }),
           fx.sacrificeIt(ref.stored("g")),
           fx.draw(amount.powerOf(ref.stored("g"))),
@@ -566,7 +564,7 @@ export const UNIQUE: Record<string, CardScript> = {
             { count: amount.powerOf(ref.stored("g")), min: 0 },
           ),
         ],
-        { condition: cond.amountAtLeast(amount.refCount(ref.crewedBy), 1), label: "Sacrifiez : piochez, terrains" },
+        { condition: cond.amountAtLeast(amount.refCount(ref.crewedBy), 1), label: "Sacrifice: draw, lands" },
       ),
     ],
   },
@@ -575,7 +573,7 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(when.enters({ token: true, controller: "opponent" }), [fx.copyToken(ref.eventObjects, { tapped: true })], {
         oncePerTurn: true,
         batched: true,
-        label: "Copies engagées des jetons adverses",
+        label: "Tapped copies of opponents' tokens",
       }),
       triggered(when.enters({ token: true, controller: "you" }), fx.drain(1), { batched: true, label: "Drain 1" }),
     ],
@@ -585,15 +583,15 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(
         { on: "castSpell", by: "you", notFromHand: true },
         [
-          // « Vous pouvez lancer un sort de permanent de VM inférieure ou égale depuis votre main sans payer son coût de
-          // mana. Si vous ne le faites pas, vous pouvez mettre une carte de terrain de votre main sur le champ de bataille. »
+          // "You may cast a permanent spell with lesser or equal mana value from your hand without paying its mana
+          // cost. If you don't, you may put a land card from your hand onto the battlefield."
           fx.castNow(ref.handOf(ref.you, { permanent: true }, amount.manaValueOf(ref.eventObject)), {
             free: true,
             storeCast: "k",
           }),
           fx.when(cond.not(cond.v("k")), fx.pickFromZone("hand", { types: ["Land"] }, { to: "battlefield" }, { min: 0 })),
         ],
-        { label: "Lancez un sort de permanent gratuitement, sinon un terrain" },
+        { label: "Cast a permanent spell for free, otherwise a land" },
       ),
     ],
   },
@@ -603,7 +601,7 @@ export const UNIQUE: Record<string, CardScript> = {
         { types: ["Creature"], controller: "you", owner: "opponent" },
         { addSubtypes: ["Mercenary"] },
         {
-          label: "Vos créatures volées sont des Mercenaires",
+          label: "Your stolen creatures are Mercenaries",
         },
       ),
       triggered(
@@ -612,7 +610,7 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.exileTop(ref.target(), amount.count({ ...OUTLAW_CREATURE, controller: "you" }), "j"),
           fx.grantPlay(ref.stored("j"), { anyMana: true }),
         ],
-        { targets: [target.player("t", "opponent")], label: "Exilez ses cartes du dessus, lançables" },
+        { targets: [target.player("t", "opponent")], label: "Exile cards from the top of their library, castable" },
       ),
     ],
   },
@@ -626,28 +624,25 @@ export const UNIQUE: Record<string, CardScript> = {
             "graveyard",
             {},
             { to: "exile" },
-            { pool: ref.allGraveyards, min: 0, store: "l", prompt: "Vous pouvez exiler une carte d'un cimetière" },
+            { pool: ref.allGraveyards, min: 0, store: "l", prompt: "You may exile a card from a graveyard" },
           ),
           fx.when(
             cond.refMatches(ref.stored("l"), { types: ["Creature"] }),
-            fx.may(
-              "Lazav devient-il une copie de cette carte jusqu'à la fin du tour ?",
-              fx.becomeCopy(ref.self, ref.stored("l")),
-            ),
+            fx.may("Does Lazav become a copy of that card until end of turn?", fx.becomeCopy(ref.self, ref.stored("l"))),
           ),
         ],
-        { oncePerTurn: true, label: "Marqueur, exilez une carte, copiez-la" },
+        { oncePerTurn: true, label: "Counter, exile a card, copy it" },
       ),
     ],
   },
   "Lilah, Undefeated Slickshot": {
     abilities: [
-      // « lancé depuis votre main » : lu sur le sort au moment du lancement (la condition `spellCastFromHand` porterait
-      // sur la capacité qui se résout).
+      // "cast from your hand": read on the spell when it is cast (the `spellCastFromHand` condition would apply
+      // to the resolving ability).
       triggered(
         { on: "castSpell", by: "you", filter: { types: ["Instant", "Sorcery"], multicolored: true }, fromHand: true },
         [fx.plotOnResolve(ref.eventObject)],
-        { label: "Le sort sera comploté" },
+        { label: "The spell will be plotted" },
       ),
     ],
   },
@@ -663,7 +658,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Obeka, Splitter of Seconds": {
     abilities: [
       triggered(when.combatDamage("self", true), [fx.extraUpkeeps(amount.eventAmount)], {
-        label: "Étapes d'entretien supplémentaires",
+        label: "Additional upkeep steps",
       }),
     ],
   },
@@ -671,16 +666,16 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.step("beginCombat"), [fx.becomeCopy(ref.self, ref.target(), "endOfTurn", { addKeywords: ["hexproof"] })], {
         targets: [target.upTo(1, target.creature("t", { controller: "you" }))],
-        label: "Devient une copie d'une de vos créatures",
+        label: "Becomes a copy of a creature you control",
       }),
       loyalty(1, {
         effects: [fx.draw(2), fx.when(cond.crime, fx.discard(1)), fx.when(cond.not(cond.crime), fx.discard(2))],
-        label: "Piochez deux, défaussez",
+        label: "Draw two, then discard",
       }),
-      loyalty(-1, { effects: [fx.createTokens(ELK)], label: "Élan 3/3" }),
+      loyalty(-1, { effects: [fx.createTokens(ELK)], label: "3/3 Elk" }),
       loyalty(-5, {
         effects: [fx.copyToken(ref.permanentsOf(ref.you, { notTypes: ["Land"], other: true }))],
-        label: "Copiez vos autres permanents non-terrain",
+        label: "Copy your other nonland permanents",
       }),
     ],
   },
@@ -692,40 +687,40 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.exileTop(ref.target(), amount.manaValueOf(ref.eventObject), "r"),
           fx.grantPlay(ref.stored("r"), { untilYourNextEndStep: true, anyMana: true }),
         ],
-        { targets: [target.player("t")], label: "Exilez des cartes de sa bibliothèque, jouables" },
+        { targets: [target.player("t")], label: "Exile cards from their library, playable" },
       ),
       activated({
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         oncePerTurn: true,
         effects: [fx.pump(ref.self, 0, 0, ["indestructible"]), fx.tap(ref.self)],
-        label: "Indestructible, engagez-le",
+        label: "Gains indestructible, tap it",
       }),
     ],
   },
   "Riku of Many Paths": {
     abilities: [
-      // Approximation : un seul mode, quel que soit le nombre de modes choisis pour le sort.
+      // Approximation: a single mode, whatever the number of modes chosen for the spell.
       triggeredModal({ on: "castSpell", by: "you", modal: true }, [
         mode(
-          "Exilez la carte du dessus, jouable",
+          "Exile the top card, playable",
           [],
           [fx.exileTop(ref.you, 1, "k"), fx.grantPlay(ref.stored("k"), { untilYourNextTurn: true })],
         ),
-        mode("Marqueur +1/+1 et piétinement", [], [fx.addCounters(ref.self, 1), fx.pump(ref.self, 0, 0, ["trample"])]),
-        mode("Oiseau 1/1 volant", [], [fx.createTokens(BIRD_1)]),
+        mode("+1/+1 counter and trample", [], [fx.addCounters(ref.self, 1), fx.pump(ref.self, 0, 0, ["trample"])]),
+        mode("1/1 flying Bird", [], [fx.createTokens(BIRD_1)]),
       ]),
     ],
   },
   "Roxanne, Starfall Savant": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTappedTokens(METEORITE)], { label: "Météorite" }),
-      triggered(when.attacksSelf, [fx.createTappedTokens(METEORITE)], { label: "Météorite" }),
+      triggered(when.entersSelf, [fx.createTappedTokens(METEORITE)], { label: "Meteorite" }),
+      triggered(when.attacksSelf, [fx.createTappedTokens(METEORITE)], { label: "Meteorite" }),
       eventReplacement({
         event: "mana",
         to: "you",
         source: { types: ["Artifact"], token: true },
         modify: { add: 1 },
-        label: "Jetons d'artefact : un mana de plus",
+        label: "Artifact tokens: one more mana",
       }),
     ],
   },
@@ -734,7 +729,7 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(
         when.enters({ types: ["Creature"], controller: "you", token: false }),
         [fx.when(cond.eventObjectMatches({ noManaSpent: true }), fx.draw(1))],
-        { batched: true, label: "Piochez" },
+        { batched: true, label: "Draw" },
       ),
     ],
   },
@@ -744,10 +739,10 @@ export const UNIQUE: Record<string, CardScript> = {
         { on: "dealsDamage", who: {}, anySourceYouControl: true, noncombatOnly: true, exactToughness: true },
         [fx.draw(1)],
         {
-          label: "Piochez",
+          label: "Draw",
         },
       ),
-      activated({ mana: "{X}", tap: true, effects: [fx.noncombatBonusThisTurn(amount.x)], label: "Blessures non de combat +X" }),
+      activated({ mana: "{X}", tap: true, effects: [fx.noncombatBonusThisTurn(amount.x)], label: "Noncombat damage +X" }),
     ],
   },
   "Vraska, the Silencer": {
@@ -756,7 +751,7 @@ export const UNIQUE: Record<string, CardScript> = {
         when.dies({ types: ["Creature"], controller: "opponent", token: false }),
         fx.mayPay(
           "{1}",
-          "Payer {1} pour la ramener en Trésor ?",
+          "Pay {1} to bring it back as a Treasure?",
           fx.moveTo(ref.eventObject, { to: "battlefield", underYourControl: true, tapped: true }, { name: "v" }),
           fx.modify(
             ref.stored("v"),
@@ -768,16 +763,16 @@ export const UNIQUE: Record<string, CardScript> = {
             "permanent",
           ),
         ),
-        { label: "Ramenez-la en Trésor" },
+        { label: "Bring it back as a Treasure" },
       ),
     ],
   },
 
-  // --- Incolores -------------------------------------------------------------
+  // --- Colorless -------------------------------------------------------------
   "Luxurious Locomotive": {
     abilities: [
       triggered(when.attacksSelf, [fx.createTokens(TREASURE, amount.refCount(ref.crewedBy))], {
-        label: "Un Trésor par créature qui l'a équipé",
+        label: "A Treasure for each creature that crewed it",
       }),
     ],
   },

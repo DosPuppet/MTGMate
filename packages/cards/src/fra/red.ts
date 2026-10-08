@@ -1,4 +1,4 @@
-/** Reality Fracture — cartes rouges. */
+/** Reality Fracture — red cards. */
 import {
   activated,
   amount,
@@ -27,8 +27,8 @@ import {
 export const RED: Record<string, CardScript> = {
   "Ajani's Anguish": {
     abilities: [
-      triggered(when.entersSelf, [fx.damage(amount.sourceX, ref.target())], { targets: [target.any()], label: "X blessures" }),
-      staticAbility(CREATURE_YOU_CONTROL, { addKeywords: ["trample"] }, { label: "Piétinement" }),
+      triggered(when.entersSelf, [fx.damage(amount.sourceX, ref.target())], { targets: [target.any()], label: "X damage" }),
+      staticAbility(CREATURE_YOU_CONTROL, { addKeywords: ["trample"] }, { label: "Trample" }),
     ],
   },
   "Artifist Acumen": {
@@ -39,7 +39,9 @@ export const RED: Record<string, CardScript> = {
   },
   "Chandra's Emberling": {
     abilities: [
-      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.addCounters(ref.self, 1)], {
+        label: "put a +1/+1 counter",
+      }),
     ],
   },
   "Craterclaw Colossus": {
@@ -47,7 +49,7 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.pumpAll(CREATURE_YOU_CONTROL, amount.count({ types: ["Artifact"], controller: "you" }), 0, ["trample"])],
-        { label: "+X/+0 et piétinement" },
+        { label: "+X/+0 and trample" },
       ),
     ],
   },
@@ -58,7 +60,7 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "you", other: true, maxPower: 2 })],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Imblocable ce tour-ci",
+        label: "Unblockable this turn",
       }),
     ],
   },
@@ -67,10 +69,10 @@ export const RED: Record<string, CardScript> = {
   },
   "Master of Barbs": {
     abilities: [
-      // « Un ou plusieurs adversaires » : un déclenchement par lot de blessures non de combat, de toute source.
+      // "One or more opponents": one trigger per batch of noncombat damage, from any source.
       triggered(when.playerDealtDamage("opponent", false), [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0)], {
         batched: true,
-        label: "+1/+0 à vos créatures",
+        label: "+1/+0 to your creatures",
       }),
     ],
   },
@@ -79,7 +81,7 @@ export const RED: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["firstStrike"] },
-        { condition: cond.yourTurn, label: "Initiative pendant votre tour" },
+        { condition: cond.yourTurn, label: "First strike during your turn" },
       ),
       activated({ mana: "{1}{R}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0" }),
     ],
@@ -87,8 +89,8 @@ export const RED: Record<string, CardScript> = {
   "Stingcaster Mage": {
     abilities: [
       triggered(when.entersSelf, [fx.grantFlashback(ref.target())], {
-        targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "éphémère ou rituel de votre cimetière")],
-        label: "flashback ce tour-ci",
+        targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "instant or sorcery in your graveyard")],
+        label: "flashback this turn",
       }),
     ],
   },
@@ -100,14 +102,14 @@ export const RED: Record<string, CardScript> = {
           fx.discard(1, ref.you, { optional: true, store: "d" }),
           ...fx.when(cond.v("d"), fx.reflexive([target.any()], [fx.damage(2, ref.target())])),
         ],
-        { label: "défausser : 2 blessures" },
+        { label: "discard: 2 damage" },
       ),
     ],
   },
   "Kiora of Fire and Ashes": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(DRAGON_5)], { label: "Dragon 5/5" }),
-      activated({ mana: "{8}", effects: [fx.createTokens(DRAGON_5)], label: "Dragon 5/5" }),
+      triggered(when.entersSelf, [fx.createTokens(DRAGON_5)], { label: "5/5 Dragon" }),
+      activated({ mana: "{8}", effects: [fx.createTokens(DRAGON_5)], label: "5/5 Dragon" }),
     ],
   },
   "Koth, the Geomancer": {
@@ -115,7 +117,7 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.landfall,
         [fx.damage(1, ref.eachOpponent), ...fx.when(cond.eventObjectMatches({ subtype: "Mountain" }), fx.addMana("R"))],
-        { label: "Landfall : 1 blessure" },
+        { label: "Landfall: 1 damage" },
       ),
     ],
   },
@@ -126,7 +128,7 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { anyOf: [{ types: ["Artifact"] }, { types: ["Land"] }], controller: "you" } },
         effects: [fx.draw(1)],
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
     ],
   },
@@ -142,21 +144,21 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   "Samut, Hazoret's Champion": {
-    abilities: [staticAbility(CREATURE_YOU_CONTROL, { addKeywords: ["haste"] }, { label: "Célérité" })],
+    abilities: [staticAbility(CREATURE_YOU_CONTROL, { addKeywords: ["haste"] }, { label: "Haste" })],
   },
   "Gallia, the Merrymaker": {
     abilities: [
       staticAbility(
         { types: ["Creature"], controller: "you", other: true, withCounter: "+1/+1" },
         { addKeywords: ["haste"] },
-        { label: "Célérité (avec un marqueur +1/+1)" },
+        { label: "Haste (with a +1/+1 counter)" },
       ),
       activated({
         mana: "{1}{R}",
         tap: true,
         targets: [target.creature("t", { enteredThisTurn: true })],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -181,7 +183,7 @@ export const RED: Record<string, CardScript> = {
   "Winter, Team Player": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0)], {
-        label: "vos créatures +1/+0",
+        label: "your creatures +1/+0",
       }),
     ],
   },
@@ -189,7 +191,7 @@ export const RED: Record<string, CardScript> = {
     prepareSpell: VICIOUS_VERSE,
     abilities: [
       entersWith({ prepared: true }),
-      activated({ tap: true, discard: 1, effects: [fx.draw(1)], label: "Défaussez une carte : piochez" }),
+      activated({ tap: true, discard: 1, effects: [fx.draw(1)], label: "Discard a card: draw" }),
     ],
   },
   "Pompous Battlemage": {
@@ -205,20 +207,20 @@ export const RED: Record<string, CardScript> = {
   },
   "Way of the Pyromancer": {
     abilities: [
-      triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" }),
-      walkersHave(loyalty(1, { effects: [fx.addMana("R")], label: "Ajoutez {R}" }), "Planeswalkers : [+1] {R}"),
+      triggered(when.entersSelf, [empower(2)], { label: "Empower Jace 2" }),
+      walkersHave(loyalty(1, { effects: [fx.addMana("R")], label: "Add {R}" }), "Planeswalkers: [+1] {R}"),
     ],
   },
   "Way of the Warlord": {
     abilities: [
-      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      triggered(when.entersSelf, [empower(5)], { label: "Empower Jace 5" }),
       walkersHave(
         loyalty(-4, {
           targets: [target.upTo(1, target.creatureOrPlaneswalker("c")), target.player("p")],
           effects: [fx.damage(2, ref.target("c")), fx.damage(2, ref.target("p"))],
-          label: "2 blessures à une créature ou un planeswalker et 2 à un joueur",
+          label: "2 damage to a creature or planeswalker and 2 to a player",
         }),
-        "Planeswalkers : [−4]",
+        "Planeswalkers: [−4]",
       ),
     ],
   },
@@ -231,12 +233,12 @@ export const RED: Record<string, CardScript> = {
   "Fulminous Forte": {
     spell: modal(
       mode(
-        "1 blessure à chaque créature et planeswalker adverse",
+        "1 damage to each creature and planeswalker your opponents control",
         [],
-        // `damageAll` ne touche que les créatures : les planeswalkers adverses sont désignés par une référence.
+        // `damageAll` only hits creatures: the opponents' planeswalkers are designated by a reference.
         [fx.damage(1, ref.permanentsOf(ref.eachOpponent, { types: ["Creature", "Planeswalker"] }))],
       ),
-      mode("5 blessures à une créature ou un planeswalker", [target.creatureOrPlaneswalker("t")], [fx.damage(5, ref.target())]),
+      mode("5 damage to a creature or planeswalker", [target.creatureOrPlaneswalker("t")], [fx.damage(5, ref.target())]),
     ),
   },
   "Wrath of the Bloodmane": {
@@ -246,14 +248,14 @@ export const RED: Record<string, CardScript> = {
   "Ajani Unrelenting": {
     abilities: [
       triggered(when.loyaltyActivated(), [fx.createTokens(CADET)], { label: "Cadet" }),
-      loyalty(1, { effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["haste"])], label: "Vos créatures +1/+0 et célérité" }),
+      loyalty(1, { effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["haste"])], label: "Your creatures +1/+0 and haste" }),
       loyalty(-2, {
         effects: [fx.discard(amount.cardsIn("hand")), fx.draw(amount.count(CREATURE_YOU_CONTROL))],
-        label: "Défaussez votre main, piochez par créature",
+        label: "Discard your hand, draw for each creature",
       }),
       loyalty(-3, {
         effects: [fx.damageAll(4, { types: ["Creature"], anyOf: [{ controller: "opponent" }, { token: false }] })],
-        label: "4 blessures à chaque créature, sauf vos jetons",
+        label: "4 damage to each creature, except your tokens",
       }),
     ],
   },

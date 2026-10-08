@@ -1,4 +1,4 @@
-/** Source Material (PZA) : scripts des cartes (PLAN-G). */
+/** Source Material (PZA): card scripts (PLAN-G). */
 import {
   activated,
   amount,
@@ -19,20 +19,20 @@ import {
 
 const RATS = { types: ["Creature" as const], subtype: "Rat", controller: "you" as const };
 const EQUIPPED = { types: ["Creature" as const], attached: "host" as const };
-const PAY_FOR_RATS = "payez autant de PV que vous voulez (un Rat par PV)";
+const PAY_FOR_RATS = "pay any amount of life (one Rat per life)";
 
 export const CARDS: Record<string, CardScript> = {
-  // Modulaire 1 : lu dans le texte.
+  // Modular 1: read from the text.
   "Arcbound Ravager": {
     abilities: [
       activated({
         sacrificeOther: { filter: { types: ["Artifact"] }, includeSelf: true },
         effects: [fx.addCounters(ref.self, 1)],
-        label: "Sacrifiez un artefact : un marqueur +1/+1",
+        label: "Sacrifice an artifact: a +1/+1 counter",
       }),
     ],
   },
-  // Greffe 2 : lue dans le texte.
+  // Graft 2: read from the text.
   "Cytoplast Manipulator": {
     abilities: [
       activated({
@@ -40,7 +40,7 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { withCounter: "+1/+1" })],
         effects: [fx.gainControlWhileSource(ref.target())],
-        label: "Contrôle d'une créature avec un marqueur +1/+1, tant que celle-ci reste",
+        label: "Control of a creature with a +1/+1 counter, for as long as this one remains",
       }),
     ],
   },
@@ -49,35 +49,35 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.step("end"), [fx.moveTo(ref.target(), { to: "exile" }, { name: "f" }), fx.toBattlefield(ref.stored("f"))], {
         targets: [
-          target.optional(target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "votre artefact ou créature")),
+          target.optional(target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "your artifact or creature")),
         ],
-        label: "Exilez puis renvoyez un de vos artefacts ou créatures",
+        label: "Exile, then return one of your artifacts or creatures",
       }),
     ],
   },
   "Ashcoat of the Shadow Swarm": {
     abilities: [
       triggered(when.attacksSelf, [fx.pumpAll({ ...RATS, other: true }, amount.count(RATS), amount.count(RATS))], {
-        label: "Vos autres Rats gagnent +X/+X (X : vos Rats)",
+        label: "Your other Rats get +X/+X (X: your Rats)",
       }),
       triggered({ on: "blocks", who: "self" }, [fx.pumpAll({ ...RATS, other: true }, amount.count(RATS), amount.count(RATS))], {
-        label: "Vos autres Rats gagnent +X/+X (X : vos Rats)",
+        label: "Your other Rats get +X/+X (X: your Rats)",
       }),
       triggered(
         when.step("end"),
         fx.may(
-          "meuler quatre cartes",
+          "mill four cards",
           fx.mill(4),
           fx.pickFromZone("graveyard", { types: ["Creature"], subtype: "Rat" }, { to: "hand" }, { count: 2, min: 0 }),
         ),
-        { label: "Vous pouvez meuler quatre cartes, puis reprendre jusqu'à deux Rats" },
+        { label: "You may mill four cards, then get back up to two Rats" },
       ),
     ],
   },
   "Silverclad Ferocidons": {
     abilities: [
       triggered(when.isDealtDamage, [fx.sacrifice(ref.eachOpponent, { permanent: true })], {
-        label: "Rage : chaque adversaire sacrifie un permanent",
+        label: "Enrage: each opponent sacrifices a permanent",
       }),
     ],
   },
@@ -85,61 +85,61 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         uncounterable: { filter: { types: ["Creature"] } },
-        label: "Vos sorts de créature ne peuvent pas être contrecarrés",
+        label: "Your creature spells can't be countered",
       }),
       staticAbility(
         { types: ["Creature"], controller: "you", token: false },
         { addKeywords: ["riot"] },
         {
-          label: "Vos créatures non-jetons ont l'émeute",
+          label: "Your nontoken creatures have riot",
         },
       ),
     ],
   },
-  // Équiper {2} : lu dans le texte.
+  // Equip {2}: read from the text.
   "Conqueror's Flail": {
     abilities: [
       staticAbility(
         "attached",
         { power: 1, toughness: 1 },
-        { perAmount: amount.colorsAmong(), label: "+1/+1 par couleur parmi vos permanents" },
+        { perAmount: amount.colorsAmong(), label: "+1/+1 for each color among your permanents" },
       ),
       playerStatic({
         castLimit: { who: "opponents", during: "yourTurn", maxSpells: 0 },
         condition: cond.controls(EQUIPPED),
-        label: "Attachée : vos adversaires ne lancent pas de sorts pendant votre tour",
+        label: "Attached: your opponents can't cast spells during your turn",
       }),
     ],
   },
   "Metallic Mimic": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      staticAbility("self", { addChosen: "subtype" }, { label: "Est du type choisi" }),
+      staticAbility("self", { addChosen: "subtype" }, { label: "Is the chosen type" }),
       entersWith({
         counters: 1,
         affects: { types: ["Creature"], controller: "you", subtypeChosen: true, other: true },
-        label: "Vos autres créatures du type choisi arrivent avec un marqueur +1/+1",
+        label: "Your other creatures of the chosen type enter with a +1/+1 counter",
       }),
     ],
   },
-  // Équiper {2} : lu dans le texte.
+  // Equip {2}: read from the text.
   Shadowspear: {
     abilities: [
       staticAbility(
         "attached",
         { power: 1, toughness: 1, addKeywords: ["trample", "lifelink"] },
         {
-          label: "+1/+1, piétinement et lien de vie",
+          label: "+1/+1, trample and lifelink",
         },
       ),
       activated({
         mana: "{1}",
         effects: [fx.modify(ref.permanentsOf(ref.eachOpponent, {}), { removeKeywords: ["hexproof", "indestructible"] })],
-        label: "Les permanents adverses perdent la défense talismanique et l'indestructible",
+        label: "Your opponents' permanents lose hexproof and indestructible",
       }),
     ],
   },
-  // Équiper {2} : lu dans le texte.
+  // Equip {2}: read from the text.
   "Sword of Sinew and Steel": {
     abilities: [
       staticAbility(
@@ -148,37 +148,37 @@ export const CARDS: Record<string, CardScript> = {
           power: 2,
           toughness: 2,
           addProtections: [
-            protection.from({ colors: ["B"] }, "Protection contre le noir"),
-            protection.from({ colors: ["R"] }, "Protection contre le rouge"),
+            protection.from({ colors: ["B"] }, "Protection from black"),
+            protection.from({ colors: ["R"] }, "Protection from red"),
           ],
         },
-        { label: "+2/+2, protection contre le noir et le rouge" },
+        { label: "+2/+2, protection from black and from red" },
       ),
       triggered(when.combatDamage(EQUIPPED, true), [fx.destroy(ref.union(ref.target("p"), ref.target("a")))], {
         targets: [
           target.optional(target.permanent("p", ["Planeswalker"], {}, "planeswalker")),
-          target.optional(target.permanent("a", ["Artifact"], {}, "artefact")),
+          target.optional(target.permanent("a", ["Artifact"], {}, "artifact")),
         ],
-        label: "Détruisez jusqu'à un planeswalker et jusqu'à un artefact",
+        label: "Destroy up to one planeswalker and up to one artifact",
       }),
     ],
   },
-  // Équiper {2} : lu dans le texte.
+  // Equip {2}: read from the text.
   "Umezawa's Jitte": {
     abilities: [
-      triggered(when.combatDamage(EQUIPPED), [fx.counters(ref.self, "charge", 2)], { label: "Deux marqueurs de charge" }),
+      triggered(when.combatDamage(EQUIPPED), [fx.counters(ref.self, "charge", 2)], { label: "Two charge counters" }),
       activated({
         removeCounters: { kind: "charge", n: 1 },
         effects: [fx.pump(ref.permanentsOf(ref.you, EQUIPPED), 2, 2)],
-        label: "Retirez un marqueur : la créature équipée gagne +2/+2",
+        label: "Remove a counter: the equipped creature gets +2/+2",
       }),
       activated({
         removeCounters: { kind: "charge", n: 1 },
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), -1, -1)],
-        label: "Retirez un marqueur : la créature ciblée gagne −1/−1",
+        label: "Remove a counter: target creature gets −1/−1",
       }),
-      activated({ removeCounters: { kind: "charge", n: 1 }, effects: [fx.gainLife(2)], label: "Retirez un marqueur : 2 PV" }),
+      activated({ removeCounters: { kind: "charge", n: 1 }, effects: [fx.gainLife(2)], label: "Remove a counter: 2 life" }),
     ],
   },
   "All Will Be One": {
@@ -187,11 +187,11 @@ export const CARDS: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "adversaire, ou sa créature ou son planeswalker",
+            label: "opponent, or a creature or planeswalker they control",
             filter: { players: "opponent", objects: { types: ["Creature", "Planeswalker"], controller: "opponent" } },
           },
         ],
-        label: "Vous mettez des marqueurs : autant de blessures",
+        label: "You put counters: that much damage",
       }),
     ],
   },
@@ -206,20 +206,20 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Trouble in Pairs": {
     abilities: [
-      playerStatic({ skips: "extraTurns", affects: "opponents", label: "Vos adversaires passent leurs tours supplémentaires" }),
+      playerStatic({ skips: "extraTurns", affects: "opponents", label: "Your opponents skip their extra turns" }),
       triggered(when.opponentAttacksYouWith(2), [fx.draw(1)], {
-        label: "Un adversaire vous attaque avec deux créatures ou plus : piochez",
+        label: "An opponent attacks you with two or more creatures: draw",
       }),
       triggered({ on: "draw", whose: "opponent", nth: 2 }, [fx.draw(1)], {
-        label: "Un adversaire pioche sa deuxième carte du tour : piochez",
+        label: "An opponent draws their second card each turn: draw",
       }),
       triggered({ on: "castSpell", by: "opponent", nth: 2 }, [fx.draw(1)], {
-        label: "Un adversaire lance son deuxième sort du tour : piochez",
+        label: "An opponent casts their second spell each turn: draw",
       }),
     ],
   },
-  // « En commençant par vous, chaque joueur peut payer des PV » : puis chaque adversaire, dans l'ordre du tour.
-  // Approximation : chaque joueur paie une seule fois (le processus ne se répète pas).
+  // "Starting with you, each player may pay any amount of life": then each opponent, in turn order.
+  // Approximation: each player pays only once (the process doesn't repeat).
   "Plague of Vermin": {
     spell: spell(
       [],

@@ -17,7 +17,7 @@ describe("exil face cachée", () => {
   it("présage : seul le propriétaire voit la carte présagée (vue et événement)", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Sozin's Comet"] } });
     const comet = idOf(s, "p1", "hand", "Sozin's Comet");
-    const foretell = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === comet && a.label === "Présage");
+    const foretell = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === comet && a.label === "Foretell");
     const step = submit(s, "p1", {
       type: "activate",
       source: comet,

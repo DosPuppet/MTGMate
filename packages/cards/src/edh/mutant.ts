@@ -1,7 +1,7 @@
 /**
- * Commander : préconstruit « Mutant Menace » de Fallout (The Wise Mothman, noir, vert, bleu). Marqueurs de radiation
- * (au début de sa première phase principale, un joueur meule autant de cartes et perd 1 PV par carte non-terrain),
- * cartes meulées, prolifération, Mutants.
+ * Commander: "Mutant Menace" precon from Fallout (The Wise Mothman, black, green, blue). Rad counters (at the
+ * beginning of their precombat main phase, a player mills that many cards and loses 1 life for each nonland card),
+ * milled cards, proliferate, Mutants.
  */
 import type { CardScript, ObjectFilter, TokenSpec, TriggerSpec } from "@mtgx/engine";
 import {
@@ -39,51 +39,51 @@ const ZOMBIE_MUTANT: TokenSpec = {
   toughness: 2,
 };
 const ALIEN: TokenSpec = { name: "Alien", colors: ["U"], types: ["Creature"], subtypes: ["Alien"], power: 0, toughness: 0 };
-/** « Chaque fois qu'une ou plusieurs cartes non-terrain sont meulées » (`amount.eventAmount` : leur nombre). */
+/** "Whenever one or more nonland cards are milled" (`amount.eventAmount`: their number). */
 const NONLAND_MILLED: TriggerSpec = { on: "milled", whose: "any", nonland: true };
-/** Évolution, avec un effet en plus quand elle évolue (Watchful Radstag). */
+/** Evolve, with an extra effect when it evolves (Watchful Radstag). */
 const evolveThen = (...more: Parameters<typeof triggered>[1][]) =>
   triggered(when.enters({ ...CREATURE_YOU, other: true }), [fx.addCounters(ref.self, 1), ...more.flat()], {
     condition: cond.any(
       cond.amountGreater(amount.powerOf(ref.eventObject), amount.powerOf(ref.self)),
       cond.amountGreater(amount.toughnessOf(ref.eventObject), amount.toughnessOf(ref.self)),
     ),
-    label: "Évolution",
+    label: "Evolve",
   });
 
 export const EDH_MUTANT: Record<string, CardScript> = {
-  // --- Commandant ---------------------------------------------------------------------------------------------------
-  // Vol : lu dans le texte.
+  // --- Commander ----------------------------------------------------------------------------------------------------
+  // Flying: read from the text.
   "The Wise Mothman": {
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((w) =>
-        triggered(w, [fx.rad(ref.eachPlayer, 1)], { label: "Chaque joueur reçoit un marqueur de radiation" }),
+        triggered(w, [fx.rad(ref.eachPlayer, 1)], { label: "Each player gets a rad counter" }),
       ),
       triggered(NONLAND_MILLED, [fx.addCounters(ref.target(), 1)], {
-        targets: [{ ...target.creature(), countAmount: amount.eventAmount, minCount: 0, label: "jusqu'à X créatures" }],
-        label: "Des cartes non-terrain sont meulées : un marqueur +1/+1 sur jusqu'à X créatures",
+        targets: [{ ...target.creature(), countAmount: amount.eventAmount, minCount: 0, label: "up to X creatures" }],
+        label: "Nonland cards are milled: a +1/+1 counter on up to X creatures",
       }),
     ],
   },
 
-  // --- Mutants et légendes ------------------------------------------------------------------------------------------
-  // Piétinement : lu dans le texte.
+  // --- Mutants and legends ------------------------------------------------------------------------------------------
+  // Trample: read from the text.
   "Agent Frank Horrigan": {
     abilities: [
       staticAbility(
         "self",
         { addKeywords: ["indestructible"] },
-        { condition: cond.sourceMatches({ attackedThisTurn: true }), label: "Indestructible s'il a attaqué ce tour-ci" },
+        { condition: cond.sourceMatches({ attackedThisTurn: true }), label: "Indestructible if it attacked this turn" },
       ),
-      ...[when.entersSelf, when.attacksSelf].map((w) => triggered(w, [fx.proliferate(2)], { label: "Proliférez deux fois" })),
+      ...[when.entersSelf, when.attacksSelf].map((w) => triggered(w, [fx.proliferate(2)], { label: "Proliferate twice" })),
     ],
   },
-  // Menace, piétinement : lus dans le texte. Monstruosité 4 : une seule fois.
+  // Menace, trample: read from the text. Monstrosity 4: only once.
   "Alpha Deathclaw": {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
         targets: [target.permanent("t", [], {}, "permanent")],
-        label: "Détruisez un permanent",
+        label: "Destroy a permanent",
       }),
       activated({
         mana: "{5}{B}{G}",
@@ -92,32 +92,32 @@ export const EDH_MUTANT: Record<string, CardScript> = {
           fx.addCounters(ref.self, 4),
           fx.reflexive([target.permanent("t", [], {}, "permanent")], [fx.destroy(ref.target())]),
         ],
-        label: "Monstruosité 4 : devient monstrueuse, détruisez un permanent",
+        label: "Monstrosity 4: becomes monstrous, destroy a permanent",
       }),
     ],
   },
   "Hancock, Ghoulish Mayor": {
     abilities: [
-      // Approximation : X compte ses marqueurs +1/+1 (pas les autres sortes).
+      // Approximation: X counts its +1/+1 counters (not the other kinds).
       {
         ...staticAbility(
           { ...ZOMBIE_OR_MUTANT_YOU, other: true },
           { power: 1, toughness: 1 },
-          { label: "+X/+X à vos autres Zombies et Mutants" },
+          { label: "+X/+X to your other Zombies and Mutants" },
         ),
         perCounter: "+1/+1",
       },
-      // Persistance du mort-vivant (Undying, 702.93).
+      // Undying (702.93).
       triggered(when.diesSelf, [fx.toBattlefield(ref.eventObject, { counters: { kind: "+1/+1", n: 1 } })], {
         condition: cond.not(cond.counterAtLeast("+1/+1", 1)),
-        label: "Undying : revient avec un marqueur +1/+1",
+        label: "Undying: returns with a +1/+1 counter",
       }),
     ],
   },
-  // Portée, vigilance : lues dans le texte.
+  // Reach, vigilance: read from the text.
   "Harold and Bob, First Numens": {
     abilities: [
-      // Approximation : la Forêt gagne la capacité pour toujours ; Harold and Bob reste dans le cimetière (pas d'Aura).
+      // Approximation: the Forest gains the ability forever; Harold and Bob stays in the graveyard (no Aura).
       triggered(
         when.diesSelf,
         [
@@ -128,7 +128,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
                 activated({
                   tap: true,
                   effects: [fx.addManaChoice(3, ANY_COLOR, undefined, true), fx.rad(ref.you, 2)],
-                  label: "Trois mana d'une couleur ; vous recevez deux marqueurs de radiation",
+                  label: "Three mana of any one color; you get two rad counters",
                 }),
               ],
             },
@@ -136,31 +136,31 @@ export const EDH_MUTANT: Record<string, CardScript> = {
           ),
         ],
         {
-          targets: [target.permanent("t", ["Land"], { controller: "you", subtype: "Forest" }, "Forêt que vous contrôlez")],
-          label: "Une de vos Forêts gagne « {T} : trois mana d'une couleur, deux marqueurs de radiation »",
+          targets: [target.permanent("t", ["Land"], { controller: "you", subtype: "Forest" }, "Forest you control")],
+          label: 'One of your Forests gains "{T}: three mana of any one color, two rad counters"',
         },
       ),
     ],
   },
   "Jason Bright, Glowing Prophet": {
     abilities: [
-      // Approximation : « une force différente de sa force de base » se lit « supérieure ».
+      // Approximation: "power different from its base power" is read as "greater".
       triggered(when.dies({ ...ZOMBIE_OR_MUTANT_YOU, compare: [cmp.power(">", "basePower")] }), [fx.draw(1)], {
-        label: "Un Zombie ou un Mutant modifié meurt : piochez une carte",
+        label: "A modified Zombie or Mutant dies: draw a card",
       }),
       activated({
         mana: "{2}",
         sacrificeOther: { filter: { types: ["Creature"] }, includeSelf: true },
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.addCounters(ref.target(), 1), fx.pump(ref.target(), 0, 0, ["flying"])],
-        label: "Volez avec moi : un marqueur +1/+1 et le vol",
+        label: "Fly with me: a +1/+1 counter and flying",
       }),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Lily Bowen, Raging Grandma": {
     abilities: [
-      entersWith({ counters: 2, label: "Deux marqueurs +1/+1" }),
+      entersWith({ counters: 2, label: "Two +1/+1 counters" }),
       triggered(
         when.yourUpkeep,
         [
@@ -171,11 +171,11 @@ export const EDH_MUTANT: Record<string, CardScript> = {
             fx.gainLife(amount.v("r")),
           ),
         ],
-        { label: "Doublez ses marqueurs (force 16 ou moins), sinon gardez-en un et gagnez des PV" },
+        { label: "Double its counters (power 16 or less), otherwise keep one and gain life" },
       ),
     ],
   },
-  // Vigilance, piétinement : lus dans le texte.
+  // Vigilance, trample: read from the text.
   "Marcus, Mutant Mayor": {
     abilities: [
       triggered(
@@ -184,16 +184,16 @@ export const EDH_MUTANT: Record<string, CardScript> = {
           ...fx.when(cond.eventObjectMatches({ withCounter: "+1/+1" }), fx.draw(1)),
           ...fx.when(cond.not(cond.eventObjectMatches({ withCounter: "+1/+1" })), fx.addCounters(ref.eventObject, 1)),
         ],
-        { label: "Une de vos créatures blesse un joueur : piochez si elle a un marqueur +1/+1, sinon elle en reçoit un" },
+        { label: "One of your creatures deals damage to a player: draw a card if it has a +1/+1 counter, otherwise it gets one" },
       ),
     ],
   },
   "Piper Wright, Publick Reporter": {
     abilities: [
-      triggered(when.combatDamageToPlayer, [fx.createTokens(CLUE, amount.eventAmount)], { label: "Enquêtez autant de fois" }),
+      triggered(when.combatDamageToPlayer, [fx.createTokens(CLUE, amount.eventAmount)], { label: "Investigate that many times" }),
       triggered(when.sacrifice({ subtype: "Clue" }), [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Vous sacrifiez un Indice : un marqueur +1/+1",
+        label: "You sacrifice a Clue: a +1/+1 counter",
       }),
     ],
   },
@@ -202,50 +202,45 @@ export const EDH_MUTANT: Record<string, CardScript> = {
       playerStatic({
         playFrom: { zone: "graveyard", filter: { milledThisTurn: true }, what: "spells", oncePerTurn: true },
         condition: cond.yourTurn,
-        label: "Une fois par tour : lancez un sort parmi les cartes meulées ce tour-ci",
+        label: "Once each turn: cast a spell from among the cards milled this turn",
       }),
-      activated({ tap: true, effects: [fx.mill(1, ref.eachPlayer)], label: "Chaque joueur meule une carte" }),
+      activated({ tap: true, effects: [fx.mill(1, ref.eachPlayer)], label: "Each player mills a card" }),
     ],
   },
   "Strong, the Brutish Thespian": {
-    // Garde {2} : lue dans le texte.
+    // Ward {2}: read from the text.
     abilities: [
       triggered(when.isDealtDamage, [fx.rad(ref.you, 3), fx.addCounters(ref.self, 3)], {
-        label: "Rage : trois marqueurs de radiation et trois marqueurs +1/+1",
+        label: "Enrage: three rad counters and three +1/+1 counters",
       }),
-      playerStatic({ radiationGains: true, label: "Vous gagnez des PV au lieu d'en perdre à cause de la radiation" }),
+      playerStatic({ radiationGains: true, label: "You gain life instead of losing life from radiation" }),
     ],
   },
   "The Master, Transcendent": {
     abilities: [
       triggered(when.entersSelf, [fx.rad(ref.target("p"), 2)], {
         targets: [target.player("p")],
-        label: "Le joueur ciblé reçoit deux marqueurs de radiation",
+        label: "Target player gets two rad counters",
       }),
       activated({
         tap: true,
         targets: [
-          target.cardInGraveyard(
-            "t",
-            { types: ["Creature"], milledThisTurn: true },
-            "any",
-            "carte de créature meulée ce tour-ci",
-          ),
+          target.cardInGraveyard("t", { types: ["Creature"], milledThisTurn: true }, "any", "creature card milled this turn"),
         ],
         effects: [
           fx.toBattlefield(ref.target(), { underYourControl: true }),
           fx.modify(ref.target(), { setColors: ["G"], setSubtypes: ["Mutant"], setPower: 3, setToughness: 3 }, "permanent"),
         ],
-        label: "Une créature meulée ce tour-ci arrive sous votre contrôle : Mutant vert 3/3",
+        label: "A creature milled this turn enters under your control: 3/3 green Mutant",
       }),
     ],
   },
 
-  // --- Autres créatures ---------------------------------------------------------------------------------------------
-  // Vol : lu dans le texte.
+  // --- Other creatures ---------------------------------------------------------------------------------------------
+  // Flying: read from the text.
   "Bloatfly Swarm": {
     abilities: [
-      entersWith({ counters: 5, label: "Cinq marqueurs +1/+1" }),
+      entersWith({ counters: 5, label: "Five +1/+1 counters" }),
       eventReplacement({
         event: "damage",
         toFilter: { self: true, withCounter: "+1/+1" },
@@ -253,7 +248,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
         onPrevent: {
           reflexive: [fx.removeCounters(ref.self, amount.eventAmount, "+1/+1", "r"), fx.rad(ref.eachPlayer, amount.v("r"))],
         },
-        label: "Blessures prévenues : autant de marqueurs +1/+1 retirés, et autant de marqueurs de radiation à chaque joueur",
+        label: "Damage prevented: that many +1/+1 counters removed, and that many rad counters to each player",
       }),
     ],
   },
@@ -262,89 +257,89 @@ export const EDH_MUTANT: Record<string, CardScript> = {
       staticAbility(
         { ...CREATURE_YOU, withCounter: "any" },
         { addAbilities: [wardAbility({ mana: { generic: 1, colored: {}, x: 0 } })] },
-        { label: "Vos créatures avec un marqueur ont la garde {1}" },
+        { label: "Your creatures with a counter have ward {1}" },
       ),
       activated({
         tap: true,
-        targets: [{ ...target.creature("t", { enteredThisTurn: true }), label: "créature arrivée ce tour-ci" }],
+        targets: [{ ...target.creature("t", { enteredThisTurn: true }), label: "creature that entered this turn" }],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Un marqueur +1/+1 sur une créature arrivée ce tour-ci",
+        label: "A +1/+1 counter on a creature that entered this turn",
       }),
     ],
   },
-  // Menace : lue dans le texte.
+  // Menace: read from the text.
   "Feral Ghoul": {
     abilities: [
       triggered(when.dies({ ...CREATURE_YOU, other: true }), [fx.addCounters(ref.self, 1)], {
-        label: "Une autre de vos créatures meurt : un marqueur +1/+1",
+        label: "Another creature you control dies: a +1/+1 counter",
       }),
       triggered(when.diesSelf, [fx.rad(ref.eachOpponent, amount.powerOf(ref.eventObject))], {
-        label: "Chaque adversaire reçoit autant de marqueurs de radiation que sa force",
+        label: "Each opponent gets rad counters equal to its power",
       }),
     ],
   },
-  // Contact mortel : lu dans le texte.
+  // Deathtouch: read from the text.
   "Glowing One": {
     abilities: [
-      triggered(when.combatDamageToPlayer, [fx.rad(ref.eventPlayer, 4)], { label: "Il reçoit quatre marqueurs de radiation" }),
+      triggered(when.combatDamageToPlayer, [fx.rad(ref.eventPlayer, 4)], { label: "That player gets four rad counters" }),
       triggered(NONLAND_MILLED, [fx.gainLife(amount.eventAmount)], {
-        label: "Une carte non-terrain meulée : vous gagnez 1 PV",
+        label: "A nonland card milled: you gain 1 life",
       }),
     ],
   },
-  // Vol, « ne peut pas bloquer » : lus dans le texte.
+  // Flying, "can't block": read from the text.
   "Infesting Radroach": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.rad(ref.eventPlayer, amount.eventAmount)], {
-        label: "Il reçoit autant de marqueurs de radiation",
+        label: "That player gets that many rad counters",
       }),
       triggered(
         { on: "milled", whose: "opponent", nonland: true },
-        fx.may("Reprendre Infesting Radroach en main ?", fx.toHand(ref.self)),
-        { fromGraveyard: true, label: "Un adversaire meule une carte non-terrain : elle revient en main" },
+        fx.may("Return Infesting Radroach to your hand?", fx.toHand(ref.self)),
+        { fromGraveyard: true, label: "An opponent mills a nonland card: it returns to your hand" },
       ),
     ],
   },
-  // Piétinement : lu dans le texte.
+  // Trample: read from the text.
   "Lumbering Megasloth": {
-    // Approximation : seuls les marqueurs des permanents comptent (pas ceux des joueurs).
+    // Approximation: only counters on permanents count (not those on players).
     costReduction: { generic: amount.countersAmong({ permanent: true }, "any") },
     abilities: [entersWith({ tapped: true })],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Mirelurk Queen": {
     abilities: [
       triggered(when.entersSelf, [fx.rad(ref.target("p"), 2)], {
         targets: [target.player("p")],
-        label: "Le joueur ciblé reçoit deux marqueurs de radiation",
+        label: "Target player gets two rad counters",
       }),
       triggered(NONLAND_MILLED, [fx.draw(1), fx.addCounters(ref.self, 1)], {
         oncePerTurn: true,
-        label: "Des cartes non-terrain sont meulées : piochez, puis un marqueur +1/+1",
+        label: "Nonland cards are milled: draw a card, then a +1/+1 counter",
       }),
     ],
   },
-  // Garde {2} : lue dans le texte.
+  // Ward {2}: read from the text.
   "Nightkin Ambusher": {
     abilities: [
       triggered(when.entersSelf, [fx.rad(ref.target("p"), 4)], {
         targets: [target.player("p")],
-        label: "Le joueur ciblé reçoit quatre marqueurs de radiation",
+        label: "Target player gets four rad counters",
       }),
-      // « Tant que le joueur défenseur a un marqueur de radiation » : celui qu'elle attaque, ou le contrôleur du
-      // planeswalker attaqué (506.2) ; hors du combat, il n'y a pas de joueur défenseur.
+      // "As long as defending player has a rad counter": the player it attacks, or the controller of the attacked
+      // planeswalker (506.2); outside combat, there is no defending player.
       staticAbility(
         "self",
         { addKeywords: ["unblockable"] },
         {
           condition: cond.amountAtLeast(amount.maxOverPlayers(ref.defendingPlayer, amount.rad), 1),
-          label: "Imblocable tant que le joueur défenseur a un marqueur de radiation",
+          label: "Can't be blocked as long as defending player has a rad counter",
         },
       ),
     ],
   },
   "Rampaging Yao Guai": {
-    // Vigilance, piétinement : lus dans le texte.
+    // Vigilance, trample: read from the text.
     abilities: [
       entersWith({ counters: amount.x }),
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
@@ -354,52 +349,50 @@ export const EDH_MUTANT: Record<string, CardScript> = {
               "t",
               ["Artifact", "Enchantment"],
               {},
-              "artefacts et enchantements de valeur de mana totale X ou moins",
+              "artifacts and enchantments with total mana value X or less",
             ),
             count: 10,
             minCount: 0,
             maxTotalManaValueAmount: amount.sourceX,
           },
         ],
-        label: "Détruisez des artefacts et enchantements de valeur de mana totale X ou moins",
+        label: "Destroy artifacts and enchantments with total mana value X or less",
       }),
     ],
   },
-  // Vol, menace : lus dans le texte.
+  // Flying, menace: read from the text.
   "Screeching Scorchbeast": {
     abilities: [
-      triggered(when.attacksSelf, [fx.rad(ref.eachPlayer, 2)], { label: "Chaque joueur reçoit deux marqueurs de radiation" }),
+      triggered(when.attacksSelf, [fx.rad(ref.eachPlayer, 2)], { label: "Each player gets two rad counters" }),
       triggered(
         NONLAND_MILLED,
         [
           ...fx.mayForStore(
             ref.you,
-            "Créer autant de Zombies Mutants 2/2 ?",
+            "Create that many 2/2 Zombie Mutants?",
             "z",
             fx.createTokens(ZOMBIE_MUTANT, amount.eventAmount),
           ),
           ...fx.when(cond.v("z"), fx.doneOncePerTurn),
         ],
-        { oncePerTurn: "ifDone", label: "Des cartes non-terrain sont meulées : autant de Zombies Mutants (une fois par tour)" },
+        { oncePerTurn: "ifDone", label: "Nonland cards are milled: that many Zombie Mutants (once per turn)" },
       ),
     ],
   },
   "Tato Farmer": {
     abilities: [
-      triggered(when.landfall, fx.may("Recevoir deux marqueurs de radiation ?", fx.rad(ref.you, 2)), {
-        label: "Accalmie : vous pouvez recevoir deux marqueurs de radiation",
+      triggered(when.landfall, fx.may("Get two rad counters?", fx.rad(ref.you, 2)), {
+        label: "Landfall: you may get two rad counters",
       }),
       activated({
         tap: true,
-        targets: [
-          target.cardInGraveyard("t", { types: ["Land"], milledThisTurn: true }, "any", "carte de terrain meulée ce tour-ci"),
-        ],
+        targets: [target.cardInGraveyard("t", { types: ["Land"], milledThisTurn: true }, "any", "land card milled this turn")],
         effects: [fx.toBattlefield(ref.target(), { tapped: true, underYourControl: true })],
-        label: "Un terrain meulé ce tour-ci arrive engagé sous votre contrôle",
+        label: "A land milled this turn enters tapped under your control",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Vexing Radgull": {
     abilities: [
       triggered(
@@ -411,7 +404,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
           ),
           ...fx.when(cond.amountAtLeast(amount.maxOverPlayers(ref.eventPlayer, amount.rad), 1), fx.proliferate()),
         ],
-        { label: "Deux marqueurs de radiation s'il n'en a pas, sinon proliférez" },
+        { label: "Two rad counters if that player has none, otherwise proliferate" },
       ),
     ],
   },
@@ -425,26 +418,26 @@ export const EDH_MUTANT: Record<string, CardScript> = {
         to: "yourSide",
         toFilter: { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] },
         modify: { add: 1 },
-        label: "Un marqueur de plus sur vos artefacts et créatures",
+        label: "One more counter on your artifacts and creatures",
       }),
     ],
   },
-  // Menace : lue dans le texte.
+  // Menace: read from the text.
   "Young Deathclaws": {
     abilities: [
-      // Approximation : récupération d'une carte de créature de votre cimetière pour {4} (et non pour son coût de mana).
+      // Approximation: scavenge of a creature card from your graveyard for {4} (not for its mana cost).
       activated({
         mana: "{4}",
         sorcerySpeed: true,
         exileFromGraveyard: { filter: { types: ["Creature"] } },
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), amount.powerOf(ref.costExiled))],
-        label: "Récupération : exilez une carte de créature de votre cimetière, autant de marqueurs que sa force",
+        label: "Scavenge: exile a creature card from your graveyard, as many counters as its power",
       }),
     ],
   },
 
-  // --- Artefacts et enchantements -----------------------------------------------------------------------------------
+  // --- Artifacts and enchantments -----------------------------------------------------------------------------------
   "Branching Evolution": {
     abilities: [
       eventReplacement({
@@ -453,7 +446,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
         toFilter: { types: ["Creature"] },
         counter: "+1/+1",
         modify: { times: 2 },
-        label: "Deux fois plus de marqueurs +1/+1 sur vos créatures",
+        label: "Twice that many +1/+1 counters on your creatures",
       }),
     ],
   },
@@ -461,9 +454,9 @@ export const EDH_MUTANT: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.counters(ref.target(), "-1/-1")], {
         targets: [target.creature()],
-        label: "Un marqueur -1/-1",
+        label: "A -1/-1 counter",
       }),
-      activated({ mana: "{4}", tap: true, effects: [fx.proliferate()], label: "Proliférez" }),
+      activated({ mana: "{4}", tap: true, effects: [fx.proliferate()], label: "Proliferate" }),
     ],
   },
   "Guardian Project": {
@@ -475,39 +468,39 @@ export const EDH_MUTANT: Record<string, CardScript> = {
           ),
           cond.not(cond.amountAtLeast(amount.refCount(ref.sameNameInGraveyard(ref.eventObject)), 1)),
         ),
-        label: "Une créature non-jeton au nom nouveau arrive : piochez une carte",
+        label: "A nontoken creature with a new name enters: draw a card",
       }),
     ],
   },
   "Nuka-Nuke Launcher": {
-    // Équiper {3} : lu dans le texte.
+    // Equip {3}: read from the text.
     abilities: [
-      // Approximation : l'intimidation se lit « ne peut être bloquée que par des créatures-artefacts » (sans la couleur).
+      // Approximation: intimidate is read as "can't be blocked except by artifact creatures" (without the color).
       staticAbility(
         "attached",
         {
           power: 3,
-          addBlockRules: [{ cantBeBlockedBy: { notTypes: ["Artifact"] }, label: "Intimidation" }],
+          addBlockRules: [{ cantBeBlockedBy: { notTypes: ["Artifact"] }, label: "Intimidate" }],
         },
-        { label: "+3/+0 et l'intimidation" },
+        { label: "+3/+0 and intimidate" },
       ),
-      // Approximation : jusqu'à votre prochain tour, chaque adversaire (pas seulement le joueur défenseur).
+      // Approximation: until your next turn, each opponent (not only the defending player).
       triggered(
         { on: "attacks", who: { attached: "host" } },
         [
           fx.emblem(
             "Nuka-Nuke",
             "Whenever an opponent casts a spell, that player gets two rad counters.",
-            [triggered(when.castSpell("opponent"), [fx.rad(ref.eventPlayer, 2)], { label: "Deux marqueurs de radiation" })],
+            [triggered(when.castSpell("opponent"), [fx.rad(ref.eventPlayer, 2)], { label: "Two rad counters" })],
             true,
           ),
         ],
-        { label: "Jusqu'à votre prochain tour, chaque sort adverse donne deux marqueurs de radiation" },
+        { label: "Until your next turn, each opposing spell gives two rad counters" },
       ),
     ],
   },
   "Power Fist": {
-    // Équiper {2} : lu dans le texte.
+    // Equip {2}: read from the text.
     abilities: [
       staticAbility(
         "attached",
@@ -515,21 +508,21 @@ export const EDH_MUTANT: Record<string, CardScript> = {
           addKeywords: ["trample"],
           addAbilities: [
             triggered(when.combatDamageToPlayer, [fx.addCounters(ref.self, amount.eventAmount)], {
-              label: "Autant de marqueurs +1/+1",
+              label: "That many +1/+1 counters",
             }),
           ],
         },
-        { label: "Piétinement ; blesse un joueur : autant de marqueurs +1/+1" },
+        { label: "Trample; deals damage to a player: that many +1/+1 counters" },
       ),
     ],
   },
-  // Vol, Équipage 2 : lus dans le texte.
+  // Flying, Crew 2: read from the text.
   "Recon Craft Theta": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(ALIEN, 1, undefined, "a"), fx.addCounters(ref.stored("a"), 1)], {
-        label: "Un Extraterrestre 0/0 avec un marqueur +1/+1",
+        label: "A 0/0 Alien with a +1/+1 counter",
       }),
-      triggered(when.attacksSelf, [fx.proliferate()], { label: "Proliférez" }),
+      triggered(when.attacksSelf, [fx.proliferate()], { label: "Proliferate" }),
     ],
   },
   "Strength Bobblehead": {
@@ -541,7 +534,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), amount.count({ subtype: "Bobblehead", controller: "you" }))],
-        label: "X marqueurs +1/+1 (X : vos Figurines)",
+        label: "X +1/+1 counters (X: your Bobbleheads)",
       }),
     ],
   },
@@ -550,40 +543,40 @@ export const EDH_MUTANT: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourUpkeep, [fx.draw(1, ref.eachOpponent), fx.draw(amount.refCount(ref.eachOpponent))], {
         condition: cond.chosenMode("Brotherhood"),
-        label: "Confrérie : chaque adversaire pioche ; vous piochez autant",
+        label: "Brotherhood: each opponent draws a card; you draw that many",
       }),
       triggered(when.opponentAttacksYouWith(1), [fx.rad(ref.eventPlayer, amount.plus(amount.eventAmount, amount.eventAmount))], {
         condition: cond.chosenMode("Enclave"),
-        label: "Enclave : l'attaquant reçoit deux marqueurs de radiation par attaquant",
+        label: "Enclave: the attacking player gets two rad counters for each attacker",
       }),
     ],
   },
   "Vault 12: The Necropolis": {
     abilities: [
-      chapter([1], [fx.rad(ref.eachPlayer, 3)], { label: "Chaque joueur reçoit trois marqueurs de radiation" }),
+      chapter([1], [fx.rad(ref.eachPlayer, 3)], { label: "Each player gets three rad counters" }),
       chapter([2], [fx.createTokens(ZOMBIE_MUTANT, amount.sumOverPlayers(ref.eachPlayer, amount.rad))], {
-        label: "Un Zombie Mutant 2/2 par marqueur de radiation parmi les joueurs",
+        label: "A 2/2 Zombie Mutant for each rad counter among players",
       }),
-      chapter([3], [fx.addCountersAll(ZOMBIE_OR_MUTANT_YOU, 2)], { label: "Deux marqueurs +1/+1 sur vos Zombies et Mutants" }),
+      chapter([3], [fx.addCountersAll(ZOMBIE_OR_MUTANT_YOU, 2)], { label: "Two +1/+1 counters on your Zombies and Mutants" }),
     ],
   },
   "Vault 87: Forced Evolution": {
     abilities: [
       chapter([1], [fx.gainControlWhileSource(ref.target())], {
-        targets: [{ ...target.creature("t", { notSubtype: "Mutant" }), label: "créature non-Mutant" }],
-        label: "Gagnez le contrôle d'une créature non-Mutant tant que vous contrôlez cette Saga",
+        targets: [{ ...target.creature("t", { notSubtype: "Mutant" }), label: "non-Mutant creature" }],
+        label: "Gain control of a non-Mutant creature for as long as you control this Saga",
       }),
       chapter([2], [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addSubtypes: ["Mutant"] }, "permanent")], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Un marqueur +1/+1 ; elle devient un Mutant",
+        label: "A +1/+1 counter; it becomes a Mutant",
       }),
       chapter([3], [fx.draw(amount.maxPower({ ...CREATURE_YOU, subtype: "Mutant" }))], {
-        label: "Piochez autant que la plus grande force parmi vos Mutants",
+        label: "Draw cards equal to the greatest power among your Mutants",
       }),
     ],
   },
 
-  // --- Éphémères et rituels -----------------------------------------------------------------------------------------
+  // --- Instants and sorceries -----------------------------------------------------------------------------------------
   Atomize: {
     spell: spell([target.nonland()], [fx.destroy(ref.target()), fx.proliferate()]),
   },
@@ -594,23 +587,23 @@ export const EDH_MUTANT: Record<string, CardScript> = {
     spell: escalate(
       "{0}",
       {
-        label: "Détruisez un artefact",
-        targets: [target.permanent("a", ["Artifact"], {}, "artefact")],
+        label: "Destroy target artifact",
+        targets: [target.permanent("a", ["Artifact"], {}, "artifact")],
         effects: [fx.destroy(ref.target("a"))],
       },
-      { label: "Détruisez une créature", targets: [target.creature("c")], effects: [fx.destroy(ref.target("c"))] },
+      { label: "Destroy a creature", targets: [target.creature("c")], effects: [fx.destroy(ref.target("c"))] },
       {
-        label: "Détruisez un enchantement",
-        targets: [target.permanent("e", ["Enchantment"], {}, "enchantement")],
+        label: "Destroy an enchantment",
+        targets: [target.permanent("e", ["Enchantment"], {}, "enchantment")],
         effects: [fx.destroy(ref.target("e"))],
       },
       {
-        label: "Détruisez un terrain",
-        targets: [target.permanent("l", ["Land"], {}, "terrain")],
+        label: "Destroy target land",
+        targets: [target.permanent("l", ["Land"], {}, "land")],
         effects: [fx.destroy(ref.target("l"))],
       },
       {
-        label: "Détruisez un planeswalker",
+        label: "Destroy target planeswalker",
         targets: [target.permanent("w", ["Planeswalker"], {}, "planeswalker")],
         effects: [fx.destroy(ref.target("w"))],
       },
@@ -623,7 +616,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
     spell: spell(
       [
         {
-          ...target.cardInGraveyard("f", { types: ["Creature"] }, "you", "cartes de créature de votre cimetière"),
+          ...target.cardInGraveyard("f", { types: ["Creature"] }, "you", "creature cards in your graveyard"),
           count: 2,
           minCount: 0,
         },
@@ -631,14 +624,14 @@ export const EDH_MUTANT: Record<string, CardScript> = {
       [fx.toHand(ref.target("f"))],
     ),
   },
-  // « Vous pouvez mettre deux marqueurs +1/+1 sur une créature que vous contrôlez » : choisie à la résolution, sans cibler.
+  // "You may put two +1/+1 counters on a creature you control": chosen on resolution, without targeting.
   Finality: {
     spell: spell(
       [],
       [
         fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.you, "c", {
           optional: true,
-          prompt: "Vous pouvez choisir une créature que vous contrôlez : elle reçoit deux marqueurs +1/+1",
+          prompt: "You may choose a creature you control: it gets two +1/+1 counters",
         }),
         fx.addCounters(ref.stored("c"), 2),
         fx.pumpAll({ types: ["Creature"] }, -4, -4),
@@ -649,9 +642,9 @@ export const EDH_MUTANT: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        // « Ces permanents » : ceux qui ont des marqueurs à la résolution, avec les blessures prévenues jusqu'à la fin du
-        // tour (même s'ils perdent leurs marqueurs ; pas ceux qui en reçoivent ensuite). La prévention est un effet sur
-        // ces objets (615), pas une capacité accordée : un effet qui fait perdre les capacités ne la retire pas.
+        // "Those permanents": those with counters on resolution, with damage prevented until end of turn (even if they
+        // lose their counters; not those that get counters later). The prevention is an effect on these objects (615),
+        // not a granted ability: an effect that removes abilities doesn't remove it.
         fx.modifyAll({ permanent: true, controller: "you", withCounter: "any" }, { addKeywords: ["hexproof", "indestructible"] }),
         fx.preventDamageThisTurn(ref.permanentsOf(ref.you, { withCounter: "any" })),
         fx.proliferate(),
@@ -673,18 +666,18 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   },
   Putrefy: {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+      [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
       [{ op: "destroy", what: ref.target(), noRegenerate: true }],
     ),
   },
-  // Déluge : lu dans le texte.
+  // Storm: read from the text.
   Radstorm: { spell: spell([], [fx.proliferate()]) },
   "Rampant Growth": {
     spell: spell([], [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })]),
   },
 
-  // --- Terrains -----------------------------------------------------------------------------------------------------
-  // Approximation : il arrive toujours dégagé, sans marqueurs de radiation.
+  // --- Lands --------------------------------------------------------------------------------------------------------
+  // Approximation: it always enters untapped, without rad counters.
   "Mariposa Military Base": {
     abilities: [
       manaAbility("C"),
@@ -693,7 +686,7 @@ export const EDH_MUTANT: Record<string, CardScript> = {
         tap: true,
         reduction: { generic: amount.rad },
         effects: [fx.draw(1)],
-        label: "Piochez une carte ({1} de moins par marqueur de radiation)",
+        label: "Draw a card ({1} less for each rad counter)",
       }),
     ],
   },
@@ -702,15 +695,12 @@ export const EDH_MUTANT: Record<string, CardScript> = {
       entersWith({ tapped: true }),
       triggered(
         when.entersSelf,
-        fx.may(
-          "Mettre une carte de créature de votre cimetière au-dessus de votre bibliothèque ?",
-          fx.moveTo(ref.target(), { to: "libraryTop" }),
-        ),
+        fx.may("Put a creature card from your graveyard on top of your library?", fx.moveTo(ref.target(), { to: "libraryTop" })),
         {
           targets: [
-            target.upTo(1, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")),
+            target.upTo(1, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")),
           ],
-          label: "Une carte de créature de votre cimetière au-dessus de votre bibliothèque",
+          label: "A creature card from your graveyard on top of your library",
         },
       ),
       manaAbility("B"),

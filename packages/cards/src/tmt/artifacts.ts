@@ -1,4 +1,4 @@
-/** Teenage Mutant Ninja Turtles — cartes incolores et terrains (lot A). */
+/** Teenage Mutant Ninja Turtles — colorless cards and lands (lot A). */
 import type { ManaType, ObjectFilter } from "@mtgx/engine";
 import {
   activated,
@@ -18,7 +18,7 @@ import {
 
 const ANY_COLOR: ManaType[] = ["W", "U", "B", "R", "G"];
 
-/** Autres créatures-artefacts que vous contrôlez. */
+/** Other artifact creatures you control. */
 const OTHER_ARTIFACT_CREATURES: ObjectFilter = {
   types: ["Artifact"],
   anyOf: [{ types: ["Creature"] }],
@@ -26,34 +26,34 @@ const OTHER_ARTIFACT_CREATURES: ObjectFilter = {
   other: true,
 };
 
-/** Ninja ou Tortue. */
+/** Ninja or Turtle. */
 const NINJA_OR_TURTLE: ObjectFilter = { anySubtype: ["Ninja", "Turtle"] };
 
-/** Terrains bicolores « arrive engagé ; en arrivant, vous gagnez 1 PV ». */
+/** Two-color lands "enters tapped; when it enters, you gain 1 life". */
 const gainLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     entersWith({ tapped: true }),
-    triggered(when.entersSelf, [fx.gainLife(1)], { label: "Vous gagnez 1 PV" }),
+    triggered(when.entersSelf, [fx.gainLife(1)], { label: "You gain 1 life" }),
     manaAbility([a, b]),
   ],
 });
 
 export const ARTIFACTS: Record<string, CardScript> = {
-  // --- Artefacts ---------------------------------------------------------------
+  // --- Artifacts ---------------------------------------------------------------
   "Chrome Dome": {
     abilities: [
-      staticAbility(OTHER_ARTIFACT_CREATURES, { power: 1 }, { label: "Vos autres créatures-artefacts : +1/+0" }),
+      staticAbility(OTHER_ARTIFACT_CREATURES, { power: 1 }, { label: "Your other artifact creatures: +1/+0" }),
       activated({
         mana: "{5}",
-        targets: [target.permanent("t", ["Artifact"], { controller: "you", other: true }, "autre artefact que vous contrôlez")],
+        targets: [target.permanent("t", ["Artifact"], { controller: "you", other: true }, "other artifact you control")],
         effects: [fx.copyToken(ref.target(), { addKeywords: ["haste"], sacrificeAtEndStep: true })],
-        label: "Un jeton copie d'un autre de vos artefacts, avec la célérité, sacrifié à la fin du tour",
+        label: "A token copy of another artifact you control, with haste, sacrificed at end of turn",
       }),
     ],
   },
   "Everything Pizza": {
     abilities: [
-      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Cherchez une carte de terrain de base" }),
+      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Search for a basic land card" }),
       activated({
         mana: "{2}{W}{U}{B}{R}{G}",
         tap: true,
@@ -66,7 +66,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
           fx.damage(3, ref.target("d")),
           fx.addCounters(ref.target("c"), 3),
         ],
-        label: "3 PV et une carte, défausse adverse, 3 blessures, trois marqueurs +1/+1",
+        label: "3 life and a card, opponents discard, 3 damage, three +1/+1 counters",
       }),
     ],
   },
@@ -74,56 +74,56 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.creature("t", { controller: "opponent", tapped: true })],
-        label: "Exilez une créature adverse engagée jusqu'à ce que les Henchbots partent",
+        label: "Exile a tapped creature an opponent controls until the Henchbots leave",
       }),
     ],
   },
   "Krang, Utrom Warlord": {
-    // Vol, piétinement, indestructible et célérité : lus dans le texte.
+    // Flying, trample, indestructible and haste: read from the text.
     abilities: [
       staticAbility(
         OTHER_ARTIFACT_CREATURES,
         { addKeywords: ["flying", "trample", "indestructible", "haste"] },
-        { label: "Vos autres créatures-artefacts : vol, piétinement, indestructible, célérité" },
+        { label: "Your other artifact creatures: flying, trample, indestructible, haste" },
       ),
     ],
   },
   "Omni-Cheese Pizza": {
     abilities: [
-      triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }),
-      // Capacité de mana (605.3b) : sans cible, elle ajoute du mana.
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }),
+      // Mana ability (605.3b): with no target, it adds mana.
       activated({
         mana: "{1}",
         tap: true,
         sacrifice: true,
         effects: [fx.addManaChoice(1)],
-        label: "Un mana de n'importe quelle couleur",
+        label: "One mana of any color",
       }),
-      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "Vous gagnez 3 PV" }),
+      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "You gain 3 life" }),
     ],
   },
   Technodrome: {
-    // Portée et piétinement : lus dans le texte.
+    // Reach and trample: read from the text.
     abilities: [
       staticAbility(
         "self",
         { addKeywords: ["cantAttack", "cantBlock"] },
-        { condition: cond.not(cond.sourceMatches({ minPower: 6 })), label: "N'attaque ni ne bloque sous 6 de force" },
+        { condition: cond.not(cond.sourceMatches({ minPower: 6 })), label: "Can't attack or block with power less than 6" },
       ),
       activated({
         tap: true,
         sacrificeOther: { filter: { types: ["Artifact"], other: true } },
         effects: [fx.draw(1), fx.addCounters(ref.self, 1)],
-        label: "Piochez une carte et un marqueur +1/+1",
+        label: "Draw a card and a +1/+1 counter",
       }),
     ],
   },
   "Turtle Blimp": {
-    // Vol et équipage 2 : lus dans le texte.
-    abilities: [triggered(when.entersSelf, [fx.createTokens(MUTANT)], { label: "Un Mutant 2/2" })],
+    // Flying and crew 2: read from the text.
+    abilities: [triggered(when.entersSelf, [fx.createTokens(MUTANT)], { label: "A 2/2 Mutant" })],
   },
   "Turtle Van": {
-    // Équipage 1 : lu dans le texte.
+    // Crew 1: read from the text.
     abilities: [
       triggered(
         when.attacksSelf,
@@ -132,33 +132,33 @@ export const ARTIFACTS: Record<string, CardScript> = {
           fx.when(cond.refMatches(ref.target(), { anySubtype: ["Mutant", "Ninja", "Turtle"] }), fx.doubleCounters(ref.target())),
         ],
         {
-          targets: [{ ...target.creature("t", { crew: "source" }), label: "créature qui l'a pilotée ce tour-ci" }],
-          label: "Un marqueur +1/+1 sur une créature qui l'a pilotée (doublés si Mutant, Ninja ou Tortue)",
+          targets: [{ ...target.creature("t", { crew: "source" }), label: "creature that crewed this Vehicle this turn" }],
+          label: "A +1/+1 counter on a creature that crewed it (doubled if Mutant, Ninja or Turtle)",
         },
       ),
     ],
   },
   "Weather Maker": {
     abilities: [
-      triggered(when.landfall, [fx.counters(ref.self, "charge")], { label: "Champ de bataille : un marqueur charge" }),
+      triggered(when.landfall, [fx.counters(ref.self, "charge")], { label: "Landfall: a charge counter" }),
       manaAbility(ANY_COLOR),
       activated({
         tap: true,
         removeCounters: { kind: "charge", n: 2 },
         effects: [fx.addMana("C", "C")],
-        label: "Retirez deux marqueurs charge : {C}{C}",
+        label: "Remove two charge counters: {C}{C}",
       }),
       activated({
         tap: true,
         removeCounters: { kind: "charge", n: 3 },
         targets: [target.any()],
         effects: [fx.damage(3, ref.target())],
-        label: "Retirez trois marqueurs charge : 3 blessures",
+        label: "Remove three charge counters: 3 damage",
       }),
     ],
   },
 
-  // --- Terrains ----------------------------------------------------------------
+  // --- Lands -------------------------------------------------------------------
   "Dimension X": gainLand("R", "W"),
   "Foot Headquarters": gainLand("W", "B"),
   "Illegitimate Business": gainLand("B", "G"),
@@ -171,7 +171,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { owner: "you" })],
         effects: [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))],
-        label: "Exilez une créature que vous possédez",
+        label: "Exile a creature you own",
       }),
       activated({
         mana: "{2}",
@@ -180,10 +180,10 @@ export const ARTIFACTS: Record<string, CardScript> = {
         effects: [
           fx.chooseAmong(ref.filtered(ref.linked, { types: ["Creature"] }), ref.you, "c", { anyZone: true }),
           fx.toBattlefield(ref.stored("c"), { underYourControl: true }),
-          // Les autres cartes exilées avec ce terrain (la créature choisie a déjà changé de zone).
+          // The other cards exiled with this land (the chosen creature has already changed zones).
           fx.toHand(ref.linked),
         ],
-        label: "Une créature exilée revient sous votre contrôle, les autres cartes en main",
+        label: "An exiled creature returns under your control, the other cards to hand",
       }),
     ],
   },
@@ -197,7 +197,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", NINJA_OR_TURTLE)],
         effects: [fx.pump(ref.target(), 0, 0, ["unblockable"])],
-        label: "Un Ninja ou une Tortue ne peut pas être bloqué ce tour-ci",
+        label: "A Ninja or Turtle can't be blocked this turn",
       }),
     ],
   },

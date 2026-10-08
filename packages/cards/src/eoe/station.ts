@@ -1,6 +1,6 @@
 /**
- * Edge of Eternities — station (702.184) : Vaisseaux, Planètes et cartes qui en parlent.
- * Les mots-clés des paliers « N+ » sont lus dans le texte ; `stationAbilities` décrit les autres capacités.
+ * Edge of Eternities — station (702.184): Spacecraft, Planets and the cards that refer to them.
+ * The keywords of the "N+" thresholds are read from the text; `stationAbilities` describes the other abilities.
  */
 import type { CardScript, ManaAbilityDef } from "@mtgx/engine";
 import {
@@ -27,21 +27,21 @@ import {
 const MULTICOLORED_YOU = { controller: "you" as const, multicolored: true, permanent: true };
 const SPACECRAFT_OR_PLANET = { anyOf: [{ subtype: "Spacecraft" }, { subtype: "Planet" }], controller: "you" as const };
 
-/** Planète : arrive engagée, « {T} : ajoutez [couleur] ». */
+/** Planet: enters tapped, "{T}: Add [color]". */
 const planet = (color: "W" | "U" | "B" | "R" | "G", stationAbilities: CardScript["stationAbilities"]): CardScript => ({
   abilities: [entersWith({ tapped: true }), manaAbility(color)],
   stationAbilities,
 });
 
 export const STATION: Record<string, CardScript> = {
-  // --- Vaisseaux ---------------------------------------------------------------
+  // --- Spacecraft --------------------------------------------------------------
   "Atmospheric Greenhouse": {
     abilities: [
-      triggered(when.entersSelf, [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)], { label: "Marqueur +1/+1 sur vos créatures" }),
+      triggered(when.entersSelf, [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)], { label: "+1/+1 counter on your creatures" }),
     ],
   },
   "Debris Field Crusher": {
-    abilities: [triggered(when.entersSelf, [fx.damage(3, ref.target())], { targets: [target.any()], label: "3 blessures" })],
+    abilities: [triggered(when.entersSelf, [fx.damage(3, ref.target())], { targets: [target.any()], label: "3 damage" })],
     stationAbilities: { 8: [activated({ mana: "{1}{R}", effects: [fx.pump(ref.self, 2, 0)], label: "+2/+0" })] },
   },
   "Dawnsire, Sunstar Dreadnought": {
@@ -49,23 +49,23 @@ export const STATION: Record<string, CardScript> = {
       10: [
         triggered(when.attackWith(1), [fx.damage(100, ref.target())], {
           targets: [target.upTo(1, target.creatureOrPlaneswalker("t"))],
-          label: "100 blessures",
+          label: "100 damage",
         }),
       ],
     },
   },
   "Entropic Battlecruiser": {
     stationAbilities: {
-      1: [triggered(when.discard("opponent"), [fx.loseLife(3, ref.eventPlayer)], { label: "L'adversaire perd 3 PV" })],
+      1: [triggered(when.discard("opponent"), [fx.loseLife(3, ref.eventPlayer)], { label: "The opponent loses 3 life" })],
       8: [
         triggered(
           when.attacksSelf,
           [
-            // « Chaque adversaire qui ne peut pas [défausser] perd 3 PV » : main vide avant la défausse.
+            // "Each opponent who can't [discard] loses 3 life": empty hand before the discard.
             fx.when(cond.not(cond.amountAtLeast(amount.countIn("hand", {}, "opponents"), 1)), fx.loseLife(3, ref.eachOpponent)),
             fx.discard(1, ref.eachOpponent),
           ],
-          { label: "Chaque adversaire défausse" },
+          { label: "Each opponent discards" },
         ),
       ],
     },
@@ -74,9 +74,9 @@ export const STATION: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target()), fx.damageAll(4, { types: ["Creature"] })], {
         targets: [
-          target.permanent("t", ["Artifact", "Enchantment", "Land", "Planeswalker", "Battle"], {}, "permanent non-créature"),
+          target.permanent("t", ["Artifact", "Enchantment", "Land", "Planeswalker", "Battle"], {}, "noncreature permanent"),
         ],
-        label: "Détruisez, 4 blessures à chaque créature",
+        label: "Destroy, 4 damage to each creature",
       }),
     ],
   },
@@ -85,7 +85,7 @@ export const STATION: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.mill(3), fx.pickFromZone("graveyard", CREATURE_OR_SPACECRAFT, { to: "hand" }, { count: 1, min: 1 })],
-        { label: "Meulez 3, reprenez une créature ou un Vaisseau" },
+        { label: "Mill 3, return a creature or Spacecraft" },
       ),
     ],
   },
@@ -93,12 +93,14 @@ export const STATION: Record<string, CardScript> = {
   "Infinite Guideline Station": {
     abilities: [
       triggered(when.entersSelf, [fx.createTappedTokens(ROBOT, amount.count(MULTICOLORED_YOU))], {
-        label: "Un Robot par permanent multicolore",
+        label: "A Robot for each multicolored permanent",
       }),
     ],
     stationAbilities: {
       12: [
-        triggered(when.attacksSelf, [fx.draw(amount.count(MULTICOLORED_YOU))], { label: "Une carte par permanent multicolore" }),
+        triggered(when.attacksSelf, [fx.draw(amount.count(MULTICOLORED_YOU))], {
+          label: "A card for each multicolored permanent",
+        }),
       ],
     },
   },
@@ -110,7 +112,7 @@ export const STATION: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { anyOf: [{ types: ["Land"] }, { subtype: "Lander" }] }, 1, { optional: true, store: "s" }),
           fx.when(cond.v("s"), fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true }, 2)),
         ],
-        { label: "Sacrifiez un terrain ou un Lander : deux terrains de base" },
+        { label: "Sacrifice a land or a Lander: two basic lands" },
       ),
     ],
   },
@@ -120,7 +122,7 @@ export const STATION: Record<string, CardScript> = {
         staticAbility(
           { ...CREATURE_YOU_CONTROL, other: true },
           { power: 1, toughness: 1 },
-          { label: "Vos autres créatures +1/+1" },
+          { label: "Your other creatures +1/+1" },
         ),
       ],
     },
@@ -129,17 +131,15 @@ export const STATION: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(10, ref.target())], {
         targets: [target.upTo(1, target.creature("t"))],
-        label: "10 blessures",
+        label: "10 damage",
       }),
     ],
   },
   "Rescue Skiff": {
     abilities: [
       triggered(when.entersSelf, [fx.toBattlefield(ref.target())], {
-        targets: [
-          target.cardInGraveyard("t", { types: ["Creature", "Enchantment"] }, "you", "carte de créature ou d'enchantement"),
-        ],
-        label: "Renvoyez une créature ou un enchantement",
+        targets: [target.cardInGraveyard("t", { types: ["Creature", "Enchantment"] }, "you", "creature or enchantment card")],
+        label: "Return a creature or enchantment",
       }),
     ],
   },
@@ -153,10 +153,10 @@ export const STATION: Record<string, CardScript> = {
               "hand",
               { types: ["Creature"] },
               { to: "battlefield" },
-              { count: 1, min: 0, prompt: "Créature à mettre sur le champ de bataille" },
+              { count: 1, min: 0, prompt: "Creature to put onto the battlefield" },
             ),
           ],
-          { label: "Une créature de votre main sur le champ de bataille" },
+          { label: "A creature from your hand onto the battlefield" },
         ),
       ],
     },
@@ -165,15 +165,17 @@ export const STATION: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         targets: [target.upTo(2, target.creature("t", { notSubtype: "Spacecraft" }))],
-        label: "Renvoyez jusqu'à deux créatures",
+        label: "Return up to two creatures",
       }),
     ],
-    stationAbilities: { 9: [triggered(when.attacksSelf, [fx.mill(4, ref.defendingPlayer)], { label: "Le défenseur meule 4" })] },
+    stationAbilities: {
+      9: [triggered(when.attacksSelf, [fx.mill(4, ref.defendingPlayer)], { label: "The defending player mills 4" })],
+    },
   },
   "Susurian Dirgecraft": {
     abilities: [
       triggered(when.entersSelf, [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false })], {
-        label: "Chaque adversaire sacrifie une créature",
+        label: "Each opponent sacrifices a creature",
       }),
     ],
   },
@@ -191,8 +193,8 @@ export const STATION: Record<string, CardScript> = {
             }),
           ],
           {
-            targets: [target.upTo(1, target.permanent("t", ["Artifact"], { controller: "you", other: true }, "autre artefact"))],
-            label: "Un artefact devient une créature 2/2 volante",
+            targets: [target.upTo(1, target.permanent("t", ["Artifact"], { controller: "you", other: true }, "other artifact"))],
+            label: "An artifact becomes a 2/2 flying creature",
           },
         ),
       ],
@@ -207,7 +209,7 @@ export const STATION: Record<string, CardScript> = {
   "The Seriema": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Creature"], legendary: true })], {
-        label: "Cherchez une créature légendaire",
+        label: "Search for a legendary creature",
       }),
     ],
     stationAbilities: {
@@ -215,26 +217,26 @@ export const STATION: Record<string, CardScript> = {
         staticAbility(
           { types: ["Creature"], controller: "you", legendary: true, tapped: true, other: true },
           { addKeywords: ["indestructible"] },
-          { label: "Vos autres légendes engagées : indestructibles" },
+          { label: "Your other tapped legends: indestructible" },
         ),
       ],
     },
   },
   "Uthros Scanship": {
-    abilities: [triggered(when.entersSelf, [fx.draw(2), fx.discard(1)], { label: "Piochez deux cartes, défaussez-en une" })],
+    abilities: [triggered(when.entersSelf, [fx.draw(2), fx.discard(1)], { label: "Draw two cards, discard one" })],
   },
   "Warmaker Gunship": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(amount.count({ types: ["Artifact"], controller: "you" }), ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Blessures égales à vos artefacts",
+        label: "Damage equal to your artifacts",
       }),
     ],
   },
-  "Wedgelight Rammer": { abilities: [triggered(when.entersSelf, [fx.createTokens(ROBOT)], { label: "Robot 2/2" })] },
-  "Wurmwall Sweeper": { abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })] },
+  "Wedgelight Rammer": { abilities: [triggered(when.entersSelf, [fx.createTokens(ROBOT)], { label: "2/2 Robot" })] },
+  "Wurmwall Sweeper": { abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })] },
 
-  // --- Planètes ---------------------------------------------------------------
+  // --- Planets ----------------------------------------------------------------
   "Adagia, Windswept Bastion": planet("W", {
     12: [
       activated({
@@ -242,15 +244,10 @@ export const STATION: Record<string, CardScript> = {
         tap: true,
         sorcerySpeed: true,
         targets: [
-          target.permanent(
-            "t",
-            ["Artifact", "Enchantment"],
-            { controller: "you" },
-            "artefact ou enchantement que vous contrôlez",
-          ),
+          target.permanent("t", ["Artifact", "Enchantment"], { controller: "you" }, "artifact or enchantment you control"),
         ],
         effects: [fx.copyToken(ref.target(), { legendary: true })],
-        label: "Copie légendaire",
+        label: "Legendary copy",
       }),
     ],
   }),
@@ -260,7 +257,7 @@ export const STATION: Record<string, CardScript> = {
         mana: "{G}",
         tap: true,
         effects: [fx.addManaTimes(amount.count(CREATURE_YOU_CONTROL), "G")],
-        label: "{G} par créature",
+        label: "{G} for each creature",
       }),
     ],
   }),
@@ -271,7 +268,7 @@ export const STATION: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { types: ["Land"] } },
         effects: [fx.createTokens(ROBOT), fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["haste"])],
-        label: "Robot 2/2, vos créatures +1/+0 et la célérité",
+        label: "2/2 Robot, your creatures +1/+0 and haste",
       }),
     ],
   }),
@@ -284,7 +281,7 @@ export const STATION: Record<string, CardScript> = {
         sorcerySpeed: true,
         sacrificeOther: { filter: { types: ["Creature"] } },
         effects: [fx.draw(amount.powerOf(ref.costSacrificed))],
-        label: "Piochez autant que sa force",
+        label: "Draw as many as its power",
       }),
     ],
   }),
@@ -294,20 +291,20 @@ export const STATION: Record<string, CardScript> = {
         mana: "{U}",
         tap: true,
         effects: [fx.addManaTimes(amount.count({ types: ["Artifact"], controller: "you" }), "U")],
-        label: "{U} par artefact",
+        label: "{U} for each artifact",
       }),
     ],
   }),
 
-  // --- Cartes qui parlent de station ------------------------------------------
+  // --- Cards that refer to station --------------------------------------------
   "Drill Too Deep": {
     spell: modal(
       mode(
-        "Cinq marqueurs de charge",
-        [{ id: "t", label: "Vaisseau ou Planète que vous contrôlez", filter: { objects: SPACECRAFT_OR_PLANET } }],
+        "Five charge counters",
+        [{ id: "t", label: "Spacecraft or Planet you control", filter: { objects: SPACECRAFT_OR_PLANET } }],
         [fx.counters(ref.target(), "charge", 5)],
       ),
-      mode("Détruisez un artefact", [target.permanent("t", ["Artifact"], {}, "artefact")], [fx.destroy(ref.target())]),
+      mode("Destroy an artifact", [target.permanent("t", ["Artifact"], {}, "artifact")], [fx.destroy(ref.target())]),
     ),
   },
   "Pulsar Squadron Ace": {
@@ -318,13 +315,13 @@ export const STATION: Record<string, CardScript> = {
           fx.lookAtTop(5, { filter: { subtype: "Spacecraft" }, count: 1, rest: "bottom", store: "n" }),
           fx.when(cond.not(cond.v("n")), fx.addCounters(ref.self, 1)),
         ],
-        { label: "Cherchez un Vaisseau, sinon marqueur +1/+1" },
+        { label: "Search for a Spacecraft, otherwise +1/+1 counter" },
       ),
     ],
   },
   "Systems Override": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+      [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
       [
         fx.gainControl(ref.target()),
         fx.untap(ref.target()),
@@ -341,7 +338,7 @@ export const STATION: Record<string, CardScript> = {
       staticAbility(
         CREATURE_YOU_CONTROL,
         { addPowerRules: [{ ...powerFor.combatToughness, uses: ["combatDamage", "station"] }] },
-        { label: "Blessures et station selon l'endurance si elle est plus grande" },
+        { label: "Damage and station by toughness if it is greater" },
       ),
     ],
   },

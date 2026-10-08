@@ -1,5 +1,5 @@
-/** Secrets of Strixhaven — cartes multicolores. */
-import type { Effect, ModeDef, ObjectFilter, TargetSpec, TriggerSpec } from "@mtgx/engine";
+/** Secrets of Strixhaven — multicolored cards. */
+import { type Effect, type ModeDef, msg, type ObjectFilter, type TargetSpec, type TriggerSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -36,15 +36,15 @@ import {
 const CREATURES_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
 const ARTIFACT_OR_CREATURE: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] };
 const ANY_COLOR = ["W", "U", "B", "R", "G"] as const;
-/** « Ce mana ne peut servir qu'à lancer des sorts d'éphémère et de rituel. » */
+/** "Spend this mana only to cast instant and sorcery spells." */
 const INSTANT_SORCERY_MANA = { spell: INSTANT_SORCERY };
 
-/** « Chaque fois qu'une ou plusieurs cartes quittent votre cimetière » (avec `batched`). */
+/** "Whenever one or more cards leave your graveyard" (with `batched`). */
 const LEAVE_YOUR_GRAVEYARD: TriggerSpec = when.zoneChange(["graveyard"], { whose: "you" });
 
 /**
- * Moment of Reckoning : « choisissez jusqu'à quatre ; vous pouvez choisir le même mode plus d'une fois ». Toutes les
- * combinaisons (de un à quatre modes) sont générées, chaque exemplaire d'un mode avec sa propre cible.
+ * Moment of Reckoning: "Choose up to four. You may choose the same mode more than once." Every combination (one to
+ * four modes) is generated, each copy of a mode with its own target.
  */
 function reckoningModes(): ModeDef[] {
   const out: ModeDef[] = [];
@@ -63,14 +63,17 @@ function reckoningModes(): ModeDef[] {
             `g${i}`,
             { permanent: true, notTypes: ["Land"] },
             "you",
-            "carte de permanent non-terrain de votre cimetière",
+            "nonland permanent card from your graveyard",
           ),
         );
         effects.push(fx.toBattlefield(ref.target(`g${i}`)));
       }
-      const label = [d ? `Détruisez ${d} permanent(s) non-terrain` : "", g ? `renvoyez ${g} carte(s) de permanent` : ""]
-        .filter(Boolean)
-        .join(", ");
+      const label =
+        d && g
+          ? msg("Destroy {d} nonland permanent(s), return {g} permanent card(s)", { d, g })
+          : d
+            ? msg("Destroy {d} nonland permanent(s)", { d })
+            : msg("return {g} permanent card(s)", { g });
       out.push(mode(label, targets, effects));
     }
   }
@@ -78,33 +81,33 @@ function reckoningModes(): ModeDef[] {
 }
 
 export const MULTI: Record<string, CardScript> = {
-  // --- Silverquill (blanc et noir) -------------------------------------------
-  // Vol lu dans le texte.
+  // --- Silverquill (white and black) -------------------------------------------
+  // Flying read from the text.
   "Abigale, Poet Laureate": {
     prepareSpell: spell([target.creature()], [fx.addCounters(ref.target(), 1)]),
     abilities: [
       triggered(when.castSpell("you", { types: ["Creature"] }), [fx.prepare(ref.self)], {
-        label: "Sort de créature lancé : Abigale devient préparée",
+        label: "Creature spell cast: Abigale becomes prepared",
       }),
     ],
   },
   "Conciliator's Duelist": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(1), fx.loseLife(1, ref.eachPlayer)], {
-        label: "Piochez une carte ; chaque joueur perd 1 PV",
+        label: "Draw a card; each player loses 1 life",
       }),
       triggered(
         REPARTEE,
         [fx.exileCard(ref.target(), { name: "k" }), fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") })],
         {
           targets: [target.upTo(1, target.creature())],
-          label: "Repartee : exilez une créature jusqu'à la prochaine étape de fin",
+          label: "Repartee: exile a creature until the next end step",
         },
       ),
     ],
   },
   "Fix What's Broken": {
-    // « Payez X points de vie » en coût additionnel : lu dans le texte.
+    // "Pay X life" as an additional cost: read from the text.
     spell: spell(
       [],
       [
@@ -117,14 +120,14 @@ export const MULTI: Record<string, CardScript> = {
       ],
     ),
   },
-  // Vigilance lue dans le texte.
+  // Vigilance read from the text.
   "Imperious Inkmage": {
-    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })],
+    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })],
   },
   "Inkling Mascot": {
     abilities: [
       triggered(REPARTEE, [fx.modify(ref.self, { addKeywords: ["flying"] }), fx.surveil(1)], {
-        label: "Repartee : vol jusqu'à la fin du tour, surveillance 1",
+        label: "Repartee: flying until end of turn, surveil 1",
       }),
     ],
   },
@@ -133,8 +136,8 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.combatDamageBatch(CREATURES_YOU),
-        fx.mayPay("{W/B}", "Payer {W/B} pour renvoyer Killian's Confidence dans votre main ?", fx.toHand(ref.self)),
-        { fromGraveyard: true, label: "Blessures de combat à un joueur : payez {W/B} pour la reprendre en main" },
+        fx.mayPay("{W/B}", "Pay {W/B} to return Killian's Confidence to your hand?", fx.toHand(ref.self)),
+        { fromGraveyard: true, label: "Combat damage to a player: pay {W/B} to return it to hand" },
       ),
     ],
   },
@@ -148,29 +151,29 @@ export const MULTI: Record<string, CardScript> = {
       ],
     ),
   },
-  // Menace lue dans le texte.
+  // Menace read from the text.
   "Scolding Administrator": {
     abilities: [
-      triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee : un marqueur +1/+1" }),
-      // « si elle avait des marqueurs » (603.4) : ses marqueurs au moment de mourir (dernières informations connues).
+      triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee: a +1/+1 counter" }),
+      // "if it had counters on it" (603.4): its counters as it died (last known information).
       triggered(when.diesSelf, [fx.lkiCountersTo(ref.target())], {
         condition: cond.amountAtLeast(amount.countersOn(ref.eventObject, "any"), 1),
         targets: [target.upTo(1, target.creature())],
-        label: "Ses marqueurs sur une créature",
+        label: "Its counters onto a creature",
       }),
     ],
   },
   "Silverquill Charm": {
     spell: modal(
-      mode("Deux marqueurs +1/+1", [target.creature()], [fx.addCounters(ref.target(), 2)]),
-      mode("Exilez une créature de force 2 ou moins", [target.creature("t", { maxPower: 2 })], [fx.exile(ref.target())]),
-      mode("Chaque adversaire perd 3 PV, vous gagnez 3 PV", [], fx.drain(3)),
+      mode("Two +1/+1 counters", [target.creature()], [fx.addCounters(ref.target(), 2)]),
+      mode("Exile a creature with power 2 or less", [target.creature("t", { maxPower: 2 })], [fx.exile(ref.target())]),
+      mode("Each opponent loses 3 life, you gain 3 life", [], fx.drain(3)),
     ),
   },
   /**
-   * Vol et vigilance lus dans le texte. Approximation de la victime (casualty 1) accordée : une capacité déclenchée au
-   * lancer (« vous pouvez sacrifier une créature de force 1 ou plus ; si vous le faites, copiez le sort »), et non un
-   * coût additionnel payé pendant le lancer.
+   * Flying and vigilance read from the text. Approximation of the granted casualty 1: a cast trigger ("you may
+   * sacrifice a creature with power 1 or greater; if you do, copy the spell"), not an additional cost paid while
+   * casting.
    */
   "Silverquill, the Disputant": {
     abilities: [
@@ -180,40 +183,40 @@ export const MULTI: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Creature"], minPower: 1 }, 1, { optional: true, store: "c" }),
           ...fx.when(cond.v("c"), fx.copySpell(ref.eventObject, 1)),
         ],
-        { label: "Victime 1 : sacrifiez une créature de force 1 ou plus pour copier le sort" },
+        { label: "Casualty 1: sacrifice a creature with power 1 or greater to copy the spell" },
       ),
     ],
   },
   "Snooping Page": {
     abilities: [
       triggered(REPARTEE, [fx.modify(ref.self, { addKeywords: ["unblockable"] })], {
-        label: "Repartee : ne peut pas être bloquée ce tour-ci",
+        label: "Repartee: can't be blocked this turn",
       }),
-      triggered(when.combatDamageToPlayer, [fx.draw(1), fx.loseLife(1)], { label: "Piochez une carte, perdez 1 PV" }),
+      triggered(when.combatDamageToPlayer, [fx.draw(1), fx.loseLife(1)], { label: "Draw a card, lose 1 life" }),
     ],
   },
   "Social Snub": {
     spell: spell([], [fx.sacrifice(ref.eachPlayer, { types: ["Creature"] }), ...fx.drain(1)]),
     abilities: [
-      triggered(when.castSelf, fx.may("Copier Social Snub ?", fx.copySpell(ref.self, 1)), {
-        // « en contrôlant une créature » : au déclenchement seulement (pas un « si » revérifié à la résolution).
+      triggered(when.castSelf, fx.may("Copy Social Snub?", fx.copySpell(ref.self, 1)), {
+        // "while you control a creature": on triggering only (not an "if" checked again on resolution).
         triggerCondition: cond.controls({ types: ["Creature"] }),
-        label: "Lancé en contrôlant une créature : vous pouvez le copier",
+        label: "Cast while you control a creature: you may copy it",
       }),
     ],
   },
 
-  // --- Lorehold (rouge et blanc) ---------------------------------------------
+  // --- Lorehold (red and white) ----------------------------------------------
   "Ark of Hunger": {
     abilities: [
       triggered(LEAVE_YOUR_GRAVEYARD, [fx.damage(1, ref.eachOpponent), fx.gainLife(1)], {
         batched: true,
-        label: "Des cartes quittent votre cimetière : 1 blessure à chaque adversaire, +1 PV",
+        label: "Cards leave your graveyard: 1 damage to each opponent, +1 life",
       }),
       activated({
         tap: true,
         effects: [fx.mill(1, ref.you, { name: "m" }), fx.grantPlay(ref.stored("m"))],
-        label: "Meulez une carte, jouable ce tour-ci",
+        label: "Mill a card, playable this turn",
       }),
     ],
   },
@@ -225,19 +228,19 @@ export const MULTI: Record<string, CardScript> = {
           fx.tapChosen({ types: ["Creature"] }, "a", { exactly: 3 }),
           ...fx.when(cond.v("a", 3), fx.copySpell(ref.eventObject, 1)),
         ],
-        { label: "Engagez trois créatures pour copier le sort" },
+        { label: "Tap three creatures to copy the spell" },
       ),
     ],
   },
   "Borrowed Knowledge": {
     spell: modal(
       mode(
-        "Défaussez votre main, piochez autant que la main de l'adversaire",
+        "Discard your hand, draw as many as the opponent's hand",
         [target.player("p", "opponent")],
         [fx.discard(amount.cardsIn("hand")), fx.draw(amount.refCount(ref.handOf(ref.target("p"))))],
       ),
       mode(
-        "Défaussez votre main, piochez autant de cartes",
+        "Discard your hand, draw that many cards",
         [],
         [fx.discard(amount.cardsIn("hand"), ref.you, { store: "d" }), fx.draw(amount.v("d"))],
       ),
@@ -246,12 +249,12 @@ export const MULTI: Record<string, CardScript> = {
   "Colossus of the Blood Age": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(3, ref.eachOpponent), fx.gainLife(3)], {
-        label: "3 blessures à chaque adversaire, +3 PV",
+        label: "3 damage to each opponent, +3 life",
       }),
       triggered(
         when.diesSelf,
         [fx.discard(amount.cardsIn("hand"), ref.you, { optional: true, store: "d" }), fx.draw(amount.plus(amount.v("d"), 1))],
-        { label: "Défaussez autant de cartes que voulu, piochez-en autant plus une" },
+        { label: "Discard any number of cards, draw that many plus one" },
       ),
     ],
   },
@@ -263,33 +266,33 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(LEAVE_YOUR_GRAVEYARD, [fx.prepare(ref.self)], {
         batched: true,
-        label: "Des cartes quittent votre cimetière : Kirol devient préparé",
+        label: "Cards leave your graveyard: Kirol becomes prepared",
       }),
     ],
   },
   "Lorehold Charm": {
     spell: modal(
       mode(
-        "Chaque adversaire sacrifie un artefact non-jeton",
+        "Each opponent sacrifices a nontoken artifact",
         [],
         [fx.sacrifice(ref.eachOpponent, { types: ["Artifact"], token: false })],
       ),
       mode(
-        "Renvoyez un artefact ou une créature de VM 2 ou moins",
+        "Return an artifact or creature with mana value 2 or less",
         [
           target.cardInGraveyard(
             "t",
             { ...ARTIFACT_OR_CREATURE, maxManaValue: 2 },
             "you",
-            "carte d'artefact ou de créature de VM 2 ou moins",
+            "artifact or creature card with mana value 2 or less",
           ),
         ],
         [fx.toBattlefield(ref.target())],
       ),
-      mode("Vos créatures : +1/+1 et piétinement", [], [fx.pumpAll(CREATURES_YOU, 1, 1, ["trample"])]),
+      mode("Your creatures: +1/+1 and trample", [], [fx.pumpAll(CREATURES_YOU, 1, 1, ["trample"])]),
     ),
   },
-  // Initiative lue dans le texte.
+  // First strike read from the text.
   "Practiced Scrollsmith": {
     abilities: [
       triggered(
@@ -301,10 +304,10 @@ export const MULTI: Record<string, CardScript> = {
               "t",
               { notTypes: ["Creature", "Land"] },
               "you",
-              "carte non-créature et non-terrain de votre cimetière",
+              "noncreature, nonland card from your graveyard",
             ),
           ],
-          label: "Exilez une carte non-créature et non-terrain : lançable jusqu'à la fin de votre prochain tour",
+          label: "Exile a noncreature, nonland card: castable until the end of your next turn",
         },
       ),
     ],
@@ -320,16 +323,16 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(LEAVE_YOUR_GRAVEYARD, [fx.addCounters(ref.self, 1)], {
         batched: true,
-        label: "Des cartes quittent votre cimetière : un marqueur +1/+1",
+        label: "Cards leave your graveyard: a +1/+1 counter",
       }),
     ],
   },
-  // Piétinement et lien de vie lus dans le texte.
+  // Trample and lifelink read from the text.
   "Startled Relic Sloth": {
     abilities: [
       triggered(when.yourCombat, [fx.exileCard(ref.target())], {
         targets: [target.upTo(1, target.cardInGraveyard("t", {}, "any"))],
-        label: "Exilez jusqu'à une carte d'un cimetière",
+        label: "Exile up to one card from a graveyard",
       }),
     ],
   },
@@ -338,17 +341,17 @@ export const MULTI: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.exileIfDies(ref.target()), fx.damage(5, ref.target())]),
   },
 
-  // --- Prismari (bleu et rouge) ----------------------------------------------
+  // --- Prismari (blue and red) -----------------------------------------------
   "Abstract Paintmage": {
     abilities: [
       triggered(
         when.step("main1", "you"),
         [fx.addManaChoice(1, ["U"], INSTANT_SORCERY_MANA), fx.addManaChoice(1, ["R"], INSTANT_SORCERY_MANA)],
-        { label: "Ajoutez {U}{R} (éphémères et rituels seulement)" },
+        { label: "Add {U}{R} (instants and sorceries only)" },
       ),
     ],
   },
-  // Vol et vigilance lus dans le texte.
+  // Flying and vigilance read from the text.
   "Elemental Mascot": {
     abilities: [
       triggered(
@@ -357,19 +360,19 @@ export const MULTI: Record<string, CardScript> = {
           fx.pump(ref.self, 1, 0),
           ...fx.when(OPUS_BIG, fx.exileTop(ref.you, 1, "e"), fx.grantPlay(ref.stored("e"), { untilYourNextTurn: true })),
         ],
-        { label: "Opus : +1/+0 ; cinq mana ou plus : exilez la carte du dessus, jouable jusqu'à votre prochain tour" },
+        { label: "Opus: +1/+0; five or more mana: exile the top card, playable until your next turn" },
       ),
     ],
   },
   /**
-   * Vol et garde (payer 5 PV) lus dans le texte. Approximation de la tempête accordée : la capacité copie le sort autant
-   * de fois que de sorts lancés ce tour-ci avant sa résolution, moins lui-même (un sort lancé en réponse à la capacité
-   * est compté).
+   * Flying and ward (pay 5 life) read from the text. Approximation of the granted storm: the ability copies the spell
+   * once for each spell cast this turn before it resolves, minus the spell itself (a spell cast in response to the
+   * ability is counted).
    */
   "Prismari, the Inspiration": {
     abilities: [
       triggered(OPUS, [fx.copySpell(ref.eventObject, amount.plus(amount.turnEvents({ event: "cast" }), -1))], {
-        label: "Tempête : une copie par sort lancé avant lui ce tour-ci",
+        label: "Storm: a copy for each spell cast before it this turn",
       }),
     ],
   },
@@ -381,13 +384,13 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         { types: ["Land"], controller: "you" },
         { addAbilities: [manaAbility([...ANY_COLOR], 2, { restriction: INSTANT_SORCERY_MANA })] },
-        { label: "Vos terrains : {T} : deux mana d'une même couleur (éphémères et rituels)" },
+        { label: "Your lands: {T}: two mana of any one color (instants and sorceries)" },
       ),
       activated({
         tap: true,
         activationCondition: cond.amountAtLeast(amount.cardsIn("hand"), 7),
         effects: [fx.draw(1)],
-        label: "Piochez une carte (sept cartes ou plus en main)",
+        label: "Draw a card (seven or more cards in hand)",
       }),
     ],
   },
@@ -399,31 +402,31 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         activationCondition: cond.amountAtLeast(amount.instantSorceryCast, 1),
         effects: [fx.createTokens(TREASURE)],
-        label: "Un Trésor (éphémère ou rituel lancé ce tour-ci)",
+        label: "A Treasure (instant or sorcery cast this turn)",
       }),
     ],
   },
-  // Vol lu dans le texte.
+  // Flying read from the text.
   "Spectacular Skywhale": {
     abilities: [
       triggered(OPUS, opusInstead([fx.pump(ref.self, 3, 0)], [fx.addCounters(ref.self, 3)]), {
-        label: "Opus : +3/+0 ; cinq mana ou plus : trois marqueurs +1/+1 à la place",
+        label: "Opus: +3/+0; five or more mana: three +1/+1 counters instead",
       }),
     ],
   },
   "Splatter Technique": {
     spell: modal(
-      mode("Piochez quatre cartes", [], [fx.draw(4)]),
-      mode("4 blessures à chaque créature et planeswalker", [], [fx.damageAll(4, { types: ["Creature", "Planeswalker"] })]),
+      mode("Draw four cards", [], [fx.draw(4)]),
+      mode("4 damage to each creature and planeswalker", [], [fx.damageAll(4, { types: ["Creature", "Planeswalker"] })]),
     ),
   },
   "Stadium Tidalmage": {
     abilities: [
-      triggered(when.entersSelf, fx.may("Piocher une carte, puis en défausser une ?", fx.draw(1), fx.discard(1)), {
-        label: "Vous pouvez piocher, puis défausser",
+      triggered(when.entersSelf, fx.may("Draw a card, then discard a card?", fx.draw(1), fx.discard(1)), {
+        label: "You may draw, then discard",
       }),
-      triggered(when.attacksSelf, fx.may("Piocher une carte, puis en défausser une ?", fx.draw(1), fx.discard(1)), {
-        label: "Vous pouvez piocher, puis défausser",
+      triggered(when.attacksSelf, fx.may("Draw a card, then discard a card?", fx.draw(1), fx.discard(1)), {
+        label: "You may draw, then discard",
       }),
     ],
   },
@@ -441,18 +444,18 @@ export const MULTI: Record<string, CardScript> = {
         fromHand: true,
         discardSelf: true,
         effects: [fx.lookAtTop(2, { count: 1, exact: true, rest: "graveyard" })],
-        label: "Regardez les deux cartes du dessus : une en main, l'autre au cimetière",
+        label: "Look at the top two cards: one to hand, the other to the graveyard",
       }),
     ],
   },
 
-  // --- Quandrix (vert et bleu) -----------------------------------------------
+  // --- Quandrix (green and blue) ---------------------------------------------
   "Applied Geometry": {
     spell: spell(
       [
         {
           id: "t",
-          label: "permanent non-Aura que vous contrôlez",
+          label: "non-Aura permanent you control",
           filter: { objects: { permanent: true, controller: "you", notSubtype: "Aura" } },
         },
       ],
@@ -466,17 +469,17 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       INCREMENT,
       triggered(when.countersPut("self", "+1/+1"), [fx.addManaChoice(1)], {
-        label: "Marqueurs +1/+1 sur Berta : un mana de n'importe quelle couleur",
+        label: "+1/+1 counters on Berta: one mana of any color",
       }),
       activated({
         mana: "{X}",
         tap: true,
         effects: [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.addCounters(ref.stored("f"), amount.x)],
-        label: "Une Fractale 0/0 avec X marqueurs +1/+1",
+        label: "A 0/0 Fractal with X +1/+1 counters",
       }),
     ],
   },
-  // Flash, vol et piétinement lus dans le texte.
+  // Flash, flying and trample read from the text.
   "Cuboid Colony": { abilities: [INCREMENT] },
   "Embrace the Paradox": {
     spell: spell(
@@ -489,18 +492,18 @@ export const MULTI: Record<string, CardScript> = {
           { to: "battlefield", tapped: true },
           {
             min: 0,
-            prompt: "Vous pouvez mettre une carte de terrain de votre main sur le champ de bataille engagée",
+            prompt: "You may put a land card from your hand onto the battlefield tapped",
           },
         ),
       ],
     ),
   },
-  // Piétinement lu dans le texte.
+  // Trample read from the text.
   "Fractal Mascot": {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagez une créature adverse, un marqueur d'étourdissement",
+        label: "Tap an opponent's creature, a stun counter",
       }),
     ],
   },
@@ -522,7 +525,7 @@ export const MULTI: Record<string, CardScript> = {
           {
             min: 0,
             maxManaValue: amount.x,
-            prompt: "Vous pouvez mettre une carte de permanent de VM X ou moins sur le champ de bataille engagée",
+            prompt: "You may put a permanent card with mana value X or less onto the battlefield tapped",
           },
         ),
       ],
@@ -534,23 +537,23 @@ export const MULTI: Record<string, CardScript> = {
       [fx.bounce(ref.target()), fx.search(BASIC_LAND, { to: "battlefield", tapped: true })],
     ),
   },
-  // Vol lu dans le texte.
+  // Flying read from the text.
   Pterafractyl: {
     abilities: [
-      entersWith({ counters: amount.x, label: "Arrive avec X marqueurs +1/+1" }),
-      triggered(when.entersSelf, [fx.gainLife(2)], { label: "Gagnez 2 PV" }),
+      entersWith({ counters: amount.x, label: "Enters with X +1/+1 counters" }),
+      triggered(when.entersSelf, [fx.gainLife(2)], { label: "Gain 2 life" }),
     ],
   },
   "Quandrix Charm": {
     spell: modal(
       mode(
-        "Contrecarrez un sort à moins que son contrôleur ne paie {2}",
+        "Counter a spell unless its controller pays {2}",
         [target.spell()],
         fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{2}" }, fx.counter(ref.target())),
       ),
-      mode("Détruisez un enchantement", [target.permanent("t", ["Enchantment"], {}, "enchantement")], [fx.destroy(ref.target())]),
+      mode("Destroy an enchantment", [target.permanent("t", ["Enchantment"], {}, "enchantment")], [fx.destroy(ref.target())]),
       mode(
-        "Une créature a une force et une endurance de base de 5/5",
+        "A creature has base power and toughness 5/5",
         [target.creature()],
         [fx.modify(ref.target(), { setPower: 5, setToughness: 5 })],
       ),
@@ -558,44 +561,44 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Tam, Observant Sequencer": {
     prepareSpell: spell([], [fx.draw(1), fx.gainLife(1)]),
-    abilities: [triggered(when.landfall, [fx.prepare(ref.self)], { label: "Atterrissage : Tam devient préparé" })],
+    abilities: [triggered(when.landfall, [fx.prepare(ref.self)], { label: "Landfall: Tam becomes prepared" })],
   },
 
-  // --- Witherbloom (noir et vert) --------------------------------------------
+  // --- Witherbloom (black and green) --------------------------------------------
   "Blech, Loafing Pest": {
     abilities: [
       triggered(
         when.gainLife,
         [fx.addCountersAll({ controller: "you", anySubtype: ["Pest", "Bat", "Insect", "Snake", "Spider"] }, 1)],
-        { label: "Un marqueur +1/+1 sur chacun de vos Nuisibles, Chauves-souris, Insectes, Serpents et Araignées" },
+        { label: "A +1/+1 counter on each of your Pests, Bats, Insects, Snakes and Spiders" },
       ),
     ],
   },
   "Bogwater Lumaret": {
-    abilities: [triggered(when.enters(CREATURES_YOU), [fx.gainLife(1)], { label: "Une créature arrive : gagnez 1 PV" })],
+    abilities: [triggered(when.enters(CREATURES_YOU), [fx.gainLife(1)], { label: "A creature enters: gain 1 life" })],
   },
   "Cauldron of Essence": {
     abilities: [
-      triggered(when.dies(CREATURES_YOU), fx.drain(1), { label: "Une de vos créatures meurt : drain de 1" }),
+      triggered(when.dies(CREATURES_YOU), fx.drain(1), { label: "One of your creatures dies: drain 1" }),
       activated({
         mana: "{1}{B}{G}",
         tap: true,
         sacrificeOther: { filter: { types: ["Creature"] } },
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card from your graveyard")],
         effects: [fx.toBattlefield(ref.target())],
-        label: "Renvoyez une carte de créature de votre cimetière sur le champ de bataille",
+        label: "Return a creature card from your graveyard to the battlefield",
       }),
     ],
   },
   "Dina's Guidance": {
-    // La carte trouvée va dans votre main, puis vous pouvez la mettre au cimetière à la place.
+    // The card found goes to your hand, then you may put it into your graveyard instead.
     spell: spell(
       [],
       [
         fx.search({ types: ["Creature"] }, { to: "hand" }, 1, undefined, "c"),
         ...fx.may(
-          "Mettre la carte trouvée dans votre cimetière plutôt que dans votre main ?",
+          "Put the card found into your graveyard rather than your hand?",
           fx.moveTo(ref.stored("c"), { to: "graveyard" }),
         ),
       ],
@@ -603,16 +606,16 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Essenceknit Scholar": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(PEST)], { label: "Un Nuisible 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(PEST)], { label: "A 1/1 Pest" }),
       triggered(when.yourEndStep, [fx.draw(1)], {
         condition: cond.amountAtLeast(amount.yourCreaturesDiedThisTurn, 1),
-        label: "Une de vos créatures est morte ce tour-ci : piochez une carte",
+        label: "One of your creatures died this turn: draw a card",
       }),
     ],
   },
   "Grapple with Death": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+      [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
       [fx.destroy(ref.target()), fx.gainLife(1)],
     ),
   },
@@ -624,7 +627,7 @@ export const MULTI: Record<string, CardScript> = {
         exileFromGraveyard: { filter: { types: ["Creature"] } },
         sorcerySpeed: true,
         effects: [fx.prepare(ref.self)],
-        label: "Exilez une carte de créature de votre cimetière : Lluwen devient préparée",
+        label: "Exile a creature card from your graveyard: Lluwen becomes prepared",
       }),
     ],
   },
@@ -637,23 +640,23 @@ export const MULTI: Record<string, CardScript> = {
           "graveyard",
           { types: ["Land"] },
           { to: "battlefield", tapped: true, underYourControl: true },
-          { min: 0, pool: ref.stored("d"), prompt: "Vous pouvez mettre une carte de terrain défaussée sur le champ de bataille" },
+          { min: 0, pool: ref.stored("d"), prompt: "You may put a discarded land card onto the battlefield" },
         ),
       ],
     ),
   },
-  // Portée et vigilance lues dans le texte.
+  // Reach and vigilance read from the text.
   "Old-Growth Educator": {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.self, 2)], {
         condition: INFUSION,
-        label: "Infusion : deux marqueurs +1/+1",
+        label: "Infusion: two +1/+1 counters",
       }),
     ],
   },
-  // Piétinement lu dans le texte.
+  // Trample read from the text.
   "Pest Mascot": {
-    abilities: [triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "Vous gagnez des PV : un marqueur +1/+1" })],
+    abilities: [triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "You gain life: a +1/+1 counter" })],
   },
   "Root Manipulation": {
     spell: spell(
@@ -663,55 +666,55 @@ export const MULTI: Record<string, CardScript> = {
           power: 2,
           toughness: 2,
           addKeywords: ["menace"],
-          addAbilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "Gagnez 1 PV" })],
+          addAbilities: [triggered(when.attacksSelf, [fx.gainLife(1)], { label: "Gain 1 life" })],
         }),
       ],
     ),
   },
-  // Menace lue dans le texte.
+  // Menace read from the text.
   "Teacher's Pest": {
     abilities: [
-      triggered(when.attacksSelf, [fx.gainLife(1)], { label: "Gagnez 1 PV" }),
+      triggered(when.attacksSelf, [fx.gainLife(1)], { label: "Gain 1 life" }),
       activated({
         mana: "{B}{G}",
         fromGraveyard: true,
         effects: [fx.toBattlefield(ref.self, { tapped: true })],
-        label: "Revient du cimetière engagé",
+        label: "Returns from the graveyard tapped",
       }),
     ],
   },
-  // Vol et contact mortel lus dans le texte. Affinité pour les créatures : réduction de coût.
+  // Flying and deathtouch read from the text. Affinity for creatures: cost reduction.
   "Witherbloom, the Balancer": {
     costReduction: { generic: amount.count(CREATURES_YOU) },
     abilities: [
-      costReducer(INSTANT_SORCERY, 0, "Vos éphémères et rituels ont l'affinité pour les créatures", {
+      costReducer(INSTANT_SORCERY, 0, "Your instants and sorceries have affinity for creatures", {
         genericAmount: amount.count(CREATURES_YOU),
       }),
     ],
   },
 
-  // --- Autres paires -----------------------------------------------------------
+  // --- Other pairs -------------------------------------------------------------
   "Stirring Honormancer": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(amount.count(CREATURES_YOU), { count: 1, exact: true, rest: "graveyard" })], {
-        label: "Regardez X cartes : une en main, les autres au cimetière",
+        label: "Look at X cards: one to hand, the others to the graveyard",
       }),
     ],
   },
   "Nita, Forum Conciliator": {
     abilities: [
       triggered({ on: "castSpell", by: "you", notOwned: true }, [fx.addCountersAll(CREATURES_YOU, 1)], {
-        label: "Sort que vous ne possédez pas : un marqueur +1/+1 sur chacune de vos créatures",
+        label: "Spell you don't own: a +1/+1 counter on each of your creatures",
       }),
       activated({
         mana: "{2}",
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         sorcerySpeed: true,
         targets: [
-          target.cardInGraveyard("t", INSTANT_SORCERY, "opponent", "carte d'éphémère ou de rituel d'un cimetière adverse"),
+          target.cardInGraveyard("t", INSTANT_SORCERY, "opponent", "instant or sorcery card from an opponent's graveyard"),
         ],
         effects: [fx.exileCard(ref.target(), { name: "e" }), fx.grantPlay(ref.stored("e"), { anyMana: true, after: "exile" })],
-        label: "Exilez un éphémère ou un rituel adverse : vous pouvez le lancer ce tour-ci",
+        label: "Exile an opponent's instant or sorcery: you may cast it this turn",
       }),
     ],
   },
@@ -725,7 +728,7 @@ export const MULTI: Record<string, CardScript> = {
   "Geometer's Arthropod": {
     abilities: [
       triggered(when.castSpell("you", { hasX: true }), [fx.lookAtTop(amount.eventX, { count: 1, exact: true, rest: "bottom" })], {
-        label: "Sort avec {X} : regardez les X cartes du dessus, une en main",
+        label: "Spell with {X}: look at the top X cards, one to hand",
       }),
     ],
   },
@@ -734,7 +737,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.lookAtTop(5, { filter: { anyOf: [{ types: ["Land"] }, { hasX: true }] }, count: 1, rest: "bottom" })],
-        { label: "Regardez cinq cartes : un terrain ou une carte avec {X} en main" },
+        { label: "Look at five cards: a land or a card with {X} to hand" },
       ),
     ],
   },
@@ -754,7 +757,7 @@ export const MULTI: Record<string, CardScript> = {
       INCREMENT,
       triggered(when.eachEndStep, [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.addCounters(ref.stored("f"), 3)], {
         condition: cond.sourceMatches({ countersPutByYouThisTurn: true }),
-        label: "Vous avez mis un marqueur sur elle ce tour-ci : une Fractale avec trois marqueurs +1/+1",
+        label: "You put a counter on it this turn: a Fractal with three +1/+1 counters",
       }),
     ],
   },
@@ -765,33 +768,33 @@ export const MULTI: Record<string, CardScript> = {
         freeFilter: INSTANT_SORCERY,
         freeOncePerTurn: true,
         condition: cond.yourTurn,
-        label: "Une fois pendant chacun de vos tours : un éphémère ou un rituel de votre main sans payer son coût",
+        label: "Once during each of your turns: an instant or sorcery from your hand without paying its cost",
       }),
     ],
   },
   "Lorehold, the Historian": {
     abilities: [
-      // Miracle {2} (702.94) accordé aux éphémères et rituels de votre main : la première carte piochée du tour peut être
-      // lancée pour {2} en la piochant.
+      // Miracle {2} (702.94) granted to the instants and sorceries in your hand: the first card drawn in the turn can be
+      // cast for {2} as it is drawn.
       triggered(when.draw(1), [fx.castNow(ref.eventObject, { cost: "{2}" })], {
         condition: cond.eventObjectMatches(INSTANT_SORCERY),
-        label: "Miracle {2} : lancez l'éphémère ou le rituel pioché pour {2}",
+        label: "Miracle {2}: cast the drawn instant or sorcery for {2}",
       }),
       triggered(
         { on: "step", step: "upkeep", whose: "opponent" },
         [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
-        { label: "Entretien adverse : vous pouvez défausser une carte pour en piocher une" },
+        { label: "Opponent's upkeep: you may discard a card to draw one" },
       ),
     ],
   },
   "Quandrix, the Proof": {
     abilities: [
       triggered(when.castSelf, [fx.cascade(6)], { label: "Cascade" }),
-      // « Les sorts d'éphémère et de rituel que vous lancez depuis votre main ont la cascade. »
+      // "Instant and sorcery spells you cast from your hand have cascade."
       triggered(
         { on: "castSpell", by: "you", filter: INSTANT_SORCERY, fromHand: true },
         [fx.cascade(amount.manaValueOf(ref.eventObject))],
-        { label: "Cascade du sort d'éphémère ou de rituel lancé depuis votre main" },
+        { label: "Cascade of the instant or sorcery spell cast from your hand" },
       ),
     ],
   },

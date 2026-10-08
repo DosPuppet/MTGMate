@@ -41,7 +41,7 @@ export { type CardSet, isMainSet, SET_BY_CODE, SETS } from "./sets";
 export { type TokenLike, tokenImage } from "./tokenImages";
 export { TOKEN_SPECS } from "./tokens";
 
-/** Toutes les cartes connues, indexées par nom anglais (toutes extensions ; une réimpression garde la première). */
+/** Every known card, indexed by English name (all sets; a reprint keeps the first one). */
 export const CARDS: Record<string, CardDef> = {};
 for (const set of SETS) {
   for (const raw of set.data) {
@@ -51,7 +51,7 @@ for (const set of SETS) {
       if (raw.origin) def.origin = raw.origin;
       CARDS[raw.name] = def;
     }
-    // Réédition d'une carte déjà connue (PLAN-G) : une impression de plus, avec son illustration, que le deck peut choisir.
+    // Reprint of an already known card (PLAN-G): one more printing, with its art, which the deck can choose.
     else if (set.reprint && raw.image !== known.image) {
       const key = `${set.code}-${raw.number}`;
       if (!known.printings?.some((p) => p.key === key))
@@ -69,21 +69,21 @@ for (const set of SETS) {
     }
   }
 }
-// Dérogations aux légalités importées (PLAN-C, C19) : un bannissement annoncé, en vigueur avant le prochain réimport.
-// Format : { "<nom anglais>": { "legalities": { "standard": "banned" }, "since": "AAAA-MM-JJ", "source": "<annonce>" } }.
+// Overrides of the imported legalities (PLAN-C, C19): an announced ban, in force before the next reimport.
+// Format: { "<English name>": { "legalities": { "standard": "banned" }, "since": "YYYY-MM-DD", "source": "<announcement>" } }.
 for (const [name, o] of Object.entries(legalityOverrides as Record<string, LegalityOverride>)) {
   const c = CARDS[name];
-  if (!c) throw new Error(`legality-overrides.json : carte inconnue « ${name} »`);
+  if (!c) throw new Error(`legality-overrides.json: unknown card "${name}"`);
   c.legalities = { ...c.legalities, ...o.legalities };
 }
-// Assemblage : chaque partie embarque la définition de la carte assemblée (enregistrée avec elle dans la partie).
+// Meld: each part carries the definition of the melded card (registered with it in the game).
 for (const c of Object.values(CARDS)) {
   if (c.meld?.result && !c.meldResult) c.meldResultDef = CARDS[c.meld.result];
 }
 
 export function card(name: string): CardDef {
   const c = CARDS[name];
-  if (!c) throw new Error(`Carte inconnue : ${name}`);
+  if (!c) throw new Error(`Unknown card: ${name}`);
   return c;
 }
 
@@ -98,8 +98,8 @@ export function buildDeck(list: Pick<DeckList, "main">): CardDef[] {
 }
 
 /**
- * Deck d'une partie (PLAN-E) : en Commander, le ou les commandants d'abord, puis le deck ; `commanders` donne leurs
- * indices (à passer dans `PlayerSetup.commanders`), `printings` l'impression de chaque carte, dans le même ordre.
+ * Deck of a game (PLAN-E): in Commander, the commander(s) first, then the deck; `commanders` gives their indices (to
+ * pass in `PlayerSetup.commanders`), `printings` the printing of each card, in the same order.
  */
 export function buildGameDeck(list: Pick<DeckList, "main" | "commander">): {
   deck: CardDef[];
@@ -115,8 +115,8 @@ export function buildGameDeck(list: Pick<DeckList, "main" | "commander">): {
 }
 
 /**
- * Impression choisie pour chaque carte de `buildDeck` (même ordre), ou `undefined` si le deck n'en choisit aucune :
- * à passer dans `PlayerSetup.printings` (le moteur ignore une impression que la carte n'a pas).
+ * Printing chosen for each card of `buildDeck` (same order), or `undefined` if the deck chooses none: to pass in
+ * `PlayerSetup.printings` (the engine ignores a printing the card does not have).
  */
 export function deckPrintings(list: Pick<DeckList, "main">): (string | null)[] | undefined {
   if (!list.main.some((e) => e[2])) return undefined;
@@ -125,7 +125,7 @@ export function deckPrintings(list: Pick<DeckList, "main">): (string | null)[] |
 
 export function deckById(id: string): DeckList {
   const d = DECKS.find((x) => x.id === id);
-  if (!d) throw new Error(`Deck inconnu : ${id}`);
+  if (!d) throw new Error(`Unknown deck: ${id}`);
   return d;
 }
 
@@ -134,9 +134,8 @@ export const implementedCards = (): CardDef[] => Object.values(CARDS).filter((c)
 let names: NameCatalog | undefined;
 
 /**
- * Catalogue des noms nommables (« choisissez un nom de carte ») : toutes les cartes connues et chacune de leurs faces
- * (pas le nom complet « A // B » d'une carte à plusieurs faces),
- * triées ; à enregistrer dans le moteur (`registerNameCatalog`) par chaque hôte d'une partie.
+ * Catalog of nameable names ("choose a card name"): every known card and each of its faces (not the full name
+ * "A // B" of a multi-faced card), sorted; to register in the engine (`registerNameCatalog`) by each host of a game.
  */
 export function nameCatalog(): NameCatalog {
   if (names) return names;
@@ -144,7 +143,7 @@ export function nameCatalog(): NameCatalog {
   const lands = new Set<string>();
   for (const c of Object.values(CARDS))
     for (const d of [c, ...(c.faceDefs ?? [])]) {
-      // 201.3 : chaque face est un nom de carte ; le nom complet « A // B » n'en est pas un.
+      // 201.3: each face is a card name; the full name "A // B" is not one.
       if (!isSingleName(d.name)) continue;
       cards.add(d.name);
       if (d.types.includes("Land")) lands.add(d.name);

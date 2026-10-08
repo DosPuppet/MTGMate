@@ -61,7 +61,7 @@ describe("Mutant Menace (EDH)", () => {
       if (p1) p1.counters = { ...p1.counters, rad: 1 };
       s = toMain1Of(s, "p1");
       const item = projectView(s, "p2").stack[0];
-      expect([item?.fr?.name, item?.effect]).toEqual(["Radiation", "Radiation : meulez une carte par marqueur"]);
+      expect([item?.fr?.name, item?.effect]).toEqual(["Radiation", "Radiation: mill a card per counter"]);
       // Plus de marqueurs avant la résolution : la capacité ne fait rien.
       const q = s.players.p1;
       if (q) q.counters = { ...q.counters, rad: 0 };
@@ -312,7 +312,7 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(castIt(s, "p1", "Mutational Advantage"), picking([cub]));
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Final Showdown"));
-    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Les créatures perdent leurs capacités") : undefined;
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Creatures lose all abilities") : undefined;
     expect(mode).toBeDefined();
     s = settle(castIt(s, "p1", "Final Showdown", { mode: mode?.index }));
     // Défense talismanique et indestructible sont des capacités accordées : elles sont perdues.

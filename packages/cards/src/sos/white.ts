@@ -1,6 +1,6 @@
 /**
- * Secrets of Strixhaven — cartes blanches (lot A). La préparation est lue dans le texte (le sort préparé va dans
- * `prepareSpell`) ; le flashback à coût de mana est écrit dans le script ; la garde et les mots-clés sont lus dans le texte.
+ * Secrets of Strixhaven — white cards (lot A). Prepare is read from the text (the prepared spell goes into
+ * `prepareSpell`); flashback with a mana cost is written in the script; ward and keywords are read from the text.
  */
 import type { ObjectFilter } from "@mtgx/engine";
 import {
@@ -22,8 +22,8 @@ import {
 
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
 const YOUR_CREATURE = () => target.creature("t", { controller: "you" });
-/** « Cette créature arrive préparée. » */
-const ENTERS_PREPARED = entersWith({ prepared: true, label: "Arrive préparée" });
+/** "This creature enters prepared." */
+const ENTERS_PREPARED = entersWith({ prepared: true, label: "Enters prepared" });
 
 export const WHITE: Record<string, CardScript> = {
   "Ajani's Response": {
@@ -36,7 +36,7 @@ export const WHITE: Record<string, CardScript> = {
       [],
       [
         fx.createTokens(SPIRIT_RW, 2),
-        // « Puis, si ce sort a été lancé d'ailleurs que de votre main » (flashback…).
+        // "Then if this spell was cast from anywhere other than your hand" (flashback…).
         ...fx.when(cond.not(cond.spellCastFromHand), fx.addCountersAll({ subtype: "Spirit", controller: "you" }, 1)),
       ],
     ),
@@ -45,11 +45,11 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Un marqueur +1/+1 sur une autre créature",
+        label: "A +1/+1 counter on another creature",
       }),
       triggered(when.yourCombat, [fx.exileCard(ref.target())], {
         targets: [target.upTo(1, target.cardInGraveyard("t", {}, "any"))],
-        label: "Exilez jusqu'à une carte d'un cimetière",
+        label: "Exile up to one card from a graveyard",
       }),
     ],
   },
@@ -58,21 +58,21 @@ export const WHITE: Record<string, CardScript> = {
     spell: spell([YOUR_CREATURE()], [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["vigilance"] })]),
   },
   "Eager Glyphmage": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(INKLING)], { label: "Un Inkling 1/1 volant" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(INKLING)], { label: "A 1/1 flying Inkling" })],
   },
   "Elite Interceptor": {
-    // Rejoinder : « Vous pouvez engager ou dégager la créature ciblée. Piochez une carte. »
+    // Rejoinder: "You may tap or untap target creature. Draw a card."
     prepareSpell: spell(
       [target.creature()],
       [
-        // Une seule des deux questions : la réponse « engager » est mémorisée pour ne pas dégager ensuite.
+        // Only one of the two questions: the "tap" answer is stored so as not to untap afterwards.
         ...fx.when(
           cond.not(cond.targetMatches("t", { tapped: true })),
-          fx.mayForStore(ref.you, "Engager la créature ciblée ?", "tapped", fx.tap(ref.target())),
+          fx.mayForStore(ref.you, "Tap the target creature?", "tapped", fx.tap(ref.target())),
         ),
         ...fx.when(
           cond.all(cond.targetMatches("t", { tapped: true }), cond.not(cond.v("tapped"))),
-          fx.may("Dégager la créature ciblée ?", fx.untap(ref.target())),
+          fx.may("Untap the target creature?", fx.untap(ref.target())),
         ),
         fx.draw(1),
       ],
@@ -80,7 +80,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [ENTERS_PREPARED],
   },
   "Emeritus of Truce": {
-    // Swords to Plowshares : la force est lue d'après les dernières informations connues.
+    // Swords to Plowshares: the power is read from last known information.
     prepareSpell: spell(
       [target.creature()],
       [fx.exile(ref.target()), fx.gainLife(amount.powerOf(ref.target()), ref.controllerOf(ref.target()))],
@@ -91,7 +91,7 @@ export const WHITE: Record<string, CardScript> = {
         [fx.createTokens(INKLING, 1, ref.target()), ...fx.when(cond.opponentHasMore("creatures"), fx.prepare(ref.self))],
         {
           targets: [target.player()],
-          label: "Le joueur ciblé crée un Inkling ; devient préparée si un adversaire a plus de créatures",
+          label: "Target player creates an Inkling; becomes prepared if an opponent has more creatures",
         },
       ),
     ],
@@ -103,12 +103,12 @@ export const WHITE: Record<string, CardScript> = {
         [fx.exileCard(ref.target(), { name: "k" }), fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") })],
         {
           targets: [target.upTo(1, target.creature("t", { controller: "you", other: true }))],
-          label: "Exilez une autre créature (elle revient à la prochaine étape de fin)",
+          label: "Exile another creature (it returns at the next end step)",
         },
       ),
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: cond.amountAtLeast(amount.turnEvents({ event: "zone", to: "exile", token: false }), 1),
-        label: "Des cartes exilées ce tour-ci : un marqueur +1/+1",
+        label: "Cards exiled this turn: a +1/+1 counter",
       }),
     ],
   },
@@ -116,7 +116,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(REPARTEE, [fx.addCounters(ref.target(), 1)], {
         targets: [YOUR_CREATURE()],
-        label: "Repartee : un marqueur +1/+1",
+        label: "Repartee: a +1/+1 counter",
       }),
     ],
   },
@@ -124,35 +124,35 @@ export const WHITE: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.destroy(ref.target()), fx.createTokens(INKLING, 1, ref.controllerOf(ref.target()))]),
   },
   "Honorbound Page": {
-    // Forum's Favor : « La créature ciblée gagne +1/+0 et le vol jusqu'à la fin du tour. »
+    // Forum's Favor: "Target creature gets +1/+0 and gains flying until end of turn."
     prepareSpell: spell([target.creature()], [fx.pump(ref.target(), 1, 0, ["flying"])]),
     abilities: [ENTERS_PREPARED],
   },
   "Informed Inkwright": {
-    abilities: [triggered(REPARTEE, [fx.createTokens(INKLING)], { label: "Repartee : un Inkling 1/1 volant" })],
+    abilities: [triggered(REPARTEE, [fx.createTokens(INKLING)], { label: "Repartee: a 1/1 flying Inkling" })],
   },
   "Inkshape Demonstrator": {
-    abilities: [triggered(REPARTEE, [fx.pump(ref.self, 1, 0, ["lifelink"])], { label: "Repartee : +1/+0 et le lien de vie" })],
+    abilities: [triggered(REPARTEE, [fx.pump(ref.self, 1, 0, ["lifelink"])], { label: "Repartee: +1/+0 and lifelink" })],
   },
   Interjection: {
     spell: spell([target.creature()], [fx.pump(ref.target(), 2, 2, ["firstStrike"])]),
   },
   "Joined Researchers": {
-    // Secret Rendezvous : « Vous et l'adversaire ciblé piochez chacun trois cartes. »
+    // Secret Rendezvous: "You and target opponent each draw three cards."
     prepareSpell: spell([target.player("t", "opponent")], [fx.draw(3), fx.draw(3, ref.target())]),
     abilities: [
       triggered(when.eachEndStep, [fx.prepare(ref.self)], {
         condition: cond.opponentHasMore("hand"),
-        label: "Un adversaire a plus de cartes en main : devient préparée",
+        label: "An opponent has more cards in hand: becomes prepared",
       }),
     ],
   },
   "Owlin Historian": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }),
       triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.pump(ref.self, 1, 1)], {
         batched: true,
-        label: "Des cartes quittent votre cimetière : +1/+1",
+        label: "Cards leave your graveyard: +1/+1",
       }),
     ],
   },
@@ -164,19 +164,19 @@ export const WHITE: Record<string, CardScript> = {
             "t",
             { permanent: true, notTypes: ["Land"], maxManaValue: 3 },
             "you",
-            "carte de permanent non-terrain de VM 3 ou moins",
+            "nonland permanent card with mana value 3 or less",
           ),
         ],
-        label: "Renvoie un permanent de VM 3 ou moins",
+        label: "Returns a permanent with mana value 3 or less",
       }),
       triggered(when.yourEndStep, [fx.draw(1)], {
         condition: cond.amountAtLeast(amount.cardsLeftGraveyardThisTurn, 1),
-        label: "Une carte a quitté votre cimetière : piochez",
+        label: "A card left your graveyard: draw",
       }),
     ],
   },
   "Quill-Blade Laureate": {
-    // Twofold Intent : « La créature ciblée gagne +1/+0 et la double initiative jusqu'à la fin du tour. »
+    // Twofold Intent: "Target creature gets +1/+0 and gains double strike until end of turn."
     prepareSpell: spell([target.creature()], [fx.pump(ref.target(), 1, 0, ["doubleStrike"])]),
     abilities: [ENTERS_PREPARED],
   },
@@ -187,12 +187,12 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   "Rehearsed Debater": {
-    abilities: [triggered(REPARTEE, [fx.pump(ref.self, 1, 1)], { label: "Repartee : +1/+1" })],
+    abilities: [triggered(REPARTEE, [fx.pump(ref.self, 1, 1)], { label: "Repartee: +1/+1" })],
   },
   "Restoration Seminar": {
-    // Paradigme : lu dans le texte.
+    // Paradigm: read from the text.
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "carte de permanent non-terrain")],
+      [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "nonland permanent card")],
       [fx.toBattlefield(ref.target())],
     ),
   },
@@ -201,19 +201,19 @@ export const WHITE: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         sacrifice: true,
-        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruit un artefact ou un enchantement",
+        label: "Destroys an artifact or an enchantment",
       }),
     ],
   },
   "Spiritcall Enthusiast": {
-    // Scrollboost : « Une ou deux créatures ciblées gagnent chacune +2/+2 jusqu'à la fin du tour. »
+    // Scrollboost: "One or two target creatures each get +2/+2 until end of turn."
     prepareSpell: spell([target.between(1, 2, target.creature())], [fx.pump(ref.target(), 2, 2)]),
     abilities: [
       triggered(when.enters({ token: true, controller: "you" }), [fx.prepare(ref.self)], {
         batched: true,
-        label: "Des jetons arrivent : devient préparée",
+        label: "Tokens enter: becomes prepared",
       }),
     ],
   },
@@ -223,7 +223,7 @@ export const WHITE: Record<string, CardScript> = {
   "Stirring Hopesinger": {
     abilities: [
       triggered(REPARTEE, [fx.addCountersAll(YOUR_CREATURES, 1)], {
-        label: "Repartee : un marqueur +1/+1 sur chacune de vos créatures",
+        label: "Repartee: a +1/+1 counter on each of your creatures",
       }),
     ],
   },
@@ -235,7 +235,7 @@ export const WHITE: Record<string, CardScript> = {
         exileSelf: true,
         sorcerySpeed: true,
         effects: [fx.gainLife(2), fx.surveil(1)],
-        label: "Gagnez 2 PV, surveillance 1",
+        label: "Gain 2 life, surveil 1",
       }),
     ],
   },
@@ -246,16 +246,16 @@ export const WHITE: Record<string, CardScript> = {
         fromGraveyard: true,
         sorcerySpeed: true,
         effects: [fx.toHand(ref.self)],
-        label: "Revient du cimetière dans la main",
+        label: "Return it from your graveyard to your hand",
       }),
     ],
   },
   "Group Project": {
-    // « Flashback—Engagez trois créatures dégagées que vous contrôlez » : flashback sans mana, avec ce coût en plus.
+    // "Flashback—Tap three untapped creatures you control": flashback without mana, with this extra cost.
     flashback: "{0}",
     flashbackCost: { tap: { filter: { types: ["Creature"], controller: "you" }, count: 3 } },
     spell: spell([], [fx.createTokens(SPIRIT_RW)]),
   },
-  // « Exilez deux cartes de votre cimetière ou payez {1}{W} » : lu dans le texte (kicker sans mana ou mana en plus).
+  // "Exile two cards from your graveyard or pay {1}{W}": read from the text (kicker without mana or extra mana).
   "Soaring Stoneglider": {},
 };

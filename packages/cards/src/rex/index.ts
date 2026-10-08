@@ -1,6 +1,6 @@
 /**
- * Jurassic World Collection (REX) : cartes sorties avec The Lost Caverns of Ixalan.
- * Hors Standard, jouables en « Sans limite » (PLAN-G) ; scripts ajoutés lot par lot.
+ * Jurassic World Collection (REX): cards released with The Lost Caverns of Ixalan.
+ * Not Standard-legal, playable in "Unlimited" (PLAN-G); scripts added lot by lot.
  */
 import type { CardScript } from "@mtgx/engine";
 import { CARDS } from "./cards";

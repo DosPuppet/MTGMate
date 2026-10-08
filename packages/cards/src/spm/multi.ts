@@ -1,7 +1,7 @@
 /**
- * Marvel's Spider-Man — cartes multicolores (lot A). Le vol, l'initiative, la double initiative, le piétinement, le lien
- * de vie, la célérité, la vigilance, la menace, le contact mortel, la garde, Web-slinging et le chaos (Mayhem) sont lus
- * dans le texte ; « ne peut pas être bloquée » est écrit ici (restriction).
+ * Marvel's Spider-Man — multicolored cards (lot A). Flying, first strike, double strike, trample, lifelink, haste,
+ * vigilance, menace, deathtouch, ward, Web-slinging and Mayhem are read from the text; "can't be blocked" is written
+ * here (restriction).
  */
 import type { AbilityDef, ObjectFilter } from "@mtgx/engine";
 import {
@@ -26,11 +26,11 @@ const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
 const MODIFIED_YOURS: ObjectFilter = { ...YOUR_CREATURES, modified: true };
 const OTHER_VILLAINS: ObjectFilter = { subtype: "Villain", controller: "you", other: true };
 
-/** Symbiote Spider-Man : « Chaque fois que cette créature inflige des blessures de combat à un joueur, … » (donnée par Find New Host). */
+/** Symbiote Spider-Man: "Whenever this creature deals combat damage to a player, …" (granted by Find New Host). */
 const SYMBIOTE_DAMAGE: AbilityDef = triggered(
   when.combatDamageToPlayer,
   [fx.lookAtTop(amount.eventAmount, { count: 1, exact: true, rest: "graveyard" })],
-  { label: "Regardez autant de cartes du dessus : une en main, les autres au cimetière" },
+  { label: "Look at that many cards from the top: one to your hand, the rest into your graveyard" },
 );
 
 export const MULTI: Record<string, CardScript> = {
@@ -38,19 +38,19 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.attackWith(), [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { attacking: true })],
-        label: "Un marqueur +1/+1 sur une créature attaquante",
+        label: "A +1/+1 counter on an attacking creature",
       }),
       triggered(when.combatDamage(MODIFIED_YOURS, true), [fx.exileTop(ref.you, 1, "a"), fx.grantPlay(ref.stored("a"))], {
-        label: "Exilez la carte du dessus : vous pouvez la jouer ce tour-ci",
+        label: "Exile the top card: you may play it this turn",
       }),
     ],
   },
   "Biorganic Carapace": {
-    // Équiper {2} : lu dans le texte.
+    // Equip {2}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "S'attache à une créature que vous contrôlez",
+        label: "Attaches to a creature you control",
       }),
       staticAbility(
         "attached",
@@ -59,11 +59,11 @@ export const MULTI: Record<string, CardScript> = {
           toughness: 2,
           addAbilities: [
             triggered(when.combatDamageToPlayer, [fx.draw(amount.count(MODIFIED_YOURS))], {
-              label: "Piochez une carte par créature modifiée que vous contrôlez",
+              label: "Draw a card for each modified creature you control",
             }),
           ],
         },
-        { label: "+2/+2 et pioche à chaque blessure de combat infligée à un joueur" },
+        { label: "+2/+2 and draws whenever it deals combat damage to a player" },
       ),
     ],
   },
@@ -80,39 +80,39 @@ export const MULTI: Record<string, CardScript> = {
             "haste",
           ]),
         ],
-        { label: "Vos autres Araignées gagnent le vol, l'initiative, le piétinement, le lien de vie et la célérité" },
+        { label: "Your other Spiders gain flying, first strike, trample, lifelink and haste" },
       ),
     ],
   },
   "Doctor Octopus, Master Planner": {
     abilities: [
-      staticAbility(OTHER_VILLAINS, { power: 2, toughness: 2 }, { label: "Vos autres Méchants gagnent +2/+2" }),
-      playerStatic({ maxHandSize: 8, label: "Taille de main maximale : huit" }),
+      staticAbility(OTHER_VILLAINS, { power: 2, toughness: 2 }, { label: "Your other Villains get +2/+2" }),
+      playerStatic({ maxHandSize: 8, label: "Maximum hand size: eight" }),
       triggered(when.yourEndStep, [fx.draw(amount.plus(8, amount.neg(amount.cardsIn("hand"))))], {
         condition: cond.handAtMost(ref.you, 7),
-        label: "Piochez jusqu'à avoir huit cartes en main",
+        label: "Draw until you have eight cards in hand",
       }),
     ],
   },
   "Gallant Citizen": {
-    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" })],
   },
   "Green Goblin, Revenant": {
     abilities: [
       triggered(when.attacksSelf, [fx.discard(1), fx.draw(amount.cardsDiscardedThisTurn)], {
-        label: "Défaussez une carte, puis piochez une carte par carte défaussée ce tour-ci",
+        label: "Discard a card, then draw a card for each card discarded this turn",
       }),
     ],
   },
   "Kraven, Proud Predator": {
-    // Au sommet de la chaîne alimentaire : la force est la plus grande valeur de mana parmi vos permanents (endurance 4).
+    // Top of the Food Chain: power is the greatest mana value among your permanents (toughness 4).
     cdaPower: amount.maxManaValue({ controller: "you" }),
   },
   "Mary Jane Watson": {
     abilities: [
       triggered(when.enters({ subtype: "Spider", controller: "you" }), [fx.draw(1)], {
         oncePerTurn: true,
-        label: "Une Araignée arrive sous votre contrôle : piochez une carte (une fois par tour)",
+        label: "A Spider enters under your control: draw a card (once each turn)",
       }),
     ],
   },
@@ -120,7 +120,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.connive(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une créature que vous contrôlez a la connivence",
+        label: "A creature you control connives",
       }),
     ],
   },
@@ -131,19 +131,19 @@ export const MULTI: Record<string, CardScript> = {
         fromGraveyard: true,
         exileSelf: true,
         effects: [fx.lookAtTop(3, { count: 1, exact: true })],
-        label: "Regardez les trois cartes du dessus : une en main, les autres au-dessous",
+        label: "Look at the top three cards: one to your hand, the rest on the bottom",
       }),
     ],
   },
   "Prowler, Clawed Thief": {
     abilities: [
       triggered(when.enters(OTHER_VILLAINS), [fx.connive(ref.self)], {
-        label: "Un autre Méchant arrive : Prowler a la connivence",
+        label: "Another Villain enters: Prowler connives",
       }),
     ],
   },
   "Pumpkin Bombardment": {
-    // « Défaussez une carte ou payez {2} » (coût additionnel).
+    // "Discard a card or pay {2}" (additional cost).
     additionalCost: { discard: 1, discardOr: { mana: { generic: 2, colored: {}, x: 0 } } },
     spell: spell([target.creature()], [fx.damage(3, ref.target())]),
   },
@@ -163,7 +163,7 @@ export const MULTI: Record<string, CardScript> = {
                   "c",
                   ["Artifact"],
                   { notTypes: ["Creature"], maxManaValue: 3 },
-                  "artefact non-créature de VM 3 ou moins",
+                  "noncreature artifact with mana value 3 or less",
                 ),
               ),
             ],
@@ -174,12 +174,12 @@ export const MULTI: Record<string, CardScript> = {
     ),
   },
   "Scarlet Spider, Kaine": {
-    // Menace et chaos {B/R} : lus dans le texte.
+    // Menace and Mayhem {B/R}: read from the text.
     abilities: [
       triggered(
         when.entersSelf,
         [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.addCounters(ref.self, 1))],
-        { label: "Vous pouvez défausser une carte : un marqueur +1/+1" },
+        { label: "You may discard a card: a +1/+1 counter" },
       ),
     ],
   },
@@ -194,33 +194,33 @@ export const MULTI: Record<string, CardScript> = {
             fx.reflexive([target.creature("c")], [fx.modify(ref.target("c"), { addKeywords: ["cantBlock"] })]),
           ),
         ],
-        { label: "Vous pouvez défausser une carte : une créature ne peut pas bloquer ce tour-ci" },
+        { label: "You may discard a card: a creature can't block this turn" },
       ),
       triggered(when.dies({ types: ["Creature"], controller: "opponent" }), [fx.damage(1, ref.controllerOf(ref.eventObject))], {
-        label: "Explosion sonique — 1 blessure au joueur dont la créature meurt",
+        label: "Sonic Blast — 1 damage to the player whose creature dies",
       }),
     ],
   },
   "Silk, Web Weaver": {
-    // Web-slinging {1}{G}{W} : lu dans le texte.
+    // Web-slinging {1}{G}{W}: read from the text.
     abilities: [
       triggered(when.castSpell("you", { types: ["Creature"] }), [fx.createTokens(HUMAN_CITIZEN)], {
-        label: "Un Humain Citoyen 1/1",
+        label: "A 1/1 Human Citizen",
       }),
       activated({
         mana: "{3}{G}{W}",
         effects: [fx.pumpAll(YOUR_CREATURES, 2, 2, ["vigilance"])],
-        label: "Vos créatures gagnent +2/+2 et la vigilance",
+        label: "Creatures you control get +2/+2 and gain vigilance",
       }),
     ],
   },
   "Skyward Spider": {
-    // Garde {2} : lue dans le texte.
+    // Ward {2}: read from the text.
     abilities: [
       staticAbility(
         "self",
         { addKeywords: ["flying"] },
-        { condition: cond.sourceMatches({ modified: true }), label: "A le vol tant qu'elle est modifiée" },
+        { condition: cond.sourceMatches({ modified: true }), label: "Has flying as long as it's modified" },
       ),
     ],
   },
@@ -228,25 +228,25 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature()],
-        label: "Un marqueur +1/+1 sur une créature",
+        label: "A +1/+1 counter on a creature",
       }),
       triggered(when.combatDamage(MODIFIED_YOURS, true), [fx.draw(1)], {
-        label: "Une de vos créatures modifiées blesse un joueur : piochez une carte",
+        label: "A modified creature you control deals damage to a player: draw a card",
       }),
     ],
   },
   "Spider-Girl, Legacy Hero": {
     abilities: [
-      staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "A le vol pendant votre tour" }),
-      triggered(when.leavesSelf, [fx.createTokens(HUMAN_CITIZEN)], { label: "Un Humain Citoyen 1/1" }),
+      staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "Has flying during your turn" }),
+      triggered(when.leavesSelf, [fx.createTokens(HUMAN_CITIZEN)], { label: "A 1/1 Human Citizen" }),
     ],
   },
   "Spider-Man 2099": {
-    // Venu du futur : « vous ne pouvez pas le lancer pendant vos trois premiers tours ».
+    // From the Future: "You can't cast Spider-Man 2099 during your first, second, or third turns of the game".
     castCondition: cond.turnsTakenAtLeast(4),
     abilities: [
       triggered(when.yourEndStep, [fx.damage(amount.powerOf(ref.self), ref.target())], {
-        // Un sort lancé ou un terrain joué depuis ailleurs que votre main.
+        // A spell cast or a land played from anywhere other than your hand.
         condition: cond.any(
           ...(["cast", "playLand"] as const).flatMap((event) =>
             (["graveyard", "exile", "library", "command"] as const).map((z) =>
@@ -255,19 +255,19 @@ export const MULTI: Record<string, CardScript> = {
           ),
         ),
         targets: [target.any()],
-        label: "Blessures égales à sa force à n'importe quelle cible",
+        label: "Damage equal to its power to any target",
       }),
     ],
   },
   "Spider-Man India": {
-    // Web-slinging {1}{G}{W} : lu dans le texte.
+    // Web-slinging {1}{G}{W}: read from the text.
     abilities: [
       triggered(
         when.castSpell("you", { types: ["Creature"] }),
         [fx.addCounters(ref.target(), 1), fx.pump(ref.target(), 0, 0, ["flying"])],
         {
           targets: [target.creature("t", { controller: "you" })],
-          label: "Sevā de Pavitr — Un marqueur +1/+1 et le vol jusqu'à la fin du tour",
+          label: "Pavitr's Sevā — A +1/+1 counter and flying until end of turn",
         },
       ),
     ],
@@ -277,7 +277,7 @@ export const MULTI: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         affects: { types: ["Artifact", "Creature"], controller: "opponent" },
-        label: "Explosion venimeuse — Les artefacts et créatures de vos adversaires arrivent engagés",
+        label: "Venom Blast — Artifacts and creatures your opponents control enter tapped",
       }),
     ],
   },
@@ -288,7 +288,7 @@ export const MULTI: Record<string, CardScript> = {
         [
           fx.exileCard(ref.target("p"), { name: "ep" }),
           fx.exileCard(ref.target("g"), { name: "eg" }),
-          // Les cartes exilées sont liées à The Spot (rendues en main quand il meurt).
+          // The exiled cards are linked to The Spot (returned to hand when it dies).
           fx.link(ref.union(ref.stored("ep"), ref.stored("eg"))),
         ],
         {
@@ -300,25 +300,25 @@ export const MULTI: Record<string, CardScript> = {
                 "g",
                 { permanent: true, notTypes: ["Land"] },
                 "any",
-                "carte de permanent non-terrain d'un cimetière",
+                "nonland permanent card in a graveyard",
               ),
             ),
           ],
-          label: "Exile un permanent non-terrain et une carte de permanent non-terrain d'un cimetière",
+          label: "Exiles a nonland permanent and a nonland permanent card from a graveyard",
         },
       ),
       triggered(
         when.diesSelf,
         [fx.moveTo(ref.selfCard, { to: "libraryBottom" }, { name: "b" }), ...fx.when(cond.v("b"), fx.toHand(ref.linked))],
-        { label: "Au-dessous de la bibliothèque ; les cartes exilées reviennent dans la main de leur propriétaire" },
+        { label: "On the bottom of the library; the exiled cards return to their owners' hands" },
       ),
     ],
   },
   "Sun-Spider, Nimble Webber": {
     abilities: [
-      staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "A le vol pendant votre tour" }),
+      staticAbility("self", { addKeywords: ["flying"] }, { condition: cond.yourTurn, label: "Has flying during your turn" }),
       triggered(when.entersSelf, [fx.search({ anySubtype: ["Aura", "Equipment"] })], {
-        label: "Cherchez une carte d'Aura ou d'Équipement",
+        label: "Search for an Aura or Equipment card",
       }),
     ],
   },
@@ -332,32 +332,32 @@ export const MULTI: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addAbilities: [SYMBIOTE_DAMAGE] }, "permanent")],
-        label: "Trouver un nouvel hôte — Un marqueur +1/+1 ; elle gagne la capacité de blessures de combat",
+        label: "Find New Host — A +1/+1 counter; it gains the combat damage ability",
       }),
     ],
   },
   "Ultimate Green Goblin": {
-    // Chaos {2}{B/R} : lu dans le texte.
+    // Mayhem {2}{B/R}: read from the text.
     abilities: [
       triggered(when.yourUpkeep, [fx.discard(1), fx.createTokens(TREASURE)], {
-        label: "Défaussez une carte, puis créez un Trésor",
+        label: "Discard a card, then create a Treasure",
       }),
     ],
   },
   "Vulture, Scheming Scavenger": {
     abilities: [
       triggered(when.attacksSelf, [fx.pumpAll(OTHER_VILLAINS, 0, 0, ["flying"])], {
-        label: "Vos autres Méchants gagnent le vol jusqu'à la fin du tour",
+        label: "Your other Villains gain flying until end of turn",
       }),
     ],
   },
   "Web-Warriors": {
     abilities: [
       triggered(when.entersSelf, [fx.addCountersAll({ ...YOUR_CREATURES, other: true }, 1)], {
-        label: "Un marqueur +1/+1 sur chacune de vos autres créatures",
+        label: "A +1/+1 counter on each of your other creatures",
       }),
     ],
   },
-  // Gaz de la peur : « ne peut pas être bloqué » (la double initiative est lue dans le texte).
+  // Fear Gas: "can't be blocked" (double strike is read from the text).
   "Wraith, Vicious Vigilante": { keywords: ["unblockable"] },
 };

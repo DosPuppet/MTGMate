@@ -1,5 +1,5 @@
-/** Lorwyn Eclipsed — cartes multicolores et hybrides. */
-import type { Amount, ModeDef, ObjectFilter, Ref } from "@mtgx/engine";
+/** Lorwyn Eclipsed: multicolored and hybrid cards. */
+import { type Amount, type ModeDef, msg, type ObjectFilter, type Ref } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -26,15 +26,15 @@ import {
 } from "./common";
 
 /**
- * « Choisissez deux — » : chaque paire de modes devient un mode (comme le Spree). Les identifiants de cibles doivent
- * être distincts d'un mode à l'autre.
+ * "Choose two —": each pair of modes becomes one mode (like Spree). Target ids must differ from one mode to the
+ * other.
  */
 function chooseTwo(...modes: ModeDef[]): { modes: ModeDef[] } {
   const out: ModeDef[] = [];
   modes.forEach((a, i) => {
     for (const b of modes.slice(i + 1)) {
       out.push({
-        label: `${a.label} + ${b.label}`,
+        label: msg("{a} + {b}", { a: a.label ?? "", b: b.label ?? "" }),
         targets: [...a.targets, ...b.targets],
         effects: [...a.effects, ...b.effects],
       });
@@ -43,18 +43,21 @@ function chooseTwo(...modes: ModeDef[]): { modes: ModeDef[] } {
   return { modes: out };
 }
 
-/** Créatures que contrôle le joueur désigné. */
+/** Creatures controlled by the given player. */
 const creaturesOf = (player: Ref): Ref => ref.permanentsOf(player, { types: ["Creature"] });
 
-/** Ordres de Lorwyn : « Créez un jeton qui est une copie de [créature de la tribu] ciblée que vous contrôlez. » */
-const copyKin = (subtype: string, label: string): ModeDef =>
+/**
+ * Lorwyn Commands: "Create a token that's a copy of target [creature of the tribe] you control." `label`: the mode;
+ * `targetLabel`: the target.
+ */
+const copyKin = (subtype: string, label: string, targetLabel: string): ModeDef =>
   mode(
-    `Copie d'un ${label} que vous contrôlez`,
-    [{ id: "kin", label: `${label} que vous contrôlez`, filter: { objects: { subtype, controller: "you" } } }],
+    label,
+    [{ id: "kin", label: targetLabel, filter: { objects: { subtype, controller: "you" } } }],
     [fx.copyToken(ref.target("kin"))],
   );
 
-/** Cartes « Eclipsed » : regardez les quatre cartes du dessus, révélez-en une de la tribu ou d'un des deux types de terrain. */
+/** "Eclipsed" cards: look at the top four cards, reveal one of the tribe or of one of the two land types. */
 const eclipsed = (kin: string, land1: string, land2: string, label: string): CardScript => ({
   abilities: [
     triggered(
@@ -71,20 +74,26 @@ const eclipsed = (kin: string, land1: string, land2: string, label: string): Car
   ],
 });
 
-/** « X est la différence entre sa force et son endurance » (Doran). */
+/** "X is the difference between its power and toughness" (Doran). */
 const ptGap = (r: Ref): Amount =>
   amount.max(
     amount.plus(amount.powerOf(r), amount.neg(amount.toughnessOf(r))),
     amount.plus(amount.toughnessOf(r), amount.neg(amount.powerOf(r))),
   );
 
-/** Défense talismanique contre chacune de ses couleurs (Tam) : une statique par couleur. */
-const COLOR_NAMES = { W: "blanc", U: "bleu", B: "noir", R: "rouge", G: "vert" } as const;
-const tamHexproof = (Object.keys(COLOR_NAMES) as (keyof typeof COLOR_NAMES)[]).map((c) =>
+/** Hexproof from each of its colors (Tam): one static ability per color. */
+const TAM_COLORS = {
+  W: { hexproof: "Hexproof from white", label: "Your other white creatures have hexproof from white" },
+  U: { hexproof: "Hexproof from blue", label: "Your other blue creatures have hexproof from blue" },
+  B: { hexproof: "Hexproof from black", label: "Your other black creatures have hexproof from black" },
+  R: { hexproof: "Hexproof from red", label: "Your other red creatures have hexproof from red" },
+  G: { hexproof: "Hexproof from green", label: "Your other green creatures have hexproof from green" },
+} as const;
+const tamHexproof = (Object.keys(TAM_COLORS) as (keyof typeof TAM_COLORS)[]).map((c) =>
   staticAbility(
     { types: ["Creature"], controller: "you", other: true, colors: [c] },
-    { addProtections: [protection.hexproofFrom({ colors: [c] }, `Défense talismanique contre le ${COLOR_NAMES[c]}`)] },
-    { label: `Vos autres créatures ${COLOR_NAMES[c]}s ont la défense talismanique contre le ${COLOR_NAMES[c]}` },
+    { addProtections: [protection.hexproofFrom({ colors: [c] }, TAM_COLORS[c].hexproof)] },
+    { label: TAM_COLORS[c].label },
   ),
 );
 
@@ -107,18 +116,18 @@ export const MULTI: Record<string, CardScript> = {
               min: 0,
               onePerColorOf: { permanent: true, controller: "you" },
               store: "e",
-              prompt: "Pour chaque couleur parmi vos permanents, vous pouvez exiler une carte révélée de cette couleur",
+              prompt: "For each color among your permanents, you may exile a revealed card of that color",
             },
           ),
           fx.shuffle(ref.you),
           fx.grantPlay(ref.stored("e")),
         ],
-        { label: "Éclatant — révélez jusqu'à X cartes non-terrain ; exilez-en une par couleur, jouables ce tour-ci" },
+        { label: "Vivid — reveal up to X nonland cards; exile one of each color, playable this turn" },
       ),
     ],
   },
   "Raiding Schemes": {
-    // Conspiration (702.78) accordée : les deux créatures sont engagées quand la capacité se résout, pas en lançant.
+    // Granted conspire (702.78): the two creatures are tapped when the ability resolves, not while casting.
     abilities: [
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
@@ -126,7 +135,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.tapChosen({ types: ["Creature"] }, "c", { exactly: 2, sharesColorWith: ref.eventObject }),
           ...fx.when(cond.v("c", 2), fx.copySpell(ref.eventObject, 1)),
         ],
-        { label: "Conspiration : engagez deux créatures qui partagent une couleur avec le sort pour le copier" },
+        { label: "Conspire: tap two creatures that share a color with the spell to copy it" },
       ),
     ],
   },
@@ -143,11 +152,11 @@ export const MULTI: Record<string, CardScript> = {
             {
               pool: ref.stored("m"),
               min: 0,
-              prompt: "Vous pouvez mettre une carte de créature ou de terrain sur votre bibliothèque",
+              prompt: "You may put a creature or land card on top of your library",
             },
           ),
         ],
-        { label: "Meulez quatre cartes ; une créature ou un terrain parmi elles sur votre bibliothèque" },
+        { label: "Mill four cards; a creature or land among them on top of your library" },
       ),
       activated({
         mana: "{2}{B/G}{B/G}{B/G}",
@@ -155,12 +164,12 @@ export const MULTI: Record<string, CardScript> = {
         discard: 1,
         discardFilter: { types: ["Land"] },
         effects: [fx.createTokens(WORM_BG, amount.countIn("graveyard", { types: ["Land"] }))],
-        label: "Défaussez une carte de terrain : un Ver 1/1 par carte de terrain dans votre cimetière",
+        label: "Discard a land card: a 1/1 Worm for each land card in your graveyard",
       }),
     ],
   },
   "Dream Harvest": {
-    // « Vous pouvez lancer les cartes exilées » : pas les cartes de terrain (qui se jouent, sans se lancer).
+    // "You may cast the exiled cards": not the land cards (which are played, not cast).
     spell: spell(
       [],
       [
@@ -169,7 +178,7 @@ export const MULTI: Record<string, CardScript> = {
       ],
     ),
   },
-  // Vol lu dans le texte.
+  // Flying read from the text.
   "Maralen, Fae Ascendant": {
     abilities: [
       triggered(
@@ -177,7 +186,7 @@ export const MULTI: Record<string, CardScript> = {
         [fx.exileTop(ref.target(), 2, "m"), fx.link(ref.stored("m"))],
         {
           targets: [target.player("t", "opponent")],
-          label: "Exilez les deux cartes du dessus de la bibliothèque de l'adversaire ciblé",
+          label: "Exile the top two cards of target opponent's library",
         },
       ),
       playerStatic({
@@ -189,83 +198,83 @@ export const MULTI: Record<string, CardScript> = {
           oncePerTurn: true,
           maxManaValue: amount.count({ controller: "you", anyOf: [{ subtype: "Elf" }, { subtype: "Faerie" }] }),
         },
-        label: "Une fois par tour : lancez gratuitement un sort exilé avec Maralen ce tour-ci (VM ≤ Elfes et Faeries)",
+        label: "Once each turn: cast a spell exiled with Maralen this turn for free (MV ≤ Elves and Faeries)",
       }),
     ],
   },
   "Shadow Urchin": {
     abilities: [
-      triggered(when.attacksSelf, [fx.blight(1)], { label: "Flétrir 1" }),
+      triggered(when.attacksSelf, [fx.blight(1)], { label: "Blight 1" }),
       triggered(
         when.dies({ types: ["Creature"], controller: "you", withCounter: "any" }),
         [
           fx.exileTop(ref.you, amount.countersOn(ref.eventObject, "any"), "u"),
           fx.grantPlay(ref.stored("u"), { untilYourNextEndStep: true }),
         ],
-        { label: "Exilez autant de cartes que de marqueurs ; jouables jusqu'à votre prochaine étape de fin" },
+        { label: "Exile cards equal to the number of counters; playable until your next end step" },
       ),
     ],
   },
-  // --- Changelins et mots-clés seuls (tout est lu dans le texte) ----------------
+  // --- Changelings and keywords only (everything is read from the text) --------
   "Chitinous Graspling": {},
   "Gangly Stompling": {},
   "Mischievous Sneakling": {},
   "Prideful Feastling": {},
 
-  // --- Blanc-noir ---------------------------------------------------------------
+  // --- White-black --------------------------------------------------------------
   "Abigale, Eloquent First-Year": {
     abilities: [
       triggered(
         when.entersSelf,
         [
           fx.modify(ref.target(), { loseAllAbilities: true }, "permanent"),
-          // Marqueurs de capacité (122.1b) : posés après la perte des capacités, ils s'appliquent.
+          // Keyword counters (122.1b): put after the loss of abilities, they apply.
           fx.counters(ref.target(), "flying"),
           fx.counters(ref.target(), "firstStrike"),
           fx.counters(ref.target(), "lifelink"),
         ],
         {
           targets: [target.upTo(1, target.creature("t", { other: true }))],
-          label: "Perd toutes ses capacités ; marqueurs vol, initiative et lien de vie",
+          label: "Loses all abilities; flying, first strike and lifelink counters",
         },
       ),
     ],
   },
   "Reaping Willow": {
     abilities: [
-      entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
+      entersWith({ counters: 2, counterKind: "-1/-1", label: "Enters with two -1/-1 counters" }),
       activated({
         mana: "{1}{W/B}",
         removeCounters: { kind: "any", n: 2 },
         sorcerySpeed: true,
         targets: [
-          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins"),
+          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "creature card with MV 3 or less"),
         ],
         effects: [fx.toBattlefield(ref.target())],
-        label: "Renvoie une créature de VM 3 ou moins sur le champ de bataille",
+        label: "Return a creature with MV 3 or less to the battlefield",
       }),
     ],
   },
 
-  // --- Blanc-bleu ---------------------------------------------------------------
+  // --- White-blue ---------------------------------------------------------------
   "Deepchannel Duelist": {
     abilities: [
       triggered(when.yourEndStep, [fx.untap(ref.target())], {
         targets: [target.creature("t", MERFOLK_YOU)],
-        label: "Dégagez un Ondin que vous contrôlez",
+        label: "Untap a Merfolk you control",
       }),
       staticAbility(
         { ...MERFOLK_YOU, types: ["Creature"], other: true },
         { power: 1, toughness: 1 },
         {
-          label: "Vos autres Ondins ont +1/+1",
+          label: "Your other Merfolk get +1/+1",
         },
       ),
     ],
   },
   "Deepway Navigator": {
     abilities: [
-      triggered(when.entersSelf, [fx.untapAll({ ...MERFOLK_YOU, other: true })], { label: "Dégagez vos autres Ondins" }),
+      triggered(when.entersSelf, [fx.untapAll({ ...MERFOLK_YOU, other: true })], { label: "Untap your other Merfolk" }),
       staticAbility(
         { ...MERFOLK_YOU, types: ["Creature"] },
         { power: 1 },
@@ -274,61 +283,57 @@ export const MULTI: Record<string, CardScript> = {
             amount.turnEvents({ event: "attack", who: "you", subtype: "Merfolk", distinct: "object" }),
             3,
           ),
-          label: "Trois Ondins ou plus ont attaqué : vos Ondins ont +1/+0",
+          label: "Three or more Merfolk attacked: your Merfolk get +1/+0",
         },
       ),
     ],
   },
-  "Eclipsed Merrow": eclipsed("Merfolk", "Plains", "Island", "Révélez un Ondin, une Plaine ou une Île"),
+  "Eclipsed Merrow": eclipsed("Merfolk", "Plains", "Island", "Reveal a Merfolk, Plains, or Island"),
   "Merrow Skyswimmer": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(MERFOLK_WU)], { label: "Jeton Ondin 1/1" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(MERFOLK_WU)], { label: "1/1 Merfolk token" })],
   },
   "Sygg's Command": {
     spell: chooseTwo(
-      copyKin("Merfolk", "Ondin"),
+      copyKin("Merfolk", "Copy of a Merfolk you control", "Merfolk you control"),
       mode(
-        "Les créatures d'un joueur gagnent le lien de vie",
+        "A player's creatures gain lifelink",
         [target.player("ll")],
         [fx.modify(creaturesOf(ref.target("ll")), { addKeywords: ["lifelink"] })],
       ),
-      mode("Un joueur pioche une carte", [target.player("dr")], [fx.draw(1, ref.target("dr"))]),
+      mode("A player draws a card", [target.player("dr")], [fx.draw(1, ref.target("dr"))]),
       mode(
-        "Engagez une créature ; marqueur d'étourdissement",
+        "Tap a creature; stun counter",
         [target.creature("st")],
         [fx.tap(ref.target("st")), fx.counters(ref.target("st"), "stun", 1)],
       ),
     ),
   },
 
-  // --- Bleu-noir ----------------------------------------------------------------
+  // --- Blue-black ---------------------------------------------------------------
   "Voracious Tome-Skimmer": {
     abilities: [
-      triggered(when.castSpellOffTurn("you"), [fx.mayPayLife(1, "Payer 1 point de vie pour piocher une carte ?", fx.draw(1))], {
-        label: "Payez 1 PV : piochez une carte",
+      triggered(when.castSpellOffTurn("you"), [fx.mayPayLife(1, "Pay 1 life to draw a card?", fx.draw(1))], {
+        label: "Pay 1 life: draw a card",
       }),
     ],
   },
 
-  // --- Bleu-rouge ---------------------------------------------------------------
+  // --- Blue-red -----------------------------------------------------------------
   "Ashling's Command": {
     spell: chooseTwo(
-      copyKin("Elemental", "Élémental"),
-      mode("Un joueur pioche deux cartes", [target.player("dr")], [fx.draw(2, ref.target("dr"))]),
-      mode("2 blessures à chaque créature d'un joueur", [target.player("dm")], [fx.damage(2, creaturesOf(ref.target("dm")))]),
-      mode("Un joueur crée deux Trésors", [target.player("tr")], [fx.createTokens(TREASURE, 2, ref.target("tr"))]),
+      copyKin("Elemental", "Copy of an Elemental you control", "Elemental you control"),
+      mode("A player draws two cards", [target.player("dr")], [fx.draw(2, ref.target("dr"))]),
+      mode("2 damage to each creature of a player", [target.player("dm")], [fx.damage(2, creaturesOf(ref.target("dm")))]),
+      mode("A player creates two Treasures", [target.player("tr")], [fx.createTokens(TREASURE, 2, ref.target("tr"))]),
     ),
   },
-  "Eclipsed Flamekin": eclipsed("Elemental", "Island", "Mountain", "Révélez un Élémental, une Île ou une Montagne"),
+  "Eclipsed Flamekin": eclipsed("Elemental", "Island", "Mountain", "Reveal an Elemental, Island, or Mountain"),
   "Flaring Cinder": {
     abilities: [when.entersSelf, when.castSpell("you", { minManaValue: 4 })].map((trigger) =>
       triggered(
         trigger,
-        fx.may(
-          "Défausser une carte pour piocher une carte ?",
-          fx.discard(1, ref.you, { store: "d" }),
-          fx.when(cond.v("d"), fx.draw(1)),
-        ),
-        { label: "Défaussez une carte : piochez une carte" },
+        fx.may("Discard a card to draw a card?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
+        { label: "Discard a card: draw a card" },
       ),
     ),
   },
@@ -336,60 +341,60 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         triggerMod: { effect: "again", sources: { subtype: "Elemental", controller: "you", other: true } },
-        label: "Les capacités déclenchées de vos autres Élémentaux se déclenchent une fois de plus",
+        label: "Triggered abilities of your other Elementals trigger an additional time",
       }),
     ],
   },
 
-  // --- Noir-rouge ---------------------------------------------------------------
+  // --- Black-red ----------------------------------------------------------------
   "Boggart Cursecrafter": {
     abilities: [
       triggered(when.dies({ subtype: "Goblin", controller: "you", other: true }), [fx.damage(1, ref.eachOpponent)], {
-        label: "1 blessure à chaque adversaire",
+        label: "1 damage to each opponent",
       }),
     ],
   },
   "Chaos Spewer": {
     abilities: [
       triggered(when.entersSelf, [fx.unlessPays(ref.you, { mana: "{2}" }, fx.blight(2))], {
-        label: "Payez {2} ou flétrissez 2",
+        label: "Pay {2} or blight 2",
       }),
     ],
   },
-  "Eclipsed Boggart": eclipsed("Goblin", "Swamp", "Mountain", "Révélez un Gobelin, un Marais ou une Montagne"),
+  "Eclipsed Boggart": eclipsed("Goblin", "Swamp", "Mountain", "Reveal a Goblin, Swamp, or Mountain"),
   "Grub's Command": {
     spell: chooseTwo(
-      copyKin("Goblin", "Gobelin"),
+      copyKin("Goblin", "Copy of a Goblin you control", "Goblin you control"),
       mode(
-        "Les créatures d'un joueur gagnent +1/+1 et la célérité",
+        "A player's creatures get +1/+1 and gain haste",
         [target.player("pu")],
         [fx.pump(creaturesOf(ref.target("pu")), 1, 1, ["haste"])],
       ),
       mode(
-        "Détruisez un artefact ou une créature",
-        [target.permanent("de", ["Artifact", "Creature"], {}, "artefact ou créature")],
+        "Destroy an artifact or creature",
+        [target.permanent("de", ["Artifact", "Creature"], {}, "artifact or creature")],
         [fx.destroy(ref.target("de"))],
       ),
       mode(
-        "Un joueur meule cinq cartes et prend les Gobelins",
+        "A player mills five cards and takes the Goblins",
         [target.player("mi")],
         [fx.mill(5, ref.target("mi"), { name: "g" }), fx.toHand(ref.filtered(ref.stored("g"), { subtype: "Goblin" }))],
       ),
     ),
   },
 
-  // --- Noir-vert ----------------------------------------------------------------
-  "Eclipsed Elf": eclipsed("Elf", "Swamp", "Forest", "Révélez un Elfe, un Marais ou une Forêt"),
+  // --- Black-green --------------------------------------------------------------
+  "Eclipsed Elf": eclipsed("Elf", "Swamp", "Forest", "Reveal an Elf, Swamp, or Forest"),
   "High Perfect Morcant": {
     abilities: [
       triggered(when.enters({ subtype: "Elf", controller: "you" }), [fx.blight(1, ref.eachOpponent)], {
-        label: "Chaque adversaire flétrit 1",
+        label: "Each opponent blights 1",
       }),
       activated({
         tapOthers: { filter: { subtype: "Elf" }, count: 3, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.proliferate()],
-        label: "Engagez trois Elfes : proliférez",
+        label: "Tap three Elves: proliferate",
       }),
     ],
   },
@@ -399,12 +404,12 @@ export const MULTI: Record<string, CardScript> = {
         { subtype: "Elf", types: ["Creature"], controller: "you", other: true },
         { power: 1, toughness: 1 },
         {
-          label: "Vos autres Elfes ont +1/+1",
+          label: "Your other Elves get +1/+1",
         },
       ),
       triggered(when.diesSelf, [fx.toHand(ref.target())], {
-        targets: [target.cardInGraveyard("t", { subtype: "Elf", other: true }, "you", "autre carte d'Elfe de votre cimetière")],
-        label: "Renvoie un autre Elfe de votre cimetière en main",
+        targets: [target.cardInGraveyard("t", { subtype: "Elf", other: true }, "you", "other Elf card in your graveyard")],
+        label: "Return another Elf from your graveyard to your hand",
       }),
     ],
   },
@@ -416,32 +421,32 @@ export const MULTI: Record<string, CardScript> = {
         exileSelf: true,
         sorcerySpeed: true,
         effects: [fx.createTokens(ELF_BG)],
-        label: "Exilez-la de votre cimetière : jeton Elfe 2/2",
+        label: "Exile it from your graveyard: 2/2 Elf token",
       }),
     ],
   },
   "Trystan's Command": {
     spell: chooseTwo(
-      copyKin("Elf", "Elfe"),
+      copyKin("Elf", "Copy of an Elf you control", "Elf you control"),
       mode(
-        "Une ou deux cartes de permanent reviennent en main",
-        [target.between(1, 2, target.cardInGraveyard("gy", { permanent: true }, "you", "carte de permanent de votre cimetière"))],
+        "One or two permanent cards return to your hand",
+        [target.between(1, 2, target.cardInGraveyard("gy", { permanent: true }, "you", "permanent card in your graveyard"))],
         [fx.toHand(ref.target("gy"))],
       ),
       mode(
-        "Détruisez une créature ou un enchantement",
-        [target.permanent("de", ["Creature", "Enchantment"], {}, "créature ou enchantement")],
+        "Destroy a creature or enchantment",
+        [target.permanent("de", ["Creature", "Enchantment"], {}, "creature or enchantment")],
         [fx.destroy(ref.target("de"))],
       ),
       mode(
-        "Les créatures d'un joueur gagnent +3/+3 et se dégagent",
+        "A player's creatures get +3/+3 and untap",
         [target.player("pu")],
         [fx.pump(creaturesOf(ref.target("pu")), 3, 3), fx.untap(creaturesOf(ref.target("pu")))],
       ),
     ),
   },
 
-  // --- Rouge-blanc --------------------------------------------------------------
+  // --- Red-white ----------------------------------------------------------------
   "Bre of Clan Stoutarm": {
     abilities: [
       activated({
@@ -449,33 +454,33 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "you", other: true })],
         effects: [fx.modify(ref.target(), { addKeywords: ["flying", "lifelink"] })],
-        label: "Une autre créature gagne le vol et le lien de vie",
+        label: "Another creature gains flying and lifelink",
       }),
       triggered(
         when.yourEndStep,
         [
           fx.exileUntil({ notTypes: ["Land"] }, "x"),
-          // Lancée gratuitement si sa VM ne dépasse pas les PV gagnés ce tour-ci ; sinon (ou refusée), en main.
+          // Cast for free if its MV is at most the life gained this turn; otherwise (or if declined), into your hand.
           fx.castNow(ref.stored("x"), { free: true, maxManaValue: amount.lifeGainedThisTurn }),
           fx.toHand(ref.stored("x")),
         ],
         {
           condition: cond.lifeGainedAtLeast(1),
-          label: "Exilez jusqu'à une carte non-terrain : lancez-la gratuitement ou prenez-la",
+          label: "Exile cards until a nonland card: cast it for free or take it",
         },
       ),
     ],
   },
   Catharsis: {
-    // Évocation lue dans le texte.
+    // Evoke read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(KITHKIN, 2)], {
         condition: cond.spent("W", 2),
-        label: "{W}{W} dépensé : deux jetons Kithkin 1/1",
+        label: "{W}{W} spent: two 1/1 Kithkin tokens",
       }),
       triggered(when.entersSelf, [fx.pumpAll({ types: ["Creature"], controller: "you" }, 1, 1, ["haste"])], {
         condition: cond.spent("R", 2),
-        label: "{R}{R} dépensé : vos créatures gagnent +1/+1 et la célérité",
+        label: "{R}{R} spent: your creatures get +1/+1 and gain haste",
       }),
     ],
   },
@@ -484,20 +489,20 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["firstStrike"] },
-        { condition: cond.yourTurn, label: "Initiative pendant votre tour" },
+        { condition: cond.yourTurn, label: "First strike during your turn" },
       ),
     ],
   },
   "Hovel Hurler": {
     abilities: [
-      entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
+      entersWith({ counters: 2, counterKind: "-1/-1", label: "Enters with two -1/-1 counters" }),
       activated({
         mana: "{R/W}{R/W}",
         removeCounters: { kind: "any", n: 1 },
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you", other: true })],
         effects: [fx.pump(ref.target(), 1, 0, ["flying"])],
-        label: "Une autre créature gagne +1/+0 et le vol",
+        label: "Another creature gets +1/+0 and gains flying",
       }),
     ],
   },
@@ -509,36 +514,36 @@ export const MULTI: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "capacité déclenchée que vous contrôlez",
+            label: "triggered ability you control",
             filter: { stackItems: { triggeredOnly: true, controller: "you" } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],
-        label: "Copiez une capacité déclenchée",
+        label: "Copy a triggered ability",
       }),
     ],
   },
 
-  // --- Vert-blanc ---------------------------------------------------------------
+  // --- Green-white --------------------------------------------------------------
   "Brigid's Command": {
     spell: chooseTwo(
-      copyKin("Kithkin", "Kithkin"),
-      mode("Un joueur crée un jeton Kithkin 1/1", [target.player("kt")], [fx.createTokens(KITHKIN, 1, ref.target("kt"))]),
-      mode("Une créature gagne +3/+3", [target.creature("pu", { controller: "you" })], [fx.pump(ref.target("pu"), 3, 3)]),
+      copyKin("Kithkin", "Copy of a Kithkin you control", "Kithkin you control"),
+      mode("A player creates a 1/1 Kithkin token", [target.player("kt")], [fx.createTokens(KITHKIN, 1, ref.target("kt"))]),
+      mode("A creature gets +3/+3", [target.creature("pu", { controller: "you" })], [fx.pump(ref.target("pu"), 3, 3)]),
       mode(
-        "Une de vos créatures se bat contre une créature adverse",
+        "One of your creatures fights an opposing creature",
         [target.creature("fa", { controller: "you" }), target.creature("fb", { controller: "opponent" })],
         [fx.fight(ref.target("fa"), ref.target("fb"))],
       ),
     ),
   },
-  "Eclipsed Kithkin": eclipsed("Kithkin", "Forest", "Plains", "Révélez un Kithkin, une Forêt ou une Plaine"),
+  "Eclipsed Kithkin": eclipsed("Kithkin", "Forest", "Plains", "Reveal a Kithkin, Forest, or Plains"),
   "Figure of Fable": {
     abilities: [
       activated({
         mana: "{G/W}",
         effects: [fx.modify(ref.self, { setSubtypes: ["Kithkin", "Scout"], setPower: 2, setToughness: 3 }, "permanent")],
-        label: "Devient un Kithkin Éclaireur 2/3",
+        label: "Becomes a 2/3 Kithkin Scout",
       }),
       activated({
         mana: "{1}{G/W}{G/W}",
@@ -548,7 +553,7 @@ export const MULTI: Record<string, CardScript> = {
             fx.modify(ref.self, { setSubtypes: ["Kithkin", "Soldier"], setPower: 4, setToughness: 5 }, "permanent"),
           ),
         ],
-        label: "Éclaireur : devient un Kithkin Soldat 4/5",
+        label: "Scout: becomes a 4/5 Kithkin Soldier",
       }),
       activated({
         mana: "{3}{G/W}{G/W}{G/W}",
@@ -561,13 +566,13 @@ export const MULTI: Record<string, CardScript> = {
                 setSubtypes: ["Kithkin", "Avatar"],
                 setPower: 7,
                 setToughness: 8,
-                addProtections: [protection.from({ controller: "opponent" }, "Protection contre chacun de vos adversaires")],
+                addProtections: [protection.from({ controller: "opponent" }, "Protection from each of your opponents")],
               },
               "permanent",
             ),
           ),
         ],
-        label: "Soldat : devient un Kithkin Avatar 7/8 avec la protection contre vos adversaires",
+        label: "Soldier: becomes a 7/8 Kithkin Avatar with protection from your opponents",
       }),
     ],
   },
@@ -575,14 +580,14 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.enters({ subtype: "Kithkin", controller: "you" }), [fx.pump(ref.target(), 1, 1, ["trample"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une de vos créatures gagne +1/+1 et le piétinement",
+        label: "One of your creatures gets +1/+1 and gains trample",
       }),
     ],
   },
   "Wary Farmer": {
     abilities: [
       triggered(when.yourEndStep, [fx.surveil(1)], {
-        // « une autre créature est arrivée sous votre contrôle ce tour-ci » : sans compter le Fermier lui-même.
+        // "another creature entered the battlefield under your control this turn": not counting the Farmer itself.
         condition: cond.any(
           cond.amountAtLeast(amount.turnEvents({ event: "zone", to: "battlefield", types: ["Creature"], who: "you" }), 2),
           cond.all(
@@ -590,17 +595,17 @@ export const MULTI: Record<string, CardScript> = {
             cond.not(cond.sourceMatches({ enteredThisTurn: true })),
           ),
         ),
-        label: "Surveillez 1",
+        label: "Surveil 1 at your end step",
       }),
     ],
   },
 
-  // --- Vert-bleu ----------------------------------------------------------------
+  // --- Green-blue ---------------------------------------------------------------
   "Glister Bairn": {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), amount.colorsAmong(), amount.colorsAmong())], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Vivid : +X/+X, X étant le nombre de couleurs parmi vos permanents",
+        label: "Vivid: +X/+X, where X is the number of colors among your permanents",
       }),
     ],
   },
@@ -611,60 +616,65 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.modify(ref.target(), { setColors: ["W", "U", "B", "R", "G"] })],
-        label: "Une de vos créatures devient de toutes les couleurs",
+        label: "One of your creatures becomes all colors",
       }),
     ],
   },
   Wistfulness: {
-    // Évocation lue dans le texte.
+    // Evoke read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.exile(ref.target())], {
         condition: cond.spent("G", 2),
         targets: [
-          target.permanent("t", ["Artifact", "Enchantment"], { controller: "opponent" }, "artefact ou enchantement adverse"),
+          target.permanent(
+            "t",
+            ["Artifact", "Enchantment"],
+            { controller: "opponent" },
+            "artifact or enchantment an opponent controls",
+          ),
         ],
-        label: "{G}{G} dépensé : exilez un artefact ou un enchantement adverse",
+        label: "{G}{G} spent: exile an opposing artifact or enchantment",
       }),
       triggered(when.entersSelf, [fx.draw(2), fx.discard(1)], {
         condition: cond.spent("U", 2),
-        label: "{U}{U} dépensé : piochez deux cartes, puis défaussez-en une",
+        label: "{U}{U} spent: draw two cards, then discard a card",
       }),
     ],
   },
 
-  // --- Rouge-vert ---------------------------------------------------------------
+  // --- Red-green ----------------------------------------------------------------
   "Noggle Robber": {
     abilities: [when.entersSelf, when.diesSelf].map((trigger) =>
-      triggered(trigger, [fx.createTokens(TREASURE)], { label: "Jeton Trésor" }),
+      triggered(trigger, [fx.createTokens(TREASURE)], { label: "Treasure token" }),
     ),
   },
   Vibrance: {
-    // Évocation lue dans le texte.
+    // Evoke read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.damage(3, ref.target())], {
         condition: cond.spent("R", 2),
         targets: [target.any()],
-        label: "{R}{R} dépensé : 3 blessures à n'importe quelle cible",
+        label: "{R}{R} spent: 3 damage to any target",
       }),
       triggered(when.entersSelf, [fx.search({ types: ["Land"] }), fx.gainLife(2)], {
         condition: cond.spent("G", 2),
-        label: "{G}{G} dépensé : cherchez un terrain, gagnez 2 PV",
+        label: "{G}{G} spent: search for a land, gain 2 life",
       }),
     ],
   },
 
-  // --- Trois couleurs -----------------------------------------------------------
+  // --- Three colors -------------------------------------------------------------
   "Doran, Besieged by Time": {
     abilities: [
       costReducer(
         { types: ["Creature"], compare: [cmp.toughness(">", "power")] },
         1,
-        "Vos sorts de créature d'endurance supérieure à leur force coûtent {1} de moins",
+        "Your creature spells with toughness greater than their power cost {1} less",
       ),
       ...[when.attacks({ types: ["Creature"], controller: "you" }), when.blocks({ types: ["Creature"], controller: "you" })].map(
         (trigger) =>
           triggered(trigger, [fx.pump(ref.eventObject, ptGap(ref.eventObject), ptGap(ref.eventObject))], {
-            label: "+X/+X, X étant l'écart entre sa force et son endurance",
+            label: "+X/+X, where X is the difference between its power and toughness",
           }),
       ),
     ],

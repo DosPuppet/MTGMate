@@ -1,6 +1,6 @@
 /**
- * Teenage Mutant Ninja Turtles — cartes bleues (lot A). Faufilement, cycle de terrain et affinité : lus dans le texte
- * (l'affinité s'écrit en réduction de coût, comme en Aetherdrift).
+ * Teenage Mutant Ninja Turtles — blue cards (lot A). Sneak, landcycling and affinity: read from the text (affinity is
+ * written as a cost reduction, as in Aetherdrift).
  */
 import type { Effect, Ref, TargetSpec } from "@mtgx/engine";
 import {
@@ -18,16 +18,11 @@ import {
   when,
 } from "./common";
 
-const ARTIFACT_YOU_CONTROL: TargetSpec = target.permanent(
-  "t",
-  ["Artifact"],
-  { controller: "you" },
-  "artefact que vous contrôlez",
-);
+const ARTIFACT_YOU_CONTROL: TargetSpec = target.permanent("t", ["Artifact"], { controller: "you" }, "artifact you control");
 
 /**
- * « Mettez trois marqueurs +1/+1 sur [l'artefact]. Si ce n'est pas une créature, il devient une créature Robot 0/0 en
- * plus de ses autres types » (Donatello, Mutant Mechanic ; Does Machines, niveau 3).
+ * "Put three +1/+1 counters on [the artifact]. If it isn't a creature, it becomes a 0/0 Robot creature in addition to
+ * its other types" (Donatello, Mutant Mechanic; Does Machines, level 3).
  */
 const roboticize = (what: Ref): Effect[] => [
   fx.addCounters(what, 3),
@@ -38,32 +33,32 @@ const roboticize = (what: Ref): Effect[] => [
 ];
 
 /**
- * « Vous pouvez engager ou dégager la créature ciblée » : la cible est choisie au déclenchement, l'action pendant la
- * résolution (608.2d) ; seule l'action utile est proposée (comme Granite Witness).
+ * "You may tap or untap target creature": the target is chosen when it triggers, the action during resolution
+ * (608.2d); only the useful action is offered (like Granite Witness).
  */
 const tapOrUntapCreature = [
   ...fx.when(
     cond.refMatches(ref.target(), { tapped: false }),
-    fx.mayForStore(ref.you, "Engager la créature ciblée ?", "e", fx.tap(ref.target())),
+    fx.mayForStore(ref.you, "Tap target creature?", "e", fx.tap(ref.target())),
   ),
   ...fx.when(
     cond.all(cond.not(cond.v("e")), cond.refMatches(ref.target(), { tapped: true })),
-    fx.may("Dégager la créature ciblée ?", fx.untap(ref.target())),
+    fx.may("Untap target creature?", fx.untap(ref.target())),
   ),
 ];
 
 /**
- * Kitsune : « deux autres créatures ciblées contrôlées par des joueurs différents », qu'elles soient à vous ou à deux
- * adversaires.
+ * Kitsune: "two other target creatures controlled by different players", whether they are yours or two opponents'
+ * creatures.
  */
 const KITSUNE_TARGETS: TargetSpec = {
   ...target.exactly(2, target.creature("t", { other: true })),
   differentPlayers: true,
-  label: "deux autres créatures de joueurs différents",
+  label: "two other creatures of different players",
 };
 const kitsuneExchange = fx.may(
-  "Échanger le contrôle des deux créatures ciblées ?",
-  // Les deux créatures ciblées, quels que soient leurs contrôleurs (rien si l'une d'elles n'est plus une cible légale).
+  "Exchange control of the two target creatures?",
+  // The two target creatures, whoever their controllers (nothing if one of them is no longer a legal target).
   fx.exchangeControl(ref.nth(ref.target(), 0), ref.nth(ref.target(), 1)),
 );
 
@@ -71,54 +66,54 @@ export const BLUE: Record<string, CardScript> = {
   "April, Reporter of the Weird": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.draw(amount.eventAmount), fx.discard(1)], {
-        label: "Piochez autant de cartes que de blessures, puis défaussez une carte",
+        label: "Draw that many cards, then discard a card",
       }),
     ],
   },
   "Bespoke Bō": {
-    // Équiper {3} : lu dans le texte.
+    // Equip {3}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
-        targets: [target.upTo(1, target.nonland("t", { other: true }, "autre permanent non-terrain"))],
-        label: "Renvoyez jusqu'à un autre permanent non-terrain",
+        targets: [target.upTo(1, target.nonland("t", { other: true }, "other nonland permanent"))],
+        label: "Return up to one other nonland permanent to its owner's hand",
       }),
-      staticAbility("attached", { power: 2, toughness: 1, addKeywords: ["vigilance"] }, { label: "+2/+1 et la vigilance" }),
+      staticAbility("attached", { power: 2, toughness: 1, addKeywords: ["vigilance"] }, { label: "+2/+1 and vigilance" }),
     ],
   },
   "Buzz Bots": {
-    abilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Piochez une carte" })],
+    abilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Draw a card" })],
   },
   "Crustacean Commando": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(MUTAGEN)], { label: "Un jeton Mutagène" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(MUTAGEN)], { label: "A Mutagen token" })],
   },
   "Does Machines": {
-    // Coûts de niveau lus dans le texte.
+    // Level costs read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.mill(2), fx.draw(2), fx.discard(2)], {
-        label: "Meulez deux cartes, piochez-en deux, puis défaussez-en deux",
+        label: "Mill two cards, draw two, then discard two",
       }),
     ],
     classLevels: [
       [
         triggered(when.classLevel(2), [fx.toHand(ref.target())], {
-          targets: [target.upTo(2, target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "carte d'artefact"))],
-          label: "Renvoyez jusqu'à deux cartes d'artefact de votre cimetière en main",
+          targets: [target.upTo(2, target.cardInGraveyard("t", { types: ["Artifact"] }, "you", "artifact card"))],
+          label: "Return up to two artifact cards from your graveyard to your hand",
         }),
       ],
       [
         triggered(when.yourCombat, roboticize(ref.target()), {
           targets: [ARTIFACT_YOU_CONTROL],
-          label: "Trois marqueurs +1/+1 sur un de vos artefacts, qui devient un Robot 0/0",
+          label: "Three +1/+1 counters on an artifact you control, which becomes a 0/0 Robot",
         }),
       ],
     ],
   },
   "Donatello, Gadget Master": {
-    // Faufilement {1}{U} : lu dans le texte.
+    // Sneak {1}{U}: read from the text.
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.copyToken(ref.target())], {
         targets: [ARTIFACT_YOU_CONTROL],
-        label: "Un jeton copie d'un de vos artefacts",
+        label: "A token copy of an artifact you control",
       }),
     ],
   },
@@ -129,19 +124,19 @@ export const BLUE: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [ARTIFACT_YOU_CONTROL],
         effects: roboticize(ref.target()),
-        label: "Trois marqueurs +1/+1 sur un de vos artefacts, qui devient un Robot 0/0",
+        label: "Three +1/+1 counters on an artifact you control, which becomes a 0/0 Robot",
       }),
-      // « s'il avait des marqueurs » : dans le filtre (dernières informations connues), comme Host of the Hereafter.
+      // "if it had counters on it": in the filter (last known information), like Host of the Hereafter.
       triggered(
         { on: "leaves", who: { types: ["Artifact"], controller: "you", withCounter: "any" }, to: "graveyard" },
         [fx.lkiCountersTo(ref.target())],
         {
           targets: [
             target.optional(
-              target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artefact ou créature que vous contrôlez"),
+              target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artifact or creature you control"),
             ),
           ],
-          label: "Ses marqueurs vont sur un de vos artefacts ou une de vos créatures",
+          label: "Its counters go onto an artifact or creature you control",
         },
       ),
     ],
@@ -150,35 +145,35 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.draw(1)], {
         condition: cond.controls({ types: ["Artifact"] }),
-        label: "Si vous contrôlez un artefact, piochez une carte",
+        label: "If you control an artifact, draw a card",
       }),
     ],
   },
   "Donatello, Way with Machines": {
     abilities: [
       triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.addCounters(ref.self, 1)], {
-        label: "Un artefact arrive sous votre contrôle : un marqueur +1/+1",
+        label: "An artifact enters under your control: a +1/+1 counter",
       }),
     ],
   },
   "Donatello's Technique": {
-    // Faufilement {U} : lu dans le texte.
+    // Sneak {U}: read from the text.
     spell: spell([], [fx.draw(2)]),
   },
   "Kitsune, Dragon's Daughter": {
     abilities: [
       triggered(when.entersSelf, kitsuneExchange, {
         targets: [KITSUNE_TARGETS],
-        label: "Vous pouvez échanger le contrôle de deux autres créatures",
+        label: "You may exchange control of two other creatures",
       }),
       triggered(when.combatDamageToPlayer, kitsuneExchange, {
         targets: [KITSUNE_TARGETS],
-        label: "Vous pouvez échanger le contrôle de deux autres créatures",
+        label: "You may exchange control of two other creatures",
       }),
     ],
   },
   "Kitsune's Technique": {
-    // Faufilement {1}{U} : lu dans le texte.
+    // Sneak {1}{U}: read from the text.
     spell: spell([target.player("t", "opponent")], [fx.millHalf(ref.target(), true)]),
   },
   "Krang, Master Mind": {
@@ -186,32 +181,32 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.draw(amount.plus(4, amount.neg(amount.cardsIn("hand"))))], {
         condition: cond.not(cond.amountAtLeast(amount.cardsIn("hand"), 4)),
-        label: "Moins de quatre cartes en main : piochez jusqu'à quatre",
+        label: "Fewer than four cards in hand: draw up to four",
       }),
       staticAbility(
         "self",
         { power: 1 },
-        { per: { types: ["Artifact"], controller: "you", other: true }, label: "+1/+0 par autre artefact que vous contrôlez" },
+        { per: { types: ["Artifact"], controller: "you", other: true }, label: "+1/+0 for each other artifact you control" },
       ),
     ],
   },
   Metalhead: {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
-        targets: [target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { other: true }, "autre artefact ou créature"))],
-        label: "Renvoyez jusqu'à un autre artefact ou une autre créature",
+        targets: [target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { other: true }, "other artifact or creature"))],
+        label: "Return up to one other artifact or creature",
       }),
       activated({
         mana: "{R}",
         sacrificeOther: { filter: { types: ["Artifact"], other: true } },
         effects: [fx.addCounters(ref.self, 1), fx.pump(ref.self, 0, 0, ["menace", "haste"])],
-        label: "Un marqueur +1/+1, la menace et la célérité",
+        label: "A +1/+1 counter, menace and haste",
       }),
     ],
   },
   "Mind Transfer Protocol": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+      [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
       [fx.modify(ref.target(), { addTypes: ["Artifact", "Creature"], setPower: 4, setToughness: 5 }), fx.draw(1)],
     ),
   },
@@ -220,32 +215,32 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Ray Fillet, Man Ray": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(MUTAGEN)], { label: "Un jeton Mutagène" }),
+      triggered(when.entersSelf, [fx.createTokens(MUTAGEN)], { label: "A Mutagen token" }),
       activated({
         mana: "{2}",
         removeCounterFrom: { filter: { types: ["Creature"], controller: "you" }, kind: "+1/+1" },
         effects: [fx.draw(1)],
-        label: "Retirez un marqueur +1/+1 d'une de vos créatures : piochez une carte",
+        label: "Remove a +1/+1 counter from a creature you control: draw a card",
       }),
     ],
   },
   "Renet, Temporal Apprentice": {
-    // « arrivé ce tour-ci » : passé sous le contrôle de son contrôleur actuel ce tour-ci (`enteredThisTurn`).
+    // "entered this turn": came under the control of its current controller this turn (`enteredThisTurn`).
     abilities: [
       triggered(
         when.entersSelf,
         [fx.bounce(ref.permanentsOf(ref.eachPlayer, { notTypes: ["Land"], other: true, enteredThisTurn: true }))],
-        { label: "Renvoyez chaque autre permanent non-terrain arrivé ce tour-ci" },
+        { label: "Return each other nonland permanent that entered this turn" },
       ),
     ],
   },
   "Retro-Mutation": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility(
         "attached",
         { setSubtypes: ["Turtle"], setPower: 0, setToughness: 1, loseAllAbilities: true, addKeywords: ["cantAttack"] },
-        { label: "Tortue 0/1 de base, sans capacité, ne peut pas attaquer" },
+        { label: "Base 0/1 Turtle, with no abilities, can't attack" },
       ),
     ],
   },
@@ -256,18 +251,18 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, tapOrUntapCreature, {
         targets: [target.creature()],
-        label: "Vous pouvez engager ou dégager une créature",
+        label: "You may tap or untap a creature",
       }),
       triggered(when.leavesSelf, tapOrUntapCreature, {
         targets: [target.creature()],
-        label: "Vous pouvez engager ou dégager une créature",
+        label: "You may tap or untap a creature",
       }),
-      activated({ mana: "{3}{U}", sacrifice: true, effects: [fx.draw(2)], label: "Piochez deux cartes" }),
+      activated({ mana: "{3}{U}", sacrifice: true, effects: [fx.draw(2)], label: "Draw two cards" }),
     ],
   },
   "Stockman, Mad Fly-entist": {
-    // Cycle d'Île {2} : lu dans le texte.
-    abilities: [triggered(when.entersSelf, fx.loot(1), { label: "Piochez une carte, puis défaussez une carte" })],
+    // Islandcycling {2}: read from the text.
+    abilities: [triggered(when.entersSelf, fx.loot(1), { label: "ctx:loot|Draw a card, then discard a card" })],
   },
   "Turtles in Time": {
     exileOnResolve: true,
@@ -277,7 +272,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
         targets: [target.upTo(1, target.creature())],
-        label: "Engagez jusqu'à une créature ; un marqueur d'étourdissement",
+        label: "Tap up to one creature; a stun counter",
       }),
     ],
   },

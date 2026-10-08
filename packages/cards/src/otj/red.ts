@@ -1,4 +1,4 @@
-/** Outlaws of Thunder Junction — cartes rouges. */
+/** Outlaws of Thunder Junction — red cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -25,14 +25,14 @@ import {
 
 export const RED: Record<string, CardScript> = {
   "Brimstone Roundup": {
-    abilities: [triggered(when.castNthSpell(2), [mercenary()], { label: "Mercenaire 1/1" })],
+    abilities: [triggered(when.castNthSpell(2), [mercenary()], { label: "1/1 Mercenary" })],
   },
   "Caught in the Crossfire": {
     spell: spree(
-      { cost: "{1}", label: "2 blessures à chaque hors-la-loi", effects: [fx.damageAll(2, OUTLAW_CREATURE)] },
+      { cost: "{1}", label: "2 damage to each outlaw", effects: [fx.damageAll(2, OUTLAW_CREATURE)] },
       {
         cost: "{1}",
-        label: "2 blessures à chaque non-hors-la-loi",
+        label: "2 damage to each non-outlaw",
         effects: [fx.damageAll(2, { types: ["Creature"], noneOfSubtypes: OUTLAW.anySubtype })],
       },
     ),
@@ -41,7 +41,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 1, 1, ["haste"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "+1/+1 et la célérité",
+        label: "+1/+1 and haste",
       }),
     ],
   },
@@ -52,25 +52,25 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.player("t", "opponent")],
         effects: [fx.damage(1, ref.target())],
-        label: "1 blessure",
+        label: "1 damage",
       }),
     ],
   },
   "Demonic Ruckus": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility(
         "attached",
         { power: 1, toughness: 1, addKeywords: ["menace", "trample"] },
-        { label: "+1/+1, menace et piétinement" },
+        { label: "+1/+1, menace and trample" },
       ),
-      triggered(when.putIntoGraveyardSelf, [fx.draw(1)], { label: "Piochez" }),
+      triggered(when.putIntoGraveyardSelf, [fx.draw(1)], { label: "Draw" }),
     ],
   },
   "Discerning Peddler": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.you, { optional: true, store: "d" }), fx.when(cond.v("d"), fx.draw(1))], {
-        label: "Défaussez : piochez",
+        label: "Discard: draw",
       }),
     ],
   },
@@ -78,13 +78,13 @@ export const RED: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{2}",
-        label: "4 blessures à une créature",
+        label: "4 damage to a creature",
         targets: [target.creature("c")],
         effects: [fx.damage(4, ref.target("c"))],
       },
       {
         cost: "{2}",
-        label: "Détruisez un artefact",
+        label: "Destroy an artifact",
         targets: [target.permanent("a", ["Artifact"])],
         effects: [fx.destroy(ref.target("a"))],
       },
@@ -95,7 +95,7 @@ export const RED: Record<string, CardScript> = {
       triggeredModal(when.step("beginCombat"), [
         mode("+2/+0", [target.creature("t", { controller: "you" })], [fx.pump(ref.target(), 2, 0)]),
         mode(
-          "Menace et célérité",
+          "Menace and haste",
           [target.creature("t", { controller: "you" })],
           [fx.pump(ref.target(), 0, 0, ["menace", "haste"])],
         ),
@@ -105,7 +105,7 @@ export const RED: Record<string, CardScript> = {
   "Gila Courser": {
     abilities: [
       whileSaddled([fx.exileTop(ref.you, 1, "g"), fx.grantPlay(ref.stored("g"), { untilYourNextTurn: true })], {
-        label: "Exilez la carte du dessus, jouable jusqu'à la fin de votre prochain tour",
+        label: "Exile the top card, playable until the end of your next turn",
       }),
     ],
   },
@@ -118,8 +118,8 @@ export const RED: Record<string, CardScript> = {
   "Hellspur Brute": { costReduction: { generic: amount.count({ ...OUTLAW, controller: "you" }) } },
   "Hellspur Posse Boss": {
     abilities: [
-      staticAbility({ ...OUTLAW_CREATURE, controller: "you", other: true }, { addKeywords: ["haste"] }, { label: "Célérité" }),
-      triggered(when.entersSelf, [mercenary(2)], { label: "Deux Mercenaires 1/1" }),
+      staticAbility({ ...OUTLAW_CREATURE, controller: "you", other: true }, { addKeywords: ["haste"] }, { label: "Haste" }),
+      triggered(when.entersSelf, [mercenary(2)], { label: "Two 1/1 Mercenaries" }),
     ],
   },
   "Highway Robbery": {
@@ -135,7 +135,7 @@ export const RED: Record<string, CardScript> = {
   "Irascible Wolverine": {
     abilities: [
       triggered(when.entersSelf, [fx.exileTop(ref.you, 1, "w"), fx.grantPlay(ref.stored("w"))], {
-        label: "Exilez la carte du dessus, jouable ce tour-ci",
+        label: "Exile the top card, playable this turn",
       }),
     ],
   },
@@ -143,23 +143,23 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.castNthSpell(2), [fx.damage(2, ref.target()), fx.scry(1)], {
         targets: [target.player("t", "opponent")],
-        label: "2 blessures, regard 1",
+        label: "2 damage, scry 1",
       }),
     ],
   },
   "Longhorn Sharpshooter": {
     abilities: [
-      triggered(when.plottedSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "Comploté : 2 blessures" }),
+      triggered(when.plottedSelf, [fx.damage(2, ref.target())], { targets: [target.any("t")], label: "Plotted: 2 damage" }),
     ],
   },
   "Magda, the Hoardmaster": {
     abilities: [
-      triggered(when.crime, [fx.createTappedTokens(TREASURE)], { oncePerTurn: true, label: "Trésor engagé" }),
+      triggered(when.crime, [fx.createTappedTokens(TREASURE)], { oncePerTurn: true, label: "Tapped Treasure" }),
       activated({
         sacrificeOther: { filter: { subtype: "Treasure" }, count: 3 },
         sorcerySpeed: true,
         effects: [fx.createTokens(SCORPION_DRAGON)],
-        label: "Dragon Scorpion 4/4",
+        label: "4/4 Scorpion Dragon",
       }),
     ],
   },
@@ -167,7 +167,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(TREASURE)], {
         condition: cond.controls({ ...OUTLAW_CREATURE, other: true }),
-        label: "Trésor",
+        label: "Treasure",
       }),
     ],
   },
@@ -184,7 +184,7 @@ export const RED: Record<string, CardScript> = {
       ],
     ),
   },
-  "Prickly Pair": { abilities: [triggered(when.entersSelf, [mercenary()], { label: "Mercenaire 1/1" })] },
+  "Prickly Pair": { abilities: [triggered(when.entersSelf, [mercenary()], { label: "1/1 Mercenary" })] },
   "Quick Draw": {
     spell: spell(
       [target.creature("a", { controller: "you" }), target.player("p", "opponent")],
@@ -196,20 +196,20 @@ export const RED: Record<string, CardScript> = {
       ],
     ),
   },
-  "Quilled Charger": { abilities: [whileSaddled([fx.pump(ref.self, 1, 2, ["menace"])], { label: "+1/+2 et la menace" })] },
+  "Quilled Charger": { abilities: [whileSaddled([fx.pump(ref.self, 1, 2, ["menace"])], { label: "+1/+2 and menace" })] },
   "Reckless Lackey": {
     abilities: [
-      activated({ mana: "{2}{R}", sacrifice: true, effects: [fx.draw(1), fx.createTokens(TREASURE)], label: "Piochez, Trésor" }),
+      activated({ mana: "{2}{R}", sacrifice: true, effects: [fx.draw(1), fx.createTokens(TREASURE)], label: "Draw, Treasure" }),
     ],
   },
   "Rodeo Pyromancers": {
-    abilities: [triggered(when.castNthSpell(1), [fx.addMana("R", "R")], { label: "Ajoutez {R}{R}" })],
+    abilities: [triggered(when.castNthSpell(1), [fx.addMana("R", "R")], { label: "Add {R}{R}" })],
   },
   "Scalestorm Summoner": {
     abilities: [
       triggered(when.attacksSelf, [fx.createTokens(DINOSAUR_3_1)], {
         condition: cond.controls({ types: ["Creature"], minPower: 4 }),
-        label: "Dinosaure 3/1",
+        label: "3/1 Dinosaur",
       }),
     ],
   },
@@ -218,7 +218,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pump(ref.self, 2, 0)], { label: "+2/+0" })],
   },
   "Stingerback Terror": {
-    abilities: [staticAbility("self", { power: -1, toughness: -1 }, { perHand: true, label: "-1/-1 par carte en main" })],
+    abilities: [staticAbility("self", { power: -1, toughness: -1 }, { perHand: true, label: "-1/-1 for each card in hand" })],
   },
   "Take for a Ride": {
     flashIf: cond.crime,

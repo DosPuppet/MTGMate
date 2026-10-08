@@ -1,4 +1,4 @@
-/** Aetherdrift — cartes vertes. */
+/** Aetherdrift — green cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -31,15 +31,15 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       whenCycled([fx.addCounters(ref.target(), 2), fx.pump(ref.target(), 0, 0, ["trample", "indestructible"])], {
         targets: [target.upTo(1, targetCreatureOrVehicle())],
-        label: "Deux marqueurs +1/+1, piétinement et indestructible",
+        label: "Two +1/+1 counters, trample and indestructible",
       }),
     ],
   },
   "Alacrian Jaguar": { abilities: [whileSaddled([fx.pump(ref.self, 2, 2)], { label: "+2/+2" })] },
   "Autarch Mammoth": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(ELEPHANT)], { label: "Éléphant 3/3" }),
-      whileSaddled([fx.createTokens(ELEPHANT)], { label: "Éléphant 3/3" }),
+      triggered(when.entersSelf, [fx.createTokens(ELEPHANT)], { label: "3/3 Elephant" }),
+      whileSaddled([fx.createTokens(ELEPHANT)], { label: "3/3 Elephant" }),
     ],
   },
   "Beastrider Vanguard": {
@@ -47,7 +47,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         mana: "{4}{G}",
         effects: [fx.lookAtTop(3, { filter: { permanent: true }, count: 1, rest: "bottom" })],
-        label: "Regardez les trois cartes du dessus",
+        label: "Look at the top three cards",
       }),
     ],
   },
@@ -55,11 +55,11 @@ export const GREEN: Record<string, CardScript> = {
   "Defend the Rider": {
     spell: modal(
       mode(
-        "Défense talismanique et indestructible",
-        [targetObj("t", { permanent: true, controller: "you" }, "permanent que vous contrôlez")],
+        "Hexproof and indestructible",
+        [targetObj("t", { permanent: true, controller: "you" }, "permanent you control")],
         [fx.pump(ref.target(), 0, 0, ["hexproof", "indestructible"])],
       ),
-      mode("Pilote 1/1", [], [pilot()]),
+      mode("1/1 Pilot", [], [pilot()]),
     ),
   },
   "District Mascot": {
@@ -70,9 +70,9 @@ export const GREEN: Record<string, CardScript> = {
         removeCounters: { kind: "+1/+1", n: 2 },
         targets: [target.permanent("t", ["Artifact"])],
         effects: [fx.destroy(ref.target())],
-        label: "Détruisez un artefact",
+        label: "Destroy target artifact",
       }),
-      whileSaddled([fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
+      whileSaddled([fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }),
     ],
   },
   Earthrumbler: {
@@ -80,7 +80,7 @@ export const GREEN: Record<string, CardScript> = {
       activated({
         exileFromGraveyard: { filter: CREATURE_OR_ARTIFACT },
         effects: [fx.animateVehicle()],
-        label: "Devient une créature-artefact",
+        label: "Becomes an artifact creature",
       }),
     ],
   },
@@ -97,43 +97,43 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.may("Chercher un terrain de base ?", fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true })),
-        { label: "Terrain de base engagé" },
+        fx.may("Search for a basic land?", fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true })),
+        { label: "Tapped basic land" },
       ),
       triggered(
         when.attacksSelf,
-        fx.may("Chercher un terrain de base ?", fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true })),
-        { label: "Terrain de base engagé" },
+        fx.may("Search for a basic land?", fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true })),
+        { label: "Tapped basic land" },
       ),
     ],
   },
-  "Migrating Ketradon": { abilities: [triggered(when.entersSelf, [fx.gainLife(4)], { label: "+4 PV" })] },
+  "Migrating Ketradon": { abilities: [triggered(when.entersSelf, [fx.gainLife(4)], { label: "+4 life" })] },
   "Molt Tender": {
     abilities: [
-      activated({ tap: true, effects: [fx.mill(1)], label: "Meulez une carte" }),
+      activated({ tap: true, effects: [fx.mill(1)], label: "Mill a card" }),
       activated({
         tap: true,
         exileFromGraveyard: { filter: {} },
         effects: [fx.addManaChoice(1)],
-        label: "Un mana de n'importe quelle couleur",
+        label: "One mana of any color",
       }),
     ],
   },
   "Ooze Patrol": {
     abilities: [
       triggered(when.entersSelf, [fx.mill(2), fx.addCounters(ref.self, amount.countIn("graveyard", CREATURE_OR_ARTIFACT))], {
-        label: "Meulez deux cartes, marqueurs +1/+1",
+        label: "Mill two cards, +1/+1 counters",
       }),
     ],
   },
   "Plow Through": {
     spell: modal(
       mode(
-        "Combat",
+        "Fight",
         [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
         [fx.fight(ref.target("a"), ref.target("b"))],
       ),
-      mode("Détruisez un Véhicule", [targetObj("t", { subtype: "Vehicle" }, "Véhicule")], [fx.destroy(ref.target())]),
+      mode("Destroy target Vehicle", [targetObj("t", { subtype: "Vehicle" }, "Vehicle")], [fx.destroy(ref.target())]),
     ),
   },
   "Pothole Mole": {
@@ -142,14 +142,9 @@ export const GREEN: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.mill(3),
-          fx.pickFromZone(
-            "graveyard",
-            { types: ["Land"] },
-            { to: "hand" },
-            { min: 0, prompt: "Vous pouvez reprendre un terrain" },
-          ),
+          fx.pickFromZone("graveyard", { types: ["Land"] }, { to: "hand" }, { min: 0, prompt: "You may take back a land" }),
         ],
-        { label: "Meulez trois cartes, reprenez un terrain" },
+        { label: "Mill three cards, take back a land" },
       ),
     ],
   },
@@ -166,27 +161,30 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Silken Strength": {
-    enchant: { filter: CREATURE_OR_VEHICLE, label: "créature ou Véhicule" },
+    enchant: { filter: CREATURE_OR_VEHICLE, label: "creature or Vehicle" },
     abilities: [
-      triggered(when.entersSelf, [fx.untap(ref.attached)], { label: "Dégagez le permanent enchanté" }),
-      staticAbility("attached", { power: 1, toughness: 2, addKeywords: ["reach"] }, { label: "+1/+2 et la portée" }),
+      triggered(when.entersSelf, [fx.untap(ref.attached)], { label: "Untap the enchanted permanent" }),
+      staticAbility("attached", { power: 1, toughness: 2, addKeywords: ["reach"] }, { label: "+1/+2 and reach" }),
     ],
   },
   "Veloheart Bike": {
-    abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 PV" }), manaAbility(["W", "U", "B", "R", "G"])],
+    abilities: [triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 life" }), manaAbility(["W", "U", "B", "R", "G"])],
   },
   "Venomsac Lagac": { abilities: [whileSaddled([fx.pump(ref.self, 0, 3)], { label: "+0/+3" })] },
   "Webstrike Elite": {
     abilities: [
-      // « … avec une valeur de mana X » : X est celui du coût de cycle payé (montant de l'événement), lu au ciblage.
+      // "… with mana value X": X is the one of the cycling cost paid (amount of the event), read when targeting.
       whenCycled([fx.destroy(ref.target())], {
         targets: [
           {
-            ...target.upTo(1, target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement de VM X")),
+            ...target.upTo(
+              1,
+              target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment with mana value X"),
+            ),
             manaValueAmount: amount.eventAmount,
           },
         ],
-        label: "Détruisez un artefact ou un enchantement de VM X",
+        label: "Destroy an artifact or enchantment with mana value X",
       }),
     ],
   },

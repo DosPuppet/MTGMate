@@ -1,4 +1,4 @@
-/** Marvel Super Heroes — cartes légendaires et cartes uniques (lot C). */
+/** Marvel Super Heroes — legendary cards and unique cards (lot C). */
 import type { CardScript } from "./common";
 
 export const LEGENDS: Record<string, CardScript> = {};

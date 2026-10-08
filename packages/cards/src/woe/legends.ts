@@ -1,4 +1,4 @@
-/** Wilds of Eldraine — cartes légendaires et cartes uniques. */
+/** Wilds of Eldraine — legendary cards and unique cards. */
 import type { TargetSpec, TokenSpec } from "@mtgx/engine";
 import {
   activated,
@@ -21,7 +21,7 @@ import {
   when,
 } from "./common";
 
-/** Cauchemar d'Ashiok : 1/1 noir, « au début du combat de votre tour, si une carte a été exilée ce tour-ci, un marqueur +1/+1 ». */
+/** Ashiok's Nightmare: 1/1 black, "at the beginning of combat on your turn, if a card was exiled this turn, a +1/+1 counter". */
 const NIGHTMARE: TokenSpec = {
   name: "Nightmare",
   colors: ["B"],
@@ -32,13 +32,13 @@ const NIGHTMARE: TokenSpec = {
   abilities: [
     triggered(when.yourCombat, [fx.addCounters(ref.self, 1)], {
       condition: cond.amountAtLeast(amount.turnEvents({ event: "zone", to: "exile" }), 1),
-      label: "Une carte exilée ce tour-ci : un marqueur +1/+1",
+      label: "A card exiled this turn: a +1/+1 counter",
     }),
   ],
   text: "At the beginning of combat on your turn, if a card was put into exile this turn, put a +1/+1 counter on this token.",
 };
 
-/** « carte [que vous possédez / que vous ne possédez pas] en exil qui a une Aventure » (Sentinel of Lost Lore). */
+/** "card [you own / you don't own] in exile that has an Adventure" (Sentinel of Lost Lore). */
 const exiledAdventure = (id: string, own: boolean, label: string): TargetSpec => ({
   id,
   label,
@@ -53,17 +53,17 @@ export const LEGENDS: Record<string, CardScript> = {
         to: "you",
         modify: {},
         instead: { exileFromLibrary: true },
-        label: "Payer des PV : exilez autant de cartes du dessus de votre bibliothèque à la place",
+        label: "Pay life: exile that many cards from the top of your library instead",
       }),
       loyalty(1, {
         effects: [fx.lookAtTop(2, { count: 1, exact: true, to: { to: "exile" }, rest: "hand" })],
-        label: "Regardez deux cartes : exilez-en une, l'autre en main",
+        label: "Look at two cards: exile one, the other to hand",
       }),
-      loyalty(-2, { effects: [fx.createTokens(NIGHTMARE, 2)], label: "Deux Cauchemars 1/1" }),
+      loyalty(-2, { effects: [fx.createTokens(NIGHTMARE, 2)], label: "Two 1/1 Nightmares" }),
       loyalty(-7, {
         targets: [target.player()],
         effects: [fx.exileTop(ref.target(), amount.totalManaValue({}, "exile"), "x")],
-        label: "Le joueur ciblé exile X cartes (VM totale de vos cartes exilées)",
+        label: "Target player exiles X cards (total MV of your exiled cards)",
       }),
     ],
   },
@@ -71,42 +71,42 @@ export const LEGENDS: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("number")],
     abilities: [
       triggered(when.castSpell("opponent", { numberChosen: true }), [fx.loseLife(2, ref.eventPlayer), fx.draw(1)], {
-        label: "Sort adverse du nombre choisi : il perd 2 PV, vous piochez",
+        label: "Opponent's spell of the chosen number: they lose 2 life, you draw",
       }),
     ],
   },
   "Sentinel of Lost Lore": {
     abilities: [
-      // « Choisissez un ou plusieurs — » : toutes les combinaisons de modes (700.2).
+      // "Choose one or more —": every combination of modes (700.2).
       triggeredModal(
         when.entersSelf,
         oneOrMore(
           {
-            label: "Reprenez une carte à Aventure que vous possédez en exil",
-            targets: [exiledAdventure("a", true, "carte à Aventure que vous possédez en exil")],
+            label: "Return an Adventure card you own in exile",
+            targets: [exiledAdventure("a", true, "Adventure card you own in exile")],
             effects: [fx.moveTo(ref.target("a"), { to: "hand" })],
           },
           {
-            label: "Mettez sous sa bibliothèque une carte à Aventure en exil que vous ne possédez pas",
-            targets: [exiledAdventure("b", false, "carte à Aventure que vous ne possédez pas en exil")],
+            label: "Put an Adventure card in exile you don't own on the bottom of its library",
+            targets: [exiledAdventure("b", false, "Adventure card you don't own in exile")],
             effects: [fx.moveTo(ref.target("b"), { to: "libraryBottom" })],
           },
           {
-            label: "Exilez le cimetière du joueur ciblé",
+            label: "Exile target player's graveyard",
             targets: [target.player("p")],
             effects: [fx.moveAll("graveyard", ref.target("p"), {}, { to: "exile" })],
           },
         ),
-        { label: "Un ou plusieurs : reprenez, renvoyez sous la bibliothèque, exilez un cimetière" },
+        { label: "One or more: return, put on the bottom of the library, exile a graveyard" },
       ),
     ],
   },
   "Johann, Apprentice Sorcerer": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Regardez la carte du dessus" }),
+      playerStatic({ lookAt: "libraryTop", label: "Look at the top card" }),
       playerStatic({
         playFrom: { zone: "libraryTop", filter: INSTANT_SORCERY, what: "spells", oncePerTurn: true },
-        label: "Une fois par tour : éphémère ou rituel du dessus de votre bibliothèque",
+        label: "Once each turn: instant or sorcery from the top of your library",
       }),
     ],
   },
@@ -118,12 +118,12 @@ export const LEGENDS: Record<string, CardScript> = {
           reduce: amount.powerOf(ref.self),
           minOneMana: true,
         },
-        label: "Capacités activées de vos créatures : {X} de moins (X = sa force, au moins un mana)",
+        label: "Activated abilities of your creatures: {X} less (X = its power, at least one mana)",
       }),
       activated({
         mana: "{4}{R}{G}",
         effects: [fx.pumpAll({ types: ["Creature"], controller: "you", other: true }, 1, 1, ["trample", "haste"])],
-        label: "Vos autres créatures : +1/+1, piétinement et célérité",
+        label: "Your other creatures: +1/+1, trample and haste",
       }),
     ],
   },
@@ -131,12 +131,12 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         abilityCost: { source: { types: ["Creature"], controller: "you" }, anyMana: true },
-        label: "Mana de n'importe quelle couleur pour les capacités de vos créatures",
+        label: "Mana of any color for the abilities of your creatures",
       }),
       staticAbility(
         { types: ["Creature"], controller: "you", withCounter: "+1/+1" },
         { gainLinkedActivated: true },
-        { label: "Vos créatures avec un marqueur +1/+1 : capacités activées des cartes de créature exilées" },
+        { label: "Your creatures with a +1/+1 counter: activated abilities of the exiled creature cards" },
       ),
       activated({
         tap: true,
@@ -149,12 +149,12 @@ export const LEGENDS: Record<string, CardScript> = {
             fx.reflexive([target.creature("c", { controller: "you" })], [fx.addCounters(ref.target("c"), 1)]),
           ),
         ],
-        label: "Exilez une carte d'un cimetière",
+        label: "Exile a card from a graveyard",
       }),
     ],
   },
   "Beluna Grandsquall": {
-    abilities: [costReducer({ permanent: true, adventure: true }, 1, "Sorts de permanent avec une Aventure : {1} de moins")],
+    abilities: [costReducer({ permanent: true, adventure: true }, 1, "Permanent spells with an Adventure: {1} less")],
   },
   "Seek Thrills": {
     spell: spell(

@@ -1,4 +1,4 @@
-/** The Hobbit — cartes incolores et terrains (lot A). */
+/** The Hobbit — colorless cards and lands (lot A). */
 import type { ManaType } from "@mtgx/engine";
 import {
   activated,
@@ -25,10 +25,10 @@ import {
 } from "./common";
 
 /**
- * Terrains bicolores du cycle « arrive engagé ; {T} : ajoutez {X} ou {Y} ; {2}{X}{Y}, {T}, sacrifiez ce terrain : mettez
- * deux marqueurs +1/+1 sur une [créature du type] ciblée que vous contrôlez, en rituel ».
+ * Two-color lands of the cycle "enters tapped; {T}: Add {X} or {Y}; {2}{X}{Y}, {T}, Sacrifice this land: Put two +1/+1
+ * counters on target [creature of the type] you control. Activate only as a sorcery."
  */
-const tribalLand = (a: ManaType, b: ManaType, subtypes: string[], label: string): CardScript => ({
+const tribalLand = (a: ManaType, b: ManaType, subtypes: string[], targetLabel: string, label: string): CardScript => ({
   abilities: [
     entersWith({ tapped: true }),
     manaAbility([a, b]),
@@ -42,27 +42,26 @@ const tribalLand = (a: ManaType, b: ManaType, subtypes: string[], label: string)
           "t",
           ["Creature"],
           { controller: "you", ...(subtypes.length > 1 ? { anySubtype: subtypes } : { subtype: subtypes[0] }) },
-          `${label} que vous contrôlez`,
+          targetLabel,
         ),
       ],
       effects: [fx.addCounters(ref.target(), 2)],
-      label: `Deux marqueurs +1/+1 sur un(e) ${label}`,
+      label,
     }),
   ],
 });
 
 export const ARTIFACTS: Record<string, CardScript> = {
-  // --- Créatures incolores --------------------------------------------------------
+  // --- Colorless creatures --------------------------------------------------------
   "Long-Bodied Grey Dog": {
-    // Flash et portée : lus dans le texte.
-    abilities: [triggered(when.entersSelf, [fx.createTappedTokens(TREASURE)], { label: "Un Trésor engagé" })],
+    // Flash and reach: read from the text.
+    abilities: [triggered(when.entersSelf, [fx.createTappedTokens(TREASURE)], { label: "A tapped Treasure" })],
   },
   "Old Thrush": {
-    // Vol : lu dans le texte. La recherche est facultative (« jusqu'à une ») ; la carte est mise sur le dessus après le
-    // mélange.
+    // Flying: read from the text. The search is optional ("up to one"); the card is put on top after the shuffle.
     abilities: [
       triggered(when.entersSelf, [fx.gainLife(2), fx.search(BASIC_LAND, { to: "libraryTop" })], {
-        label: "2 PV ; un terrain de base sur le dessus de votre bibliothèque",
+        label: "2 life; a basic land on top of your library",
       }),
     ],
   },
@@ -73,32 +72,32 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [
-          // Les terrains trouvés passent par la main ; l'un d'eux va ensuite sur le champ de bataille engagé.
+          // The lands found go through the hand; one of them then goes onto the battlefield tapped.
           fx.search(BASIC_LAND, { to: "hand" }, 2, undefined, "lands"),
           fx.pickFromZone(
             "hand",
             BASIC_LAND,
             { to: "battlefield", tapped: true },
-            { pool: ref.stored("lands"), prompt: "Le terrain à mettre sur le champ de bataille engagé" },
+            { pool: ref.stored("lands"), prompt: "The land to put onto the battlefield tapped" },
           ),
         ],
-        label: "Deux terrains de base : l'un sur le champ de bataille engagé, l'autre en main",
+        label: "Two basic lands: one onto the battlefield tapped, the other to hand",
       }),
     ],
   },
 
-  // --- Artefacts --------------------------------------------------------------------
+  // --- Artifacts --------------------------------------------------------------------
   "The Arkenstone": {
     abilities: [
-      staticAbility({ types: ["Creature"], controller: "you" }, { power: 1, toughness: 1 }, { label: "Vos créatures : +1/+1" }),
-      triggered(when.yourEndStep, [fx.draw(1)], { label: "Piochez une carte" }),
+      staticAbility({ types: ["Creature"], controller: "you" }, { power: 1, toughness: 1 }, { label: "Your creatures: +1/+1" }),
+      triggered(when.yourEndStep, [fx.draw(1)], { label: "Draw a card" }),
     ],
   },
   "Seek the Heart": {
     spell: spell([], [fx.search({ types: ["Creature"], legendary: true })]),
   },
   "The Black Arrow": {
-    // Flash et Équiper {1} : lus dans le texte. « Blessée de cette façon » : la cible a reçu des blessures de la Flèche.
+    // Flash and Equip {1}: read from the text. "Dealt damage this way": the target was dealt damage by the Arrow.
     abilities: [
       triggered(
         when.entersSelf,
@@ -106,43 +105,43 @@ export const ARTIFACTS: Record<string, CardScript> = {
           fx.damage(1, ref.target()),
           ...fx.when(cond.targetMatches("t", { subtype: "Dragon", damagedBySource: true }), fx.destroy(ref.target())),
         ],
-        { targets: [target.any()], label: "1 blessure ; un Dragon ainsi blessé est détruit" },
+        { targets: [target.any()], label: "1 damage; a Dragon dealt damage this way is destroyed" },
       ),
-      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["reach"] }, { label: "+1/+1 et la portée" }),
+      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["reach"] }, { label: "+1/+1 and reach" }),
     ],
   },
   "Dwarven Mattock": {
-    // Équiper {3} : lu dans le texte.
+    // Equip {3}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
-        targets: [target.permanent("t", ["Creature"], { subtype: "Dwarf", controller: "you" }, "Nain que vous contrôlez")],
-        label: "Attachez-le à un Nain",
+        targets: [target.permanent("t", ["Creature"], { subtype: "Dwarf", controller: "you" }, "Dwarf you control")],
+        label: "Attach it to a Dwarf",
       }),
       staticAbility(
         "attached",
         { power: 2, toughness: 2, addAbilities: [wardAbility({ mana: cost("{1}") })] },
-        { label: "+2/+2 et la garde {1}" },
+        { label: "+2/+2 and ward {1}" },
       ),
     ],
   },
   "Giant's Boulder": {
     abilities: [
-      triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
-      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
+      triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" }),
+      activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "One mana of any color" }),
       activated({
         mana: "{7}",
         tap: true,
         sacrifice: true,
         targets: [targetObj("t", { permanent: true }, "permanent")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruisez un permanent",
+        label: "Destroy a permanent",
       }),
     ],
   },
   "Glamdring, Foe-hammer": {
-    // Équiper {2} : lu dans le texte. Une force négative ne rend pas les sorts plus chers.
+    // Equip {2}: read from the text. A negative power doesn't make spells cost more.
     abilities: [
-      costReducer(INSTANT_SORCERY, 0, "Éphémères et rituels : {X} de moins (force de la créature équipée)", {
+      costReducer(INSTANT_SORCERY, 0, "Instants and sorceries: {X} less (power of the equipped creature)", {
         genericAmount: amount.max(0, amount.powerOf(ref.attached)),
       }),
     ],
@@ -152,13 +151,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "My Precious": {
     abilities: [
-      staticAbility(
-        "attached",
-        { addKeywords: ["hexproof", "unblockable"] },
-        { label: "Défense talismanique, ne peut pas être bloquée" },
-      ),
-      // « Équiper—{2}, payez 2 points de vie » : non lu dans le texte (coût composé).
-      equipAbility({ mana: "{2}", payLife: 2, label: "Équiper {2}, 2 PV" }),
+      staticAbility("attached", { addKeywords: ["hexproof", "unblockable"] }, { label: "Hexproof, can't be blocked" }),
+      // "Equip—{2}, Pay 2 life": not read from the text (compound cost).
+      equipAbility({ mana: "{2}", payLife: 2, label: "Equip {2}, 2 life" }),
     ],
   },
   "Allure of Power": {
@@ -166,22 +161,22 @@ export const ARTIFACTS: Record<string, CardScript> = {
     spell: spell([], [fx.draw(2)]),
   },
   "Orcrist, Goblin-cleaver": {
-    // Équiper {3} : lu dans le texte. Le type choisi est gardé sur Orcrist, et choisi de nouveau à chaque fois.
+    // Equip {3}: read from the text. The chosen type is kept on Orcrist, and chosen again each time.
     abilities: [
-      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["trample"] }, { label: "+2/+2 et le piétinement" }),
+      staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["trample"] }, { label: "+2/+2 and trample" }),
       triggered(
         when.attachedDealsCombatDamageToPlayer,
         [
           fx.chooseForSelf("creatureType"),
           fx.createTokens(TREASURE, amount.count({ types: ["Creature"], controller: "you", subtypeChosen: true })),
         ],
-        { label: "Choisissez un type : un Trésor par créature de ce type que vous contrôlez" },
+        { label: "Choose a type: a Treasure for each creature of that type you control" },
       ),
     ],
   },
   "Sting, Bilbo's Sword": {
-    // Flash et Équiper {3} : lus dans le texte. Marqueurs d'affûtage : règle générale du moteur (+1/+0 à la créature
-    // équipée par marqueur sur l'Équipement).
+    // Flash and Equip {3}: read from the text. Hone counters: general engine rule (+1/+0 to the equipped creature for
+    // each counter on the Equipment).
     abilities: [
       triggered(
         when.entersSelf,
@@ -191,39 +186,45 @@ export const ARTIFACTS: Record<string, CardScript> = {
         ],
         {
           targets: [target.player("o", "opponent"), target.upTo(1, target.creature("c", { controller: "you" }))],
-          label: "Un marqueur d'affûtage par créature adverse ; attachez Dard",
+          label: "A hone counter for each opponent's creature; attach Sting",
         },
       ),
     ],
   },
   "Thrór's Map": {
     abilities: [
-      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Un terrain de base en main" }),
-      activated({ mana: "{2}", tap: true, effects: fx.loot(1), label: "Piochez une carte, puis défaussez-en une" }),
+      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "A basic land to hand" }),
+      activated({ mana: "{2}", tap: true, effects: fx.loot(1), label: "Draw a card, then discard a card" }),
     ],
   },
   "Well-Worn Spatula": {
-    // Équiper {1} : lu dans le texte.
+    // Equip {1}: read from the text.
     abilities: [
-      triggered(when.entersSelf, [fx.gainLife(2)], { label: "Vous gagnez 2 PV" }),
+      triggered(when.entersSelf, [fx.gainLife(2)], { label: "You gain 2 life" }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
     ],
   },
 
-  // --- Terrains ---------------------------------------------------------------------
-  "Elvenking's Halls": tribalLand("G", "U", ["Elf"], "Elfe"),
-  "Goblin-town": tribalLand("B", "R", ["Goblin", "Orc"], "Gobelin ou Orque"),
-  "Iron Hills": tribalLand("R", "W", ["Dwarf"], "Nain"),
-  "Lake-town": tribalLand("W", "U", ["Human"], "Humain"),
-  Mirkwood: tribalLand("B", "G", ["Bear", "Spider", "Wolf"], "Ours, Araignée ou Loup"),
+  // --- Lands ------------------------------------------------------------------------
+  "Elvenking's Halls": tribalLand("G", "U", ["Elf"], "Elf you control", "Two +1/+1 counters on an Elf"),
+  "Goblin-town": tribalLand("B", "R", ["Goblin", "Orc"], "Goblin or Orc you control", "Two +1/+1 counters on a Goblin or Orc"),
+  "Iron Hills": tribalLand("R", "W", ["Dwarf"], "Dwarf you control", "Two +1/+1 counters on a Dwarf"),
+  "Lake-town": tribalLand("W", "U", ["Human"], "Human you control", "Two +1/+1 counters on a Human"),
+  Mirkwood: tribalLand(
+    "B",
+    "G",
+    ["Bear", "Spider", "Wolf"],
+    "Bear, Spider or Wolf you control",
+    "Two +1/+1 counters on a Bear, Spider or Wolf",
+  ),
   "Hobbit Hole": {
-    // Cycle de Hobbit {4} : lu dans le texte.
+    // Hobbitcycling {4}: read from the text.
     abilities: [
       activated({
         tap: true,
         sacrifice: true,
         effects: [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })],
-        label: "Un terrain de base engagé",
+        label: "A basic land tapped",
       }),
     ],
   },

@@ -1,9 +1,9 @@
-/** Éléments communs de Marvel Super Heroes (MSH) : le DSL et les jetons viennent des extensions précédentes (via lci/common.ts). */
+/** Shared elements of Marvel Super Heroes (MSH): the DSL and the tokens come from the earlier sets (via lci/common.ts). */
 export * from "../lci/common";
 
 import type { TokenSpec } from "@mtgx/engine";
 
-/** Doombot (Castle Doom) : créature-artefact incolore 3/3 Robot Méchant. */
+/** Doombot (Castle Doom): 3/3 colorless Robot Villain artifact creature. */
 export const DOOMBOT: TokenSpec = {
   name: "Doombot",
   colors: [],
@@ -13,7 +13,7 @@ export const DOOMBOT: TokenSpec = {
   toughness: 3,
 };
 
-/** Méchant : créature noire 2/1 avec la menace. */
+/** Villain: 2/1 black creature with menace. */
 export const VILLAIN: TokenSpec = {
   name: "Villain",
   colors: ["B"],
@@ -24,7 +24,7 @@ export const VILLAIN: TokenSpec = {
   keywords: ["menace"],
 };
 
-/** Héros : créature blanche 3/2 avec la vigilance. */
+/** Hero: 3/2 white creature with vigilance. */
 export const HERO: TokenSpec = {
   name: "Hero",
   colors: ["W"],
@@ -35,7 +35,7 @@ export const HERO: TokenSpec = {
   keywords: ["vigilance"],
 };
 
-/** Robot Méchant : créature-artefact incolore 2/2. */
+/** Robot Villain: 2/2 colorless artifact creature. */
 export const ROBOT_VILLAIN: TokenSpec = {
   name: "Robot Villain",
   colors: [],
@@ -45,7 +45,7 @@ export const ROBOT_VILLAIN: TokenSpec = {
   toughness: 2,
 };
 
-/** Mur : créature incolore 0/4 avec le défenseur. */
+/** Wall: 0/4 colorless creature with defender. */
 export const WALL_C: TokenSpec = {
   name: "Wall",
   colors: [],
@@ -56,7 +56,7 @@ export const WALL_C: TokenSpec = {
   keywords: ["defender"],
 };
 
-/** Insecte : créature verte 1/1. */
+/** Insect: 1/1 green creature. */
 export const INSECT_G: TokenSpec = {
   name: "Insect",
   colors: ["G"],
@@ -66,7 +66,7 @@ export const INSECT_G: TokenSpec = {
   toughness: 1,
 };
 
-/** Ondin : créature bleue 1/1. */
+/** Merfolk: 1/1 blue creature. */
 export const MERFOLK_BLUE: TokenSpec = {
   name: "Merfolk",
   colors: ["U"],

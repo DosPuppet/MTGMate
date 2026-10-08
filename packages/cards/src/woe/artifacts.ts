@@ -1,5 +1,5 @@
-/** Wilds of Eldraine — cartes incolores et terrains. */
-import type { Color, Effect, LayerMods, TargetSpec } from "@mtgx/engine";
+/** Wilds of Eldraine — colorless cards and lands. */
+import { type Color, type Effect, type LayerMods, msg, type TargetSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -20,17 +20,17 @@ import {
 
 const ALL_COLORS = ["W", "U", "B", "R", "G"] as const;
 
-/** « {N}, {T} : ajoutez un mana de n'importe quelle couleur » (capacité de mana à coût, résolue sans la pile). */
+/** "{N}, {T}: Add one mana of any color" (mana ability with a cost, resolved without the stack). */
 const anyColor = (mana: string, opts: { tap?: boolean; oncePerTurn?: boolean } = {}) =>
-  activated({ mana, ...opts, effects: [fx.addManaChoice(1)], label: "Ajoutez un mana de n'importe quelle couleur" });
+  activated({ mana, ...opts, effects: [fx.addManaChoice(1)], label: "Add one mana of any color" });
 
-/** Nourriture : « {2}, {T}, sacrifiez [ce permanent] : vous gagnez 3 points de vie. » */
+/** Food: "{2}, {T}, Sacrifice [this permanent]: You gain 3 life." */
 const foodAbility = () =>
-  activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "Gagnez 3 points de vie" });
+  activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "Food: gain 3 life" });
 
 /**
- * Terrains « Restless » : arrivent engagés ; {T} : l'une des deux couleurs ; le terrain devient une créature jusqu'à la
- * fin du tour (c'est toujours un terrain) ; capacité quand il attaque.
+ * "Restless" lands: enter tapped; {T}: one of the two colors; the land becomes a creature until end of turn (it is
+ * still a land); ability when it attacks.
  */
 const restless = (
   colors: [Color, Color],
@@ -38,7 +38,7 @@ const restless = (
   onAttack: { effects: Effect[]; targets?: TargetSpec[]; label: string },
 ): CardScript => ({
   abilities: [
-    entersWith({ tapped: true, label: "Arrive engagé" }),
+    entersWith({ tapped: true, label: "Enters tapped" }),
     manaAbility(colors),
     activated({
       mana: animate.mana,
@@ -52,15 +52,15 @@ const restless = (
           ...animate.extra,
         }),
       ],
-      label: `Devient une créature ${animate.power}/${animate.toughness}`,
+      label: msg("Becomes a {power}/{toughness} creature", { power: animate.power, toughness: animate.toughness }),
     }),
     triggered(when.attacksSelf, onAttack.effects, { targets: onAttack.targets, label: onAttack.label }),
   ],
 });
 
-/** Everflame, Heroes' Legacy (The Irencrag transformé) : Équiper {3} et « la créature équipée gagne +3/+3 ». */
-const EVERFLAME_EQUIP = equipAbility({ mana: "{3}", label: "Équiper {3}" });
-/** L'Irencrag n'est pas encore devenu Everflame (ses capacités d'origine ne s'appliquent qu'avant). */
+/** Everflame, Heroes' Legacy (The Irencrag transformed): Equip {3} and "Equipped creature gets +3/+3." */
+const EVERFLAME_EQUIP = equipAbility({ mana: "{3}", label: msg("Equip {cost}", { cost: "{3}" }) });
+/** The Irencrag has not become Everflame yet (its original abilities only apply before). */
 const NOT_EVERFLAME = cond.sourceMatches({ notSubtype: "Equipment" });
 
 export const ARTIFACTS: Record<string, CardScript> = {
@@ -70,7 +70,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{2}",
         tap: true,
         effects: [...fx.loot(1), fx.createTokens(TREASURE)],
-        label: "Piochez, défaussez, puis un Trésor",
+        label: "Draw, discard, then a Treasure",
       }),
     ],
   },
@@ -78,7 +78,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.gainControl(ref.target()), fx.untap(ref.target()), fx.pump(ref.target(), 0, 0, ["haste"])], {
         targets: [target.creature()],
-        label: "Contrôle d'une créature jusqu'à la fin du tour, dégagée, avec la célérité",
+        label: "Gain control of a creature until end of turn, untap it, it gains haste",
       }),
       foodAbility(),
       activated({
@@ -87,7 +87,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         sacrifice: true,
         targets: [target.player("t", "opponent")],
         effects: [fx.loseLife(3, ref.target())],
-        label: "Un adversaire perd 3 points de vie",
+        label: "An opponent loses 3 life",
       }),
     ],
   },
@@ -97,12 +97,10 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{1}",
         effects: [
           fx.modify(ref.self, {
-            addBlockRules: [
-              block.notBy({ not: { keyword: "haste" } }, "Ne peut être bloquée que par des créatures avec la célérité"),
-            ],
+            addBlockRules: [block.notBy({ not: { keyword: "haste" } }, "Can't be blocked except by creatures with haste")],
           }),
         ],
-        label: "Ne peut être bloquée que par des créatures avec la célérité ce tour-ci",
+        label: "Can't be blocked except by creatures with haste this turn",
       }),
       foodAbility(),
     ],
@@ -115,25 +113,25 @@ export const ARTIFACTS: Record<string, CardScript> = {
         targets: [target.creature()],
         effects: [fx.tap(ref.target())],
         reduction: { generic: 1, condition: cond.yourTurn },
-        label: "Engagez une créature (coûte {1} de moins pendant votre tour)",
+        label: "Tap a creature (costs {1} less during your turn)",
       }),
       activated({
         mana: "{3}",
         sacrifice: true,
         effects: [fx.draw(amount.count({ types: ["Creature"], controller: "opponent", tapped: true }))],
-        label: "Piochez une carte par créature adverse engagée",
+        label: "Draw a card for each tapped creature your opponents control",
       }),
     ],
   },
   "The Irencrag": {
-    // « … et perd toutes ses autres capacités » : ses deux capacités d'origine ne s'appliquent plus une fois qu'il est
-    // devenu un Équipement (équivalent ; un effet « perd toutes ses capacités » retirerait aussi celles qu'il gagne).
+    // "… and loses all other abilities": its two original abilities no longer apply once it has become an Equipment
+    // (equivalent; a "loses all abilities" effect would also remove the ones it gains).
     abilities: [
       manaAbility("C", 1, { condition: NOT_EVERFLAME }),
       triggered(
         when.enters({ types: ["Creature"], legendary: true, controller: "you" }),
         fx.may(
-          "Faire de The Irencrag l'Équipement légendaire Everflame, Heroes' Legacy ?",
+          "Have The Irencrag become the legendary Equipment Everflame, Heroes' Legacy?",
           fx.modify(
             ref.self,
             {
@@ -141,18 +139,18 @@ export const ARTIFACTS: Record<string, CardScript> = {
               addSubtypes: ["Equipment"],
               addAbilities: [
                 EVERFLAME_EQUIP,
-                staticAbility("attached", { power: 3, toughness: 3 }, { label: "La créature équipée gagne +3/+3" }),
+                staticAbility("attached", { power: 3, toughness: 3 }, { label: "Equipped creature gets +3/+3" }),
               ],
             },
             "permanent",
           ),
         ),
-        { condition: NOT_EVERFLAME, label: "Peut devenir Everflame, Heroes' Legacy" },
+        { condition: NOT_EVERFLAME, label: "May become Everflame, Heroes' Legacy" },
       ),
     ],
   },
   "Prophetic Prism": {
-    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" }), anyColor("{1}", { tap: true })],
+    abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" }), anyColor("{1}", { tap: true })],
   },
   "Scarecrow Guide": { abilities: [anyColor("{1}", { oncePerTurn: true })] },
   "Syr Ginger, the Meal Ender": {
@@ -162,25 +160,25 @@ export const ARTIFACTS: Record<string, CardScript> = {
         { addKeywords: ["trample", "hexproof", "haste"] },
         {
           condition: cond.battlefieldCount({ types: ["Planeswalker"], controller: "opponent" }, 1),
-          label: "Piétinement, défense talismanique et célérité tant qu'un adversaire contrôle un planeswalker",
+          label: "Trample, hexproof and haste as long as an opponent controls a planeswalker",
         },
       ),
       triggered(
         { on: "leaves", who: { types: ["Artifact"], controller: "you", other: true }, to: "graveyard" },
         [fx.addCounters(ref.self, 1), fx.scry(1)],
-        { label: "Un autre artefact mis au cimetière : un marqueur +1/+1 et regard 1" },
+        { label: "Another artifact put into the graveyard: a +1/+1 counter and scry 1" },
       ),
       activated({
         mana: "{2}",
         tap: true,
         sacrifice: true,
         effects: [fx.gainLife(amount.powerOf(ref.self))],
-        label: "Gagnez autant de points de vie que sa force",
+        label: "Gain life equal to its power",
       }),
     ],
   },
   "Three Bowls of Porridge": {
-    // « Choisissez un mode qui n'a pas déjà été choisi » : chaque mode est une capacité activable une seule fois.
+    // "Choose one that hasn't been chosen": each mode is an ability that can be activated only once.
     abilities: [
       activated({
         mana: "{2}",
@@ -188,7 +186,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         once: true,
         targets: [target.creature()],
         effects: [fx.damage(2, ref.target())],
-        label: "2 blessures à une créature",
+        label: "2 damage to a creature",
       }),
       activated({
         mana: "{2}",
@@ -196,38 +194,34 @@ export const ARTIFACTS: Record<string, CardScript> = {
         once: true,
         targets: [target.creature()],
         effects: [fx.tap(ref.target())],
-        label: "Engagez une créature",
+        label: "Tap a creature",
       }),
       activated({
         mana: "{2}",
         tap: true,
         once: true,
         effects: [fx.sacrificeIt(ref.self), fx.gainLife(3)],
-        label: "Sacrifiez-le et gagnez 3 points de vie",
+        label: "Sacrifice it and gain 3 life",
       }),
     ],
   },
 
-  // --- Terrains ----------------------------------------------------------------
+  // --- Lands ----------------------------------------------------------------
   "Crystal Grotto": {
-    abilities: [
-      triggered(when.entersSelf, [fx.scry(1)], { label: "Regard 1" }),
-      manaAbility("C"),
-      anyColor("{1}", { tap: true }),
-    ],
+    abilities: [triggered(when.entersSelf, [fx.scry(1)], { label: "Scry 1" }), manaAbility("C"), anyColor("{1}", { tap: true })],
   },
   "Edgewall Inn": {
     asEnters: [fx.chooseForSelf("color")],
     abilities: [
-      entersWith({ tapped: true, label: "Arrive engagé" }),
+      entersWith({ tapped: true, label: "Enters tapped" }),
       manaAbility([...ALL_COLORS], 1, { produceChosen: true }),
       activated({
         mana: "{3}",
         tap: true,
         sacrifice: true,
-        targets: [target.cardInGraveyard("t", { adventure: true }, "you", "carte avec une Aventure de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { adventure: true }, "you", "card with an Adventure in your graveyard")],
         effects: [fx.toHand(ref.target())],
-        label: "Renvoie en main une carte avec une Aventure",
+        label: "Return a card with an Adventure to your hand",
       }),
     ],
   },
@@ -237,7 +231,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     {
       effects: [fx.addCounters(ref.target(), 1)],
       targets: [target.creature("t", { controller: "you" })],
-      label: "Un marqueur +1/+1 sur une créature que vous contrôlez",
+      label: "Put a +1/+1 counter on a creature you control",
     },
   ),
   "Restless Fortress": restless(
@@ -245,7 +239,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     { mana: "{2}{W}{B}", subtype: "Nightmare", power: 1, toughness: 4 },
     {
       effects: [fx.loseLife(2, ref.defendingPlayer), fx.gainLife(2)],
-      label: "Le joueur défenseur perd 2 points de vie et vous en gagnez 2",
+      label: "Defending player loses 2 life and you gain 2 life",
     },
   ),
   "Restless Spire": restless(
@@ -260,12 +254,12 @@ export const ARTIFACTS: Record<string, CardScript> = {
           staticAbility(
             "self",
             { addKeywords: ["firstStrike"] },
-            { condition: cond.yourTurn, label: "L'initiative pendant votre tour" },
+            { condition: cond.yourTurn, label: "Has first strike during your turn" },
           ),
         ],
       },
     },
-    { effects: [fx.scry(1)], label: "Regard 1" },
+    { effects: [fx.scry(1)], label: "Scry 1" },
   ),
   "Restless Vinestalk": restless(
     ["G", "U"],
@@ -273,7 +267,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     {
       effects: [fx.modify(ref.target(), { setPower: 3, setToughness: 3 })],
       targets: [target.optional(target.creature("t", { other: true }))],
-      label: "Jusqu'à une autre créature a une force et une endurance de base de 3/3",
+      label: "Up to one other creature has base power and toughness 3/3",
     },
   ),
 };

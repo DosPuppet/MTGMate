@@ -1,7 +1,11 @@
 {
-  "id": "bienvenue-bleu",
-  "name": "Bienvenue : bleu",
-  "description": "Deck de bienvenue (40 cartes, Foundations). Créatures volantes, contresorts et renvois en main, puis Arcanis pioche des cartes à foison.",
+  "id": "welcome-blue",
+  "name": "Welcome: Blue",
+  "description": "Welcome deck (40 cards, Foundations). Flying creatures, counterspells and bounce, then Arcanis draws cards galore.",
+  "fr": {
+    "name": "Bienvenue : bleu",
+    "description": "Deck de bienvenue (40 cartes, Foundations). Créatures volantes, contresorts et renvois en main, puis Arcanis pioche des cartes à foison."
+  },
   "colors": [
     "U"
   ],

@@ -1,7 +1,7 @@
 /**
- * Wilds of Eldraine — cartes des decks du méta (phase 1 du plan P4, lot M1). Le Marchandage (702.166) est lu dans le
- * texte (`scryfall.ts` : kicker « sacrifiez un artefact, un enchantement ou un jeton »). Les autres cartes de
- * l'extension sont dans les fichiers par couleur.
+ * Wilds of Eldraine — cards of the meta decks (phase 1 of plan P4, lot M1). Bargain (702.166) is read from the text
+ * (`scryfall.ts`: kicker "sacrifice an artifact, enchantment, or token"). The other cards of the set are in the
+ * files by color.
  */
 import {
   activated,
@@ -22,11 +22,11 @@ import {
 } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
-  // --- Bleu ------------------------------------------------------------------
+  // --- Blue ------------------------------------------------------------------
   "Sleight of Hand": { spell: spell([], [fx.lookAtTop(2, { count: 1, to: { to: "hand" }, rest: "bottom" })]) },
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -----------------------------------------------------------------
   "Hearth Elemental": {
-    // {X} de moins : cartes d'éphémère, de rituel et/ou avec une Aventure dans votre cimetière.
+    // {X} less: instant, sorcery and/or Adventure cards in your graveyard.
     costReduction: {
       generic: amount.plus(
         amount.countIn("graveyard", INSTANT_SORCERY),
@@ -44,19 +44,19 @@ export const CARDS: Record<string, CardScript> = {
 
   // --- Lot M2 -----------------------------------------------------------------
   "Disdainful Stroke": {
-    spell: spell([target.spell("t", { minManaValue: 4 }, "sort de VM 4 ou plus")], [fx.counter(ref.target())]),
+    spell: spell([target.spell("t", { minManaValue: 4 }, "spell with MV 4 or greater")], [fx.counter(ref.target())]),
   },
 
   // --- Lot M4 -----------------------------------------------------------------
   "Candy Trail": {
     abilities: [
-      triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
+      triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" }),
       activated({
         mana: "{2}",
         tap: true,
         sacrifice: true,
         effects: [fx.gainLife(3), fx.draw(1)],
-        label: "Gagnez 3 PV, piochez",
+        label: "Gain 3 life, draw",
       }),
     ],
   },
@@ -76,7 +76,13 @@ export const CARDS: Record<string, CardScript> = {
   "Bramble Familiar": {
     abilities: [
       manaAbility("G"),
-      activated({ mana: "{1}{G}", tap: true, discard: 1, effects: [fx.bounce(ref.self)], label: "Renvoyez-la dans la main" }),
+      activated({
+        mana: "{1}{G}",
+        tap: true,
+        discard: 1,
+        effects: [fx.bounce(ref.self)],
+        label: "Return it to its owner's hand",
+      }),
     ],
   },
   "Fetch Quest": {
@@ -88,7 +94,7 @@ export const CARDS: Record<string, CardScript> = {
           "graveyard",
           { anyOf: [{ types: ["Creature"] }, { types: ["Enchantment"] }, { types: ["Land"] }] },
           { to: "battlefield" },
-          { count: 1, pool: ref.stored("m"), prompt: "Une carte de créature, d'enchantement ou de terrain meulée" },
+          { count: 1, pool: ref.stored("m"), prompt: "A milled creature, enchantment or land card" },
         ),
       ],
     ),
@@ -96,7 +102,7 @@ export const CARDS: Record<string, CardScript> = {
   "Mosswood Dreadknight": {
     abilities: [
       triggered(when.diesSelf, [fx.grantPlay(ref.selfCard, { untilYourNextTurn: true, adventureOnly: true })], {
-        label: "Lançable depuis le cimetière (en Aventure) jusqu'à la fin de votre prochain tour",
+        label: "Castable from the graveyard (as an Adventure) until the end of your next turn",
       }),
     ],
   },
@@ -116,18 +122,18 @@ export const CARDS: Record<string, CardScript> = {
             setColors: ["B", "G"],
           }),
         ],
-        label: "Devient une créature Horreur 4/4",
+        label: "Becomes a 4/4 Horror creature",
       }),
       triggered(when.attacksSelf, [fx.createTokens(FOOD), fx.exileCard(ref.target())], {
         targets: [target.optional(target.cardInGraveyard("t", {}, "any"))],
-        label: "Une Nourriture, exile une carte d'un cimetière",
+        label: "A Food, exile a card from a graveyard",
       }),
     ],
   },
   "Scalding Viper": {
     abilities: [
       triggered(when.castSpell("opponent", { maxManaValue: 3 }), [fx.damage(1, ref.eventPlayer)], {
-        label: "1 blessure au lanceur",
+        label: "1 damage to the caster",
       }),
     ],
   },

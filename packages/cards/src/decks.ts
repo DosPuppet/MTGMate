@@ -1,11 +1,6 @@
-/** Listes de decks seules (sans les données de cartes) : utilisable côté interface sans alourdir le bundle. */
+/** Deck lists only (without the card data): usable by the interface without weighing down the bundle. */
 
 import { CUSTOM_PRINTING, type Format } from "@mtgx/engine";
-import bienvenueBlanc from "../decks/bienvenue-blanc.json";
-import bienvenueBleu from "../decks/bienvenue-bleu.json";
-import bienvenueNoir from "../decks/bienvenue-noir.json";
-import bienvenueRouge from "../decks/bienvenue-rouge.json";
-import bienvenueVert from "../decks/bienvenue-vert.json";
 import cmdCounterBlitz from "../decks/cmd-counter-blitz.json";
 import cmdDarkLeo from "../decks/cmd-dark-leo.json";
 import cmdEdgarMarkov from "../decks/cmd-edgar-markov.json";
@@ -25,9 +20,14 @@ import metaDimirMidrange from "../decks/meta-dimir-midrange.json";
 import metaIzzetSpellementals from "../decks/meta-izzet-spellementals.json";
 import metaJundSacrifice from "../decks/meta-jund-sacrifice.json";
 import metaMonoGreenLandfall from "../decks/meta-mono-green-landfall.json";
+import welcomeBlack from "../decks/welcome-black.json";
+import welcomeBlue from "../decks/welcome-blue.json";
+import welcomeGreen from "../decks/welcome-green.json";
+import welcomeRed from "../decks/welcome-red.json";
+import welcomeWhite from "../decks/welcome-white.json";
 import type { DeckEntries } from "./decklist";
 
-/** Un deck : cartes par nom anglais (clé canonique), avec leur nombre d'exemplaires. */
+/** A deck: cards by English name (canonical key), with their number of copies. */
 export interface DeckList {
   id: string;
   /** Name and description in English; French in `fr` (PLAN-I), shown when the interface is in French. */
@@ -36,36 +36,36 @@ export interface DeckList {
   fr?: { name?: string; description?: string };
   colors: string[];
   cover?: string;
-  /** Commander (PLAN-E) : le commandant (une ligne), à part du deck. */
+  /** Commander (PLAN-E): the commander (one line), apart from the deck. */
   commander?: DeckEntries;
   main: DeckEntries;
   sideboard?: DeckEntries;
-  /** Format du deck, quand il n'est pas le Standard (un deck Commander se valide en Commander). */
+  /** Format of the deck, when it is not Standard (a Commander deck is validated in Commander). */
   format?: Format;
-  /** Deck préconstruit (lecture seule) ou créé par l'utilisateur. */
+  /** Precon deck (read-only) or created by the user. */
   builtin?: boolean;
   /**
-   * Commander : bracket déclaré par la source de la liste (Wizards annonce ses préconstruits en bracket 2 ; une liste
-   * EDHREC ou Moxfield, celui de son auteur). Le nombre de Game Changers (`validateDeck`) n'en donne qu'un plancher.
+   * Commander: bracket declared by the source of the list (Wizards announces its precons at bracket 2; an EDHREC or
+   * Moxfield list, that of its author). The number of Game Changers (`validateDeck`) only gives a floor.
    */
   bracket?: 1 | 2 | 3 | 4 | 5;
   /**
-   * Préconstruit aux illustrations personnelles (`"custom"`) : chaque ligne qui ne choisit pas d'impression prend
-   * l'impression personnelle (`CUSTOM_PRINTING`), dont l'image vient du dossier local du serveur, s'il y en a une.
+   * Precon with custom art (`"custom"`): each line that chooses no printing takes the custom printing
+   * (`CUSTOM_PRINTING`), whose image comes from the server's local folder, if there is one.
    */
   art?: "custom";
 }
 
 /**
- * Decks de bienvenue (40 cartes, Foundations), le Starter Kit Final Fantasy, les cinq premiers decks du méta Standard
- * (relevé du 29/09/2026, `docs/meta/`), réserve comprise, puis les decks Commander (PLAN-E, `docs/commander/decks/`).
+ * Welcome decks (40 cards, Foundations), the Final Fantasy Starter Kit, the top five decks of the Standard metagame
+ * (survey of 2026-09-29, `docs/meta/`), sideboard included, then the Commander decks (PLAN-E, `docs/commander/decks/`).
  */
 export const DECKS: DeckList[] = [
-  bienvenueBlanc,
-  bienvenueBleu,
-  bienvenueNoir,
-  bienvenueRouge,
-  bienvenueVert,
+  welcomeWhite,
+  welcomeBlue,
+  welcomeBlack,
+  welcomeRed,
+  welcomeGreen,
   finSephiroth,
   finCloud,
   metaIzzetSpellementals,
@@ -101,7 +101,7 @@ const deckKey = (main: DeckEntries) => {
 };
 const PRECON_BY_KEY = new Map(DECKS.map((d) => [deckKey(d.main), d]));
 
-/** Préconstruit dont le deck principal est identique (quels que soient l'ordre et le découpage des lignes). */
+/** Precon whose main deck is identical (whatever the order and splitting of the lines). */
 export function preconFor(main: DeckEntries): DeckList | undefined {
   return PRECON_BY_KEY.get(deckKey(main));
 }

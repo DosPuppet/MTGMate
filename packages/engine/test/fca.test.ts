@@ -6,6 +6,7 @@ import { destroy, drawCards, loseLife } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars, moveObject } from "../src/state";
+import { plainText } from "../src/text";
 import { stateBasedActions } from "../src/turn";
 import {
   act,
@@ -34,7 +35,7 @@ describe("Through the Ages", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Ragavan, Nimble Pilferer"] } });
       const card = idOf(s, "p1", "hand", "Ragavan, Nimble Pilferer");
       const opt = castOption(s, card);
-      expect(opt?.type === "cast" && opt.altLabel).toBe("Ruée — {1}{R}");
+      expect(opt?.type === "cast" && plainText(opt.altLabel ?? "")).toBe("Dash — {1}{R}");
       s = settle(act(s, "p1", { type: "cast", card, alternative: true }));
       const rag = idOf(s, "p1", "battlefield", "Ragavan, Nimble Pilferer");
       expect(chars(s, rag).keywords).toContain("haste");
@@ -74,7 +75,7 @@ describe("Through the Ages", () => {
       expect(opt?.type === "cast" && opt.altAvailable).toBeFalsy();
       loseLife(s, "p2", 1);
       opt = castOption(s, card);
-      expect(opt?.type === "cast" && opt.altLabel).toBe("Spectacle — {R}");
+      expect(opt?.type === "cast" && plainText(opt.altLabel ?? "")).toBe("Spectacle — {R}");
       s = settle(act(s, "p1", { type: "cast", card, alternative: true }));
       // {R} payé : deux Montagnes encore dégagées ; les deux cartes exilées sont jouables.
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Mountain" && !s.objects[id]?.tapped)).toHaveLength(2);
@@ -206,7 +207,7 @@ describe("Through the Ages", () => {
           s,
           idOf(s, "p1", "battlefield", "Kenrith, the Returned King"),
           { targets: { t: ["p1"] } },
-          (a) => !!a.label?.includes("5 PV"),
+          (a) => !!a.label?.includes("5 life"),
         ),
       );
       expect(s.players.p1?.life).toBe(25);
@@ -230,7 +231,7 @@ describe("Through the Ages", () => {
       const opt = castOption(s, idOf(s, "p1", "hand", "Cryptic Command"));
       const pair =
         opt?.type === "cast"
-          ? opt.modes.find((m) => m.label?.startsWith("Contrecarrez") && m.label.includes("Piochez"))
+          ? opt.modes.find((m) => plainText(m.label ?? "").startsWith("Counter") && plainText(m.label ?? "").includes("Draw"))
           : undefined;
       s = settle(castIt(s, "Cryptic Command", { mode: pair?.index, targets: { s: [s.stack[0]?.id as string] } }));
       expect([idsOf(s, "p2", "graveyard", "Bear Cub").length, s.players.p1?.hand.length]).toEqual([1, 1]);

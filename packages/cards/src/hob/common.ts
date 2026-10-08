@@ -1,10 +1,10 @@
-/** Éléments de The Hobbit (HOB) : jetons. Le DSL et les jetons communs viennent de lci/common.ts. */
-import type { Effect, TokenSpec } from "@mtgx/engine";
+/** The Hobbit (HOB) building blocks: tokens. The DSL and the common tokens come from lci/common.ts. */
+import { type Effect, msg, type TokenSpec } from "@mtgx/engine";
 import { cond, equipAbility, fx, ref, staticAbility } from "../lci/common";
 
 export * from "../lci/common";
 
-/** Nain : créature rouge 2/2. */
+/** Dwarf: 2/2 red creature. */
 export const DWARF: TokenSpec = {
   name: "Dwarf",
   colors: ["R"],
@@ -14,10 +14,10 @@ export const DWARF: TokenSpec = {
   toughness: 2,
 };
 
-/** Loup : créature verte 2/2. */
+/** Wolf: 2/2 green creature. */
 export const WOLF: TokenSpec = { name: "Wolf", colors: ["G"], types: ["Creature"], subtypes: ["Wolf"], power: 2, toughness: 2 };
 
-/** Humain Soldat : créature blanche 1/1. */
+/** Human Soldier: 1/1 white creature. */
 export const HUMAN_SOLDIER: TokenSpec = {
   name: "Human Soldier",
   colors: ["W"],
@@ -27,13 +27,13 @@ export const HUMAN_SOLDIER: TokenSpec = {
   toughness: 1,
 };
 
-/** Elfe : créature verte 1/1. */
+/** Elf: 1/1 green creature. */
 export const ELF: TokenSpec = { name: "Elf", colors: ["G"], types: ["Creature"], subtypes: ["Elf"], power: 1, toughness: 1 };
 
-/** Ours : créature verte 2/2. */
+/** Bear: 2/2 green creature. */
 export const BEAR: TokenSpec = { name: "Bear", colors: ["G"], types: ["Creature"], subtypes: ["Bear"], power: 2, toughness: 2 };
 
-/** Oiseau Soldat : créature blanche 4/4 avec le vol. */
+/** Bird Soldier: 4/4 white creature with flying. */
 export const BIRD_SOLDIER: TokenSpec = {
   name: "Bird Soldier",
   colors: ["W"],
@@ -44,7 +44,7 @@ export const BIRD_SOLDIER: TokenSpec = {
   keywords: ["flying"],
 };
 
-/** Dragon : créature rouge 6/6 avec le vol. */
+/** Dragon: 6/6 red creature with flying. */
 export const DRAGON_6: TokenSpec = {
   name: "Dragon",
   colors: ["R"],
@@ -55,7 +55,7 @@ export const DRAGON_6: TokenSpec = {
   keywords: ["flying"],
 };
 
-/** Stone Boulder : créature-artefact Mur incolore 3/1 avec le défenseur. */
+/** Stone Boulder: 3/1 colorless Wall artifact creature with defender. */
 export const STONE_BOULDER: TokenSpec = {
   name: "Stone Boulder",
   colors: [],
@@ -66,20 +66,23 @@ export const STONE_BOULDER: TokenSpec = {
   keywords: ["defender"],
 };
 
-/** Axe : Équipement incolore, « la créature équipée a +1/+0 », équiper {2}. */
+/** Axe: colorless Equipment, "Equipped creature gets +1/+0", equip {2}. */
 export const AXE: TokenSpec = {
   name: "Axe",
   colors: [],
   types: ["Artifact"],
   subtypes: ["Equipment"],
-  abilities: [staticAbility("attached", { power: 1 }, { label: "+1/+0" }), equipAbility({ mana: "{2}", label: "Équiper {2}" })],
+  abilities: [
+    staticAbility("attached", { power: 1 }, { label: "+1/+0" }),
+    equipAbility({ mana: "{2}", label: msg("Equip {cost}", { cost: "{2}" }) }),
+  ],
   text: "Equipped creature gets +1/+0.\nEquip {2}",
 };
 
 /**
- * Recruter (The Hobbit) : « piochez une carte, puis défaussez une carte ; si vous défaussez ainsi une carte non-terrain,
- * créez un jeton Humain Soldat 1/1 » ; `v` : la variable de la carte défaussée (un nom propre à chaque recrutement d'une
- * même capacité).
+ * Recruit (The Hobbit): "Draw a card, then discard a card. If you discarded a nonland card this way, create a 1/1
+ * Human Soldier token"; `v`: the variable of the discarded card (a name of its own for each recruit of the same
+ * ability).
  */
 export const recruit = (v = "recruited"): Effect[] => [
   fx.draw(1),

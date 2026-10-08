@@ -1,7 +1,11 @@
 {
   "id": "cmd-nissa",
-  "name": "Nissa, Leyline Tamer — toucheterre et grandes créatures",
-  "description": "Commander, quatre couleurs sans le vert (blanc, bleu, noir, rouge), d'après la liste « Nissa, Non-Green Animist (Landfall w/ Big Creatures) » (Moxfield, bracket 4). Chaque terrain qui arrive fait piocher Nissa et lui fait révéler une grande créature ; fetchs, terrains rejoués et Retraites multiplient le toucheterre, puis Avacyn, Elesh Norn et Hullbreaker Horror verrouillent la table.",
+  "name": "Nissa, Leyline Tamer — landfall and big creatures",
+  "description": "Commander, four colors without green (white, blue, black, red), based on the list \"Nissa, Non-Green Animist (Landfall w/ Big Creatures)\" (Moxfield, bracket 4). Each land that enters makes Nissa draw and reveal a big creature; fetch lands, replayed lands and Retreats multiply landfall, then Avacyn, Elesh Norn and Hullbreaker Horror lock the table.",
+  "fr": {
+    "name": "Nissa, Leyline Tamer — toucheterre et grandes créatures",
+    "description": "Commander, quatre couleurs sans le vert (blanc, bleu, noir, rouge), d'après la liste « Nissa, Non-Green Animist (Landfall w/ Big Creatures) » (Moxfield, bracket 4). Chaque terrain qui arrive fait piocher Nissa et lui fait révéler une grande créature ; fetchs, terrains rejoués et Retraites multiplient le toucheterre, puis Avacyn, Elesh Norn et Hullbreaker Horror verrouillent la table."
+  },
   "colors": [
     "W",
     "U",

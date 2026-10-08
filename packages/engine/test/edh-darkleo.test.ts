@@ -156,7 +156,7 @@ describe("Dark Leo & Shredder (EDH)", () => {
       expect(s.objects[lions]?.owner).toBe("p2");
       // Régénération : un bouclier qui empêche la prochaine destruction.
       const inkEyes = idOf(s, "p1", "battlefield", "Ink-Eyes, Servant of Oni");
-      s = settle(activateLabeled(s, "p1", inkEyes, "Régénérez"));
+      s = settle(activateLabeled(s, "p1", inkEyes, "Regenerate"));
       expect(s.objects[inkEyes]?.regenShields).toBe(1);
     });
 
@@ -257,14 +257,14 @@ describe("Dark Leo & Shredder (EDH)", () => {
       expect(s.players.p2?.life).toBe(16);
       expect(s.players.p1?.life).toBe(24);
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "choice", 100);
-      s = settle(s, feedFirst("Nourrir") as never);
+      s = settle(s, feedFirst("Feed") as never);
       expect(s.players.p2?.life).toBe(12);
 
       let t = scenario({ p1: { battlefield: ["Astarion, the Decadent"] } });
       t = attack(t, [idOf(t, "p1", "battlefield", "Astarion, the Decadent")]);
       t = finishCombat(t);
       t = advanceUntil(t, (x) => x.turn.step === "end" && x.pending?.kind === "choice", 100);
-      t = settle(t, feedFirst("Faux amis") as never);
+      t = settle(t, feedFirst("Friends") as never);
       expect(t.players.p1?.life).toBe(28);
     });
 
@@ -314,7 +314,7 @@ describe("Dark Leo & Shredder (EDH)", () => {
     it("Mirror Entity : {X} : vos créatures ont une force et une endurance de base X/X et tous les types de créature", () => {
       let s = scenario({ p1: { battlefield: ["Mirror Entity", "Bear Cub", ...lands("Plains", 4)] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activateLabeled(s, "p1", idOf(s, "p1", "battlefield", "Mirror Entity"), "Vos créatures", { x: 4 }));
+      s = settle(activateLabeled(s, "p1", idOf(s, "p1", "battlefield", "Mirror Entity"), "Creatures you control", { x: 4 }));
       expect(pt(s, bear)).toEqual([4, 4]);
       expect(["Bear", "Ninja", "Turtle"].every((t) => matchesObjectFilter(s, "p1", bear, { subtype: t }))).toBe(true);
       s = advanceUntil(s, (x) => x.turn.active === "p2");
@@ -410,20 +410,20 @@ describe("Dark Leo & Shredder (EDH)", () => {
       expect(labels).toHaveLength(3);
       const both = legalActions(s, "p1")
         .flatMap((a) => (a.type === "cast" && nameOf(s, a.card) === "Akroma's Will" ? a.modes : []))
-        .find((m) => m.label?.startsWith("Les deux"));
+        .find((m) => m.label?.startsWith("Both"));
       s = settle(castIt(s, "p1", "Akroma's Will", { mode: both?.index }));
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, bear).keywords).toEqual(
         expect.arrayContaining(["flying", "vigilance", "doubleStrike", "lifelink", "indestructible"]),
       );
-      expect(chars(s, bear).protections.map((p) => p.label)).toContain("Protection contre chaque couleur");
+      expect(chars(s, bear).protections.map((p) => p.label)).toContain("Protection from each color");
     });
 
     it("Helm of the Host : au début de votre combat, un jeton copie non légendaire de la créature équipée, avec la célérité", () => {
       let s = scenario({ p1: { battlefield: ["Helm of the Host", "Splinter, Aging Champion", ...lands("Plains", 5)] } });
       const splinter = idOf(s, "p1", "battlefield", "Splinter, Aging Champion");
       const helm = idOf(s, "p1", "battlefield", "Helm of the Host");
-      s = settle(activateLabeled(s, "p1", helm, "Équiper", { targets: { t: [splinter] } }));
+      s = settle(activateLabeled(s, "p1", helm, "Equip", { targets: { t: [splinter] } }));
       expect(s.objects[helm]?.attachedTo).toBe(splinter);
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "priority" && x.stack.length > 0);
       s = settle(s);
@@ -452,9 +452,9 @@ describe("Dark Leo & Shredder (EDH)", () => {
       const sd = idOf(s, "p1", "battlefield", "Sonic Screwdriver");
       const ring2 = idOf(s, "p1", "battlefield", "Sol Ring");
       // « Un autre artefact » : il ne peut pas se cibler lui-même.
-      const untap = activations(s, "p1", sd).find((a) => a.label?.startsWith("Dégagez"));
+      const untap = activations(s, "p1", sd).find((a) => a.label?.startsWith("Untap"));
       expect(untap?.targets[0]?.legal).toEqual([ring2]);
-      s = settle(activateLabeled(s, "p1", sd, "Dégagez", { targets: { t: [ring2] } }));
+      s = settle(activateLabeled(s, "p1", sd, "Untap", { targets: { t: [ring2] } }));
       expect(s.objects[ring2]?.tapped).toBe(false);
       expect(ring && screwdriver).toBeTruthy();
       // {3} : imblocable ce tour-ci (Sol Ring paie {2}).
@@ -464,7 +464,7 @@ describe("Dark Leo & Shredder (EDH)", () => {
       });
       const bear = idOf(t, "p1", "battlefield", "Bear Cub");
       t = settle(
-        activateLabeled(t, "p1", idOf(t, "p1", "battlefield", "Sonic Screwdriver"), "Une créature", { targets: { t: [bear] } }),
+        activateLabeled(t, "p1", idOf(t, "p1", "battlefield", "Sonic Screwdriver"), "A creature", { targets: { t: [bear] } }),
       );
       t = attack(t, [bear]);
       expect(canBlock(t, idOf(t, "p2", "battlefield", "Savannah Lions"), bear)).toBe(false);
@@ -478,7 +478,7 @@ describe("Dark Leo & Shredder (EDH)", () => {
       expect(trigger).toBeTruthy();
       const hand = s.players.p1?.hand.length ?? 0;
       s = settle(
-        activateLabeled(s, "p1", idOf(s, "p1", "battlefield", "Strionic Resonator"), "Copiez", { targets: { t: [trigger] } }),
+        activateLabeled(s, "p1", idOf(s, "p1", "battlefield", "Strionic Resonator"), "Copy", { targets: { t: [trigger] } }),
       );
       expect(s.players.p1?.life).toBe(22);
       expect(s.players.p1?.hand.length).toBe(hand + 2);
@@ -491,7 +491,7 @@ describe("Dark Leo & Shredder (EDH)", () => {
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(
-        activateLabeled(s, "p1", idOf(s, "p1", "battlefield", "Whispersilk Cloak"), "Équiper", { targets: { t: [bear] } }),
+        activateLabeled(s, "p1", idOf(s, "p1", "battlefield", "Whispersilk Cloak"), "Equip", { targets: { t: [bear] } }),
       );
       expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["unblockable", "shroud"]));
       s = act(s, "p1", { type: "pass" });
@@ -509,9 +509,9 @@ describe("Dark Leo & Shredder (EDH)", () => {
       });
       const tunnel = idOf(s, "p1", "battlefield", "Access Tunnel");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      const ability = activations(s, "p1", tunnel).find((a) => a.label?.startsWith("Une créature"));
+      const ability = activations(s, "p1", tunnel).find((a) => a.label?.startsWith("A creature"));
       expect(namesIn(s, ability?.targets[0]?.legal)).toEqual(["Bear Cub", "Savannah Lions"]);
-      s = settle(activateLabeled(s, "p1", tunnel, "Une créature", { targets: { t: [bear] } }));
+      s = settle(activateLabeled(s, "p1", tunnel, "A creature", { targets: { t: [bear] } }));
       s = attack(s, [bear]);
       expect(canBlock(s, idOf(s, "p2", "battlefield", "Savannah Lions"), bear)).toBe(false);
     });
@@ -523,9 +523,9 @@ describe("Dark Leo & Shredder (EDH)", () => {
       });
       const shizo = idOf(s, "p1", "battlefield", "Shizo, Death's Storehouse");
       const splinter = idOf(s, "p1", "battlefield", "Splinter, Aging Champion");
-      const ability = activations(s, "p1", shizo).find((a) => a.label?.startsWith("Une créature légendaire"));
+      const ability = activations(s, "p1", shizo).find((a) => a.label?.startsWith("A legendary creature"));
       expect(namesIn(s, ability?.targets[0]?.legal)).toEqual(["Splinter, Aging Champion"]);
-      s = settle(activateLabeled(s, "p1", shizo, "Une créature légendaire", { targets: { t: [splinter] } }));
+      s = settle(activateLabeled(s, "p1", shizo, "A legendary creature", { targets: { t: [splinter] } }));
       s = attack(s, [splinter]);
       expect(canBlock(s, idOf(s, "p2", "battlefield", "Savannah Lions"), splinter)).toBe(false);
       expect(canBlock(s, idOf(s, "p2", "battlefield", "Highborn Vampire"), splinter)).toBe(true);
@@ -553,7 +553,7 @@ describe("Dark Leo & Shredder (EDH)", () => {
       });
       const bear = idOf(t, "p1", "battlefield", "Bear Cub");
       t = settle(
-        activateLabeled(t, "p1", idOf(t, "p1", "battlefield", "The Black Gate"), "Une créature", { targets: { t: [bear] } }),
+        activateLabeled(t, "p1", idOf(t, "p1", "battlefield", "The Black Gate"), "A creature", { targets: { t: [bear] } }),
       );
       const rule = chars(t, bear).blockRules.find((r) => r.cantBeBlockedByPlayer);
       expect(rule?.cantBeBlockedByPlayer).toBe("p2");
@@ -566,7 +566,7 @@ describe("Dark Leo & Shredder (EDH)", () => {
       });
       const bear2 = idOf(u, "p1", "battlefield", "Bear Cub");
       u = settle(
-        activateLabeled(u, "p1", idOf(u, "p1", "battlefield", "The Black Gate"), "Une créature", { targets: { t: [bear2] } }),
+        activateLabeled(u, "p1", idOf(u, "p1", "battlefield", "The Black Gate"), "A creature", { targets: { t: [bear2] } }),
       );
       u = attack(u, [bear2]);
       expect(canBlock(u, idOf(u, "p2", "battlefield", "Savannah Lions"), bear2)).toBe(true);

@@ -131,7 +131,7 @@ describe("Source Material", () => {
       equip(s, jitte, cub);
       s = throughCombat(attack(s, [cub]));
       expect(s.objects[jitte]?.counters.charge).toBe(2);
-      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === jitte && a.label?.includes("2 PV"));
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === jitte && a.label?.includes("2 life"));
       s = settle(act(s, "p1", { type: "activate", source: jitte, ability: ab?.type === "activate" ? ab.ability : 0 }));
       expect([s.players.p1?.life, s.objects[jitte]?.counters.charge]).toEqual([22, 1]);
     });
@@ -139,9 +139,7 @@ describe("Source Material", () => {
     it("Shadowspear : {1}, les permanents adverses perdent la défense talismanique et l'indestructible", () => {
       let s = scenario({ p1: { battlefield: ["Shadowspear", "Plains"] }, p2: { battlefield: ["Carnage Tyrant"] } });
       const spear = idOf(s, "p1", "battlefield", "Shadowspear");
-      const ab = legalActions(s, "p1").find(
-        (a) => a.type === "activate" && a.source === spear && !a.label?.startsWith("Équiper"),
-      );
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === spear && !a.label?.startsWith("Equip"));
       s = settle(act(s, "p1", { type: "activate", source: spear, ability: ab?.type === "activate" ? ab.ability : 0 }));
       expect(chars(s, idOf(s, "p2", "battlefield", "Carnage Tyrant")).keywords).not.toContain("hexproof");
     });

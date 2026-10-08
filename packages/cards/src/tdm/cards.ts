@@ -1,7 +1,7 @@
 /**
- * Tarkir: Dragonstorm — cartes des decks du méta (phase 1 du plan P4, lot M1). L'Harmonie (702.180) est lue dans le
- * texte (`scryfall.ts`) : lancée depuis le cimetière comme un flashback, une créature engagée réduit le coût. L'extension
- * sera couverte en entier en phase 2.
+ * Tarkir: Dragonstorm — cards of the meta decks (phase 1 of plan P4, batch M1). Harmonize (702.180) is read from the
+ * text (`scryfall.ts`): cast from the graveyard like flashback, a tapped creature reduces the cost. The set will be
+ * covered in full in phase 2.
  */
 import {
   activated,
@@ -29,21 +29,21 @@ import {
 } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
-  // --- Bleu ------------------------------------------------------------------
+  // --- Blue ------------------------------------------------------------------
   "Winternight Stories": {
     spell: spell([], [fx.draw(3), fx.discard(2, ref.you, { unlessFilter: { types: ["Creature"] } })]),
   },
-  // --- Vert ------------------------------------------------------------------
+  // --- Green -----------------------------------------------------------------
   "Surrak, Elusive Hunter": {
     cantBeCountered: true,
     abilities: [
       triggered(when.targetedByOpponent({ types: ["Creature"], controller: "you" }, true), [fx.draw(1)], {
-        label: "Piochez une carte",
+        label: "Draw a card",
       }),
     ],
   },
 
-  // --- Lot M2 -----------------------------------------------------------------
+  // --- Batch M2 -----------------------------------------------------------------
   "Strategic Betrayal": {
     spell: spell(
       [target.player("t", "opponent")],
@@ -54,9 +54,9 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
 
-  // --- Lot M3 -----------------------------------------------------------------
+  // --- Batch M3 -----------------------------------------------------------------
   "Voice of Victory": {
-    // Mobilisation 2 : lue dans le texte.
+    // Mobilize 2: read from the text.
     abilities: [playerStatic({ castLimit: { who: "opponents", during: "yourTurn" } })],
   },
   "Qarsi Revenant": {
@@ -72,14 +72,14 @@ export const CARDS: Record<string, CardScript> = {
           fx.counters(ref.target(), "deathtouch"),
           fx.counters(ref.target(), "lifelink"),
         ],
-        label: "Renouveau : vol, contact mortel et lien de vie",
+        label: "Renew: flying, deathtouch and lifelink",
       }),
     ],
   },
 
-  // --- Lot M4 -----------------------------------------------------------------
+  // --- Batch M4 -----------------------------------------------------------------
   "Dispelling Exhale": {
-    // « En coût additionnel, vous pouvez contempler un Dragon » : fait au lancement, retenu par le sort.
+    // "As an additional cost to cast this spell, you may behold a Dragon": done on casting, remembered by the spell.
     additionalCost: { behold: { filter: { subtype: "Dragon" } } },
     spell: spell(
       [target.spell()],
@@ -98,7 +98,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Jeskai Revelation": {
     spell: spell(
-      [{ id: "b", label: "sort ou permanent", filter: { spells: {}, objects: { permanent: true } } }, target.any("d")],
+      [{ id: "b", label: "spell or permanent", filter: { spells: {}, objects: { permanent: true } } }, target.any("d")],
       [fx.bounce(ref.target("b")), fx.damage(4, ref.target("d")), fx.createTokens(MONK, 2), fx.draw(2), fx.gainLife(4)],
     ),
   },
@@ -107,26 +107,26 @@ export const CARDS: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.controls({ anySubtype: ["Mountain", "Forest"] })),
-        label: "Engagé, sauf si vous contrôlez une Montagne ou une Forêt",
+        label: "Tapped, unless you control a Mountain or a Forest",
       }),
       manaAbility("U"),
       activated({
         mana: "{U}",
         tap: true,
         effects: [fx.nextSpellUncounterable],
-        label: "Le prochain sort ne peut pas être contrecarré",
+        label: "The next spell can't be countered",
       }),
     ],
   },
   "Sarkhan, Dragon Ascendant": {
     abilities: [
       triggered(when.entersSelf, fx.mayBehold({ subtype: "Dragon" }, fx.createTokens(TREASURE)), {
-        label: "En contemplant un Dragon : un Trésor",
+        label: "Beholding a Dragon: a Treasure",
       }),
       triggered(
         when.enters({ subtype: "Dragon", controller: "you" }),
         [fx.addCounters(ref.self, 1), fx.modify(ref.self, { addSubtypes: ["Dragon"], addKeywords: ["flying"] })],
-        { label: "Marqueur +1/+1 ; Dragon volant jusqu'à la fin du tour" },
+        { label: "+1/+1 counter; flying Dragon until end of turn" },
       ),
     ],
   },
@@ -139,7 +139,7 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.search({ subtype: "Dragon" }, { to: "hand" })],
-        label: "Chercher une carte de Dragon",
+        label: "Search for a Dragon card",
       }),
     ],
   },
@@ -157,8 +157,8 @@ export const CARDS: Record<string, CardScript> = {
           ),
         ],
         {
-          targets: [target.permanent("t", ["Land"], { basic: false, controller: "opponent" }, "terrain non de base adverse")],
-          label: "Détruit un terrain non de base",
+          targets: [target.permanent("t", ["Land"], { basic: false, controller: "opponent" }, "opponent's nonbasic land")],
+          label: "Destroys a nonbasic land",
         },
       ),
     ],
@@ -168,11 +168,11 @@ export const CARDS: Record<string, CardScript> = {
       staticAbility(
         { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }, { types: ["Planeswalker"] }] },
         { addKeywords: ["noActivatedAbilities"] },
-        { label: "Les capacités activées des artefacts, créatures et planeswalkers ne peuvent pas être activées" },
+        { label: "Activated abilities of artifacts, creatures and planeswalkers can't be activated" },
       ),
     ],
   },
-  "Twinmaw Stormbrood": { abilities: [triggered(when.entersSelf, [fx.gainLife(5)], { label: "Gagnez 5 PV" })] },
+  "Twinmaw Stormbrood": { abilities: [triggered(when.entersSelf, [fx.gainLife(5)], { label: "Gain 5 life" })] },
   "Charring Bite": { spell: spell([target.creature("t", { not: { keyword: "flying" } })], [fx.damage(5, ref.target())]) },
   "United Battlefront": {
     spell: spell(
@@ -188,20 +188,20 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
 
-  // --- Lot M5 -----------------------------------------------------------------
+  // --- Batch M5 -----------------------------------------------------------------
   "Dalkovan Encampment": {
     abilities: [
       entersWith({
         tapped: true,
         condition: cond.not(cond.controls({ anySubtype: ["Swamp", "Mountain"] })),
-        label: "Engagé, sauf si vous contrôlez un Marais ou une Montagne",
+        label: "Tapped, unless you control a Swamp or a Mountain",
       }),
       manaAbility("W"),
       activated({
         mana: "{2}{W}",
         tap: true,
-        // « Chaque fois que vous attaquez ce tour-ci » : capacité retardée (603.7), portée par un emblème du tour ; elle
-        // ne dépend plus du terrain (qui peut quitter le champ de bataille).
+        // "Whenever you attack this turn": delayed ability (603.7), carried by an emblem for the turn; it no longer
+        // depends on the land (which can leave the battlefield).
         effects: [
           fx.emblem(
             "Dalkovan Encampment",
@@ -213,36 +213,36 @@ export const CARDS: Record<string, CardScript> = {
                   fx.createTappedTokens(WARRIOR_R, 2, { attacking: true, store: "w" }),
                   fx.delayed([fx.sacrificeIt(ref.target("m"))], { m: ref.stored("w") }),
                 ],
-                { label: "Deux Guerriers 1/1 attaquants" },
+                { label: "Two attacking 1/1 Warriors" },
               ),
             ],
             false,
             true,
           ),
         ],
-        label: "Ce tour-ci, chaque attaque crée deux Guerriers",
+        label: "This turn, each attack creates two Warriors",
       }),
     ],
   },
   "Dragonfire Blade": {
-    // Équiper {4}, {1} de moins par couleur de la créature ciblée : lu dans le texte.
+    // Equip {4}, {1} less for each color of the target creature: read from the text.
     abilities: [
       staticAbility(
         "attached",
         {
           power: 2,
           toughness: 2,
-          addProtections: [protection.hexproofFrom({ colorCount: 1 }, "Défense talismanique contre le monocolore")],
+          addProtections: [protection.hexproofFrom({ colorCount: 1 }, "Hexproof from monocolored")],
         },
-        { label: "+2/+2, défense contre le monocolore" },
+        { label: "+2/+2, hexproof from monocolored" },
       ),
     ],
   },
   "Frontline Rush": {
     spell: modal(
-      mode("Deux Gobelins 1/1", [], [fx.createTokens(GOBLIN, 2)]),
+      mode("Two 1/1 Goblins", [], [fx.createTokens(GOBLIN, 2)]),
       mode(
-        "+X/+X (vos créatures)",
+        "+X/+X (your creatures)",
         [target.creature()],
         [
           fx.pump(
@@ -255,21 +255,21 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Stadium Headliner": {
-    // Mobilisation 1 : lue dans le texte.
+    // Mobilize 1: read from the text.
     abilities: [
       activated({
         mana: "{1}{R}",
         sacrifice: true,
         targets: [target.creature()],
         effects: [fx.damage(amount.count({ types: ["Creature"], controller: "you" }), ref.target())],
-        label: "Blessures égales au nombre de vos créatures",
+        label: "Damage equal to the number of your creatures",
       }),
     ],
   },
   "Tersa Lightshatter": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(2, ref.you, { optional: true, store: "d" }), fx.draw(amount.v("d"))], {
-        label: "Défaussez jusqu'à deux cartes, piochez-en autant",
+        label: "Discard up to two cards, draw that many",
       }),
       triggered(
         when.attacksSelf,
@@ -278,27 +278,27 @@ export const CARDS: Record<string, CardScript> = {
           fx.pickFromZone("graveyard", {}, { to: "exile" }, { count: 1, random: true, store: "x" }),
           fx.grantPlay(ref.stored("x")),
         ),
-        { label: "Sept cartes au cimetière : exile une carte au hasard, jouable ce tour-ci" },
+        { label: "Seven cards in the graveyard: exiles a card at random, playable this turn" },
       ),
     ],
   },
 
-  // --- Lot M6 -----------------------------------------------------------------
+  // --- Batch M6 -----------------------------------------------------------------
   "Channeled Dragonfire": { spell: spell([target.any()], [fx.damage(2, ref.target())]) },
   "Sage of the Skies": {
     abilities: [
       triggered(when.castSelf, [fx.copySpell(ref.self, 1)], {
         condition: cond.amountAtLeast(amount.spellsCastThisTurn, 2),
-        label: "Un autre sort lancé ce tour-ci : copiez ce sort",
+        label: "Another spell cast this turn: copy this spell",
       }),
     ],
   },
   "Heritage Reclamation": {
     spell: modal(
-      mode("Détruit un artefact", [target.permanent("a", ["Artifact"])], [fx.destroy(ref.target("a"))]),
-      mode("Détruit un enchantement", [target.permanent("e", ["Enchantment"])], [fx.destroy(ref.target("e"))]),
+      mode("Destroys an artifact", [target.permanent("a", ["Artifact"])], [fx.destroy(ref.target("a"))]),
+      mode("Destroys an enchantment", [target.permanent("e", ["Enchantment"])], [fx.destroy(ref.target("e"))]),
       mode(
-        "Exile une carte d'un cimetière, piochez",
+        "Exiles a card from a graveyard, draw",
         [target.optional(target.cardInGraveyard("g", {}, "any"))],
         [fx.exileCard(ref.target("g")), fx.draw(1)],
       ),

@@ -1,5 +1,5 @@
-/** Stellar Sights (EOS) : scripts des cartes (PLAN-G). Que des terrains. */
-import type { AbilityDef, Color, Keyword } from "@mtgx/engine";
+/** Stellar Sights (EOS): card scripts (PLAN-G). Lands only. */
+import { type AbilityDef, type Color, type Keyword, msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -17,13 +17,13 @@ import {
 } from "../tdm/common";
 
 const ANY = ["W", "U", "B", "R", "G"] as const;
-const TAPPED = entersWith({ tapped: true, label: "Arrive engagé" });
+const TAPPED = entersWith({ tapped: true, label: "Enters tapped" });
 const ARTIFACTS_3 = cond.controls({ types: ["Artifact"], controller: "you" }, 3);
 const LUCK = cond.amountAtLeast(amount.countersOn(ref.self, "luck"), 1);
 
 /**
- * Terrains-créatures de Worldwake et d'Oath of the Gatewatch : engagés, bicolores ; « jusqu'à la fin du tour, ce terrain
- * devient une créature Élémental X/Y [de ses couleurs] avec … ; c'est toujours un terrain ».
+ * Creature lands of Worldwake and Oath of the Gatewatch: tapped, two colors; "until end of turn, this land becomes an
+ * X/Y [its colors] Elemental creature with …; it's still a land".
  */
 function manland(
   colors: [Color, Color],
@@ -48,7 +48,7 @@ function manland(
             ...(extra.abilities ? { addAbilities: extra.abilities } : {}),
           }),
         ],
-        label: extra.label ?? `Devient une créature ${pt[0]}/${pt[1]}`,
+        label: extra.label ?? msg("Becomes a {power}/{toughness} creature", { power: pt[0], toughness: pt[1] }),
       }),
     ],
   };
@@ -70,14 +70,14 @@ export const CARDS: Record<string, CardScript> = {
             addKeywords: ["flying"],
           }),
         ],
-        label: "Devient une créature-artefact 1/1 volante",
+        label: "Becomes a 1/1 artifact creature with flying",
       }),
       activated({
         mana: "{1}",
         tap: true,
         targets: [target.creature("t", { subtype: "Blinkmoth" })],
         effects: [fx.pump(ref.target(), 1, 1)],
-        label: "Le Phalène ciblé gagne +1/+1",
+        label: "Target Blinkmoth gets +1/+1",
       }),
     ],
   },
@@ -89,11 +89,11 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         activationCondition: cond.controls({ types: ["Creature"], controller: "you", minPower: 4 }),
         effects: [fx.draw(1)],
-        label: "Piochez (créature de force 4 ou plus)",
+        label: "Draw (creature with power 4 or greater)",
       }),
     ],
   },
-  // Indestructible : lu dans le texte.
+  // Indestructible: read from the text.
   "Cascading Cataracts": {
     abilities: [
       manaAbility("C"),
@@ -101,11 +101,11 @@ export const CARDS: Record<string, CardScript> = {
         mana: "{5}",
         tap: true,
         effects: [fx.addManaCombination(5)],
-        label: "Cinq mana en n'importe quelle combinaison",
+        label: "Five mana in any combination",
       }),
     ],
   },
-  // Exaltation : lue dans le texte.
+  // Exalted: read from the text.
   "Cathedral of War": { abilities: [TAPPED, manaAbility("C")] },
   "Celestial Colonnade": manland(["W", "U"], "{3}{W}{U}", [4, 4], { keywords: ["flying", "vigilance"] }),
   "Contested War Zone": {
@@ -114,9 +114,9 @@ export const CARDS: Record<string, CardScript> = {
         { on: "dealsCombatDamage", who: { types: ["Creature"] }, to: { players: "any" } },
         [fx.giveControl(ref.self, ref.controllerOf(ref.eventObject))],
         {
-          // Les blessures vous sont infligées : le joueur blessé n'est pas un adversaire.
+          // The damage is dealt to you: the damaged player is not an opponent.
           condition: cond.amountAtLeast(amount.refCount(ref.except(ref.eventPlayer, ref.eachOpponent)), 1),
-          label: "Le contrôleur de la créature qui vous blesse en prend le contrôle",
+          label: "The controller of the creature that deals damage to you gains control of it",
         },
       ),
       manaAbility("C"),
@@ -124,7 +124,7 @@ export const CARDS: Record<string, CardScript> = {
         mana: "{1}",
         tap: true,
         effects: [fx.pumpAll({ attacking: true }, 1, 0)],
-        label: "Les créatures attaquantes gagnent +1/+0",
+        label: "Attacking creatures get +1/+0",
       }),
     ],
   },
@@ -132,7 +132,7 @@ export const CARDS: Record<string, CardScript> = {
   "Crystal Quarry": {
     abilities: [
       manaAbility("C"),
-      activated({ mana: "{5}", tap: true, effects: [fx.addMana("W", "U", "B", "R", "G")], label: "Ajoutez {W}{U}{B}{R}{G}" }),
+      activated({ mana: "{5}", tap: true, effects: [fx.addMana("W", "U", "B", "R", "G")], label: "Add {W}{U}{B}{R}{G}" }),
     ],
   },
   "Deserted Temple": {
@@ -141,9 +141,9 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         tap: true,
-        targets: [target.permanent("t", ["Land"], {}, "terrain")],
+        targets: [target.permanent("t", ["Land"], {}, "land")],
         effects: [fx.untap(ref.target())],
-        label: "Dégagez le terrain ciblé",
+        label: "Untap target land",
       }),
     ],
   },
@@ -154,9 +154,9 @@ export const CARDS: Record<string, CardScript> = {
         mana: "{3}",
         tap: true,
         sacrificeOther: { filter: { types: ["Land"] }, includeSelf: true },
-        targets: [target.permanent("t", ["Land"], { basic: false }, "terrain non-base")],
+        targets: [target.permanent("t", ["Land"], { basic: false }, "nonbasic land")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruisez le terrain non-base ciblé",
+        label: "Destroy target nonbasic land",
       }),
     ],
   },
@@ -164,7 +164,7 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       manaAbility("C"),
       manaAbility("C", 2, {
-        // « Eldrazi incolores » : sorts et sources sans couleur.
+        // "Colorless Eldrazi": spells and sources with no color.
         restriction: { spell: { subtype: "Eldrazi", colorCount: 0 }, abilityOfSource: { subtype: "Eldrazi", colorCount: 0 } },
       }),
     ],
@@ -177,14 +177,14 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.moveTo(ref.target(), { to: "exile" }, { name: "e" }), fx.link(ref.stored("e"))],
-        label: "Exilez une de vos créatures",
+        label: "Exile a creature you control",
       }),
       activated({
         mana: "{4}",
         tap: true,
         sacrifice: true,
         effects: [fx.toBattlefield(ref.filtered(ref.linked, { types: ["Creature"] }))],
-        label: "Les cartes de créature exilées avec ce terrain reviennent",
+        label: "The creature cards exiled with this land return",
       }),
     ],
   },
@@ -198,14 +198,14 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { types: ["Creature"] } },
         effects: [fx.gainLife(1)],
-        label: "Sacrifiez une créature : 1 PV",
+        label: "Sacrifice a creature: 1 life",
       }),
     ],
   },
   "Hissing Quagmire": manland(["B", "G"], "{1}{B}{G}", [2, 2], { keywords: ["deathtouch"] }),
   "Inventors' Fair": {
     abilities: [
-      triggered(when.yourUpkeep, [fx.gainLife(1)], { condition: ARTIFACTS_3, label: "Trois artefacts : 1 PV" }),
+      triggered(when.yourUpkeep, [fx.gainLife(1)], { condition: ARTIFACTS_3, label: "Three artifacts: 1 life" }),
       manaAbility("C"),
       activated({
         mana: "{4}",
@@ -213,18 +213,18 @@ export const CARDS: Record<string, CardScript> = {
         sacrifice: true,
         activationCondition: ARTIFACTS_3,
         effects: [fx.search({ types: ["Artifact"] }, { to: "hand" })],
-        label: "Cherchez une carte d'artefact",
+        label: "Search for an artifact card",
       }),
     ],
   },
   "Lavaclaw Reaches": manland(["B", "R"], "{1}{B}{R}", [2, 2], {
     abilities: [activated({ mana: "{X}", effects: [fx.pump(ref.self, amount.x, 0)], label: "+X/+0" })],
   }),
-  // Défense talismanique : lue dans le texte.
+  // Hexproof: read from the text.
   "Lotus Field": {
     abilities: [
       TAPPED,
-      triggered(when.entersSelf, [fx.sacrifice(ref.you, { types: ["Land"] }, 2)], { label: "Sacrifiez deux terrains" }),
+      triggered(when.entersSelf, [fx.sacrifice(ref.you, { types: ["Land"] }, 2)], { label: "Sacrifice two lands" }),
       manaAbility([...ANY], 3),
     ],
   },
@@ -238,9 +238,11 @@ export const CARDS: Record<string, CardScript> = {
         mana: "{2}{C}",
         tap: true,
         sacrifice: true,
-        targets: [target.spell("t", { types: ["Instant", "Sorcery"], controller: "you" }, "votre sort d'éphémère ou de rituel")],
+        targets: [
+          target.spell("t", { types: ["Instant", "Sorcery"], controller: "you" }, "instant or sorcery spell you control"),
+        ],
         effects: [fx.copySpell(ref.target(), 1)],
-        label: "Copiez votre éphémère ou rituel ciblé",
+        label: "Copy target instant or sorcery spell you control",
       }),
       activated({
         mana: "{4}{C}",
@@ -248,7 +250,7 @@ export const CARDS: Record<string, CardScript> = {
         sacrifice: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.copyToken(ref.target())],
-        label: "Un jeton copie de votre créature ciblée",
+        label: "A token copy of target creature you control",
       }),
     ],
   },
@@ -258,7 +260,7 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         effects: [fx.modify(ref.self, { addTypes: ["Creature"], setPower: 2, setToughness: 2, addKeywords: ["changeling"] })],
-        label: "Devient une créature 2/2 de tous les types",
+        label: "Becomes a 2/2 creature with all creature types",
       }),
     ],
   },
@@ -273,7 +275,7 @@ export const CARDS: Record<string, CardScript> = {
           fx.moveTo(ref.target(), { to: "exile" }, { name: "m" }),
           fx.delayed([fx.toBattlefield(ref.target("m"), { tapped: true })], { m: ref.stored("m") }),
         ],
-        label: "Exilez l'attaquant ; il revient engagé à l'étape de fin",
+        label: "Exile the attacker; it returns tapped at the end step",
       }),
     ],
   },
@@ -284,13 +286,13 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         tap: true,
         sacrifice: true,
-        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain de votre cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "land card from your graveyard")],
         effects: [fx.toHand(ref.target())],
-        label: "Renvoyez une carte de terrain de votre cimetière",
+        label: "Return a land card from your graveyard",
       }),
     ],
   },
-  // Modulaire 1 : lu dans le texte.
+  // Modular 1: read from the text.
   "Power Depot": {
     abilities: [
       TAPPED,
@@ -301,7 +303,7 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Raging Ravine": manland(["R", "G"], "{2}{R}{G}", [3, 3], {
-    abilities: [triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], { label: "Attaque : un marqueur +1/+1" })],
+    abilities: [triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], { label: "Attacks: a +1/+1 counter" })],
   }),
   "Scavenger Grounds": {
     abilities: [
@@ -311,7 +313,7 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { subtype: "Desert" }, includeSelf: true },
         effects: [fx.moveTo(ref.zone("graveyard", ref.eachPlayer), { to: "exile" })],
-        label: "Exilez tous les cimetières",
+        label: "Exile all graveyards",
       }),
     ],
   },
@@ -323,9 +325,9 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         tap: true,
         sacrifice: true,
-        targets: [target.permanent("t", ["Land"], {}, "terrain")],
+        targets: [target.permanent("t", ["Land"], {}, "land")],
         effects: [fx.destroy(ref.target())],
-        label: "Détruisez le terrain ciblé",
+        label: "Destroy the target land",
       }),
     ],
   },
@@ -336,7 +338,7 @@ export const CARDS: Record<string, CardScript> = {
         mana: "{2}",
         tap: true,
         effects: [fx.pickFromZone("hand", BASIC_LAND, { to: "battlefield", tapped: true }, { count: 1, min: 0 })],
-        label: "Vous pouvez mettre un terrain de base de votre main, engagé",
+        label: "You may put a basic land from your hand onto the battlefield tapped",
       }),
     ],
   },
@@ -346,10 +348,10 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         mana: "{2}",
         tap: true,
-        targets: [target.permanent("t", ["Land"], {}, "terrain")],
-        // « … sauf qu'il a cette capacité » : la capacité d'indice 1 (celle-ci) est gardée.
+        targets: [target.permanent("t", ["Land"], {}, "land")],
+        // "… except it has this ability": the ability at index 1 (this one) is kept.
         effects: [fx.becomeCopy(ref.self, ref.target(), "permanent", { keepAbilities: [1] })],
-        label: "Devient une copie du terrain ciblé",
+        label: "Becomes a copy of target land",
       }),
     ],
   },
@@ -358,26 +360,26 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         mana: "{0}",
         effects: [fx.modify(ref.self, { switchPT: true })],
-        label: "Échangez sa force et son endurance",
+        label: "Switch its power and toughness",
       }),
     ],
   }),
   "Blast Zone": {
     abilities: [
-      entersWith({ counters: 1, counterKind: "charge", label: "Arrive avec un marqueur de charge" }),
+      entersWith({ counters: 1, counterKind: "charge", label: "Enters with a charge counter" }),
       manaAbility("C"),
       activated({
         mana: "{X}{X}",
         tap: true,
         effects: [fx.counters(ref.self, "charge", amount.x)],
-        label: "X marqueurs de charge",
+        label: "X charge counters",
       }),
       activated({
         mana: "{3}",
         tap: true,
         sacrifice: true,
         effects: [fx.destroyAll({ notTypes: ["Land"], compare: [cmp.manaValue("=", amount.lkiCounters("charge"))] })],
-        label: "Détruisez chaque permanent non-terrain de valeur de mana égale à ses marqueurs de charge",
+        label: "Destroy each nonland permanent with mana value equal to its charge counters",
       }),
     ],
   },
@@ -399,7 +401,7 @@ export const CARDS: Record<string, CardScript> = {
             addKeywords: ["flying", "infect"],
           }),
         ],
-        label: "Devient une créature-artefact 1/1 volante avec l'infection",
+        label: "Becomes a 1/1 artifact creature with flying and infect",
       }),
     ],
   },
@@ -412,11 +414,11 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         sorcerySpeed: true,
         targets: [
-          { id: "a", label: "permanent que vous contrôlez", filter: { objects: { controller: "you" } } },
+          { id: "a", label: "permanent you control", filter: { objects: { controller: "you" } } },
           { id: "b", label: "second permanent", filter: { objects: {} } },
         ],
         effects: [fx.moveCounter(ref.target("a"), ref.target("b"))],
-        label: "Déplacez un marqueur d'un de vos permanents sur un autre",
+        label: "Move a counter from a permanent you control onto another",
       }),
     ],
   },
@@ -431,7 +433,7 @@ export const CARDS: Record<string, CardScript> = {
         exileSelf: true,
         targets: [target.creature("t", { legendary: true })],
         effects: [fx.pump(ref.target(), 0, 0, ["hexproof", "indestructible"])],
-        label: "La créature légendaire ciblée gagne la défense talismanique et l'indestructible",
+        label: "Target legendary creature gains hexproof and indestructible",
       }),
     ],
   },
@@ -443,7 +445,7 @@ export const CARDS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { anySubtype: ["Insect", "Rat", "Spider", "Squirrel"] })],
         effects: [fx.regenerate(ref.target())],
-        label: "Régénérez l'Insecte, le Rat, l'Araignée ou l'Écureuil ciblé",
+        label: "Regenerate target Insect, Rat, Spider or Squirrel",
       }),
     ],
   },

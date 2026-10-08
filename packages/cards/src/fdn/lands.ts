@@ -1,4 +1,4 @@
-/** Foundations — terrains non de base. */
+/** Foundations — nonbasic lands. */
 import type { ManaType } from "@mtgx/engine";
 import {
   activated,
@@ -15,21 +15,21 @@ import {
   when,
 } from "./common";
 
-/** Terrains bicolores « arrive engagé, gagnez 1 PV ». */
+/** Two-color lands "enters tapped, gain 1 life". */
 const gainLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     entersWith({ tapped: true }),
-    triggered(when.entersSelf, [fx.gainLife(1)], { label: "+1 PV" }),
+    triggered(when.entersSelf, [fx.gainLife(1)], { label: "+1 life" }),
     manaAbility([a, b]),
   ],
 });
 
-/** Guildgates : « arrive engagé, {T} : ajoutez {X} ou {Y} » (sous-type Porte). */
+/** Guildgates: "enters tapped, {T}: Add {X} or {Y}" (Gate subtype). */
 const guildgate = (a: ManaType, b: ManaType): CardScript => ({ abilities: [entersWith({ tapped: true }), manaAbility([a, b])] });
 
-/** Temples : « arrive engagé, regard 1 en arrivant ». */
+/** Temples: "enters tapped, scry 1 when it enters". */
 const temple = (a: ManaType, b: ManaType): CardScript => ({
-  abilities: [entersWith({ tapped: true }), triggered(when.entersSelf, [fx.scry(1)], { label: "regard 1" }), manaAbility([a, b])],
+  abilities: [entersWith({ tapped: true }), triggered(when.entersSelf, [fx.scry(1)], { label: "scry 1" }), manaAbility([a, b])],
 });
 
 export const LANDS: Record<string, CardScript> = {
@@ -49,7 +49,7 @@ export const LANDS: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })],
-        label: "Chercher un terrain de base",
+        label: "Search for a basic land, put onto the battlefield tapped",
       }),
     ],
   },
@@ -61,7 +61,7 @@ export const LANDS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature()],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Une créature ne peut pas être bloquée",
+        label: "A creature can't be blocked",
       }),
     ],
   },
@@ -77,7 +77,7 @@ export const LANDS: Record<string, CardScript> = {
             "permanent",
           ),
         ],
-        label: "Devient une créature 3/3",
+        label: "Becomes a 3/3 creature",
       }),
     ],
   },
@@ -91,7 +91,7 @@ export const LANDS: Record<string, CardScript> = {
     ],
   },
 
-  // --- Réimpressions ---
+  // --- Reprints ---
   "Azorius Guildgate": guildgate("W", "U"),
   "Boros Guildgate": guildgate("R", "W"),
   "Dimir Guildgate": guildgate("U", "B"),
@@ -120,11 +120,11 @@ export const LANDS: Record<string, CardScript> = {
         effects: [
           fx.addCounters(ref.self, 2),
           ...fx.may(
-            "Devenir une créature Élémental 0/0 jusqu'à la fin du tour ?",
+            "Become a 0/0 Elemental creature until end of turn?",
             fx.modify(ref.self, { addTypes: ["Creature"], addSubtypes: ["Elemental"], setPower: 0, setToughness: 0 }),
           ),
         ],
-        label: "Deux marqueurs +1/+1",
+        label: "Two +1/+1 counters",
       }),
     ],
   },
@@ -137,7 +137,7 @@ export const LANDS: Record<string, CardScript> = {
         sacrifice: true,
         activationCondition: cond.controls({ types: ["Land"] }, 5),
         effects: [fx.draw(1)],
-        label: "Piochez une carte (cinq terrains)",
+        label: "Draw a card (five lands)",
       }),
     ],
   },
@@ -148,13 +148,13 @@ export const LANDS: Record<string, CardScript> = {
         mana: "{2}",
         tap: true,
         sacrifice: true,
-        targets: [target.permanent("t", ["Land"], { controller: "opponent", basic: false }, "terrain non de base adverse")],
+        targets: [target.permanent("t", ["Land"], { controller: "opponent", basic: false }, "opponent's nonbasic land")],
         effects: [
           fx.destroy(ref.target()),
           fx.search(BASIC_LAND, { to: "battlefield" }, 1, ref.controllerOf(ref.target())),
           fx.search(BASIC_LAND, { to: "battlefield" }),
         ],
-        label: "Détruire un terrain non de base",
+        label: "Destroy a nonbasic land",
       }),
     ],
   },
@@ -170,7 +170,7 @@ export const LANDS: Record<string, CardScript> = {
           fx.search({ subtype: "Gate" }, { to: "battlefield" }),
           ...fx.when(cond.amountAtLeast(amount.distinctNames({ subtype: "Gate", controller: "you" }), 10), fx.winGame),
         ],
-        label: "Chercher une Porte",
+        label: "Search for a Gate",
       }),
     ],
   },

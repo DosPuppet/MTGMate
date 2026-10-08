@@ -1,4 +1,4 @@
-/** Marvel Super Heroes — cartes blanches (lot A). */
+/** Marvel Super Heroes — white cards (lot A). */
 import type { ObjectFilter, TokenSpec, TriggerSpec } from "@mtgx/engine";
 import {
   activated,
@@ -27,12 +27,12 @@ import {
 
 const CREATURES_YOU_CONTROL: ObjectFilter = { types: ["Creature"], controller: "you" };
 const OTHER_HEROES_YOU_CONTROL: ObjectFilter = { subtype: "Hero", controller: "you", other: true };
-/** « Chaque fois que [cette créature] attaque seule » */
+/** "Whenever [this creature] attacks alone" */
 const ATTACKS_ALONE_SELF: TriggerSpec = { on: "attacks", who: "self", alone: true };
-/** « un sort qui cible une créature que vous contrôlez » */
+/** "a spell that targets a creature you control" */
 const TARGETS_YOUR_CREATURE = { objects: CREATURES_YOU_CONTROL };
 
-/** The Void (The Sentry) : Horreur Méchant légendaire noire 5/5, vol, indestructible, attaque à chaque combat. */
+/** The Void (The Sentry): legendary 5/5 black Horror Villain, flying, indestructible, attacks each combat. */
 const THE_VOID: TokenSpec = {
   name: "The Void",
   legendary: true,
@@ -48,7 +48,7 @@ export const WHITE: Record<string, CardScript> = {
   "Agent 13, Sharon Carter": {
     abilities: [
       triggered(when.attacksAlone(CREATURES_YOU_CONTROL), [investigate()], {
-        label: "Une de vos créatures attaque seule : enquêtez",
+        label: "A creature you control attacks alone: investigate",
       }),
     ],
   },
@@ -57,32 +57,36 @@ export const WHITE: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [fx.addCountersAll(OTHER_HEROES_YOU_CONTROL, 1)],
-        label: "Un marqueur +1/+1 sur chacun de vos autres Héros",
+        label: "A +1/+1 counter on each other Hero you control",
       }),
     ],
   },
   "Agents of S.H.I.E.L.D.": {
     abilities: [
       triggered(when.attacksAlone(CREATURES_YOU_CONTROL), [fx.pump(ref.eventObject, 1, 1)], {
-        label: "La créature qui attaque seule gagne +1/+1",
+        label: "The creature attacking alone gets +1/+1",
       }),
     ],
   },
   "Avengers Assemble!": {
-    // Flash : lu dans le texte.
+    // Flash: read from the text.
     abilities: [
-      staticAbility({ subtype: "Hero", controller: "you" }, { power: 2, toughness: 2 }, { label: "Vos Héros ont +2/+2" }),
+      staticAbility(
+        { subtype: "Hero", controller: "you" },
+        { power: 2, toughness: 2 },
+        { label: "Heroes you control get +2/+2" },
+      ),
       triggered(when.eachEndStep, [fx.draw(1)], {
         condition: cond.any(
           cond.attackedWith("Hero"),
           cond.amountAtLeast(amount.turnEvents({ event: "zone", to: "battlefield", subtype: "Hero", who: "you" }), 1),
         ),
-        label: "Piochez une carte (Héros qui a attaqué ou qui est arrivé ce tour-ci)",
+        label: "Draw a card (a Hero attacked or entered this turn)",
       }),
     ],
   },
   "Borough Backup": {
-    // Cycle de terrain de base {2} : lu dans le texte.
+    // Basic landcycling {2}: read from the text.
     spell: spell([], [fx.createTokens(HERO, 2)]),
   },
   "Brave Brawler": {
@@ -91,7 +95,7 @@ export const WHITE: Record<string, CardScript> = {
         mana: "{4}{W}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, 2)],
-        label: "Montée en puissance : deux marqueurs +1/+1",
+        label: "Power-up: two +1/+1 counters",
       }),
     ],
   },
@@ -100,7 +104,7 @@ export const WHITE: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [fx.pumpAll(OTHER_HEROES_YOU_CONTROL, amount.toughnessOf(ref.self), amount.toughnessOf(ref.self))],
-        { label: "Vos autres Héros gagnent +X/+X (X : son endurance)" },
+        { label: "Other Heroes you control get +X/+X (X: its toughness)" },
       ),
     ],
   },
@@ -109,14 +113,14 @@ export const WHITE: Record<string, CardScript> = {
       playerStatic({
         spellKeywords: { filter: {}, keywords: ["flash"] },
         condition: cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "opponent" }), 1),
-        label: "Conscience cosmique — vos sorts ont le flash si un adversaire a lancé un sort ce tour-ci",
+        label: "Cosmic Awareness — your spells have flash if an opponent cast a spell this turn",
       }),
     ],
   },
   "Colleen Wing, Street Samurai": {
     abilities: [
       triggered(when.castSpell("you", undefined, TARGETS_YOUR_CREATURE), [fx.addCounters(ref.self, 1), fx.scry(1)], {
-        label: "Un marqueur +1/+1, regard 1",
+        label: "A +1/+1 counter, scry 1",
       }),
     ],
   },
@@ -124,27 +128,27 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       activated({
         tap: true,
-        // « attaquant seule » (506.5) : la seule créature attaquante, quoi qu'elle attaque.
+        // "attacking alone" (506.5): the only attacking creature, whatever it attacks.
         activationCondition: cond.not(cond.amountAtLeast(amount.count({ types: ["Creature"], attacking: true }), 2)),
         targets: [
           {
             id: "t",
-            label: "créature que vous contrôlez qui attaque seule",
+            label: "creature you control attacking alone",
             filter: { objects: { ...CREATURES_YOU_CONTROL, attacking: true } },
           },
         ],
         effects: [fx.pump(ref.target(), 1, 0), fx.gainLife(1)],
-        label: "+1/+0 à votre créature qui attaque seule, gagnez 1 PV",
+        label: "+1/+0 to your creature attacking alone, gain 1 life",
       }),
     ],
   },
   "Helicarrier Strike": {
-    // Travail d'équipe 2 : lu dans le texte.
+    // Teamwork 2: read from the text.
     spell: spell(
       [
         {
           id: "t",
-          label: "créature attaquante ou bloqueuse",
+          label: "attacking or blocking creature",
           filter: { objects: { types: ["Creature"], anyOf: [{ attacking: true }, { blocking: true }] } },
         },
       ],
@@ -154,7 +158,7 @@ export const WHITE: Record<string, CardScript> = {
   "Hero in Training": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(1), ...fx.when(cond.controls({ subtype: "Hero", other: true }), fx.gainLife(2))], {
-        label: "Piochez ; 2 PV si vous contrôlez un autre Héros",
+        label: "Draw; 2 life if you control another Hero",
       }),
     ],
   },
@@ -162,28 +166,28 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.youPutCounters(OTHER_HEROES_YOU_CONTROL, "+1/+1"),
-        fx.may("Créer un Mur 0/4 avec le défenseur ?", fx.createTokens(WALL_C)),
-        { batched: true, label: "Un Mur 0/4 avec le défenseur" },
+        fx.may("Create a 0/4 Wall with defender?", fx.createTokens(WALL_C)),
+        { batched: true, label: "A 0/4 Wall with defender" },
       ),
     ],
   },
   "Luke Cage, Power Man": {
     abilities: [
       triggered(ATTACKS_ALONE_SELF, [fx.pump(ref.self, 2, 0, ["indestructible"])], {
-        label: "Peau incassable — +2/+0 et l'indestructible",
+        label: "Unbreakable Skin — +2/+0 and indestructible",
       }),
     ],
   },
   "Mockingbird, Ace Agent": {
     abilities: [
       triggered(when.castSpell("you", undefined, TARGETS_YOUR_CREATURE), [fx.addCounters(ref.self, 1)], {
-        label: "Un marqueur +1/+1",
+        label: "A +1/+1 counter",
       }),
     ],
   },
   "Monica Rambeau": {
     abilities: [
-      activated({ mana: "{2}{R}{W}{W}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-la" }),
+      activated({ mana: "{2}{R}{W}{W}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transform her" }),
     ],
   },
   "Photon, Living Light": {
@@ -191,24 +195,24 @@ export const WHITE: Record<string, CardScript> = {
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [fx.addCountersAll({ ...CREATURES_YOU_CONTROL, other: true }, 1)],
-        { label: "Un marqueur +1/+1 sur chacune de vos autres créatures" },
+        { label: "A +1/+1 counter on each other creature you control" },
       ),
     ],
   },
   "Murdock's Crusade": {
-    // Travail d'équipe 4 : lu dans le texte ; « choisissez les deux » demande le travail d'équipe.
+    // Teamwork 4: read from the text; "choose both" requires teamwork.
     spell: bothIfKicked(
       mode(
-        "Justice de la rue — exile une créature d'endurance 4 ou plus",
+        "Street Justice — exile a creature with toughness 4 or greater",
         [target.creature("t", { minToughness: 4 })],
         [fx.exile(ref.target())],
       ),
       mode(
-        "Justice légale — exile un enchantement de valeur de mana 4 ou plus",
-        [target.permanent("u", ["Enchantment"], { minManaValue: 4 }, "enchantement de valeur de mana 4 ou plus")],
+        "Legal Justice — exile an enchantment with mana value 4 or greater",
+        [target.permanent("u", ["Enchantment"], { minManaValue: 4 }, "enchantment with mana value 4 or greater")],
         [fx.exile(ref.target("u"))],
       ),
-      "Les deux (travail d'équipe)",
+      "Both (teamwork)",
     ),
   },
   "Nick Fury, Agent of S.H.I.E.L.D.": {
@@ -218,14 +222,14 @@ export const WHITE: Record<string, CardScript> = {
         powerUp: true,
         effects: [
           fx.addCounters(ref.self, 2),
-          // « Si c'est une carte recto-verso, vous pouvez la transformer » : approché, elle arrive sur sa face recto.
+          // "If it's a double-faced card, you may transform it": approximated, it enters on its front face.
           fx.lookAtTop(7, {
             filter: { anyOf: [{ subtype: "Hero" }, { subtype: "Equipment" }, { subtype: "Vehicle" }] },
             to: { to: "battlefield" },
             rest: "bottom",
           }),
         ],
-        label: "Montée en puissance : deux marqueurs +1/+1, un Héros, Équipement ou Véhicule parmi les sept du dessus",
+        label: "Power-up: two +1/+1 counters, a Hero, Equipment or Vehicle from among the top seven",
       }),
     ],
   },
@@ -237,26 +241,26 @@ export const WHITE: Record<string, CardScript> = {
             "t",
             { permanent: true, enteredThisTurn: true },
             "you",
-            "carte de permanent mise dans votre cimetière ce tour-ci",
+            "permanent card put into your graveyard this turn",
           ),
         ],
-        label: "Renvoie en main une carte de permanent mise dans votre cimetière ce tour-ci",
+        label: "Return to hand a permanent card put into your graveyard this turn",
       }),
     ],
   },
   "Okoye, Dora Milaje Leader": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(SOLDIER, 2)], { label: "Deux Soldats 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(SOLDIER, 2)], { label: "Two 1/1 Soldiers" }),
       staticAbility(
         { ...CREATURES_YOU_CONTROL, token: true, attacking: true },
         { addKeywords: ["firstStrike"] },
-        { label: "Vos jetons de créature attaquants ont l'initiative" },
+        { label: "Attacking creature tokens you control have first strike" },
       ),
     ],
   },
   "Origin of the Avengers": {
     abilities: [
-      chapter([1], [fx.scry(2)], { label: "Regard 2" }),
+      chapter([1], [fx.scry(2)], { label: "Scry 2" }),
       chapter(
         [2],
         [
@@ -264,13 +268,13 @@ export const WHITE: Record<string, CardScript> = {
             "hand",
             { types: ["Creature"], subtype: "Hero", maxManaValue: 3 },
             { to: "battlefield" },
-            { min: 0, store: "h", prompt: "Un Héros de valeur de mana 3 ou moins de votre main" },
+            { min: 0, store: "h", prompt: "A Hero with mana value 3 or less from your hand" },
           ),
           ...fx.when(cond.not(cond.v("h")), fx.draw(1)),
         ],
-        { label: "Un Héros de votre main sur le champ de bataille, sinon piochez" },
+        { label: "A Hero from your hand onto the battlefield, otherwise draw" },
       ),
-      chapter([3], [fx.addCountersAll(CREATURES_YOU_CONTROL, 1)], { label: "Un marqueur +1/+1 sur chacune de vos créatures" }),
+      chapter([3], [fx.addCountersAll(CREATURES_YOU_CONTROL, 1)], { label: "A +1/+1 counter on each creature you control" }),
     ],
   },
   "Panther Pounce": {
@@ -286,34 +290,34 @@ export const WHITE: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "you", other: true })],
         effects: [fx.pump(ref.target(), 2, 0, ["hexproof"])],
-        label: "Une autre de vos créatures gagne +2/+0 et la défense talismanique",
+        label: "Another creature you control gets +2/+0 and gains hexproof",
       }),
     ],
   },
   "Quake, Agent of S.H.I.E.L.D.": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.tap(ref.target())], {
-        targets: [target.permanent("t", ["Creature", "Land"], {}, "créature ou terrain")],
-        label: "Mise à terre sismique — engage une créature ou un terrain",
+        targets: [target.permanent("t", ["Creature", "Land"], {}, "creature or land")],
+        label: "Seismic Takedown — tap a creature or land",
       }),
     ],
   },
   "Raft Security Officer": {
-    // « Coûte {1} de moins si elle cible une créature de force 3 ou moins » : deux capacités, selon la cible.
+    // "Costs {1} less if it targets a creature with power 3 or less": two abilities, depending on the target.
     abilities: [
       activated({
         mana: "{1}",
         tap: true,
         targets: [target.creature("t", { maxPower: 3 })],
         effects: [fx.tap(ref.target())],
-        label: "Engage une créature de force 3 ou moins",
+        label: "Taps a creature with power 3 or less",
       }),
       activated({
         mana: "{2}",
         tap: true,
         targets: [target.creature()],
         effects: [fx.tap(ref.target())],
-        label: "Engage une créature",
+        label: "Taps a creature",
       }),
     ],
   },
@@ -323,11 +327,11 @@ export const WHITE: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "créature adverse qui a infligé des blessures ce tour-ci",
+            label: "creature an opponent controls that dealt damage this turn",
             filter: { objects: { types: ["Creature"], controller: "opponent", dealtDamageThisTurn: true } },
           },
         ],
-        label: "Détruit une créature adverse qui a infligé des blessures ce tour-ci",
+        label: "Destroy a creature an opponent controls that dealt damage this turn",
       }),
     ],
   },
@@ -335,30 +339,30 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(THE_VOID, 1, ref.target("p"))], {
         targets: [target.player("p", "opponent")],
-        label: "Un adversaire crée The Void, 5/5",
+        label: "An opponent creates The Void, 5/5",
       }),
     ],
   },
   "S.H.I.E.L.D. Spy Kit": {
-    // Équiper {1} : lu dans le texte.
+    // Equip {1}: read from the text.
     abilities: [
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
       triggered(when.attacksAlone({ attached: "host" }), [fx.untap(ref.attached), fx.scry(1)], {
-        label: "La créature équipée attaque seule : dégagez-la, regard 1",
+        label: "Equipped creature attacks alone: untap it, scry 1",
       }),
     ],
   },
   "Super Villain Lockup": {
-    // Flash : lu dans le texte.
+    // Flash: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.creature("t", { controller: "opponent", tapped: true })],
-        label: "Exile une créature adverse engagée jusqu'à son départ",
+        label: "Exile a tapped creature an opponent controls until this leaves",
       }),
     ],
   },
   "Super-Soldier Serum": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility(
         "attached",
@@ -369,23 +373,23 @@ export const WHITE: Record<string, CardScript> = {
           addSupertypes: ["Legendary"],
           addSubtypes: ["Soldier"],
         },
-        { label: "+2/+2, l'initiative et la vigilance ; Soldat légendaire" },
+        { label: "+2/+2, first strike and vigilance; legendary Soldier" },
       ),
       ...[when.attacks({ attached: "host" }), when.blocks({ attached: "host" })].map((w) =>
         triggered(w, [fx.attach(ref.attached, ref.target())], {
           targets: [
             target.upTo(
               99,
-              target.permanent("t", ["Artifact"], { subtype: "Equipment", controller: "you" }, "Équipement que vous contrôlez"),
+              target.permanent("t", ["Artifact"], { subtype: "Equipment", controller: "you" }, "Equipment you control"),
             ),
           ],
-          label: "Attache vos Équipements ciblés à la créature enchantée",
+          label: "Attach target Equipment you control to enchanted creature",
         }),
       ),
     ],
   },
   "Wakandan Drone Flock": {
-    abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" })],
+    abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" })],
   },
   "White Widow, Free Agent": {
     abilities: [
@@ -393,47 +397,47 @@ export const WHITE: Record<string, CardScript> = {
         when.entersSelf,
         [
           mode(
-            "Un marqueur +1/+1 sur chacune de jusqu'à deux créatures",
+            "A +1/+1 counter on each of up to two creatures",
             [target.upTo(2, target.creature())],
             [fx.addCounters(ref.target(), 1)],
           ),
           mode(
-            "Renvoie en main une carte d'artefact ou d'enchantement de votre cimetière",
+            "Return to hand an artifact or enchantment card from your graveyard",
             [
               target.cardInGraveyard(
                 "u",
                 { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }] },
                 "you",
-                "carte d'artefact ou d'enchantement de votre cimetière",
+                "artifact or enchantment card from your graveyard",
               ),
             ],
             [fx.toHand(ref.target("u"))],
           ),
         ],
-        { label: "Marqueurs +1/+1, ou un artefact ou un enchantement de votre cimetière" },
+        { label: "+1/+1 counters, or an artifact or enchantment from your graveyard" },
       ),
     ],
   },
   "Agent Maria Hill": {
     abilities: [
       triggered({ on: "taps", who: "self", cause: "teamwork" }, [fx.addCounters(ref.self, 1), fx.draw(1)], {
-        label: "Engagée pour un travail d'équipe : un marqueur +1/+1 et piochez une carte",
+        label: "Tapped for teamwork: a +1/+1 counter and draw a card",
       }),
     ],
   },
-  // Initiative : lue dans le texte.
+  // First strike: read from the text.
   "Captain America, Super-Soldier": {
     abilities: [
-      entersWith({ counters: 1, counterKind: "shield", label: "Arrive avec un marqueur de bouclier" }),
+      entersWith({ counters: 1, counterKind: "shield", label: "Enters with a shield counter" }),
       playerStatic({
         hexproof: true,
         condition: cond.counterAtLeast("shield", 1),
-        label: "Vous avez la défense talismanique tant qu'il a un marqueur de bouclier",
+        label: "You have hexproof as long as it has a shield counter",
       }),
       staticAbility(
         { types: ["Creature"], subtype: "Hero", controller: "you", other: true },
         { addKeywords: ["hexproof"] },
-        { condition: cond.counterAtLeast("shield", 1), label: "Vos autres Héros ont la défense talismanique" },
+        { condition: cond.counterAtLeast("shield", 1), label: "Other Heroes you control have hexproof" },
       ),
     ],
   },

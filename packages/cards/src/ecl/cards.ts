@@ -1,6 +1,6 @@
 /**
- * Lorwyn Eclipsed — cartes des decks du méta (phase 1 du plan P4, lot M1). Les autres cartes de l'extension sont dans
- * les fichiers par couleur.
+ * Lorwyn Eclipsed: cards of the meta decks (phase 1 of plan P4, lot M1). The other cards of the set are in the files
+ * by color.
  */
 import {
   activated,
@@ -20,33 +20,33 @@ import {
   when,
 } from "./common";
 
-/** Terrains choc : la règle « payez 2 PV ou il arrive engagé » est lue dans le texte. */
+/** Shock lands: the "pay 2 life or it enters tapped" rule is read from the text. */
 const shock: CardScript = {};
 
 export const CARDS: Record<string, CardScript> = {
-  // --- Terrains --------------------------------------------------------------
+  // --- Lands -----------------------------------------------------------------
   "Steam Vents": shock,
-  // --- Bleu ------------------------------------------------------------------
-  "Spell Snare": { spell: spell([target.spell("t", { manaValue: 2 }, "sort de valeur de mana 2")], [fx.counter(ref.target())]) },
+  // --- Blue ------------------------------------------------------------------
+  "Spell Snare": { spell: spell([target.spell("t", { manaValue: 2 }, "spell with mana value 2")], [fx.counter(ref.target())]) },
   Sunderflock: {
-    // « Ce sort coûte {X} de moins, X étant la plus grande valeur de mana parmi les Élémentaux que vous contrôlez. »
+    // "This spell costs {X} less to cast, where X is the greatest mana value among Elementals you control."
     costReduction: { generic: amount.maxManaValue({ subtype: "Elemental", controller: "you" }) },
     abilities: [
       triggered(
         when.entersSelf,
         [fx.moveAll("battlefield", ref.eachPlayer, { types: ["Creature"], notSubtype: "Elemental" }, { to: "hand" })],
-        { condition: cond.wasCast, label: "Renvoie toutes les créatures non-Élémentaux" },
+        { condition: cond.wasCast, label: "Return all non-Elemental creatures" },
       ),
     ],
   },
-  // --- Rouge -----------------------------------------------------------------
+  // --- Red -------------------------------------------------------------------
   Sear: { spell: spell([target.creatureOrPlaneswalker()], [fx.damage(4, ref.target())]) },
-  // --- Vert ------------------------------------------------------------------
+  // --- Green -----------------------------------------------------------------
   "Sapling Nursery": {
-    // Affinité pour les Forêts.
+    // Affinity for Forests.
     costReduction: { generic: amount.count({ subtype: "Forest", controller: "you" }) },
     abilities: [
-      triggered(when.landfall, [fx.createTokens(TREEFOLK_REACH)], { label: "Jeton Sylvin 3/4 avec la portée" }),
+      triggered(when.landfall, [fx.createTokens(TREEFOLK_REACH)], { label: "3/4 Treefolk token with reach" }),
       activated({
         mana: "{1}{G}",
         exileSelf: true,
@@ -56,7 +56,7 @@ export const CARDS: Record<string, CardScript> = {
             { addKeywords: ["indestructible"] },
           ),
         ],
-        label: "Sylvins et Forêts indestructibles",
+        label: "Treefolk and Forests gain indestructible",
       }),
     ],
   },
@@ -65,7 +65,7 @@ export const CARDS: Record<string, CardScript> = {
   "Blood Crypt": shock,
   "Overgrown Tomb": shock,
   "Requiting Hex": {
-    // Flétrir 1 en coût additionnel facultatif : lu dans le texte (kicker « blight »).
+    // Optional additional cost blight 1: read from the text ("blight" kicker).
     spell: spell(
       [target.creature("t", { maxManaValue: 2 })],
       [fx.destroy(ref.target()), ...fx.when(cond.kicked, fx.gainLife(2))],
@@ -76,17 +76,17 @@ export const CARDS: Record<string, CardScript> = {
   "Hallowed Fountain": shock,
   "Temple Garden": shock,
   Deceit: {
-    // Évocation lue dans le texte ; « si {U}{U} / {B}{B} a été dépensé pour le lancer » : `cond.spent`.
+    // Evoke read from the text; "if {U}{U} / {B}{B} was spent to cast it": `cond.spent`.
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
         condition: cond.spent("U", 2),
         targets: [target.upTo(1, target.nonland("t", { other: true }))],
-        label: "{U}{U} dépensé : renvoie un permanent non-terrain",
+        label: "{U}{U} spent: return a nonland permanent",
       }),
       triggered(when.entersSelf, [fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller" })], {
         condition: cond.spent("B", 2),
         targets: [target.player("t", "opponent")],
-        label: "{B}{B} dépensé : défausse d'une carte non-terrain choisie",
+        label: "{B}{B} spent: discard a chosen nonland card",
       }),
     ],
   },
@@ -98,38 +98,38 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         mana: "{4}",
         effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"], setPower: 4, setToughness: 4 })],
-        label: "Devient une créature-artefact 4/4",
+        label: "Becomes a 4/4 artifact creature",
       }),
     ],
   },
 
   // --- Lot M5 -----------------------------------------------------------------
   "Pyrrhic Strike": {
-    // Flétrir 2 (coût additionnel facultatif) : lu dans le texte ; payé, on choisit les deux modes.
+    // Blight 2 (optional additional cost): read from the text; when paid, both modes are chosen.
     spell: bothIfKicked(
       mode(
-        "Détruit un artefact ou un enchantement",
+        "Destroy an artifact or enchantment",
         [target.permanent("a", ["Artifact", "Enchantment"])],
         [fx.destroy(ref.target("a"))],
       ),
-      mode("Détruit une créature de VM 3 ou plus", [target.creature("c", { minManaValue: 3 })], [fx.destroy(ref.target("c"))]),
-      "Les deux (flétrir 2 payé)",
+      mode("Destroy a creature with MV 3 or greater", [target.creature("c", { minManaValue: 3 })], [fx.destroy(ref.target("c"))]),
+      "Both (blight 2 paid)",
     ),
   },
   Emptiness: {
-    // Évocation lue dans le texte.
+    // Evoke read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.toBattlefield(ref.target())], {
         condition: cond.spent("W", 2),
         targets: [
-          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins"),
+          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "creature card with MV 3 or less"),
         ],
-        label: "{W}{W} dépensé : renvoie une créature de votre cimetière",
+        label: "{W}{W} spent: return a creature from your graveyard",
       }),
       triggered(when.entersSelf, [fx.counters(ref.target(), "-1/-1", 3)], {
         condition: cond.spent("B", 2),
         targets: [target.upTo(1, target.creature())],
-        label: "{B}{B} dépensé : trois marqueurs -1/-1",
+        label: "{B}{B} spent: three -1/-1 counters",
       }),
     ],
   },
@@ -138,22 +138,22 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         discard: 1,
         effects: [fx.modify(ref.self, { addKeywords: ["indestructible"] }), fx.tap(ref.self)],
-        label: "Indestructible, engagez-la",
+        label: "Indestructible, tap it",
       }),
     ],
   },
   Moonshadow: {
     abilities: [
-      entersWith({ counters: 6, counterKind: "-1/-1", label: "Arrive avec six marqueurs -1/-1" }),
+      entersWith({ counters: 6, counterKind: "-1/-1", label: "Enters with six -1/-1 counters" }),
       triggered(
         when.zoneChange(["battlefield", "hand", "library", "exile", "stack"], {
           to: ["graveyard"],
           whose: "you",
-          // « cartes de permanent » : pas les jetons.
+          // "permanent cards": not tokens.
           filter: { permanent: true, token: false },
         }),
         [fx.removeCounters(ref.self, 1, "-1/-1")],
-        { condition: cond.counterAtLeast("-1/-1", 1), batched: true, label: "Retire un marqueur -1/-1" },
+        { condition: cond.counterAtLeast("-1/-1", 1), batched: true, label: "Remove a -1/-1 counter" },
       ),
     ],
   },

@@ -1,6 +1,6 @@
 /**
- * Commander (PLAN-E, E10) : les Vampires du deck d'Edgar Markov (créatures, sorts et Sorin). Ascension (702.131) lue dans
- * le texte ; coûts « engagez cinq Vampires dégagés » (`tapOthers`), « engagez un Vampire dégagé » (coût additionnel).
+ * Commander (PLAN-E, E10): the Vampires of the Edgar Markov deck (creatures, spells and Sorin). Ascend (702.131) read
+ * from the text; costs "tap five untapped Vampires" (`tapOthers`), "tap an untapped Vampire" (additional cost).
  */
 import type { CardScript, ObjectFilter } from "@mtgx/engine";
 import {
@@ -25,21 +25,21 @@ import {
 } from "./common";
 
 const CREATURE: ObjectFilter = { types: ["Creature"] };
-/** « Les Vampires que vous contrôlez » (permanents). */
+/** "Vampires you control" (permanents). */
 const YOUR_VAMPIRES: ObjectFilter = { subtype: "Vampire", controller: "you" };
-/** « Les autres créatures Vampires que vous contrôlez ». */
+/** "Other Vampire creatures you control". */
 const OTHER_VAMPIRES: ObjectFilter = { types: ["Creature"], subtype: "Vampire", controller: "you", other: true };
 const VAMPIRE_COUNT = amount.count(YOUR_VAMPIRES);
 
-/** « Les autres Vampires que vous contrôlez gagnent +N/+N » (et des mots-clés). */
+/** "Other Vampires you control get +N/+N" (and keywords). */
 const vampireLord = (n: number, label: string, keywords?: ("firstStrike" | "flying")[]) =>
   staticAbility(OTHER_VAMPIRES, { power: n, toughness: n, ...(keywords ? { addKeywords: keywords } : {}) }, { label });
 
-/** « {T} : créez un jeton de créature Vampire 2/2 noire avec le vol » (Bloodline Keeper, Lord of Lineage). */
+/** "{T}: Create a 2/2 black Vampire creature token with flying" (Bloodline Keeper, Lord of Lineage). */
 const vampireMaker = activated({
   tap: true,
   effects: [fx.createTokens(VAMPIRE_FLYING)],
-  label: "Jeton Vampire 2/2 volant",
+  label: "2/2 flying Vampire token",
 });
 
 export const EDH_EDGAR: Record<string, CardScript> = {
@@ -47,11 +47,11 @@ export const EDH_EDGAR: Record<string, CardScript> = {
     abilities: [
       triggered(when.dies(CREATURE), [fx.loseLife(1, ref.target()), fx.gainLife(1)], {
         targets: [target.player()],
-        label: "Une créature meurt : le joueur ciblé perd 1 PV, vous en gagnez 1",
+        label: "A creature dies: target player loses 1 life, you gain 1",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Bloodline Keeper": {
     abilities: [
       vampireMaker,
@@ -59,31 +59,31 @@ export const EDH_EDGAR: Record<string, CardScript> = {
         mana: "{B}",
         activationCondition: cond.controls({ subtype: "Vampire" }, 5),
         effects: [fx.transform()],
-        label: "Transformez (cinq Vampires ou plus)",
+        label: "Transform (five or more Vampires)",
       }),
     ],
   },
-  "Lord of Lineage": { abilities: [vampireLord(2, "Les autres Vampires gagnent +2/+2"), vampireMaker] },
+  "Lord of Lineage": { abilities: [vampireLord(2, "Other Vampires get +2/+2"), vampireMaker] },
   "Captivating Vampire": {
     abilities: [
-      vampireLord(1, "Les autres Vampires gagnent +1/+1"),
+      vampireLord(1, "Other Vampires get +1/+1"),
       activated({
         tapOthers: { filter: YOUR_VAMPIRES, count: 5, includeSelf: true },
         targets: [target.creature()],
         effects: [fx.gainControl(ref.target()), fx.modify(ref.target(), { addSubtypes: ["Vampire"] }, "permanent")],
-        label: "Engagez cinq Vampires : contrôlez la créature ciblée, qui devient un Vampire",
+        label: "Tap five Vampires: gain control of target creature, which becomes a Vampire",
       }),
     ],
   },
   "Champion of Dusk": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(VAMPIRE_COUNT), fx.loseLife(VAMPIRE_COUNT)], {
-        label: "Piochez X cartes et perdez X PV (X : vos Vampires)",
+        label: "Draw X cards and lose X life (X: your Vampires)",
       }),
     ],
   },
-  // « Ils peuvent engager ce permanent. S'ils ne le font pas, vous créez un Vampire 1/1 blanc avec le lien de vie » :
-  // la question est posée au contrôleur du permanent arrivé.
+  // "They may tap that permanent. If they don't, you create a 1/1 white Vampire with lifelink": the question is asked
+  // to the controller of the entering permanent.
   "Charismatic Conqueror": {
     abilities: [
       triggered(
@@ -91,13 +91,13 @@ export const EDH_EDGAR: Record<string, CardScript> = {
         [
           ...fx.mayForStore(
             ref.controllerOf(ref.eventObject),
-            "Engager ce permanent ? Sinon, votre adversaire crée un Vampire 1/1 avec le lien de vie",
+            "Tap this permanent? Otherwise, your opponent creates a 1/1 Vampire with lifelink",
             "tapped",
             fx.tap(ref.eventObject),
           ),
           ...fx.when(cond.not(cond.v("tapped")), fx.createTokens(VAMPIRE_LIFELINK)),
         ],
-        { label: "Un artefact ou une créature adverse arrive dégagé : engagé, ou un Vampire pour vous" },
+        { label: "An opposing artifact or creature enters untapped: tapped, or a Vampire for you" },
       ),
     ],
   },
@@ -112,7 +112,7 @@ export const EDH_EDGAR: Record<string, CardScript> = {
               addSubtypes: ["Demon"],
               addAbilities: [
                 triggered(when.diesSelf, [fx.draw(1), fx.createTappedTokens(VAMPIRE_DEMON)], {
-                  label: "Meurt : piochez, et un Vampire Démon 4/3 volant engagé",
+                  label: "Dies: draw a card, and a tapped 4/3 flying Vampire Demon",
                 }),
               ],
             },
@@ -125,10 +125,10 @@ export const EDH_EDGAR: Record<string, CardScript> = {
               "t",
               ["Creature"],
               { subtype: "Vampire", notSubtype: "Demon", attacking: true },
-              "Vampire attaquant qui n'est pas un Démon",
+              "attacking Vampire that isn't a Demon",
             ),
           ],
-          label: "Un Vampire attaquant devient un Démon",
+          label: "An attacking Vampire becomes a Demon",
         },
       ),
     ],
@@ -136,30 +136,30 @@ export const EDH_EDGAR: Record<string, CardScript> = {
   "Cordial Vampire": {
     abilities: [
       triggered(when.dies(CREATURE), [fx.addCountersAll(YOUR_VAMPIRES)], {
-        label: "Une créature meurt : +1/+1 sur chaque Vampire",
+        label: "A creature dies: +1/+1 on each Vampire",
       }),
     ],
   },
   "Cruel Celebrant": {
     abilities: [
       triggered(when.dies({ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }], controller: "you" }), fx.drain(1), {
-        label: "Une de vos créatures ou un de vos planeswalkers meurt : drain 1",
+        label: "One of your creatures or planeswalkers dies: drain 1",
       }),
     ],
   },
-  // Vol et initiative : lus dans le texte.
+  // Flying and first strike: read from the text.
   "Drana, Liberator of Malakir": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.addCountersAll({ types: ["Creature"], controller: "you", attacking: true })], {
-        label: "+1/+1 sur chaque attaquant",
+        label: "+1/+1 on each attacker",
       }),
     ],
   },
   "Edgar, Charmed Groom": {
     abilities: [
-      vampireLord(1, "Les autres Vampires gagnent +1/+1"),
+      vampireLord(1, "Other Vampires get +1/+1"),
       triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { transformed: true })], {
-        label: "Revient transformé (Edgar Markov's Coffin)",
+        label: "Returns transformed (Edgar Markov's Coffin)",
       }),
     ],
   },
@@ -176,18 +176,18 @@ export const EDH_EDGAR: Record<string, CardScript> = {
             fx.transform(),
           ),
         ],
-        { label: "Vampire 1/1 avec le lien de vie, marqueur de lignée ; à trois, transformez" },
+        { label: "1/1 Vampire with lifelink, bloodline counter; at three, transform" },
       ),
     ],
   },
-  // Lien de vie : lu dans le texte.
+  // Lifelink: read from the text.
   "Elenda, the Dusk Rose": {
     abilities: [
       triggered(when.dies({ types: ["Creature"], other: true }), [fx.addCounters(ref.self, 1)], {
-        label: "Une autre créature meurt : +1/+1",
+        label: "Another creature dies: +1/+1",
       }),
       triggered(when.diesSelf, [fx.createTokens(VAMPIRE_LIFELINK, amount.lkiPower)], {
-        label: "Meurt : X Vampires 1/1 avec le lien de vie (X : sa force)",
+        label: "Dies: X 1/1 Vampires with lifelink (X: its power)",
       }),
     ],
   },
@@ -196,76 +196,76 @@ export const EDH_EDGAR: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         fx.may(
-          "Chercher une carte de Vampire à mettre au-dessus de votre bibliothèque ?",
+          "Search for a Vampire card to put on top of your library?",
           fx.search({ subtype: "Vampire" }, { to: "libraryTop" }),
         ),
-        { label: "Cherchez un Vampire, au-dessus de la bibliothèque" },
+        { label: "Search for a Vampire, on top of the library" },
       ),
       triggered(when.enters({ ...OTHER_VAMPIRES }), [fx.pump(ref.target(), 1, 1)], {
         targets: [target.creature()],
-        label: "Un autre Vampire arrive : +1/+1 à la créature ciblée",
+        label: "Another Vampire enters: target creature gets +1/+1",
       }),
     ],
   },
-  // Lien de vie : lu dans le texte.
+  // Lifelink: read from the text.
   "Indulgent Aristocrat": {
     abilities: [
       activated({
         mana: "{2}",
         sacrificeOther: { filter: CREATURE, includeSelf: true },
         effects: [fx.addCountersAll(YOUR_VAMPIRES)],
-        label: "Sacrifiez une créature : +1/+1 sur chaque Vampire",
+        label: "Sacrifice a creature: +1/+1 on each Vampire",
       }),
     ],
   },
   "Knight of the Ebon Legion": {
     abilities: [
-      activated({ mana: "{2}{B}", effects: [fx.pump(ref.self, 3, 3, ["deathtouch"])], label: "+3/+3 et contact mortel" }),
+      activated({ mana: "{2}{B}", effects: [fx.pump(ref.self, 3, 3, ["deathtouch"])], label: "+3/+3 and deathtouch" }),
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
         condition: cond.amountAtLeast(amount.turnEvents({ event: "lifeLoss", sum: true, perPlayer: true }), 4),
-        label: "Un joueur a perdu 4 PV ou plus : +1/+1",
+        label: "A player lost 4 or more life: +1/+1",
       }),
     ],
   },
-  "Legion Lieutenant": { abilities: [vampireLord(1, "Les autres Vampires gagnent +1/+1")] },
-  // Vol : lu dans le texte.
+  "Legion Lieutenant": { abilities: [vampireLord(1, "Other Vampires get +1/+1")] },
+  // Flying: read from the text.
   "Malakir Bloodwitch": {
     abilities: [
-      protectionAbility(protection.from({ colors: ["W"] }, "Protection contre le blanc")),
+      protectionAbility(protection.from({ colors: ["W"] }, "Protection from white")),
       triggered(when.entersSelf, [fx.loseLife(VAMPIRE_COUNT, ref.eachOpponent, "lost"), fx.gainLife(amount.v("lost"))], {
-        label: "Chaque adversaire perd 1 PV par Vampire ; vous gagnez autant",
+        label: "Each opponent loses 1 life per Vampire; you gain that much",
       }),
     ],
   },
-  // Convocation, lien de vie et folie : lus dans le texte.
-  "Markov Baron": { abilities: [vampireLord(1, "Les autres Vampires gagnent +1/+1")] },
+  // Convoke, lifelink and madness: read from the text.
+  "Markov Baron": { abilities: [vampireLord(1, "Other Vampires get +1/+1")] },
   "Master of Dark Rites": {
     abilities: [
       activated({
         tap: true,
         sacrificeOther: { filter: CREATURE },
         effects: [fx.addManaChoice(3, ["B"], { spell: { anySubtype: ["Vampire", "Cleric", "Demon"] } })],
-        label: "{B}{B}{B} pour des sorts de Vampire, de Clerc ou de Démon",
+        label: "{B}{B}{B} for Vampire, Cleric or Demon spells",
       }),
     ],
   },
   "Mavren Fein, Dusk Apostle": {
     abilities: [
       triggered(when.attackWith(1, { subtype: "Vampire", token: false }), [fx.createTokens(VAMPIRE_LIFELINK)], {
-        label: "Des Vampires non-jetons attaquent : Vampire 1/1 avec le lien de vie",
+        label: "Nontoken Vampires attack: 1/1 Vampire with lifelink",
       }),
     ],
   },
   "Sanctum Seeker": {
     abilities: [
       triggered(when.attacks({ subtype: "Vampire", controller: "you" }), fx.drain(1), {
-        label: "Un Vampire attaque : drain 1",
+        label: "A Vampire attacks: drain 1",
       }),
     ],
   },
-  // Initiative : lue dans le texte.
-  "Stromkirk Captain": { abilities: [vampireLord(1, "Les autres Vampires gagnent +1/+1 et l'initiative", ["firstStrike"])] },
-  // Vol et ascension : lus dans le texte.
+  // First strike: read from the text.
+  "Stromkirk Captain": { abilities: [vampireLord(1, "Other Vampires get +1/+1 and first strike", ["firstStrike"])] },
+  // Flying and ascend: read from the text.
   "Twilight Prophet": {
     abilities: [
       triggered(
@@ -273,23 +273,23 @@ export const EDH_EDGAR: Record<string, CardScript> = {
         [fx.moveTo(ref.libraryTop(ref.you), { to: "hand" }, { name: "c" }), ...fx.drain(amount.manaValueOf(ref.stored("c")))],
         {
           condition: cond.citysBlessing,
-          label: "Bénédiction de la cité : la carte du dessus en main, drain de sa valeur de mana",
+          label: "City's blessing: the top card into your hand, drain its mana value",
         },
       ),
     ],
   },
-  // Menace : lue dans le texte.
+  // Menace: read from the text.
   "Vampire Socialite": {
     abilities: [
       triggered(when.entersSelf, [fx.addCountersAll({ ...YOUR_VAMPIRES, other: true })], {
         condition: cond.opponentLostLife,
-        label: "Un adversaire a perdu des PV : +1/+1 sur chaque autre Vampire",
+        label: "An opponent lost life: +1/+1 on each other Vampire",
       }),
       entersWith({
         counters: 1,
         affects: { ...YOUR_VAMPIRES, other: true },
         condition: cond.opponentLostLife,
-        label: "Les autres Vampires arrivent avec un marqueur +1/+1 de plus",
+        label: "Other Vampires enter with an additional +1/+1 counter",
       }),
     ],
   },
@@ -298,7 +298,7 @@ export const EDH_EDGAR: Record<string, CardScript> = {
       activated({
         sacrificeOther: { filter: CREATURE, includeSelf: true },
         effects: [fx.scry(1)],
-        label: "Sacrifiez une créature : regard 1",
+        label: "Sacrifice a creature: scry 1",
       }),
     ],
   },
@@ -306,40 +306,40 @@ export const EDH_EDGAR: Record<string, CardScript> = {
     abilities: [
       triggered({ on: "life", change: "gain", whose: "you" }, [fx.loseLife(amount.eventAmount, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Vous gagnez des PV : l'adversaire ciblé en perd autant",
+        label: "You gain life: target opponent loses that much",
       }),
       activated({
         mana: "{3}{B}{B}",
         effects: [fx.pumpAll({ controller: "you" }, 0, 0, ["lifelink"])],
-        label: "Vos créatures gagnent le lien de vie",
+        label: "Your creatures gain lifelink",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Welcoming Vampire": {
     abilities: [
       triggered(when.enters({ types: ["Creature"], controller: "you", other: true, maxPower: 2 }), [fx.draw(1)], {
         batched: true,
         oncePerTurn: true,
-        label: "Des créatures de force 2 ou moins arrivent : piochez (une fois par tour)",
+        label: "Creatures with power 2 or less enter: draw a card (once per turn)",
       }),
     ],
   },
-  // Célérité : lue dans le texte.
+  // Haste: read from the text.
   "Yahenni, Undying Partisan": {
     abilities: [
       triggered(when.dies({ types: ["Creature"], controller: "opponent" }), [fx.addCounters(ref.self, 1)], {
-        label: "Une créature adverse meurt : +1/+1",
+        label: "An opposing creature dies: +1/+1",
       }),
       activated({
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         effects: [fx.modify(ref.self, { addKeywords: ["indestructible"] })],
-        label: "Sacrifiez une autre créature : indestructible",
+        label: "Sacrifice another creature: indestructible",
       }),
     ],
   },
-  // Approximation : « remplacez toutes les occurrences d'un type de créature par Vampire » (changement de texte, 612)
-  // n'est pas fait ; la créature devient un Vampire en plus de ses autres types (docs/approximations.md).
+  // Approximation: "replace all instances of one creature type with Vampire" (text change, 612) is not done; the
+  // creature becomes a Vampire in addition to its other types (docs/approximations.md).
   "New Blood": {
     additionalCost: { tap: { filter: { types: ["Creature"], subtype: "Vampire", controller: "you" }, count: 1 } },
     spell: spell(
@@ -368,18 +368,18 @@ export const EDH_EDGAR: Record<string, CardScript> = {
           fx.pump(ref.target(), 0, 0, ["deathtouch", "lifelink"]),
           ...fx.when(cond.refMatches(ref.target(), { subtype: "Vampire" }), fx.addCounters(ref.target(), 1)),
         ],
-        label: "Contact mortel et lien de vie ; +1/+1 si c'est un Vampire",
+        label: "Deathtouch and lifelink; +1/+1 if it's a Vampire",
       }),
       loyalty(1, {
         effects: [
           fx.sacrifice(ref.you, { subtype: "Vampire" }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.reflexive([target.any()], [fx.damage(3, ref.target()), fx.gainLife(3)])),
         ],
-        label: "Sacrifiez un Vampire : 3 blessures à n'importe quelle cible, gagnez 3 PV",
+        label: "Sacrifice a Vampire: 3 damage to any target, gain 3 life",
       }),
       loyalty(-3, {
         effects: [fx.pickFromZone("hand", { types: ["Creature"], subtype: "Vampire" }, { to: "battlefield" }, { min: 0 })],
-        label: "Mettez une carte de créature Vampire de votre main sur le champ de bataille",
+        label: "Put a Vampire creature card from your hand onto the battlefield",
       }),
     ],
   },

@@ -1,4 +1,5 @@
-/** Bloomburrow — cartes rouges. */
+/** Bloomburrow — red cards. */
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -29,28 +30,28 @@ import {
 } from "./common";
 
 const NONCREATURE = { notTypes: ["Creature" as const] };
-/** « Vous pouvez défausser une carte. Si vous le faites, piochez une carte. » */
-const mayRummage = (prompt = "Défausser une carte pour piocher ?") =>
+/** "You may discard a card. If you do, draw a card." */
+const mayRummage = (prompt = "Discard a card to draw?") =>
   fx.may(prompt, fx.discard(1, ref.you, { store: "d" }), ...fx.when(cond.v("d"), fx.draw(1)));
 
 export const RED: Record<string, CardScript> = {
   "Agate Assault": {
     spell: modal(
       mode(
-        "4 blessures à une créature (exilée si elle meurt)",
+        "4 damage to a creature (exiled if it dies)",
         [target.creature()],
         [fx.exileIfDies(ref.target()), fx.damage(4, ref.target())],
       ),
-      mode("Exile un artefact", [target.permanent("t", ["Artifact"], {}, "artefact")], [fx.exile(ref.target())]),
+      mode("Exiles an artifact", [target.permanent("t", ["Artifact"], {}, "artifact")], [fx.exile(ref.target())]),
     ),
   },
   "Alania's Pathmaker": {
-    abilities: [triggered(when.entersSelf, [fx.impulse(1, "yourNextTurn")], { label: "Exile la carte du dessus (jouable)" })],
+    abilities: [triggered(when.entersSelf, [fx.impulse(1, "yourNextTurn")], { label: "Exiles the top card (playable)" })],
   },
   "Artist's Talent": {
-    abilities: [triggered(when.castSpell("you", NONCREATURE), mayRummage(), { label: "Défaussez, puis piochez" })],
+    abilities: [triggered(when.castSpell("you", NONCREATURE), mayRummage(), { label: "Discard, then draw a card" })],
     classLevels: [
-      [costReducer(NONCREATURE, 1, "Sorts non-créature {1} de moins")],
+      [costReducer(NONCREATURE, 1, "Noncreature spells cost {1} less")],
       [
         eventReplacement({
           event: "damage",
@@ -58,28 +59,28 @@ export const RED: Record<string, CardScript> = {
           to: "opponentSide",
           combat: false,
           modify: { add: 2 },
-          label: "Blessures non de combat aux adversaires +2",
+          label: "Noncombat damage to opponents +2",
         }),
       ],
     ],
   },
   "Blacksmith's Talent": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(SWORD)], { label: "Épée (Équipement)" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(SWORD)], { label: "Sword (Equipment)" })],
     classLevels: [
       [
         triggered(when.yourCombat, [fx.attach(ref.target("c"), ref.target("e"))], {
           targets: [
-            targetObj("e", { subtype: "Equipment", controller: "you" }, "Équipement que vous contrôlez"),
+            targetObj("e", { subtype: "Equipment", controller: "you" }, "Equipment you control"),
             target.upTo(1, target.creature("c", { controller: "you" })),
           ],
-          label: "Attache un Équipement",
+          label: "Attaches an Equipment",
         }),
       ],
       [
         staticAbility(
           { types: ["Creature"], controller: "you", equipped: true },
           { addKeywords: ["doubleStrike", "haste"] },
-          { condition: cond.yourTurn, label: "Double initiative et célérité" },
+          { condition: cond.yourTurn, label: "Double strike and haste" },
         ),
       ],
     ],
@@ -94,36 +95,32 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), amount.powerOf(ref.self), 0)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "+X/+0 (X = sa force)",
+        label: "+X/+0 (X = its power)",
       }),
     ],
   },
   "Brazen Collector": {
-    abilities: [triggered(when.attacksSelf, [fx.addManaUntilEndOfTurn("R")], { label: "Ajoute {R}" })],
+    abilities: [triggered(when.attacksSelf, [fx.addManaUntilEndOfTurn("R")], { label: "Adds {R}" })],
   },
   "Byway Barterer": {
     abilities: [
       expend(
         4,
-        fx.may(
-          "Défausser votre main pour piocher deux cartes ?",
-          fx.discard(amount.cardsIn("hand"), ref.you, { store: "d" }),
-          fx.draw(2),
-        ),
-        { label: "Défaussez votre main, piochez deux cartes" },
+        fx.may("Discard your hand to draw two cards?", fx.discard(amount.cardsIn("hand"), ref.you, { store: "d" }), fx.draw(2)),
+        { label: "Discard your hand, draw two cards" },
       ),
     ],
   },
   "Conduct Electricity": {
     spell: spell(
-      [target.creature("t"), target.upTo(1, targetObj("u", { types: ["Creature"], token: true }, "jeton de créature"))],
+      [target.creature("t"), target.upTo(1, targetObj("u", { types: ["Creature"], token: true }, "creature token"))],
       [fx.damage(6, ref.target()), fx.damage(2, ref.target("u"))],
     ),
   },
   "Coruscation Mage": {
     abilities: [
       triggered(when.castSpell("you", NONCREATURE), [fx.damage(1, ref.eachOpponent)], {
-        label: "1 blessure à chaque adversaire",
+        label: "1 damage to each opponent",
       }),
     ],
   },
@@ -134,7 +131,7 @@ export const RED: Record<string, CardScript> = {
           w,
           [
             fx.exileTop(ref.you, amount.count({ types: ["Creature"], controller: "you", minPower: 4 }), "d"),
-            // « Jusqu'à votre prochaine étape de fin » : celle de ce tour-ci, si c'est le vôtre.
+            // "Until your next end step": this turn's, if it is yours.
             fx.grantPlay(ref.stored("d"), { untilYourNextEndStep: true }),
             fx.delayedAt(
               "yourEndStep",
@@ -142,54 +139,54 @@ export const RED: Record<string, CardScript> = {
               { d: ref.stored("d") },
             ),
           ],
-          { label: "Exile X cartes (jouables) ; 2 blessures par carte restée en exil" },
+          { label: "Exiles X cards (playable); 2 damage for each card left in exile" },
         ),
       ),
     ],
   },
   "Emberheart Challenger": {
-    abilities: [valiant([fx.impulse(1)], { label: "Exile la carte du dessus (jouable ce tour-ci)" })],
+    abilities: [valiant([fx.impulse(1)], { label: "Exiles the top card (playable this turn)" })],
   },
   "Festival of Embers": {
     abilities: [
       playerStatic({
         playFrom: { zone: "graveyard", filter: { types: ["Instant", "Sorcery"] }, what: "spells", payLife: 1 },
         condition: cond.yourTurn,
-        label: "Éphémères et rituels depuis le cimetière (1 PV)",
+        label: "Instants and sorceries from the graveyard (1 life)",
       }),
-      graveyardReplacement({ graveyardOf: "you", label: "Cimetière exilé" }),
-      activated({ mana: "{1}{R}", sacrifice: true, effects: [], label: "Sacrifiez cet enchantement" }),
+      graveyardReplacement({ graveyardOf: "you", label: "Graveyard exiled" }),
+      activated({ mana: "{1}{R}", sacrifice: true, effects: [], label: "Sacrifice this enchantment" }),
     ],
   },
   "Flamecache Gecko": {
     abilities: [
-      triggered(when.entersSelf, [fx.addMana("B", "R")], { condition: cond.opponentLostLife, label: "Ajoute {B}{R}" }),
-      activated({ mana: "{1}{R}", discard: 1, effects: [fx.draw(1)], label: "Défaussez : piochez" }),
+      triggered(when.entersSelf, [fx.addMana("B", "R")], { condition: cond.opponentLostLife, label: "Adds {B}{R}" }),
+      activated({ mana: "{1}{R}", discard: 1, effects: [fx.draw(1)], label: "Discard: draw" }),
     ],
   },
   "Frilled Sparkshooter": {
-    abilities: [entersWith({ counters: 1, condition: cond.opponentLostLife, label: "Un marqueur +1/+1" })],
+    abilities: [entersWith({ counters: 1, condition: cond.opponentLostLife, label: "A +1/+1 counter" })],
   },
   "Harnesser of Storms": {
     abilities: [
       triggered(
         when.castSpell("you", { anyOf: [NONCREATURE, { subtype: "Otter" }] }),
-        fx.may("Exiler la carte du dessus (jouable ce tour-ci) ?", fx.impulse(1)),
-        { oncePerTurn: true, label: "Exile la carte du dessus" },
+        fx.may("Exile the top card (playable this turn)?", fx.impulse(1)),
+        { oncePerTurn: true, label: "Exiles the top card" },
       ),
     ],
   },
   "Heartfire Hero": {
     abilities: [
-      valiant([fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
-      triggered(when.diesSelf, [fx.damage(amount.lkiPower, ref.eachOpponent)], { label: "Blessures égales à sa force" }),
+      valiant([fx.addCounters(ref.self, 1)], { label: "+1/+1 counter" }),
+      triggered(when.diesSelf, [fx.damage(amount.lkiPower, ref.eachOpponent)], { label: "Damage equal to its power" }),
     ],
   },
   "Hearthborn Battler": {
     abilities: [
       triggered({ on: "castSpell", by: "any", nth: 2 }, [fx.damage(2, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "Deuxième sort d'un joueur : 2 blessures",
+        label: "A player's second spell: 2 damage",
       }),
     ],
   },
@@ -197,26 +194,26 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.attackWith(1, { subtype: "Lizard" }), [fx.damage(1, ref.target())], {
         targets: [target.player("t", "opponent")],
-        label: "1 blessure à un adversaire",
+        label: "1 damage to an opponent",
       }),
       activated({
         mana: "{1}{R}",
         oncePerTurn: true,
         activationCondition: cond.opponentLostLife,
         effects: [fx.addCounters(ref.self, 1)],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
   "Hoarder's Overflow": {
     abilities: [
-      triggered(when.entersSelf, [fx.counters(ref.self, "stash", 1)], { label: "Marqueur de réserve" }),
-      expend(4, [fx.counters(ref.self, "stash", 1)], { label: "Marqueur de réserve" }),
+      triggered(when.entersSelf, [fx.counters(ref.self, "stash", 1)], { label: "Stash counter" }),
+      expend(4, [fx.counters(ref.self, "stash", 1)], { label: "Stash counter" }),
       activated({
         mana: "{1}{R}",
         sacrifice: true,
         effects: [fx.discard(amount.cardsIn("hand")), fx.draw(amount.lkiCounters("stash"))],
-        label: "Défaussez votre main, piochez",
+        label: "Discard your hand, draw",
       }),
     ],
   },
@@ -226,23 +223,23 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.player("t", "opponent")],
         effects: [fx.damage(1, ref.target())],
-        label: "1 blessure à un adversaire",
+        label: "1 damage to an opponent",
       }),
-      triggered(when.castSpell("you", NONCREATURE), [fx.untap(ref.self)], { label: "Se dégage" }),
+      triggered(when.castSpell("you", NONCREATURE), [fx.untap(ref.self)], { label: "Untaps" }),
     ],
   },
   "Manifold Mouse": {
     abilities: [
-      // La cible au déclenchement, le mot-clé « au choix » à la résolution (608.2d).
+      // The target on triggering, the "your choice" keyword on resolution (608.2d).
       triggered(
         when.yourCombat,
-        fx.yourChoice("la Souris ciblée gagne…", "k", [
-          { label: "La double initiative", effects: [fx.pump(ref.target(), 0, 0, ["doubleStrike"])] },
-          { label: "Le piétinement", effects: [fx.pump(ref.target(), 0, 0, ["trample"])] },
+        fx.yourChoice("the targeted Mouse gains…", "k", [
+          { label: msg("ctx:gains|double strike"), effects: [fx.pump(ref.target(), 0, 0, ["doubleStrike"])] },
+          { label: msg("ctx:gains|trample"), effects: [fx.pump(ref.target(), 0, 0, ["trample"])] },
         ]),
         {
           targets: [target.creature("t", { controller: "you", subtype: "Mouse" })],
-          label: "Une Souris gagne la double initiative ou le piétinement",
+          label: "A Mouse gains double strike or trample",
         },
       ),
     ],
@@ -262,7 +259,7 @@ export const RED: Record<string, CardScript> = {
     spell: spell(
       [
         target.creature("t", { controller: "you" }),
-        targetObj("u", { types: ["Creature"], controller: "opponent" }, "créature que vous ne contrôlez pas"),
+        targetObj("u", { types: ["Creature"], controller: "opponent" }, "creature you don't control"),
       ],
       [fx.pump(ref.target(), 1, 0), fx.damage(amount.powerOf(ref.target()), ref.target("u"), ref.target())],
     ),
@@ -274,7 +271,7 @@ export const RED: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.pump(ref.target(), 0, 0, ["haste"])],
-        label: "Célérité",
+        label: "Haste",
       }),
     ],
   },
@@ -291,7 +288,7 @@ export const RED: Record<string, CardScript> = {
           fx.untap(ref.target()),
           fx.pump(ref.target(), 0, 0, ["haste"]),
         ),
-        { targets: [target.creature()], label: "Prend le contrôle d'une créature" },
+        { targets: [target.creature()], label: "Gains control of a creature" },
       ),
     ],
   },
@@ -299,7 +296,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       expend(4, [fx.pump(ref.target(), 1, 1, ["trample"])], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "+1/+1 et piétinement",
+        label: "+1/+1 and trample",
       }),
     ],
   },
@@ -312,23 +309,23 @@ export const RED: Record<string, CardScript> = {
   },
   "Season of the Bold": {
     spell: pawprint(
-      { pips: 1, label: "Trésor engagé", effects: [fx.createTappedTokens(TREASURE)] },
+      { pips: 1, label: "Tapped Treasure", effects: [fx.createTappedTokens(TREASURE)] },
       {
         pips: 2,
-        label: "Exile les deux cartes du dessus (jouables)",
+        label: "Exiles the top two cards (playable)",
         effects: [fx.exileTop(ref.you, 2, "b"), fx.grantPlay(ref.stored("b"), { untilYourNextTurn: true })],
       },
       {
         pips: 3,
-        label: "Chaque sort : 2 blessures à une créature",
+        label: "Each spell: 2 damage to a creature",
         effects: [
           fx.emblem(
             "Season of the Bold",
-            "Jusqu'à la fin de votre prochain tour, chaque fois que vous lancez un sort, 2 blessures à jusqu'à une créature ciblée.",
+            msg("Until the end of your next turn, whenever you cast a spell, 2 damage to up to one target creature."),
             [
               triggered(when.castSpell("you"), [fx.damage(2, ref.target())], {
                 targets: [target.upTo(1, target.creature())],
-                label: "2 blessures à une créature",
+                label: "2 damage to a creature",
               }),
             ],
             false,
@@ -342,13 +339,13 @@ export const RED: Record<string, CardScript> = {
   },
   "Steampath Charger": {
     abilities: [
-      triggered(when.diesSelf, [fx.damage(1, ref.target())], { targets: [target.player()], label: "1 blessure à un joueur" }),
+      triggered(when.diesSelf, [fx.damage(1, ref.target())], { targets: [target.player()], label: "1 damage to a player" }),
     ],
   },
   Stormsplitter: {
     abilities: [
       triggered(when.castSpell("you", { types: ["Instant", "Sorcery"] }), [fx.copyToken(ref.self, { exileAtEndStep: true })], {
-        label: "Copie de cette créature (exilée à l'étape de fin)",
+        label: "Copy of this creature (exiled at the end step)",
       }),
     ],
   },
@@ -357,16 +354,16 @@ export const RED: Record<string, CardScript> = {
       eventReplacement({
         event: "lifeGain",
         modify: { prevent: true },
-        label: "Les joueurs ne peuvent pas gagner de points de vie",
+        label: "Players can't gain life",
       }),
-      playerStatic({ damageUnpreventable: true, label: "Les blessures ne peuvent pas être prévenues" }),
+      playerStatic({ damageUnpreventable: true, label: "Damage can't be prevented" }),
       triggered(
         when.entersSelf,
         fx.forEachPlayer(ref.eachPlayer, (p) => [
           fx.damage(amount.refCount(ref.permanentsOf(p, { types: ["Land"], basic: false })), p),
         ]),
         {
-          label: "Blessures selon les terrains non de base",
+          label: "Damage equal to the nonbasic lands",
         },
       ),
     ],
@@ -378,7 +375,7 @@ export const RED: Record<string, CardScript> = {
     ),
   },
   "Teapot Slinger": {
-    abilities: [expend(4, [fx.damage(2, ref.eachOpponent)], { label: "2 blessures à chaque adversaire" })],
+    abilities: [expend(4, [fx.damage(2, ref.eachOpponent)], { label: "2 damage to each opponent" })],
   },
   "Valley Flamecaller": {
     abilities: [
@@ -386,7 +383,7 @@ export const RED: Record<string, CardScript> = {
         event: "damage",
         source: { ...kin(["Lizard", "Mouse", "Otter", "Raccoon"]), controller: "you" },
         modify: { add: 1 },
-        label: "Lézards, Souris, Loutres et Ratons laveurs : +1 blessure",
+        label: "Lizards, Mice, Otters and Raccoons: +1 damage",
       }),
     ],
   },
@@ -397,17 +394,17 @@ export const RED: Record<string, CardScript> = {
     ),
   },
   "War Squeak": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 0, 0, ["cantBlock"])], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Ne peut pas bloquer",
+        label: "Can't block",
       }),
-      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["haste"] }, { label: "+1/+1 et célérité" }),
+      staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["haste"] }, { label: "+1/+1, haste" }),
     ],
   },
   "Whiskerquill Scribe": {
-    abilities: [valiant(mayRummage(), { label: "Défaussez, puis piochez" })],
+    abilities: [valiant(mayRummage(), { label: "Discard, then draw a card" })],
   },
   "Wildfire Howl": {
     spell: spell(

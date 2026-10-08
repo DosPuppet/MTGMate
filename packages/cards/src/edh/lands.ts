@@ -1,9 +1,10 @@
 /**
- * Commander (PLAN-E, E8) : base de mana commune des decks Commander. Terrains douloureux, à contrôle, « deux terrains de
- * base », fetchs, Triomes (cycle et types de terrain lus dans le texte), terrains légendaires (Urborg, Otawara, Phyrexian
- * Tower), terrains filtres et restreints ; rocs de mana (Sol Ring, talismans) et « pas de taille maximale de main ».
+ * Commander (PLAN-E, E8): shared mana base of the Commander decks. Pain lands, check lands, "two basic lands" lands,
+ * fetches, Triomes (cycling and land types read from the text), legendary lands (Urborg, Otawara, Phyrexian
+ * Tower), filter and restricted lands; mana rocks (Sol Ring, talismans) and "no maximum hand size".
  */
 import type { CardScript, ManaType, TokenSpec } from "@mtgx/engine";
+import { msg } from "@mtgx/engine";
 import {
   ANY_COLOR,
   activated,
@@ -20,71 +21,75 @@ import {
   when,
 } from "./common";
 
-/** Sang : « {1}, {T}, défaussez une carte, sacrifiez ce jeton : piochez une carte » (la défausse est un coût). */
+/** Blood: "{1}, {T}, Discard a card, Sacrifice this token: Draw a card." (the discard is a cost). */
 export const BLOOD: TokenSpec = {
   name: "Blood",
   colors: [],
   types: ["Artifact"],
   subtypes: ["Blood"],
-  abilities: [
-    activated({ mana: "{1}", tap: true, discard: 1, sacrifice: true, effects: [fx.draw(1)], label: "Défaussez, piochez" }),
-  ],
+  abilities: [activated({ mana: "{1}", tap: true, discard: 1, sacrifice: true, effects: [fx.draw(1)], label: "Discard, draw" })],
   text: "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.",
 };
 
-/** Terrains et artefacts « douloureux » : {C}, ou l'une de deux couleurs et 1 blessure à vous. */
+/** "Pain" lands and artifacts: {C}, or one of two colors and 1 damage to you. */
 const painSource = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [manaAbility("C"), manaAbility([a, b], 1, { drawback: { damageYou: 1 } })],
 });
 
-/** Types de terrain de base, avec leur article, pour les libellés. */
-const LAND_FR: Record<string, string> = {
-  Plains: "une Plaine",
-  Island: "une Île",
-  Swamp: "un Marais",
-  Mountain: "une Montagne",
-  Forest: "une Forêt",
+/** Basic land types, with their article, for the labels. */
+const LAND_WITH_ARTICLE: Record<string, string> = {
+  Plains: msg("a Plains"),
+  Island: msg("an Island"),
+  Swamp: msg("a Swamp"),
+  Mountain: msg("a Mountain"),
+  Forest: msg("a Forest"),
 };
 
-/** Terrains « à contrôle » : arrive engagé sauf si vous contrôlez un terrain de l'un de ces deux types. */
+/** "Check" lands: enters tapped unless you control a land of one of these two types. */
 const checkLand = (a: ManaType, b: ManaType, typeA: string, typeB: string): CardScript => ({
   abilities: [
     entersWith({
       tapped: true,
       condition: cond.not(cond.controls({ types: ["Land"], anySubtype: [typeA, typeB] })),
-      label: `Engagé, sauf si vous contrôlez ${LAND_FR[typeA] ?? typeA} ou ${LAND_FR[typeB] ?? typeB}`,
+      label: msg("Tapped unless you control {a} or {b}", {
+        a: LAND_WITH_ARTICLE[typeA] ?? typeA,
+        b: LAND_WITH_ARTICLE[typeB] ?? typeB,
+      }),
     }),
     manaAbility([a, b]),
   ],
 });
 
-/** Terrains « de bataille » (types de base lus dans le texte) : engagés sauf avec deux terrains de base ou plus. */
+/** "Battle" lands (basic types read from the text): tapped unless you control two or more basic lands. */
 const battleLand: CardScript = {
   abilities: [
     entersWith({
       tapped: true,
       condition: cond.not(cond.controls({ types: ["Land"], basic: true }, 2)),
-      label: "Engagé, sauf si vous contrôlez deux terrains de base ou plus",
+      label: "Tapped unless you control two or more basic lands",
     }),
   ],
 };
 
-/** Triomes et tours de New Capenna : arrivent engagés (types de terrain et cycle lus dans le texte). */
+/** Triomes and New Capenna towers: enter tapped (land types and cycling read from the text). */
 const tappedTriland: CardScript = { abilities: [entersWith({ tapped: true })] };
 
-/** Terrains « à révélation » : engagés, sauf si vous révélez une carte de [type] ou de [type] de votre main (choix auto). */
+/** "Reveal" lands: tapped unless you reveal a [type] or [type] card from your hand (automatic choice). */
 const revealLand = (a: ManaType, b: ManaType, typeA: string, typeB: string): CardScript => ({
   abilities: [
     entersWith({
       tapped: true,
       condition: cond.not(cond.amountAtLeast(amount.countIn("hand", { anySubtype: [typeA, typeB] }), 1)),
-      label: `Engagé, sauf si vous révélez ${LAND_FR[typeA] ?? typeA} ou ${LAND_FR[typeB] ?? typeB} de votre main`,
+      label: msg("Tapped unless you reveal {a} or {b} from your hand", {
+        a: LAND_WITH_ARTICLE[typeA] ?? typeA,
+        b: LAND_WITH_ARTICLE[typeB] ?? typeB,
+      }),
     }),
     manaAbility([a, b]),
   ],
 });
 
-/** Terrains filtres : {T} : {C} ; {A/B}, {T} : deux mana parmi ces deux couleurs. */
+/** Filter lands: {T}: {C}; {A/B}, {T}: two mana among these two colors. */
 const filterLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     manaAbility("C"),
@@ -92,41 +97,43 @@ const filterLand = (a: ManaType, b: ManaType): CardScript => ({
       mana: `{${a}/${b}}`,
       tap: true,
       effects: [fx.addManaCombination(2, [a, b])],
-      label: `{${a}}{${a}}, {${a}}{${b}} ou {${b}}{${b}}`,
+      label: msg("{a}{a}, {a}{b}, or {b}{b}", { a: `{${a}}`, b: `{${b}}` }),
     }),
   ],
 });
 
-/** Terrains « contaminés » : {C}, ou l'une de deux couleurs si vous contrôlez un Marais. */
+/** "Tainted" lands: {C}, or one of two colors if you control a Swamp. */
 const taintedLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [manaAbility("C"), manaAbility([a, b], 1, { condition: cond.controls({ types: ["Land"], subtype: "Swamp" }) })],
 });
 
-/** Terrains « {1}, {T} : ajoutez {A}{B} » (Overflowing Basin). */
+/** "{1}, {T}: Add {A}{B}" lands (Overflowing Basin). */
 const pairLand = (a: ManaType, b: ManaType): CardScript => ({
-  abilities: [activated({ mana: "{1}", tap: true, effects: [fx.addMana(a, b)], label: `{${a}}{${b}}` })],
+  abilities: [
+    activated({ mana: "{1}", tap: true, effects: [fx.addMana(a, b)], label: msg("{a}{b}", { a: `{${a}}`, b: `{${b}}` }) }),
+  ],
 });
 
-/** Terrains « fetch » : {T}, 1 PV, sacrifice : une carte de [type] ou [type] sur le champ de bataille. */
-const fetchland = (a: string, b: string): CardScript => ({
+/** "Fetch" lands: {T}, 1 life, sacrifice: a [type] or [type] card onto the battlefield. */
+const fetchland = (a: string, b: string, label: string): CardScript => ({
   abilities: [
     activated({
       tap: true,
       payLife: 1,
       sacrifice: true,
       effects: [fx.search({ types: ["Land"], anySubtype: [a, b] }, { to: "battlefield" })],
-      label: `Cherchez une carte de ${a} ou de ${b}`,
+      label,
     }),
   ],
 });
 
-/** « Vous n'avez pas de taille maximale de main », et {T} : ajoutez du mana. */
+/** "You have no maximum hand size", and {T}: add mana. */
 const noMaxHand = (...mana: ReturnType<typeof manaAbility>[]): CardScript => ({
-  abilities: [playerStatic({ maxHandSize: "none", label: "Pas de taille maximale de main" }), ...mana],
+  abilities: [playerStatic({ maxHandSize: "none", label: "You have no maximum hand size" }), ...mana],
 });
 
 export const EDH_LANDS: Record<string, CardScript> = {
-  // --- Terrains douloureux et talismans ---
+  // --- Pain lands and talismans ---
   "Adarkar Wastes": painSource("W", "U"),
   "Caves of Koilos": painSource("W", "B"),
   "Underground River": painSource("U", "B"),
@@ -150,7 +157,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Tangled Islet": tappedTriland,
   "Seaside Citadel": { abilities: [entersWith({ tapped: true }), manaAbility(["G", "W", "U"])] },
   "Flooded Grove": filterLand("G", "U"),
-  // Choix automatique : une carte du bon type de la main est révélée d'office si possible (docs/approximations.md).
+  // Automatic choice: a card of the right type in hand is revealed automatically if possible (docs/approximations.md).
   "Fortified Village": revealLand("G", "W", "Forest", "Plains"),
   "Port Town": revealLand("W", "U", "Plains", "Island"),
   "Vineglimmer Snarl": revealLand("G", "U", "Forest", "Island"),
@@ -175,17 +182,17 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Vernal Fen": battleLand,
   "Hinterland Harbor": checkLand("G", "U", "Forest", "Island"),
   "Rootbound Crag": checkLand("R", "G", "Mountain", "Forest"),
-  // Recyclage de terrain de base {1} : lu dans le texte.
+  // Basic landcycling {1}: read from the text.
   "Ash Barrens": { abilities: [manaAbility("C")] },
   "Talisman of Indulgence": painSource("B", "R"),
 
-  // --- Terrains à contrôle ---
+  // --- Check lands ---
   "Dragonskull Summit": checkLand("B", "R", "Swamp", "Mountain"),
   "Drowned Catacomb": checkLand("U", "B", "Island", "Swamp"),
   "Glacial Fortress": checkLand("W", "U", "Plains", "Island"),
   "Isolated Chapel": checkLand("W", "B", "Plains", "Swamp"),
 
-  // --- Deux terrains de base, Triomes, terrains tricolores ---
+  // --- Two basic lands, Triomes, three-color lands ---
   "Prairie Stream": battleLand,
   "Smoldering Marsh": battleLand,
   "Blackcleave Cliffs": {
@@ -193,18 +200,18 @@ export const EDH_LANDS: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.controls({ types: ["Land"], other: true }, 3),
-        label: "Engagé, sauf si vous contrôlez deux autres terrains ou moins",
+        label: "Tapped unless you control two or fewer other lands",
       }),
       manaAbility(["B", "R"]),
     ],
   },
-  // Choix automatique : une carte de Marais ou de Montagne de la main est révélée si possible (docs/approximations.md).
+  // Automatic choice: a Swamp or Mountain card in hand is revealed if possible (docs/approximations.md).
   "Foreboding Ruins": {
     abilities: [
       entersWith({
         tapped: true,
         condition: cond.not(cond.amountAtLeast(amount.countIn("hand", { anySubtype: ["Swamp", "Mountain"] }), 1)),
-        label: "Engagé, sauf si vous révélez une carte de Marais ou de Montagne de votre main",
+        label: "Tapped unless you reveal a Swamp or Mountain card from your hand",
       }),
       manaAbility(["B", "R"]),
     ],
@@ -216,7 +223,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
         mana: "{B/R}",
         tap: true,
         effects: [fx.addManaCombination(2, ["B", "R"])],
-        label: "{B}{B}, {B}{R} ou {R}{R}",
+        label: "{B}{B}, {B}{R}, or {R}{R}",
       }),
     ],
   },
@@ -231,20 +238,20 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Xander's Lounge": tappedTriland,
   "Arcane Sanctum": { abilities: [entersWith({ tapped: true }), manaAbility(["W", "U", "B"])] },
 
-  // --- Fetchs ---
-  "Bloodstained Mire": fetchland("Swamp", "Mountain"),
-  "Flooded Strand": fetchland("Plains", "Island"),
-  "Polluted Delta": fetchland("Island", "Swamp"),
-  "Windswept Heath": fetchland("Forest", "Plains"),
-  "Wooded Foothills": fetchland("Mountain", "Forest"),
+  // --- Fetches ---
+  "Bloodstained Mire": fetchland("Swamp", "Mountain", "Search for a Swamp or Mountain card"),
+  "Flooded Strand": fetchland("Plains", "Island", "Search for a Plains or Island card"),
+  "Polluted Delta": fetchland("Island", "Swamp", "Search for an Island or Swamp card"),
+  "Windswept Heath": fetchland("Forest", "Plains", "Search for a Forest or Plains card"),
+  "Wooded Foothills": fetchland("Mountain", "Forest", "Search for a Mountain or Forest card"),
 
-  // --- Terrains à capacité ---
+  // --- Utility lands ---
   "Bojuka Bog": {
     abilities: [
       entersWith({ tapped: true }),
       triggered(when.entersSelf, [fx.moveTo(ref.graveyardOf(ref.target("p")), { to: "exile" })], {
         targets: [target.player("p")],
-        label: "Exilez le cimetière du joueur ciblé",
+        label: "Exile target player's graveyard",
       }),
       manaAbility("B"),
     ],
@@ -252,7 +259,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Otawara, Soaring City": {
     abilities: [
       manaAbility("U"),
-      // Canalisation : depuis la main, en défaussant la carte ; {1} de moins par créature légendaire que vous contrôlez.
+      // Channel: from the hand, by discarding the card; {1} less for each legendary creature you control.
       activated({
         mana: "{3}{U}",
         fromHand: true,
@@ -263,11 +270,11 @@ export const EDH_LANDS: Record<string, CardScript> = {
             "t",
             ["Artifact", "Creature", "Enchantment", "Planeswalker"],
             {},
-            "artefact, créature, enchantement ou planeswalker",
+            "artifact, creature, enchantment, or planeswalker",
           ),
         ],
         effects: [fx.toHand(ref.target())],
-        label: "Canalisation — renvoyez le permanent ciblé dans la main de son propriétaire",
+        label: "Channel — return target permanent to its owner's hand",
       }),
     ],
   },
@@ -278,7 +285,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: { types: ["Creature"] } },
         effects: [fx.addMana("B", "B")],
-        label: "Sacrifiez une créature : ajoutez {B}{B}",
+        label: "Sacrifice a creature: add {B}{B}",
       }),
     ],
   },
@@ -290,7 +297,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
         mana: "{U/B}",
         tap: true,
         effects: [fx.addManaCombination(2, ["U", "B"])],
-        label: "Ajoutez {U}{U}, {U}{B} ou {B}{B}",
+        label: "Add {U}{U}, {U}{B}, or {B}{B}",
       }),
     ],
   },
@@ -302,7 +309,13 @@ export const EDH_LANDS: Record<string, CardScript> = {
     ],
   },
   "Urborg, Tomb of Yawgmoth": {
-    abilities: [staticAbility({ types: ["Land"] }, { addSubtypes: ["Swamp"] }, { label: "Chaque terrain est aussi un Marais" })],
+    abilities: [
+      staticAbility(
+        { types: ["Land"] },
+        { addSubtypes: ["Swamp"] },
+        { label: "Each land is a Swamp in addition to its other types" },
+      ),
+    ],
   },
   "Voldaren Estate": {
     abilities: [
@@ -313,12 +326,12 @@ export const EDH_LANDS: Record<string, CardScript> = {
         tap: true,
         reduction: { generic: amount.count({ subtype: "Vampire", controller: "you" }) },
         effects: [fx.createTokens(BLOOD)],
-        label: "Créez un jeton Sang",
+        label: "Create a Blood token",
       }),
     ],
   },
 
-  // --- Artefacts ---
+  // --- Artifacts ---
   "Sol Ring": { abilities: [manaAbility("C", 2)] },
   "Thought Vessel": noMaxHand(manaAbility("C")),
   "Decanter of Endless Water": noMaxHand(manaAbility(ANY_COLOR)),

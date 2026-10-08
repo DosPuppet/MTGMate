@@ -1,4 +1,4 @@
-/** Duskmourn — cartes rouges. */
+/** Duskmourn — red cards. */
 import {
   activated,
   amount,
@@ -34,7 +34,7 @@ export const RED: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { ...CREATURE_OR_ENCHANTMENT, other: true }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.reflexive([target.any()], [fx.damage(2, ref.target())])),
         ],
-        { label: "Sacrifiez une créature ou un enchantement : 2 blessures" },
+        { label: "Sacrifice a creature or enchantment: 2 damage" },
       ),
     ],
   },
@@ -42,17 +42,17 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(3, ref.target())], {
         targets: [target.upTo(1, target.creature())],
-        label: "3 blessures à une créature",
+        label: "3 damage to a creature",
       }),
       triggered(when.dies({ types: ["Creature"] }), [fx.counters(ref.self, "rev", 1)], {
         batched: true,
-        label: "Marqueur de régime",
+        label: "Rev counter",
       }),
-      staticAbility("attached", { power: 1 }, { perCounter: "rev", label: "+X/+0 (marqueurs de régime)" }),
+      staticAbility("attached", { power: 1 }, { perCounter: "rev", label: "+X/+0 (rev counters)" }),
     ],
   },
   "Clockwork Percussionist": {
-    abilities: [triggered(when.diesSelf, [fx.impulse(1, "yourNextTurn")], { label: "Exilez la carte du dessus, jouable" })],
+    abilities: [triggered(when.diesSelf, [fx.impulse(1, "yourNextTurn")], { label: "Exile the top card, playable" })],
   },
   "Diversion Specialist": {
     abilities: [
@@ -60,34 +60,34 @@ export const RED: Record<string, CardScript> = {
         mana: "{1}",
         sacrificeOther: { filter: { ...CREATURE_OR_ENCHANTMENT, other: true } },
         effects: [fx.impulse(1)],
-        label: "Exilez la carte du dessus, jouable ce tour-ci",
+        label: "Exile the top card, playable this turn",
       }),
     ],
   },
   "Fear of Being Hunted": { keywords: ["mustBeBlocked"] },
   "Fear of Burning Alive": {
     abilities: [
-      triggered(when.entersSelf, [fx.damage(4, ref.eachOpponent)], { label: "4 blessures à chaque adversaire" }),
+      triggered(when.entersSelf, [fx.damage(4, ref.eachOpponent)], { label: "4 damage to each opponent" }),
       triggered(
         when.dealsDamage({}, { noncombatOnly: true, to: { players: "opponent" }, anySourceYouControl: true }),
         [fx.damage(amount.eventAmount, ref.target())],
         {
           condition: cond.delirium,
-          targets: [target.of(ref.eventPlayer, target.creature("t"), "créature de ce joueur")],
-          label: "Délire — autant de blessures à une de ses créatures",
+          targets: [target.of(ref.eventPlayer, target.creature("t"), "creature that player controls")],
+          label: "Delirium — that much damage to one of their creatures",
         },
       ),
     ],
   },
   "Fear of Missing Out": {
     abilities: [
-      triggered(when.entersSelf, [fx.discard(1), fx.draw(1)], { label: "Défaussez une carte, puis piochez" }),
-      // « Attaque pour la première fois chaque tour » : la première attaque est notée même sans le délire.
+      triggered(when.entersSelf, [fx.discard(1), fx.draw(1)], { label: "Discard a card, then draw" }),
+      // "Attacks for the first time each turn": the first attack is recorded even without delirium.
       triggered(when.attacksSelf, [fx.untap(ref.target()), fx.extraCombat], {
         condition: cond.delirium,
         oncePerTurn: "firstEvent",
         targets: [target.creature()],
-        label: "Délire — dégagez une créature, phase de combat supplémentaire",
+        label: "Delirium — untap a creature, additional combat phase",
       }),
     ],
   },
@@ -95,18 +95,18 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.unlockThisDoor, [fx.damage(4, ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "4 blessures à une créature adverse",
+        label: "4 damage to a creature an opponent controls",
       }),
     ],
   },
   "Shattered Yard": {
-    abilities: [triggered(when.yourEndStep, [fx.damage(1, ref.eachOpponent)], { label: "1 blessure à chaque adversaire" })],
+    abilities: [triggered(when.yourEndStep, [fx.damage(1, ref.eachOpponent)], { label: "1 damage to each opponent" })],
   },
   "Hand That Feeds": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.self, 2, 0, ["menace"])], {
         condition: cond.delirium,
-        label: "Délire — +2/+0 et la menace",
+        label: "Delirium — +2/+0 and menace",
       }),
     ],
   },
@@ -118,7 +118,7 @@ export const RED: Record<string, CardScript> = {
       eerie([fx.pump(ref.self, 2, 0)], { label: "+2/+0" }),
       triggered(when.diesSelf, [fx.damage(amount.powerOf(ref.self), ref.target())], {
         targets: [target.any()],
-        label: "Blessures égales à sa force",
+        label: "Damage equal to its power",
       }),
     ],
   },
@@ -126,13 +126,13 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true, maxPower: 2 }),
-        // « Faites ceci une seule fois par tour » : seulement si une carte a été défaussée.
+        // "Do this only once each turn": only if a card was discarded.
         fx.may(
-          "Défausser une carte pour piocher ?",
+          "Discard a card to draw?",
           fx.discard(1, ref.you, { store: "d" }),
           fx.when(cond.v("d"), fx.draw(1), fx.doneOncePerTurn),
         ),
-        { oncePerTurn: "ifDone", label: "Défaussez, puis piochez" },
+        { oncePerTurn: "ifDone", label: "Discard, then draw a card" },
       ),
     ],
   },
@@ -140,26 +140,26 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.attackWith(), [fx.pump(ref.target(), 1, 0, ["firstStrike"])], {
         targets: [target.creature("t", { attacking: true })],
-        label: "+1/+0 et l'initiative",
+        label: "+1/+0 and first strike",
       }),
     ],
   },
   "Painter's Studio": {
     abilities: [
       triggered(when.unlockThisDoor, [fx.exileTop(ref.you, 2, "e"), fx.grantPlay(ref.stored("e"), { untilYourNextTurn: true })], {
-        label: "Exilez les deux cartes du dessus, jouables",
+        label: "Exile the top two cards, playable",
       }),
     ],
   },
   "Defaced Gallery": {
     abilities: [
       triggered(when.attackWith(), [fx.pumpAll({ ...CREATURE_YOU_CONTROL, attacking: true }, 1, 0)], {
-        label: "Vos attaquants +1/+0",
+        label: "Your attackers +1/+0",
       }),
     ],
   },
   "Piggy Bank": {
-    abilities: [triggered(when.diesSelf, [fx.createTokens(TREASURE)], { label: "Jeton Trésor" })],
+    abilities: [triggered(when.diesSelf, [fx.createTokens(TREASURE)], { label: "Treasure token" })],
   },
   Pyroclasm: { spell: spell([], [fx.damageAll(2, { types: ["Creature"] })]) },
   "Ragged Playmate": {
@@ -169,7 +169,7 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { maxPower: 2 })],
         effects: [fx.pump(ref.target(), 0, 0, ["unblockable"])],
-        label: "Une créature de force 2 ou moins ne peut pas être bloquée",
+        label: "A creature with power 2 or less can't be blocked",
       }),
     ],
   },
@@ -180,22 +180,22 @@ export const RED: Record<string, CardScript> = {
         { power: 3 },
         {
           condition: cond.amountAtLeast(amount.unlockedDoors, 2),
-          label: "+3/+0 (deux portes déverrouillées)",
+          label: "+3/+0 (two unlocked doors)",
         },
       ),
     ],
   },
   "Razorkin Hordecaller": {
-    abilities: [triggered(when.attackWith(), [fx.createTokens(GREMLIN)], { label: "Jeton Diablotin 1/1" })],
+    abilities: [triggered(when.attackWith(), [fx.createTokens(GREMLIN)], { label: "1/1 Gremlin token" })],
   },
   "Razorkin Needlehead": {
     abilities: [
       staticAbility(
         "self",
         { addKeywords: ["firstStrike"] },
-        { condition: cond.yourTurn, label: "Initiative pendant votre tour" },
+        { condition: cond.yourTurn, label: "First strike during your turn" },
       ),
-      triggered(when.draw(undefined, "opponent"), [fx.damage(1, ref.eventPlayer)], { label: "1 blessure au joueur qui pioche" }),
+      triggered(when.draw(undefined, "opponent"), [fx.damage(1, ref.eventPlayer)], { label: "1 damage to the player who draws" }),
     ],
   },
   "Ripchain Razorkin": {
@@ -204,31 +204,27 @@ export const RED: Record<string, CardScript> = {
         mana: "{2}{R}",
         sacrificeOther: { filter: { types: ["Land"] } },
         effects: [fx.draw(1)],
-        label: "Sacrifiez un terrain : piochez une carte",
+        label: "Sacrifice a land: draw a card",
       }),
     ],
   },
   "Ticket Booth": {
-    abilities: [triggered(when.unlockThisDoor, [fx.manifestDread], { label: "Manifestation effroyable" })],
+    abilities: [triggered(when.unlockThisDoor, [fx.manifestDread], { label: "Manifest dread" })],
   },
   "Tunnel of Hate": {
     abilities: [
       triggered(when.attackWith(), [fx.pump(ref.target(), 0, 0, ["doubleStrike"])], {
         targets: [target.creature("t", { attacking: true })],
-        label: "Double initiative",
+        label: "Double strike",
       }),
     ],
   },
   "Untimely Malfunction": {
     spell: modal(
-      mode("Détruisez un artefact", [target.permanent("a", ["Artifact"], {}, "artefact")], [fx.destroy(ref.target("a"))]),
+      mode("Destroy one artifact", [target.permanent("a", ["Artifact"], {}, "artifact")], [fx.destroy(ref.target("a"))]),
+      mode("Change the target of a spell or ability", [target.stackItemSingleTarget("s")], [fx.changeTarget(ref.target("s"))]),
       mode(
-        "Changez la cible d'un sort ou d'une capacité",
-        [target.stackItemSingleTarget("s")],
-        [fx.changeTarget(ref.target("s"))],
-      ),
-      mode(
-        "Une ou deux créatures ne peuvent pas bloquer",
+        "One or two creatures can't block",
         [target.between(1, 2, target.creature("c"))],
         [fx.pump(ref.target("c"), 0, 0, ["cantBlock"])],
       ),
@@ -241,7 +237,7 @@ export const RED: Record<string, CardScript> = {
         fx.gainControl(ref.target()),
         fx.untap(ref.target()),
         fx.pump(ref.target(), 0, 0, ["haste"]),
-        ...fx.may("Défausser une carte pour piocher ?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
+        ...fx.may("Discard a card to draw?", fx.discard(1, ref.you, { store: "d" }), fx.when(cond.v("d"), fx.draw(1))),
       ],
     ),
   },

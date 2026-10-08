@@ -1,4 +1,4 @@
-/** Final Fantasy — cartes bleues. */
+/** Final Fantasy — blue cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -31,7 +31,7 @@ export const BLUE: Record<string, CardScript> = {
       [fx.draw(2, ref.target("p")), fx.addCounters(ref.target("c"), 1)],
     ),
   },
-  "Dragoon's Wyvern": { abilities: [triggered(when.entersSelf, [hero()], { label: "Héros 1/1" })] },
+  "Dragoon's Wyvern": { abilities: [triggered(when.entersSelf, [hero()], { label: "1/1 Hero" })] },
   "Dreams of Laguna": { flashback: "{3}{U}", spell: spell([], [fx.surveil(1), fx.draw(1)]) },
   Eject: { cantBeCountered: true, spell: spell([target.nonland("t")], [fx.bounce(ref.target()), fx.draw(1)]) },
   Ether: {
@@ -40,57 +40,57 @@ export const BLUE: Record<string, CardScript> = {
         tap: true,
         exileSelf: true,
         effects: [fx.addMana("U"), fx.copyNextSpell],
-        label: "{U}, copiez le prochain éphémère ou rituel",
+        label: "{U}, copy the next instant or sorcery",
       }),
     ],
   },
   "Ice Flan": {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
-        targets: [target.permanent("t", ["Artifact", "Creature"], { controller: "opponent" }, "artefact ou créature")],
-        label: "Engagez et étourdissez",
+        targets: [target.permanent("t", ["Artifact", "Creature"], { controller: "opponent" }, "artifact or creature")],
+        label: "Tap and stun",
       }),
     ],
   },
   "Ice Magic": {
     spell: tiered(
-      { cost: "{0}", label: "Glace", targets: [target.creature("t")], effects: [fx.bounce(ref.target())] },
-      { cost: "{2}", label: "Extra Glace", targets: [target.creature("t")], effects: [fx.topOrBottom(ref.target())] },
+      { cost: "{0}", label: "Blizzard", targets: [target.creature("t")], effects: [fx.bounce(ref.target())] },
+      { cost: "{2}", label: "Blizzara", targets: [target.creature("t")], effects: [fx.topOrBottom(ref.target())] },
       {
         cost: "{5}{U}",
-        label: "Méga Glace",
+        label: "Blizzaga",
         targets: [target.creature("t")],
         effects: [fx.moveTo(ref.target(), { to: "libraryTop" }), fx.shuffle(ref.controllerOf(ref.target()))],
       },
     ),
   },
-  "Il Mheg Pixie": { abilities: [triggered(when.attacksSelf, [fx.surveil(1)], { label: "Surveillance 1" })] },
+  "Il Mheg Pixie": { abilities: [triggered(when.attacksSelf, [fx.surveil(1)], { label: "Surveil 1" })] },
   "Magic Damper": {
     spell: spell(
       [target.creature("t", { controller: "you" })],
       [fx.pump(ref.target(), 1, 1, ["hexproof"]), fx.untap(ref.target())],
     ),
   },
-  "Matoya, Archon Elder": { abilities: [triggered(when.scryOrSurveil, [fx.draw(1)], { label: "Piochez" })] },
+  "Matoya, Archon Elder": { abilities: [triggered(when.scryOrSurveil, [fx.draw(1)], { label: "Draw" })] },
   "The Prima Vista": {
-    abilities: [triggered(when.castNoncreatureWithMana(4), [fx.animateVehicle()], { label: "Devient une créature-artefact" })],
+    abilities: [triggered(when.castNoncreatureWithMana(4), [fx.animateVehicle()], { label: "Becomes an artifact creature" })],
   },
   "Qiqirn Merchant": {
     abilities: [
-      activated({ mana: "{1}", tap: true, effects: fx.loot(1), label: "Piochez, défaussez" }),
+      activated({ mana: "{1}", tap: true, effects: fx.loot(1), label: "Draw, then discard" }),
       activated({
         mana: "{7}",
         tap: true,
         sacrifice: true,
         reduction: { generic: amount.count({ ...TOWN, controller: "you" }) },
         effects: [fx.draw(3)],
-        label: "Piochez trois cartes",
+        label: "Draw three cards",
       }),
     ],
   },
   "Relm's Sketching": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature", "Land"], {}, "artefact, créature ou terrain")],
+      [target.permanent("t", ["Artifact", "Creature", "Land"], {}, "artifact, creature or land")],
       [fx.copyToken(ref.target())],
     ),
   },
@@ -108,9 +108,9 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ types: ["Artifact"], controller: "you", other: true }),
-        fx.may("Piocher puis défausser ?", ...fx.loot(1)),
+        fx.may("Draw, then discard?", ...fx.loot(1)),
         {
-          label: "Piochez, défaussez",
+          label: "Draw, then discard",
         },
       ),
     ],
@@ -118,21 +118,21 @@ export const BLUE: Record<string, CardScript> = {
   Sahagin: {
     abilities: [
       triggered(when.castNoncreatureWithMana(4), [fx.addCounters(ref.self, 1), fx.pump(ref.self, 0, 0, ["unblockable"])], {
-        label: "Marqueur +1/+1, imblocable",
+        label: "+1/+1 counter, can't be blocked",
       }),
     ],
   },
   "Scorpion Sentinel": {
     abilities: [
-      staticAbility("self", { power: 3 }, { condition: cond.controls({ types: ["Land"] }, 7), label: "+3/+0 (sept terrains)" }),
+      staticAbility("self", { power: 3 }, { condition: cond.controls({ types: ["Land"] }, 7), label: "+3/+0 (seven lands)" }),
     ],
   },
   "Sleep Magic": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature" }),
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Tap the creature" }),
       doesntUntap("attached"),
-      triggered(when.attachedIsDealtDamage, [fx.sacrificeIt(ref.self)], { label: "Blessée : sacrifiez l'Aura" }),
+      triggered(when.attachedIsDealtDamage, [fx.sacrificeIt(ref.self)], { label: "Dealt damage: sacrifice the Aura" }),
     ],
   },
   Syncopate: {
@@ -149,13 +149,13 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.castNoncreatureWithMana(4), [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagez et étourdissez",
+        label: "Tap and stun",
       }),
-      triggered(when.castNoncreatureWithMana(8), [fx.addCounters(ref.self, 8)], { label: "Huit marqueurs +1/+1" }),
+      triggered(when.castNoncreatureWithMana(8), [fx.addCounters(ref.self, 8)], { label: "Eight +1/+1 counters" }),
     ],
   },
   "Valkyrie Aerial Unit": {
     costReduction: { generic: amount.count({ types: ["Artifact"], controller: "you" }) },
-    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" })],
+    abilities: [triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveil 2" })],
   },
 };

@@ -1,6 +1,6 @@
 /**
- * Teenage Mutant Ninja Turtles — cartes des decks du méta (phase 1 du plan P4, lot M1). Les autres cartes de
- * l'extension sont dans les fichiers par couleur.
+ * Teenage Mutant Ninja Turtles — cards of the meta decks (phase 1 of plan P4, lot M1). The other cards of the set are
+ * in the per-color files.
  */
 import {
   activated,
@@ -22,32 +22,32 @@ import {
 } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
-  // --- Terrains --------------------------------------------------------------
+  // --- Lands -----------------------------------------------------------------
   "Escape Tunnel": {
     abilities: [
       activated({
         tap: true,
         sacrifice: true,
         effects: [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })],
-        label: "Chercher un terrain de base",
+        label: "Search for a basic land, tapped",
       }),
       activated({
         tap: true,
         sacrifice: true,
         targets: [target.creature("t", { maxPower: 2 })],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Une créature de force 2 ou moins ne peut pas être bloquée",
+        label: "A creature with power 2 or less can't be blocked",
       }),
     ],
   },
-  // --- Vert ------------------------------------------------------------------
+  // --- Green -----------------------------------------------------------------
   "Leatherhead, Swamp Stalker": {
     abilities: [
-      entersWith({ counters: 1, counterKind: "hexproof", label: "Arrive avec un marqueur de défense talismanique" }),
+      entersWith({ counters: 1, counterKind: "hexproof", label: "Enters with a hexproof counter" }),
       triggered(
         when.combatDamageToPlayer,
         fx.may(
-          "Retirer un marqueur de Leatherhead pour détruire un artefact ou un enchantement ?",
+          "Remove a counter from Leatherhead to destroy an artifact or enchantment?",
           fx.removeCounters(ref.self, 1, undefined, "removed"),
           fx.when(
             cond.v("removed"),
@@ -55,26 +55,26 @@ export const CARDS: Record<string, CardScript> = {
               [
                 target.of(
                   ref.eventPlayer,
-                  target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement de ce joueur"),
+                  target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment that player controls"),
                 ),
               ],
               [fx.destroy(ref.target())],
             ),
           ),
         ),
-        { label: "Retirer un marqueur : détruire un artefact ou un enchantement" },
+        { label: "Remove a counter to destroy an artifact or enchantment" },
       ),
     ],
   },
 
   // --- Lot M2 -----------------------------------------------------------------
   "Dream Beavers": {
-    abilities: [triggered(when.entersSelf, [...fx.drain(1), fx.scry(1)], { label: "Drain 1, regard 1" })],
+    abilities: [triggered(when.entersSelf, [...fx.drain(1), fx.scry(1)], { label: "Drain 1, scry 1" })],
   },
   "Mutagen Man, Living Ooze": {
     abilities: [
       playerStatic({ abilityCost: { source: { types: ["Artifact"], token: true }, reduce: 1 } }),
-      triggered(when.entersSelf, [fx.createTokens(MUTAGEN, amount.sourceX)], { label: "X jetons Mutagène" }),
+      triggered(when.entersSelf, [fx.createTokens(MUTAGEN, amount.sourceX)], { label: "X Mutagen tokens" }),
     ],
   },
   "The Ooze": {
@@ -82,13 +82,13 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.leaves({ types: ["Creature"], controller: "you", withCounter: "+1/+1" }),
         [fx.createTokens(MUTAGEN, amount.countersOn(ref.eventObject, "+1/+1"))],
-        { label: "Un Mutagène par marqueur +1/+1" },
+        { label: "A Mutagen for each +1/+1 counter" },
       ),
       activated({
         tap: true,
         targets: [target.cardInGraveyard("t", {}, "any")],
         effects: [fx.exileCard(ref.target()), fx.createTokens(MUTAGEN)],
-        label: "Exiler une carte d'un cimetière, un Mutagène",
+        label: "Exile a card from a graveyard, a Mutagen",
       }),
     ],
   },
@@ -98,13 +98,13 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target())], {
         targets: [{ id: "t", label: "permanent", filter: { objects: { permanent: true } } }],
-        label: "Engage un permanent",
+        label: "Taps a permanent",
       }),
-      staticAbility("attached", { power: 1, addKeywords: ["haste"] }, { label: "+1/+0 et célérité" }),
+      staticAbility("attached", { power: 1, addKeywords: ["haste"] }, { label: "ctx:short|+1/+0 and haste" }),
     ],
   },
   "The Last Ronin's Technique": {
-    // Faufilement {1}{W} : lu dans le texte (coût alternatif, un attaquant non bloqué retourne en main).
+    // Sneak {1}{W}: read from the text (alternative cost, an unblocked attacker returns to hand).
     spell: spell(
       [],
       [
@@ -119,15 +119,15 @@ export const CARDS: Record<string, CardScript> = {
         when.attackWith(1),
         [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
         {
-          label: "Défausse facultative : piochez",
+          label: "Optional discard: draw",
         },
       ),
     ],
     classLevels: [
-      [triggered(when.discard("you"), [fx.damage(2, ref.eachOpponent)], { label: "2 blessures à chaque adversaire" })],
+      [triggered(when.discard("you"), [fx.damage(2, ref.eachOpponent)], { label: "2 damage to each opponent" })],
       [
         triggered(when.classLevel(3), [fx.search({}, { to: "hand" }), fx.discard(1, ref.you, { random: true })], {
-          label: "Cherchez une carte, puis défaussez au hasard",
+          label: "Search for a card, then discard at random",
         }),
       ],
     ],
@@ -135,14 +135,14 @@ export const CARDS: Record<string, CardScript> = {
   "Casey Jones, Vigilante": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(3), fx.delayedAt("yourNextUpkeep", [fx.discard(3, ref.you, { random: true })])], {
-        label: "Piochez trois cartes ; au prochain entretien, défaussez-en trois au hasard",
+        label: "Draw three cards; at your next upkeep, discard three at random",
       }),
     ],
   },
 
   // --- Lot M6 -----------------------------------------------------------------
   "Michelangelo's Technique": {
-    // Faufilement {3}{G} : lu dans le texte.
+    // Sneak {3}{G}: read from the text.
     spell: spell(
       [],
       [

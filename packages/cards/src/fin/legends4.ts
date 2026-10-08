@@ -1,4 +1,4 @@
-/** Final Fantasy — les dernières cartes uniques (lot D4). */
+/** Final Fantasy — the last unique cards (lot D4). */
 import type { CardScript, TargetSpec } from "@mtgx/engine";
 import {
   activated,
@@ -29,7 +29,7 @@ const LANDS_AND_BIRDS = { anyOf: [{ types: ["Land" as const] }, { types: ["Creat
 export const LEGENDS4: Record<string, CardScript> = {
   "Ultima, Origin of Oblivion": {
     abilities: [
-      // « Tant que ce terrain a un marqueur de fléau » : l'effet ne dépend plus d'Ultima.
+      // "For as long as that land has a blight counter on it": the effect no longer depends on Ultima.
       triggered(
         when.attacksSelf,
         [
@@ -41,8 +41,8 @@ export const LEGENDS4: Record<string, CardScript> = {
           ),
         ],
         {
-          targets: [targetObj("t", { types: ["Land"] }, "terrain")],
-          label: "Marqueur de fléau sur un terrain : il perd ses types et capacités, et produit {C}",
+          targets: [targetObj("t", { types: ["Land"] }, "land")],
+          label: "Blight counter on a land: it loses its types and abilities, and taps for {C}",
         },
       ),
       eventReplacement({
@@ -51,7 +51,7 @@ export const LEGENDS4: Record<string, CardScript> = {
         source: { types: ["Land"] },
         manaProduced: "C",
         modify: { add: 1 },
-        label: "Un terrain engagé pour {C} ajoute {C}",
+        label: "A land tapped for {C} adds {C}",
       }),
     ],
   },
@@ -65,13 +65,13 @@ export const LEGENDS4: Record<string, CardScript> = {
         effects: [
           fx.pump(ref.target(), 0, 0, ["indestructible"]),
           fx.addCounters(ref.target(), amount.lkiCounters("+1/+1")),
-          // « Un Équipement qui était attaché à Zack » : vous en choisissez un (quel que soit son contrôleur).
+          // "An Equipment that was attached to Zack": you choose one (whoever controls it).
           fx.chooseAmong(ref.permanentsOf(ref.eachPlayer, { subtype: "Equipment", attached: "wasToSource" }), ref.you, "e", {
-            prompt: "Choisissez l'Équipement à attacher",
+            prompt: "Choose an Equipment to attach",
           }),
           fx.attach(ref.target(), ref.stored("e")),
         ],
-        label: "Indestructible, ses marqueurs et son Équipement",
+        label: "Indestructible, its counters and its Equipment",
       }),
     ],
   },
@@ -84,41 +84,41 @@ export const LEGENDS4: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "capacité activée ou déclenchée que vous contrôlez",
+            label: "activated or triggered ability you control",
             filter: { stackItems: { abilitiesOnly: true } },
           } satisfies TargetSpec,
         ],
         effects: [fx.copySpell(ref.target(), amount.x)],
-        label: "Copiez une capacité X fois",
+        label: "Copy an ability X times",
       }),
     ],
   },
   "Stolen Uniform": {
     spell: spell(
-      [target.creature("c", { controller: "you" }), targetObj("e", { subtype: "Equipment" }, "Équipement")],
+      [target.creature("c", { controller: "you" }), targetObj("e", { subtype: "Equipment" }, "Equipment")],
       [
         fx.gainControl(ref.target("e")),
         fx.attach(ref.target("c"), ref.target("e")),
-        // « Quand vous perdez le contrôle de cet Équipement ce tour-ci, s'il est attaché à une créature que vous contrôlez,
-        // détachez-le » (au nettoyage, quand le contrôle revient).
+        // "When you lose control of that Equipment this turn, if it's attached to a creature you control,
+        // unattach it" (at cleanup, when control comes back).
         fx.whenThisTurn(
           when.opponentGainsControl,
           ref.target("e"),
           [fx.unattach(ref.target("e"), ref.permanentsOf(ref.you, { types: ["Creature"] }))],
-          { bind: { e: ref.target("e") }, label: "Détachez l'Équipement" },
+          { bind: { e: ref.target("e") }, label: "Unattach the Equipment" },
         ),
       ],
     ),
   },
   "The Darkness Crystal": {
     abilities: [
-      costReducer({ colors: ["B"] }, 1, "Sorts noirs : {1} de moins"),
+      costReducer({ colors: ["B"] }, 1, "Black spells cost {1} less"),
       graveyardReplacement({
         fromBattlefield: true,
         filter: { types: ["Creature"], controller: "opponent", token: false },
         link: "uid",
         gainLife: 2,
-        label: "Créatures adverses exilées au lieu de mourir, +2 PV",
+        label: "Opponents' creatures exiled instead of dying, +2 life",
       }),
       activated({
         mana: "{4}{B}{B}",
@@ -126,7 +126,7 @@ export const LEGENDS4: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "carte de créature exilée avec The Darkness Crystal",
+            label: "creature card exiled with The Darkness Crystal",
             filter: { exiled: { linked: true, filter: { types: ["Creature"] } } },
           } satisfies TargetSpec,
         ],
@@ -138,17 +138,17 @@ export const LEGENDS4: Record<string, CardScript> = {
             counters: { kind: "+1/+1", n: 2 },
           }),
         ],
-        label: "Une créature exilée revient sous votre contrôle",
+        label: "An exiled creature returns under your control",
       }),
     ],
   },
   "Firion, Wild Rose Warrior": {
     abilities: [
-      staticAbility({ ...YOURS, equipped: true }, { addKeywords: ["haste"] }, { label: "Créatures équipées : célérité" }),
+      staticAbility({ ...YOURS, equipped: true }, { addKeywords: ["haste"] }, { label: "Equipped creatures: haste" }),
       triggered(
         when.enters({ ...EQUIPMENT_YOU, token: false }),
         [fx.copyToken(ref.eventObject, { equipDiscount: 2, sacrificeAtNextUpkeep: true })],
-        { label: "Copie de l'Équipement (Équiper {2} de moins)" },
+        { label: "Copy of the Equipment (equip costs {2} less)" },
       ),
     ],
   },
@@ -157,10 +157,10 @@ export const LEGENDS4: Record<string, CardScript> = {
       wardAbility({ lifePower: true }),
       triggered(when.attacksSelf, [fx.attach(ref.target("c"), ref.target("e"))], {
         targets: [
-          target.upTo(1, targetObj("e", EQUIPMENT_YOU, "Équipement que vous contrôlez")),
+          target.upTo(1, targetObj("e", EQUIPMENT_YOU, "Equipment you control")),
           target.creature("c", { attacking: true }),
         ],
-        label: "Attachez un Équipement à une créature attaquante",
+        label: "Attach an Equipment to an attacking creature",
       }),
     ],
   },
@@ -168,7 +168,7 @@ export const LEGENDS4: Record<string, CardScript> = {
     abilities: [triggered(when.yourUpkeep, [fx.tripleTriad], { label: "Triple Triad" })],
   },
   "Unexpected Request": {
-    // « Vous pouvez attacher un Équipement que vous contrôlez » : choisi à la résolution, pas ciblé.
+    // "You may attach an Equipment you control": chosen on resolution, not targeted.
     spell: spell(
       [target.creature("t")],
       [
@@ -177,7 +177,7 @@ export const LEGENDS4: Record<string, CardScript> = {
         fx.pump(ref.target("t"), 0, 0, ["haste"]),
         fx.chooseAmong(ref.permanentsOf(ref.you, EQUIPMENT_YOU), ref.you, "e", {
           optional: true,
-          prompt: "Unexpected Request : vous pouvez attacher un Équipement que vous contrôlez à la créature",
+          prompt: "Unexpected Request: you may attach an Equipment you control to the creature",
         }),
         fx.attach(ref.target("t"), ref.stored("e")),
         fx.delayed([fx.unattach(ref.target("e"))], { e: ref.stored("e") }),
@@ -196,20 +196,20 @@ export const LEGENDS4: Record<string, CardScript> = {
           fx.castNow(ref.stored("v"), { storeCast: "cast" }),
           fx.when(cond.not(cond.v("cast")), fx.createTokens(TREASURE)),
         ],
-        { label: "Exilez sa carte du dessus ; lancez-la ou Trésor" },
+        { label: "Exile their top card; cast it or Treasure" },
       ),
       triggered(
         when.castSpellNotOwned,
         [fx.addCountersAll({ ...YOURS, anyOf: [{ subtype: "Scout" }, { subtype: "Pirate" }, { subtype: "Rogue" }] }, 1)],
-        { label: "Un marqueur sur chaque Éclaireur, Pirate et Voleur" },
+        { label: "A counter on each Scout, Pirate and Rogue" },
       ),
     ],
   },
   "Ancient Adamantoise": {
     abilities: [
-      staticAbility("self", { addKeywords: ["keepsDamage", "absorbsDamage"] }, { label: "Encaisse les blessures" }),
+      staticAbility("self", { addKeywords: ["keepsDamage", "absorbsDamage"] }, { label: "Absorbs damage" }),
       triggered(when.diesSelf, [fx.exileCard(ref.selfCard), fx.createTappedTokens(TREASURE, 10)], {
-        label: "Exilez-la, dix Trésors engagés",
+        label: "Exile it, ten tapped Treasures",
       }),
     ],
   },
@@ -218,22 +218,22 @@ export const LEGENDS4: Record<string, CardScript> = {
       playerStatic({
         playFrom: { zone: "libraryTop", filter: LANDS_AND_BIRDS },
         triggerMod: { effect: "again", on: "enter", entering: { ...LANDS_AND_BIRDS, controller: "you" } },
-        label: "Terrains et Oiseaux du dessus ; déclencheurs d'arrivée doublés",
+        label: "Lands and Birds from the top; enter triggers doubled",
       }),
     ],
   },
   "Absolute Virtue": {
     cantBeCountered: true,
-    abilities: [playerStatic({ protection: "opponents", label: "Protection contre vos adversaires" })],
+    abilities: [playerStatic({ protection: "opponents", label: "Protection from your opponents" })],
   },
   "Zidane, Tantalus Thief": {
     abilities: [
       triggered(
         when.entersSelf,
         [fx.gainControl(ref.target()), fx.untap(ref.target()), fx.pump(ref.target(), 0, 0, ["lifelink", "haste"])],
-        { targets: [target.creature("t", { controller: "opponent" })], label: "Prenez le contrôle d'une créature" },
+        { targets: [target.creature("t", { controller: "opponent" })], label: "Gain control of a creature" },
       ),
-      triggered(when.opponentGainsControl, [fx.createTokens(TREASURE)], { label: "Trésor" }),
+      triggered(when.opponentGainsControl, [fx.createTokens(TREASURE)], { label: "Treasure" }),
     ],
   },
   "Buster Sword": {
@@ -242,7 +242,7 @@ export const LEGENDS4: Record<string, CardScript> = {
       triggered(
         when.attachedDealsCombatDamageToPlayer,
         [fx.draw(1), fx.castNow(ref.handOf(ref.you, { notTypes: ["Land"] }, amount.eventAmount), { free: true })],
-        { label: "Piochez, lancez gratuitement un sort de VM ≤ blessures" },
+        { label: "Draw, cast a spell with mana value ≤ damage for free" },
       ),
     ],
   },
@@ -250,18 +250,18 @@ export const LEGENDS4: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         triggerMod: { effect: "again", on: "dies", emblems: true, sources: { attached: "host" } },
-        label: "Morts : déclencheurs de la créature équipée et de vos emblèmes, une fois de plus",
+        label: "Dies: triggers of the equipped creature and your emblems trigger an additional time",
       }),
       staticAbility(
         "attached",
         { addKeywords: ["firstStrike", "mustBeBlocked"] },
-        { condition: cond.refMatches(ref.attached, { attacking: true }), label: "En attaque : initiative, doit être bloquée" },
+        { condition: cond.refMatches(ref.attached, { attacking: true }), label: "Attacking: first strike, must be blocked" },
       ),
     ],
   },
   "Clive's Hideaway": {
     abilities: [
-      // Hideaway 4 : la carte est exilée face cachée (vous seul la voyez).
+      // Hideaway 4: the card is exiled face down (only you can see it).
       triggered(
         when.entersSelf,
         [
@@ -280,7 +280,7 @@ export const LEGENDS4: Record<string, CardScript> = {
             fx.grantPlay(ref.linked, { free: true, anyTime: true }),
           ),
         ],
-        label: "Jouez la carte cachée (quatre créatures légendaires)",
+        label: "Play the hidden card (four legendary creatures)",
       }),
     ],
   },

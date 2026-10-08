@@ -1,4 +1,4 @@
-/** Avatar: The Last Airbender — cartes incolores et terrains. */
+/** Avatar: The Last Airbender: colorless cards and lands. */
 import type { ManaType } from "@mtgx/engine";
 import { BASIC_LAND_TYPES } from "@mtgx/engine";
 import {
@@ -23,39 +23,39 @@ import {
 
 const ANY_COLOR: ManaType[] = ["W", "U", "B", "R", "G"];
 
-/** « Ce terrain arrive engagé à moins que vous ne contrôliez un terrain de base. » */
+/** "This land enters tapped unless you control a basic land." */
 const unlessBasic = entersWith({
   tapped: true,
   condition: cond.not(cond.controls({ types: ["Land"], basic: true })),
-  label: "Engagé, sauf si vous contrôlez un terrain de base",
+  label: "Enters tapped unless you control a basic land",
 });
 
-/** Terrains bicolores « arrive engagé ; {4}, {T}, sacrifiez ce terrain : piochez une carte ». */
+/** Two-color lands "enters tapped; {4}, {T}, sacrifice this land: draw a card". */
 const cyclingLand = (a: ManaType, b: ManaType): CardScript => ({
   abilities: [
     entersWith({ tapped: true }),
     manaAbility([a, b]),
-    activated({ mana: "{4}", tap: true, sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
+    activated({ mana: "{4}", tap: true, sacrifice: true, effects: [fx.draw(1)], label: "Draw a card" }),
   ],
 });
 
-/** « {1}, {T} : ajoutez un mana de n'importe quelle couleur. » */
+/** "{1}, {T}: add one mana of any color." */
 const filterAnyColor = activated({
   mana: "{1}",
   tap: true,
   effects: [fx.addManaChoice(1)],
-  label: "Un mana de n'importe quelle couleur",
+  label: "One mana of any color",
 });
 
 export const ARTIFACTS: Record<string, CardScript> = {
-  // --- Leçons incolores --------------------------------------------------------
+  // --- Colorless Lessons -------------------------------------------------------
   "Aang's Journey": {
     kicker: "{2}",
     spell: spell(
       [],
       [
         fx.search(BASIC_LAND, { to: "hand" }),
-        // Kické : un terrain de base et une carte de Sanctuaire (deux recherches, chacune suivie d'un mélange).
+        // Kicked: a basic land and a Shrine card (two searches, each followed by a shuffle).
         ...fx.when(cond.kicked, fx.search({ subtype: "Shrine" }, { to: "hand" })),
         fx.gainLife(2),
       ],
@@ -69,40 +69,40 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Zuko's Exile": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature", "Enchantment"], {}, "artefact, créature ou enchantement")],
+      [target.permanent("t", ["Artifact", "Creature", "Enchantment"], {}, "artifact, creature or enchantment")],
       [fx.exile(ref.target()), fx.createTokens(CLUE, 1, ref.controllerOf(ref.target()))],
     ),
   },
 
-  // --- Artefacts ---------------------------------------------------------------
+  // --- Artifacts ---------------------------------------------------------------
   "Barrels of Blasting Jelly": {
     abilities: [
-      activated({ mana: "{1}", oncePerTurn: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
+      activated({ mana: "{1}", oncePerTurn: true, effects: [fx.addManaChoice(1)], label: "One mana of any color" }),
       activated({
         mana: "{5}",
         tap: true,
         sacrifice: true,
         targets: [target.creature()],
         effects: [fx.damage(5, ref.target())],
-        label: "5 blessures à une créature",
+        label: "5 damage to a creature",
       }),
     ],
   },
   "Bender's Waterskin": {
     abilities: [
-      // Approximation (comme Thousand Moons Infantry) : se dégage au début de l'entretien de chaque adversaire.
-      triggered(when.step("upkeep", "opponent"), [fx.untap(ref.self)], { label: "Se dégage pendant le tour adverse" }),
+      // Approximation (like Thousand Moons Infantry): untaps at the beginning of each opponent's upkeep.
+      triggered(when.step("upkeep", "opponent"), [fx.untap(ref.self)], { label: "Untaps during each opponent's turn" }),
       manaAbility(ANY_COLOR),
     ],
   },
   "Fire Nation Warship": {
-    // Portée et équipage 2 : lus dans le texte. « Meurt » : mis au cimetière depuis le champ de bataille, créature ou non.
-    abilities: [triggered(when.putIntoGraveyardSelf, [fx.createTokens(CLUE)], { label: "Un Indice" })],
+    // Reach and crew 2: read from the text. "Dies": put into a graveyard from the battlefield, creature or not.
+    abilities: [triggered(when.putIntoGraveyardSelf, [fx.createTokens(CLUE)], { label: "A Clue" })],
   },
   "Kyoshi Battle Fan": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(ALLY, 1, undefined, "a"), fx.attach(ref.stored("a"))], {
-        label: "Un Allié 1/1, puis attachez-lui l'Équipement",
+        label: "A 1/1 Ally, then attach the Equipment to it",
       }),
       staticAbility("attached", { power: 1 }, { label: "+1/+0" }),
     ],
@@ -111,7 +111,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
         targets: [{ id: "t", label: "permanent", filter: { objects: { permanent: true } } }],
-        label: "Détruisez un permanent",
+        label: "Destroy a permanent",
       }),
       staticAbility("attached", { power: 3, toughness: 3 }, { label: "+3/+3" }),
     ],
@@ -127,11 +127,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
               tap: true,
               targets: [target.creature()],
               effects: [fx.tap(ref.target()), fx.bounce(ref.grantor)],
-              label: "Engagez une créature, puis Trusty Boomerang revient dans la main",
+              label: "Tap a creature, then return Trusty Boomerang to hand",
             }),
           ],
         },
-        { label: "« {1}, {T} : engagez une créature ; renvoyez Trusty Boomerang »" },
+        { label: '"{1}, {T}: tap a creature; return Trusty Boomerang"' },
       ),
     ],
   },
@@ -140,17 +140,17 @@ export const ARTIFACTS: Record<string, CardScript> = {
       staticAbility(
         { controller: "you", other: true },
         { addKeywords: ["indestructible"] },
-        { label: "Vos autres permanents sont indestructibles" },
+        { label: "Other permanents you control have indestructible" },
       ),
     ],
   },
 
-  // --- Terrains ----------------------------------------------------------------
+  // --- Lands -------------------------------------------------------------------
   "Agna Qel'a": {
     abilities: [
       unlessBasic,
       manaAbility("U"),
-      activated({ mana: "{2}{U}", tap: true, effects: fx.loot(1), label: "Piochez, puis défaussez une carte" }),
+      activated({ mana: "{2}{U}", tap: true, effects: fx.loot(1), label: "Draw, then discard a card" }),
     ],
   },
   "Airship Engine Room": cyclingLand("U", "R"),
@@ -164,7 +164,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { controller: "you" })],
         effects: [fx.modify(ref.target(), { addAbilities: [firebending(4)] }, "endOfTurn")],
-        label: "Maîtrise du feu 4 jusqu'à la fin du tour",
+        label: "Firebending 4 until end of turn",
       }),
     ],
   },
@@ -173,7 +173,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       manaAbility("C"),
       manaAbility(ANY_COLOR, 1, { restriction: { spell: { subtype: "Ally" }, abilityOfSource: { subtype: "Ally" } } }),
-      activated({ mana: "{5}", tap: true, effects: [fx.createTokens(ALLY)], label: "Un Allié 1/1" }),
+      activated({ mana: "{5}", tap: true, effects: [fx.createTokens(ALLY)], label: "A 1/1 Ally" }),
     ],
   },
   "Kyoshi Village": cyclingLand("G", "W"),
@@ -182,8 +182,8 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "North Pole Gates": cyclingLand("W", "U"),
   "Omashu City": cyclingLand("R", "G"),
   "Rumble Arena": {
-    // Vigilance : lue dans le texte.
-    abilities: [triggered(when.entersSelf, [fx.scry(1)], { label: "Regard 1" }), manaAbility("C"), filterAnyColor],
+    // Vigilance: read from the text.
+    abilities: [triggered(when.entersSelf, [fx.scry(1)], { label: "Scry 1" }), manaAbility("C"), filterAnyColor],
   },
   "Secret Tunnel": {
     keywords: ["unblockable"],
@@ -197,11 +197,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
             ...target.creature("t", { controller: "you" }),
             count: 2,
             shareCreatureType: true,
-            label: "deux créatures que vous contrôlez qui partagent un type",
+            label: "two creatures you control that share a creature type",
           },
         ],
         effects: [fx.pump(ref.target(), 0, 0, ["unblockable"])],
-        label: "Deux créatures imblocables ce tour-ci",
+        label: "Two creatures can't be blocked this turn",
       }),
     ],
   },
@@ -220,20 +220,20 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [fx.addManaChoice(amount.maxSharingCreatureType({ types: ["Creature"], controller: "you" }))],
-        label: "X mana d'une même couleur (X : le plus de créatures partageant un type)",
+        label: "X mana of one color (X: the greatest number of creatures that share a creature type)",
       }),
     ],
   },
   "Planetarium of Wan Shi Tong": {
     abilities: [
-      activated({ mana: "{1}", tap: true, effects: [fx.scry(2)], label: "Regard 2" }),
-      // « Ne le faites qu'une fois par tour » : la limite n'est consommée que si la carte est lancée.
+      activated({ mana: "{1}", tap: true, effects: [fx.scry(2)], label: "Scry 2" }),
+      // "Do this only once each turn": the limit is used up only if the card is cast.
       triggered(
         when.scryOrSurveil,
         [fx.castNow(ref.libraryTop(ref.you), { free: true, storeCast: "cast" }), ...fx.when(cond.v("cast"), fx.doneOncePerTurn)],
         {
           oncePerTurn: "ifDone",
-          label: "Vous regardez ou surveillez : vous pouvez lancer gratuitement la carte du dessus",
+          label: "You scry or surveil: you may cast the top card for free",
         },
       ),
     ],

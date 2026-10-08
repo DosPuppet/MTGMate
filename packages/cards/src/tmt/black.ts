@@ -1,7 +1,7 @@
 /**
- * Teenage Mutant Ninja Turtles — cartes noires (lot A). Le vol, le contact mortel, la menace, le lien de vie, le flash,
- * l'initiative, le piétinement, le faufilement, le kicker lu dans le texte, l'équipement et le cycle de Marais sont lus
- * dans le texte.
+ * Teenage Mutant Ninja Turtles — black cards (lot A). Flying, deathtouch, menace, lifelink, flash, first strike,
+ * trample, sneak, kicker read from the text, equip and swampcycling are read from the
+ * text.
  */
 import type { TokenSpec } from "@mtgx/engine";
 import {
@@ -25,11 +25,11 @@ import {
   when,
 } from "./common";
 
-/** Disparition : « si un permanent a quitté le champ de bataille sous votre contrôle ce tour-ci ». */
+/** Disappear: "if a permanent left the battlefield under your control this turn". */
 const DISAPPEAR = cond.amountAtLeast(amount.turnEvents({ event: "zone", from: "battlefield", who: "you" }), 1);
-/** Insecte Guerrier 1/1 noir avec le vol (Lord Dregg). */
+/** 1/1 black Insect Warrior with flying (Lord Dregg). */
 const FLYING_INSECT_WARRIOR: TokenSpec = { ...INSECT_WARRIOR, keywords: ["flying"] };
-/** Copie d'une carte « sauf qu'elle n'est pas légendaire et qu'elle est un Mutant en plus de ses autres types ». */
+/** Copy of a card "except it isn't legendary and it's a Mutant in addition to its other types". */
 const MUTANT_COPY = { nonlegendary: true, addSubtypes: ["Mutant"] };
 const CREATURE_OR_ARTIFACT = { anyOf: [{ types: ["Creature" as const] }, { types: ["Artifact" as const] }] };
 
@@ -38,7 +38,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
         targets: [target.creature()],
-        label: "Détruisez une créature",
+        label: "Destroy a creature",
       }),
       FOOD_ABILITY,
     ],
@@ -47,17 +47,13 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
         targets: [target.upTo(3, target.creature())],
-        label: "Détruisez jusqu'à trois créatures",
+        label: "Destroy up to three creatures",
       }),
     ],
   },
   "Bebop, Warthog Warrior": {
     abilities: [
-      staticAbility(
-        { subtype: "Rhino", controller: "you" },
-        { addKeywords: ["menace"] },
-        { label: "Vos Rhinocéros ont la menace" },
-      ),
+      staticAbility({ subtype: "Rhino", controller: "you" }, { addKeywords: ["menace"] }, { label: "Your Rhinos have menace" }),
     ],
   },
   "The Cloning of Shredder": {
@@ -66,12 +62,12 @@ export const BLACK: Record<string, CardScript> = {
         [1],
         [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x")), fx.copyToken(ref.stored("x"), MUTANT_COPY)],
         {
-          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
-          label: "Chapitre I — Exilez une carte de créature de votre cimetière ; jeton copie Mutant non légendaire",
+          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
+          label: "Chapter I — Exile a creature card from your graveyard; nonlegendary Mutant token copy",
         },
       ),
       chapter([2, 3], [fx.copyToken(ref.linked, MUTANT_COPY)], {
-        label: "Jeton copie Mutant non légendaire de la carte exilée",
+        label: "Nonlegendary Mutant token copy of the exiled card",
       }),
     ],
   },
@@ -80,49 +76,49 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(NINJA)], {
         condition: DISAPPEAR,
-        label: "Disparition — un Ninja 1/1",
+        label: "Disappear — a 1/1 Ninja",
       }),
     ],
   },
   "Insectoid Exterminator": {
-    abilities: [triggered(when.yourEndStep, [fx.scry(1)], { condition: DISAPPEAR, label: "Disparition — regard 1" })],
+    abilities: [triggered(when.yourEndStep, [fx.scry(1)], { condition: DISAPPEAR, label: "Disappear — scry 1" })],
   },
   "Lord Dregg, Insect Invader": {
     abilities: [
       triggered(when.yourEndStep, [fx.createTokens(FLYING_INSECT_WARRIOR)], {
         condition: DISAPPEAR,
-        label: "Disparition — un Insecte Guerrier 1/1 volant",
+        label: "Disappear — a 1/1 flying Insect Warrior",
       }),
       activated({
         mana: "{3}{G}",
         sacrificeOther: { filter: { token: true } },
         effects: [fx.draw(1)],
-        label: "Sacrifiez un jeton : piochez une carte",
+        label: "Sacrifice a token: draw a card",
       }),
     ],
   },
   "Madame Null, Power Broker": {
     abilities: [
-      // « Vous pouvez payer des PV égaux à sa force » (119.4 : seulement si vos PV suffisent ; la question n'est pas posée
-      // sinon).
+      // "You may pay life equal to its power" (119.4: only if your life total is enough; the question is not asked
+      // otherwise).
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true }),
         fx.when(
           cond.not(cond.amountGreater(amount.powerOf(ref.eventObject), amount.lifeTotal)),
           fx.mayPayLife(
             amount.powerOf(ref.eventObject),
-            "Payer des PV égaux à sa force pour y mettre autant de marqueurs +1/+1 ?",
+            "Pay life equal to its power to put that many +1/+1 counters on it?",
             fx.addCounters(ref.eventObject, amount.powerOf(ref.eventObject)),
           ),
         ),
-        { label: "Payez des PV égaux à sa force : autant de marqueurs +1/+1" },
+        { label: "Pay life equal to its power: that many +1/+1 counters" },
       ),
     ],
   },
   "Oroku Saki, Shredder Rising": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.draw(1), fx.loseLife(1)], {
-        label: "Piochez une carte et perdez 1 point de vie",
+        label: "Draw a card, then lose 1 life",
       }),
     ],
   },
@@ -134,7 +130,7 @@ export const BLACK: Record<string, CardScript> = {
           addKeywords: ["deathtouch"],
           addAbilities: [
             triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true })], {
-              label: "Revient engagée sous le contrôle de son propriétaire",
+              label: "Returns tapped under its owner's control",
             }),
           ],
         }),
@@ -143,21 +139,21 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Paramecia Coloniex": {
     abilities: [
-      triggered(when.entersSelf, [fx.mill(3)], { label: "Meulez trois cartes" }),
+      triggered(when.entersSelf, [fx.mill(3)], { label: "Mill three cards" }),
       triggered(
         when.diesSelf,
         fx.may(
-          "Exiler Paramecia Coloniex pour mettre une carte de créature de votre cimetière au-dessus de votre bibliothèque ?",
+          "Exile Paramecia Coloniex to put a creature card from your graveyard on top of your library?",
           fx.exileCard(ref.selfCard, { name: "e" }),
           fx.when(
             cond.v("e"),
             fx.reflexive(
-              [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+              [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
               [fx.moveTo(ref.target(), { to: "libraryTop" })],
             ),
           ),
         ),
-        { label: "Exilez-la : une carte de créature au-dessus de votre bibliothèque" },
+        { label: "Exile it: a creature card on top of your library" },
       ),
     ],
   },
@@ -170,7 +166,7 @@ export const BLACK: Record<string, CardScript> = {
           fx.draw(amount.countersOn(ref.self, "any")),
           fx.loseLife(amount.countersOn(ref.self, "any")),
         ],
-        { label: "Un marqueur +1/+1, puis piochez X cartes et perdez X PV (X : ses marqueurs)" },
+        { label: "A +1/+1 counter, then draw X cards and lose X life (X: its counters)" },
       ),
     ],
   },
@@ -185,11 +181,11 @@ export const BLACK: Record<string, CardScript> = {
               1,
               target.of(
                 ref.eventPlayer,
-                target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature du cimetière de ce joueur"),
+                target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card in the graveyard of that player"),
               ),
             ),
           ],
-          label: "Une carte de créature de son cimetière arrive sous votre contrôle, engagée et attaquante",
+          label: "A creature card from their graveyard enters under your control, tapped and attacking",
         },
       ),
     ],
@@ -198,11 +194,11 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 0, 0, ["deathtouch"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Une autre de vos créatures gagne le contact mortel",
+        label: "Another creature you control gains deathtouch",
       }),
       triggered(when.attacksSelf, [fx.pump(ref.target(), 0, 0, ["deathtouch"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Une autre de vos créatures gagne le contact mortel",
+        label: "Another creature you control gains deathtouch",
       }),
     ],
   },
@@ -211,30 +207,30 @@ export const BLACK: Record<string, CardScript> = {
       staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-le à une de vos créatures",
+        label: "Attach this Equipment to one of your creatures",
       }),
       equipAbility({
         sacrificeOther: { filter: { notTypes: ["Land"] } },
         oncePerTurn: true,
-        label: "Équiper — sacrifiez un autre permanent non-terrain",
+        label: "Equip — Sacrifice another nonland permanent",
       }),
     ],
   },
   "Shredder's Revenge": {
     spell: modal(
-      mode("Le joueur défausse deux cartes", [target.player()], [fx.discard(2, ref.target())]),
+      mode("The player discards two cards", [target.player()], [fx.discard(2, ref.target())]),
       mode(
-        "Le joueur pioche deux cartes et perd 2 points de vie",
+        "The player draws two cards and loses 2 life",
         [target.player()],
         [fx.draw(2, ref.target()), fx.loseLife(2, ref.target())],
       ),
     ),
   },
   "Shredder's Technique": {
-    // Faufilement {B} : lu dans le texte. « Si un enchantement a été détruit de cette façon » : la cible a été détruite
-    // (nombre mémorisé) et c'était un enchantement (dernières informations connues).
+    // Sneak {B}: read from the text. "If an enchantment was destroyed this way": the target was destroyed
+    // (stored number) and it was an enchantment (last known information).
     spell: spell(
-      [target.permanent("t", ["Creature", "Enchantment"], {}, "créature ou enchantement")],
+      [target.permanent("t", ["Creature", "Enchantment"], {}, "creature or enchantment")],
       [
         fx.destroy(ref.target(), "d"),
         ...fx.when(cond.all(cond.v("d"), cond.targetMatches("t", { types: ["Enchantment"] })), fx.loseLife(2)),
@@ -246,9 +242,9 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.dies({ types: ["Creature"], controller: "you", other: true }),
         [fx.gainLife(amount.toughnessOf(ref.eventObject))],
-        { label: "Gagnez autant de PV que son endurance" },
+        { label: "Gain life equal to its toughness" },
       ),
-      triggered(when.gainLife, [fx.loseLife(1, ref.eachOpponent)], { label: "Chaque adversaire perd 1 point de vie" }),
+      triggered(when.gainLife, [fx.loseLife(1, ref.eachOpponent)], { label: "ctx:lifePoint|Each opponent loses 1 life" }),
     ],
   },
   "Splinter, Hamato Yoshi": {
@@ -256,12 +252,12 @@ export const BLACK: Record<string, CardScript> = {
       staticAbility(
         { subtype: "Ninja", controller: "you", other: true },
         { power: 1, toughness: 1 },
-        { label: "Vos autres Ninjas : +1/+1" },
+        { label: "Your other Ninjas: +1/+1" },
       ),
     ],
   },
   "Splinter's Technique": {
-    // Faufilement {1}{B} : lu dans le texte.
+    // Sneak {1}{B}: read from the text.
     spell: spell([], [fx.search({})]),
   },
   "Stomped by the Foot": {
@@ -272,7 +268,7 @@ export const BLACK: Record<string, CardScript> = {
   "Super Shredder": {
     abilities: [
       triggered(when.leaves({ other: true }), [fx.addCounters(ref.self, 1)], {
-        label: "Un autre permanent part : un marqueur +1/+1",
+        label: "Another permanent leaves: a +1/+1 counter",
       }),
     ],
   },
@@ -282,7 +278,7 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{4}{B}",
         fromGraveyard: true,
         effects: [fx.toBattlefield(ref.selfCard, { tapped: true })],
-        label: "Revient du cimetière engagée",
+        label: "Returns tapped from the graveyard",
       }),
     ],
   },

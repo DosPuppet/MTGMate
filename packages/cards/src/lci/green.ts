@@ -1,4 +1,4 @@
-/** The Lost Caverns of Ixalan — cartes vertes. */
+/** The Lost Caverns of Ixalan — green cards. */
 import {
   activated,
   amount,
@@ -33,8 +33,8 @@ import {
 const CREATURE = { types: ["Creature" as const] };
 const ANY_COLOR = ["W", "U", "B", "R", "G"] as const;
 const explores = triggered(when.entersSelf, [fx.explore()], { label: "Explore" });
-const mayMillTwo = triggered(when.entersSelf, [...fx.may("Meuler deux cartes ?", fx.mill(2))], {
-  label: "Meulez deux cartes",
+const mayMillTwo = triggered(when.entersSelf, [...fx.may("Mill two cards?", fx.mill(2))], {
+  label: "Mill two cards",
 });
 
 export const GREEN: Record<string, CardScript> = {
@@ -45,12 +45,12 @@ export const GREEN: Record<string, CardScript> = {
           cond.controls({ ...DINOSAUR_YOU, other: true }),
           cond.amountAtLeast(amount.countIn("hand", { subtype: "Dinosaur" }), 1),
         ),
-        label: "+3 PV (Dinosaure révélé ou contrôlé)",
+        label: "+3 life (Dinosaur revealed or controlled)",
       }),
     ],
   },
   "Basking Capybara": {
-    abilities: [staticAbility("self", { power: 3 }, { condition: descend(4), label: "Descente 4 — +3/+0" })],
+    abilities: [staticAbility("self", { power: 3 }, { condition: descend(4), label: "Descend 4 — +3/+0" })],
   },
   "Bedrock Tortoise": {
     abilities: [
@@ -59,25 +59,25 @@ export const GREEN: Record<string, CardScript> = {
         { addKeywords: ["hexproof"] },
         {
           condition: cond.yourTurn,
-          label: "Défense talismanique pendant votre tour",
+          label: "Hexproof during your turn",
         },
       ),
       staticAbility(
         CREATURE_YOU_CONTROL,
         { addPowerRules: [powerFor.combatToughness] },
         {
-          label: "Blessures de combat selon l'endurance",
+          label: "Combat damage equal to toughness",
         },
       ),
     ],
   },
   "Cavern Stomper": {
     abilities: [
-      triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
+      triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" }),
       activated({
         mana: "{3}{G}",
         effects: [fx.modify(ref.self, { addBlockRules: [block.notByPowerLE2] })],
-        label: "Imblocable par force 2 ou moins",
+        label: "Can't be blocked by power 2 or less",
       }),
     ],
   },
@@ -85,15 +85,15 @@ export const GREEN: Record<string, CardScript> = {
   "Coati Scavenger": {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {
-        targets: [target.cardInGraveyard("t", PERMANENT_CARD, "you", "carte de permanent de votre cimetière")],
+        targets: [target.cardInGraveyard("t", PERMANENT_CARD, "you", "permanent card in your graveyard")],
         condition: descend(4),
-        label: "Descente 4 — carte de permanent en main",
+        label: "Descend 4 — permanent card into your hand",
       }),
     ],
   },
   "Disturbed Slumber": {
     spell: spell(
-      [target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez")],
+      [target.permanent("t", ["Land"], { controller: "you" }, "land you control")],
       [
         fx.modify(ref.target(), {
           addTypes: ["Creature"],
@@ -108,15 +108,15 @@ export const GREEN: Record<string, CardScript> = {
   "Earthshaker Dreadmaw": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(amount.count({ ...DINOSAUR_YOU, other: true }))], {
-        label: "Une carte par autre Dinosaure",
+        label: "A card for each other Dinosaur",
       }),
     ],
   },
   "Explorer's Cache": {
     abilities: [
-      entersWith({ counters: 2, label: "Arrive avec deux marqueurs +1/+1" }),
+      entersWith({ counters: 2, label: "Enters with two +1/+1 counters" }),
       triggered(when.dies({ ...CREATURE_YOU_CONTROL, withCounter: "+1/+1" }), [fx.addCounters(ref.self, 1)], {
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
       activated({
         tap: true,
@@ -124,7 +124,7 @@ export const GREEN: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Déplacez un marqueur +1/+1",
+        label: "Move a +1/+1 counter",
       }),
     ],
   },
@@ -132,48 +132,55 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        [fx.pickFromZone("hand", CREATURE, { to: "battlefield" }, { count: 60, min: 0, prompt: "Créatures à mettre en jeu" })],
-        { label: "Créatures de votre main sur le champ de bataille" },
+        [
+          fx.pickFromZone(
+            "hand",
+            CREATURE,
+            { to: "battlefield" },
+            { count: 60, min: 0, prompt: "Creatures to put onto the battlefield" },
+          ),
+        ],
+        { label: "Creatures from your hand onto the battlefield" },
       ),
     ],
   },
   "Glimpse the Core": {
     spell: modal(
       mode(
-        "Forêt de base engagée",
+        "Tapped basic Forest",
         [],
         [fx.search({ types: ["Land"], basic: true, subtype: "Forest" }, { to: "battlefield", tapped: true })],
       ),
       mode(
-        "Caverne du cimetière engagée",
-        [target.cardInGraveyard("t", { subtype: "Cave" }, "you", "carte de Caverne de votre cimetière")],
+        "Tapped Cave from the graveyard",
+        [target.cardInGraveyard("t", { subtype: "Cave" }, "you", "Cave card from your graveyard")],
         [fx.toBattlefield(ref.target(), { tapped: true })],
       ),
     ),
   },
   "Glowcap Lantern": {
     abilities: [
-      // Les deux capacités sont celles de la créature équipée : son contrôleur regarde le dessus de sa bibliothèque.
+      // Both abilities belong to the equipped creature: its controller looks at the top of their library.
       staticAbility(
         "attached",
         {
           addAbilities: [
-            playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus" }),
+            playerStatic({ lookAt: "libraryTop", label: "You may look at the top card" }),
             triggered(when.attacksSelf, [fx.explore()], { label: "Explore" }),
           ],
         },
-        { label: "Regard sur la carte du dessus ; explore en attaquant" },
+        { label: "Look at the top card; explores when attacking" },
       ),
     ],
   },
   "Growing Rites of Itlimoc": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(4, { filter: CREATURE, count: 1, rest: "bottom" })], {
-        label: "Carte de créature en main",
+        label: "Creature card into your hand",
       }),
       triggered(when.yourEndStep, [fx.transform()], {
         condition: cond.controls(CREATURE_YOU_CONTROL, 4),
-        label: "Transformation (quatre créatures)",
+        label: "Transform (four creatures)",
       }),
     ],
   },
@@ -182,18 +189,18 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Huatli, Poet of Unity": {
     abilities: [
-      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Terrain de base en main" }),
+      triggered(when.entersSelf, [fx.search(BASIC_LAND)], { label: "Basic land into your hand" }),
       activated({
         mana: "{3}{R/W}{R/W}",
         sorcerySpeed: true,
         effects: [fx.exileCard(ref.self, { name: "flip" }), fx.toBattlefield(ref.stored("flip"), { transformed: true })],
-        label: "Exilez-la, puis renvoyez-la transformée",
+        label: "Exile it, then return it transformed",
       }),
     ],
   },
   "Roar of the Fifth People": {
     abilities: [
-      chapter([1], [fx.createTokens(DINOSAUR_3_3, 2)], { label: "Deux Dinosaures 3/3" }),
+      chapter([1], [fx.createTokens(DINOSAUR_3_3, 2)], { label: "Two 3/3 Dinosaurs" }),
       chapter(
         [2],
         [
@@ -205,7 +212,7 @@ export const GREEN: Record<string, CardScript> = {
                   CREATURE_YOU_CONTROL,
                   { addAbilities: [manaAbility(["R", "G", "W"])] },
                   {
-                    label: "Vos créatures : {T} : {R}, {G} ou {W}",
+                    label: "Your creatures: {T}: {R}, {G} or {W}",
                   },
                 ),
               ],
@@ -213,11 +220,11 @@ export const GREEN: Record<string, CardScript> = {
             "permanent",
           ),
         ],
-        { label: "Vos créatures produisent du mana" },
+        { label: "Your creatures produce mana" },
       ),
-      chapter([3], [fx.search({ subtype: "Dinosaur" })], { label: "Carte de Dinosaure en main" }),
+      chapter([3], [fx.search({ subtype: "Dinosaur" })], { label: "Dinosaur card into your hand" }),
       chapter([4], [fx.pumpAll(DINOSAUR_YOU, 0, 0, ["doubleStrike", "trample"])], {
-        label: "Double initiative et piétinement",
+        label: "Double strike and trample",
       }),
     ],
   },
@@ -228,10 +235,10 @@ export const GREEN: Record<string, CardScript> = {
     ),
   },
   "Hulking Raptor": {
-    abilities: [triggered(when.step("main1"), [fx.addMana("G", "G")], { label: "Ajoutez {G}{G}" })],
+    abilities: [triggered(when.step("main1"), [fx.addMana("G", "G")], { label: "Add {G}{G}" })],
   },
   "In the Presence of Ages": {
-    // « Une carte de créature et/ou une carte de terrain » : une de chaque type au plus.
+    // "A creature card and/or a land card": at most one of each type.
     spell: spell(
       [],
       [fx.lookAtTop(4, { filter: { anyOf: [CREATURE, { types: ["Land"] }] }, count: 2, onePerType: true, rest: "graveyard" })],
@@ -245,7 +252,7 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Jadelight Spelunker": {
-    abilities: [triggered(when.entersSelf, [fx.explore(ref.self, amount.sourceX)], { label: "Explore X fois" })],
+    abilities: [triggered(when.entersSelf, [fx.explore(ref.self, amount.sourceX)], { label: "Explores X times" })],
   },
   "Malamet Battle Glyph": {
     spell: spell(
@@ -260,7 +267,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), 0, 0, ["trample"])], {
         targets: [target.creature("t", { attacking: true })],
-        label: "Piétinement",
+        label: "Trample",
       }),
     ],
   },
@@ -269,7 +276,7 @@ export const GREEN: Record<string, CardScript> = {
       staticAbility("attached", { power: 2, toughness: 2 }, { label: "+2/+2" }),
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-la",
+        label: "Attach it to target creature",
       }),
     ],
   },
@@ -278,36 +285,36 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.attacksSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature()],
         condition: descend(4),
-        label: "Descente 4 — marqueur +1/+1",
+        label: "Descend 4 — +1/+1 counter",
       }),
     ],
   },
   "Mineshaft Spider": { abilities: [mayMillTwo] },
   "Nurturing Bristleback": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(DINOSAUR_3_3)], { label: "Dinosaure 3/3" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(DINOSAUR_3_3)], { label: "3/3 Dinosaur" })],
   },
   "Over the Edge": {
     spell: modal(
       mode(
-        "Détruisez un artefact ou un enchantement",
-        [targetObj("t", { types: ["Artifact", "Enchantment"] }, "artefact ou enchantement")],
+        "Destroy an artifact or an enchantment",
+        [targetObj("t", { types: ["Artifact", "Enchantment"] }, "artifact or enchantment")],
         [fx.destroy(ref.target())],
       ),
-      mode("Une créature explore deux fois", [target.creature("c", { controller: "you" })], [fx.explore(ref.target("c"), 2)]),
+      mode("A creature explores twice", [target.creature("c", { controller: "you" })], [fx.explore(ref.target("c"), 2)]),
     ),
   },
   "Pathfinding Axejaw": { abilities: [explores] },
   "Poison Dart Frog": {
     abilities: [
       manaAbility([...ANY_COLOR]),
-      activated({ mana: "{2}", effects: [fx.pump(ref.self, 0, 0, ["deathtouch"])], label: "Contact mortel" }),
+      activated({ mana: "{2}", effects: [fx.pump(ref.self, 0, 0, ["deathtouch"])], label: "Deathtouch" }),
     ],
   },
   "Pugnacious Hammerskull": {
     abilities: [
       triggered(when.attacksSelf, [fx.counters(ref.self, "stun", 1)], {
         condition: cond.not(cond.controls({ ...DINOSAUR_YOU, other: true })),
-        label: "Marqueur d'étourdissement (aucun autre Dinosaure)",
+        label: "Stun counter (no other Dinosaur)",
       }),
     ],
   },
@@ -316,7 +323,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [activated({ mana: "{2}{G}", sorcerySpeed: true, effects: [fx.explore()], label: "Explore" })],
   },
   "Sentinel of the Nameless City": {
-    abilities: [when.entersSelf, when.attacksSelf].map((t) => triggered(t, [fx.createTokens(MAP)], { label: "Jeton Carte" })),
+    abilities: [when.entersSelf, when.attacksSelf].map((t) => triggered(t, [fx.createTokens(MAP)], { label: "Map token" })),
   },
   Spelunking: {
     abilities: [
@@ -328,13 +335,13 @@ export const GREEN: Record<string, CardScript> = {
             "hand",
             { types: ["Land"] },
             { to: "battlefield" },
-            { count: 1, min: 0, store: "l", prompt: "Terrain à mettre en jeu" },
+            { count: 1, min: 0, store: "l", prompt: "Land to put onto the battlefield" },
           ),
           ...fx.when(cond.amountAtLeast(amount.refCount(ref.filtered(ref.stored("l"), CAVE)), 1), fx.gainLife(4)),
         ],
-        { label: "Piochez, puis un terrain de votre main" },
+        { label: "Draw, then a land from your hand" },
       ),
-      playerStatic({ landsEnterUntapped: true, label: "Vos terrains arrivent dégagés" }),
+      playerStatic({ landsEnterUntapped: true, label: "Your lands enter untapped" }),
     ],
   },
   "Staggering Size": { spell: spell([target.creature()], [fx.pump(ref.target(), 3, 3, ["trample"])]) },
@@ -342,14 +349,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       activated({
         mana: "{5}{G}{G}",
-        targets: [
-          target.permanent(
-            "t",
-            ["Land"],
-            { controller: "you", notTypes: ["Creature"] },
-            "terrain non-créature que vous contrôlez",
-          ),
-        ],
+        targets: [target.permanent("t", ["Land"], { controller: "you", notTypes: ["Creature"] }, "noncreature land you control")],
         effects: [
           fx.counters(ref.target(), "+1/+1", 7),
           fx.modify(
@@ -358,13 +358,13 @@ export const GREEN: Record<string, CardScript> = {
             "permanent",
           ),
         ],
-        label: "Le terrain devient un Champignon 0/0",
+        label: "The land becomes a 0/0 Fungus",
       }),
     ],
   },
   "Walk with the Ancestors": {
     spell: spell(
-      [target.optional(target.cardInGraveyard("t", PERMANENT_CARD, "you", "carte de permanent de votre cimetière"))],
+      [target.optional(target.cardInGraveyard("t", PERMANENT_CARD, "you", "permanent card in your graveyard"))],
       [fx.toHand(ref.target()), fx.discover(4)],
     ),
   },

@@ -1,6 +1,6 @@
 /**
- * Éléments propres à Edge of Eternities (EOE) : jetons Lander, Robot, Drone, Soldat humain, Munitions.
- * Le DSL et les filtres génériques viennent de Foundations (fdn/common.ts).
+ * Elements specific to Edge of Eternities (EOE): Lander, Robot, Drone, Human Soldier and Munitions tokens.
+ * The DSL and the generic filters come from Foundations (fdn/common.ts).
  */
 import { dsl, type ObjectFilter, type TokenSpec } from "@mtgx/engine";
 
@@ -8,7 +8,7 @@ export * from "../fdn/common";
 
 const { activated, triggered, fx, ref, target, when } = dsl;
 
-/** Lander : « {2}, {T}, sacrifiez ce jeton : cherchez une carte de terrain de base, mettez-la sur le champ de bataille engagée. » */
+/** Lander: "{2}, {T}, Sacrifice this token: search for a basic land card, put it onto the battlefield tapped." */
 export const LANDER: TokenSpec = {
   name: "Lander",
   colors: [],
@@ -20,13 +20,13 @@ export const LANDER: TokenSpec = {
       tap: true,
       sacrifice: true,
       effects: [fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true })],
-      label: "Terrain de base",
+      label: "Basic land",
     }),
   ],
   text: "{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
 };
 
-/** Robot : créature-artefact incolore 2/2. */
+/** Robot: 2/2 colorless artifact creature. */
 export const ROBOT: TokenSpec = {
   name: "Robot",
   colors: [],
@@ -36,7 +36,7 @@ export const ROBOT: TokenSpec = {
   toughness: 2,
 };
 
-/** Sliver : créature incolore 1/1 (Thrumming Hivepool). */
+/** Sliver: 1/1 colorless creature (Thrumming Hivepool). */
 export const SLIVER: TokenSpec = {
   name: "Sliver",
   colors: [],
@@ -46,7 +46,7 @@ export const SLIVER: TokenSpec = {
   toughness: 1,
 };
 
-/** Drone : créature-artefact incolore 1/1 avec le vol, « ne peut bloquer que des créatures avec le vol ». */
+/** Drone: 1/1 colorless artifact creature with flying and "can block only creatures with flying". */
 export const DRONE: TokenSpec = {
   name: "Drone",
   colors: [],
@@ -55,11 +55,11 @@ export const DRONE: TokenSpec = {
   power: 1,
   toughness: 1,
   keywords: ["flying"],
-  abilities: [dsl.blockAbility(dsl.block.onlyBlocks({ keyword: "flying" }, "Ne bloque que les créatures volantes"))],
+  abilities: [dsl.blockAbility(dsl.block.onlyBlocks({ keyword: "flying" }, "Can block only creatures with flying"))],
   text: "Flying\nThis token can block only creatures with flying.",
 };
 
-/** Soldat humain : créature blanche 1/1. */
+/** Human Soldier: 1/1 white creature. */
 export const HUMAN_SOLDIER: TokenSpec = {
   name: "Human Soldier",
   colors: ["W"],
@@ -69,22 +69,22 @@ export const HUMAN_SOLDIER: TokenSpec = {
   toughness: 1,
 };
 
-/** Munitions : artefact avec « Quand ce jeton quitte le champ de bataille, il inflige 2 blessures à n'importe quelle cible ». */
+/** Munitions: artifact with "When this token leaves the battlefield, it deals 2 damage to any target". */
 export const MUNITIONS: TokenSpec = {
   name: "Munitions",
   colors: [],
   types: ["Artifact"],
   subtypes: [],
-  abilities: [triggered(when.leavesSelf, [fx.damage(2, ref.target())], { targets: [target.any()], label: "2 blessures" })],
+  abilities: [triggered(when.leavesSelf, [fx.damage(2, ref.target())], { targets: [target.any()], label: "2 damage" })],
   text: "When this token leaves the battlefield, it deals 2 damage to any target.",
 };
 
-/** « Créez un jeton Lander. » */
+/** "Create a Lander token." */
 export const lander = (n = 1) => fx.createTokens(LANDER, n);
 
-/** « créature ou artefact » */
+/** "creature or artifact" */
 export const CREATURE_OR_ARTIFACT: ObjectFilter = { types: ["Creature", "Artifact"] };
-/** « deux créatures engagées ou plus » */
+/** "two or more tapped creatures" */
 export const TWO_TAPPED = dsl.cond.controls({ types: ["Creature"], tapped: true }, 2);
-/** « créature ou Vaisseau » */
+/** "creature or Spacecraft" */
 export const CREATURE_OR_SPACECRAFT: ObjectFilter = { anyOf: [{ types: ["Creature"] }, { subtype: "Spacecraft" }] };

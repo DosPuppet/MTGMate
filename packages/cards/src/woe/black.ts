@@ -1,4 +1,4 @@
-/** Wilds of Eldraine — cartes noires. */
+/** Wilds of Eldraine — black cards. */
 
 import type { ObjectFilter, TriggerSpec } from "@mtgx/engine";
 import {
@@ -26,17 +26,17 @@ import {
   when,
 } from "./common";
 
-/** « un artefact, un enchantement ou un jeton » (Marchandage, Devouring Sugarmaw, Lich-Knights' Conquest…). */
+/** "an artifact, enchantment, or token" (Bargain, Devouring Sugarmaw, Lich-Knights' Conquest…). */
 const ARTIFACT_ENCHANTMENT_TOKEN: ObjectFilter = { anyOf: [{ types: ["Artifact", "Enchantment"] }, { token: true }] };
 
-/** « Chaque fois qu'un enchantement que vous contrôlez est mis dans un cimetière depuis le champ de bataille » */
+/** "Whenever an enchantment you control is put into a graveyard from the battlefield" */
 const YOUR_ENCHANTMENT_TO_GRAVEYARD: TriggerSpec = {
   on: "leaves",
   who: { types: ["Enchantment"], controller: "you" },
   to: "graveyard",
 };
 
-/** « Sacrifiez un nombre quelconque d'artefacts, d'enchantements et/ou de jetons » : leur nombre est mémorisé sous `n`. */
+/** "Sacrifice any number of artifacts, enchantments, and/or tokens": their number is stored under `n`. */
 const sacrificeAnyNumber = (store: string) =>
   fx.sacrifice(ref.you, ARTIFACT_ENCHANTMENT_TOKEN, amount.count({ ...ARTIFACT_ENCHANTMENT_TOKEN, controller: "you" }), {
     optional: true,
@@ -50,7 +50,7 @@ export const BLACK: Record<string, CardScript> = {
     keywords: ["cantBlock"],
     abilities: [
       triggered(when.diesSelf, [fx.createTokens(RAT_NO_BLOCK, amount.lkiDamage)], {
-        label: "Un Rat 1/1 par blessure qui lui a été infligée ce tour-ci",
+        label: "A 1/1 Rat for each damage dealt to it this turn",
       }),
     ],
   },
@@ -59,7 +59,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.createTokens(RAT_NO_BLOCK), ...createRole(WICKED_ROLE, ref.permanentsOf(ref.you, { subtype: "Rat" }))],
-        { label: "Un Rat 1/1, puis un Rôle Méchant attaché à chaque Rat que vous contrôlez" },
+        { label: "A 1/1 Rat, then a Wicked Role attached to each Rat you control" },
       ),
     ],
   },
@@ -67,23 +67,23 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, createRole(WICKED_ROLE), {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Un Rôle Méchant attaché à une créature que vous contrôlez",
+        label: "A Wicked Role attached to a creature you control",
       }),
       triggered(when.step("draw", "you"), [fx.loseLife(1), fx.draw(1)], {
         condition: cond.controls({ types: ["Creature"], enchanted: true }),
-        label: "Vous contrôlez une créature enchantée : perdez 1 PV, piochez une carte de plus",
+        label: "You control an enchanted creature: lose 1 life, draw an additional card",
       }),
     ],
   },
   "Ashiok's Reaper": {
     abilities: [
-      triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.draw(1)], { label: "Un de vos enchantements au cimetière : piochez" }),
+      triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.draw(1)], { label: "One of your enchantments to the graveyard: draw" }),
     ],
   },
   "Back for Seconds": {
-    // Marchandé : une des cartes ciblées de VM 4 ou moins peut arriver sur le champ de bataille au lieu d'aller en main.
+    // Bargained: one of the targeted cards with MV 4 or less can enter the battlefield instead of going to hand.
     spell: spell(
-      [target.upTo(2, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière"))],
+      [target.upTo(2, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard"))],
       [
         ...fx.when(
           cond.kicked,
@@ -96,7 +96,7 @@ export const BLACK: Record<string, CardScript> = {
               min: 0,
               pool: ref.target(),
               maxManaValue: 4,
-              prompt: "Vous pouvez mettre l'une d'elles (VM 4 ou moins) sur le champ de bataille",
+              prompt: "You may put one of them (MV 4 or less) onto the battlefield",
             },
           ),
         ),
@@ -111,14 +111,14 @@ export const BLACK: Record<string, CardScript> = {
         { addKeywords: ["lifelink"] },
         {
           condition: cond.controls({ subtype: "Faerie", other: true }),
-          label: "Lien de vie tant que vous contrôlez une autre Fée",
+          label: "Lifelink as long as you control another Faerie",
         },
       ),
-      activated({ mana: "{2}{B}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0 jusqu'à la fin du tour" }),
+      activated({ mana: "{2}{B}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0 until end of turn" }),
     ],
   },
   "Beseech the Mirror": {
-    // La carte est exilée face cachée (vous seul la voyez).
+    // The card is exiled face down (only you see it).
     spell: spell(
       [],
       [
@@ -137,7 +137,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.castSpellOffTurn("you"), [fx.pump(ref.target(), -1, -1)], {
         targets: [target.optional(target.creature("t", { controller: "opponent" }))],
-        label: "Sort lancé pendant le tour d'un adversaire : -1/-1 à une créature adverse",
+        label: "Spell cast during an opponent's turn: -1/-1 to a creature an opponent controls",
       }),
     ],
   },
@@ -158,18 +158,18 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Faerie Dreamthief": {
     abilities: [
-      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
+      triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" }),
       activated({
         mana: "{2}{B}",
         fromGraveyard: true,
         exileSelf: true,
         effects: [fx.draw(1), fx.loseLife(1)],
-        label: "Depuis le cimetière : piochez une carte, perdez 1 PV",
+        label: "From the graveyard: draw a card, lose 1 life",
       }),
     ],
   },
   "Faerie Fencing": {
-    // « si vous contrôliez une Fée en lançant ce sort » : vérifié au lancement.
+    // "if you controlled a Faerie as you cast this spell": checked on casting.
     whenCast: cond.controls({ subtype: "Faerie" }),
     spell: spell(
       [target.creature()],
@@ -188,7 +188,7 @@ export const BLACK: Record<string, CardScript> = {
   "Fell Horseman": {
     abilities: [
       triggered(when.diesSelf, [fx.moveTo(ref.selfCard, { to: "libraryBottom" })], {
-        label: "Va au-dessous de la bibliothèque de son propriétaire",
+        label: "Goes to the bottom of its owner's library",
       }),
     ],
   },
@@ -202,7 +202,7 @@ export const BLACK: Record<string, CardScript> = {
         [fx.pump(ref.target(), amount.neg(amount.lifeGainedThisTurn), amount.neg(amount.lifeGainedThisTurn))],
         {
           targets: [target.optional(target.creature())],
-          label: "-X/-X, X étant les points de vie gagnés ce tour-ci",
+          label: "-X/-X, where X is the life gained this turn",
         },
       ),
     ],
@@ -212,17 +212,17 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, fx.drain(3), {
         condition: cond.kicked,
-        label: "Marchandée : chaque adversaire perd 3 PV, vous gagnez 3 PV",
+        label: "Bargained: each opponent loses 3 life, you gain 3 life",
       }),
     ],
   },
   "Hopeless Nightmare": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent), fx.loseLife(2, ref.eachOpponent)], {
-        label: "Chaque adversaire défausse une carte et perd 2 PV",
+        label: "Each opponent discards a card and loses 2 life",
       }),
-      triggered(when.putIntoGraveyardSelf, [fx.scry(2)], { label: "Regard 2" }),
-      activated({ mana: "{2}{B}", effects: [fx.sacrificeIt(ref.self)], label: "Sacrifiez cet enchantement" }),
+      triggered(when.putIntoGraveyardSelf, [fx.scry(2)], { label: "Scry 2" }),
+      activated({ mana: "{2}{B}", effects: [fx.sacrificeIt(ref.self)], label: "Sacrifice this enchantment" }),
     ],
   },
   "Lich-Knights' Conquest": {
@@ -234,7 +234,7 @@ export const BLACK: Record<string, CardScript> = {
           "graveyard",
           { types: ["Creature"] },
           { to: "battlefield" },
-          { count: amount.v("n"), prompt: "Autant de cartes de créature de votre cimetière que de permanents sacrifiés" },
+          { count: amount.v("n"), prompt: "As many creature cards from your graveyard as permanents sacrificed" },
         ),
       ],
     ),
@@ -242,10 +242,10 @@ export const BLACK: Record<string, CardScript> = {
   "Lord Skitter, Sewer King": {
     abilities: [
       triggered(when.enters({ subtype: "Rat", controller: "you", other: true }), [fx.exileCard(ref.target())], {
-        targets: [target.optional(target.cardInGraveyard("t", {}, "opponent", "carte du cimetière d'un adversaire"))],
-        label: "Un autre Rat arrive : exilez une carte du cimetière d'un adversaire",
+        targets: [target.optional(target.cardInGraveyard("t", {}, "opponent", "card in an opponent's graveyard"))],
+        label: "Another Rat enters: exile a card from an opponent's graveyard",
       }),
-      triggered(when.yourCombat, [fx.createTokens(RAT_NO_BLOCK)], { label: "Un Rat 1/1 qui ne peut pas bloquer" }),
+      triggered(when.yourCombat, [fx.createTokens(RAT_NO_BLOCK)], { label: "A 1/1 Rat that can't block" }),
     ],
   },
   "Lord Skitter's Butcher": {
@@ -253,9 +253,9 @@ export const BLACK: Record<string, CardScript> = {
       triggeredModal(
         when.entersSelf,
         [
-          mode("Un Rat 1/1 qui ne peut pas bloquer", [], [fx.createTokens(RAT_NO_BLOCK)]),
+          mode("A 1/1 Rat that can't block", [], [fx.createTokens(RAT_NO_BLOCK)]),
           mode(
-            "Sacrifiez une autre créature : regard 2, piochez",
+            "Sacrifice another creature: scry 2, draw",
             [],
             [
               fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "s" }),
@@ -263,17 +263,17 @@ export const BLACK: Record<string, CardScript> = {
             ],
           ),
           mode(
-            "Vos créatures gagnent la menace",
+            "Your creatures gain menace",
             [],
             [fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["menace"] })],
           ),
         ],
-        { label: "Choisissez un mode" },
+        { label: "Choose a mode" },
       ),
     ],
   },
   Mintstrosity: {
-    abilities: [triggered(when.diesSelf, [fx.createTokens(FOOD)], { label: "Une Nourriture" })],
+    abilities: [triggered(when.diesSelf, [fx.createTokens(FOOD)], { label: "A Food" })],
   },
   "Not Dead After All": {
     spell: spell(
@@ -287,7 +287,7 @@ export const BLACK: Record<string, CardScript> = {
                 fx.moveTo(ref.selfCard, { to: "battlefield", tapped: true }, { name: "back" }),
                 ...createRole(WICKED_ROLE, ref.stored("back")),
               ],
-              { label: "Revient engagée avec un Rôle Méchant" },
+              { label: "Returns tapped with a Wicked Role" },
             ),
           ],
         }),
@@ -295,13 +295,13 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Rankle's Prank": {
-    // « Choisissez un ou plusieurs » : toutes les combinaisons, dans l'ordre imprimé.
+    // "Choose one or more": every combination, in printed order.
     spell: spree(
-      { cost: "{0}", label: "Chaque joueur défausse deux cartes", effects: [fx.discard(2, ref.eachPlayer)] },
-      { cost: "{0}", label: "Chaque joueur perd 4 PV", effects: [fx.loseLife(4, ref.eachPlayer)] },
+      { cost: "{0}", label: "Each player discards two cards", effects: [fx.discard(2, ref.eachPlayer)] },
+      { cost: "{0}", label: "Each player loses 4 life", effects: [fx.loseLife(4, ref.eachPlayer)] },
       {
         cost: "{0}",
-        label: "Chaque joueur sacrifie deux créatures",
+        label: "Each player sacrifices two creatures",
         effects: [fx.sacrifice(ref.eachPlayer, { types: ["Creature"] }, 2)],
       },
     ),
@@ -320,11 +320,11 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Scream Puff": {
-    abilities: [triggered(when.combatDamageToPlayer, [fx.createTokens(FOOD)], { label: "Une Nourriture" })],
+    abilities: [triggered(when.combatDamageToPlayer, [fx.createTokens(FOOD)], { label: "A Food" })],
   },
   "Shatter the Oath": {
     spell: spell(
-      [target.permanent("t", ["Creature", "Enchantment"], {}, "créature ou enchantement"), target.optional(YOUR_CREATURE())],
+      [target.permanent("t", ["Creature", "Enchantment"], {}, "creature or enchantment"), target.optional(YOUR_CREATURE())],
       [fx.destroy(ref.target()), ...createRole(WICKED_ROLE, ref.target("c"))],
     ),
   },
@@ -341,10 +341,10 @@ export const BLACK: Record<string, CardScript> = {
               count: amount.countIn("graveyard", { types: ["Creature"] }),
               min: 0,
               store: "ex",
-              prompt: "Vous pouvez exiler des cartes de créature de votre cimetière",
+              prompt: "You may exile creature cards from your graveyard",
             },
           ),
-          // « Quand vous le faites » : capacité réflexive, X étant le nombre de cartes exilées.
+          // "When you do": reflexive ability, X being the number of exiled cards.
           ...fx.when(
             cond.v("ex"),
             fx.reflexive(
@@ -360,7 +360,7 @@ export const BLACK: Record<string, CardScript> = {
             ),
           ),
         ],
-        { label: "Exilez des cartes de créature : les autres créatures prennent -X/-X" },
+        { label: "Exile creature cards: the other creatures get -X/-X" },
       ),
     ],
   },
@@ -368,7 +368,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, createRole(CURSED_ROLE), {
         targets: [YOUR_CREATURE("t")],
-        label: "Un Rôle Maudit sur une créature que vous contrôlez",
+        label: "A Cursed Role on a creature you control",
       }),
     ],
   },
@@ -376,22 +376,27 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
         targets: [
-          target.permanent("t", ["Creature"], { controller: "opponent", damaged: true }, "créature adverse blessée ce tour-ci"),
+          target.permanent(
+            "t",
+            ["Creature"],
+            { controller: "opponent", damaged: true },
+            "creature an opponent controls that was dealt damage this turn",
+          ),
         ],
-        label: "Détruisez une créature adverse blessée ce tour-ci",
+        label: "Destroy a creature an opponent controls that was dealt damage this turn",
       }),
     ],
   },
   "Sugar Rush": { spell: spell([target.creature()], [fx.pump(ref.target(), 3, 0), fx.draw(1)]) },
   "Sweettooth Witch": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Une Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food" }),
       activated({
         mana: "{2}",
         sacrificeOther: { filter: { subtype: "Food" } },
         targets: [target.player()],
         effects: [fx.loseLife(2, ref.target())],
-        label: "Le joueur ciblé perd 2 PV",
+        label: "Target player loses 2 life",
       }),
     ],
   },
@@ -404,36 +409,36 @@ export const BLACK: Record<string, CardScript> = {
   "Virtue of Persistence": {
     abilities: [
       triggered(when.yourUpkeep, [fx.toBattlefield(ref.target(), { underYourControl: true })], {
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière")],
-        label: "Une carte de créature d'un cimetière arrive sous votre contrôle",
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card in a graveyard")],
+        label: "A creature card from a graveyard enters under your control",
       }),
     ],
   },
   "Locthwain Scorn": { spell: spell([target.creature()], [fx.pump(ref.target(), -3, -3), fx.gainLife(2)]) },
   "Voracious Vermin": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(RAT_NO_BLOCK)], { label: "Un Rat 1/1 qui ne peut pas bloquer" }),
+      triggered(when.entersSelf, [fx.createTokens(RAT_NO_BLOCK)], { label: "A 1/1 Rat that can't block" }),
       triggered(when.dies({ types: ["Creature"], controller: "you", other: true }), [fx.addCounters(ref.self, 1)], {
-        label: "Une autre de vos créatures meurt : un marqueur +1/+1",
+        label: "Another creature you control dies: a +1/+1 counter",
       }),
     ],
   },
   "Warehouse Tabby": {
     abilities: [
       triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.createTokens(RAT_NO_BLOCK)], {
-        label: "Un de vos enchantements au cimetière : un Rat",
+        label: "One of your enchantments to the graveyard: a Rat",
       }),
       activated({
         mana: "{1}{B}",
         effects: [fx.pump(ref.self, 0, 0, ["deathtouch"])],
-        label: "Contact mortel jusqu'à la fin du tour",
+        label: "Deathtouch until end of turn",
       }),
     ],
   },
   "Wicked Visitor": {
     abilities: [
       triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.loseLife(1, ref.eachOpponent)], {
-        label: "Un de vos enchantements au cimetière : chaque adversaire perd 1 PV",
+        label: "One of your enchantments to the graveyard: each opponent loses 1 life",
       }),
     ],
   },
@@ -441,12 +446,12 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       chapter([1], [fx.destroy(ref.target())], {
         targets: [target.creature("t", { controller: "opponent", maxManaValue: 2 })],
-        label: "Détruisez une créature adverse de VM 2 ou moins",
+        label: "Destroy a creature an opponent controls with MV 2 or less",
       }),
-      chapter([2], [fx.createTokens(FOOD)], { label: "Une Nourriture" }),
+      chapter([2], [fx.createTokens(FOOD)], { label: "A Food" }),
       chapter([3], createRole(WICKED_ROLE), {
         targets: [YOUR_CREATURE("t")],
-        label: "Un Rôle Méchant sur une créature que vous contrôlez",
+        label: "A Wicked Role on a creature you control",
       }),
     ],
   },
@@ -454,7 +459,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       entersWith({
         counters: amount.yourCreaturesDiedThisTurn,
-        label: "Un marqueur +1/+1 par créature morte sous votre contrôle ce tour-ci",
+        label: "A +1/+1 counter for each creature that died under your control this turn",
       }),
     ],
   },
@@ -474,27 +479,27 @@ export const BLACK: Record<string, CardScript> = {
           fx.sacrifice(ref.you, ARTIFACT_ENCHANTMENT_TOKEN, 1, { optional: true, store: "s" }),
           ...fx.when(cond.not(cond.v("s")), fx.tap(ref.self)),
         ],
-        { label: "Sacrifiez un artefact, un enchantement ou un jeton ; sinon, engagez-la" },
+        { label: "Sacrifice an artifact, an enchantment or a token; otherwise, tap it" },
       ),
     ],
   },
   "Have for Dinner": { spell: spell([], [fx.createTokens(HUMAN_W), fx.createTokens(FOOD)]) },
   "Spellscorn Coven": {
-    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Chaque adversaire défausse une carte" })],
+    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Each opponent discards a card" })],
   },
   "Take It Back": { spell: spell([target.spell()], [fx.bounce(ref.target())]) },
   "Experimental Confectioner": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Une Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food" }),
       triggered(when.sacrifice({ subtype: "Food" }), [fx.createTokens(RAT_NO_BLOCK)], {
-        label: "Vous sacrifiez une Nourriture : un Rat",
+        label: "You sacrifice a Food: a Rat",
       }),
     ],
   },
   "Malevolent Witchkite": {
     abilities: [
       triggered(when.entersSelf, [sacrificeAnyNumber("n"), fx.draw(amount.v("n"))], {
-        label: "Sacrifiez des artefacts, enchantements et/ou jetons, puis piochez autant",
+        label: "Sacrifice artifacts, enchantments and/or tokens, then draw that many",
       }),
     ],
   },
@@ -502,13 +507,13 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.eachEndStep, [fx.createTokens(FOOD)], {
         condition: cond.morbid,
-        label: "Une créature est morte ce tour-ci : une Nourriture",
+        label: "A creature died this turn: a Food",
       }),
       activated({
         mana: "{2}{B}",
         sacrificeOther: { filter: { types: ["Creature", "Artifact"], other: true } },
         effects: [fx.pump(ref.self, 2, 2)],
-        label: "+2/+2 jusqu'à la fin du tour",
+        label: "+2/+2 until end of turn",
       }),
     ],
   },

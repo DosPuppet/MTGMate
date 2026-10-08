@@ -9,6 +9,7 @@ import { bump, chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { payableLife, playerProtectedFrom } from "../src/statics";
+import { plainText } from "../src/text";
 import type { ActionOption, CardDef, ChoiceRequest, GameState, ObjectId, PlayerId } from "../src/types";
 import {
   act,
@@ -59,7 +60,7 @@ const handNames = (s: GameState, player: PlayerId) => namesIn(s, s.players[playe
 const modeNamed = (label: string) => (req: ChoiceRequest) =>
   req.type === "pick" && req.intent === "triggerMode"
     ? Object.entries(req.labels ?? {})
-        .filter(([, l]) => l === label)
+        .filter(([, l]) => plainText(l) === label)
         .map(([k]) => k)
     : undefined;
 /** p2 lance un Shock sur p1, puis p1 a la priorité. */
@@ -116,7 +117,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Teferi's Protection") }));
       expect(payableLife(s, "p1")).toBe(0);
       const deluge = idOf(s, "p1", "hand", "Toxic Deluge");
-      expect(() => act(s, "p1", { type: "cast", card: deluge, x: 2 })).toThrow(/points de vie/);
+      expect(() => act(s, "p1", { type: "cast", card: deluge, x: 2 })).toThrow(/Not enough life/);
       s = settle(act(s, "p1", { type: "cast", card: deluge, x: 0 }));
       expect(s.players.p1?.life).toBe(20);
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
@@ -326,7 +327,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       const farewell = idOf(s, "p1", "hand", "Farewell");
       const modes = castOptions(s, "p1", farewell).flatMap((o) => o.modes);
       expect(modes).toHaveLength(15);
-      const both = modes.find((m) => m.label === "Exilez toutes les créatures + Exilez tous les cimetières");
+      const both = modes.find((m) => plainText(m.label ?? "") === "Exile all creatures + Exile all graveyards");
       s = settle(act(s, "p1", { type: "cast", card: farewell, mode: both?.index }));
       expect(exiled(s, "Bear Cub")).toHaveLength(1);
       expect(exiled(s, "Shock")).toHaveLength(1);
@@ -401,7 +402,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       let s = scenario({ step: "upkeep", p1: { battlefield: ["Black Market Connections"], library: lands("Swamp", 5) } });
       s = advanceUntil(s, (x) => x.pending?.kind === "choice");
       expect(s.turn.step).toBe("main1");
-      s = settle(s, modeNamed("Trésor, 1 PV + Piochez, 2 PV + Changelin 3/2, 3 PV"));
+      s = settle(s, modeNamed("Treasure, 1 life + Draw, 2 life + 3/2 Shapeshifter, 3 life"));
       expect(s.players.p1?.life).toBe(14);
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
       const shifter = tokens(s, "p1", "Shapeshifter")[0] as string;

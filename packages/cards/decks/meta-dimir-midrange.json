@@ -1,7 +1,10 @@
 {
   "id": "meta-dimir-midrange",
   "name": "Dimir Midrange",
-  "description": "Méta Standard (8,3 %). Bleu-noir : créatures efficaces avec le flash et le vol, Kaito et Enduring Curiosity, soutenues par des contresorts et du retrait bon marché.",
+  "description": "Standard metagame (8.3%). Blue-black: efficient creatures with flash and flying, Kaito and Enduring Curiosity, backed by counterspells and cheap removal.",
+  "fr": {
+    "description": "Méta Standard (8,3 %). Bleu-noir : créatures efficaces avec le flash et le vol, Kaito et Enduring Curiosity, soutenues par des contresorts et du retrait bon marché."
+  },
   "colors": [
     "U",
     "B"

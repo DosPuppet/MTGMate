@@ -13,6 +13,7 @@ import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { spellCost } from "../src/stack";
 import { chars, setPrepared } from "../src/state";
+import { plainText } from "../src/text";
 import { simultaneously } from "../src/triggers";
 import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
@@ -351,17 +352,15 @@ describe("Reality Fracture, lot D : Empower Jace", () => {
     const jace = jaces(s)[0] as string;
     expect(loyaltyOf(s, jace)).toBe(1);
     // [−1] surveillance : Jace tombe à 0 mais reste (Sanctum Lurker).
-    const surveil = legalActions(s, "p1").find(
-      (a) => a.type === "activate" && a.source === jace && a.label?.includes("Surveillance"),
-    );
+    const surveil = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === jace && a.label?.includes("Surveil"));
     expect(surveil).toBeDefined();
     s = act(s, "p1", { type: "activate", source: jace, ability: (surveil as { ability: number }).ability });
     expect(s.objects[jace]?.zone).toBe("battlefield");
     expect(loyaltyOf(s, jace)).toBe(0);
     // Capacités accordées : [+2] (Lurker) et [−4] (Wildspeaker) sur le jeton.
     const labels = chars(s, jace).abilities.map((a) => (a.kind === "activated" ? a.label : ""));
-    expect(labels.some((l) => l?.startsWith("+2"))).toBe(true);
-    expect(labels.some((l) => l?.startsWith("−4"))).toBe(true);
+    expect(labels.some((l) => plainText(l ?? "").startsWith("+2"))).toBe(true);
+    expect(labels.some((l) => plainText(l ?? "").startsWith("−4"))).toBe(true);
   });
 
   it("Jace's Machinations : les capacités de loyauté des Jace à vitesse d'éphémère, pendant le tour adverse", () => {
@@ -415,7 +414,9 @@ describe("Reality Fracture, lot E : planeswalkers", () => {
     let s = scenario({ p1: { battlefield: ["Ajani Resolute"] } });
     const ajani = idOf(s, "p1", "battlefield", "Ajani Resolute");
     expect(s.objects[ajani]?.counters.loyalty).toBe(2);
-    const zero = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ajani && a.label?.startsWith("0"));
+    const zero = legalActions(s, "p1").find(
+      (a) => a.type === "activate" && a.source === ajani && plainText(a.label ?? "").startsWith("0"),
+    );
     s = act(s, "p1", { type: "activate", source: ajani, ability: (zero as { ability: number }).ability });
     s = passBoth(s); // +1 PV
     s = passBoth(s); // déclencheur : loyauté
@@ -426,7 +427,9 @@ describe("Reality Fracture, lot E : planeswalkers", () => {
   it("Ajani Unrelenting : « chaque fois que vous activez une capacité de loyauté », un Cadet ; Kiora voit l'activation", () => {
     let s = scenario({ p1: { battlefield: ["Ajani Unrelenting"] } });
     const ajani = idOf(s, "p1", "battlefield", "Ajani Unrelenting");
-    const plus = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ajani && a.label?.startsWith("+1"));
+    const plus = legalActions(s, "p1").find(
+      (a) => a.type === "activate" && a.source === ajani && plainText(a.label ?? "").startsWith("+1"),
+    );
     s = act(s, "p1", { type: "activate", source: ajani, ability: (plus as { ability: number }).ability });
     expect(s.turnLog.filter((e) => e.e === "activate" && e.loyalty && e.player === "p1")).toHaveLength(1);
     for (let i = 0; i < 4 && s.stack.length; i++) s = passBoth(s);
@@ -620,13 +623,15 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
   /** Active la capacité de `source` dont le libellé commence par `label` (la première, sans libellé). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const opt = legalActions(s, player).find(
-      (a) => a.type === "activate" && a.source === source && (!label || a.label?.startsWith(label)),
+      (a) => a.type === "activate" && a.source === source && (!label || plainText(a.label ?? "").startsWith(label)),
     );
     if (opt?.type !== "activate") throw new Error(`capacité « ${label ?? "?"} » introuvable`);
     return act(s, player, { type: "activate", source, ability: opt.ability, ...extra });
   };
   const canUse = (s: S, player: string, source: string, label?: string) =>
-    legalActions(s, player).some((a) => a.type === "activate" && a.source === source && (!label || a.label?.startsWith(label)));
+    legalActions(s, player).some(
+      (a) => a.type === "activate" && a.source === source && (!label || plainText(a.label ?? "").startsWith(label)),
+    );
   const life = (s: S, p: string) => s.players[p]?.life;
   const handOf = (s: S, p: string) => namesIn(s, s.players[p]?.hand);
   const graveOf = (s: S, p: string) => namesIn(s, s.players[p]?.graveyard);
@@ -1180,7 +1185,7 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       expect(graveOf(run(false), "p2")).toEqual([]);
       let t = scenario({ p1: { battlefield: ["Lich's Relic", "Bear Cub", ...lands("Swamp", 2)] } });
       const bear = idOf(t, "p1", "battlefield", "Bear Cub");
-      t = resolve(activate(t, "p1", idOf(t, "p1", "battlefield", "Lich's Relic"), "Équiper", { targets: { t: [bear] } }));
+      t = resolve(activate(t, "p1", idOf(t, "p1", "battlefield", "Lich's Relic"), "Equip", { targets: { t: [bear] } }));
       expect(pt(t, bear)).toEqual([4, 3]);
     });
 
@@ -1555,7 +1560,7 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       t = act(t, "p1", { type: "playLand", card: idOf(t, "p1", "hand", "Theorist's Sanctum") });
       expect(t.objects[idOf(t, "p1", "battlefield", "Theorist's Sanctum")]?.tapped).toBe(false);
       let u = scenario({ p1: { battlefield: ["Theorist's Sanctum", ...lands("Island", 3)] } });
-      u = resolve(activate(u, "p1", idOf(u, "p1", "battlefield", "Theorist's Sanctum"), "Renforcez"));
+      u = resolve(activate(u, "p1", idOf(u, "p1", "battlefield", "Theorist's Sanctum"), "Empower"));
       expect(jaceLoyalty(u)).toBe(2);
     });
 
@@ -2178,7 +2183,7 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       const minusThree = (s: S) => {
         const garruk = idOf(s, "p1", "battlefield", "Garruk, Veiled Butcher");
         const ability = chars(s, garruk).abilities.findIndex(
-          (ab) => ab.kind === "activated" && !!ab.label?.includes("Chaque adversaire"),
+          (ab) => ab.kind === "activated" && !!ab.label?.includes("Each opponent"),
         );
         return resolve(act(s, "p1", { type: "activate", source: garruk, ability }));
       };
@@ -2238,14 +2243,14 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === arena && a.colors.includes("C"))).toBe(
         true,
       );
-      expect(canUse(s, "p1", arena, "Une créature qui a attaqué")).toBe(false);
-      s = resolve(activate(s, "p1", arena, "Une créature devient", { targets: { t: [mage] } }));
+      expect(canUse(s, "p1", arena, "A creature that attacked")).toBe(false);
+      s = resolve(activate(s, "p1", arena, "A creature becomes", { targets: { t: [mage] } }));
       expect(prepared(s, mage)).toBe(true);
       let t = scenario({ p1: { battlefield: ["Hexhaven Dueling Arena", "Pompous Battlemage", ...lands("Mountain", 2)] } });
       const mage2 = idOf(t, "p1", "battlefield", "Pompous Battlemage");
       t = attackThrough(t, [mage2]);
       t = resolve(
-        activate(t, "p1", idOf(t, "p1", "battlefield", "Hexhaven Dueling Arena"), "Une créature qui a attaqué", {
+        activate(t, "p1", idOf(t, "p1", "battlefield", "Hexhaven Dueling Arena"), "A creature that attacked", {
           targets: { t: [mage2] },
         }),
       );
@@ -2255,7 +2260,7 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
     it("Hunter's Axe : +2/+0 ; en attaquant, la créature équipée gagne au choix le piétinement ou le contact mortel", () => {
       let s = scenario({ p1: { battlefield: ["Hunter's Axe", "Bear Cub", ...lands("Forest", 2)] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Hunter's Axe"), "Équiper", { targets: { t: [bear] } }));
+      s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Hunter's Axe"), "Equip", { targets: { t: [bear] } }));
       expect(pt(s, bear)).toEqual([4, 2]);
       const run = (trample: boolean) => {
         const t = settleNoBlocks(attack(s, [bear]), answering(trample));
@@ -3020,7 +3025,7 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
         p1: { battlefield: ["Warrior's Blades", { name: "Bear Cub", counters: { "+1/+1": 2 } }, "Plains", "Plains"] },
       });
       const bear = idOf(t, "p1", "battlefield", "Bear Cub");
-      t = resolve(activate(t, "p1", idOf(t, "p1", "battlefield", "Warrior's Blades"), "Équiper", { targets: { t: [bear] } }));
+      t = resolve(activate(t, "p1", idOf(t, "p1", "battlefield", "Warrior's Blades"), "Equip", { targets: { t: [bear] } }));
       expect(t.battlefield.filter((id) => t.objects[id]?.tapped)).toHaveLength(1);
       expect(pt(t, bear)).toEqual([6, 5]);
     });
@@ -3095,7 +3100,7 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
     it("Way of the Cryomancer : renforcez Jace 5 ; [−3] : le prochain éphémère ou rituel lancé ce tour-ci est copié", () => {
       let { s, jace } = castWay("Way of the Cryomancer", "Island", 3, { hand: ["Shock"], battlefield: ["Mountain"] });
       expect(s.objects[jace]?.counters.loyalty).toBe(5);
-      s = resolve(activate(s, "p1", jace, "−3 : Copier"));
+      s = resolve(activate(s, "p1", jace, "−3: Copy"));
       expect(s.objects[jace]?.counters.loyalty).toBe(2);
       s = resolve(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
       expect(life(s, "p2")).toBe(16);

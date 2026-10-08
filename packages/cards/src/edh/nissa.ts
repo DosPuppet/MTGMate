@@ -1,8 +1,8 @@
 /**
- * Commander : deck « Nissa, Non-Green Animist (Landfall w/ Big Creatures) » (Nissa, Leyline Tamer ; blanc, bleu, noir,
- * rouge). Toucheterre (Retraites, Emeria, Ob Nixilis, Roil Elemental, Ruin Crab, Valakut Exploration), terrains rejoués
- * (Crucible of Worlds, Trade Routes, Walking Atlas, Oboro), dessus de bibliothèque ordonné (Ponder, Portent, Sensei's
- * Divining Top, Scroll Rack) et grandes créatures (Avacyn, Elesh Norn, Hullbreaker Horror, Nezahal, Agent of Treachery).
+ * Commander: "Nissa, Non-Green Animist (Landfall w/ Big Creatures)" deck (Nissa, Leyline Tamer; white, blue, black,
+ * red). Landfall (Retreats, Emeria, Ob Nixilis, Roil Elemental, Ruin Crab, Valakut Exploration), replayed lands
+ * (Crucible of Worlds, Trade Routes, Walking Atlas, Oboro), ordered top of library (Ponder, Portent, Sensei's Divining
+ * Top, Scroll Rack) and big creatures (Avacyn, Elesh Norn, Hullbreaker Horror, Nezahal, Agent of Treachery).
  */
 import type { CardScript, ObjectFilter, Ref } from "@mtgx/engine";
 import {
@@ -26,35 +26,35 @@ import {
 } from "./common";
 
 const LEGENDARY_CREATURES_YOU: ObjectFilter = { types: ["Creature"], legendary: true, controller: "you" };
-/** « Regardez les N cartes du dessus, puis remettez-les dans l'ordre de votre choix » (rien n'est pris). */
+/** "Look at the top N cards, then put them back in any order" (nothing is taken). */
 const reorderTop = (n: number, who?: Ref) => fx.lookAtTop(n, { count: 0, rest: "reorder", ...(who ? { who } : {}) });
 
 export const EDH_NISSA: Record<string, CardScript> = {
-  // --- Grandes créatures ---------------------------------------------------------------------------------------------
+  // --- Big creatures --------------------------------------------------------------------------------------------------
   "Agent of Treachery": {
     abilities: [
       triggered(when.entersSelf, [fx.gainControl(ref.target())], {
         targets: [target.permanent("t", [], {}, "permanent")],
-        label: "Gagnez le contrôle du permanent ciblé",
+        label: "Gain control of target permanent",
       }),
-      // « S'il … » : vérifié au déclenchement et à la résolution (603.4).
+      // "If …": checked on trigger and on resolution (603.4).
       triggered(when.yourEndStep, [fx.draw(3)], {
         condition: cond.controls({ controller: "you", owner: "opponent" }, 3),
-        label: "Trois permanents ou plus que vous ne possédez pas : piochez trois cartes",
+        label: "Three or more permanents you don't own: draw three cards",
       }),
     ],
   },
-  // Vol, vigilance, indestructible : lus dans le texte.
+  // Flying, vigilance, indestructible: read from the text.
   "Avacyn, Angel of Hope": {
     abilities: [
       staticAbility(
         { controller: "you", other: true },
         { addKeywords: ["indestructible"] },
-        { label: "Vos autres permanents ont l'indestructible" },
+        { label: "Your other permanents have indestructible" },
       ),
     ],
   },
-  // Émerger d'un artefact : lu dans le texte (sacrifice d'un artefact, coût réduit de sa valeur de mana).
+  // Emerge from artifact: read from the text (sacrifice an artifact, cost reduced by its mana value).
   Crabomination: {
     abilities: [
       triggered(
@@ -67,33 +67,33 @@ export const EDH_NISSA: Record<string, CardScript> = {
         ],
         {
           targets: [target.player("p", "opponent")],
-          label: "L'adversaire ciblé exile le dessus de sa bibliothèque, une carte au hasard de son cimetière et de sa main",
+          label: "Target opponent exiles the top of their library, a card at random from their graveyard and from their hand",
         },
       ),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Elesh Norn, Mother of Machines": {
     abilities: [
       playerStatic({
         triggerMod: { effect: "again", on: "enter" },
-        label: "Les arrivées font se déclencher vos capacités une fois de plus",
+        label: "Permanents entering cause your abilities to trigger an additional time",
       }),
       playerStatic({
         triggerMod: { effect: "none", on: "enter", sources: { controller: "opponent" } },
-        label: "Les arrivées ne déclenchent pas les capacités des permanents de vos adversaires",
+        label: "Permanents entering don't cause abilities of permanents your opponents control to trigger",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Emeria Angel": {
     abilities: [
-      triggered(when.landfall, fx.may("Créer un jeton Oiseau 1/1 avec le vol ?", fx.createTokens(BIRD_W)), {
-        label: "Toucheterre — jeton Oiseau 1/1 avec le vol",
+      triggered(when.landfall, fx.may("Create a 1/1 Bird token with flying?", fx.createTokens(BIRD_W)), {
+        label: "Landfall — 1/1 Bird token with flying",
       }),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Emeria Shepherd": {
     abilities: [
       triggered(
@@ -101,52 +101,50 @@ export const EDH_NISSA: Record<string, CardScript> = {
         [
           ...fx.when(
             cond.eventObjectMatches({ subtype: "Plains" }),
-            fx.yourChoice("Emeria Shepherd : la carte ciblée…", "es", [
-              { label: "Sur le champ de bataille", effects: [fx.toBattlefield(ref.target())] },
-              { label: "Dans votre main", effects: [fx.toHand(ref.target())] },
-              { label: "Reste dans le cimetière", effects: [] },
+            fx.yourChoice("Emeria Shepherd: target card…", "es", [
+              { label: "Onto the battlefield", effects: [fx.toBattlefield(ref.target())] },
+              { label: "Into your hand", effects: [fx.toHand(ref.target())] },
+              { label: "Stays in the graveyard", effects: [] },
             ]),
           ),
           ...fx.when(
             cond.not(cond.eventObjectMatches({ subtype: "Plains" })),
-            fx.may("Renvoyer la carte ciblée dans votre main ?", fx.toHand(ref.target())),
+            fx.may("Return target card to your hand?", fx.toHand(ref.target())),
           ),
         ],
         {
-          targets: [
-            target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "carte de permanent non-terrain"),
-          ],
-          label: "Toucheterre — une carte de permanent non-terrain revient (sur le champ de bataille avec une Plaine)",
+          targets: [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "nonland permanent card")],
+          label: "Landfall — a nonland permanent card returns (onto the battlefield with a Plains)",
         },
       ),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Gandalf, Shadow's Foe": {
     abilities: [
       triggered(
         when.entersSelf,
         [fx.exileCard(ref.target(), { name: "f" }), fx.toBattlefield(ref.stored("f"), { tapped: true })],
         {
-          targets: [target.upTo(3, target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez"))],
-          label: "Exilez jusqu'à trois de vos terrains, puis renvoyez-les engagés",
+          targets: [target.upTo(3, target.permanent("t", ["Land"], { controller: "you" }, "land you control"))],
+          label: "Exile up to three of your lands, then return them tapped",
         },
       ),
       triggered(when.landfall, [fx.draw(1), fx.addCounters(ref.self, 1)], {
-        label: "Toucheterre — piochez une carte, un marqueur +1/+1 sur Gandalf",
+        label: "Landfall — draw a card, a +1/+1 counter on Gandalf",
       }),
     ],
   },
-  // Initiative : lue dans le texte.
+  // First strike: read from the text.
   "Geode Rager": {
     abilities: [
       triggered(when.landfall, [fx.goad(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }))], {
         targets: [target.player("p")],
-        label: "Toucheterre — provoquez chaque créature du joueur ciblé",
+        label: "Landfall — goad each creature target player controls",
       }),
     ],
   },
-  // Flash : lu dans le texte. « Choisissez jusqu'à un » : chaque mode a une cible facultative.
+  // Flash: read from the text. "Choose up to one": each mode has an optional target.
   "Hullbreaker Horror": {
     cantBeCountered: true,
     abilities: [
@@ -154,26 +152,26 @@ export const EDH_NISSA: Record<string, CardScript> = {
         when.castSpell("you"),
         [
           mode(
-            "Renvoyez un sort que vous ne contrôlez pas dans la main de son propriétaire",
-            [target.optional(target.spell("t", { controller: "opponent" }, "sort que vous ne contrôlez pas"))],
+            "Return a spell you don't control to its owner's hand",
+            [target.optional(target.spell("t", { controller: "opponent" }, "spell you don't control"))],
             [fx.bounce(ref.target())],
           ),
           mode(
-            "Renvoyez un permanent non-terrain dans la main de son propriétaire",
+            "Return a nonland permanent to its owner's hand",
             [target.optional(target.nonland("t"))],
             [fx.bounce(ref.target())],
           ),
         ],
-        { label: "Vous lancez un sort : renvoyez un sort adverse ou un permanent non-terrain" },
+        { label: "You cast a spell: return an opposing spell or a nonland permanent" },
       ),
     ],
   },
   "Nezahal, Primal Tide": {
     cantBeCountered: true,
     abilities: [
-      playerStatic({ maxHandSize: "none", label: "Pas de taille maximale de main" }),
+      playerStatic({ maxHandSize: "none", label: "You have no maximum hand size" }),
       triggered(when.castSpell("opponent", { notTypes: ["Creature"] }), [fx.draw(1)], {
-        label: "Un adversaire lance un sort non-créature : piochez une carte",
+        label: "An opponent casts a noncreature spell: draw a card",
       }),
       activated({
         discard: 3,
@@ -181,7 +179,7 @@ export const EDH_NISSA: Record<string, CardScript> = {
           fx.exileCard(ref.self, { name: "n" }),
           fx.delayed([fx.toBattlefield(ref.target("k"), { tapped: true })], { k: ref.stored("n") }),
         ],
-        label: "Défaussez trois cartes : exilez Nezahal, il revient engagé à la prochaine étape de fin",
+        label: "Discard three cards: exile Nezahal, it returns tapped at the next end step",
       }),
     ],
   },
@@ -189,29 +187,29 @@ export const EDH_NISSA: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.landfall,
-        fx.may("Le joueur ciblé perd 3 PV et Ob Nixilis reçoit trois marqueurs +1/+1 ?", fx.loseLife(3, ref.target("p")), [
+        fx.may("Target player loses 3 life and Ob Nixilis gets three +1/+1 counters?", fx.loseLife(3, ref.target("p")), [
           fx.addCounters(ref.self, 3),
         ]),
-        { targets: [target.player("p")], label: "Toucheterre — 3 PV perdus, trois marqueurs +1/+1" },
+        { targets: [target.player("p")], label: "Landfall — 3 life lost, three +1/+1 counters" },
       ),
     ],
   },
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Roil Elemental": {
     abilities: [
       triggered(
         when.landfall,
         fx.may(
-          "Gagner le contrôle de la créature ciblée tant que vous contrôlez Roil Elemental ?",
+          "Gain control of target creature for as long as you control Roil Elemental?",
           fx.gainControlWhileSource(ref.target()),
         ),
-        { targets: [target.creature()], label: "Toucheterre — gagnez le contrôle d'une créature" },
+        { targets: [target.creature()], label: "Landfall — gain control of a creature" },
       ),
     ],
   },
   "Ruin Crab": {
     abilities: [
-      triggered(when.landfall, [fx.mill(3, ref.eachOpponent)], { label: "Toucheterre — chaque adversaire meule trois cartes" }),
+      triggered(when.landfall, [fx.mill(3, ref.eachOpponent)], { label: "Landfall — each opponent mills three cards" }),
     ],
   },
   "Walking Atlas": {
@@ -223,32 +221,32 @@ export const EDH_NISSA: Record<string, CardScript> = {
             "hand",
             { types: ["Land"] },
             { to: "battlefield" },
-            { min: 0, prompt: "Mettez une carte de terrain de votre main sur le champ de bataille" },
+            { min: 0, prompt: "Put a land card from your hand onto the battlefield" },
           ),
         ],
-        label: "Vous pouvez mettre un terrain de votre main sur le champ de bataille",
+        label: "You may put a land from your hand onto the battlefield",
       }),
     ],
   },
 
-  // --- Enchantements -------------------------------------------------------------------------------------------------
+  // --- Enchantments -------------------------------------------------------------------------------------------------
   "Retreat to Coralhelm": {
     abilities: [
       triggeredModal(
         when.landfall,
         [
           mode(
-            "Vous pouvez engager ou dégager la créature ciblée",
+            "You may tap or untap target creature",
             [target.creature()],
-            fx.yourChoice("Retreat to Coralhelm : la créature ciblée…", "rc", [
-              { label: "Dégager", effects: [fx.untap(ref.target())] },
-              { label: "Engager", effects: [fx.tap(ref.target())] },
-              { label: "Ne rien faire", effects: [] },
+            fx.yourChoice("Retreat to Coralhelm: target creature…", "rc", [
+              { label: "Untap", effects: [fx.untap(ref.target())] },
+              { label: "Tap", effects: [fx.tap(ref.target())] },
+              { label: "Do nothing", effects: [] },
             ]),
           ),
-          mode("Regard 1", [], [fx.scry(1)]),
+          mode("Scry 1", [], [fx.scry(1)]),
         ],
-        { label: "Toucheterre — engager ou dégager une créature, ou regard 1" },
+        { label: "Landfall — tap or untap a creature, or scry 1" },
       ),
     ],
   },
@@ -258,13 +256,13 @@ export const EDH_NISSA: Record<string, CardScript> = {
         when.landfall,
         [
           mode(
-            "La créature ciblée gagne +1/+0 et le contact mortel",
+            "Target creature gets +1/+0 and gains deathtouch",
             [target.creature()],
             [fx.pump(ref.target(), 1, 0, ["deathtouch"])],
           ),
-          mode("Chaque adversaire perd 1 PV et vous gagnez 1 PV", [], [fx.loseLife(1, ref.eachOpponent), fx.gainLife(1)]),
+          mode("Each opponent loses 1 life; you gain 1 life", [], [fx.loseLife(1, ref.eachOpponent), fx.gainLife(1)]),
         ],
-        { label: "Toucheterre — +1/+0 et contact mortel, ou drain de 1" },
+        { label: "Landfall — +1/+0 and deathtouch, or drain 1" },
       ),
     ],
   },
@@ -272,28 +270,28 @@ export const EDH_NISSA: Record<string, CardScript> = {
     abilities: [
       activated({
         mana: "{1}",
-        targets: [target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez")],
+        targets: [target.permanent("t", ["Land"], { controller: "you" }, "land you control")],
         effects: [fx.toHand(ref.target())],
-        label: "Renvoyez un de vos terrains dans la main de son propriétaire",
+        label: "Return a land you control to its owner's hand",
       }),
       activated({
         mana: "{1}",
         discard: 1,
         discardFilter: { types: ["Land"] },
         effects: [fx.draw(1)],
-        label: "Défaussez une carte de terrain : piochez une carte",
+        label: "Discard a land card: draw a card",
       }),
     ],
   },
-  // Les cartes exilées sont liées à l'enchantement (« exilées avec cet enchantement ») et restent jouables tant qu'elles
-  // restent exilées, même s'il quitte le champ de bataille.
+  // The exiled cards are linked to the enchantment ("exiled with this enchantment") and stay playable as long as they
+  // remain exiled, even if it leaves the battlefield.
   "Valakut Exploration": {
     abilities: [
       triggered(
         when.landfall,
         [fx.exileTop(ref.you, 1, "v"), fx.link(ref.stored("v")), fx.grantPlay(ref.stored("v"), { forever: true })],
         {
-          label: "Toucheterre — exilez la carte du dessus ; vous pouvez la jouer tant qu'elle reste exilée",
+          label: "Landfall — exile the top card; you may play it for as long as it remains exiled",
         },
       ),
       triggered(
@@ -301,19 +299,17 @@ export const EDH_NISSA: Record<string, CardScript> = {
         [fx.moveTo(ref.linked, { to: "graveyard" }, { name: "g" }), fx.damage(amount.v("g"), ref.eachOpponent)],
         {
           condition: cond.amountAtLeast(amount.refCount(ref.linked), 1),
-          label: "Les cartes exilées vont au cimetière : autant de blessures à chaque adversaire",
+          label: "The exiled cards go to the graveyard: that much damage to each opponent",
         },
       ),
     ],
   },
 
-  // --- Artefacts -----------------------------------------------------------------------------------------------------
+  // --- Artifacts -----------------------------------------------------------------------------------------------------
   "Crucible of Worlds": {
-    abilities: [
-      playerStatic({ playFrom: { zone: "graveyard", what: "lands" }, label: "Jouez des terrains depuis votre cimetière" }),
-    ],
+    abilities: [playerStatic({ playFrom: { zone: "graveyard", what: "lands" }, label: "Play lands from your graveyard" })],
   },
-  // Les cartes exilées face cachée reviennent au-dessus, puis sont remises dans l'ordre de votre choix.
+  // The cards exiled face down return on top, then are put back in any order.
   "Scroll Rack": {
     abilities: [
       activated({
@@ -328,24 +324,24 @@ export const EDH_NISSA: Record<string, CardScript> = {
               count: amount.cardsIn("hand"),
               min: 0,
               store: "r",
-              prompt: "Exilez face cachée un nombre quelconque de cartes de votre main",
+              prompt: "Exile any number of cards from your hand face down",
             },
           ),
           fx.lookAtTop(amount.v("r"), { count: amount.v("r"), exact: true, to: { to: "hand" } }),
           fx.moveTo(ref.stored("r"), { to: "libraryTop" }),
           fx.lookAtTop(amount.v("r"), { count: 0, rest: "reorder" }),
         ],
-        label: "Échangez des cartes de votre main contre autant de cartes du dessus de votre bibliothèque",
+        label: "Exchange cards from your hand for as many cards from the top of your library",
       }),
     ],
   },
   "Sensei's Divining Top": {
     abilities: [
-      activated({ mana: "{1}", effects: [reorderTop(3)], label: "Regardez les trois cartes du dessus et ordonnez-les" }),
+      activated({ mana: "{1}", effects: [reorderTop(3)], label: "Look at the top three cards and reorder them" }),
       activated({
         tap: true,
         effects: [fx.draw(1), fx.moveTo(ref.self, { to: "libraryTop" })],
-        label: "Piochez une carte, puis mettez cet artefact au-dessus de votre bibliothèque",
+        label: "Draw a card, then put this artifact on top of your library",
       }),
     ],
   },
@@ -356,21 +352,21 @@ export const EDH_NISSA: Record<string, CardScript> = {
         tap: true,
         sacrifice: true,
         effects: [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })],
-        label: "Cherchez une carte de terrain de base, mettez-la sur le champ de bataille engagée",
+        label: "Search for a basic land card, put it onto the battlefield tapped",
       }),
     ],
   },
 
-  // --- Rituels -------------------------------------------------------------------------------------------------------
+  // --- Sorceries ----------------------------------------------------------------------------------------------------
   Ponder: {
-    spell: spell([], [reorderTop(3), ...fx.may("Mélanger votre bibliothèque ?", fx.shuffle()), fx.draw(1)]),
+    spell: spell([], [reorderTop(3), ...fx.may("Shuffle your library?", fx.shuffle()), fx.draw(1)]),
   },
   Portent: {
     spell: spell(
       [target.player("p")],
       [
         reorderTop(3, ref.target("p")),
-        ...fx.may("Faire mélanger sa bibliothèque à ce joueur ?", fx.shuffle(ref.target("p"))),
+        ...fx.may("Have that player shuffle their library?", fx.shuffle(ref.target("p"))),
         fx.delayedAt("nextUpkeep", [fx.draw(1)]),
       ],
     ),
@@ -379,21 +375,21 @@ export const EDH_NISSA: Record<string, CardScript> = {
     spell: spell([target.exactly(2, target.player("p"))], [fx.search({}, { to: "libraryTop" }, 1, ref.target("p"))]),
   },
 
-  // --- Terrains ------------------------------------------------------------------------------------------------------
+  // --- Lands ---------------------------------------------------------------------------------------------------------
   "Boggart Trawler": {
     abilities: [
       triggered(when.entersSelf, [fx.moveTo(ref.graveyardOf(ref.target("p")), { to: "exile" })], {
         targets: [target.player("p")],
-        label: "Exilez le cimetière du joueur ciblé",
+        label: "Exile target player's graveyard",
       }),
     ],
   },
-  // « Vous pouvez payer 3 PV, sinon il arrive engagé » : lu dans le texte.
+  // "You may pay 3 life; if you don't, it enters tapped": read from the text.
   "Boggart Bog": { abilities: [manaAbility("B")] },
   "Eiganjo, Seat of the Empire": {
     abilities: [
       manaAbility("W"),
-      // Canalisation : depuis la main, en défaussant la carte ; {1} de moins par créature légendaire que vous contrôlez.
+      // Channel: from the hand, discarding the card; {1} less for each legendary creature you control.
       activated({
         mana: "{2}{W}",
         fromHand: true,
@@ -402,18 +398,18 @@ export const EDH_NISSA: Record<string, CardScript> = {
         targets: [
           {
             ...target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] }),
-            label: "créature attaquante ou bloqueuse",
+            label: "attacking or blocking creature",
           },
         ],
         effects: [fx.damage(4, ref.target())],
-        label: "Canalisation — 4 blessures à une créature attaquante ou bloqueuse",
+        label: "Channel — 4 damage to an attacking or blocking creature",
       }),
     ],
   },
   "Oboro, Palace in the Clouds": {
     abilities: [
       manaAbility("U"),
-      activated({ mana: "{1}", effects: [fx.toHand(ref.self)], label: "Renvoyez Oboro dans la main de son propriétaire" }),
+      activated({ mana: "{1}", effects: [fx.toHand(ref.self)], label: "Return Oboro to its owner's hand" }),
     ],
   },
   "Takenuma, Abandoned Mire": {
@@ -430,10 +426,10 @@ export const EDH_NISSA: Record<string, CardScript> = {
             "graveyard",
             { types: ["Creature", "Planeswalker"] },
             { to: "hand" },
-            { prompt: "Renvoyez une carte de créature ou de planeswalker de votre cimetière dans votre main" },
+            { prompt: "Return a creature or planeswalker card from your graveyard to your hand" },
           ),
         ],
-        label: "Canalisation — meulez trois cartes, puis une créature ou un planeswalker revient en main",
+        label: "Channel — mill three cards, then a creature or planeswalker returns to hand",
       }),
     ],
   },
@@ -441,20 +437,20 @@ export const EDH_NISSA: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.phaseOut(ref.target())], {
         targets: [target.upTo(1, target.creature())],
-        label: "Jusqu'à une créature ciblée est mise hors phase",
+        label: "Up to one target creature phases out",
       }),
       manaAbility("C"),
       activated({
         mana: "{1}",
         tap: true,
         effects: [fx.addManaChoice(1, ANY_COLOR)],
-        label: "Un mana de n'importe quelle couleur",
+        label: "One mana of any color",
       }),
       activated({
         mana: "{4}",
         fromHand: true,
         effects: [fx.toBattlefield(ref.selfCard)],
-        label: "Mettez cette carte de votre main sur le champ de bataille",
+        label: "Put this card from your hand onto the battlefield",
       }),
     ],
   },

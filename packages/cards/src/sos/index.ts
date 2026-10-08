@@ -1,4 +1,4 @@
-/** Secrets of Strixhaven (SOS) : Repartee, Infusion, Opus, Increment, préparation, convergence, Paradigme. */
+/** Secrets of Strixhaven (SOS): Repartee, Infusion, Opus, Increment, prepare, converge, Paradigm. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

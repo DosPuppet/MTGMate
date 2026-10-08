@@ -1,7 +1,10 @@
 {
   "id": "meta-mono-green-landfall",
   "name": "Mono-Green Landfall",
-  "description": "Méta Standard (13,4 %). Vert : des terrains à chaque tour (Passages, Tunnel, Ba Sing Se) qui déclenchent Earthbender Ascension, Sapling Nursery et les créatures qui grandissent.",
+  "description": "Standard metagame (13.4%). Green: lands every turn (Passages, Tunnel, Ba Sing Se) that trigger Earthbender Ascension, Sapling Nursery and the creatures that grow.",
+  "fr": {
+    "description": "Méta Standard (13,4 %). Vert : des terrains à chaque tour (Passages, Tunnel, Ba Sing Se) qui déclenchent Earthbender Ascension, Sapling Nursery et les créatures qui grandissent."
+  },
   "colors": [
     "G"
   ],

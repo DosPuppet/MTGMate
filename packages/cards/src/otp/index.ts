@@ -1,6 +1,6 @@
 /**
- * Breaking News (OTP) : rééditions sorties avec Outlaws of Thunder Junction.
- * Hors Standard, jouables en « Sans limite » (PLAN-G) ; scripts ajoutés lot par lot.
+ * Breaking News (OTP): reprints released with Outlaws of Thunder Junction.
+ * Not Standard-legal, playable in "Unlimited" (PLAN-G); scripts added lot by lot.
  */
 import type { CardScript } from "@mtgx/engine";
 import { CARDS } from "./cards";

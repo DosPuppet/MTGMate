@@ -112,7 +112,7 @@ describe("ObjectFilter.compare : comparaisons dynamiques (un champ retiré par t
       const src = idOf(s, "p1", "battlefield", "Loki Laufeyson");
       const option = legalActions(s, "p1").find(
         (a): a is Extract<ActionOption, { type: "activate" }> =>
-          a.type === "activate" && a.source === src && /prochain/.test(a.label ?? ""),
+          a.type === "activate" && a.source === src && /next/.test(a.label ?? ""),
       );
       s = settle(act(s, "p1", { type: "activate", source: src, ability: option?.ability ?? -1 }));
       return s.playerEffects.find((e) => e.ability.nextSpell)?.ability.nextSpell?.filter?.compare;

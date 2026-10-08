@@ -1,7 +1,7 @@
 /**
- * Comportement des cartes de Foundations (FDN), par couleur.
- * Les caractéristiques (coût, types, F/E, mots-clés) viennent de Scryfall ;
- * on ne décrit ici que ce qui ne se déduit pas des mots-clés.
+ * Behavior of the Foundations (FDN) cards, by color.
+ * Characteristics (cost, types, P/T, keywords) come from Scryfall;
+ * only what can't be deduced from the keywords is described here.
  */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";

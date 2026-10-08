@@ -1,4 +1,4 @@
-/** Marvel's Spider-Man (SPM) : Web-slinging, chaos (Mayhem), Héros et Méchants. */
+/** Marvel's Spider-Man (SPM): Web-slinging, Mayhem, Heroes and Villains. */
 import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";

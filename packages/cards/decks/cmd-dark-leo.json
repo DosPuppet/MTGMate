@@ -1,7 +1,10 @@
 {
   "id": "cmd-dark-leo",
   "name": "Dark Leo & Shredder — Ninjas",
-  "description": "Commander, blanc et noir, d'après la liste « I Am Ninja, Sneaking in the Shadows » de Fullmoon (Moxfield, bracket 4 : quatre Game Changers, Smothering Tithe, Bolas's Citadel, Teferi's Protection et Farewell). Dark Leo & Shredder mène les Ninjas et le Foot Clan : le ninjutsu renvoie un attaquant non bloqué pour faire entrer un Ninja, Whispersilk Cloak, Access Tunnel et The Black Gate rendent les attaquants imblocables, Helm of the Host et Legion Loyalty les copient, et Wound Reflection et Sanguine Bond font perdre des points de vie.",
+  "description": "Commander, white and black, based on the list \"I Am Ninja, Sneaking in the Shadows\" by Fullmoon (Moxfield, bracket 4: four Game Changers, Smothering Tithe, Bolas's Citadel, Teferi's Protection and Farewell). Dark Leo & Shredder leads the Ninjas and the Foot Clan: ninjutsu returns an unblocked attacker to bring in a Ninja, Whispersilk Cloak, Access Tunnel and The Black Gate make attackers unblockable, Helm of the Host and Legion Loyalty copy them, and Wound Reflection and Sanguine Bond make opponents lose life.",
+  "fr": {
+    "description": "Commander, blanc et noir, d'après la liste « I Am Ninja, Sneaking in the Shadows » de Fullmoon (Moxfield, bracket 4 : quatre Game Changers, Smothering Tithe, Bolas's Citadel, Teferi's Protection et Farewell). Dark Leo & Shredder mène les Ninjas et le Foot Clan : le ninjutsu renvoie un attaquant non bloqué pour faire entrer un Ninja, Whispersilk Cloak, Access Tunnel et The Black Gate rendent les attaquants imblocables, Helm of the Host et Legion Loyalty les copient, et Wound Reflection et Sanguine Bond font perdre des points de vie."
+  },
   "colors": [
     "W",
     "B"

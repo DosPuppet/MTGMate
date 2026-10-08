@@ -1,4 +1,4 @@
-/** Foundations — cartes multicolores. */
+/** Foundations — multicolored cards. */
 import {
   activated,
   amount,
@@ -36,58 +36,58 @@ import {
 export const MULTI: Record<string, CardScript> = {
   "Alesha, Who Laughs at Fate": {
     abilities: [
-      triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+      triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], { label: "a +1/+1 counter" }),
       triggered(when.yourEndStep, [fx.toBattlefield(ref.target())], {
         targets: [
           target.cardInGraveyard(
             "t",
             { types: ["Creature"], compare: [cmp.manaValue("<=", amount.sourcePower)] },
             "you",
-            "créature de valeur de mana ≤ la force d'Alesha",
+            "creature with mana value ≤ Alesha's power",
           ),
         ],
         condition: cond.raid,
-        label: "Raid : réanime une créature",
+        label: "Raid: reanimates a creature",
       }),
     ],
   },
   "Koma, World-Eater": {
     cantBeCountered: true,
-    abilities: [triggered(when.combatDamageToPlayer, [fx.createTokens(KOMAS_COIL, 4)], { label: "quatre Koma's Coil 3/3" })],
+    abilities: [triggered(when.combatDamageToPlayer, [fx.createTokens(KOMAS_COIL, 4)], { label: "four 3/3 Koma's Coils" })],
   },
   "Anthem of Champions": { abilities: [staticAbility(CREATURE_YOU_CONTROL, { power: 1, toughness: 1 })] },
   "Ashroot Animist": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), amount.powerOf(ref.self), amount.powerOf(ref.self), ["trample"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "+X/+X et piétinement",
+        label: "+X/+X, trample",
       }),
     ],
   },
   "Dreadwing Scavenger": {
     abilities: [
-      triggered(when.entersSelf, fx.loot(1), { label: "pioche puis défausse" }),
-      triggered(when.attacksSelf, fx.loot(1), { label: "pioche puis défausse" }),
+      triggered(when.entersSelf, fx.loot(1), { label: "draws then discards" }),
+      triggered(when.attacksSelf, fx.loot(1), { label: "draws then discards" }),
       staticAbility(
         "self",
         { power: 1, toughness: 1, addKeywords: ["deathtouch"] },
-        { condition: cond.threshold, label: "Seuil : +1/+1 et contact mortel" },
+        { condition: cond.threshold, label: "Threshold: +1/+1 and deathtouch" },
       ),
     ],
   },
   "Fiendish Panda": {
     abilities: [
-      triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+      triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "a +1/+1 counter" }),
       triggered(when.diesSelf, [fx.toBattlefield(ref.target())], {
         targets: [
           target.cardInGraveyard(
             "t",
             { types: ["Creature"], notSubtype: "Bear", compare: [cmp.manaValue("<=", amount.sourcePower)] },
             "you",
-            "créature non-Ours de valeur de mana ≤ sa force",
+            "non-Bear creature with mana value ≤ its power",
           ),
         ],
-        label: "réanime une créature",
+        label: "reanimates a creature",
       }),
     ],
   },
@@ -95,11 +95,11 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggeredModal(when.castSpell("you", { notTypes: ["Creature"] }), [
         mode(
-          "Exiler une autre créature (elle revient à l'étape de fin)",
+          "Exile another creature (it returns at the end step)",
           [target.creature("t", { controller: "you", other: true })],
           [fx.exileCard(ref.target(), { name: "k" }), fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") })],
         ),
-        mode("Esprit 1/1 volant", [], [fx.createTokens(SPIRIT)]),
+        mode("1/1 flying Spirit", [], [fx.createTokens(SPIRIT)]),
       ]),
     ],
   },
@@ -107,7 +107,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.punisher(ref.eachOpponent, 3, { discard: true, sacrifice: { notTypes: ["Land"] } })], {
         condition: cond.raid,
-        label: "Raid : 3 PV sauf sacrifice ou défausse",
+        label: "Raid: 3 life unless sacrifice or discard",
       }),
     ],
   },
@@ -115,8 +115,8 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggeredModal(
         when.yourEndStep,
-        [mode("Vous gagnez 2 PV", [], [fx.gainLife(2)]), mode("Piochez, perdez 1 PV", [], [fx.draw(1), fx.loseLife(1)])],
-        { condition: cond.morbid, label: "Morbide" },
+        [mode("You gain 2 life", [], [fx.gainLife(2)]), mode("Draw, lose 1 life", [], [fx.draw(1), fx.loseLife(1)])],
+        { condition: cond.morbid, label: "Morbid" },
       ),
     ],
   },
@@ -124,23 +124,23 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourCombat, [fx.addCounters(ref.target(), 1)], {
         targets: [target.upTo(2, target.creature("t", { controller: "you" }))],
-        label: "marqueurs +1/+1",
+        label: "+1/+1 counters",
       }),
       activated({
         mana: "{G}{U}",
         tap: true,
         targets: [
-          target.upTo(2, targetObj("t", { types: ["Creature", "Artifact"], controller: "you" }, "créature ou artefact à vous")),
+          target.upTo(2, targetObj("t", { types: ["Creature", "Artifact"], controller: "you" }, "creature or artifact of yours")),
         ],
         effects: [fx.doubleAllCounters(ref.target())],
-        label: "Doubler les marqueurs",
+        label: "Double the counters",
       }),
     ],
   },
   "Balmor, Battlemage Captain": {
     abilities: [
       triggered(when.castSpell("you", INSTANT_SORCERY), [fx.pumpAll({ controller: "you" }, 1, 0, ["trample"])], {
-        label: "vos créatures +1/+0 et piétinement",
+        label: "your creatures +1/+0 and trample",
       }),
     ],
   },
@@ -149,7 +149,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Good-Fortune Unicorn": {
     abilities: [
-      triggered(when.enters(OTHER_CREATURE_YOU_CONTROL), [fx.addCounters(ref.eventObject, 1)], { label: "marqueur +1/+1" }),
+      triggered(when.enters(OTHER_CREATURE_YOU_CONTROL), [fx.addCounters(ref.eventObject, 1)], { label: "a +1/+1 counter" }),
     ],
   },
   "Heroic Reinforcements": {
@@ -157,12 +157,12 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Lathril, Blade of the Elves": {
     abilities: [
-      triggered(when.combatDamageToPlayer, [fx.createTokens(ELF_WARRIOR, amount.eventAmount)], { label: "Elfes guerriers" }),
+      triggered(when.combatDamageToPlayer, [fx.createTokens(ELF_WARRIOR, amount.eventAmount)], { label: "Elf Warriors" }),
       activated({
         tap: true,
         tapOthers: { filter: { subtype: "Elf" }, count: 10 },
         effects: fx.drain(10),
-        label: "Engager dix Elfes : draine 10",
+        label: "Tap ten Elves: drains 10",
       }),
     ],
   },
@@ -173,26 +173,26 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Tatyova, Benthic Druid": {
-    abilities: [triggered(when.landfall, [fx.gainLife(1), fx.draw(1)], { label: "+1 PV, piochez" })],
+    abilities: [triggered(when.landfall, [fx.gainLife(1), fx.draw(1)], { label: "+1 life, draw" })],
   },
   "Elenda, Saint of Dusk": {
     abilities: [
-      protectionAbility(protection.hexproofFrom({ types: ["Instant"] }, "Défense talismanique contre les éphémères")),
+      protectionAbility(protection.hexproofFrom({ types: ["Instant"] }, "Hexproof from instants")),
       staticAbility(
         "self",
         { power: 1, toughness: 1, addKeywords: ["menace"] },
-        { condition: cond.lifeAboveStart(1), label: "+1/+1 et menace" },
+        { condition: cond.lifeAboveStart(1), label: "+1/+1, menace" },
       ),
       staticAbility("self", { power: 5, toughness: 5 }, { condition: cond.lifeAboveStart(10), label: "+5/+5" }),
     ],
   },
   "Niv-Mizzet, Visionary": {
     abilities: [
-      playerStatic({ maxHandSize: "none", label: "Pas de taille de main maximale" }),
+      playerStatic({ maxHandSize: "none", label: "No maximum hand size" }),
       triggered(
         when.dealsDamage({}, { anySourceYouControl: true, noncombatOnly: true, to: { players: "opponent" } }),
         [fx.draw(amount.eventAmount)],
-        { label: "piochez autant de cartes" },
+        { label: "draw that many cards" },
       ),
     ],
   },
@@ -200,12 +200,12 @@ export const MULTI: Record<string, CardScript> = {
     cdaPT: amount.countIn("graveyard", {}, "opponents"),
     abilities: [
       triggered(when.castSpell("you"), [fx.millUntil(ref.eachOpponent, { types: ["Land"] })], {
-        label: "chaque adversaire meule jusqu'à un terrain",
+        label: "each opponent mills until a land",
       }),
     ],
   },
   "Muldrotha, the Gravetide": {
-    abilities: [castPermission({ graveyardPermanentTypes: true, label: "Un permanent de chaque type depuis le cimetière" })],
+    abilities: [castPermission({ graveyardPermanentTypes: true, label: "One permanent of each type from the graveyard" })],
   },
   Progenitus: {
     abilities: [protectionAbility(protection.everything)],
@@ -214,17 +214,17 @@ export const MULTI: Record<string, CardScript> = {
   "Thousand-Year Storm": {
     abilities: [
       triggered(when.castSpell("you", INSTANT_SORCERY), [fx.copySpell(ref.eventObject, amount.eventAmount)], {
-        label: "copie le sort",
+        label: "copies the spell",
       }),
     ],
   },
 
-  // --- Réimpressions ---
+  // --- Reprints ---
   "Aurelia, the Warleader": {
     abilities: [
       triggered(when.attacksSelf, [fx.untapUpTo({ types: ["Creature"] }, 99), fx.extraCombat], {
         oncePerTurn: true,
-        label: "dégage vos créatures, combat supplémentaire",
+        label: "untaps your creatures, additional combat",
       }),
     ],
   },
@@ -234,7 +234,7 @@ export const MULTI: Record<string, CardScript> = {
         mana: "{1}",
         sacrificeOther: { filter: { types: ["Creature"] } },
         effects: [fx.gainLife(amount.toughnessOf(ref.costSacrificed))],
-        label: "Sacrifier une créature : PV égaux à son endurance",
+        label: "Sacrifice a creature: life equal to its toughness",
       }),
       activated({
         mana: "{1}{W}{B}",
@@ -242,22 +242,22 @@ export const MULTI: Record<string, CardScript> = {
         activationCondition: cond.lifeAboveStart(10),
         targets: [target.nonland()],
         effects: [fx.exileCard(ref.target())],
-        label: "Sacrifier une créature : exiler un permanent",
+        label: "Sacrifice a creature: exile a permanent",
       }),
     ],
   },
   "Boros Charm": {
     spell: modal(
       mode(
-        "4 blessures à un joueur ou planeswalker",
-        [{ id: "t", label: "joueur ou planeswalker", filter: { players: "any", objects: { types: ["Planeswalker"] } } }],
+        "4 damage to a player or planeswalker",
+        [{ id: "t", label: "player or planeswalker", filter: { players: "any", objects: { types: ["Planeswalker"] } } }],
         [fx.damage(4, ref.target())],
       ),
-      mode("Vos permanents sont indestructibles", [], [fx.modifyAll({ controller: "you" }, { addKeywords: ["indestructible"] })]),
-      mode("Double initiative", [target.creature()], [fx.pump(ref.target(), 0, 0, ["doubleStrike"])]),
+      mode("Your permanents are indestructible", [], [fx.modifyAll({ controller: "you" }, { addKeywords: ["indestructible"] })]),
+      mode("Double strike", [target.creature()], [fx.pump(ref.target(), 0, 0, ["doubleStrike"])]),
     ),
   },
-  Cloudblazer: { abilities: [triggered(when.entersSelf, [fx.gainLife(2), fx.draw(2)], { label: "+2 PV, piochez deux cartes" })] },
+  Cloudblazer: { abilities: [triggered(when.entersSelf, [fx.gainLife(2), fx.draw(2)], { label: "+2 life, draw two cards" })] },
   "Deadly Brew": {
     spell: spell(
       [],
@@ -267,19 +267,19 @@ export const MULTI: Record<string, CardScript> = {
         ...fx.when(
           cond.v("mine"),
           fx.may(
-            "Renvoyer une autre carte de permanent de votre cimetière en main ?",
+            "Return another permanent card from your graveyard to hand?",
             fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { excludeStored: "mine" }),
           ),
         ),
       ],
     ),
   },
-  "Drogskol Reaver": { abilities: [triggered(when.gainLife, [fx.draw(1)], { label: "piochez une carte" })] },
+  "Drogskol Reaver": { abilities: [triggered(when.gainLife, [fx.draw(1)], { label: "draw a card" })] },
   "Dryad Militant": {
     abilities: [
       graveyardReplacement({
         filter: { types: ["Instant", "Sorcery"] },
-        label: "Éphémères et rituels exilés au lieu du cimetière",
+        label: "Instants and sorceries exiled instead of the graveyard",
       }),
     ],
   },
@@ -292,7 +292,7 @@ export const MULTI: Record<string, CardScript> = {
           ...fx.when(cond.eventObjectMatches({ attacking: true }), fx.draw(1)),
           ...fx.when(cond.not(cond.eventObjectMatches({ attacking: true })), fx.damage(1, ref.eachOpponent, ref.self)),
         ],
-        { label: "attaquante : piochez ; sinon 1 blessure" },
+        { label: "attacking: draw; otherwise 1 damage" },
       ),
     ],
   },
@@ -303,7 +303,7 @@ export const MULTI: Record<string, CardScript> = {
         [fx.addCounters(ref.target(), amount.powerOf(ref.self)), fx.pump(ref.target(), 0, 0, ["haste"])],
         {
           targets: [target.creature("t", { controller: "you", other: true })],
-          label: "X marqueurs et célérité",
+          label: "X counters and haste",
         },
       ),
     ],
@@ -312,21 +312,18 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.tapsSelf, [fx.exileCard(ref.target()), fx.addCounters(ref.self, 1)], {
         targets: [target.optional(target.cardInGraveyard("t", {}, "any"))],
-        label: "exile une carte, marqueur +1/+1",
+        label: "exiles a card, a +1/+1 counter",
       }),
       activated({
         sacrificeOther: { filter: { types: ["Creature"] } },
         effects: [fx.pump(ref.self, 0, 0, ["indestructible"]), fx.tap(ref.self)],
-        label: "Sacrifier une créature : indestructible, engagé",
+        label: "Sacrifice a creature: indestructible, tapped",
       }),
     ],
   },
   "Maelstrom Pulse": { spell: spell([target.nonland()], [fx.destroySameName(ref.target())]) },
   Mortify: {
-    spell: spell(
-      [targetObj("t", { types: ["Creature", "Enchantment"] }, "créature ou enchantement")],
-      [fx.destroy(ref.target())],
-    ),
+    spell: spell([targetObj("t", { types: ["Creature", "Enchantment"] }, "creature or enchantment")], [fx.destroy(ref.target())]),
   },
   "Ovika, Enigma Goliath": {
     abilities: [
@@ -336,7 +333,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.createTokens(PHYREXIAN_GOBLIN, amount.manaValueOf(ref.eventObject), undefined, "g"),
           fx.pump(ref.stored("g"), 0, 0, ["haste"]),
         ],
-        { label: "X Gobelins phyrexians avec la célérité" },
+        { label: "X Phyrexian Goblins with haste" },
       ),
     ],
   },
@@ -344,9 +341,9 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       entersWith({
         counters: amount.maxPower({ types: ["Creature"], controller: "you" }),
-        label: "Marqueurs : plus grande force",
+        label: "Counters: greatest power",
       }),
-      triggered(when.entersSelf, [fx.draw(amount.powerOf(ref.self))], { label: "piochez autant que sa force" }),
+      triggered(when.entersSelf, [fx.draw(amount.powerOf(ref.self))], { label: "draw as many as its power" }),
     ],
   },
   "Savage Ventmaw": {
@@ -357,26 +354,26 @@ export const MULTI: Record<string, CardScript> = {
   "Teach by Example": { spell: spell([], [fx.copyNextSpell]) },
   "Trygon Predator": {
     abilities: [
-      triggered(when.combatDamageToPlayer, fx.may("Détruire l'artefact ou l'enchantement ciblé ?", fx.destroy(ref.target())), {
+      triggered(when.combatDamageToPlayer, fx.may("Destroy the target artifact or enchantment?", fx.destroy(ref.target())), {
         targets: [
           target.optional(
             target.of(
               ref.eventPlayer,
-              target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement de ce joueur"),
+              target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment of that player"),
             ),
           ),
         ],
-        label: "détruit un artefact ou un enchantement",
+        label: "destroys an artifact or an enchantment",
       }),
     ],
   },
   "Unflinching Courage": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
       staticAbility(
         "attached",
         { power: 2, toughness: 2, addKeywords: ["trample", "lifelink"] },
-        { label: "+2/+2, piétinement, lien de vie" },
+        { label: "+2/+2, trample, lifelink" },
       ),
     ],
   },
@@ -386,12 +383,12 @@ export const MULTI: Record<string, CardScript> = {
       staticAbility(
         { ...CREATURE_YOU_CONTROL, other: true, colors: ["G"] },
         { power: 1, toughness: 1 },
-        { label: "Autres créatures vertes +1/+1" },
+        { label: "Other green creatures +1/+1" },
       ),
       staticAbility(
         { ...CREATURE_YOU_CONTROL, other: true, colors: ["W"] },
         { power: 1, toughness: 1 },
-        { label: "Autres créatures blanches +1/+1" },
+        { label: "Other white creatures +1/+1" },
       ),
     ],
   },

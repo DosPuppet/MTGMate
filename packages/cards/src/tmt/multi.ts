@@ -1,9 +1,9 @@
 /**
- * Teenage Mutant Ninja Turtles — cartes multicolores (lot A). Le faufilement (Sneak), le vol, le piétinement, la
- * vigilance, la menace, le contact mortel, la célérité et la garde sont lus dans le texte. Alliance et Disparition sont
- * des mots de capacité : déclencheurs et conditions ordinaires.
+ * Teenage Mutant Ninja Turtles — multicolored cards (lot A). Sneak, flying, trample, vigilance, menace, deathtouch,
+ * haste and ward are read from the text. Alliance and Disappear are ability words: ordinary triggers and
+ * conditions.
  */
-import type { Effect, ObjectFilter } from "@mtgx/engine";
+import { type Effect, msg, type ObjectFilter } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -29,25 +29,25 @@ import {
 
 const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
 
-/** Disparition : un permanent a quitté le champ de bataille sous votre contrôle ce tour-ci. */
+/** Disappear: a permanent left the battlefield under your control this turn. */
 const DISAPPEAR = cond.amountAtLeast(amount.turnEvents({ event: "zone", from: "battlefield", who: "you" }), 1);
 
-/** Alliance : « chaque fois qu'une autre créature arrive sous votre contrôle ». */
+/** Alliance: "whenever another creature you control enters". */
 const ALLIANCE = when.enters({ ...YOUR_CREATURES, other: true });
 
-/** « Sacrifiez un permanent à moins de défausser une carte » : la défausse est proposée d'abord. */
+/** "Sacrifice a permanent unless you discard a card": the discard is offered first. */
 const SACRIFICE_UNLESS_DISCARD: Effect[] = [
   fx.discard(1, ref.you, { optional: true, store: "d" }),
   ...fx.when(cond.not(cond.v("d")), fx.sacrifice(ref.you, {})),
 ];
 
-/** « Exilez [la cible], puis renvoyez-la sur le champ de bataille sous le contrôle de son propriétaire. » */
+/** "Exile [the target], then return it to the battlefield under its owner's control." */
 const flicker = (id: string): Effect[] => [
   fx.exileCard(ref.target(id), { name: `${id}Exiled` }),
   fx.toBattlefield(ref.stored(`${id}Exiled`)),
 ];
 
-/** Brilliance Unleashed : une carte d'artefact de votre cimetière revient ; si ce n'est pas une créature, Robot 3/3 volant. */
+/** Brilliance Unleashed: an artifact card from your graveyard returns; if it isn't a creature, a 3/3 flying Robot. */
 const REANIMATE_ARTIFACT: Effect[] = [
   ...fx.when(
     cond.not(cond.refMatches(ref.target("a"), { types: ["Creature"] })),
@@ -58,18 +58,18 @@ const REANIMATE_ARTIFACT: Effect[] = [
     ),
     fx.modify(ref.stored("robot"), { setPower: 3, setToughness: 3 }, "permanent"),
   ),
-  // Déjà revenue si ce n'était pas une créature : l'identifiant du cimetière ne désigne plus rien.
+  // Already returned if it wasn't a creature: the graveyard identifier no longer designates anything.
   ...fx.when(cond.refMatches(ref.target("a"), { types: ["Creature"] }), fx.toBattlefield(ref.target("a"))),
 ];
 const BRILLIANCE_DAMAGE = target.creature("d");
-const BRILLIANCE_ARTIFACT = target.cardInGraveyard("a", { types: ["Artifact"] }, "you", "carte d'artefact de votre cimetière");
+const BRILLIANCE_ARTIFACT = target.cardInGraveyard("a", { types: ["Artifact"] }, "you", "artifact card in your graveyard");
 
 /** Go Ninja Go. */
 const GO_FLICKER = target.creature("f", { controller: "you" });
 const GO_DAMAGE = target.creature("d", { controller: "opponent" });
 const GREATEST_POWER = amount.maxPower(YOUR_CREATURES);
 
-/** Krang & Shredder : chaque adversaire exile jusqu'à une carte non-terrain, liée à Krang & Shredder. */
+/** Krang & Shredder: each opponent exiles up to one nonland card, linked to Krang & Shredder. */
 const KRANG_EXILE: Effect[] = [
   { op: "exileUntil", filter: { notTypes: ["Land"] }, store: "k", who: ref.eachOpponent },
   fx.link(ref.stored("k")),
@@ -78,36 +78,36 @@ const KRANG_EXILE: Effect[] = [
 export const MULTI: Record<string, CardScript> = {
   "Baxter Stockman": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(ROBOT_1)], { label: "Un Robot 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(ROBOT_1)], { label: "A 1/1 Robot" }),
       triggered(when.yourCombat, [fx.pump(ref.target(), 3, 0, ["firstStrike", "vigilance"])], {
         targets: [
-          target.permanent("t", ["Creature"], { controller: "you", anyOf: [{ types: ["Artifact"] }] }, "créature-artefact"),
+          target.permanent("t", ["Creature"], { controller: "you", anyOf: [{ types: ["Artifact"] }] }, "artifact creature"),
         ],
-        label: "+3/+0, l'initiative et la vigilance à une créature-artefact",
+        label: "+3/+0, first strike and vigilance to an artifact creature",
       }),
     ],
   },
   "Bebop & Rocksteady": {
     abilities: [
-      triggered(when.attacksSelf, SACRIFICE_UNLESS_DISCARD, { label: "Sacrifiez un permanent à moins de défausser" }),
-      triggered(when.blocks("self"), SACRIFICE_UNLESS_DISCARD, { label: "Sacrifiez un permanent à moins de défausser" }),
+      triggered(when.attacksSelf, SACRIFICE_UNLESS_DISCARD, { label: "Sacrifice a permanent unless you discard" }),
+      triggered(when.blocks("self"), SACRIFICE_UNLESS_DISCARD, { label: "Sacrifice a permanent unless you discard" }),
     ],
   },
   "Brilliance Unleashed": {
-    // « Choisissez l'un ou les deux. »
+    // "Choose one or both."
     spell: modal(
-      mode("5 blessures à une créature", [BRILLIANCE_DAMAGE], [fx.damage(5, ref.target("d"))]),
-      mode("Un artefact de votre cimetière revient", [BRILLIANCE_ARTIFACT], REANIMATE_ARTIFACT),
-      mode("Les deux", [BRILLIANCE_DAMAGE, BRILLIANCE_ARTIFACT], [fx.damage(5, ref.target("d")), ...REANIMATE_ARTIFACT]),
+      mode("5 damage to a creature", [BRILLIANCE_DAMAGE], [fx.damage(5, ref.target("d"))]),
+      mode("An artifact from your graveyard returns", [BRILLIANCE_ARTIFACT], REANIMATE_ARTIFACT),
+      mode("Both", [BRILLIANCE_DAMAGE, BRILLIANCE_ARTIFACT], [fx.damage(5, ref.target("d")), ...REANIMATE_ARTIFACT]),
     ),
   },
   "Dark Leo & Shredder": {
-    // Faufilement {W}{B} : lu dans le texte.
+    // Sneak {W}{B}: read from the text.
     abilities: [
       staticAbility(
         { types: ["Creature"], subtype: "Ninja", attacking: true, controller: "you" },
         { addKeywords: ["deathtouch"] },
-        { label: "Vos Ninjas attaquants ont le contact mortel" },
+        { label: "Attacking Ninjas you control have deathtouch" },
       ),
       triggered(
         when.combatDamageToPlayer,
@@ -115,7 +115,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.createTokens(NINJA),
           ...fx.when(cond.controls({ subtype: "Ninja" }, 5), fx.loseLife(amount.halfLife(ref.eventPlayer), ref.eventPlayer)),
         ],
-        { label: "Un Ninja 1/1 ; cinq Ninjas : ce joueur perd la moitié de ses PV" },
+        { label: "A 1/1 Ninja; five Ninjas: that player loses half their life" },
       ),
     ],
   },
@@ -130,42 +130,42 @@ export const MULTI: Record<string, CardScript> = {
         ],
         {
           targets: [
-            target.upTo(1, target.permanent("a", ["Artifact"], { controller: "you" }, "artefact que vous contrôlez")),
+            target.upTo(1, target.permanent("a", ["Artifact"], { controller: "you" }, "artifact you control")),
             target.upTo(1, target.creature("c", { controller: "you" })),
           ],
-          label: "Exile puis renvoie un artefact et une créature",
+          label: "Exiles, then returns an artifact and a creature",
         },
       ),
     ],
   },
   "EPF Point Squad": {
-    abilities: [triggered(ALLIANCE, [fx.addCounters(ref.self, 1)], { label: "Alliance — un marqueur +1/+1" })],
+    abilities: [triggered(ALLIANCE, [fx.addCounters(ref.self, 1)], { label: "Alliance — a +1/+1 counter" })],
   },
   "Foot Elite": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), 1, 0, ["indestructible"])], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "+1/+0 et l'indestructible à une autre créature",
+        label: "+1/+0 and indestructible to another creature",
       }),
     ],
   },
   "Foot Ninjas": {
-    // Faufilement {3}{W/B} : lu dans le texte.
-    abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "Vous gagnez 3 PV" })],
+    // Sneak {3}{W/B}: read from the text.
+    abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "You gain 3 life" })],
   },
   "Genghis Frog": {
     abilities: [
       triggered(when.enters({ controller: "you", anyOf: [{ self: true }, { subtype: "Mutant" }] }), [fx.createTokens(MUTAGEN)], {
-        label: "Un Mutagène",
+        label: "A Mutagen",
       }),
     ],
   },
   "Go Ninja Go": {
-    // « Choisissez l'un ou les deux. »
+    // "Choose one or both."
     spell: modal(
-      mode("Exile puis renvoie une de vos créatures", [GO_FLICKER], flicker("f")),
-      mode("Blessures égales à votre plus grande force", [GO_DAMAGE], [fx.damage(GREATEST_POWER, ref.target("d"))]),
-      mode("Les deux", [GO_FLICKER, GO_DAMAGE], [...flicker("f"), fx.damage(GREATEST_POWER, ref.target("d"))]),
+      mode("Exiles, then returns a creature you control", [GO_FLICKER], flicker("f")),
+      mode("Damage equal to your greatest power", [GO_DAMAGE], [fx.damage(GREATEST_POWER, ref.target("d"))]),
+      mode("Both", [GO_FLICKER, GO_DAMAGE], [...flicker("f"), fx.damage(GREATEST_POWER, ref.target("d"))]),
     ),
   },
   "Ice Cream Kitty": {
@@ -175,14 +175,14 @@ export const MULTI: Record<string, CardScript> = {
         sacrificeOther: { filter: { other: true, anyOf: [{ types: ["Creature"] }, { token: true }] } },
         sorcerySpeed: true,
         effects: [fx.draw(1)],
-        label: "Sacrifiez une autre créature ou un jeton : piochez",
+        label: "Sacrifice another creature or a token: draw",
       }),
-      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "Vous gagnez 3 PV" }),
+      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "You gain 3 life" }),
     ],
   },
   "Karai, Future of the Foot": {
-    // Faufilement {2}{W}{B} : lu dans le texte. « Si son coût de faufilement a été payé ce tour-ci » : lancée ainsi et
-    // arrivée ce tour-ci.
+    // Sneak {2}{W}{B}: read from the text. "If its sneak cost was paid this turn": cast that way and
+    // entered this turn.
     abilities: [
       triggered(
         when.combatDamageToPlayer,
@@ -197,19 +197,19 @@ export const MULTI: Record<string, CardScript> = {
           ),
         ],
         {
-          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
-          label: "Une créature de votre cimetière en main (sur le champ de bataille si faufilée)",
+          targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
+          label: "A creature from your graveyard to your hand (onto the battlefield if sneaked)",
         },
       ),
     ],
   },
   "Karai's Technique": {
-    // Faufilement {W}{B} : lu dans le texte. « Choisissez l'un ou les deux. »
+    // Sneak {W}{B}: read from the text. "Choose one or both."
     spell: modal(
       mode("+3/+3", [target.creature("p")], [fx.pump(ref.target("p"), 3, 3)]),
       mode("-3/-3", [target.creature("m")], [fx.pump(ref.target("m"), -3, -3)]),
       mode(
-        "Les deux",
+        "Both",
         [target.creature("p"), target.creature("m")],
         [fx.pump(ref.target("p"), 3, 3), fx.pump(ref.target("m"), -3, -3)],
       ),
@@ -217,17 +217,17 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Krang & Shredder": {
     abilities: [
-      triggered(when.entersSelf, KRANG_EXILE, { label: "Chaque adversaire exile jusqu'à une carte non-terrain" }),
-      triggered(when.attacksSelf, KRANG_EXILE, { label: "Chaque adversaire exile jusqu'à une carte non-terrain" }),
+      triggered(when.entersSelf, KRANG_EXILE, { label: "Each opponent exiles up to one nonland card" }),
+      triggered(when.attacksSelf, KRANG_EXILE, { label: "Each opponent exiles up to one nonland card" }),
       triggered(when.yourEndStep, [fx.castNow(ref.linked, { free: true })], {
         condition: DISAPPEAR,
-        label: "Disparition — lancez sans payer une carte exilée avec Krang & Shredder",
+        label: "Disappear — cast a card exiled with Krang & Shredder without paying",
       }),
     ],
   },
   "The Last Ronin": {
     abilities: [
-      chapter([1], [fx.destroyAll({ types: ["Creature"] })], { label: "Chapitre I — Détruisez toutes les créatures" }),
+      chapter([1], [fx.destroyAll({ types: ["Creature"] })], { label: "Chapter I — Destroy all creatures" }),
       chapter(
         [2],
         [
@@ -235,32 +235,34 @@ export const MULTI: Record<string, CardScript> = {
           ...fx.when(
             cond.v("m"),
             fx.reflexive(
-              [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+              [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card in your graveyard")],
               [fx.toHand(ref.target())],
             ),
           ),
         ],
-        { label: "Chapitre II — Meulez quatre cartes, puis une créature de votre cimetière en main" },
+        { label: "Chapter II — Mill four cards, then a creature from your graveyard to your hand" },
       ),
       chapter(
         [3],
         [
-          // Capacité déclenchée « ce tour-ci » : un emblème qui disparaît à la fin du tour.
+          // Triggered ability "this turn": an emblem that disappears at end of turn.
           fx.emblem(
             "The Last Ronin",
-            "Ce tour-ci, chaque fois qu'une créature que vous contrôlez attaque seule, mettez trois marqueurs +1/+1 sur elle ; elle gagne le piétinement, le lien de vie et l'indestructible jusqu'à la fin du tour.",
+            msg(
+              "This turn, whenever a creature you control attacks alone, put three +1/+1 counters on it. It gains trample, lifelink, and indestructible until end of turn.",
+            ),
             [
               triggered(
                 when.attacksAlone(YOUR_CREATURES),
                 [fx.addCounters(ref.eventObject, 3), fx.pump(ref.eventObject, 0, 0, ["trample", "lifelink", "indestructible"])],
-                { label: "Trois marqueurs +1/+1, piétinement, lien de vie et indestructible" },
+                { label: "Three +1/+1 counters, trample, lifelink and indestructible" },
               ),
             ],
             false,
             true,
           ),
         ],
-        { label: "Chapitre III — Ce tour-ci, une créature qui attaque seule grandit" },
+        { label: "Chapter III — This turn, a creature that attacks alone grows" },
       ),
     ],
   },
@@ -273,19 +275,19 @@ export const MULTI: Record<string, CardScript> = {
           "hand",
           { types: ["Land"] },
           { to: "battlefield", tapped: true },
-          { count: 1, min: 0, prompt: "Vous pouvez mettre un terrain de votre main sur le champ de bataille, engagé" },
+          { count: 1, min: 0, prompt: "You may put a land from your hand onto the battlefield tapped" },
         ),
       ],
     ),
   },
   "Mechanized Ninja Cavalry": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(ROBOT_1)], { label: "Un Robot 1/1" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(ROBOT_1)], { label: "A 1/1 Robot" })],
   },
   "Mikey & Leo, Chaos & Order": {
     abilities: [
       triggered(when.youPutCounters(YOUR_CREATURES), [fx.draw(1)], {
         oncePerTurn: true,
-        label: "Piochez une carte (une fois par tour)",
+        label: "Draw a card (once each turn)",
       }),
     ],
   },
@@ -296,14 +298,14 @@ export const MULTI: Record<string, CardScript> = {
         { addKeywords: ["cantAttack"] },
         {
           condition: cond.not(cond.controls({ types: ["Artifact"], other: true })),
-          label: "N'attaque que si vous contrôlez un autre artefact",
+          label: "Attacks only if you control another artifact",
         },
       ),
     ],
   },
   "The Neutrinos": {
     abilities: [
-      triggered(ALLIANCE, [fx.pump(ref.self, 1, 0)], { label: "Alliance — +1/+0 jusqu'à la fin du tour" }),
+      triggered(ALLIANCE, [fx.pump(ref.self, 1, 0)], { label: "Alliance — +1/+0 until end of turn" }),
       triggered(
         when.attacksSelf,
         [
@@ -312,7 +314,7 @@ export const MULTI: Record<string, CardScript> = {
         ],
         {
           targets: [target.upTo(1, target.creature("t", { owner: "you" }))],
-          label: "Exile puis renvoie une de vos créatures, engagée et attaquante",
+          label: "Exiles, then returns a creature you control, tapped and attacking",
         },
       ),
     ],
@@ -321,18 +323,15 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target()), fx.scry(1)], {
         targets: [
-          target.upTo(
-            1,
-            target.permanent("t", ["Artifact"], { controller: "you", other: true }, "autre artefact que vous contrôlez"),
-          ),
+          target.upTo(1, target.permanent("t", ["Artifact"], { controller: "you", other: true }, "other artifact you control")),
         ],
-        label: "Renvoie un autre de vos artefacts en main, regard 1",
+        label: "Returns another artifact you control to hand, scry 1",
       }),
     ],
   },
   "Pizza Face, Gastromancer": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Une Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food" }),
       triggered(
         when.yourEndStep,
         [
@@ -349,23 +348,23 @@ export const MULTI: Record<string, CardScript> = {
         {
           condition: DISAPPEAR,
           targets: [
-            target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { other: true }, "autre artefact ou créature")),
+            target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { other: true }, "other artifact or creature")),
           ],
-          label: "Disparition — trois marqueurs +1/+1 ; un artefact devient un Mutant 0/0",
+          label: "Disappear — three +1/+1 counters; an artifact becomes a 0/0 Mutant",
         },
       ),
-      activated({ mana: "{10}", tap: true, sacrifice: true, effects: [fx.gainLife(15)], label: "Vous gagnez 15 PV" }),
+      activated({ mana: "{10}", tap: true, sacrifice: true, effects: [fx.gainLife(15)], label: "You gain 15 life" }),
     ],
   },
   "Putrid Pals": {
-    abilities: [entersWith({ counters: 2, condition: DISAPPEAR, label: "Disparition — arrive avec deux marqueurs +1/+1" })],
+    abilities: [entersWith({ counters: 2, condition: DISAPPEAR, label: "Disappear — enters with two +1/+1 counters" })],
   },
   "Raph & Leo, Sibling Rivals": {
     abilities: [
       triggered(when.attacksSelf, [fx.untap(ref.target()), fx.extraCombat], {
         condition: cond.firstCombat,
         targets: [target.between(1, 2, target.creature("t", { attacking: true }))],
-        label: "Dégage une ou deux créatures attaquantes ; une phase de combat supplémentaire",
+        label: "Untaps one or two attacking creatures; an additional combat phase",
       }),
     ],
   },
@@ -374,33 +373,33 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [fx.revealUntil({ types: ["Creature"] }, { to: "battlefield", tapped: true, attacking: true })],
-        { label: "Révélez jusqu'à une créature : elle arrive engagée et attaquante" },
+        { label: "Reveal until a creature: it enters tapped and attacking" },
       ),
     ],
   },
   "Slithering Cryptid": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(MUTAGEN)], { label: "Un Mutagène" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(MUTAGEN)], { label: "A Mutagen" })],
   },
   "Splinter, Radical Rat": {
     abilities: [
       playerStatic({
         triggerMod: { effect: "again", sources: { types: ["Creature"], subtype: "Ninja", controller: "you" } },
-        label: "Les capacités déclenchées de vos Ninjas se déclenchent une fois de plus",
+        label: "Your Ninjas' triggered abilities trigger an additional time",
       }),
       activated({
         mana: "{1}{U}",
         targets: [target.permanent("t", ["Creature"], { subtype: "Ninja" }, "Ninja")],
         effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
-        label: "Un Ninja ne peut pas être bloqué ce tour-ci",
+        label: "A Ninja can't be blocked this turn",
       }),
     ],
   },
   "Tainted Treats": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+      [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
       [
         fx.destroy(ref.target()),
-        // Valeur de mana d'après ses dernières informations connues.
+        // Mana value from its last known information.
         ...fx.when(cond.refMatches(ref.target(), { maxManaValue: 4 }), fx.createTokens(FOOD)),
       ],
     ),
@@ -409,7 +408,7 @@ export const MULTI: Record<string, CardScript> = {
     cantBeCountered: true,
     abilities: [
       triggered(when.castSpell("any", { manaSpentBelowValue: true }), [fx.damage(3, ref.eventPlayer)], {
-        label: "3 blessures au joueur qui a dépensé moins que la valeur de mana",
+        label: "3 damage to the player who spent less than the mana value",
       }),
     ],
   },

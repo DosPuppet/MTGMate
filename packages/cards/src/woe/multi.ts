@@ -1,4 +1,4 @@
-/** Wilds of Eldraine — cartes multicolores. */
+/** Wilds of Eldraine — multicolored cards. */
 import type { ManaRestriction, TokenSpec, TriggerSpec } from "@mtgx/engine";
 import {
   activated,
@@ -23,18 +23,18 @@ import {
 } from "./common";
 
 /**
- * Troyan : « ce mana ne peut servir qu'à lancer des sorts de valeur de mana 5 ou plus, ou des sorts avec {X} dans leur
- * coût de mana ».
+ * Troyan: "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana
+ * costs".
  */
 const TROYAN_MANA: ManaRestriction = { spell: { anyOf: [{ minManaValue: 5 }, { hasX: true }] } };
 
-/** « Chaque fois que vous engagez une créature dégagée qu'un adversaire contrôle » (Hylda, Sharae). */
+/** "Whenever you tap an untapped creature an opponent controls" (Hylda, Sharae). */
 const YOU_TAP_OPPONENT_CREATURE: TriggerSpec = {
   on: "taps",
   who: { types: ["Creature"], controller: "opponent" },
   byYou: true,
 };
-/** Élémental : créature blanche et bleue 4/4 (Hylda of the Icy Crown). */
+/** Elemental: 4/4 white and blue creature (Hylda of the Icy Crown). */
 const ELEMENTAL_WU: TokenSpec = {
   name: "Elemental",
   colors: ["W", "U"],
@@ -55,9 +55,9 @@ export const MULTI: Record<string, CardScript> = {
             notSameNameAs: { token: true, controller: "you" },
           }),
         ],
-        label: "Chapitres I et II — Un jeton copie (Reflet, non légendaire, célérité)",
+        label: "Chapters I and II — A token copy (Reflection, nonlegendary, haste)",
       }),
-      chapter([3], [fx.sacrifice(ref.you, { subtype: "Reflection" }, 99)], { label: "Chapitre III — Sacrifiez vos Reflets" }),
+      chapter([3], [fx.sacrifice(ref.you, { subtype: "Reflection" }, 99)], { label: "Chapter III — Sacrifice your Reflections" }),
     ],
   },
   "Yenna, Redtooth Regent": {
@@ -67,24 +67,24 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         sorcerySpeed: true,
         targets: [
-          target.permanent("t", ["Enchantment"], { controller: "you", notSameNameAs: { controller: "you" } }, "enchantement"),
+          target.permanent("t", ["Enchantment"], { controller: "you", notSameNameAs: { controller: "you" } }, "enchantment"),
         ],
         effects: [
           fx.copyToken(ref.target(), { nonlegendary: true, store: "y" }),
           ...fx.when(cond.refMatches(ref.stored("y"), { subtype: "Aura" }), fx.untap(ref.self), fx.scry(2)),
         ],
-        label: "Un jeton copie (non légendaire) d'un de vos enchantements ; une Aura : dégagez Yenna, regard 2",
+        label: "A token copy (nonlegendary) of one of your enchantments; an Aura: untap Yenna, scry 2",
       }),
     ],
   },
-  // Vol lu dans le texte.
+  // Flying read from the text.
   "Likeness Looter": {
     abilities: [
-      activated({ tap: true, effects: fx.loot(1), label: "Piochez une carte, puis défaussez une carte" }),
+      activated({ tap: true, effects: fx.loot(1), label: "Loot: draw a card, then discard a card" }),
       activated({
         mana: "{X}",
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de valeur de mana X")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card with mana value X")],
         effects: [
           fx.becomeCopy(ref.self, ref.target(), "permanent", {
             addKeywords: ["flying"],
@@ -92,24 +92,24 @@ export const MULTI: Record<string, CardScript> = {
             ifManaValue: amount.x,
           }),
         ],
-        label: "Devient une copie d'une carte de créature de VM X de votre cimetière (avec le vol et cette capacité)",
+        label: "Becomes a copy of a creature card with MV X in your graveyard (with flying and this ability)",
       }),
     ],
   },
   "Faunsbane Troll": {
     abilities: [
-      triggered(when.entersSelf, createRole(MONSTER_ROLE, ref.self), { label: "Un Rôle Monstre attaché à elle" }),
+      triggered(when.entersSelf, createRole(MONSTER_ROLE, ref.self), { label: "A Monster Role attached to it" }),
       activated({
         mana: "{1}",
         sacrificeOther: { filter: { subtype: "Aura", attached: "toSource" }, count: 1 },
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "opponent" })],
         effects: [fx.exileIfDies(ref.target()), fx.fight(ref.self, ref.target())],
-        label: "Sacrifiez une Aura attachée : elle se bat contre une créature (exilée si elle meurt ce tour-ci)",
+        label: "Sacrifice an attached Aura: it fights a creature (exiled if it dies this turn)",
       }),
     ],
   },
-  // Menace lue dans le texte. Comme Will, Scion of Peace : la réduction est accordée à Rowan pour le tour.
+  // Menace read from the text. As for Will, Scion of Peace: the reduction is granted to Rowan for the turn.
   "Rowan, Scion of War": {
     abilities: [
       activated({
@@ -118,35 +118,35 @@ export const MULTI: Record<string, CardScript> = {
         effects: [
           fx.modify(ref.self, {
             addAbilities: [
-              costReducer({ colors: ["B", "R"] }, 0, "Vos sorts noirs et/ou rouges coûtent {X} de moins (PV perdus)", {
+              costReducer({ colors: ["B", "R"] }, 0, "Your black and/or red spells cost {X} less (life lost)", {
                 genericAmount: amount.lifeLostThisTurn,
               }),
             ],
           }),
         ],
-        label: "Vos sorts noirs et/ou rouges coûtent {X} de moins ce tour-ci",
+        label: "Your black and/or red spells cost {X} less this turn",
       }),
     ],
   },
   "Hylda of the Icy Crown": {
     abilities: [
-      // « Vous pouvez payer {1}. Quand vous le faites, choisissez un — » : le mode est choisi par la capacité réflexive.
+      // "You may pay {1}. When you do, choose one —": the mode is chosen by the reflexive ability.
       triggered(
         YOU_TAP_OPPONENT_CREATURE,
         fx.mayPay(
           "{1}",
-          "Payer {1} ?",
+          "Pay {1}?",
           fx.reflexiveModal([
-            mode("Un Élémental 4/4", [], [fx.createTokens(ELEMENTAL_WU)]),
+            mode("A 4/4 Elemental", [], [fx.createTokens(ELEMENTAL_WU)]),
             mode(
-              "Un marqueur +1/+1 sur chaque créature que vous contrôlez",
+              "Put a +1/+1 counter on each creature you control",
               [],
               [fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1)],
             ),
-            mode("Regard 2, puis piochez une carte", [], [fx.scry(2), fx.draw(1)]),
+            mode("Scry 2, then draw a card", [], [fx.scry(2), fx.draw(1)]),
           ]),
         ),
-        { label: "Vous engagez une créature adverse : vous pouvez payer {1}" },
+        { label: "You tap a creature an opponent controls: you may pay {1}" },
       ),
     ],
   },
@@ -154,11 +154,11 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Engagez une créature adverse, marqueur d'étourdissement",
+        label: "Tap a creature an opponent controls, stun counter",
       }),
       triggered(YOU_TAP_OPPONENT_CREATURE, [fx.draw(1)], {
         oncePerTurn: true,
-        label: "Vous engagez une créature adverse : piochez une carte (une fois par tour)",
+        label: "You tap a creature an opponent controls: draw a card (once each turn)",
       }),
     ],
   },
@@ -166,8 +166,8 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         { types: ["Creature"], enchanted: "byYou" },
-        { addBlockRules: [{ cantAttackPlayer: "you", label: "Ne peut pas attaquer le contrôleur d'Eriette" }] },
-        { label: "Les créatures enchantées par vos Auras ne peuvent pas vous attaquer" },
+        { addBlockRules: [{ cantAttackPlayer: "you", label: "Can't attack Eriette's controller" }] },
+        { label: "Creatures enchanted by your Auras can't attack you" },
       ),
       triggered(
         when.yourEndStep,
@@ -175,7 +175,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.loseLife(amount.count({ subtype: "Aura", controller: "you" }), ref.eachOpponent),
           fx.gainLife(amount.count({ subtype: "Aura", controller: "you" })),
         ],
-        { label: "Chaque adversaire perd X PV, vous en gagnez X (X : vos Auras)" },
+        { label: "Each opponent loses X life, you gain X life (X: your Auras)" },
       ),
     ],
   },
@@ -183,12 +183,12 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, createRole(MONSTER_ROLE), {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Un Rôle Monstre attaché à une autre créature que vous contrôlez",
+        label: "A Monster Role attached to another creature you control",
       }),
       staticAbility(
         { types: ["Creature"], controller: "you", enchanted: true },
         { power: 1, toughness: 1 },
-        { label: "Vos créatures enchantées : +1/+1" },
+        { label: "Your enchanted creatures: +1/+1" },
       ),
     ],
   },
@@ -196,40 +196,40 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], {
         condition: CELEBRATION,
-        label: "Célébration — un marqueur +1/+1 sur Ash",
+        label: "Celebration — a +1/+1 counter on Ash",
       }),
     ],
   },
   "The Goose Mother": {
     abilities: [
-      entersWith({ counters: amount.x, label: "Arrive avec X marqueurs +1/+1" }),
-      // « La moitié de X Nourritures, arrondie à l'unité supérieure » : (X + 1) / 2, arrondi à l'inférieur.
+      entersWith({ counters: amount.x, label: "Enters with X +1/+1 counters" }),
+      // "half X Food tokens, rounded up": (X + 1) / 2, rounded down.
       triggered(when.entersSelf, [fx.createTokens(FOOD, amount.per(amount.plus(amount.sourceX, 1), 2))], {
-        label: "La moitié de X Nourritures (arrondie au supérieur)",
+        label: "Half X Foods (rounded up)",
       }),
       triggered(
         when.attacksSelf,
         [fx.sacrifice(ref.you, { subtype: "Food" }, 1, { optional: true, store: "f" }), ...fx.when(cond.v("f"), fx.draw(1))],
-        { label: "Vous pouvez sacrifier une Nourriture pour piocher une carte" },
+        { label: "You may sacrifice a Food to draw a card" },
       ),
     ],
   },
   "Greta, Sweettooth Scourge": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Une Nourriture" }),
+      triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "A Food" }),
       activated({
         mana: "{G}",
         sacrificeOther: { filter: { subtype: "Food" } },
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Un marqueur +1/+1 sur une créature",
+        label: "A +1/+1 counter on a creature",
       }),
       activated({
         mana: "{1}{B}",
         sacrificeOther: { filter: { subtype: "Food" } },
         effects: [fx.draw(1), fx.loseLife(1)],
-        label: "Piochez une carte et perdez 1 point de vie",
+        label: "Draw a card, and you lose 1 life",
       }),
     ],
   },
@@ -241,15 +241,15 @@ export const MULTI: Record<string, CardScript> = {
             "t",
             { anyOf: [{ types: ["Creature"] }, { types: ["Enchantment"] }] },
             "you",
-            "carte de créature ou d'enchantement de votre cimetière",
+            "creature or enchantment card in your graveyard",
           ),
         ],
-        label: "Renvoie une carte de créature ou d'enchantement en main",
+        label: "Returns a creature or enchantment card to hand",
       }),
       triggered(
         { on: "leaves", who: { types: ["Enchantment"], controller: "you" }, to: "graveyard" },
         [fx.addCounters(ref.self, 1), fx.scry(1)],
-        { label: "Un enchantement mis au cimetière : un marqueur +1/+1, puis regard 1" },
+        { label: "An enchantment put into the graveyard: a +1/+1 counter, then scry 1" },
       ),
     ],
   },
@@ -258,21 +258,21 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.enters({ types: ["Creature"], subtype: "Faerie", controller: "you", other: true }),
         [fx.loseLife(1, ref.eachOpponent)],
-        { label: "Chaque adversaire perd 1 point de vie" },
+        { label: "Another Faerie enters: each opponent loses 1 life" },
       ),
     ],
   },
   "Totentanz, Swarm Piper": {
     abilities: [
-      // « Totentanz ou une autre créature non-jeton que vous contrôlez » : Totentanz est elle-même non-jeton.
+      // "Totentanz or another nontoken creature you control": Totentanz is itself nontoken.
       triggered(when.dies({ types: ["Creature"], controller: "you", token: false }), [fx.createTokens(RAT_NO_BLOCK)], {
-        label: "Un Rat 1/1 qui ne peut pas bloquer",
+        label: "A 1/1 Rat that can't block",
       }),
       activated({
         mana: "{1}{B}",
         targets: [target.creature("t", { subtype: "Rat", attacking: true, controller: "you" })],
         effects: [fx.pump(ref.target(), 0, 0, ["deathtouch"])],
-        label: "Un Rat attaquant gagne le contact mortel",
+        label: "An attacking Rat gains deathtouch",
       }),
     ],
   },
@@ -281,28 +281,28 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         tap: true,
         effects: [fx.addManaChoice(1, ["G"], TROYAN_MANA), fx.addManaChoice(1, ["U"], TROYAN_MANA)],
-        label: "Ajoutez {G}{U} (sorts de VM 5 ou plus)",
+        label: "Add {G}{U} (spells with MV 5 or greater)",
       }),
-      activated({ mana: "{U}", tap: true, effects: fx.loot(1), label: "Piochez, puis défaussez" }),
+      activated({ mana: "{U}", tap: true, effects: fx.loot(1), label: "Draw, then discard one card" }),
     ],
   },
   "Will, Scion of Peace": {
     abilities: [
-      // Approximation : la réduction est accordée à Will jusqu'à la fin du tour (elle cesse s'il quitte le champ de
-      // bataille) ; X est lu à chaque sort lancé (points de vie gagnés ce tour-ci).
+      // Approximation: the reduction is granted to Will until end of turn (it stops if he leaves the battlefield); X is
+      // read on each spell cast (life gained this turn).
       activated({
         tap: true,
         sorcerySpeed: true,
         effects: [
           fx.modify(ref.self, {
             addAbilities: [
-              costReducer({ colors: ["W", "U"] }, 0, "Vos sorts blancs et/ou bleus coûtent {X} de moins (PV gagnés)", {
+              costReducer({ colors: ["W", "U"] }, 0, "Your white and/or blue spells cost {X} less (life gained)", {
                 genericAmount: amount.lifeGainedThisTurn,
               }),
             ],
           }),
         ],
-        label: "Vos sorts blancs et/ou bleus coûtent {X} de moins ce tour-ci",
+        label: "Your white and/or blue spells cost {X} less this turn",
       }),
     ],
   },

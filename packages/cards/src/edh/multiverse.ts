@@ -1,8 +1,9 @@
 /**
- * Commander : préconstruit « Multiverse Reforged » de Reality Fracture (Jace, Multiverse Architect, quatre couleurs sans
- * vert). Planeswalkers et grandes créatures remises sur le champ de bataille, jetons, monarque, contrôle.
+ * Commander: "Multiverse Reforged" precon of Reality Fracture (Jace, Multiverse Architect, four colors without
+ * green). Planeswalkers and big creatures put back onto the battlefield, tokens, monarch, control.
  */
 import type { CardScript, Effect, ObjectFilter, TokenSpec } from "@mtgx/engine";
+import { msg } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -43,7 +44,7 @@ const ANGEL_4_4: TokenSpec = creature("Angel", ["W"], ["Angel"], 4, 4, { keyword
 const ROGUE: TokenSpec = creature("Rogue", ["B"], ["Rogue"], 2, 2);
 const KOBOLDS: TokenSpec = creature("Kobolds of Kher Keep", ["R"], ["Kobold"], 0, 1);
 const SHARK: TokenSpec = creature("Shark", ["U"], ["Shark"], 0, 0, { keywords: ["flying"] });
-/** Mite phyrexian 1/1 incolore, artefact, toxique 1, « ne peut pas bloquer ». */
+/** 1/1 colorless Phyrexian Mite artifact, toxic 1, "can't block". */
 const MITE: TokenSpec = {
   name: "Phyrexian Mite",
   colors: [],
@@ -56,7 +57,7 @@ const MITE: TokenSpec = {
   text: "Toxic 1. This token can't block.",
 };
 const MYR: TokenSpec = { name: "Myr", colors: [], types: ["Artifact", "Creature"], subtypes: ["Myr"], power: 1, toughness: 1 };
-/** Gingerbrute : Golem Nourriture 1/1 avec la célérité. */
+/** Gingerbrute: 1/1 Food Golem with haste. */
 const GINGERBRUTE: TokenSpec = {
   name: "Gingerbrute",
   colors: [],
@@ -70,16 +71,16 @@ const GINGERBRUTE: TokenSpec = {
       mana: "{1}",
       effects: [
         fx.modify(ref.self, {
-          addBlockRules: [{ cantBeBlockedBy: { not: { keyword: "haste" } }, label: "Imblocable sauf par la célérité" }],
+          addBlockRules: [{ cantBeBlockedBy: { not: { keyword: "haste" } }, label: "Can't be blocked except by haste" }],
         }),
       ],
-      label: "Ne peut être bloqué ce tour-ci que par des créatures avec la célérité",
+      label: "Can't be blocked this turn except by creatures with haste",
     }),
-    activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "Vous gagnez 3 PV" }),
+    activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "You gain 3 life" }),
   ],
   text: "Haste. {1}: This token can't be blocked this turn except by creatures with haste. {2}, {T}, Sacrifice this token: You gain 3 life.",
 };
-/** Incubateur (701.53) : « {2} : transformez ce jeton » ; il devient une créature-artefact Phyrexian 0/0. */
+/** Incubator (701.53): "{2}: Transform this token"; it becomes a 0/0 Phyrexian artifact creature. */
 const INCUBATOR: TokenSpec = {
   name: "Incubator",
   colors: [],
@@ -89,23 +90,23 @@ const INCUBATOR: TokenSpec = {
     activated({
       mana: "{2}",
       effects: [fx.modify(ref.self, { addTypes: ["Creature"], setSubtypes: ["Phyrexian"] }, "permanent", 0)],
-      label: "Transformez-le : créature-artefact Phyrexian 0/0",
+      label: "Transform it: 0/0 Phyrexian artifact creature",
     }),
   ],
   text: "{2}: Transform this token.",
 };
-/** Incuber X (701.53) : un Incubateur avec X marqueurs +1/+1. */
+/** Incubate X (701.53): an Incubator with X +1/+1 counters. */
 const incubate = (x: Parameters<typeof amount.plus>[0]): Effect[] => [
   fx.createTokens(INCUBATOR, 1, undefined, "incubator"),
   fx.addCounters(ref.stored("incubator"), x),
 ];
 
-/** « Les sorts de [type] coûtent {1} de moins » depuis la zone de commandement aussi (éminence : The Ur-Sphinx). */
+/** "[Type] spells cost {1} less" from the command zone as well (eminence: The Ur-Sphinx). */
 const eminenceReduction = (subtype: string, label: string) =>
   playerStatic({ spellCost: { filter: { subtype, not: { name: "The Ur-Sphinx" } }, reduce: 1 }, fromCommand: true, label });
 
 export const EDH_MULTIVERSE: Record<string, CardScript> = {
-  // --- Commandant ---------------------------------------------------------------------------------------------------
+  // --- Commander ----------------------------------------------------------------------------------------------------
   "Jace, Multiverse Architect": {
     abilities: [
       triggered(
@@ -115,19 +116,14 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
           { mana: "{2}" },
           fx.thisTurn({ cantAttack: { of: "you", subtype: "Jace" } }, ref.eventPlayer),
         ),
-        { label: "L'adversaire paie {2}, sinon ses créatures ne peuvent pas attaquer vos Jace ce tour-ci" },
+        { label: "The opponent pays {2}, or their creatures can't attack your Jaces this turn" },
       ),
       loyalty(1, {
         effects: [
           fx.draw(2),
-          fx.pickFromZone(
-            "hand",
-            {},
-            { to: "libraryBottom" },
-            { count: 1, prompt: "Une carte au-dessous de votre bibliothèque" },
-          ),
+          fx.pickFromZone("hand", {}, { to: "libraryBottom" }, { count: 1, prompt: "One card on the bottom of your library" }),
         ],
-        label: "Piochez deux cartes, puis une carte de votre main au-dessous de votre bibliothèque",
+        label: "Draw two cards, then put a card from your hand on the bottom of your library",
       }),
       loyalty(-3, {
         targets: [
@@ -135,14 +131,14 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
             "t",
             ["Planeswalker", "Creature"],
             { controller: "you", other: true },
-            "autre planeswalker ou créature",
+            "other planeswalker or creature",
           ),
         ],
         effects: [
           fx.exile(ref.target()),
           fx.revealUntilN({ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, 1, { to: "battlefield" }),
         ],
-        label: "Exilez un autre de vos planeswalkers ou créatures ; un planeswalker ou une créature de votre bibliothèque arrive",
+        label: "Exile another planeswalker or creature you control; a planeswalker or creature from your library enters",
       }),
     ],
   },
@@ -154,13 +150,23 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
   "Fetid Heath": {
     abilities: [
       manaAbility("C"),
-      activated({ mana: "{W/B}", tap: true, effects: [fx.addManaCombination(2, ["W", "B"])], label: "{W}{W}, {W}{B} ou {B}{B}" }),
+      activated({
+        mana: "{W/B}",
+        tap: true,
+        effects: [fx.addManaCombination(2, ["W", "B"])],
+        label: "{W}{W}, {W}{B}, or {B}{B}",
+      }),
     ],
   },
   "Mystic Gate": {
     abilities: [
       manaAbility("C"),
-      activated({ mana: "{W/U}", tap: true, effects: [fx.addManaCombination(2, ["W", "U"])], label: "{W}{W}, {W}{U} ou {U}{U}" }),
+      activated({
+        mana: "{W/U}",
+        tap: true,
+        effects: [fx.addManaCombination(2, ["W", "U"])],
+        label: "{W}{W}, {W}{U}, or {U}{U}",
+      }),
     ],
   },
   "Kher Keep": {
@@ -176,12 +182,12 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
     abilities: [manaAbility("R")],
   },
   "Omnath, Locus of the Void": {
-    // « +1/+1 pour chaque mana inutilisé que vous avez » : force et endurance de base 6 plus ce mana.
+    // "+1/+1 for each unspent mana you have": base power and toughness 6 plus that mana.
     cdaPower: amount.plus(6, amount.manaInPool),
     cdaToughness: amount.plus(6, amount.manaInPool),
     abilities: [
-      playerStatic({ keepUnspentMana: { types: [], becomes: "C" }, label: "Le mana inutilisé devient incolore" }),
-      triggered(when.landfall, [fx.addMana("C", "C")], { label: "Accalmie : {C}{C}" }),
+      playerStatic({ keepUnspentMana: { types: [], becomes: "C" }, label: "Unspent mana becomes colorless" }),
+      triggered(when.landfall, [fx.addMana("C", "C")], { label: "Landfall: {C}{C}" }),
     ],
   },
   "Contaminated Landscape": {
@@ -196,7 +202,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
             { to: "battlefield", tapped: true },
           ),
         ],
-        label: "Cherchez une Plaine, une Île ou un Marais de base",
+        label: "Search for a basic Plains, Island, or Swamp",
       }),
     ],
   },
@@ -212,7 +218,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
             { to: "battlefield", tapped: true },
           ),
         ],
-        label: "Cherchez une Île, une Montagne ou une Plaine de base",
+        label: "Search for a basic Island, Mountain, or Plains",
       }),
     ],
   },
@@ -221,7 +227,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.amountAtLeast(amount.count({ types: ["Land"], controller: "opponent" }), 8)),
-        label: "Engagé, sauf si vos adversaires contrôlent huit terrains ou plus",
+        label: "Tapped unless your opponents control eight or more lands",
       }),
     ],
   },
@@ -230,7 +236,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.amountAtLeast(amount.count({ types: ["Land"], controller: "opponent" }), 8)),
-        label: "Engagé, sauf si vos adversaires contrôlent huit terrains ou plus",
+        label: "Tapped unless your opponents control eight or more lands",
       }),
     ],
   },
@@ -239,25 +245,25 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
       entersWith({
         tapped: true,
         condition: cond.not(cond.amountAtLeast(amount.count({ types: ["Land"], controller: "opponent" }), 8)),
-        label: "Engagé, sauf si vos adversaires contrôlent huit terrains ou plus",
+        label: "Tapped unless your opponents control eight or more lands",
       }),
     ],
   },
 
-  // --- Créatures ----------------------------------------------------------------------------------------------------
+  // --- Creatures -----------------------------------------------------------------------------------------------------
   "Akroma, Angel of Fury": {
     cantBeCountered: true,
     abilities: [activated({ mana: "{R}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0" })],
   },
   "Archfiend of Despair": {
     abilities: [
-      playerStatic({ cantGainLife: true, affects: "opponents", label: "Vos adversaires ne peuvent pas gagner de PV" }),
+      playerStatic({ cantGainLife: true, affects: "opponents", label: "Your opponents can't gain life" }),
       triggered(
         when.eachEndStep,
         fx.forEachPlayer(ref.eachOpponent, (p) => [
           fx.loseLife({ kind: "turnEvents", query: { event: "lifeLoss", sum: true }, of: p }, p),
         ]),
-        { label: "Chaque adversaire perd autant de PV qu'il en a perdu ce tour-ci" },
+        { label: "Each opponent loses life equal to the life they lost this turn" },
       ),
     ],
   },
@@ -275,7 +281,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
           ],
           {
             targets: [target.player("t", "opponent")],
-            label: "L'adversaire sacrifie une créature ou un planeswalker, défausse, perd 3 PV ; vous piochez et gagnez 3 PV",
+            label: "The opponent sacrifices a creature or planeswalker, discards, loses 3 life; you draw and gain 3 life",
           },
         ),
       ),
@@ -286,7 +292,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
       triggered(
         when.dies({ types: ["Creature"], controller: "you", token: false }),
         [fx.delayed([fx.toBattlefield(ref.target("c"), { underYourControl: true })], { c: ref.eventObject })],
-        { label: "Une de vos créatures non-jetons meurt : elle revient au début de la prochaine étape de fin" },
+        { label: "A nontoken creature you control dies: it returns at the beginning of the next end step" },
       ),
     ],
   },
@@ -299,30 +305,30 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
           fx.goad(ref.stored("dack"), "permanent"),
           ...fx.forEachPlayer(ref.eachOpponent, (p, n) => [fx.giveControl(ref.nth(ref.stored("dack"), n), p)]),
         ],
-        { label: "Une créature par adversaire arrive, provoquée, et chaque adversaire en prend une" },
+        { label: "One creature per opponent enters, goaded, and each opponent gains control of one" },
       ),
     ],
   },
   "Darksteel Angel": {
     abilities: [
-      playerStatic({ cantLose: true, label: "Vous ne pouvez pas perdre et vos adversaires ne peuvent pas gagner" }),
+      playerStatic({ cantLose: true, label: "You can't lose the game and your opponents can't win the game" }),
       eventReplacement({
         event: "counters",
         to: "yourSide",
         toFilter: { types: ["Creature"] },
         counter: "-1/-1",
         modify: { prevent: true },
-        label: "Vos créatures ne peuvent pas recevoir de marqueurs -1/-1",
+        label: "-1/-1 counters can't be put on creatures you control",
       }),
     ],
   },
   "Ginger, Queen of Sweets": {
     abilities: [
-      triggered(when.entersSelf, [fx.becomeMonarch()], { label: "Vous devenez le monarque" }),
-      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(6)], label: "Sacrifiez-la : vous gagnez 6 PV" }),
+      triggered(when.entersSelf, [fx.becomeMonarch()], { label: "You become the monarch" }),
+      activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(6)], label: "Sacrifice it: you gain 6 life" }),
       triggered({ on: "step", step: "upkeep", whose: "any" }, [fx.createTokens(GINGERBRUTE)], {
         condition: cond.monarch,
-        label: "Vous êtes le monarque : un Gingerbrute",
+        label: "You're the monarch: a Gingerbrute",
       }),
     ],
   },
@@ -344,7 +350,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
           {
             targets: [target.player("t", "opponent")],
             label:
-              "L'adversaire révèle jusqu'à un permanent historique : il arrive sous votre contrôle ; vous perdez sa valeur de mana",
+              "The opponent reveals until a historic permanent: it enters under your control; you lose life equal to its mana value",
           },
         ),
       ),
@@ -352,9 +358,9 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
   },
   "Memnarch, the Warden": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(MYR, 2)], { label: "Deux Myr 1/1" }),
+      triggered(when.entersSelf, [fx.createTokens(MYR, 2)], { label: "Two 1/1 Myr" }),
       triggered(when.attacksSelf, [fx.draw(amount.count({ types: ["Artifact"], controller: "you" }))], {
-        label: "Piochez une carte par artefact que vous contrôlez",
+        label: "Draw a card for each artifact you control",
       }),
     ],
   },
@@ -367,7 +373,7 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
           fx.countResolution("nissa"),
           ...fx.when(cond.not(cond.v("nissa", 2)), fx.revealUntilN({ types: ["Creature"] }, 1, { to: "battlefield" })),
         ],
-        { label: "Accalmie : piochez ; la première fois ce tour-ci, une créature de votre bibliothèque arrive" },
+        { label: "Landfall: draw; the first time this turn, a creature from your library enters" },
       ),
     ],
   },
@@ -375,10 +381,10 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.gainLife,
-        fx.mayPayLife(amount.eventAmount, "Payer autant de PV pour piocher autant de cartes ?", fx.draw(amount.eventAmount)),
-        { label: "Vous gagnez des PV : vous pouvez payer autant de PV et piocher autant" },
+        fx.mayPayLife(amount.eventAmount, "Pay that much life to draw that many cards?", fx.draw(amount.eventAmount)),
+        { label: "You gain life: you may pay that much life and draw that many cards" },
       ),
-      activated({ tap: true, effects: [fx.loseLife(1, ref.eachOpponent), fx.gainLife(1)], label: "Chaque adversaire perd 1 PV" }),
+      activated({ tap: true, effects: [fx.loseLife(1, ref.eachOpponent), fx.gainLife(1)], label: "Each opponent loses 1 life" }),
     ],
   },
   "Ob Nixilis, the Ascended": {
@@ -386,16 +392,16 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [fx.destroyAll({ types: ["Creature"], controller: "opponent", tapped: true }, "obd"), fx.gainLife(amount.v("obd"))],
-        { label: "Détruisez les créatures engagées de vos adversaires ; 1 PV par créature détruite" },
+        { label: "Destroy the tapped creatures your opponents control; 1 life for each creature destroyed" },
       ),
       triggered(when.eachEndStep, [fx.createTokens(ANGEL_4_4)], {
         condition: cond.lifeGainedAtLeast(1),
-        label: "Vous avez gagné des PV ce tour-ci : un Ange 4/4 volant",
+        label: "You gained life this turn: a 4/4 flying Angel",
       }),
     ],
   },
   "Serra's Emissary": {
-    // Le type de carte est choisi comme un mode d'arrivée (comme Arachne, Psionic Weaver).
+    // The card type is chosen as an "as enters" choice (like Arachne, Psionic Weaver).
     asEnters: [
       fx.chooseForSelf("mode", {
         options: ["Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Planeswalker", "Land", "Battle", "Kindred"],
@@ -404,37 +410,37 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         CREATURE_YOU,
-        { addProtections: [protection.from({ typeChosen: true }, "Protection contre le type choisi")] },
+        { addProtections: [protection.from({ typeChosen: true }, "Protection from the chosen type")] },
         {
-          label: "Vos créatures ont la protection contre le type choisi",
+          label: "Creatures you control have protection from the chosen type",
         },
       ),
-      playerStatic({ protection: { typeChosen: true }, label: "Vous avez la protection contre le type choisi" }),
+      playerStatic({ protection: { typeChosen: true }, label: "You have protection from the chosen type" }),
     ],
   },
   "Tamiyo, Upriser Crowned": {
     abilities: [
-      triggered(when.entersSelf, [fx.becomeMonarch()], { label: "Vous devenez le monarque" }),
+      triggered(when.entersSelf, [fx.becomeMonarch()], { label: "You become the monarch" }),
       triggered(
         when.combatDamageBatch({ types: ["Creature"] }, true),
         [fx.tap(ref.eventObjects), fx.counters(ref.eventObjects, "stun", 1)],
         {
           triggerCondition: cond.monarch,
-          label: "Des créatures vous blessent alors que vous êtes le monarque : engagées, un marqueur d'étourdissement",
+          label: "Creatures deal damage to you while you're the monarch: tapped, a stun counter",
         },
       ),
     ],
   },
   "The Ur-Sphinx": {
     abilities: [
-      eminenceReduction("Sphinx", "Éminence — vos autres sorts de Sphinx coûtent {1} de moins"),
+      eminenceReduction("Sphinx", "Eminence — other Sphinx spells you cast cost {1} less"),
       triggered(
         when.attackWith(1, { subtype: "Sphinx", controller: "you" }),
         fx.forEachPlayer(ref.eachPlayer, (p, n) => [
           fx.mill(amount.eventAmount, p, { name: `sphinx${n}` }),
           fx.castNow(ref.stored(`sphinx${n}`), { free: true }),
         ]),
-        { label: "Chaque joueur meule autant de cartes ; une carte meulée par joueur, lancée gratuitement" },
+        { label: "Each player mills that many cards; one milled card per player, cast for free" },
       ),
     ],
   },
@@ -442,30 +448,42 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
     abilities: [
       triggeredModal(when.entersSelf, [
         {
-          label: "Copiez deux fois un éphémère ou un rituel adverse",
-          targets: [target.spell("s", { types: ["Instant", "Sorcery"], controller: "opponent" }, "éphémère ou rituel adverse")],
+          label: "Copy an opponent's instant or sorcery twice",
+          targets: [
+            target.spell(
+              "s",
+              { types: ["Instant", "Sorcery"], controller: "opponent" },
+              "instant or sorcery spell an opponent controls",
+            ),
+          ],
           effects: [fx.copySpell(ref.target("s"), 2)],
         },
         {
-          label: "Deux jetons copies d'un permanent adverse, avec la célérité, sacrifiés à l'étape de fin",
-          targets: [{ id: "p", label: "permanent adverse", filter: { objects: { permanent: true, controller: "opponent" } } }],
+          label: "Two token copies of an opponent's permanent, with haste, sacrificed at the end step",
+          targets: [
+            {
+              id: "p",
+              label: "permanent an opponent controls",
+              filter: { objects: { permanent: true, controller: "opponent" } },
+            },
+          ],
           effects: [fx.copyToken(ref.target("p"), { count: 2, addKeywords: ["haste"], sacrificeAtEndStep: true })],
         },
       ]),
     ],
   },
 
-  // --- Artefacts et enchantements -----------------------------------------------------------------------------------
+  // --- Artifacts and enchantments -----------------------------------------------------------------------------------
   "Currency Converter": {
     abilities: [
       triggered(
         when.discard("you"),
-        fx.may("Exiler la carte défaussée ?", fx.exileCard(ref.eventObject, { name: "cc" }), fx.link(ref.stored("cc"))),
+        fx.may("Exile the discarded card?", fx.exileCard(ref.eventObject, { name: "cc" }), fx.link(ref.stored("cc"))),
         {
-          label: "Vous défaussez : vous pouvez exiler cette carte",
+          label: "You discard: you may exile that card",
         },
       ),
-      activated({ mana: "{2}", tap: true, effects: [fx.draw(1), fx.discard(1)], label: "Piochez, puis défaussez" }),
+      activated({ mana: "{2}", tap: true, effects: [fx.draw(1), fx.discard(1)], label: "Draw, and then discard" }),
       activated({
         tap: true,
         effects: [
@@ -473,20 +491,20 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
           ...fx.when(cond.refMatches(ref.stored("cc"), { types: ["Land"] }), fx.createTokens(TREASURE)),
           ...fx.when(cond.refMatches(ref.stored("cc"), { notTypes: ["Land"] }), fx.createTokens(ROGUE)),
         ],
-        label: "Une carte exilée au cimetière : terrain, un Trésor ; sinon, un Voleur 2/2",
+        label: "An exiled card into the graveyard: land, a Treasure; otherwise, a 2/2 Rogue",
       }),
     ],
   },
   "Dreadhorde Invasion": {
     abilities: [
       triggered(when.yourUpkeep, [fx.loseLife(1), fx.amass(ref.you, "Zombie", 1)], {
-        label: "Perdez 1 PV et amassez des Zombies 1",
+        label: "Lose 1 life and amass Zombies 1",
       }),
       triggered(
         when.attacks({ subtype: "Zombie", token: true, controller: "you", minPower: 6 }),
         [fx.pump(ref.eventObject, 0, 0, ["lifelink"])],
         {
-          label: "Un jeton Zombie de force 6 ou plus attaque : lien de vie",
+          label: "A Zombie token with power 6 or greater attacks: lifelink",
         },
       ),
     ],
@@ -502,7 +520,8 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
           fx.moveTo(ref.target(), { to: "libraryBottom" }),
           fx.revealUntilN({ types: ["Creature"] }, 1, { to: "battlefield" }, undefined, ref.controllerOf(ref.target())),
         ],
-        label: "La créature au-dessous de la bibliothèque ; son contrôleur révèle jusqu'à une créature et la met en jeu",
+        label:
+          "The creature on the bottom of the library; its controller reveals until a creature and puts it onto the battlefield",
       }),
     ],
   },
@@ -512,60 +531,55 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
         when.castSpell("you", { notTypes: ["Creature"] }),
         [{ ...fx.createTokens(SHARK), pt: amount.manaValueOf(ref.eventObject) } as Effect],
         {
-          label: "Sort non-créature : un Requin X/X volant",
+          label: "Noncreature spell: an X/X flying Shark",
         },
       ),
-      whenCycled([{ ...fx.createTokens(SHARK), pt: amount.eventAmount } as Effect], { label: "Cyclée : un Requin X/X volant" }),
+      whenCycled([{ ...fx.createTokens(SHARK), pt: amount.eventAmount } as Effect], { label: "Cycled: an X/X flying Shark" }),
     ],
   },
   "Skrelv's Hive": {
     abilities: [
-      triggered(when.yourUpkeep, [fx.loseLife(1), fx.createTokens(MITE)], { label: "Perdez 1 PV ; un Mite phyrexian" }),
+      triggered(when.yourUpkeep, [fx.loseLife(1), fx.createTokens(MITE)], { label: "Lose 1 life; a Phyrexian Mite" }),
       staticAbility(
         { ...CREATURE_YOU, keyword: "toxic" },
         { addKeywords: ["lifelink"] },
         {
           condition: cond.amountAtLeast(amount.maxOverPlayers(ref.eachOpponent, amount.poison), 3),
-          label: "Corrompu : vos créatures avec la toxicité ont le lien de vie",
+          label: "Corrupted: creatures you control with toxic have lifelink",
         },
       ),
     ],
   },
   "Staff of the Storyteller": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(SPIRIT)], { label: "Un Esprit 1/1 volant" }),
+      triggered(when.entersSelf, [fx.createTokens(SPIRIT)], { label: "A 1/1 flying Spirit" }),
       triggered(when.enters({ types: ["Creature"], token: true, controller: "you" }), [fx.counters(ref.self, "story", 1)], {
         batched: true,
-        label: "Vous créez des jetons de créature : un marqueur d'histoire",
+        label: "You create creature tokens: a story counter",
       }),
       activated({
         mana: "{W}",
         tap: true,
         removeCounters: { kind: "story", n: 1 },
         effects: [fx.draw(1)],
-        label: "Retirez un marqueur d'histoire : piochez",
+        label: "Remove a story counter: draw",
       }),
     ],
   },
   "Whirlwind of Thought": {
-    abilities: [
-      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.draw(1)], { label: "Sort non-créature : piochez" }),
-    ],
+    abilities: [triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.draw(1)], { label: "Noncreature spell: draw" })],
   },
 
-  // --- Sorts ----------------------------------------------------------------------------------------------------------
+  // --- Spells ----------------------------------------------------------------------------------------------------------
   Brainsurge: {
     spell: spell(
       [],
-      [
-        fx.draw(4),
-        fx.pickFromZone("hand", {}, { to: "libraryTop" }, { count: 2, prompt: "Deux cartes au-dessus de votre bibliothèque" }),
-      ],
+      [fx.draw(4), fx.pickFromZone("hand", {}, { to: "libraryTop" }, { count: 2, prompt: "Two cards on top of your library" })],
     ),
   },
   Despark: {
     spell: spell(
-      [{ id: "t", label: "permanent de valeur de mana 4 ou plus", filter: { objects: { permanent: true, minManaValue: 4 } } }],
+      [{ id: "t", label: "permanent with mana value 4 or greater", filter: { objects: { permanent: true, minManaValue: 4 } } }],
       [fx.exile(ref.target())],
     ),
   },
@@ -654,18 +668,18 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
   },
   "Elspeth, Sun's Champion": {
     abilities: [
-      loyalty(1, { effects: [fx.createTokens(SOLDIER, 3)], label: "Trois Soldats 1/1" }),
+      loyalty(1, { effects: [fx.createTokens(SOLDIER, 3)], label: "Three 1/1 Soldiers" }),
       loyalty(-3, {
         effects: [fx.destroyAll({ types: ["Creature"], minPower: 4 })],
-        label: "Détruisez les créatures de force 4 ou plus",
+        label: "Destroy all creatures with power 4 or greater",
       }),
       loyalty(-7, {
         effects: [
-          fx.emblem("Emblème d'Elspeth", "Les créatures que vous contrôlez gagnent +2/+2 et ont le vol.", [
-            staticAbility(CREATURE_YOU, { power: 2, toughness: 2, addKeywords: ["flying"] }, { label: "+2/+2 et le vol" }),
+          fx.emblem(msg("Elspeth's emblem"), msg("Creatures you control get +2/+2 and have flying."), [
+            staticAbility(CREATURE_YOU, { power: 2, toughness: 2, addKeywords: ["flying"] }, { label: "+2/+2 and flying" }),
           ]),
         ],
-        label: "Emblème : vos créatures +2/+2 et le vol",
+        label: "Emblem: your creatures get +2/+2 and flying",
       }),
     ],
   },

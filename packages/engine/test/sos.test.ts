@@ -246,7 +246,7 @@ describe("Secrets of Strixhaven", () => {
       // « Au choix » : demandé à la résolution (608.2d), ce n'est pas un mode.
       s = passAccepting(s, (x) => x.pending?.kind === "choice");
       const p = s.pending;
-      expect(p?.kind === "choice" && p.request.type === "pick" && p.request.labels?.["1"]).toBe("Le lien de vie");
+      expect(p?.kind === "choice" && p.request.type === "pick" && p.request.labels?.["1"]).toBe("lifelink");
       s = settle(act(s, "p1", { type: "choose", values: ["1"] }));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
       expect(chars(s, bear).keywords).toContain("lifelink");
@@ -358,20 +358,20 @@ describe("Secrets of Strixhaven", () => {
       });
       const pw = idOf(s, "p1", "battlefield", "Professor Dellian Fel");
       expect(s.objects[pw]?.counters.loyalty).toBe(5);
-      s = settle(activate(s, "p1", pw, "Gagnez 3"));
+      s = settle(activate(s, "p1", pw, "Gain 3"));
       expect(s.players.p1?.life).toBe(23);
       expect(s.objects[pw]?.counters.loyalty).toBe(7);
       // Une seule capacité de fidélité par tour.
       expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === pw)).toBe(false);
       s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.pending?.kind === "priority");
       const hand = s.players.p1?.hand.length ?? 0;
-      s = settle(activate(s, "p1", pw, "Piochez"));
+      s = settle(activate(s, "p1", pw, "Draw"));
       expect(s.players.p1?.hand).toHaveLength(hand + 1);
       expect(s.players.p1?.life).toBe(22);
       expect(s.objects[pw]?.counters.loyalty).toBe(7);
       s = advanceUntil(s, (x) => x.turn.number === 7 && x.turn.step === "main1" && x.pending?.kind === "priority");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      s = settle(activate(s, "p1", pw, "Détruit", { t: [angel] }));
+      s = settle(activate(s, "p1", pw, "Destroys", { t: [angel] }));
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
       expect(s.objects[pw]?.counters.loyalty).toBe(4);
     });
@@ -381,7 +381,7 @@ describe("Secrets of Strixhaven", () => {
       const pw = idOf(s, "p1", "battlefield", "Professor Dellian Fel");
       (s.objects[pw] as { counters: Record<string, number> }).counters.loyalty = 6;
       s.version += 1;
-      s = settle(activate(s, "p1", pw, "Emblème"));
+      s = settle(activate(s, "p1", pw, "Emblem"));
       expect(s.objects[pw]).toBeUndefined();
       s = settle(cast(s, "p1", "Witherbloom Charm", undefined, { mode: 1 }));
       expect(s.players.p1?.life).toBe(25);
@@ -2266,7 +2266,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
     it("{T}, exilez une carte de votre cimetière : ajoutez {R}, puis 1 blessure à chaque adversaire", () => {
       let s = scenario({ p1: { battlefield: ["Rubble Rouser"], graveyard: ["Opt"] } });
       const rouser = idOf(s, "p1", "battlefield", "Rubble Rouser");
-      s = activate(s, "p1", rouser, "Exilez");
+      s = activate(s, "p1", rouser, "Exile");
       expect(s.players.p1?.manaPool.R).toBe(1);
       expect(exiled(s, "Opt")).toHaveLength(1);
       s = settle(s);
@@ -4204,7 +4204,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       });
       const archaic = idOf(s, "p1", "battlefield", "Sundering Archaic");
       const opt = idOf(s, "p2", "graveyard", "Opt");
-      s = settle(activate(s, "p1", archaic, "au-dessous", { t: [opt] }));
+      s = settle(activate(s, "p1", archaic, "bottom", { t: [opt] }));
       expect(s.players.p2?.graveyard).toHaveLength(0);
       // Une carte qui change de zone devient un nouvel objet (400.7) : on la reconnaît à son nom.
       expect(nameOf(s, s.players.p2?.library.at(-1) as string)).toBe("Opt");
@@ -4270,12 +4270,12 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === waypoint ? a.colors : []));
       expect(colors).toEqual(["C"]);
       const emeritus = idOf(s, "p1", "battlefield", "Emeritus of Ideation");
-      s = settle(activate(s, "p1", waypoint, "préparée", { t: [emeritus] }));
+      s = settle(activate(s, "p1", waypoint, "prepared", { t: [emeritus] }));
       expect(s.objects[waypoint]?.tapped).toBe(true);
       expect(s.objects[emeritus]?.preparedCopy).toBe(exiled(s, "Ancestral Recall")[0]);
       let t = scenario({ p1: { battlefield: ["Skycoach Waypoint", "Bear Cub", ...lands("Plains", 3)] } });
       const bear = idOf(t, "p1", "battlefield", "Bear Cub");
-      t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Skycoach Waypoint"), "préparée", { t: [bear] }));
+      t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Skycoach Waypoint"), "prepared", { t: [bear] }));
       expect(t.objects[bear]?.preparedCopy).toBeUndefined();
       expect(t.exile).toHaveLength(0);
     });
@@ -4287,16 +4287,16 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
         p1: { battlefield: ["Diary of Dreams", ...lands("Island", 2)], hand: [FREE_SORCERY, FREE_SORCERY, FREE_SORCERY] },
       });
       const diary = idOf(s, "p1", "battlefield", "Diary of Dreams");
-      expect(activation(s, "p1", diary, "Piochez")).toBeUndefined();
+      expect(activation(s, "p1", diary, "Draw")).toBeUndefined();
       s = settle(cast(s, "p1", FREE_SORCERY.name));
       s = settle(cast(s, "p1", FREE_SORCERY.name));
       expect(s.objects[diary]?.counters.page).toBe(2);
       // Deux terrains : {5} − 2 = {3}, trop cher.
-      expect(activation(s, "p1", diary, "Piochez")).toBeUndefined();
+      expect(activation(s, "p1", diary, "Draw")).toBeUndefined();
       s = settle(cast(s, "p1", FREE_SORCERY.name));
       expect(s.objects[diary]?.counters.page).toBe(3);
       const hand = s.players.p1?.hand.length ?? 0;
-      s = settle(activate(s, "p1", diary, "Piochez"));
+      s = settle(activate(s, "p1", diary, "Draw"));
       expect(s.players.p1?.hand).toHaveLength(hand + 1);
       expect(s.objects[diary]?.tapped).toBe(true);
       expect(idsOf(s, "p1", "battlefield", "Island").every((id) => s.objects[id]?.tapped)).toBe(true);
@@ -4353,10 +4353,10 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       const trove = idOf(s, "p1", "battlefield", "Potioner's Trove");
       const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === trove ? a.colors : []));
       expect(colors.sort()).toEqual(["B", "G", "R", "U", "W"]);
-      expect(activation(s, "p1", trove, "PV")).toBeUndefined();
+      expect(activation(s, "p1", trove, "life")).toBeUndefined();
       s = settle(cast(s, "p1", "Opt"));
       expect(s.objects[trove]?.tapped).toBe(false);
-      s = settle(activate(s, "p1", trove, "PV"));
+      s = settle(activate(s, "p1", trove, "life"));
       expect(s.players.p1?.life).toBe(22);
     });
   });
@@ -4377,10 +4377,10 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       const coach = idOf(s, "p1", "battlefield", "Strixhaven Skycoach");
       expect(chars(s, coach).keywords).toContain("flying");
       expect(chars(s, coach).types).not.toContain("Creature");
-      expect(activation(s, "p1", coach, "Équipage")).toBeUndefined();
+      expect(activation(s, "p1", coach, "Crew")).toBeUndefined();
       let t = scenario({ p1: { battlefield: ["Strixhaven Skycoach", "Bear Cub"] } });
       const c2 = idOf(t, "p1", "battlefield", "Strixhaven Skycoach");
-      t = settle(activate(t, "p1", c2, "Équipage"));
+      t = settle(activate(t, "p1", c2, "Crew"));
       expect(chars(t, c2).types).toContain("Creature");
       expect(pt(t, c2)).toEqual([3, 2]);
     });
@@ -4410,7 +4410,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       });
       const fields = idOf(s, "p1", "battlefield", "Fields of Strife");
       const top = s.players.p1?.library[0] as string;
-      s = settle(activate(s, "p1", fields, "Surveillance"), (req) =>
+      s = settle(activate(s, "p1", fields, "Surveil"), (req) =>
         req.type === "pick" && req.options.includes(top) ? [top] : undefined,
       );
       expect(s.objects[fields]?.tapped).toBe(true);
@@ -4716,7 +4716,7 @@ describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies
     const strike = s.stack[0]?.id as string;
     const card = idOf(s, "p1", "hand", "Choreographed Sparks");
     const opt = legalActions(s, "p1").find((x) => x.type === "cast" && x.card === card);
-    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Copiez un sort d'éphémère")) : undefined;
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Copy an instant or sorcery")) : undefined;
     expect(mode).toBeDefined();
     s = settle(act(s, "p1", { type: "cast", card, mode: mode?.index, targets: { a: [strike] } }));
     expect(s.players.p2?.life).toBe(14);
@@ -4731,7 +4731,7 @@ describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies
     const bearSpell = s.stack[0]?.id as string;
     const card = idOf(s, "p1", "hand", "Choreographed Sparks");
     const opt = legalActions(s, "p1").find((x) => x.type === "cast" && x.card === card);
-    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Copiez un sort de créature")) : undefined;
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Copy a creature spell")) : undefined;
     s = settle(act(s, "p1", { type: "cast", card, mode: mode?.index, targets: { b: [bearSpell] } }));
     const bears = idsOf(s, "p1", "battlefield", "Bear Cub");
     expect(bears).toHaveLength(2);

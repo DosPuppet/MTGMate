@@ -1,7 +1,11 @@
 {
-  "id": "bienvenue-blanc",
-  "name": "Bienvenue : blanc",
-  "description": "Deck de bienvenue (40 cartes, Foundations). Anges, soins et gain de points de vie : Lyra et Serra Angel mènent l'assaut dans les airs.",
+  "id": "welcome-white",
+  "name": "Welcome: White",
+  "description": "Welcome deck (40 cards, Foundations). Angels, healing and lifegain: Lyra and Serra Angel lead the assault in the air.",
+  "fr": {
+    "name": "Bienvenue : blanc",
+    "description": "Deck de bienvenue (40 cartes, Foundations). Anges, soins et gain de points de vie : Lyra et Serra Angel mènent l'assaut dans les airs."
+  },
   "colors": [
     "W"
   ],

@@ -1,4 +1,4 @@
-/** Final Fantasy — légendaires et cartes uniques (lot D3). */
+/** Final Fantasy — legendaries and unique cards (lot D3). */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -22,10 +22,10 @@ const YOURS = { types: ["Creature" as const], controller: "you" as const };
 const ALL_COLORS = ["W", "U", "B", "R", "G"] as const;
 const PERMANENT_CARD = { permanent: true };
 const SAGA_YOU = { subtype: "Saga", controller: "you" as const };
-/** Choco : « regardez autant de cartes » que d'Oiseaux qui ont attaqué (compté au déclenchement). */
+/** Choco: "look at that many cards", as many as the Birds that attacked (counted when it triggers). */
 const CHOCO_LOOK = amount.eventAmount;
 
-/** Sin : exilez une carte de permanent au hasard, copie engagée ; recommencez si c'était un terrain (au plus six fois). */
+/** Sin: exile a permanent card at random, tapped copy; repeat if it was a land (at most six times). */
 const sinRound = (k: number): ReturnType<typeof fx.when> => {
   const name = `sin${k}`;
   const body = [
@@ -40,29 +40,31 @@ export const LEGENDS3: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{0}",
-        label: "Combat",
+        label: "Fight",
         targets: [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
         effects: [fx.fight(ref.target("a"), ref.target("b"))],
       },
       {
         cost: "{0}",
-        label: "Retirez un marqueur de savoir",
-        targets: [targetObj("r", SAGA_YOU, "Saga que vous contrôlez")],
+        label: "Remove a lore counter",
+        targets: [targetObj("r", SAGA_YOU, "Saga you control")],
         effects: [fx.removeCounters(ref.target("r"), 1, "lore")],
       },
       {
         cost: "{0}",
-        label: "Ajoutez un marqueur de savoir",
-        targets: [targetObj("l", SAGA_YOU, "Saga que vous contrôlez")],
+        label: "Put a lore counter",
+        targets: [targetObj("l", SAGA_YOU, "Saga you control")],
         effects: [fx.counters(ref.target("l"), "lore", 1)],
       },
     ),
   },
   "Summon: Fenrir": {
     abilities: [
-      chapter([1], [fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true })], { label: "Croc lunaire" }),
-      chapter([2], [fx.nextCreatureSpell({ counters: 1 })], { label: "Hurlement céleste" }),
-      chapter([3], [fx.when(cond.controlsGreatestPower, fx.draw(1))], { label: "Grognement écliptique" }),
+      chapter([1], [fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true })], {
+        label: "Crescent Fang",
+      }),
+      chapter([2], [fx.nextCreatureSpell({ counters: 1 })], { label: "Heavenward Howl" }),
+      chapter([3], [fx.when(cond.controlsGreatestPower, fx.draw(1))], { label: "Ecliptic Growl" }),
     ],
   },
   "Torgal, A Fine Hound": {
@@ -70,7 +72,7 @@ export const LEGENDS3: Record<string, CardScript> = {
       triggered(
         when.castSpell("you", { types: ["Creature"], subtype: "Human" }),
         [fx.spellArrivalCounters(ref.eventObject, amount.count({ ...YOURS, anyOf: [{ subtype: "Dog" }, { subtype: "Wolf" }] }))],
-        { oncePerTurn: true, label: "Premier Humain : marqueurs par Chien ou Loup" },
+        { oncePerTurn: true, label: "First Human: counters for each Dog or Wolf" },
       ),
       manaAbility([...ALL_COLORS]),
     ],
@@ -78,19 +80,19 @@ export const LEGENDS3: Record<string, CardScript> = {
   "Summon: Brynhildr": {
     abilities: [
       chapter([1], [fx.exileTop(ref.you, 1, "b"), fx.link(ref.stored("b")), fx.grantPlay(ref.stored("b"))], {
-        label: "Chaîne : exilez la carte du dessus",
+        label: "Chain: exile the top card",
       }),
-      chapter([2, 3], [fx.grantPlay(ref.linked), fx.nextCreatureSpell({ haste: true })], { label: "Mode Gestalt" }),
+      chapter([2, 3], [fx.grantPlay(ref.linked), fx.nextCreatureSpell({ haste: true })], { label: "Gestalt Mode" }),
     ],
   },
   "Lightning, Army of One": {
-    abilities: [triggered(when.combatDamageToPlayer, [fx.doubleDamageTo(ref.eventPlayer)], { label: "Déséquilibre" })],
+    abilities: [triggered(when.combatDamageToPlayer, [fx.doubleDamageTo(ref.eventPlayer)], { label: "Stagger" })],
   },
   "Noctis, Prince of Lucis": {
     abilities: [
       playerStatic({
         playFrom: { zone: "graveyard", filter: { types: ["Artifact"] }, what: "spells", payLife: 3, finality: true },
-        label: "Artefacts depuis le cimetière (3 PV, finalité)",
+        label: "Artifacts from your graveyard (3 life, finality)",
       }),
     ],
   },
@@ -105,7 +107,7 @@ export const LEGENDS3: Record<string, CardScript> = {
         ],
         {
           targets: [{ ...target.upTo(8, target.nonland("t", { controller: "opponent" })), differentPlayers: true }],
-          label: "Canon à ondes",
+          label: "Wave Cannon",
         },
       ),
     ],
@@ -122,31 +124,31 @@ export const LEGENDS3: Record<string, CardScript> = {
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [fx.addCounters(ref.self, 1), fx.damage(1, ref.eachOpponent)],
-        { label: "Marqueur +1/+1, 1 blessure à chaque adversaire" },
+        { label: "+1/+1 counter, 1 damage to each opponent" },
       ),
     ],
   },
   "Garnet, Princess of Alexandria": {
     abilities: [
-      // « De chacune d'un nombre quelconque de Sagas » : les Sagas sont choisies (aucune possible).
+      // "From each of any number of Sagas": the Sagas are chosen (none is possible).
       triggered(
         when.attacksSelf,
         [
           fx.chooseAmong(ref.permanentsOf(ref.you, { subtype: "Saga", withCounter: "lore" }), ref.you, "sagas", {
             anyNumber: true,
-            prompt: "Retirez un marqueur de savoir de chacune de ces Sagas",
+            prompt: "Remove a lore counter from each of these Sagas",
           }),
           fx.removeCounters(ref.stored("sagas"), 1, "lore", "g"),
           fx.addCounters(ref.self, amount.v("g")),
         ],
-        { label: "Marqueurs de savoir → marqueurs +1/+1" },
+        { label: "Lore counters → +1/+1 counters" },
       ),
     ],
   },
   "Choco, Seeker of Paradise": {
     abilities: [
-      // Les cartes regardées restent au-dessus le temps de choisir celle de la main, puis les terrains parmi les autres ;
-      // le reste va au cimetière (sans être meulé).
+      // The cards looked at stay on top while the one for the hand is chosen, then the lands among the others;
+      // the rest goes to the graveyard (without being milled).
       triggered(
         when.attackWith(1, { ...YOURS, subtype: "Bird" }),
         [
@@ -158,21 +160,21 @@ export const LEGENDS3: Record<string, CardScript> = {
             rest: "graveyard",
           }),
         ],
-        { label: "Oiseaux attaquants : regardez autant de cartes" },
+        { label: "Attacking Birds: look at that many cards" },
       ),
-      triggered(when.landfall, [fx.pump(ref.self, 1, 0)], { label: "Landfall : +1/+0" }),
+      triggered(when.landfall, [fx.pump(ref.self, 1, 0)], { label: "Landfall: +1/+0" }),
     ],
   },
   "Sin, Spira's Punishment": {
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((t) =>
-        triggered(t, [0, 1, 2, 3, 4, 5].map(sinRound), { label: "Copie d'une carte de permanent au hasard" }),
+        triggered(t, [0, 1, 2, 3, 4, 5].map(sinRound), { label: "Copy of a random permanent card" }),
       ),
     ],
   },
   "Memories Returning": {
     flashback: "{7}{U}{U}",
-    // Approximation : vous choisissez les trois cartes gardées (l'adversaire ne choisit pas les deux cartes du dessous).
+    // Approximation: you choose the three cards kept (the opponent does not choose the two cards for the bottom).
     spell: spell([], [fx.lookAtTop(5, { count: 3, rest: "bottom" })]),
   },
   "Balthier and Fran": {
@@ -180,18 +182,22 @@ export const LEGENDS3: Record<string, CardScript> = {
       staticAbility(
         { subtype: "Vehicle", controller: "you" },
         { power: 1, toughness: 1, addKeywords: ["reach", "vigilance"] },
-        { label: "Vos Véhicules : +1/+1, portée et vigilance" },
+        { label: "Your Vehicles: +1/+1, reach and vigilance" },
       ),
       triggered(
         when.attacks({ subtype: "Vehicle", controller: "you", crew: "bySource" }),
-        fx.mayPay("{1}{R}{G}", "Payer {1}{R}{G} pour une phase de combat supplémentaire ?", fx.extraCombat),
-        { condition: cond.firstCombat, label: "Combat supplémentaire" },
+        fx.mayPay("{1}{R}{G}", "Pay {1}{R}{G} for an additional combat phase?", fx.extraCombat),
+        { condition: cond.firstCombat, label: "Additional combat" },
       ),
     ],
   },
   "Aettir and Priwen": {
     abilities: [
-      staticAbility("attached", { setPower: 1, setToughness: 1 }, { perLife: true, label: "F/E de base égales à vos PV" }),
+      staticAbility(
+        "attached",
+        { setPower: 1, setToughness: 1 },
+        { perLife: true, label: "Base power and toughness equal to your life total" },
+      ),
     ],
   },
   Blitzball: {
@@ -202,16 +208,16 @@ export const LEGENDS3: Record<string, CardScript> = {
         sacrifice: true,
         activationCondition: cond.opponentDamagedByLegendary,
         effects: [fx.draw(2)],
-        label: "BUUUUT ! Piochez deux cartes",
+        label: "GOOOAL! Draw two cards",
       }),
     ],
   },
   "Genji Glove": {
     abilities: [
-      staticAbility("attached", { addKeywords: ["doubleStrike"] }, { label: "Double initiative" }),
+      staticAbility("attached", { addKeywords: ["doubleStrike"] }, { label: "Double strike" }),
       triggered(when.attacks({ attached: "host" }), [fx.untap(ref.eventObject), fx.extraCombat], {
         condition: cond.firstCombat,
-        label: "Dégagez-la, phase de combat supplémentaire",
+        label: "Untap it, additional combat phase",
       }),
     ],
   },
@@ -221,7 +227,7 @@ export const LEGENDS3: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["doubleStrike", "indestructible"] },
-        { condition: cond.all(cond.yourTurn, cond.sourceMatches({ equipped: true })), label: "Équipé pendant votre tour" },
+        { condition: cond.all(cond.yourTurn, cond.sourceMatches({ equipped: true })), label: "Equipped during your turn" },
       ),
     ],
   },

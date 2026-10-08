@@ -5,6 +5,7 @@ import { fx, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars, decider } from "../src/state";
 import { legalTargets } from "../src/targets";
+import { plainText } from "../src/text";
 import { logTurnEvent } from "../src/turnlog";
 import {
   act,
@@ -51,7 +52,7 @@ describe("Breaking News", () => {
       const opt = castOption(s, card);
       const both =
         opt?.type === "cast"
-          ? opt.modes.find((m) => m.label?.includes("4 blessures") && m.label.includes("3 blessures"))
+          ? opt.modes.find((m) => plainText(m.label ?? "").includes("4 damage") && plainText(m.label ?? "").includes("3 damage"))
           : undefined;
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(act(s, "p1", { type: "cast", card, mode: both?.index, targets: { c: [bear], o: ["p2"] } }));
@@ -83,7 +84,7 @@ describe("Breaking News", () => {
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       const opt = castOption(s, card);
       // Aucune créature n'attaque : seul le mode fendu a une cible.
-      expect(opt?.type === "cast" && opt.modes.map((m) => m.label)).toEqual(["Fendre — {5}{W}"]);
+      expect(opt?.type === "cast" && opt.modes.map((m) => plainText(m.label ?? ""))).toEqual(["Cleave — {5}{W}"]);
       expect(() => act(s, "p1", { type: "cast", card, mode: 0, targets: { t: [bear] } })).toThrow();
       s = settle(act(s, "p1", { type: "cast", card, mode: 1, targets: { t: [bear] } }));
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
@@ -233,7 +234,9 @@ describe("Breaking News", () => {
       expect(opt?.type === "cast" && opt.modes.length).toBe(6);
       const pair =
         opt?.type === "cast"
-          ? opt.modes.find((m) => m.label?.startsWith("Le joueur ciblé gagne") && m.label.includes("Cherchez"))
+          ? opt.modes.find(
+              (m) => plainText(m.label ?? "").startsWith("Target player gains") && plainText(m.label ?? "").includes("Search"),
+            )
           : undefined;
       s = settle(castIt(s, "Primal Command", { mode: pair?.index, targets: { g: ["p1"] } }));
       expect([s.players.p1?.life, idsOf(s, "p1", "hand", "Bear Cub").length]).toEqual([27, 1]);
@@ -310,7 +313,9 @@ describe("Breaking News", () => {
       });
       const oko = idOf(s, "p1", "battlefield", "Oko, Thief of Crowns");
       const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
-      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === oko && a.label?.startsWith("+1"));
+      const ab = legalActions(s, "p1").find(
+        (a) => a.type === "activate" && a.source === oko && plainText(a.label ?? "").startsWith("+1"),
+      );
       s = settle(
         act(s, "p1", {
           type: "activate",

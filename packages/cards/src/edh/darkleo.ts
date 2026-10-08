@@ -1,8 +1,8 @@
 /**
- * Commander : deck « I Am Ninja, Sneaking in the Shadows » (Dark Leo & Shredder ; blanc et noir ; liste de Fullmoon).
- * Ninjas et ninjutsu, attaquants imblocables ou presque (Whispersilk Cloak, Access Tunnel, Sonic Screwdriver, Shizo,
- * Cover of Darkness, The Black Gate), copies (Helm of the Host, Legion Loyalty, Strionic Resonator), perte de points de
- * vie (Wound Reflection, Astarion). Tainted Field est avec les autres terrains « contaminés » (`edh/lands.ts`).
+ * Commander: "I Am Ninja, Sneaking in the Shadows" deck (Dark Leo & Shredder; white and black; Fullmoon's list).
+ * Ninjas and ninjutsu, unblockable or nearly unblockable attackers (Whispersilk Cloak, Access Tunnel, Sonic Screwdriver,
+ * Shizo, Cover of Darkness, The Black Gate), copies (Helm of the Host, Legion Loyalty, Strionic Resonator), life loss
+ * (Wound Reflection, Astarion). Tainted Field is with the other "tainted" lands (`edh/lands.ts`).
  */
 import type { Amount, CardScript, ModeDef, ObjectFilter, Ref } from "@mtgx/engine";
 import {
@@ -27,29 +27,29 @@ import {
 } from "./common";
 
 const CREATURE_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
-/** Points de vie perdus ce tour-ci par le joueur désigné. */
+/** Life lost this turn by the designated player. */
 const lifeLostBy = (p: Ref): Amount => ({ kind: "turnEvents", query: { event: "lifeLoss", sum: true }, of: p });
-/** « Imblocable ce tour-ci. » */
+/** "Can't be blocked this turn." */
 const unblockable = (r: Ref = ref.target()) => fx.modify(r, { addKeywords: ["unblockable"] });
 
-/** Akroma's Will : les deux modes. */
+/** Akroma's Will: the two modes. */
 const AKROMA_FLYING: ModeDef = mode(
-  "Vol, vigilance et double initiative",
+  "Flying, vigilance, and double strike",
   [],
   [fx.modifyAll(CREATURE_YOU, { addKeywords: ["flying", "vigilance", "doubleStrike"] })],
 );
 const AKROMA_LIFELINK: ModeDef = mode(
-  "Lien de vie, indestructible et protection contre chaque couleur",
+  "Lifelink, indestructible, and protection from each color",
   [],
   [
     fx.modifyAll(CREATURE_YOU, {
       addKeywords: ["lifelink", "indestructible"],
-      addProtections: [protection.from({ colors: ["W", "U", "B", "R", "G"] }, "Protection contre chaque couleur")],
+      addProtections: [protection.from({ colors: ["W", "U", "B", "R", "G"] }, "Protection from each color")],
     }),
   ],
 );
 
-/** « Un joueur qui a le plus de points de vie ou qui est à égalité » (adversaires d'abord : la suggestion). */
+/** "A player with the most life or tied for most life" (opponents first: the suggestion). */
 const MOST_LIFE = { kind: "mostLife" } as const;
 const PLAYERS_WITH_MOST_LIFE: Ref = ref.union(
   ref.playersWhere(ref.eachOpponent, MOST_LIFE),
@@ -63,20 +63,20 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
       ninjutsu("{3}{B}{B}"),
       triggered(
         when.combatDamageToPlayer,
-        fx.may("Mettre cette carte de créature sur le champ de bataille sous votre contrôle ?", [
+        fx.may("Put that creature card onto the battlefield under your control?", [
           fx.toBattlefield(ref.target("c"), { underYourControl: true }),
         ]),
         {
           targets: [
             target.of(
               ref.eventPlayer,
-              target.cardInGraveyard("c", { types: ["Creature"] }, "any", "carte de créature de son cimetière"),
+              target.cardInGraveyard("c", { types: ["Creature"] }, "any", "creature card in that player's graveyard"),
             ),
           ],
-          label: "Une carte de créature du cimetière de ce joueur sur le champ de bataille sous votre contrôle",
+          label: "A creature card from that player's graveyard onto the battlefield under your control",
         },
       ),
-      activated({ mana: "{1}{B}", effects: [fx.regenerate(ref.self)], label: "Régénérez Ink-Eyes" }),
+      activated({ mana: "{1}{B}", effects: [fx.regenerate(ref.self)], label: "Regenerate Ink-Eyes" }),
     ],
   },
   "Nashi, Moon Sage's Scion": {
@@ -87,7 +87,7 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
         [fx.exileTop(ref.eachPlayer, 1, "nashi"), fx.grantPlay(ref.stored("nashi"), { oneOf: true, payLifeManaValue: true })],
         {
           label:
-            "Exilez la carte du dessus de chaque bibliothèque ; vous pouvez jouer l'une d'elles ce tour-ci, un sort en payant des PV égaux à sa valeur de mana",
+            "Exile the top card of each library; you may play one of them this turn, a spell by paying life equal to its mana value",
         },
       ),
     ],
@@ -97,14 +97,14 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
       ninjutsu("{1}{B}"),
       triggered(when.entersSelf, [fx.modify(ref.target(), { addKeywords: ["deathtouch", "lifelink"] })], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Une créature que vous contrôlez gagne le contact mortel et le lien de vie",
+        label: "A creature you control gains deathtouch and lifelink",
       }),
     ],
   },
   "Okiba-Gang Shinobi": {
     abilities: [
       ninjutsu("{3}{B}"),
-      triggered(when.combatDamageToPlayer, [fx.discard(2, ref.eventPlayer)], { label: "Ce joueur défausse deux cartes" }),
+      triggered(when.combatDamageToPlayer, [fx.discard(2, ref.eventPlayer)], { label: "That player discards two cards" }),
     ],
   },
   "Orochi Soul-Reaver": {
@@ -113,7 +113,7 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
       triggered(
         when.combatDamageBatch(CREATURE_YOU),
         [fx.createTokens(TREASURE), fx.putFaceDown(ref.libraryTop(ref.eventPlayer))],
-        { label: "Un Trésor, et manifestez la carte du dessus de la bibliothèque de ce joueur" },
+        { label: "A Treasure, and manifest the top card of that player's library" },
       ),
     ],
   },
@@ -122,9 +122,9 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
       ninjutsu("{2}{B}"),
       triggered(when.combatDamageToPlayer, [fx.destroy(ref.target())], {
         targets: [
-          target.of(ref.eventPlayer, target.creature("t", { not: { colors: ["B"] } }), "créature non noire de ce joueur"),
+          target.of(ref.eventPlayer, target.creature("t", { not: { colors: ["B"] } }), "nonblack creature that player controls"),
         ],
-        label: "Détruisez une créature non noire de ce joueur",
+        label: "Destroy a nonblack creature that player controls",
       }),
     ],
   },
@@ -133,69 +133,69 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], subtype: "Ninja", controller: "you", attacking: true, blocked: false },
         { addKeywords: ["lifelink"] },
-        { label: "Vos Ninjas attaquants non bloqués ont le lien de vie" },
+        { label: "Unblocked attacking Ninjas you control have lifelink" },
       ),
     ],
   },
 
-  // --- Autres créatures ---------------------------------------------------------------------------------------------
+  // --- Other creatures ----------------------------------------------------------------------------------------------
   "Archetype of Courage": {
     abilities: [
-      staticAbility(CREATURE_YOU, { addKeywords: ["firstStrike"] }, { label: "Vos créatures ont l'initiative" }),
+      staticAbility(CREATURE_YOU, { addKeywords: ["firstStrike"] }, { label: "Creatures you control have first strike" }),
       staticAbility(
         { types: ["Creature"], controller: "opponent" },
         { forbidKeywords: ["firstStrike"] },
-        { label: "Les créatures adverses perdent l'initiative et ne peuvent pas l'avoir ni l'acquérir" },
+        { label: "Creatures your opponents control lose first strike and can't have or gain first strike" },
       ),
     ],
   },
   "Astarion, the Decadent": {
-    // Contact mortel, lien de vie : lus dans le texte.
+    // Deathtouch, lifelink: read from the text.
     abilities: [
       triggeredModal(
         when.yourEndStep,
         [
           mode(
-            "Nourrir — un adversaire perd autant de PV qu'il en a perdu ce tour-ci",
+            "Feed — an opponent loses life equal to the life they lost this turn",
             [target.player("o", "opponent")],
             [fx.loseLife(lifeLostBy(ref.target("o")), ref.target("o"))],
           ),
           mode(
-            "Faux amis — gagnez autant de PV que vous en avez gagné ce tour-ci",
+            "Friends — gain life equal to the life you gained this turn",
             [],
             [fx.gainLife(amount.turnEvents({ event: "lifeGain", who: "you", sum: true }))],
           ),
         ],
-        { label: "Nourrir ou Faux amis" },
+        { label: "Feed or Friends" },
       ),
     ],
   },
   "Bloodline Pretender": {
-    // Changelin : lu dans le texte.
+    // Changeling: read from the text.
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true, subtypeChosen: true }),
         [fx.addCounters(ref.self, 1)],
-        { label: "Une autre créature du type choisi arrive : un marqueur +1/+1" },
+        { label: "Another creature of the chosen type enters: a +1/+1 counter" },
       ),
     ],
   },
   "Changeling Outcast": {
-    // Changelin : lu dans le texte.
+    // Changeling: read from the text.
     keywords: ["cantBlock", "unblockable"],
   },
   "Leonardo, Worldly Warrior": {
-    // Affinité pour les créatures ; double initiative (lue dans le texte).
+    // Affinity for creatures; double strike (read from the text).
     costReduction: { generic: amount.count(CREATURE_YOU) },
   },
   "Mirror Entity": {
-    // Changelin : lu dans le texte.
+    // Changeling: read from the text.
     abilities: [
       activated({
         mana: "{X}",
         effects: [fx.setBasePTAll(CREATURE_YOU, amount.x), fx.modifyAll(CREATURE_YOU, { allCreatureTypes: true })],
-        label: "Vos créatures ont une force et une endurance de base X/X et tous les types de créature",
+        label: "Creatures you control have base power and toughness X/X and all creature types",
       }),
     ],
   },
@@ -203,33 +203,33 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
         targets: [target.optional(target.creature("t", { tapped: true }))],
-        label: "Détruisez jusqu'à une créature engagée",
+        label: "Destroy up to one tapped creature",
       }),
       triggered(when.leavesSelf, [fx.draw(1), fx.draw(1, ref.target("p"))], {
         targets: [target.player("p", "opponent")],
-        label: "Vous et un autre joueur ciblé piochez chacun une carte",
+        label: "You and another target player each draw a card",
       }),
     ],
   },
 
-  // --- Enchantements ------------------------------------------------------------------------------------------------
+  // --- Enchantments ----------------------------------------------------------------------------------------------
   "Cover of Darkness": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
         { types: ["Creature"], subtypeChosen: true },
         { addBlockRules: [block.fear] },
-        { label: "Les créatures du type choisi ont la peur" },
+        { label: "Creatures of the chosen type have fear" },
       ),
     ],
   },
   "Legion Loyalty": {
-    abilities: [staticAbility(CREATURE_YOU, { addAbilities: [myriadAbility()] }, { label: "Vos créatures ont la myriade" })],
+    abilities: [staticAbility(CREATURE_YOU, { addAbilities: [myriadAbility()] }, { label: "Creatures you control have myriad" })],
   },
   "No Mercy": {
     abilities: [
       triggered(when.dealsDamage({ types: ["Creature"] }, { to: { players: "you" } }), [fx.destroy(ref.eventObject)], {
-        label: "Une créature vous inflige des blessures : détruisez-la",
+        label: "A creature deals damage to you: destroy it",
       }),
     ],
   },
@@ -238,19 +238,19 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
       triggered(
         when.eachEndStep,
         fx.forEachPlayer(ref.eachOpponent, (p) => [fx.loseLife(lifeLostBy(p), p)]),
-        { label: "Chaque adversaire perd autant de PV qu'il en a perdu ce tour-ci" },
+        { label: "Each opponent loses life equal to the life they lost this turn" },
       ),
     ],
   },
 
-  // --- Éphémères -------------------------------------------------------------------------------------------------------
+  // --- Instants ------------------------------------------------------------------------------------------------------
   "Akroma's Will": {
     spell: {
       modes: [
         AKROMA_FLYING,
         AKROMA_LIFELINK,
         {
-          label: "Les deux (vous contrôlez un commandant)",
+          label: "Both (you control a commander)",
           targets: [],
           effects: [...AKROMA_FLYING.effects, ...AKROMA_LIFELINK.effects],
           condition: cond.controls({ commander: true }),
@@ -259,12 +259,12 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
     },
   },
 
-  // --- Artefacts ----------------------------------------------------------------------------------------------------
+  // --- Artifacts ----------------------------------------------------------------------------------------------------
   "Helm of the Host": {
-    // Équipement {5} : lu dans le texte.
+    // Equip {5}: read from the text.
     abilities: [
       triggered(when.yourCombat, [fx.copyToken(ref.attached, { nonlegendary: true, addKeywords: ["haste"] })], {
-        label: "Un jeton copie non légendaire de la créature équipée, avec la célérité",
+        label: "A nonlegendary token copy of the equipped creature, with haste",
       }),
     ],
   },
@@ -274,17 +274,17 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
       activated({
         mana: "{1}",
         tap: true,
-        targets: [target.permanent("t", ["Artifact"], { other: true }, "autre artefact")],
+        targets: [target.permanent("t", ["Artifact"], { other: true }, "another artifact")],
         effects: [fx.untap(ref.target())],
-        label: "Dégagez un autre artefact",
+        label: "Untap another artifact",
       }),
-      activated({ mana: "{2}", tap: true, effects: [fx.scry(1)], label: "Regard 1" }),
+      activated({ mana: "{2}", tap: true, effects: [fx.scry(1)], label: "Scry 1" }),
       activated({
         mana: "{3}",
         tap: true,
         targets: [target.creature()],
         effects: [unblockable()],
-        label: "Une créature ne peut pas être bloquée ce tour-ci",
+        label: "A creature can't be blocked this turn",
       }),
     ],
   },
@@ -296,21 +296,21 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "capacité déclenchée que vous contrôlez",
+            label: "triggered ability you control",
             filter: { stackItems: { triggeredOnly: true, controller: "you" } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],
-        label: "Copiez une capacité déclenchée que vous contrôlez",
+        label: "Copy a triggered ability you control",
       }),
     ],
   },
   "Whispersilk Cloak": {
-    // Équipement {2} : lu dans le texte.
-    abilities: [staticAbility("attached", { addKeywords: ["unblockable", "shroud"] }, { label: "Imblocable et défense totale" })],
+    // Equip {2}: read from the text.
+    abilities: [staticAbility("attached", { addKeywords: ["unblockable", "shroud"] }, { label: "Can't be blocked and shroud" })],
   },
 
-  // --- Terrains -----------------------------------------------------------------------------------------------------
+  // --- Lands --------------------------------------------------------------------------------------------------------
   "Access Tunnel": {
     abilities: [
       manaAbility("C"),
@@ -319,7 +319,7 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { maxPower: 3 })],
         effects: [unblockable()],
-        label: "Une créature de force 3 ou moins ne peut pas être bloquée ce tour-ci",
+        label: "A creature with power 3 or less can't be blocked this turn",
       }),
     ],
   },
@@ -331,12 +331,12 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { legendary: true })],
         effects: [fx.modify(ref.target(), { addBlockRules: [block.fear] })],
-        label: "Une créature légendaire gagne la peur",
+        label: "A legendary creature gains fear",
       }),
     ],
   },
   "The Black Gate": {
-    // « Vous pouvez payer 3 PV, sinon elle arrive engagée » : lu dans le texte.
+    // "You may pay 3 life. If you don't, it enters tapped": read from the text.
     abilities: [
       manaAbility("B"),
       activated({
@@ -345,13 +345,13 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
         targets: [target.creature()],
         effects: [
           fx.chooseAmong(PLAYERS_WITH_MOST_LIFE, ref.you, "gate", {
-            prompt: "Choisissez un joueur qui a le plus de points de vie (ou à égalité)",
+            prompt: "Choose a player with the most life (or tied)",
           }),
           fx.modify(ref.target(), {
-            addBlockRules: [block.notByPlayer(ref.stored("gate"), "Ne peut pas être bloquée par les créatures du joueur choisi")],
+            addBlockRules: [block.notByPlayer(ref.stored("gate"), "Can't be blocked by creatures the chosen player controls")],
           }),
         ],
-        label: "Une créature ne peut pas être bloquée par les créatures d'un joueur qui a le plus de PV",
+        label: "A creature can't be blocked by creatures of a player with the most life",
       }),
     ],
   },

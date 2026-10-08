@@ -1,7 +1,11 @@
 {
   "id": "cmd-turtle-power",
-  "name": "Turtle Power! — Héros à carapace",
-  "description": "Préconstruit Commander officiel de Teenage Mutant Ninja Turtles, en cinq couleurs. Les Tortues frappent ensemble : marqueurs +1/+1 doublés et multipliés, jetons Mutagène, et des attaques qui piochent des cartes.",
+  "name": "Turtle Power! — Heroes in a Half Shell",
+  "description": "Official Teenage Mutant Ninja Turtles Commander precon, in five colors. The Turtles strike together: +1/+1 counters doubled and multiplied, Mutagen tokens, and attacks that draw cards.",
+  "fr": {
+    "name": "Turtle Power! — Héros à carapace",
+    "description": "Préconstruit Commander officiel de Teenage Mutant Ninja Turtles, en cinq couleurs. Les Tortues frappent ensemble : marqueurs +1/+1 doublés et multipliés, jetons Mutagène, et des attaques qui piochent des cartes."
+  },
   "colors": [
     "W",
     "U",

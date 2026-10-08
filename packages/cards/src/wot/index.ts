@@ -1,6 +1,6 @@
 /**
- * Enchanting Tales (WOT) : enchantements réédités avec Wilds of Eldraine.
- * Hors Standard, jouables en « Sans limite » (PLAN-G) ; scripts ajoutés lot par lot.
+ * Enchanting Tales (WOT): enchantments reprinted with Wilds of Eldraine.
+ * Outside Standard, playable in "Unlimited" (PLAN-G); scripts added lot by lot.
  */
 import type { CardScript } from "@mtgx/engine";
 import { CARDS } from "./cards";

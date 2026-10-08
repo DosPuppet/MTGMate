@@ -1,4 +1,4 @@
-/** Tarkir: Dragonstorm — cartes noires. */
+/** Tarkir: Dragonstorm — black cards. */
 import {
   activated,
   amount,
@@ -30,7 +30,7 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{2}{B}",
         fromGraveyard: true,
         effects: [fx.toHand(ref.selfCard)],
-        label: "Revient de votre cimetière en main",
+        label: "Returns from your graveyard to your hand",
       }),
     ],
   },
@@ -50,7 +50,7 @@ export const BLACK: Record<string, CardScript> = {
     ),
   },
   "Avenger of the Fallen": {
-    // Mobilisation X : X est le nombre de cartes de créature de votre cimetière.
+    // Mobilize X: X is the number of creature cards in your graveyard.
     abilities: [
       triggered(
         when.attacksSelf,
@@ -61,19 +61,19 @@ export const BLACK: Record<string, CardScript> = {
           }),
           fx.delayed([fx.sacrificeIt(ref.target("m"))], { m: ref.stored("mob") }),
         ],
-        { label: "Mobilisation X (cartes de créature de votre cimetière)" },
+        { label: "Mobilize X (creature cards in your graveyard)" },
       ),
     ],
   },
   "Caustic Exhale": {
-    // « En coût additionnel, contemplez un Dragon ou payez {1} ».
+    // "As an additional cost, behold a Dragon or pay {1}".
     additionalCost: { behold: { filter: DRAGON_CARD, orPay: { generic: 1, colored: {}, x: 0 } } },
     spell: spell([target.creature()], [fx.pump(ref.target(), -3, -3)]),
   },
   "Corroding Dragonstorm": {
     abilities: [
       triggered(when.entersSelf, [...fx.drain(2), fx.surveil(2)], {
-        label: "Chaque adversaire perd 2 PV, vous en gagnez 2 ; surveillance 2",
+        label: "Each opponent loses 2 life, you gain 2; surveil 2",
       }),
       dragonstorm(),
     ],
@@ -83,7 +83,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.loseLife(1, ref.eachOpponent)], {
         condition: cond.controls(CREATURE_WITH_COUNTER),
-        label: "Une de vos créatures a un marqueur : chaque adversaire perd 1 PV",
+        label: "One of your creatures has a counter: each opponent loses 1 life",
       }),
     ],
   },
@@ -92,7 +92,7 @@ export const BLACK: Record<string, CardScript> = {
       [target.creature()],
       [
         fx.pump(ref.target(), 1, -1),
-        fx.whenThisTurn(when.dies({ controller: "you" }), ref.target(), [fx.draw(2)], { label: "Piochez deux cartes" }),
+        fx.whenThisTurn(when.dies({ controller: "you" }), ref.target(), [fx.draw(2)], { label: "Draw two cards" }),
       ],
     ),
   },
@@ -104,11 +104,11 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target("a"), -2, -2), fx.pump(ref.target("b"), 2, 2)], {
         targets: [target.creature("a", { controller: "opponent" }), target.creature("b", { controller: "you" })],
-        label: "Une créature adverse gagne -2/-2, une des vôtres +2/+2",
+        label: "An opponent's creature gets -2/-2, one of yours +2/+2",
       }),
     ],
   },
-  "Nightblade Brigade": { abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" })] },
+  "Nightblade Brigade": { abilities: [triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveil 1" })] },
   "Salt Road Skirmish": {
     spell: spell(
       [target.creature()],
@@ -126,7 +126,7 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{2}",
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         effects: [fx.addCounters(ref.self, 1)],
-        label: "Sacrifiez une autre créature : marqueur +1/+1",
+        label: "Sacrifice another creature: +1/+1 counter",
       }),
     ],
   },
@@ -136,28 +136,28 @@ export const BLACK: Record<string, CardScript> = {
         mana: "{1}",
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         effects: [fx.modify(ref.self, { addKeywords: ["indestructible"] }), fx.tap(ref.self)],
-        label: "Sacrifiez une autre créature : indestructible, engagez-la",
+        label: "Sacrifice another creature: indestructible, tap it",
       }),
     ],
   },
   "Venerated Stormsinger": {
-    // Mobilisation 1 : lue dans le texte.
+    // Mobilize 1: read from the text.
     abilities: [
       triggered(when.dies(CREATURE_YOU_CONTROL), fx.drain(1), {
-        label: "Une de vos créatures meurt : chaque adversaire perd 1 PV, vous en gagnez 1",
+        label: "One of your creatures dies: each opponent loses 1 life, you gain 1",
       }),
     ],
   },
   "Wail of War": {
     spell: modal(
       mode(
-        "Les créatures d'un adversaire gagnent -1/-1",
+        "An opponent's creatures get -1/-1",
         [target.player("p", "opponent")],
         [fx.pump(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), -1, -1)],
       ),
       mode(
-        "Jusqu'à deux cartes de créature reviennent en main",
-        [target.upTo(2, target.cardInGraveyard("g", { types: ["Creature"] }, "you", "carte de créature de votre cimetière"))],
+        "Up to two creature cards return to hand",
+        [target.upTo(2, target.cardInGraveyard("g", { types: ["Creature"] }, "you", "creature card in your graveyard"))],
         [fx.toHand(ref.target("g"))],
       ),
     ),
@@ -169,47 +169,45 @@ export const BLACK: Record<string, CardScript> = {
   "Yathan Tombguard": {
     abilities: [
       triggered(when.combatDamage(CREATURE_WITH_COUNTER, true), [fx.draw(1), fx.loseLife(1)], {
-        label: "Une de vos créatures à marqueur blesse un joueur : piochez, perdez 1 PV",
+        label: "One of your creatures with a counter damages a player: draw, lose 1 life",
       }),
     ],
   },
 
-  // --- Lot B ------------------------------------------------------------------
+  // --- Batch B ----------------------------------------------------------------
   "Adorned Crocodile": {
     abilities: [
-      triggered(when.diesSelf, [fx.createTokens(ZOMBIE_DRUID)], { label: "Un Zombie Druide 2/2" }),
-      renew("{B}", [target.creature()], [fx.addCounters(ref.target(), 1)], "marqueur +1/+1 sur une créature"),
+      triggered(when.diesSelf, [fx.createTokens(ZOMBIE_DRUID)], { label: "A 2/2 Zombie Druid" }),
+      renew("{B}", [target.creature()], [fx.addCounters(ref.target(), 1)], "+1/+1 counter on a creature"),
     ],
   },
   "Alchemist's Assistant": {
-    abilities: [
-      renew("{1}{B}", [target.creature()], [fx.counters(ref.target(), "lifelink")], "marqueur de lien de vie sur une créature"),
-    ],
+    abilities: [renew("{1}{B}", [target.creature()], [fx.counters(ref.target(), "lifelink")], "lifelink counter on a creature")],
   },
   "Feral Deathgorger": {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target())], {
         targets: [{ ...target.upTo(2, target.cardInGraveyard("t", {}, "any")), samePlayer: true }],
-        label: "Exilez jusqu'à deux cartes d'un même cimetière",
+        label: "Exile up to two cards from a single graveyard",
       }),
     ],
   },
   "Dusk Sight": {
     spell: spell([target.optional(target.creature())], [fx.addCounters(ref.target(), 1), fx.draw(1)]),
   },
-  "Kin-Tree Nurturer": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 1)], { label: "Endurance 1" })] },
-  "Sandskitter Outrider": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 2)], { label: "Endurance 2" })] },
+  "Kin-Tree Nurturer": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 1)], { label: "Endure 1" })] },
+  "Sandskitter Outrider": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 2)], { label: "Endure 2" })] },
   "Exude Toxin": {
     spell: spell([], [fx.pumpAll({ types: ["Creature"], notSubtype: "Dragon" }, amount.neg(amount.x), amount.neg(amount.x))]),
   },
   "Sinkhole Surveyor": {
-    abilities: [triggered(when.attacksSelf, [fx.loseLife(1), fx.endure(ref.self, 1)], { label: "Perdez 1 PV ; endurance 1" })],
+    abilities: [triggered(when.attacksSelf, [fx.loseLife(1), fx.endure(ref.self, 1)], { label: "Lose 1 life; endure 1" })],
   },
   "Purging Stormbrood": {
     abilities: [
       triggered(when.entersSelf, [fx.removeCounters(ref.target(), 1000)], {
         targets: [target.optional(target.creature())],
-        label: "Retirez tous les marqueurs d'une créature",
+        label: "Remove all the counters from a creature",
       }),
     ],
   },

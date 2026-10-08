@@ -1,4 +1,4 @@
-/** Outlaws of Thunder Junction — cartes blanches. */
+/** Outlaws of Thunder Junction — white cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,
@@ -36,24 +36,24 @@ export const WHITE: Record<string, CardScript> = {
       activated({
         mana: "{3}{W}",
         effects: [fx.pump(ref.self, amount.toughnessOf(ref.self), 0)],
-        label: "+X/+0 (son endurance)",
+        label: "+X/+0 (its toughness)",
       }),
     ],
   },
   "Bounding Felidar": {
     abilities: [
       whileSaddled([fx.addCountersAll(OTHER_CREATURE_YOU_CONTROL, 1), fx.gainLife(amount.count(OTHER_CREATURE_YOU_CONTROL))], {
-        label: "Marqueur sur vos autres créatures, +1 PV chacune",
+        label: "Counter on your other creatures, +1 life for each",
       }),
     ],
   },
   "Bovine Intervention": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
+      [target.permanent("t", ["Artifact", "Creature"], {}, "artifact or creature")],
       [fx.destroy(ref.target()), fx.createTokens(OX, 1, ref.controllerOf(ref.target()))],
     ),
   },
-  "Bridled Bighorn": { abilities: [whileSaddled([fx.createTokens(SHEEP)], { label: "Mouton 1/1" })] },
+  "Bridled Bighorn": { abilities: [whileSaddled([fx.createTokens(SHEEP)], { label: "1/1 Sheep" })] },
   "Claim Jumper": {
     abilities: [
       triggered(
@@ -62,7 +62,7 @@ export const WHITE: Record<string, CardScript> = {
           fx.search(PLAINS, { to: "battlefield", tapped: true }),
           fx.when(OPP_HAS_MORE_LANDS, fx.search(PLAINS, { to: "battlefield", tapped: true })),
         ],
-        { condition: OPP_HAS_MORE_LANDS, label: "Plaine engagée (deux fois au plus)" },
+        { condition: OPP_HAS_MORE_LANDS, label: "Tapped Plains (up to twice)" },
       ),
     ],
   },
@@ -79,21 +79,21 @@ export const WHITE: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{1}",
-        label: "Les créatures perdent leurs capacités",
+        label: "Creatures lose all abilities",
         effects: [fx.modifyAll({ types: ["Creature"] }, { loseAllAbilities: true })],
       },
       {
         cost: "{1}",
-        label: "Une de vos créatures devient indestructible",
-        // « Choisissez » : pas de cible, le choix se fait à la résolution.
+        label: "A creature you control gains indestructible",
+        // "Choose": no target, the choice is made on resolution.
         effects: [
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.you, "i", {
-            prompt: "Choisissez une créature que vous contrôlez",
+            prompt: "Choose a creature you control",
           }),
           fx.pump(ref.stored("i"), 0, 0, ["indestructible"]),
         ],
       },
-      { cost: "{3}{W}{W}", label: "Détruisez toutes les créatures", effects: [fx.destroyAll({ types: ["Creature"] })] },
+      { cost: "{3}{W}{W}", label: "Destroy all creatures", effects: [fx.destroyAll({ types: ["Creature"] })] },
     ),
   },
   "Frontier Seeker": {
@@ -107,7 +107,7 @@ export const WHITE: Record<string, CardScript> = {
             rest: "bottom",
           }),
         ],
-        { label: "Une Monture ou une Plaine parmi les cinq du dessus" },
+        { label: "A Mount or a Plains among the top five" },
       ),
     ],
   },
@@ -115,7 +115,7 @@ export const WHITE: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{1}",
-        label: "Exilez une créature non-jeton, elle revient",
+        label: "Exile a nontoken creature, it returns",
         targets: [target.creature("e", { token: false })],
         effects: [
           fx.exileCard(ref.target("e"), { name: "g" }),
@@ -124,7 +124,7 @@ export const WHITE: Record<string, CardScript> = {
       },
       {
         cost: "{2}",
-        label: "Détruisez la créature de plus grande force",
+        label: "Destroy the creature with the greatest power",
         targets: [target.creature("d")],
         effects: [
           fx.when(
@@ -138,12 +138,12 @@ export const WHITE: Record<string, CardScript> = {
       },
     ),
   },
-  "Holy Cow": { abilities: [triggered(when.entersSelf, [fx.gainLife(2), fx.scry(1)], { label: "+2 PV, regard 1" })] },
+  "Holy Cow": { abilities: [triggered(when.entersSelf, [fx.gainLife(2), fx.scry(1)], { label: "+2 life, scry 1" })] },
   "Inventive Wingsmith": {
     abilities: [
       triggered(when.yourEndStep, [fx.counters(ref.self, "flying", 1)], {
         condition: cond.all(cond.not(cond.handSpellThisTurn), cond.not(cond.counterAtLeast("flying", 1))),
-        label: "Marqueur vol",
+        label: "Flying counter",
       }),
     ],
   },
@@ -151,17 +151,17 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
         targets: [target.nonland("t", { controller: "opponent" })],
-        label: "Exilez un permanent non-terrain",
+        label: "Exile a nonland permanent",
       }),
-      triggered(when.entersSelf, [mercenary()], { label: "Mercenaire 1/1" }),
+      triggered(when.entersSelf, [mercenary()], { label: "1/1 Mercenary" }),
     ],
   },
   "Mystical Tether": {
     flashExtraCost: "{2}",
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
-        targets: [target.permanent("t", ["Artifact", "Creature"], { controller: "opponent" }, "artefact ou créature")],
-        label: "Exilez un artefact ou une créature",
+        targets: [target.permanent("t", ["Artifact", "Creature"], { controller: "opponent" }, "artifact or creature")],
+        label: "Exile an artifact or creature",
       }),
     ],
   },
@@ -169,66 +169,61 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.when(cond.targetMatches("t", {}), fx.bounce(ref.target()), fx.addCounters(ref.self, 1))], {
         targets: [target.upTo(1, target.nonland("t", { controller: "you", notSubtype: "Faerie" }))],
-        label: "Renvoyez un permanent, marqueur +1/+1",
+        label: "Return a permanent, +1/+1 counter",
       }),
     ],
   },
   "Omenport Vigilante": {
     abilities: [
-      staticAbility("self", { addKeywords: ["doubleStrike"] }, { condition: cond.crime, label: "Double initiative (crime)" }),
+      staticAbility("self", { addKeywords: ["doubleStrike"] }, { condition: cond.crime, label: "Double strike (crime)" }),
     ],
   },
   "One Last Job": {
     spell: spree(
       {
         cost: "{2}",
-        label: "Une créature",
-        targets: [target.cardInGraveyard("c", { types: ["Creature"] }, "you", "carte de créature")],
+        label: "A creature",
+        targets: [target.cardInGraveyard("c", { types: ["Creature"] }, "you", "creature card")],
         effects: [fx.toBattlefield(ref.target("c"))],
       },
       {
         cost: "{1}",
-        label: "Une Monture ou un Véhicule",
+        label: "A Mount or a Vehicle",
         targets: [
-          target.cardInGraveyard(
-            "m",
-            { anyOf: [{ subtype: "Mount" }, { subtype: "Vehicle" }] },
-            "you",
-            "carte de Monture ou de Véhicule",
-          ),
+          target.cardInGraveyard("m", { anyOf: [{ subtype: "Mount" }, { subtype: "Vehicle" }] }, "you", "Mount or Vehicle card"),
         ],
         effects: [fx.toBattlefield(ref.target("m"))],
       },
       {
         cost: "{1}",
-        label: "Une Aura ou un Équipement attaché",
+        label: "An attached Aura or Equipment",
         targets: [
           target.cardInGraveyard(
             "a",
             { anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }] },
             "you",
-            "carte d'Aura ou d'Équipement",
+            "Aura or Equipment card",
           ),
         ],
-        // La créature est choisie à la résolution (pas ciblée) : celle que renvoie le premier mode peut l'être.
+        // The creature is chosen on resolution (not targeted): the one returned by the first mode can be chosen.
         effects: [
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.you, "h", {
-            prompt: "One Last Job : la créature à laquelle l'attacher",
+            prompt: "One Last Job: the creature to attach it to",
           }),
           fx.moveTo(ref.target("a"), { to: "battlefield" }, undefined, ref.stored("h")),
         ],
       },
     ),
   },
-  "Outlaw Medic": { abilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Piochez" })] },
+  "Outlaw Medic": { abilities: [triggered(when.diesSelf, [fx.draw(1)], { label: "Draw" })] },
   "Prosperity Tycoon": {
     abilities: [
-      triggered(when.entersSelf, [mercenary()], { label: "Mercenaire 1/1" }),
+      triggered(when.entersSelf, [mercenary()], { label: "1/1 Mercenary" }),
       activated({
         mana: "{2}",
         sacrificeOther: { filter: { token: true } },
         effects: [fx.pump(ref.self, 0, 0, ["indestructible"]), fx.tap(ref.self)],
-        label: "Indestructible, engagez-la",
+        label: "Indestructible, tap it",
       }),
     ],
   },
@@ -236,19 +231,19 @@ export const WHITE: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{1}",
-        label: "Détruisez un artefact",
+        label: "Destroy an artifact",
         targets: [target.permanent("a", ["Artifact"])],
         effects: [fx.destroy(ref.target("a"))],
       },
       {
         cost: "{1}",
-        label: "Détruisez un enchantement",
+        label: "Destroy an enchantment",
         targets: [target.permanent("e", ["Enchantment"])],
         effects: [fx.destroy(ref.target("e"))],
       },
       {
         cost: "{1}",
-        label: "Marqueur +1/+1 sur les créatures d'un joueur",
+        label: "+1/+1 counter on a player's creatures",
         targets: [target.player("p")],
         effects: [fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1)],
       },
@@ -258,13 +253,13 @@ export const WHITE: Record<string, CardScript> = {
     spell: spree(
       {
         cost: "{1}",
-        label: "Dégagez les créatures d'un joueur",
+        label: "Untap a player's creatures",
         targets: [target.player("p")],
         effects: [fx.untap(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }))],
       },
       {
         cost: "{1}",
-        label: "Double initiative",
+        label: "Double strike",
         targets: [target.creature("c")],
         effects: [fx.pump(ref.target("c"), 0, 0, ["doubleStrike"])],
       },
@@ -279,8 +274,8 @@ export const WHITE: Record<string, CardScript> = {
           fx.when(cond.not(cond.controls({ subtype: "Mount" })), fx.toHand(ref.target())),
         ],
         {
-          targets: [target.cardInGraveyard("t", { permanent: true, maxManaValue: 3 }, "you", "carte de permanent")],
-          label: "Reprenez un permanent de VM 3 ou moins",
+          targets: [target.cardInGraveyard("t", { permanent: true, maxManaValue: 3 }, "you", "permanent card")],
+          label: "Return a permanent with mana value 3 or less",
         },
       ),
     ],
@@ -290,11 +285,11 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Stagecoach Security": {
     abilities: [
-      triggered(when.entersSelf, [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 1, ["vigilance"])], { label: "+1/+1 et vigilance" }),
+      triggered(when.entersSelf, [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 1, ["vigilance"])], { label: "+1/+1 and vigilance" }),
     ],
   },
   "Steer Clear": {
-    // « si vous contrôliez une Monture en lançant ce sort » : vérifié au lancement.
+    // "if you controlled a Mount as you cast this spell": checked on casting.
     whenCast: cond.controls({ subtype: "Mount" }),
     spell: spell(
       [target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })],
@@ -308,7 +303,7 @@ export const WHITE: Record<string, CardScript> = {
         tap: true,
         targets: [target.creature("t", { notSubtype: "Mount" })],
         effects: [fx.tap(ref.target())],
-        label: "Engagez une créature non-Monture",
+        label: "Tap a non-Mount creature",
       }),
     ],
   },
@@ -316,7 +311,7 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you", other: true })],
-        label: "Marqueur +1/+1",
+        label: "+1/+1 counter",
       }),
     ],
   },
@@ -330,22 +325,22 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-le",
+        label: "Attach it",
       }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
       triggered(when.attacks({ types: ["Creature"], attached: "host" }), [fx.tap(ref.target())], {
-        targets: [target.of(ref.defendingPlayer, target.creature("t"), "créature du joueur défenseur")],
-        label: "Engagez une créature du défenseur",
+        targets: [target.of(ref.defendingPlayer, target.creature("t"), "creature of the defending player")],
+        label: "Tap a creature of the defending player",
       }),
     ],
   },
   "Trained Arynx": {
-    abilities: [whileSaddled([fx.pump(ref.self, 0, 0, ["firstStrike"]), fx.scry(1)], { label: "Initiative, regard 1" })],
+    abilities: [whileSaddled([fx.pump(ref.self, 0, 0, ["firstStrike"]), fx.scry(1)], { label: "First strike, scry 1" })],
   },
   "Vengeful Townsfolk": {
     abilities: [
-      triggered(when.dies(OTHER_CREATURE_YOU_CONTROL), [fx.addCounters(ref.self, 1)], { batched: true, label: "Marqueur +1/+1" }),
+      triggered(when.dies(OTHER_CREATURE_YOU_CONTROL), [fx.addCounters(ref.self, 1)], { batched: true, label: "+1/+1 counter" }),
     ],
   },
-  "Wanted Griffin": { abilities: [triggered(when.diesSelf, [mercenary()], { label: "Mercenaire 1/1" })] },
+  "Wanted Griffin": { abilities: [triggered(when.diesSelf, [mercenary()], { label: "1/1 Mercenary" })] },
 };

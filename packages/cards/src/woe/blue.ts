@@ -1,6 +1,6 @@
 /**
- * Wilds of Eldraine — cartes bleues (lot A). Le Marchandage, la garde, le flash et les Aventures sont lus dans le texte ;
- * chaque face d'une carte à Aventure a son entrée (la créature sous son nom, le sort sous le nom de l'Aventure).
+ * Wilds of Eldraine — blue cards (lot A). Bargain, ward, flash and Adventures are read from the text; each face of an
+ * Adventure card has its entry (the creature under its name, the spell under the name of the Adventure).
  */
 import type { Effect, TargetSpec, TokenSpec } from "@mtgx/engine";
 import {
@@ -27,7 +27,7 @@ import {
   when,
 } from "./common";
 
-/** Faerie : créature bleue 1/1 avec le vol et « ce jeton ne peut bloquer que des créatures avec le vol ». */
+/** Faerie: 1/1 blue creature with flying and "This token can block only creatures with flying." */
 const FAERIE_FLYING_BLOCKER: TokenSpec = {
   name: "Faerie",
   colors: ["U"],
@@ -36,26 +36,26 @@ const FAERIE_FLYING_BLOCKER: TokenSpec = {
   power: 1,
   toughness: 1,
   keywords: ["flying"],
-  abilities: [blockAbility(block.onlyBlocks({ keyword: "flying" }, "Ne bloque que les créatures volantes"))],
+  abilities: [blockAbility(block.onlyBlocks({ keyword: "flying" }, "Can block only creatures with flying"))],
   text: "Flying\nThis token can block only creatures with flying.",
 };
 
-/** « créature ciblée qu'un adversaire contrôle » */
+/** "target creature an opponent controls" */
 const OPP_CREATURE = (id = "t"): TargetSpec => target.creature(id, { controller: "opponent" });
 
-/** « Engagez [la créature] et mettez-y N marqueurs d'étourdissement. » */
+/** "Tap [the creature] and put N stun counters on it." */
 const tapAndStun = (what = ref.target(), n = 1): Effect[] => [fx.tap(what), fx.counters(what, "stun", n)];
 
-/** « Chaque fois que vous lancez un sort d'Aventure » (le sort lancé en tant qu'Aventure, 715.3). */
+/** "Whenever you cast an Adventure spell" (the spell cast as an Adventure, 715.3). */
 const CAST_ADVENTURE = when.castSpell("you", { subtype: "Adventure" });
 
-/** « Chaque fois que vous lancez un sort de valeur de mana 5 ou plus » */
+/** "Whenever you cast a spell with mana value 5 or greater" */
 const CAST_MV5 = when.castSpell("you", { minManaValue: 5 });
 
-/** « jusqu'à une autre créature ciblée que vous contrôlez » */
+/** "up to one other target creature you control" */
 const OTHER_CREATURE_YOU = target.optional(target.creature("t", { controller: "you", other: true }));
 
-/** Nombre d'adversaires qui contrôlent au moins une créature (contrôleurs des créatures adverses, sans doublon). */
+/** Number of opponents who control at least one creature (controllers of the opponents' creatures, without duplicates). */
 const OPPONENTS_WITH_CREATURES = amount.refCount(
   ref.union(ref.controllerOf(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }))),
 );
@@ -66,35 +66,35 @@ export const BLUE: Record<string, CardScript> = {
       blockAbility(
         block.notBy(
           { compare: [cmp.power(">", amount.sourcePower)] },
-          "Furtivité : imblocable par les créatures de force supérieure",
+          "Stealth: can't be blocked by creatures with greater power",
         ),
       ),
       entersWith({ counters: amount.x }),
       triggered(
         when.yourUpkeep,
         [
-          ...fx.may("Retirer un marqueur +1/+1 pour piocher une carte ?", fx.removeCounters(ref.self, 1, "+1/+1", "r")),
+          ...fx.may("Remove a +1/+1 counter to draw a card?", fx.removeCounters(ref.self, 1, "+1/+1", "r")),
           ...fx.when(cond.v("r"), fx.draw(1)),
         ],
         {
           condition: cond.sourceMatches({ withCounter: "+1/+1" }),
-          label: "Vous pouvez retirer un marqueur +1/+1 : piochez une carte",
+          label: "You may remove a +1/+1 counter: draw a card",
         },
       ),
     ],
   },
-  // Prouesse lue dans le texte.
+  // Prowess read from the text.
   "Elusive Otter": {
     abilities: [
       blockAbility(
-        block.notBy({ compare: [cmp.power("<", amount.sourcePower)] }, "Imblocable par les créatures de force inférieure"),
+        block.notBy({ compare: [cmp.power("<", amount.sourcePower)] }, "Can't be blocked by creatures with lesser power"),
       ),
     ],
   },
   "Grove's Bounty": {
     spell: spell([target.upTo(99, target.creature("t", { controller: "you" }))], [fx.countersDivided(amount.x, ref.target())]),
   },
-  // Marchandage lu dans le texte ; « coûte {N} de moins s'il est marchandé » : réduction sous `cond.kicked`.
+  // Bargain read from the text; "costs {N} less if it's bargained": reduction under `cond.kicked`.
   "Ice Out": {
     costReduction: { generic: 1, condition: cond.kicked },
     spell: spell([target.spell()], [fx.counter(ref.target())]),
@@ -109,43 +109,39 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Aquatic Alchemist": {
     abilities: [
-      // Le premier éphémère ou rituel du tour (tous deux confondus) : le montant de l'événement compte ceux lancés avant ;
-      // condition du déclencheur (vérifiée au lancement seulement), les suivants ne déclenchent rien.
+      // The first instant or sorcery of the turn (both together): the event amount counts those cast before; trigger
+      // condition (checked on casting only), the next ones trigger nothing.
       triggered(when.castSpell("you", INSTANT_SORCERY), [fx.pump(ref.self, 2, 0)], {
         triggerCondition: cond.not(cond.amountAtLeast(amount.eventAmount, 1)),
-        label: "Premier éphémère ou rituel du tour : +2/+0",
+        label: "First instant or sorcery of the turn: +2/+0",
       }),
     ],
   },
   "Bubble Up": {
     spell: spell(
-      [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "carte d'éphémère ou de rituel de votre cimetière")],
+      [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery card in your graveyard")],
       [fx.moveTo(ref.target(), { to: "libraryTop" })],
     ),
   },
-  "Archive Dragon": { abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" })] },
+  "Archive Dragon": { abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Scry 2" })] },
   "Beluna's Gatekeeper": {},
   "Entry Denied": {
     spell: spell([target.creature("t", { controller: "opponent", maxManaValue: 3 })], [fx.bounce(ref.target())]),
   },
   "Bitter Chill": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature enchantée" }),
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Taps the enchanted creature" }),
       doesntUntap("attached"),
-      triggered(
-        when.putIntoGraveyardSelf,
-        [fx.mayPay("{1}", "Payer {1} pour regard 1, puis piocher ?", fx.scry(1), fx.draw(1))],
-        {
-          label: "Vous pouvez payer {1} : regard 1, puis piochez",
-        },
-      ),
+      triggered(when.putIntoGraveyardSelf, [fx.mayPay("{1}", "Pay {1} to scry 1, then draw?", fx.scry(1), fx.draw(1))], {
+        label: "You may pay {1}: scry 1, then draw",
+      }),
     ],
   },
   "Chancellor of Tales": {
     abilities: [
-      triggered(CAST_ADVENTURE, [fx.may("Copier ce sort d'Aventure ?", fx.copySpell(ref.eventObject, 1))], {
-        label: "Vous pouvez copier le sort d'Aventure",
+      triggered(CAST_ADVENTURE, [fx.may("Copy this Adventure spell?", fx.copySpell(ref.eventObject, 1))], {
+        label: "You may copy the Adventure spell",
       }),
     ],
   },
@@ -154,7 +150,7 @@ export const BLUE: Record<string, CardScript> = {
       triggered(when.entersSelf, createRole(CURSED_ROLE), {
         targets: [OPP_CREATURE()],
         condition: cond.kicked,
-        label: "Marchandée : un Rôle Maudit sur une créature adverse",
+        label: "Bargained: a Cursed Role on a creature an opponent controls",
       }),
     ],
   },
@@ -166,9 +162,9 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       chapter([1], createRole(CURSED_ROLE), {
         targets: [target.optional(target.creature())],
-        label: "Un Rôle Maudit sur jusqu'à une créature",
+        label: "A Cursed Role on up to one creature",
       }),
-      chapter([2], [fx.scry(2)], { label: "Regard 2" }),
+      chapter([2], [fx.scry(2)], { label: "Scry 2" }),
       chapter(
         [3],
         [
@@ -178,7 +174,7 @@ export const BLUE: Record<string, CardScript> = {
             once: true,
           },
         ],
-        { label: "Copiez votre prochain éphémère ou rituel de VM 3 ou moins ce tour-ci" },
+        { label: "Copy your next instant or sorcery with MV 3 or less this turn" },
       ),
     ],
   },
@@ -186,13 +182,13 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(CAST_MV5, tapAndStun(), {
         targets: [OPP_CREATURE()],
-        label: "Sort de VM 5 ou plus : engagez une créature adverse, un marqueur d'étourdissement",
+        label: "Spell with MV 5 or greater: tap a creature an opponent controls, a stun counter",
       }),
     ],
   },
   "Storm Reading": { spell: spell([], [fx.draw(4), fx.discard(2)]) },
   "Horned Loch-Whale": {
-    abilities: [entersWith({ tapped: true, condition: cond.not(cond.yourTurn), label: "Arrive engagée hors de votre tour" })],
+    abilities: [entersWith({ tapped: true, condition: cond.not(cond.yourTurn), label: "Enters tapped if it's not your turn" })],
   },
   "Lagoon Breach": {
     spell: spell([target.creature("t", { attacking: true, controller: "opponent" })], [fx.topOrBottom(ref.target())]),
@@ -203,13 +199,13 @@ export const BLUE: Record<string, CardScript> = {
         when.attacksSelf,
         fx.mayPay(
           "{1}{U}",
-          "Payer {1}{U} pour engager une créature adverse ?",
+          "Pay {1}{U} to tap a creature an opponent controls?",
           fx.reflexive([OPP_CREATURE()], [fx.tap(ref.target())]),
         ),
-        { label: "Vous pouvez payer {1}{U} : engagez une créature adverse" },
+        { label: "You may pay {1}{U}: tap a creature an opponent controls" },
       ),
       triggered({ on: "taps", who: { types: ["Creature"], controller: "opponent" }, byYou: true }, [fx.pump(ref.self, 2, 1)], {
-        label: "Vous engagez une créature adverse : +2/+1",
+        label: "You tap a creature an opponent controls: +2/+1",
       }),
     ],
   },
@@ -222,14 +218,14 @@ export const BLUE: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [OTHER_CREATURE_YOU],
         effects: [fx.draw(1), ...createRole(SORCERER_ROLE)],
-        label: "Piochez ; un Rôle Sorcier sur jusqu'à une autre créature",
+        label: "Draw; a Sorcerer Role on up to one other creature",
       }),
     ],
   },
   "Merfolk Coralsmith": {
     abilities: [
       activated({ mana: "{1}", effects: [fx.pump(ref.self, 1, -1)], label: "+1/-1" }),
-      triggered(when.diesSelf, [fx.scry(2)], { label: "Regard 2" }),
+      triggered(when.diesSelf, [fx.scry(2)], { label: "Scry 2" }),
     ],
   },
   "Misleading Motes": { spell: spell([target.creature()], [fx.topOrBottom(ref.target())]) },
@@ -245,7 +241,7 @@ export const BLUE: Record<string, CardScript> = {
           "graveyard",
           { anyOf: [INSTANT_SORCERY, { subtype: "Faerie" }] },
           { to: "hand" },
-          { count: 1, pool: ref.stored("m"), prompt: "Une carte d'éphémère, de rituel ou de Faerie meulée" },
+          { count: 1, pool: ref.stored("m"), prompt: "A milled instant, sorcery or Faerie card" },
         ),
       ],
     ),
@@ -256,17 +252,17 @@ export const BLUE: Record<string, CardScript> = {
         tapped: true,
         counters: 3,
         counterKind: "stun",
-        label: "Arrive engagée avec trois marqueurs d'étourdissement",
+        label: "Enters tapped with three stun counters",
       }),
-      activated({ mana: "{1}{U}", effects: [fx.untap(ref.self)], label: "Dégagez-la" }),
+      activated({ mana: "{1}{U}", effects: [fx.untap(ref.self)], label: "Untap this creature" }),
     ],
   },
   "Snaremaster Sprite": {
     abilities: [
       triggered(
         when.entersSelf,
-        fx.mayPay("{2}", "Payer {2} pour engager une créature adverse ?", fx.reflexive([OPP_CREATURE()], tapAndStun())),
-        { label: "Vous pouvez payer {2} : engagez une créature adverse, un marqueur d'étourdissement" },
+        fx.mayPay("{2}", "Pay {2} to tap a creature an opponent controls?", fx.reflexive([OPP_CREATURE()], tapAndStun())),
+        { label: "You may pay {2}: tap a creature an opponent controls, a stun counter" },
       ),
     ],
   },
@@ -286,12 +282,12 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.castSpell("you", INSTANT_SORCERY), createRole(SORCERER_ROLE), {
         targets: [OTHER_CREATURE_YOU],
-        label: "Un Rôle Sorcier sur jusqu'à une autre créature",
+        label: "A Sorcerer Role on up to one other creature",
       }),
     ],
   },
   "Stormkeld Prowler": {
-    abilities: [triggered(CAST_MV5, [fx.addCounters(ref.self, 2)], { label: "Sort de VM 5 ou plus : deux marqueurs +1/+1" })],
+    abilities: [triggered(CAST_MV5, [fx.addCounters(ref.self, 2)], { label: "Spell with MV 5 or greater: two +1/+1 counters" })],
   },
   "Succumb to the Cold": {
     spell: spell([target.between(1, 2, OPP_CREATURE())], tapAndStun()),
@@ -308,16 +304,16 @@ export const BLUE: Record<string, CardScript> = {
             fx.reflexive([target.creature("t", { subtype: "Faerie", controller: "you" })], [fx.addCounters(ref.target(), 1)]),
           ),
         ],
-        { label: "Piochez, défaussez ; un marqueur +1/+1 sur une Faerie" },
+        { label: "Draw, discard; a +1/+1 counter on a Faerie" },
       ),
     ],
   },
   "Tenacious Tomeseeker": {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {
-        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "carte d'éphémère ou de rituel de votre cimetière")],
+        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery card in your graveyard")],
         condition: cond.kicked,
-        label: "Marchandée : un éphémère ou un rituel du cimetière en main",
+        label: "Bargained: an instant or a sorcery from the graveyard to hand",
       }),
     ],
   },
@@ -327,7 +323,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         triggerMod: { effect: "again", on: "enter" },
-        label: "Déclencheurs d'arrivée de vos permanents doublés",
+        label: "Enter triggers of your permanents doubled",
       }),
     ],
   },
@@ -336,7 +332,7 @@ export const BLUE: Record<string, CardScript> = {
       [
         {
           id: "t",
-          label: "capacité activée ou déclenchée que vous contrôlez",
+          label: "activated or triggered ability you control",
           filter: { stackItems: { abilitiesOnly: true, controller: "you" } },
         },
       ],
@@ -352,7 +348,7 @@ export const BLUE: Record<string, CardScript> = {
   "Frolicking Familiar": {
     abilities: [
       triggered(when.castSpell("you", INSTANT_SORCERY), [fx.pump(ref.self, 1, 1)], {
-        label: "Éphémère ou rituel : +1/+1",
+        label: "Instant or sorcery: +1/+1",
       }),
     ],
   },
@@ -370,8 +366,8 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        // Les jetons sont créés d'abord (deux par adversaire qui contrôle une créature), puis toutes les autres créatures
-        // retournent en main : même résultat que l'ordre imprimé, le nombre étant fixé avant le renvoi.
+        // The tokens are created first (two for each opponent who controls a creature), then all the other creatures
+        // return to hand: same result as the printed order, the number being set before the return.
         fx.createTokens(
           FAERIE_FLYING_BLOCKER,
           amount.plus(OPPONENTS_WITH_CREATURES, OPPONENTS_WITH_CREATURES),
@@ -383,28 +379,28 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Rowdy Research": {
-    // {1} de moins par créature qui a attaqué ce tour-ci (créatures différentes du journal du tour).
+    // {1} less for each creature that attacked this turn (distinct creatures of the turn log).
     costReduction: { generic: amount.turnEvents({ event: "attack", distinct: "object" }) },
     spell: spell([], [fx.draw(3)]),
   },
   "Extraordinary Journey": {
     abilities: [
-      // « jusqu'à X créatures ciblées » : X est évalué au ciblage (`countAmount`).
+      // "up to X target creatures": X is evaluated on targeting (`countAmount`).
       triggered(
         when.entersSelf,
         [fx.exileCard(ref.target(), { name: "j" }), fx.grantPlay(ref.stored("j"), { forever: true, for: "owner" })],
         {
           targets: [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
-          label: "Exilez jusqu'à X créatures ; leurs propriétaires pourront les jouer",
+          label: "Exile up to X creatures; their owners may play them",
         },
       ),
       triggered({ on: "enters", who: { types: ["Creature"], token: false }, fromZone: "exile" }, [fx.draw(1)], {
         oncePerTurn: true,
-        label: "Une créature arrive depuis l'exil : piochez une carte (une fois par tour)",
+        label: "A creature enters from exile: draw a card (once each turn)",
       }),
     ],
   },
   "Storyteller Pixie": {
-    abilities: [triggered(CAST_ADVENTURE, [fx.draw(1)], { label: "Sort d'Aventure : piochez une carte" })],
+    abilities: [triggered(CAST_ADVENTURE, [fx.draw(1)], { label: "Adventure spell: draw a card" })],
   },
 };

@@ -3,10 +3,12 @@
  */
 import { type RawCard, type RawFace, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
+import { cardRef } from "../src/choices";
 import { fx, ref, spell, target, triggered, when } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaValue, parseManaCost } from "../src/mana";
 import { chars } from "../src/state";
+import { msg } from "../src/text";
 import type { CardDef, GameState } from "../src/types";
 import { act, customCard, idOf, passBoth, scenario } from "./helpers";
 
@@ -312,7 +314,8 @@ describe("Salles (709.5)", () => {
     expect(chars(s, room).colors).toEqual(["R"]);
     // Déverrouiller la porte bleue : action spéciale (rien sur la pile), puis son déclencheur.
     const unlock = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === room);
-    expect(unlock?.type === "activate" && unlock.label).toBe("Déverrouiller Salle bleue");
+    const door = cardRef(ROOM.faceDefs?.[1]?.id ?? "");
+    expect(unlock?.type === "activate" && unlock.label).toBe(msg("Unlock {door}", { door }));
     const hand = s.players.p1?.hand.length ?? 0;
     s = act(s, "p1", { type: "activate", source: room, ability: unlock?.type === "activate" ? unlock.ability : -1 });
     expect(s.stack.map((x) => x.kind)).toEqual(["ability"]); // le déclencheur, pas l'action

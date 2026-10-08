@@ -1,14 +1,14 @@
 /**
- * Audit Oracle ↔ script (P1 de l'audit du 29/09/2026) : une carte « gérée » l'est dès qu'un script existe. Cet audit
- * confronte le texte Oracle au script pour repérer ce qui manque probablement :
+ * Oracle ↔ script audit (P1 of the 2026-09-29 audit): a card is "handled" as soon as a script exists. This audit
+ * compares the Oracle text with the script to spot what is probably missing:
  *
- * - capacités : le texte est découpé en paragraphes (lignes de mots-clés, déclenchées, activées, statiques, chapitres) ;
- *   le script doit avoir au moins autant de capacités déclenchées et activées que le texte en décrit ;
- * - nombres : les nombres d'effet du texte (blessures, pioche, PV, +N/+N, jetons, marqueurs, regard…) doivent apparaître
- *   dans le script.
+ * - abilities: the text is split into paragraphs (keyword lines, triggered, activated, static, chapters); the script
+ *   must have at least as many triggered and activated abilities as the text describes;
+ * - numbers: the effect numbers of the text (damage, draw, life, +N/+N, tokens, counters, scry…) must appear in the
+ *   script.
  *
- * C'est une heuristique : un écart est un indice à vérifier, pas une preuve. Les écarts connus et vérifiés sont listés
- * dans `data/audit-baseline.json` ; le test `audit.test.ts` échoue si une carte en ajoute un nouveau.
+ * It is a heuristic: a discrepancy is a clue to check, not a proof. The known and checked discrepancies are listed in
+ * `data/audit-baseline.json`; the test `audit.test.ts` fails if a card adds a new one.
  */
 import type { AbilityDef, CardDef } from "@mtgx/engine";
 
@@ -22,11 +22,11 @@ export interface Paragraph {
 export interface AuditIssue {
   card: string;
   /**
-   * « déclenchées », « activées » : le texte en décrit plus que le script ; « statiques » : le texte décrit plus de
-   * capacités statiques que le script n'en porte (capacités, champs de la définition, mots-clés non imprimés, surplus de
-   * déclenchées ou d'activées qui les réalisent) ; « nombre » : un nombre d'effet absent du script ; « cible » : un
-   * éphémère ou un rituel dont le script n'a pas autant de cibles que de mots « target » dans le texte (une cible de
-   * trop : un choix fait à la résolution, ou « chaque », est ciblé ; une de moins : une cible oubliée).
+   * "triggered", "activated": the text describes more of them than the script; "static": the text describes more
+   * static abilities than the script carries (abilities, fields of the definition, keywords not printed, extra
+   * triggered or activated abilities that implement them); "number": an effect number missing from the script;
+   * "target": an instant or sorcery whose script does not have as many targets as "target" words in the text (one
+   * target too many: a choice made on resolution, or "each", is targeted; one fewer: a forgotten target).
    */
   kind: "triggered" | "activated" | "static" | "number" | "target";
   detail: string;
@@ -52,11 +52,11 @@ const NUMBER_WORDS: Record<string, number> = {
   twenty: 20,
 };
 
-/** Mots-clés (et mots-clés à coût) qui peuvent former une ligne de mots-clés. */
+/** Keywords (and keywords with a cost) that can form a keyword line. */
 const KEYWORD_LINE =
   /^(?:(?:flying|first strike|double strike|deathtouch|defender|haste|hexproof|indestructible|lifelink|menace|reach|trample|vigilance|flash|prowess|changeling|convoke|delve|affinity for [a-z]+|fear|intimidate|shroud|skulk|landwalk|[a-z]+walk|protection from [^,.]+|ward(?: \{[^}]+\}|—[^.]+\.?)|equip(?: [^{]*)?\{[^}]*\}(?:\{[^}]*\})*|crew \d+|saddle \d+|station \d*|cycling \{[^}]*\}(?:\{[^}]*\})*|[a-z]+cycling \{[^}]*\}(?:\{[^}]*\})*|kicker \{[^}]*\}(?:\{[^}]*\})*|flashback \{[^}]*\}(?:\{[^}]*\})*|disguise \{[^}]*\}(?:\{[^}]*\})*|warp \{[^}]*\}(?:\{[^}]*\})*|plot \{[^}]*\}(?:\{[^}]*\})*|offspring \{[^}]*\}(?:\{[^}]*\})*|impending \d+—\{[^}]*\}(?:\{[^}]*\})*|craft with [^.]+|max speed|start your engines!|exhaust|mobilize \d+|surveil \d+|ninjutsu \{[^}]*\}(?:\{[^}]*\})*|evoke \{[^}]*\}(?:\{[^}]*\})*|bestow \{[^}]*\}(?:\{[^}]*\})*|mutate \{[^}]*\}(?:\{[^}]*\})*|enchant [^.]+|devour \d+|job select|toxic \d+|infect|wither|annihilator \d+|rebound|cascade|storm|split second|unearth \{[^}]*\}(?:\{[^}]*\})*|embalm \{[^}]*\}(?:\{[^}]*\})*|escape—[^.]+\.?|harmonize \{[^}]*\}(?:\{[^}]*\})*|echo \{[^}]*\}(?:\{[^}]*\})*|dash \{[^}]*\}(?:\{[^}]*\})*|evolve|exploit|riot|undying|persist|training|bargain|backup \d+|forage|gift [^.]+|spree|tiered|hideaway \d+|living weapon|buyback \{[^}]*\}(?:\{[^}]*\})*|mentor|melee|afflict \d+|renew|freerunning \{[^}]*\}(?:\{[^}]*\})*|the ring tempts you|basic landcycling \{[^}]*\}(?:\{[^}]*\})*|increment|mobilize x[^.]*|extort|battle cry|improvise|firebending (?:\d+|x(?:, where x is [^.]+)?))(?:,\s*|\s*$))+$/i;
 
-/** Retire le texte de rappel (entre parenthèses) et les mots d'aptitude (« Landfall — », « Void — »). */
+/** Removes the reminder text (in parentheses) and the ability words ("Landfall — ", "Void — "). */
 export function stripReminder(text: string): string {
   return text
     .replace(/\s*\([^)]*\)/g, "")
@@ -64,18 +64,18 @@ export function stripReminder(text: string): string {
     .trim();
 }
 
-/** Découpe un texte Oracle en paragraphes classés. */
+/** Splits an Oracle text into classified paragraphs. */
 export function paragraphs(text: string, isSpell: boolean): Paragraph[] {
   const out: Paragraph[] = [];
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     if (!line) continue;
-    // Chapitres de Saga (« I, II — … »), niveaux de Classe et paliers : comptés à part.
+    // Saga chapters ("I, II — …"), Class levels and thresholds: counted apart.
     if (/^(?:[IVX]+(?:, [IVX]+)*) —/.test(line) || /^Level \d/.test(line) || /^\d+\+ \|/.test(line)) {
       out.push({ kind: "chapter", text: line });
       continue;
     }
-    // Mode d'une capacité ou d'un sort modal (« • … ») : fait partie du paragraphe précédent.
+    // Mode of a modal ability or spell ("• …"): part of the previous paragraph.
     if (line.startsWith("•")) {
       out.push({ kind: "mode", text: stripReminder(line.slice(1).trim()) });
       continue;
@@ -86,19 +86,19 @@ export function paragraphs(text: string, isSpell: boolean): Paragraph[] {
       out.push({ kind: "keywords", text: t });
       continue;
     }
-    // Un éphémère ou un rituel ne décrit pas de capacité déclenchée (« When you next cast… » est créée par le sort).
+    // An instant or sorcery does not describe a triggered ability ("When you next cast…" is created by the spell).
     if (!isSpell && /^(?:When|Whenever|At the beginning|At end of|At the end)\b/.test(t)) {
       out.push({ kind: "triggered", text: t });
       continue;
     }
-    // Capacité activée : un coût avant les deux-points (mana, {T}, loyauté, « Sacrifiez… », « Exhaust — »…).
+    // Activated ability: a cost before the colon (mana, {T}, loyalty, "Sacrifice…", "Exhaust — "…).
     const colon = t.indexOf(":");
     const cost = colon > 0 ? t.slice(0, colon) : "";
     if (
       !isSpell &&
       colon > 0 &&
       !cost.includes(".") &&
-      // Capacité citée (« Enchanted land has "{T}: …" ») : accordée à un autre objet, ce n'est pas celle de la carte.
+      // Quoted ability ("Enchanted land has "{T}: …""): granted to another object, it is not the card's own.
       !cost.includes('"') &&
       (/^[+−-]?(?:\d+|X):?$/.test(cost.trim()) ||
         /\{[^}]+\}/.test(cost) ||
@@ -112,7 +112,7 @@ export function paragraphs(text: string, isSpell: boolean): Paragraph[] {
   return out;
 }
 
-/** Capacités d'une définition, toutes sources comprises (paliers de station, niveaux de Classe, Affaire résolue). */
+/** Abilities of a definition, all sources included (station thresholds, Class levels, solved Case). */
 function allAbilities(d: CardDef): AbilityDef[] {
   return [
     ...d.abilities,
@@ -128,7 +128,7 @@ function countKind(d: CardDef, kind: "triggered" | "activated"): number {
   ).length;
 }
 
-/** Champs d'une définition qui ne décrivent pas une capacité (identité, texte, image, faces, légalité…). */
+/** Fields of a definition that do not describe an ability (identity, text, image, faces, legality…). */
 const IDENTITY_FIELDS = new Set([
   "id",
   "name",
@@ -159,14 +159,14 @@ const IDENTITY_FIELDS = new Set([
   "prepareFace",
 ]);
 
-/** Champs de capacité (coûts, permissions, entrée…) renseignés dans une définition. */
+/** Ability fields (costs, permissions, entering…) filled in a definition. */
 function abilityFields(d: CardDef): number {
   return Object.entries(d).filter(([k, v]) => v !== undefined && !IDENTITY_FIELDS.has(k)).length;
 }
 
 /**
- * Statiques portées par une capacité : une capacité statique ou de joueur réalise souvent plusieurs phrases du texte
- * (« ont la menace et +1/+0 », « un terrain de plus, depuis le cimetière ») ; on compte ses effets distincts.
+ * Statics carried by an ability: a static or player ability often implements several sentences of the text ("have
+ * menace and +1/+0", "an additional land, from the graveyard"); its distinct effects are counted.
  */
 function staticWeight(a: AbilityDef): number {
   if (a.kind === "triggered" || a.kind === "activated" || a.kind === "mana") return 0;
@@ -176,10 +176,10 @@ function staticWeight(a: AbilityDef): number {
   return 1;
 }
 
-/** Statiques sans effet de jeu à vérifier (règle de construction du deck). */
+/** Statics without a game effect to check (deck construction rule). */
 const NO_SCRIPT_STATIC = /^A deck can have any number of cards named/;
 
-/** Nombres d'effet cités par un paragraphe (« deals 3 damage », « draw two cards », « +2/+2 »…). */
+/** Effect numbers cited by a paragraph ("deals 3 damage", "draw two cards", "+2/+2"…). */
 export function effectNumbers(text: string): number[] {
   const out: number[] = [];
   const num = (w: string) => (/^\d+$/.test(w) ? Number(w) : NUMBER_WORDS[w.toLowerCase()]);
@@ -198,8 +198,8 @@ export function effectNumbers(text: string): number[] {
       if (n !== undefined && n > 1) out.push(n);
     }
   }
-  // Modifications de F/E : « +2/+2 », « -3/-0 ».
-  // Un « +1/+1 » suivi de « counter » est le nom du marqueur, pas une modification.
+  // P/T modifications: "+2/+2", "-3/-0".
+  // A "+1/+1" followed by "counter" is the name of the counter, not a modification.
   for (const m of text.matchAll(/([+\-−])(\d+)\/([+\-−])(\d+)(?! counters?)/g)) {
     const p = Number(m[2]);
     const t = Number(m[4]);
@@ -209,18 +209,18 @@ export function effectNumbers(text: string): number[] {
   return out;
 }
 
-/** Tous les nombres présents dans le script (valeurs numériques du JSON, négatives comprises en valeur absolue). */
+/** Every number present in the script (numeric values of the JSON, negative ones included as absolute values). */
 function scriptNumbers(d: CardDef): Set<number> {
   const out = new Set<number>();
   const visit = (v: unknown) => {
     if (typeof v === "number") out.add(Math.abs(v));
     else if (typeof v === "string") {
-      // Coûts et mana en texte (« {2}{R} ») : les nombres comptent aussi.
+      // Costs and mana as text ("{2}{R}"): the numbers count too.
       for (const m of v.matchAll(/\d+/g)) out.add(Number(m[0]));
     } else if (Array.isArray(v)) {
       for (const x of v) visit(x);
-      // Mana en liste (« addMana: ["R", "R", "R"] ») ou somme de termes identiques (« X + X + X ») : la longueur est
-      // le multiplicateur.
+      // Mana as a list ("addMana: ["R", "R", "R"]") or sum of identical terms ("X + X + X"): the length is the
+      // multiplier.
       if (v.length > 1 && v.every((x) => JSON.stringify(x) === JSON.stringify(v[0]))) out.add(v.length);
     } else if (v && typeof v === "object") for (const x of Object.values(v)) visit(x);
   };
@@ -239,7 +239,7 @@ function scriptNumbers(d: CardDef): Set<number> {
   return out;
 }
 
-/** Audite une définition (et ses faces). Seules les cartes gérées ont un sens. */
+/** Audits a definition (and its faces). Only handled cards make sense. */
 export function auditCard(d: CardDef): AuditIssue[] {
   const issues: AuditIssue[] = [];
   const faces: CardDef[] = d.faceDefs?.length ? d.faceDefs : [d];
@@ -249,14 +249,14 @@ export function auditCard(d: CardDef): AuditIssue[] {
     let surplus = 0;
     for (const kind of ["triggered", "activated"] as const) {
       const expected = paras.filter((p) => p.kind === kind).length;
-      // Les deux faces partagent parfois les capacités (verso) : on compte celles de la carte entière aussi.
+      // The two faces sometimes share the abilities (back face): those of the whole card are counted too.
       const have = Math.max(countKind(f, kind), faces.length > 1 ? 0 : countKind(d, kind));
       if (have < expected)
-        issues.push({ card: d.name, kind, detail: `${f.name} : ${expected} dans le texte, ${have} dans le script` });
+        issues.push({ card: d.name, kind, detail: `${f.name}: ${expected} in the text, ${have} in the script` });
       surplus += Math.max(0, have - expected);
     }
-    // Statiques d'un permanent : chacune doit être portée par quelque chose dans le script. Un éphémère ou un rituel
-    // décrit son effet en paragraphes « sort », comptés ailleurs (nombres).
+    // Statics of a permanent: each must be carried by something in the script. An instant or sorcery describes its
+    // effect in "spell" paragraphs, counted elsewhere (numbers).
     if (!isSpell) {
       const statics = paras.filter((p) => p.kind === "static" && !NO_SCRIPT_STATIC.test(p.text)).length;
       const printed = paras.filter((p) => p.kind === "keywords").reduce((n, p) => n + p.text.split(",").length, 0);
@@ -264,33 +264,33 @@ export function auditCard(d: CardDef): AuditIssue[] {
         allAbilities(x).reduce((n, a) => n + staticWeight(a), 0) + abilityFields(x) + Math.max(0, x.keywords.length - printed);
       const have = own(f) + (f !== d ? own(d) : 0) + surplus;
       if (have < statics)
-        issues.push({ card: d.name, kind: "static", detail: `${f.name} : ${statics} dans le texte, ${have} dans le script` });
+        issues.push({ card: d.name, kind: "static", detail: `${f.name}: ${statics} in the text, ${have} in the script` });
     }
     const nums = scriptNumbers(f);
     if (f !== d) for (const n of scriptNumbers(d)) nums.add(n);
     const missing = [...new Set(paras.flatMap((p) => effectNumbers(p.text)))].filter((n) => !nums.has(n));
-    if (missing.length) issues.push({ card: d.name, kind: "number", detail: `${f.name} : ${missing.join(", ")} absent(s)` });
+    if (missing.length) issues.push({ card: d.name, kind: "number", detail: `${f.name}: ${missing.join(", ")} missing` });
   }
   issues.push(...auditTargets(d));
   return issues;
 }
 
 /**
- * Mots « target » d'un sort : hors capacités citées entre guillemets (jetons) et texte de rappel, hors « change the
- * target of … with a single target » (la cible d'un autre sort n'en est pas une de celui-ci) ; la maîtrise de la terre
- * compte pour une cible.
+ * "target" words of a spell: outside abilities quoted in quotation marks (tokens) and reminder text, outside "change
+ * the target of … with a single target" (the target of another spell is not one of this spell); earthbending counts
+ * as a target.
  */
 export function targetWords(text: string): number {
   const t = text
     .replace(/"[^"]*"/g, "")
     .replace(/\(([^)]*)\)/g, "")
     .replace(/\bthe targets? of\b|\bwith a single target\b/gi, "");
-  // Maîtrise de la terre N : « terrain ciblé que vous contrôlez » (texte de rappel).
+  // Earthbend N: "target land you control" (reminder text).
   const earthbend = (t.match(/\bearthbend (?:\d+|X)\b/gi) ?? []).length;
   return (t.match(/\btarget\b/gi) ?? []).length + earthbend;
 }
 
-/** Mots « up to N target », « any number of target », « one or two target » d'un sort (cibles facultatives). */
+/** "up to N target", "any number of target", "one or two target" words of a spell (optional targets). */
 export function upToWords(text: string): number {
   const t = text.replace(/"[^"]*"/g, "").replace(/\(([^)]*)\)/g, "");
   return (
@@ -300,7 +300,7 @@ export function upToWords(text: string): number {
   ).length;
 }
 
-/** Cibles du script d'un sort à un seul mode : celles du sort, plus celles de ses capacités réflexives et retardées. */
+/** Targets of the script of a single-mode spell: those of the spell, plus those of its reflexive and delayed abilities. */
 function scriptTargets(d: CardDef): number {
   const mode = d.spell?.modes[0];
   if (!mode) return 0;
@@ -309,7 +309,7 @@ function scriptTargets(d: CardDef): number {
     if (Array.isArray(x)) for (const y of x) visit(y, inToken);
     else if (x && typeof x === "object") {
       const o = x as Record<string, unknown>;
-      // Capacités d'un jeton créé : les siennes, pas celles du sort.
+      // Abilities of a created token: its own, not the spell's.
       const token = inToken || o.op === "createTokens" || o.op === "createTokenCopy";
       if (!token && Array.isArray(o.targets) && (o.op === "reflexive" || o.op === "delayed")) nested += o.targets.length;
       for (const v of Object.values(o)) visit(v, token);
@@ -319,31 +319,30 @@ function scriptTargets(d: CardDef): number {
   return mode.targets.length + nested;
 }
 
-/** Audit des cibles d'un éphémère ou d'un rituel à un seul mode (sans faces). */
+/** Audit of the targets of a single-mode instant or sorcery (without faces). */
 export function auditTargets(d: CardDef): AuditIssue[] {
   if (d.faceDefs?.length || !d.spell || d.spell.modes.length !== 1) return [];
   if (!d.types.includes("Instant") && !d.types.includes("Sorcery")) return [];
   const words = targetWords(d.text ?? "");
   const have = scriptTargets(d);
-  if (words !== have)
-    return [{ card: d.name, kind: "target", detail: `${words} « target » dans le texte, ${have} dans le script` }];
-  // « jusqu'à N cibles » : autant de cibles facultatives dans le script (sort sans capacité réflexive ni retardée).
+  if (words !== have) return [{ card: d.name, kind: "target", detail: `${words} "target" in the text, ${have} in the script` }];
+  // "up to N targets": as many optional targets in the script (spell without reflexive or delayed ability).
   const specs = d.spell.modes[0]?.targets ?? [];
   const upTo = upToWords(d.text ?? "");
-  // Nombre de cibles variable : facultatives, ou entre un minimum et un maximum (« one or two »).
+  // Variable number of targets: optional, or between a minimum and a maximum ("one or two").
   const optional = specs.filter((t) => t.optional || (t.minCount !== undefined && t.minCount < (t.count ?? 1))).length;
-  // Cible conditionnée par un coût (cadeau promis, marchandage) : facultative dans le script, sans « up to ».
+  // Target conditioned by a cost (promised gift, bargain): optional in the script, without "up to".
   const conditional = /\bif the gift was promised\b|\bif this spell was (?:bargained|kicked)\b/i.test(d.text ?? "");
   if (have === specs.length && !conditional && upTo !== optional)
     return [
       {
         card: d.name,
         kind: "target",
-        detail: `${upTo} nombre(s) de cibles variable(s) dans le texte, ${optional} dans le script`,
+        detail: `${upTo} variable number(s) of targets in the text, ${optional} in the script`,
       },
     ];
   return [];
 }
 
-/** Clé stable d'un écart (pour la liste des écarts connus). */
+/** Stable key of a discrepancy (for the list of known discrepancies). */
 export const issueKey = (i: AuditIssue) => `${i.card} | ${i.kind} | ${i.detail}`;

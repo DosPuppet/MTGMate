@@ -841,7 +841,7 @@ describe("Tarkir: Dragonstorm, lot B", () => {
     });
   });
 
-  describe("Renouveau", () => {
+  describe("Renew", () => {
     it("Sage of the Fang : un marqueur +1/+1, puis doublez les marqueurs +1/+1 de la créature", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 4), "Bear Cub"], graveyard: ["Sage of the Fang"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1333,7 +1333,7 @@ describe("Tarkir: Dragonstorm, lot C", () => {
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       const u = idOf(s, "p1", "battlefield", "Ureni, the Song Unending");
-      expect(chars(s, u).protections.map((p) => p.label)).toContain("Protection contre le blanc et contre le noir");
+      expect(chars(s, u).protections.map((p) => p.label)).toContain("Protection from white and from black");
     });
   });
 
@@ -1578,7 +1578,7 @@ describe("Tarkir: Dragonstorm : cartes du méta (PLAN-C, lot C13)", () => {
     it("{2}{W}, {T} : quand vous attaquez ce tour-ci, deux Guerriers 1/1 rouges engagés et attaquants, sacrifiés à l'étape de fin", () => {
       let s = scenario({ p1: { battlefield: ["Dalkovan Encampment", ...lands("Plains", 3), "Bear Cub"] } });
       const camp = idOf(s, "p1", "battlefield", "Dalkovan Encampment");
-      s = settle(activate(s, "p1", camp, "Guerriers"));
+      s = settle(activate(s, "p1", camp, "Warriors"));
       expect(s.objects[camp]?.tapped).toBe(true);
       expect(s.battlefield.filter((id) => chars(s, id).name === "Warrior")).toHaveLength(0);
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -1605,7 +1605,7 @@ describe("Tarkir: Dragonstorm : cartes du méta (PLAN-C, lot C13)", () => {
 
     it("sans attaque ce tour-ci, aucun Guerrier ; l'effet ne dure pas jusqu'au tour suivant", () => {
       let s = scenario({ p1: { battlefield: ["Dalkovan Encampment", ...lands("Plains", 3), "Bear Cub"] } });
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Dalkovan Encampment"), "Guerriers"));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Dalkovan Encampment"), "Warriors"));
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.number === 5 && x.pending?.kind === "declareAttackers");
       s = act(s, "p1", {
         type: "declareAttackers",
@@ -1618,7 +1618,7 @@ describe("Tarkir: Dragonstorm : cartes du méta (PLAN-C, lot C13)", () => {
     it("603.7 : capacité retardée, indépendante du terrain ; détruit après l'activation, l'attaque crée quand même les Guerriers", () => {
       let s = scenario({ p1: { battlefield: ["Dalkovan Encampment", ...lands("Plains", 3), "Bear Cub"] } });
       const camp = idOf(s, "p1", "battlefield", "Dalkovan Encampment");
-      s = settle(activate(s, "p1", camp, "Guerriers"));
+      s = settle(activate(s, "p1", camp, "Warriors"));
       s = structuredClone(s);
       destroy(s, camp);
       s = settle(s);
@@ -1952,7 +1952,7 @@ describe("Tarkir: Dragonstorm, lot K8 : rares (1)", () => {
     let s = scenario({
       p1: { battlefield: ["Cori Mountain Monastery", ...lands("Mountain", 4)], library: ["Plains", ...lands("Forest", 6)] },
     });
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Cori Mountain Monastery"), "Exilez"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Cori Mountain Monastery"), "Exile"));
     const plains = exiled(s, "Plains")[0] as string;
     expect(plains).toBeDefined();
     const playable = (x: S) => legalActions(x, "p1").some((a) => a.type === "playLand" && a.card === plains);
@@ -2063,9 +2063,9 @@ describe("Tarkir: Dragonstorm, lot K8 : rares (1)", () => {
     expect(landEntersTapped("Great Arashin City", ["Plains"])).toBe(false);
     const setup = (graveyard: string[]) => scenario({ p1: { battlefield: ["Great Arashin City", "Swamp", "Swamp"], graveyard } });
     const none = setup(["Forest", "Shock"]);
-    expect(hasActivation(none, idOf(none, "p1", "battlefield", "Great Arashin City"), "Esprit")).toBe(false);
+    expect(hasActivation(none, idOf(none, "p1", "battlefield", "Great Arashin City"), "Spirit")).toBe(false);
     let s = setup(["Bear Cub"]);
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Great Arashin City"), "Esprit"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Great Arashin City"), "Spirit"));
     expect(exiled(s, "Bear Cub")).toHaveLength(1);
     const spirit = tokensOf(s, "p1", "Spirit")[0] as string;
     expect(pt(s, spirit)).toEqual([1, 1]);
@@ -2086,13 +2086,9 @@ describe("Tarkir: Dragonstorm, lot K8 : rares (1)", () => {
     let s = scenario({ p1: { battlefield: ["Herd Heirloom", "Serra Angel", "Bear Cub"] }, p2: { battlefield: ["Bear Cub"] } });
     const heirloom = idOf(s, "p1", "battlefield", "Herd Heirloom");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
-    expect(() =>
-      activateNamed(s, heirloom, "Piétinement", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }),
-    ).toThrow();
-    expect(() =>
-      activateNamed(s, heirloom, "Piétinement", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }),
-    ).toThrow();
-    s = settle(activateNamed(s, heirloom, "Piétinement", { targets: { t: [angel] } }));
+    expect(() => activateNamed(s, heirloom, "Trample", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } })).toThrow();
+    expect(() => activateNamed(s, heirloom, "Trample", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } })).toThrow();
+    s = settle(activateNamed(s, heirloom, "Trample", { targets: { t: [angel] } }));
     expect(chars(s, angel).keywords).toContain("trample");
     s = settleNoBlocks(attack(s, [angel]));
     s = advanceUntil(s, (x) => x.turn.step === "main2");
@@ -2148,7 +2144,7 @@ describe("Tarkir: Dragonstorm, lot K8 : rares (1)", () => {
     expect(landEntersTapped("Kishla Village", ["Swamp"])).toBe(false);
     let s = scenario({ p1: { battlefield: ["Kishla Village", ...lands("Forest", 4)], library: ["Opt", "Shock", "Island"] } });
     let seen: (string | undefined)[] = [];
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Kishla Village"), "Surveillance"), (req, _p, cur) => {
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Kishla Village"), "Surveil"), (req, _p, cur) => {
       if (req.type === "pick" && req.intent.startsWith("surveil")) seen = namesIn(cur, req.options);
       return surveilAll(req);
     });
@@ -2174,7 +2170,7 @@ describe("Tarkir: Dragonstorm, lot K8 : rares (2)", () => {
       p2: { graveyard: ["Plains", "Plains"] },
     });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Lasyd Prowler"), "Renouveau", { targets: { t: [bear] } }));
+    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Lasyd Prowler"), "Renew", { targets: { t: [bear] } }));
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
     expect(exiled(s, "Lasyd Prowler")).toHaveLength(1);
   });
@@ -2284,11 +2280,9 @@ describe("Tarkir: Dragonstorm, lot K8 : rares (2)", () => {
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
     const eshki = idOf(s, "p1", "battlefield", "Eshki Dragonclaw");
-    expect(() => activateNamed(s, naga, "Renouveau", { targets: { t: [eshki] } })).toThrow();
-    expect(() =>
-      activateNamed(s, naga, "Renouveau", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }),
-    ).toThrow();
-    s = settle(activateNamed(s, naga, "Renouveau", { targets: { t: [bear] } }));
+    expect(() => activateNamed(s, naga, "Renew", { targets: { t: [eshki] } })).toThrow();
+    expect(() => activateNamed(s, naga, "Renew", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } })).toThrow();
+    s = settle(activateNamed(s, naga, "Renew", { targets: { t: [bear] } }));
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     expect(chars(s, elves).name).toBe("Bear Cub");
     expect(chars(s, eshki).name).toBe("Bear Cub");
@@ -2502,7 +2496,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (1)
     });
     expect(chars(s, idOf(s, "p1", "battlefield", "Alchemist's Assistant")).keywords).toContain("lifelink");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renouveau", { targets: { t: [bear] } }));
+    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renew", { targets: { t: [bear] } }));
     expect(s.objects[bear]?.counters.lifelink).toBe(1);
     expect(chars(s, bear).keywords).toContain("lifelink");
     expect(exiled(s, "Alchemist's Assistant")).toHaveLength(1);
@@ -2536,9 +2530,9 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (1)
       p2: { battlefield: ["Serra Angel"] },
     });
     const sage = idOf(s, "p1", "graveyard", "Constrictor Sage");
-    expect(() => activateNamed(s, sage, "Renouveau", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } })).toThrow();
+    expect(() => activateNamed(s, sage, "Renew", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } })).toThrow();
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-    s = settle(activateNamed(s, sage, "Renouveau", { targets: { t: [angel] } }));
+    s = settle(activateNamed(s, sage, "Renew", { targets: { t: [angel] } }));
     expect(s.objects[angel]?.tapped).toBe(true);
     expect(s.objects[angel]?.counters.stun).toBe(1);
   });
@@ -2641,7 +2635,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (1)
     const anchor = idOf(s, "p1", "battlefield", "Essence Anchor");
     expect(hasActivation(s, anchor, "Zombie")).toBe(false);
     s = settle(
-      activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renouveau", {
+      activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renew", {
         targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] },
       }),
     );
@@ -2711,7 +2705,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (1)
     });
     expect(chars(s, idOf(s, "p1", "battlefield", "Kheru Goldkeeper")).keywords).toContain("flying");
     s = settle(
-      activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renouveau", {
+      activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renew", {
         targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] },
       }),
     );
@@ -2723,7 +2717,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (1)
       p1: { battlefield: ["Swamp", "Forest", "Island", ...lands("Swamp", 2), "Bear Cub"], graveyard: ["Kheru Goldkeeper"] },
     });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Kheru Goldkeeper"), "Renouveau", { targets: { t: [bear] } }));
+    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Kheru Goldkeeper"), "Renew", { targets: { t: [bear] } }));
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
     expect(s.objects[bear]?.counters.flying).toBe(1);
     expect(chars(s, bear).keywords).toContain("flying");
@@ -2769,8 +2763,8 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
     const monument = idOf(s, "p1", "battlefield", "Jeskai Monument");
     // Seulement en rituel.
     const busy = cast(s, "p1", "Opt");
-    expect(hasActivation(busy, monument, "Oiseaux")).toBe(false);
-    s = settle(activateNamed(s, monument, "Oiseaux"));
+    expect(hasActivation(busy, monument, "Birds")).toBe(false);
+    s = settle(activateNamed(s, monument, "Birds"));
     const birds = tokensOf(s, "p1", "Bird");
     expect(birds).toHaveLength(2);
     expect(pt(s, birds[0] as string)).toEqual([1, 1]);
@@ -2783,7 +2777,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
     const { offered } = monumentSearch("Mardu Monument", ["Forest", "Island", "Swamp"]);
     expect(offered).toEqual(["Swamp"]);
     let s = scenario({ p1: { battlefield: ["Mardu Monument", "Mountain", "Plains", "Swamp", "Swamp", "Swamp"] } });
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Mardu Monument"), "Guerriers"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Mardu Monument"), "Warriors"));
     const warriors = tokensOf(s, "p1", "Warrior");
     expect(warriors).toHaveLength(3);
     for (const w of warriors) {
@@ -2798,7 +2792,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
     const { offered } = monumentSearch("Sultai Monument", ["Plains", "Mountain", "Island"]);
     expect(offered).toEqual(["Island"]);
     let s = scenario({ p1: { battlefield: ["Sultai Monument", "Swamp", "Forest", "Island", "Swamp", "Swamp"] } });
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Sultai Monument"), "Zombies"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Sultai Monument"), "Zombie Druids"));
     const zombies = tokensOf(s, "p1", "Zombie Druid");
     expect(zombies).toHaveLength(2);
     expect(pt(s, zombies[0] as string)).toEqual([2, 2]);
@@ -2809,7 +2803,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
     const { offered } = monumentSearch("Temur Monument", ["Plains", "Swamp", "Forest"]);
     expect(offered).toEqual(["Forest"]);
     let s = scenario({ p1: { battlefield: ["Temur Monument", "Forest", "Island", "Mountain", ...lands("Forest", 3)] } });
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Temur Monument"), "Éléphant"));
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Temur Monument"), "Elephant"));
     const elephant = tokensOf(s, "p1", "Elephant")[0] as string;
     expect(pt(s, elephant)).toEqual([5, 5]);
     expect(chars(s, elephant).colors).toEqual(["G"]);
@@ -2824,7 +2818,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
     // Tous les marqueurs partent : aucune question sur leur sorte.
     const asked: string[] = [];
     s = settle(cast(s, "p1", "Purging Stormbrood // Absorb Essence"), (req, p) => {
-      if (req.type === "pick" && req.prompt.includes("quel marqueur retirer")) asked.push(req.prompt);
+      if (req.type === "pick" && req.prompt.includes("which counter to remove")) asked.push(req.prompt);
       return picking([bear])(req, p);
     });
     expect(asked).toEqual([]);
@@ -3046,7 +3040,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
       });
       const blade = idOf(s, "p1", "battlefield", "Stormbeacon Blade");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(activateNamed(s, blade, "Équiper", { targets: { t: [bear] } }));
+      s = settle(activateNamed(s, blade, "Equip", { targets: { t: [bear] } }));
       expect(pt(s, bear)).toEqual([5, 2]);
       s = settleNoBlocks(
         attack(
@@ -3068,8 +3062,8 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
       p2: { battlefield: ["Serra Angel", "Bear Cub"] },
     });
     const sm = idOf(s, "p1", "battlefield", "Sunset Strikemaster");
-    expect(() => activateNamed(s, sm, "6 blessures", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } })).toThrow();
-    s = settle(activateNamed(s, sm, "6 blessures", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }));
+    expect(() => activateNamed(s, sm, "6 damage", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } })).toThrow();
+    s = settle(activateNamed(s, sm, "6 damage", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }));
     expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p1", "graveyard", "Sunset Strikemaster")).toHaveLength(1);
     let t = scenario({ p1: { battlefield: ["Sunset Strikemaster"], hand: ["Shock"] } });
@@ -3100,10 +3094,10 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (2)
 
   it("Unrooted Ancestor : flash ; {1}, sacrifiez une autre créature : indestructible jusqu'à la fin du tour, et elle s'engage", () => {
     const alone = scenario({ p1: { battlefield: ["Unrooted Ancestor", "Swamp"] } });
-    expect(hasActivation(alone, idOf(alone, "p1", "battlefield", "Unrooted Ancestor"), "Sacrifiez")).toBe(false);
+    expect(hasActivation(alone, idOf(alone, "p1", "battlefield", "Unrooted Ancestor"), "Sacrifice")).toBe(false);
     let s = scenario({ p1: { battlefield: ["Unrooted Ancestor", "Swamp", "Bear Cub"] } });
     const ancestor = idOf(s, "p1", "battlefield", "Unrooted Ancestor");
-    s = settle(activateNamed(s, ancestor, "Sacrifiez", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+    s = settle(activateNamed(s, ancestor, "Sacrifice", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
     expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(s.objects[ancestor]?.tapped).toBe(true);
     expect(chars(s, ancestor).keywords).toContain("indestructible");
@@ -3382,7 +3376,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes à plusieurs capacités (3)
     expect(chars(s, idOf(s, "p1", "battlefield", "Kishla Skimmer")).keywords).toContain("flying");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const renewOne = (x: S) =>
-      settle(activateNamed(x, idOf(x, "p1", "graveyard", "Alchemist's Assistant"), "Renouveau", { targets: { t: [bear] } }));
+      settle(activateNamed(x, idOf(x, "p1", "graveyard", "Alchemist's Assistant"), "Renew", { targets: { t: [bear] } }));
     s = renewOne(s);
     expect(handSize(s, "p1")).toBe(1);
     s = renewOne(s);
@@ -3399,7 +3393,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes (4)", () => {
     let s = scenario({ p1: { battlefield: ["Attuned Hunter", "Swamp", "Swamp"], graveyard: ["Alchemist's Assistant"] } });
     const hunter = idOf(s, "p1", "battlefield", "Attuned Hunter");
     expect(chars(s, hunter).keywords).toContain("trample");
-    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renouveau", { targets: { t: [hunter] } }));
+    s = settle(activateNamed(s, idOf(s, "p1", "graveyard", "Alchemist's Assistant"), "Renew", { targets: { t: [hunter] } }));
     expect(s.objects[hunter]?.counters["+1/+1"]).toBe(1);
   });
 
@@ -3490,7 +3484,7 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes (4)", () => {
       },
     });
     let offered: (string | undefined)[] = [];
-    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Dragonstorm Forecaster"), "Cherchez"), (req, _p, cur) => {
+    s = settle(activateNamed(s, idOf(s, "p1", "battlefield", "Dragonstorm Forecaster"), "Search"), (req, _p, cur) => {
       if (req.type !== "pick" || req.intent !== "search") return undefined;
       offered = namesIn(cur, req.options);
       return req.options.filter((id) => nameOf(cur, id) === "Dragonstorm Globe");
@@ -3519,10 +3513,10 @@ describe("Tarkir: Dragonstorm, lot K8 : peu communes (4)", () => {
     });
     const tactician = idOf(s, "p1", "battlefield", "Hardened Tactician");
     // Une créature non-jeton ne paie pas le coût.
-    expect(hasActivation(s, tactician, "Sacrifiez")).toBe(false);
+    expect(hasActivation(s, tactician, "Sacrifice")).toBe(false);
     s = settle(cast(s, "p1", "Dragon Fodder"));
     const goblin = tokensOf(s, "p1", "Goblin")[0] as string;
-    s = settle(activateNamed(s, tactician, "Sacrifiez", { sacrifice: [goblin] }));
+    s = settle(activateNamed(s, tactician, "Sacrifice", { sacrifice: [goblin] }));
     expect(tokensOf(s, "p1", "Goblin")).toHaveLength(1);
     expect(handSize(s, "p1")).toBe(1);
   });

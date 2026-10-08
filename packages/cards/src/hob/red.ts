@@ -1,4 +1,4 @@
-/** The Hobbit — cartes rouges (lot A). */
+/** The Hobbit — red cards (lot A). */
 import {
   AXE,
   activated,
@@ -21,33 +21,35 @@ import {
   when,
 } from "./common";
 
-/** Vos Trésors. */
+/** Your Treasures. */
 const YOUR_TREASURES = { subtype: "Treasure", controller: "you" as const };
 
 export const RED: Record<string, CardScript> = {
-  // Storied : lu dans le texte.
+  // Storied: read from the text.
   "Balin, Loremaster": {
     abilities: [
       triggered(
         when.enters({ subtype: "Dwarf", controller: "you" }),
         fx.may(
-          "Défausser votre main pour piocher autant de cartes ?",
+          "Discard your hand to draw that many cards?",
           fx.discard(amount.cardsIn("hand"), ref.you, { store: "d" }),
           fx.draw(amount.v("d")),
           ...fx.when(cond.enduringStory, fx.damage(amount.v("d"), ref.eachOpponent)),
         ),
-        { label: "Défaussez votre main, piochez autant (récit durable : autant de blessures à chaque adversaire)" },
+        { label: "Discard your hand, draw that many (enduring story: that much damage to each opponent)" },
       ),
     ],
   },
-  // Storied : lu dans le texte.
+  // Storied: read from the text.
   "Bombur, Gentle Dreamer": {
-    abilities: [doesntUntap("self", { condition: cond.not(cond.enduringStory), label: "Ne se dégage pas sans récit durable" })],
+    abilities: [
+      doesntUntap("self", { condition: cond.not(cond.enduringStory), label: "Doesn't untap without an enduring story" }),
+    ],
   },
   "Bothersome Noisemaker": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.amass(ref.you, "Goblin", 1)], {
-        label: "Sort non-créature : amassez des Gobelins 1",
+        label: "Noncreature spell: amass Goblins 1",
       }),
     ],
   },
@@ -55,13 +57,13 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       chapter([1], [fx.damage(6, ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Chapitre I — 6 blessures à une créature adverse",
+        label: "Chapter I — 6 damage to an opponent's creature",
       }),
       chapter([2], [fx.destroy(ref.target())], {
-        targets: [target.permanent("t", ["Artifact"], { controller: "opponent" }, "artefact adverse")],
-        label: "Chapitre II — détruit un artefact adverse",
+        targets: [target.permanent("t", ["Artifact"], { controller: "opponent" }, "artifact an opponent controls")],
+        label: "Chapter II — destroys an opponent's artifact",
       }),
-      chapter([3, 4], [fx.addMana("R")], { label: "Chapitres III et IV — ajoutez {R}" }),
+      chapter([3, 4], [fx.addMana("R")], { label: "Chapters III and IV — add {R}" }),
     ],
   },
   "Dáin Ironfoot": {
@@ -70,25 +72,25 @@ export const RED: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.createTokens(AXE, 1, undefined, "axe"),
-          // « Quand vous le faites, attachez-la à une créature ciblée que vous contrôlez. »
+          // "When you do, attach it to target creature you control."
           fx.reflexive([target.creature("c", { controller: "you" })], [fx.attach(ref.target("c"), ref.target("axe"))], {
             axe: ref.stored("axe"),
           }),
         ],
-        { label: "Une Hache, attachée à une de vos créatures" },
+        { label: "An Axe, attached to one of your creatures" },
       ),
       triggered(when.attacksSelf, [fx.pumpAll({ attacking: true, equipped: true }, 0, 0, ["doubleStrike"])], {
-        label: "Vos attaquants équipés ont la double initiative",
+        label: "Your equipped attackers have double strike",
       }),
     ],
   },
   "Desert Were-Worm": {
     abilities: [
-      staticAbility("self", { power: 2 }, { per: { subtype: "Mountain", controller: "you" }, label: "+2/+0 par Montagne" }),
+      staticAbility("self", { power: 2 }, { per: { subtype: "Mountain", controller: "you" }, label: "+2/+0 for each Mountain" }),
       triggered(when.attackWith(1), [fx.untapAll({ attacking: true }), fx.extraCombat], {
         condition: cond.amountAtLeast(amount.totalPower({ attacking: true, controller: "you" }), 12),
         oncePerTurn: true,
-        label: "Attaque de force totale 12 ou plus : dégagez les attaquants, combat supplémentaire",
+        label: "Attack with total power 12 or greater: untap the attackers, additional combat",
       }),
     ],
   },
@@ -97,26 +99,26 @@ export const RED: Record<string, CardScript> = {
       [],
       [
         fx.damageAll(3, { types: ["Creature"], notSubtype: "Dragon" }),
-        // « Quatre mana en n'importe quelle combinaison de couleurs » : une couleur choisie pour chaque mana.
+        // "Four mana in any combination of colors": a color chosen for each mana.
         ...[1, 2, 3, 4].map(() => fx.addManaChoice(1, undefined, { spell: { subtype: "Dragon" } })),
       ],
     ),
   },
-  // Piétinement : lu dans le texte.
+  // Trample: read from the text.
   "Dori, Bearer of Friends": {
-    abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Un Trésor" })],
+    abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "A Treasure" })],
   },
 
   // --- Gandalf, Goblins' Bane // Flameshape -----------------------------------
   "Gandalf, Goblins' Bane": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pump(ref.self, 1, 1), fx.damage(1, ref.eachOpponent)], {
-        label: "Sort non-créature : +1/+1 et 1 blessure à chaque adversaire",
+        label: "Noncreature spell: +1/+1 and 1 damage to each opponent",
       }),
     ],
   },
   Flameshape: {
-    // Les cartes sont exilées face cachée (vous seul les voyez).
+    // The cards are exiled face down (only you see them).
     spell: spell(
       [],
       [
@@ -126,46 +128,46 @@ export const RED: Record<string, CardScript> = {
     ),
   },
 
-  // Portée : lue dans le texte.
+  // Reach: read from the text.
   "Gandalf, Spark Starter": {
     abilities: [
       triggered(when.entersSelf, [fx.damageDivided(3, ref.target())], {
         targets: [target.between(1, 3, target.any())],
-        label: "3 blessures réparties entre une, deux ou trois cibles",
+        label: "3 damage divided among one, two or three targets",
       }),
     ],
   },
 
   // --- Glóin the Mighty // Easy Pickings --------------------------------------
   "Glóin the Mighty": {
-    abilities: [triggered(when.step("main1", "you"), [fx.addMana("R", "R")], { label: "Ajoutez {R}{R}" })],
+    abilities: [triggered(when.step("main1", "you"), [fx.addMana("R", "R")], { label: "Add {R}{R}" })],
   },
   "Easy Pickings": { spell: spell([], [fx.damageAll(1, { types: ["Creature"], controller: "opponent" })]) },
 
-  // Célérité : lue dans le texte.
+  // Haste: read from the text.
   "Goblin-town Flunkies": {
-    abilities: [triggered(when.entersSelf, [fx.amass(ref.you, "Goblin", 1)], { label: "Amassez des Gobelins 1" })],
+    abilities: [triggered(when.entersSelf, [fx.amass(ref.you, "Goblin", 1)], { label: "Amass Goblins 1" })],
   },
   "Gundabad Opportunist": {
     abilities: [
       triggered(when.entersSelf, [fx.impulse(1, "yourNextTurn")], {
-        label: "Exile la carte du dessus, jouable jusqu'à la fin de votre prochain tour",
+        label: "Exiles the top card, playable until the end of your next turn",
       }),
     ],
   },
-  // Portée, piétinement : lus dans le texte.
+  // Reach, trample: read from the text.
   "Iron Hills Stalwart": {
     abilities: [
       triggered(when.entersSelf, [fx.attach(ref.target("c"), ref.target("e"))], {
         targets: [
-          target.permanent("e", ["Artifact"], { subtype: "Equipment", controller: "you" }, "Équipement que vous contrôlez"),
+          target.permanent("e", ["Artifact"], { subtype: "Equipment", controller: "you" }, "Equipment you control"),
           target.upTo(1, target.creature("c", { controller: "you" })),
         ],
-        label: "Attache un de vos Équipements à une de vos créatures",
+        label: "Attaches one of your Equipment to one of your creatures",
       }),
     ],
   },
-  // Cycle de Montagne : lu dans le texte.
+  // Mountaincycling: read from the text.
   "Last Light of Durin's Day": {
     abilities: [
       triggered(
@@ -175,21 +177,21 @@ export const RED: Record<string, CardScript> = {
           ...fx.when(
             cond.counterAtLeast("quest", 6),
             fx.sacrifice(ref.you, { self: true }, 1, { store: "s" }),
-            // « Cherchez dans votre main et/ou votre bibliothèque une carte de Dragon » : dans la main d'abord, sinon
-            // dans la bibliothèque (qui est alors mélangée).
+            // "Search your hand and/or library for a Dragon card": in the hand first, otherwise in the library (which
+            // is then shuffled).
             ...fx.when(
               cond.v("s"),
               fx.pickFromZone(
                 "hand",
                 { subtype: "Dragon" },
                 { to: "battlefield" },
-                { min: 0, store: "h", prompt: "Choisissez un Dragon de votre main (aucun : cherchez dans la bibliothèque)" },
+                { min: 0, store: "h", prompt: "Choose a Dragon from your hand (none: search the library)" },
               ),
               ...fx.when(cond.not(cond.v("h")), fx.search({ subtype: "Dragon" }, { to: "battlefield" })),
             ),
           ),
         ],
-        { label: "Un marqueur de quête ; à six, sacrifiez-le : un Dragon sur le champ de bataille" },
+        { label: "A quest counter; at six, sacrifice it: a Dragon onto the battlefield" },
       ),
     ],
   },
@@ -205,56 +207,52 @@ export const RED: Record<string, CardScript> = {
             ...fx.when(cond.v("s"), fx.createTokens(DRAGON_6)),
           ),
         ],
-        { label: "Un Trésor ; avec quatre Trésors, sacrifiez la Saga : un Dragon 6/6 volant" },
+        { label: "A Treasure; with four Treasures, sacrifice the Saga: a 6/6 flying Dragon" },
       ),
     ],
   },
   "Misty Mountains Raider": {
-    abilities: [triggered(when.attackWith(1), [fx.amass(ref.you, "Goblin", 2)], { label: "Amassez des Gobelins 2" })],
+    abilities: [triggered(when.attackWith(1), [fx.amass(ref.you, "Goblin", 2)], { label: "Amass Goblins 2" })],
   },
-  // Storied : lu dans le texte.
+  // Storied: read from the text.
   "Óin the Brave": {
     abilities: [
       staticAbility(
         "self",
         { power: 1, addKeywords: ["haste"] },
-        { condition: cond.enduringStory, label: "Récit durable : +1/+0 et la célérité" },
+        { condition: cond.enduringStory, label: "Enduring story: +1/+0 and haste" },
       ),
-      activated({ mana: "{1}", tap: true, discard: 1, effects: [fx.draw(1)], label: "Défaussez une carte : piochez une carte" }),
+      activated({ mana: "{1}", tap: true, discard: 1, effects: [fx.draw(1)], label: "Discard a card: draw a card" }),
     ],
   },
   "Pinecone Strike": {
-    // « Choisissez l'un ou les deux. »
+    // "Choose one or both."
     spell: modal(
+      mode("3 damage to a creature", [target.creature("c")], [fx.exileIfDies(ref.target("c")), fx.damage(3, ref.target("c"))]),
       mode(
-        "3 blessures à une créature",
-        [target.creature("c")],
-        [fx.exileIfDies(ref.target("c")), fx.damage(3, ref.target("c"))],
-      ),
-      mode(
-        "Détruit un jeton d'artefact",
-        [target.permanent("a", ["Artifact"], { token: true }, "jeton d'artefact")],
+        "Destroys an artifact token",
+        [target.permanent("a", ["Artifact"], { token: true }, "artifact token")],
         [fx.destroy(ref.target("a"))],
       ),
       mode(
-        "Les deux",
-        [target.creature("c"), target.permanent("a", ["Artifact"], { token: true }, "jeton d'artefact")],
+        "Both",
+        [target.creature("c"), target.permanent("a", ["Artifact"], { token: true }, "artifact token")],
         [fx.exileIfDies(ref.target("c")), fx.damage(3, ref.target("c")), fx.destroy(ref.target("a"))],
       ),
     ),
   },
-  // Équiper {3} : lu dans le texte.
+  // Equip {3}: read from the text.
   "Ragged Short Spear": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(2))], {
-        label: "Défaussez une carte : piochez deux cartes",
+        label: "Discard a card: draw two cards",
       }),
       staticAbility("attached", { power: 2 }, { label: "+2/+0" }),
     ],
   },
 
   // --- Smaug, the Great Calamity // Spew Flame --------------------------------
-  // Vol : lu dans le texte.
+  // Flying: read from the text.
   "Smaug, the Great Calamity": {},
   "Spew Flame": { spell: spell([target.creature()], [fx.damage(5, ref.target())]) },
 
@@ -268,21 +266,21 @@ export const RED: Record<string, CardScript> = {
         activationCondition: cond.yourTurn,
         oncePerTurn: true,
         effects: [fx.impulse(1, "yourNextTurn")],
-        label: "Sacrifiez une autre créature ou un artefact : exilez la carte du dessus, jouable jusqu'à votre prochain tour",
+        label: "Sacrifice another creature or an artifact: exile the top card, playable until your next turn",
       }),
     ],
   },
   "Stone-Giant of High Pass": {
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((trigger) =>
-        triggered(trigger, [fx.createTokens(STONE_BOULDER)], { label: "Un Rocher (Mur 3/1 défenseur)" }),
+        triggered(trigger, [fx.createTokens(STONE_BOULDER)], { label: "A Boulder (3/1 defender Wall)" }),
       ),
       activated({
         mana: "{2}{R}",
         sacrificeOther: { filter: { types: ["Artifact"] } },
         targets: [target.any()],
         effects: [fx.damage(4, ref.target())],
-        label: "Sacrifiez un artefact : 4 blessures",
+        label: "Sacrifice an artifact: 4 damage",
       }),
     ],
   },

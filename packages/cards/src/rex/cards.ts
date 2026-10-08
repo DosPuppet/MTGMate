@@ -1,5 +1,6 @@
-/** Jurassic World Collection (REX) : scripts des cartes (PLAN-G). */
-import type { Effect, Keyword, TokenSpec } from "@mtgx/engine";
+/** Jurassic World Collection (REX): card scripts (PLAN-G). */
+import { cardRef, type Effect, type Keyword, msg, type TokenSpec } from "@mtgx/engine";
+import { slug } from "../scryfall";
 import {
   activated,
   amount,
@@ -20,15 +21,19 @@ import {
   when,
 } from "../tdm/common";
 
-/** Partenaire avec (702.124j) : à l'arrivée, le joueur ciblé peut chercher le partenaire dans sa bibliothèque. */
+/** Partner with (702.124j): when it enters, target player may search their library for the partner. */
 const partnerWith = (name: string) =>
   triggered(
     when.entersSelf,
-    fx.mayFor(ref.target("p"), `Chercher ${name} ?`, fx.search({ name }, { to: "hand" }, 1, ref.target("p"))),
-    { targets: [target.player("p")], label: `Partenaire avec ${name}` },
+    fx.mayFor(
+      ref.target("p"),
+      msg("Search for {card}?", { card: cardRef(slug(name)) }),
+      fx.search({ name }, { to: "hand" }, 1, ref.target("p")),
+    ),
+    { targets: [target.player("p")], label: msg("Partner with {card}", { card: cardRef(slug(name)) }) },
   );
 
-/** Indominus Rex, Alpha : les capacités qui donnent un marqueur (702.xx, marqueurs de mot-clé). */
+/** Indominus Rex, Alpha: the abilities that give a counter (702.xx, keyword counters). */
 const INDOMINUS_KEYWORDS: Keyword[] = [
   "flying",
   "firstStrike",
@@ -44,7 +49,7 @@ const INDOMINUS_KEYWORDS: Keyword[] = [
   "vigilance",
 ];
 
-/** Welcome to . . . : un Dinosaure 3/3 vert avec le piétinement. */
+/** Welcome to . . .: a 3/3 green Dinosaur with trample. */
 const DINOSAUR_TRAMPLE: TokenSpec = {
   name: "Dinosaur",
   colors: ["G"],
@@ -63,10 +68,10 @@ export const CARDS: Record<string, CardScript> = {
         fx.destroyAll({ types: ["Creature"], tapped: true }),
         fx.emblem(
           "Don't Move",
-          "Jusqu'à votre prochain tour, chaque fois qu'une créature devient engagée, détruisez-la.",
+          msg("Until your next turn, whenever a creature becomes tapped, destroy it."),
           [
             triggered({ on: "taps", who: { types: ["Creature"] } }, [fx.destroy(ref.eventObject)], {
-              label: "Une créature devient engagée : détruisez-la",
+              label: "A creature becomes tapped: destroy it",
             }),
           ],
           true,
@@ -78,17 +83,17 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.counters(ref.target(), "-1/-1")], {
         targets: [target.optional(target.creature())],
-        label: "Un marqueur −1/−1 sur jusqu'à une créature",
+        label: "A −1/−1 counter on up to one creature",
       }),
       triggered(when.attacksSelf, [fx.counters(ref.target(), "-1/-1")], {
         targets: [target.optional(target.creature())],
-        label: "Un marqueur −1/−1 sur jusqu'à une créature",
+        label: "A −1/−1 counter on up to one creature",
       }),
       staticAbility(
         { types: ["Creature"], controller: "opponent", withCounter: "-1/-1" },
         { addKeywords: ["cantBlock"] },
         {
-          label: "Les créatures adverses avec un marqueur −1/−1 ne peuvent pas bloquer",
+          label: "Creatures your opponents control with a −1/−1 counter can't block",
         },
       ),
     ],
@@ -98,13 +103,13 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.enters({ types: ["Creature"], controller: "you", token: false, minPower: 4 }),
         [
-          // Peuplement (701.30) : une copie d'un jeton de créature que vous contrôlez.
+          // Populate (701.30): a copy of a creature token you control.
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], token: true }), ref.you, "p", {
-            prompt: "Peuplez : un jeton de créature",
+            prompt: "Populate: a creature token",
           }),
           fx.copyToken(ref.stored("p")),
         ],
-        { label: "Une de vos créatures non-jetons de force 4 ou plus arrive : peuplez" },
+        { label: "A nontoken creature you control with power 4 or greater enters: populate" },
       ),
     ],
   },
@@ -122,7 +127,7 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(when.step("end"), [fx.copyToken(ref.self, { tapped: true })], {
         condition: cond.morbid,
-        label: "Une créature est morte ce tour-ci : un jeton copie engagé",
+        label: "A creature died this turn: a tapped token copy",
       }),
     ],
   },
@@ -133,13 +138,13 @@ export const CARDS: Record<string, CardScript> = {
         exileFromGraveyard: { filter: { types: ["Creature"] }, count: 1 },
         sorcerySpeed: true,
         effects: [fx.discover(amount.manaValueOf(ref.costExiled))],
-        label: "Découverte X (la valeur de mana de la carte exilée)",
+        label: "Discover X (the mana value of the exiled card)",
       }),
     ],
   },
   "Permission Denied": {
     spell: spell(
-      [target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")],
+      [target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")],
       [
         fx.counter(ref.target()),
         fx.thisTurn({ castLimit: { who: "opponents", maxSpells: 0, spellTypes: { notTypes: ["Creature"] } } }),
@@ -147,7 +152,7 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Ravenous Tyrannosaurus": {
-    // Dévorer 3 : lu dans le texte.
+    // Devour 3: read from the text.
     abilities: [
       triggered(
         when.attacksSelf,
@@ -157,38 +162,38 @@ export const CARDS: Record<string, CardScript> = {
         ],
         {
           targets: [target.optional(target.creature("t", { other: true }))],
-          label: "Blessures égales à sa force à une autre créature ; l'excès à son contrôleur",
+          label: "Damage equal to its power to another creature; the excess to its controller",
         },
       ),
     ],
   },
-  // — G4e : sous-lot difficile —
+  // — G4e: hard sub-lot —
   "Grim Giganotosaurus": {
     abilities: [
-      // Monstruosité 10 (701.37) : « monstrueuse » est noté par un marqueur, qui déclenche la capacité suivante.
+      // Monstrosity 10 (701.37): "monstrous" is noted by a counter, which triggers the next ability.
       activated({
         mana: "{10}{B}{G}",
         reduction: { generic: amount.count({ types: ["Creature"], controller: "opponent", minPower: 4 }) },
         activationCondition: cond.not(cond.amountAtLeast(amount.countersOn(ref.self, "monstrous"), 1)),
         effects: [fx.addCounters(ref.self, 10), fx.counters(ref.self, "monstrous")],
-        label: "Monstruosité 10",
+        label: "Monstrosity 10",
       }),
       triggered(
         { on: "countersPut", who: "self", kind: "monstrous" },
         [fx.destroyAll({ anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], other: true })],
         {
-          label: "Devient monstrueuse : détruisez tous les autres artefacts et créatures",
+          label: "Becomes monstrous: destroy all other artifacts and creatures",
         },
       ),
     ],
   },
-  // Menace : lue dans le texte.
+  // Menace: read from the text.
   "Indoraptor, the Perfect Hybrid": {
     abilities: [
-      // Soif de sang X (702.54) : X, les blessures infligées à vos adversaires ce tour-ci.
+      // Bloodthirst X (702.54): X, the damage dealt to your opponents this turn.
       entersWith({
         counters: amount.turnEvents({ event: "damage", who: "opponent", toPlayer: true, sum: true }),
-        label: "Soif de sang X",
+        label: "Bloodthirst X",
       }),
       triggered(
         when.isDealtDamage,
@@ -204,8 +209,7 @@ export const CARDS: Record<string, CardScript> = {
           fx.damage(amount.powerOf(ref.self), ref.stored("o")),
         ],
         {
-          label:
-            "Rage : un adversaire au hasard subit des blessures égales à sa force, à moins de sacrifier une créature non-jeton",
+          label: "Enrage: a random opponent is dealt damage equal to its power unless they sacrifice a nontoken creature",
         },
       ),
     ],
@@ -216,7 +220,7 @@ export const CARDS: Record<string, CardScript> = {
         { types: ["Creature"], subtype: "Human", controller: "you" },
         {
           addAbilities: [
-            // Exploitation (702.110) : « vous pouvez sacrifier une créature » ; Henry Wu en tire une carte (et un Trésor).
+            // Exploit (702.110): "you may sacrifice a creature"; Henry Wu draws a card from it (and a Treasure).
             triggered(
               when.entersSelf,
               [
@@ -224,11 +228,11 @@ export const CARDS: Record<string, CardScript> = {
                 ...fx.when(cond.refMatches(ref.stored("x"), { notSubtype: "Human" }), fx.draw(1)),
                 ...fx.when(cond.refMatches(ref.stored("x"), { notSubtype: "Human", minPower: 3 }), fx.createTokens(TREASURE)),
               ],
-              { label: "Exploitation" },
+              { label: "Exploit" },
             ),
           ],
         },
-        { label: "Henry Wu et vos autres Humains ont l'exploitation" },
+        { label: "Henry Wu and other Humans you control have exploit" },
       ),
     ],
   },
@@ -242,7 +246,7 @@ export const CARDS: Record<string, CardScript> = {
           fx.pump(ref.target(), 0, 0, ["flying", "haste"]),
           fx.delayed(
             [
-              fx.reflexive([target.permanent("l", ["Land"], {}, "terrain")], [fx.damage(3, ref.target("c"), ref.target("l"))], {
+              fx.reflexive([target.permanent("l", ["Land"], {}, "land")], [fx.damage(3, ref.target("c"), ref.target("l"))], {
                 c: ref.target("c"),
               }),
             ],
@@ -252,7 +256,7 @@ export const CARDS: Record<string, CardScript> = {
         {
           targets: [target.creature("t", { controller: "opponent" })],
           label:
-            "Un Dinosaure volant arrive : prenez le contrôle d'une créature adverse ; à l'étape de fin, un terrain lui inflige 3 blessures",
+            "A Dinosaur with flying enters: gain control of a creature an opponent controls; at the end step, a land deals 3 damage to it",
         },
       ),
     ],
@@ -265,11 +269,11 @@ export const CARDS: Record<string, CardScript> = {
         sorcerySpeed: true,
         targets: [target.creature("t", { subtype: "Dinosaur" })],
         effects: fx.yourChoice(
-          "Quel marqueur ?",
+          "Which counter?",
           "k",
           ["reach", "menace", "trample", "haste"].map((k) => ({ label: k, effects: [fx.counters(ref.target(), k)] })),
         ),
-        label: "{T} : un marqueur portée, menace, piétinement ou célérité sur un Dinosaure (rituel)",
+        label: "{T}: a reach, menace, trample or haste counter on a Dinosaur (sorcery)",
       }),
     ],
   },
@@ -280,7 +284,7 @@ export const CARDS: Record<string, CardScript> = {
         counters: 1,
         counterKind: "*",
         affects: { types: ["Creature"], subtype: "Dinosaur", controller: "you", other: true },
-        label: "Vos autres Dinosaures arrivent avec un marqueur de chaque sorte présente sur Blue",
+        label: "Other Dinosaurs you control enter with a counter of each kind on Blue",
       }),
     ],
   },
@@ -291,7 +295,7 @@ export const CARDS: Record<string, CardScript> = {
         [fx.bounce(ref.zone("battlefield", ref.eachPlayer, { types: ["Creature"], notSubtype: "Dinosaur" }))],
         {
           condition: cond.wasCast,
-          label: "Arrivée, si vous l'avez lancée : renvoyez chaque créature non-Dinosaure",
+          label: "When it enters, if you cast it: return each non-Dinosaur creature",
         },
       ),
     ],
@@ -309,7 +313,7 @@ export const CARDS: Record<string, CardScript> = {
           }),
           1,
         ),
-        label: "Vos sorts de Dinosaure ont la maraude {2}{R}",
+        label: "Dinosaur spells you cast have prowl {2}{R}",
       }),
     ],
   },
@@ -319,9 +323,9 @@ export const CARDS: Record<string, CardScript> = {
         mana: "{1}",
         tap: true,
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card from a graveyard")],
         effects: [fx.exileCard(ref.target(), { name: "e" }), fx.link(ref.stored("e"))],
-        label: "Empreinte — {1}, {T} : exilez une carte de créature d'un cimetière (rituel)",
+        label: "Imprint — {1}, {T}: exile a creature card from a graveyard (sorcery)",
       }),
       activated({
         mana: "{6}",
@@ -329,12 +333,12 @@ export const CARDS: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "carte de créature exilée avec Dino DNA",
+            label: "creature card exiled with Dino DNA",
             filter: { exiled: { linked: true, filter: { types: ["Creature"] } } },
           },
         ],
         effects: [fx.copyToken(ref.target(), { pt: 6, setColors: ["G"], setSubtypes: ["Dinosaur"], addKeywords: ["trample"] })],
-        label: "{6} : un jeton copie, sauf que c'est un Dinosaure vert 6/6 avec le piétinement (rituel)",
+        label: "{6}: a token copy, except it's a 6/6 green Dinosaur with trample (sorcery)",
       }),
     ],
   },
@@ -347,13 +351,13 @@ export const CARDS: Record<string, CardScript> = {
           fx.link(ref.stored("i")),
           fx.grantPlay(ref.stored("i"), { forever: true, anyMana: true, for: "nonOwners", condition: cond.yourTurn }),
         ],
-        { label: "Un joueur pioche sa deuxième carte du tour : il exile la carte du dessus de sa bibliothèque" },
+        { label: "A player draws their second card each turn: they exile the top card of their library" },
       ),
     ],
   },
   "Indominus Rex, Alpha": {
-    // « En arrivant, défaussez un nombre quelconque de cartes de créature. Il arrive avec un marqueur de vol si une carte
-    // défaussée ainsi a le vol » (de même pour chaque capacité de la liste).
+    // "As it enters, discard any number of creature cards. It enters with a flying counter if a card discarded this way
+    // has flying" (likewise for each ability of the list).
     asEnters: [
       fx.discard(99, ref.you, { filter: { types: ["Creature"] }, optional: true, store: "d" }),
       ...INDOMINUS_KEYWORDS.flatMap((k) =>
@@ -362,7 +366,7 @@ export const CARDS: Record<string, CardScript> = {
     ],
     abilities: [
       triggered(when.entersSelf, [fx.draw(amount.countersOn(ref.self, "any"))], {
-        label: "Piochez une carte pour chaque marqueur sur Indominus Rex",
+        label: "Draw a card for each counter on Indominus Rex",
       }),
     ],
   },
@@ -380,7 +384,7 @@ export const CARDS: Record<string, CardScript> = {
           }),
         ],
         {
-          // « Pour chaque adversaire, jusqu'à un artefact non-créature ciblé qu'il contrôle. »
+          // "For each opponent, up to one target noncreature artifact that player controls."
           targets: [
             {
               ...target.upTo(
@@ -389,7 +393,7 @@ export const CARDS: Record<string, CardScript> = {
                   "t",
                   ["Artifact"],
                   { controller: "opponent", notTypes: ["Creature"] },
-                  "artefact non-créature adverse (un par adversaire)",
+                  "noncreature artifact an opponent controls (one per opponent)",
                 ),
               ),
               differentPlayers: true,
@@ -397,11 +401,11 @@ export const CARDS: Record<string, CardScript> = {
             },
           ],
           label:
-            "I — Jusqu'à un artefact non-créature de chaque adversaire devient un Mur 0/4 avec le défenseur, tant que vous contrôlez la Saga",
+            "I — Up to one noncreature artifact of each opponent becomes a 0/4 Wall with defender for as long as you control the Saga",
         },
       ),
       chapter([2], [fx.createTokens(DINOSAUR_TRAMPLE, 1, undefined, "d"), fx.pump(ref.stored("d"), 0, 0, ["haste"])], {
-        label: "II — Un Dinosaure 3/3 vert avec le piétinement, qui a la célérité ce tour-ci",
+        label: "II — A 3/3 green Dinosaur with trample, which has haste this turn",
       }),
       chapter(
         [3],
@@ -410,7 +414,7 @@ export const CARDS: Record<string, CardScript> = {
           fx.exileCard(ref.self, { name: "flip" }),
           fx.toBattlefield(ref.stored("flip"), { transformed: true, underYourControl: true }),
         ],
-        { label: "III — Détruisez tous les Murs ; la Saga revient transformée" },
+        { label: "III — Destroy all Walls; the Saga returns transformed" },
       ),
     ],
   },
@@ -418,7 +422,7 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         playFrom: { zone: "graveyard", filter: { subtype: "Dinosaur" }, what: "spells", exileOthers: 3 },
-        label: "Les cartes de Dinosaure de votre cimetière ont l'évasion",
+        label: "Dinosaur cards in your graveyard have escape",
       }),
       manaAbility("G", 1, { per: { types: ["Creature"], subtype: "Dinosaur", controller: "you" } }),
     ],

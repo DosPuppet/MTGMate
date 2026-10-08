@@ -1,1 +1,17 @@
-{}
+{
+ "3 damage to each creature and planeswalker": "3 blessures à chaque créature et planeswalker",
+ "Creature spell: draw": "Sort de créature : piochez",
+ "Creature token": "Jeton de créature",
+ "Daze — return an Island you control": "Daze — renvoyez une Île que vous contrôlez",
+ "Destroy artifacts with mana value 3 or less": "Détruisez les artefacts de VM 3 ou moins",
+ "Force of Will — 1 life and a blue card exiled from your hand": "Force of Will — 1 PV et une carte bleue de votre main exilée",
+ "Hexproof from blue and from black": "Défense talismanique contre le bleu et le noir",
+ "Nontoken creature": "Créature non-jeton",
+ "Planeswalker": "Planeswalker",
+ "Repeat (reveal the next card)?": "Recommencer (révéler la carte suivante) ?",
+ "Whenever you cast a creature spell this turn, draw a card.": "Chaque fois que vous lancez un sort de créature ce tour-ci, piochez une carte.",
+ "artifact, enchantment or planeswalker": "artefact, enchantement ou planeswalker",
+ "creature card with mana value 2 or less": "carte de créature de VM 2 ou moins",
+ "instant or sorcery spell": "sort d'éphémère ou de rituel",
+ "nonland permanent you don't control": "permanent non-terrain que vous ne contrôlez pas"
+}

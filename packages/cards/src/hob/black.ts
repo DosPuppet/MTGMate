@@ -1,6 +1,6 @@
 /**
- * The Hobbit — cartes noires (lot A). Le vol, le contact mortel, la menace, l'équipement et « ne peut pas bloquer » (mot-clé
- * technique) sont lus dans le texte ou écrits ici ; amasser des Gobelins : `fx.amass`.
+ * The Hobbit — black cards (lot A). Flying, deathtouch, menace, equip and "can't block" (technical keyword) are read
+ * from the text or written here; amass Goblins: `fx.amass`.
  */
 import type { ObjectFilter } from "@mtgx/engine";
 import {
@@ -21,38 +21,38 @@ import {
   when,
 } from "./common";
 
-/** « un artefact ou une créature » (coûts de sacrifice). */
+/** "an artifact or creature" (sacrifice costs). */
 const ARTIFACT_OR_CREATURE: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] };
-const CREATURE_CARD = target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière");
+const CREATURE_CARD = target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card from your graveyard");
 
 export const BLACK: Record<string, CardScript> = {
   "Along the Crooked Way": {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {
         targets: [CREATURE_CARD],
-        label: "Une carte de créature de votre cimetière revient en main",
+        label: "A creature card from your graveyard returns to hand",
       }),
       triggered(
         when.zoneChange(["graveyard"], { filter: { types: ["Creature"] }, whose: "you" }),
         [fx.amass(ref.you, "Goblin", 1)],
-        { label: "Une carte de créature quitte votre cimetière : amassez des Gobelins 1" },
+        { label: "A creature card leaves your graveyard: amass Goblins 1" },
       ),
       activated({
         mana: "{1}{B}",
         effects: [
           fx.modifyAll({ types: ["Creature"], anySubtype: ["Goblin", "Orc"], controller: "you" }, { addKeywords: ["menace"] }),
         ],
-        label: "Vos Gobelins et vos Orques gagnent la menace",
+        label: "Your Goblins and Orcs gain menace",
       }),
     ],
   },
   "Bilbo's Deadly Slice": { spell: spell([target.creature()], [fx.destroy(ref.target())]) },
   "Crude Bent Blade": {
-    // Équiper {2} : lu dans le texte.
+    // Equip {2}: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.sacrifice(ref.target(), { types: ["Creature"] })], {
         targets: [target.player("t", "opponent")],
-        label: "Un adversaire sacrifie une créature",
+        label: "An opponent sacrifices a creature",
       }),
       staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
     ],
@@ -61,12 +61,12 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       chapter([1], [fx.discard(1, ref.target(), { chooser: "controller", filter: { notTypes: ["Land"] } })], {
         targets: [target.player("t", "opponent")],
-        label: "Chapitre I — Un adversaire défausse la carte non-terrain de votre choix",
+        label: "Chapter I — An opponent discards a nonland card of your choice",
       }),
-      chapter([2], [fx.amass(ref.you, "Goblin", 1)], { label: "Chapitre II — Amassez des Gobelins 1" }),
+      chapter([2], [fx.amass(ref.you, "Goblin", 1)], { label: "Chapter II — Amass Goblins 1" }),
       chapter([3, 4], [fx.loseLife(1, ref.target()), fx.gainLife(1)], {
         targets: [target.player("t", "opponent")],
-        label: "Chapitres III, IV — Un adversaire perd 1 PV, vous gagnez 1 PV",
+        label: "Chapters III, IV — An opponent loses 1 life, you gain 1 life",
       }),
     ],
   },
@@ -75,7 +75,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.diesSelf, [fx.pump(ref.target(), -1, -1)], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "Une créature adverse gagne -1/-1",
+        label: "An opponent's creature gets -1/-1",
       }),
     ],
   },
@@ -85,18 +85,18 @@ export const BLACK: Record<string, CardScript> = {
   "Gnashing of Teeth": {
     spell: modal(
       mode(
-        "Une créature gagne -5/-5 (exilée si elle meurt)",
+        "A creature gets -5/-5 (exiled if it dies)",
         [target.creature("c")],
         [fx.exileIfDies(ref.target("c")), fx.pump(ref.target("c"), -5, -5)],
       ),
       mode(
-        "Les créatures d'un joueur gagnent -1/-1",
+        "A player's creatures get -1/-1",
         [target.player("p")],
         [fx.pump(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), -1, -1)],
       ),
     ),
   },
-  // --- Gollum, Silent Slinker // Meager Meal : la menace est lue dans le texte. ---
+  // --- Gollum, Silent Slinker // Meager Meal: menace is read from the text. ---
   "Gollum, Silent Slinker": {},
   "Meager Meal": {
     spell: spell(
@@ -108,8 +108,8 @@ export const BLACK: Record<string, CardScript> = {
     keywords: ["cantBlock"],
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target()), fx.loseLife(2, ref.eachOpponent)], {
-        targets: [target.upTo(1, target.cardInGraveyard("t", {}, "opponent", "carte du cimetière d'un adversaire"))],
-        label: "Exilez une carte d'un cimetière adverse ; chaque adversaire perd 2 PV",
+        targets: [target.upTo(1, target.cardInGraveyard("t", {}, "opponent", "card from an opponent's graveyard"))],
+        label: "Exile a card from an opponent's graveyard; each opponent loses 2 life",
       }),
       activated({
         mana: "{2}",
@@ -117,7 +117,7 @@ export const BLACK: Record<string, CardScript> = {
         fromGraveyard: true,
         sorcerySpeed: true,
         effects: [fx.toHand(ref.selfCard)],
-        label: "Revient du cimetière en main",
+        label: "Returns from the graveyard to hand",
       }),
     ],
   },
@@ -125,7 +125,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.dies({ types: ["Creature"], other: true }), [fx.scry(1)], {
         batched: true,
-        label: "Une ou plusieurs autres créatures meurent : regard 1",
+        label: "One or more other creatures die: scry 1",
       }),
     ],
   },
@@ -135,7 +135,7 @@ export const BLACK: Record<string, CardScript> = {
       staticAbility(
         { types: ["Creature"], controller: "you", withCounter: "+1/+1" },
         { addKeywords: ["menace"] },
-        { label: "Vos créatures avec un marqueur +1/+1 ont la menace" },
+        { label: "Your creatures with a +1/+1 counter have menace" },
       ),
     ],
   },
@@ -147,18 +147,18 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(when.attacksSelf, [fx.gainLife(2)], {
         condition: cond.ferocious,
-        label: "Férocité : vous gagnez 2 PV",
+        label: "Ferocious: you gain 2 life",
       }),
     ],
   },
   "Reverent Howl": {
     spell: modal(
       mode(
-        "Un joueur pioche deux cartes et perd 2 PV",
+        "A player draws two cards and loses 2 life",
         [target.player("p")],
         [fx.draw(2, ref.target("p")), fx.loseLife(2, ref.target("p"))],
       ),
-      mode("Une créature gagne +2/+2 et le lien de vie", [target.creature("c")], [fx.pump(ref.target("c"), 2, 2, ["lifelink"])]),
+      mode("A creature gets +2/+2 and gains lifelink", [target.creature("c")], [fx.pump(ref.target("c"), 2, 2, ["lifelink"])]),
     ),
   },
   "Rhovanion Rampager": {
@@ -169,10 +169,10 @@ export const BLACK: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "s" }),
           ...fx.when(cond.v("s"), fx.addCounters(ref.self, amount.powerOf(ref.stored("s")))),
         ],
-        { label: "Sacrifice facultatif : des marqueurs +1/+1 égaux à sa force" },
+        { label: "Optional sacrifice: +1/+1 counters equal to its power" },
       ),
       triggered(when.diesSelf, [fx.amass(ref.you, "Goblin", amount.lkiPower)], {
-        label: "Amassez des Gobelins X (sa force)",
+        label: "Amass Goblins X (its power)",
       }),
     ],
   },
@@ -181,6 +181,6 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.destroy(ref.target())]),
   },
   "Stony-Voiced Goblins": {
-    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Chaque adversaire défausse une carte" })],
+    abilities: [triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "Each opponent discards a card" })],
   },
 };

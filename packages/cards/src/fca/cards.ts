@@ -1,5 +1,5 @@
-/** Through the Ages (FCA) : scripts des cartes (PLAN-G). */
-import type { Effect, TargetSpec, TokenSpec } from "@mtgx/engine";
+/** Through the Ages (FCA): card scripts (PLAN-G). */
+import { type Effect, msg, type TargetSpec, type TokenSpec } from "@mtgx/engine";
 import {
   activated,
   altCostMode,
@@ -48,7 +48,7 @@ const CONSTRUCT: TokenSpec = {
     staticAbility(
       "self",
       { power: 1, toughness: 1 },
-      { per: { types: ["Artifact"], controller: "you" }, label: "+1/+1 par artefact" },
+      { per: { types: ["Artifact"], controller: "you" }, label: "+1/+1 for each artifact" },
     ),
   ],
 };
@@ -60,28 +60,34 @@ const IN_COMBAT = cond.any(
   cond.step("combatDamage"),
   cond.step("endCombat"),
 );
-/** « Choisissez deux — » : chaque paire de modes. */
+/** "Choose two —": each pair of modes. */
 function chooseTwo(...choices: { label: string; targets?: TargetSpec[]; effects: Effect[] }[]) {
   return modal(
     ...choices.flatMap((a, i) =>
       choices
         .slice(i + 1)
-        .map((b) => mode(`${a.label} ; ${b.label}`, [...(a.targets ?? []), ...(b.targets ?? [])], [...a.effects, ...b.effects])),
+        .map((b) =>
+          mode(
+            msg("{a}; {b}", { a: a.label, b: b.label }),
+            [...(a.targets ?? []), ...(b.targets ?? [])],
+            [...a.effects, ...b.effects],
+          ),
+        ),
     ),
   );
 }
 
 export const CARDS: Record<string, CardScript> = {
   "Light Up the Stage": {
-    // Spectacle {R} : lu dans le texte.
+    // Spectacle {R}: read from the text.
     spell: spell([], [fx.exileTop(ref.you, 2, "l"), fx.grantPlay(ref.stored("l"), { untilYourNextTurn: true })]),
   },
   "Mizzix's Mastery": {
     spell: altCostMode(
-      "Surcharge",
+      "Overload",
       "{5}{R}{R}{R}",
       {
-        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "carte d'éphémère ou de rituel de votre cimetière")],
+        targets: [target.cardInGraveyard("t", INSTANT_SORCERY, "you", "instant or sorcery card in your graveyard")],
         effects: [fx.exileCard(ref.target(), { name: "c" }), fx.castCopiesFree([ref.stored("c")], 999), fx.exileOnResolve],
       },
       {
@@ -94,22 +100,22 @@ export const CARDS: Record<string, CardScript> = {
     ),
   },
   "Ragavan, Nimble Pilferer": {
-    // Ruée {1}{R} : lue dans le texte.
+    // Dash {1}{R}: read from the text.
     abilities: [
       triggered(
         when.combatDamageToPlayer,
         [
           fx.createTokens(TREASURE),
           fx.exileTop(ref.eventPlayer, 1, "r"),
-          // « Vous pouvez lancer cette carte » : un terrain ne peut pas être joué ainsi.
+          // "You may cast that card": a land can't be played this way.
           ...fx.when(cond.refMatches(ref.stored("r"), { notTypes: ["Land"] }), fx.grantPlay(ref.stored("r"))),
         ],
-        { label: "Un Trésor ; exilez sa carte du dessus, lançable ce tour-ci" },
+        { label: "A Treasure; exile the top card of their library, castable this turn" },
       ),
     ],
   },
-  // — G7 : Through the Ages —
-  // Vigilance : lue dans le texte.
+  // — G7: Through the Ages —
+  // Vigilance: read from the text.
   "Adeline, Resplendent Cathar": {
     cdaPower: amount.count(YOUR_CREATURES),
     abilities: [
@@ -117,7 +123,7 @@ export const CARDS: Record<string, CardScript> = {
         when.attackWith(),
         fx.forEachPlayer(ref.eachOpponent, (p) => [fx.createTappedTokens(HUMAN, 1, { attacking: ref.withPlaneswalkers(p) })]),
         {
-          label: "Vous attaquez : un Humain 1/1 engagé et attaquant par adversaire",
+          label: "You attack: a 1/1 Human tapped and attacking for each opponent",
         },
       ),
     ],
@@ -125,40 +131,40 @@ export const CARDS: Record<string, CardScript> = {
   "Ranger-Captain of Eos": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Creature"], maxManaValue: 1 }, { to: "hand" })], {
-        label: "Cherchez une carte de créature de valeur de mana 1 ou moins",
+        label: "Search for a creature card with mana value 1 or less",
       }),
       activated({
         sacrifice: true,
         effects: [fx.thisTurn({ castLimit: { who: "opponents", maxSpells: 0, spellTypes: { notTypes: ["Creature"] } } })],
-        label: "Sacrifiez-la : vos adversaires ne peuvent pas lancer de sorts non-créature ce tour-ci",
+        label: "Sacrifice it: your opponents can't cast noncreature spells this turn",
       }),
     ],
   },
   "Sram, Senior Edificer": {
     abilities: [
       triggered(when.castSpell("you", { anySubtype: ["Aura", "Equipment", "Vehicle"] }), [fx.draw(1)], {
-        label: "Sort d'Aura, d'Équipement ou de Véhicule : piochez",
+        label: "Aura, Equipment, or Vehicle spell: draw",
       }),
     ],
   },
   Counterspell: { spell: spell([target.spell()], [fx.counter(ref.target())]) },
   "Urza, Lord High Artificer": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(CONSTRUCT)], { label: "Un Assemblage 0/0 (+1/+1 par artefact)" }),
+      triggered(when.entersSelf, [fx.createTokens(CONSTRUCT)], { label: "A 0/0 Construct (+1/+1 for each artifact)" }),
       manaAbility("U", 1, { noTap: true, tapAnother: "artifact" }),
       activated({
         mana: "{5}",
         effects: [fx.shuffle(ref.you), fx.exileTop(ref.you, 1, "u"), fx.grantPlay(ref.stored("u"), { free: true })],
-        label: "Mélangez, exilez la carte du dessus : jouable gratuitement ce tour-ci",
+        label: "Shuffle, exile the top card: playable for free this turn",
       }),
     ],
   },
-  // Flash : lu dans le texte.
+  // Flash: read from the text.
   "Venser, Shaper Savant": {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
-        targets: [{ id: "t", label: "sort ou permanent", filter: { spells: {}, objects: {} } }],
-        label: "Renvoyez le sort ou le permanent ciblé",
+        targets: [{ id: "t", label: "spell or permanent", filter: { spells: {}, objects: {} } }],
+        label: "Return target spell or permanent",
       }),
     ],
   },
@@ -183,7 +189,7 @@ export const CARDS: Record<string, CardScript> = {
   "Syr Konrad, the Grim": {
     abilities: [
       triggered(when.dies({ types: ["Creature"], other: true }), [fx.damage(1, ref.eachOpponent)], {
-        label: "Une autre créature meurt : 1 blessure à chaque adversaire",
+        label: "Another creature dies: 1 damage to each opponent",
       }),
       triggered(
         {
@@ -194,44 +200,44 @@ export const CARDS: Record<string, CardScript> = {
           whose: "any",
         },
         [fx.damage(1, ref.eachOpponent)],
-        { label: "Une carte de créature va au cimetière d'ailleurs que du champ de bataille : 1 blessure à chaque adversaire" },
+        { label: "A creature card is put into a graveyard from anywhere other than the battlefield: 1 damage to each opponent" },
       ),
       triggered(
         { on: "zoneChange", from: ["graveyard"], filter: { types: ["Creature"] }, whose: "you" },
         [fx.damage(1, ref.eachOpponent)],
         {
-          label: "Une carte de créature quitte votre cimetière : 1 blessure à chaque adversaire",
+          label: "A creature card leaves your graveyard: 1 damage to each opponent",
         },
       ),
-      activated({ mana: "{1}{B}", effects: [fx.mill(1, ref.eachPlayer)], label: "Chaque joueur meule une carte" }),
+      activated({ mana: "{1}{B}", effects: [fx.mill(1, ref.eachPlayer)], label: "Each player mills a card" }),
     ],
   },
   "Yawgmoth, Thran Physician": {
     abilities: [
-      protectionAbility(protection.from({ subtype: "Human" }, "Protection contre les Humains")),
+      protectionAbility(protection.from({ subtype: "Human" }, "Protection from Humans")),
       activated({
         payLife: 1,
         sacrificeOther: { filter: { types: ["Creature"], other: true } },
         targets: [target.optional(target.creature())],
         effects: [fx.counters(ref.target(), "-1/-1"), fx.draw(1)],
-        label: "1 PV, sacrifiez une autre créature : un marqueur −1/−1, piochez",
+        label: "1 life, sacrifice another creature: a −1/−1 counter, draw",
       }),
-      activated({ mana: "{B}{B}", discard: 1, effects: [fx.proliferate()], label: "Défaussez une carte : proliférez" }),
+      activated({ mana: "{B}{B}", discard: 1, effects: [fx.proliferate()], label: "Discard a card: proliferate" }),
     ],
   },
   "Godo, Bandit Warlord": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Artifact"], subtype: "Equipment" }, { to: "battlefield" })], {
-        label: "Vous pouvez chercher un Équipement et le mettre sur le champ de bataille",
+        label: "You may search for an Equipment and put it onto the battlefield",
       }),
       triggered(
         when.attacksSelf,
         [fx.untap(ref.union(ref.self, ref.permanentsOf(ref.you, { subtype: "Samurai" }))), fx.extraCombat],
-        { oncePerTurn: true, label: "Première attaque du tour : dégagez-le et vos Samouraïs ; un combat supplémentaire" },
+        { oncePerTurn: true, label: "First attack this turn: untap it and your Samurai; an additional combat" },
       ),
     ],
   },
-  // Indestructible : lu dans le texte.
+  // Indestructible: read from the text.
   "Purphoros, God of the Forge": {
     abilities: [
       staticAbility(
@@ -239,36 +245,36 @@ export const CARDS: Record<string, CardScript> = {
         { setTypes: ["Enchantment"] },
         {
           condition: cond.not(cond.amountAtLeast(amount.devotion("R"), 5)),
-          label: "N'est pas une créature si votre dévotion au rouge est inférieure à cinq",
+          label: "Not a creature as long as your devotion to red is less than five",
         },
       ),
       triggered(when.enters({ ...YOUR_CREATURES, other: true }), [fx.damage(2, ref.eachOpponent)], {
-        label: "Une autre de vos créatures arrive : 2 blessures à chaque adversaire",
+        label: "Another creature you control enters: 2 damage to each opponent",
       }),
-      activated({ mana: "{2}{R}", effects: [fx.pumpAll(YOUR_CREATURES, 1, 0)], label: "Vos créatures gagnent +1/+0" }),
+      activated({ mana: "{2}{R}", effects: [fx.pumpAll(YOUR_CREATURES, 1, 0)], label: "Your creatures get +1/+0" }),
     ],
   },
   "Azusa, Lost but Seeking": {
-    abilities: [playerStatic({ extraLands: 2, label: "Deux terrains de plus à chacun de vos tours" })],
+    abilities: [playerStatic({ extraLands: 2, label: "Two additional lands on each of your turns" })],
   },
-  // Piétinement : lu dans le texte.
+  // Trample: read from the text.
   "Traxos, Scourge of Kroog": {
     abilities: [
-      entersWith({ tapped: true, label: "Arrive engagé" }),
-      doesntUntap("self", { label: "Ne se dégage pas lors de votre étape de dégagement" }),
+      entersWith({ tapped: true, label: "Enters tapped" }),
+      doesntUntap("self", { label: "Doesn't untap during your untap step" }),
       triggered(
         when.castSpell("you", { anyOf: [{ types: ["Artifact"] }, { legendary: true }, { subtype: "Saga" }] }),
         [fx.untap(ref.self)],
-        { label: "Sort historique : dégagez-le" },
+        { label: "Historic spell: untap it" },
       ),
     ],
   },
-  // Initiative, vigilance, lien de vie : lus dans le texte.
+  // First strike, vigilance, lifelink: read from the text.
   "Danitha Capashen, Paragon": {
     abilities: [
       playerStatic({
         spellCost: { filter: { anySubtype: ["Aura", "Equipment"] }, reduce: 1 },
-        label: "Vos sorts d'Aura et d'Équipement coûtent {1} de moins",
+        label: "Your Aura and Equipment spells cost {1} less",
       }),
     ],
   },
@@ -277,61 +283,61 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         mana: "{R}",
         effects: [fx.pumpAll({ types: ["Creature"] }, 0, 0, ["trample", "haste"])],
-        label: "Toutes les créatures gagnent le piétinement et la célérité",
+        label: "All creatures gain trample and haste",
       }),
       activated({
         mana: "{1}{G}",
         targets: [target.creature()],
         effects: [fx.addCounters(ref.target(), 1)],
-        label: "Un marqueur +1/+1",
+        label: "A +1/+1 counter",
       }),
       activated({
         mana: "{2}{W}",
         targets: [target.player()],
         effects: [fx.gainLife(5, ref.target())],
-        label: "Le joueur ciblé gagne 5 PV",
+        label: "Target player gains 5 life",
       }),
       activated({
         mana: "{3}{U}",
         targets: [target.player()],
         effects: [fx.draw(1, ref.target())],
-        label: "Le joueur ciblé pioche",
+        label: "Target player draws",
       }),
       activated({
         mana: "{4}{B}",
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière")],
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card in a graveyard")],
         effects: [fx.toBattlefield(ref.target())],
-        label: "Une carte de créature d'un cimetière sur le champ de bataille",
+        label: "A creature card from a graveyard onto the battlefield",
       }),
     ],
   },
-  // Vigilance : lue dans le texte.
+  // Vigilance: read from the text.
   "Loran of the Third Path": {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
-        targets: [target.optional(target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement"))],
-        label: "Détruisez jusqu'à un artefact ou enchantement",
+        targets: [target.optional(target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment"))],
+        label: "Destroy up to one artifact or enchantment",
       }),
       activated({
         tap: true,
         targets: [target.player("t", "opponent")],
         effects: [fx.draw(1), fx.draw(1, ref.target())],
-        label: "Vous et l'adversaire ciblé piochez une carte",
+        label: "You and target opponent each draw a card",
       }),
     ],
   },
-  // Lien de vie : lu dans le texte.
+  // Lifelink: read from the text.
   "Mangara, the Diplomat": {
     abilities: [
-      // « … si deux de ces créatures ou plus vous attaquent, vous et/ou vos planeswalkers ».
+      // "… if two or more of those creatures are attacking you and/or planeswalkers you control".
       triggered(when.opponentAttacksYouWith(2, true), [fx.draw(1)], {
-        label: "Un adversaire vous attaque avec deux créatures ou plus : piochez",
+        label: "An opponent attacks you with two or more creatures: draw",
       }),
-      triggered({ on: "castSpell", by: "opponent", nth: 2 }, [fx.draw(1)], { label: "Deuxième sort d'un adversaire : piochez" }),
+      triggered({ on: "castSpell", by: "opponent", nth: 2 }, [fx.draw(1)], { label: "An opponent's second spell: draw" }),
     ],
   },
-  // Défenseur : lu dans le texte.
-  "Wall of Omens": { abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez une carte" })] },
+  // Defender: read from the text.
+  "Wall of Omens": { abilities: [triggered(when.entersSelf, [fx.draw(1)], { label: "Draw a card" })] },
   Brainstorm: {
     spell: spell(
       [],
@@ -341,23 +347,26 @@ export const CARDS: Record<string, CardScript> = {
           "hand",
           {},
           { to: "libraryTop" },
-          { count: 2, min: 2, prompt: "Deux cartes à remettre sur votre bibliothèque" },
+          { count: 2, min: 2, prompt: "Two cards to put back on top of your library" },
         ),
       ],
     ),
   },
   "Cryptic Command": {
     spell: chooseTwo(
-      { label: "Contrecarrez le sort ciblé", targets: [target.spell("s")], effects: [fx.counter(ref.target("s"))] },
+      { label: "Counter target spell", targets: [target.spell("s")], effects: [fx.counter(ref.target("s"))] },
       {
-        label: "Renvoyez le permanent ciblé",
+        label: "Return target permanent",
         targets: [
           target.permanent("p", ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"], {}, "permanent"),
         ],
         effects: [fx.bounce(ref.target("p"))],
       },
-      { label: "Engagez les créatures adverses", effects: [fx.tap(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }))] },
-      { label: "Piochez une carte", effects: [fx.draw(1)] },
+      {
+        label: "Tap all creatures your opponents control",
+        effects: [fx.tap(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }))],
+      },
+      { label: "Draw a card", effects: [fx.draw(1)] },
     ),
   },
   "Deadly Dispute": {
@@ -368,7 +377,7 @@ export const CARDS: Record<string, CardScript> = {
     additionalCost: { sacrifice: { filter: { types: ["Creature"] }, count: 1 } },
     spell: spell([], [fx.search({}, { to: "hand" })]),
   },
-  // Contact mortel : lu dans le texte.
+  // Deathtouch: read from the text.
   "Varragoth, Bloodsky Sire": {
     abilities: [
       activated({
@@ -377,16 +386,16 @@ export const CARDS: Record<string, CardScript> = {
         activationCondition: cond.sourceMatches({ attackedThisTurn: true }),
         targets: [target.player()],
         effects: [fx.search({}, { to: "libraryTop" }, 1, ref.target())],
-        label: "Vantardise : le joueur ciblé met une carte de sa bibliothèque sur le dessus",
+        label: "Boast: target player puts a card from their library on top",
       }),
     ],
   },
-  // Célérité : lue dans le texte.
+  // Haste: read from the text.
   "Captain Lannery Storm": {
     abilities: [
-      triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "Attaque : un Trésor" }),
+      triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "Attacks: a Treasure" }),
       triggered(when.sacrifice({ subtype: "Treasure" }), [fx.pump(ref.self, 1, 0)], {
-        label: "Vous sacrifiez un Trésor : +1/+0",
+        label: "You sacrifice a Treasure: +1/+0",
       }),
     ],
   },
@@ -395,12 +404,12 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.attacks({ types: ["Creature"], subtype: "Warrior" }),
-        fx.may("créer un Guerrier 1/1 engagé et attaquant", {
+        fx.may("create a 1/1 Warrior tapped and attacking", {
           ...fx.createTokens(WARRIOR_W, 1, ref.controllerOf(ref.eventObject)),
           tapped: true,
           attacking: true,
         } as Effect),
-        { label: "Un Guerrier attaque : son contrôleur peut créer un Guerrier 1/1 attaquant" },
+        { label: "A Warrior attacks: its controller may create an attacking 1/1 Warrior" },
       ),
       activated({
         mana: "{W}{U}{B}{R}{G}",
@@ -410,7 +419,7 @@ export const CARDS: Record<string, CardScript> = {
           fx.pumpAll({ attacking: true }, 0, 0, ["trample", "lifelink", "haste"]),
           fx.extraCombat,
         ],
-        label: "Dégagez les attaquants ; piétinement, lien de vie, célérité ; un combat supplémentaire",
+        label: "Untap the attackers; trample, lifelink, haste; an additional combat",
       }),
     ],
   },
@@ -427,30 +436,30 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Nature's Claim": {
     spell: spell(
-      [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+      [target.permanent("t", ["Artifact", "Enchantment"], {}, "artifact or enchantment")],
       [fx.gainLife(4, ref.controllerOf(ref.target())), fx.destroy(ref.target())],
     ),
   },
-  // Piétinement : lu dans le texte.
+  // Trample: read from the text.
   "Primeval Titan": {
     abilities: [
       triggered(when.entersSelf, [fx.search({ types: ["Land"] }, { to: "battlefield", tapped: true }, 2)], {
-        label: "Jusqu'à deux cartes de terrain, engagées",
+        label: "Up to two land cards, tapped",
       }),
       triggered(when.attacksSelf, [fx.search({ types: ["Land"] }, { to: "battlefield", tapped: true }, 2)], {
-        label: "Jusqu'à deux cartes de terrain, engagées",
+        label: "Up to two land cards, tapped",
       }),
     ],
   },
   "Dovin's Veto": {
     cantBeCountered: true,
-    spell: spell([target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")], [fx.counter(ref.target())]),
+    spell: spell([target.spell("t", { notTypes: ["Creature"] }, "noncreature spell")], [fx.counter(ref.target())]),
   },
   "Isshin, Two Heavens as One": {
     abilities: [
       playerStatic({
         triggerMod: { effect: "again", on: "attack" },
-        label: "Les déclenchements dus à une créature qui attaque se déclenchent une fois de plus",
+        label: "Abilities triggered by an attacking creature trigger an additional time",
       }),
     ],
   },
@@ -460,7 +469,7 @@ export const CARDS: Record<string, CardScript> = {
         event: "mana",
         source: { notTypes: ["Land"], controller: "you" },
         modify: { add: 1 },
-        label: "Un permanent non-terrain engagé pour du mana : un mana de plus du même type",
+        label: "A nonland permanent tapped for mana: one additional mana of the same type",
       }),
       activated({
         mana: "{5}{G}{U}",
@@ -472,7 +481,7 @@ export const CARDS: Record<string, CardScript> = {
             rest: "bottom",
           }),
         ],
-        label: "Parmi les cinq du dessus, une créature non-Humain sur le champ de bataille",
+        label: "Among the top five, a non-Human creature onto the battlefield",
       }),
     ],
   },
@@ -482,20 +491,20 @@ export const CARDS: Record<string, CardScript> = {
         { types: ["Land"], controller: "you" },
         { addAbilities: [manaAbility([...ANY])] },
         {
-          label: "Vos terrains produisent un mana de n'importe quelle couleur",
+          label: "Your lands tap for mana of any color",
         },
       ),
       manaAbility([...ANY]),
     ],
   },
-  // Vol, équipage 1 : lus dans le texte.
+  // Flying, crew 1: read from the text.
   "Smuggler's Copter": {
     abilities: [
-      triggered(when.attacksSelf, fx.may("piocher puis défausser", ...fx.loot()), {
-        label: "Attaque : vous pouvez piocher et défausser",
+      triggered(when.attacksSelf, fx.may("draw then discard", ...fx.loot()), {
+        label: "Attacks: you may draw and discard",
       }),
-      triggered({ on: "blocks", who: "self" }, fx.may("piocher puis défausser", ...fx.loot()), {
-        label: "Bloque : vous pouvez piocher et défausser",
+      triggered({ on: "blocks", who: "self" }, fx.may("draw then discard", ...fx.loot()), {
+        label: "Blocks: you may draw and discard",
       }),
     ],
   },
@@ -507,7 +516,7 @@ export const CARDS: Record<string, CardScript> = {
         [fx.removeCounters(ref.self, 1, "point")],
         {
           condition: cond.not(cond.amountAtLeast(amount.refCount(ref.except(ref.eventPlayer, ref.you)), 1)),
-          label: "Une créature vous blesse au combat : retirez un marqueur de point",
+          label: "A creature deals combat damage to you: remove a point counter",
         },
       ),
       triggered(
@@ -519,17 +528,17 @@ export const CARDS: Record<string, CardScript> = {
             fx.playerLoses(ref.eventPlayer),
           ]),
         ],
-        { label: "Une de vos créatures blesse un adversaire : un marqueur de point ; dix : il perd la partie" },
+        { label: "One of your creatures deals damage to an opponent: a point counter; ten: they lose the game" },
       ),
     ],
   },
-  // — G4e : sous-lot difficile —
-  // Lien de vie : lu dans le texte.
+  // — G4e: hard sub-lot —
+  // Lifelink: read from the text.
   "K'rrik, Son of Yawgmoth": {
     abilities: [
-      playerStatic({ phyrexianMana: "B", label: "Chaque {B} de vos coûts peut se payer avec 2 PV" }),
+      playerStatic({ phyrexianMana: "B", label: "Each {B} in your costs can be paid with 2 life" }),
       triggered(when.castSpell("you", { colors: ["B"] }), [fx.addCounters(ref.self, 1)], {
-        label: "Sort noir : un marqueur +1/+1",
+        label: "Black spell: a +1/+1 counter",
       }),
     ],
   },
@@ -537,7 +546,7 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         winOnEmptyDraw: true,
-        label: "Si vous deviez piocher dans une bibliothèque vide, vous gagnez la partie à la place",
+        label: "If you would draw from an empty library, you win the game instead",
       }),
     ],
   },
@@ -547,14 +556,14 @@ export const CARDS: Record<string, CardScript> = {
         event: "mana",
         to: "you",
         modify: { times: 3 },
-        label: "Un permanent que vous engagez pour du mana en produit trois fois autant",
+        label: "A permanent you tap for mana produces three times as much",
       }),
     ],
   },
   "Ancient Copper Dragon": {
     abilities: [
       triggered(when.combatDamageToPlayer, [fx.rollDie(20, "d20"), fx.createTokens(TREASURE, amount.v("d20"))], {
-        label: "Blessures de combat à un joueur : lancez un d20, autant de Trésors",
+        label: "Combat damage to a player: roll a d20, that many Treasures",
       }),
     ],
   },
@@ -562,28 +571,28 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         spellKeywords: { filter: { types: ["Creature"] }, keywords: ["flash"] },
-        label: "Vos cartes de créature ont le flash",
+        label: "Your creature cards have flash",
       }),
       playerStatic({
         castLimit: { who: "opponents", sorceryTiming: true },
-        label: "Vos adversaires ne lancent des sorts qu'au moment d'un rituel",
+        label: "Your opponents can cast spells only any time they could cast a sorcery",
       }),
     ],
   },
   "Atraxa, Grand Unifier": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(10, { count: 8, onePerType: true, rest: "bottom" })], {
-        label: "Arrivée : révélez dix cartes ; une de chaque type de carte dans votre main",
+        label: "Enters: reveal ten cards; one of each card type into your hand",
       }),
     ],
   },
   "Carpet of Flowers": {
     abilities: [
-      // « Si vous n'avez pas ajouté de mana avec cette capacité ce tour-ci » : un refus ne compte pas.
+      // "If you haven't added mana with this ability this turn": declining doesn't count.
       triggered(
         when.eachMain,
         fx.may(
-          "Ajouter du mana (autant que d'Îles de l'adversaire) ?",
+          "Add mana (as much as the opponent's Islands)?",
           fx.addManaChoice(amount.refCount(ref.permanentsOf(ref.target(), { subtype: "Island" }))),
           fx.doneOncePerTurn,
         ),
@@ -591,7 +600,7 @@ export const CARDS: Record<string, CardScript> = {
           targets: [target.player("t", "opponent")],
           oncePerTurn: "ifDone",
           label:
-            "Début de chacune de vos phases principales : X mana d'une couleur, X étant le nombre d'Îles de l'adversaire ciblé",
+            "Beginning of each of your main phases: X mana of one color, where X is the number of Islands target opponent controls",
         },
       ),
     ],
@@ -610,7 +619,7 @@ export const CARDS: Record<string, CardScript> = {
           }),
           fx.pump(ref.stored("w"), 0, 0, ["indestructible"]),
         ],
-        { label: "Une créature non-Humain attaque : un Humain des six cartes du dessus arrive engagé et attaquant" },
+        { label: "A non-Human creature attacks: a Human among the top six cards enters tapped and attacking" },
       ),
     ],
   },
@@ -621,32 +630,32 @@ export const CARDS: Record<string, CardScript> = {
         { power: 1, toughness: 1 },
         {
           perAmount: amount.count({ types: ["Creature"], controller: "you", legendary: true }),
-          label: "Vos créatures légendaires : +X/+X (X : vos créatures légendaires)",
+          label: "Your legendary creatures: +X/+X (X: your legendary creatures)",
         },
       ),
       triggered(
         { on: "castSpell", by: "you", filter: { legendary: true }, fromHand: true },
         [fx.cascade(amount.manaValueOf(ref.eventObject), { legendary: true })],
-        { label: "Vous lancez un sort légendaire de votre main : cascade légendaire" },
+        { label: "You cast a legendary spell from your hand: legendary cascade" },
       ),
     ],
   },
   "Bolas's Citadel": {
     abilities: [
-      playerStatic({ lookAt: "libraryTop", label: "Vous pouvez regarder la carte du dessus de votre bibliothèque" }),
+      playerStatic({ lookAt: "libraryTop", label: "You may look at the top card of your library" }),
       playerStatic({
         playFrom: { zone: "libraryTop", what: "lands" },
-        label: "Vous pouvez jouer des terrains du dessus de votre bibliothèque",
+        label: "You may play lands from the top of your library",
       }),
       playerStatic({
         playFrom: { zone: "libraryTop", what: "spells", payLifeManaValue: true },
-        label: "Sorts du dessus de votre bibliothèque : des PV égaux à leur VM au lieu de leur coût",
+        label: "Spells from the top of your library: life equal to their MV rather than their cost",
       }),
       activated({
         tap: true,
         sacrificeOther: { filter: { notTypes: ["Land"] }, count: 10, includeSelf: true },
         effects: [fx.loseLife(10, ref.eachOpponent)],
-        label: "{T}, sacrifiez dix permanents non-terrain : chaque adversaire perd 10 PV",
+        label: "{T}, sacrifice ten nonland permanents: each opponent loses 10 life",
       }),
     ],
   },
@@ -656,18 +665,18 @@ export const CARDS: Record<string, CardScript> = {
         { on: "dealsCombatDamage", who: { types: ["Creature"] }, to: { players: "opponent" } },
         fx.mayFor(
           ref.controllerOf(ref.eventObject),
-          "Payer 1 PV pour piocher une carte ?",
+          "Pay 1 life and draw a card?",
           fx.loseLife(1, ref.controllerOf(ref.eventObject)),
           fx.draw(1, ref.controllerOf(ref.eventObject)),
         ),
-        { label: "Une créature blesse un de vos adversaires : son contrôleur peut payer 1 PV et piocher" },
+        { label: "A creature deals damage to one of your opponents: its controller may pay 1 life and draw" },
       ),
       activated({
         mana: "{4}{B}{B}{B}",
         discardX: true,
         targets: [target.player("t", "opponent")],
         effects: [fx.exileTop(ref.target(), amount.x, "g"), fx.grantPlay(ref.stored("g"), { free: true, forever: true })],
-        label: "{4}{B}{B}{B}, défaussez X cartes : exilez les X cartes du dessus de l'adversaire ; jouez-les sans payer",
+        label: "{4}{B}{B}{B}, discard X cards: exile the opponent's top X cards; play them without paying",
       }),
     ],
   },

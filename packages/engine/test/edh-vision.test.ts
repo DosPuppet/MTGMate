@@ -7,6 +7,7 @@ import { bump, chars, snapshot } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { protectedFrom } from "../src/targets";
+import { msg, plainText } from "../src/text";
 import type { ActionOption, ChoiceRequest, GameState, ObjectId, PlayerId } from "../src/types";
 import {
   act,
@@ -67,14 +68,14 @@ const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 const modeNamed = (label: string) => (req: ChoiceRequest) =>
   req.type === "pick" && req.intent === "triggerMode"
     ? Object.entries(req.labels ?? {})
-        .filter(([, l]) => l === label)
+        .filter(([, l]) => plainText(l) === label)
         .map(([k]) => k)
     : undefined;
 /** Rang du mode d'un sort dont le libellé est donné. */
 const spellMode = (s: S, p: PlayerId, card: string, label: string) => {
   const m = legalActions(s, p)
     .flatMap((a) => (a.type === "cast" && a.card === card ? a.modes : []))
-    .find((x) => x.label === label);
+    .find((x) => plainText(x.label ?? "") === label);
   if (!m) throw new Error(`pas de mode « ${label} »`);
   return m.index;
 };
@@ -86,14 +87,16 @@ const castOption = (s: S, p: PlayerId, card: string) => {
 
 /** Active la capacité dont le libellé commence ainsi (capacités de loyauté : « +1 », « −3 »…). */
 const activateLabeled = (s: S, p: PlayerId, source: ObjectId, prefix: string, extra: object = {}) => {
-  const o = activations(s, p, source).find((a) => a.label?.startsWith(prefix));
+  const o = activations(s, p, source).find((a) => plainText(a.label ?? "").startsWith(prefix));
   if (!o) throw new Error(`pas de capacité « ${prefix} » pour ${nameOf(s, source)}`);
   return act(s, p, { type: "activate", source, ability: o.ability, ...extra } as never);
 };
 /** Active la capacité d'Équiper (la première proposée, ou celle dont le libellé commence ainsi) sur la créature. */
-const equip = (s: S, equipment: string, creature: ObjectId, label = "Équiper", p: PlayerId = "p1") => {
+const equip = (s: S, equipment: string, creature: ObjectId, label = "Equip", p: PlayerId = "p1") => {
   const source = idOf(s, p, "battlefield", equipment);
-  const o = activations(s, p, source).find((a) => a.label?.startsWith(label) && a.targets[0]?.legal.includes(creature));
+  const o = activations(s, p, source).find(
+    (a) => plainText(a.label ?? "").startsWith(label) && a.targets[0]?.legal.includes(creature),
+  );
   if (!o) throw new Error(`pas d'Équiper « ${label} » pour ${equipment}`);
   return settle(act(s, p, { type: "activate", source, ability: o.ability, targets: { t: [creature] } } as never));
 };
@@ -101,7 +104,8 @@ const equip = (s: S, equipment: string, creature: ObjectId, label = "Équiper", 
 const equipTargets = (s: S, equipment: string, label: string, p: PlayerId = "p1") =>
   namesIn(
     s,
-    activations(s, p, idOf(s, p, "battlefield", equipment)).find((a) => a.label?.startsWith(label))?.targets[0]?.legal ?? [],
+    activations(s, p, idOf(s, p, "battlefield", equipment)).find((a) => plainText(a.label ?? "").startsWith(label))?.targets[0]
+      ?.legal ?? [],
   ).sort();
 
 describe("The Vision (EDH)", () => {
@@ -264,13 +268,13 @@ describe("The Vision (EDH)", () => {
 
     it("The Mightstone and Weakstone : piochez deux cartes ou −5/−5 ; {C}{C} pour les sorts d'artefact", () => {
       let s = scenario({ p1: { hand: ["The Mightstone and Weakstone"], battlefield: lands("Wastes", 5) } });
-      s = settle(castIt(s, "p1", "The Mightstone and Weakstone"), modeNamed("Piochez deux cartes"));
+      s = settle(castIt(s, "p1", "The Mightstone and Weakstone"), modeNamed("Draw two cards"));
       expect(s.players.p1?.hand).toHaveLength(2);
       let t = scenario({
         p1: { hand: ["The Mightstone and Weakstone"], battlefield: lands("Wastes", 5) },
         p2: { battlefield: ["Bear Cub"] },
       });
-      t = settle(castIt(t, "p1", "The Mightstone and Weakstone"), modeNamed("La créature ciblée gagne −5/−5"));
+      t = settle(castIt(t, "p1", "The Mightstone and Weakstone"), modeNamed("Target creature gets −5/−5"));
       expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       // Le mana ne sert qu'aux sorts d'artefact.
       const u = scenario({ p1: { battlefield: ["The Mightstone and Weakstone"], hand: ["Shock", "Basalt Monolith"] } });
@@ -338,15 +342,13 @@ describe("The Vision (EDH)", () => {
       let s = scenario({
         p1: { battlefield: ["Brotherhood Regalia", "Liberator, Urza's Battlethopter", "Bear Cub", "Wastes"] },
       });
-      expect(equipTargets(s, "Brotherhood Regalia", "Équiper une créature légendaire")).toEqual([
-        "Liberator, Urza's Battlethopter",
-      ]);
+      expect(equipTargets(s, "Brotherhood Regalia", "Equip legendary creature")).toEqual(["Liberator, Urza's Battlethopter"]);
       // Avec un seul mana, seul l'Équiper légendaire {1} est possible.
       expect(activations(s, "p1", idOf(s, "p1", "battlefield", "Brotherhood Regalia")).map((a) => a.label)).toEqual([
-        "Équiper une créature légendaire {1}",
+        msg("Equip legendary creature {cost}", { cost: "{1}" }),
       ]);
       const lib = idOf(s, "p1", "battlefield", "Liberator, Urza's Battlethopter");
-      s = equip(s, "Brotherhood Regalia", lib, "Équiper une créature légendaire");
+      s = equip(s, "Brotherhood Regalia", lib, "Equip legendary creature");
       expect(chars(s, lib).subtypes).toContain("Assassin");
       expect(chars(s, lib).keywords).toContain("unblockable");
       expect(chars(s, lib).abilities.some((a) => a.kind === "triggered" && a.ward)).toBe(true);
@@ -372,8 +374,8 @@ describe("The Vision (EDH)", () => {
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       // Aucun commandant sur le champ de bataille : seul « Équiper {5} ».
-      expect(equipTargets(s, "Commander's Plate", "Équiper un commandant")).toEqual([]);
-      s = equip(s, "Commander's Plate", bear, "Équiper {5}");
+      expect(equipTargets(s, "Commander's Plate", "Equip commander")).toEqual([]);
+      s = equip(s, "Commander's Plate", bear, "Equip {5}");
       expect(pt(s, bear)).toEqual([5, 5]);
       const from = (x: S, name: string) => protectedFrom(x, bear, snapshot(x, idOf(x, "p2", "battlefield", name)));
       expect([from(s, "Shivan Dragon"), from(s, "Serra Angel"), from(s, "Llanowar Elves")]).toEqual([true, true, true]);
@@ -382,7 +384,7 @@ describe("The Vision (EDH)", () => {
         p1: { command: ["Edgar Markov"], battlefield: ["Commander's Plate", "Bear Cub", ...lands("Wastes", 5)] },
         p2: { battlefield: ["Shivan Dragon", "Serra Angel", "Llanowar Elves"] },
       });
-      t = equip(t, "Commander's Plate", idOf(t, "p1", "battlefield", "Bear Cub"), "Équiper {5}");
+      t = equip(t, "Commander's Plate", idOf(t, "p1", "battlefield", "Bear Cub"), "Equip {5}");
       expect([from(t, "Shivan Dragon"), from(t, "Serra Angel"), from(t, "Llanowar Elves")]).toEqual([false, false, true]);
     });
 
@@ -403,7 +405,7 @@ describe("The Vision (EDH)", () => {
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Excalibur, Sword of Eden"))).toBe(true);
       s = settle(castIt(s, "p1", "Excalibur, Sword of Eden"));
       expect(s.battlefield.every((id) => !s.objects[id]?.tapped)).toBe(true);
-      expect(equipTargets(s, "Excalibur, Sword of Eden", "Équiper")).toEqual(["Liberator, Urza's Battlethopter"]);
+      expect(equipTargets(s, "Excalibur, Sword of Eden", "Equip")).toEqual(["Liberator, Urza's Battlethopter"]);
       const lib = idOf(s, "p1", "battlefield", "Liberator, Urza's Battlethopter");
       s = equip(s, "Excalibur, Sword of Eden", lib);
       expect(chars(s, lib).power).toBe(11);
@@ -461,7 +463,7 @@ describe("The Vision (EDH)", () => {
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = equip(s, "Sword of Feast and Famine", bear);
-      expect(chars(s, bear).protections.map((r) => r.label)).toEqual(["Protection contre le noir", "Protection contre le vert"]);
+      expect(chars(s, bear).protections.map((r) => r.label)).toEqual(["Protection from black", "Protection from green"]);
       expect(idsOf(s, "p1", "battlefield", "Wastes").every((id) => s.objects[id]?.tapped)).toBe(true);
       s = attack(s, [bear]);
       s = throughCombat(s);
@@ -558,7 +560,7 @@ describe("The Vision (EDH)", () => {
         p2: { battlefield: ["Bear Cub", "Sol Ring", "Forest"] },
       });
       const legal = activations(s, "p1", idOf(s, "p1", "battlefield", "Ugin, the Ineffable")).find((a) =>
-        a.label?.startsWith("−3"),
+        plainText(a.label ?? "").startsWith("−3"),
       )?.targets[0]?.legal;
       expect(namesIn(s, legal)).toEqual(["Bear Cub"]);
     });
@@ -785,9 +787,9 @@ describe("The Vision (EDH)", () => {
         p2: { battlefield: ["Bear Cub"] },
       });
       const card = idOf(s, "p1", "hand", "Eldrazi Confluence");
-      const labels = castOption(s, "p1", card)?.modes.map((m) => m.label) ?? [];
+      const labels = castOption(s, "p1", card)?.modes.map((m) => plainText(m.label ?? "")) ?? [];
       expect(labels).toHaveLength(10);
-      const three = labels.find((l) => l === "Une Engeance Eldrazi 1/1 + Une Engeance Eldrazi 1/1 + Une Engeance Eldrazi 1/1");
+      const three = labels.find((l) => l === "A 1/1 Eldrazi Scion + A 1/1 Eldrazi Scion + A 1/1 Eldrazi Scion");
       expect(three).toBeDefined();
       s = settle(castIt(s, "p1", "Eldrazi Confluence", { mode: spellMode(s, "p1", card, three as string) }));
       expect(tokens(s, "Eldrazi Scion")).toHaveLength(3);
@@ -797,8 +799,7 @@ describe("The Vision (EDH)", () => {
         p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
       });
       const c2 = idOf(t, "p1", "hand", "Eldrazi Confluence");
-      const label =
-        "Une créature gagne +3/−3 + Exilez un permanent non-terrain, puis renvoyez-le engagé + Une Engeance Eldrazi 1/1";
+      const label = "A creature gets +3/−3 + Exile a nonland permanent, then return it tapped + A 1/1 Eldrazi Scion";
       const dragon = idOf(t, "p2", "battlefield", "Shivan Dragon");
       t = settle(
         castIt(t, "p1", "Eldrazi Confluence", {
@@ -815,14 +816,14 @@ describe("The Vision (EDH)", () => {
       let s = scenario({ p1: { hand: ["Eldritch Immunity"], battlefield: ["Wastes", "Bear Cub", "Savannah Lions"] } });
       const card = idOf(s, "p1", "hand", "Eldritch Immunity");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      s = settle(castIt(s, "p1", "Eldritch Immunity", { mode: spellMode(s, "p1", card, "Coût normal"), targets: { t: [bear] } }));
-      expect(chars(s, bear).protections.map((r) => r.label)).toEqual(["Protection contre chaque couleur"]);
+      s = settle(castIt(s, "p1", "Eldritch Immunity", { mode: spellMode(s, "p1", card, "Normal cost"), targets: { t: [bear] } }));
+      expect(chars(s, bear).protections.map((r) => r.label)).toEqual(["Protection from each color"]);
       expect(chars(s, idOf(s, "p1", "battlefield", "Savannah Lions")).protections).toEqual([]);
       let t = scenario({
         p1: { hand: ["Eldritch Immunity"], battlefield: [...lands("Wastes", 5), "Bear Cub", "Savannah Lions"] },
       });
       const c2 = idOf(t, "p1", "hand", "Eldritch Immunity");
-      t = settle(castIt(t, "p1", "Eldritch Immunity", { mode: spellMode(t, "p1", c2, "Surcharge — {4}{C}") }));
+      t = settle(castIt(t, "p1", "Eldritch Immunity", { mode: spellMode(t, "p1", c2, "Overload — {4}{C}") }));
       for (const n of ["Bear Cub", "Savannah Lions"])
         expect(chars(t, idOf(t, "p1", "battlefield", n)).protections).toHaveLength(1);
     });
@@ -833,7 +834,7 @@ describe("The Vision (EDH)", () => {
         p2: { battlefield: ["Bear Cub", "Shivan Dragon"], graveyard: ["Sol Ring", "Shock", "Forest"] },
       });
       const card = idOf(s, "p1", "hand", "Kozilek's Command");
-      const label = "Un joueur crée X Rejetons Eldrazi 0/1 + Exilez une créature de valeur de mana X ou moins";
+      const label = "A player creates X 0/1 Eldrazi Spawn + Exile a creature with mana value X or less";
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       // X = 2 : Shivan Dragon (6) n'est pas une cible légale.
       expect(() =>
@@ -862,12 +863,7 @@ describe("The Vision (EDH)", () => {
       t = settle(
         castIt(t, "p1", "Kozilek's Command", {
           x: 2,
-          mode: spellMode(
-            t,
-            "p1",
-            c2,
-            "Un joueur regarde X cartes, puis pioche une carte + Exilez jusqu'à X cartes de cimetières",
-          ),
+          mode: spellMode(t, "p1", c2, "A player scries X, then draws a card + Exile up to X cards from graveyards"),
           targets: { p2: ["p1"], g4: gy },
         }),
       );
@@ -881,7 +877,7 @@ describe("The Vision (EDH)", () => {
         p2: { battlefield: ["Trygon Predator", "Bear Cub"] },
       });
       const card = idOf(s, "p1", "hand", "Null Elemental Blast");
-      const destroy = castOption(s, "p1", card)?.modes.find((m) => m.label === "Détruisez un permanent multicolore");
+      const destroy = castOption(s, "p1", card)?.modes.find((m) => m.label === "Destroy a multicolored permanent");
       expect(namesIn(s, destroy?.targets[0]?.legal)).toEqual(["Trygon Predator"]);
       s = settle(
         castIt(s, "p1", "Null Elemental Blast", {
@@ -902,7 +898,7 @@ describe("The Vision (EDH)", () => {
       const c2 = idOf(t, "p1", "hand", "Null Elemental Blast");
       t = settle(
         castIt(t, "p1", "Null Elemental Blast", {
-          mode: spellMode(t, "p1", c2, "Contrecarrez un sort multicolore"),
+          mode: spellMode(t, "p1", c2, "Counter a multicolored spell"),
           targets: { s: [vindicate] },
         }),
       );
@@ -920,11 +916,11 @@ describe("The Vision (EDH)", () => {
         p2: { graveyard: ["Shock", "Liberator, Urza's Battlethopter"] },
       });
       const abstergo = idOf(s, "p1", "battlefield", "Abstergo Entertainment");
-      const spec = activations(s, "p1", abstergo).find((a) => a.label?.startsWith("Une carte historique"))?.targets[0];
+      const spec = activations(s, "p1", abstergo).find((a) => a.label?.startsWith("A historic card"))?.targets[0];
       // Seulement de votre cimetière, et historique : Sol Ring (pas Bear Cub, ni la créature légendaire de l'adversaire).
       expect(namesIn(s, spec?.legal)).toEqual(["Sol Ring"]);
       s = settle(
-        activateLabeled(s, "p1", abstergo, "Une carte historique", { targets: { t: [idOf(s, "p1", "graveyard", "Sol Ring")] } }),
+        activateLabeled(s, "p1", abstergo, "A historic card", { targets: { t: [idOf(s, "p1", "graveyard", "Sol Ring")] } }),
       );
       expect(handNames(s, "p1")).toEqual(["Sol Ring"]);
       expect([s.players.p1?.graveyard.length, s.players.p2?.graveyard.length]).toEqual([0, 0]);
@@ -1016,7 +1012,7 @@ describe("The Vision (EDH)", () => {
           (x.objects[saga]?.counters.lore ?? 0) >= 2,
       );
       expect(s.objects[saga]?.counters.lore).toBe(2);
-      s = settle(activateLabeled(s, "p1", saga, "Un jeton de créature-artefact Construction"));
+      s = settle(activateLabeled(s, "p1", saga, "A 0/0 Construct artifact creature token"));
       const [construct] = tokens(s, "Construct");
       // Sol Ring, la Construction : deux artefacts.
       expect(pt(s, construct ?? "")).toEqual([2, 2]);
@@ -1100,7 +1096,7 @@ describe("The Vision (EDH)", () => {
       let s = scenario({ p1: { battlefield: ["The Mycosynth Gardens", "Sol Ring", "Wastes"] } });
       const gardens = idOf(s, "p1", "battlefield", "The Mycosynth Gardens");
       const ring = idOf(s, "p1", "battlefield", "Sol Ring");
-      s = settle(activateLabeled(s, "p1", gardens, "Devient une copie", { x: 1, targets: { t: [ring] } }));
+      s = settle(activateLabeled(s, "p1", gardens, "Becomes a copy", { x: 1, targets: { t: [ring] } }));
       expect(nameOf(s, gardens)).toBe("The Mycosynth Gardens");
       expect(chars(s, gardens).name).toBe("Sol Ring");
       expect(chars(s, gardens).types).toEqual(["Artifact"]);
@@ -1253,7 +1249,7 @@ describe("The Vision (EDH)", () => {
       t = advanceUntil(t, (x) => x.pending?.kind === "declareAttackers");
       const elves = idOf(t, "p1", "battlefield", "Llanowar Elves");
       expect(() => act(t, "p1", { type: "declareAttackers", attackers: [{ id: elves, defender: "p2" }] })).toThrow(
-        "Il faut payer {2} pour attaquer",
+        msg("You must pay {cost} to attack", { cost: "{2}" }),
       );
     });
 

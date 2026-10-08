@@ -1,6 +1,6 @@
 /**
- * Murders at Karlov Manor — cartes rouges (lot A). Le déguisement, la garde, la prouesse et les autres mots-clés sont
- * lus dans le texte ; « enquêtez » crée un Indice (`investigate`), « suspectez » passe par `fx.suspect`.
+ * Murders at Karlov Manor — red cards (lot A). Disguise, ward, prowess and the other keywords are read from the text;
+ * "investigate" creates a Clue (`investigate`), "suspect" goes through `fx.suspect`.
  */
 import {
   activated,
@@ -26,8 +26,8 @@ import {
 
 const ARTIFACT = { types: ["Artifact" as const] };
 
-/** « {2}, sacrifiez [cet Indice] : piochez une carte. » */
-const clueAbility = activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" });
+/** "{2}, Sacrifice [this Clue]: Draw a card." */
+const clueAbility = activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Draw a card" });
 
 const NONBASIC_LAND = { types: ["Land" as const], basic: false };
 
@@ -37,7 +37,7 @@ export const RED: Record<string, CardScript> = {
       [],
       [
         fx.destroyAll({ types: ["Artifact"], controller: "opponent" }),
-        // X : les artefacts mis dans un cimetière depuis le champ de bataille ce tour-ci (ceux qui viennent d'être détruits compris).
+        // X: the artifacts put into a graveyard from the battlefield this turn (including the ones just destroyed).
         fx.exileTop(
           ref.you,
           amount.turnEvents({ event: "zone", from: "battlefield", to: "graveyard", types: ["Artifact"] }),
@@ -52,7 +52,7 @@ export const RED: Record<string, CardScript> = {
             count: 1,
             min: 0,
             store: "c",
-            prompt: "Une carte de créature exilée à mettre sur le champ de bataille",
+            prompt: "An exiled creature card to put onto the battlefield",
           },
         ),
         fx.modify(ref.stored("c"), { addKeywords: ["haste"] }, "permanent"),
@@ -62,12 +62,12 @@ export const RED: Record<string, CardScript> = {
   },
   "Bolrac-Clan Basher": {},
   "Case of the Crimson Pulse": {
-    abilities: [triggered(when.entersSelf, [fx.discard(1), fx.draw(2)], { label: "Défaussez une carte, puis piochez-en deux" })],
-    // « Vous n'avez aucune carte en main » (`handAtMost` n'est lu qu'à la résolution d'un effet).
+    abilities: [triggered(when.entersSelf, [fx.discard(1), fx.draw(2)], { label: "Discard a card, then draw two cards" })],
+    // "You have no cards in hand" (`handAtMost` is only read when an effect resolves).
     caseToSolve: cond.not(cond.amountAtLeast(amount.cardsIn("hand"), 1)),
     caseSolved: [
       triggered(when.yourUpkeep, [fx.discard(amount.cardsIn("hand")), fx.draw(2)], {
-        label: "Défaussez votre main, puis piochez deux cartes",
+        label: "Discard your hand, then draw two cards",
       }),
     ],
   },
@@ -86,37 +86,37 @@ export const RED: Record<string, CardScript> = {
       staticAbility("attached", { power: 3 }, { label: "+3/+0" }),
       triggered(when.turnedFaceUp, [fx.attach(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Attachez-le à une créature que vous contrôlez",
+        label: "Attach this Equipment to a creature you control",
       }),
     ],
   },
   "Connecting the Dots": {
     abilities: [
-      // La carte est exilée face cachée (personne ne la voit).
+      // The card is exiled face down (nobody sees it).
       triggered(
         when.attacks({ types: ["Creature"], controller: "you" }),
         [fx.exileTop(ref.you, 1, "x", "nobody"), fx.link(ref.stored("x"))],
-        { label: "Exilez la carte du dessus de votre bibliothèque" },
+        { label: "Exile the top card of your library" },
       ),
       activated({
         mana: "{1}{R}",
         sacrifice: true,
         discardHand: true,
         effects: [fx.toHand(ref.linked)],
-        label: "Défaussez votre main : les cartes exilées avec cet enchantement vont dans la main de leur propriétaire",
+        label: "Discard your hand: the cards exiled with this enchantment go to their owner's hand",
       }),
     ],
   },
   "Convenient Target": {
-    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    enchant: { filter: { types: ["Creature"] }, label: "creature" },
     abilities: [
-      triggered(when.entersSelf, [fx.suspect(ref.attached)], { label: "Suspectez la créature enchantée" }),
+      triggered(when.entersSelf, [fx.suspect(ref.attached)], { label: "Suspect the enchanted creature" }),
       staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }),
       activated({
         mana: "{2}{R}",
         fromGraveyard: true,
         effects: [fx.toHand(ref.self)],
-        label: "Revient du cimetière dans la main",
+        label: "Return this card from your graveyard to your hand",
       }),
     ],
   },
@@ -128,14 +128,14 @@ export const RED: Record<string, CardScript> = {
           fx.sacrifice(ref.you, ARTIFACT, 1, { optional: true, store: "s" }),
           fx.when(cond.v("s"), fx.reflexive([target.any()], [fx.damage(3, ref.target())])),
         ],
-        { label: "Vous pouvez sacrifier un artefact : 3 blessures à n'importe quelle cible" },
+        { label: "You may sacrifice an artifact: 3 damage to any target" },
       ),
     ],
   },
   "Crime Novelist": {
     abilities: [
       triggered(when.sacrifice(ARTIFACT), [fx.addCounters(ref.self, 1), fx.addMana("R")], {
-        label: "Marqueur +1/+1 et {R}",
+        label: "+1/+1 counter and {R}",
       }),
     ],
   },
@@ -145,11 +145,11 @@ export const RED: Record<string, CardScript> = {
         when.dealtDamage({ types: ["Creature"] }),
         fx.mayFor(
           ref.controllerOf(ref.eventObject),
-          "Exiler autant de cartes du dessus de votre bibliothèque (jouables jusqu'à la fin de votre prochain tour) ?",
+          "Exile that many cards from the top of your library (playable until the end of your next turn)?",
           fx.exileTop(ref.controllerOf(ref.eventObject), amount.eventAmount, "x"),
           fx.grantPlay(ref.stored("x"), { for: "owner", untilOwnersNextTurn: true }),
         ),
-        { label: "Son contrôleur peut exiler autant de cartes du dessus de sa bibliothèque" },
+        { label: "Its controller may exile that many cards from the top of their library" },
       ),
     ],
   },
@@ -158,19 +158,19 @@ export const RED: Record<string, CardScript> = {
       [target.creature("t", { controller: "you" })],
       [
         fx.pump(ref.target(), 2, 0, ["haste"]),
-        fx.whenThisTurn(when.dies({}), ref.target(), [fx.createTokens(DETECTIVE)], { label: "Détective 2/2" }),
+        fx.whenThisTurn(when.dies({}), ref.target(), [fx.createTokens(DETECTIVE)], { label: "2/2 Detective" }),
       ],
     ),
   },
   "Frantic Scapegoat": {
     abilities: [
-      triggered(when.entersSelf, [fx.suspect(ref.self)], { label: "Suspectez-la" }),
-      // « Une ou plusieurs » : un déclenchement par créature ; la condition, vérifiée de nouveau à la résolution (603.4),
-      // fait qu'une seule d'entre elles peut devenir suspecte.
+      triggered(when.entersSelf, [fx.suspect(ref.self)], { label: "Suspect it" }),
+      // "One or more": one trigger per creature; the condition, checked again on resolution (603.4), lets only one of
+      // them become suspected.
       triggered(
         when.enters({ types: ["Creature"], controller: "you", other: true }),
-        fx.may("Suspecter cette créature à la place ?", fx.suspect(ref.eventObject), fx.suspect(ref.self, false)),
-        { condition: cond.sourceMatches({ suspected: true }), label: "Transférez la suspicion" },
+        fx.may("Suspect this creature instead?", fx.suspect(ref.eventObject), fx.suspect(ref.self, false)),
+        { condition: cond.sourceMatches({ suspected: true }), label: "Transfer the suspicion" },
       ),
     ],
   },
@@ -189,17 +189,17 @@ export const RED: Record<string, CardScript> = {
         when.entersSelf,
         [
           mode(
-            "Détruisez jusqu'à un artefact ciblé",
-            [target.upTo(1, target.permanent("t", ["Artifact"], {}, "artefact"))],
+            "Destroy up to one target artifact",
+            [target.upTo(1, target.permanent("t", ["Artifact"], {}, "artifact"))],
             [fx.destroy(ref.target())],
           ),
           mode(
-            "Sacrifiez un artefact : deux marqueurs +1/+1",
+            "Sacrifice an artifact: two +1/+1 counters",
             [],
             [fx.sacrifice(ref.you, ARTIFACT, 1, { store: "s" }), ...fx.when(cond.v("s"), fx.addCounters(ref.self, 2))],
           ),
         ],
-        { label: "Choisissez un mode" },
+        { label: "Choose a mode" },
       ),
     ],
   },
@@ -212,7 +212,7 @@ export const RED: Record<string, CardScript> = {
           fx.pump(ref.stored("t"), 0, 0, ["haste"]),
           fx.delayedAt("yourEndStep", [fx.sacrificeIt(ref.target("t"))], { t: ref.stored("t") }),
         ],
-        { label: "Thopter 1/1 volant avec la célérité, sacrifié à votre étape de fin" },
+        { label: "1/1 flying Thopter with haste, sacrificed at your end step" },
       ),
     ],
   },
@@ -220,7 +220,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.isDealtDamage, [investigate()], {
         condition: cond.amountAtLeast(amount.eventAmount, 3),
-        label: "3 blessures ou plus : enquêtez",
+        label: "3 or more damage: investigate",
       }),
     ],
   },
@@ -229,7 +229,7 @@ export const RED: Record<string, CardScript> = {
       staticAbility(
         "attached",
         { power: 1, addKeywords: ["firstStrike"] },
-        { condition: cond.yourTurn, label: "Pendant votre tour : +1/+0 et l'initiative" },
+        { condition: cond.yourTurn, label: "During your turn: +1/+0 and first strike" },
       ),
       clueAbility,
     ],
@@ -240,37 +240,37 @@ export const RED: Record<string, CardScript> = {
         tap: true,
         sacrificeOther: { filter: ARTIFACT },
         effects: [fx.addCountersAll({ subtype: "Goblin", controller: "you" }, 1)],
-        label: "Un marqueur +1/+1 sur chaque Gobelin que vous contrôlez",
+        label: "A +1/+1 counter on each Goblin you control",
       }),
       triggered(
         when.zoneChange(["battlefield"], { to: ["graveyard"], filter: ARTIFACT }),
         fx.mayPay(
           "{R}",
-          "Payer {R} pour créer un Gobelin 1/1 avec la célérité ?",
+          "Pay {R} to create a 1/1 Goblin with haste?",
           fx.createTokens(GOBLIN, 1, undefined, "g"),
           fx.pump(ref.stored("g"), 0, 0, ["haste"]),
         ),
-        { label: "Payez {R} : Gobelin 1/1 avec la célérité" },
+        { label: "Pay {R}: 1/1 Goblin with haste" },
       ),
     ],
   },
   "Krenko's Buzzcrusher": {
     abilities: [
-      // « Pour chaque joueur, détruisez jusqu'à un terrain non-base que ce joueur contrôle » : un choix par joueur (sans
-      // cible), puis une seule destruction ; le contrôleur de chaque terrain détruit peut chercher un terrain de base.
-      // Pour vos propres terrains, une question oui / non d'abord : la réponse suggérée (« Non ») ne détruit pas le vôtre.
+      // "For each player, destroy up to one nonbasic land that player controls": one choice per player (no target),
+      // then a single destruction; the controller of each destroyed land may search for a basic land. For your own
+      // lands, a yes/no question first: the suggested answer ("No") doesn't destroy yours.
       triggered(
         when.entersSelf,
         [
           ...fx.when(
             cond.amountAtLeast(amount.refCount(ref.permanentsOf(ref.you, NONBASIC_LAND)), 1),
-            fx.yourChoice("Détruire aussi un de vos terrains non-base ?", "bzMine", [
-              { label: "Non", effects: [] },
+            fx.yourChoice("Also destroy one of your nonbasic lands?", "bzMine", [
+              { label: "No", effects: [] },
               {
-                label: "Oui",
+                label: "Yes",
                 effects: [
                   fx.chooseAmong(ref.permanentsOf(ref.you, NONBASIC_LAND), ref.you, "bzYou", {
-                    prompt: "Choisissez un de vos terrains non-base à détruire",
+                    prompt: "Choose one of your nonbasic lands to destroy",
                   }),
                 ],
               },
@@ -279,13 +279,13 @@ export const RED: Record<string, CardScript> = {
           ...fx.forEachPlayer(ref.eachOpponent, (p, n) => [
             fx.chooseAmong(ref.permanentsOf(p, NONBASIC_LAND), ref.you, `bz${n}`, {
               optional: true,
-              prompt: "Choisissez jusqu'à un terrain non-base de ce joueur à détruire",
+              prompt: "Choose up to one nonbasic land of this player to destroy",
             }),
           ]),
           fx.destroy(ref.union(ref.stored("bzYou"), ...Array.from({ length: 6 }, (_, n) => ref.stored(`bz${n}`))), "d"),
           fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.stored("d"))),
         ],
-        { label: "Détruisez jusqu'à un terrain non-base par joueur ; son contrôleur cherche un terrain de base" },
+        { label: "Destroy up to one nonbasic land per player; its controller searches for a basic land" },
       ),
     ],
   },
@@ -293,18 +293,18 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 2, 0)], {
         targets: [target.upTo(1, target.creature())],
-        label: "+2/+0 à jusqu'à une créature",
+        label: "+2/+0 to up to one creature",
       }),
       triggered(when.turnedFaceUp, [fx.pump(ref.target(), 2, 0)], {
         targets: [target.upTo(1, target.creature())],
-        label: "+2/+0 à jusqu'à une créature",
+        label: "+2/+0 to up to one creature",
       }),
     ],
   },
   "Person of Interest": {
     abilities: [
       triggered(when.entersSelf, [fx.suspect(ref.self), fx.createTokens(DETECTIVE)], {
-        label: "Suspectez-la ; Détective 2/2",
+        label: "Suspect it; 2/2 Detective",
       }),
     ],
   },
@@ -313,7 +313,7 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.permanentTurnedFaceUp({ types: ["Creature"], controller: "you" }),
         [fx.damage(amount.powerOf(ref.eventObject), ref.eachOpponent, ref.eventObject)],
-        { label: "Elle inflige autant de blessures que sa force à chaque adversaire" },
+        { label: "It deals damage equal to its power to each opponent" },
       ),
     ],
   },
@@ -326,7 +326,7 @@ export const RED: Record<string, CardScript> = {
           ...fx.when(cond.not(cond.v("s")), fx.discard(1, ref.you, { optional: true, store: "d" })),
           ...fx.when(cond.any(cond.v("s"), cond.v("d")), fx.draw(1), fx.pump(ref.self, 2, 0)),
         ],
-        { label: "Sacrifiez un artefact ou défaussez une carte : piochez, +2/+0" },
+        { label: "Sacrifice an artifact or discard a card: draw, +2/+0" },
       ),
     ],
   },
@@ -336,9 +336,9 @@ export const RED: Record<string, CardScript> = {
   },
   "Rubblebelt Braggart": {
     abilities: [
-      triggered(when.attacksSelf, fx.may("Suspecter cette créature ?", fx.suspect(ref.self)), {
+      triggered(when.attacksSelf, fx.may("Suspect this creature?", fx.suspect(ref.self)), {
         condition: cond.not(cond.sourceMatches({ suspected: true })),
-        label: "Vous pouvez la suspecter",
+        label: "You may suspect it",
       }),
     ],
   },
@@ -361,7 +361,7 @@ export const RED: Record<string, CardScript> = {
           "x",
           fx.damage(amount.v("x"), ref.permanentsOf(ref.eventPlayer, { types: ["Creature", "Planeswalker"] })),
         ),
-        { label: "Réunissez des preuves X : X blessures à chaque créature et planeswalker de ce joueur" },
+        { label: "Collect evidence X: X damage to each creature and planeswalker of that player" },
       ),
     ],
   },
@@ -375,7 +375,7 @@ export const RED: Record<string, CardScript> = {
           fx.exileCard(ref.selfCard, { name: "p" }),
           fx.toBattlefield(ref.stored("p"), { tapped: true }),
         ),
-        { label: "Exilez-le et réunissez des preuves 4 : il revient engagé" },
+        { label: "Exile it and collect evidence 4: it returns tapped" },
       ),
     ],
   },
@@ -383,29 +383,29 @@ export const RED: Record<string, CardScript> = {
     disguiseReduction: amount.countIn("graveyard", INSTANT_SORCERY),
     abilities: [
       triggered(when.turnedFaceUp, [fx.discard(amount.cardsIn("hand"), ref.you), fx.draw(3)], {
-        label: "Défaussez votre main, puis piochez trois cartes",
+        label: "Discard your hand, then draw three cards",
       }),
     ],
   },
   "Goblin Maskmaker": {
     abilities: [
       triggered(when.attacksSelf, [fx.thisTurn({ spellCost: { filter: { faceDown: true }, reduce: 1 } })], {
-        label: "Vos sorts face cachée coûtent {1} de moins ce tour-ci",
+        label: "Your face-down spells cost {1} less this turn",
       }),
     ],
   },
   "Expose the Culprit": {
-    // « Un ou les deux » : deux modes sans coût en plus.
+    // "One or both": two modes with no extra cost.
     spell: spree(
       {
         cost: "{0}",
-        label: "Retournez face visible une créature face cachée",
-        targets: [{ ...target.creature("a", { faceDown: true }), label: "créature face cachée" }],
+        label: "Turn a face-down creature face up",
+        targets: [{ ...target.creature("a", { faceDown: true }), label: "face-down creature" }],
         effects: [fx.turnFaceUp(ref.target("a"))],
       },
       {
         cost: "{0}",
-        label: "Exilez vos créatures face visible avec le déguisement, puis enveloppez-les d'une cape",
+        label: "Exile your face-up creatures with disguise, then cloak them",
         effects: [
           fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], faceDown: false, disguise: true }), ref.you, "e", {
             anyNumber: true,
@@ -420,7 +420,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.damage(3, ref.target())], {
         targets: [target.creature("t", { controller: "opponent" })],
-        label: "3 blessures à une créature adverse",
+        label: "3 damage to an opponent's creature",
       }),
     ],
     caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "damage", source: { controller: "you" }, distinct: "source" }), 3),
@@ -428,7 +428,7 @@ export const RED: Record<string, CardScript> = {
       activated({
         sacrifice: true,
         effects: [fx.impulse(3)],
-        label: "Sacrifiez-la : exilez trois cartes, jouez-en une ce tour-ci",
+        label: "Sacrifice it: exile three cards, play one of them this turn",
       }),
     ],
   },

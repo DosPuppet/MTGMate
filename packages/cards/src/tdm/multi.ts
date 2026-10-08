@@ -1,4 +1,4 @@
-/** Tarkir: Dragonstorm — cartes multicolores (sauf légendaires et cartes uniques, dans legends.ts). */
+/** Tarkir: Dragonstorm — multicolored cards (except legendaries and unique cards, in legends.ts). */
 import type { Effect } from "@mtgx/engine";
 import {
   activated,
@@ -28,15 +28,15 @@ import {
   when,
 } from "./common";
 
-/** « Copiez le prochain sort que vous lancez ce tour-ci quand vous le lancez » (Flamehold Grappler). */
+/** "When you next cast a spell this turn, copy it" (Flamehold Grappler). */
 const COPY_NEXT_SPELL: Effect = { op: "playerEffect", ability: { nextSpell: { copy: true } }, once: true };
 
 export const MULTI: Record<string, CardScript> = {
   "Auroral Procession": { spell: spell([target.cardInGraveyard()], [fx.toHand(ref.target())]) },
   "Awaken the Honored Dead": {
     abilities: [
-      chapter([1], [fx.destroy(ref.target())], { targets: [target.nonland()], label: "Détruisez un permanent non-terrain" }),
-      chapter([2], [fx.mill(3)], { label: "Meulez trois cartes" }),
+      chapter([1], [fx.destroy(ref.target())], { targets: [target.nonland()], label: "Destroy a nonland permanent" }),
+      chapter([2], [fx.mill(3)], { label: "Mill three cards" }),
       chapter(
         [3],
         [
@@ -49,24 +49,24 @@ export const MULTI: Record<string, CardScript> = {
                   "t",
                   { anyOf: [{ types: ["Creature"] }, { types: ["Land"] }] },
                   "you",
-                  "carte de créature ou de terrain de votre cimetière",
+                  "creature or land card in your graveyard",
                 ),
               ],
               [fx.toHand(ref.target())],
             ),
           ),
         ],
-        { label: "Défaussez une carte : une créature ou un terrain revient en main" },
+        { label: "Discard a card: a creature or a land returns to hand" },
       ),
     ],
   },
   "Bone-Cairn Butcher": {
-    // Mobilisation 2 : lue dans le texte.
+    // Mobilize 2: read from the text.
     abilities: [
       staticAbility(
         { types: ["Creature"], token: true, attacking: true, controller: "you" },
         { addKeywords: ["deathtouch"] },
-        { label: "Vos jetons attaquants ont le contact mortel" },
+        { label: "Your attacking tokens have deathtouch" },
       ),
     ],
   },
@@ -82,9 +82,9 @@ export const MULTI: Record<string, CardScript> = {
   "Dragonback Assault": {
     abilities: [
       triggered(when.entersSelf, [fx.damageAll(3, { types: ["Creature", "Planeswalker"] })], {
-        label: "3 blessures à chaque créature et chaque planeswalker",
+        label: "3 damage to each creature and each planeswalker",
       }),
-      triggered(when.landfall, [fx.createTokens(DRAGON)], { label: "Toucheterre : un Dragon 4/4 volant" }),
+      triggered(when.landfall, [fx.createTokens(DRAGON)], { label: "Landfall: a 4/4 flying Dragon" }),
     ],
   },
   "Dragonclaw Strike": {
@@ -98,25 +98,25 @@ export const MULTI: Record<string, CardScript> = {
       entersWith({
         counters: 2,
         condition: cond.castThisTurn(2),
-        label: "Deux sorts lancés ce tour-ci : arrive avec deux marqueurs +1/+1",
+        label: "Two spells cast this turn: enters with two +1/+1 counters",
       }),
     ],
   },
   "Fangkeeper's Familiar": {
     abilities: [
       triggeredModal(when.entersSelf, [
-        mode("Gagnez 3 PV, surveillance 3", [], [fx.gainLife(3), fx.surveil(3)]),
-        mode("Détruisez un enchantement", [target.permanent("e", ["Enchantment"])], [fx.destroy(ref.target("e"))]),
+        mode("Gain 3 life, surveil 3", [], [fx.gainLife(3), fx.surveil(3)]),
+        mode("Destroy an enchantment", [target.permanent("e", ["Enchantment"])], [fx.destroy(ref.target("e"))]),
         mode(
-          "Contrecarrez un sort de créature",
-          [target.spell("s", { types: ["Creature"] }, "sort de créature")],
+          "Counter a creature spell",
+          [target.spell("s", { types: ["Creature"] }, "creature spell")],
           [fx.counter(ref.target("s"))],
         ),
       ]),
     ],
   },
   "Flamehold Grappler": {
-    abilities: [triggered(when.entersSelf, [COPY_NEXT_SPELL], { label: "Copiez le prochain sort lancé ce tour-ci" })],
+    abilities: [triggered(when.entersSelf, [COPY_NEXT_SPELL], { label: "Copy the next spell cast this turn" })],
   },
   "Glacial Dragonhunt": {
     spell: spell(
@@ -131,7 +131,7 @@ export const MULTI: Record<string, CardScript> = {
   "Gurmag Nightwatch": {
     abilities: [
       triggered(when.entersSelf, [fx.lookAtTop(3, { count: 1, to: { to: "libraryTop" }, rest: "graveyard" })], {
-        label: "Regardez trois cartes : une peut rester dessus, le reste au cimetière",
+        label: "Look at three cards: one may stay on top, the rest into the graveyard",
       }),
     ],
   },
@@ -141,48 +141,48 @@ export const MULTI: Record<string, CardScript> = {
         mana: "{1}",
         sacrificeOther: { filter: { token: true } },
         effects: [fx.draw(1)],
-        label: "Sacrifiez un jeton : piochez une carte",
+        label: "Sacrifice a token: draw a card",
       }),
     ],
   },
   "Host of the Hereafter": {
     abilities: [
-      entersWith({ counters: 2, label: "Arrive avec deux marqueurs +1/+1" }),
-      // « s'il avait des marqueurs » : dans le filtre (dernières informations connues).
+      entersWith({ counters: 2, label: "Enters with two +1/+1 counters" }),
+      // "if it had counters on it": in the filter (last known information).
       triggered(when.dies({ ...CREATURE_YOU_CONTROL, withCounter: "any" }), [fx.lkiCountersTo(ref.target())], {
         targets: [target.optional(target.creature("t", { controller: "you" }))],
-        label: "Une de vos créatures à marqueurs meurt : ses marqueurs vont sur une de vos créatures",
+        label: "A creature of yours with counters dies: its counters go on one of your creatures",
       }),
     ],
   },
   "Jeskai Shrinekeeper": {
-    abilities: [triggered(when.combatDamageToPlayer, [fx.gainLife(1), fx.draw(1)], { label: "Gagnez 1 PV, piochez une carte" })],
+    abilities: [triggered(when.combatDamageToPlayer, [fx.gainLife(1), fx.draw(1)], { label: "Gain 1 life, draw a card" })],
   },
   "Karakyk Guardian": {
     abilities: [
       staticAbility(
         "self",
         { addKeywords: ["hexproof"] },
-        { condition: cond.not(cond.sourceDealtDamage), label: "Défense talismanique tant qu'il n'a pas infligé de blessures" },
+        { condition: cond.not(cond.sourceDealtDamage), label: "Hexproof as long as it hasn't dealt damage" },
       ),
     ],
   },
   "Kin-Tree Severance": {
-    spell: spell([targetObj("t", { minManaValue: 3 }, "permanent de valeur de mana 3 ou plus")], [fx.exile(ref.target())]),
+    spell: spell([targetObj("t", { minManaValue: 3 }, "permanent with mana value 3 or greater")], [fx.exile(ref.target())]),
   },
   "Kishla Skimmer": {
     abilities: [
       triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.draw(1)], {
         condition: cond.yourTurn,
         oncePerTurn: true,
-        label: "Une carte quitte votre cimetière pendant votre tour : piochez (une fois par tour)",
+        label: "A card leaves your graveyard during your turn: draw (once per turn)",
       }),
     ],
   },
   "Lie in Wait": {
-    // Les blessures (égales à la force de la carte) sont infligées avant le retour en main : même résultat.
+    // The damage (equal to the card's power) is dealt before the return to hand: same result.
     spell: spell(
-      [target.cardInGraveyard("c", { types: ["Creature"] }, "you", "carte de créature de votre cimetière"), target.creature("d")],
+      [target.cardInGraveyard("c", { types: ["Creature"] }, "you", "creature card in your graveyard"), target.creature("d")],
       [fx.damage(amount.powerOf(ref.target("c")), ref.target("d")), fx.toHand(ref.target("c"))],
     ),
   },
@@ -195,7 +195,7 @@ export const MULTI: Record<string, CardScript> = {
           fx.search({ colors: ["G"] }, { to: "graveyard" }),
           fx.search({ colors: ["U"] }, { to: "graveyard" }),
         ],
-        { label: "Une carte noire, une verte et une bleue au cimetière" },
+        { label: "A black, a green and a blue card into the graveyard" },
       ),
     ],
   },
@@ -211,7 +211,7 @@ export const MULTI: Record<string, CardScript> = {
             amount.count({ types: ["Creature"], attacking: true }),
           ),
         ],
-        { targets: [target.creature()], label: "Une créature gagne +X/+X (X : les attaquants)" },
+        { targets: [target.creature()], label: "A creature gets +X/+X (X: the attackers)" },
       ),
     ],
   },
@@ -219,17 +219,15 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.moveTo(ref.target(), { to: "libraryTop" })], {
         targets: [
-          target.optional(
-            target.cardInGraveyard("t", { notTypes: ["Land", "Creature"] }, "you", "carte non-créature non-terrain"),
-          ),
+          target.optional(target.cardInGraveyard("t", { notTypes: ["Land", "Creature"] }, "you", "noncreature, nonland card")),
         ],
-        label: "Une carte non-créature non-terrain de votre cimetière sur votre bibliothèque",
+        label: "A noncreature, nonland card from your graveyard on top of your library",
       }),
     ],
   },
   Perennation: {
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true }, "you", "carte de permanent de votre cimetière")],
+      [target.cardInGraveyard("t", { permanent: true }, "you", "permanent card in your graveyard")],
       [
         fx.moveTo(ref.target(), { to: "battlefield", counters: { kind: "hexproof", n: 1 } }, { name: "b" }),
         fx.counters(ref.stored("b"), "indestructible"),
@@ -240,7 +238,7 @@ export const MULTI: Record<string, CardScript> = {
   "Rediscover the Way": {
     abilities: [
       chapter([1, 2], [fx.lookAtTop(3, { count: 1, rest: "bottom", exact: true })], {
-        label: "Regardez trois cartes : une en main",
+        label: "Look at three cards: one to hand",
       }),
       chapter(
         [3],
@@ -254,7 +252,7 @@ export const MULTI: Record<string, CardScript> = {
                 [fx.modify(ref.target(), { addKeywords: ["doubleStrike"] })],
                 {
                   targets: [target.creature("t", { controller: "you" })],
-                  label: "Une de vos créatures gagne la double initiative",
+                  label: "One of your creatures gains double strike",
                 },
               ),
             ],
@@ -262,16 +260,16 @@ export const MULTI: Record<string, CardScript> = {
             true,
           ),
         ],
-        { label: "Ce tour-ci, vos sorts non-créature donnent la double initiative" },
+        { label: "This turn, your noncreature spells grant double strike" },
       ),
     ],
   },
   "Reigning Victor": {
-    // Mobilisation 1 : lue dans le texte.
+    // Mobilize 1: read from the text.
     abilities: [
       triggered(when.entersSelf, [fx.pump(ref.target(), 1, 0, ["indestructible"])], {
         targets: [target.creature()],
-        label: "Une créature gagne +1/+0 et l'indestructibilité",
+        label: "A creature gets +1/+0 and indestructible",
       }),
     ],
   },
@@ -279,23 +277,23 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Marqueur +1/+1 sur une de vos créatures",
+        label: "+1/+1 counter on one of your creatures",
       }),
       triggered(when.diesSelf, [fx.addCounters(ref.target(), 1)], {
         targets: [target.creature("t", { controller: "you" })],
-        label: "Marqueur +1/+1 sur une de vos créatures",
+        label: "+1/+1 counter on one of your creatures",
       }),
     ],
   },
   "Revival of the Ancestors": {
     abilities: [
-      chapter([1], [fx.createTokens(SPIRIT_W, 3)], { label: "Trois Esprits 1/1" }),
+      chapter([1], [fx.createTokens(SPIRIT_W, 3)], { label: "Three 1/1 Spirits" }),
       chapter([2], [fx.countersDivided(3, ref.target())], {
         targets: [target.between(1, 3, target.creature("t", { controller: "you" }))],
-        label: "Répartissez trois marqueurs +1/+1",
+        label: "Distribute three +1/+1 counters",
       }),
       chapter([3], [fx.modifyAll(CREATURE_YOU_CONTROL, { addKeywords: ["trample", "lifelink"] })], {
-        label: "Vos créatures gagnent le piétinement et le lien de vie",
+        label: "Your creatures gain trample and lifelink",
       }),
     ],
   },
@@ -309,7 +307,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { notTypes: ["Land"] }, false, undefined, true)], {
         targets: [target.player("t", "opponent")],
-        label: "Exilez une carte non-terrain de la main d'un adversaire",
+        label: "Exile a nonland card from an opponent's hand",
       }),
       triggered(
         when.leavesSelf,
@@ -322,18 +320,18 @@ export const MULTI: Record<string, CardScript> = {
             for: ref.ownerOf(ref.linked),
           },
         ],
-        { label: "Le propriétaire de la carte exilée crée un Esprit X/X" },
+        { label: "The owner of the exiled card creates an X/X Spirit" },
       ),
     ],
   },
   "Skirmish Rhino": {
-    abilities: [triggered(when.entersSelf, fx.drain(2), { label: "Chaque adversaire perd 2 PV, vous en gagnez 2" })],
+    abilities: [triggered(when.entersSelf, fx.drain(2), { label: "Each opponent loses 2 life, you gain 2" })],
   },
   "Sonic Shrieker": {
     abilities: [
       triggered(when.entersSelf, [fx.damage(2, ref.target()), fx.gainLife(2), fx.discard(1, ref.target())], {
         targets: [target.any()],
-        label: "2 blessures, gagnez 2 PV ; un joueur blessé défausse une carte",
+        label: "2 damage, gain 2 life; a damaged player discards a card",
       }),
     ],
   },
@@ -345,14 +343,14 @@ export const MULTI: Record<string, CardScript> = {
         generic: 0,
         genericAmount: amount.count({ types: ["Creature"], controller: "you", minPower: 4 }),
         condition: cond.yourTurn,
-        label: "Pendant votre tour, vos sorts coûtent {1} de moins par créature de force 4 ou plus",
+        label: "During your turn, your spells cost {1} less for each creature with power 4 or greater",
       },
     ],
   },
-  "Temur Tawnyback": { abilities: [triggered(when.entersSelf, fx.loot(1), { label: "Piochez, puis défaussez" })] },
+  "Temur Tawnyback": { abilities: [triggered(when.entersSelf, fx.loot(1), { label: "Draw, and then discard" })] },
   "Thunder of Unity": {
     abilities: [
-      chapter([1], [fx.draw(2), fx.loseLife(2)], { label: "Piochez deux cartes, perdez 2 PV" }),
+      chapter([1], [fx.draw(2), fx.loseLife(2)], { label: "Draw two cards, lose 2 life" }),
       chapter(
         [2, 3],
         [
@@ -361,14 +359,14 @@ export const MULTI: Record<string, CardScript> = {
             "Whenever a creature you control enters this turn, each opponent loses 1 life and you gain 1 life.",
             [
               triggered(when.enters(CREATURE_YOU_CONTROL), fx.drain(1), {
-                label: "Chaque adversaire perd 1 PV, vous en gagnez 1",
+                label: "Each opponent loses 1 life, you gain 1",
               }),
             ],
             false,
             true,
           ),
         ],
-        { label: "Ce tour-ci, vos créatures qui arrivent drainent 1 PV" },
+        { label: "This turn, your creatures that enter drain 1 life" },
       ),
     ],
   },
@@ -379,21 +377,21 @@ export const MULTI: Record<string, CardScript> = {
         [
           fx.mill(4),
           fx.reflexive(
-            [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins")],
+            [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "creature card with MV 3 or less")],
             [fx.toBattlefield(ref.target())],
           ),
         ],
-        { condition: cond.wasCast, label: "Meulez quatre cartes : une créature de VM 3 ou moins revient" },
+        { condition: cond.wasCast, label: "Mill four cards: a creature with MV 3 or less returns" },
       ),
     ],
   },
 
-  // --- Lot B ------------------------------------------------------------------
+  // --- Batch B ----------------------------------------------------------------
   "Armament Dragon": {
     abilities: [
       triggered(when.entersSelf, [fx.countersDivided(3, ref.target())], {
         targets: [target.between(1, 3, target.creature("t", { controller: "you" }))],
-        label: "Répartissez trois marqueurs +1/+1 entre vos créatures",
+        label: "Distribute three +1/+1 counters among your creatures",
       }),
     ],
   },
@@ -402,11 +400,11 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)], {
         condition: cond.chosenMode("Abzan"),
-        label: "Abzan — un marqueur +1/+1 sur chacune de vos créatures",
+        label: "Abzan — a +1/+1 counter on each creature you control",
       }),
       triggered(when.yourEndStep, [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] })], {
         condition: cond.all(cond.chosenMode("Mardu"), cond.amountAtLeast(amount.yourCreaturesDiedThisTurn, 1)),
-        label: "Mardu — une de vos créatures est morte ce tour-ci : chaque adversaire sacrifie une créature",
+        label: "Mardu — a creature of yours died this turn: each opponent sacrifices a creature",
       }),
     ],
   },
@@ -415,12 +413,12 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.combatDamageBatch(CREATURE_YOU_CONTROL), [fx.draw(1)], {
         condition: cond.chosenMode("Jeskai"),
-        label: "Jeskai — vos créatures blessent un joueur : piochez une carte",
+        label: "Jeskai — your creatures damage a player: draw a card",
       }),
       staticAbility(
         CREATURE_YOU_CONTROL,
         { power: 1, addKeywords: ["trample", "haste"] },
-        { condition: cond.chosenMode("Temur"), label: "Temur — vos créatures : +1/+0, piétinement et célérité" },
+        { condition: cond.chosenMode("Temur"), label: "Temur — your creatures: +1/+0, trample and haste" },
       ),
     ],
   },
@@ -430,12 +428,12 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.castSpell("you", { types: ["Instant", "Sorcery"] }), [fx.mill(4, ref.target())], {
         targets: [target.player()],
         condition: cond.chosenMode("Temur"),
-        label: "Temur — éphémère ou rituel : un joueur meule quatre cartes",
+        label: "Temur — instant or sorcery: a player mills four cards",
       }),
       playerStatic({
         playFrom: { zone: "graveyard", what: "lands" },
         condition: cond.chosenMode("Sultai"),
-        label: "Sultai — vous pouvez jouer des terrains depuis votre cimetière",
+        label: "Sultai — you may play lands from your graveyard",
       }),
     ],
   },
@@ -445,12 +443,12 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.countersPut(CREATURE_YOU_CONTROL), [fx.draw(1)], {
         condition: cond.chosenMode("Sultai"),
         oncePerTurn: true,
-        label: "Sultai — un marqueur est mis sur une de vos créatures : piochez (une fois par tour)",
+        label: "Sultai — a counter is put on one of your creatures: draw (once per turn)",
       }),
       triggered(when.attackWith(1), [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["menace"] })], {
         targets: [target.creature("t", { attacking: true })],
         condition: cond.chosenMode("Abzan"),
-        label: "Abzan — marqueur +1/+1 et menace sur une créature attaquante",
+        label: "Abzan — +1/+1 counter and menace on an attacking creature",
       }),
     ],
   },
@@ -460,30 +458,30 @@ export const MULTI: Record<string, CardScript> = {
       playerStatic({
         triggerMod: { effect: "again", on: "attack" },
         condition: cond.chosenMode("Mardu"),
-        label: "Mardu — une créature qui attaque déclenche vos capacités une fois de plus",
+        label: "Mardu — an attacking creature triggers your abilities an additional time",
       }),
       triggered(
         when.yourUpkeep,
         [fx.createTokens(GOBLIN, 1, undefined, "g"), fx.modify(ref.stored("g"), { addKeywords: ["lifelink", "haste"] })],
-        { condition: cond.chosenMode("Jeskai"), label: "Jeskai — un Gobelin 1/1 avec le lien de vie et la célérité ce tour-ci" },
+        { condition: cond.chosenMode("Jeskai"), label: "Jeskai — a 1/1 Goblin with lifelink and haste this turn" },
       ),
     ],
   },
   "Cori Mountain Stalwart": {
-    abilities: [flurry([fx.damage(2, ref.eachOpponent), fx.gainLife(2)], "2 blessures à chaque adversaire, gagnez 2 PV")],
+    abilities: [flurry([fx.damage(2, ref.eachOpponent), fx.gainLife(2)], "2 damage to each opponent, gain 2 life")],
   },
   "Kheru Goldkeeper": {
     abilities: [
       triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.createTokens(TREASURE)], {
         condition: cond.yourTurn,
         batched: true,
-        label: "Des cartes quittent votre cimetière pendant votre tour : un Trésor",
+        label: "Cards leave your graveyard during your turn: a Treasure",
       }),
       renew(
         "{2}{B}{G}{U}",
         [target.creature()],
         [fx.addCounters(ref.target(), 2), fx.counters(ref.target(), "flying")],
-        "deux marqueurs +1/+1 et un marqueur de vol",
+        "two +1/+1 counters and a flying counter",
       ),
     ],
   },

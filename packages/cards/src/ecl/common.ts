@@ -1,5 +1,5 @@
 /**
- * Éléments propres à Lorwyn Eclipsed (ECL) : jetons. Le DSL et les jetons communs viennent des extensions précédentes
+ * Elements specific to Lorwyn Eclipsed (ECL): tokens. The DSL and the common tokens come from the previous sets
  * (via lci/common.ts).
  */
 import type { AbilityDef, CardScript, TokenSpec } from "@mtgx/engine";
@@ -16,25 +16,25 @@ const creature = (
   extra: Partial<TokenSpec> = {},
 ): TokenSpec => ({ name, colors, types: ["Creature"], subtypes, power, toughness, ...extra });
 
-/** Sylvin (Sapling Nursery) : créature verte 3/4 avec la portée. */
+/** Treefolk (Sapling Nursery): 3/4 green creature with reach. */
 export const TREEFOLK_REACH: TokenSpec = creature("Treefolk", ["G"], ["Treefolk"], 3, 4, { keywords: ["reach"] });
-/** Kithkin : créature verte et blanche 1/1. */
+/** Kithkin: 1/1 green and white creature. */
 export const KITHKIN: TokenSpec = creature("Kithkin", ["G", "W"], ["Kithkin"], 1, 1);
-/** Ondin : créature blanche et bleue 1/1. */
+/** Merfolk: 1/1 white and blue creature. */
 export const MERFOLK_WU: TokenSpec = creature("Merfolk", ["W", "U"], ["Merfolk"], 1, 1);
-/** Gobelin : créature noire et rouge 1/1. */
+/** Goblin: 1/1 black and red creature. */
 export const GOBLIN_BR: TokenSpec = creature("Goblin", ["B", "R"], ["Goblin"], 1, 1);
-/** Faerie : créature bleue et noire 1/1 avec le vol. */
+/** Faerie: 1/1 blue and black creature with flying. */
 export const FAERIE_UB: TokenSpec = creature("Faerie", ["U", "B"], ["Faerie"], 1, 1, { keywords: ["flying"] });
-/** Changeforme : créature incolore 1/1 avec le changelin. */
+/** Shapeshifter: 1/1 colorless creature with changeling. */
 export const SHAPESHIFTER: TokenSpec = creature("Shapeshifter", [], ["Shapeshifter"], 1, 1, { keywords: ["changeling"] });
-/** Elfe : créature noire et verte 2/2. */
+/** Elf: 2/2 black and green creature. */
 export const ELF_BG: TokenSpec = creature("Elf", ["B", "G"], ["Elf"], 2, 2);
-/** Élan : créature verte 3/3. */
+/** Elk: 3/3 green creature. */
 export const ELK: TokenSpec = creature("Elk", ["G"], ["Elk"], 3, 3);
-/** Ver : créature noire et verte 1/1. */
+/** Worm: 1/1 black and green creature. */
 export const WORM_BG: TokenSpec = creature("Worm", ["B", "G"], ["Worm"], 1, 1);
-/** Mutavault : terrain, « {T} : ajoutez {C} » et « {1} : devient une créature 2/2 de tous les types jusqu'à la fin du tour ». */
+/** Mutavault: land, "{T}: Add {C}" and "{1}: becomes a 2/2 creature with all creature types until end of turn". */
 export const MUTAVAULT: TokenSpec = {
   name: "Mutavault",
   colors: [],
@@ -45,30 +45,30 @@ export const MUTAVAULT: TokenSpec = {
     activated({
       mana: "{1}",
       effects: [fx.modify(ref.self, { addTypes: ["Creature"], addKeywords: ["changeling"], setPower: 2, setToughness: 2 })],
-      label: "Devient une créature 2/2 de tous les types jusqu'à la fin du tour",
+      label: "Becomes a 2/2 creature with all creature types until end of turn",
     }),
   ],
   text: "{T}: Add {C}.\n{1}: This token becomes a 2/2 creature with all creature types until end of turn. It's still a land.",
 };
 
 /**
- * Champions (« contemplez un [type] et exilez-le » en coût additionnel ; « quand cette créature quitte le champ de
- * bataille, renvoyez la carte exilée dans la main de son propriétaire ») : un permanent que vous contrôlez ou une carte
- * de votre main, choisi par le moteur, lié à la créature.
+ * Champion ("behold a [type] and exile it" as an additional cost; "when this creature leaves the battlefield, return
+ * the exiled card to its owner's hand"): a permanent you control or a card from your hand, chosen by the engine, linked
+ * to the creature.
  */
 export function champion(subtype: string, abilities: AbilityDef[]): CardScript {
   return {
     additionalCost: { exile: { filter: { subtype }, count: 1, fromHand: true } },
     abilities: [
       ...abilities,
-      triggered(when.leavesSelf, [fx.toHand(ref.linked)], { label: "La carte exilée revient dans la main de son propriétaire" }),
+      triggered(when.leavesSelf, [fx.toHand(ref.linked)], { label: "The exiled card returns to its owner's hand" }),
     ],
   };
 }
 
 /**
- * « En coût additionnel, contemplez un [type] ou payez {N} » : un permanent que vous contrôlez ou une autre carte de votre
- * main (révélée), sinon {N} de plus.
+ * "As an additional cost, behold a [type] or pay {N}": a permanent you control or another card from your hand
+ * (revealed), otherwise {N} more.
  */
 export const beholdOrPay = (subtype: string, n: number): CardScript["additionalCost"] => ({
   behold: { filter: { subtype }, orPay: { generic: n, colored: {}, x: 0 } },
