@@ -7,7 +7,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import baseline from "../data/debt-baseline.json";
 import { implementedCards } from "../src/index";
-import { declaredFieldNames, engineLiterals, interfaceFields, largestImportCycle, measureSurfaces } from "./debtSurface";
+import {
+  declaredFieldNames,
+  engineLiterals,
+  interfaceFields,
+  largestImportCycle,
+  measureSurfaces,
+  unionVariants,
+} from "./debtSurface";
 
 const source = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
@@ -47,6 +54,37 @@ function singleCardOps(): string[] {
   };
   for (const c of implementedCards()) walk(c, c.name);
   return [...users].filter(([, cards]) => cards.size === 1).map(([op]) => op);
+}
+
+/**
+ * Variantes des unions Condition, Amount, Ref (discriminant `kind`) et TriggerSpec (`on`) écrites par une seule carte
+ * gérée, notées « Union.variante » (audit du 07/10/2026 : comme les ops, elles échappaient à la garde).
+ */
+function singleCardVariants(): string[] {
+  const unions = [
+    ["Condition", "kind"],
+    ["Amount", "kind"],
+    ["Ref", "kind"],
+    ["TriggerSpec", "on"],
+  ] as const;
+  const declared = unions.map(([name, d]) => [name, d, new Set(unionVariants(name, d).keys())] as const);
+  const users = new Map<string, Set<string>>();
+  const walk = (v: unknown, name: string): void => {
+    if (Array.isArray(v)) for (const x of v) walk(x, name);
+    else if (v && typeof v === "object") {
+      const o = v as Record<string, unknown>;
+      for (const [union, d, variants] of declared) {
+        const value = o[d];
+        if (typeof value === "string" && variants.has(value)) {
+          const k = `${union}.${value}`;
+          users.set(k, (users.get(k) ?? new Set()).add(name));
+        }
+      }
+      for (const x of Object.values(o)) walk(x, name);
+    }
+  };
+  for (const c of implementedCards()) walk(c, c.name);
+  return [...users].filter(([, cards]) => cards.size === 1).map(([k]) => k);
 }
 
 /**
@@ -94,6 +132,7 @@ describe("garde-fou de la dette (data/debt-baseline.json)", () => {
     ["playerStatic", playerStaticKeys],
     ["keyword", nonPrintedKeywords],
     ["op", singleCardOps],
+    ["variant", singleCardVariants],
     ["singleCardKeys", singleCardKeys],
     ["turnFields", turnFields],
     ["engineCardLiterals", engineCardLiterals],

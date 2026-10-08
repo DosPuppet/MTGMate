@@ -5,6 +5,7 @@
  * étant réguliers (interfaces et unions d'objets à discriminant).
  */
 import { readdirSync, readFileSync } from "node:fs";
+import { implementedCards } from "../src/index";
 
 const ROOT = new URL("../../", import.meta.url);
 
@@ -293,6 +294,7 @@ export const UNION_SURFACES = [
 /** Taille de chaque surface du modèle : champs d'une interface, variantes d'une union, champs de toutes ses variantes. */
 export function measureSurfaces(): Record<string, number> {
   const out: Record<string, number> = {};
+  out["Valeurs propres à une carte"] = singleCardValues(implementedCards());
   for (const name of INTERFACE_SURFACES) out[name] = interfaceFields(name).length;
   for (const [name, discriminant] of UNION_SURFACES) {
     const variants = unionVariants(name, discriminant);
@@ -300,4 +302,75 @@ export function measureSurfaces(): Record<string, number> {
     out[`${name} (champs)`] = [...variants.values()].reduce((n, f) => n + f.length, 0);
   }
   return out;
+}
+
+/** Littéraux de chaîne écrits dans le modèle (valeurs d'unions fermées : `"host" | "notHost"`…). */
+function modelLiterals(): Set<string> {
+  return new Set([...model().matchAll(/"([^"\n]+)"/g)].map((m) => m[1] as string));
+}
+
+/**
+ * Champs dont la valeur est une donnée imprimée ou un nom libre, et non un choix du modèle : types, couleurs, mots-clés,
+ * sortes de marqueurs, noms de cartes et de valeurs retenues, discriminants suivis à part (`op`, `kind`, `on`).
+ */
+const NOT_MODEL_VALUES = new Set([
+  "op",
+  "kind",
+  "on",
+  "id",
+  "name",
+  "store",
+  "keyword",
+  "keywords",
+  "addKeywords",
+  "removeKeywords",
+  "types",
+  "supertypes",
+  "subtypes",
+  "addTypes",
+  "addSubtypes",
+  "setSubtypes",
+  "subtype",
+  "anySubtype",
+  "notSubtype",
+  "noneOfSubtypes",
+  "firstOf",
+  "colors",
+  "addColors",
+  "setColors",
+  "becomes",
+  "color",
+  "produce",
+  "extraMana",
+  "manaProduced",
+  "counter",
+  "counterKind",
+  "withCounter",
+  "perCounter",
+  "addCounter",
+  "number",
+  "key",
+  "origin",
+  "labels",
+  "options",
+  "layout",
+  "rarity",
+]);
+
+/**
+ * Valeurs d'unions fermées du modèle (`attached: "toHost"`, `spellFate.fate: "rebound"`…) qu'une seule carte gérée
+ * écrit, comptées par couple champ et valeur : de la dette propre à une carte que les clés ne montrent pas (audit du
+ * 07/10/2026). Suivies par un plafond plutôt que par une liste.
+ */
+export function singleCardValues(cards: readonly { name: string }[]): number {
+  const literals = modelLiterals();
+  const users = new Map<string, Set<string>>();
+  const walk = (v: unknown, card: string, key: string): void => {
+    if (Array.isArray(v)) for (const x of v) walk(x, card, key);
+    else if (v && typeof v === "object") for (const [k, x] of Object.entries(v as Record<string, unknown>)) walk(x, card, k);
+    else if (typeof v === "string" && !NOT_MODEL_VALUES.has(key) && literals.has(v))
+      users.set(`${key}=${v}`, (users.get(`${key}=${v}`) ?? new Set()).add(card));
+  };
+  for (const c of cards) walk(c, c.name, "");
+  return [...users.values()].filter((u) => u.size === 1).length;
 }
