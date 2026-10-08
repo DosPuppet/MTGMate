@@ -156,6 +156,8 @@ describe("informations cachées : noms à choisir (nom de carte, de terrain, typ
     const deck = [...Array(30).fill(plains), ...mine.flatMap((d) => Array(10).fill(d))] as CardDef[];
     let asked = 0;
     const leaks: string[] = [];
+    // Types de créature de chaque nom de carte, calculés une fois (et non un parcours du catalogue par décision).
+    const subtypesOf = new Map(ALL.map((c) => [c.name, c.subtypes]));
     for (let seed = 1; seed <= 6; seed++) {
       let { state } = createGame({
         seed,
@@ -176,19 +178,21 @@ describe("informations cachées : noms à choisir (nom de carte, de terrain, typ
         for (const o of Object.values(state.objects))
           if (PUBLIC_ZONES.has(o.zone) && !o.faceDown) publicNames.add(state.defs[o.defId]?.name ?? "");
         const view = projectView(state, "p1");
-        const strings = requestStrings(view);
-        if (view.pending?.kind === "choice" && view.pending.request?.type === "name") asked++;
+        const strings = new Set(requestStrings(view));
+        const nameAsked = view.pending?.kind === "choice" && view.pending.request?.type === "name";
+        if (nameAsked) asked++;
+        // Types de créature connus de p1 : ceux des cartes publiques ou des siennes (seulement quand un nom est demandé).
+        const knownTypes = nameAsked
+          ? new Set([...publicNames, ...ownNames].flatMap((n) => subtypesOf.get(n) ?? []))
+          : new Set<string>();
         for (const d of opponentCards) {
           const name = state.defs[d]?.name ?? "";
-          if (!ownNames.has(name) && !publicNames.has(name) && strings.includes(name))
+          if (!ownNames.has(name) && !publicNames.has(name) && strings.has(name))
             leaks.push(`graine ${seed}, tour ${state.turn.number} : p1 voit ${name}`);
+          if (!nameAsked) continue;
           // Types de créature : seulement ceux des cartes publiques ou des vôtres.
           const types = state.defs[d]?.types.includes("Creature") ? (state.defs[d]?.subtypes ?? []) : [];
-          for (const t of types) {
-            const known = [...publicNames, ...ownNames].some((n) => ALL.find((c) => c.name === n)?.subtypes.includes(t));
-            if (!known && strings.includes(t) && view.pending?.kind === "choice" && view.pending.request?.type === "name")
-              leaks.push(`graine ${seed} : p1 voit le type ${t}`);
-          }
+          for (const t of types) if (!knownTypes.has(t) && strings.has(t)) leaks.push(`graine ${seed} : p1 voit le type ${t}`);
         }
         const p = state.pending;
         let r: ReturnType<typeof submit>;
